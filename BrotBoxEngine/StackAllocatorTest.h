@@ -11,6 +11,43 @@ namespace bbe {
 			bbe::StackAllocator<> sa(sizeof(Person) * 128);
 			std::cout << alignof(Person) << " " << sizeof(Person);
 			auto startMarker = sa.getMarker();
+			Person* pArr = sa.allocateObject<Person>(5);
+			pArr[0].name = "Hugo";
+			pArr[1].name = "Ebert";
+			pArr[2].name = "Lel";
+			pArr[3].name = "Aha?";
+			pArr[4].name = "Okay";
+
+			pArr[0].adress = "AStr";
+			pArr[1].adress = "BStr";
+			pArr[2].adress = "CStr";
+			pArr[3].adress = "DStr";
+			pArr[4].adress = "EStr";
+
+			pArr[0].age = 1;
+			pArr[1].age = 2;
+			pArr[2].age = 3;
+			pArr[3].age = 4;
+			pArr[4].age = 5;
+
+			assertEquals(pArr[0].name, "Hugo");
+			assertEquals(pArr[1].name, "Ebert");
+			assertEquals(pArr[2].name, "Lel");
+			assertEquals(pArr[3].name, "Aha?");
+			assertEquals(pArr[4].name, "Okay");
+
+			assertEquals(pArr[0].adress, "AStr");
+			assertEquals(pArr[1].adress, "BStr");
+			assertEquals(pArr[2].adress, "CStr");
+			assertEquals(pArr[3].adress, "DStr");
+			assertEquals(pArr[4].adress, "EStr");
+
+			assertEquals(pArr[0].age, 1);
+			assertEquals(pArr[1].age, 2);
+			assertEquals(pArr[2].age, 3);
+			assertEquals(pArr[3].age, 4);
+			assertEquals(pArr[4].age, 5);
+
 			Person* pOut1 = sa.allocateObject<Person>();
 			Person* pOut2 = sa.allocateObject<Person>();
 			Person* pOut3 = sa.allocateObject<Person>();
@@ -70,7 +107,7 @@ namespace bbe {
 
 			for (int i = 0; i < 128; i++) {
 				Person* inner = sa.allocateObject<Person>();
-				std::cout << i << " " << inner << std::endl;
+				//std::cout << i << " " << inner << std::endl;
 				assertUnequals(inner, nullptr);
 			}
 			assertEquals(sa.allocateObject<Person>(), nullptr);

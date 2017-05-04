@@ -15,18 +15,18 @@ namespace bbe {
 			int age;
 
 			Person() {
-				std::cout << "Constructor called!" << std::endl;
+				//std::cout << "Constructor called!" << std::endl;
 				Person::amountOfPersons++;
 			}
 
 			Person(std::string name, std::string adress, int age) :
 				name(name), adress(adress), age(age) {
-				std::cout << "Constructor with parameters called!" << std::endl;
+				//std::cout << "Constructor with parameters called!" << std::endl;
 				amountOfPersons++;
 			}
 
 			~Person() {
-				std::cout << "Destructor called!" << std::endl;
+				//std::cout << "Destructor called!" << std::endl;
 				amountOfPersons--;
 			}
 
