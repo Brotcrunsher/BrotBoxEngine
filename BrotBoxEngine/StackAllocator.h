@@ -50,8 +50,8 @@ namespace bbe {
 		typedef typename std::pointer_traits<T*>::rebind<const void> const_void_pointer;
 	private:
 		static const size_t STACKALLOCATORDEFAULSIZE = 1024;
-		T* m_bottomPointer = nullptr;
-		T* m_headPointer = nullptr;
+		T* m_data = nullptr;
+		T* m_head = nullptr;
 		size_t m_size = 0;
 
 		Allocator* m_parentAllocator = nullptr;
@@ -66,25 +66,25 @@ namespace bbe {
 				m_parentAllocator = new Allocator();
 				m_needsToDeleteParentAllocator = true;
 			}
-			m_bottomPointer = m_parentAllocator->allocate(m_size);
-			m_headPointer = m_bottomPointer;
+			m_data = m_parentAllocator->allocate(m_size);
+			m_head = m_data;
 
-			memset(m_bottomPointer, 0, m_size);
+			memset(m_data, 0, m_size);
 		}
 
 		~StackAllocator() {
-			if (m_bottomPointer != m_headPointer) {
+			if (m_data != m_head) {
 				//TODO add further error handling
 				debugBreak();
 			}
-			if (m_bottomPointer != nullptr && m_parentAllocator != nullptr) {
-				m_parentAllocator->deallocate(m_bottomPointer, m_size);
+			if (m_data != nullptr && m_parentAllocator != nullptr) {
+				m_parentAllocator->deallocate(m_data, m_size);
 			}
 			if (m_needsToDeleteParentAllocator) {
 				delete m_parentAllocator;
 			}
-			m_bottomPointer = nullptr;
-			m_headPointer = nullptr;
+			m_data = nullptr;
+			m_head = nullptr;
 		}
 
 		StackAllocator(const StackAllocator&  other) = delete; //Copy Constructor
@@ -94,11 +94,11 @@ namespace bbe {
 
 		template <typename U, typename... arguments>
 		U* allocateObject(size_t amountOfObjects = 1, arguments&&... args) {
-			T* allocationLocation = (T*)nextMultiple((size_t)alignof(T), (size_t)m_headPointer);
+			T* allocationLocation = (T*)nextMultiple((size_t)alignof(T), (size_t)m_head);
 			T* newHeadPointer = allocationLocation + amountOfObjects * sizeof(U);
-			if (newHeadPointer <= m_bottomPointer + m_size) {
+			if (newHeadPointer <= m_data + m_size) {
 				U* returnPointer = reinterpret_cast<U*>(allocationLocation);
-				m_headPointer = newHeadPointer;
+				m_head = newHeadPointer;
 				for (size_t i = 0; i < amountOfObjects; i++) {
 					U* object = new (std::addressof(returnPointer[i])) U(std::forward<arguments>(args)...);
 					destructors.push_back(StackAllocatorDestructor(*object));
@@ -114,10 +114,10 @@ namespace bbe {
 
 		void* allocate(size_t amountOfBytes, size_t alignment = 1)
 		{
-			T* allocationLocation = nextMultiple(alignment, m_headPointer);
+			T* allocationLocation = nextMultiple(alignment, m_head);
 			T* newHeadPointer = allocationLocation + amountOfBytes;
-			if (newHeadPointer <= m_bottomPointer + m_size) {
-				m_headPointer = newHeadPointer;
+			if (newHeadPointer <= m_data + m_size) {
+				m_head = newHeadPointer;
 				return allocationLocation;
 			}
 			else {
@@ -127,24 +127,38 @@ namespace bbe {
 		}
 
 		StackAllocatorMarker<T> getMarker() {
-			return StackAllocatorMarker<T>(m_headPointer, destructors.size());
+			return StackAllocatorMarker<T>(m_head, destructors.size());
 		}
 		
-		void deallocateToMarker(StackAllocatorMarker<T> sam) {
-			m_headPointer = sam.m_markerValue;
-			while (destructors.size() > sam.m_destructorHandle) {
-				destructors.back()();
-				destructors.pop_back();
+		void deallocateToMarker(StackAllocatorMarker<T> sam, bool callDestructors = true) {
+			m_head = sam.m_markerValue;
+			if (callDestructors) {
+				while (destructors.size() > sam.m_destructorHandle) {
+					destructors.back()();
+					destructors.pop_back();
+				}
+			}
+			else {
+				while (destructors.size() > sam.m_destructorHandle) {
+					destructors.pop_back();
+				}
 			}
 		}
 
-		void deallocateAll() {
+		void deallocateAll(bool callDestructors = true) {
 			//TODO call Destructors
-			m_headPointer = m_bottomPointer;
-			while (destructors.size() > 0) {
-				StackAllocatorDestructor sad = destructors.back();
-				sad();
-				destructors.pop_back();
+			m_head = m_data;
+			if (callDestructors) {
+				while (destructors.size() > 0) {
+					StackAllocatorDestructor sad = destructors.back();
+					sad();
+					destructors.pop_back();
+				}
+			}
+			else {
+				while (destructors.size() > 0) {
+					destructors.pop_back();
+				}
 			}
 		}
 
