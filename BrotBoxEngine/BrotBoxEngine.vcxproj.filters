@@ -25,6 +25,12 @@
     <Filter Include="Header Files\Util">
       <UniqueIdentifier>{4b46aeae-6e37-4485-87fd-d0022a2ee639}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\General">
+      <UniqueIdentifier>{741007af-4505-448c-8da1-7457bb2fa404}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests\General">
+      <UniqueIdentifier>{9648820f-2eb7-4090-8f7a-7aba39d08265}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -62,6 +68,12 @@
     </ClInclude>
     <ClInclude Include="DataType.h">
       <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="String.h">
+      <Filter>Header Files\General</Filter>
+    </ClInclude>
+    <ClInclude Include="StringTest.h">
+      <Filter>Tests\General</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
