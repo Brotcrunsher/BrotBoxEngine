@@ -58,6 +58,7 @@ namespace bbe {
 			for (size_t i = 0; i < split.getLength(); i++) {
 				std::wcout << "\"" << split[i].getRaw() << "\"" << std::endl;
 			}
+			std::cout << (countString.search("Test"));
 		}
 	}
 }

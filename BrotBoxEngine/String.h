@@ -276,6 +276,43 @@ namespace bbe {
 			return split(String(splitAt));
 		}
 
+		bool contains(const wchar_t* string) const {
+			return contains(String(string));
+		}
+
+		bool contains(const char* string) const {
+			return contains(String(string));
+		}
+
+		bool contains(const std::string& string) const {
+			return contains(String(string));
+		}
+
+		bool contains(const String& string) const {
+			return wcsstr(m_data, string.m_data) != nullptr;
+		}
+
+		int search(const wchar_t* string) const {
+			return search(String(string));
+		}
+
+		int search(const char* string) const {
+			return search(String(string));
+		}
+
+		int search(const std::string& string) const {
+			return search(String(string));
+		}
+
+		int search(const String& string) const {
+			wchar_t *found = wcsstr(m_data, string.m_data);
+			if (found == nullptr) {
+				return -1;
+			}
+
+			return found - m_data;
+		}
+
 		long toLong(int base = 10) {
 			return wcstol(m_data, nullptr, base);
 		}
