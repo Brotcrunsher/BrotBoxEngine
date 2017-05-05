@@ -50,8 +50,40 @@ namespace bbe {
 			initializeFromWCharArr(data.c_str());
 		}
 
-		String(double value) {
-			initializeFromCharArr(std::to_string(value).c_str());
+		String(double number) {
+			initializeFromCharArr(std::to_string(number).c_str());
+		}
+
+		String(int number) {
+			initializeFromCharArr(std::to_string(number).c_str());
+		}
+
+		String(long long number) {
+			initializeFromCharArr(std::to_string(number).c_str());
+		}
+
+		String(long double number) {
+			initializeFromCharArr(std::to_string(number).c_str());
+		}
+
+		String(float number) {
+			initializeFromCharArr(std::to_string(number).c_str());
+		}
+
+		String(unsigned long long number) {
+			initializeFromCharArr(std::to_string(number).c_str());
+		}
+
+		String(unsigned long number) {
+			initializeFromCharArr(std::to_string(number).c_str());
+		}
+
+		String(long number) {
+			initializeFromCharArr(std::to_string(number).c_str());
+		}
+
+		String(unsigned int number) {
+			initializeFromCharArr(std::to_string(number).c_str());
 		}
 
 		String(const String&  other) { //Copy Constructor
@@ -66,12 +98,20 @@ namespace bbe {
 		}
 
 		String& operator=(const String&  other) { //Copy Assignment
+			if (m_data != nullptr) {
+				delete[] m_data;
+			}
+
 			m_length = other.getLength();
 			initializeFromWCharArr(other.m_data);
 			return *this;
 		}
 
 		String& operator=(String&& other) { //Move Assignment
+			if (m_data != nullptr) {
+				delete[] m_data;
+			}
+
 			m_length = other.m_length;
 			m_data = other.m_data;
 			other.m_data = nullptr;
@@ -97,12 +137,30 @@ namespace bbe {
 			return operator==(localString);
 		}
 
+		bool operator==(const std::string& str) const {
+			String localString(str);
+			return operator==(localString);
+		}
+
+		bool operator==(const std::wstring& str) const {
+			String localString(str);
+			return operator==(localString);
+		}
+
 		friend bool operator==(const wchar_t* arr, const String& a) {
 			return a.operator==(arr);
 		}
 
 		friend bool operator==(const char* arr, const String& a) {
 			return a.operator==(arr);
+		}
+
+		friend bool operator==(std::string& str, const String& a) {
+			return a.operator==(str);
+		}
+
+		friend bool operator==(std::wstring& str, const String& a) {
+			return a.operator==(str);
 		}
 
 		bool operator!=(const String& other) const {
@@ -117,12 +175,28 @@ namespace bbe {
 			return !operator==(arr);
 		}
 
+		bool operator!=(const std::string& str) const {
+			return !operator==(str);
+		}
+
+		bool operator!=(const std::wstring& str) const {
+			return !operator==(str);
+		}
+
 		friend bool operator!=(const wchar_t* arr, const String& string) {
 			return string.operator!=(arr);
 		}
 
 		friend bool operator!=(const char* arr, const String& string) {
 			return string.operator!=(arr);
+		}
+
+		friend bool operator!=(const std::string& str, const String& string) {
+			return string.operator!=(str);
+		}
+
+		friend bool operator!=(const std::wstring& str, const String& string) {
+			return string.operator!=(str);
 		}
 
 		String operator+(const String& other) const {
@@ -142,6 +216,10 @@ namespace bbe {
 			return operator+(String(other));
 		}
 
+		String operator+(const std::wstring& other) const {
+			return operator+(String(other));
+		}
+
 		String operator+(const wchar_t* other) const {
 			return operator+(String(other));
 		}
@@ -154,40 +232,158 @@ namespace bbe {
 			return operator+(String(number));
 		}
 
+		String operator+(int number) const {
+			return operator+(String(number));
+		}
+
+		String operator+(long long number) const {
+			return operator+(String(number));
+		}
+
+		String operator+(long double number) const {
+			return operator+(String(number));
+		}
+
+		String operator+(float number) const {
+			return operator+(String(number));
+		}
+
+		String operator+(unsigned long long number) const {
+			return operator+(String(number));
+		}
+
+		String operator+(unsigned long number) const {
+			return operator+(String(number));
+		}
+
+		String operator+(long number) const {
+			return operator+(String(number));
+		}
+
+		String operator+(unsigned int number) const {
+			return operator+(String(number));
+		}
+
 		friend String operator+(const std::string& other, const String& string) {
-			return string + other;
+			return String(other) + string;
+		}
+
+		friend String operator+(const std::wstring& other, const String& string) {
+			return String(other) + string;
 		}
 
 		friend String operator+(const wchar_t* other, const String& string) {
-			return string + other;
+			return String(other) + string;
 		}
 
 		friend String operator+(const char* other, const String& string) {
-			return string + other;
+			return String(other) + string;
 		}
 
 		friend String operator+(double number, const String& string) {
-			return string + number;
+			return String(number) + string;
+		}
+
+		friend String operator+(int number, const String& string) {
+			return String(number) + string;
+		}
+
+		friend String operator+(long long number, const String& string) {
+			return String(number) + string;
+		}
+
+		friend String operator+(long double number, const String& string) {
+			return String(number) + string;
+		}
+
+		friend String operator+(float number, const String& string) {
+			return String(number) + string;
+		}
+
+		friend String operator+(unsigned long long number, const String& string) {
+			return String(number) + string;
+		}
+
+		friend String operator+(unsigned long number, const String& string) {
+			return String(number) + string;
+		}
+
+		friend String operator+(long number, const String& string) {
+			return String(number) + string;
+		}
+
+		friend String operator+(unsigned int number, const String& string) {
+			return String(number) + string;
 		}
 
 		String& operator+=(const String& other) {
 			*this = *this + other;
+			return *this;
 		}
 
 		String& operator+=(const std::string& other) {
 			*this = *this + other;
+			return *this;
+		}
+
+		String& operator+=(const std::wstring& other) {
+			*this = *this + other;
+			return *this;
 		}
 
 		String& operator+=(const wchar_t* other) {
 			*this = *this + other;
+			return *this;
 		}
 
 		String& operator+=(const char* other) {
 			*this = *this + other;
+			return *this;
 		}
 
 		String& operator+=(double number) {
 			*this = *this + number;
+			return *this;
+		}
+
+		String& operator+=(int number) {
+			*this = *this + number;
+			return *this;
+		}
+
+		String& operator+=(long long number) {
+			*this = *this + number;
+			return *this;
+		}
+
+		String& operator+=(long double number) {
+			*this = *this + number;
+			return *this;
+		}
+
+		String& operator+=(float number) {
+			*this = *this + number;
+			return *this;
+		}
+
+		String& operator+=(unsigned long long number) {
+			*this = *this + number;
+			return *this;
+		}
+
+		String& operator+=(unsigned long number) {
+			*this = *this + number;
+			return *this;
+		}
+
+		String& operator+=(long number) {
+			*this = *this + number;
+			return *this;
+		}
+
+		String& operator+=(unsigned int number) {
+			*this = *this + number;
+			return *this;
 		}
 
 		void trim() {
@@ -234,6 +430,21 @@ namespace bbe {
 			return count(String(countand));
 		}
 
+		size_t count(char* countand) const
+		{
+			return count(String(countand));
+		}
+
+		size_t count(std::string countand) const
+		{
+			return count(String(countand));
+		}
+
+		size_t count(std::wstring countand) const
+		{
+			return count(String(countand));
+		}
+
 		DynamicArray<String> split(const String& splitAt) const
 		{
 			size_t counted = count(splitAt);
@@ -276,6 +487,21 @@ namespace bbe {
 			return split(String(splitAt));
 		}
 
+		DynamicArray<String> split(const char* splitAt) const
+		{
+			return split(String(splitAt));
+		}
+
+		DynamicArray<String> split(std::string splitAt) const
+		{
+			return split(String(splitAt));
+		}
+
+		DynamicArray<String> split(std::wstring splitAt) const
+		{
+			return split(String(splitAt));
+		}
+
 		bool contains(const wchar_t* string) const {
 			return contains(String(string));
 		}
@@ -288,23 +514,31 @@ namespace bbe {
 			return contains(String(string));
 		}
 
+		bool contains(const std::wstring& string) const {
+			return contains(String(string));
+		}
+
 		bool contains(const String& string) const {
 			return wcsstr(m_data, string.m_data) != nullptr;
 		}
 
-		int search(const wchar_t* string) const {
+		int64_t search(const wchar_t* string) const {
 			return search(String(string));
 		}
 
-		int search(const char* string) const {
+		int64_t search(const char* string) const {
 			return search(String(string));
 		}
 
-		int search(const std::string& string) const {
+		int64_t search(const std::string& string) const {
 			return search(String(string));
 		}
 
-		int search(const String& string) const {
+		int64_t search(const std::wstring& string) const {
+			return search(String(string));
+		}
+
+		int64_t search(const String& string) const {
 			wchar_t *found = wcsstr(m_data, string.m_data);
 			if (found == nullptr) {
 				return -1;
@@ -329,8 +563,24 @@ namespace bbe {
 			return m_data[index];
 		}
 
+		const wchar_t& operator[](size_t index) const {
+			return m_data[index];
+		}
+
 		wchar_t* getRaw() {
 			return m_data;
+		}
+
+		void toUpperCase() {
+			for (size_t i = 0; i < m_length; i++) {
+				m_data[i] = towupper(m_data[i]);
+			}
+		}
+
+		void toLowerCase() {
+			for (size_t i = 0; i < m_length; i++) {
+				m_data[i] = towlower(m_data[i]);
+			}
 		}
 
 		size_t getLength() const{

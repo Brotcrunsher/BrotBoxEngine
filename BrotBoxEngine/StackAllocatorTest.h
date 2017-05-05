@@ -9,7 +9,6 @@ namespace bbe {
 	namespace test {
 		void testStackAllocator() {
 			bbe::StackAllocator<> sa(sizeof(Person) * 128);
-			std::cout << alignof(Person) << " " << sizeof(Person);
 			auto startMarker = sa.getMarker();
 			Person* pArr = sa.allocateObject<Person>(5);
 			pArr[0].name = "Hugo";
@@ -107,13 +106,11 @@ namespace bbe {
 
 			for (int i = 0; i < 128; i++) {
 				Person* inner = sa.allocateObject<Person>();
-				//std::cout << i << " " << inner << std::endl;
 				assertUnequals(inner, nullptr);
 			}
 			assertEquals(sa.allocateObject<Person>(), nullptr);
 			sa.deallocateToMarker(startMarker);
 			Person::checkIfAllPersonsWereDestroyed();
-			std::cout << "End of StackAllocatorTest" << std::endl;
 		}
 	}
 }

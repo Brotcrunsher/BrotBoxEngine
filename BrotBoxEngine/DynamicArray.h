@@ -36,6 +36,8 @@ namespace bbe {
 		}
 		DynamicArray& operator=(const DynamicArray&  other)  //Copy Assignment
 		{
+			delete[] m_data;
+
 			m_data = new T[other.m_size];
 			for (size_t i = 0; i < size; i++)
 			{
@@ -44,6 +46,8 @@ namespace bbe {
 		}
 		DynamicArray& operator=(DynamicArray&& other) //Move Assignment
 		{
+			delete[] m_data;
+
 			m_data = other.m_data;
 			m_size = other.m_size;
 			other.m_data = nullptr;
