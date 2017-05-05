@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "DynamicArray.h"
 
 namespace bbe {
 	class String {
@@ -67,6 +68,7 @@ namespace bbe {
 		String& operator=(const String&  other) { //Copy Assignment
 			m_length = other.getLength();
 			initializeFromWCharArr(other.m_data);
+			return *this;
 		}
 
 		String& operator=(String&& other) { //Move Assignment
@@ -189,8 +191,8 @@ namespace bbe {
 		}
 
 		void trim() {
-			int start = 0;
-			int end = m_length - 1;
+			size_t start = 0;
+			size_t end = m_length - 1;
 			while (iswspace(m_data[start])) {
 				start++;
 			}
@@ -209,6 +211,69 @@ namespace bbe {
 					m_data[m_length] = 0;
 				}
 			}
+		}
+
+		size_t count(const String& countand) const
+		{
+			size_t countandLength = countand.getLength();
+			if (countandLength == 0) {
+				return 0;
+			}
+			size_t amount = 0;
+			wchar_t *readHead = m_data;
+
+			while ((readHead = wcsstr(readHead, countand.m_data)) != nullptr) {
+				amount++;
+				readHead += countandLength;
+			}
+			return amount;
+		}
+
+		size_t count(const wchar_t* countand) const
+		{
+			return count(String(countand));
+		}
+
+		DynamicArray<String> split(const String& splitAt) const
+		{
+			size_t counted = count(splitAt);
+			if (counted == 0) {
+				DynamicArray<String> retVal(1);
+				retVal[0] = m_data;
+				return retVal;
+			}
+			DynamicArray<String> retVal(counted + 1);
+			wchar_t *previousFinding = m_data;
+			for (size_t i = 0; i < retVal.getLength() - 1; i++) {
+				wchar_t *currentFinding = wcsstr(previousFinding, splitAt.m_data);
+				String currentString;
+				delete[] currentString.m_data;
+				size_t currentStringLength = currentFinding - previousFinding;
+				currentString.m_data = new wchar_t[currentStringLength + 1];
+				memcpy(currentString.m_data, previousFinding, currentStringLength * sizeof(wchar_t));
+				currentString.m_data[currentStringLength] = 0;
+				currentString.m_length = currentStringLength;
+
+				retVal[i] = currentString;
+
+				previousFinding = currentFinding + splitAt.getLength();
+			}
+
+			String currentString;
+			delete[] currentString.m_data;
+			size_t currentStringLength = m_data + m_length - previousFinding;
+			currentString.m_data = new wchar_t[currentStringLength + 1];
+			memcpy(currentString.m_data, previousFinding, currentStringLength * sizeof(wchar_t));
+			currentString.m_data[currentStringLength] = 0;
+			currentString.m_length = currentStringLength;
+			retVal[retVal.getLength() - 1] = currentString;
+
+			return retVal;
+		}
+
+		DynamicArray<String> split(const wchar_t* splitAt) const
+		{
+			return split(String(splitAt));
 		}
 
 		long toLong(int base = 10) {

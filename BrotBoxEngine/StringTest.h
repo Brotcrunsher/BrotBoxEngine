@@ -49,6 +49,15 @@ namespace bbe {
 			trim1.trim();
 
 			std::wcout << "\"" << trim1.getRaw() << "\" " << trim1.getLength() << std::endl;
+
+
+			bbe::String countString("Ha! Test yeh Test Test TestTest okay edgeTestcase?");
+			std::wcout << countString.count(L"Test") << " " << countString.count(L"hahaha") << " " << countString.count(L"") << std::endl;
+			auto split = countString.split(L" ");
+			std::wcout << countString.getRaw() << std::endl;
+			for (size_t i = 0; i < split.getLength(); i++) {
+				std::wcout << "\"" << split[i].getRaw() << "\"" << std::endl;
+			}
 		}
 	}
 }
