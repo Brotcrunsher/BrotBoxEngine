@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <algorithm>
+#include <functional>
 
 namespace bbe {
 	template <typename T>
@@ -34,11 +35,13 @@ namespace bbe {
 				ListChunk<T>* newData = new ListChunk<T>[newCapacity];
 
 				for (size_t i = 0; i < m_length; i++) {
-					newData[i].value = std::move(m_data[i].value);
+					new (std::addressof(newData[i].value)) T(std::move(m_data[i].value));
 					m_data[i].value.~T();
 				}
 
-				delete[] m_data;
+				if (m_data != nullptr) {
+					delete[] m_data;
+				}
 				m_data = newData;
 				m_capacity = newCapacity;
 			}
@@ -57,7 +60,7 @@ namespace bbe {
 		{
 			m_data = new ListChunk<T>[amountOfObjects];
 			for (size_t i = 0; i < amountOfObjects; i++) {
-				new (std::adressof(m_data[i])) T(std::forward<arguments>(args)...);
+				new (std::addressof(m_data[i])) T(std::forward<arguments>(args)...);
 			}
 		}
 
@@ -65,8 +68,8 @@ namespace bbe {
 			: m_length(other.m_length), m_capacity(other.m_capacity)
 		{
 			m_data = new ListChunk<T>[m_capacity];
-			for (size_t i = 0; i < m_capacity; i++) {
-				m_data[i] = other.m_data[i];
+			for (size_t i = 0; i < m_length; i++) {
+				new (std::addressof(m_data[i])) T(other.m_data[i].value);
 			}
 		}
 
@@ -87,8 +90,10 @@ namespace bbe {
 			m_capacity = other.m_capacity;
 			m_data = new ListChunk<T>[m_capacity];
 			for (size_t i = 0; i < m_capacity; i++) {
-				m_data[i] = other.m_data[i];
+				new (std::addressof(m_data[i])) T(other.m_data[i].value);
 			}
+
+			return *this;
 		}
 
 		List& operator=(List<T>&& other) {
@@ -103,6 +108,8 @@ namespace bbe {
 			other.m_data = nullptr;
 			other.m_length = 0;
 			other.m_capacity = 0;
+
+			return *this;
 		}
 
 		~List() {
@@ -145,14 +152,40 @@ namespace bbe {
 			for (size_t i = 0; i < other.m_length; i++) {
 				pushBack(other.m_data[i].value);
 			}
+			return *this;
 		}
 
 		void pushBack(const T& val, size_t amount = 1) {
 			growIfNeeded(amount);
 			for (size_t i = 0; i < amount; i++) {
-				m_data[m_length + i].value = val;
+				new (std::addressof(m_data[m_length + i])) T(val);
 			}
 			m_length += amount;
+		}
+
+		void pushBack(T&& val, size_t amount = 1) {
+			growIfNeeded(amount);
+			if (amount == 1) {
+				new (std::addressof(m_data[m_length])) T(std::move(val));
+			}
+			else {
+				for (size_t i = 0; i < amount; i++) {
+					new (std::addressof(m_data[m_length + i])) T(val);
+				}
+			}
+
+			m_length += amount;
+		}
+
+		template <typename T>
+		void pushBackAll(T&& t) {
+			pushBack(std::forward<T>(t));
+		}
+
+		template<typename T, typename... arguments>
+		void pushBackAll(T&& t, arguments&&... args) {
+			pushBack(std::forward<T>(t));
+			pushBackAll(std::forward<arguments>(args)...);
 		}
 
 		void popBack(size_t amount = 1) {
@@ -164,7 +197,7 @@ namespace bbe {
 
 		void clear() {
 			for (size_t i = 0; i < m_length; i++) {
-				m_data[i].~T();
+				(&(m_data[i].value))->~T();
 			}
 			m_length = 0;
 		}
@@ -173,37 +206,52 @@ namespace bbe {
 			if (m_length == m_capacity) {
 				return false;
 			}
-			List<T> newList = new List<T>[m_length];
-			for (size_t i = 0; i < m_length; i++) {
-				newList[i].value = std::move(m_data[i].value);
+			m_capacity = m_length;
+
+			if (m_length == 0) {
+				if (m_data != nullptr) {
+					delete[] m_data;
+				}
+				m_data = nullptr;
+				return true;
 			}
-			delete[] m_data;
+			ListChunk<T>* newList = new ListChunk<T>[m_length];
+			for (size_t i = 0; i < m_length; i++) {
+				new (std::addressof(newList[i])) T(std::move(m_data[i].value));
+			}
+			if (m_data != nullptr) {
+				for (size_t i = 0; i < m_length; i++) {
+					std::addressof(m_data[i].value)->~T();
+				}
+				delete[] m_data;
+			}
 			m_data = newList;
 			return true;
 		}
 
 		size_t removeAll(const T& remover) {
-			return removeAll([&remover](const &T other) { other == remover });
+			return removeAll([&](const T& other) { return other == remover; });
 		}
 
-		size_t removeAll(bool(*predicate)(T&)) {
+		size_t removeAll(std::function<bool(const T&)> predicate) {
 			size_t moveRange = 0;
 			for (size_t i = 0; i < m_length; i++) {
 				if (predicate(m_data[i].value)) {
 					moveRange++;
 				}
 				else if (moveRange != 0) {
-					m_data[i - moveRange].value = std::move(m - data[i]);
+					m_data[i - moveRange].value = std::move(m_data[i].value);
 				}
 			}
 			m_length -= moveRange;
+			return moveRange;
 		}
 
 		bool removeSingle(const T& remover) {
-			removeSingle([&remover](const T& t) {remover == t});
+			return removeSingle([&](const T& t) {return remover == t; });
 		}
 
-		bool removeSingle(bool(*predicate)(T&)) {
+		bool removeSingle(std::function<bool(const T&)> predicate) {
 			size_t index = 0;
 			bool found = false;
 			for (size_t i = 0; i < m_length; i++) {
@@ -216,16 +264,24 @@ namespace bbe {
 			if (!found) return false;
 
 			m_data[index].value.~T();
-			for (size_t i = index; i < m_length - 1; i++) {
-				m_data[index].value = std::move(m_data[index + 1].value);
+			if (index != m_length - 1) {
+				new (std::addressof(m_data[index].value)) T(std::move(m_data[index + 1].value));
+
+				for (size_t i = index + 1; i < m_length - 1; i++) {
+					m_data[i].value = std::move(m_data[i + 1].value);
+				}
 			}
+			
+			
+			m_length--;
+			return true;
 		}
 
 		size_t containsAmount(const T& t) const {
-			return containsAmount([&t](const T& other) {t == other});
+			return containsAmount([&](const T& other) { return t == other; });
 		}
 
-		size_t containsAmount(bool(*predicate)(T&)) const {
+		size_t containsAmount(std::function<bool(const T&)> predicate) const {
 			size_t amount = 0;
 			for (size_t i = 0; i < m_length; i++) {
 				if (predicate(m_data[i].value)) {
@@ -236,10 +292,10 @@ namespace bbe {
 		}
 
 		bool contains(const T& t) const {
-			return contains([&t](const T& other) {t == other});
+			return contains([&](const T& other) {return t == other; });
 		}
 
-		bool contains(bool(*predicate)(T&)) const {
+		bool contains(std::function<bool(const T&)> predicate) const {
 			for (size_t i = 0; i < m_length; i++) {
 				if (predicate(m_data[i].value)) {
 					return true;
@@ -252,40 +308,42 @@ namespace bbe {
 			return containsAmount(t) == 1;
 		}
 
-		bool containsUnique(bool(*predicate)(T&)) const {
+		bool containsUnique(std::function<bool(const T&)> predicate) const {
 			return containsAmount(predicate) == 1;
 		}
 
 		void sort() {
-			std::sort(reinterpret_cast<*T>(m_data), reinterpret_cast<*T>(m_data + m_length));
+			std::sort(reinterpret_cast<T*>(m_data), reinterpret_cast<T*>(m_data + m_length));
 		}
 
-		void sort(bool(*predicate)(T&, T&)) {
-			std::sort(reinterpret_cast<*T>(m_data), reinterpret_cast<*T>(m_data + m_length), predicate);
+		void sort(std::function<bool(const T&, const T&)> predicate) {
+			std::sort(reinterpret_cast<T*>(m_data), reinterpret_cast<T*>(m_data + m_length), predicate);
 		}
 
 		T* find(const T& t) {
-			return find([&t](const T& other) { t == other });
+			return find([&](const T& other) { return t == other; });
 		}
 
-		T* find(bool(*predicate)(T&)) {
+		T* find(std::function<bool(const T&)> predicate) {
 			for (size_t i = 0; i < m_length; i++) {
 				if (predicate(m_data[i].value)) {
 					return reinterpret_cast<T*>(m_data + i);
 				}
 			}
+			return nullptr;
 		}
 
 		T* findLast(const T& t) {
-			return findLast([&t](const T& other) { t == other });
+			return findLast([&t](const T& other) { return t == other; });
 		}
 
-		T* findLast(bool(*predicate)(T&)) {
-			for (size_t i = m_length - 1; i >= 0; i--) {
+		T* findLast(std::function<bool(const T&)> predicate) {
+			for (size_t i = m_length - 1; i >= 0 && i != std::numeric_limits<size_t>::max(); i--) {
 				if (predicate(m_data[i].value)) {
 					return reinterpret_cast<T*>(m_data + i);
 				}
 			}
+			return nullptr;
 		}
 
 		bool operator==(const List<T>& other) {

@@ -149,6 +149,7 @@
     <ClInclude Include="DataType.h" />
     <ClInclude Include="DynamicArray.h" />
     <ClInclude Include="List.h" />
+    <ClInclude Include="ListTest.h" />
     <ClInclude Include="OtherTest.h" />
     <ClInclude Include="PoolAllocator.h" />
     <ClInclude Include="PoolAllocatorTest.h" />

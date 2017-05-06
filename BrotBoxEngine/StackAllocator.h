@@ -15,8 +15,8 @@ namespace bbe {
 		template<class T>
 		explicit StackAllocatorDestructor(const T& data) noexcept :
 			m_data(std::addressof(data)) {
-			destructor = [](const void* data) {
-				auto originalType = static_cast<const T*>(data);
+			destructor = [](const void* lambdaData) {
+				auto originalType = static_cast<const T*>(lambdaData);
 				originalType->~T();
 			};
 		}

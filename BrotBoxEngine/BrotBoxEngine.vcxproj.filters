@@ -34,6 +34,9 @@
     <Filter Include="Header Files\DataStructures">
       <UniqueIdentifier>{02c310ad-5f99-43af-ad7d-8c702b42b130}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Tests\DataStructures">
+      <UniqueIdentifier>{833b2de2-7c6b-4a6e-bdf8-9a56c965acc0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -86,6 +89,9 @@
     </ClInclude>
     <ClInclude Include="List.h">
       <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="ListTest.h">
+      <Filter>Tests\DataStructures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
