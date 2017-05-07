@@ -1,10 +1,10 @@
 #pragma once
 
-#include <memory>
 #include "DataType.h"
 #include "UtilTest.h"
-#include <vector>
+#include "List.h"
 #include <iostream>
+#include "STLCapsule.h"
 
 namespace bbe {
 	class StackAllocatorDestructor {
@@ -14,7 +14,7 @@ namespace bbe {
 	public:
 		template<class T>
 		explicit StackAllocatorDestructor(const T& data) noexcept :
-			m_data(std::addressof(data)) {
+			m_data(bbe::addressOf(data)) {
 			destructor = [](const void* lambdaData) {
 				auto originalType = static_cast<const T*>(lambdaData);
 				originalType->~T();
@@ -37,7 +37,7 @@ namespace bbe {
 		}
 	};
 
-	template <typename T = byte, typename Allocator = std::allocator<T>>
+	template <typename T = byte, typename Allocator = STLAllocator<T>>
 	class StackAllocator {
 	public:
 		typedef typename T                                           value_type;
@@ -57,7 +57,7 @@ namespace bbe {
 		Allocator* m_parentAllocator = nullptr;
 		bool m_needsToDeleteParentAllocator = false;
 		
-		std::vector<StackAllocatorDestructor> destructors; //TODO change to own container type
+		List<StackAllocatorDestructor> destructors; //TODO change to own container type
 	public:
 		explicit StackAllocator(size_t size = STACKALLOCATORDEFAULSIZE, Allocator* parentAllocator = nullptr)
 			: m_size(size), m_parentAllocator(parentAllocator) 
@@ -100,8 +100,8 @@ namespace bbe {
 				U* returnPointer = reinterpret_cast<U*>(allocationLocation);
 				m_head = newHeadPointer;
 				for (size_t i = 0; i < amountOfObjects; i++) {
-					U* object = new (std::addressof(returnPointer[i])) U(std::forward<arguments>(args)...);
-					destructors.push_back(StackAllocatorDestructor(*object));
+					U* object = new (bbe::addressOf(returnPointer[i])) U(std::forward<arguments>(args)...);
+					destructors.pushBack(StackAllocatorDestructor(*object));
 				}
 				return returnPointer;
 			}
@@ -127,20 +127,20 @@ namespace bbe {
 		}
 
 		StackAllocatorMarker<T> getMarker() {
-			return StackAllocatorMarker<T>(m_head, destructors.size());
+			return StackAllocatorMarker<T>(m_head, destructors.getLength());
 		}
 		
 		void deallocateToMarker(StackAllocatorMarker<T> sam, bool callDestructors = true) {
 			m_head = sam.m_markerValue;
 			if (callDestructors) {
-				while (destructors.size() > sam.m_destructorHandle) {
-					destructors.back()();
-					destructors.pop_back();
+				while (destructors.getLength() > sam.m_destructorHandle) {
+					destructors.last()();
+					destructors.popBack();
 				}
 			}
 			else {
-				while (destructors.size() > sam.m_destructorHandle) {
-					destructors.pop_back();
+				while (destructors.getLength() > sam.m_destructorHandle) {
+					destructors.popBack();
 				}
 			}
 		}

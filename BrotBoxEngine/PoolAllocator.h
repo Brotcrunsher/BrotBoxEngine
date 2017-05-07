@@ -1,7 +1,7 @@
 #pragma once
 
-#include <memory>
 #include "UtilDebug.h"
+#include "STLCapsule.h"
 
 namespace bbe {
 	template <typename T>
@@ -13,7 +13,7 @@ namespace bbe {
 		~PoolChunk() = delete;
 	};
 
-	template <typename T, typename Allocator = std::allocator<PoolChunk<T>>>
+	template <typename T, typename Allocator = STLAllocator<PoolChunk<T>>>
 	class PoolAllocator
 	{
 	public:
@@ -47,7 +47,7 @@ namespace bbe {
 			}
 			m_data = m_parentAllocator->allocate(m_size);
 			for (size_t i = 0; i < m_size - 1; i++) {
-				m_data[i].nextPoolChunk = std::addressof(m_data[i + 1]);
+				m_data[i].nextPoolChunk = bbe::addressOf(m_data[i + 1]);
 			}
 			m_data[m_size - 1].nextPoolChunk = nullptr;
 			m_head = m_data;
@@ -84,7 +84,7 @@ namespace bbe {
 			}
 			PoolChunk<T>* retVal = m_head;
 			m_head = retVal->nextPoolChunk;
-			T* realRetVal = new (std::addressof(retVal->value)) T(std::forward<arguments>(args)...);
+			T* realRetVal = new (bbe::addressOf(retVal->value)) T(std::forward<arguments>(args)...);
 			m_openAllocations++;
 			return realRetVal;
 		}

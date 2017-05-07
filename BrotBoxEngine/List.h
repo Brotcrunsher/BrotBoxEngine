@@ -1,8 +1,7 @@
 #pragma once
 
-#include <memory>
-#include <algorithm>
 #include <functional>
+#include "STLCapsule.h"
 
 namespace bbe {
 	template <typename T>
@@ -35,7 +34,7 @@ namespace bbe {
 				ListChunk<T>* newData = new ListChunk<T>[newCapacity];
 
 				for (size_t i = 0; i < m_length; i++) {
-					new (std::addressof(newData[i].value)) T(std::move(m_data[i].value));
+					new (bbe::addressOf(newData[i].value)) T(std::move(m_data[i].value));
 					m_data[i].value.~T();
 				}
 
@@ -60,7 +59,7 @@ namespace bbe {
 		{
 			m_data = new ListChunk<T>[amountOfObjects];
 			for (size_t i = 0; i < amountOfObjects; i++) {
-				new (std::addressof(m_data[i])) T(std::forward<arguments>(args)...);
+				new (bbe::addressOf(m_data[i])) T(std::forward<arguments>(args)...);
 			}
 		}
 
@@ -69,7 +68,7 @@ namespace bbe {
 		{
 			m_data = new ListChunk<T>[m_capacity];
 			for (size_t i = 0; i < m_length; i++) {
-				new (std::addressof(m_data[i])) T(other.m_data[i].value);
+				new (bbe::addressOf(m_data[i])) T(other.m_data[i].value);
 			}
 		}
 
@@ -90,7 +89,7 @@ namespace bbe {
 			m_capacity = other.m_capacity;
 			m_data = new ListChunk<T>[m_capacity];
 			for (size_t i = 0; i < m_capacity; i++) {
-				new (std::addressof(m_data[i])) T(other.m_data[i].value);
+				new (bbe::addressOf(m_data[i])) T(other.m_data[i].value);
 			}
 
 			return *this;
@@ -158,7 +157,7 @@ namespace bbe {
 		void pushBack(const T& val, size_t amount = 1) {
 			growIfNeeded(amount);
 			for (size_t i = 0; i < amount; i++) {
-				new (std::addressof(m_data[m_length + i])) T(val);
+				new (bbe::addressOf(m_data[m_length + i])) T(val);
 			}
 			m_length += amount;
 		}
@@ -166,11 +165,11 @@ namespace bbe {
 		void pushBack(T&& val, size_t amount = 1) {
 			growIfNeeded(amount);
 			if (amount == 1) {
-				new (std::addressof(m_data[m_length])) T(std::move(val));
+				new (bbe::addressOf(m_data[m_length])) T(std::move(val));
 			}
 			else {
 				for (size_t i = 0; i < amount; i++) {
-					new (std::addressof(m_data[m_length + i])) T(val);
+					new (bbe::addressOf(m_data[m_length + i])) T(val);
 				}
 			}
 
@@ -217,11 +216,11 @@ namespace bbe {
 			}
 			ListChunk<T>* newList = new ListChunk<T>[m_length];
 			for (size_t i = 0; i < m_length; i++) {
-				new (std::addressof(newList[i])) T(std::move(m_data[i].value));
+				new (bbe::addressOf(newList[i])) T(std::move(m_data[i].value));
 			}
 			if (m_data != nullptr) {
 				for (size_t i = 0; i < m_length; i++) {
-					std::addressof(m_data[i].value)->~T();
+					bbe::addressOf(m_data[i].value)->~T();
 				}
 				delete[] m_data;
 			}
@@ -265,7 +264,7 @@ namespace bbe {
 
 			m_data[index].value.~T();
 			if (index != m_length - 1) {
-				new (std::addressof(m_data[index].value)) T(std::move(m_data[index + 1].value));
+				new (bbe::addressOf(m_data[index].value)) T(std::move(m_data[index + 1].value));
 
 				for (size_t i = index + 1; i < m_length - 1; i++) {
 					m_data[i].value = std::move(m_data[i + 1].value);
@@ -313,11 +312,31 @@ namespace bbe {
 		}
 
 		void sort() {
-			std::sort(reinterpret_cast<T*>(m_data), reinterpret_cast<T*>(m_data + m_length));
+			sortSTL(reinterpret_cast<T*>(m_data), reinterpret_cast<T*>(m_data + m_length));
 		}
 
 		void sort(std::function<bool(const T&, const T&)> predicate) {
-			std::sort(reinterpret_cast<T*>(m_data), reinterpret_cast<T*>(m_data + m_length), predicate);
+			sortSTL(reinterpret_cast<T*>(m_data), reinterpret_cast<T*>(m_data + m_length), predicate);
+		}
+
+		T& first() {
+			//UNTESTED
+			if (m_data == nullptr) {
+				//TODO error handling
+				debugBreak();
+			}
+
+			return (m_data[0].value);
+		}
+
+		T& last() {
+			//UNTESTED
+			if (m_data == nullptr) {
+				//TODO error handling
+				debugBreak();
+			}
+
+			return (m_data[m_length - 1].value);
 		}
 
 		T* find(const T& t) {

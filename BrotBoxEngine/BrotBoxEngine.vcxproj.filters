@@ -93,6 +93,12 @@
     <ClInclude Include="ListTest.h">
       <Filter>Tests\DataStructures</Filter>
     </ClInclude>
+    <ClInclude Include="STLCapsule.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="STLAllocator.h">
+      <Filter>Header Files\MemoryManagement</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
