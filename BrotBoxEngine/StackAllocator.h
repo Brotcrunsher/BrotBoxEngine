@@ -58,6 +58,21 @@ namespace bbe {
 		bool m_needsToDeleteParentAllocator = false;
 		
 		List<StackAllocatorDestructor> destructors; //TODO change to own container type
+
+		template<typename U>
+		typename std::enable_if<std::is_trivially_destructible<U>::value>::type
+			addDestructorToList(U* object)
+		{
+			//do nothing
+		}
+
+		template<typename U>
+		typename std::enable_if<!std::is_trivially_destructible<U>::value>::type
+			addDestructorToList(U* object)
+		{
+			destructors.pushBack(StackAllocatorDestructor(*object));
+		}
+
 	public:
 		explicit StackAllocator(size_t size = STACKALLOCATORDEFAULSIZE, Allocator* parentAllocator = nullptr)
 			: m_size(size), m_parentAllocator(parentAllocator) 
@@ -101,7 +116,7 @@ namespace bbe {
 				m_head = newHeadPointer;
 				for (size_t i = 0; i < amountOfObjects; i++) {
 					U* object = new (bbe::addressOf(returnPointer[i])) U(std::forward<arguments>(args)...);
-					destructors.pushBack(StackAllocatorDestructor(*object));
+					addDestructorToList(object);
 				}
 				return returnPointer;
 			}
@@ -146,7 +161,6 @@ namespace bbe {
 		}
 
 		void deallocateAll(bool callDestructors = true) {
-			//TODO call Destructors
 			m_head = m_data;
 			if (callDestructors) {
 				while (destructors.size() > 0) {

@@ -58,7 +58,9 @@ namespace bbe {
 				Person* person2 = sa.allocateObject<Person>();
 				Person* person3 = sa.allocateObject<Person>();
 				Person* person4 = sa.allocateObject<Person>();
+				float* data = sa.allocateObject<float>();
 				Person* person5 = sa.allocateObject<Person>();
+
 
 				person1->name = "Hugo";
 				person2->name = "Ebert";
