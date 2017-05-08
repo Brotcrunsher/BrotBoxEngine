@@ -7,18 +7,21 @@
 #include "STLCapsule.h"
 
 namespace bbe {
+	template <typename T>
+	void executeDestructor(const void* data) {
+		auto originalType = static_cast<const T*>(data);
+		originalType->~T();
+	}
+
 	class StackAllocatorDestructor {
 	private:
 		const void* m_data;
 		void(*destructor)(const void*);
 	public:
-		template<class T>
+		template<typename T>
 		explicit StackAllocatorDestructor(const T& data) noexcept :
 			m_data(bbe::addressOf(data)) {
-			destructor = [](const void* lambdaData) {
-				auto originalType = static_cast<const T*>(lambdaData);
-				originalType->~T();
-			};
+			destructor = executeDestructor<T>;
 		}
 
 		void operator () () noexcept {
@@ -57,17 +60,17 @@ namespace bbe {
 		Allocator* m_parentAllocator = nullptr;
 		bool m_needsToDeleteParentAllocator = false;
 		
-		List<StackAllocatorDestructor> destructors; //TODO change to own container type
+		List<StackAllocatorDestructor> destructors;
 
 		template<typename U>
-		typename std::enable_if<std::is_trivially_destructible<U>::value>::type
+		inline typename std::enable_if<std::is_trivially_destructible<U>::value>::type
 			addDestructorToList(U* object)
 		{
 			//do nothing
 		}
 
 		template<typename U>
-		typename std::enable_if<!std::is_trivially_destructible<U>::value>::type
+		inline typename std::enable_if<!std::is_trivially_destructible<U>::value>::type
 			addDestructorToList(U* object)
 		{
 			destructors.pushBack(StackAllocatorDestructor(*object));
@@ -84,7 +87,7 @@ namespace bbe {
 			m_data = m_parentAllocator->allocate(m_size);
 			m_head = m_data;
 
-			memset(m_data, 0, m_size);
+			memset(m_data, 0, m_size);	//TODO evaluate if this should be here
 		}
 
 		~StackAllocator() {
@@ -103,13 +106,13 @@ namespace bbe {
 		}
 
 		StackAllocator(const StackAllocator&  other) = delete; //Copy Constructor
-		StackAllocator(const StackAllocator&& other) = delete; //Move Constructor
+		StackAllocator(StackAllocator&& other) = delete; //Move Constructor
 		StackAllocator& operator=(const StackAllocator&  other) = delete; //Copy Assignment
 		StackAllocator& operator=(StackAllocator&& other) = delete; //Move Assignment
 
 		template <typename U, typename... arguments>
 		U* allocateObject(size_t amountOfObjects = 1, arguments&&... args) {
-			T* allocationLocation = (T*)nextMultiple((size_t)alignof(T), (size_t)m_head);
+			T* allocationLocation = (T*)nextMultiple(alignof(U), (size_t)m_head);
 			T* newHeadPointer = allocationLocation + amountOfObjects * sizeof(U);
 			if (newHeadPointer <= m_data + m_size) {
 				U* returnPointer = reinterpret_cast<U*>(allocationLocation);
@@ -129,7 +132,7 @@ namespace bbe {
 
 		void* allocate(size_t amountOfBytes, size_t alignment = 1)
 		{
-			T* allocationLocation = nextMultiple(alignment, m_head);
+			T* allocationLocation = (T*)nextMultiple(alignment, (size_t)m_head);
 			T* newHeadPointer = allocationLocation + amountOfBytes;
 			if (newHeadPointer <= m_data + m_size) {
 				m_head = newHeadPointer;

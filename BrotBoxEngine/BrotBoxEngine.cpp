@@ -13,7 +13,6 @@
 
 int main()
 {
-	
 	bbe::test::testPoolAllocator();
 	bbe::test::testStackAllocator();
 	bbe::test::testString();
@@ -21,6 +20,8 @@ int main()
 	bbe::test::testAllOthers();
 
 	bbe::test::Person::resetTestStatistics();
+	
+
 
 	std::vector<bbe::test::Person> listEmpty;
 

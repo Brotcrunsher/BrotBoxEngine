@@ -11,6 +11,12 @@ namespace bbe {
 			bbe::StackAllocator<> sa(sizeof(Person) * 128);
 			auto startMarker = sa.getMarker();
 			Person* pArr = sa.allocateObject<Person>(5);
+			float* floatData = (float*)sa.allocate(sizeof(float) * 100, alignof(float));
+
+			for (size_t i = 0; i < 100; i++) {
+				floatData[i] = i + 100;
+			}
+
 			pArr[0].name = "Hugo";
 			pArr[1].name = "Ebert";
 			pArr[2].name = "Lel";
@@ -47,6 +53,10 @@ namespace bbe {
 			assertEquals(pArr[3].age, 4);
 			assertEquals(pArr[4].age, 5);
 
+			for (size_t i = 0; i < 100; i++) {
+				assertEquals(floatData[i], i + 100);
+			}
+
 			Person* pOut1 = sa.allocateObject<Person>();
 			Person* pOut2 = sa.allocateObject<Person>();
 			Person* pOut3 = sa.allocateObject<Person>();
@@ -58,7 +68,7 @@ namespace bbe {
 				Person* person2 = sa.allocateObject<Person>();
 				Person* person3 = sa.allocateObject<Person>();
 				Person* person4 = sa.allocateObject<Person>();
-				float* data = sa.allocateObject<float>();
+				float* data = sa.allocateObject<float>(50);
 				Person* person5 = sa.allocateObject<Person>();
 
 

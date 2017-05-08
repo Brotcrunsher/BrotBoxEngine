@@ -54,7 +54,7 @@ namespace bbe {
 		}
 
 		PoolAllocator(const PoolAllocator&  other) = delete; //Copy Constructor
-		PoolAllocator(const PoolAllocator&& other) = delete; //Move Constructor
+		PoolAllocator(PoolAllocator&& other) = delete; //Move Constructor
 		PoolAllocator& operator=(const PoolAllocator&  other) = delete; //Copy Assignment
 		PoolAllocator& operator=(PoolAllocator&& other) = delete; //Move Assignment
 
