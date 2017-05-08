@@ -23,8 +23,8 @@ namespace bbe {
 				assertEquals(0, Person::amountOfMoveAssignmentCalls);
 				assertEquals(0, Person::amountOfParameterConstructorCalls);
 				assertEquals(0, Person::amountOfDestructorCalls);
-
 				listEmpty.pushBack(Person("Peter", "AStr", 18));
+				
 				assertEquals(listEmpty.getCapacity(), 1);
 				assertEquals(listEmpty.getLength(), 1);
 				assertUnequals(listEmpty.getRaw(), nullptr);

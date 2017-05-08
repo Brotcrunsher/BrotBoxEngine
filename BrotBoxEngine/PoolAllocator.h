@@ -27,7 +27,7 @@ namespace bbe {
 		typedef typename std::pointer_traits<T*>::rebind<const void> const_void_pointer;
 
 	private:
-		static const size_t POOLALLOCATORDEFAULSIZE = 1024;
+		static constexpr size_t POOLALLOCATORDEFAULSIZE = 1024;
 		size_t m_openAllocations = 0;		//Used to find memory leaks
 
 		PoolChunk<T>* m_data = nullptr;

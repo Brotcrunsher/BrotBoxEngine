@@ -14,7 +14,7 @@ namespace bbe {
 			float* floatData = (float*)sa.allocate(sizeof(float) * 100, alignof(float));
 
 			for (size_t i = 0; i < 100; i++) {
-				floatData[i] = i + 100;
+				floatData[i] = (float)i + 100.0f;
 			}
 
 			pArr[0].name = "Hugo";
@@ -54,7 +54,7 @@ namespace bbe {
 			assertEquals(pArr[4].age, 5);
 
 			for (size_t i = 0; i < 100; i++) {
-				assertEquals(floatData[i], i + 100);
+				assertEquals(floatData[i], (float)i + 100.0f);
 			}
 
 			Person* pOut1 = sa.allocateObject<Person>();
@@ -70,7 +70,12 @@ namespace bbe {
 				Person* person4 = sa.allocateObject<Person>();
 				float* data = sa.allocateObject<float>(50);
 				Person* person5 = sa.allocateObject<Person>();
-
+				try {
+					Person* person6 = sa.allocateObject<Person>(1, ForceException());
+				}
+				catch (int i) {
+					//do nothing
+				}
 
 				person1->name = "Hugo";
 				person2->name = "Ebert";

@@ -5,6 +5,7 @@
 namespace bbe {
 	namespace test {
 
+		class ForceException{};
 
 		class Person
 		{
@@ -75,6 +76,13 @@ namespace bbe {
 				//std::cout << "Constructor with parameters called!" << std::endl;
 				amountOfPersons++;
 				Person::amountOfParameterConstructorCalls++;
+			}
+
+			Person(ForceException fe)
+				:name("Will throw"), adress("Will throw street"), age(-1)
+			{
+				amountOfPersons++;
+				throw 1;
 			}
 
 			~Person() {

@@ -52,7 +52,7 @@ namespace bbe {
 		typedef typename std::pointer_traits<T*>::difference_type    difference_type;
 		typedef typename std::pointer_traits<T*>::rebind<const void> const_void_pointer;
 	private:
-		static const size_t STACKALLOCATORDEFAULSIZE = 1024;
+		static constexpr size_t STACKALLOCATORDEFAULSIZE = 1024;
 		T* m_data = nullptr;
 		T* m_head = nullptr;
 		size_t m_size = 0;
@@ -118,8 +118,9 @@ namespace bbe {
 				U* returnPointer = reinterpret_cast<U*>(allocationLocation);
 				m_head = newHeadPointer;
 				for (size_t i = 0; i < amountOfObjects; i++) {
-					U* object = new (bbe::addressOf(returnPointer[i])) U(std::forward<arguments>(args)...);
-					addDestructorToList(object);
+					U* object = bbe::addressOf(returnPointer[i]);
+					addDestructorToList(object); //First add the destructor! Placement new could throw.
+					new (object) U(std::forward<arguments>(args)...);
 				}
 				return returnPointer;
 			}
