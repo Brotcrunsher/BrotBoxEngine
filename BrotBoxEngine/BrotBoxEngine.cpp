@@ -5,11 +5,13 @@
 
 #include "AllTests.h"
 #include "PoolAllocatorPerformanceTime.h"
+#include "StringPerformanceTime.h"
 
 int main()
 {
 	bbe::test::runAllTests();
-	bbe::test::poolAllocatorPrintAllocationSpeed();
+	//bbe::test::poolAllocatorPrintAllocationSpeed();
+	bbe::test::stringSpeed();
 
     return 0;
 }

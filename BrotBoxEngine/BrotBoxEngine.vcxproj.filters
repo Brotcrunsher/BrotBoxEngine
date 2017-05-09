@@ -55,6 +55,9 @@
     <Filter Include="Tests\Performance\Time\MemoryManagement">
       <UniqueIdentifier>{80cdc108-1632-4bfe-a778-9d0adca8e0a4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Tests\Performance\Time\General">
+      <UniqueIdentifier>{6ba0fe63-acf5-423f-8ae3-47501401fbfe}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -128,6 +131,9 @@
     </ClInclude>
     <ClInclude Include="CPUWatch.h">
       <Filter>Header Files\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="StringPerformanceTime.h">
+      <Filter>Tests\Performance\Time\General</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
