@@ -19,23 +19,38 @@
     <Filter Include="Tests">
       <UniqueIdentifier>{a9588f8d-7f8b-4585-9bec-0fe3bae76cf1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Tests\MemoryManagement">
-      <UniqueIdentifier>{a54dc58f-bdd3-4755-b146-f4c59d218a8d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Util">
       <UniqueIdentifier>{4b46aeae-6e37-4485-87fd-d0022a2ee639}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\General">
       <UniqueIdentifier>{741007af-4505-448c-8da1-7457bb2fa404}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Tests\General">
-      <UniqueIdentifier>{9648820f-2eb7-4090-8f7a-7aba39d08265}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\DataStructures">
       <UniqueIdentifier>{02c310ad-5f99-43af-ad7d-8c702b42b130}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Tests\DataStructures">
+    <Filter Include="Header Files\Time">
+      <UniqueIdentifier>{aa93ac2a-a2b5-4a25-af39-5d8a0fee10b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests\Functionality">
+      <UniqueIdentifier>{fd001219-33af-4fdc-b1eb-f24bde47736b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests\Functionality\MemoryManagement">
+      <UniqueIdentifier>{a54dc58f-bdd3-4755-b146-f4c59d218a8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests\Functionality\General">
+      <UniqueIdentifier>{9648820f-2eb7-4090-8f7a-7aba39d08265}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests\Functionality\DataStructures">
       <UniqueIdentifier>{833b2de2-7c6b-4a6e-bdf8-9a56c965acc0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests\Performance">
+      <UniqueIdentifier>{19af6599-1ff7-4ce7-a40c-4bafbe9eb2c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests\Performance\Time">
+      <UniqueIdentifier>{7d7a2a74-8ed1-4ca0-82a3-498d98fde1f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests\Performance\Memory">
+      <UniqueIdentifier>{8837e97a-b8f7-4343-b807-25849c140b9f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -52,7 +67,7 @@
       <Filter>Header Files\MemoryManagement</Filter>
     </ClInclude>
     <ClInclude Include="PoolAllocatorTest.h">
-      <Filter>Tests\MemoryManagement</Filter>
+      <Filter>Tests\Functionality\MemoryManagement</Filter>
     </ClInclude>
     <ClInclude Include="UtilDebug.h">
       <Filter>Header Files\Util</Filter>
@@ -64,7 +79,7 @@
       <Filter>Header Files\MemoryManagement</Filter>
     </ClInclude>
     <ClInclude Include="StackAllocatorTest.h">
-      <Filter>Tests\MemoryManagement</Filter>
+      <Filter>Tests\Functionality\MemoryManagement</Filter>
     </ClInclude>
     <ClInclude Include="UtilMath.h">
       <Filter>Header Files\Util</Filter>
@@ -79,7 +94,7 @@
       <Filter>Header Files\General</Filter>
     </ClInclude>
     <ClInclude Include="StringTest.h">
-      <Filter>Tests\General</Filter>
+      <Filter>Tests\Functionality\General</Filter>
     </ClInclude>
     <ClInclude Include="Array.h">
       <Filter>Header Files\DataStructures</Filter>
@@ -91,13 +106,19 @@
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="ListTest.h">
-      <Filter>Tests\DataStructures</Filter>
+      <Filter>Tests\Functionality\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="STLCapsule.h">
       <Filter>Header Files\Util</Filter>
     </ClInclude>
     <ClInclude Include="STLAllocator.h">
       <Filter>Header Files\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="StopWatch.h">
+      <Filter>Header Files\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="AllTests.h">
+      <Filter>Tests\Functionality</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

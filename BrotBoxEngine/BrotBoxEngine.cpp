@@ -2,22 +2,11 @@
 //
 
 #include "stdafx.h"
-#include "PoolAllocatorTest.h"
-#include "StackAllocatorTest.h"
-#include "StringTest.h"
-#include "ListTest.h"
-#include "OtherTest.h"
-#include "UtilTest.h"
-#include <vector>
-#include <chrono>
+#include "AllTests.h"
 
 int main()
 {
-	bbe::test::testPoolAllocator();
-	bbe::test::testStackAllocator();
-	bbe::test::testString();
-	bbe::test::testList();
-	bbe::test::testAllOthers();
+	bbe::test::runAllTests();
 
     return 0;
 }

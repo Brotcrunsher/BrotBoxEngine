@@ -145,6 +145,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AllTests.h" />
     <ClInclude Include="Array.h" />
     <ClInclude Include="DataType.h" />
     <ClInclude Include="DynamicArray.h" />
@@ -158,6 +159,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="STLAllocator.h" />
     <ClInclude Include="STLCapsule.h" />
+    <ClInclude Include="StopWatch.h" />
     <ClInclude Include="String.h" />
     <ClInclude Include="StringTest.h" />
     <ClInclude Include="targetver.h" />
