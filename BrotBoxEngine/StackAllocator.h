@@ -149,34 +149,19 @@ namespace bbe {
 			return StackAllocatorMarker<T>(m_head, destructors.getLength());
 		}
 		
-		void deallocateToMarker(StackAllocatorMarker<T> sam, bool callDestructors = true) {
+		void deallocateToMarker(StackAllocatorMarker<T> sam) {
 			m_head = sam.m_markerValue;
-			if (callDestructors) {
-				while (destructors.getLength() > sam.m_destructorHandle) {
-					destructors.last()();
-					destructors.popBack();
-				}
-			}
-			else {
-				while (destructors.getLength() > sam.m_destructorHandle) {
-					destructors.popBack();
-				}
+			while (destructors.getLength() > sam.m_destructorHandle) {
+				destructors.last()();
+				destructors.popBack();
 			}
 		}
 
-		void deallocateAll(bool callDestructors = true) {
+		void deallocateAll() {
 			m_head = m_data;
-			if (callDestructors) {
-				while (destructors.size() > 0) {
-					StackAllocatorDestructor sad = destructors.back();
-					sad();
-					destructors.pop_back();
-				}
-			}
-			else {
-				while (destructors.size() > 0) {
-					destructors.pop_back();
-				}
+			while (destructors.size() > 0) {
+				destructors.back()();
+				destructors.pop_back();
 			}
 		}
 
