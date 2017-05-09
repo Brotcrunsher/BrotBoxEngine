@@ -3,9 +3,7 @@
 
 namespace bbe {
 	template<typename T>
-	T nextMultiple(T multipleOf, T value) {
-		T multiple = value + multipleOf - 1;
-		multiple -= (multiple % multipleOf);
-		return multiple;
+	constexpr T nextMultiple(T multipleOf, T value) {
+		return (value + multipleOf - 1) - ((value + multipleOf - 1) % multipleOf);
 	}
 }

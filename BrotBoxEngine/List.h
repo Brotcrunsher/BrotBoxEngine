@@ -2,6 +2,8 @@
 
 #include <functional>
 #include "STLCapsule.h"
+#include "Array.h"
+#include "DynamicArray.h"
 
 namespace bbe {
 	template <typename T>
@@ -15,7 +17,7 @@ namespace bbe {
 		~ListChunk() {}
 	};
 
-	template <typename T>
+	template <typename T, bool keepSorted = false>
 	class List {
 		//TODO use own allocators
 	private:
@@ -63,7 +65,7 @@ namespace bbe {
 			}
 		}
 
-		List(const List<T>& other)
+		List(const List<T, keepSorted>& other)
 			: m_length(other.m_length), m_capacity(other.m_capacity)
 		{
 			m_data = new ListChunk<T>[m_capacity];
@@ -72,7 +74,7 @@ namespace bbe {
 			}
 		}
 
-		List(List<T>&& other)
+		List(List<T, keepSorted>&& other)
 			: m_length(other.m_length), m_capacity(other.m_capacity), m_data(other.m_data)
 		{
 			other.m_data = nullptr;
@@ -80,7 +82,7 @@ namespace bbe {
 			other.m_capacity = 0;
 		}
 
-		List& operator=(const List<T>& other) {
+		List& operator=(const List<T, keepSorted>& other) {
 			if (m_data != nullptr) {
 				delete[] m_data;
 			}
@@ -95,7 +97,7 @@ namespace bbe {
 			return *this;
 		}
 
-		List& operator=(List<T>&& other) {
+		List& operator=(List<T, keepSorted>&& other) {
 			if (m_data != nullptr) {
 				delete[] m_data;
 			}
@@ -147,14 +149,84 @@ namespace bbe {
 			return m_data[index].value;
 		}
 
-		List<T>& operator+=(List<T> other) {
+		template <bool dummyKeepSorted = keepSorted>
+		typename std::enable_if<dummyKeepSorted, List<typename T, dummyKeepSorted>&>::type operator+=(List<T, dummyKeepSorted> other) {
+			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
+			//UNTESTED
+			growIfNeeded(other.m_length);
+			size_t newLength = m_length + other.m_length;
+			size_t indexThis = m_length - 1;
+			size_t indexOther = other.m_length - 1;
+			m_length = newLength;
+			for (size_t i = newLength - 1; i >= m_length; i++) {
+				if (indexThis != std::numeric_limits<size_t>::max() && other[indexOther] >= m_data[indexThis]) {
+					new (bbe::addressOf(m_data[i])) T(other[indexOther]);
+					indexOther--;
+					if (indexOther == std::numeric_limits<size_t>::max()) {
+						return *this;
+					}
+				}
+				else {
+					new (bbe::addressOf(m_data[i])) T(std::move(m_data[indexThis]));
+					indexThis--;
+				}
+			}
+			for (size_t i = m_length - 1; i >= 0; i++) {
+				if (indexThis != std::numeric_limits<size_t>::max() && other[indexOther] >= m_data[indexThis]) {
+					m_data[i] = other[indexOther];
+					indexOther--;
+					if (indexOther == std::numeric_limits<size_t>::max()) {
+						return *this;
+					}
+				}
+				else {
+					m_data[i] = std::move(m_data[indexThis]);
+					indexThis--;
+				}
+			}
+			return *this;
+		}
+
+		template <bool dummyKeepSorted = keepSorted>
+		typename std::enable_if<!dummyKeepSorted, List&>::type operator+=(List<T, dummyKeepSorted> other) {
+			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			for (size_t i = 0; i < other.m_length; i++) {
 				pushBack(other.m_data[i].value);
 			}
 			return *this;
 		}
 
-		void pushBack(const T& val, size_t amount = 1) {
+		template <bool dummyKeepSorted = keepSorted>
+		typename std::enable_if<dummyKeepSorted, void>::type pushBack(const T& val, int amount = 1) {
+			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
+			//TODO rewrite this method using size_t instead of int
+			growIfNeeded(amount);
+			//UNTESTED
+			int i = 0;
+			for (i = (int)m_length + amount - 1; i >= 0; i--) {
+				int lowerIndex = i - amount;
+				if (lowerIndex >= 0 && val < m_data[lowerIndex].value) {
+					new (bbe::addressOf(m_data[i])) T(m_data[lowerIndex].value);
+				}
+				else {
+					break;
+				}
+			}
+			int insertionIndex = i;
+			for (; i >= insertionIndex - amount + 1 && i >= 0; i--) {
+				if (i >= m_length) {
+					new (bbe::addressOf(m_data[i])) T(val);
+				}
+				else {
+					m_data[i].value = val;
+				}
+			}
+			m_length += amount;
+		}
+
+		template <bool dummyKeepSorted = keepSorted>
+		typename std::enable_if<!dummyKeepSorted, void>::type pushBack(const T& val, size_t amount = 1) {
+			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			growIfNeeded(amount);
 			for (size_t i = 0; i < amount; i++) {
 				new (bbe::addressOf(m_data[m_length + i])) T(val);
@@ -162,7 +234,45 @@ namespace bbe {
 			m_length += amount;
 		}
 
-		void pushBack(T&& val, size_t amount = 1) {
+		template <bool dummyKeepSorted = keepSorted>
+		typename std::enable_if<dummyKeepSorted, void>::type pushBack(T&& val, int amount = 1) {
+			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
+			//TODO rewrite this method using size_t instead of int
+			if (amount <= 0) {
+				debugBreak();
+			}
+			growIfNeeded(amount);
+			//UNTESTED
+			int i = 0;
+			for (i = (int)m_length + amount - 1; i >= 0; i--) {
+				int lowerIndex = i - amount;
+				if (lowerIndex >= 0 && val < m_data[lowerIndex].value) {
+					new (bbe::addressOf(m_data[i])) T(m_data[lowerIndex].value);
+				}
+				else {
+					break;
+				}
+			}
+			int insertionIndex = i;
+			for (; i >= insertionIndex - amount + 1 && i >= 0; i--) {
+				if (i >= m_length) {
+					if (amount == 1) {
+						new (bbe::addressOf(m_data[m_length])) T(std::move(val));
+					}
+					else {
+						new (bbe::addressOf(m_data[i])) T(val);
+					}
+				}
+				else {
+					m_data[i].value = val;
+				}
+			}
+			m_length += amount;
+		}
+
+		template <bool dummyKeepSorted = keepSorted>
+		typename std::enable_if<!dummyKeepSorted, void>::type pushBack(T&& val, size_t amount = 1) {
+			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			growIfNeeded(amount);
 			if (amount == 1) {
 				new (bbe::addressOf(m_data[m_length])) T(std::move(val));
@@ -185,6 +295,24 @@ namespace bbe {
 		void pushBackAll(T&& t, arguments&&... args) {
 			pushBack(std::forward<T>(t));
 			pushBackAll(std::forward<arguments>(args)...);
+		}
+
+		void pushBackAll(T* data, size_t size) {
+			//UNTESTED
+			for (size_t i = 0; i < size; i++) {
+				pushBack(data[i]);
+			}
+		}
+
+		template<int size>
+		void pushBackAll(Array<T, size>& arr) {
+			//UNTESTED
+			pushBackAll(arr.getRaw(), size);
+		}
+
+		void pushBackAll(DynamicArray<T>& arr) {
+			//UNTESTED
+			pushBackAll(arr.getRaw(), arr.getLength());
 		}
 
 		void popBack(size_t amount = 1) {

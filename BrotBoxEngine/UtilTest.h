@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UtilDebug.h"
+#include "String.h"
 
 namespace bbe {
 	namespace test {
@@ -18,8 +19,8 @@ namespace bbe {
 			static size_t amountOfMoveAssignmentCalls;
 			static size_t amountOfParameterConstructorCalls;
 			static size_t amountOfDestructorCalls;
-			std::string name;
-			std::string adress;
+			bbe::String name;
+			bbe::String adress;
 			int age;
 
 			static void resetTestStatistics() {
@@ -79,9 +80,10 @@ namespace bbe {
 			}
 
 			Person(ForceException fe)
-				:name("Will throw"), adress("Will throw street"), age(-1)
+				:name("Will throw Name"), adress("Will throw street"), age(-1)
 			{
 				amountOfPersons++;
+				amountOfPersons--;
 				throw 1;
 			}
 
@@ -103,6 +105,22 @@ namespace bbe {
 
 			bool operator!=(const Person& other) const {
 				return !operator==(other);
+			}
+
+			bool operator>(const Person& other) const {
+				return age > other.age;
+			}
+
+			bool operator>=(const Person& other) const {
+				return age >= other.age;
+			}
+
+			bool operator<(const Person& other) const {
+				return age < other.age;
+			}
+
+			bool operator<=(const Person& other) const {
+				return age <= other.age;
 			}
 
 			static void checkIfAllPersonsWereDestroyed() {

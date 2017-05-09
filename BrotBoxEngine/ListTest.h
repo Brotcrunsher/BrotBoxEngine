@@ -5,7 +5,271 @@
 
 namespace bbe {
 	namespace test {
+		void testListUnsorted();
+		void testListSorted();
+
+		template<typename T, bool U>
+		void printList(List<T, U> l) {
+			std::cout << "[";
+			for (size_t i = 0; i < l.getLength(); i++) {
+				std::cout << l[i];
+				if (i != l.getLength() - 1) {
+					std::cout << ", ";
+				}
+			}
+			std::cout << "]" << std::endl;
+		}
+
+		template<typename T>
+		void checkIfListIsSorted(List<T, true> l) {
+			for (int i = 0; i < l.getLength() - 1; i++) {
+				if (l[i] > l[i + 1]) {
+					debugBreak();
+				}
+			}
+		}
+
 		void testList() {
+			testListUnsorted();
+			testListSorted();
+		}
+
+		void testListSorted() {
+			List<int, true> intList;
+			assertEquals(intList.getCapacity(), 0);
+			assertEquals(intList.getLength(), 0);
+			assertEquals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), true);
+
+			intList.pushBack(1);
+			assertEquals(intList.getCapacity(), 1);
+			assertEquals(intList.getLength(), 1);
+			assertUnequals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), false);
+
+			assertEquals(intList[0], 1);
+
+			intList.pushBack(2, 2);
+			assertEquals(intList.getCapacity(), 3);
+			assertEquals(intList.getLength(), 3);
+			assertUnequals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), false);
+
+			assertEquals(intList[0], 1);
+			assertEquals(intList[1], 2);
+			assertEquals(intList[2], 2);
+
+			intList.pushBack(-1, 2);
+			assertEquals(intList.getCapacity(), 6);
+			assertEquals(intList.getLength(), 5);
+			assertUnequals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), false);
+
+			assertEquals(intList[0], -1);
+			assertEquals(intList[1], -1);
+			assertEquals(intList[2], 1);
+			assertEquals(intList[3], 2);
+			assertEquals(intList[4], 2);
+
+			intList.pushBack(1, 1);
+			assertEquals(intList.getCapacity(), 6);
+			assertEquals(intList.getLength(), 6);
+			assertUnequals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), false);
+
+			assertEquals(intList[0], -1);
+			assertEquals(intList[1], -1);
+			assertEquals(intList[2], 1);
+			assertEquals(intList[3], 1);
+			assertEquals(intList[4], 2);
+			assertEquals(intList[5], 2);
+
+			intList.pushBack(-1000, 1);
+			assertEquals(intList.getCapacity(), 12);
+			assertEquals(intList.getLength(), 7);
+			assertUnequals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), false);
+
+			assertEquals(intList[0], -1000);
+			assertEquals(intList[1], -1);
+			assertEquals(intList[2], -1);
+			assertEquals(intList[3], 1);
+			assertEquals(intList[4], 1);
+			assertEquals(intList[5], 2);
+			assertEquals(intList[6], 2);
+
+			intList.pushBack(1000, 1);
+			assertEquals(intList.getCapacity(), 12);
+			assertEquals(intList.getLength(), 8);
+			assertUnequals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), false);
+
+			assertEquals(intList[0], -1000);
+			assertEquals(intList[1], -1);
+			assertEquals(intList[2], -1);
+			assertEquals(intList[3], 1);
+			assertEquals(intList[4], 1);
+			assertEquals(intList[5], 2);
+			assertEquals(intList[6], 2);
+			assertEquals(intList[7], 1000);
+
+			int lValue = 17;
+			intList.pushBack(lValue, 1);
+			assertEquals(intList.getCapacity(), 12);
+			assertEquals(intList.getLength(), 9);
+			assertUnequals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), false);
+
+			assertEquals(intList[0], -1000);
+			assertEquals(intList[1], -1);
+			assertEquals(intList[2], -1);
+			assertEquals(intList[3], 1);
+			assertEquals(intList[4], 1);
+			assertEquals(intList[5], 2);
+			assertEquals(intList[6], 2);
+			assertEquals(intList[7], 17);
+			assertEquals(intList[8], 1000);
+
+			lValue = -17;
+			intList.pushBack(lValue, 1);
+			assertEquals(intList.getCapacity(), 12);
+			assertEquals(intList.getLength(), 10);
+			assertUnequals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), false);
+
+			assertEquals(intList[0], -1000);
+			assertEquals(intList[1], -17);
+			assertEquals(intList[2], -1);
+			assertEquals(intList[3], -1);
+			assertEquals(intList[4], 1);
+			assertEquals(intList[5], 1);
+			assertEquals(intList[6], 2);
+			assertEquals(intList[7], 2);
+			assertEquals(intList[8], 17);
+			assertEquals(intList[9], 1000);
+
+			intList.clear();
+			assertEquals(intList.getCapacity(), 12);
+			assertEquals(intList.getLength(), 0);
+			assertUnequals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), true);
+
+			intList.clear();
+			assertEquals(intList.getCapacity(), 12);
+			assertEquals(intList.getLength(), 0);
+			assertUnequals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), true);
+
+			intList.shrink();
+			assertEquals(intList.getCapacity(), 0);
+			assertEquals(intList.getLength(), 0);
+			assertEquals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), true);
+
+			intList.pushBackAll(8, 0, 1, -1, 17, 29, 19, 2);
+			assertEquals(intList.getCapacity(), 8);
+			assertEquals(intList.getLength(), 8);
+			assertUnequals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), false);
+
+			assertEquals(intList[0], -1);
+			assertEquals(intList[1], 0);
+			assertEquals(intList[2], 1);
+			assertEquals(intList[3], 2);
+			assertEquals(intList[4], 8);
+			assertEquals(intList[5], 17);
+			assertEquals(intList[6], 19);
+			assertEquals(intList[7], 29);
+
+			intList.pushBackAll(8, 0, 1);
+			assertEquals(intList.getCapacity(), 16);
+			assertEquals(intList.getLength(), 11);
+			assertUnequals(intList.getRaw(), nullptr);
+			assertEquals(intList.isEmpty(), false);
+
+			assertEquals(intList[0], -1);
+			assertEquals(intList[1], 0);
+			assertEquals(intList[2], 0);
+			assertEquals(intList[3], 1);
+			assertEquals(intList[4], 1);
+			assertEquals(intList[5], 2);
+			assertEquals(intList[6], 8);
+			assertEquals(intList[7], 8);
+			assertEquals(intList[8], 17);
+			assertEquals(intList[9], 19);
+			assertEquals(intList[10], 29);
+
+			List<Person, true> personList;
+			personList.pushBack(Person("3 name", "3 adress", 3));
+			personList.pushBack(Person("2 name", "2 adress", 2));
+			personList.pushBack(Person("6 name", "6 adress", 6));
+			Person rPerson("0 name", "0 adress", 0);
+			personList.pushBack(rPerson);
+			personList.pushBack(Person("1 name", "1 adress", 1));
+			personList.pushBack(Person("7 name", "7 adress", 7));
+		
+
+			assertEquals(personList.getCapacity(), 8);
+			assertEquals(personList.getLength(), 6);
+			assertUnequals(personList.getRaw(), nullptr);
+			assertEquals(personList.isEmpty(), false);
+
+			assertEquals(personList[0].name, "0 name");
+			assertEquals(personList[0].adress, "0 adress");
+			assertEquals(personList[0].age, 0);
+			assertEquals(personList[1].name, "1 name");
+			assertEquals(personList[1].adress, "1 adress");
+			assertEquals(personList[1].age, 1);
+			assertEquals(personList[2].name, "2 name");
+			assertEquals(personList[2].adress, "2 adress");
+			assertEquals(personList[2].age, 2);
+			assertEquals(personList[3].name, "3 name");
+			assertEquals(personList[3].adress, "3 adress");
+			assertEquals(personList[3].age, 3);
+			assertEquals(personList[4].name, "6 name");
+			assertEquals(personList[4].adress, "6 adress");
+			assertEquals(personList[4].age, 6);
+			assertEquals(personList[5].name, "7 name");
+			assertEquals(personList[5].adress, "7 adress");
+			assertEquals(personList[5].age, 7);
+			assertEquals(rPerson.name, "0 name");
+			assertEquals(rPerson.adress, "0 adress");
+			assertEquals(rPerson.age, 0);
+
+			rPerson.name = "Eval Name";
+			rPerson.adress = "Eval Adr";
+			rPerson.age = -1;
+
+
+			assertEquals(personList.getCapacity(), 8);
+			assertEquals(personList.getLength(), 6);
+			assertUnequals(personList.getRaw(), nullptr);
+			assertEquals(personList.isEmpty(), false);
+
+			assertEquals(personList[0].name, "0 name");
+			assertEquals(personList[0].adress, "0 adress");
+			assertEquals(personList[0].age, 0);
+			assertEquals(personList[1].name, "1 name");
+			assertEquals(personList[1].adress, "1 adress");
+			assertEquals(personList[1].age, 1);
+			assertEquals(personList[2].name, "2 name");
+			assertEquals(personList[2].adress, "2 adress");
+			assertEquals(personList[2].age, 2);
+			assertEquals(personList[3].name, "3 name");
+			assertEquals(personList[3].adress, "3 adress");
+			assertEquals(personList[3].age, 3);
+			assertEquals(personList[4].name, "6 name");
+			assertEquals(personList[4].adress, "6 adress");
+			assertEquals(personList[4].age, 6);
+			assertEquals(personList[5].name, "7 name");
+			assertEquals(personList[5].adress, "7 adress");
+			assertEquals(personList[5].age, 7);
+			assertEquals(rPerson.name, "Eval Name");
+			assertEquals(rPerson.adress, "Eval Adr");
+			assertEquals(rPerson.age, -1);
+		}
+
+		void testListUnsorted() {
 			{
 				Person::resetTestStatistics();
 

@@ -2,6 +2,7 @@
 
 #include <string>
 #include "DynamicArray.h"
+#include "Array.h"
 
 namespace bbe {
 	class String {
@@ -30,6 +31,28 @@ namespace bbe {
 		String()
 		{
 			initializeFromWCharArr(L"");
+		}
+
+		template<int size>
+		String(const Array<wchar_t, size>& arr) {
+			//UNTESTED
+			initializeFromWCharArr(arr.getRaw());
+		}
+
+		String(const DynamicArray<wchar_t>& arr) {
+			//UNTESTED
+			initializeFromWCharArr(arr.getRaw());
+		}
+
+		template<int size>
+		String(const Array<char, size>& arr) {
+			//UNTESTED
+			initializeFromCharArr(arr.getRaw());
+		}
+
+		String(const DynamicArray<char>& arr) {
+			//UNTESTED
+			initializeFromCharArr(arr.getRaw());
 		}
 
 		String(const wchar_t *data) {
@@ -95,6 +118,7 @@ namespace bbe {
 			m_length = other.m_length;
 			m_data = other.m_data;
 			other.m_data = nullptr;
+			other.m_length = 0;
 		}
 
 		String& operator=(const String&  other) { //Copy Assignment
@@ -115,12 +139,14 @@ namespace bbe {
 			m_length = other.m_length;
 			m_data = other.m_data;
 			other.m_data = nullptr;
+			other.m_length = 0;
 			return *this;
 		}
 
 		~String() {
 			if (m_data != nullptr) {
 				delete[] m_data;
+				m_data = nullptr;
 			}
 		}
 
@@ -181,6 +207,10 @@ namespace bbe {
 
 		bool operator!=(const std::wstring& str) const {
 			return !operator==(str);
+		}
+
+		friend std::ostream &operator<<(std::ostream &os, const bbe::String &string) {
+			return os << string.m_data;
 		}
 
 		friend bool operator!=(const wchar_t* arr, const String& string) {
