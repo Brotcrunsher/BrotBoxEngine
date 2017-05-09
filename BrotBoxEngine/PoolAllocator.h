@@ -28,7 +28,9 @@ namespace bbe {
 
 	private:
 		static constexpr size_t POOLALLOCATORDEFAULSIZE = 1024;
+#ifndef BBE_DISABLE_ALL_SECURITY_CHECKS
 		size_t m_openAllocations = 0;		//Used to find memory leaks
+#endif //!BBE_DISABLE_ALL_SECURITY_CHECKS
 
 		PoolChunk<T>* m_data = nullptr;
 		PoolChunk<T>* m_head = nullptr;
@@ -59,10 +61,12 @@ namespace bbe {
 		PoolAllocator& operator=(PoolAllocator&& other) = delete; //Move Assignment
 
 		~PoolAllocator() {
+#ifndef BBE_DISABLE_ALL_SECURITY_CHECKS
 			if (m_openAllocations != 0) {
 				//TODO add further error handling
 				debugBreak();
 			}
+#endif // !BBE_DISABLE_ALL_SECURITY_CHECKS
 			if (m_data != nullptr && m_parentAllocator != nullptr) {
 				m_parentAllocator->deallocate(m_data, m_size);
 			}
@@ -84,8 +88,10 @@ namespace bbe {
 			}
 			PoolChunk<T>* retVal = m_head;
 			m_head = retVal->nextPoolChunk;
-			T* realRetVal = new (bbe::addressOf(retVal->value)) T(std::forward<arguments>(args)...);
+			T* realRetVal = new (retVal) T(std::forward<arguments>(args)...);
+#ifndef BBE_DISABLE_ALL_SECURITY_CHECKS
 			m_openAllocations++;
+#endif // !BBE_DISABLE_ALL_SECURITY_CHECKS
 			return realRetVal;
 		}
 
@@ -95,7 +101,9 @@ namespace bbe {
 			PoolChunk<T>* poolChunk = reinterpret_cast<PoolChunk<T>*>(data);
 			poolChunk->nextPoolChunk = m_head;
 			m_head = poolChunk;
+#ifndef BBE_DISABLE_ALL_SECURITY_CHECKS
 			m_openAllocations--;
+#endif //!BBE_DISABLE_ALL_SECURITY_CHECKS
 		}
 	};
 }

@@ -92,6 +92,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <StackReserveSize>0x1000000000</StackReserveSize>
+      <StackCommitSize>0x1000000000</StackCommitSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -105,6 +107,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <StackReserveSize>0x10000000</StackReserveSize>
+      <StackCommitSize>0x10000000</StackCommitSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -116,6 +120,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalOptions>/F 800000000 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -139,6 +144,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <StackReserveSize>0x10000000</StackReserveSize>
+      <StackCommitSize>0x10000000</StackCommitSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -147,12 +154,14 @@
   <ItemGroup>
     <ClInclude Include="AllTests.h" />
     <ClInclude Include="Array.h" />
+    <ClInclude Include="CPUWatch.h" />
     <ClInclude Include="DataType.h" />
     <ClInclude Include="DynamicArray.h" />
     <ClInclude Include="List.h" />
     <ClInclude Include="ListTest.h" />
     <ClInclude Include="OtherTest.h" />
     <ClInclude Include="PoolAllocator.h" />
+    <ClInclude Include="PoolAllocatorPerformanceTime.h" />
     <ClInclude Include="PoolAllocatorTest.h" />
     <ClInclude Include="StackAllocator.h" />
     <ClInclude Include="StackAllocatorTest.h" />

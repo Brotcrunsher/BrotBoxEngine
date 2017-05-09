@@ -52,6 +52,9 @@
     <Filter Include="Tests\Performance\Memory">
       <UniqueIdentifier>{8837e97a-b8f7-4343-b807-25849c140b9f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Tests\Performance\Time\MemoryManagement">
+      <UniqueIdentifier>{80cdc108-1632-4bfe-a778-9d0adca8e0a4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -119,6 +122,12 @@
     </ClInclude>
     <ClInclude Include="AllTests.h">
       <Filter>Tests\Functionality</Filter>
+    </ClInclude>
+    <ClInclude Include="PoolAllocatorPerformanceTime.h">
+      <Filter>Tests\Performance\Time\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="CPUWatch.h">
+      <Filter>Header Files\Time</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
