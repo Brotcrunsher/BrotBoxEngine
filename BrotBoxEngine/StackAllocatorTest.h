@@ -73,7 +73,7 @@ namespace bbe {
 				try {
 					Person* person6 = sa.allocateObject<Person>(1, ForceException());
 				}
-				catch (int i) {
+				catch (int) {
 					//do nothing
 				}
 

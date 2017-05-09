@@ -119,8 +119,8 @@ namespace bbe {
 				m_head = newHeadPointer;
 				for (size_t i = 0; i < amountOfObjects; i++) {
 					U* object = bbe::addressOf(returnPointer[i]);
-					addDestructorToList(object); //First add the destructor! Placement new could throw.
 					new (object) U(std::forward<arguments>(args)...);
+					addDestructorToList(object); //First add the destructor! Placement new could throw.
 				}
 				return returnPointer;
 			}
