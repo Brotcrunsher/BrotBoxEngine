@@ -135,6 +135,12 @@
     <ClInclude Include="StringPerformanceTime.h">
       <Filter>Tests\Performance\Time\General</Filter>
     </ClInclude>
+    <ClInclude Include="GeneralPurposeAllocator.h">
+      <Filter>Header Files\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneralPurposeAllocatorTest.h">
+      <Filter>Tests\Functionality\MemoryManagement</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

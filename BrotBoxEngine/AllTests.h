@@ -3,6 +3,7 @@
 
 #include "PoolAllocatorTest.h"
 #include "StackAllocatorTest.h"
+#include "GeneralPurposeAllocatorTest.h"
 #include "StringTest.h"
 #include "ListTest.h"
 #include "OtherTest.h"
@@ -13,6 +14,7 @@ namespace bbe {
 		void runAllTests() {
 			bbe::test::testPoolAllocator();
 			bbe::test::testStackAllocator();
+			bbe::test::testGeneralPurposeAllocator();
 			bbe::test::testString();
 			bbe::test::testList();
 			bbe::test::testAllOthers();

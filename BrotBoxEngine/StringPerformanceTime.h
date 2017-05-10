@@ -22,8 +22,8 @@ namespace bbe {
 			while (true) {
 				CPUWatch allocationWatch;
 				for (int i = 0; i < 10000000; i++) {
-					std::wstring ape(L"Hallo!");
-					//bbe::String ape(L"Hallo!");
+					std::wstring ape(L"Hallooooooooooooooooooooo!");
+					//bbe::String ape(L"Hallooooooooooooooooooooo!");
 
 					//ape[0] = c;
 					//vec.push_back(ape);

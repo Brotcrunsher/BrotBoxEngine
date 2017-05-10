@@ -4,6 +4,7 @@
 #include <iostream>
 #include "UtilTest.h"
 #include "CPUWatch.h"
+#include "GeneralPurposeAllocator.h"
 
 namespace bbe {
 	namespace test {
@@ -13,21 +14,25 @@ namespace bbe {
 			int runs = 0;
 
 			while (true) {
-				constexpr size_t amountOfPersons = 1000000;
-				PoolAllocator<Person> personAllocator(sizeof(Person) * amountOfPersons);
+				constexpr size_t amountOfPersons = 10000000;
+				PoolAllocator<Person> personAllocator(amountOfPersons);
+				//GeneralPurposeAllocator gpa(sizeof(Person) * amountOfPersons + amountOfPersons * 16);
+
 				Person* arr[amountOfPersons];
 
 				CPUWatch swAllocate;
 				for (size_t i = 0; i < amountOfPersons; i++) {
-					arr[i] = personAllocator.allocate();
-					//arr[i] = new Person();
+					//arr[i] = personAllocator.allocate();
+					arr[i] = new Person();
+					//arr[i] = gpa.allocateObjects<Person>();
 				}
 				totalTimeAlloc += swAllocate.getTimeExpiredSeconds();
 
 				CPUWatch swDeallocate;
 				for (size_t i = 0; i < amountOfPersons; i++) {
-					personAllocator.deallocate(arr[i]);
-					//delete arr[i];
+					//personAllocator.deallocate(arr[i]);
+					delete arr[i];
+					//gpa.deallocateObjects(arr[i]);
 				}
 				totalTimeDealloc += swDeallocate.getTimeExpiredSeconds();
 

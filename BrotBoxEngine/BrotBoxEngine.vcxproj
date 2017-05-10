@@ -157,6 +157,8 @@
     <ClInclude Include="CPUWatch.h" />
     <ClInclude Include="DataType.h" />
     <ClInclude Include="DynamicArray.h" />
+    <ClInclude Include="GeneralPurposeAllocator.h" />
+    <ClInclude Include="GeneralPurposeAllocatorTest.h" />
     <ClInclude Include="List.h" />
     <ClInclude Include="ListTest.h" />
     <ClInclude Include="OtherTest.h" />

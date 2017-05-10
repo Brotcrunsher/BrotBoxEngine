@@ -286,6 +286,117 @@ namespace bbe {
 			m_length += amount;
 		}
 
+		template <bool dummyKeepSorted = keepSorted>
+		typename std::enable_if<!dummyKeepSorted, size_t>::type getIndexWhenPushedBack(const T& val)
+		{
+			static_assert(false, "Only sorted Lists can getIndexWhenPushedBack!");
+		}
+
+		template <bool dummyKeepSorted = keepSorted>
+		typename std::enable_if<dummyKeepSorted, size_t>::type getIndexWhenPushedBack(const T& val)
+		{
+			//UNTESTED
+			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
+
+			if (m_length == 0) {
+				return 0;
+			}
+			else if (m_length == 1) {
+				if (m_data[0].value > val) {
+					return 0;
+				}
+				else {
+					return 1;
+				}
+			}
+			if (val < m_data[0].value) {
+				return 0;
+			}
+			if (val > m_data[m_length - 1].value) {
+				return m_length;
+			}
+
+			size_t smallIndex = 0;
+			size_t bigIndex = m_length - 1;
+			size_t middleIndex;
+
+			while (smallIndex <= bigIndex)
+			{
+				size_t searchSpace = bigIndex - smallIndex;
+				middleIndex = smallIndex + searchSpace / 2;
+				if (m_data[middleIndex].value == val) {
+					return middleIndex;
+				}
+				else {
+					if (m_data[middleIndex].value > val) {
+						if (middleIndex == 0) {
+							return 0;
+						}
+						bigIndex = middleIndex - 1;
+					}
+					else {
+						if (middleIndex >= m_length) {
+							return m_length;
+						}
+						smallIndex = middleIndex + 1;
+					}
+				}
+			}
+			return smallIndex;
+		}
+
+		template <bool dummyKeepSorted = keepSorted>
+		typename std::enable_if<!dummyKeepSorted, void>::type getNeighbors(const T& val, T*& leftNeighbor, T*& rightNeighbor)
+		{
+			static_assert(false, "Only sorted Lists can getIndexWhenPushedBack!");
+		}
+
+		template <bool dummyKeepSorted = keepSorted>
+		typename std::enable_if<dummyKeepSorted, void>::type getNeighbors(const T& val, T*& leftNeighbor, T*& rightNeighbor)
+		{
+			//UNTESTED
+			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
+
+			if (m_length == 0) {
+				leftNeighbor = nullptr;
+				rightNeighbor = nullptr;
+				return;
+			}
+			else if (m_length == 1) {
+				if (m_data[0].value > val) {
+					leftNeighbor = nullptr;
+					rightNeighbor = reinterpret_cast<T*>(m_data);
+					return;
+				}
+				else {
+					leftNeighbor = reinterpret_cast<T*>(m_data);
+					rightNeighbor = nullptr;
+					return;
+				}
+			}
+
+			size_t index = getIndexWhenPushedBack(val);
+			while (m_data[index].value == val && index < m_length - 1) {
+				index++;
+			}
+
+			if (index == 0) {
+				leftNeighbor = nullptr;
+				rightNeighbor = reinterpret_cast<T*>(m_data);
+				return;
+			}
+			if (index >= m_length) {
+				leftNeighbor = reinterpret_cast<T*>(m_data + m_length - 1);
+				rightNeighbor = nullptr;
+				return;
+			}
+
+			leftNeighbor = reinterpret_cast<T*>(m_data + index - 1);
+			rightNeighbor = reinterpret_cast<T*>(m_data + index);
+
+			return;
+		}
+
 		template <typename T>
 		void pushBackAll(T&& t) {
 			pushBack(std::forward<T>(t));
