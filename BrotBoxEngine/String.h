@@ -19,6 +19,7 @@ namespace bbe {
 
 
 		void initializeFromWCharArr(const wchar_t *data) {
+			//PO
 			if (m_length == 0) {
 				m_length = wcslen(data);
 			}
@@ -35,6 +36,7 @@ namespace bbe {
 		}
 
 		void initializeFromCharArr(const char *data) {
+			//PO
 			if (m_length == 0) {
 				m_length = strlen(data);
 			}
@@ -80,6 +82,7 @@ namespace bbe {
 		}
 
 		String(const wchar_t *data) {
+			//PO
 			initializeFromWCharArr(data);
 		}
 

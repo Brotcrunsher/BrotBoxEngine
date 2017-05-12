@@ -34,7 +34,9 @@ namespace bbe {
 				amountOfDestructorCalls = 0;
 			}
 
-			Person() {
+			Person()
+				: age(0)
+			{
 				//std::cout << "Constructor called!" << std::endl;
 				Person::amountOfPersons++;
 				Person::amountOfDefaulConstructorCalls++;
@@ -65,21 +67,21 @@ namespace bbe {
 			}
 
 			Person& operator=(Person&& other) {
-				name = other.name;
-				adress = other.adress;
+				name = std::move(other.name);
+				adress = std::move(other.adress);
 				age = other.age;
 				Person::amountOfMoveAssignmentCalls++;
 				return *this;
 			}
 
-			Person(std::string name, std::string adress, int age) :
+			explicit Person(std::string name, std::string adress, int age) :
 				name(name), adress(adress), age(age) {
 				//std::cout << "Constructor with parameters called!" << std::endl;
 				amountOfPersons++;
 				Person::amountOfParameterConstructorCalls++;
 			}
 
-			Person(ForceException fe)
+			explicit Person(ForceException fe)
 				:name("Will throw Name"), adress("Will throw street"), age(-1)
 			{
 				amountOfPersons++;

@@ -84,7 +84,7 @@ namespace bbe {
 		List<GeneralPurposeAllocatorFreeChunk, true> freeChunks;
 
 	public:
-		GeneralPurposeAllocator(size_t size = GENERALPURPOSEALLOCATORDEFAULTSIZE)
+		explicit GeneralPurposeAllocator(size_t size = GENERALPURPOSEALLOCATORDEFAULTSIZE)
 			: m_size(size)
 		{
 			//UNTESTED

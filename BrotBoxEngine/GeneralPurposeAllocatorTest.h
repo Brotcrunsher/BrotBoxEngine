@@ -27,8 +27,8 @@ namespace bbe {
 				assertEquals(f2[i], i + 200);
 			}
 
-			gpa.deallocateObjects(f2, 50);
 			gpa.deallocateObjects(f1, 20);
+			gpa.deallocateObjects(f2, 50);
 
 		}
 	}
