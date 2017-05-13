@@ -141,6 +141,15 @@
     <ClInclude Include="GeneralPurposeAllocatorTest.h">
       <Filter>Tests\Functionality\MemoryManagement</Filter>
     </ClInclude>
+    <ClInclude Include="UniquePointer.h">
+      <Filter>Header Files\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="UniquePointerTest.h">
+      <Filter>Tests\Functionality\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="DefaultDestroyer.h">
+      <Filter>Header Files\MemoryManagement</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

@@ -7,6 +7,7 @@
 #include "PoolAllocatorPerformanceTime.h"
 #include "StringPerformanceTime.h"
 #include "List.h"
+#include "UniquePointer.h"
 
 int main()
 {
@@ -32,11 +33,17 @@ int main()
 		}
 		std::cout << std::endl;
 	}
+
+	bbe::test::Person::checkIfAllPersonsWereDestroyed();
+	{
+		bbe::UniquePointer<bbe::test::Person> up(new bbe::test::Person());
+	}
+	bbe::test::Person::checkIfAllPersonsWereDestroyed();
 	
 
 	bbe::test::runAllTests();
-	bbe::test::poolAllocatorPrintAllocationSpeed();
-	bbe::test::stringSpeed();
+	//bbe::test::poolAllocatorPrintAllocationSpeed();
+	//bbe::test::stringSpeed();
 
     return 0;
 }

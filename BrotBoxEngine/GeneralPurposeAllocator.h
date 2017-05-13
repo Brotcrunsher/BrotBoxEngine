@@ -3,6 +3,7 @@
 #include "DataType.h"
 #include "List.h"
 #include "UtilMath.h"
+#include "UniquePointer.h"
 #include "UtilTest.h"
 
 namespace bbe {
@@ -76,6 +77,23 @@ namespace bbe {
 	class GeneralPurposeAllocator {
 		//TODO use parent allocator
 		//TODO defragmentation
+	public:
+		template<typename T>
+		class GeneralPurposeAllocatorDestroyer {
+		private:
+			GeneralPurposeAllocator* m_pa;
+			size_t m_size;
+		public:
+			GeneralPurposeAllocatorDestroyer(GeneralPurposeAllocator *pa, size_t size)
+				: m_pa(pa), m_size(size)
+			{
+				//do nothing
+			}
+
+			void destroy(void* data) {
+				m_pa->deallocateObjects(reinterpret_cast<T*>(data), m_size);
+			}
+		};
 	private:
 		static const size_t GENERALPURPOSEALLOCATORDEFAULTSIZE = 1024;
 		byte* m_data;
@@ -117,6 +135,7 @@ namespace bbe {
 		template <typename T, typename... arguments>
 		T* allocateObjects(size_t amountOfObjects = 1, arguments&&... args) {
 			//UNTESTED
+			static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
 			for (size_t i = 0; i < freeChunks.getLength(); i++) {
 				T* data = freeChunks[i].allocateObject<T>(amountOfObjects, std::forward<arguments>(args)...);
 				if (data != nullptr) {
@@ -126,6 +145,23 @@ namespace bbe {
 
 			//TODO add further error handling
 			return nullptr;
+		}
+
+		template <typename T, typename... arguments>
+		T* allocateObject(arguments&&... args) {
+			//UNTESTED
+			return allocateObjects<T>(1, std::forward<arguments>(args)...);
+		}
+
+		template <typename T, typename... arguments>
+		UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>> allocateObjectsUniquePointer(size_t amountOfObjects = 1, arguments&&... args) {
+			T* pointer = allocateObjects<T>(amountOfObjects, std::forward<arguments>(args)...);
+			return UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>>(pointer, GeneralPurposeAllocatorDestroyer<T>(this, amountOfObjects));
+		}
+
+		template <typename T, typename... arguments>
+		UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>> allocateObjectUniquePointer(arguments&&... args) {
+			return allocateObjectsUniquePointer<T>(1, std::forward<arguments>(args)...);
 		}
 
 		template<typename T>

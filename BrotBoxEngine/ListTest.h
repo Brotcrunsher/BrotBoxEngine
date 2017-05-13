@@ -199,74 +199,233 @@ namespace bbe {
 			assertEquals(intList[9], 19);
 			assertEquals(intList[10], 29);
 
-			List<Person, true> personList;
-			personList.pushBack(Person("3 name", "3 adress", 3));
-			personList.pushBack(Person("2 name", "2 adress", 2));
-			personList.pushBack(Person("6 name", "6 adress", 6));
-			Person rPerson("0 name", "0 adress", 0);
-			personList.pushBack(rPerson);
-			personList.pushBack(Person("1 name", "1 adress", 1));
-			personList.pushBack(Person("7 name", "7 adress", 7));
-		
+			Person::checkIfAllPersonsWereDestroyed();
 
-			assertEquals(personList.getCapacity(), 8);
-			assertEquals(personList.getLength(), 6);
-			assertUnequals(personList.getRaw(), nullptr);
-			assertEquals(personList.isEmpty(), false);
+			{
+				List<Person, true> list;
+			}
 
-			assertEquals(personList[0].name, "0 name");
-			assertEquals(personList[0].adress, "0 adress");
-			assertEquals(personList[0].age, 0);
-			assertEquals(personList[1].name, "1 name");
-			assertEquals(personList[1].adress, "1 adress");
-			assertEquals(personList[1].age, 1);
-			assertEquals(personList[2].name, "2 name");
-			assertEquals(personList[2].adress, "2 adress");
-			assertEquals(personList[2].age, 2);
-			assertEquals(personList[3].name, "3 name");
-			assertEquals(personList[3].adress, "3 adress");
-			assertEquals(personList[3].age, 3);
-			assertEquals(personList[4].name, "6 name");
-			assertEquals(personList[4].adress, "6 adress");
-			assertEquals(personList[4].age, 6);
-			assertEquals(personList[5].name, "7 name");
-			assertEquals(personList[5].adress, "7 adress");
-			assertEquals(personList[5].age, 7);
-			assertEquals(rPerson.name, "0 name");
-			assertEquals(rPerson.adress, "0 adress");
-			assertEquals(rPerson.age, 0);
+			Person::checkIfAllPersonsWereDestroyed();
 
-			rPerson.name = "Eval Name";
-			rPerson.adress = "Eval Adr";
-			rPerson.age = -1;
+			{
+				List<Person, true> list;
+				list.pushBack(Person("A Name", "A Str", 1));
+			}
+
+			Person::checkIfAllPersonsWereDestroyed();
+
+			{
+				List<Person, true> list;
+				list.pushBack(Person("A Name", "A Str", 1));
+				list.pushBack(Person("B Name", "B Str", 2));
+			}
+
+			Person::checkIfAllPersonsWereDestroyed();
+
+			{
+				List<Person, true> list;
+				list.pushBack(Person("A Name", "A Str", 1));
+				list.pushBack(Person("B Name", "B Str", 2));
+				list.pushBack(Person("C Name", "C Str", 3));
+			}
+
+			Person::checkIfAllPersonsWereDestroyed();
+
+			{
+				List<Person, true> list;
+				list.pushBack(Person("E Name", "E Str", 5));
+				list.pushBack(Person("D Name", "D Str", 4));
+				list.pushBack(Person("C Name", "C Str", 3));
+				Person lPerson("C Name", "C Str", 3);
+				list.pushBack(lPerson);
+				list.pushBack(Person("B Name", "B Str", 2));
+				list.pushBack(Person("A Name", "A Str", 1));
+			}
+
+			Person::checkIfAllPersonsWereDestroyed();
+
+			{
+				List<Person, true> list;
+				list.pushBack(Person("A Name", "A Str", 1));
+				list.pushBack(Person("B Name", "B Str", 2));
+				list.pushBack(Person("C Name", "C Str", 3));
+				list.pushBack(Person("D Name", "D Str", 4));
+				list.pushBack(Person("E Name", "E Str", 5));
+			}
+
+			Person::checkIfAllPersonsWereDestroyed();
+
+			{
+				List<Person, true> list;
+				list.pushBack(Person("A Name", "A Str", 1));
+				list.pushBack(Person("B Name", "B Str", 2));
+				list.pushBack(Person("C Name", "C Str", 3));
+				list.pushBack(Person("D Name", "D Str", 4));
+				list.pushBack(Person("E Name", "E Str", 5));
+				list.pushBack(Person("F Name", "F Str", 6));
+			}
+
+			Person::checkIfAllPersonsWereDestroyed();
+
+			{
+				List<Person, true> list;
+				list.pushBack(Person("A Name", "A Str", 1));
+				list.pushBack(Person("B Name", "B Str", 2));
+				list.pushBack(Person("C Name", "C Str", 3));
+				list.pushBack(Person("D Name", "D Str", 4));
+				list.pushBack(Person("E Name", "E Str", 5));
+				list.pushBack(Person("F Name", "F Str", 6));
+				list.pushBack(Person("G Name", "G Str", 7));
+			}
+
+			Person::checkIfAllPersonsWereDestroyed();
+
+			{
+				List<Person, true> list;
+				list.pushBack(Person("A Name", "A Str", 1));
+				list.pushBack(Person("B Name", "B Str", 2));
+				list.pushBack(Person("C Name", "C Str", 3));
+				list.pushBack(Person("D Name", "D Str", 4));
+				list.pushBack(Person("E Name", "E Str", 5));
+				list.pushBack(Person("F Name", "F Str", 6));
+				list.pushBack(Person("G Name", "G Str", 7));
+				list.pushBack(Person("H Name", "H Str", 8));
+			}
+
+			Person::checkIfAllPersonsWereDestroyed();
+
+			{
+				List<Person, true> list;
+				list.pushBack(Person("A Name", "A Str", 1));
+				list.pushBack(Person("B Name", "B Str", 2));
+				list.pushBack(Person("C Name", "C Str", 3));
+				list.pushBack(Person("D Name", "D Str", 4));
+				list.pushBack(Person("E Name", "E Str", 5));
+				list.pushBack(Person("F Name", "F Str", 6));
+				list.pushBack(Person("G Name", "G Str", 7));
+				list.pushBack(Person("H Name", "H Str", 8));
+				list.pushBack(Person("I Name", "I Str", 9));
+			}
+
+			Person::checkIfAllPersonsWereDestroyed();
+
+			{
+				List<Person, true> list;
+				list.pushBack(Person("A Name", "A Str", 1));
+				list.pushBack(Person("B Name", "B Str", 2));
+				list.pushBack(Person("C Name", "C Str", 3));
+				list.pushBack(Person("D Name", "D Str", 4));
+				list.pushBack(Person("E Name", "E Str", 5));
+				list.pushBack(Person("F Name", "F Str", 6));
+				list.pushBack(Person("G Name", "G Str", 7));
+				list.pushBack(Person("H Name", "H Str", 8));
+				list.pushBack(Person("I Name", "I Str", 9));
+				list.pushBack(Person("J Name", "J Str", 10));
+			}
+
+			Person::checkIfAllPersonsWereDestroyed();
+
+			{
+				List<Person, true> list;
+				list.pushBack(Person("A Name", "A Str", 1));
+				list.pushBack(Person("B Name", "B Str", 2));
+				list.pushBack(Person("C Name", "C Str", 3));
+				list.pushBack(Person("D Name", "D Str", 4));
+				list.pushBack(Person("E Name", "E Str", 5));
+				list.pushBack(Person("F Name", "F Str", 6));
+				list.pushBack(Person("G Name", "G Str", 7));
+				list.pushBack(Person("H Name", "H Str", 8));
+				list.pushBack(Person("I Name", "I Str", 9));
+				list.pushBack(Person("J Name", "J Str", 10));
+				list.pushBack(Person("K Name", "K Str", 11));
+			}
+
+			Person::checkIfAllPersonsWereDestroyed();
+
+			{
+				List<Person, true> personList;
+				personList.pushBack(Person("3 name", "3 adress", 3));
+				personList.pushBack(Person("2 name", "2 adress", 2));
+				personList.pushBack(Person("6 name", "6 adress", 6));
+				Person rPerson("0 name", "0 adress", 0);
+				personList.pushBack(rPerson);
+				personList.pushBack(Person("1 name", "1 adress", 1));
+				personList.pushBack(Person("7 name", "7 adress", 7));
 
 
-			assertEquals(personList.getCapacity(), 8);
-			assertEquals(personList.getLength(), 6);
-			assertUnequals(personList.getRaw(), nullptr);
-			assertEquals(personList.isEmpty(), false);
+				assertEquals(personList.getCapacity(), 8);
+				assertEquals(personList.getLength(), 6);
+				assertUnequals(personList.getRaw(), nullptr);
+				assertEquals(personList.isEmpty(), false);
 
-			assertEquals(personList[0].name, "0 name");
-			assertEquals(personList[0].adress, "0 adress");
-			assertEquals(personList[0].age, 0);
-			assertEquals(personList[1].name, "1 name");
-			assertEquals(personList[1].adress, "1 adress");
-			assertEquals(personList[1].age, 1);
-			assertEquals(personList[2].name, "2 name");
-			assertEquals(personList[2].adress, "2 adress");
-			assertEquals(personList[2].age, 2);
-			assertEquals(personList[3].name, "3 name");
-			assertEquals(personList[3].adress, "3 adress");
-			assertEquals(personList[3].age, 3);
-			assertEquals(personList[4].name, "6 name");
-			assertEquals(personList[4].adress, "6 adress");
-			assertEquals(personList[4].age, 6);
-			assertEquals(personList[5].name, "7 name");
-			assertEquals(personList[5].adress, "7 adress");
-			assertEquals(personList[5].age, 7);
-			assertEquals(rPerson.name, "Eval Name");
-			assertEquals(rPerson.adress, "Eval Adr");
-			assertEquals(rPerson.age, -1);
+				assertEquals(personList[0].name, "0 name");
+				assertEquals(personList[0].adress, "0 adress");
+				assertEquals(personList[0].age, 0);
+				assertEquals(personList[1].name, "1 name");
+				assertEquals(personList[1].adress, "1 adress");
+				assertEquals(personList[1].age, 1);
+				assertEquals(personList[2].name, "2 name");
+				assertEquals(personList[2].adress, "2 adress");
+				assertEquals(personList[2].age, 2);
+				assertEquals(personList[3].name, "3 name");
+				assertEquals(personList[3].adress, "3 adress");
+				assertEquals(personList[3].age, 3);
+				assertEquals(personList[4].name, "6 name");
+				assertEquals(personList[4].adress, "6 adress");
+				assertEquals(personList[4].age, 6);
+				assertEquals(personList[5].name, "7 name");
+				assertEquals(personList[5].adress, "7 adress");
+				assertEquals(personList[5].age, 7);
+				assertEquals(rPerson.name, "0 name");
+				assertEquals(rPerson.adress, "0 adress");
+				assertEquals(rPerson.age, 0);
+
+				rPerson.name = "Eval Name";
+				rPerson.adress = "Eval Adr";
+				rPerson.age = -1;
+
+
+				assertEquals(personList.getCapacity(), 8);
+				assertEquals(personList.getLength(), 6);
+				assertUnequals(personList.getRaw(), nullptr);
+				assertEquals(personList.isEmpty(), false);
+
+				assertEquals(personList[0].name, "0 name");
+				assertEquals(personList[0].adress, "0 adress");
+				assertEquals(personList[0].age, 0);
+				assertEquals(personList[1].name, "1 name");
+				assertEquals(personList[1].adress, "1 adress");
+				assertEquals(personList[1].age, 1);
+				assertEquals(personList[2].name, "2 name");
+				assertEquals(personList[2].adress, "2 adress");
+				assertEquals(personList[2].age, 2);
+				assertEquals(personList[3].name, "3 name");
+				assertEquals(personList[3].adress, "3 adress");
+				assertEquals(personList[3].age, 3);
+				assertEquals(personList[4].name, "6 name");
+				assertEquals(personList[4].adress, "6 adress");
+				assertEquals(personList[4].age, 6);
+				assertEquals(personList[5].name, "7 name");
+				assertEquals(personList[5].adress, "7 adress");
+				assertEquals(personList[5].age, 7);
+				assertEquals(rPerson.name, "Eval Name");
+				assertEquals(rPerson.adress, "Eval Adr");
+				assertEquals(rPerson.age, -1);
+			}
+			
+
+			Person::checkIfAllPersonsWereDestroyed(); 
+
+			{
+				List<Person, true> personList;
+				personList.pushBack(Person("3 name", "3 adress", 3));
+				personList.pushBack(Person("2 name", "2 adress", 2));
+				personList.pushBack(Person("6 name", "6 adress", 6));
+				Person rPerson("0 name", "0 adress", 0);
+				personList.pushBack(rPerson);
+				personList.pushBack(Person("1 name", "1 adress", 1));
+				//personList.pushBack(Person("7 name", "7 adress", 7));
+			}
 		}
 
 		void testListUnsorted() {
@@ -1754,8 +1913,147 @@ namespace bbe {
 					assertEquals(l1 != l2, true);
 				}
 
-
+				Person::checkIfAllPersonsWereDestroyed();
 				
+
+				{
+					List<Person> list;
+				}
+
+				Person::checkIfAllPersonsWereDestroyed();
+
+				{
+					List<Person> list;
+					list.pushBack(Person("A Name", "A Str", 1));
+				}
+
+				Person::checkIfAllPersonsWereDestroyed();
+
+				{
+					List<Person> list;
+					list.pushBack(Person("A Name", "A Str", 1));
+					list.pushBack(Person("B Name", "B Str", 2));
+				}
+
+				Person::checkIfAllPersonsWereDestroyed();
+
+				{
+					List<Person> list;
+					list.pushBack(Person("A Name", "A Str", 1));
+					list.pushBack(Person("B Name", "B Str", 2));
+					list.pushBack(Person("C Name", "C Str", 3));
+				}
+
+				Person::checkIfAllPersonsWereDestroyed();
+
+				{
+					List<Person> list;
+					list.pushBack(Person("A Name", "A Str", 1));
+					list.pushBack(Person("B Name", "B Str", 2));
+					list.pushBack(Person("C Name", "C Str", 3));
+					list.pushBack(Person("D Name", "D Str", 4));
+				}
+
+				Person::checkIfAllPersonsWereDestroyed();
+
+				{
+					List<Person> list;
+					list.pushBack(Person("A Name", "A Str", 1));
+					list.pushBack(Person("B Name", "B Str", 2));
+					list.pushBack(Person("C Name", "C Str", 3));
+					list.pushBack(Person("D Name", "D Str", 4));
+					list.pushBack(Person("E Name", "E Str", 5));
+				}
+
+				Person::checkIfAllPersonsWereDestroyed();
+
+				{
+					List<Person> list;
+					list.pushBack(Person("A Name", "A Str", 1));
+					list.pushBack(Person("B Name", "B Str", 2));
+					list.pushBack(Person("C Name", "C Str", 3));
+					list.pushBack(Person("D Name", "D Str", 4));
+					list.pushBack(Person("E Name", "E Str", 5));
+					list.pushBack(Person("F Name", "F Str", 6));
+				}
+
+				Person::checkIfAllPersonsWereDestroyed();
+
+				{
+					List<Person> list;
+					list.pushBack(Person("A Name", "A Str", 1));
+					list.pushBack(Person("B Name", "B Str", 2));
+					list.pushBack(Person("C Name", "C Str", 3));
+					list.pushBack(Person("D Name", "D Str", 4));
+					list.pushBack(Person("E Name", "E Str", 5));
+					list.pushBack(Person("F Name", "F Str", 6));
+					list.pushBack(Person("G Name", "G Str", 7));
+				}
+
+				Person::checkIfAllPersonsWereDestroyed();
+
+				{
+					List<Person> list;
+					list.pushBack(Person("A Name", "A Str", 1));
+					list.pushBack(Person("B Name", "B Str", 2));
+					list.pushBack(Person("C Name", "C Str", 3));
+					list.pushBack(Person("D Name", "D Str", 4));
+					list.pushBack(Person("E Name", "E Str", 5));
+					list.pushBack(Person("F Name", "F Str", 6));
+					list.pushBack(Person("G Name", "G Str", 7));
+					list.pushBack(Person("H Name", "H Str", 8));
+				}
+
+				Person::checkIfAllPersonsWereDestroyed();
+
+				{
+					List<Person> list;
+					list.pushBack(Person("A Name", "A Str", 1));
+					list.pushBack(Person("B Name", "B Str", 2));
+					list.pushBack(Person("C Name", "C Str", 3));
+					list.pushBack(Person("D Name", "D Str", 4));
+					list.pushBack(Person("E Name", "E Str", 5));
+					list.pushBack(Person("F Name", "F Str", 6));
+					list.pushBack(Person("G Name", "G Str", 7));
+					list.pushBack(Person("H Name", "H Str", 8));
+					list.pushBack(Person("I Name", "I Str", 9));
+				}
+
+				Person::checkIfAllPersonsWereDestroyed();
+
+				{
+					List<Person> list;
+					list.pushBack(Person("A Name", "A Str", 1));
+					list.pushBack(Person("B Name", "B Str", 2));
+					list.pushBack(Person("C Name", "C Str", 3));
+					list.pushBack(Person("D Name", "D Str", 4));
+					list.pushBack(Person("E Name", "E Str", 5));
+					list.pushBack(Person("F Name", "F Str", 6));
+					list.pushBack(Person("G Name", "G Str", 7));
+					list.pushBack(Person("H Name", "H Str", 8));
+					list.pushBack(Person("I Name", "I Str", 9));
+					list.pushBack(Person("J Name", "J Str", 10));
+				}
+
+				Person::checkIfAllPersonsWereDestroyed();
+
+				{
+					List<Person> list;
+					list.pushBack(Person("A Name", "A Str", 1));
+					list.pushBack(Person("B Name", "B Str", 2));
+					list.pushBack(Person("C Name", "C Str", 3));
+					list.pushBack(Person("D Name", "D Str", 4));
+					list.pushBack(Person("E Name", "E Str", 5));
+					list.pushBack(Person("F Name", "F Str", 6));
+					list.pushBack(Person("G Name", "G Str", 7));
+					list.pushBack(Person("H Name", "H Str", 8));
+					list.pushBack(Person("I Name", "I Str", 9));
+					list.pushBack(Person("J Name", "J Str", 10));
+					list.pushBack(Person("K Name", "K Str", 11));
+				}
+
+				Person::checkIfAllPersonsWereDestroyed();
+
 			}
 		}
 	}

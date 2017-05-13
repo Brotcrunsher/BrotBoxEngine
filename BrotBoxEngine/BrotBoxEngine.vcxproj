@@ -156,6 +156,7 @@
     <ClInclude Include="Array.h" />
     <ClInclude Include="CPUWatch.h" />
     <ClInclude Include="DataType.h" />
+    <ClInclude Include="DefaultDestroyer.h" />
     <ClInclude Include="DynamicArray.h" />
     <ClInclude Include="GeneralPurposeAllocator.h" />
     <ClInclude Include="GeneralPurposeAllocatorTest.h" />
@@ -175,6 +176,8 @@
     <ClInclude Include="StringPerformanceTime.h" />
     <ClInclude Include="StringTest.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="UniquePointer.h" />
+    <ClInclude Include="UniquePointerTest.h" />
     <ClInclude Include="UtilMath.h" />
     <ClInclude Include="UtilTest.h" />
     <ClInclude Include="UtilDebug.h" />

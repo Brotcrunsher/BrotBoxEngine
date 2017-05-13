@@ -206,7 +206,8 @@ namespace bbe {
 			for (i = (int)m_length + amount - 1; i >= 0; i--) {
 				int lowerIndex = i - amount;
 				if (lowerIndex >= 0 && val < m_data[lowerIndex].value) {
-					new (bbe::addressOf(m_data[i])) T(m_data[lowerIndex].value);
+					new (bbe::addressOf(m_data[i])) T(std::move(m_data[lowerIndex].value));
+					bbe::addressOf(m_data[lowerIndex].value)->~T();
 				}
 				else {
 					break;
@@ -247,7 +248,8 @@ namespace bbe {
 			for (i = (int)m_length + amount - 1; i >= 0; i--) {
 				int lowerIndex = i - amount;
 				if (lowerIndex >= 0 && val < m_data[lowerIndex].value) {
-					new (bbe::addressOf(m_data[i])) T(m_data[lowerIndex].value);
+					new (bbe::addressOf(m_data[i])) T(std::move(m_data[lowerIndex].value));
+					bbe::addressOf(m_data[lowerIndex].value)->~T();
 				}
 				else {
 					break;

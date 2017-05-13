@@ -62,6 +62,7 @@ namespace bbe {
 				name = other.name;
 				adress = other.adress;
 				age = other.age;
+				Person::amountOfPersons++;
 				Person::amountOfCopyAssignmentCalls++;
 				return *this;
 			}
@@ -74,7 +75,7 @@ namespace bbe {
 				return *this;
 			}
 
-			explicit Person(std::string name, std::string adress, int age) :
+			explicit Person(bbe::String name, bbe::String adress, int age) :
 				name(name), adress(adress), age(age) {
 				//std::cout << "Constructor with parameters called!" << std::endl;
 				amountOfPersons++;

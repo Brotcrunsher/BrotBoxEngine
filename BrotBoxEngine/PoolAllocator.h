@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UtilDebug.h"
+#include "UniquePointer.h"
 #include "STLCapsule.h"
 
 namespace bbe {
@@ -12,6 +13,8 @@ namespace bbe {
 
 		~PoolChunk() = delete;
 	};
+
+	
 
 	template <typename T, typename Allocator = STLAllocator<PoolChunk<T>>>
 	class PoolAllocator
@@ -27,6 +30,21 @@ namespace bbe {
 		typedef typename std::pointer_traits<T*>::rebind<const void> const_void_pointer;
 
 	private:
+		class PoolAllocatorDestroyer {
+		private:
+			PoolAllocator* m_pa;
+		public:
+			PoolAllocatorDestroyer(PoolAllocator *pa)
+				: m_pa(pa)
+			{
+				//do nothing
+			}
+
+			void destroy(T* data) {
+				m_pa->deallocate(data);
+			}
+		};
+
 		static constexpr size_t POOLALLOCATORDEFAULSIZE = 1024;
 #ifndef BBE_DISABLE_ALL_SECURITY_CHECKS
 		size_t m_openAllocations = 0;		//Used to find memory leaks
@@ -77,9 +95,14 @@ namespace bbe {
 			m_head = nullptr;
 		}
 
+		template <typename... arguments>
+		UniquePointer<T, PoolAllocatorDestroyer> allocateObjectUniquePointer(arguments&&... args) {
+			T* pointer = allocateObject(std::forward<arguments>(args)...);
+			return UniquePointer<T, PoolAllocatorDestroyer>(pointer, PoolAllocatorDestroyer(this));
+		}
 
 		template <typename... arguments>
-		T* allocate(arguments&&... args)
+		T* allocateObject(arguments&&... args)
 		{
 			if (m_head == nullptr) {
 				debugBreak();
