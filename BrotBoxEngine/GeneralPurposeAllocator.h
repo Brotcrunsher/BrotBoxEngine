@@ -121,7 +121,7 @@ namespace bbe
 		byte* m_data;
 		size_t m_size;
 
-		List<INTERNAL::GeneralPurposeAllocatorFreeChunk, true> freeChunks;
+		List<INTERNAL::GeneralPurposeAllocatorFreeChunk, true> m_freeChunks;
 
 	public:
 		explicit GeneralPurposeAllocator(size_t size = GENERAL_PURPOSE_ALLOCATOR_DEFAULT_SIZE)
@@ -129,20 +129,20 @@ namespace bbe
 		{
 			//UNTESTED
 			m_data = new byte[m_size];
-			freeChunks.pushBack(INTERNAL::GeneralPurposeAllocatorFreeChunk(m_data, m_size));
+			m_freeChunks.pushBack(INTERNAL::GeneralPurposeAllocatorFreeChunk(m_data, m_size));
 		}
 
 		~GeneralPurposeAllocator()
 		{
-			if (freeChunks.getLength() != 1)
+			if (m_freeChunks.getLength() != 1)
 			{
 				debugBreak();
 			}
-			if (freeChunks[0].m_addr != m_data)
+			if (m_freeChunks[0].m_addr != m_data)
 			{
 				debugBreak();
 			}
-			if (freeChunks[0].m_size != m_size)
+			if (m_freeChunks[0].m_size != m_size)
 			{
 				debugBreak();
 			}
@@ -163,9 +163,9 @@ namespace bbe
 		{
 			//UNTESTED
 			static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
-			for (size_t i = 0; i < freeChunks.getLength(); i++)
+			for (size_t i = 0; i < m_freeChunks.getLength(); i++)
 			{
-				T* data = freeChunks[i].allocateObject<T>(amountOfObjects, std::forward<arguments>(args)...);
+				T* data = m_freeChunks[i].allocateObject<T>(amountOfObjects, std::forward<arguments>(args)...);
 				if (data != nullptr)
 				{
 					return data;
@@ -218,7 +218,7 @@ namespace bbe
 			bool didMerge = false;
 			INTERNAL::GeneralPurposeAllocatorFreeChunk* right;
 
-			freeChunks.getNeighbors(*p_gpafc, left, right);
+			m_freeChunks.getNeighbors(*p_gpafc, left, right);
 			if (left != nullptr)
 			{
 				if (left->touches(*p_gpafc))
@@ -236,7 +236,7 @@ namespace bbe
 					if (didTouchLeft)
 					{
 						p_gpafc->m_size += right->m_size;
-						freeChunks.removeSingle(*right);
+						m_freeChunks.removeSingle(*right);
 					}
 					else
 					{
@@ -249,7 +249,7 @@ namespace bbe
 
 			if (!didMerge)
 			{
-				freeChunks.pushBack(gpafc);
+				m_freeChunks.pushBack(gpafc);
 			}
 		}
 	};

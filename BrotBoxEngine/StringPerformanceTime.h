@@ -14,7 +14,19 @@ namespace bbe {
 
 		}
 
-		void stringSpeed() {
+		void stringSpeedAddition() {
+			while (true) {
+				bbe::String a("Hallo ");
+				bbe::String b("Welt");
+				CPUWatch allocationWatch;
+				for (int i = 0; i < 10000000; i++) {
+					bbe::String c = a + b;
+				}
+				std::cout << allocationWatch.getTimeExpiredSeconds() << std::endl;
+			}
+		}
+
+		void stringSpeedCreation() {
 			//char c = 0;
 			//std::vector<std::wstring> vec;
 			//std::vector<bbe::String> vec;

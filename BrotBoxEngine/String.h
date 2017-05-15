@@ -346,14 +346,25 @@ namespace bbe
 		String operator+(const String& other) const
 		{
 			size_t totalLength = m_length + other.m_length;
-			wchar_t *newData = new wchar_t[totalLength + 1];
-			memcpy(newData, getRaw(), sizeof(wchar_t) * m_length);
-			memcpy(newData + m_length, other.getRaw(), sizeof(wchar_t) * other.m_length);
-			newData[totalLength] = 0;
 			String retVal;
-			retVal.m_usesSSO = false; //TODO make this better! It could use SSO!
-			retVal.m_data = newData;
 			retVal.m_length = totalLength;
+
+			if (totalLength < SSOSIZE)
+			{
+				memcpy(retVal.m_ssoData, getRaw(), sizeof(wchar_t) * m_length);
+				memcpy(retVal.m_ssoData + m_length, other.getRaw(), sizeof(wchar_t) * other.m_length);
+				retVal.m_ssoData[totalLength] = 0;
+			}
+			else
+			{
+				wchar_t *newData = new wchar_t[totalLength + 1];
+				memcpy(newData, getRaw(), sizeof(wchar_t) * m_length);
+				memcpy(newData + m_length, other.getRaw(), sizeof(wchar_t) * other.m_length);
+				newData[totalLength] = 0;
+
+				retVal.m_usesSSO = false;
+				retVal.m_data = newData;
+			}
 			return retVal;
 		}
 

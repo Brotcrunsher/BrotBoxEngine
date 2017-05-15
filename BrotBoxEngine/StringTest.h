@@ -9,6 +9,8 @@ namespace bbe {
 	namespace test {
 		void testString() {
 
+			//TODO add non SSO Tests
+
 			bbe::String emptyString;
 			bbe::String stringWChar  (L"Hallo WChar");
 			bbe::String stringClassic("Hallo Classic");
