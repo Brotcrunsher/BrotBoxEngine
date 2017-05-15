@@ -6,9 +6,12 @@
 #include "UniquePointer.h"
 #include "UtilTest.h"
 
-namespace bbe {
-	namespace INTERNAL {
-		class GeneralPurposeAllocatorFreeChunk {
+namespace bbe
+{
+	namespace INTERNAL
+	{
+		class GeneralPurposeAllocatorFreeChunk
+		{
 		public:
 			byte* m_addr;
 			size_t m_size;
@@ -19,58 +22,70 @@ namespace bbe {
 				//do nothing
 			}
 
-			bool touches(const GeneralPurposeAllocatorFreeChunk& other) const {
+			bool touches(const GeneralPurposeAllocatorFreeChunk& other) const
+			{
 				//UNTESTED
-				if (m_addr + m_size == other.m_addr) {
+				if (m_addr + m_size == other.m_addr)
+				{
 					return true;
 				}
-				if (other.m_addr + other.m_size == m_addr) {
+				if (other.m_addr + other.m_size == m_addr)
+				{
 					return true;
 				}
 
 				return false;
 			}
 
-			bool operator>(const GeneralPurposeAllocatorFreeChunk& other) const {
+			bool operator>(const GeneralPurposeAllocatorFreeChunk& other) const
+			{
 				return m_addr > other.m_addr;
 			}
 
-			bool operator>=(const GeneralPurposeAllocatorFreeChunk& other) const {
+			bool operator>=(const GeneralPurposeAllocatorFreeChunk& other) const
+			{
 				return m_addr >= other.m_addr;
 			}
 
-			bool operator<(const GeneralPurposeAllocatorFreeChunk& other) const {
+			bool operator<(const GeneralPurposeAllocatorFreeChunk& other) const
+			{
 				return m_addr < other.m_addr;
 			}
 
-			bool operator<=(const GeneralPurposeAllocatorFreeChunk& other) const {
+			bool operator<=(const GeneralPurposeAllocatorFreeChunk& other) const
+			{
 				return m_addr <= other.m_addr;
 			}
 
-			bool operator==(const GeneralPurposeAllocatorFreeChunk& other) const {
+			bool operator==(const GeneralPurposeAllocatorFreeChunk& other) const
+			{
 				return m_addr == other.m_addr;
 			}
 
 			template <typename T, typename... arguments>
-			T* allocateObject(size_t amountOfObjects = 1, arguments&&... args) {
+			T* allocateObject(size_t amountOfObjects = 1, arguments&&... args)
+			{
 				//UNTESTED
 				static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
 				byte* allocationLocation = (byte*)nextMultiple(alignof(T), ((size_t)m_addr) + 1);
 				size_t amountOfBytes = amountOfObjects * sizeof(T);
 				byte* newAddr = allocationLocation + amountOfBytes;
-				if (newAddr <= m_addr + m_size) {
+				if (newAddr <= m_addr + m_size)
+				{
 					byte offset = (byte)(allocationLocation - m_addr);
 					allocationLocation[-1] = offset;
 					T* returnPointer = reinterpret_cast<T*>(allocationLocation);
 					m_size -= newAddr - m_addr;
 					m_addr = newAddr;
-					for (size_t i = 0; i < amountOfObjects; i++) {
+					for (size_t i = 0; i < amountOfObjects; i++)
+					{
 						T* object = bbe::addressOf(returnPointer[i]);
 						new (object) T(std::forward<arguments>(args)...);
 					}
 					return returnPointer;
 				}
-				else {
+				else
+				{
 					return nullptr;
 				}
 			}
@@ -78,12 +93,14 @@ namespace bbe {
 	}
 	
 
-	class GeneralPurposeAllocator {
+	class GeneralPurposeAllocator
+	{
 		//TODO use parent allocator
 		//TODO defragmentation
 	public:
 		template<typename T>
-		class GeneralPurposeAllocatorDestroyer {
+		class GeneralPurposeAllocatorDestroyer
+		{
 		private:
 			GeneralPurposeAllocator* m_pa;
 			size_t m_size;
@@ -94,7 +111,8 @@ namespace bbe {
 				//do nothing
 			}
 
-			void destroy(void* data) {
+			void destroy(void* data)
+			{
 				m_pa->deallocateObjects(reinterpret_cast<T*>(data), m_size);
 			}
 		};
@@ -116,16 +134,20 @@ namespace bbe {
 
 		~GeneralPurposeAllocator()
 		{
-			if (freeChunks.getLength() != 1) {
+			if (freeChunks.getLength() != 1)
+			{
 				debugBreak();
 			}
-			if (freeChunks[0].m_addr != m_data) {
+			if (freeChunks[0].m_addr != m_data)
+			{
 				debugBreak();
 			}
-			if (freeChunks[0].m_size != m_size) {
+			if (freeChunks[0].m_size != m_size)
+			{
 				debugBreak();
 			}
-			if (m_data != nullptr) {
+			if (m_data != nullptr)
+			{
 				delete[] m_data;
 				m_data = nullptr;
 			}
@@ -137,12 +159,15 @@ namespace bbe {
 		GeneralPurposeAllocator& operator=(GeneralPurposeAllocator&& other) = delete;
 
 		template <typename T, typename... arguments>
-		T* allocateObjects(size_t amountOfObjects = 1, arguments&&... args) {
+		T* allocateObjects(size_t amountOfObjects = 1, arguments&&... args)
+		{
 			//UNTESTED
 			static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
-			for (size_t i = 0; i < freeChunks.getLength(); i++) {
+			for (size_t i = 0; i < freeChunks.getLength(); i++)
+			{
 				T* data = freeChunks[i].allocateObject<T>(amountOfObjects, std::forward<arguments>(args)...);
-				if (data != nullptr) {
+				if (data != nullptr)
+				{
 					return data;
 				}
 			}
@@ -152,26 +177,31 @@ namespace bbe {
 		}
 
 		template <typename T, typename... arguments>
-		T* allocateObject(arguments&&... args) {
+		T* allocateObject(arguments&&... args)
+		{
 			//UNTESTED
 			return allocateObjects<T>(1, std::forward<arguments>(args)...);
 		}
 
 		template <typename T, typename... arguments>
-		UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>> allocateObjectsUniquePointer(size_t amountOfObjects = 1, arguments&&... args) {
+		UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>> allocateObjectsUniquePointer(size_t amountOfObjects = 1, arguments&&... args)
+		{
 			T* pointer = allocateObjects<T>(amountOfObjects, std::forward<arguments>(args)...);
 			return UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>>(pointer, GeneralPurposeAllocatorDestroyer<T>(this, amountOfObjects));
 		}
 
 		template <typename T, typename... arguments>
-		UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>> allocateObjectUniquePointer(arguments&&... args) {
+		UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>> allocateObjectUniquePointer(arguments&&... args)
+		{
 			return allocateObjectsUniquePointer<T>(1, std::forward<arguments>(args)...);
 		}
 
 		template<typename T>
-		void deallocateObjects(T* dataPointer, size_t amountOfObjects = 1) {
+		void deallocateObjects(T* dataPointer, size_t amountOfObjects = 1)
+		{
 			//UNTESTED
-			for (size_t i = 0; i < amountOfObjects; i++) {
+			for (size_t i = 0; i < amountOfObjects; i++)
+			{
 				bbe::addressOf(dataPointer[i])->~T();
 			}
 
@@ -189,21 +219,27 @@ namespace bbe {
 			INTERNAL::GeneralPurposeAllocatorFreeChunk* right;
 
 			freeChunks.getNeighbors(*p_gpafc, left, right);
-			if (left != nullptr) {
-				if (left->touches(*p_gpafc)) {
+			if (left != nullptr)
+			{
+				if (left->touches(*p_gpafc))
+				{
 					left->m_size += p_gpafc->m_size;
 					didTouchLeft = true;
 					p_gpafc = left;
 					didMerge = true;
 				}
 			}
-			if (right != nullptr) {
-				if (right->touches(*p_gpafc)) {
-					if (didTouchLeft) {
+			if (right != nullptr)
+			{
+				if (right->touches(*p_gpafc))
+				{
+					if (didTouchLeft)
+					{
 						p_gpafc->m_size += right->m_size;
 						freeChunks.removeSingle(*right);
 					}
-					else {
+					else
+					{
 						right->m_size += p_gpafc->m_size;
 						right->m_addr = p_gpafc->m_addr;
 					}
@@ -211,7 +247,8 @@ namespace bbe {
 				}
 			}
 
-			if (!didMerge) {
+			if (!didMerge)
+			{
 				freeChunks.pushBack(gpafc);
 			}
 		}

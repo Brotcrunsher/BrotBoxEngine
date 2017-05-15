@@ -2,12 +2,14 @@
 
 #include "Array.h"
 
-namespace bbe {
+namespace bbe
+{
 	template<typename T, bool keepSorted>
 	class List;
 
 	template <typename T>
-	class DynamicArray {
+	class DynamicArray
+	{
 		//TODO use Allocator
 	private:
 
@@ -27,7 +29,8 @@ namespace bbe {
 		{
 			//UNTESTED
 			m_data = new T[m_size];
-			for (int i = 0; i < size; i++) {
+			for (int i = 0; i < size; i++)
+			{
 				m_data[i] = arr[i];
 			}
 		}
@@ -37,7 +40,8 @@ namespace bbe {
 		{
 			//UNTESTED
 			m_data = new T[m_size];
-			for (int i = 0; i < m_size; i++) {
+			for (int i = 0; i < m_size; i++)
+			{
 				m_data[i] = list[i];
 			}
 		}
@@ -48,7 +52,8 @@ namespace bbe {
 			//UNTESTED
 			//TODO basically this is a copy of above. Put into function!
 			m_data = new T[m_size];
-			for (int i = 0; i < m_size; i++) {
+			for (int i = 0; i < m_size; i++)
+			{
 				m_data[i] = list[i];
 			}
 		}
@@ -110,17 +115,20 @@ namespace bbe {
 			return m_data[index];
 		}
 
-		size_t getLength() const {
+		size_t getLength() const
+		{
 			//UNTESTED
 			return m_size;
 		}
 
-		T* getRaw() {
+		T* getRaw()
+		{
 			//UNTESTED
 			return m_data;
 		}
 
-		const T* getRaw() const {
+		const T* getRaw() const
+		{
 			//UNTESTED
 			return m_data;
 		}

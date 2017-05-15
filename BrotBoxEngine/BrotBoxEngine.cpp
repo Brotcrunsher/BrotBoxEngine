@@ -12,7 +12,8 @@
 int main()
 {
 
-	for (int i = 0; i < 11; i++) {
+	for (int i = 0; i < 11; i++)
+	{
 		int checkVal = i;
 		bbe::List<int, true> list;
 		list.pushBackAll(1, 2, 3, 4, 5, 6, 7, 7, 8);
@@ -22,13 +23,16 @@ int main()
 		int* right;
 		list.getNeighbors(checkVal, left, right);
 		std::cout << checkVal << " ";
-		if (left == nullptr) {
+		if (left == nullptr)
+		{
 			std::cout << "nullptr" << " " << *right;
 		}
-		else if (right == nullptr) {
+		else if (right == nullptr)
+		{
 			std::cout << *left << " " << "nullptr";
 		}
-		else {
+		else
+		{
 			std::cout << *left << " " << *right;
 		}
 		std::cout << std::endl;

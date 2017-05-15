@@ -6,26 +6,32 @@
 #include <iostream>
 #include "STLCapsule.h"
 
-namespace bbe {
-	namespace INTERNAL {
+namespace bbe
+{
+	namespace INTERNAL
+	{
 		template <typename T>
-		void executeDestructor(const void* data) {
+		void executeDestructor(const void* data)
+		{
 			auto originalType = static_cast<const T*>(data);
 			originalType->~T();
 		}
 
-		class StackAllocatorDestructor {
+		class StackAllocatorDestructor
+		{
 		private:
 			const void* m_data;
 			void(*destructor)(const void*);
 		public:
 			template<typename T>
 			explicit StackAllocatorDestructor(const T& data) noexcept :
-				m_data(bbe::addressOf(data)) {
+				m_data(bbe::addressOf(data))
+			{
 				destructor = executeDestructor<T>;
 			}
 
-			void operator () () noexcept {
+			void operator () () noexcept
+			{
 				destructor(m_data);
 			}
 		};
@@ -35,18 +41,21 @@ namespace bbe {
 
 
 	template <typename T>
-	class StackAllocatorMarker {
+	class StackAllocatorMarker
+	{
 	public:
 		T* m_markerValue;
 		size_t m_destructorHandle;
 		StackAllocatorMarker(T* markerValue, size_t destructorHandle) :
-			m_markerValue(markerValue), m_destructorHandle(destructorHandle) {
-
+			m_markerValue(markerValue), m_destructorHandle(destructorHandle)
+		{
+			//do nothing
 		}
 	};
 
 	template <typename T = byte, typename Allocator = STLAllocator<T>>
-	class StackAllocator {
+	class StackAllocator
+	{
 	public:
 		typedef typename T                                           value_type;
 		typedef typename T*                                          pointer;
@@ -85,7 +94,8 @@ namespace bbe {
 		explicit StackAllocator(size_t size = STACKALLOCATORDEFAULSIZE, Allocator* parentAllocator = nullptr)
 			: m_size(size), m_parentAllocator(parentAllocator) 
 		{
-			if (m_parentAllocator == nullptr) {
+			if (m_parentAllocator == nullptr)
+			{
 				m_parentAllocator = new Allocator();
 				m_needsToDeleteParentAllocator = true;
 			}
@@ -95,15 +105,19 @@ namespace bbe {
 			memset(m_data, 0, m_size);	//TODO evaluate if this should be here
 		}
 
-		~StackAllocator() {
-			if (m_data != m_head) {
+		~StackAllocator()
+		{
+			if (m_data != m_head)
+			{
 				//TODO add further error handling
 				debugBreak();
 			}
-			if (m_data != nullptr && m_parentAllocator != nullptr) {
+			if (m_data != nullptr && m_parentAllocator != nullptr)
+			{
 				m_parentAllocator->deallocate(m_data, m_size);
 			}
-			if (m_needsToDeleteParentAllocator) {
+			if (m_needsToDeleteParentAllocator)
+			{
 				delete m_parentAllocator;
 			}
 			m_data = nullptr;
@@ -116,20 +130,24 @@ namespace bbe {
 		StackAllocator& operator=(StackAllocator&& other) = delete; //Move Assignment
 
 		template <typename U, typename... arguments>
-		U* allocateObject(size_t amountOfObjects = 1, arguments&&... args) {
+		U* allocateObject(size_t amountOfObjects = 1, arguments&&... args)
+		{
 			T* allocationLocation = (T*)nextMultiple(alignof(U), (size_t)m_head);
 			T* newHeadPointer = allocationLocation + amountOfObjects * sizeof(U);
-			if (newHeadPointer <= m_data + m_size) {
+			if (newHeadPointer <= m_data + m_size)
+			{
 				U* returnPointer = reinterpret_cast<U*>(allocationLocation);
 				m_head = newHeadPointer;
-				for (size_t i = 0; i < amountOfObjects; i++) {
+				for (size_t i = 0; i < amountOfObjects; i++)
+				{
 					U* object = bbe::addressOf(returnPointer[i]);
 					new (object) U(std::forward<arguments>(args)...);
 					addDestructorToList(object);
 				}
 				return returnPointer;
 			}
-			else {
+			else
+			{
 				//TODO add additional errorhandling
 				return nullptr;
 			}
@@ -140,31 +158,38 @@ namespace bbe {
 		{
 			T* allocationLocation = (T*)nextMultiple(alignment, (size_t)m_head);
 			T* newHeadPointer = allocationLocation + amountOfBytes;
-			if (newHeadPointer <= m_data + m_size) {
+			if (newHeadPointer <= m_data + m_size)
+			{
 				m_head = newHeadPointer;
 				return allocationLocation;
 			}
-			else {
+			else
+			{
 				//TODO add additional errorhandling
 				return nullptr;
 			}
 		}
 
-		StackAllocatorMarker<T> getMarker() {
+		StackAllocatorMarker<T> getMarker()
+		{
 			return StackAllocatorMarker<T>(m_head, destructors.getLength());
 		}
 		
-		void deallocateToMarker(StackAllocatorMarker<T> sam) {
+		void deallocateToMarker(StackAllocatorMarker<T> sam)
+		{
 			m_head = sam.m_markerValue;
-			while (destructors.getLength() > sam.m_destructorHandle) {
+			while (destructors.getLength() > sam.m_destructorHandle)
+			{
 				destructors.last()();
 				destructors.popBack();
 			}
 		}
 
-		void deallocateAll() {
+		void deallocateAll()
+		{
 			m_head = m_data;
-			while (destructors.size() > 0) {
+			while (destructors.size() > 0)
+			{
 				destructors.back()();
 				destructors.pop_back();
 			}

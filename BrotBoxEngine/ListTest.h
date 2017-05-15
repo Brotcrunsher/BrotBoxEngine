@@ -3,17 +3,22 @@
 #include "List.h"
 #include "UtilTest.h"
 
-namespace bbe {
-	namespace test {
+namespace bbe
+{
+	namespace test
+	{
 		void testListUnsorted();
 		void testListSorted();
 
 		template<typename T, bool U>
-		void printList(List<T, U> l) {
+		void printList(List<T, U> l)
+		{
 			std::cout << "[";
-			for (size_t i = 0; i < l.getLength(); i++) {
+			for (size_t i = 0; i < l.getLength(); i++)
+			{
 				std::cout << l[i];
-				if (i != l.getLength() - 1) {
+				if (i != l.getLength() - 1)
+				{
 					std::cout << ", ";
 				}
 			}
@@ -21,20 +26,25 @@ namespace bbe {
 		}
 
 		template<typename T>
-		void checkIfListIsSorted(List<T, true> l) {
-			for (int i = 0; i < l.getLength() - 1; i++) {
-				if (l[i] > l[i + 1]) {
+		void checkIfListIsSorted(List<T, true> l)
+		{
+			for (int i = 0; i < l.getLength() - 1; i++)
+			{
+				if (l[i] > l[i + 1])
+				{
 					debugBreak();
 				}
 			}
 		}
 
-		void testList() {
+		void testList()
+		{
 			testListUnsorted();
 			testListSorted();
 		}
 
-		void testListSorted() {
+		void testListSorted()
+		{
 			List<int, true> intList;
 			assertEquals(intList.getCapacity(), 0);
 			assertEquals(intList.getLength(), 0);
@@ -428,7 +438,8 @@ namespace bbe {
 			}
 		}
 
-		void testListUnsorted() {
+		void testListUnsorted()
+		{
 			{
 				Person::resetTestStatistics();
 
@@ -1171,7 +1182,8 @@ namespace bbe {
 				size_tList.pushBack(2);
 				size_tList.pushBack(2);
 				size_tList.pushBack(2);
-				for (size_t i = 0; i < 128; i++) {
+				for (size_t i = 0; i < 128; i++)
+				{
 					size_tList.pushBack(i);
 				}
 
@@ -1194,7 +1206,11 @@ namespace bbe {
 				assertEquals(size_tList[4], 5);
 				assertEquals(size_tList[5], 6);
 
-				removedVals = size_tList.removeAll([](const size_t& t) {return t % 2 == 0; });
+				removedVals = size_tList.removeAll(
+					[](const size_t& t)
+					{
+						return t % 2 == 0;
+					});
 				assertEquals(removedVals, 63);
 				assertEquals(size_tList.getCapacity(), 256);
 				assertEquals(size_tList.getLength(), 64);
@@ -1222,7 +1238,11 @@ namespace bbe {
 				assertEquals(size_tList[4], 9);
 				assertEquals(size_tList[5], 11);
 
-				removedVals = size_tList.removeAll([](const size_t& t) {return false; });
+				removedVals = size_tList.removeAll(
+					[](const size_t& t)
+					{
+						return false;
+					});
 				assertEquals(removedVals, 0);
 				assertEquals(size_tList.getCapacity(), 256);
 				assertEquals(size_tList.getLength(), 64);
@@ -1264,7 +1284,11 @@ namespace bbe {
 				assertEquals(size_tList[4], 11);
 				assertEquals(size_tList[5], 13);
 
-				didRemove = size_tList.removeSingle([](const size_t& val) {return val == 13; });
+				didRemove = size_tList.removeSingle(
+					[](const size_t& val)
+					{
+						return val == 13;
+					});
 				assertEquals(didRemove, true);
 				assertEquals(size_tList.getCapacity(), 256);
 				assertEquals(size_tList.getLength(), 62);
@@ -1278,7 +1302,11 @@ namespace bbe {
 				assertEquals(size_tList[4], 11);
 				assertEquals(size_tList[5], 15);
 
-				didRemove = size_tList.removeSingle([](const size_t& val) {return val == 13; });
+				didRemove = size_tList.removeSingle(
+					[](const size_t& val)
+					{
+						return val == 13;
+					});
 				assertEquals(didRemove, false);
 				assertEquals(size_tList.getCapacity(), 256);
 				assertEquals(size_tList.getLength(), 62);
@@ -1432,7 +1460,8 @@ namespace bbe {
 					Person("2 year", "2 Street", 2)
 				);
 
-				sortPersonList.sort([](const Person& a, const Person& b) {
+				sortPersonList.sort([](const Person& a, const Person& b)
+				{
 					return a.age < b.age;
 				});
 

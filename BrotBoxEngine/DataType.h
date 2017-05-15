@@ -1,5 +1,6 @@
 #pragma once
 
-namespace bbe{
+namespace bbe
+{
 	typedef unsigned char byte;
 }

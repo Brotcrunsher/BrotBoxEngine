@@ -4,8 +4,10 @@
 #include "UniquePointer.h"
 #include "STLCapsule.h"
 
-namespace bbe {
-	namespace INTERNAL {
+namespace bbe
+{
+	namespace INTERNAL
+	{
 		template <typename T>
 		union PoolChunk
 		{
@@ -33,7 +35,8 @@ namespace bbe {
 		typedef typename std::pointer_traits<T*>::rebind<const void> const_void_pointer;
 
 	private:
-		class PoolAllocatorDestroyer {
+		class PoolAllocatorDestroyer
+		{
 		private:
 			PoolAllocator* m_pa;
 		public:
@@ -43,7 +46,8 @@ namespace bbe {
 				//do nothing
 			}
 
-			void destroy(T* data) {
+			void destroy(T* data)
+			{
 				m_pa->deallocate(data);
 			}
 		};
@@ -64,12 +68,14 @@ namespace bbe {
 		explicit PoolAllocator(size_t size = POOLALLOCATORDEFAULSIZE, Allocator* parentAllocator = nullptr)
 			: m_size(size), m_parentAllocator(parentAllocator)
 		{
-			if (m_parentAllocator == nullptr) {
+			if (m_parentAllocator == nullptr)
+			{
 				m_parentAllocator = new Allocator();
 				m_needsToDeleteParentAllocator = true;
 			}
 			m_data = m_parentAllocator->allocate(m_size);
-			for (size_t i = 0; i < m_size - 1; i++) {
+			for (size_t i = 0; i < m_size - 1; i++)
+			{
 				m_data[i].nextPoolChunk = bbe::addressOf(m_data[i + 1]);
 			}
 			m_data[m_size - 1].nextPoolChunk = nullptr;
@@ -81,17 +87,21 @@ namespace bbe {
 		PoolAllocator& operator=(const PoolAllocator&  other) = delete; //Copy Assignment
 		PoolAllocator& operator=(PoolAllocator&& other) = delete; //Move Assignment
 
-		~PoolAllocator() {
+		~PoolAllocator()
+		{
 #ifndef BBE_DISABLE_ALL_SECURITY_CHECKS
-			if (m_openAllocations != 0) {
+			if (m_openAllocations != 0)
+			{
 				//TODO add further error handling
 				debugBreak();
 			}
 #endif // !BBE_DISABLE_ALL_SECURITY_CHECKS
-			if (m_data != nullptr && m_parentAllocator != nullptr) {
+			if (m_data != nullptr && m_parentAllocator != nullptr)
+			{
 				m_parentAllocator->deallocate(m_data, m_size);
 			}
-			if (m_needsToDeleteParentAllocator) {
+			if (m_needsToDeleteParentAllocator)
+			{
 				delete m_parentAllocator;
 			}
 			m_data = nullptr;
@@ -99,7 +109,8 @@ namespace bbe {
 		}
 
 		template <typename... arguments>
-		UniquePointer<T, PoolAllocatorDestroyer> allocateObjectUniquePointer(arguments&&... args) {
+		UniquePointer<T, PoolAllocatorDestroyer> allocateObjectUniquePointer(arguments&&... args)
+		{
 			T* pointer = allocateObject(std::forward<arguments>(args)...);
 			return UniquePointer<T, PoolAllocatorDestroyer>(pointer, PoolAllocatorDestroyer(this));
 		}
@@ -107,7 +118,8 @@ namespace bbe {
 		template <typename... arguments>
 		T* allocateObject(arguments&&... args)
 		{
-			if (m_head == nullptr) {
+			if (m_head == nullptr)
+			{
 				debugBreak();
 				//TODO throw exception, keep returning nullptr or allocate more space?
 				return nullptr;
@@ -121,7 +133,8 @@ namespace bbe {
 			return realRetVal;
 		}
 
-		void deallocate(T* data) {
+		void deallocate(T* data)
+		{
 			//TODO check if data is in range of the original array
 			data->~T();
 			INTERNAL::PoolChunk<T>* poolChunk = reinterpret_cast<INTERNAL::PoolChunk<T>*>(data);

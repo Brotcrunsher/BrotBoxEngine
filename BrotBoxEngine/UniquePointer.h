@@ -4,9 +4,11 @@
 #include "DefaultDestroyer.h"
 #include "UtilDebug.h"
 
-namespace bbe {
+namespace bbe
+{
 	template <typename T, typename Destroyer = bbe::INTERNAL::DefaultDestroyer>
-	class UniquePointer {
+	class UniquePointer
+	{
 	private:
 		T *m_ptr;
 		Destroyer m_destroyer;
@@ -24,21 +26,26 @@ namespace bbe {
 			//do nothing
 		}
 
-		~UniquePointer() {
-			if (m_ptr != nullptr) {
+		~UniquePointer()
+		{
+			if (m_ptr != nullptr)
+			{
 				m_destroyer.destroy(m_ptr);
 				m_ptr = nullptr;
 			}
 		}
 
 		UniquePointer(const UniquePointer& other) = delete;
-		UniquePointer(UniquePointer&& other) {
+		UniquePointer(UniquePointer&& other)
+		{
 			m_ptr = std::move(other.m_ptr);
 			other.m_ptr = nullptr;
 		}
 		UniquePointer& operator= (const UniquePointer& other) = delete;
-		UniquePointer& operator= (UniquePointer&& other) {
-			if (m_ptr != nullptr) {
+		UniquePointer& operator= (UniquePointer&& other)
+		{
+			if (m_ptr != nullptr)
+			{
 				Destroyer::destroy(m_ptr);
 			}
 
@@ -46,9 +53,11 @@ namespace bbe {
 			other.m_ptr = nullptr;
 		}
 
-		UniquePointer& operator= (T* ptr) {
+		UniquePointer& operator= (T* ptr)
+		{
 			//UNTESTED
-			if (m_ptr != nullptr) {
+			if (m_ptr != nullptr)
+			{
 				Destroyer::destroy(m_ptr);
 			}
 
@@ -57,26 +66,31 @@ namespace bbe {
 		}
 
 		
-		T* operator ->() {
+		T* operator ->()
+		{
 			return m_ptr;
 		}
 
-		const T* operator ->() const {
+		const T* operator ->() const
+		{
 			//UNTESTED
 			return m_ptr;
 		}
 
-		T& operator *() {
+		T& operator *()
+		{
 			//UNTESTED
 			return *m_ptr;
 		}
 
-		const T& operator *() const {
+		const T& operator *() const
+		{
 			//UNTESTED
 			return *m_ptr;
 		}
 
-		T* getRaw() {
+		T* getRaw()
+		{
 			return m_ptr;
 		}
 	};
