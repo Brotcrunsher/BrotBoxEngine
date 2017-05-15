@@ -13,10 +13,10 @@ namespace bbe {
 
 
 			for (int i = 0; i < 20; i++) {
-				f1[i] = i + 2;
+				f1[i] = (float)(i + 2);
 			}
 			for (int i = 0; i < 50; i++) {
-				f2[i] = i + 200;
+				f2[i] = (float)(i + 200);
 			}
 
 

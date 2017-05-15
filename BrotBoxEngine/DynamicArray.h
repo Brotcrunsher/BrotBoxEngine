@@ -3,7 +3,7 @@
 #include "Array.h"
 
 namespace bbe {
-	template<typename T, bool keepSorted = false>
+	template<typename T, bool keepSorted>
 	class List;
 
 	template <typename T>
@@ -26,18 +26,29 @@ namespace bbe {
 			: m_size(size)
 		{
 			//UNTESTED
-			m_data = new T[size];
+			m_data = new T[m_size];
 			for (int i = 0; i < size; i++) {
 				m_data[i] = arr[i];
 			}
 		}
 
-		DynamicArray(List<T> list)
+		DynamicArray(List<T, true> list)
 			: m_size(list.getLength())
 		{
 			//UNTESTED
-			m_data = new T[size];
-			for (int i = 0; i < size; i++) {
+			m_data = new T[m_size];
+			for (int i = 0; i < m_size; i++) {
+				m_data[i] = list[i];
+			}
+		}
+
+		DynamicArray(List<T, false> list)
+			: m_size(list.getLength())
+		{
+			//UNTESTED
+			//TODO basically this is a copy of above. Put into function!
+			m_data = new T[m_size];
+			for (int i = 0; i < m_size; i++) {
 				m_data[i] = list[i];
 			}
 		}

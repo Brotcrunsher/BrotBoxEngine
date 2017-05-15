@@ -53,11 +53,12 @@ namespace bbe {
 		template <typename T, typename... arguments>
 		T* allocateObject(size_t amountOfObjects = 1, arguments&&... args) {
 			//UNTESTED
+			static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
 			byte* allocationLocation = (byte*)nextMultiple(alignof(T), ((size_t)m_addr) + 1);
 			size_t amountOfBytes = amountOfObjects * sizeof(T);
 			byte* newAddr = allocationLocation + amountOfBytes;
 			if (newAddr <= m_addr + m_size) {
-				byte offset = allocationLocation - m_addr;
+				byte offset = (byte)(allocationLocation - m_addr);
 				allocationLocation[-1] = offset;
 				T* returnPointer = reinterpret_cast<T*>(allocationLocation);
 				m_size -= newAddr - m_addr;
