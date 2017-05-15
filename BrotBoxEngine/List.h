@@ -6,16 +6,19 @@
 #include "DynamicArray.h"
 
 namespace bbe {
-	template <typename T>
-	union ListChunk
-	{
-		//this little hack prevents the constructor of T to be called
-		//allows the use of new and its auto alignment features
-		T value;
+	namespace INTERNAL {
+		template <typename T>
+		union ListChunk
+		{
+			//this little hack prevents the constructor of T to be called
+			//allows the use of new and its auto alignment features
+			T value;
 
-		ListChunk() {}
-		~ListChunk() {}
-	};
+			ListChunk() {}
+			~ListChunk() {}
+		};
+	}
+	
 
 	template <typename T, bool keepSorted = false>
 	class List {
@@ -23,7 +26,7 @@ namespace bbe {
 	private:
 		size_t m_length;
 		size_t m_capacity;
-		ListChunk<T>* m_data;
+		INTERNAL::ListChunk<T>* m_data;
 
 		void growIfNeeded(size_t amountOfNewObjects)
 		{
@@ -33,7 +36,7 @@ namespace bbe {
 					newCapacity = m_capacity * 2;
 				}
 
-				ListChunk<T>* newData = new ListChunk<T>[newCapacity];
+				INTERNAL::ListChunk<T>* newData = new INTERNAL::ListChunk<T>[newCapacity];
 
 				for (size_t i = 0; i < m_length; i++) {
 					new (bbe::addressOf(newData[i].value)) T(std::move(m_data[i].value));
@@ -59,7 +62,7 @@ namespace bbe {
 		List(size_t amountOfObjects, arguments&&... args)
 			: m_length(amountOfObjects), m_capacity(amountOfObjects)
 		{
-			m_data = new ListChunk<T>[amountOfObjects];
+			m_data = new INTERNAL::ListChunk<T>[amountOfObjects];
 			for (size_t i = 0; i < amountOfObjects; i++) {
 				new (bbe::addressOf(m_data[i])) T(std::forward<arguments>(args)...);
 			}
@@ -68,7 +71,7 @@ namespace bbe {
 		List(const List<T, keepSorted>& other)
 			: m_length(other.m_length), m_capacity(other.m_capacity)
 		{
-			m_data = new ListChunk<T>[m_capacity];
+			m_data = new INTERNAL::ListChunk<T>[m_capacity];
 			for (size_t i = 0; i < m_length; i++) {
 				new (bbe::addressOf(m_data[i])) T(other.m_data[i].value);
 			}
@@ -89,7 +92,7 @@ namespace bbe {
 
 			m_length = other.m_length;
 			m_capacity = other.m_capacity;
-			m_data = new ListChunk<T>[m_capacity];
+			m_data = new INTERNAL::ListChunk<T>[m_capacity];
 			for (size_t i = 0; i < m_capacity; i++) {
 				new (bbe::addressOf(m_data[i])) T(other.m_data[i].value);
 			}
@@ -455,7 +458,7 @@ namespace bbe {
 				m_data = nullptr;
 				return true;
 			}
-			ListChunk<T>* newList = new ListChunk<T>[m_length];
+			INTERNAL::ListChunk<T>* newList = new INTERNAL::ListChunk<T>[m_length];
 			for (size_t i = 0; i < m_length; i++) {
 				new (bbe::addressOf(newList[i])) T(std::move(m_data[i].value));
 			}
