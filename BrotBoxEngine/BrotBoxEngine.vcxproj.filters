@@ -150,6 +150,9 @@
     <ClInclude Include="DefaultDestroyer.h">
       <Filter>Header Files\MemoryManagement</Filter>
     </ClInclude>
+    <ClInclude Include="BrotBoxEngine.h">
+      <Filter>Header Files\General</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

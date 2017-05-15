@@ -154,6 +154,7 @@
   <ItemGroup>
     <ClInclude Include="AllTests.h" />
     <ClInclude Include="Array.h" />
+    <ClInclude Include="BrotBoxEngine.h" />
     <ClInclude Include="CPUWatch.h" />
     <ClInclude Include="DataType.h" />
     <ClInclude Include="DefaultDestroyer.h" />
