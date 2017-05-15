@@ -11,6 +11,7 @@ namespace bbe
 	{
 #define SSOSIZE (16)
 		//TODO use allocators
+		//TODO use capacity
 	private:
 		union
 		{
@@ -345,6 +346,7 @@ namespace bbe
 
 		String operator+(const String& other) const
 		{
+			//PO
 			size_t totalLength = m_length + other.m_length;
 			String retVal;
 			retVal.m_length = totalLength;
@@ -500,86 +502,92 @@ namespace bbe
 
 		String& operator+=(const String& other)
 		{
-			*this = *this + other;
+			size_t totalLength = m_length + other.m_length;
+			size_t oldLength = m_length;
+			m_length = totalLength;
+
+			if (totalLength < SSOSIZE) {
+				memcpy(m_ssoData + oldLength, other.getRaw(), sizeof(wchar_t) * other.m_length);
+				m_ssoData[totalLength] = 0;
+			}
+			else {
+				wchar_t *newData = new wchar_t[totalLength + 1];
+				memcpy(newData, getRaw(), sizeof(wchar_t) * oldLength);
+				memcpy(newData + oldLength, other.getRaw(), sizeof(wchar_t) * other.m_length);
+				newData[totalLength] = 0;
+
+				if (!m_usesSSO) {
+					delete[] m_data;
+				}
+				m_usesSSO = false;
+				m_data = newData;
+			}
 			return *this;
 		}
 
 		String& operator+=(const std::string& other)
 		{
-			*this = *this + other;
-			return *this;
+			return operator+=(bbe::String(other));
 		}
 
 		String& operator+=(const std::wstring& other)
 		{
-			*this = *this + other;
-			return *this;
+			return operator+=(bbe::String(other));
 		}
 
 		String& operator+=(const wchar_t* other)
 		{
-			*this = *this + other;
-			return *this;
+			return operator+=(bbe::String(other));
 		}
 
 		String& operator+=(const char* other)
 		{
-			*this = *this + other;
-			return *this;
+			return operator+=(bbe::String(other));
 		}
 
 		String& operator+=(double number)
 		{
-			*this = *this + number;
-			return *this;
+			return operator+=(bbe::String(number));
 		}
 
 		String& operator+=(int number)
 		{
-			*this = *this + number;
-			return *this;
+			return operator+=(bbe::String(number));
 		}
 
 		String& operator+=(long long number)
 		{
-			*this = *this + number;
-			return *this;
+			return operator+=(bbe::String(number));
 		}
 
 		String& operator+=(long double number)
 		{
-			*this = *this + number;
-			return *this;
+			return operator+=(bbe::String(number));
 		}
 
 		String& operator+=(float number)
 		{
-			*this = *this + number;
-			return *this;
+			return operator+=(bbe::String(number));
 		}
 
 		String& operator+=(unsigned long long number)
 		{
-			*this = *this + number;
-			return *this;
+			return operator+=(bbe::String(number));
 		}
 
 		String& operator+=(unsigned long number)
 		{
-			*this = *this + number;
-			return *this;
+			return operator+=(bbe::String(number));
 		}
 
 		String& operator+=(long number)
 		{
-			*this = *this + number;
-			return *this;
+			return operator+=(bbe::String(number));
 		}
 
 		String& operator+=(unsigned int number)
 		{
-			*this = *this + number;
-			return *this;
+			return operator+=(bbe::String(number));
 		}
 
 		void trim()

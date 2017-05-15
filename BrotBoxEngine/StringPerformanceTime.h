@@ -16,11 +16,15 @@ namespace bbe {
 
 		void stringSpeedAddition() {
 			while (true) {
-				bbe::String a("Hallo ");
-				bbe::String b("Welt");
 				CPUWatch allocationWatch;
 				for (int i = 0; i < 10000000; i++) {
-					bbe::String c = a + b;
+					//bbe::String c = a + b;
+					bbe::String a(L"Hallo ");
+					bbe::String b(L"Welt");
+					a += b;
+					a += b;
+					a += b;
+					a += b;
 				}
 				std::cout << allocationWatch.getTimeExpiredSeconds() << std::endl;
 			}
