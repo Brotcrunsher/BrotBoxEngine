@@ -7,73 +7,76 @@
 #include "UtilTest.h"
 
 namespace bbe {
-	class GeneralPurposeAllocatorFreeChunk {
-	public:
-		byte* m_addr;
-		size_t m_size;
+	namespace INTERNAL {
+		class GeneralPurposeAllocatorFreeChunk {
+		public:
+			byte* m_addr;
+			size_t m_size;
 
-		GeneralPurposeAllocatorFreeChunk(byte* addr, size_t size) 
-			: m_addr(addr), m_size(size)
-		{
-			//do nothing
-		}
-
-		bool touches(const GeneralPurposeAllocatorFreeChunk& other) const {
-			//UNTESTED
-			if (m_addr + m_size == other.m_addr) {
-				return true;
-			}
-			if (other.m_addr + other.m_size == m_addr) {
-				return true;
+			GeneralPurposeAllocatorFreeChunk(byte* addr, size_t size)
+				: m_addr(addr), m_size(size)
+			{
+				//do nothing
 			}
 
-			return false;
-		}
-
-		bool operator>(const GeneralPurposeAllocatorFreeChunk& other) const {
-			return m_addr > other.m_addr;
-		}
-
-		bool operator>=(const GeneralPurposeAllocatorFreeChunk& other) const {
-			return m_addr >= other.m_addr;
-		}
-
-		bool operator<(const GeneralPurposeAllocatorFreeChunk& other) const {
-			return m_addr < other.m_addr;
-		}
-
-		bool operator<=(const GeneralPurposeAllocatorFreeChunk& other) const {
-			return m_addr <= other.m_addr;
-		}
-
-		bool operator==(const GeneralPurposeAllocatorFreeChunk& other) const {
-			return m_addr == other.m_addr;
-		}
-
-		template <typename T, typename... arguments>
-		T* allocateObject(size_t amountOfObjects = 1, arguments&&... args) {
-			//UNTESTED
-			static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
-			byte* allocationLocation = (byte*)nextMultiple(alignof(T), ((size_t)m_addr) + 1);
-			size_t amountOfBytes = amountOfObjects * sizeof(T);
-			byte* newAddr = allocationLocation + amountOfBytes;
-			if (newAddr <= m_addr + m_size) {
-				byte offset = (byte)(allocationLocation - m_addr);
-				allocationLocation[-1] = offset;
-				T* returnPointer = reinterpret_cast<T*>(allocationLocation);
-				m_size -= newAddr - m_addr;
-				m_addr = newAddr;
-				for (size_t i = 0; i < amountOfObjects; i++) {
-					T* object = bbe::addressOf(returnPointer[i]);
-					new (object) T(std::forward<arguments>(args)...);
+			bool touches(const GeneralPurposeAllocatorFreeChunk& other) const {
+				//UNTESTED
+				if (m_addr + m_size == other.m_addr) {
+					return true;
 				}
-				return returnPointer;
+				if (other.m_addr + other.m_size == m_addr) {
+					return true;
+				}
+
+				return false;
 			}
-			else {
-				return nullptr;
+
+			bool operator>(const GeneralPurposeAllocatorFreeChunk& other) const {
+				return m_addr > other.m_addr;
 			}
-		}
-	};
+
+			bool operator>=(const GeneralPurposeAllocatorFreeChunk& other) const {
+				return m_addr >= other.m_addr;
+			}
+
+			bool operator<(const GeneralPurposeAllocatorFreeChunk& other) const {
+				return m_addr < other.m_addr;
+			}
+
+			bool operator<=(const GeneralPurposeAllocatorFreeChunk& other) const {
+				return m_addr <= other.m_addr;
+			}
+
+			bool operator==(const GeneralPurposeAllocatorFreeChunk& other) const {
+				return m_addr == other.m_addr;
+			}
+
+			template <typename T, typename... arguments>
+			T* allocateObject(size_t amountOfObjects = 1, arguments&&... args) {
+				//UNTESTED
+				static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
+				byte* allocationLocation = (byte*)nextMultiple(alignof(T), ((size_t)m_addr) + 1);
+				size_t amountOfBytes = amountOfObjects * sizeof(T);
+				byte* newAddr = allocationLocation + amountOfBytes;
+				if (newAddr <= m_addr + m_size) {
+					byte offset = (byte)(allocationLocation - m_addr);
+					allocationLocation[-1] = offset;
+					T* returnPointer = reinterpret_cast<T*>(allocationLocation);
+					m_size -= newAddr - m_addr;
+					m_addr = newAddr;
+					for (size_t i = 0; i < amountOfObjects; i++) {
+						T* object = bbe::addressOf(returnPointer[i]);
+						new (object) T(std::forward<arguments>(args)...);
+					}
+					return returnPointer;
+				}
+				else {
+					return nullptr;
+				}
+			}
+		};
+	}
+	
 
 	class GeneralPurposeAllocator {
 		//TODO use parent allocator
@@ -100,7 +103,7 @@ namespace bbe {
 		byte* m_data;
 		size_t m_size;
 
-		List<GeneralPurposeAllocatorFreeChunk, true> freeChunks;
+		List<INTERNAL::GeneralPurposeAllocatorFreeChunk, true> freeChunks;
 
 	public:
 		explicit GeneralPurposeAllocator(size_t size = GENERALPURPOSEALLOCATORDEFAULTSIZE)
@@ -108,7 +111,7 @@ namespace bbe {
 		{
 			//UNTESTED
 			m_data = new byte[m_size];
-			freeChunks.pushBack(GeneralPurposeAllocatorFreeChunk(m_data, m_size));
+			freeChunks.pushBack(INTERNAL::GeneralPurposeAllocatorFreeChunk(m_data, m_size));
 		}
 
 		~GeneralPurposeAllocator()
