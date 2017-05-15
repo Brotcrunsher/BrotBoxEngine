@@ -5,7 +5,7 @@
 #include "UtilDebug.h"
 
 namespace bbe {
-	template <typename T, typename Destroyer = bbe::DefaultDestroyer>
+	template <typename T, typename Destroyer = bbe::INTERNAL::DefaultDestroyer>
 	class UniquePointer {
 	private:
 		T *m_ptr;
