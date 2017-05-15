@@ -180,13 +180,13 @@ namespace bbe {
 			byte offset = bytePointer[-1];
 
 			//TODO add this to the freeChunks list
-			GeneralPurposeAllocatorFreeChunk gpafc(bytePointer - offset, amountOfBytes + offset);
+			INTERNAL::GeneralPurposeAllocatorFreeChunk gpafc(bytePointer - offset, amountOfBytes + offset);
 
-			GeneralPurposeAllocatorFreeChunk* p_gpafc = &gpafc;
-			GeneralPurposeAllocatorFreeChunk* left;
+			INTERNAL::GeneralPurposeAllocatorFreeChunk* p_gpafc = &gpafc;
+			INTERNAL::GeneralPurposeAllocatorFreeChunk* left;
 			bool didTouchLeft = false;
 			bool didMerge = false;
-			GeneralPurposeAllocatorFreeChunk* right;
+			INTERNAL::GeneralPurposeAllocatorFreeChunk* right;
 
 			freeChunks.getNeighbors(*p_gpafc, left, right);
 			if (left != nullptr) {

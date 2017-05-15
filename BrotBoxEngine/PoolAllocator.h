@@ -5,18 +5,21 @@
 #include "STLCapsule.h"
 
 namespace bbe {
-	template <typename T>
-	union PoolChunk
-	{
-		T value;
-		PoolChunk<T>* nextPoolChunk;
+	namespace INTERNAL {
+		template <typename T>
+		union PoolChunk
+		{
+			T value;
+			PoolChunk<T>* nextPoolChunk;
 
-		~PoolChunk() = delete;
-	};
+			~PoolChunk() = delete;
+		};
+	}
+
 
 	
 
-	template <typename T, typename Allocator = STLAllocator<PoolChunk<T>>>
+	template <typename T, typename Allocator = STLAllocator<INTERNAL::PoolChunk<T>>>
 	class PoolAllocator
 	{
 	public:
@@ -50,8 +53,8 @@ namespace bbe {
 		size_t m_openAllocations = 0;		//Used to find memory leaks
 #endif //!BBE_DISABLE_ALL_SECURITY_CHECKS
 
-		PoolChunk<T>* m_data = nullptr;
-		PoolChunk<T>* m_head = nullptr;
+		INTERNAL::PoolChunk<T>* m_data = nullptr;
+		INTERNAL::PoolChunk<T>* m_head = nullptr;
 		size_t m_size;
 
 		Allocator* m_parentAllocator = nullptr;
@@ -109,7 +112,7 @@ namespace bbe {
 				//TODO throw exception, keep returning nullptr or allocate more space?
 				return nullptr;
 			}
-			PoolChunk<T>* retVal = m_head;
+			INTERNAL::PoolChunk<T>* retVal = m_head;
 			m_head = retVal->nextPoolChunk;
 			T* realRetVal = new (retVal) T(std::forward<arguments>(args)...);
 #ifndef BBE_DISABLE_ALL_SECURITY_CHECKS
@@ -121,7 +124,7 @@ namespace bbe {
 		void deallocate(T* data) {
 			//TODO check if data is in range of the original array
 			data->~T();
-			PoolChunk<T>* poolChunk = reinterpret_cast<PoolChunk<T>*>(data);
+			INTERNAL::PoolChunk<T>* poolChunk = reinterpret_cast<INTERNAL::PoolChunk<T>*>(data);
 			poolChunk->nextPoolChunk = m_head;
 			m_head = poolChunk;
 #ifndef BBE_DISABLE_ALL_SECURITY_CHECKS
