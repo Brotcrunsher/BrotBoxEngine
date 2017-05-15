@@ -7,27 +7,32 @@
 #include "STLCapsule.h"
 
 namespace bbe {
-	template <typename T>
-	void executeDestructor(const void* data) {
-		auto originalType = static_cast<const T*>(data);
-		originalType->~T();
+	namespace INTERNAL {
+		template <typename T>
+		void executeDestructor(const void* data) {
+			auto originalType = static_cast<const T*>(data);
+			originalType->~T();
+		}
+
+		class StackAllocatorDestructor {
+		private:
+			const void* m_data;
+			void(*destructor)(const void*);
+		public:
+			template<typename T>
+			explicit StackAllocatorDestructor(const T& data) noexcept :
+				m_data(bbe::addressOf(data)) {
+				destructor = executeDestructor<T>;
+			}
+
+			void operator () () noexcept {
+				destructor(m_data);
+			}
+		};
 	}
 
-	class StackAllocatorDestructor {
-	private:
-		const void* m_data;
-		void(*destructor)(const void*);
-	public:
-		template<typename T>
-		explicit StackAllocatorDestructor(const T& data) noexcept :
-			m_data(bbe::addressOf(data)) {
-			destructor = executeDestructor<T>;
-		}
 
-		void operator () () noexcept {
-			destructor(m_data);
-		}
-	};
+
 
 	template <typename T>
 	class StackAllocatorMarker {
@@ -60,7 +65,7 @@ namespace bbe {
 		Allocator* m_parentAllocator = nullptr;
 		bool m_needsToDeleteParentAllocator = false;
 		
-		List<StackAllocatorDestructor> destructors;
+		List<INTERNAL::StackAllocatorDestructor> destructors;
 
 		template<typename U>
 		inline typename std::enable_if<std::is_trivially_destructible<U>::value>::type
@@ -73,7 +78,7 @@ namespace bbe {
 		inline typename std::enable_if<!std::is_trivially_destructible<U>::value>::type
 			addDestructorToList(U* object)
 		{
-			destructors.pushBack(StackAllocatorDestructor(*object));
+			destructors.pushBack(INTERNAL::StackAllocatorDestructor(*object));
 		}
 
 	public:
