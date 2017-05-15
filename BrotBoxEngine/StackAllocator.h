@@ -66,7 +66,7 @@ namespace bbe
 		typedef typename std::pointer_traits<T*>::difference_type    difference_type;
 		typedef typename std::pointer_traits<T*>::rebind<const void> const_void_pointer;
 	private:
-		static constexpr size_t STACKALLOCATORDEFAULSIZE = 1024;
+		static constexpr size_t STACK_ALLOCATOR_DEFAULT_SIZE = 1024;
 		T* m_data = nullptr;
 		T* m_head = nullptr;
 		size_t m_size = 0;
@@ -74,7 +74,7 @@ namespace bbe
 		Allocator* m_parentAllocator = nullptr;
 		bool m_needsToDeleteParentAllocator = false;
 		
-		List<INTERNAL::StackAllocatorDestructor> destructors;
+		List<INTERNAL::StackAllocatorDestructor> m_destructors;
 
 		template<typename U>
 		inline typename std::enable_if<std::is_trivially_destructible<U>::value>::type
@@ -87,11 +87,11 @@ namespace bbe
 		inline typename std::enable_if<!std::is_trivially_destructible<U>::value>::type
 			addDestructorToList(U* object)
 		{
-			destructors.pushBack(INTERNAL::StackAllocatorDestructor(*object));
+			m_destructors.pushBack(INTERNAL::StackAllocatorDestructor(*object));
 		}
 
 	public:
-		explicit StackAllocator(size_t size = STACKALLOCATORDEFAULSIZE, Allocator* parentAllocator = nullptr)
+		explicit StackAllocator(size_t size = STACK_ALLOCATOR_DEFAULT_SIZE, Allocator* parentAllocator = nullptr)
 			: m_size(size), m_parentAllocator(parentAllocator) 
 		{
 			if (m_parentAllocator == nullptr)
@@ -172,26 +172,26 @@ namespace bbe
 
 		StackAllocatorMarker<T> getMarker()
 		{
-			return StackAllocatorMarker<T>(m_head, destructors.getLength());
+			return StackAllocatorMarker<T>(m_head, m_destructors.getLength());
 		}
 		
 		void deallocateToMarker(StackAllocatorMarker<T> sam)
 		{
 			m_head = sam.m_markerValue;
-			while (destructors.getLength() > sam.m_destructorHandle)
+			while (m_destructors.getLength() > sam.m_destructorHandle)
 			{
-				destructors.last()();
-				destructors.popBack();
+				m_destructors.last()();
+				m_destructors.popBack();
 			}
 		}
 
 		void deallocateAll()
 		{
 			m_head = m_data;
-			while (destructors.size() > 0)
+			while (m_destructors.size() > 0)
 			{
-				destructors.back()();
-				destructors.pop_back();
+				m_destructors.back()();
+				m_destructors.pop_back();
 			}
 		}
 

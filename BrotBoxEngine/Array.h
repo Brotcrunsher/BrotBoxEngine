@@ -6,7 +6,7 @@ namespace bbe
 	class Array
 	{
 	private:
-		T data[SIZE];
+		T m_data[SIZE];
 	public:
 		Array()
 		{
@@ -18,7 +18,7 @@ namespace bbe
 			//UNTESTED
 			for (size_t i = 0; i < SIZE; i++)
 			{
-				data[i] = other[i];
+				m_data[i] = other[i];
 			}
 		}
 
@@ -27,7 +27,7 @@ namespace bbe
 			//UNTESTED
 			for (size_t i = 0; i < SIZE; i++)
 			{
-				data[i] = std::move(other[i]);
+				m_data[i] = std::move(other[i]);
 			}
 		}
 
@@ -36,7 +36,7 @@ namespace bbe
 			//UNTESTED
 			for (size_t i = 0; i < SIZE; i++)
 			{
-				data[i] = other[i];
+				m_data[i] = other[i];
 			}
 		}
 
@@ -45,7 +45,7 @@ namespace bbe
 			//UNTESTED
 			for (size_t i = 0; i < SIZE; i++)
 			{
-				data[i] = std::move(other[i]);
+				m_data[i] = std::move(other[i]);
 			}
 		}
 
@@ -57,13 +57,13 @@ namespace bbe
 		T& operator[](size_t index)
 		{
 			//UNTESTED
-			return data[index];
+			return m_data[index];
 		}
 
 		const T& operator[](size_t index) const
 		{
 			//UNTESTED
-			return data[index]
+			return m_data[index]
 		}
 
 		constexpr size_t getLength() const
@@ -75,13 +75,13 @@ namespace bbe
 		T* getRaw()
 		{
 			//UNTESTED
-			return data;
+			return m_data;
 		}
 
 		const T* getRaw() const
 		{
 			//UNTESTED
-			return data;
+			return m_data;
 		}
 	};
 }

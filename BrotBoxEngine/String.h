@@ -17,7 +17,7 @@ namespace bbe
 			wchar_t *m_data = nullptr;
 			wchar_t m_ssoData[SSOSIZE];
 		};
-		bool usesSSO = true;
+		bool m_usesSSO = true;
 		size_t m_length = 0;
 
 
@@ -32,13 +32,13 @@ namespace bbe
 			if (m_length < SSOSIZE)
 			{
 				wmemcpy(m_ssoData, data, m_length + 1);
-				usesSSO = true;
+				m_usesSSO = true;
 			}
 			else
 			{
 				m_data = new wchar_t[m_length + 1];
 				wmemcpy(m_data, data, m_length + 1);
-				usesSSO = false;
+				m_usesSSO = false;
 			}
 		}
 
@@ -53,13 +53,13 @@ namespace bbe
 			if (m_length < SSOSIZE)
 			{
 				mbstowcs_s(0, m_ssoData, m_length + 1, data, m_length);
-				usesSSO = true;
+				m_usesSSO = true;
 			}
 			else
 			{
 				m_data = new wchar_t[m_length + 1];
 				mbstowcs_s(0, m_data, m_length + 1, data, m_length);
-				usesSSO = false;
+				m_usesSSO = false;
 			}
 			
 		}
@@ -167,7 +167,7 @@ namespace bbe
 		String(const String&  other)//Copy Constructor
 		{ 
 			m_length = other.getLength();
-			if (other.usesSSO)
+			if (other.m_usesSSO)
 			{
 				initializeFromWCharArr(other.m_ssoData);
 			}
@@ -180,8 +180,8 @@ namespace bbe
 		String(String&& other) //Move Constructor
 		{
 			m_length = other.m_length;
-			usesSSO = other.usesSSO;
-			if (other.usesSSO)
+			m_usesSSO = other.m_usesSSO;
+			if (other.m_usesSSO)
 			{
 				wmemcpy(m_ssoData, other.m_ssoData, SSOSIZE);
 			}
@@ -195,13 +195,13 @@ namespace bbe
 
 		String& operator=(const String&  other) //Copy Assignment
 		{ 
-			if (!usesSSO && m_data != nullptr)
+			if (!m_usesSSO && m_data != nullptr)
 			{
 				delete[] m_data;
 			}
 
 			m_length = other.getLength();
-			if (other.usesSSO)
+			if (other.m_usesSSO)
 			{
 				initializeFromWCharArr(other.m_ssoData);
 			}
@@ -214,15 +214,15 @@ namespace bbe
 
 		String& operator=(String&& other)//Move Assignment
 		{ 
-			if (!usesSSO && m_data != nullptr)
+			if (!m_usesSSO && m_data != nullptr)
 			{
 				delete[] m_data;
 			}
 			
 			m_length = other.m_length;
-			usesSSO = other.usesSSO;
+			m_usesSSO = other.m_usesSSO;
 
-			if (other.usesSSO)
+			if (other.m_usesSSO)
 			{
 				wmemcpy(m_ssoData, other.m_ssoData, SSOSIZE);
 			}
@@ -238,7 +238,7 @@ namespace bbe
 
 		~String()
 		{
-			if (!usesSSO && m_data != nullptr)
+			if (!m_usesSSO && m_data != nullptr)
 			{
 				delete[] m_data;
 				m_data = nullptr;
@@ -351,7 +351,7 @@ namespace bbe
 			memcpy(newData + m_length, other.getRaw(), sizeof(wchar_t) * other.m_length);
 			newData[totalLength] = 0;
 			String retVal;
-			retVal.usesSSO = false; //TODO make this better! It could use SSO!
+			retVal.m_usesSSO = false; //TODO make this better! It could use SSO!
 			retVal.m_data = newData;
 			retVal.m_length = totalLength;
 			return retVal;
@@ -657,7 +657,7 @@ namespace bbe
 				const wchar_t *currentFinding = wcsstr(previousFinding, splitAt.getRaw());
 				String currentString;
 				size_t currentStringLength = currentFinding - previousFinding;
-				currentString.usesSSO = false; //TODO make this better! current string could use SSO!
+				currentString.m_usesSSO = false; //TODO make this better! current string could use SSO!
 				currentString.m_data = new wchar_t[currentStringLength + 1];
 				memcpy(currentString.m_data, previousFinding, currentStringLength * sizeof(wchar_t));
 				currentString.m_data[currentStringLength] = 0;
@@ -670,7 +670,7 @@ namespace bbe
 
 			String currentString;
 			size_t currentStringLength = m_data + m_length - previousFinding;
-			currentString.usesSSO = false; //TODO make this better! current string could use SSO!
+			currentString.m_usesSSO = false; //TODO make this better! current string could use SSO!
 			currentString.m_data = new wchar_t[currentStringLength + 1];
 			memcpy(currentString.m_data, previousFinding, currentStringLength * sizeof(wchar_t));
 			currentString.m_data[currentStringLength] = 0;
@@ -783,7 +783,7 @@ namespace bbe
 
 		wchar_t* getRaw()
 		{
-			if (usesSSO)
+			if (m_usesSSO)
 			{
 				return m_ssoData;
 			}
@@ -795,7 +795,7 @@ namespace bbe
 
 		const wchar_t* getRaw() const
 		{
-			if (usesSSO)
+			if (m_usesSSO)
 			{
 				return m_ssoData;
 			}

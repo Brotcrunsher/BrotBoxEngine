@@ -52,7 +52,7 @@ namespace bbe
 			}
 		};
 
-		static constexpr size_t POOLALLOCATORDEFAULSIZE = 1024;
+		static constexpr size_t POOL_ALLOCATOR_DEFAULT_SIZE = 1024;
 #ifndef BBE_DISABLE_ALL_SECURITY_CHECKS
 		size_t m_openAllocations = 0;		//Used to find memory leaks
 #endif //!BBE_DISABLE_ALL_SECURITY_CHECKS
@@ -65,7 +65,7 @@ namespace bbe
 		bool m_needsToDeleteParentAllocator = false;
 
 	public:
-		explicit PoolAllocator(size_t size = POOLALLOCATORDEFAULSIZE, Allocator* parentAllocator = nullptr)
+		explicit PoolAllocator(size_t size = POOL_ALLOCATOR_DEFAULT_SIZE, Allocator* parentAllocator = nullptr)
 			: m_size(size), m_parentAllocator(parentAllocator)
 		{
 			if (m_parentAllocator == nullptr)

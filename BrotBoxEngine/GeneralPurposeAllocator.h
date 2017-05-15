@@ -117,14 +117,14 @@ namespace bbe
 			}
 		};
 	private:
-		static const size_t GENERALPURPOSEALLOCATORDEFAULTSIZE = 1024;
+		static const size_t GENERAL_PURPOSE_ALLOCATOR_DEFAULT_SIZE = 1024;
 		byte* m_data;
 		size_t m_size;
 
 		List<INTERNAL::GeneralPurposeAllocatorFreeChunk, true> freeChunks;
 
 	public:
-		explicit GeneralPurposeAllocator(size_t size = GENERALPURPOSEALLOCATORDEFAULTSIZE)
+		explicit GeneralPurposeAllocator(size_t size = GENERAL_PURPOSE_ALLOCATOR_DEFAULT_SIZE)
 			: m_size(size)
 		{
 			//UNTESTED
