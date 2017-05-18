@@ -11,7 +11,7 @@
 
 int main()
 {
-	//bbe::test::stringSpeedAddition();
+	bbe::test::stringSpeedAddition();
 
 
 	for (int i = 0; i < 11; i++)

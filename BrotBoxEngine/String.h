@@ -15,16 +15,41 @@ namespace bbe
 	private:
 		union
 		{
-			wchar_t *m_data = nullptr;
+			struct {
+				wchar_t *m_data;
+				size_t m_capacity;
+			};
 			wchar_t m_ssoData[SSOSIZE];
 		};
 		bool m_usesSSO = true;
 		size_t m_length = 0;
 
+		void growIfNeeded(size_t newSize) {
+			const size_t capa = getCapacity();
+			if (capa < newSize) {
+				size_t newCapa = newSize;
+				if (newCapa < capa * 2) {
+					newCapa = capa * 2;
+				}
+				wchar_t *newData = new wchar_t[newCapa];
+				wmemcpy(newData, getRaw(), capa);
+
+				if (!m_usesSSO) {
+					delete[] m_data;
+				}
+
+				m_usesSSO = false;
+				m_capacity = newCapa;
+				m_data = newData;
+			}
+		}
 
 		void initializeFromWCharArr(const wchar_t *data)
 		{
 			//PO
+			m_data = nullptr;
+			m_capacity = 0;
+
 			if (m_length == 0)
 			{
 				m_length = wcslen(data);
@@ -40,12 +65,16 @@ namespace bbe
 				m_data = new wchar_t[m_length + 1];
 				wmemcpy(m_data, data, m_length + 1);
 				m_usesSSO = false;
+				m_capacity = m_length + 1;
 			}
 		}
 
 		void initializeFromCharArr(const char *data)
 		{
 			//PO
+			m_data = nullptr;
+			m_capacity = 0;
+
 			if (m_length == 0)
 			{
 				m_length = strlen(data);
@@ -61,6 +90,7 @@ namespace bbe
 				m_data = new wchar_t[m_length + 1];
 				mbstowcs_s(0, m_data, m_length + 1, data, m_length);
 				m_usesSSO = false;
+				m_capacity = m_length + 1;
 			}
 			
 		}
@@ -189,6 +219,7 @@ namespace bbe
 			else
 			{
 				m_data = other.m_data;
+				m_capacity = other.m_capacity;
 				other.m_data = nullptr;
 			}
 			other.m_length = 0;
@@ -229,6 +260,7 @@ namespace bbe
 			}
 			else
 			{
+				m_capacity = other.m_capacity;
 				m_data = other.m_data;
 			}
 			
@@ -511,16 +543,9 @@ namespace bbe
 				m_ssoData[totalLength] = 0;
 			}
 			else {
-				wchar_t *newData = new wchar_t[totalLength + 1];
-				memcpy(newData, getRaw(), sizeof(wchar_t) * oldLength);
-				memcpy(newData + oldLength, other.getRaw(), sizeof(wchar_t) * other.m_length);
-				newData[totalLength] = 0;
-
-				if (!m_usesSSO) {
-					delete[] m_data;
-				}
-				m_usesSSO = false;
-				m_data = newData;
+				growIfNeeded(totalLength + 1);
+				memcpy(getRaw() + oldLength, other.getRaw(), sizeof(wchar_t) * other.m_length);
+				m_data[totalLength] = 0;
 			}
 			return *this;
 		}
@@ -845,6 +870,18 @@ namespace bbe
 		size_t getLength() const
 		{
 			return m_length;
+		}
+
+		size_t getCapacity() const
+		{
+			if (m_usesSSO)
+			{
+				return SSOSIZE;
+			}
+			else
+			{
+				return m_capacity;
+			}
 		}
 	};
 

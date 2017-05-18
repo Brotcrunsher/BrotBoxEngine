@@ -50,6 +50,16 @@ namespace bbe {
 			}
 
 			{
+				bbe::String stringAdd0WOSSO("Kurz ");
+				bbe::String stringAdd1WOSSO("Hallo Welt! Das ist ein langer Text! ");
+				bbe::String stringAddr = stringAdd0WOSSO + stringAdd1WOSSO;
+				assertEquals(stringAddr, "Kurz Hallo Welt! Das ist ein langer Text! ");
+				bbe::String stringAdd2WOSSO("Und hierdurch wird er sogar noch länger!");
+				bbe::String stringAdd3WOSSO = stringAdd1WOSSO + stringAdd2WOSSO;
+				assertEquals(stringAdd3WOSSO, "Hallo Welt! Das ist ein langer Text! Und hierdurch wird er sogar noch länger!");
+			}
+
+			{
 				bbe::String stringAdd1("con");
 				bbe::String stringAdd2("");
 				bbe::String stringAdd3 = stringAdd1 + stringAdd2;
@@ -120,6 +130,17 @@ namespace bbe {
 				bbe::String stringAdd1("con");
 				bbe::String stringAdd3 = L"cattttt" + stringAdd1;
 				assertEquals(stringAdd3, "catttttcon");
+			}
+
+
+			{
+				bbe::String s1("A");
+				s1 += "B";
+				assertEquals(s1, "AB");
+				s1 += "C";
+				assertEquals(s1, "ABC");
+				s1 += "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"; // <- SSO Buster
+				assertEquals(s1, "ABCLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
 			}
 
 			{
