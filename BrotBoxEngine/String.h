@@ -11,28 +11,24 @@ namespace bbe
 	{
 #define SSOSIZE (16)
 		//TODO use allocators
-		//TODO use capacity
 	private:
 		union
 		{
-			struct {
-				wchar_t *m_data;
-				size_t m_capacity;
-			};
+			wchar_t *m_data;
 			wchar_t m_ssoData[SSOSIZE];
 		};
 		bool m_usesSSO = true;
 		size_t m_length = 0;
+		size_t m_capacity;
 
 		void growIfNeeded(size_t newSize) {
-			const size_t capa = getCapacity();
-			if (capa < newSize) {
+			if (getCapacity() < newSize) {
 				size_t newCapa = newSize;
-				if (newCapa < capa * 2) {
-					newCapa = capa * 2;
+				if (newCapa < getCapacity() * 2) {
+					newCapa = getCapacity() * 2;
 				}
 				wchar_t *newData = new wchar_t[newCapa];
-				wmemcpy(newData, getRaw(), capa);
+				wmemcpy(newData, getRaw(), getCapacity());
 
 				if (!m_usesSSO) {
 					delete[] m_data;
@@ -59,6 +55,7 @@ namespace bbe
 			{
 				wmemcpy(m_ssoData, data, m_length + 1);
 				m_usesSSO = true;
+				m_capacity = SSOSIZE;
 			}
 			else
 			{
@@ -84,6 +81,7 @@ namespace bbe
 			{
 				mbstowcs_s(0, m_ssoData, m_length + 1, data, m_length);
 				m_usesSSO = true;
+				m_capacity = SSOSIZE;
 			}
 			else
 			{
@@ -215,6 +213,7 @@ namespace bbe
 			if (other.m_usesSSO)
 			{
 				wmemcpy(m_ssoData, other.m_ssoData, SSOSIZE);
+				m_capacity = SSOSIZE;
 			}
 			else
 			{
@@ -257,6 +256,7 @@ namespace bbe
 			if (other.m_usesSSO)
 			{
 				wmemcpy(m_ssoData, other.m_ssoData, SSOSIZE);
+				m_capacity = SSOSIZE;
 			}
 			else
 			{
@@ -874,14 +874,7 @@ namespace bbe
 
 		size_t getCapacity() const
 		{
-			if (m_usesSSO)
-			{
-				return SSOSIZE;
-			}
-			else
-			{
-				return m_capacity;
-			}
+			return m_capacity;
 		}
 	};
 
