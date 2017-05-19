@@ -13,6 +13,13 @@
 int main()
 {
 	//bbe::test::stringSpeedAddition();
+	bbe::Window window(300, 400, "TestWindow");
+
+	while (window.keepAlive())
+	{
+		//do nothing
+	}
+
 
 	for (int i = 0; i < 11; i++)
 	{
