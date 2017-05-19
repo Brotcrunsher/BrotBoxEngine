@@ -58,6 +58,12 @@
     <Filter Include="Tests\Performance\Time\General">
       <UniqueIdentifier>{6ba0fe63-acf5-423f-8ae3-47501401fbfe}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\GFX">
+      <UniqueIdentifier>{a54c231c-d8a9-4ee8-9c39-7956fe2081c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\Core">
+      <UniqueIdentifier>{f69f7f23-6edb-4c8c-aff6-9f3967fcd0e4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -152,6 +158,9 @@
     </ClInclude>
     <ClInclude Include="BrotBoxEngine.h">
       <Filter>Header Files\General</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>Header Files\GFX\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

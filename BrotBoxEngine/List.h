@@ -4,6 +4,7 @@
 #include "STLCapsule.h"
 #include "Array.h"
 #include "DynamicArray.h"
+#include <initializer_list>
 
 namespace bbe
 {
@@ -94,6 +95,13 @@ namespace bbe
 			other.m_capacity = 0;
 		}
 
+		List(std::initializer_list<T> il) {
+			//UNTESTED
+			for (auto iter = il.begin(); iter != il.end(); iter++) {
+				pushBack(*iter);
+			}
+		}
+
 		List& operator=(const List<T, keepSorted>& other)
 		{
 			if (m_data != nullptr)
@@ -157,6 +165,12 @@ namespace bbe
 		T* getRaw()
 		{
 			return reinterpret_cast<T*>(m_data);
+		}
+
+		const T* getRaw() const
+		{
+			//UNTESTED
+			return reinterpret_cast<const T*>(m_data);
 		}
 
 		bool isEmpty() const

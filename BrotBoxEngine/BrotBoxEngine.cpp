@@ -8,11 +8,11 @@
 #include "StringPerformanceTime.h"
 #include "List.h"
 #include "UniquePointer.h"
+#include "Window.h"
 
 int main()
 {
 	//bbe::test::stringSpeedAddition();
-
 
 	for (int i = 0; i < 11; i++)
 	{
