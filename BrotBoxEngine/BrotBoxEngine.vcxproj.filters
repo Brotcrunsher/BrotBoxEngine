@@ -64,6 +64,9 @@
     <Filter Include="Header Files\GFX\Core">
       <UniqueIdentifier>{f69f7f23-6edb-4c8c-aff6-9f3967fcd0e4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\GFX\Vulkan">
+      <UniqueIdentifier>{11552c6a-5c2a-45f1-878f-a1c7e93bf90d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -161,6 +164,21 @@
     </ClInclude>
     <ClInclude Include="Window.h">
       <Filter>Header Files\GFX\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanInstance.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanHelper.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanPhysicalDevices.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanManager.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanSurface.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

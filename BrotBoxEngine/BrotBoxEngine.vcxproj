@@ -202,6 +202,11 @@
     <ClInclude Include="UtilMath.h" />
     <ClInclude Include="UtilTest.h" />
     <ClInclude Include="UtilDebug.h" />
+    <ClInclude Include="VulkanHelper.h" />
+    <ClInclude Include="VulkanInstance.h" />
+    <ClInclude Include="VulkanManager.h" />
+    <ClInclude Include="VulkanPhysicalDevices.h" />
+    <ClInclude Include="VulkanSurface.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>

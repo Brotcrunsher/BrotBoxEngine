@@ -27,6 +27,7 @@ namespace bbe
 	class List
 	{
 		//TODO use own allocators
+		//TODO make usable in foreach
 	private:
 		size_t m_length;
 		size_t m_capacity;
@@ -576,6 +577,35 @@ namespace bbe
 			}
 			m_data = newList;
 			return true;
+		}
+
+		void resizeCapacity(size_t newCapacity)
+		{
+			//UNTESTED
+			if (newCapacity < m_length)
+			{
+				//TODO add further error handling
+				debugBreak();
+				return;
+			}
+
+			if (newCapacity == m_capacity)
+			{
+				return;
+			}
+
+			INTERNAL::ListChunk<T>* newList = new INTERNAL::ListChunk<T>[newCapacity];
+			for (size_t i = 0; i < m_length; i++)
+			{
+				new (bbe::addressOf(newList[i])) T(std::move(m_data[i].value));
+			}
+			if (m_data != nullptr) {
+				for (size_t i = 0; i < m_length; i++) {
+					bbe::addressOf(m_data[i].value)->~T();
+				}
+				delete[] m_data;
+			}
+			m_data = newList;
 		}
 
 		size_t removeAll(const T& remover)

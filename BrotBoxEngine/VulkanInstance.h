@@ -7,46 +7,65 @@
 
 namespace bbe
 {
-	namespace vulkan
+	namespace INTERNAL
 	{
-		class Instance
+		namespace vulkan
 		{
-		private:
-			VkInstance m_instance = VK_NULL_HANDLE;
-
-		public:
-			Instance(const char *appName, uint32_t major, uint32_t minor, uint32_t patch)
+			class Instance
 			{
-				VkApplicationInfo appInfo = {};
-				appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-				appInfo.pApplicationName = appName;
-				appInfo.applicationVersion = VK_MAKE_VERSION(major, minor, patch);
-				appInfo.pEngineName = "Brot Box Engine";
-				appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
-				appInfo.apiVersion = VK_API_VERSION_1_0;
+			private:
+				VkInstance m_instance = VK_NULL_HANDLE;
 
-				const bbe::List<const char*> validationLayers = {
-					"VK_LAYER_LUNARG_standard_validation"
-				};
+			public:
+				Instance()
+				{
+					//DO NOTHING
+				}
 
-				uint32_t amountOfGlfwExtensions = 0;
-				auto glfwExtensions = glfwGetRequiredInstanceExtensions(&amountOfGlfwExtensions);
+				void init(const char *appName, uint32_t major, uint32_t minor, uint32_t patch)
+				{
+					VkApplicationInfo appInfo = {};
+					appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+					appInfo.pApplicationName = appName;
+					appInfo.applicationVersion = VK_MAKE_VERSION(major, minor, patch);
+					appInfo.pEngineName = "Brot Box Engine";
+					appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
+					appInfo.apiVersion = VK_API_VERSION_1_0;
 
-				VkInstanceCreateInfo instanceInfo = {};
-				instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-				instanceInfo.pApplicationInfo = &appInfo;
-				instanceInfo.enabledLayerCount = validationLayers.getLength();
-				instanceInfo.ppEnabledLayerNames = validationLayers.getRaw();;
-				instanceInfo.enabledExtensionCount = amountOfGlfwExtensions;
-				instanceInfo.ppEnabledExtensionNames = glfwExtensions;
+					const bbe::List<const char*> validationLayers = {
+						"VK_LAYER_LUNARG_standard_validation"
+					};
 
-				VkResult result = vkCreateInstance(&instanceInfo, nullptr, &m_instance);
-				ASSERT_VULKAN(result);
-			}
+					uint32_t amountOfGlfwExtensions = 0;
+					auto glfwExtensions = glfwGetRequiredInstanceExtensions(&amountOfGlfwExtensions);
 
-			~Instance() {
-				vkDestroyInstance(m_instance, nullptr);
-			}
-		};
+					VkInstanceCreateInfo instanceInfo = {};
+					instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+					instanceInfo.pApplicationInfo = &appInfo;
+					instanceInfo.enabledLayerCount = validationLayers.getLength();
+					instanceInfo.ppEnabledLayerNames = validationLayers.getRaw();;
+					instanceInfo.enabledExtensionCount = amountOfGlfwExtensions;
+					instanceInfo.ppEnabledExtensionNames = glfwExtensions;
+
+					VkResult result = vkCreateInstance(&instanceInfo, nullptr, &m_instance);
+					ASSERT_VULKAN(result);
+				}
+
+				Instance(const Instance& other) = delete;
+				Instance(Instance&& other) = delete;
+				Instance& operator=(const Instance& other) = delete;
+				Instance& operator=(Instance&& other) = delete;
+
+				~Instance() {
+					vkDestroyInstance(m_instance, nullptr);
+				}
+
+
+				VkInstance getInstance() const
+				{
+					return m_instance;
+				}
+			};
+		}
 	}
 }
