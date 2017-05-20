@@ -23,18 +23,18 @@ namespace bbe
 
 		void growIfNeeded(size_t newSize) {
 			if (getCapacity() < newSize) {
-				size_t newCapa = newSize;
-				if (newCapa < getCapacity() * 2) {
-					newCapa = getCapacity() * 2;
-				}
+				size_t newCapa = newSize * 2;
+				
 				wchar_t *newData = new wchar_t[newCapa];
 				wmemcpy(newData, getRaw(), getCapacity());
 
 				if (!m_usesSSO) {
 					delete[] m_data;
 				}
-
-				m_usesSSO = false;
+				else {
+					m_usesSSO = false;
+				}
+				
 				m_capacity = newCapa;
 				m_data = newData;
 			}
