@@ -32,7 +32,7 @@ namespace bbe
 				}
 
 				void init(const PhysicalDeviceContainer &physicalDevices, const VulkanSurface &surface) {
-					PhysicalDevice pd = physicalDevices.findBestDevice(surface);
+					VulkanPhysicalDevice pd = physicalDevices.findBestDevice(surface);
 					m_physicalDevice = pd.getDevice();
 					uint32_t queueFamilyIndex = pd.findBestCompleteQueueIndex();
 

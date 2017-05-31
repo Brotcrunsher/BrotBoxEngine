@@ -12,7 +12,7 @@ namespace bbe
 	{
 		namespace vulkan
 		{
-			class PhysicalDevice
+			class VulkanPhysicalDevice
 			{
 			private:
 				VkPhysicalDevice                  m_device                = VK_NULL_HANDLE;
@@ -31,7 +31,7 @@ namespace bbe
 
 			public:
 
-				PhysicalDevice(const VkPhysicalDevice &device, const VulkanSurface &surface)
+				VulkanPhysicalDevice(const VkPhysicalDevice &device, const VulkanSurface &surface)
 					: m_device(device)
 				{
 					vkGetPhysicalDeviceProperties(device, &m_properties);
@@ -80,7 +80,7 @@ namespace bbe
 			{
 				//TODO use Allocators
 			private:
-				List<PhysicalDevice> m_devices;
+				List<VulkanPhysicalDevice> m_devices;
 			public:
 				PhysicalDeviceContainer()
 				{
@@ -92,7 +92,7 @@ namespace bbe
 				PhysicalDeviceContainer& operator=(const PhysicalDeviceContainer& other) = delete;
 				PhysicalDeviceContainer& operator=(PhysicalDeviceContainer&& other) = delete;
 
-				void init(const Instance &instance, const VulkanSurface &surface)
+				void init(const VulkanInstance &instance, const VulkanSurface &surface)
 				{
 					VkPhysicalDevice *physicalDevices = nullptr;
 					uint32_t length = 0;
@@ -102,7 +102,7 @@ namespace bbe
 
 					for (size_t i = 0; i < length; i++)
 					{
-						m_devices.pushBack(PhysicalDevice(physicalDevices[i], surface));
+						m_devices.pushBack(VulkanPhysicalDevice(physicalDevices[i], surface));
 					}
 					delete physicalDevices;
 				}
@@ -111,7 +111,7 @@ namespace bbe
 				{
 				}
 
-				const PhysicalDevice& findBestDevice(const VulkanSurface &surface) const
+				const VulkanPhysicalDevice& findBestDevice(const VulkanSurface &surface) const
 				{
 					for (size_t i = 0; i < m_devices.getLength(); i++)
 					{

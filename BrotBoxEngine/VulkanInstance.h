@@ -11,13 +11,13 @@ namespace bbe
 	{
 		namespace vulkan
 		{
-			class Instance
+			class VulkanInstance
 			{
 			private:
 				VkInstance m_instance = VK_NULL_HANDLE;
 
 			public:
-				Instance()
+				VulkanInstance()
 				{
 					//DO NOTHING
 				}
@@ -51,12 +51,12 @@ namespace bbe
 					ASSERT_VULKAN(result);
 				}
 
-				Instance(const Instance& other) = delete;
-				Instance(Instance&& other) = delete;
-				Instance& operator=(const Instance& other) = delete;
-				Instance& operator=(Instance&& other) = delete;
+				VulkanInstance(const VulkanInstance& other) = delete;
+				VulkanInstance(VulkanInstance&& other) = delete;
+				VulkanInstance& operator=(const VulkanInstance& other) = delete;
+				VulkanInstance& operator=(VulkanInstance&& other) = delete;
 
-				~Instance() {
+				~VulkanInstance() {
 					vkDestroyInstance(m_instance, nullptr);
 				}
 

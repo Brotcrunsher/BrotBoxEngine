@@ -15,7 +15,7 @@ namespace bbe
 			{
 			private:
 				VkSurfaceKHR m_surface = VK_NULL_HANDLE;
-				Instance* m_instance = nullptr;
+				VulkanInstance* m_instance = nullptr;
 
 			public:
 				VulkanSurface()
@@ -28,7 +28,7 @@ namespace bbe
 					vkDestroySurfaceKHR(m_instance->getInstance(), m_surface, nullptr);
 				}
 
-				void init(Instance &instance, GLFWwindow *window) {
+				void init(VulkanInstance &instance, GLFWwindow *window) {
 					m_instance = &instance;
 					VkResult result = glfwCreateWindowSurface(instance.getInstance(), window, nullptr, &m_surface);
 					ASSERT_VULKAN(result);

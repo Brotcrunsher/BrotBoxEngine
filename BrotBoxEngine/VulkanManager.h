@@ -14,7 +14,7 @@ namespace bbe
 		{
 			class VulkanManager {
 			private:
-				Instance m_instance;
+				VulkanInstance m_instance;
 				VulkanSurface m_surface;
 				PhysicalDeviceContainer m_physicalDeviceContainer;
 				VulkanDevice m_device;
