@@ -5,11 +5,14 @@
 
 namespace bbe
 {
-	namespace vulkan
+	namespace INTERNAL
 	{
-#define ASSERT_VULKAN(val)\
-		if(val != VK_SUCCESS){\
-			__debugbreak();\
+		namespace vulkan
+		{
+			#define ASSERT_VULKAN(val)\
+			if(val != VK_SUCCESS){\
+				__debugbreak();\
+			}
 		}
 	}
 }

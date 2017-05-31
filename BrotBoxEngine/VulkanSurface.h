@@ -11,26 +11,33 @@ namespace bbe
 	{
 		namespace vulkan
 		{
-			class Surface
+			class VulkanSurface
 			{
 			private:
 				VkSurfaceKHR m_surface = VK_NULL_HANDLE;
+				Instance* m_instance = nullptr;
 
 			public:
-				Surface()
+				VulkanSurface()
 				{
 					//DO NOTHING
 				}
 
-				void init(const Instance &instance, GLFWwindow *window) {
+				~VulkanSurface()
+				{
+					vkDestroySurfaceKHR(m_instance->getInstance(), m_surface, nullptr);
+				}
+
+				void init(Instance &instance, GLFWwindow *window) {
+					m_instance = &instance;
 					VkResult result = glfwCreateWindowSurface(instance.getInstance(), window, nullptr, &m_surface);
 					ASSERT_VULKAN(result);
 				}
 
-				Surface(const Surface& other) = delete;
-				Surface(Surface&& other) = delete;
-				Surface& operator=(const Surface& other) = delete;
-				Surface& operator=(Surface&& other) = delete;
+				VulkanSurface(const VulkanSurface& other) = delete;
+				VulkanSurface(VulkanSurface&& other) = delete;
+				VulkanSurface& operator=(const VulkanSurface& other) = delete;
+				VulkanSurface& operator=(VulkanSurface&& other) = delete;
 
 				VkSurfaceKHR getSurface() const
 				{

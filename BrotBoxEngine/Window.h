@@ -26,7 +26,7 @@ namespace bbe
 
 			window = glfwCreateWindow(width, height, title, nullptr, nullptr);
 			
-			m_vulkanManager.init(title, major, minor, patch, window);
+			m_vulkanManager.init(title, major, minor, patch, window, width, height);
 			
 			windowsAliveCounter++;
 		}

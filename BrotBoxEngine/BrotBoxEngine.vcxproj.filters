@@ -180,6 +180,12 @@
     <ClInclude Include="VulkanSurface.h">
       <Filter>Header Files\GFX\Vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="VulkanDevice.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanSwapchain.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

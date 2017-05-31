@@ -237,7 +237,8 @@ namespace bbe
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<!dummyKeepSorted, List&>::type operator+=(List<T, dummyKeepSorted> other)
+		typename std::enable_if<!dummyKeepSorted, List&>::type
+			operator+=(List<T, dummyKeepSorted> other)
 		{
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			for (size_t i = 0; i < other.m_length; i++)
@@ -577,6 +578,16 @@ namespace bbe
 			}
 			m_data = newList;
 			return true;
+		}
+
+		template <typename dummyT = T>
+		typename std::enable_if<std::is_default_constructible<dummyT>::value, void>::type
+			resizeCapacityAndLength(size_t newCapacity)
+		{
+			//UNTESTED
+			static_assert(std::is_same<dummyT, T>::value, "Do not specify dummyT!");
+			resizeCapacity(newCapacity);
+			pushBack(T(), newCapacity - m_length);
 		}
 
 		void resizeCapacity(size_t newCapacity)
