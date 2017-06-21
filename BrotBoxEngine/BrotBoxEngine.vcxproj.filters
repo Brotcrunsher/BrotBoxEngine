@@ -67,6 +67,9 @@
     <Filter Include="Header Files\GFX\Vulkan">
       <UniqueIdentifier>{11552c6a-5c2a-45f1-878f-a1c7e93bf90d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\FileSystem">
+      <UniqueIdentifier>{2c72cecb-9319-4796-b489-0eccc6e7759a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -185,6 +188,12 @@
     </ClInclude>
     <ClInclude Include="VulkanSwapchain.h">
       <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanRenderPass.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleFile.h">
+      <Filter>Header Files\FileSystem</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -187,6 +187,7 @@
     <ClInclude Include="PoolAllocator.h" />
     <ClInclude Include="PoolAllocatorPerformanceTime.h" />
     <ClInclude Include="PoolAllocatorTest.h" />
+    <ClInclude Include="SimpleFile.h" />
     <ClInclude Include="StackAllocator.h" />
     <ClInclude Include="StackAllocatorTest.h" />
     <ClInclude Include="stdafx.h" />
@@ -207,6 +208,7 @@
     <ClInclude Include="VulkanInstance.h" />
     <ClInclude Include="VulkanManager.h" />
     <ClInclude Include="VulkanPhysicalDevices.h" />
+    <ClInclude Include="VulkanRenderPass.h" />
     <ClInclude Include="VulkanSurface.h" />
     <ClInclude Include="VulkanSwapchain.h" />
     <ClInclude Include="Window.h" />

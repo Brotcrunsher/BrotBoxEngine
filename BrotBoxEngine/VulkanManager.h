@@ -5,6 +5,7 @@
 #include "VulkanPhysicalDevices.h"
 #include "VulkanDevice.h"
 #include "VulkanSwapchain.h"
+#include "VulkanRenderPass.h"
 
 namespace bbe
 {
@@ -19,6 +20,7 @@ namespace bbe
 				PhysicalDeviceContainer m_physicalDeviceContainer;
 				VulkanDevice m_device;
 				VulkanSwapchain m_swapchain;
+				VulkanRenderPass m_renderPass;
 				GLFWwindow *m_window = nullptr;
 
 			public:
@@ -40,6 +42,7 @@ namespace bbe
 					m_physicalDeviceContainer.init(m_instance, m_surface);
 					m_device.init(m_physicalDeviceContainer, m_surface);
 					m_swapchain.init(m_surface, m_device, initialWindowWidth, initialWindowHeight, nullptr);
+					m_renderPass.init(m_device);
 				}
 			};
 		}
