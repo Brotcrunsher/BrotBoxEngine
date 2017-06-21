@@ -8,8 +8,8 @@ namespace bbe {
 		void testGeneralPurposeAllocator() {
 			GeneralPurposeAllocator gpa(10000);
 
-			float* f1 = gpa.allocateObjects<float>(20);
-			float* f2 = gpa.allocateObjects<float>(50);
+			auto f1 = gpa.allocateObjects<float>(20);
+			auto f2 = gpa.allocateObjects<float>(50);
 
 
 			for (int i = 0; i < 20; i++) {
@@ -27,8 +27,8 @@ namespace bbe {
 				assertEquals(f2[i], i + 200);
 			}
 
-			gpa.deallocateObjects(f1, 20);
-			gpa.deallocateObjects(f2, 50);
+			gpa.deallocateObjects(f1);
+			gpa.deallocateObjects(f2);
 
 		}
 	}

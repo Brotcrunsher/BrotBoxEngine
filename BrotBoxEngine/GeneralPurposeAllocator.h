@@ -99,21 +99,84 @@ namespace bbe
 		//TODO defragmentation
 	public:
 		template<typename T>
+		class GeneralPurposeAllocatorPointer
+		{
+			friend class GeneralPurposeAllocator;
+		private:
+			T* m_pdata;
+			size_t m_size;
+		public:
+			GeneralPurposeAllocatorPointer(T* pdata, size_t size)
+				: m_pdata(pdata), m_size(size)
+			{
+				//do nothing
+			}
+
+			T* operator ->()
+			{
+				return m_pdata;
+			}
+
+			const T* operator ->() const
+			{
+				//UNTESTED
+				return m_pdata;
+			}
+
+			T& operator *()
+			{
+				//UNTESTED
+				return *m_pdata;
+			}
+
+			const T& operator *() const
+			{
+				//UNTESTED
+				return *m_pdata;
+			}
+
+			T& operator [](int index)
+			{
+				return *(m_pdata + index);
+			}
+
+			const T& operator [](int index) const
+			{
+				return *(m_pdata + index);
+			}
+
+			T* getRaw()
+			{
+				return m_pdata;
+			}
+
+			bool operator ==(void* ptr) const
+			{
+				return m_pdata == ptr;
+			}
+
+			bool operator !=(void* ptr) const
+			{
+				return m_pdata != ptr;
+			}
+		};
+
+		template<typename T>
 		class GeneralPurposeAllocatorDestroyer
 		{
 		private:
 			GeneralPurposeAllocator* m_pa;
-			size_t m_size;
+			GeneralPurposeAllocatorPointer<T> m_data;
 		public:
-			GeneralPurposeAllocatorDestroyer(GeneralPurposeAllocator *pa, size_t size)
-				: m_pa(pa), m_size(size)
+			GeneralPurposeAllocatorDestroyer(GeneralPurposeAllocator *pa, GeneralPurposeAllocatorPointer<T> data)
+				: m_pa(pa), m_data(data)
 			{
 				//do nothing
 			}
 
 			void destroy(void* data)
 			{
-				m_pa->deallocateObjects(reinterpret_cast<T*>(data), m_size);
+				m_pa->deallocateObjects(m_data);
 			}
 		};
 	private:
@@ -159,7 +222,7 @@ namespace bbe
 		GeneralPurposeAllocator& operator=(GeneralPurposeAllocator&& other) = delete;
 
 		template <typename T, typename... arguments>
-		T* allocateObjects(size_t amountOfObjects = 1, arguments&&... args)
+		GeneralPurposeAllocatorPointer<T> allocateObjects(size_t amountOfObjects = 1, arguments&&... args)
 		{
 			//UNTESTED
 			static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
@@ -168,16 +231,16 @@ namespace bbe
 				T* data = m_freeChunks[i].allocateObject<T>(amountOfObjects, std::forward<arguments>(args)...);
 				if (data != nullptr)
 				{
-					return data;
+					return GeneralPurposeAllocatorPointer<T>(data, amountOfObjects);
 				}
 			}
 
 			//TODO add further error handling
-			return nullptr;
+			return GeneralPurposeAllocatorPointer<T>(nullptr, 0);
 		}
 
 		template <typename T, typename... arguments>
-		T* allocateObject(arguments&&... args)
+		GeneralPurposeAllocatorPointer<T> allocateObject(arguments&&... args)
 		{
 			//UNTESTED
 			return allocateObjects<T>(1, std::forward<arguments>(args)...);
@@ -186,8 +249,8 @@ namespace bbe
 		template <typename T, typename... arguments>
 		UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>> allocateObjectsUniquePointer(size_t amountOfObjects = 1, arguments&&... args)
 		{
-			T* pointer = allocateObjects<T>(amountOfObjects, std::forward<arguments>(args)...);
-			return UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>>(pointer, GeneralPurposeAllocatorDestroyer<T>(this, amountOfObjects));
+			auto pointer = allocateObjects<T>(amountOfObjects, std::forward<arguments>(args)...);
+			return UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>>(pointer.m_pdata, GeneralPurposeAllocatorDestroyer<T>(this, pointer));
 		}
 
 		template <typename T, typename... arguments>
@@ -197,16 +260,16 @@ namespace bbe
 		}
 
 		template<typename T>
-		void deallocateObjects(T* dataPointer, size_t amountOfObjects = 1)
+		void deallocateObjects(GeneralPurposeAllocatorPointer<T> pointer)
 		{
 			//UNTESTED
-			for (size_t i = 0; i < amountOfObjects; i++)
+			for (size_t i = 0; i < pointer.m_size; i++)
 			{
-				bbe::addressOf(dataPointer[i])->~T();
+				bbe::addressOf(pointer.m_pdata[i])->~T();
 			}
 
-			byte* bytePointer = reinterpret_cast<byte*>(dataPointer);
-			size_t amountOfBytes = sizeof(T) * amountOfObjects;
+			byte* bytePointer = reinterpret_cast<byte*>(pointer.m_pdata);
+			size_t amountOfBytes = sizeof(T) * pointer.m_size;
 			byte offset = bytePointer[-1];
 
 			//TODO add this to the freeChunks list
