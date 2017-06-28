@@ -10,16 +10,20 @@
 #include "List.h"
 #include "UniquePointer.h"
 #include "Window.h"
+#include "Random.h"
 
 int main()
 {
 	//bbe::test::stringSpeedAddition();
 	//bbe::Window window(300, 400, "TestWindow");
 
-	//while (window.keepAlive())
+	//while (window.keepAlive
 	//{
 		//do nothing
 	//}
+	bbe::Random rand;
+	std::cout << rand.randomInt() << std::endl;
+
 
 	bbe::test::GeneralPurposeAllocatorAllocationDeallocationSpeed();
 	bbe::test::NewDeleteAllocationDeallocationSpeed();

@@ -16,13 +16,13 @@ namespace bbe {
 				Random rand;
 
 				CPUWatch watch;
-				for (int i = 0; i < 1024 * 128; i++)
+				for (int i = 0; i < 1024 * 1024 * 8; i++)
 				{
 					if (rand.randomBool())
 					{
 						if (list.getLength() < 64)
 						{
-							Person *p = new Person[128];
+							Person *p = new Person[rand.randomInt(1024) + 1];
 							list.pushBack(p);
 						}
 					}
@@ -48,18 +48,18 @@ namespace bbe {
 		}
 		void GeneralPurposeAllocatorAllocationDeallocationSpeed() {
 			{
-				GeneralPurposeAllocator gpa(sizeof(float) * 1024 * 1024);
+				GeneralPurposeAllocator gpa(sizeof(Person) * 1024 * 1024);
 				List<GeneralPurposeAllocator::GeneralPurposeAllocatorPointer<Person>> list;
 				Random rand;
 
 				CPUWatch watch;
-				for (int i = 0; i < 1024 * 128; i++)
+				for (int i = 0; i < 1024 * 1024 * 8; i++)
 				{
 					if (rand.randomBool())
 					{
 						if (list.getLength() < 64)
 						{
-							list.pushBack(gpa.allocateObjects<Person>(128));
+							list.pushBack(gpa.allocateObjects<Person>(rand.randomInt(1024) + 1));
 						}
 					}
 					else
