@@ -22,16 +22,16 @@ namespace bbe {
 
 				CPUWatch swAllocate;
 				for (size_t i = 0; i < amountOfPersons; i++) {
-					//arr[i] = personAllocator.allocate();
-					arr[i] = new Person();
+					arr[i] = personAllocator.allocateObject();
+					//arr[i] = new Person();
 					//arr[i] = gpa.allocateObjects<Person>();
 				}
 				totalTimeAlloc += swAllocate.getTimeExpiredSeconds();
 
 				CPUWatch swDeallocate;
 				for (size_t i = 0; i < amountOfPersons; i++) {
-					//personAllocator.deallocate(arr[i]);
-					delete arr[i];
+					personAllocator.deallocate(arr[i]);
+					//delete arr[i];
 					//gpa.deallocateObjects(arr[i]);
 				}
 				totalTimeDealloc += swDeallocate.getTimeExpiredSeconds();

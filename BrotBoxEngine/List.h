@@ -181,11 +181,19 @@ namespace bbe
 
 		T& operator[](size_t index)
 		{
+			if (index >= m_length)
+			{
+				debugBreak();
+			}
 			return m_data[index].value;
 		}
 
 		const T& operator[](size_t index) const
 		{
+			if (index >= m_length)
+			{
+				debugBreak();
+			}
 			return m_data[index].value;
 		}
 
@@ -646,6 +654,27 @@ namespace bbe
 			return moveRange;
 		}
 
+		bool removeIndex(size_t index) {
+			if (index >= m_length) {
+				return false;
+			}
+
+			m_data[index].value.~T();
+			if (index != m_length - 1)
+			{
+				new (bbe::addressOf(m_data[index].value)) T(std::move(m_data[index + 1].value));
+
+				for (size_t i = index + 1; i < m_length - 1; i++)
+				{
+					m_data[i].value = std::move(m_data[i + 1].value);
+				}
+			}
+
+
+			m_length--;
+			return true;
+		}
+
 		bool removeSingle(const T& remover)
 		{
 			return removeSingle(
@@ -670,20 +699,7 @@ namespace bbe
 			}
 			if (!found) return false;
 
-			m_data[index].value.~T();
-			if (index != m_length - 1)
-			{
-				new (bbe::addressOf(m_data[index].value)) T(std::move(m_data[index + 1].value));
-
-				for (size_t i = index + 1; i < m_length - 1; i++)
-				{
-					m_data[i].value = std::move(m_data[i + 1].value);
-				}
-			}
-			
-			
-			m_length--;
-			return true;
+			return removeIndex(index);
 		}
 
 		size_t containsAmount(const T& t) const

@@ -180,6 +180,7 @@
     <ClInclude Include="DefaultDestroyer.h" />
     <ClInclude Include="DynamicArray.h" />
     <ClInclude Include="GeneralPurposeAllocator.h" />
+    <ClInclude Include="GeneralPurposeAllocatorPerformanceTime.h" />
     <ClInclude Include="GeneralPurposeAllocatorTest.h" />
     <ClInclude Include="List.h" />
     <ClInclude Include="ListTest.h" />
@@ -187,6 +188,7 @@
     <ClInclude Include="PoolAllocator.h" />
     <ClInclude Include="PoolAllocatorPerformanceTime.h" />
     <ClInclude Include="PoolAllocatorTest.h" />
+    <ClInclude Include="Random.h" />
     <ClInclude Include="SimpleFile.h" />
     <ClInclude Include="StackAllocator.h" />
     <ClInclude Include="StackAllocatorTest.h" />

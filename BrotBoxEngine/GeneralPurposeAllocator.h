@@ -231,11 +231,16 @@ namespace bbe
 				T* data = m_freeChunks[i].allocateObject<T>(amountOfObjects, std::forward<arguments>(args)...);
 				if (data != nullptr)
 				{
+					if (m_freeChunks[i].m_size == 0)
+					{
+						m_freeChunks.removeIndex(i);
+					}
 					return GeneralPurposeAllocatorPointer<T>(data, amountOfObjects);
 				}
 			}
 
 			//TODO add further error handling
+			debugBreak();
 			return GeneralPurposeAllocatorPointer<T>(nullptr, 0);
 		}
 
@@ -260,7 +265,7 @@ namespace bbe
 		}
 
 		template<typename T>
-		void deallocateObjects(GeneralPurposeAllocatorPointer<T> pointer)
+		void deallocateObjects(GeneralPurposeAllocatorPointer<T> &pointer)
 		{
 			//UNTESTED
 			for (size_t i = 0; i < pointer.m_size; i++)
@@ -314,6 +319,8 @@ namespace bbe
 			{
 				m_freeChunks.pushBack(gpafc);
 			}
+
+			pointer.m_pdata = nullptr;
 		}
 	};
 }

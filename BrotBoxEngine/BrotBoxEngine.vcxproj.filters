@@ -70,6 +70,9 @@
     <Filter Include="Header Files\FileSystem">
       <UniqueIdentifier>{2c72cecb-9319-4796-b489-0eccc6e7759a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Random">
+      <UniqueIdentifier>{7b10c1a5-9ba4-414a-ae82-5916529d5c3c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -194,6 +197,12 @@
     </ClInclude>
     <ClInclude Include="SimpleFile.h">
       <Filter>Header Files\FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Random.h">
+      <Filter>Header Files\Random</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneralPurposeAllocatorPerformanceTime.h">
+      <Filter>Tests\Performance\Time\MemoryManagement</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -5,6 +5,7 @@
 
 #include "AllTests.h"
 #include "PoolAllocatorPerformanceTime.h"
+#include "GeneralPurposeAllocatorPerformanceTime.h"
 #include "StringPerformanceTime.h"
 #include "List.h"
 #include "UniquePointer.h"
@@ -13,14 +14,16 @@
 int main()
 {
 	//bbe::test::stringSpeedAddition();
-	bbe::Window window(300, 400, "TestWindow");
+	//bbe::Window window(300, 400, "TestWindow");
 
-	while (window.keepAlive())
-	{
+	//while (window.keepAlive())
+	//{
 		//do nothing
-	}
+	//}
 
-
+	bbe::test::GeneralPurposeAllocatorAllocationDeallocationSpeed();
+	bbe::test::NewDeleteAllocationDeallocationSpeed();
+	//bbe::test::poolAllocatorPrintAllocationSpeed();
 	for (int i = 0; i < 11; i++)
 	{
 		int checkVal = i;
