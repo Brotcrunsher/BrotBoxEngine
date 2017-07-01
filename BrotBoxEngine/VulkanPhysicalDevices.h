@@ -102,7 +102,7 @@ namespace bbe
 
 					for (size_t i = 0; i < length; i++)
 					{
-						m_devices.pushBack(VulkanPhysicalDevice(physicalDevices[i], surface));
+						m_devices.add(VulkanPhysicalDevice(physicalDevices[i], surface));
 					}
 					delete physicalDevices;
 				}

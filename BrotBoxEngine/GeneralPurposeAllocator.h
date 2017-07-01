@@ -192,7 +192,7 @@ namespace bbe
 		{
 			//UNTESTED
 			m_data = new byte[m_size];
-			m_freeChunks.pushBack(INTERNAL::GeneralPurposeAllocatorFreeChunk(m_data, m_size));
+			m_freeChunks.add(INTERNAL::GeneralPurposeAllocatorFreeChunk(m_data, m_size));
 		}
 
 		~GeneralPurposeAllocator()
@@ -277,7 +277,6 @@ namespace bbe
 			size_t amountOfBytes = sizeof(T) * pointer.m_size;
 			byte offset = bytePointer[-1];
 
-			//TODO add this to the freeChunks list
 			INTERNAL::GeneralPurposeAllocatorFreeChunk gpafc(bytePointer - offset, amountOfBytes + offset);
 
 			INTERNAL::GeneralPurposeAllocatorFreeChunk* p_gpafc = &gpafc;
@@ -317,7 +316,7 @@ namespace bbe
 
 			if (!didMerge)
 			{
-				m_freeChunks.pushBack(gpafc);
+				m_freeChunks.add(gpafc);
 			}
 
 			pointer.m_pdata = nullptr;

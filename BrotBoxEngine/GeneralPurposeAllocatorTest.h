@@ -40,7 +40,7 @@ namespace bbe {
 				List<GeneralPurposeAllocator::GeneralPurposeAllocatorPointer<float>> list;
 				for (int i = 0; i < 64; i++)
 				{
-					list.pushBack(gpa.allocateObject<float>());
+					list.add(gpa.allocateObject<float>());
 				}
 
 				for (int i = 0; i < 64; i++)
@@ -60,7 +60,7 @@ namespace bbe {
 					{
 						if (list.getLength() < 64)
 						{
-							list.pushBack(gpa.allocateObject<float>());
+							list.add(gpa.allocateObject<float>());
 						}
 					}
 					else
@@ -79,6 +79,16 @@ namespace bbe {
 					gpa.deallocateObjects(list[i]);
 				}
 
+			}
+
+			{
+				GeneralPurposeAllocator gpa;
+
+				auto f1 = gpa.allocateObjects<Person>();
+
+				f1->print();
+
+				gpa.deallocateObjects(f1);
 			}
 
 		}

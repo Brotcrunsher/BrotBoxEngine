@@ -9,6 +9,8 @@
 
 namespace bbe {
 	namespace test {
+		int runs = 1024 * 128;
+
 		void NewDeleteAllocationDeallocationSpeed()
 		{
 			{
@@ -16,14 +18,14 @@ namespace bbe {
 				Random rand;
 
 				CPUWatch watch;
-				for (int i = 0; i < 1024 * 1024 * 8; i++)
+				for (int i = 0; i < runs; i++)
 				{
 					if (rand.randomBool())
 					{
 						if (list.getLength() < 64)
 						{
 							Person *p = new Person[rand.randomInt(1024) + 1];
-							list.pushBack(p);
+							list.add(p);
 						}
 					}
 					else
@@ -53,13 +55,13 @@ namespace bbe {
 				Random rand;
 
 				CPUWatch watch;
-				for (int i = 0; i < 1024 * 1024 * 8; i++)
+				for (int i = 0; i < runs; i++)
 				{
 					if (rand.randomBool())
 					{
 						if (list.getLength() < 64)
 						{
-							list.pushBack(gpa.allocateObjects<Person>(rand.randomInt(1024) + 1));
+							list.add(gpa.allocateObjects<Person>(rand.randomInt(1024) + 1));
 						}
 					}
 					else

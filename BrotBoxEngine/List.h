@@ -99,7 +99,7 @@ namespace bbe
 		List(std::initializer_list<T> il) {
 			//UNTESTED
 			for (auto iter = il.begin(); iter != il.end(); iter++) {
-				pushBack(*iter);
+				add(*iter);
 			}
 		}
 
@@ -251,13 +251,13 @@ namespace bbe
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			for (size_t i = 0; i < other.m_length; i++)
 			{
-				pushBack(other.m_data[i].value);
+				add(other.m_data[i].value);
 			}
 			return *this;
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<dummyKeepSorted, void>::type pushBack(const T& val, int amount = 1)
+		typename std::enable_if<dummyKeepSorted, void>::type add(const T& val, int amount = 1)
 		{
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			//TODO rewrite this method using size_t instead of int
@@ -293,7 +293,7 @@ namespace bbe
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<!dummyKeepSorted, void>::type pushBack(const T& val, size_t amount = 1)
+		typename std::enable_if<!dummyKeepSorted, void>::type add(const T& val, size_t amount = 1)
 		{
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			growIfNeeded(amount);
@@ -305,7 +305,7 @@ namespace bbe
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<dummyKeepSorted, void>::type pushBack(T&& val, int amount = 1)
+		typename std::enable_if<dummyKeepSorted, void>::type add(T&& val, int amount = 1)
 		{
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			//TODO rewrite this method using size_t instead of int
@@ -352,7 +352,7 @@ namespace bbe
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<!dummyKeepSorted, void>::type pushBack(T&& val, size_t amount = 1)
+		typename std::enable_if<!dummyKeepSorted, void>::type add(T&& val, size_t amount = 1)
 		{
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			growIfNeeded(amount);
@@ -502,38 +502,38 @@ namespace bbe
 		}
 
 		template <typename T>
-		void pushBackAll(T&& t)
+		void addAll(T&& t)
 		{
-			pushBack(std::forward<T>(t));
+			add(std::forward<T>(t));
 		}
 
 		template<typename T, typename... arguments>
-		void pushBackAll(T&& t, arguments&&... args)
+		void addAll(T&& t, arguments&&... args)
 		{
-			pushBack(std::forward<T>(t));
-			pushBackAll(std::forward<arguments>(args)...);
+			add(std::forward<T>(t));
+			addAll(std::forward<arguments>(args)...);
 		}
 
-		void pushBackAll(T* data, size_t size)
+		void addAll(T* data, size_t size)
 		{
 			//UNTESTED
 			for (size_t i = 0; i < size; i++)
 			{
-				pushBack(data[i]);
+				add(data[i]);
 			}
 		}
 
 		template<int size>
-		void pushBackAll(Array<T, size>& arr)
+		void addAll(Array<T, size>& arr)
 		{
 			//UNTESTED
-			pushBackAll(arr.getRaw(), size);
+			addAll(arr.getRaw(), size);
 		}
 
-		void pushBackAll(DynamicArray<T>& arr)
+		void addAll(DynamicArray<T>& arr)
 		{
 			//UNTESTED
-			pushBackAll(arr.getRaw(), arr.getLength());
+			addAll(arr.getRaw(), arr.getLength());
 		}
 
 		void popBack(size_t amount = 1)
@@ -595,7 +595,7 @@ namespace bbe
 			//UNTESTED
 			static_assert(std::is_same<dummyT, T>::value, "Do not specify dummyT!");
 			resizeCapacity(newCapacity);
-			pushBack(T(), newCapacity - m_length);
+			add(T(), newCapacity - m_length);
 		}
 
 		void resizeCapacity(size_t newCapacity)

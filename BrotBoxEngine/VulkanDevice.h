@@ -45,7 +45,7 @@ namespace bbe
 					List<float> queuePriorities;
 					for (uint32_t i = 0; i < deviceQueueCreateInfo.queueCount; i++)
 					{
-						queuePriorities.pushBack(1.0f);
+						queuePriorities.add(1.0f);
 					}
 					deviceQueueCreateInfo.pQueuePriorities = queuePriorities.getRaw();
 

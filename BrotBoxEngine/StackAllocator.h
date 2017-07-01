@@ -87,7 +87,7 @@ namespace bbe
 		inline typename std::enable_if<!std::is_trivially_destructible<U>::value>::type
 			addDestructorToList(U* object)
 		{
-			m_destructors.pushBack(INTERNAL::StackAllocatorDestructor(*object));
+			m_destructors.add(INTERNAL::StackAllocatorDestructor(*object));
 		}
 
 	public:
