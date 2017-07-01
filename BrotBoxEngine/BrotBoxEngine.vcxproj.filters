@@ -204,6 +204,15 @@
     <ClInclude Include="GeneralPurposeAllocatorPerformanceTime.h">
       <Filter>Tests\Performance\Time\MemoryManagement</Filter>
     </ClInclude>
+    <ClInclude Include="Hash.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="HashMap.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="HashMapTest.h">
+      <Filter>Tests\Functionality\DataStructures</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

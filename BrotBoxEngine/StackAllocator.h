@@ -69,7 +69,7 @@ namespace bbe
 		static constexpr size_t STACK_ALLOCATOR_DEFAULT_SIZE = 1024;
 		T* m_data = nullptr;
 		T* m_head = nullptr;
-		size_t m_size = 0;
+		size_t m_length = 0;
 
 		Allocator* m_parentAllocator = nullptr;
 		bool m_needsToDeleteParentAllocator = false;
@@ -92,17 +92,17 @@ namespace bbe
 
 	public:
 		explicit StackAllocator(size_t size = STACK_ALLOCATOR_DEFAULT_SIZE, Allocator* parentAllocator = nullptr)
-			: m_size(size), m_parentAllocator(parentAllocator) 
+			: m_length(size), m_parentAllocator(parentAllocator) 
 		{
 			if (m_parentAllocator == nullptr)
 			{
 				m_parentAllocator = new Allocator();
 				m_needsToDeleteParentAllocator = true;
 			}
-			m_data = m_parentAllocator->allocate(m_size);
+			m_data = m_parentAllocator->allocate(m_length);
 			m_head = m_data;
 
-			memset(m_data, 0, m_size);	//TODO evaluate if this should be here
+			memset(m_data, 0, m_length);	//TODO evaluate if this should be here
 		}
 
 		~StackAllocator()
@@ -114,7 +114,7 @@ namespace bbe
 			}
 			if (m_data != nullptr && m_parentAllocator != nullptr)
 			{
-				m_parentAllocator->deallocate(m_data, m_size);
+				m_parentAllocator->deallocate(m_data, m_length);
 			}
 			if (m_needsToDeleteParentAllocator)
 			{
@@ -134,7 +134,7 @@ namespace bbe
 		{
 			T* allocationLocation = (T*)nextMultiple(alignof(U), (size_t)m_head);
 			T* newHeadPointer = allocationLocation + amountOfObjects * sizeof(U);
-			if (newHeadPointer <= m_data + m_size)
+			if (newHeadPointer <= m_data + m_length)
 			{
 				U* returnPointer = reinterpret_cast<U*>(allocationLocation);
 				m_head = newHeadPointer;
@@ -158,7 +158,7 @@ namespace bbe
 		{
 			T* allocationLocation = (T*)nextMultiple(alignment, (size_t)m_head);
 			T* newHeadPointer = allocationLocation + amountOfBytes;
-			if (newHeadPointer <= m_data + m_size)
+			if (newHeadPointer <= m_data + m_length)
 			{
 				m_head = newHeadPointer;
 				return allocationLocation;

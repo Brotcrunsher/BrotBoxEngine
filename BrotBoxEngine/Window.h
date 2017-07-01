@@ -12,11 +12,14 @@ namespace bbe
 	private:
 		static size_t windowsAliveCounter;
 
-		GLFWwindow *window;
+		GLFWwindow *m_pwindow;
 		INTERNAL::vulkan::VulkanManager m_vulkanManager;
+		int m_width;
+		int m_height;
 
 	public:
 		Window(int width, int height, const char* title, uint32_t major = 0, uint32_t minor = 0, uint32_t patch = 0)
+			: m_width(width), m_height(height)
 		{
 			if (windowsAliveCounter == 0)
 			{
@@ -24,9 +27,9 @@ namespace bbe
 			}
 			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-			window = glfwCreateWindow(width, height, title, nullptr, nullptr);
+			m_pwindow = glfwCreateWindow(width, height, title, nullptr, nullptr);
 			
-			m_vulkanManager.init(title, major, minor, patch, window, width, height);
+			m_vulkanManager.init(title, major, minor, patch, m_pwindow, width, height);
 			
 			windowsAliveCounter++;
 		}
@@ -38,7 +41,7 @@ namespace bbe
 
 		bool keepAlive()
 		{
-			if (glfwWindowShouldClose(window))
+			if (glfwWindowShouldClose(m_pwindow))
 			{
 				return false;
 			}
@@ -49,12 +52,12 @@ namespace bbe
 
 		GLFWwindow *getRaw()
 		{
-			return window;
+			return m_pwindow;
 		}
 
 		~Window()
 		{
-			glfwDestroyWindow(window);
+			glfwDestroyWindow(m_pwindow);
 			if (windowsAliveCounter == 1)
 			{
 				glfwTerminate();
@@ -63,7 +66,18 @@ namespace bbe
 			windowsAliveCounter--;
 		}
 
+		int getWidth() const
+		{
+			return m_width;
+		}
+
+		int getHeight() const
+		{
+			return m_height;
+		}
 	};
+
+	
 
 	size_t Window::windowsAliveCounter = 0;
 }

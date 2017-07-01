@@ -59,26 +59,26 @@ namespace bbe
 
 		INTERNAL::PoolChunk<T>* m_data = nullptr;
 		INTERNAL::PoolChunk<T>* m_head = nullptr;
-		size_t m_size;
+		size_t m_length;
 
 		Allocator* m_parentAllocator = nullptr;
 		bool m_needsToDeleteParentAllocator = false;
 
 	public:
 		explicit PoolAllocator(size_t size = POOL_ALLOCATOR_DEFAULT_SIZE, Allocator* parentAllocator = nullptr)
-			: m_size(size), m_parentAllocator(parentAllocator)
+			: m_length(size), m_parentAllocator(parentAllocator)
 		{
 			if (m_parentAllocator == nullptr)
 			{
 				m_parentAllocator = new Allocator();
 				m_needsToDeleteParentAllocator = true;
 			}
-			m_data = m_parentAllocator->allocate(m_size);
-			for (size_t i = 0; i < m_size - 1; i++)
+			m_data = m_parentAllocator->allocate(m_length);
+			for (size_t i = 0; i < m_length - 1; i++)
 			{
 				m_data[i].nextPoolChunk = bbe::addressOf(m_data[i + 1]);
 			}
-			m_data[m_size - 1].nextPoolChunk = nullptr;
+			m_data[m_length - 1].nextPoolChunk = nullptr;
 			m_head = m_data;
 		}
 
@@ -98,7 +98,7 @@ namespace bbe
 #endif // !BBE_DISABLE_ALL_SECURITY_CHECKS
 			if (m_data != nullptr && m_parentAllocator != nullptr)
 			{
-				m_parentAllocator->deallocate(m_data, m_size);
+				m_parentAllocator->deallocate(m_data, m_length);
 			}
 			if (m_needsToDeleteParentAllocator)
 			{

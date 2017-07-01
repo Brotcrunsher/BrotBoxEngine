@@ -2,48 +2,48 @@
 
 namespace bbe
 {
-	template <typename T, int SIZE>
+	template <typename T, int LENGTH>
 	class Array
 	{
 	private:
-		T m_data[SIZE];
+		T m_data[LENGTH];
 	public:
 		Array()
 		{
 			//do nothing
 		}
 
-		Array(const Array<T, SIZE>& other)
+		Array(const Array<T, LENGTH>& other)
 		{
 			//UNTESTED
-			for (size_t i = 0; i < SIZE; i++)
+			for (size_t i = 0; i < LENGTH; i++)
 			{
 				m_data[i] = other[i];
 			}
 		}
 
-		Array(Array<T, SIZE>&& other)
+		Array(Array<T, LENGTH>&& other)
 		{
 			//UNTESTED
-			for (size_t i = 0; i < SIZE; i++)
+			for (size_t i = 0; i < LENGTH; i++)
 			{
 				m_data[i] = std::move(other[i]);
 			}
 		}
 
-		Array& operator=(const Array<T, SIZE>& other)
+		Array& operator=(const Array<T, LENGTH>& other)
 		{
 			//UNTESTED
-			for (size_t i = 0; i < SIZE; i++)
+			for (size_t i = 0; i < LENGTH; i++)
 			{
 				m_data[i] = other[i];
 			}
 		}
 
-		Array& operator=(Array<T, SIZE>&& other)
+		Array& operator=(Array<T, LENGTH>&& other)
 		{
 			//UNTESTED
-			for (size_t i = 0; i < SIZE; i++)
+			for (size_t i = 0; i < LENGTH; i++)
 			{
 				m_data[i] = std::move(other[i]);
 			}
@@ -69,7 +69,7 @@ namespace bbe
 		constexpr size_t getLength() const
 		{
 			//UNTESTED
-			return SIZE;
+			return LENGTH;
 		}
 
 		T* getRaw()

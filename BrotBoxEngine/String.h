@@ -817,11 +817,19 @@ namespace bbe
 
 		wchar_t& operator[](size_t index)
 		{
+			if (index >= m_length)
+			{
+				debugBreak();
+			}
 			return getRaw()[index];
 		}
 
 		const wchar_t& operator[](size_t index) const
 		{
+			if (index >= m_length)
+			{
+				debugBreak();
+			}
 			return getRaw()[index];
 		}
 

@@ -14,10 +14,10 @@ namespace bbe
 	private:
 
 		T* m_data;
-		size_t m_size;
+		size_t m_length;
 	public:
 		DynamicArray(size_t size)
-			: m_size(size)
+			: m_length(size)
 		{
 			//UNTESTED
 			m_data = new T[size];
@@ -25,10 +25,10 @@ namespace bbe
 
 		template <typename U, int size>
 		DynamicArray(Array<U, size> arr)
-			: m_size(size)
+			: m_length(size)
 		{
 			//UNTESTED
-			m_data = new T[m_size];
+			m_data = new T[m_length];
 			for (int i = 0; i < size; i++)
 			{
 				m_data[i] = arr[i];
@@ -36,23 +36,23 @@ namespace bbe
 		}
 
 		DynamicArray(List<T, true> list)
-			: m_size(list.getLength())
+			: m_length(list.getLength())
 		{
 			//UNTESTED
-			m_data = new T[m_size];
-			for (int i = 0; i < m_size; i++)
+			m_data = new T[m_length];
+			for (int i = 0; i < m_length; i++)
 			{
 				m_data[i] = list[i];
 			}
 		}
 
 		DynamicArray(List<T, false> list)
-			: m_size(list.getLength())
+			: m_length(list.getLength())
 		{
 			//UNTESTED
 			//TODO basically this is a copy of above. Put into function!
-			m_data = new T[m_size];
-			for (int i = 0; i < m_size; i++)
+			m_data = new T[m_length];
+			for (int i = 0; i < m_length; i++)
 			{
 				m_data[i] = list[i];
 			}
@@ -67,7 +67,7 @@ namespace bbe
 		DynamicArray(const DynamicArray&  other) //Copy Constructor
 		{
 			//UNTESTED
-			m_data = new T[other.m_size];
+			m_data = new T[other.m_length];
 			for (size_t i = 0; i < size; i++)
 			{
 				m_data[i] = other[i];
@@ -77,16 +77,16 @@ namespace bbe
 		{
 			//UNTESTED
 			m_data = other.m_data;
-			m_size = other.m_size;
+			m_length = other.m_length;
 			other.m_data = nullptr;
-			other.m_size = 0;
+			other.m_length = 0;
 		}
 		DynamicArray& operator=(const DynamicArray&  other)  //Copy Assignment
 		{
 			//UNTESTED
 			delete[] m_data;
 
-			m_data = new T[other.m_size];
+			m_data = new T[other.m_length];
 			for (size_t i = 0; i < size; i++)
 			{
 				m_data[i] = other[i];
@@ -98,9 +98,9 @@ namespace bbe
 			delete[] m_data;
 
 			m_data = other.m_data;
-			m_size = other.m_size;
+			m_length = other.m_length;
 			other.m_data = nullptr;
-			other.m_size = 0;
+			other.m_length = 0;
 		}
 
 		T& operator[](size_t index)
@@ -118,7 +118,7 @@ namespace bbe
 		size_t getLength() const
 		{
 			//UNTESTED
-			return m_size;
+			return m_length;
 		}
 
 		T* getRaw()

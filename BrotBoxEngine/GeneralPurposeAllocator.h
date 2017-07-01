@@ -14,10 +14,10 @@ namespace bbe
 		{
 		public:
 			byte* m_addr;
-			size_t m_size;
+			size_t m_length;
 
 			GeneralPurposeAllocatorFreeChunk(byte* addr, size_t size)
-				: m_addr(addr), m_size(size)
+				: m_addr(addr), m_length(size)
 			{
 				//do nothing
 			}
@@ -25,11 +25,11 @@ namespace bbe
 			bool touches(const GeneralPurposeAllocatorFreeChunk& other) const
 			{
 				//UNTESTED
-				if (m_addr + m_size == other.m_addr)
+				if (m_addr + m_length == other.m_addr)
 				{
 					return true;
 				}
-				if (other.m_addr + other.m_size == m_addr)
+				if (other.m_addr + other.m_length == m_addr)
 				{
 					return true;
 				}
@@ -70,12 +70,12 @@ namespace bbe
 				byte* allocationLocation = (byte*)nextMultiple(alignof(T), ((size_t)m_addr) + 1);
 				size_t amountOfBytes = amountOfObjects * sizeof(T);
 				byte* newAddr = allocationLocation + amountOfBytes;
-				if (newAddr <= m_addr + m_size)
+				if (newAddr <= m_addr + m_length)
 				{
 					byte offset = (byte)(allocationLocation - m_addr);
 					allocationLocation[-1] = offset;
 					T* returnPointer = reinterpret_cast<T*>(allocationLocation);
-					m_size -= newAddr - m_addr;
+					m_length -= newAddr - m_addr;
 					m_addr = newAddr;
 					for (size_t i = 0; i < amountOfObjects; i++)
 					{
@@ -104,10 +104,10 @@ namespace bbe
 			friend class GeneralPurposeAllocator;
 		private:
 			T* m_pdata;
-			size_t m_size;
+			size_t m_length;
 		public:
 			GeneralPurposeAllocatorPointer(T* pdata, size_t size)
-				: m_pdata(pdata), m_size(size)
+				: m_pdata(pdata), m_length(size)
 			{
 				//do nothing
 			}
@@ -182,17 +182,17 @@ namespace bbe
 	private:
 		static const size_t GENERAL_PURPOSE_ALLOCATOR_DEFAULT_SIZE = 1024;
 		byte* m_data;
-		size_t m_size;
+		size_t m_length;
 
 		List<INTERNAL::GeneralPurposeAllocatorFreeChunk, true> m_freeChunks;
 
 	public:
 		explicit GeneralPurposeAllocator(size_t size = GENERAL_PURPOSE_ALLOCATOR_DEFAULT_SIZE)
-			: m_size(size)
+			: m_length(size)
 		{
 			//UNTESTED
-			m_data = new byte[m_size];
-			m_freeChunks.add(INTERNAL::GeneralPurposeAllocatorFreeChunk(m_data, m_size));
+			m_data = new byte[m_length];
+			m_freeChunks.add(INTERNAL::GeneralPurposeAllocatorFreeChunk(m_data, m_length));
 		}
 
 		~GeneralPurposeAllocator()
@@ -205,7 +205,7 @@ namespace bbe
 			{
 				debugBreak();
 			}
-			if (m_freeChunks[0].m_size != m_size)
+			if (m_freeChunks[0].m_length != m_length)
 			{
 				debugBreak();
 			}
@@ -231,7 +231,7 @@ namespace bbe
 				T* data = m_freeChunks[i].allocateObject<T>(amountOfObjects, std::forward<arguments>(args)...);
 				if (data != nullptr)
 				{
-					if (m_freeChunks[i].m_size == 0)
+					if (m_freeChunks[i].m_length == 0)
 					{
 						m_freeChunks.removeIndex(i);
 					}
@@ -268,13 +268,13 @@ namespace bbe
 		void deallocateObjects(GeneralPurposeAllocatorPointer<T> &pointer)
 		{
 			//UNTESTED
-			for (size_t i = 0; i < pointer.m_size; i++)
+			for (size_t i = 0; i < pointer.m_length; i++)
 			{
 				bbe::addressOf(pointer.m_pdata[i])->~T();
 			}
 
 			byte* bytePointer = reinterpret_cast<byte*>(pointer.m_pdata);
-			size_t amountOfBytes = sizeof(T) * pointer.m_size;
+			size_t amountOfBytes = sizeof(T) * pointer.m_length;
 			byte offset = bytePointer[-1];
 
 			INTERNAL::GeneralPurposeAllocatorFreeChunk gpafc(bytePointer - offset, amountOfBytes + offset);
@@ -290,7 +290,7 @@ namespace bbe
 			{
 				if (left->touches(*p_gpafc))
 				{
-					left->m_size += p_gpafc->m_size;
+					left->m_length += p_gpafc->m_length;
 					didTouchLeft = true;
 					p_gpafc = left;
 					didMerge = true;
@@ -302,12 +302,12 @@ namespace bbe
 				{
 					if (didTouchLeft)
 					{
-						p_gpafc->m_size += right->m_size;
+						p_gpafc->m_length += right->m_length;
 						m_freeChunks.removeSingle(*right);
 					}
 					else
 					{
-						right->m_size += p_gpafc->m_size;
+						right->m_length += p_gpafc->m_length;
 						right->m_addr = p_gpafc->m_addr;
 					}
 					didMerge = true;
