@@ -18,11 +18,11 @@ namespace bbe
 		private:
 			Key key;
 			Value value;
+			uint32_t _hash;
 
-			HashMapNode(const Key &key, const Value &value)
-				: key(key), value(value)
+			HashMapNode(const Key &key, const Value &value, const uint32_t _hash)
+				: key(key), value(value), _hash(_hash)
 			{
-				//UNTESTED
 				//do nothing
 			}
 		};
@@ -33,7 +33,6 @@ namespace bbe
 		HashMap()
 			: m_amountOfContainers(1 << 4)
 		{
-			//UNTESTED
 			m_containers = new List<HashMapNode>[m_amountOfContainers];
 		}
 
@@ -97,7 +96,6 @@ namespace bbe
 
 		~HashMap()
 		{
-			//UNTESTED
 			if (m_containers != nullptr)
 			{
 				delete[] m_containers;
@@ -108,7 +106,6 @@ namespace bbe
 
 		void add(const Key &key, const Value &value)
 		{
-			//UNTESTED
 			uint32_t _hash = hash(key);
 			uint32_t index = _hash & (m_amountOfContainers - 1);
 
@@ -121,7 +118,7 @@ namespace bbe
 					if (otherHash != _hash)
 					{
 						differentHashes++;
-						if (differentHashes >= 4)
+						if (differentHashes >= 3)
 						{
 							resize();
 							index = _hash & (m_amountOfContainers - 1);
@@ -140,12 +137,11 @@ namespace bbe
 				}
 			}
 
-			m_containers[index].add(HashMapNode(key, value));
+			m_containers[index].add(HashMapNode(key, value, _hash));
 		}
 
 		Value* get(const Key &key)
 		{
-			//UNTESTED
 			uint32_t _hash = hash(key);
 			uint32_t index = _hash & (m_amountOfContainers - 1);
 
@@ -159,16 +155,33 @@ namespace bbe
 			return nullptr;
 		}
 
-		void remove(const Key &key)
+		bool remove(const Key &key)
 		{
+			//TODO
 			//UNTESTED
+			return false;
 		}
 
 	private:
 		void resize()
 		{
-			//TODO
-			//UNTESTED
+			size_t newAmountOfContainers = m_amountOfContainers << 1;
+			List<HashMapNode> *newContainers = new List<HashMapNode>[newAmountOfContainers];
+
+			for (size_t i = 0; i < m_amountOfContainers; i++)
+			{
+				for (size_t k = 0; k < m_containers[i].getLength(); k++)
+				{
+					uint32_t _hash = m_containers[i][k]._hash;
+					uint32_t index = _hash & (newAmountOfContainers - 1);
+
+					newContainers[index].add(std::move(m_containers[i][k]));
+				}
+			}
+
+			delete[] m_containers;
+			m_containers = newContainers;
+			m_amountOfContainers = newAmountOfContainers;
 		}
 	};
 }

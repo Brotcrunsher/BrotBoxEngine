@@ -7,6 +7,7 @@
 #include "PoolAllocatorPerformanceTime.h"
 #include "GeneralPurposeAllocatorPerformanceTime.h"
 #include "StringPerformanceTime.h"
+#include "HashMapPerformanceTime.h"
 #include "List.h"
 #include "UniquePointer.h"
 #include "Window.h"
@@ -14,6 +15,8 @@
 
 int main()
 {
+	bbe::test::hashMapPrintSpeed();
+
 	bbe::test::runAllTests();
 	//bbe::test::poolAllocatorPrintAllocationSpeed();
 	//bbe::test::stringSpeed();

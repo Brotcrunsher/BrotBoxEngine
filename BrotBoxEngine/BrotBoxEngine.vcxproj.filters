@@ -73,6 +73,9 @@
     <Filter Include="Header Files\Random">
       <UniqueIdentifier>{7b10c1a5-9ba4-414a-ae82-5916529d5c3c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Tests\Performance\Time\DataStructures">
+      <UniqueIdentifier>{84867f04-98c0-4de0-97ab-6a12e107a338}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -212,6 +215,9 @@
     </ClInclude>
     <ClInclude Include="HashMapTest.h">
       <Filter>Tests\Functionality\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="HashMapPerformanceTime.h">
+      <Filter>Tests\Performance\Time\DataStructures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

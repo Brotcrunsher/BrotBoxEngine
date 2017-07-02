@@ -184,6 +184,7 @@
     <ClInclude Include="GeneralPurposeAllocatorTest.h" />
     <ClInclude Include="Hash.h" />
     <ClInclude Include="HashMap.h" />
+    <ClInclude Include="HashMapPerformanceTime.h" />
     <ClInclude Include="HashMapTest.h" />
     <ClInclude Include="List.h" />
     <ClInclude Include="ListTest.h" />
