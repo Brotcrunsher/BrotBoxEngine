@@ -32,7 +32,7 @@ namespace bbe {
 					{
 						if (list.getLength() > 0)
 						{
-							size_t index = rand.randomInt(list.getLength());
+							size_t index = (size_t)rand.randomInt((int)list.getLength());
 							Person* p = list[index];
 							delete[] (p);
 							list.removeIndex(index);
@@ -68,7 +68,7 @@ namespace bbe {
 					{
 						if (list.getLength() > 0)
 						{
-							size_t index = rand.randomInt(list.getLength());
+							size_t index = (size_t)rand.randomInt((int)list.getLength());
 							gpa.deallocateObjects(list[index]);
 							list.removeIndex(index);
 						}

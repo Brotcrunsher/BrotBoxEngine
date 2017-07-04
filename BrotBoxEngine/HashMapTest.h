@@ -16,7 +16,7 @@ namespace bbe
 			{
 				HashMap<int, Person> hashMap;
 
-				for (size_t i = 0; i < 1024; i++)
+				for (int i = 0; i < 1024; i++)
 				{
 					assertEquals(hashMap.get(i), nullptr);
 				}

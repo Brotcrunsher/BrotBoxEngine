@@ -29,7 +29,7 @@ namespace bbe
 
 				~VulkanSwapchain()
 				{
-					for (int i = 0; i < amountOfImagesInSwapchain; i++) {
+					for (uint32_t i = 0; i < amountOfImagesInSwapchain; i++) {
 						vkDestroyImageView(m_device, m_pimageViews[i], nullptr);
 					}
 
@@ -66,7 +66,7 @@ namespace bbe
 					swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 					VulkanSharingBehaviour vsb = device.getSharingBehaviour();
 					swapchainCreateInfo.imageSharingMode = vsb.m_sharingMode;
-					swapchainCreateInfo.queueFamilyIndexCount = vsb.m_queueFamilyIndices.getLength();
+					swapchainCreateInfo.queueFamilyIndexCount = (uint32_t)vsb.m_queueFamilyIndices.getLength();
 					swapchainCreateInfo.pQueueFamilyIndices = vsb.m_queueFamilyIndices.getRaw();
 					swapchainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 					swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
@@ -88,7 +88,7 @@ namespace bbe
 					ASSERT_VULKAN(result);
 
 					m_pimageViews = new VkImageView[amountOfImagesInSwapchain];
-					for (int i = 0; i < amountOfImagesInSwapchain; i++) {
+					for (uint32_t i = 0; i < amountOfImagesInSwapchain; i++) {
 						VkImageViewCreateInfo imageViewCreateInfo = {};
 						imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 						imageViewCreateInfo.pNext = nullptr;

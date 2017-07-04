@@ -42,7 +42,7 @@ namespace bbe
 					VkInstanceCreateInfo instanceInfo = {};
 					instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 					instanceInfo.pApplicationInfo = &appInfo;
-					instanceInfo.enabledLayerCount = validationLayers.getLength();
+					instanceInfo.enabledLayerCount = (uint32_t)validationLayers.getLength();
 					instanceInfo.ppEnabledLayerNames = validationLayers.getRaw();;
 					instanceInfo.enabledExtensionCount = amountOfGlfwExtensions;
 					instanceInfo.ppEnabledExtensionNames = glfwExtensions;

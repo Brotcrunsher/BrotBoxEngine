@@ -4,6 +4,7 @@
 #include "UtilTest.h"
 #include "List.h"
 #include <iostream>
+#include <cstring>
 #include "STLCapsule.h"
 
 namespace bbe

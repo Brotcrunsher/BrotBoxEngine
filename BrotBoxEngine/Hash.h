@@ -88,7 +88,10 @@ namespace bbe
 		//  3. wchar_t is used instead of char
 		uint32_t _hash = 5381;
 		size_t length = t.getLength();
-		if (length > 128);
+		if (length > 128)
+		{
+			length = 128;
+		}
 
 		for (size_t i = 0; i < length; i++)
 		{

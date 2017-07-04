@@ -92,7 +92,6 @@ namespace bbe
 		};
 	}
 	
-
 	class GeneralPurposeAllocator
 	{
 		//TODO use parent allocator

@@ -63,7 +63,7 @@ namespace bbe
 					deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
 					deviceCreateInfo.enabledLayerCount = 0;
 					deviceCreateInfo.ppEnabledLayerNames = nullptr;
-					deviceCreateInfo.enabledExtensionCount = deviceExtensions.getLength();
+					deviceCreateInfo.enabledExtensionCount = (uint32_t)deviceExtensions.getLength();
 					deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.getRaw();
 					deviceCreateInfo.pEnabledFeatures = &usedFeatures;
 
