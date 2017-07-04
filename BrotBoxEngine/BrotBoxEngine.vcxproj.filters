@@ -219,6 +219,15 @@
     <ClInclude Include="HashMapPerformanceTime.h">
       <Filter>Tests\Performance\Time\DataStructures</Filter>
     </ClInclude>
+    <ClInclude Include="EmptyClass.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Stack.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="StackTest.h">
+      <Filter>Tests\Functionality\DataStructures</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

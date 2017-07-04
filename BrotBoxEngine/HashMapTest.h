@@ -34,7 +34,7 @@ namespace bbe
 				assertEquals(hashMap.get(2)->adress, "BStr");
 				assertEquals(hashMap.get(2)->age, 41);
 
-				for (int i = 3; i < 1024 * 16; i++)
+				for (int i = 3; i < 1024; i++)
 				{
 					hashMap.add(i, Person("Undefined Name", "Undefinded Addr", i + 20));
 					assertEquals(hashMap.get(1)->name, "Peter");

@@ -190,6 +190,7 @@
     <ClInclude Include="HashMap.h" />
     <ClInclude Include="HashMapPerformanceTime.h" />
     <ClInclude Include="HashMapTest.h" />
+    <ClInclude Include="EmptyClass.h" />
     <ClInclude Include="List.h" />
     <ClInclude Include="ListTest.h" />
     <ClInclude Include="OtherTest.h" />
@@ -198,8 +199,10 @@
     <ClInclude Include="PoolAllocatorTest.h" />
     <ClInclude Include="Random.h" />
     <ClInclude Include="SimpleFile.h" />
+    <ClInclude Include="Stack.h" />
     <ClInclude Include="StackAllocator.h" />
     <ClInclude Include="StackAllocatorTest.h" />
+    <ClInclude Include="StackTest.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="STLAllocator.h" />
     <ClInclude Include="STLCapsule.h" />

@@ -15,8 +15,6 @@
 
 int main()
 {
-	bbe::test::hashMapPrintSpeed();
-
 	bbe::test::runAllTests();
 	//bbe::test::poolAllocatorPrintAllocationSpeed();
 	//bbe::test::stringSpeed();
