@@ -111,6 +111,11 @@ namespace bbe {
 							list.removeIndex(index);
 						}
 					}
+
+					if (i % 10 == 0)
+					{
+						da.defragment();
+					}
 				}
 
 				for (int i = 0; i < list.getLength(); i++)

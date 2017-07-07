@@ -210,45 +210,43 @@ namespace bbe
 			byte* relocateTemplate(void *newAddr)
 			{
 				static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
-				//auto tempArrPointer = m_pparent->allocateObjects<INTERNAL::Unconstructed<T>>(m_amountOfObjects);
-				//INTERNAL::Unconstructed<T>* tempArr = tempArrPointer.getRaw();
-				//INTERNAL::Unconstructed<T>* tempArr = new INTERNAL::Unconstructed<T>[m_amountOfObjects];
-				//auto tempArrPointer = m_pparent->allocateObjectsAligned<byte, alignof(T)>(m_amountOfObjects * sizeof(T));
-				//T* tempArr = reinterpret_cast<T*>(tempArrPointer.getRaw());
-
-				byte* testArr = new byte[m_amountOfObjects * sizeof(T) + alignof(T)];
-				T* tempArr = reinterpret_cast<T*>(nextMultiple((size_t)alignof(T), (size_t)testArr));
-				if (tempArr == nullptr)
-				{
-					//TODO add further error handling
-					debugBreak();
-					return static_cast<byte*>(m_pparent->m_handleTable[m_handleIndex]);
-				}
-
-				T* oldData = static_cast<T*>(m_pparent->m_handleTable[m_handleIndex]);
-				for (int i = 0; i < m_amountOfObjects; i++)
-				{
-					new (bbe::addressOf(tempArr[i])) T(std::move(oldData[i]));
-					bbe::addressOf(oldData[i])->~T();
-					memset(oldData + i, 0, sizeof(T));
-				}
-
-
-
 				byte* allocationLocation = (byte*)nextMultiple(alignof(T), ((size_t)newAddr) + 1);
 				size_t amountOfBytes = m_amountOfObjects * sizeof(T);
 
 				byte offset = (byte)(allocationLocation - (byte*)newAddr);
 				allocationLocation[-1] = offset;
-				T* tPointer = reinterpret_cast<T*>(allocationLocation);
-				for (size_t i = 0; i < m_amountOfObjects; i++)
+
+				T* oldData = static_cast<T*>(m_pparent->m_handleTable[m_handleIndex]);
+				T* newData = reinterpret_cast<T*>(allocationLocation);
+
+				if (std::is_trivially_move_constructible<T>::value)
 				{
-					T* object = bbe::addressOf(tPointer[i]);
-					new (object) T(std::move(tempArr[i]));
-					bbe::addressOf(tempArr[i])->~T();
+					std::memmove(newData, oldData, amountOfBytes);
 				}
-				//m_pparent->deallocateObjects(tempArrPointer);
-				delete[] testArr;
+				else if(allocationLocation + sizeof(T) < (byte*)oldData)
+				{
+					for (int i = 0; i < m_amountOfObjects; i++)
+					{
+						new (bbe::addressOf(newData[i])) T(std::move(oldData[i]));
+						bbe::addressOf(oldData[i])->~T();
+					}
+				}
+				else
+				{
+					byte tempByteArr[sizeof(T) + alignof(T)];
+					T* tempObj = reinterpret_cast<T*>(nextMultiple((size_t)alignof(T), (size_t)tempByteArr));
+
+					for (int i = 0; i < m_amountOfObjects; i++)
+					{
+						new (tempObj) T(std::move(oldData[i]));
+						bbe::addressOf(oldData[i])->~T();
+
+						T* object = bbe::addressOf(newData[i]);
+						new (object) T(std::move(*tempObj));
+						tempObj->~T();
+					}
+				}
+
 				m_pparent->m_handleTable[m_handleIndex] = allocationLocation;
 				return static_cast<byte*>(allocationLocation + amountOfBytes);
 			}
@@ -503,10 +501,6 @@ namespace bbe
 				//If this is triggered, an allocated Block could not get removed!
 				debugBreak();
 			}
-
-			memset(bytePointer - offset, 0, offset + amountOfBytes);
-			
-
 			pointer.m_handleIndex = 0;
 		}
 
