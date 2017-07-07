@@ -6,7 +6,6 @@
 #include "UniquePointer.h"
 #include "UtilTest.h"
 #include "EmptyClass.h"
-#include "Stack.h"
 
 namespace bbe
 {
@@ -64,11 +63,12 @@ namespace bbe
 				return m_addr == other.m_addr;
 			}
 
-			template <typename T, typename... arguments>
+			template <typename T, int ALIGNMENT, typename... arguments>
 			T* allocateObject(size_t amountOfObjects = 1, arguments&&... args)
 			{
 				//UNTESTED
 				static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
+				static_assert(ALIGNMENT > 0, "Alignment must be positive, none zero.");
 				byte* allocationLocation = (byte*)nextMultiple(alignof(T), ((size_t)m_addr) + 1);
 				size_t amountOfBytes = amountOfObjects * sizeof(T);
 				byte* newAddr = allocationLocation + amountOfBytes;
@@ -225,11 +225,18 @@ namespace bbe
 		template <typename T, typename... arguments>
 		GeneralPurposeAllocatorPointer<T> allocateObjects(size_t amountOfObjects = 1, arguments&&... args)
 		{
+			return allocateObjectsAligned<T, alignof(T), arguments&&...>(amountOfObjects, std::forward<arguments>(args)...);
+		}
+
+		template <typename T, int ALIGNMENT, typename... arguments>
+		GeneralPurposeAllocatorPointer<T> allocateObjectsAligned(size_t amountOfObjects = 1, arguments&&... args)
+		{
 			//UNTESTED
-			static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
+			static_assert(ALIGNMENT <= 128, "Max alignment of 128 was exceeded");
+			static_assert(ALIGNMENT >= alignof(T), "Alignment must be at least the alignment of type T!");
 			for (size_t i = 0; i < m_freeChunks.getLength(); i++)
 			{
-				T* data = m_freeChunks[i].allocateObject<T>(amountOfObjects, std::forward<arguments>(args)...);
+				T* data = m_freeChunks[i].allocateObject<T, ALIGNMENT>(amountOfObjects, std::forward<arguments>(args)...);
 				if (data != nullptr)
 				{
 					if (m_freeChunks[i].m_length == 0)

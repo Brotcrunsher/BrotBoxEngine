@@ -8,95 +8,11 @@
 #include "UtilTest.h"
 #include "EmptyClass.h"
 #include "Unconstructed.h"
+#include "GeneralPurposeAllocator.h"
 #include "Stack.h"
 
 namespace bbe
 {
-	namespace INTERNAL
-	{
-		class DefragmentationAllocatorFreeChunk
-		{
-		public:
-			byte* m_addr;
-			size_t m_length;
-
-			DefragmentationAllocatorFreeChunk(byte* addr, size_t size)
-				: m_addr(addr), m_length(size)
-			{
-				//do nothing
-			}
-
-			bool touches(const DefragmentationAllocatorFreeChunk& other) const
-			{
-				//UNTESTED
-				if (m_addr + m_length == other.m_addr)
-				{
-					return true;
-				}
-				if (other.m_addr + other.m_length == m_addr)
-				{
-					return true;
-				}
-
-				return false;
-			}
-
-			bool operator>(const DefragmentationAllocatorFreeChunk& other) const
-			{
-				return m_addr > other.m_addr;
-			}
-
-			bool operator>=(const DefragmentationAllocatorFreeChunk& other) const
-			{
-				return m_addr >= other.m_addr;
-			}
-
-			bool operator<(const DefragmentationAllocatorFreeChunk& other) const
-			{
-				return m_addr < other.m_addr;
-			}
-
-			bool operator<=(const DefragmentationAllocatorFreeChunk& other) const
-			{
-				return m_addr <= other.m_addr;
-			}
-
-			bool operator==(const DefragmentationAllocatorFreeChunk& other) const
-			{
-				return m_addr == other.m_addr;
-			}
-
-			template <typename T, int ALIGNMENT, typename... arguments>
-			T* allocateObject(size_t amountOfObjects = 1, arguments&&... args)
-			{
-				//UNTESTED
-				static_assert(ALIGNMENT <= 128, "Max alignment of 128 was exceeded");
-				static_assert(ALIGNMENT > 0, "Alignment must be positive, none zero.");
-				byte* allocationLocation = (byte*)nextMultiple((size_t)ALIGNMENT, ((size_t)m_addr) + 1);
-				size_t amountOfBytes = amountOfObjects * sizeof(T);
-				byte* newAddr = allocationLocation + amountOfBytes;
-				if (newAddr <= m_addr + m_length)
-				{
-					byte offset = (byte)(allocationLocation - m_addr);
-					allocationLocation[-1] = offset;
-					T* returnPointer = reinterpret_cast<T*>(allocationLocation);
-					m_length -= newAddr - m_addr;
-					m_addr = newAddr;
-					for (size_t i = 0; i < amountOfObjects; i++)
-					{
-						T* object = bbe::addressOf(returnPointer[i]);
-						new (object) T(std::forward<arguments>(args)...);
-					}
-					return returnPointer;
-				}
-				else
-				{
-					return nullptr;
-				}
-			}
-		};
-	}
-
 	class DefragmentationAllocator
 	{
 		//TODO use parent allocator
@@ -318,7 +234,7 @@ namespace bbe
 		byte* m_data;
 		size_t m_length;
 
-		List<INTERNAL::DefragmentationAllocatorFreeChunk, true> m_freeChunks;
+		List<INTERNAL::GeneralPurposeAllocatorFreeChunk, true> m_freeChunks;
 		
 		size_t m_lengthOfHandleTable;
 		void** m_handleTable;
@@ -331,7 +247,7 @@ namespace bbe
 		{
 			//UNTESTED
 			m_data = new byte[m_length];
-			m_freeChunks.add(INTERNAL::DefragmentationAllocatorFreeChunk(m_data, m_length));
+			m_freeChunks.add(INTERNAL::GeneralPurposeAllocatorFreeChunk(m_data, m_length));
 
 			m_handleTable = new void*[m_lengthOfHandleTable];
 			memset(m_handleTable, 0, sizeof(void*) * m_lengthOfHandleTable);
@@ -451,13 +367,13 @@ namespace bbe
 			size_t amountOfBytes = sizeof(T) * pointer.m_length;
 			byte offset = bytePointer[-1];
 
-			INTERNAL::DefragmentationAllocatorFreeChunk gpafc(bytePointer - offset, amountOfBytes + offset);
+			INTERNAL::GeneralPurposeAllocatorFreeChunk gpafc(bytePointer - offset, amountOfBytes + offset);
 
-			INTERNAL::DefragmentationAllocatorFreeChunk* p_gpafc = &gpafc;
-			INTERNAL::DefragmentationAllocatorFreeChunk* left;
+			INTERNAL::GeneralPurposeAllocatorFreeChunk* p_gpafc = &gpafc;
+			INTERNAL::GeneralPurposeAllocatorFreeChunk* left;
 			bool didTouchLeft = false;
 			bool didMerge = false;
-			INTERNAL::DefragmentationAllocatorFreeChunk* right;
+			INTERNAL::GeneralPurposeAllocatorFreeChunk* right;
 
 			m_freeChunks.getNeighbors(*p_gpafc, left, right);
 			if (left != nullptr)
@@ -499,6 +415,7 @@ namespace bbe
 			{
 				//TODO add further error handling
 				//If this is triggered, an allocated Block could not get removed!
+				//This should never happen, when a well behaved pointer was passed to this method
 				debugBreak();
 			}
 			pointer.m_handleIndex = 0;
