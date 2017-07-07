@@ -237,6 +237,9 @@
     <ClInclude Include="Unconstructed.h">
       <Filter>Header Files\Util</Filter>
     </ClInclude>
+    <ClInclude Include="LinearCongruentialGenerator.h">
+      <Filter>Header Files\Random</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

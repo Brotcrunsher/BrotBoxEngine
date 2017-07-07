@@ -187,7 +187,8 @@ namespace bbe
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<dummyKeepSorted, List<typename T, dummyKeepSorted>&>::type operator+=(List<T, dummyKeepSorted> other)
+		typename std::enable_if<dummyKeepSorted, List<typename T, dummyKeepSorted>&>::type
+		operator+=(List<T, dummyKeepSorted> other)
 		{
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			//UNTESTED

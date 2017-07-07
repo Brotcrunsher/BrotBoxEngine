@@ -193,6 +193,7 @@
     <ClInclude Include="HashMapPerformanceTime.h" />
     <ClInclude Include="HashMapTest.h" />
     <ClInclude Include="EmptyClass.h" />
+    <ClInclude Include="LinearCongruentialGenerator.h" />
     <ClInclude Include="List.h" />
     <ClInclude Include="ListTest.h" />
     <ClInclude Include="OtherTest.h" />
