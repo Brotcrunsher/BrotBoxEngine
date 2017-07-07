@@ -6,6 +6,7 @@
 #include "UniquePointer.h"
 #include "UtilTest.h"
 #include "EmptyClass.h"
+#include "Stack.h"
 
 namespace bbe
 {
@@ -92,9 +93,8 @@ namespace bbe
 			}
 		};
 	}
-	
-	template<bool ENABLE_DEFRAGMENTATION>
-	class GeneralPurposeAllocatorBase
+
+	class GeneralPurposeAllocator
 	{
 		//TODO use parent allocator
 		//TODO defragmentation
@@ -102,7 +102,7 @@ namespace bbe
 		template<typename T>
 		class GeneralPurposeAllocatorPointer
 		{
-			friend class GeneralPurposeAllocatorBase<ENABLE_DEFRAGMENTATION>;
+			friend class GeneralPurposeAllocator;
 		private:
 			T* m_pdata;
 			size_t m_length;
@@ -166,10 +166,10 @@ namespace bbe
 		class GeneralPurposeAllocatorDestroyer
 		{
 		private:
-			GeneralPurposeAllocatorBase<ENABLE_DEFRAGMENTATION>* m_pa;
+			GeneralPurposeAllocator* m_pa;
 			GeneralPurposeAllocatorPointer<T> m_data;
 		public:
-			GeneralPurposeAllocatorDestroyer(GeneralPurposeAllocatorBase<ENABLE_DEFRAGMENTATION> *pa, GeneralPurposeAllocatorPointer<T> data)
+			GeneralPurposeAllocatorDestroyer(GeneralPurposeAllocator *pa, GeneralPurposeAllocatorPointer<T> data)
 				: m_pa(pa), m_data(data)
 			{
 				//do nothing
@@ -188,7 +188,7 @@ namespace bbe
 		List<INTERNAL::GeneralPurposeAllocatorFreeChunk, true> m_freeChunks;
 
 	public:
-		explicit GeneralPurposeAllocatorBase(size_t size = GENERAL_PURPOSE_ALLOCATOR_DEFAULT_SIZE)
+		explicit GeneralPurposeAllocator(size_t size = GENERAL_PURPOSE_ALLOCATOR_DEFAULT_SIZE)
 			: m_length(size)
 		{
 			//UNTESTED
@@ -196,7 +196,7 @@ namespace bbe
 			m_freeChunks.add(INTERNAL::GeneralPurposeAllocatorFreeChunk(m_data, m_length));
 		}
 
-		~GeneralPurposeAllocatorBase()
+		~GeneralPurposeAllocator()
 		{
 			if (m_freeChunks.getLength() != 1)
 			{
@@ -217,10 +217,10 @@ namespace bbe
 			}
 		}
 
-		GeneralPurposeAllocatorBase(const GeneralPurposeAllocatorBase& other) = delete;
-		GeneralPurposeAllocatorBase(GeneralPurposeAllocatorBase&& other) = delete;
-		GeneralPurposeAllocatorBase& operator=(const GeneralPurposeAllocatorBase& other) = delete;
-		GeneralPurposeAllocatorBase& operator=(GeneralPurposeAllocatorBase&& other) = delete;
+		GeneralPurposeAllocator(const GeneralPurposeAllocator& other) = delete;
+		GeneralPurposeAllocator(GeneralPurposeAllocator&& other) = delete;
+		GeneralPurposeAllocator& operator=(const GeneralPurposeAllocator& other) = delete;
+		GeneralPurposeAllocator& operator=(GeneralPurposeAllocator&& other) = delete;
 
 		template <typename T, typename... arguments>
 		GeneralPurposeAllocatorPointer<T> allocateObjects(size_t amountOfObjects = 1, arguments&&... args)
@@ -323,6 +323,4 @@ namespace bbe
 			pointer.m_pdata = nullptr;
 		}
 	};
-
-	typedef GeneralPurposeAllocatorBase<false> GeneralPurposeAllocator;
 }

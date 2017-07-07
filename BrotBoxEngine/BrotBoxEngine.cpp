@@ -12,9 +12,18 @@
 #include "UniquePointer.h"
 #include "Window.h"
 #include "Random.h"
+#include "UtilTest.h"
+#include "Unconstructed.h"
+#include "GeneralPurposeAllocator.h"
 
 int main()
 {
+
+
+	//bbe::test::NewDeleteAllocationDeallocationSpeed();
+	//bbe::test::GeneralPurposeAllocatorAllocationDeallocationSpeed();
+	//bbe::test::DefragmentationAllocatorAllocationDeallocationSpeed();
+
 	bbe::test::runAllTests();
 	//bbe::test::poolAllocatorPrintAllocationSpeed();
 	//bbe::test::stringSpeed();

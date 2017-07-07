@@ -228,6 +228,15 @@
     <ClInclude Include="StackTest.h">
       <Filter>Tests\Functionality\DataStructures</Filter>
     </ClInclude>
+    <ClInclude Include="DefragmentationAllocator.h">
+      <Filter>Header Files\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="DefragmentationAllocatorTest.h">
+      <Filter>Tests\Functionality\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="Unconstructed.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

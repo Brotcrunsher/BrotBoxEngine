@@ -4,6 +4,7 @@
 #include "PoolAllocatorTest.h"
 #include "StackAllocatorTest.h"
 #include "GeneralPurposeAllocatorTest.h"
+#include "DefragmentationAllocatorTest.h"
 #include "StringTest.h"
 #include "ListTest.h"
 #include "HashMapTest.h"
@@ -21,6 +22,8 @@ namespace bbe {
 			bbe::test::testStackAllocator();
 			Person::checkIfAllPersonsWereDestroyed();
 			bbe::test::testGeneralPurposeAllocator();
+			Person::checkIfAllPersonsWereDestroyed();
+			bbe::test::testDefragmentationAllocator();
 			Person::checkIfAllPersonsWereDestroyed();
 			bbe::test::testString();
 			Person::checkIfAllPersonsWereDestroyed();

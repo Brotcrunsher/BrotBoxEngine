@@ -4,23 +4,12 @@
 #include "STLCapsule.h"
 #include "Array.h"
 #include "DynamicArray.h"
+#include "Unconstructed.h"
 #include <initializer_list>
 
 namespace bbe
 {
-	namespace INTERNAL
-	{
-		template <typename T>
-		union ListChunk
-		{
-			//this little hack prevents the constructor of T to be called
-			//allows the use of new and its auto alignment features
-			T value;
 
-			ListChunk() {}
-			~ListChunk() {}
-		};
-	}
 	
 
 	template <typename T, bool keepSorted = false>
@@ -31,7 +20,7 @@ namespace bbe
 	private:
 		size_t m_length;
 		size_t m_capacity;
-		INTERNAL::ListChunk<T>* m_data;
+		INTERNAL::Unconstructed<T>* m_data;
 
 		void growIfNeeded(size_t amountOfNewObjects)
 		{
@@ -43,7 +32,7 @@ namespace bbe
 					newCapacity = m_capacity * 2;
 				}
 
-				INTERNAL::ListChunk<T>* newData = new INTERNAL::ListChunk<T>[newCapacity];
+				INTERNAL::Unconstructed<T>* newData = new INTERNAL::Unconstructed<T>[newCapacity];
 
 				for (size_t i = 0; i < m_length; i++)
 				{
@@ -71,7 +60,7 @@ namespace bbe
 		List(size_t amountOfObjects, arguments&&... args)
 			: m_length(amountOfObjects), m_capacity(amountOfObjects)
 		{
-			m_data = new INTERNAL::ListChunk<T>[amountOfObjects];
+			m_data = new INTERNAL::Unconstructed<T>[amountOfObjects];
 			for (size_t i = 0; i < amountOfObjects; i++)
 			{
 				new (bbe::addressOf(m_data[i])) T(std::forward<arguments>(args)...);
@@ -81,7 +70,7 @@ namespace bbe
 		List(const List<T, keepSorted>& other)
 			: m_length(other.m_length), m_capacity(other.m_capacity)
 		{
-			m_data = new INTERNAL::ListChunk<T>[m_capacity];
+			m_data = new INTERNAL::Unconstructed<T>[m_capacity];
 			for (size_t i = 0; i < m_length; i++)
 			{
 				new (bbe::addressOf(m_data[i])) T(other.m_data[i].value);
@@ -112,7 +101,7 @@ namespace bbe
 
 			m_length = other.m_length;
 			m_capacity = other.m_capacity;
-			m_data = new INTERNAL::ListChunk<T>[m_capacity];
+			m_data = new INTERNAL::Unconstructed<T>[m_capacity];
 			for (size_t i = 0; i < m_capacity; i++)
 			{
 				new (bbe::addressOf(m_data[i])) T(other.m_data[i].value);
@@ -372,13 +361,13 @@ namespace bbe
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<!dummyKeepSorted, size_t>::type getIndexWhenPushedBack(const T& val)
+		typename std::enable_if<!dummyKeepSorted, size_t>::type getIndexOnAdd(const T& val)
 		{
 			static_assert(false, "Only sorted Lists can getIndexWhenPushedBack!");
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<dummyKeepSorted, size_t>::type getIndexWhenPushedBack(const T& val)
+		typename std::enable_if<dummyKeepSorted, size_t>::type getIndexOnAdd(const T& val)
 		{
 			//UNTESTED
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
@@ -476,7 +465,7 @@ namespace bbe
 				}
 			}
 
-			size_t index = getIndexWhenPushedBack(val);
+			size_t index = getIndexOnAdd(val);
 			while (m_data[index].value == val && index < m_length - 1)
 			{
 				index++;
@@ -571,7 +560,7 @@ namespace bbe
 				m_data = nullptr;
 				return true;
 			}
-			INTERNAL::ListChunk<T>* newList = new INTERNAL::ListChunk<T>[m_length];
+			INTERNAL::Unconstructed<T>* newList = new INTERNAL::Unconstructed<T>[m_length];
 			for (size_t i = 0; i < m_length; i++)
 			{
 				new (bbe::addressOf(newList[i])) T(std::move(m_data[i].value));
@@ -613,7 +602,7 @@ namespace bbe
 				return;
 			}
 
-			INTERNAL::ListChunk<T>* newList = new INTERNAL::ListChunk<T>[newCapacity];
+			INTERNAL::Unconstructed<T>* newList = new INTERNAL::Unconstructed<T>[newCapacity];
 			for (size_t i = 0; i < m_length; i++)
 			{
 				new (bbe::addressOf(newList[i])) T(std::move(m_data[i].value));
