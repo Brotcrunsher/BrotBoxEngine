@@ -6,6 +6,16 @@
 #include <unordered_map>
 #include <iostream>
 
+
+namespace std
+{
+	template<> struct hash<int> {
+		size_t operator()(const int& i) const {
+			return (size_t)i;
+		}
+	};
+}
+
 namespace bbe
 {
 	namespace test
@@ -31,6 +41,10 @@ namespace bbe
 			}
 
 			{
+				int a = 5;
+				std::hash<int> hasher;
+				hasher(a);
+
 				std::unordered_map<int, bbe::String> map;
 				CPUWatch watchAdd;
 				for (int i = 0; i < 1024 * 1024; i++)

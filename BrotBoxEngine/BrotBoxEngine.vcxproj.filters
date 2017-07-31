@@ -76,6 +76,9 @@
     <Filter Include="Tests\Performance\Time\DataStructures">
       <UniqueIdentifier>{84867f04-98c0-4de0-97ab-6a12e107a338}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Tests\Performance\Time\Random">
+      <UniqueIdentifier>{1cc96990-5e5b-4924-8329-56b89d27395e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -239,6 +242,12 @@
     </ClInclude>
     <ClInclude Include="LinearCongruentialGenerator.h">
       <Filter>Header Files\Random</Filter>
+    </ClInclude>
+    <ClInclude Include="MersenneTwister.h">
+      <Filter>Header Files\Random</Filter>
+    </ClInclude>
+    <ClInclude Include="MersenneTwisterPerformanceTime.h">
+      <Filter>Tests\Performance\Time\Random</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

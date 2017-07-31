@@ -8,15 +8,15 @@ namespace bbe {
 	class Random
 	{
 	private:
-		std::random_device ranDev;
-		std::mt19937 mt;
+		std::random_device m_ranDev;
+		std::mt19937 m_mt;
 		
 		template<typename T>
 		T randomInteger()
 		{
 			//UNTESTED
 			std::uniform_int_distribution<T> dist(std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
-			return dist(mt);
+			return dist(m_mt);
 		}
 
 		template<typename T>
@@ -24,7 +24,7 @@ namespace bbe {
 		{
 			//UNTESTED
 			std::uniform_int_distribution<T> dist(0, max - 1);
-			return dist(mt);
+			return dist(m_mt);
 		}
 
 		template<typename T>
@@ -32,7 +32,7 @@ namespace bbe {
 		{
 			//UNTESTED
 			std::uniform_real_distribution<T> dist(0.0, 1.0);
-			return dist(mt);
+			return dist(m_mt);
 		}
 
 		template<typename T>
@@ -40,12 +40,12 @@ namespace bbe {
 		{
 			//UNTESTED
 			std::uniform_real_distribution<T> dist(0.0, max);
-			return dist(mt);
+			return dist(m_mt);
 		}
 
 	public:
 		explicit Random()
-			: ranDev(), mt(ranDev())
+			: m_ranDev(), m_mt(m_ranDev())
 		{
 			//DO NOTHING
 		}
@@ -172,7 +172,7 @@ namespace bbe {
 
 		void setSeed(unsigned int seed)
 		{
-			mt.seed(seed);
+			m_mt.seed(seed);
 		}
 	};
 }

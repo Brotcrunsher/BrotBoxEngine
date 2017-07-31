@@ -196,6 +196,8 @@
     <ClInclude Include="LinearCongruentialGenerator.h" />
     <ClInclude Include="List.h" />
     <ClInclude Include="ListTest.h" />
+    <ClInclude Include="MersenneTwister.h" />
+    <ClInclude Include="MersenneTwisterPerformanceTime.h" />
     <ClInclude Include="OtherTest.h" />
     <ClInclude Include="PoolAllocator.h" />
     <ClInclude Include="PoolAllocatorPerformanceTime.h" />
