@@ -2,8 +2,6 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW\glfw3.h"
-#include "VulkanHelper.h"
-#include "VulkanInstance.h"
 
 namespace bbe
 {
@@ -11,6 +9,8 @@ namespace bbe
 	{
 		namespace vulkan
 		{
+			class VulkanInstance;
+
 			class VulkanSurface
 			{
 			private:
@@ -18,31 +18,19 @@ namespace bbe
 				VulkanInstance* m_instance = nullptr;
 
 			public:
-				VulkanSurface()
-				{
-					//DO NOTHING
-				}
+				VulkanSurface();
 
-				~VulkanSurface()
-				{
-					vkDestroySurfaceKHR(m_instance->getInstance(), m_surface, nullptr);
-				}
 
-				void init(VulkanInstance &instance, GLFWwindow *window) {
-					m_instance = &instance;
-					VkResult result = glfwCreateWindowSurface(instance.getInstance(), window, nullptr, &m_surface);
-					ASSERT_VULKAN(result);
-				}
+				void destroy();
+
+				void init(VulkanInstance &instance, GLFWwindow *window);
 
 				VulkanSurface(const VulkanSurface& other) = delete;
 				VulkanSurface(VulkanSurface&& other) = delete;
 				VulkanSurface& operator=(const VulkanSurface& other) = delete;
 				VulkanSurface& operator=(VulkanSurface&& other) = delete;
 
-				VkSurfaceKHR getSurface() const
-				{
-					return m_surface;
-				}
+				VkSurfaceKHR getSurface() const;
 			};
 		}
 	}

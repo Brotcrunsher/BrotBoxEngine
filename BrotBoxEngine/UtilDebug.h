@@ -2,8 +2,5 @@
 
 namespace bbe
 {
-	void debugBreak()
-	{
-		__debugbreak();
-	}
+	void debugBreak();
 }

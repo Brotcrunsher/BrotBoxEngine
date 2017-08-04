@@ -80,7 +80,7 @@ namespace bbe
 	uint32_t hash(const String &t)
 	{
 		//UNTESTED
-		//This function is based on the djb2 hasing algorithm by Dan Bernstein
+		//This function is based on the djb2 hashing algorithm by Dan Bernstein
 		//See: http://www.cse.yorku.ca/~oz/hash.html
 		//Changes to the original algorithm:
 		//  1. A 32 bit hash is used instead of a 64 bit hash

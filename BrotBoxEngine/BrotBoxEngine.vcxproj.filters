@@ -79,6 +79,45 @@
     <Filter Include="Tests\Performance\Time\Random">
       <UniqueIdentifier>{1cc96990-5e5b-4924-8329-56b89d27395e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Tests\Functionality\GFX">
+      <UniqueIdentifier>{291bfc22-b2ac-4e23-9114-19f077ccf82e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\Vulkan\Wrappers">
+      <UniqueIdentifier>{85558c4c-b6d8-454a-a721-f47d5e396719}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Exceptions">
+      <UniqueIdentifier>{a4333073-6bd9-4262-8a83-8ae819a5d629}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GFX\Vulkan\Shaders">
+      <UniqueIdentifier>{ba14e93f-14b0-4fba-b8ca-e8872d1731f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX">
+      <UniqueIdentifier>{345f7c6e-b767-4c77-82a3-58298cbd16f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Vulkan">
+      <UniqueIdentifier>{12db08aa-f9ce-4e88-ab87-c6a31bc57d80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Vulkan\Wrappers">
+      <UniqueIdentifier>{c699864a-c8c6-48f7-b92a-1369ba5311a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Util">
+      <UniqueIdentifier>{69b097c9-b755-4c09-9350-0897b845c5fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\FileSystem">
+      <UniqueIdentifier>{8dab6c7b-8290-41b8-9038-7214e3c9631e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Input">
+      <UniqueIdentifier>{36b726ff-a5df-4aca-8163-c9af58ed09f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Shapes">
+      <UniqueIdentifier>{bc0b860e-cf1f-4e0d-8b79-95cc4589cf06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Math">
+      <UniqueIdentifier>{92e17ecf-93eb-4bd1-aa15-30d0a4294e58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GFX\Core">
+      <UniqueIdentifier>{8dfbd26e-0a23-4217-b582-99a9cb2be7cd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -249,6 +288,60 @@
     <ClInclude Include="MersenneTwisterPerformanceTime.h">
       <Filter>Tests\Performance\Time\Random</Filter>
     </ClInclude>
+    <ClInclude Include="WindowTest.h">
+      <Filter>Tests\Functionality\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanPipeline.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="VWDepthImage.h">
+      <Filter>Header Files\GFX\Vulkan\Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="ExceptionHelper.h">
+      <Filter>Header Files\Exceptions</Filter>
+    </ClInclude>
+    <ClInclude Include="Exceptions.h">
+      <Filter>Header Files\Exceptions</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanShader.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanCommandPool.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanBuffer.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanSemaphore.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>Header Files\GFX\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="GameTime.h">
+      <Filter>Header Files\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanFence.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyboardKeys.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Keyboard.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="PrimitiveBrush2D.h">
+      <Filter>Header Files\GFX\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Rectangle.h">
+      <Filter>Header Files\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector2.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Color.h">
+      <Filter>Header Files\GFX\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -257,5 +350,94 @@
     <ClCompile Include="BrotBoxEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>Source Files\GFX\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="VWDepthImage.cpp">
+      <Filter>Source Files\GFX\Vulkan\Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanPipeline.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanCommandPool.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanDevice.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanHelper.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanInstance.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanPhysicalDevices.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleFile.cpp">
+      <Filter>Source Files\FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="UtilDebug.cpp">
+      <Filter>Source Files\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanRenderPass.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanShader.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanSurface.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanSwapchain.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanManager.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanBuffer.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanSemaphore.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="GameTime.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>Source Files\GFX\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowTest.cpp">
+      <Filter>Tests\Functionality\GFX</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanFence.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="KeyboardKeys.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Keyboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrimitiveBrush2D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Rectangle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Vector2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Color.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shader.frag">
+      <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
+    </None>
+    <None Include="shader.vert">
+      <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -11,20 +11,20 @@ namespace bbe
 		{
 			class VulkanDevice;
 
-			class VulkanRenderPass
+			class VulkanSemaphore
 			{
 			private:
-				VkRenderPass m_renderPass = VK_NULL_HANDLE;
+				VkSemaphore m_semaphore = VK_NULL_HANDLE;
 				VkDevice m_device = VK_NULL_HANDLE;
 
 			public:
-				VulkanRenderPass();
-
-				void destroy();
+				VulkanSemaphore();
 
 				void init(const VulkanDevice &device);
 
-				VkRenderPass getRenderPass() const;
+				void destroy();
+
+				VkSemaphore getSemaphore();
 			};
 		}
 	}

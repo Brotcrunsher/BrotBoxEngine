@@ -4,6 +4,7 @@
 #include <cwchar>
 #include "DynamicArray.h"
 #include "Array.h"
+#include "UtilDebug.h"
 
 namespace bbe
 {

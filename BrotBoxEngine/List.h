@@ -5,6 +5,7 @@
 #include "Array.h"
 #include "DynamicArray.h"
 #include "Unconstructed.h"
+#include "UtilDebug.h"
 #include <initializer_list>
 
 namespace bbe
@@ -743,6 +744,30 @@ namespace bbe
 		bool containsUnique(std::function<bool(const T&)> predicate) const
 		{
 			return containsAmount(predicate) == 1;
+		}
+
+		T* begin()
+		{
+			//UNTESTED
+			return &(this->m_data[0].value);
+		}
+
+		const T* begin() const
+		{
+			//UNTESTED
+			return &(this->m_data[0].value);
+		}
+
+		T* end()
+		{
+			//UNTESTED
+			return &(this->m_data[getLength()].value);
+		}
+
+		const T* end() const
+		{
+			//UNTESTED
+			return &(this->m_data[getLength()].value);
 		}
 
 		void sort()

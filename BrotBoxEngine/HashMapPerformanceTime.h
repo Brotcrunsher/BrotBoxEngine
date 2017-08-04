@@ -7,15 +7,6 @@
 #include <iostream>
 
 
-namespace std
-{
-	template<> struct hash<int> {
-		size_t operator()(const int& i) const {
-			return (size_t)i;
-		}
-	};
-}
-
 namespace bbe
 {
 	namespace test

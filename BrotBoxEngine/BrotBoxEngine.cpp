@@ -17,22 +17,12 @@
 #include "Unconstructed.h"
 #include "GeneralPurposeAllocator.h"
 #include "LinearCongruentialGenerator.h"
+#include "WindowTest.h"
 
 
 int main()
 {
-	bbe::test::hashMapPrintSpeed();
-
-	//bbe::test::NewDeleteAllocationDeallocationSpeed();
-	//bbe::test::GeneralPurposeAllocatorAllocationDeallocationSpeed();
-	//bbe::test::DefragmentationAllocatorAllocationDeallocationSpeed();
-
-	bbe::test::runAllTests();
-	//bbe::test::poolAllocatorPrintAllocationSpeed();
-	//bbe::test::stringSpeed();
-	//bbe::test::GeneralPurposeAllocatorAllocationDeallocationSpeed();
-	//bbe::test::NewDeleteAllocationDeallocationSpeed();
-    
+	bbe::test::testWindow();
 	return 0;
 }
 

@@ -107,6 +107,9 @@
       <AdditionalLibraryDirectories>$(SolutionDir)\Third-Party\Vulkan\Lib32;$(SolutionDir)\Third-Party\GLFW\glfw-3.2.1.bin.WIN32\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>call runCompiler.bat</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -126,6 +129,9 @@
       <AdditionalLibraryDirectories>$(SolutionDir)\Third-Party\Vulkan\Lib;$(SolutionDir)\Third-Party\GLFW\glfw-3.2.1.bin.WIN64\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>call runCompiler.bat</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -148,6 +154,9 @@
       <AdditionalLibraryDirectories>$(SolutionDir)\Third-Party\Vulkan\Lib32;$(SolutionDir)\Third-Party\GLFW\glfw-3.2.1.bin.WIN32\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>call runCompiler.bat</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -171,6 +180,9 @@
       <AdditionalLibraryDirectories>$(SolutionDir)\Third-Party\Vulkan\Lib;$(SolutionDir)\Third-Party\GLFW\glfw-3.2.1.bin.WIN64\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>call runCompiler.bat</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -179,12 +191,17 @@
     <ClInclude Include="AllTests.h" />
     <ClInclude Include="Array.h" />
     <ClInclude Include="BrotBoxEngine.h" />
+    <ClInclude Include="Color.h" />
     <ClInclude Include="CPUWatch.h" />
     <ClInclude Include="DataType.h" />
     <ClInclude Include="DefaultDestroyer.h" />
     <ClInclude Include="DefragmentationAllocator.h" />
     <ClInclude Include="DefragmentationAllocatorTest.h" />
     <ClInclude Include="DynamicArray.h" />
+    <ClInclude Include="ExceptionHelper.h" />
+    <ClInclude Include="Exceptions.h" />
+    <ClInclude Include="Game.h" />
+    <ClInclude Include="GameTime.h" />
     <ClInclude Include="GeneralPurposeAllocator.h" />
     <ClInclude Include="GeneralPurposeAllocatorPerformanceTime.h" />
     <ClInclude Include="GeneralPurposeAllocatorTest.h" />
@@ -193,6 +210,8 @@
     <ClInclude Include="HashMapPerformanceTime.h" />
     <ClInclude Include="HashMapTest.h" />
     <ClInclude Include="EmptyClass.h" />
+    <ClInclude Include="Keyboard.h" />
+    <ClInclude Include="KeyboardKeys.h" />
     <ClInclude Include="LinearCongruentialGenerator.h" />
     <ClInclude Include="List.h" />
     <ClInclude Include="ListTest.h" />
@@ -202,7 +221,9 @@
     <ClInclude Include="PoolAllocator.h" />
     <ClInclude Include="PoolAllocatorPerformanceTime.h" />
     <ClInclude Include="PoolAllocatorTest.h" />
+    <ClInclude Include="PrimitiveBrush2D.h" />
     <ClInclude Include="Random.h" />
+    <ClInclude Include="Rectangle.h" />
     <ClInclude Include="SimpleFile.h" />
     <ClInclude Include="Stack.h" />
     <ClInclude Include="StackAllocator.h" />
@@ -222,24 +243,64 @@
     <ClInclude Include="UtilMath.h" />
     <ClInclude Include="UtilTest.h" />
     <ClInclude Include="UtilDebug.h" />
+    <ClInclude Include="Vector2.h" />
+    <ClInclude Include="VulkanBuffer.h" />
+    <ClInclude Include="VulkanCommandPool.h" />
     <ClInclude Include="VulkanDevice.h" />
+    <ClInclude Include="VulkanFence.h" />
     <ClInclude Include="VulkanHelper.h" />
     <ClInclude Include="VulkanInstance.h" />
     <ClInclude Include="VulkanManager.h" />
     <ClInclude Include="VulkanPhysicalDevices.h" />
+    <ClInclude Include="VulkanPipeline.h" />
     <ClInclude Include="VulkanRenderPass.h" />
+    <ClInclude Include="VulkanSemaphore.h" />
     <ClInclude Include="VulkanSurface.h" />
     <ClInclude Include="VulkanSwapchain.h" />
+    <ClInclude Include="VulkanShader.h" />
+    <ClInclude Include="VWDepthImage.h" />
     <ClInclude Include="Window.h" />
+    <ClInclude Include="WindowTest.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BrotBoxEngine.cpp" />
+    <ClCompile Include="Color.cpp" />
+    <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameTime.cpp" />
+    <ClCompile Include="Keyboard.cpp" />
+    <ClCompile Include="KeyboardKeys.cpp" />
+    <ClCompile Include="PrimitiveBrush2D.cpp" />
+    <ClCompile Include="Rectangle.cpp" />
+    <ClCompile Include="SimpleFile.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="UtilDebug.cpp" />
+    <ClCompile Include="Vector2.cpp" />
+    <ClCompile Include="VulkanBuffer.cpp" />
+    <ClCompile Include="VulkanCommandPool.cpp" />
+    <ClCompile Include="VulkanDevice.cpp" />
+    <ClCompile Include="VulkanFence.cpp" />
+    <ClCompile Include="VulkanHelper.cpp" />
+    <ClCompile Include="VulkanInstance.cpp" />
+    <ClCompile Include="VulkanManager.cpp" />
+    <ClCompile Include="VulkanPhysicalDevices.cpp" />
+    <ClCompile Include="VulkanPipeline.cpp" />
+    <ClCompile Include="VulkanRenderPass.cpp" />
+    <ClCompile Include="VulkanSemaphore.cpp" />
+    <ClCompile Include="VulkanShader.cpp" />
+    <ClCompile Include="VulkanSurface.cpp" />
+    <ClCompile Include="VulkanSwapchain.cpp" />
+    <ClCompile Include="VWDepthImage.cpp" />
+    <ClCompile Include="Window.cpp" />
+    <ClCompile Include="WindowTest.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shader.frag" />
+    <None Include="shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
