@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "VulkanHelper.h"
+#include "BBE/VulkanHelper.h"
 
 uint32_t bbe::INTERNAL::vulkan::findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
 	VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;

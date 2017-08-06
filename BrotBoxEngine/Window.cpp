@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "Window.h"
-#include "PrimitiveBrush2D.h"
+#include "BBE/Window.h"
+#include "BBE/PrimitiveBrush2D.h"
 #include <iostream>
 
 
@@ -90,7 +90,6 @@ bbe::PrimitiveBrush2D * bbe::Window::getBrush2D()
 
 void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, int action, int mods)
 {
-	std::cout << "hai";
 	if (action == GLFW_PRESS)
 	{
 		bbe::Window::INTERNAL_firstInstance->INTERNAL_keyboard.INTERNAL_press(keyCode);
@@ -99,4 +98,11 @@ void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, i
 	{
 		bbe::Window::INTERNAL_firstInstance->INTERNAL_keyboard.INTERNAL_release(keyCode);
 	}
+}
+
+template<>
+uint32_t bbe::hash(const bbe::Window & t)
+{
+	//UNTESTED
+	return t.getWidth() * 7 + t.getHeight() * 13;
 }

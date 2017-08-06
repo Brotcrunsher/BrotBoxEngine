@@ -1,7 +1,7 @@
 #include "stdafx.h"
-#include "Rectangle.h"
-#include "Vector2.h"
-#include "VulkanDevice.h"
+#include "BBE/Rectangle.h"
+#include "BBE/Vector2.h"
+#include "BBE/VulkanDevice.h"
 
 bbe::INTERNAL::vulkan::VulkanBuffer* bbe::Rectangle::getVulkanVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, int screenWidth, int screenHeight)
 {

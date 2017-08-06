@@ -1,7 +1,7 @@
 #include "stdafx.h"
-#include "VulkanPipeline.h"
-#include "VWDepthImage.h"
-#include "VulkanShader.h"
+#include "BBE/VulkanPipeline.h"
+#include "BBE/VWDepthImage.h"
+#include "BBE/VulkanShader.h"
 
 bbe::INTERNAL::vulkan::VulkanPipeline::VulkanPipeline()
 {

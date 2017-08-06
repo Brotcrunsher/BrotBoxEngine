@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "VulkanSemaphore.h"
-#include "VulkanDevice.h"
-#include "VulkanHelper.h"
-#include "Exceptions.h"
+#include "BBE/VulkanSemaphore.h"
+#include "BBE/VulkanDevice.h"
+#include "BBE/VulkanHelper.h"
+#include "BBE/Exceptions.h"
 
 bbe::INTERNAL::vulkan::VulkanSemaphore::VulkanSemaphore()
 {

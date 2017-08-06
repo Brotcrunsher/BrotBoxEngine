@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "VulkanDevice.h"
-#include "VulkanSurface.h"
-#include "VulkanPhysicalDevices.h"
-#include "VulkanHelper.h"
+#include "BBE/VulkanDevice.h"
+#include "BBE/VulkanSurface.h"
+#include "BBE/VulkanPhysicalDevices.h"
+#include "BBE/VulkanHelper.h"
 
 void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & physicalDevices, const VulkanSurface & surface) {
 	VulkanPhysicalDevice pd = physicalDevices.findBestDevice(surface);

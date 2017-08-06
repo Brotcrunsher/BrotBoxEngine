@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "VulkanDevice.h"
-#include "VWDepthImage.h"
+#include "BBE/VulkanDevice.h"
+#include "BBE/VWDepthImage.h"
 
 bbe::INTERNAL::vulkan::VWDepthImage::VWDepthImage()
 {

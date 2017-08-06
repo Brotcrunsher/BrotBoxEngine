@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "GameTime.h"
+#include "BBE/GameTime.h"
 
 bbe::GameTime::GameTime()
 {

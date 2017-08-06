@@ -1,7 +1,7 @@
 #include "stdafx.h"
-#include "VulkanInstance.h"
-#include "List.h"
-#include "VulkanHelper.h"
+#include "BBE/VulkanInstance.h"
+#include "BBE/List.h"
+#include "BBE/VulkanHelper.h"
 
 bbe::INTERNAL::vulkan::VulkanInstance::VulkanInstance()
 {

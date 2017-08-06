@@ -1,10 +1,10 @@
 #include "stdafx.h"
-#include "VulkanBuffer.h"
-#include "Exceptions.h"
-#include "VulkanDevice.h"
-#include "VulkanHelper.h"
-#include "VulkanCommandPool.h"
-#include "VulkanManager.h"
+#include "BBE/VulkanBuffer.h"
+#include "BBE/Exceptions.h"
+#include "BBE/VulkanDevice.h"
+#include "BBE/VulkanHelper.h"
+#include "BBE/VulkanCommandPool.h"
+#include "BBE/VulkanManager.h"
 
 void bbe::INTERNAL::vulkan::VulkanBuffer::create(const VulkanDevice &vulkanDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t* p_queueFamilyIndices)
 {

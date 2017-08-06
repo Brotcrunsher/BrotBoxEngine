@@ -22,30 +22,30 @@
     <ProjectGuid>{4FBD385B-15BA-43EE-A6BE-0B702B15B972}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>BrotBoxEngine</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -94,10 +94,11 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>
+      </SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\Third-Party\Vulkan\Include;$(SolutionDir)\Third-Party\GLFW\glfw-3.2.1.bin.WIN32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -188,79 +189,79 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AllTests.h" />
-    <ClInclude Include="Array.h" />
-    <ClInclude Include="BrotBoxEngine.h" />
-    <ClInclude Include="Color.h" />
-    <ClInclude Include="CPUWatch.h" />
-    <ClInclude Include="DataType.h" />
-    <ClInclude Include="DefaultDestroyer.h" />
-    <ClInclude Include="DefragmentationAllocator.h" />
-    <ClInclude Include="DefragmentationAllocatorTest.h" />
-    <ClInclude Include="DynamicArray.h" />
-    <ClInclude Include="ExceptionHelper.h" />
-    <ClInclude Include="Exceptions.h" />
-    <ClInclude Include="Game.h" />
-    <ClInclude Include="GameTime.h" />
-    <ClInclude Include="GeneralPurposeAllocator.h" />
-    <ClInclude Include="GeneralPurposeAllocatorPerformanceTime.h" />
-    <ClInclude Include="GeneralPurposeAllocatorTest.h" />
-    <ClInclude Include="Hash.h" />
-    <ClInclude Include="HashMap.h" />
-    <ClInclude Include="HashMapPerformanceTime.h" />
-    <ClInclude Include="HashMapTest.h" />
-    <ClInclude Include="EmptyClass.h" />
-    <ClInclude Include="Keyboard.h" />
-    <ClInclude Include="KeyboardKeys.h" />
-    <ClInclude Include="LinearCongruentialGenerator.h" />
-    <ClInclude Include="List.h" />
-    <ClInclude Include="ListTest.h" />
-    <ClInclude Include="MersenneTwister.h" />
-    <ClInclude Include="MersenneTwisterPerformanceTime.h" />
-    <ClInclude Include="OtherTest.h" />
-    <ClInclude Include="PoolAllocator.h" />
-    <ClInclude Include="PoolAllocatorPerformanceTime.h" />
-    <ClInclude Include="PoolAllocatorTest.h" />
-    <ClInclude Include="PrimitiveBrush2D.h" />
-    <ClInclude Include="Random.h" />
-    <ClInclude Include="Rectangle.h" />
-    <ClInclude Include="SimpleFile.h" />
-    <ClInclude Include="Stack.h" />
-    <ClInclude Include="StackAllocator.h" />
-    <ClInclude Include="StackAllocatorTest.h" />
-    <ClInclude Include="StackTest.h" />
+    <ClInclude Include="BBE\AllTests.h" />
+    <ClInclude Include="BBE\Array.h" />
+    <ClInclude Include="BBE\BrotBoxEngine.h" />
+    <ClInclude Include="BBE\Color.h" />
+    <ClInclude Include="BBE\CPUWatch.h" />
+    <ClInclude Include="BBE\DataType.h" />
+    <ClInclude Include="BBE\DefaultDestroyer.h" />
+    <ClInclude Include="BBE\DefragmentationAllocator.h" />
+    <ClInclude Include="BBE\DefragmentationAllocatorTest.h" />
+    <ClInclude Include="BBE\DynamicArray.h" />
+    <ClInclude Include="BBE\ExceptionHelper.h" />
+    <ClInclude Include="BBE\Exceptions.h" />
+    <ClInclude Include="BBE\Game.h" />
+    <ClInclude Include="BBE\GameTime.h" />
+    <ClInclude Include="BBE\GeneralPurposeAllocator.h" />
+    <ClInclude Include="BBE\GeneralPurposeAllocatorPerformanceTime.h" />
+    <ClInclude Include="BBE\GeneralPurposeAllocatorTest.h" />
+    <ClInclude Include="BBE\Hash.h" />
+    <ClInclude Include="BBE\HashMap.h" />
+    <ClInclude Include="BBE\HashMapPerformanceTime.h" />
+    <ClInclude Include="BBE\HashMapTest.h" />
+    <ClInclude Include="BBE\EmptyClass.h" />
+    <ClInclude Include="BBE\Keyboard.h" />
+    <ClInclude Include="BBE\KeyboardKeys.h" />
+    <ClInclude Include="BBE\LinearCongruentialGenerator.h" />
+    <ClInclude Include="BBE\List.h" />
+    <ClInclude Include="BBE\ListTest.h" />
+    <ClInclude Include="BBE\MersenneTwister.h" />
+    <ClInclude Include="BBE\MersenneTwisterPerformanceTime.h" />
+    <ClInclude Include="BBE\OtherTest.h" />
+    <ClInclude Include="BBE\PoolAllocator.h" />
+    <ClInclude Include="BBE\PoolAllocatorPerformanceTime.h" />
+    <ClInclude Include="BBE\PoolAllocatorTest.h" />
+    <ClInclude Include="BBE\PrimitiveBrush2D.h" />
+    <ClInclude Include="BBE\Random.h" />
+    <ClInclude Include="BBE\Rectangle.h" />
+    <ClInclude Include="BBE\SimpleFile.h" />
+    <ClInclude Include="BBE\Stack.h" />
+    <ClInclude Include="BBE\StackAllocator.h" />
+    <ClInclude Include="BBE\StackAllocatorTest.h" />
+    <ClInclude Include="BBE\StackTest.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="STLAllocator.h" />
-    <ClInclude Include="STLCapsule.h" />
-    <ClInclude Include="StopWatch.h" />
-    <ClInclude Include="String.h" />
-    <ClInclude Include="StringPerformanceTime.h" />
-    <ClInclude Include="StringTest.h" />
+    <ClInclude Include="BBE\STLAllocator.h" />
+    <ClInclude Include="BBE\STLCapsule.h" />
+    <ClInclude Include="BBE\StopWatch.h" />
+    <ClInclude Include="BBE\String.h" />
+    <ClInclude Include="BBE\StringPerformanceTime.h" />
+    <ClInclude Include="BBE\StringTest.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="Unconstructed.h" />
-    <ClInclude Include="UniquePointer.h" />
-    <ClInclude Include="UniquePointerTest.h" />
-    <ClInclude Include="UtilMath.h" />
-    <ClInclude Include="UtilTest.h" />
-    <ClInclude Include="UtilDebug.h" />
-    <ClInclude Include="Vector2.h" />
-    <ClInclude Include="VulkanBuffer.h" />
-    <ClInclude Include="VulkanCommandPool.h" />
-    <ClInclude Include="VulkanDevice.h" />
-    <ClInclude Include="VulkanFence.h" />
-    <ClInclude Include="VulkanHelper.h" />
-    <ClInclude Include="VulkanInstance.h" />
-    <ClInclude Include="VulkanManager.h" />
-    <ClInclude Include="VulkanPhysicalDevices.h" />
-    <ClInclude Include="VulkanPipeline.h" />
-    <ClInclude Include="VulkanRenderPass.h" />
-    <ClInclude Include="VulkanSemaphore.h" />
-    <ClInclude Include="VulkanSurface.h" />
-    <ClInclude Include="VulkanSwapchain.h" />
-    <ClInclude Include="VulkanShader.h" />
-    <ClInclude Include="VWDepthImage.h" />
-    <ClInclude Include="Window.h" />
-    <ClInclude Include="WindowTest.h" />
+    <ClInclude Include="BBE\Unconstructed.h" />
+    <ClInclude Include="BBE\UniquePointer.h" />
+    <ClInclude Include="BBE\UniquePointerTest.h" />
+    <ClInclude Include="BBE\UtilMath.h" />
+    <ClInclude Include="BBE\UtilTest.h" />
+    <ClInclude Include="BBE\UtilDebug.h" />
+    <ClInclude Include="BBE\Vector2.h" />
+    <ClInclude Include="BBE\VulkanBuffer.h" />
+    <ClInclude Include="BBE\VulkanCommandPool.h" />
+    <ClInclude Include="BBE\VulkanDevice.h" />
+    <ClInclude Include="BBE\VulkanFence.h" />
+    <ClInclude Include="BBE\VulkanHelper.h" />
+    <ClInclude Include="BBE\VulkanInstance.h" />
+    <ClInclude Include="BBE\VulkanManager.h" />
+    <ClInclude Include="BBE\VulkanPhysicalDevices.h" />
+    <ClInclude Include="BBE\VulkanPipeline.h" />
+    <ClInclude Include="BBE\VulkanRenderPass.h" />
+    <ClInclude Include="BBE\VulkanSemaphore.h" />
+    <ClInclude Include="BBE\VulkanSurface.h" />
+    <ClInclude Include="BBE\VulkanSwapchain.h" />
+    <ClInclude Include="BBE\VulkanShader.h" />
+    <ClInclude Include="BBE\VWDepthImage.h" />
+    <ClInclude Include="BBE\Window.h" />
+    <ClInclude Include="BBE\WindowTest.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BrotBoxEngine.cpp" />
@@ -278,6 +279,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="String.cpp" />
     <ClCompile Include="UtilDebug.cpp" />
     <ClCompile Include="Vector2.cpp" />
     <ClCompile Include="VulkanBuffer.cpp" />

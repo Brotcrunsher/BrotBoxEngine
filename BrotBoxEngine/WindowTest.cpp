@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "WindowTest.h"
-#include "KeyboardKeys.h"
+#include "BBE/WindowTest.h"
+#include "BBE/KeyboardKeys.h"
 #include <iostream>
 
 void bbe::test::MyGame::onStart()

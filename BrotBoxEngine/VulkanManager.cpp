@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "Vector2.h"
-#include "VulkanManager.h"
-#include "Color.h"
-#include "Exceptions.h"
+#include "BBE/Vector2.h"
+#include "BBE/VulkanManager.h"
+#include "BBE/Color.h"
+#include "BBE/Exceptions.h"
 
 bbe::INTERNAL::vulkan::VulkanManager *bbe::INTERNAL::vulkan::VulkanManager::s_pinstance = nullptr;
 

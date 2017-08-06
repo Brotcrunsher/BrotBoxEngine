@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "PrimitiveBrush2D.h"
-#include "VulkanBuffer.h"
-#include "VulkanDevice.h"
-#include "VulkanManager.h"
+#include "BBE/PrimitiveBrush2D.h"
+#include "BBE/VulkanBuffer.h"
+#include "BBE/VulkanDevice.h"
+#include "BBE/VulkanManager.h"
 
 void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice &device, VkCommandBuffer commandBuffer, VkPipelineLayout layout, int width, int height)
 {

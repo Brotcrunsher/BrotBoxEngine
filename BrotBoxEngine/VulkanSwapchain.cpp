@@ -1,9 +1,9 @@
 #include "stdafx.h"
-#include "VulkanSwapchain.h"
-#include "VulkanSurface.h"
-#include "VulkanRenderPass.h"
-#include "VWDepthImage.h"
-#include "VulkanDevice.h"
+#include "BBE/VulkanSwapchain.h"
+#include "BBE/VulkanSurface.h"
+#include "BBE/VulkanRenderPass.h"
+#include "BBE/VWDepthImage.h"
+#include "BBE/VulkanDevice.h"
 
 bbe::INTERNAL::vulkan::VulkanSwapchain::VulkanSwapchain()
 {

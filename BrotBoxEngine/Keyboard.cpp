@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "Keyboard.h"
-#include "Exceptions.h"
+#include "BBE/Keyboard.h"
+#include "BBE/Exceptions.h"
 
 void bbe::Keyboard::INTERNAL_press(int keyCode)
 {

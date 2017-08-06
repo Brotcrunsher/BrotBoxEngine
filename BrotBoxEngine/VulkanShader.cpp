@@ -1,9 +1,9 @@
 #include "stdafx.h"
-#include "VulkanShader.h"
-#include "SimpleFile.h"
-#include "VulkanHelper.h"
-#include "VulkanDevice.h"
-#include "List.h"
+#include "BBE/VulkanShader.h"
+#include "BBE/SimpleFile.h"
+#include "BBE/VulkanHelper.h"
+#include "BBE/VulkanDevice.h"
+#include "BBE/List.h"
 
 bbe::INTERNAL::vulkan::VulkanShader::VulkanShader()
 {

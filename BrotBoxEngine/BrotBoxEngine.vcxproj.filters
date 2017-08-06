@@ -126,221 +126,221 @@
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PoolAllocator.h">
-      <Filter>Header Files\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="PoolAllocatorTest.h">
-      <Filter>Tests\Functionality\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="UtilDebug.h">
-      <Filter>Header Files\Util</Filter>
-    </ClInclude>
-    <ClInclude Include="UtilTest.h">
-      <Filter>Tests</Filter>
-    </ClInclude>
-    <ClInclude Include="StackAllocator.h">
-      <Filter>Header Files\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="StackAllocatorTest.h">
-      <Filter>Tests\Functionality\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="UtilMath.h">
-      <Filter>Header Files\Util</Filter>
-    </ClInclude>
-    <ClInclude Include="OtherTest.h">
-      <Filter>Tests</Filter>
-    </ClInclude>
-    <ClInclude Include="DataType.h">
-      <Filter>Header Files\Util</Filter>
-    </ClInclude>
-    <ClInclude Include="String.h">
-      <Filter>Header Files\General</Filter>
-    </ClInclude>
-    <ClInclude Include="StringTest.h">
-      <Filter>Tests\Functionality\General</Filter>
-    </ClInclude>
-    <ClInclude Include="Array.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="DynamicArray.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="List.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="ListTest.h">
-      <Filter>Tests\Functionality\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="STLCapsule.h">
-      <Filter>Header Files\Util</Filter>
-    </ClInclude>
-    <ClInclude Include="STLAllocator.h">
-      <Filter>Header Files\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="StopWatch.h">
-      <Filter>Header Files\Time</Filter>
-    </ClInclude>
-    <ClInclude Include="AllTests.h">
+    <ClInclude Include="BBE\AllTests.h">
       <Filter>Tests\Functionality</Filter>
     </ClInclude>
-    <ClInclude Include="PoolAllocatorPerformanceTime.h">
-      <Filter>Tests\Performance\Time\MemoryManagement</Filter>
+    <ClInclude Include="BBE\Array.h">
+      <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
-    <ClInclude Include="CPUWatch.h">
-      <Filter>Header Files\Time</Filter>
-    </ClInclude>
-    <ClInclude Include="StringPerformanceTime.h">
-      <Filter>Tests\Performance\Time\General</Filter>
-    </ClInclude>
-    <ClInclude Include="GeneralPurposeAllocator.h">
-      <Filter>Header Files\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="GeneralPurposeAllocatorTest.h">
-      <Filter>Tests\Functionality\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="UniquePointer.h">
-      <Filter>Header Files\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="UniquePointerTest.h">
-      <Filter>Tests\Functionality\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="DefaultDestroyer.h">
-      <Filter>Header Files\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="BrotBoxEngine.h">
+    <ClInclude Include="BBE\BrotBoxEngine.h">
       <Filter>Header Files\General</Filter>
     </ClInclude>
-    <ClInclude Include="Window.h">
+    <ClInclude Include="BBE\Color.h">
       <Filter>Header Files\GFX\Core</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanInstance.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="VulkanHelper.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="VulkanPhysicalDevices.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="VulkanManager.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="VulkanSurface.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="VulkanDevice.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="VulkanSwapchain.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="VulkanRenderPass.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="SimpleFile.h">
-      <Filter>Header Files\FileSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="Random.h">
-      <Filter>Header Files\Random</Filter>
-    </ClInclude>
-    <ClInclude Include="GeneralPurposeAllocatorPerformanceTime.h">
-      <Filter>Tests\Performance\Time\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="Hash.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="HashMap.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="HashMapTest.h">
-      <Filter>Tests\Functionality\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="HashMapPerformanceTime.h">
-      <Filter>Tests\Performance\Time\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="EmptyClass.h">
-      <Filter>Header Files\Util</Filter>
-    </ClInclude>
-    <ClInclude Include="Stack.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="StackTest.h">
-      <Filter>Tests\Functionality\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="DefragmentationAllocator.h">
-      <Filter>Header Files\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="DefragmentationAllocatorTest.h">
-      <Filter>Tests\Functionality\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="Unconstructed.h">
-      <Filter>Header Files\Util</Filter>
-    </ClInclude>
-    <ClInclude Include="LinearCongruentialGenerator.h">
-      <Filter>Header Files\Random</Filter>
-    </ClInclude>
-    <ClInclude Include="MersenneTwister.h">
-      <Filter>Header Files\Random</Filter>
-    </ClInclude>
-    <ClInclude Include="MersenneTwisterPerformanceTime.h">
-      <Filter>Tests\Performance\Time\Random</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowTest.h">
-      <Filter>Tests\Functionality\GFX</Filter>
-    </ClInclude>
-    <ClInclude Include="VulkanPipeline.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="VWDepthImage.h">
-      <Filter>Header Files\GFX\Vulkan\Wrappers</Filter>
-    </ClInclude>
-    <ClInclude Include="ExceptionHelper.h">
-      <Filter>Header Files\Exceptions</Filter>
-    </ClInclude>
-    <ClInclude Include="Exceptions.h">
-      <Filter>Header Files\Exceptions</Filter>
-    </ClInclude>
-    <ClInclude Include="VulkanShader.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="VulkanCommandPool.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="VulkanBuffer.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="VulkanSemaphore.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Game.h">
-      <Filter>Header Files\GFX\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="GameTime.h">
+    <ClInclude Include="BBE\CPUWatch.h">
       <Filter>Header Files\Time</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanFence.h">
-      <Filter>Header Files\GFX\Vulkan</Filter>
+    <ClInclude Include="BBE\DataType.h">
+      <Filter>Header Files\Util</Filter>
     </ClInclude>
-    <ClInclude Include="KeyboardKeys.h">
-      <Filter>Header Files\Input</Filter>
+    <ClInclude Include="BBE\DefaultDestroyer.h">
+      <Filter>Header Files\MemoryManagement</Filter>
     </ClInclude>
-    <ClInclude Include="Keyboard.h">
-      <Filter>Header Files\Input</Filter>
+    <ClInclude Include="BBE\DefragmentationAllocator.h">
+      <Filter>Header Files\MemoryManagement</Filter>
     </ClInclude>
-    <ClInclude Include="PrimitiveBrush2D.h">
+    <ClInclude Include="BBE\DefragmentationAllocatorTest.h">
+      <Filter>Tests\Functionality\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\DynamicArray.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\EmptyClass.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\ExceptionHelper.h">
+      <Filter>Header Files\Exceptions</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Exceptions.h">
+      <Filter>Header Files\Exceptions</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Game.h">
       <Filter>Header Files\GFX\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Rectangle.h">
+    <ClInclude Include="BBE\GameTime.h">
+      <Filter>Header Files\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\GeneralPurposeAllocator.h">
+      <Filter>Header Files\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\GeneralPurposeAllocatorPerformanceTime.h">
+      <Filter>Tests\Performance\Time\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\GeneralPurposeAllocatorTest.h">
+      <Filter>Tests\Functionality\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Hash.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\HashMap.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\HashMapPerformanceTime.h">
+      <Filter>Tests\Performance\Time\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\HashMapTest.h">
+      <Filter>Tests\Functionality\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Keyboard.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\KeyboardKeys.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\LinearCongruentialGenerator.h">
+      <Filter>Header Files\Random</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\List.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\ListTest.h">
+      <Filter>Tests\Functionality\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\MersenneTwister.h">
+      <Filter>Header Files\Random</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\MersenneTwisterPerformanceTime.h">
+      <Filter>Tests\Performance\Time\Random</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\OtherTest.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\PoolAllocator.h">
+      <Filter>Header Files\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\PoolAllocatorPerformanceTime.h">
+      <Filter>Tests\Performance\Time\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\PoolAllocatorTest.h">
+      <Filter>Tests\Functionality\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\PrimitiveBrush2D.h">
+      <Filter>Header Files\GFX\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Random.h">
+      <Filter>Header Files\Random</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Rectangle.h">
       <Filter>Header Files\Shapes</Filter>
     </ClInclude>
-    <ClInclude Include="Vector2.h">
+    <ClInclude Include="BBE\SimpleFile.h">
+      <Filter>Header Files\FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Stack.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\StackAllocator.h">
+      <Filter>Header Files\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\StackAllocatorTest.h">
+      <Filter>Tests\Functionality\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\StackTest.h">
+      <Filter>Tests\Functionality\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\STLAllocator.h">
+      <Filter>Header Files\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\STLCapsule.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\StopWatch.h">
+      <Filter>Header Files\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\String.h">
+      <Filter>Header Files\General</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\StringPerformanceTime.h">
+      <Filter>Tests\Performance\Time\General</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\StringTest.h">
+      <Filter>Tests\Functionality\General</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Unconstructed.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\UniquePointer.h">
+      <Filter>Header Files\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\UniquePointerTest.h">
+      <Filter>Tests\Functionality\MemoryManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\UtilDebug.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\UtilMath.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\UtilTest.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Vector2.h">
       <Filter>Header Files\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Color.h">
+    <ClInclude Include="BBE\VulkanBuffer.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanCommandPool.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanDevice.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanFence.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanHelper.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanInstance.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanManager.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanPhysicalDevices.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanPipeline.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanRenderPass.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanSemaphore.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanShader.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanSurface.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanSwapchain.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VWDepthImage.h">
+      <Filter>Header Files\GFX\Vulkan\Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Window.h">
       <Filter>Header Files\GFX\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\WindowTest.h">
+      <Filter>Tests\Functionality\GFX</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -429,6 +429,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Color.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="String.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

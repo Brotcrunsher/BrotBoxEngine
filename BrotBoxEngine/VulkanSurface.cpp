@@ -1,7 +1,7 @@
 #include "stdafx.h"
-#include "VulkanSurface.h"
-#include "VulkanHelper.h"
-#include "VulkanInstance.h"
+#include "BBE/VulkanSurface.h"
+#include "BBE/VulkanHelper.h"
+#include "BBE/VulkanInstance.h"
 
 bbe::INTERNAL::vulkan::VulkanSurface::VulkanSurface()
 {

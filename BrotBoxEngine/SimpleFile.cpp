@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "SimpleFile.h"
+#include "BBE/SimpleFile.h"
 
 bbe::List<char> bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 {

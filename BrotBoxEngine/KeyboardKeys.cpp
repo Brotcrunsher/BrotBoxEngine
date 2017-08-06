@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "KeyboardKeys.h"
-#include "Exceptions.h"
+#include "BBE/KeyboardKeys.h"
+#include "BBE/Exceptions.h"
 
 bbe::String bbe::keyCodeToString(int keyCode)
 {

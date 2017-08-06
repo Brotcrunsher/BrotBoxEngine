@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "Game.h"
-#include "Window.h"
-#include "Exceptions.h"
-#include "PrimitiveBrush2D.h"
+#include "BBE/Game.h"
+#include "BBE/Window.h"
+#include "BBE/Exceptions.h"
+#include "BBE/PrimitiveBrush2D.h"
 
 bbe::Game::Game()
 {
