@@ -147,28 +147,51 @@ float bbe::Rectangle::getHeight() const
 
 void bbe::Rectangle::setX(float x)
 {
+	if(x != m_x)
+		m_bufferDirty = true;
 	m_x = x;
 }
 
 void bbe::Rectangle::setY(float y)
 {
+	if(y != m_y)
+		m_bufferDirty = true;
 	m_y = y;
 }
 
 void bbe::Rectangle::setWidth(float width)
 {
+	if(width != m_width)
+		m_bufferDirty = true;
 	m_width = width;
 }
 
 void bbe::Rectangle::setHeight(float height)
 {
+	if(height != m_height)
+		m_bufferDirty = true;
 	m_height = height;
 }
 
 void bbe::Rectangle::set(float x, float y, float width, float height)
 {
-	m_x = x;
-	m_y = y;
-	m_width = width;
-	m_height = height;
+	setX(x);
+	setY(y);
+	setWidth(width);
+	setHeight(height);
+}
+
+void bbe::Rectangle::translate(float x, float y)
+{
+	if (x != 0 || y != 0)
+	{
+		m_bufferDirty = true;
+		m_x += x;
+		m_y += y;
+	}
+}
+
+void bbe::Rectangle::translate(const Vector2 & vec)
+{
+	translate(vec.x, vec.y);
 }

@@ -16,9 +16,6 @@
     <Filter Include="Header Files\MemoryManagement">
       <UniqueIdentifier>{744ac410-73e1-4299-a1e7-af54a0e9c4e2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Tests">
-      <UniqueIdentifier>{a9588f8d-7f8b-4585-9bec-0fe3bae76cf1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Util">
       <UniqueIdentifier>{4b46aeae-6e37-4485-87fd-d0022a2ee639}</UniqueIdentifier>
     </Filter>
@@ -30,33 +27,6 @@
     </Filter>
     <Filter Include="Header Files\Time">
       <UniqueIdentifier>{aa93ac2a-a2b5-4a25-af39-5d8a0fee10b1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tests\Functionality">
-      <UniqueIdentifier>{fd001219-33af-4fdc-b1eb-f24bde47736b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tests\Functionality\MemoryManagement">
-      <UniqueIdentifier>{a54dc58f-bdd3-4755-b146-f4c59d218a8d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tests\Functionality\General">
-      <UniqueIdentifier>{9648820f-2eb7-4090-8f7a-7aba39d08265}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tests\Functionality\DataStructures">
-      <UniqueIdentifier>{833b2de2-7c6b-4a6e-bdf8-9a56c965acc0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tests\Performance">
-      <UniqueIdentifier>{19af6599-1ff7-4ce7-a40c-4bafbe9eb2c4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tests\Performance\Time">
-      <UniqueIdentifier>{7d7a2a74-8ed1-4ca0-82a3-498d98fde1f1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tests\Performance\Memory">
-      <UniqueIdentifier>{8837e97a-b8f7-4343-b807-25849c140b9f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tests\Performance\Time\MemoryManagement">
-      <UniqueIdentifier>{80cdc108-1632-4bfe-a778-9d0adca8e0a4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tests\Performance\Time\General">
-      <UniqueIdentifier>{6ba0fe63-acf5-423f-8ae3-47501401fbfe}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\GFX">
       <UniqueIdentifier>{a54c231c-d8a9-4ee8-9c39-7956fe2081c7}</UniqueIdentifier>
@@ -72,15 +42,6 @@
     </Filter>
     <Filter Include="Header Files\Random">
       <UniqueIdentifier>{7b10c1a5-9ba4-414a-ae82-5916529d5c3c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tests\Performance\Time\DataStructures">
-      <UniqueIdentifier>{84867f04-98c0-4de0-97ab-6a12e107a338}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tests\Performance\Time\Random">
-      <UniqueIdentifier>{1cc96990-5e5b-4924-8329-56b89d27395e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tests\Functionality\GFX">
-      <UniqueIdentifier>{291bfc22-b2ac-4e23-9114-19f077ccf82e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\GFX\Vulkan\Wrappers">
       <UniqueIdentifier>{85558c4c-b6d8-454a-a721-f47d5e396719}</UniqueIdentifier>
@@ -126,9 +87,6 @@
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BBE\AllTests.h">
-      <Filter>Tests\Functionality</Filter>
-    </ClInclude>
     <ClInclude Include="BBE\Array.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
@@ -149,9 +107,6 @@
     </ClInclude>
     <ClInclude Include="BBE\DefragmentationAllocator.h">
       <Filter>Header Files\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="BBE\DefragmentationAllocatorTest.h">
-      <Filter>Tests\Functionality\MemoryManagement</Filter>
     </ClInclude>
     <ClInclude Include="BBE\DynamicArray.h">
       <Filter>Header Files\DataStructures</Filter>
@@ -174,23 +129,11 @@
     <ClInclude Include="BBE\GeneralPurposeAllocator.h">
       <Filter>Header Files\MemoryManagement</Filter>
     </ClInclude>
-    <ClInclude Include="BBE\GeneralPurposeAllocatorPerformanceTime.h">
-      <Filter>Tests\Performance\Time\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="BBE\GeneralPurposeAllocatorTest.h">
-      <Filter>Tests\Functionality\MemoryManagement</Filter>
-    </ClInclude>
     <ClInclude Include="BBE\Hash.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="BBE\HashMap.h">
       <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="BBE\HashMapPerformanceTime.h">
-      <Filter>Tests\Performance\Time\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="BBE\HashMapTest.h">
-      <Filter>Tests\Functionality\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="BBE\Keyboard.h">
       <Filter>Header Files\Input</Filter>
@@ -204,26 +147,11 @@
     <ClInclude Include="BBE\List.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
-    <ClInclude Include="BBE\ListTest.h">
-      <Filter>Tests\Functionality\DataStructures</Filter>
-    </ClInclude>
     <ClInclude Include="BBE\MersenneTwister.h">
       <Filter>Header Files\Random</Filter>
     </ClInclude>
-    <ClInclude Include="BBE\MersenneTwisterPerformanceTime.h">
-      <Filter>Tests\Performance\Time\Random</Filter>
-    </ClInclude>
-    <ClInclude Include="BBE\OtherTest.h">
-      <Filter>Tests</Filter>
-    </ClInclude>
     <ClInclude Include="BBE\PoolAllocator.h">
       <Filter>Header Files\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="BBE\PoolAllocatorPerformanceTime.h">
-      <Filter>Tests\Performance\Time\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="BBE\PoolAllocatorTest.h">
-      <Filter>Tests\Functionality\MemoryManagement</Filter>
     </ClInclude>
     <ClInclude Include="BBE\PrimitiveBrush2D.h">
       <Filter>Header Files\GFX\Core</Filter>
@@ -243,12 +171,6 @@
     <ClInclude Include="BBE\StackAllocator.h">
       <Filter>Header Files\MemoryManagement</Filter>
     </ClInclude>
-    <ClInclude Include="BBE\StackAllocatorTest.h">
-      <Filter>Tests\Functionality\MemoryManagement</Filter>
-    </ClInclude>
-    <ClInclude Include="BBE\StackTest.h">
-      <Filter>Tests\Functionality\DataStructures</Filter>
-    </ClInclude>
     <ClInclude Include="BBE\STLAllocator.h">
       <Filter>Header Files\MemoryManagement</Filter>
     </ClInclude>
@@ -261,29 +183,17 @@
     <ClInclude Include="BBE\String.h">
       <Filter>Header Files\General</Filter>
     </ClInclude>
-    <ClInclude Include="BBE\StringPerformanceTime.h">
-      <Filter>Tests\Performance\Time\General</Filter>
-    </ClInclude>
-    <ClInclude Include="BBE\StringTest.h">
-      <Filter>Tests\Functionality\General</Filter>
-    </ClInclude>
     <ClInclude Include="BBE\Unconstructed.h">
       <Filter>Header Files\Util</Filter>
     </ClInclude>
     <ClInclude Include="BBE\UniquePointer.h">
       <Filter>Header Files\MemoryManagement</Filter>
     </ClInclude>
-    <ClInclude Include="BBE\UniquePointerTest.h">
-      <Filter>Tests\Functionality\MemoryManagement</Filter>
-    </ClInclude>
     <ClInclude Include="BBE\UtilDebug.h">
       <Filter>Header Files\Util</Filter>
     </ClInclude>
     <ClInclude Include="BBE\UtilMath.h">
       <Filter>Header Files\Util</Filter>
-    </ClInclude>
-    <ClInclude Include="BBE\UtilTest.h">
-      <Filter>Tests</Filter>
     </ClInclude>
     <ClInclude Include="BBE\Vector2.h">
       <Filter>Header Files\Math</Filter>
@@ -336,18 +246,15 @@
     <ClInclude Include="BBE\Window.h">
       <Filter>Header Files\GFX\Core</Filter>
     </ClInclude>
-    <ClInclude Include="BBE\WindowTest.h">
-      <Filter>Tests\Functionality\GFX</Filter>
-    </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\UtilTest.h">
+      <Filter>Header Files\Util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BrotBoxEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Window.cpp">
@@ -406,9 +313,6 @@
     </ClCompile>
     <ClCompile Include="Game.cpp">
       <Filter>Source Files\GFX\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="WindowTest.cpp">
-      <Filter>Tests\Functionality\GFX</Filter>
     </ClCompile>
     <ClCompile Include="VulkanFence.cpp">
       <Filter>Source Files</Filter>

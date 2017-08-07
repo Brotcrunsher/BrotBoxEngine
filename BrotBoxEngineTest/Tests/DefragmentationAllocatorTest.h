@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../BBE/DefragmentationAllocator.h"
-#include "../BBE/UtilDebug.h"
-#include "../BBE/Random.h"
+#include "BBE/DefragmentationAllocator.h"
+#include "BBE/UtilDebug.h"
+#include "BBE/Random.h"
 
 namespace bbe {
 	namespace test {
@@ -35,8 +35,8 @@ namespace bbe {
 					assertEquals(f2[i], i + 200);
 				}
 
-				da.deallocateObjects(f1);
-				da.deallocateObjects(f2);
+				da.deallocate(f1);
+				da.deallocate(f2);
 			}
 
 
@@ -50,7 +50,7 @@ namespace bbe {
 
 				for (int i = 0; i < 64; i++)
 				{
-					da.deallocateObjects(list[i]);
+					da.deallocate(list[i]);
 				}
 			}
 
@@ -85,7 +85,7 @@ namespace bbe {
 							states[*list[index]] = freed;
 
 							*list[index] = 0;
-							da.deallocateObjects(list[index]);
+							da.deallocate(list[index]);
 							list.removeIndex(index);
 						}
 					}
@@ -98,7 +98,7 @@ namespace bbe {
 
 				for (int i = 0; i < list.getLength(); i++)
 				{
-					da.deallocateObjects(list[i]);
+					da.deallocate(list[i]);
 				}
 
 			}
@@ -110,7 +110,7 @@ namespace bbe {
 
 				f1->print();
 
-				da.deallocateObjects(f1);
+				da.deallocate(f1);
 			}
 			
 			{
@@ -189,7 +189,7 @@ namespace bbe {
 				assertEquals(p3->adress, "CStr");
 				assertEquals(p3->age, 89);
 
-				da.deallocateObjects(p2);
+				da.deallocate(p2);
 				assertEquals(p1->name, "AName");
 				assertEquals(p1->adress, "AStr");
 				assertEquals(p1->age, 18);
@@ -214,7 +214,7 @@ namespace bbe {
 				assertEquals(p3->age, 89);
 				assertUnequals(p3.getRaw(), orgAddrP3);
 
-				da.deallocateObjects(p1);
+				da.deallocate(p1);
 				assertEquals(p3->name, "CName");
 				assertEquals(p3->adress, "CStr");
 				assertEquals(p3->age, 89);
@@ -229,7 +229,7 @@ namespace bbe {
 				assertEquals(p3->adress, "CStr");
 				assertEquals(p3->age, 89);
 
-				da.deallocateObjects(p3);
+				da.deallocate(p3);
 
 				assertEquals(da.needsDefragmentation(), false);
 			}

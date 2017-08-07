@@ -1,17 +1,17 @@
 #pragma once
 
 
-#include "../BBE/PoolAllocatorTest.h"
-#include "../BBE/StackAllocatorTest.h"
-#include "../BBE/GeneralPurposeAllocatorTest.h"
-#include "../BBE/DefragmentationAllocatorTest.h"
-#include "../BBE/StringTest.h"
-#include "../BBE/ListTest.h"
-#include "../BBE/HashMapTest.h"
-#include "../BBE/StackTest.h"
-#include "../BBE/OtherTest.h"
-#include "../BBE/UtilTest.h"
-#include "../BBE/UniquePointerTest.h"
+#include "PoolAllocatorTest.h"
+#include "StackAllocatorTest.h"
+#include "GeneralPurposeAllocatorTest.h"
+#include "DefragmentationAllocatorTest.h"
+#include "StringTest.h"
+#include "ListTest.h"
+#include "HashMapTest.h"
+#include "StackTest.h"
+#include "OtherTest.h"
+#include "BBE/UtilTest.h"
+#include "UniquePointerTest.h"
 
 namespace bbe {
 	namespace test {

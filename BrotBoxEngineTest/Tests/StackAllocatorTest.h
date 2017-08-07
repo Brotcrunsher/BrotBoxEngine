@@ -1,16 +1,16 @@
 #pragma once
 
-#include "../BBE/StackAllocator.h"
+#include "BBE/StackAllocator.h"
 #include <iostream>
 #include <string>
-#include "../BBE/UtilTest.h"
+#include "BBE/UtilTest.h"
 
 namespace bbe {
 	namespace test {
 		void testStackAllocator() {
 			bbe::StackAllocator<> sa(sizeof(Person) * 128);
 			auto startMarker = sa.getMarker();
-			Person* pArr = sa.allocateObject<Person>(5);
+			Person* pArr = sa.allocateObjects<Person>(5);
 			float* floatData = (float*)sa.allocate(sizeof(float) * 100, alignof(float));
 
 			for (size_t i = 0; i < 100; i++) {
@@ -71,7 +71,7 @@ namespace bbe {
 				float* data = sa.allocateObject<float>(50);
 				Person* person5 = sa.allocateObject<Person>();
 				try {
-					Person* person6 = sa.allocateObject<Person>(1, ForceException());
+					Person* person6 = sa.allocateObjects<Person>(1, ForceException());
 				}
 				catch (int) {
 					//do nothing

@@ -349,7 +349,7 @@ namespace bbe
 		}
 
 		template<typename T>
-		void deallocateObjects(DefragmentationAllocatorPointer<T> &pointer)
+		void deallocate(DefragmentationAllocatorPointer<T> &pointer)
 		{
 			if (pointer.m_pparent != this)
 			{

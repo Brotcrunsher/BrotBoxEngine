@@ -1,5 +1,6 @@
 #pragma once
 #include "../BBE/VulkanBuffer.h"
+#include "../BBE/Vector2.h"
 
 namespace bbe
 {
@@ -42,5 +43,8 @@ namespace bbe
 		void setWidth(float width);
 		void setHeight(float height);
 		void set(float x, float y, float width, float height);
+
+		void translate(float x, float y);
+		void translate(const Vector2 &vec);
 	};
 }

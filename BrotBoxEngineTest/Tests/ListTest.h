@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../BBE/List.h"
-#include "../BBE/UtilTest.h"
+#include "BBE/List.h"
+#include "BBE/UtilTest.h"
 
 namespace bbe
 {

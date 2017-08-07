@@ -1,9 +1,9 @@
 #pragma once
 
 
-#include "../BBE/Hash.h"
-#include "../BBE/HashMap.h"
-#include "../BBE/UtilDebug.h"
+#include "BBE/Hash.h"
+#include "BBE/HashMap.h"
+#include "BBE/UtilDebug.h"
 
 
 namespace bbe

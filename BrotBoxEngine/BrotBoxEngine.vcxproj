@@ -189,7 +189,6 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BBE\AllTests.h" />
     <ClInclude Include="BBE\Array.h" />
     <ClInclude Include="BBE\BrotBoxEngine.h" />
     <ClInclude Include="BBE\Color.h" />
@@ -197,52 +196,36 @@
     <ClInclude Include="BBE\DataType.h" />
     <ClInclude Include="BBE\DefaultDestroyer.h" />
     <ClInclude Include="BBE\DefragmentationAllocator.h" />
-    <ClInclude Include="BBE\DefragmentationAllocatorTest.h" />
     <ClInclude Include="BBE\DynamicArray.h" />
     <ClInclude Include="BBE\ExceptionHelper.h" />
     <ClInclude Include="BBE\Exceptions.h" />
     <ClInclude Include="BBE\Game.h" />
     <ClInclude Include="BBE\GameTime.h" />
     <ClInclude Include="BBE\GeneralPurposeAllocator.h" />
-    <ClInclude Include="BBE\GeneralPurposeAllocatorPerformanceTime.h" />
-    <ClInclude Include="BBE\GeneralPurposeAllocatorTest.h" />
     <ClInclude Include="BBE\Hash.h" />
     <ClInclude Include="BBE\HashMap.h" />
-    <ClInclude Include="BBE\HashMapPerformanceTime.h" />
-    <ClInclude Include="BBE\HashMapTest.h" />
     <ClInclude Include="BBE\EmptyClass.h" />
     <ClInclude Include="BBE\Keyboard.h" />
     <ClInclude Include="BBE\KeyboardKeys.h" />
     <ClInclude Include="BBE\LinearCongruentialGenerator.h" />
     <ClInclude Include="BBE\List.h" />
-    <ClInclude Include="BBE\ListTest.h" />
     <ClInclude Include="BBE\MersenneTwister.h" />
-    <ClInclude Include="BBE\MersenneTwisterPerformanceTime.h" />
-    <ClInclude Include="BBE\OtherTest.h" />
     <ClInclude Include="BBE\PoolAllocator.h" />
-    <ClInclude Include="BBE\PoolAllocatorPerformanceTime.h" />
-    <ClInclude Include="BBE\PoolAllocatorTest.h" />
     <ClInclude Include="BBE\PrimitiveBrush2D.h" />
     <ClInclude Include="BBE\Random.h" />
     <ClInclude Include="BBE\Rectangle.h" />
     <ClInclude Include="BBE\SimpleFile.h" />
     <ClInclude Include="BBE\Stack.h" />
     <ClInclude Include="BBE\StackAllocator.h" />
-    <ClInclude Include="BBE\StackAllocatorTest.h" />
-    <ClInclude Include="BBE\StackTest.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="BBE\STLAllocator.h" />
     <ClInclude Include="BBE\STLCapsule.h" />
     <ClInclude Include="BBE\StopWatch.h" />
     <ClInclude Include="BBE\String.h" />
-    <ClInclude Include="BBE\StringPerformanceTime.h" />
-    <ClInclude Include="BBE\StringTest.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="BBE\Unconstructed.h" />
     <ClInclude Include="BBE\UniquePointer.h" />
-    <ClInclude Include="BBE\UniquePointerTest.h" />
     <ClInclude Include="BBE\UtilMath.h" />
-    <ClInclude Include="BBE\UtilTest.h" />
     <ClInclude Include="BBE\UtilDebug.h" />
     <ClInclude Include="BBE\Vector2.h" />
     <ClInclude Include="BBE\VulkanBuffer.h" />
@@ -261,10 +244,9 @@
     <ClInclude Include="BBE\VulkanShader.h" />
     <ClInclude Include="BBE\VWDepthImage.h" />
     <ClInclude Include="BBE\Window.h" />
-    <ClInclude Include="BBE\WindowTest.h" />
+    <ClInclude Include="BBE\UtilTest.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BrotBoxEngine.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameTime.cpp" />
@@ -298,7 +280,6 @@
     <ClCompile Include="VulkanSwapchain.cpp" />
     <ClCompile Include="VWDepthImage.cpp" />
     <ClCompile Include="Window.cpp" />
-    <ClCompile Include="WindowTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shader.frag" />

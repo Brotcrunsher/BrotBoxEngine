@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../BBE/PoolAllocator.h"
+#include "BBE/PoolAllocator.h"
 #include <iostream>
 #include <string>
-#include "../BBE/UtilTest.h"
+#include "BBE/UtilTest.h"
 
 namespace bbe {
 	namespace test {

@@ -2,6 +2,7 @@
 
 #include "../BBE/UtilDebug.h"
 #include "../BBE/UniquePointer.h"
+#include "../BBE/STLAllocator.h"
 #include "../BBE/STLCapsule.h"
 
 namespace bbe

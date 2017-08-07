@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../BBE/UtilMath.h"
-#include "../BBE/UtilTest.h"
+#include "BBE/UtilMath.h"
+#include "BBE/UtilTest.h"
 
 namespace bbe {
 	namespace test {

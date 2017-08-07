@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../BBE/GeneralPurposeAllocator.h"
-#include "../BBE/UtilDebug.h"
-#include "../BBE/Random.h"
+#include "BBE/GeneralPurposeAllocator.h"
+#include "BBE/UtilDebug.h"
+#include "BBE/Random.h"
 
 namespace bbe {
 	namespace test {
@@ -30,8 +30,8 @@ namespace bbe {
 					assertEquals(f2[i], i + 200);
 				}
 
-				gpa.deallocateObjects(f1);
-				gpa.deallocateObjects(f2);
+				gpa.deallocate(f1);
+				gpa.deallocate(f2);
 			}
 			
 
@@ -45,7 +45,7 @@ namespace bbe {
 
 				for (int i = 0; i < 64; i++)
 				{
-					gpa.deallocateObjects(list[i]);
+					gpa.deallocate(list[i]);
 				}
 			}
 
@@ -68,7 +68,7 @@ namespace bbe {
 						if (list.getLength() > 0)
 						{
 							size_t index = (size_t)rand.randomInt((int)list.getLength());
-							gpa.deallocateObjects(list[index]);
+							gpa.deallocate(list[index]);
 							list.removeIndex(index);
 						}
 					}
@@ -76,7 +76,7 @@ namespace bbe {
 
 				for (int i = 0; i < list.getLength(); i++)
 				{
-					gpa.deallocateObjects(list[i]);
+					gpa.deallocate(list[i]);
 				}
 
 			}
@@ -88,7 +88,7 @@ namespace bbe {
 
 				f1->print();
 
-				gpa.deallocateObjects(f1);
+				gpa.deallocate(f1);
 			}
 
 		}

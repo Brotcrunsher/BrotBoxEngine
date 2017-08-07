@@ -131,7 +131,7 @@ namespace bbe
 		StackAllocator& operator=(StackAllocator&& other) = delete; //Move Assignment
 
 		template <typename U, typename... arguments>
-		U* allocateObject(size_t amountOfObjects = 1, arguments&&... args)
+		U* allocateObjects(size_t amountOfObjects = 1, arguments&&... args)
 		{
 			T* allocationLocation = (T*)nextMultiple(alignof(U), (size_t)m_head);
 			T* newHeadPointer = allocationLocation + amountOfObjects * sizeof(U);
@@ -152,6 +152,12 @@ namespace bbe
 				//TODO add additional errorhandling
 				return nullptr;
 			}
+		}
+
+		template <typename U, typename... arguments>
+		U* allocateObject(arguments&&... args)
+		{
+			return allocateObjects<U>(1, std::forward<arguments>(args)...);
 		}
 
 

@@ -177,7 +177,7 @@ namespace bbe
 
 			void destroy(void* data)
 			{
-				m_pa->deallocateObjects(m_data);
+				m_pa->deallocate(m_data);
 			}
 		};
 	private:
@@ -273,7 +273,7 @@ namespace bbe
 		}
 
 		template<typename T>
-		void deallocateObjects(GeneralPurposeAllocatorPointer<T> &pointer)
+		void deallocate(GeneralPurposeAllocatorPointer<T> &pointer)
 		{
 			//UNTESTED
 			for (size_t i = 0; i < pointer.m_length; i++)

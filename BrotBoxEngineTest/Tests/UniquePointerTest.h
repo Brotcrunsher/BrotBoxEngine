@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../BBE/UniquePointer.h"
-#include "../BBE/UtilTest.h"
-#include "../BBE/PoolAllocator.h"
-#include "../BBE/GeneralPurposeAllocator.h"
+#include "BBE/UniquePointer.h"
+#include "BBE/UtilTest.h"
+#include "BBE/PoolAllocator.h"
+#include "BBE/GeneralPurposeAllocator.h"
 
 namespace bbe {
 	namespace test {

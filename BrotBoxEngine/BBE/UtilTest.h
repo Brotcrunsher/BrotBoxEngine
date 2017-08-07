@@ -7,7 +7,7 @@
 namespace bbe {
 	namespace test {
 
-		class ForceException{};
+		class ForceException {};
 
 		class Person
 		{
