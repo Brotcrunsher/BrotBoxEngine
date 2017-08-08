@@ -2,135 +2,176 @@
 
 #include "../BBE/Array.h"
 #include "../BBE/Hash.h"
+#include "../BBE/NewDeleteAllocator.h"
+#include <type_traits>
+#include <cassert>
+#include <initializer_list>
 
 namespace bbe
 {
 	template<typename T, bool keepSorted>
 	class List;
 
-	template <typename T>
+	template <typename T, typename Allocator = NewDeleteAllocator, typename PointerType = T*>
 	class DynamicArray
 	{
-		//TODO use Allocator
 	private:
 
-		T* m_data;
+		PointerType m_data;
 		size_t m_length;
+		Allocator* m_pparentAllocator = nullptr;
+
+		void createArray(size_t size, Allocator* parentAllocator)
+		{
+			m_length = size;
+			if (std::is_same<Allocator, NewDeleteAllocator>::value)
+			{
+				m_data = new T[size];
+			}
+			else
+			{
+				assert(parentAllocator != nullptr);
+				m_data = parentAllocator->allocateObjects<T>(size);
+				m_pparentAllocator = parentAllocator;
+			}
+		}
+
+		void deleteArray()
+		{
+			if (m_data != nullptr)
+			{
+				if (std::is_same<Allocator, NewDeleteAllocator>::value)
+				{
+					delete[] m_data;
+				}
+				else
+				{
+					m_pparentAllocator->deallocate(m_data);
+				}
+
+				m_length = 0;
+				m_pparentAllocator = nullptr;
+			}
+		}
+
 	public:
-		DynamicArray(size_t size)
+		DynamicArray(size_t size, Allocator* parentAllocator = nullptr)
 			: m_length(size)
 		{
-			//UNTESTED
-			m_data = new T[size];
+			createArray(size, parentAllocator);
 		}
 
 		template <typename U, int size>
-		DynamicArray(Array<U, size> arr)
+		DynamicArray(const Array<U, size> &arr, Allocator* parentAllocator = nullptr)
 			: m_length(size)
 		{
-			//UNTESTED
-			m_data = new T[m_length];
+			createArray(arr.getLength(), parentAllocator);
 			for (int i = 0; i < size; i++)
 			{
 				m_data[i] = arr[i];
 			}
 		}
 
-		DynamicArray(List<T, true> list)
+		DynamicArray(const List<T, true> &list, Allocator* parentAllocator = nullptr)
 			: m_length(list.getLength())
 		{
-			//UNTESTED
-			m_data = new T[m_length];
+			createArray(list.getLength(), parentAllocator);
 			for (int i = 0; i < m_length; i++)
 			{
 				m_data[i] = list[i];
 			}
 		}
 
-		DynamicArray(List<T, false> list)
+		DynamicArray(const List<T, false> &list, Allocator* parentAllocator = nullptr)
 			: m_length(list.getLength())
 		{
-			//UNTESTED
-			//TODO basically this is a copy of above. Put into function!
-			m_data = new T[m_length];
+			createArray(list.getLength(), parentAllocator);
 			for (int i = 0; i < m_length; i++)
 			{
 				m_data[i] = list[i];
+			}
+		}
+
+		DynamicArray(const std::initializer_list<T> &il)
+		{
+			createArray(il.end() - il.begin(), nullptr);
+			size_t i = 0;
+			for (auto iter = il.begin(); iter != il.end(); iter++) {
+				m_data[i] = *iter;
+				i++;
 			}
 		}
 
 		~DynamicArray()
 		{
-			//UNTESTED
-			delete [] m_data;
+			deleteArray();
 		}
 
 		DynamicArray(const DynamicArray&  other) //Copy Constructor
+			: m_length(other.m_length), m_pparentAllocator(other.m_pparentAllocator)
 		{
-			//UNTESTED
-			m_data = new T[other.m_length];
-			for (size_t i = 0; i < size; i++)
+			createArray(other.m_length, other.m_pparentAllocator);
+			for (size_t i = 0; i < m_length; i++)
 			{
 				m_data[i] = other[i];
 			}
 		}
 		DynamicArray(DynamicArray&& other) //Move Constructor
 		{
-			//UNTESTED
 			m_data = other.m_data;
 			m_length = other.m_length;
+			m_pparentAllocator = other.m_pparentAllocator;
 			other.m_data = nullptr;
 			other.m_length = 0;
+			other.m_pparentAllocator = nullptr;
 		}
 		DynamicArray& operator=(const DynamicArray&  other)  //Copy Assignment
 		{
-			//UNTESTED
-			delete[] m_data;
+			deleteArray();
 
-			m_data = new T[other.m_length];
-			for (size_t i = 0; i < size; i++)
+			createArray(other.m_length, other.m_pparentAllocator);
+			for (size_t i = 0; i < m_length; i++)
 			{
 				m_data[i] = other[i];
 			}
+
+			return *this;
 		}
 		DynamicArray& operator=(DynamicArray&& other) //Move Assignment
 		{
-			//UNTESTED
-			delete[] m_data;
+			deleteArray();
 
 			m_data = other.m_data;
 			m_length = other.m_length;
+			m_pparentAllocator = other.m_pparentAllocator;
 			other.m_data = nullptr;
 			other.m_length = 0;
+
+			return *this;
 		}
 
 		T& operator[](size_t index)
 		{
-			//UNTESTED
 			return m_data[index];
 		}
 
 		const T& operator[](size_t index) const
 		{
-			//UNTESTED
 			return m_data[index];
 		}
 
 		size_t getLength() const
 		{
-			//UNTESTED
 			return m_length;
 		}
 
 		T* getRaw()
 		{
-			//UNTESTED
 			return m_data;
 		}
 
 		const T* getRaw() const
 		{
-			//UNTESTED
 			return m_data;
 		}
 	};
@@ -138,8 +179,7 @@ namespace bbe
 	template<typename T>
 	uint32_t hash(const DynamicArray<T> &t)
 	{
-		//UNTESTED
-		size_t length = t.getSize();
+		size_t length = t.getLength();
 		if (length > 16)
 		{
 			length = 16;

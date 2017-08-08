@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cstring>
 #include "../BBE/STLCapsule.h"
+#include "../BBE/Exceptions.h"
 
 namespace bbe
 {
@@ -102,15 +103,12 @@ namespace bbe
 			}
 			m_data = m_parentAllocator->allocate(m_length);
 			m_head = m_data;
-
-			memset(m_data, 0, m_length);	//TODO evaluate if this should be here
 		}
 
 		~StackAllocator()
 		{
 			if (m_data != m_head)
 			{
-				//TODO add further error handling
 				debugBreak();
 			}
 			if (m_data != nullptr && m_parentAllocator != nullptr)
@@ -149,8 +147,7 @@ namespace bbe
 			}
 			else
 			{
-				//TODO add additional errorhandling
-				return nullptr;
+				throw AllocatorOutOfMemoryException();
 			}
 		}
 
@@ -172,8 +169,7 @@ namespace bbe
 			}
 			else
 			{
-				//TODO add additional errorhandling
-				return nullptr;
+				throw AllocatorOutOfMemoryException();
 			}
 		}
 

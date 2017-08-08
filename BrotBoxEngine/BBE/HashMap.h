@@ -2,6 +2,7 @@
 
 #include "../BBE/List.h"
 #include "../BBE/Hash.h"
+#include "../BBE/Exceptions.h"
 
 namespace bbe
 {
@@ -132,8 +133,7 @@ namespace bbe
 			{
 				if (key == m_containers[index][i].key)
 				{
-					//TODO add further error handling
-					debugBreak();
+					throw KeyAlreadyUsedException();
 				}
 			}
 

@@ -6,6 +6,7 @@
 #include "../BBE/UniquePointer.h"
 #include "../BBE/UtilTest.h"
 #include "../BBE/EmptyClass.h"
+#include "../BBE/Exceptions.h"
 
 namespace bbe
 {
@@ -247,9 +248,8 @@ namespace bbe
 				}
 			}
 
-			//TODO add further error handling
 			debugBreak();
-			return GeneralPurposeAllocatorPointer<T>(nullptr, 0);
+			throw AllocatorOutOfMemoryException();
 		}
 
 		template <typename T, typename... arguments>

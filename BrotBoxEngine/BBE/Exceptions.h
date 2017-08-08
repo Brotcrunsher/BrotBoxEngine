@@ -21,4 +21,14 @@ namespace bbe
 	CREATE_EXCEPTION(SingletonViolationException);
 
 	CREATE_EXCEPTION(IllegalStateException);
+
+	CREATE_EXCEPTION(AllocatorOutOfMemoryException);
+	CREATE_EXCEPTION(AllocatorOutOfHandlesException);
+	CREATE_EXCEPTION(NullptrDeallocationException);
+	CREATE_EXCEPTION(MalformedPointerException);
+
+	CREATE_EXCEPTION(KeyAlreadyUsedException);
+
+	CREATE_EXCEPTION(IllegalArgumentException);
+	CREATE_EXCEPTION(ContainerEmptyException);
 }

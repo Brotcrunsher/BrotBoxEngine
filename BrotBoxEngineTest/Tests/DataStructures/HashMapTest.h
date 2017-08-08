@@ -3,6 +3,7 @@
 
 #include "BBE/Hash.h"
 #include "BBE/HashMap.h"
+#include "BBE/UtilTest.h"
 #include "BBE/UtilDebug.h"
 
 

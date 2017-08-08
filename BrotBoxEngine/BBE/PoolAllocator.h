@@ -4,6 +4,7 @@
 #include "../BBE/UniquePointer.h"
 #include "../BBE/STLAllocator.h"
 #include "../BBE/STLCapsule.h"
+#include "../BBE/Exceptions.h"
 
 namespace bbe
 {
@@ -93,7 +94,6 @@ namespace bbe
 #ifndef BBE_DISABLE_ALL_SECURITY_CHECKS
 			if (m_openAllocations != 0)
 			{
-				//TODO add further error handling
 				debugBreak();
 			}
 #endif // !BBE_DISABLE_ALL_SECURITY_CHECKS
@@ -122,8 +122,7 @@ namespace bbe
 			if (m_head == nullptr)
 			{
 				debugBreak();
-				//TODO throw exception, keep returning nullptr or allocate more space?
-				return nullptr;
+				throw AllocatorOutOfMemoryException();
 			}
 			INTERNAL::PoolChunk<T>* retVal = m_head;
 			m_head = retVal->nextPoolChunk;
@@ -136,7 +135,14 @@ namespace bbe
 
 		void deallocate(T* data)
 		{
-			//TODO check if data is in range of the original array
+			if (data < reinterpret_cast<T*>(m_data))
+			{
+				throw MalformedPointerException();
+			}
+			if (data > reinterpret_cast<T*>(m_data) + m_length)
+			{
+				throw MalformedPointerException();
+			}
 			data->~T();
 			INTERNAL::PoolChunk<T>* poolChunk = reinterpret_cast<INTERNAL::PoolChunk<T>*>(data);
 			poolChunk->nextPoolChunk = m_head;

@@ -105,7 +105,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	VkCommandBufferBeginInfo cbbi;
 	cbbi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	cbbi.pNext = nullptr;
-	cbbi.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;	//TODO make this a one time buffer?
+	cbbi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 	cbbi.pInheritanceInfo = nullptr;
 
 

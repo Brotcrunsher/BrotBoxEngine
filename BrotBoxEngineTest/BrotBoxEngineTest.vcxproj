@@ -144,14 +144,16 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Tests\AllTests.h" />
+    <ClInclude Include="Tests\DataStructures\ArrayTest.h" />
+    <ClInclude Include="Tests\DataStructures\DynamicArrayTest.h" />
     <ClInclude Include="Tests\DefragmentationAllocatorTest.h" />
     <ClInclude Include="Tests\GeneralPurposeAllocatorTest.h" />
-    <ClInclude Include="Tests\HashMapTest.h" />
-    <ClInclude Include="Tests\ListTest.h" />
+    <ClInclude Include="Tests\DataStructures\HashMapTest.h" />
+    <ClInclude Include="Tests\DataStructures\ListTest.h" />
     <ClInclude Include="Tests\OtherTest.h" />
     <ClInclude Include="Tests\PoolAllocatorTest.h" />
     <ClInclude Include="Tests\StackAllocatorTest.h" />
-    <ClInclude Include="Tests\StackTest.h" />
+    <ClInclude Include="Tests\DataStructures\StackTest.h" />
     <ClInclude Include="Tests\StringTest.h" />
     <ClInclude Include="Tests\UniquePointerTest.h" />
   </ItemGroup>

@@ -10,6 +10,7 @@
 #include "../BBE/Unconstructed.h"
 #include "../BBE/GeneralPurposeAllocator.h"
 #include "../BBE/Stack.h"
+#include "../BBE/Exceptions.h"
 
 namespace bbe
 {
@@ -27,10 +28,31 @@ namespace bbe
 			size_t m_length;
 			DefragmentationAllocator *m_pparent;
 		public:
+			DefragmentationAllocatorPointer()
+				: m_handleIndex(0), m_length(0), m_pparent(nullptr)
+			{
+				//do nothing
+			}
+
 			DefragmentationAllocatorPointer(DefragmentationAllocator *parent, size_t handleIndex, size_t size)
 				: m_pparent(parent), m_handleIndex(handleIndex), m_length(size)
 			{
 				//do nothing
+			}
+
+			DefragmentationAllocatorPointer& operator=(T* other)
+			{
+				assert(other == nullptr);
+				m_handleIndex = 0;
+				m_length = 0;
+				m_pparent = nullptr;
+
+				return *this;
+			}
+
+			operator T*() const
+			{
+				return static_cast<T*>(m_pparent->m_handleTable[m_handleIndex]);
 			}
 
 			T* operator ->()
@@ -74,17 +96,30 @@ namespace bbe
 
 			T* getRaw()
 			{
+				if (m_handleIndex == 0)
+				{
+					return nullptr;
+				}
+				return static_cast<T*>(m_pparent->m_handleTable[m_handleIndex]);
+			}
+
+			const T* getRaw() const
+			{
+				if (m_handleIndex == 0)
+				{
+					return nullptr;
+				}
 				return static_cast<T*>(m_pparent->m_handleTable[m_handleIndex]);
 			}
 
 			bool operator ==(void* ptr) const
 			{
-				return static_cast<T*>(m_pparent->m_handleTable[m_handleIndex]) == ptr;
+				return getRaw() == ptr;
 			}
 
 			bool operator !=(void* ptr) const
 			{
-				return static_cast<T*>(m_pparent->m_handleTable[m_handleIndex]) != ptr;
+				return getRaw() != ptr;
 			}
 		};
 
@@ -251,7 +286,7 @@ namespace bbe
 
 			m_handleTable = new void*[m_lengthOfHandleTable];
 			memset(m_handleTable, 0, sizeof(void*) * m_lengthOfHandleTable);
-			//Never add 0, this allowes us to use 0 as a nullptr
+			//Never add 0, this allows us to use 0 as a nullptr
 			for (size_t i = lengthOfHandleTable - 1; i > 0; i--)
 			{
 				m_unusedHandleStack.push(i);
@@ -307,8 +342,8 @@ namespace bbe
 					}
 					if (m_unusedHandleStack.hasDataLeft() == false)
 					{
-						//TODO add further error handling
 						debugBreak();
+						throw AllocatorOutOfHandlesException();
 					}
 					size_t index = m_unusedHandleStack.pop();
 					m_handleTable[index] = data;
@@ -317,9 +352,8 @@ namespace bbe
 				}
 			}
 
-			//TODO add further error handling
 			debugBreak();
-			return DefragmentationAllocatorPointer<T>(this, 0, 0);
+			throw AllocatorOutOfMemoryException();
 		}
 
 		template <typename T, typename... arguments>
@@ -353,8 +387,8 @@ namespace bbe
 		{
 			if (pointer.m_pparent != this)
 			{
-				//TODO add further error handling
 				debugBreak();
+				throw NullptrDeallocationException();
 			}
 
 			//UNTESTED
@@ -413,10 +447,10 @@ namespace bbe
 			Empty e;
 			if (!m_allocatedBlocks.removeSingle(DefragmentationAllocatorRelocatable(this, pointer.m_handleIndex, 0, &e)))
 			{
-				//TODO add further error handling
 				//If this is triggered, an allocated Block could not get removed!
 				//This should never happen, when a well behaved pointer was passed to this method
 				debugBreak();
+				throw MalformedPointerException();
 			}
 			pointer.m_handleIndex = 0;
 		}

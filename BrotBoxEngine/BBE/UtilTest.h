@@ -2,6 +2,7 @@
 
 #include "../BBE/UtilDebug.h"
 #include "../BBE/String.h"
+#include "../BBE/Hash.h"
 #include <iostream>
 
 namespace bbe {
@@ -12,17 +13,21 @@ namespace bbe {
 		class Person
 		{
 		public:
-			static size_t amountOfPersons;
-			static size_t amountOfDefaulConstructorCalls;
-			static size_t amountOfCopyConstructorCalls;
-			static size_t amountOfMoveConstructorCalls;
-			static size_t amountOfCopyAssignmentCalls;
-			static size_t amountOfMoveAssignmentCalls;
-			static size_t amountOfParameterConstructorCalls;
-			static size_t amountOfDestructorCalls;
+			static int nextPersonIndex;
+
+			static int64_t amountOfPersons;
+			static int64_t amountOfDefaulConstructorCalls;
+			static int64_t amountOfCopyConstructorCalls;
+			static int64_t amountOfMoveConstructorCalls;
+			static int64_t amountOfCopyAssignmentCalls;
+			static int64_t amountOfMoveAssignmentCalls;
+			static int64_t amountOfParameterConstructorCalls;
+			static int64_t amountOfDestructorCalls;
 			bbe::String name;
 			bbe::String adress;
 			int age;
+			bool destructed = false;
+			int personIndex = nextPersonIndex++;
 
 			static void resetTestStatistics() {
 				amountOfPersons = 0;
@@ -60,15 +65,23 @@ namespace bbe {
 			}
 
 			Person& operator=(const Person& other) {
+				if (destructed)
+				{
+					debugBreak(); //Destructed Object got equal to other object
+				}
 				name = other.name;
 				adress = other.adress;
 				age = other.age;
-				Person::amountOfPersons++;
 				Person::amountOfCopyAssignmentCalls++;
 				return *this;
 			}
 
 			Person& operator=(Person&& other) {
+				if (destructed)
+				{
+					debugBreak(); //Destructed Object got equal to other object
+				}
+
 				name = std::move(other.name);
 				adress = std::move(other.adress);
 				age = other.age;
@@ -92,6 +105,11 @@ namespace bbe {
 			}
 
 			~Person() {
+				if (destructed)
+				{
+					debugBreak();	//Was already destructed!
+				}
+				destructed = true;
 				amountOfPersons--;
 				Person::amountOfDestructorCalls++;
 			}
@@ -132,14 +150,15 @@ namespace bbe {
 				}
 			}
 		};
-		size_t Person::amountOfPersons = 0;
-		size_t Person::amountOfDefaulConstructorCalls = 0;
-		size_t Person::amountOfCopyConstructorCalls = 0;
-		size_t Person::amountOfMoveConstructorCalls = 0;
-		size_t Person::amountOfCopyAssignmentCalls = 0;
-		size_t Person::amountOfMoveAssignmentCalls = 0;
-		size_t Person::amountOfParameterConstructorCalls = 0;
-		size_t Person::amountOfDestructorCalls = 0;
+		int Person::nextPersonIndex = 0;
+		int64_t Person::amountOfPersons = 0;
+		int64_t Person::amountOfDefaulConstructorCalls = 0;
+		int64_t Person::amountOfCopyConstructorCalls = 0;
+		int64_t Person::amountOfMoveConstructorCalls = 0;
+		int64_t Person::amountOfCopyAssignmentCalls = 0;
+		int64_t Person::amountOfMoveAssignmentCalls = 0;
+		int64_t Person::amountOfParameterConstructorCalls = 0;
+		int64_t Person::amountOfDestructorCalls = 0;
 
 		template <typename T, typename U>
 		void assertEquals(T a, U b) {
@@ -200,5 +219,15 @@ namespace bbe {
 				debugBreak();
 			}
 		}
+	}
+
+	template<>
+	uint32_t hash(const test::Person &person)
+	{
+		uint32_t hashValue = hash(person.age);
+		hashValue += hash(person.adress);
+		hashValue += hash(person.name);
+
+		return hashValue;
 	}
 }

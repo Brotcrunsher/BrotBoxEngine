@@ -6,9 +6,11 @@
 #include "GeneralPurposeAllocatorTest.h"
 #include "DefragmentationAllocatorTest.h"
 #include "StringTest.h"
-#include "ListTest.h"
-#include "HashMapTest.h"
-#include "StackTest.h"
+#include "DataStructures/ListTest.h"
+#include "DataStructures/HashMapTest.h"
+#include "DataStructures/StackTest.h"
+#include "DataStructures\ArrayTest.h"
+#include "DataStructures\DynamicArrayTest.h"
 #include "OtherTest.h"
 #include "BBE/UtilTest.h"
 #include "UniquePointerTest.h"
@@ -36,6 +38,10 @@ namespace bbe {
 			bbe::test::testAllOthers();
 			Person::checkIfAllPersonsWereDestroyed();
 			bbe::test::testUniquePointer();
+			Person::checkIfAllPersonsWereDestroyed();
+			bbe::test::testArray();
+			Person::checkIfAllPersonsWereDestroyed();
+			bbe::test::testDynamicArray();
 			Person::checkIfAllPersonsWereDestroyed();
 		}
 	}

@@ -36,9 +36,6 @@
     <ClInclude Include="Tests\StackAllocatorTest.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="Tests\StackTest.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="Tests\StringTest.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
@@ -54,10 +51,19 @@
     <ClInclude Include="Tests\GeneralPurposeAllocatorTest.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="Tests\HashMapTest.h">
+    <ClInclude Include="Tests\DataStructures\ListTest.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="Tests\ListTest.h">
+    <ClInclude Include="Tests\DataStructures\HashMapTest.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\DataStructures\StackTest.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\DataStructures\ArrayTest.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\DataStructures\DynamicArrayTest.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

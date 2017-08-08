@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../BBE/Hash.h"
+#include <cassert>
+#include <initializer_list>
 
 namespace bbe
 {
@@ -15,9 +17,19 @@ namespace bbe
 			//do nothing
 		}
 
-		Array(const Array<T, LENGTH>& other)
+		Array(const std::initializer_list<T> &il)
 		{
 			//UNTESTED
+			assert((il.end() - il.begin()) == LENGTH);
+			size_t i = 0;
+			for (auto iter = il.begin(); iter != il.end(); iter++) {
+				m_data[i] = *iter;
+				i++;
+			}
+		}
+
+		Array(const Array<T, LENGTH>& other)
+		{
 			for (size_t i = 0; i < LENGTH; i++)
 			{
 				m_data[i] = other[i];
@@ -26,7 +38,6 @@ namespace bbe
 
 		Array(Array<T, LENGTH>&& other)
 		{
-			//UNTESTED
 			for (size_t i = 0; i < LENGTH; i++)
 			{
 				m_data[i] = std::move(other[i]);
@@ -35,20 +46,22 @@ namespace bbe
 
 		Array& operator=(const Array<T, LENGTH>& other)
 		{
-			//UNTESTED
 			for (size_t i = 0; i < LENGTH; i++)
 			{
 				m_data[i] = other[i];
 			}
+
+			return *this;
 		}
 
 		Array& operator=(Array<T, LENGTH>&& other)
 		{
-			//UNTESTED
 			for (size_t i = 0; i < LENGTH; i++)
 			{
 				m_data[i] = std::move(other[i]);
 			}
+
+			return *this;
 		}
 
 		~Array()
@@ -58,31 +71,26 @@ namespace bbe
 
 		T& operator[](size_t index)
 		{
-			//UNTESTED
 			return m_data[index];
 		}
 
 		const T& operator[](size_t index) const
 		{
-			//UNTESTED
-			return m_data[index]
+			return m_data[index];
 		}
 
 		constexpr size_t getLength() const
 		{
-			//UNTESTED
 			return LENGTH;
 		}
 
 		T* getRaw()
 		{
-			//UNTESTED
 			return m_data;
 		}
 
 		const T* getRaw() const
 		{
-			//UNTESTED
 			return m_data;
 		}
 	};
@@ -90,8 +98,7 @@ namespace bbe
 	template<typename T, int LENGTH>
 	uint32_t hash(const Array<T, LENGTH> &t)
 	{
-		//UNTESTED
-		size_t length = t.getSize();
+		size_t length = t.getLength();
 		if (length > 16)
 		{
 			length = 16;

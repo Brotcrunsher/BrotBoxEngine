@@ -252,6 +252,9 @@
     <ClInclude Include="BBE\UtilTest.h">
       <Filter>Header Files\Util</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\NewDeleteAllocator.h">
+      <Filter>Header Files\MemoryManagement</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

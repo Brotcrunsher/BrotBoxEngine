@@ -125,7 +125,16 @@ namespace bbe {
 				Person* inner = sa.allocateObject<Person>();
 				assertUnequals(inner, nullptr);
 			}
-			assertEquals(sa.allocateObject<Person>(), nullptr);
+			bool caughtException = false;
+			try
+			{
+				sa.allocateObject<Person>();
+			}
+			catch (AllocatorOutOfMemoryException aoome)
+			{
+				caughtException = true;
+			}
+			assertEquals(caughtException, true);
 			sa.deallocateToMarker(startMarker);
 			Person::checkIfAllPersonsWereDestroyed();
 		}

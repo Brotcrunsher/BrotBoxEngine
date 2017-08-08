@@ -7,6 +7,7 @@
 #include "../BBE/Unconstructed.h"
 #include "../BBE/UtilDebug.h"
 #include "../BBE/Hash.h"
+#include "../BBE/Exceptions.h"
 #include <initializer_list>
 
 namespace bbe
@@ -18,7 +19,6 @@ namespace bbe
 	class List
 	{
 		//TODO use own allocators
-		//TODO make usable in foreach
 	private:
 		size_t m_length;
 		size_t m_capacity;
@@ -87,7 +87,7 @@ namespace bbe
 			other.m_capacity = 0;
 		}
 
-		List(std::initializer_list<T> il)
+		List(const std::initializer_list<T> &il)
 			: m_length(0), m_capacity(0), m_data(nullptr)
 		{
 			//UNTESTED
@@ -251,10 +251,14 @@ namespace bbe
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<dummyKeepSorted, void>::type add(const T& val, int amount = 1)
+		typename std::enable_if<dummyKeepSorted, void>::type add(const T& val, const int amount = 1)
 		{
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			//TODO rewrite this method using size_t instead of int
+			if (amount <= 0)
+			{
+				debugBreak();
+			}
 			growIfNeeded(amount);
 			//UNTESTED
 			int i = 0;
@@ -263,8 +267,14 @@ namespace bbe
 				int lowerIndex = i - amount;
 				if (lowerIndex >= 0 && val < m_data[lowerIndex].value)
 				{
-					new (bbe::addressOf(m_data[i])) T(std::move(m_data[lowerIndex].value));
-					bbe::addressOf(m_data[lowerIndex].value)->~T();
+					if (i >= m_length)
+					{
+						new (bbe::addressOf(m_data[i])) T(std::move(m_data[lowerIndex].value));
+					}
+					else
+					{
+						m_data[i].value = std::move(m_data[lowerIndex].value);
+					}
 				}
 				else
 				{
@@ -299,7 +309,7 @@ namespace bbe
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<dummyKeepSorted, void>::type add(T&& val, int amount = 1)
+		typename std::enable_if<dummyKeepSorted, void>::type add(T&& val, const int amount = 1)
 		{
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			//TODO rewrite this method using size_t instead of int
@@ -315,8 +325,14 @@ namespace bbe
 				int lowerIndex = i - amount;
 				if (lowerIndex >= 0 && val < m_data[lowerIndex].value)
 				{
-					new (bbe::addressOf(m_data[i])) T(std::move(m_data[lowerIndex].value));
-					bbe::addressOf(m_data[lowerIndex].value)->~T();
+					if (i >= m_length)
+					{
+						new (bbe::addressOf(m_data[i])) T(std::move(m_data[lowerIndex].value));
+					}
+					else
+					{
+						m_data[i].value = std::move(m_data[lowerIndex].value);
+					}
 				}
 				else
 				{
@@ -597,9 +613,8 @@ namespace bbe
 			//UNTESTED
 			if (newCapacity < m_length)
 			{
-				//TODO add further error handling
 				debugBreak();
-				return;
+				throw IllegalArgumentException();
 			}
 
 			if (newCapacity == m_capacity)
@@ -788,8 +803,7 @@ namespace bbe
 			//UNTESTED
 			if (m_data == nullptr)
 			{
-				//TODO error handling
-				debugBreak();
+				throw ContainerEmptyException();
 			}
 
 			return (m_data[0].value);
@@ -800,8 +814,7 @@ namespace bbe
 			//UNTESTED
 			if (m_data == nullptr)
 			{
-				//TODO error handling
-				debugBreak();
+				throw ContainerEmptyException();
 			}
 
 			return (m_data[m_length - 1].value);
