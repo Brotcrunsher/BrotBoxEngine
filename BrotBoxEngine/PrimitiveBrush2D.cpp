@@ -18,15 +18,18 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevi
 
 void bbe::PrimitiveBrush2D::INTERNAL_fillRect(Rectangle &rect)
 {
-	bbe::INTERNAL::vulkan::VulkanBuffer *buffer = rect.getVulkanVertexBuffer(m_device, m_physicalDevice, m_screenWidth, m_screenHeight);
-	VkBuffer vkBuffer = buffer->getBuffer();
+	float pushConstants[] = {rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f, rect.getWidth() / m_screenWidth * 2.f, rect.getHeight() / m_screenHeight * 2.f};
+
+
+
+	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
+
 	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &vkBuffer, offsets);
+	VkBuffer buffer = Rectangle::s_vertexBuffer.getBuffer();
+	vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
 
-
-	buffer = rect.getVulkanIndexBuffer(m_device, m_physicalDevice);
-	vkBuffer = buffer->getBuffer();
-	vkCmdBindIndexBuffer(m_currentCommandBuffer, vkBuffer, 0, VK_INDEX_TYPE_UINT32);
+	buffer = Rectangle::s_indexBuffer.getBuffer();
+	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
 }

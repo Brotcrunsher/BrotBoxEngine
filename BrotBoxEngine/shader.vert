@@ -7,9 +7,14 @@ out gl_PerVertex {
 
 layout(location = 0) in vec2 inPos;
 
+layout(push_constant) uniform PushConstants
+{
+	layout(offset = 16) vec4 posScale;
+} pushConts;
 
 void main() 
 {
-	gl_Position = vec4(inPos, 0.0, 1.0);
+	vec2 pos = inPos * pushConts.posScale.zw + pushConts.posScale.xy;
+	gl_Position = vec4(pos, 0.0, 1.0);
 	
 }

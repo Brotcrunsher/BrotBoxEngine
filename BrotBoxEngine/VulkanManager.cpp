@@ -3,6 +3,7 @@
 #include "BBE/VulkanManager.h"
 #include "BBE/Color.h"
 #include "BBE/Exceptions.h"
+#include "BBE/Rectangle.h"
 
 bbe::INTERNAL::vulkan::VulkanManager *bbe::INTERNAL::vulkan::VulkanManager::s_pinstance = nullptr;
 
@@ -59,12 +60,19 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 
 	m_pipeline.addVertexDescription(viad);
 
-	VkPushConstantRange pcr = {};
-	pcr.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	pcr.offset = 0;
-	pcr.size = sizeof(Color);
+	VkPushConstantRange pcrFragment = {};
+	pcrFragment.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	pcrFragment.offset = 0;
+	pcrFragment.size = sizeof(Color);
 
-	m_pipeline.addPushConstantRange(pcr);
+	m_pipeline.addPushConstantRange(pcrFragment);
+
+	VkPushConstantRange pcrVertex = {};
+	pcrVertex.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pcrVertex.offset = sizeof(Color);
+	pcrVertex.size = sizeof(float) * 4;
+
+	m_pipeline.addPushConstantRange(pcrVertex);
 
 	m_pipeline.create(m_device.getDevice(), m_renderPass.getRenderPass());
 	m_commandPool.init(m_device);
@@ -73,12 +81,14 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_semaphoreImageAvailable.init(m_device);
 	m_semaphoreRenderingDone.init(m_device);
 	m_presentFence.init(m_device);
+	bbe::Rectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 {
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
+	bbe::Rectangle::s_destroy();
 
 	destroyPendingBuffers();
 	m_presentFence.destroy();

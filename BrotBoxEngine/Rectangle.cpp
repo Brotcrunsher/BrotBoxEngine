@@ -2,71 +2,52 @@
 #include "BBE/Rectangle.h"
 #include "BBE/Vector2.h"
 #include "BBE/VulkanDevice.h"
+#include "BBE/VulkanManager.h"
 
-bbe::INTERNAL::vulkan::VulkanBuffer* bbe::Rectangle::getVulkanVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, int screenWidth, int screenHeight)
+bbe::INTERNAL::vulkan::VulkanBuffer bbe::Rectangle::s_indexBuffer;
+bbe::INTERNAL::vulkan::VulkanBuffer bbe::Rectangle::s_vertexBuffer;
+
+void bbe::Rectangle::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue)
 {
-	if (m_bufferDirty)
-	{
-		m_vertexBuffer.destroy();
-	}
-	if (m_vertexBuffer.m_wasCreated == false)
-	{
-		createVertexBuffer(device, physicalDevice, screenWidth, screenHeight);
-	}
-	return &m_vertexBuffer;
+	s_initVertexBuffer(device, physicalDevice, commandPool, queue);
+	s_initIndexBuffer (device, physicalDevice, commandPool, queue);
 }
 
-bbe::INTERNAL::vulkan::VulkanBuffer * bbe::Rectangle::getVulkanIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice)
+void bbe::Rectangle::s_initIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue)
 {
-	if (m_bufferDirty)
-	{
-		m_indexBuffer.destroy();
-	}
-	if (m_indexBuffer.m_wasCreated == false)
-	{
-		createIndexBuffer(device, physicalDevice);
-	}
-	return &m_indexBuffer;
-}
+	s_indexBuffer.create(device, physicalDevice, sizeof(uint32_t) * 6, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-void bbe::Rectangle::createVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, int screenWidth, int screenHeight)
-{
-	m_vertexBuffer.destroy();
-
-	m_vertexBuffer.create(device, physicalDevice, sizeof(Vector2) * 4, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-	//todo upload buffer
-
-	float x = (m_x / screenWidth ) * 2 - 1;
-	float y = (m_y / screenHeight) * 2 - 1;
-	float width = (m_width / screenWidth) * 2;
-	float height = (m_height / screenHeight) * 2;
-
-	float data[] = {
-		 x        , y         ,
-		 x + width, y         ,
-		 x + width, y + height,
-		 x        , y + height,
-	};
-	void* dataBuf = m_vertexBuffer.map();
-	memcpy(dataBuf, data, sizeof(Vector2) * 4);
-	m_vertexBuffer.unmap();
-	m_bufferDirty = false;
-}
-
-void bbe::Rectangle::createIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice)
-{
-	//TODO the indexbuffer should stay the same for all Rectangles? Maybe make it static and upload only a single one?
-	m_indexBuffer.destroy();
-
-	m_indexBuffer.create(device, physicalDevice, sizeof(uint32_t) * 6, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-
-	static uint32_t data[] = {
+	uint32_t data[] = {
 		0, 1, 2, 0, 2, 3
 	};
-	void* dataBuf = m_indexBuffer.map();
+	void* dataBuf = s_indexBuffer.map();
 	memcpy(dataBuf, data, sizeof(uint32_t) * 6);
-	m_indexBuffer.unmap();
+	s_indexBuffer.unmap();
 
+	s_indexBuffer.upload(commandPool, queue);
+}
+
+void bbe::Rectangle::s_initVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue)
+{
+	s_vertexBuffer.create(device, physicalDevice, sizeof(float) * 8, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	float data[] = {
+		0, 0,
+		1, 0,
+		1, 1,
+		0, 1,
+	};
+
+	void* dataBuf = s_vertexBuffer.map();
+	memcpy(dataBuf, data, sizeof(float) * 8);
+	s_vertexBuffer.unmap();
+
+	s_vertexBuffer.upload(commandPool, queue);
+}
+
+void bbe::Rectangle::s_destroy()
+{
+	s_indexBuffer.destroy();
+	s_vertexBuffer.destroy();
 }
 
 bbe::Rectangle::Rectangle()
@@ -81,8 +62,6 @@ bbe::Rectangle::Rectangle(float x, float y, float width, float height)
 
 bbe::Rectangle::~Rectangle()
 {
-	m_vertexBuffer.destroyAtEndOfFrame();
-	m_indexBuffer .destroyAtEndOfFrame();
 }
 
 bbe::Rectangle::Rectangle(const Rectangle &other)
@@ -93,35 +72,17 @@ bbe::Rectangle::Rectangle(const Rectangle &other)
 bbe::Rectangle::Rectangle(Rectangle &&other)
 {
 	set(other.getX(), other.getY(), other.getWidth(), other.getHeight());
-	if (other.m_bufferDirty == false)
-	{
-		m_vertexBuffer = std::move(other.m_vertexBuffer);
-		m_indexBuffer = std::move(other.m_indexBuffer);
-		m_bufferDirty = false;
-	}
 }
 
 bbe::Rectangle & bbe::Rectangle::operator=(const Rectangle &other)
 {
-	m_vertexBuffer.destroy();
-	m_indexBuffer.destroy();
 	set(other.getX(), other.getY(), other.getWidth(), other.getHeight());
-	m_bufferDirty = true;
 	return *this;
 }
 
 bbe::Rectangle & bbe::Rectangle::operator=(Rectangle &&other)
 {
-	m_vertexBuffer.destroy();
-	m_indexBuffer.destroy();
 	set(other.getX(), other.getY(), other.getWidth(), other.getHeight());
-	m_bufferDirty = true;
-	if (other.m_bufferDirty == false)
-	{
-		m_vertexBuffer = std::move(other.m_vertexBuffer);
-		m_indexBuffer = std::move(other.m_indexBuffer);
-		m_bufferDirty = false;
-	}
 	return *this;
 }
 
@@ -147,29 +108,21 @@ float bbe::Rectangle::getHeight() const
 
 void bbe::Rectangle::setX(float x)
 {
-	if(x != m_x)
-		m_bufferDirty = true;
 	m_x = x;
 }
 
 void bbe::Rectangle::setY(float y)
 {
-	if(y != m_y)
-		m_bufferDirty = true;
 	m_y = y;
 }
 
 void bbe::Rectangle::setWidth(float width)
 {
-	if(width != m_width)
-		m_bufferDirty = true;
 	m_width = width;
 }
 
 void bbe::Rectangle::setHeight(float height)
 {
-	if(height != m_height)
-		m_bufferDirty = true;
 	m_height = height;
 }
 
@@ -183,12 +136,8 @@ void bbe::Rectangle::set(float x, float y, float width, float height)
 
 void bbe::Rectangle::translate(float x, float y)
 {
-	if (x != 0 || y != 0)
-	{
-		m_bufferDirty = true;
-		m_x += x;
-		m_y += y;
-	}
+	m_x += x;
+	m_y += y;
 }
 
 void bbe::Rectangle::translate(const Vector2 & vec)
