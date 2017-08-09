@@ -2,15 +2,12 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW\glfw3.h"
-
-#include "../BBE/Rectangle.h"
-#include "../BBE/Circle.h"
-#include "../BBE/Color.h"
+#include "../BBE/Matrix4.h"
+#include "../BBE/VulkanBuffer.h"
 
 namespace bbe
 {
-	
-
+	class Color;
 	namespace INTERNAL
 	{
 		namespace vulkan
@@ -20,7 +17,8 @@ namespace bbe
 		}
 	}
 
-	class PrimitiveBrush2D
+
+	class PrimitiveBrush3D
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
 	private:
@@ -32,20 +30,19 @@ namespace bbe
 		int m_screenWidth;
 		int m_screenHeight;
 
-		void INTERNAL_fillRect(const Rectangle &rect);
-		void INTERNAL_fillCircle(const Circle &circle);
+		Matrix4 m_modelMatrix;
+		Matrix4 m_viewProjectionMatrix;
+
+		INTERNAL::vulkan::VulkanBuffer m_uboModel;
+		INTERNAL::vulkan::VulkanBuffer m_uboViewProjection;
+
 		void INTERNAL_setColor(float r, float g, float b, float a);
 		void INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice &device, VkCommandBuffer commandBuffer, VkPipelineLayout layout, int screenWidth, int screenHeight);
+		
+		void create(const INTERNAL::vulkan::VulkanDevice &vulkanDevice);
+		void destroy();
 
 	public:
-
-
-		void fillRect(const Rectangle &rect);
-		void fillRect(float x, float y, float width, float height);
-
-		void fillCircle(const Circle &circle);
-		void fillCircle(float x, float y, float width, float height);
-
 		void setColor(float r, float g, float b, float a);
 		void setColor(float r, float g, float b);
 		void setColor(const Color &c);

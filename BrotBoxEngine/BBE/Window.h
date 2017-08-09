@@ -43,6 +43,7 @@ namespace bbe
 		int getHeight() const;
 
 		PrimitiveBrush2D* getBrush2D();
+		PrimitiveBrush3D* getBrush3D();
 
 		static Window* INTERNAL_firstInstance;
 		Keyboard INTERNAL_keyboard;

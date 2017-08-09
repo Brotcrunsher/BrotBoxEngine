@@ -37,8 +37,8 @@ namespace bbe
 				void unmap();
 				void copy(const VulkanBuffer &other, VkCommandPool commandPool, VkQueue queue);
 
-				VkBuffer getBuffer();
-				VkDeviceSize getSize();
+				VkBuffer getBuffer() const;
+				VkDeviceSize getSize() const;
 
 				bool isUsable();
 			};

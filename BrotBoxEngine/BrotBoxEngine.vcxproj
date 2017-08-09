@@ -223,6 +223,8 @@
     <ClInclude Include="BBE\NewDeleteAllocator.h" />
     <ClInclude Include="BBE\Circle.h" />
     <ClInclude Include="BBE\Math.h" />
+    <ClInclude Include="BBE\Matrix4.h" />
+    <ClInclude Include="BBE\PrimitiveBrush3D.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="BBE\STLAllocator.h" />
     <ClInclude Include="BBE\STLCapsule.h" />
@@ -251,8 +253,14 @@
     <ClInclude Include="BBE\VWDepthImage.h" />
     <ClInclude Include="BBE\Window.h" />
     <ClInclude Include="BBE\UtilTest.h" />
+    <ClInclude Include="BBE\VulkanDescriptorPool.h" />
+    <ClInclude Include="BBE\Vector3.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Matrix4.cpp" />
+    <ClCompile Include="PrimitiveBrush3D.cpp" />
+    <ClCompile Include="Vector3.cpp" />
+    <ClCompile Include="VulkanDescriptorPool.cpp" />
     <ClCompile Include="Circle.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="Game.cpp" />
@@ -290,8 +298,10 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader.frag" />
-    <None Include="shader.vert" />
+    <None Include="Shader2DPrimitive.frag" />
+    <None Include="Shader2DPrimitive.vert" />
+    <None Include="Shader3DPrimitive.frag" />
+    <None Include="Shader3DPrimitive.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

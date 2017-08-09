@@ -261,6 +261,18 @@
     <ClInclude Include="BBE\Math.h">
       <Filter>Header Files\Math</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\VulkanDescriptorPool.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Vector3.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\PrimitiveBrush3D.h">
+      <Filter>Header Files\GFX\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Matrix4.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -353,12 +365,30 @@
     <ClCompile Include="Math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="VulkanDescriptorPool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Vector3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix4.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrimitiveBrush3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader.frag">
+    <None Include="Shader2DPrimitive.frag">
       <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
     </None>
-    <None Include="shader.vert">
+    <None Include="Shader2DPrimitive.vert">
+      <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
+    </None>
+    <None Include="Shader3DPrimitive.frag">
+      <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
+    </None>
+    <None Include="Shader3DPrimitive.vert">
       <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
     </None>
   </ItemGroup>

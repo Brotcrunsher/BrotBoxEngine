@@ -254,9 +254,28 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexBinding(VkVertexInputBindin
 	vertexBindingDescription.add(vb);
 }
 
+void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexBinding(uint32_t binding, uint32_t stride, VkVertexInputRate inputRate)
+{
+	VkVertexInputBindingDescription vb = {};
+	vb.binding = binding;
+	vb.stride = stride;
+	vb.inputRate = inputRate;
+	addVertexBinding(vb);
+}
+
 void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexDescription(VkVertexInputAttributeDescription vd)
 {
 	vertexAttributeDescriptions.add(vd);
+}
+
+void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexDescription(uint32_t location, uint32_t binding, VkFormat format, uint32_t offset)
+{
+	VkVertexInputAttributeDescription vd = {};
+	vd.location = location;
+	vd.binding = binding;
+	vd.format = format;
+	vd.offset = offset;
+	addVertexDescription(vd);
 }
 
 void bbe::INTERNAL::vulkan::VulkanPipeline::addDescriptorSetLayout(VkDescriptorSetLayout dsl)
@@ -267,4 +286,13 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addDescriptorSetLayout(VkDescriptorS
 void bbe::INTERNAL::vulkan::VulkanPipeline::addPushConstantRange(VkPushConstantRange pcr)
 {
 	pushConstantRanges.add(pcr);
+}
+
+void bbe::INTERNAL::vulkan::VulkanPipeline::addPushConstantRange(VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size)
+{
+	VkPushConstantRange pcr = {};
+	pcr.stageFlags = stageFlags;
+	pcr.offset = offset;
+	pcr.size = size;
+	addPushConstantRange(pcr);
 }

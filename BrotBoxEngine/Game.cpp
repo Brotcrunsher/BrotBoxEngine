@@ -3,6 +3,7 @@
 #include "BBE/Window.h"
 #include "BBE/Exceptions.h"
 #include "BBE/PrimitiveBrush2D.h"
+#include "BBE/PrimitiveBrush3D.h"
 
 bbe::Game::Game()
 {
@@ -35,6 +36,8 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 		update(m_gameTime.tick());
 
 		m_window->preDraw();
+		PrimitiveBrush3D brush3D = *(m_window->getBrush3D());
+		draw3D(brush3D);
 		PrimitiveBrush2D brush2D = *(m_window->getBrush2D());
 		draw2D(brush2D);
 		m_window->postDraw();

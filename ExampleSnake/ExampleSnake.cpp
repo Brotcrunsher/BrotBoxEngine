@@ -187,6 +187,10 @@ public:
 	virtual void onEnd() override
 	{
 	}
+
+	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	{
+	}
 };
 
 

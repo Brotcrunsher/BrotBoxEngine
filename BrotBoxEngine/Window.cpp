@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "BBE/Window.h"
 #include "BBE/PrimitiveBrush2D.h"
+#include "BBE/PrimitiveBrush3D.h"
 #include <iostream>
 
 
@@ -86,6 +87,11 @@ int bbe::Window::getHeight() const
 bbe::PrimitiveBrush2D * bbe::Window::getBrush2D()
 {
 	return m_vulkanManager.getBrush2D();
+}
+
+bbe::PrimitiveBrush3D * bbe::Window::getBrush3D()
+{
+	return m_vulkanManager.getBrush3D();
 }
 
 void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, int action, int mods)

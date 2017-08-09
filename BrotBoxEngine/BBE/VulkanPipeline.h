@@ -62,12 +62,15 @@ namespace bbe
 				void setGeometryShader(VkShaderModule shaderModule);
 
 				void addVertexBinding(VkVertexInputBindingDescription vb);
+				void addVertexBinding(uint32_t binding, uint32_t stride, VkVertexInputRate inputRate);
 
 				void addVertexDescription(VkVertexInputAttributeDescription vd);
+				void addVertexDescription(uint32_t location, uint32_t binding, VkFormat format, uint32_t offset);
 
 				void addDescriptorSetLayout(VkDescriptorSetLayout dsl);
 
 				void addPushConstantRange(VkPushConstantRange pcr);
+				void addPushConstantRange(VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size);
 			};
 		}
 	}

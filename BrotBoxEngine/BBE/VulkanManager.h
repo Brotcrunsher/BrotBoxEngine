@@ -4,6 +4,7 @@
 #include "GLFW\glfw3.h"
 
 #include "../BBE/PrimitiveBrush2D.h"
+#include "../BBE/PrimitiveBrush3D.h"
 #include "../BBE/VulkanInstance.h"
 #include "../BBE/VulkanSurface.h"
 #include "../BBE/VulkanPhysicalDevices.h"
@@ -14,6 +15,7 @@
 #include "../BBE/VulkanPipeline.h"
 #include "../BBE/VulkanCommandPool.h"
 #include "../BBE/VulkanSemaphore.h"
+#include "../BBE/VulkanDescriptorPool.h"
 #include "../BBE/VWDepthImage.h"
 #include "../BBE/VulkanFence.h"
 #include "../BBE/Stack.h"
@@ -34,17 +36,25 @@ namespace bbe
 				VulkanDevice m_device;
 				VulkanSwapchain m_swapchain;
 				VulkanRenderPass m_renderPass;
-				VulkanShader m_vertexShader;
-				VulkanShader m_fragmentShader;
-				VulkanPipeline m_pipeline;
+
+				VulkanShader m_vertexShader2DPrimitive;
+				VulkanShader m_fragmentShader2DPrimitive;
+				VulkanPipeline m_pipeline2DPrimitive;
+
+				VulkanShader m_vertexShader3DPrimitive;
+				VulkanShader m_fragmentShader3DPrimitive;
+				VulkanPipeline m_pipeline3DPrimitive;
+
 				VulkanCommandPool m_commandPool;
 				VulkanSemaphore m_semaphoreImageAvailable;
 				VulkanSemaphore m_semaphoreRenderingDone;
 				VWDepthImage m_depthImage;
 				VkCommandBuffer m_currentFrameDrawCommandBuffer = VK_NULL_HANDLE;
 				VulkanFence m_presentFence;
+				VulkanDescriptorPool m_descriptorPool;
 				GLFWwindow *m_window = nullptr;
-				bbe::PrimitiveBrush2D m_primitiveBrush2D;
+				PrimitiveBrush2D m_primitiveBrush2D;
+				PrimitiveBrush3D m_primitiveBrush3D;
 
 				uint32_t m_screenWidth;
 				uint32_t m_screenHeight;
@@ -69,6 +79,7 @@ namespace bbe
 				void postDraw();
 
 				bbe::PrimitiveBrush2D *getBrush2D();
+				bbe::PrimitiveBrush3D *getBrush3D();
 
 				void addPendingDestructionBuffer(VkBuffer buffer, VkDeviceMemory memory);
 			};

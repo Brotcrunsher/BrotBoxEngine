@@ -17,6 +17,7 @@
 #include "../BBE/Color.h"
 #include "../BBE/Game.h"
 #include "../BBE/PrimitiveBrush2D.h"
+#include "../BBE/PrimitiveBrush3D.h"
 #include "../BBE/Window.h"
 #include "../BBE/VWDepthImage.h"
 #include "../BBE/VulkanBuffer.h"

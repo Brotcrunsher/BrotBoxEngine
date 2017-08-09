@@ -148,12 +148,12 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::copy(const VulkanBuffer &other, VkComm
 	copyBuffer(m_device, commandPool, queue, other.m_buffer, m_buffer, m_bufferSize);
 }
 
-VkBuffer bbe::INTERNAL::vulkan::VulkanBuffer::getBuffer()
+VkBuffer bbe::INTERNAL::vulkan::VulkanBuffer::getBuffer() const
 {
 	return m_buffer;
 }
 
-VkDeviceSize bbe::INTERNAL::vulkan::VulkanBuffer::getSize()
+VkDeviceSize bbe::INTERNAL::vulkan::VulkanBuffer::getSize() const
 {
 	return m_bufferSize;
 }

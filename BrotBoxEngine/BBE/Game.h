@@ -6,6 +6,7 @@ namespace bbe
 {
 	class Window;
 	class PrimitiveBrush2D;
+	class PrimitiveBrush3D;
 
 	class Game
 	{
@@ -27,6 +28,7 @@ namespace bbe
 
 		virtual void onStart() = 0;
 		virtual void update(float timeSinceLastFrame) = 0;
+		virtual void draw3D(PrimitiveBrush3D &brush) = 0;
 		virtual void draw2D(PrimitiveBrush2D &brush) = 0;
 		virtual void onEnd() = 0;
 
