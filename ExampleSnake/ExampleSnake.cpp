@@ -181,7 +181,7 @@ public:
 		}
 
 		brush.setColor(0.5f, 1, 0.5f);
-		brush.fillRect(food.x * CELLSIZE, food.y * CELLSIZE, CELLSIZE, CELLSIZE);
+		brush.fillCircle(food.x * CELLSIZE, food.y * CELLSIZE, CELLSIZE, CELLSIZE);
 	}
 
 	virtual void onEnd() override

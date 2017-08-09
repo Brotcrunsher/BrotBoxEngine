@@ -82,12 +82,15 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_semaphoreRenderingDone.init(m_device);
 	m_presentFence.init(m_device);
 	bbe::Rectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
+	bbe::Circle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
+
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 {
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
+	bbe::Circle::s_destroy();
 	bbe::Rectangle::s_destroy();
 
 	destroyPendingBuffers();

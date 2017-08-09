@@ -60,30 +60,19 @@ bbe::Rectangle::Rectangle(float x, float y, float width, float height)
 {
 }
 
-bbe::Rectangle::~Rectangle()
+bbe::Rectangle::Rectangle(const Vector2 & vec, float width, float height)
+	: m_x(vec.x), m_y(vec.y), m_width(width), m_height(height)
 {
 }
 
-bbe::Rectangle::Rectangle(const Rectangle &other)
+bbe::Rectangle::Rectangle(float x, float y, const Vector2 & dim)
+	: m_x(x), m_y(y), m_width(dim.x), m_height(dim.y)
 {
-	set(other.getX(), other.getY(), other.getWidth(), other.getHeight());
 }
 
-bbe::Rectangle::Rectangle(Rectangle &&other)
+bbe::Rectangle::Rectangle(const Vector2 & vec, const Vector2 & dim)
+	: m_x(vec.x), m_y(vec.y), m_width(dim.x), m_height(dim.y)
 {
-	set(other.getX(), other.getY(), other.getWidth(), other.getHeight());
-}
-
-bbe::Rectangle & bbe::Rectangle::operator=(const Rectangle &other)
-{
-	set(other.getX(), other.getY(), other.getWidth(), other.getHeight());
-	return *this;
-}
-
-bbe::Rectangle & bbe::Rectangle::operator=(Rectangle &&other)
-{
-	set(other.getX(), other.getY(), other.getWidth(), other.getHeight());
-	return *this;
 }
 
 float bbe::Rectangle::getX() const
@@ -116,6 +105,18 @@ void bbe::Rectangle::setY(float y)
 	m_y = y;
 }
 
+void bbe::Rectangle::setPos(float x, float y)
+{
+	m_x = x;
+	m_y = y;
+}
+
+void bbe::Rectangle::setPos(const Vector2 & vec)
+{
+	m_x = vec.x;
+	m_y = vec.y;
+}
+
 void bbe::Rectangle::setWidth(float width)
 {
 	m_width = width;
@@ -124,6 +125,18 @@ void bbe::Rectangle::setWidth(float width)
 void bbe::Rectangle::setHeight(float height)
 {
 	m_height = height;
+}
+
+void bbe::Rectangle::setDim(float width, float height)
+{
+	m_width = width;
+	m_height = height;
+}
+
+void bbe::Rectangle::setDim(const Vector2 & vec)
+{
+	m_width = vec.x;
+	m_height = vec.y;
 }
 
 void bbe::Rectangle::set(float x, float y, float width, float height)

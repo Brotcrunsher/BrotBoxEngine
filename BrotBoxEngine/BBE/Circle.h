@@ -1,4 +1,5 @@
 #pragma once
+
 #include "../BBE/VulkanBuffer.h"
 #include "../BBE/VulkanCommandPool.h"
 #include "../BBE/Vector2.h"
@@ -15,10 +16,10 @@ namespace bbe
 		}
 	}
 
-	class Rectangle
+	class Circle
 	{
 		friend class PrimitiveBrush2D;
-		friend class ::bbe::INTERNAL::vulkan::VulkanManager;
+		friend class INTERNAL::vulkan::VulkanManager;
 	private:
 		float m_x;
 		float m_y;
@@ -32,12 +33,14 @@ namespace bbe
 		static bbe::INTERNAL::vulkan::VulkanBuffer s_indexBuffer;
 		static bbe::INTERNAL::vulkan::VulkanBuffer s_vertexBuffer;
 
+		static const uint32_t AMOUNTOFVERTICES;
+
 	public:
-		Rectangle();
-		Rectangle(float x, float y, float width, float height);
-		Rectangle(const Vector2 &vec, float width, float height);
-		Rectangle(float x, float y, const Vector2 &dim);
-		Rectangle(const Vector2 &vec, const Vector2 &dim);
+		Circle();
+		Circle(float x, float y, float width, float height);
+		Circle(const Vector2 &vec, float width, float height);
+		Circle(float x, float y, const Vector2 &dim);
+		Circle(const Vector2 &vec, const Vector2 &dim);
 
 		float getX() const;
 		float getY() const;

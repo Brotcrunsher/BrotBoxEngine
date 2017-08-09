@@ -221,6 +221,8 @@
     <ClInclude Include="BBE\Stack.h" />
     <ClInclude Include="BBE\StackAllocator.h" />
     <ClInclude Include="BBE\NewDeleteAllocator.h" />
+    <ClInclude Include="BBE\Circle.h" />
+    <ClInclude Include="BBE\Math.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="BBE\STLAllocator.h" />
     <ClInclude Include="BBE\STLCapsule.h" />
@@ -251,11 +253,13 @@
     <ClInclude Include="BBE\UtilTest.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Circle.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameTime.cpp" />
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="KeyboardKeys.cpp" />
+    <ClCompile Include="Math.cpp" />
     <ClCompile Include="PrimitiveBrush2D.cpp" />
     <ClCompile Include="Rectangle.cpp" />
     <ClCompile Include="SimpleFile.cpp" />
