@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../BBE/Vector4.h";
 
 namespace bbe
 {
@@ -13,5 +14,9 @@ namespace bbe
 
 	public:
 		Matrix4();
+
+		float& operator[](int index);
+		const float& operator[](int index) const;
+		Matrix4 operator*(const Matrix4 other) const;
 	};
 }

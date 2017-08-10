@@ -273,6 +273,9 @@
     <ClInclude Include="BBE\Matrix4.h">
       <Filter>Header Files\Math</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\Vector4.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -375,6 +378,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PrimitiveBrush3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Vector4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
