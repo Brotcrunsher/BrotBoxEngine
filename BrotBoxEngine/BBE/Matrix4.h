@@ -7,13 +7,13 @@ namespace bbe
 	class Matrix4
 	{
 	private:
-		float col0[4];
-		float col1[4];
-		float col2[4];
-		float col3[4];
+		Vector4 m_cols[4];
 
 	public:
 		Matrix4();
+
+		float get(int row, int col) const;
+		void set(int row, int col, float val);
 
 		float& operator[](int index);
 		const float& operator[](int index) const;

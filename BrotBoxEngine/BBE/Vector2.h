@@ -19,5 +19,8 @@ namespace bbe
 		Vector2 operator-(const Vector2 &other) const;
 
 		static Vector2 createVector2OnUnitCircle(float radians);
+
+		float& operator[](int index);
+		const float& operator[](int index) const;
 	};
 }

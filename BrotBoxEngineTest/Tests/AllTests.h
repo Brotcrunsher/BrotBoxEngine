@@ -14,6 +14,7 @@
 #include "OtherTest.h"
 #include "BBE/UtilTest.h"
 #include "UniquePointerTest.h"
+#include "Matrix4Test.h"
 
 namespace bbe {
 	namespace test {
@@ -43,6 +44,9 @@ namespace bbe {
 			Person::checkIfAllPersonsWereDestroyed();
 			bbe::test::testDynamicArray();
 			Person::checkIfAllPersonsWereDestroyed();
+			bbe::test::testMatrix4();
+			Person::checkIfAllPersonsWereDestroyed();
+
 		}
 	}
 }

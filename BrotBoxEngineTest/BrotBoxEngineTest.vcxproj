@@ -150,6 +150,7 @@
     <ClInclude Include="Tests\GeneralPurposeAllocatorTest.h" />
     <ClInclude Include="Tests\DataStructures\HashMapTest.h" />
     <ClInclude Include="Tests\DataStructures\ListTest.h" />
+    <ClInclude Include="Tests\Matrix4Test.h" />
     <ClInclude Include="Tests\OtherTest.h" />
     <ClInclude Include="Tests\PoolAllocatorTest.h" />
     <ClInclude Include="Tests\StackAllocatorTest.h" />

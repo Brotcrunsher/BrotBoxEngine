@@ -3,6 +3,12 @@
 #include "BBE/Vector3.h"
 #include "BBE/Vector4.h"
 #include "BBE/Exceptions.h"
+#include "BBE\Vector4.h"
+
+bbe::Vector4::Vector4()
+	: x(0), y(0), z(0), w(0)
+{
+}
 
 bbe::Vector4::Vector4(float x, float y, float z, float w)
 	: x(x), y(y), z(z), w(w)
@@ -42,6 +48,21 @@ bbe::Vector4::Vector4(float x, const bbe::Vector3 &yzw)
 bbe::Vector4 bbe::Vector4::operator+(const bbe::Vector4 & other) const
 {
 	return Vector4(x + other.x, y + other.y, z + other.z, w + other.w);
+}
+
+bbe::Vector4 bbe::Vector4::operator-(const Vector4 & other) const
+{
+	return Vector4(x - other.x, y - other.y, z - other.z, w - other.w);
+}
+
+bbe::Vector4 bbe::Vector4::operator*(float scalar) const
+{
+	return Vector4(x * scalar, y * scalar, z * scalar, w * scalar);
+}
+
+bbe::Vector4 bbe::Vector4::operator/(float scalar) const
+{
+	return Vector4(x / scalar, y / scalar, z / scalar, w / scalar);
 }
 
 float& bbe::Vector4::operator[](int index)
