@@ -2,7 +2,7 @@
 
 #include "../BBE/DataType.h"
 #include "../BBE/List.h"
-#include "../BBE/UtilMath.h"
+#include "../BBE/Math.h"
 #include "../BBE/UniquePointer.h"
 #include "../BBE/UtilTest.h"
 #include "../BBE/EmptyClass.h"
@@ -70,7 +70,7 @@ namespace bbe
 				//UNTESTED
 				static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
 				static_assert(ALIGNMENT > 0, "Alignment must be positive, none zero.");
-				byte* allocationLocation = (byte*)nextMultiple(alignof(T), ((size_t)m_addr) + 1);
+				byte* allocationLocation = (byte*)Math::nextMultiple(alignof(T), ((size_t)m_addr) + 1);
 				size_t amountOfBytes = amountOfObjects * sizeof(T);
 				byte* newAddr = allocationLocation + amountOfBytes;
 				if (newAddr <= m_addr + m_length)

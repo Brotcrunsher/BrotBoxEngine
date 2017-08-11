@@ -3,7 +3,7 @@
 #include "../BBE/DataType.h"
 #include "../BBE/List.h"
 #include "../BBE/Stack.h"
-#include "../BBE/UtilMath.h"
+#include "../BBE/Math.h"
 #include "../BBE/UniquePointer.h"
 #include "../BBE/UtilTest.h"
 #include "../BBE/EmptyClass.h"
@@ -161,7 +161,7 @@ namespace bbe
 			byte* relocateTemplate(void *newAddr)
 			{
 				static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
-				byte* allocationLocation = (byte*)nextMultiple(alignof(T), ((size_t)newAddr) + 1);
+				byte* allocationLocation = (byte*)Math::nextMultiple(alignof(T), ((size_t)newAddr) + 1);
 				size_t amountOfBytes = m_amountOfObjects * sizeof(T);
 
 				byte offset = (byte)(allocationLocation - (byte*)newAddr);
@@ -185,7 +185,7 @@ namespace bbe
 				else
 				{
 					byte tempByteArr[sizeof(T) + alignof(T)];
-					T* tempObj = reinterpret_cast<T*>(nextMultiple((size_t)alignof(T), (size_t)tempByteArr));
+					T* tempObj = reinterpret_cast<T*>(Math::nextMultiple((size_t)alignof(T), (size_t)tempByteArr));
 
 					for (int i = 0; i < m_amountOfObjects; i++)
 					{

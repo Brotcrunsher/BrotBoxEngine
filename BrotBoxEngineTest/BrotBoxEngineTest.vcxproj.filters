@@ -27,9 +27,6 @@
     <ClInclude Include="targetver.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="Tests\OtherTest.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="Tests\PoolAllocatorTest.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
@@ -67,6 +64,9 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="Tests\Matrix4Test.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\MathTest.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

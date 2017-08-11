@@ -37,7 +37,11 @@
 #include "../BBE/Keyboard.h"
 #include "../BBE/KeyboardKeys.h"
 
+#include "../BBE/Math.h"
+#include "../BBE/Matrix4.h"
 #include "../BBE/Vector2.h"
+#include "../BBE/Vector3.h"
+#include "../BBE/Vector4.h"
 
 #include "../BBE/DefaultDestroyer.h"
 #include "../BBE/DefragmentationAllocator.h"
@@ -62,4 +66,3 @@
 #include "../BBE/STLCapsule.h"
 #include "../BBE/Unconstructed.h"
 #include "../BBE/UtilDebug.h"
-#include "../BBE/UtilMath.h"

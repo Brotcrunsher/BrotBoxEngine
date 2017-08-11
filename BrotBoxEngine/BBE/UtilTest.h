@@ -171,6 +171,18 @@ namespace bbe {
 		}
 
 		template <typename T, typename U>
+		void assertEqualsFloat(T a, U b, T epsilon = 0.01) {
+			T diff = a - b;
+
+			if (diff > -epsilon && diff < epsilon) {
+				//Do nothing, test passed
+			}
+			else {
+				debugBreak();
+			}
+		}
+
+		template <typename T, typename U>
 		void assertUnequals(T a, U b) {
 			if (a != b) {
 				//Do nothing, test passed

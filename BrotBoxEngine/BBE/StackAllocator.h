@@ -7,6 +7,7 @@
 #include <cstring>
 #include "../BBE/STLCapsule.h"
 #include "../BBE/Exceptions.h"
+#include "../BBE/Math.h"
 
 namespace bbe
 {
@@ -131,7 +132,7 @@ namespace bbe
 		template <typename U, typename... arguments>
 		U* allocateObjects(size_t amountOfObjects = 1, arguments&&... args)
 		{
-			T* allocationLocation = (T*)nextMultiple(alignof(U), (size_t)m_head);
+			T* allocationLocation = (T*)Math::nextMultiple(alignof(U), (size_t)m_head);
 			T* newHeadPointer = allocationLocation + amountOfObjects * sizeof(U);
 			if (newHeadPointer <= m_data + m_length)
 			{
@@ -160,7 +161,7 @@ namespace bbe
 
 		void* allocate(size_t amountOfBytes, size_t alignment = 1)
 		{
-			T* allocationLocation = (T*)nextMultiple(alignment, (size_t)m_head);
+			T* allocationLocation = (T*)Math::nextMultiple(alignment, (size_t)m_head);
 			T* newHeadPointer = allocationLocation + amountOfBytes;
 			if (newHeadPointer <= m_data + m_length)
 			{

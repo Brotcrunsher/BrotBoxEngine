@@ -233,7 +233,6 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="BBE\Unconstructed.h" />
     <ClInclude Include="BBE\UniquePointer.h" />
-    <ClInclude Include="BBE\UtilMath.h" />
     <ClInclude Include="BBE\UtilDebug.h" />
     <ClInclude Include="BBE\Vector2.h" />
     <ClInclude Include="BBE\VulkanBuffer.h" />

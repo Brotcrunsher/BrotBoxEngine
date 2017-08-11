@@ -192,9 +192,6 @@
     <ClInclude Include="BBE\UtilDebug.h">
       <Filter>Header Files\Util</Filter>
     </ClInclude>
-    <ClInclude Include="BBE\UtilMath.h">
-      <Filter>Header Files\Util</Filter>
-    </ClInclude>
     <ClInclude Include="BBE\Vector2.h">
       <Filter>Header Files\Math</Filter>
     </ClInclude>

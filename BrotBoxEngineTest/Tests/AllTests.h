@@ -11,10 +11,10 @@
 #include "DataStructures/StackTest.h"
 #include "DataStructures\ArrayTest.h"
 #include "DataStructures\DynamicArrayTest.h"
-#include "OtherTest.h"
 #include "BBE/UtilTest.h"
 #include "UniquePointerTest.h"
 #include "Matrix4Test.h"
+#include "MathTest.h"
 
 namespace bbe {
 	namespace test {
@@ -36,8 +36,6 @@ namespace bbe {
 			Person::checkIfAllPersonsWereDestroyed();
 			bbe::test::testStack();
 			Person::checkIfAllPersonsWereDestroyed();
-			bbe::test::testAllOthers();
-			Person::checkIfAllPersonsWereDestroyed();
 			bbe::test::testUniquePointer();
 			Person::checkIfAllPersonsWereDestroyed();
 			bbe::test::testArray();
@@ -46,7 +44,8 @@ namespace bbe {
 			Person::checkIfAllPersonsWereDestroyed();
 			bbe::test::testMatrix4();
 			Person::checkIfAllPersonsWereDestroyed();
-
+			bbe::test::testMath();
+			Person::checkIfAllPersonsWereDestroyed();
 		}
 	}
 }
