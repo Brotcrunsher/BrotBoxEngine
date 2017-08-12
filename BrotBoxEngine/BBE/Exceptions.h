@@ -33,4 +33,6 @@ namespace bbe
 	CREATE_EXCEPTION(ContainerEmptyException);
 
 	CREATE_EXCEPTION(IllegalIndexException);
+
+	CREATE_EXCEPTION(NotImplementedException);
 }

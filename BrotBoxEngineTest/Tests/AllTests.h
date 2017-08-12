@@ -15,6 +15,7 @@
 #include "UniquePointerTest.h"
 #include "Matrix4Test.h"
 #include "MathTest.h"
+#include "Vector2Test.h"
 
 namespace bbe {
 	namespace test {
@@ -45,6 +46,8 @@ namespace bbe {
 			bbe::test::testMatrix4();
 			Person::checkIfAllPersonsWereDestroyed();
 			bbe::test::testMath();
+			Person::checkIfAllPersonsWereDestroyed();
+			bbe::test::testVector2();
 			Person::checkIfAllPersonsWereDestroyed();
 		}
 	}

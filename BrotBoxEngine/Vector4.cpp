@@ -8,65 +8,78 @@
 bbe::Vector4::Vector4()
 	: x(0), y(0), z(0), w(0)
 {
+	//UNTESTED
 }
 
 bbe::Vector4::Vector4(float x, float y, float z, float w)
 	: x(x), y(y), z(z), w(w)
 {
+	//UNTESTED
 }
 
 bbe::Vector4::Vector4(float x, float y, const bbe::Vector2 &zw)
 	: x(x), y(y), z(zw.x), w(zw.y)
 {
+	//UNTESTED
 }
 
 bbe::Vector4::Vector4(const bbe::Vector2 &xy, float z, float w)
 	: x(xy.x), y(xy.y), z(z), w(w)
 {
+	//UNTESTED
 }
 
 bbe::Vector4::Vector4(const bbe::Vector2 &xy, const bbe::Vector2 &zw)
 	: x(xy.x), y(xy.y), z(zw.x), w(zw.y)
 {
+	//UNTESTED
 }
 
 bbe::Vector4::Vector4(float x, const bbe::Vector2 &yz, float w)
 	: x(x), y(yz.x), z(yz.y), w(w)
 {
+	//UNTESTED
 }
 
 bbe::Vector4::Vector4(const bbe::Vector3 &xyz, float w)
 	: x(xyz.x), y(xyz.y), z(xyz.z), w(w)
 {
+	//UNTESTED
 }
 
 bbe::Vector4::Vector4(float x, const bbe::Vector3 &yzw)
 	: x(x), y(yzw.x), z(yzw.y), w(yzw.z)
 {
+	//UNTESTED
 }
 
 bbe::Vector4 bbe::Vector4::operator+(const bbe::Vector4 & other) const
 {
+	//UNTESTED
 	return Vector4(x + other.x, y + other.y, z + other.z, w + other.w);
 }
 
 bbe::Vector4 bbe::Vector4::operator-(const Vector4 & other) const
 {
+	//UNTESTED
 	return Vector4(x - other.x, y - other.y, z - other.z, w - other.w);
 }
 
 bbe::Vector4 bbe::Vector4::operator*(float scalar) const
 {
+	//UNTESTED
 	return Vector4(x * scalar, y * scalar, z * scalar, w * scalar);
 }
 
 bbe::Vector4 bbe::Vector4::operator/(float scalar) const
 {
+	//UNTESTED
 	return Vector4(x / scalar, y / scalar, z / scalar, w / scalar);
 }
 
 float& bbe::Vector4::operator[](int index)
 {
+	//UNTESTED
 	switch (index)
 	{
 	case 0:
@@ -84,6 +97,7 @@ float& bbe::Vector4::operator[](int index)
 
 const float& bbe::Vector4::operator[](int index) const
 {
+	//UNTESTED
 	switch (index)
 	{
 	case 0:

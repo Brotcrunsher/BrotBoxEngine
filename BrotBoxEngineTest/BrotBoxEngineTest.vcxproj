@@ -166,6 +166,7 @@
     <ClInclude Include="Tests\DataStructures\StackTest.h" />
     <ClInclude Include="Tests\StringTest.h" />
     <ClInclude Include="Tests\UniquePointerTest.h" />
+    <ClInclude Include="Tests\Vector2Test.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BrotBoxEngineTest.cpp" />
