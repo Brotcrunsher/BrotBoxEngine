@@ -404,6 +404,24 @@ namespace bbe
 
 			}
 
+			{
+				Vector2 vec(5, 5);
+				Vector2 proj(1, 0);
+
+				Vector2 result = vec.project(proj);
+				assertEqualsFloat(result.x, 5);
+				assertEqualsFloat(result.y, 0);
+			}
+
+			{
+				Vector2 vec(-1, -1);
+				Vector2 normal(1, 0);
+				Vector2 result = vec.reflect(normal);
+
+				assertEqualsFloat(result.x, 1);
+				assertEqualsFloat(result.y, -1);
+			}
+
 			//TODO test other stuff
 		}
 	}

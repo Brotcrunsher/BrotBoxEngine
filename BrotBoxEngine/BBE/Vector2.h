@@ -14,10 +14,11 @@ namespace bbe
 		static Vector2 createVector2OnUnitCircle(float radians);
 
 		Vector2 operator*(float scalar) const;
-		float operator*(const Vector2 &other) const;
 		Vector2 operator/(float scalar) const;
+		float operator*(const Vector2 &other) const;
 		Vector2 operator+(const Vector2 &other) const;
 		Vector2 operator-(const Vector2 &other) const;
+		Vector2 operator-() const;
 		float& operator[](int index);
 		const float& operator[](int index) const;
 
@@ -49,7 +50,7 @@ namespace bbe
 		Vector2 abs() const;
 		Vector2 clampComponents(float min, float max) const;
 		Vector2 project(const Vector2 &other) const;
-		Vector2 reflect(const Vector2 &other) const;
+		Vector2 reflect(const Vector2 &normal) const;
 
 		float getLength() const;
 		float getLengthSq() const;

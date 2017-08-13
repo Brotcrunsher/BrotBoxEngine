@@ -18,9 +18,21 @@ namespace bbe
 		float acos(float val);
 		float sin(float val);
 		float asin(float val);
+		float tan(float val);
+		float atan(float val);
 		float sqrt(float val);
 		float mod(float val, float mod);
 		float pingpong(float val, float border);
+
+		constexpr float toRadians(float val)
+		{
+			return val * 0.0174532925f;
+		}
+
+		constexpr float toDegrees(float val)
+		{
+			return val * 57.295779513f;
+		}
 
 		float floor(float val);
 		float ceil(float val);
@@ -34,11 +46,17 @@ namespace bbe
 		bool  isInRange01Strict(float val);
 		float abs(float val);
 		float max(float val1, float val2);
+		float max(float val1, float val2, float val3);
 		float min(float val1, float val2);
+		float min(float val1, float val2, float val3);
 		float maxAbs(float val1, float val2);
+		float maxAbs(float val1, float val2, float val3);
 		float minAbs(float val1, float val2);
+		float minAbs(float val1, float val2, float val3);
 		float maxAbsKeepSign(float val1, float val2);
+		float maxAbsKeepSign(float val1, float val2, float val3);
 		float minAbsKeepSign(float val1, float val2);
+		float minAbsKeepSign(float val1, float val2, float val3);
 		bool floatEquals(float val1, float val2, float epsilon);
 		float isNaN(float val);
 		float isInfinity(float val);

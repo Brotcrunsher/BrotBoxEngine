@@ -33,6 +33,16 @@ float bbe::Math::asin(float val)
 	return ::asin(val);
 }
 
+float bbe::Math::tan(float val)
+{
+	return ::tan(val);
+}
+
+float bbe::Math::atan(float val)
+{
+	return ::atan(val);
+}
+
 float bbe::Math::sqrt(float val)
 {
 	return ::sqrt(val);
@@ -83,6 +93,19 @@ float bbe::Math::minAbs(float val1, float val2)
 	return min(abs(val1), abs(val2));
 }
 
+float bbe::Math::minAbs(float val1, float val2, float val3)
+{
+	//UNTESTED
+	val1 = abs(val1);
+	val2 = abs(val2);
+	val3 = abs(val3);
+
+	if (val2 < val1) val1 = val2;
+	if (val3 < val1) val1 = val3;
+
+	return val1;
+}
+
 float bbe::Math::maxAbsKeepSign(float val1, float val2)
 {
 	if (abs(val1) > abs(val2))
@@ -95,6 +118,19 @@ float bbe::Math::maxAbsKeepSign(float val1, float val2)
 	}
 }
 
+float bbe::Math::maxAbsKeepSign(float val1, float val2, float val3)
+{
+	//UNTESTED
+	float aVal1 = abs(val1);
+	float aVal2 = abs(val2);
+	float aVal3 = abs(val3);
+
+	if (aVal2 > aVal1) val1 = val2;
+	if (aVal3 > aVal1) val1 = val3;
+
+	return val1;
+}
+
 float bbe::Math::minAbsKeepSign(float val1, float val2)
 {
 	if (abs(val1) < abs(val2))
@@ -105,6 +141,19 @@ float bbe::Math::minAbsKeepSign(float val1, float val2)
 	{
 		return val2;
 	}
+}
+
+float bbe::Math::minAbsKeepSign(float val1, float val2, float val3)
+{
+	//UNTESTED
+	float aVal1 = abs(val1);
+	float aVal2 = abs(val2);
+	float aVal3 = abs(val3);
+
+	if (aVal2 < aVal1) val1 = val2;
+	if (aVal3 < aVal1) val1 = val3;
+
+	return val1;
 }
 
 bool bbe::Math::floatEquals(float val1, float val2, float epsilon)
@@ -195,12 +244,40 @@ float bbe::Math::max(float val1, float val2)
 	return val1 > val2 ? val1 : val2;
 }
 
+float bbe::Math::max(float val1, float val2, float val3)
+{
+	//UNTESTED
+	if (val2 > val1) val1 = val2;
+	if (val3 > val1) val1 = val3;
+	return val3;
+}
+
 float bbe::Math::min(float val1, float val2)
 {
 	return val1 < val2 ? val1 : val2;
 }
 
+float bbe::Math::min(float val1, float val2, float val3)
+{
+	//UNTESTED
+	if (val2 < val1) val1 = val2;
+	if (val3 < val1) val1 = val3;
+	return val1;
+}
+
 float bbe::Math::maxAbs(float val1, float val2)
 {
 	return max(abs(val1), abs(val2));
+}
+
+float bbe::Math::maxAbs(float val1, float val2, float val3)
+{
+	//UNTESTED
+	val1 = abs(val1);
+	val2 = abs(val2);
+	val3 = abs(val3);
+
+	if (val2 > val1) val1 = val2;
+	if (val3 > val1) val1 = val3;
+	return val1;
 }

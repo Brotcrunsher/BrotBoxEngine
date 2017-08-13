@@ -39,6 +39,11 @@ bbe::Vector2 bbe::Vector2::operator-(const Vector2 & other) const
 	return Vector2(x - other.x, y - other.y);
 }
 
+bbe::Vector2 bbe::Vector2::operator-() const
+{
+	return Vector2(-x, -y);
+}
+
 bbe::Vector2 bbe::Vector2::createVector2OnUnitCircle(float radians)
 {
 	float x = Math::cos(radians);
@@ -197,7 +202,7 @@ bbe::Vector2 bbe::Vector2::normalize() const
 	float length = getLength();
 	if (length == 0)
 	{
-		Vector2(1, 0);
+		return Vector2(1, 0);
 	}
 	return Vector2(x / length, y / length);
 }
@@ -214,16 +219,15 @@ bbe::Vector2 bbe::Vector2::clampComponents(float min, float max) const
 
 bbe::Vector2 bbe::Vector2::project(const Vector2 & other) const
 {
-	//TODO IMPLEMENT
-	//Untested
-	throw NotImplementedException();
+	float scalar = operator*(other);
+	scalar /= other.getLengthSq();
+	return other * scalar;
 }
 
-bbe::Vector2 bbe::Vector2::reflect(const Vector2 & other) const
+bbe::Vector2 bbe::Vector2::reflect(const Vector2 & normal) const
 {
-	//TODO IMPLEMENT
-	//Untested
-	throw NotImplementedException();
+	Vector2 normalized = normal.normalize();
+	return operator-(normalized * 2 * (operator*(normalized)));
 }
 
 float bbe::Vector2::getLength() const
