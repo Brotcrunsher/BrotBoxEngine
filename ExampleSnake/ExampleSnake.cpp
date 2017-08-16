@@ -4,6 +4,7 @@
 #include "stdafx.h"
 
 #include "BBE\BrotBoxEngine.h"
+#include <iostream>
 
 enum Direction
 {
@@ -29,6 +30,8 @@ public:
 	const int CELLSIZE = 10;
 	const float TICKTIME = 0.25f;
 
+	bbe::Cube cube;
+
 	float x = 0;
 	Direction dir = left;
 	Direction nextDir = left;
@@ -42,6 +45,8 @@ public:
 
 	bool gameOver = false;
 
+	float rot = 0;
+
 	virtual void onStart() override
 	{
 		bodyParts.add({ GRIDWIDTH / 2, GRIDHEIGHT / 2 });
@@ -53,6 +58,9 @@ public:
 
 	virtual void update(float timeSinceLastFrame) override
 	{
+		rot += timeSinceLastFrame;
+		cube.set(bbe::Vector3(0, 2, bbe::Math::sin(rot) * 1), bbe::Vector3(1, 1, 1), bbe::Vector3(0, 0, 1), rot);
+
 		input();
 		timeSinceLastTick += timeSinceLastFrame;
 		if (timeSinceLastTick > TICKTIME)
@@ -190,12 +198,15 @@ public:
 
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
+		brush.setCamera(bbe::Vector3(0, 0, 1), bbe::Vector3(0, 2, 0));
+		brush.fillCube(cube);
 	}
 };
 
 
 int main()
 {
+	std::cout << "hai" << std::endl;
 	MyGame mg;
 	mg.start(mg.CELLSIZE * mg.GRIDWIDTH, mg.CELLSIZE * mg.GRIDHEIGHT, "Snake!");
 

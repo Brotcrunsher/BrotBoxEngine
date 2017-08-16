@@ -69,7 +69,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::init(VulkanShader vertexShader, Vulk
 	rasterizationCreateInfo.depthClampEnable = VK_FALSE;
 	rasterizationCreateInfo.rasterizerDiscardEnable = VK_FALSE;
 	rasterizationCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizationCreateInfo.cullMode = VK_CULL_MODE_NONE;
+	rasterizationCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
 	rasterizationCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	rasterizationCreateInfo.depthBiasEnable = VK_FALSE;
 	rasterizationCreateInfo.depthBiasConstantFactor = 0.0f;
@@ -182,7 +182,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 	VkResult result = vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
 	ASSERT_VULKAN(result);
 
-
+	VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = VWDepthImage::getDepthStencilStateCreateInfoOpaque();
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo;
 	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -196,7 +196,14 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 	pipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
 	pipelineCreateInfo.pRasterizationState = &rasterizationCreateInfo;
 	pipelineCreateInfo.pMultisampleState = &multisampleCreateInfo;
-	pipelineCreateInfo.pDepthStencilState = nullptr;
+	if (useDepthBuffer)
+	{
+		pipelineCreateInfo.pDepthStencilState = &depthStencilStateCreateInfo;
+	}
+	else
+	{
+		pipelineCreateInfo.pDepthStencilState = nullptr;
+	}
 	pipelineCreateInfo.pColorBlendState = &colorBlendCreateInfo;
 	pipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
 	pipelineCreateInfo.layout = pipelineLayout;
@@ -241,21 +248,37 @@ VkPipelineLayout bbe::INTERNAL::vulkan::VulkanPipeline::getLayout() const
 
 void bbe::INTERNAL::vulkan::VulkanPipeline::setPolygonMode(VkPolygonMode polygonMode)
 {
+	if (wasCreated)
+	{
+		throw AlreadyCreatedException();
+	}
 	rasterizationCreateInfo.polygonMode = polygonMode;
 }
 
 void bbe::INTERNAL::vulkan::VulkanPipeline::setGeometryShader(VkShaderModule shaderModule)
 {
+	if (wasCreated)
+	{
+		throw AlreadyCreatedException();
+	}
 	geometryShader = shaderModule;
 }
 
 void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexBinding(VkVertexInputBindingDescription vb)
 {
+	if (wasCreated)
+	{
+		throw AlreadyCreatedException();
+	}
 	vertexBindingDescription.add(vb);
 }
 
 void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexBinding(uint32_t binding, uint32_t stride, VkVertexInputRate inputRate)
 {
+	if (wasCreated)
+	{
+		throw AlreadyCreatedException();
+	}
 	VkVertexInputBindingDescription vb = {};
 	vb.binding = binding;
 	vb.stride = stride;
@@ -265,11 +288,19 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexBinding(uint32_t binding, u
 
 void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexDescription(VkVertexInputAttributeDescription vd)
 {
+	if (wasCreated)
+	{
+		throw AlreadyCreatedException();
+	}
 	vertexAttributeDescriptions.add(vd);
 }
 
 void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexDescription(uint32_t location, uint32_t binding, VkFormat format, uint32_t offset)
 {
+	if (wasCreated)
+	{
+		throw AlreadyCreatedException();
+	}
 	VkVertexInputAttributeDescription vd = {};
 	vd.location = location;
 	vd.binding = binding;
@@ -280,19 +311,40 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexDescription(uint32_t locati
 
 void bbe::INTERNAL::vulkan::VulkanPipeline::addDescriptorSetLayout(VkDescriptorSetLayout dsl)
 {
+	if (wasCreated)
+	{
+		throw AlreadyCreatedException();
+	}
 	descriptorSetLayouts.add(dsl);
 }
 
 void bbe::INTERNAL::vulkan::VulkanPipeline::addPushConstantRange(VkPushConstantRange pcr)
 {
+	if (wasCreated)
+	{
+		throw AlreadyCreatedException();
+	}
 	pushConstantRanges.add(pcr);
 }
 
 void bbe::INTERNAL::vulkan::VulkanPipeline::addPushConstantRange(VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size)
 {
+	if (wasCreated)
+	{
+		throw AlreadyCreatedException();
+	}
 	VkPushConstantRange pcr = {};
 	pcr.stageFlags = stageFlags;
 	pcr.offset = offset;
 	pcr.size = size;
 	addPushConstantRange(pcr);
+}
+
+void bbe::INTERNAL::vulkan::VulkanPipeline::enableDepthBuffer()
+{
+	if (wasCreated)
+	{
+		throw AlreadyCreatedException();
+	}
+	useDepthBuffer = true;
 }

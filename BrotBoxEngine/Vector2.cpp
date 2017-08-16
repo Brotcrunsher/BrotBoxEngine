@@ -14,6 +14,11 @@ bbe::Vector2::Vector2(float x, float y)
 {
 }
 
+bbe::Vector2::Vector2(float xy)
+	: x(xy), y(xy)
+{
+}
+
 bbe::Vector2 bbe::Vector2::operator*(float scalar) const
 {
 	return Vector2(x * scalar, y * scalar);

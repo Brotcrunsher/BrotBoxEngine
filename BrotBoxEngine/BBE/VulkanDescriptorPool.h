@@ -49,6 +49,7 @@ namespace bbe
 				void destroy();
 
 				VkDescriptorSetLayout getLayout() const;
+				VkDescriptorSet* getPSet();
 			};
 		}
 	}

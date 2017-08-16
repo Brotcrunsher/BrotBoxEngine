@@ -34,6 +34,11 @@ void bbe::INTERNAL::vulkan::VulkanRenderPass::init(const VulkanDevice & device)
 	attachmentReference.attachment = 0;
 	attachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+	VkAttachmentDescription depthAttachment = VWDepthImage::getDepthAttachment(device.getPhysicalDevice());
+
+	VkAttachmentReference depthAttachmentReference = {};
+	depthAttachmentReference.attachment = 1;
+	depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkSubpassDescription subpassDescription = {};
 	subpassDescription.flags = 0;
@@ -43,7 +48,7 @@ void bbe::INTERNAL::vulkan::VulkanRenderPass::init(const VulkanDevice & device)
 	subpassDescription.colorAttachmentCount = 1;
 	subpassDescription.pColorAttachments = &attachmentReference;
 	subpassDescription.pResolveAttachments = nullptr;
-	subpassDescription.pDepthStencilAttachment = nullptr;
+	subpassDescription.pDepthStencilAttachment = &depthAttachmentReference;
 	subpassDescription.preserveAttachmentCount = 0;
 	subpassDescription.pPreserveAttachments = nullptr;
 
@@ -58,6 +63,7 @@ void bbe::INTERNAL::vulkan::VulkanRenderPass::init(const VulkanDevice & device)
 
 	bbe::List<VkAttachmentDescription> attachments;
 	attachments.add(attachmentDescription);
+	attachments.add(depthAttachment);
 
 	VkRenderPassCreateInfo renderPassCreateInfo = {};
 	renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;

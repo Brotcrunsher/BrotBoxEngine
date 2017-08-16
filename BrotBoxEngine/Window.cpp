@@ -27,8 +27,22 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	m_vulkanManager.init(title, major, minor, patch, m_pwindow, width, height);
 
 	glfwSetKeyCallback(m_pwindow, INTERNAL_keyCallback);
-
+	glfwSetCursorPosCallback(m_pwindow, INTERNAL_cursorPosCallback);
+	double mX = 0;
+	double mY = 0;
+	glfwGetCursorPos(m_pwindow, &mX, &mY);
+	INTERNAL_mouse.INTERNAL_moveMouse(mX, mY);
 	windowsAliveCounter++;
+}
+
+void bbe::Window::preDraw2D()
+{
+	m_vulkanManager.preDraw2D();
+}
+
+void bbe::Window::preDraw3D()
+{
+	m_vulkanManager.preDraw3D();
 }
 
 void bbe::Window::preDraw()
@@ -50,6 +64,24 @@ bool bbe::Window::keepAlive()
 void bbe::Window::postDraw()
 {
 	m_vulkanManager.postDraw();
+}
+
+void bbe::Window::setCursorMode(bbe::CursorMode cursorMode)
+{
+	switch (cursorMode)
+	{
+	case bbe::CursorMode::DISABLED:
+		glfwSetInputMode(m_pwindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		break;
+	case bbe::CursorMode::NORMAL:
+		glfwSetInputMode(m_pwindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		break;
+	case bbe::CursorMode::HIDDEN:
+		glfwSetInputMode(m_pwindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+		break;
+	default:
+		throw IllegalArgumentException();
+	}
 }
 
 GLFWwindow * bbe::Window::getRaw()
@@ -104,6 +136,11 @@ void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, i
 	{
 		bbe::Window::INTERNAL_firstInstance->INTERNAL_keyboard.INTERNAL_release(keyCode);
 	}
+}
+
+void bbe::INTERNAL_cursorPosCallback(GLFWwindow * window, double xpos, double ypos)
+{
+	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_moveMouse(xpos, ypos);
 }
 
 template<>

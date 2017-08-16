@@ -44,6 +44,8 @@ namespace bbe
 				VulkanShader m_vertexShader3DPrimitive;
 				VulkanShader m_fragmentShader3DPrimitive;
 				VulkanPipeline m_pipeline3DPrimitive;
+				VulkanBuffer m_uboMatrixViewProjection;
+				VulkanBuffer m_uboMatrixModel;
 
 				VulkanCommandPool m_commandPool;
 				VulkanSemaphore m_semaphoreImageAvailable;
@@ -75,6 +77,8 @@ namespace bbe
 				void init(const char *appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow *window, uint32_t initialWindowWidth, uint32_t initialWindowHeight);
 
 				void destroy();
+				void preDraw2D();
+				void preDraw3D();
 				void preDraw();
 				void postDraw();
 

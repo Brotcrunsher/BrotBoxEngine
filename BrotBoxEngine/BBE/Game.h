@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../BBE/GameTime.h"
+#include "../BBE/CursorMode.h"
 
 namespace bbe
 {
@@ -28,8 +29,8 @@ namespace bbe
 
 		virtual void onStart() = 0;
 		virtual void update(float timeSinceLastFrame) = 0;
-		virtual void draw3D(PrimitiveBrush3D &brush) = 0;
-		virtual void draw2D(PrimitiveBrush2D &brush) = 0;
+		virtual void draw3D(bbe::PrimitiveBrush3D &brush) = 0;
+		virtual void draw2D(bbe::PrimitiveBrush2D &brush) = 0;
 		virtual void onEnd() = 0;
 
 		bool isKeyDown(int keyCode);
@@ -37,5 +38,11 @@ namespace bbe
 		bool wasKeyDownLastFrame(int keyCode);
 		bool wasKeyUpLastFrame(int keyCode);
 		bool isKeyPressed(int keyCode);
+		float getMouseX();
+		float getMouseY();
+		float getMouseXDelta();
+		float getMouseYDelta();
+
+		void setCursorMode(bbe::CursorMode cm);
 	};
 }

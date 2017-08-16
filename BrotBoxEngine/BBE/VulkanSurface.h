@@ -14,7 +14,7 @@ namespace bbe
 			class VulkanSurface
 			{
 			private:
-				VkSurfaceKHR m_surface = VK_NULL_HANDLE;
+				VkSurfaceKHR m_surface     = VK_NULL_HANDLE;
 				VulkanInstance* m_instance = nullptr;
 
 			public:

@@ -273,6 +273,21 @@
     <ClInclude Include="BBE\Vector4.h">
       <Filter>Header Files\Math</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\Cube.h">
+      <Filter>Header Files\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Mouse.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\CursorMode.h">
+      <Filter>Header Files\GFX\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\CameraControlNoClip.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VWTransform.h">
+      <Filter>Header Files\GFX\Vulkan\Wrappers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -378,6 +393,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Vector4.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cube.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mouse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraControlNoClip.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VWTransform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

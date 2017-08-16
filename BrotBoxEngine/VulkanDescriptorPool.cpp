@@ -66,6 +66,16 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
 
 	m_device = device;
 
+	VkDescriptorSetLayoutCreateInfo dslci = {};
+	dslci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	dslci.pNext = nullptr;
+	dslci.flags = 0;
+	dslci.bindingCount = m_layoutBindings.getLength();
+	dslci.pBindings = m_layoutBindings.getRaw();
+
+	VkResult result = vkCreateDescriptorSetLayout(m_device, &dslci, nullptr, &m_descriptorSetLayout);
+	ASSERT_VULKAN(result);
+
 	VkDescriptorPoolCreateInfo dpci;
 	dpci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	dpci.pNext = nullptr;
@@ -74,18 +84,9 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
 	dpci.poolSizeCount = m_descriptorPoolSizes.getLength();
 	dpci.pPoolSizes = m_descriptorPoolSizes.getRaw();
 
-	VkResult result = vkCreateDescriptorPool(m_device, &dpci, nullptr, &m_descriptorPool);
+	result = vkCreateDescriptorPool(m_device, &dpci, nullptr, &m_descriptorPool);
 	ASSERT_VULKAN(result);
 
-	VkDescriptorSetLayoutCreateInfo dslci = {};
-	dslci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	dslci.pNext = nullptr;
-	dslci.flags = 0;
-	dslci.bindingCount = m_layoutBindings.getLength();
-	dslci.pBindings = m_layoutBindings.getRaw();
-
-	result = vkCreateDescriptorSetLayout(m_device, &dslci, nullptr, &m_descriptorSetLayout);
-	ASSERT_VULKAN(result);
 
 	VkDescriptorSetAllocateInfo dsai = {};
 	dsai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -108,7 +109,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
 		wds.dstBinding = m_descriptorBufferInfo[i].m_binding;
 		wds.dstArrayElement = 0;
 		wds.descriptorCount = 1;
-		wds.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		wds.descriptorType = m_layoutBindings[i].descriptorType;
 		wds.pImageInfo = nullptr;
 		wds.pBufferInfo = &(m_descriptorBufferInfo[i].m_descriptorBufferInfo);
 		wds.pTexelBufferView = nullptr;
@@ -134,6 +135,11 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::destroy()
 VkDescriptorSetLayout bbe::INTERNAL::vulkan::VulkanDescriptorPool::getLayout() const
 {
 	return m_descriptorSetLayout;
+}
+
+VkDescriptorSet* bbe::INTERNAL::vulkan::VulkanDescriptorPool::getPSet()
+{
+	return &m_descriptorSet;
 }
 
 bbe::INTERNAL::vulkan::VulkanDescriptorPool::AdvancedBufferInfo::AdvancedBufferInfo(VkDescriptorBufferInfo dbi, uint32_t binding)

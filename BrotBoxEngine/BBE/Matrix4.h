@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../BBE/Vector4.h";
-#include "../BBE/Vector3.h";
+#include "../BBE/Vector4.h"
+#include "../BBE/Vector3.h"
 
 namespace bbe
 {
@@ -12,6 +12,7 @@ namespace bbe
 
 	public:
 		Matrix4();
+		Matrix4(const Vector4 &col0, const Vector4 &col1, const Vector4 &col2, const Vector4 &col3);
 		
 		static Matrix4 createTranslationMatrix(const Vector3 &translation);
 		static Matrix4 createRotationMatrix(float radians, const Vector3 &rotationAxis);
@@ -27,5 +28,12 @@ namespace bbe
 		Matrix4 operator*(const Matrix4 &other) const;
 		Vector3 operator*(const Vector3 &other) const;
 		Vector4 operator*(const Vector4 &other) const;
+
+		Vector4 getColumn(int colIndex) const;
+		Vector4 getRow(int rowIndex) const;
+
+		Vector3 extractTranslation() const;
+		Vector3 extractScale() const;
+		Matrix4 extractRotation() const;
 	};
 }

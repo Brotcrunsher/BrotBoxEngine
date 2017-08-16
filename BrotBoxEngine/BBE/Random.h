@@ -3,6 +3,9 @@
 #include <random>
 #include "../BBE/DataType.h"
 #include "../BBE/List.h"
+#include "../BBE/Vector2.h"
+#include "../BBE/Vector3.h"
+#include "../BBE/Vector4.h"
 
 namespace bbe {
 	class Random
@@ -48,6 +51,42 @@ namespace bbe {
 			: m_ranDev(), m_mt(m_ranDev())
 		{
 			//DO NOTHING
+		}
+
+		Vector2 randomVector2()
+		{
+			//UNTESTED
+			return Vector2(randomFloat(), randomFloat());
+		}
+
+		Vector2 randomVector2(float max)
+		{
+			//UNTESTED
+			return Vector2(randomFloat(max), randomFloat(max));
+		}
+
+		Vector3 randomVector3()
+		{
+			//UNTESTED
+			return Vector3(randomFloat(), randomFloat(), randomFloat());
+		}
+
+		Vector3 randomVector3(float max)
+		{
+			//UNTESTED
+			return Vector3(randomFloat(max), randomFloat(max), randomFloat(max));
+		}
+
+		Vector4 randomVector4()
+		{
+			//UNTESTED
+			return Vector4(randomFloat(), randomFloat(), randomFloat(), randomFloat());
+		}
+
+		Vector4 randomVector4(float max)
+		{
+			//UNTESTED
+			return Vector4(randomFloat(max), randomFloat(max), randomFloat(max), randomFloat(max));
 		}
 
 		byte randomByte()

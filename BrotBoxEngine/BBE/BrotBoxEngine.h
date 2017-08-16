@@ -34,8 +34,10 @@
 #include "../BBE/VulkanSurface.h"
 #include "../BBE/VulkanSwapchain.h"
 
+#include "../BBE/CameraControlNoClip.h"
 #include "../BBE/Keyboard.h"
 #include "../BBE/KeyboardKeys.h"
+#include "../BBE/Mouse.h"
 
 #include "../BBE/Math.h"
 #include "../BBE/Matrix4.h"
@@ -55,6 +57,8 @@
 #include "../BBE/MersenneTwister.h"
 #include "../BBE/Random.h"
 
+#include "../BBE/Circle.h"
+#include "../BBE/Cube.h"
 #include "../BBE/Rectangle.h"
 
 #include "../BBE/CPUWatch.h"

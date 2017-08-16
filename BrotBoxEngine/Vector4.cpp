@@ -11,6 +11,16 @@ bbe::Vector4::Vector4()
 	//UNTESTED
 }
 
+bbe::Vector4::Vector4(float xyzw)
+	: x(xyzw), y(xyzw), z(xyzw), w(xyzw)
+{
+}
+
+bbe::Vector4::Vector4(float xyz, float w)
+	: x(xyz), y(xyz), z(xyz), w(w)
+{
+}
+
 bbe::Vector4::Vector4(float x, float y, float z, float w)
 	: x(x), y(y), z(z), w(w)
 {

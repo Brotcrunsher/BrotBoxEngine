@@ -11,6 +11,11 @@ bbe::Vector3::Vector3()
 	//UNTESTED
 }
 
+bbe::Vector3::Vector3(float xyz)
+	:x(xyz), y(xyz), z(xyz)
+{
+}
+
 bbe::Vector3::Vector3(float x, float y, float z)
 	: x(x), y(y), z(z)
 {

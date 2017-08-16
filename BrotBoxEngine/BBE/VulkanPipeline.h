@@ -16,9 +16,9 @@ namespace bbe
 			{
 			private:
 				VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-				VkPipeline pipeline = VK_NULL_HANDLE;
-				VkDevice device = VK_NULL_HANDLE;
-				VkShaderModule geometryShader = VK_NULL_HANDLE;
+				VkPipeline pipeline             = VK_NULL_HANDLE;
+				VkDevice device                 = VK_NULL_HANDLE;
+				VkShaderModule geometryShader   = VK_NULL_HANDLE;
 
 				VkPipelineShaderStageCreateInfo shaderStageCreateInfoVert;
 				VkPipelineShaderStageCreateInfo shaderStageCreateInfoFrag;
@@ -41,6 +41,8 @@ namespace bbe
 
 				bool wasInitialized = false;
 				bool wasCreated = false;
+
+				bool useDepthBuffer = false;
 
 			public:
 				VulkanPipeline();
@@ -71,6 +73,8 @@ namespace bbe
 
 				void addPushConstantRange(VkPushConstantRange pcr);
 				void addPushConstantRange(VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size);
+
+				void enableDepthBuffer();
 			};
 		}
 	}

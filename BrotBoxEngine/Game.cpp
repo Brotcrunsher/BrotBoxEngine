@@ -33,12 +33,15 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 	while (m_window->keepAlive())
 	{
 		m_window->INTERNAL_keyboard.update();
+		m_window->INTERNAL_mouse.update();
 		update(m_gameTime.tick());
 
 		m_window->preDraw();
 		PrimitiveBrush3D brush3D = *(m_window->getBrush3D());
+		m_window->preDraw3D();
 		draw3D(brush3D);
 		PrimitiveBrush2D brush2D = *(m_window->getBrush2D());
+		m_window->preDraw2D();
 		draw2D(brush2D);
 		m_window->postDraw();
 	}
@@ -69,4 +72,29 @@ bool bbe::Game::wasKeyUpLastFrame(int keyCode)
 bool bbe::Game::isKeyPressed(int keyCode)
 {
 	return m_window->INTERNAL_keyboard.isKeyPressed(keyCode);
+}
+
+float bbe::Game::getMouseX()
+{
+	return (float)(m_window->INTERNAL_mouse.getMouseX());
+}
+
+float bbe::Game::getMouseY()
+{
+	return (float)(m_window->INTERNAL_mouse.getMouseY());
+}
+
+float bbe::Game::getMouseXDelta()
+{
+	return (float)(m_window->INTERNAL_mouse.getMouseXDelta());
+}
+
+float bbe::Game::getMouseYDelta()
+{
+	return (float)(m_window->INTERNAL_mouse.getMouseYDelta());
+}
+
+void bbe::Game::setCursorMode(bbe::CursorMode cm)
+{
+	m_window->setCursorMode(cm);
 }

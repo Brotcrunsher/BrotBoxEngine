@@ -4,7 +4,9 @@
 #include "GLFW\glfw3.h"
 #include "../BBE/VulkanManager.h"
 #include "../BBE/Keyboard.h"
+#include "../BBE/Mouse.h"
 #include "../BBE/Hash.h"
+#include "../BBE/CursorMode.h"
 
 
 namespace bbe
@@ -30,9 +32,13 @@ namespace bbe
 		Window& operator=(const Window& other) = delete;
 		Window& operator=(Window&& other) = delete;
 
+		void preDraw2D();
+		void preDraw3D();
 		void preDraw();
 		bool keepAlive();
 		void postDraw();
+
+		void setCursorMode(bbe::CursorMode cursorMode);
 
 		GLFWwindow *getRaw();
 
@@ -47,11 +53,14 @@ namespace bbe
 
 		static Window* INTERNAL_firstInstance;
 		Keyboard INTERNAL_keyboard;
+		Mouse INTERNAL_mouse;
 	};
 
 
 
 	void INTERNAL_keyCallback(GLFWwindow *window, int keyCode, int scanCode, int action, int mods);
+	void INTERNAL_cursorPosCallback(GLFWwindow *window, double xpos, double ypos);
+
 
 	template<>
 	uint32_t hash(const Window &t);

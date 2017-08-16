@@ -24,6 +24,14 @@ bbe::Matrix4::Matrix4()
 	}
 }
 
+bbe::Matrix4::Matrix4(const Vector4 & col0, const Vector4 & col1, const Vector4 & col2, const Vector4 & col3)
+{
+	m_cols[0] = col0;
+	m_cols[1] = col1;
+	m_cols[2] = col2;
+	m_cols[3] = col3;
+}
+
 bbe::Matrix4 bbe::Matrix4::createTranslationMatrix(const Vector3 & translation)
 {
 	Matrix4 retVal;
@@ -65,11 +73,11 @@ bbe::Matrix4 bbe::Matrix4::createPerspectiveMatrix(float fieldOfView, float aspe
 
 	Matrix4 retVal;
 	retVal.set(0, 0, 1.0f / tanFoV / aspectRatio);
-	retVal.set(1, 1, 1.0f / tanFoV);
+	retVal.set(1, 1, -1.0f / tanFoV);
 	retVal.set(2, 2, -(farClipPlane + nearClipPlane) / (farClipPlane - nearClipPlane));
 	retVal.set(3, 3, 0);
 	
-	retVal.set(3, 2, 1);
+	retVal.set(3, 2, -1);
 	retVal.set(2, 3, -(2 * farClipPlane * nearClipPlane) / (farClipPlane - nearClipPlane));
 
 	return retVal;
@@ -92,9 +100,9 @@ bbe::Matrix4 bbe::Matrix4::createViewMatrix(const Vector3 & cameraPos, const Vec
 	retVal.set(2, 0, -direction.x);
 	retVal.set(2, 1, -direction.y);
 	retVal.set(2, 2, -direction.z);
-	retVal.set(3, 0, -(right * cameraPos));
-	retVal.set(3, 1, -(down * cameraPos));
-	retVal.set(3, 2, direction * cameraPos);
+	retVal.set(0, 3, -(right * cameraPos));
+	retVal.set(1, 3, -(down * cameraPos));
+	retVal.set(2, 3, direction * cameraPos);
 	
 	return retVal;
 }
@@ -148,6 +156,49 @@ bbe::Vector4 bbe::Matrix4::operator*(const Vector4 & other) const
 		get(1, 0) * other.x + get(1, 1) * other.y + get(1, 2) * other.z + get(1, 3) * other.w,
 		get(2, 0) * other.x + get(2, 1) * other.y + get(2, 2) * other.z + get(2, 3) * other.w,
 		get(3, 0) * other.x + get(3, 1) * other.y + get(3, 2) * other.z + get(3, 3) * other.w
+	);
+}
+
+bbe::Vector4 bbe::Matrix4::getColumn(int colIndex) const
+{
+	if (colIndex < 0 || colIndex > 3)
+	{
+		throw IllegalIndexException();
+	}
+	return Vector4(m_cols[colIndex]);
+}
+
+bbe::Vector4 bbe::Matrix4::getRow(int rowIndex) const
+{
+	if (rowIndex < 0 || rowIndex > 3)
+	{
+		throw IllegalIndexException();
+	}
+	return Vector4(m_cols[0][rowIndex], m_cols[1][rowIndex], m_cols[2][rowIndex], m_cols[3][rowIndex]);
+}
+
+bbe::Vector3 bbe::Matrix4::extractTranslation() const
+{
+	return getColumn(3).xyz();
+}
+
+bbe::Vector3 bbe::Matrix4::extractScale() const
+{
+	return Vector3(
+		getColumn(0).xyz().getLength(),
+		getColumn(1).xyz().getLength(),
+		getColumn(2).xyz().getLength()
+	);
+}
+
+bbe::Matrix4 bbe::Matrix4::extractRotation() const
+{
+	Vector3 scale = extractScale();
+	return Matrix4(
+		Vector4((getColumn(0) / scale.x).xyz(), 0),
+		Vector4((getColumn(1) / scale.y).xyz(), 0),
+		Vector4((getColumn(2) / scale.z).xyz(), 0),
+		Vector4(0, 0, 0, 1)
 	);
 }
 

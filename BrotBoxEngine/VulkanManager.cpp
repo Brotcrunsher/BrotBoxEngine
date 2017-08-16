@@ -5,6 +5,7 @@
 #include "BBE/Color.h"
 #include "BBE/Exceptions.h"
 #include "BBE/Rectangle.h"
+#include "BBE/VWTransform.h"
 
 bbe::INTERNAL::vulkan::VulkanManager *bbe::INTERNAL::vulkan::VulkanManager::s_pinstance = nullptr;
 
@@ -43,13 +44,21 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_swapchain.init(m_surface, m_device, initialWindowWidth, initialWindowHeight, nullptr);
 	m_renderPass.init(m_device);
 
+	m_commandPool.init(m_device);
+	m_depthImage.create(m_device, m_commandPool, initialWindowWidth, initialWindowHeight);
+	m_swapchain.createFramebuffers(m_depthImage, m_renderPass);
+	m_semaphoreImageAvailable.init(m_device);
+	m_semaphoreRenderingDone.init(m_device);
+	m_presentFence.init(m_device);
+
 	m_primitiveBrush3D.create(m_device);
+	bbe::VWTransform::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 
 	m_descriptorPool.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2);
 	m_descriptorPool.addLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
 	m_descriptorPool.addLayoutBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
-	m_descriptorPool.addDescriptorBufferInfo(m_primitiveBrush3D.m_uboViewProjection, 0, sizeof(Matrix4), 0);
-	m_descriptorPool.addDescriptorBufferInfo(m_primitiveBrush3D.m_uboModel, 0, sizeof(Matrix4), 1);
+	m_descriptorPool.addDescriptorBufferInfo(m_primitiveBrush3D.m_uboMatrices, 0, sizeof(Matrix4), 0);
+	m_descriptorPool.addDescriptorBufferInfo(VWTransform::s_buffer, 0, sizeof(Matrix4) * VWTransform::NUM_BUFFERS, 1);
 	m_descriptorPool.create(m_device.getDevice());
 
 	m_vertexShader2DPrimitive.init(m_device, "vert2DPrimitive.spv");
@@ -59,6 +68,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_pipeline2DPrimitive.addVertexDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
 	m_pipeline2DPrimitive.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
 	m_pipeline2DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4);
+	m_pipeline2DPrimitive.enableDepthBuffer();
 	m_pipeline2DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
 
 	m_vertexShader3DPrimitive.init(m_device, "vert3DPrimitive.spv");
@@ -67,27 +77,28 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_pipeline3DPrimitive.addVertexBinding(0, sizeof(Vector3), VK_VERTEX_INPUT_RATE_VERTEX);
 	m_pipeline3DPrimitive.addVertexDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0);
 	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
+	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(uint32_t));
 	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPool.getLayout());
+	m_pipeline3DPrimitive.enableDepthBuffer();
 	m_pipeline3DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
+	m_uboMatrixViewProjection.create(m_device, sizeof(Matrix4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+	m_uboMatrixModel.create(m_device, sizeof(Matrix4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-	m_commandPool.init(m_device);
-	m_depthImage.create(m_device, m_commandPool, initialWindowWidth, initialWindowHeight);
-	m_swapchain.createFramebuffers(m_depthImage, m_renderPass);
-	m_semaphoreImageAvailable.init(m_device);
-	m_semaphoreRenderingDone.init(m_device);
-	m_presentFence.init(m_device);
+	
 
 
 
 	bbe::Rectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::Circle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
-
+	bbe::Cube::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 {
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
+	bbe::VWTransform::s_destroy();
+	bbe::Cube::s_destroy();
 	bbe::Circle::s_destroy();
 	bbe::Rectangle::s_destroy();
 
@@ -99,6 +110,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_depthImage.destroy();
 	m_commandPool.destroy();
 
+	m_uboMatrixViewProjection.destroy();
+	m_uboMatrixModel.destroy();
 	m_pipeline3DPrimitive.destroy();
 	m_fragmentShader3DPrimitive.destroy();
 	m_vertexShader3DPrimitive.destroy();
@@ -114,6 +127,17 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_device.destroy();
 	m_surface.destroy();
 	m_instance.destroy();
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
+{
+	vkCmdBindPipeline(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DPrimitive.getPipeline());
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
+{
+	vkCmdBindPipeline(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getPipeline());
+	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 0, 1, m_descriptorPool.getPSet(), 0, nullptr);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
@@ -140,22 +164,25 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent = { m_screenWidth, m_screenHeight };
 	VkClearValue clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
+	VkClearValue depthClearValue = { 1.0f, 0 };
 
-	bbe::List<VkClearValue> clearValues = { clearValue };
+	bbe::List<VkClearValue> clearValues = { 
+		clearValue,
+		depthClearValue
+	};
 
 	renderPassBeginInfo.clearValueCount = clearValues.getLength();
 	renderPassBeginInfo.pClearValues = clearValues.getRaw();
 
 
 	vkCmdBeginRenderPass(m_currentFrameDrawCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	vkCmdBindPipeline(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DPrimitive.getPipeline());
+	
 
 	VkViewport viewport;
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = m_screenWidth;
-	viewport.height = m_screenHeight;
+	viewport.width = (float)m_screenWidth;
+	viewport.height = (float)m_screenHeight;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 	vkCmdSetViewport(m_currentFrameDrawCommandBuffer, 0, 1, &viewport);
@@ -166,7 +193,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	vkCmdSetScissor(m_currentFrameDrawCommandBuffer, 0, 1, &scissor);
 
 	m_primitiveBrush2D.INTERNAL_beginDraw(m_device, m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), m_screenWidth, m_screenHeight);
-	m_primitiveBrush3D.INTERNAL_beginDraw(m_device, m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), m_screenWidth, m_screenHeight);
+	m_primitiveBrush3D.INTERNAL_beginDraw(m_device, m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), m_screenWidth, m_screenHeight, *m_descriptorPool.getPSet());
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::postDraw()

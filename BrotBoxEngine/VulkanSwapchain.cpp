@@ -73,7 +73,10 @@ void bbe::INTERNAL::vulkan::VulkanSwapchain::createFramebuffers(const VWDepthIma
 {
 	for (uint32_t i = 0; i < m_amountOfImages; i++)
 	{
-		bbe::List<VkImageView> attachmentViews = { m_pimageViews[i] };
+		bbe::List<VkImageView> attachmentViews = { 
+			m_pimageViews[i],
+			depthImage.getImageView()
+		};
 
 		VkFramebufferCreateInfo framebufferCreateInfo;
 		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

@@ -15,13 +15,13 @@ namespace bbe
 			class VulkanBuffer
 			{
 			private:
-				VkBuffer m_buffer = VK_NULL_HANDLE;
-				VkDeviceMemory m_memory = VK_NULL_HANDLE;
+				VkBuffer m_buffer         = VK_NULL_HANDLE;
+				VkDeviceMemory m_memory   = VK_NULL_HANDLE;
 				VkDeviceSize m_bufferSize = 0;
 				
-				VkDevice m_device = VK_NULL_HANDLE;
+				VkDevice m_device                 = VK_NULL_HANDLE;
 				VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
-				VkBufferUsageFlags m_usage = 0;
+				VkBufferUsageFlags m_usage        = 0;
 
 			public:
 				bool m_wasCreated = false;
