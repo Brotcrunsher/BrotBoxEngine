@@ -22,6 +22,7 @@ class MyGame : public bbe::Game
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
+		std::cout << 1 / timeSinceLastFrame << std::endl;
 		ccnc.update(timeSinceLastFrame);
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
@@ -42,6 +43,7 @@ class MyGame : public bbe::Game
 
 int main()
 {
+	bbe::Settings::setAmountOfTransformContainers(8);
 	MyGame mg;
 	mg.start(1280, 720, "3D Test");
 

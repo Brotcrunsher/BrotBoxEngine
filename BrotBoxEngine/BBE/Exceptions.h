@@ -35,4 +35,6 @@ namespace bbe
 	CREATE_EXCEPTION(IllegalIndexException);
 
 	CREATE_EXCEPTION(NotImplementedException);
+
+	CREATE_EXCEPTION(NoTransformsLeftException);
 }

@@ -229,6 +229,7 @@
     <ClInclude Include="BBE\Mouse.h" />
     <ClInclude Include="BBE\CursorMode.h" />
     <ClInclude Include="BBE\CameraControlNoClip.h" />
+    <ClInclude Include="BBE\EngineSettings.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="BBE\STLAllocator.h" />
     <ClInclude Include="BBE\STLCapsule.h" />
@@ -264,6 +265,7 @@
   <ItemGroup>
     <ClCompile Include="CameraControlNoClip.cpp" />
     <ClCompile Include="Cube.cpp" />
+    <ClCompile Include="EngineSettings.cpp" />
     <ClCompile Include="Matrix4.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="PrimitiveBrush3D.cpp" />

@@ -4,6 +4,15 @@
 #include "BBE\VulkanHelper.h"
 #include "BBE\VulkanBuffer.h"
 
+void bbe::INTERNAL::vulkan::VulkanDescriptorPool::setAmountOfSets(size_t amount)
+{
+	if (m_descriptorPool != VK_NULL_HANDLE)
+	{
+		throw AlreadyCreatedException();
+	}
+	amountOfSets = amount;
+}
+
 void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addPoolSize(VkDescriptorPoolSize dps)
 {
 	if (m_descriptorPool != VK_NULL_HANDLE)
@@ -38,23 +47,23 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addLayoutBinding(uint32_t bind
 	addLayoutBinding(dslb);
 }
 
-void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addDescriptorBufferInfo(VkDescriptorBufferInfo dbi, uint32_t binding)
+void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addDescriptorBufferInfo(VkDescriptorBufferInfo dbi, uint32_t binding, uint32_t setIndex)
 {
-	m_descriptorBufferInfo.add(AdvancedBufferInfo(dbi, binding));
+	m_descriptorBufferInfo.add(AdvancedBufferInfo(dbi, binding, setIndex));
 }
 
-void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addDescriptorBufferInfo(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding)
+void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addDescriptorBufferInfo(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding, uint32_t setIndex)
 {
 	VkDescriptorBufferInfo dbi = {};
 	dbi.buffer = buffer;
 	dbi.offset = offset;
 	dbi.range = range;
-	addDescriptorBufferInfo(dbi, binding);
+	addDescriptorBufferInfo(dbi, binding, setIndex);
 }
 
-void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addDescriptorBufferInfo(const VulkanBuffer &buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding)
+void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addDescriptorBufferInfo(const VulkanBuffer &buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding, uint32_t setIndex)
 {
-	addDescriptorBufferInfo(buffer.getBuffer(), offset, range, binding);
+	addDescriptorBufferInfo(buffer.getBuffer(), offset, range, binding, setIndex);
 }
 
 void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
@@ -76,11 +85,18 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
 	VkResult result = vkCreateDescriptorSetLayout(m_device, &dslci, nullptr, &m_descriptorSetLayout);
 	ASSERT_VULKAN(result);
 
+	List<VkDescriptorSetLayout> layouts;
+	for (int i = 0; i < amountOfSets; i++)
+	{
+		layouts.add(m_descriptorSetLayout);
+	}
+
+
 	VkDescriptorPoolCreateInfo dpci;
 	dpci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	dpci.pNext = nullptr;
 	dpci.flags = 0;
-	dpci.maxSets = 1;
+	dpci.maxSets = amountOfSets;
 	dpci.poolSizeCount = m_descriptorPoolSizes.getLength();
 	dpci.pPoolSizes = m_descriptorPoolSizes.getRaw();
 
@@ -92,10 +108,11 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
 	dsai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	dsai.pNext = nullptr;
 	dsai.descriptorPool = m_descriptorPool;
-	dsai.descriptorSetCount = 1;
-	dsai.pSetLayouts = &m_descriptorSetLayout;
+	dsai.descriptorSetCount = amountOfSets;
+	dsai.pSetLayouts = layouts.getRaw();
+	m_descriptorSets = new VkDescriptorSet[amountOfSets];
 
-	result = vkAllocateDescriptorSets(m_device, &dsai, &m_descriptorSet);
+	result = vkAllocateDescriptorSets(m_device, &dsai, m_descriptorSets);
 	ASSERT_VULKAN(result);
 
 	List<VkWriteDescriptorSet> writeDescriptorSetsUniforms;
@@ -105,7 +122,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
 		VkWriteDescriptorSet wds = {};
 		wds.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		wds.pNext = nullptr;
-		wds.dstSet = m_descriptorSet;
+		wds.dstSet = m_descriptorSets[m_descriptorBufferInfo[i].m_setIndex];
 		wds.dstBinding = m_descriptorBufferInfo[i].m_binding;
 		wds.dstArrayElement = 0;
 		wds.descriptorCount = 1;
@@ -128,7 +145,8 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::destroy()
 		vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 		m_descriptorPool = VK_NULL_HANDLE;
 		m_device = VK_NULL_HANDLE;
-		m_descriptorSet = VK_NULL_HANDLE;
+		delete[] m_descriptorSets;
+		m_descriptorSets = nullptr;
 	}
 }
 
@@ -137,12 +155,12 @@ VkDescriptorSetLayout bbe::INTERNAL::vulkan::VulkanDescriptorPool::getLayout() c
 	return m_descriptorSetLayout;
 }
 
-VkDescriptorSet* bbe::INTERNAL::vulkan::VulkanDescriptorPool::getPSet()
+VkDescriptorSet* bbe::INTERNAL::vulkan::VulkanDescriptorPool::getPSet(size_t setNumber)
 {
-	return &m_descriptorSet;
+	return &m_descriptorSets[setNumber];
 }
 
-bbe::INTERNAL::vulkan::VulkanDescriptorPool::AdvancedBufferInfo::AdvancedBufferInfo(VkDescriptorBufferInfo dbi, uint32_t binding)
-	: m_descriptorBufferInfo(dbi), m_binding(binding)
+bbe::INTERNAL::vulkan::VulkanDescriptorPool::AdvancedBufferInfo::AdvancedBufferInfo(VkDescriptorBufferInfo dbi, uint32_t binding, uint32_t setIndex)
+	: m_descriptorBufferInfo(dbi), m_binding(binding), m_setIndex(setIndex)
 {
 }

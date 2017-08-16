@@ -22,8 +22,8 @@ namespace bbe
 		friend class Cube;
 		friend class PrimitiveBrush3D;
 	private:
-		static int NUM_BUFFERS;
-		static INTERNAL::vulkan::VulkanBuffer s_buffer;
+		static int NUM_BUFFERS_PER_CONTAINER;
+		static INTERNAL::vulkan::VulkanBuffer *s_buffers;
 		static Stack<int> s_indexStack;
 
 		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
@@ -37,6 +37,7 @@ namespace bbe
 	public:
 		VWTransform();
 		VWTransform(const Vector4 &col0, const Vector4 &col1, const Vector4 &col2, const Vector4 &col3);
+		~VWTransform();
 
 		VWTransform& operator=(const Matrix4 &mat);
 	};

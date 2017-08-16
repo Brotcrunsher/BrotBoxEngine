@@ -12,6 +12,7 @@
 
 #include "../BBE/SimpleFile.h"
 
+#include "../BBE/EngineSettings.h"
 #include "../BBE/String.h"
 
 #include "../BBE/Color.h"

@@ -16,6 +16,7 @@ namespace bbe
 			class VulkanDevice;
 			class VulkanManager;
 			class VulkanBuffer;
+			class VulkanDescriptorPool;
 		}
 	}
 
@@ -32,7 +33,7 @@ namespace bbe
 		VkDevice m_device                      = VK_NULL_HANDLE;
 		VkPhysicalDevice m_physicalDevice      = VK_NULL_HANDLE;
 		VkPipelineLayout m_layout              = VK_NULL_HANDLE;
-		VkDescriptorSet m_descriptorSet        = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanDescriptorPool *m_descriptorPool = nullptr;
 		int m_screenWidth;
 		int m_screenHeight;
 
@@ -44,7 +45,7 @@ namespace bbe
 		INTERNAL::vulkan::VulkanBuffer m_uboMatrices;
 
 		void INTERNAL_setColor(float r, float g, float b, float a);
-		void INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice &device, VkCommandBuffer commandBuffer, VkPipelineLayout layout, int screenWidth, int screenHeight, VkDescriptorSet descriptorSet);
+		void INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice &device, VkCommandBuffer commandBuffer, VkPipelineLayout layout, int screenWidth, int screenHeight, INTERNAL::vulkan::VulkanDescriptorPool *descriptorPool);
 		
 		void create(const INTERNAL::vulkan::VulkanDevice &vulkanDevice);
 		void destroy();

@@ -80,6 +80,7 @@ bbe::Cube::Cube(const Matrix4 & transform)
 	m_transform = transform;
 }
 
+
 void bbe::Cube::set(const Vector3 & pos, const Vector3 & scale, const Vector3 & rotationVector, float radians)
 {
 	m_bufferDirty = true;

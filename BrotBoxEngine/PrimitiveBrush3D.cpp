@@ -4,6 +4,7 @@
 #include "BBE/VulkanBuffer.h"
 #include "BBE/Color.h"
 #include "BBE/Math.h"
+#include "BBE/VulkanDescriptorPool.h"
 
 void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a)
 {
@@ -11,7 +12,7 @@ void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a
 	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
 }
 
-void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice & device, VkCommandBuffer commandBuffer, VkPipelineLayout layout, int width, int height, VkDescriptorSet descriptorSet)
+void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice & device, VkCommandBuffer commandBuffer, VkPipelineLayout layout, int width, int height, INTERNAL::vulkan::VulkanDescriptorPool *descriptorPool)
 {
 	m_layout = layout;
 	m_currentCommandBuffer = commandBuffer;
@@ -19,7 +20,7 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevi
 	m_physicalDevice = device.getPhysicalDevice();
 	m_screenWidth = width;
 	m_screenHeight = height;
-	m_descriptorSet = descriptorSet;
+	m_descriptorPool = descriptorPool;
 	m_lastDraw = NONE;
 
 	setColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -45,19 +46,26 @@ void bbe::PrimitiveBrush3D::destroy()
 
 void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 {
+
+	int index = cube.m_transform.getIndex();
+	int containerIndex = index / 1024;
+	int localOffset = index % 1024;
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layout, 0, 1, m_descriptorPool->getPSet(containerIndex), 0, nullptr);
+
 	if (cube.m_bufferDirty)
 	{
-		void *data = VWTransform::s_buffer.map();
+		
+
+		void *data = VWTransform::s_buffers[containerIndex].map();
 		Matrix4 transform = cube.getTransform();
-		memcpy((char*)data + sizeof(Matrix4) * cube.m_transform.getIndex(), &transform, sizeof(Matrix4));
-		VWTransform::s_buffer.unmap();
+		memcpy((char*)data + sizeof(Matrix4) * localOffset, &transform, sizeof(Matrix4));
+		VWTransform::s_buffers[containerIndex].unmap();
 
 		cube.m_bufferDirty = false;
 	}
 	
 
-	uint32_t index = cube.m_transform.getIndex();
-	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(uint32_t) * 1, &index);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(uint32_t) * 1, &localOffset);
 
 	if (m_lastDraw != CUBE)
 	{

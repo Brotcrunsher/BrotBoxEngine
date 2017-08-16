@@ -6,6 +6,7 @@
 #include "BBE/Exceptions.h"
 #include "BBE/Rectangle.h"
 #include "BBE/VWTransform.h"
+#include "BBE/EngineSettings.h"
 
 bbe::INTERNAL::vulkan::VulkanManager *bbe::INTERNAL::vulkan::VulkanManager::s_pinstance = nullptr;
 
@@ -54,11 +55,16 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_primitiveBrush3D.create(m_device);
 	bbe::VWTransform::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 
-	m_descriptorPool.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2);
-	m_descriptorPool.addLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
-	m_descriptorPool.addLayoutBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
-	m_descriptorPool.addDescriptorBufferInfo(m_primitiveBrush3D.m_uboMatrices, 0, sizeof(Matrix4), 0);
-	m_descriptorPool.addDescriptorBufferInfo(VWTransform::s_buffer, 0, sizeof(Matrix4) * VWTransform::NUM_BUFFERS, 1);
+	int amountOfBuffers = Settings::getAmountOfTransformContainers();
+	m_descriptorPool.setAmountOfSets(amountOfBuffers);
+	m_descriptorPool.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 * amountOfBuffers * amountOfBuffers);
+	for (int i = 0; i < amountOfBuffers; i++)
+	{
+		m_descriptorPool.addLayoutBinding(i * 2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+		m_descriptorPool.addLayoutBinding(i * 2 + 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+		m_descriptorPool.addDescriptorBufferInfo(m_primitiveBrush3D.m_uboMatrices, 0, sizeof(Matrix4), 0, i);
+		m_descriptorPool.addDescriptorBufferInfo(VWTransform::s_buffers[i], 0, sizeof(Matrix4) * VWTransform::NUM_BUFFERS_PER_CONTAINER, 1, i);
+	}
 	m_descriptorPool.create(m_device.getDevice());
 
 	m_vertexShader2DPrimitive.init(m_device, "vert2DPrimitive.spv");
@@ -137,7 +143,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 {
 	vkCmdBindPipeline(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getPipeline());
-	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 0, 1, m_descriptorPool.getPSet(), 0, nullptr);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
@@ -193,7 +198,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	vkCmdSetScissor(m_currentFrameDrawCommandBuffer, 0, 1, &scissor);
 
 	m_primitiveBrush2D.INTERNAL_beginDraw(m_device, m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), m_screenWidth, m_screenHeight);
-	m_primitiveBrush3D.INTERNAL_beginDraw(m_device, m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), m_screenWidth, m_screenHeight, *m_descriptorPool.getPSet());
+	m_primitiveBrush3D.INTERNAL_beginDraw(m_device, m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), m_screenWidth, m_screenHeight, &m_descriptorPool);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::postDraw()
