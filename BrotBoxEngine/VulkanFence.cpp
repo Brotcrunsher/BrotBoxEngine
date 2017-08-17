@@ -37,12 +37,23 @@ void bbe::INTERNAL::vulkan::VulkanFence::waitForFence(uint64_t timeout)
 	{
 		throw NotInitializedException();
 	}
+	
 
 	VkResult result = vkWaitForFences(m_device, 1, &m_fence, VK_TRUE, timeout);
 	ASSERT_VULKAN(result);
 	
 	result = vkResetFences(m_device, 1, &m_fence);
 	ASSERT_VULKAN(result);
+}
+
+void bbe::INTERNAL::vulkan::VulkanFence::reset()
+{
+	if (m_fence == VK_NULL_HANDLE)
+	{
+		throw NotInitializedException();
+	}
+
+	vkResetFences(m_device, 1, &m_fence);
 }
 
 VkFence bbe::INTERNAL::vulkan::VulkanFence::getFence()

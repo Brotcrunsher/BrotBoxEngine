@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "BBE/Cube.h"
+#include "BBE/VertexWithNormal.h"
 
 
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::Cube::s_indexBuffer;
@@ -39,22 +40,22 @@ void bbe::Cube::s_initIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevi
 
 void bbe::Cube::s_initVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
 {
-	Vector3 vertices[] = {
-		Vector3(0.5 , -0.5, 0),
-		Vector3(0.5 , 0.5 , 0),
-		Vector3(-0.5, 0.5 , 0),
-		Vector3(-0.5, -0.5, 0),
-
-		Vector3(0.5 , -0.5, 1),
-		Vector3(0.5 , 0.5 , 1),
-		Vector3(-0.5, 0.5 , 1),
-		Vector3(-0.5, -0.5, 1)
+	VertexWithNormal vertices[] = {
+		VertexWithNormal(Vector3(0.5 , -0.5, -0.5), Vector3(0.5 , -0.5, -0.5)),
+		VertexWithNormal(Vector3(0.5 , 0.5 , -0.5), Vector3(0.5 , 0.5 , -0.5)),
+		VertexWithNormal(Vector3(-0.5, 0.5 , -0.5), Vector3(-0.5, 0.5 , -0.5)),
+		VertexWithNormal(Vector3(-0.5, -0.5, -0.5), Vector3(-0.5, -0.5, -0.5)),
+													 					  
+		VertexWithNormal(Vector3(0.5 , -0.5, 0.5),  Vector3(0.5 , -0.5, 0.5)),
+		VertexWithNormal(Vector3(0.5 , 0.5 , 0.5),  Vector3(0.5 , 0.5 , 0.5)),
+		VertexWithNormal(Vector3(-0.5, 0.5 , 0.5),  Vector3(-0.5, 0.5 , 0.5)),
+		VertexWithNormal(Vector3(-0.5, -0.5, 0.5),  Vector3(-0.5, -0.5, 0.5)),
 	};
 
-	s_vertexBuffer.create(device, physicalDevice, sizeof(Vector3) * 8, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	s_vertexBuffer.create(device, physicalDevice, sizeof(VertexWithNormal) * 8, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
 	void* dataBuf = s_vertexBuffer.map();
-	memcpy(dataBuf, vertices, sizeof(Vector3) * 8);
+	memcpy(dataBuf, vertices, sizeof(VertexWithNormal) * 8);
 	s_vertexBuffer.unmap();
 
 	s_vertexBuffer.upload(commandPool, queue);

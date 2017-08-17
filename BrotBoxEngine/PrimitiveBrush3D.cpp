@@ -30,7 +30,7 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevi
 void bbe::PrimitiveBrush3D::create(const INTERNAL::vulkan::VulkanDevice &vulkanDevice)
 {
 	Matrix4 mat;
-	m_uboMatrices.create(vulkanDevice, sizeof(Matrix4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+	m_uboMatrices.create(vulkanDevice, sizeof(Matrix4) * 2, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 	{
 		void* data = m_uboMatrices.map();
 		memcpy(data, &mat, sizeof(Matrix4));
@@ -100,11 +100,11 @@ void bbe::PrimitiveBrush3D::setColor(const Color & c)
 
 void bbe::PrimitiveBrush3D::setCamera(const Vector3 & cameraPos, const Vector3 & cameraTarget, const Vector3 & cameraUpVector)
 {
-	Matrix4 proj = Matrix4::createPerspectiveMatrix(Math::toRadians(60.0f), (float)m_screenWidth / (float)m_screenHeight, 0.001f, 10000.0f);
 	Matrix4 view = Matrix4::createViewMatrix(cameraPos, cameraTarget, cameraUpVector);
-	m_viewProjectionMatrix = proj * view;
+	Matrix4 projection = Matrix4::createPerspectiveMatrix(Math::toRadians(60.0f), (float)m_screenWidth / (float)m_screenHeight, 0.001f, 10000.0f);
 
 	void *data = m_uboMatrices.map();
-	memcpy(data, &m_viewProjectionMatrix, sizeof(Matrix4));
+	memcpy((char*)data, &view, sizeof(Matrix4));
+	memcpy((char*)data + sizeof(Matrix4), &projection, sizeof(Matrix4));
 	m_uboMatrices.unmap();
 }

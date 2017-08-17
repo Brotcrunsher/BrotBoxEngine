@@ -261,6 +261,7 @@
     <ClInclude Include="BBE\Vector3.h" />
     <ClInclude Include="BBE\Vector4.h" />
     <ClInclude Include="BBE\VWTransform.h" />
+    <ClInclude Include="BBE\VertexWithNormal.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CameraControlNoClip.cpp" />
@@ -271,6 +272,7 @@
     <ClCompile Include="PrimitiveBrush3D.cpp" />
     <ClCompile Include="Vector3.cpp" />
     <ClCompile Include="Vector4.cpp" />
+    <ClCompile Include="VertexWithNormal.cpp" />
     <ClCompile Include="VulkanDescriptorPool.cpp" />
     <ClCompile Include="Circle.cpp" />
     <ClCompile Include="Color.cpp" />

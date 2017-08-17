@@ -28,6 +28,7 @@ namespace bbe
 				void destroy();
 
 				void waitForFence(uint64_t timeout = std::numeric_limits<uint64_t>::max());
+				void reset();
 
 				VkFence getFence();
 			};

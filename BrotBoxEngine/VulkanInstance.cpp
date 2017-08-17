@@ -27,7 +27,9 @@ void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t 
 	appInfo.apiVersion = VK_API_VERSION_1_0;
 
 	const bbe::List<const char*> validationLayers = {
+#ifdef _DEBUG
 		"VK_LAYER_LUNARG_standard_validation"
+#endif
 	};
 
 	uint32_t amountOfGlfwExtensions = 0;

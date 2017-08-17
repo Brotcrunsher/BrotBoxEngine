@@ -7,6 +7,7 @@
 #include "BBE/Rectangle.h"
 #include "BBE/VWTransform.h"
 #include "BBE/EngineSettings.h"
+#include "BBE/VertexWithNormal.h"
 
 bbe::INTERNAL::vulkan::VulkanManager *bbe::INTERNAL::vulkan::VulkanManager::s_pinstance = nullptr;
 
@@ -62,7 +63,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	{
 		m_descriptorPool.addLayoutBinding(i * 2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
 		m_descriptorPool.addLayoutBinding(i * 2 + 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
-		m_descriptorPool.addDescriptorBufferInfo(m_primitiveBrush3D.m_uboMatrices, 0, sizeof(Matrix4), 0, i);
+		m_descriptorPool.addDescriptorBufferInfo(m_primitiveBrush3D.m_uboMatrices, 0, sizeof(Matrix4) * 2, 0, i);
 		m_descriptorPool.addDescriptorBufferInfo(VWTransform::s_buffers[i], 0, sizeof(Matrix4) * VWTransform::NUM_BUFFERS_PER_CONTAINER, 1, i);
 	}
 	m_descriptorPool.create(m_device.getDevice());
@@ -80,8 +81,9 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_vertexShader3DPrimitive.init(m_device, "vert3DPrimitive.spv");
 	m_fragmentShader3DPrimitive.init(m_device, "frag3DPrimitive.spv");
 	m_pipeline3DPrimitive.init(m_vertexShader3DPrimitive, m_fragmentShader3DPrimitive, initialWindowWidth, initialWindowHeight);
-	m_pipeline3DPrimitive.addVertexBinding(0, sizeof(Vector3), VK_VERTEX_INPUT_RATE_VERTEX);
-	m_pipeline3DPrimitive.addVertexDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0);
+	m_pipeline3DPrimitive.addVertexBinding(0, sizeof(VertexWithNormal), VK_VERTEX_INPUT_RATE_VERTEX);
+	m_pipeline3DPrimitive.addVertexDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_pos));
+	m_pipeline3DPrimitive.addVertexDescription(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_pos));
 	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
 	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(uint32_t));
 	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPool.getLayout());
@@ -92,7 +94,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 
 	
 
-
+	
 
 	bbe::Rectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::Circle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());

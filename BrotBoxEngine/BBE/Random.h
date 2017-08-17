@@ -77,6 +77,21 @@ namespace bbe {
 			return Vector3(randomFloat(max), randomFloat(max), randomFloat(max));
 		}
 
+		Vector3 randomVector3InUnitSphere()
+		{
+			while (true)
+			{
+				float x = randomFloat() * 2 - 1;
+				float y = randomFloat() * 2 - 1;
+				float z = randomFloat() * 2 - 1;
+				Vector3 retVal(x, y, z);
+				if (retVal.getLengthSq() <= 1)
+				{
+					return retVal;
+				}
+			}
+		}
+
 		Vector4 randomVector4()
 		{
 			//UNTESTED
