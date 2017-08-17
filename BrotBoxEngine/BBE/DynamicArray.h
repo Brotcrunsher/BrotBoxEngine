@@ -152,11 +152,19 @@ namespace bbe
 
 		T& operator[](size_t index)
 		{
+			if (index < 0 || index >= m_length)
+			{
+				throw IllegalIndexException();
+			}
 			return m_data[index];
 		}
 
 		const T& operator[](size_t index) const
 		{
+			if (index < 0 || index >= m_length)
+			{
+				throw IllegalIndexException();
+			}
 			return m_data[index];
 		}
 

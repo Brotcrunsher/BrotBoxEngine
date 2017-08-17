@@ -5,6 +5,7 @@
 #include "../BBE/Matrix4.h"
 #include "../BBE/VulkanBuffer.h"
 #include "../BBE/Cube.h"
+#include "../BBE/Terrain.h"
 
 namespace bbe
 {
@@ -22,7 +23,7 @@ namespace bbe
 
 	enum DrawRecord
 	{
-		NONE, CUBE
+		NONE, CUBE, TERRAIN
 	};
 
 	class PrimitiveBrush3D
@@ -52,6 +53,8 @@ namespace bbe
 
 	public:
 		void fillCube(const Cube &cube);
+
+		void drawTerrain(const Terrain &terrain);
 
 		void setColor(float r, float g, float b, float a);
 		void setColor(float r, float g, float b);

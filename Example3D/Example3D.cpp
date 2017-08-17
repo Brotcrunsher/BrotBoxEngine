@@ -5,10 +5,11 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 
-#define AMOUNTOFCUBES 1024 * 8
+#define AMOUNTOFCUBES 1024 * 7
 class MyGame : public bbe::Game
 {
 	bbe::Cube cubes[AMOUNTOFCUBES];
+	bbe::Vector3 originalPositions[AMOUNTOFCUBES];
 	bbe::Vector3 positions[AMOUNTOFCUBES];
 	bbe::Vector3 rotationAxis[AMOUNTOFCUBES];
 	float rotationSpeeds[AMOUNTOFCUBES];
@@ -16,11 +17,16 @@ class MyGame : public bbe::Game
 	bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
 	bbe::Random rand;
 
+	float timePassed = 0.0f;
+
+	bbe::Terrain terrain;
+
 	virtual void onStart() override
 	{
+		terrain.setTransform(bbe::Vector3(-750, -750, -120), bbe::Vector3(1), bbe::Vector3(1), 0);
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
-			positions[i] = rand.randomVector3InUnitSphere() * 100.0f;
+			originalPositions[i] = rand.randomVector3InUnitSphere();
 			rotationAxis[i] = rand.randomVector3InUnitSphere();
 			rotations[i] = rand.randomFloat() * bbe::Math::PI * 2;
 			rotationSpeeds[i] = rand.randomFloat() * bbe::Math::PI * 2 * 0.25f;
@@ -30,10 +36,14 @@ class MyGame : public bbe::Game
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
+		timePassed += timeSinceLastFrame;
 		std::cout << 1 / timeSinceLastFrame << std::endl;
 		ccnc.update(timeSinceLastFrame);
+
+
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
+			positions[i] = originalPositions[i] * ((bbe::Math::sin(timePassed / 10.0f) + 1) * 40.0f + 10.0f);
 			rotations[i] += rotationSpeeds[i] * timeSinceLastFrame;
 			if (rotations[i] > bbe::Math::PI * 2)
 			{
@@ -49,6 +59,8 @@ class MyGame : public bbe::Game
 		{
 			brush.fillCube(cubes[i]);
 		}
+
+		brush.drawTerrain(terrain);
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{

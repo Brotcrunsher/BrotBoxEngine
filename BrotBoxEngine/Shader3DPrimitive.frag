@@ -18,7 +18,7 @@ void main() {
 	float lightPower = 1;
 	if(distToLight > 0)
 	{
-		lightPower = 1 / distToLight * 10.0f;
+		//lightPower = 1 / distToLight * 10.0f;
 	}
 
 	vec3 N = normalize(inNormal);	
@@ -26,7 +26,7 @@ void main() {
 	vec3 V = normalize(inViewVec);
 	vec3 R = reflect(-L, N);
 
-	vec3 ambient = texColor * 0.01;
+	vec3 ambient = texColor * 0.1;
 	vec3 diffuse = max(dot(N, L), 0.0) * texColor * lightPower;
 	vec3 specular = pow(max(dot(R, V), 0.0), 4.0) * vec3(0.35) * lightPower;
 

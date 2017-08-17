@@ -8,6 +8,7 @@
 #include "BBE/VWTransform.h"
 #include "BBE/EngineSettings.h"
 #include "BBE/VertexWithNormal.h"
+#include "BBE/Terrain.h"
 
 bbe::INTERNAL::vulkan::VulkanManager *bbe::INTERNAL::vulkan::VulkanManager::s_pinstance = nullptr;
 
@@ -83,7 +84,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_pipeline3DPrimitive.init(m_vertexShader3DPrimitive, m_fragmentShader3DPrimitive, initialWindowWidth, initialWindowHeight);
 	m_pipeline3DPrimitive.addVertexBinding(0, sizeof(VertexWithNormal), VK_VERTEX_INPUT_RATE_VERTEX);
 	m_pipeline3DPrimitive.addVertexDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_pos));
-	m_pipeline3DPrimitive.addVertexDescription(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_pos));
+	m_pipeline3DPrimitive.addVertexDescription(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_normal));
 	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
 	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(uint32_t));
 	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPool.getLayout());
@@ -99,6 +100,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	bbe::Rectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::Circle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::Cube::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
+	bbe::Terrain::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::destroy()
@@ -106,6 +108,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
 	bbe::VWTransform::s_destroy();
+	bbe::Terrain::s_destroy();
 	bbe::Cube::s_destroy();
 	bbe::Circle::s_destroy();
 	bbe::Rectangle::s_destroy();

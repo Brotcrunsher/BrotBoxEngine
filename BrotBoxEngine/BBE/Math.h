@@ -3,6 +3,10 @@
 
 namespace bbe
 {
+	class Vector2;
+	class Vector3;
+	class Vector4;
+
 	namespace Math
 	{
 		extern const float PI;
@@ -70,5 +74,31 @@ namespace bbe
 
 		bool isOdd(int val);
 		bool isEven(int val);
+
+		float interpolateLinear(float a, float b, float t);
+		float interpolateBool(float a, float b, float t);
+		float interpolateCosine(float a, float b, float t);
+		float interpolateCubic(float preA, float a, float b, float postB, float t);
+		float interpolateBezier(float a, float b, float t, float control);
+
+		Vector2 interpolateLinear(Vector2 a, Vector2 b, float t);
+		Vector2 interpolateBool(Vector2 a, Vector2 b, float t);
+		Vector2 interpolateCosine(Vector2 a, Vector2 b, float t);
+		Vector2 interpolateCubic(Vector2 preA, Vector2 a, Vector2 b, Vector2 postB, float t);
+		Vector2 interpolateBezier(Vector2 a, Vector2 b, float t, Vector2 control);
+
+		Vector3 interpolateLinear(Vector3 a, Vector3 b, float t);
+		Vector3 interpolateBool(Vector3 a, Vector3 b, float t);
+		Vector3 interpolateCosine(Vector3 a, Vector3 b, float t);
+		Vector3 interpolateCubic(Vector3 preA, Vector3 a, Vector3 b, Vector3 postB, float t);
+		Vector3 interpolateBezier(Vector3 a, Vector3 b, float t, Vector3 control);
+
+		Vector4 interpolateLinear(Vector4 a, Vector4 b, float t);
+		Vector4 interpolateBool(Vector4 a, Vector4 b, float t);
+		Vector4 interpolateCosine(Vector4 a, Vector4 b, float t);
+		Vector4 interpolateCubic(Vector4 preA, Vector4 a, Vector4 b, Vector4 postB, float t);
+		Vector4 interpolateBezier(Vector4 a, Vector4 b, float t, Vector4 control);
+
+
 	}
 }

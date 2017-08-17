@@ -83,6 +83,44 @@ void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 	vkCmdDrawIndexed(m_currentCommandBuffer, 12 * 3, 1, 0, 0, 0);
 }
 
+void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
+{
+	int index = terrain.m_transform.getIndex();
+	int containerIndex = index / 1024;
+	int localOffset = index % 1024;
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layout, 0, 1, m_descriptorPool->getPSet(containerIndex), 0, nullptr);
+
+	if (terrain.m_bufferDirty)
+	{
+
+
+		void *data = VWTransform::s_buffers[containerIndex].map();
+		Matrix4 transform = terrain.getTransform();
+		memcpy((char*)data + sizeof(Matrix4) * localOffset, &transform, sizeof(Matrix4));
+		VWTransform::s_buffers[containerIndex].unmap();
+
+		terrain.m_bufferDirty = false;
+	}
+
+
+	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(uint32_t) * 1, &localOffset);
+
+	if (m_lastDraw != TERRAIN)
+	{
+		VkDeviceSize offsets[] = { 0 };
+		VkBuffer buffer = Terrain::s_vertexBuffer.getBuffer();
+		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
+
+		buffer = Terrain::s_indexBuffer.getBuffer();
+		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+
+		m_lastDraw = TERRAIN;
+	}
+
+
+	vkCmdDrawIndexed(m_currentCommandBuffer, Terrain::s_numberOfVertices, 1, 0, 0, 0);
+}
+
 void bbe::PrimitiveBrush3D::setColor(float r, float g, float b, float a)
 {
 	INTERNAL_setColor(r, g, b, a);
