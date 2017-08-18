@@ -3,6 +3,7 @@
 #include "BBE/VulkanSurface.h"
 #include "BBE/VulkanPhysicalDevices.h"
 #include "BBE/VulkanHelper.h"
+#include "BBE/Exceptions.h"
 
 void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & physicalDevices, const VulkanSurface & surface) {
 	VulkanPhysicalDevice pd = physicalDevices.findBestDevice(surface);
@@ -59,6 +60,16 @@ void bbe::INTERNAL::vulkan::VulkanDevice::destroy()
 		vkDestroyDevice(m_device, nullptr);
 		m_device = VK_NULL_HANDLE;
 	}
+}
+
+void bbe::INTERNAL::vulkan::VulkanDevice::waitIdle() const
+{
+	if (m_device == VK_NULL_HANDLE)
+	{
+		throw NotInitializedException();
+	}
+
+	vkDeviceWaitIdle(m_device);
 }
 
 VkDevice bbe::INTERNAL::vulkan::VulkanDevice::getDevice() const

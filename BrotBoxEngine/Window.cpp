@@ -28,6 +28,7 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 
 	glfwSetKeyCallback(m_pwindow, INTERNAL_keyCallback);
 	glfwSetCursorPosCallback(m_pwindow, INTERNAL_cursorPosCallback);
+	glfwSetWindowSizeCallback(m_pwindow, INTERNAL_windowResizeCallback);
 	double mX = 0;
 	double mY = 0;
 	glfwGetCursorPos(m_pwindow, &mX, &mY);
@@ -126,6 +127,14 @@ bbe::PrimitiveBrush3D * bbe::Window::getBrush3D()
 	return m_vulkanManager.getBrush3D();
 }
 
+void bbe::Window::INTERNAL_resize(int width, int height)
+{
+	m_width = width;
+	m_height = height;
+
+	m_vulkanManager.resize(width, height);
+}
+
 void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, int action, int mods)
 {
 	if (action == GLFW_PRESS)
@@ -141,6 +150,11 @@ void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, i
 void bbe::INTERNAL_cursorPosCallback(GLFWwindow * window, double xpos, double ypos)
 {
 	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_moveMouse(xpos, ypos);
+}
+
+void bbe::INTERNAL_windowResizeCallback(GLFWwindow * window, int width, int height)
+{
+	bbe::Window::INTERNAL_firstInstance->INTERNAL_resize(width, height);
 }
 
 template<>

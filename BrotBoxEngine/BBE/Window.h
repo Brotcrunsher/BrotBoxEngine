@@ -54,13 +54,14 @@ namespace bbe
 		static Window* INTERNAL_firstInstance;
 		Keyboard INTERNAL_keyboard;
 		Mouse INTERNAL_mouse;
+		void INTERNAL_resize(int width, int height);
 	};
 
 
 
 	void INTERNAL_keyCallback(GLFWwindow *window, int keyCode, int scanCode, int action, int mods);
 	void INTERNAL_cursorPosCallback(GLFWwindow *window, double xpos, double ypos);
-
+	void INTERNAL_windowResizeCallback(GLFWwindow *window, int width, int height);
 
 	template<>
 	uint32_t hash(const Window &t);

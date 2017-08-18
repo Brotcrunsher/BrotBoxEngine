@@ -42,6 +42,8 @@ namespace bbe
 
 				void destroy();
 
+				void waitIdle() const;
+
 				VkDevice getDevice() const;
 
 				VkPhysicalDevice getPhysicalDevice() const;

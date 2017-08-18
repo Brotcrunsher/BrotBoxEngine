@@ -34,11 +34,6 @@ namespace bbe
 
 				void destroy();
 
-				VulkanSwapchain(const VulkanSwapchain& other)            = delete;
-				VulkanSwapchain(VulkanSwapchain&& other)                 = delete;
-				VulkanSwapchain& operator=(const VulkanSwapchain& other) = delete;
-				VulkanSwapchain& operator=(VulkanSwapchain&& other)      = delete;
-
 				void init(const VulkanSurface &surface, const VulkanDevice &device, uint32_t width, uint32_t height, VulkanSwapchain *oldSwapchain = nullptr);
 
 				void createFramebuffers(const VWDepthImage &depthImage, const VulkanRenderPass &renderPass);

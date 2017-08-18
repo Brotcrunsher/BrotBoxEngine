@@ -17,6 +17,7 @@ void bbe::INTERNAL::vulkan::VulkanSwapchain::destroy()
 		{
 			vkDestroyFramebuffer(m_device, frameBuffers[i], nullptr);
 		}
+		
 
 		for (uint32_t i = 0; i < m_amountOfImages; i++) {
 			vkDestroyImageView(m_device, m_pimageViews[i], nullptr);
@@ -31,7 +32,17 @@ void bbe::INTERNAL::vulkan::VulkanSwapchain::destroy()
 			m_pswapchainImages = nullptr;
 		}
 		vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+
 		m_swapchain = VK_NULL_HANDLE;
+		m_device = VK_NULL_HANDLE;
+		m_amountOfImages = 0;
+
+		m_pswapchainImages = nullptr;
+		m_pimageViews = nullptr;
+		frameBuffers.clear();
+
+		m_width = 0;
+		m_height = 0;
 	}
 	
 }

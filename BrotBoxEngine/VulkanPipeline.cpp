@@ -11,6 +11,9 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::init(VulkanShader vertexShader, Vulk
 {
 	//depthStencilStateCreateInfo = VWDepthImage::getDepthStencilStateCreateInfoOpaque();
 
+	dynamicStates.add(VK_DYNAMIC_STATE_VIEWPORT);
+	dynamicStates.add(VK_DYNAMIC_STATE_SCISSOR);
+
 	shaderStageCreateInfoVert.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shaderStageCreateInfoVert.pNext = nullptr;
 	shaderStageCreateInfoVert.flags = 0;
@@ -224,6 +227,13 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::destroy()
 	{
 		vkDestroyPipeline(device, pipeline, nullptr);
 		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+
+		dynamicStates.clear();
+		pushConstantRanges.clear();
+		vertexBindingDescription.clear();
+		vertexAttributeDescriptions.clear();
+		descriptorSetLayouts.clear();
+
 		wasCreated = false;
 	}
 }

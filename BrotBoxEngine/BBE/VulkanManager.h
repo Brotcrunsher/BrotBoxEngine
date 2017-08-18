@@ -86,6 +86,9 @@ namespace bbe
 				bbe::PrimitiveBrush3D *getBrush3D();
 
 				void addPendingDestructionBuffer(VkBuffer buffer, VkDeviceMemory memory);
+				void createPipelines();
+				void resize(int width, int height);
+				void recreateSwapchain();
 			};
 		}
 	}

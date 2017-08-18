@@ -31,7 +31,7 @@ namespace bbe
 				VkPipelineColorBlendAttachmentState colorBlendAttachment;
 				//VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo;
 				VkPipelineColorBlendStateCreateInfo colorBlendCreateInfo;
-				bbe::List<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+				bbe::List<VkDynamicState> dynamicStates;
 				VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo;
 				bbe::List<VkPushConstantRange> pushConstantRanges;
 

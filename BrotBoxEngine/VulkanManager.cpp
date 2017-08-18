@@ -71,25 +71,11 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 
 	m_vertexShader2DPrimitive.init(m_device, "vert2DPrimitive.spv");
 	m_fragmentShader2DPrimitive.init(m_device, "frag2DPrimitive.spv");
-	m_pipeline2DPrimitive.init(m_vertexShader2DPrimitive, m_fragmentShader2DPrimitive, initialWindowWidth, initialWindowHeight);
-	m_pipeline2DPrimitive.addVertexBinding(0, sizeof(Vector2), VK_VERTEX_INPUT_RATE_VERTEX);
-	m_pipeline2DPrimitive.addVertexDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
-	m_pipeline2DPrimitive.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
-	m_pipeline2DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4);
-	m_pipeline2DPrimitive.enableDepthBuffer();
-	m_pipeline2DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
-
 	m_vertexShader3DPrimitive.init(m_device, "vert3DPrimitive.spv");
 	m_fragmentShader3DPrimitive.init(m_device, "frag3DPrimitive.spv");
-	m_pipeline3DPrimitive.init(m_vertexShader3DPrimitive, m_fragmentShader3DPrimitive, initialWindowWidth, initialWindowHeight);
-	m_pipeline3DPrimitive.addVertexBinding(0, sizeof(VertexWithNormal), VK_VERTEX_INPUT_RATE_VERTEX);
-	m_pipeline3DPrimitive.addVertexDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_pos));
-	m_pipeline3DPrimitive.addVertexDescription(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_normal));
-	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
-	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(uint32_t));
-	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPool.getLayout());
-	m_pipeline3DPrimitive.enableDepthBuffer();
-	m_pipeline3DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
+
+	createPipelines();
+
 	m_uboMatrixViewProjection.create(m_device, sizeof(Matrix4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 	m_uboMatrixModel.create(m_device, sizeof(Matrix4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
@@ -264,5 +250,66 @@ void bbe::INTERNAL::vulkan::VulkanManager::addPendingDestructionBuffer(VkBuffer 
 {
 	m_pendingDestructionBuffers.push(buffer);
 	m_pendingDestructionMemory.push(memory);
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
+{
+	m_pipeline2DPrimitive.init(m_vertexShader2DPrimitive, m_fragmentShader2DPrimitive, m_screenWidth, m_screenHeight);
+	m_pipeline2DPrimitive.addVertexBinding(0, sizeof(Vector2), VK_VERTEX_INPUT_RATE_VERTEX);
+	m_pipeline2DPrimitive.addVertexDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
+	m_pipeline2DPrimitive.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
+	m_pipeline2DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4);
+	m_pipeline2DPrimitive.enableDepthBuffer();
+	m_pipeline2DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
+
+
+	m_pipeline3DPrimitive.init(m_vertexShader3DPrimitive, m_fragmentShader3DPrimitive, m_screenWidth, m_screenHeight);
+	m_pipeline3DPrimitive.addVertexBinding(0, sizeof(VertexWithNormal), VK_VERTEX_INPUT_RATE_VERTEX);
+	m_pipeline3DPrimitive.addVertexDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_pos));
+	m_pipeline3DPrimitive.addVertexDescription(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_normal));
+	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
+	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(uint32_t));
+	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPool.getLayout());
+	m_pipeline3DPrimitive.enableDepthBuffer();
+	m_pipeline3DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::resize(int width, int height)
+{
+	VkSurfaceCapabilitiesKHR surfaceCapabilities;
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_device.getPhysicalDevice(), m_surface.getSurface(), &surfaceCapabilities);
+
+	if (width > surfaceCapabilities.maxImageExtent.width) width = surfaceCapabilities.maxImageExtent.width;
+	if (height > surfaceCapabilities.maxImageExtent.height) height = surfaceCapabilities.maxImageExtent.height;
+
+	if (width == 0 || height == 0) return; //Do nothing!
+
+
+	m_screenWidth = width;
+	m_screenHeight = height;
+
+	recreateSwapchain();
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::recreateSwapchain()
+{
+	m_device.waitIdle();
+
+
+	m_pipeline2DPrimitive.destroy();
+	m_pipeline3DPrimitive.destroy();
+	m_renderPass.destroy();
+	m_depthImage.destroy();
+	//m_swapchain.destroy();
+
+	VulkanSwapchain newChain;
+	newChain.init(m_surface, m_device, m_screenWidth, m_screenHeight, &m_swapchain);
+	m_renderPass.init(m_device);
+	m_depthImage.create(m_device, m_commandPool, m_screenWidth, m_screenHeight);
+	newChain.createFramebuffers(m_depthImage, m_renderPass);
+	createPipelines();
+
+	m_swapchain.destroy();
+	m_swapchain = newChain;
 }
 
