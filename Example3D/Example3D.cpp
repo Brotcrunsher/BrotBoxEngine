@@ -8,6 +8,7 @@
 #define AMOUNTOFCUBES 1024 * 7
 class MyGame : public bbe::Game
 {
+public:
 	bbe::Cube cubes[AMOUNTOFCUBES];
 	bbe::Vector3 originalPositions[AMOUNTOFCUBES];
 	bbe::Vector3 positions[AMOUNTOFCUBES];
@@ -20,6 +21,13 @@ class MyGame : public bbe::Game
 	float timePassed = 0.0f;
 
 	bbe::Terrain terrain;
+	bbe::PointLight light;
+
+	MyGame()
+		:light(bbe::Vector3(100, 200, 0))
+	{
+
+	}
 
 	virtual void onStart() override
 	{
@@ -32,7 +40,6 @@ class MyGame : public bbe::Game
 			rotationSpeeds[i] = rand.randomFloat() * bbe::Math::PI * 2 * 0.25f;
 			cubes[i].set(positions[i] , bbe::Vector3(1), rotationAxis[i], rotations[i]);
 		}
-		
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
@@ -51,6 +58,8 @@ class MyGame : public bbe::Game
 			}
 			cubes[i].set(positions[i], bbe::Vector3(1), rotationAxis[i], rotations[i]);
 		}
+
+		//light.setPosition(bbe::Vector3(bbe::Math::sin(timePassed) * 1000, 0, 0));
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{

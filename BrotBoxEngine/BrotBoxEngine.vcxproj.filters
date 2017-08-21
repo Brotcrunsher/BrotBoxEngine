@@ -300,6 +300,9 @@
     <ClInclude Include="BBE\ValueNoise2D.h">
       <Filter>Header Files\Math</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\PointLight.h">
+      <Filter>Header Files\GFX\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -429,6 +432,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ValueNoise2D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PointLight.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

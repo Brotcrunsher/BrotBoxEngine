@@ -9,6 +9,8 @@ namespace bbe
 
 		void setAmountOfTransformContainers(int amount);
 		int getAmountOfTransformContainers();
+
+		int getAmountOfLightSources();
 	}
-	
+
 }

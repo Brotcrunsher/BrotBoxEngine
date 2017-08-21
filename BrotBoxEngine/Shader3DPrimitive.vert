@@ -1,17 +1,30 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+#define AMOUNT_OF_LIGHTS 4
+
 out gl_PerVertex {
 	vec4 gl_Position;
 };
 
-layout(binding = 0) uniform UBOProjection
+struct Light
+{
+	vec3 pos;
+	float used;
+};
+
+layout(set = 0, binding = 0) uniform UBOLights
+{
+	Light light[AMOUNT_OF_LIGHTS];
+} uboLights;
+
+layout(set = 1, binding = 0) uniform UBOProjection
 {
 	mat4 view;
 	mat4 projection;
 } uboProjection;
 
-layout(binding = 1) uniform UBOModel
+layout(set = 1, binding = 1) uniform UBOModel
 {
 	mat4 model[1024];
 } uboModel;
@@ -26,16 +39,23 @@ layout(location = 1) in vec3 inNormal;
 
 layout(location = 0) out vec3 outNormal;
 layout(location = 1) out vec3 outViewVec;
-layout(location = 2) out vec3 outLightVec;
+layout(location = 2) out vec3 outLightVec[AMOUNT_OF_LIGHTS];
+layout(location = 3 + AMOUNT_OF_LIGHTS) out float lightUsed[AMOUNT_OF_LIGHTS];
 
 
 void main() 
 {
-	vec3 lightPos = vec3(0, 0, 0);
+	
 
 	vec4 worldPos = uboModel.model[pushConts.uboModelIndex] * vec4(inPos, 1.0);
 	gl_Position = uboProjection.projection * uboProjection.view * worldPos;
 	outNormal = mat3(uboProjection.view) * mat3(uboModel.model[pushConts.uboModelIndex]) * inNormal;
 	outViewVec = -(uboProjection.view * worldPos).xyz;
-	outLightVec = mat3(uboProjection.view) * (lightPos - vec3(worldPos));
+	for(int i = 0; i<AMOUNT_OF_LIGHTS; i++)
+	{
+		vec3 lightPos = uboLights.light[i].pos;
+		outLightVec[i] = mat3(uboProjection.view) * (lightPos - vec3(worldPos));
+		lightUsed[i] = uboLights.light[i].used;
+	}
+	
 }

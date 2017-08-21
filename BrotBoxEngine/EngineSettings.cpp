@@ -3,6 +3,7 @@
 
 static bool started = false;
 static int amountOfTransformContainers = 1;
+static int amountOfLightSources = 4;
 
 void bbe::Settings::INTERNAL_start()
 {
@@ -17,4 +18,9 @@ void bbe::Settings::setAmountOfTransformContainers(int amount)
 int bbe::Settings::getAmountOfTransformContainers()
 {
 	return amountOfTransformContainers;
+}
+
+int bbe::Settings::getAmountOfLightSources()
+{
+	return amountOfLightSources;
 }

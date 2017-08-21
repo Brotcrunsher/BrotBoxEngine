@@ -15,7 +15,7 @@ namespace bbe
 	CREATE_EXCEPTION(BufferAlreadyMappedException);
 	CREATE_EXCEPTION(BufferAlreadyUploadedException);
 	CREATE_EXCEPTION(BufferTooSmallException);
-	
+
 	CREATE_EXCEPTION(NoSuchKeycodeException);
 
 	CREATE_EXCEPTION(SingletonViolationException);
@@ -37,4 +37,6 @@ namespace bbe
 	CREATE_EXCEPTION(NotImplementedException);
 
 	CREATE_EXCEPTION(NoTransformsLeftException);
+
+	CREATE_EXCEPTION(OutOfLightResourcesException);
 }

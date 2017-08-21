@@ -9,6 +9,7 @@
 #include "BBE/EngineSettings.h"
 #include "BBE/VertexWithNormal.h"
 #include "BBE/Terrain.h"
+#include "BBE/PointLight.h"
 
 bbe::INTERNAL::vulkan::VulkanManager *bbe::INTERNAL::vulkan::VulkanManager::s_pinstance = nullptr;
 
@@ -56,12 +57,14 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 
 	m_primitiveBrush3D.create(m_device);
 	bbe::VWTransform::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
+	bbe::PointLight::s_init(m_device.getDevice(), m_device.getPhysicalDevice());
 
 	int amountOfBuffers = Settings::getAmountOfTransformContainers();
+	m_descriptorPool.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, PointLight::s_buffer, 0, 0, 0);
 	for (int i = 0; i < amountOfBuffers; i++)
 	{
-		m_descriptorPool.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, m_primitiveBrush3D.m_uboMatrices, 0, 0, i);
-		m_descriptorPool.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, VWTransform::s_buffers[i], 0, 1, i);
+		m_descriptorPool.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, m_primitiveBrush3D.m_uboMatrices, 0, 0, i+1);
+		m_descriptorPool.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, VWTransform::s_buffers[i], 0, 1, i+1);
 	}
 	m_descriptorPool.create(m_device.getDevice());
 
@@ -94,6 +97,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	bbe::Cube::s_destroy();
 	bbe::Circle::s_destroy();
 	bbe::Rectangle::s_destroy();
+	bbe::PointLight::s_destroy();
 
 
 	destroyPendingBuffers();
@@ -130,6 +134,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 {
 	vkCmdBindPipeline(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getPipeline());
+	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 0, 1, m_descriptorPool.getPSet(0), 0, nullptr);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
@@ -266,6 +271,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
 	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(uint32_t));
 	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPool.getLayout(0));
+	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPool.getLayout(1));
 	m_pipeline3DPrimitive.enableDepthBuffer();
 	m_pipeline3DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
 }

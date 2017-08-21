@@ -230,6 +230,7 @@
     <ClInclude Include="BBE\CursorMode.h" />
     <ClInclude Include="BBE\CameraControlNoClip.h" />
     <ClInclude Include="BBE\EngineSettings.h" />
+    <ClInclude Include="BBE\PointLight.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="BBE\STLAllocator.h" />
     <ClInclude Include="BBE\STLCapsule.h" />
@@ -266,6 +267,7 @@
     <ClInclude Include="BBE\ValueNoise2D.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="PointLight.cpp" />
     <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="CameraControlNoClip.cpp" />
     <ClCompile Include="Cube.cpp" />

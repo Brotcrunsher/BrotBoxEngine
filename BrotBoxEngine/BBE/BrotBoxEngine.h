@@ -16,7 +16,9 @@
 #include "../BBE/String.h"
 
 #include "../BBE/Color.h"
+#include "../BBE/CursorMode.h"
 #include "../BBE/Game.h"
+#include "../BBE/PointLight.h"
 #include "../BBE/PrimitiveBrush2D.h"
 #include "../BBE/PrimitiveBrush3D.h"
 #include "../BBE/Window.h"
