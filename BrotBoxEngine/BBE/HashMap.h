@@ -140,6 +140,11 @@ namespace bbe
 			m_containers[index].add(HashMapNode(key, value, _hash));
 		}
 
+		bool contains(const Key &key)
+		{
+			return get(key) != nullptr;
+		}
+
 		Value* get(const Key &key)
 		{
 			uint32_t _hash = hash(key);

@@ -58,14 +58,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	bbe::VWTransform::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 
 	int amountOfBuffers = Settings::getAmountOfTransformContainers();
-	m_descriptorPool.setAmountOfSets(amountOfBuffers);
-	m_descriptorPool.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 * amountOfBuffers * amountOfBuffers);
 	for (int i = 0; i < amountOfBuffers; i++)
 	{
-		m_descriptorPool.addLayoutBinding(i * 2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
-		m_descriptorPool.addLayoutBinding(i * 2 + 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
-		m_descriptorPool.addDescriptorBufferInfo(m_primitiveBrush3D.m_uboMatrices, 0, sizeof(Matrix4) * 2, 0, i);
-		m_descriptorPool.addDescriptorBufferInfo(VWTransform::s_buffers[i], 0, sizeof(Matrix4) * VWTransform::NUM_BUFFERS_PER_CONTAINER, 1, i);
+		m_descriptorPool.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, m_primitiveBrush3D.m_uboMatrices, 0, 0, i);
+		m_descriptorPool.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, VWTransform::s_buffers[i], 0, 1, i);
 	}
 	m_descriptorPool.create(m_device.getDevice());
 
@@ -269,7 +265,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DPrimitive.addVertexDescription(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_normal));
 	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
 	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(uint32_t));
-	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPool.getLayout());
+	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPool.getLayout(0));
 	m_pipeline3DPrimitive.enableDepthBuffer();
 	m_pipeline3DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
 }

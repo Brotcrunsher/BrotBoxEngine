@@ -1,69 +1,27 @@
 #include "stdafx.h"
+#include "BBE/HashMap.h"
 #include "BBE\VulkanDescriptorPool.h"
 #include "BBE\Exceptions.h"
 #include "BBE\VulkanHelper.h"
 #include "BBE\VulkanBuffer.h"
 
-void bbe::INTERNAL::vulkan::VulkanDescriptorPool::setAmountOfSets(size_t amount)
+
+void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addDescriptor(VkDescriptorType type, VkShaderStageFlags shaderStage, const VulkanBuffer & buffer, VkDeviceSize offset, uint32_t binding, uint32_t setIndex)
 {
 	if (m_descriptorPool != VK_NULL_HANDLE)
 	{
 		throw AlreadyCreatedException();
 	}
-	amountOfSets = amount;
-}
-
-void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addPoolSize(VkDescriptorPoolSize dps)
-{
-	if (m_descriptorPool != VK_NULL_HANDLE)
-	{
-		throw AlreadyCreatedException();
-	}
-	m_descriptorPoolSizes.add(dps);
-}
-
-void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addPoolSize(VkDescriptorType type, uint32_t descriptorCount)
-{
-	VkDescriptorPoolSize dps = {};
-	dps.type = type;
-	dps.descriptorCount = descriptorCount;
-	addPoolSize(dps);
-}
-
-void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addLayoutBinding(VkDescriptorSetLayoutBinding dslb)
-{
-	m_layoutBindings.add(dslb);
-}
-
-void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addLayoutBinding(uint32_t binding, VkDescriptorType descriptorType, uint32_t descriptorCount, VkShaderStageFlags stageFlags, const VkSampler * pImmutableSamplers)
-{
-	VkDescriptorSetLayoutBinding dslb = {};
-	dslb.binding = binding;
-	dslb.descriptorType = descriptorType;
-	dslb.descriptorCount = descriptorCount;
-	dslb.stageFlags = stageFlags;
-	dslb.pImmutableSamplers = pImmutableSamplers;
-
-	addLayoutBinding(dslb);
-}
-
-void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addDescriptorBufferInfo(VkDescriptorBufferInfo dbi, uint32_t binding, uint32_t setIndex)
-{
-	m_descriptorBufferInfo.add(AdvancedBufferInfo(dbi, binding, setIndex));
-}
-
-void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addDescriptorBufferInfo(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding, uint32_t setIndex)
-{
-	VkDescriptorBufferInfo dbi = {};
-	dbi.buffer = buffer;
-	dbi.offset = offset;
-	dbi.range = range;
-	addDescriptorBufferInfo(dbi, binding, setIndex);
-}
-
-void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addDescriptorBufferInfo(const VulkanBuffer &buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding, uint32_t setIndex)
-{
-	addDescriptorBufferInfo(buffer.getBuffer(), offset, range, binding, setIndex);
+	m_descriptorBufferInfos.add(
+		AdvancedBufferInfo(
+			type,
+			shaderStage,
+			buffer,
+			offset,
+			binding,
+			setIndex
+		)
+	);
 }
 
 void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
@@ -75,32 +33,77 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
 
 	m_device = device;
 
-	VkDescriptorSetLayoutCreateInfo dslci = {};
-	dslci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	dslci.pNext = nullptr;
-	dslci.flags = 0;
-	dslci.bindingCount = m_layoutBindings.getLength();
-	dslci.pBindings = m_layoutBindings.getRaw();
-
-	VkResult result = vkCreateDescriptorSetLayout(m_device, &dslci, nullptr, &m_descriptorSetLayout);
-	ASSERT_VULKAN(result);
-
-	List<VkDescriptorSetLayout> layouts;
-	for (int i = 0; i < amountOfSets; i++)
+	HashMap<int, List<VkDescriptorSetLayoutBinding>> layoutBindings;
+	List<int> usedSetIndexes;
+	for (int i = 0; i < m_descriptorBufferInfos.getLength(); i++)
 	{
-		layouts.add(m_descriptorSetLayout);
+		VkDescriptorSetLayoutBinding dslb = {};
+		dslb.binding = m_descriptorBufferInfos[i].m_binding;
+		dslb.descriptorType = m_descriptorBufferInfos[i].m_type;
+		dslb.descriptorCount = 1;
+		dslb.stageFlags = m_descriptorBufferInfos[i].m_shaderStage;
+		dslb.pImmutableSamplers = nullptr;
+
+		if(!layoutBindings.contains(m_descriptorBufferInfos[i].m_setIndex))
+		{
+			layoutBindings.add(m_descriptorBufferInfos[i].m_setIndex, List<VkDescriptorSetLayoutBinding>());
+			usedSetIndexes.add(m_descriptorBufferInfos[i].m_setIndex);
+		}
+
+		layoutBindings.get(m_descriptorBufferInfos[i].m_setIndex)->add(dslb);
 	}
 
+	for (int i = 0; i < usedSetIndexes.getLength(); i++)
+	{
+		VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
+		List<VkDescriptorSetLayoutBinding> *list = layoutBindings.get(usedSetIndexes[i]);
+
+		VkDescriptorSetLayoutCreateInfo dslci = {};
+		dslci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		dslci.pNext = nullptr;
+		dslci.flags = 0;
+		dslci.bindingCount = list->getLength();
+		dslci.pBindings = list->getRaw();
+
+		VkResult result = vkCreateDescriptorSetLayout(m_device, &dslci, nullptr, &dsl);
+		ASSERT_VULKAN(result);
+
+		m_descriptorSetLayout.add(dsl);
+	}
+	
+
+	List<VkDescriptorPoolSize> poolSizes;
+	for (int i = 0; i < m_descriptorBufferInfos.getLength(); i++)
+	{
+		for (int k = 0; k < poolSizes.getLength(); k++)
+		{
+			if (poolSizes[k].type == m_descriptorBufferInfos[i].m_type)
+			{
+				poolSizes[k].descriptorCount += 1;
+				goto continueLoop;	//Skip adding new PoolSize Entry
+			}
+		}
+
+		{
+			VkDescriptorPoolSize dps = {};
+			dps.type = m_descriptorBufferInfos[i].m_type;
+			dps.descriptorCount = 1;
+			poolSizes.add(dps);
+		}
+		
+
+	continueLoop:;
+	}
 
 	VkDescriptorPoolCreateInfo dpci;
 	dpci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	dpci.pNext = nullptr;
 	dpci.flags = 0;
-	dpci.maxSets = amountOfSets;
-	dpci.poolSizeCount = m_descriptorPoolSizes.getLength();
-	dpci.pPoolSizes = m_descriptorPoolSizes.getRaw();
+	dpci.maxSets = usedSetIndexes.getLength();
+	dpci.poolSizeCount = poolSizes.getLength();
+	dpci.pPoolSizes = poolSizes.getRaw();
 
-	result = vkCreateDescriptorPool(m_device, &dpci, nullptr, &m_descriptorPool);
+	VkResult result = vkCreateDescriptorPool(m_device, &dpci, nullptr, &m_descriptorPool);
 	ASSERT_VULKAN(result);
 
 
@@ -108,27 +111,38 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
 	dsai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	dsai.pNext = nullptr;
 	dsai.descriptorPool = m_descriptorPool;
-	dsai.descriptorSetCount = amountOfSets;
-	dsai.pSetLayouts = layouts.getRaw();
-	m_descriptorSets = new VkDescriptorSet[amountOfSets];
+	dsai.descriptorSetCount = m_descriptorSetLayout.getLength();
+	dsai.pSetLayouts = m_descriptorSetLayout.getRaw();
+	m_descriptorSets.resizeCapacityAndLength(m_descriptorSetLayout.getLength());
 
-	result = vkAllocateDescriptorSets(m_device, &dsai, m_descriptorSets);
+	result = vkAllocateDescriptorSets(m_device, &dsai, m_descriptorSets.getRaw());
 	ASSERT_VULKAN(result);
 
 	List<VkWriteDescriptorSet> writeDescriptorSetsUniforms;
+	List<VkDescriptorBufferInfo> descriptorBufferInfo;
 
-	for (int i = 0; i < m_descriptorBufferInfo.getLength(); i++)
+	for (int i = 0; i < m_descriptorBufferInfos.getLength(); i++)
+	{
+		VkDescriptorBufferInfo dbi = {};
+		dbi.buffer = m_descriptorBufferInfos[i].m_buffer;
+		dbi.offset = m_descriptorBufferInfos[i].m_offset;
+		dbi.range  = m_descriptorBufferInfos[i].m_bufferSize;
+
+		descriptorBufferInfo.add(dbi);
+	}
+
+	for (int i = 0; i < m_descriptorBufferInfos.getLength(); i++)
 	{
 		VkWriteDescriptorSet wds = {};
 		wds.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		wds.pNext = nullptr;
-		wds.dstSet = m_descriptorSets[m_descriptorBufferInfo[i].m_setIndex];
-		wds.dstBinding = m_descriptorBufferInfo[i].m_binding;
+		wds.dstSet = m_descriptorSets[m_descriptorBufferInfos[i].m_setIndex];
+		wds.dstBinding = m_descriptorBufferInfos[i].m_binding;
 		wds.dstArrayElement = 0;
 		wds.descriptorCount = 1;
-		wds.descriptorType = m_layoutBindings[i].descriptorType;
+		wds.descriptorType = m_descriptorBufferInfos[i].m_type;
 		wds.pImageInfo = nullptr;
-		wds.pBufferInfo = &(m_descriptorBufferInfo[i].m_descriptorBufferInfo);
+		wds.pBufferInfo = &(descriptorBufferInfo[i]);
 		wds.pTexelBufferView = nullptr;
 
 		writeDescriptorSetsUniforms.add(wds);
@@ -141,18 +155,20 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::destroy()
 {
 	if (m_descriptorPool != VK_NULL_HANDLE)
 	{
-		vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, nullptr);
+		for (int i = 0; i < m_descriptorSetLayout.getLength(); i++)
+		{
+			vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout[i], nullptr);
+		}
 		vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 		m_descriptorPool = VK_NULL_HANDLE;
 		m_device = VK_NULL_HANDLE;
-		delete[] m_descriptorSets;
-		m_descriptorSets = nullptr;
+		m_descriptorSets.clear();
 	}
 }
 
-VkDescriptorSetLayout bbe::INTERNAL::vulkan::VulkanDescriptorPool::getLayout() const
+VkDescriptorSetLayout bbe::INTERNAL::vulkan::VulkanDescriptorPool::getLayout(size_t setNumber) const
 {
-	return m_descriptorSetLayout;
+	return m_descriptorSetLayout[setNumber];
 }
 
 VkDescriptorSet* bbe::INTERNAL::vulkan::VulkanDescriptorPool::getPSet(size_t setNumber)
@@ -160,7 +176,13 @@ VkDescriptorSet* bbe::INTERNAL::vulkan::VulkanDescriptorPool::getPSet(size_t set
 	return &m_descriptorSets[setNumber];
 }
 
-bbe::INTERNAL::vulkan::VulkanDescriptorPool::AdvancedBufferInfo::AdvancedBufferInfo(VkDescriptorBufferInfo dbi, uint32_t binding, uint32_t setIndex)
-	: m_descriptorBufferInfo(dbi), m_binding(binding), m_setIndex(setIndex)
+bbe::INTERNAL::vulkan::VulkanDescriptorPool::AdvancedBufferInfo::AdvancedBufferInfo(VkDescriptorType type, VkShaderStageFlags shaderStage, const VulkanBuffer & buffer, VkDeviceSize offset, uint32_t binding, uint32_t setIndex)
 {
+	m_type = type;
+	m_shaderStage = shaderStage;
+	m_buffer = buffer.getBuffer();
+	m_offset = offset;
+	m_bufferSize = buffer.getSize();
+	m_binding = binding;
+	m_setIndex = setIndex;
 }

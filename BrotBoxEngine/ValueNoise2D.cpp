@@ -6,7 +6,7 @@
 #include "BBE/Math.h"
 #include "BBE\ValueNoise2D.h"
 
-static int m_octaves = 6;
+static int m_octaves = 3;
 static int m_startFrequencyX = 8;
 static int m_startFrequencyY = 8;
 static float m_startAlpha = 1;
