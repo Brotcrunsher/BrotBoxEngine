@@ -53,9 +53,12 @@ void main()
 	outViewVec = -(uboProjection.view * worldPos).xyz;
 	for(int i = 0; i<AMOUNT_OF_LIGHTS; i++)
 	{
-		vec3 lightPos = uboLights.light[i].pos;
-		outLightVec[i] = mat3(uboProjection.view) * (lightPos - vec3(worldPos));
 		lightUsed[i] = uboLights.light[i].used;
+		if(uboLights.light[i].used > 0.0f)
+		{
+			vec3 lightPos = uboLights.light[i].pos;
+			outLightVec[i] = mat3(uboProjection.view) * (lightPos - vec3(worldPos));
+		}
 	}
 	
 }

@@ -73,5 +73,7 @@ namespace bbe
 		void setPosition(Vector3 pos);
 
 		void destroy();
+		void turnOn(bool on);
+		bool isOn();
 	};
 }

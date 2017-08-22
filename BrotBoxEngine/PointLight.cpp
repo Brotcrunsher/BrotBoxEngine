@@ -28,6 +28,26 @@ void bbe::PointLight::destroy()
 	}
 }
 
+void bbe::PointLight::turnOn(bool on)
+{
+	if (!s_staticIniCalled)
+	{
+		throw IllegalStateException("Engine must have started!");
+	}
+
+	s_data[m_index].used = on ? VK_TRUE : VK_FALSE;
+
+}
+
+bool bbe::PointLight::isOn()
+{
+	if (!s_staticIniCalled)
+	{
+		throw IllegalStateException("Engine must have started!");
+	}
+	return s_data[m_index].used > 0.0f;
+}
+
 void bbe::PointLight::s_init(VkDevice device, VkPhysicalDevice physicalDevice)
 {
 	s_buffer.create(device, physicalDevice, sizeof(INTERNAL::PointLightVertexData) * Settings::getAmountOfLightSources(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
