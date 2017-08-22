@@ -231,6 +231,7 @@
     <ClInclude Include="BBE\CameraControlNoClip.h" />
     <ClInclude Include="BBE\EngineSettings.h" />
     <ClInclude Include="BBE\PointLight.h" />
+    <ClInclude Include="BBE\LightFalloffMode.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="BBE\STLAllocator.h" />
     <ClInclude Include="BBE\STLCapsule.h" />

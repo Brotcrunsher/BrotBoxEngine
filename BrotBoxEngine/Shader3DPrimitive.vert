@@ -31,8 +31,7 @@ layout(set = 1, binding = 1) uniform UBOModel
 
 layout(push_constant) uniform PushConstants
 {
-	vec4 color;			//Fragment
-	int uboModelIndex;	//Vertex
+	layout(offset = 16)int uboModelIndex;	//Vertex
 } pushConts;
 
 layout(location = 0) in vec3 inPos;

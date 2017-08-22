@@ -303,6 +303,9 @@
     <ClInclude Include="BBE\PointLight.h">
       <Filter>Header Files\GFX\Core</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\LightFalloffMode.h">
+      <Filter>Header Files\GFX\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

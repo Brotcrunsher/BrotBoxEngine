@@ -53,7 +53,7 @@ namespace bbe
 				VWDepthImage m_depthImage;
 				VkCommandBuffer m_currentFrameDrawCommandBuffer = VK_NULL_HANDLE;
 				VulkanFence m_presentFence;
-				VulkanDescriptorPool m_descriptorPool;
+				VulkanDescriptorPool m_descriptorPoolVertex;
 				GLFWwindow *m_window = nullptr;
 				PrimitiveBrush2D m_primitiveBrush2D;
 				PrimitiveBrush3D m_primitiveBrush3D;

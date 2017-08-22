@@ -3,6 +3,12 @@
 
 #define AMOUNT_OF_LIGHTS 4
 
+#define FALLOFF_NONE    0
+#define	FALLOFF_LINEAR  1
+#define FALLOFF_SQUARED 2
+#define FALLOFF_CUBIC   3
+#define FALLOFF_SQRT    4
+
 layout(location = 0) out vec4 outColor;
 layout(location = 0) in vec3 inNormal;
 layout(location = 1) in vec3 inViewVec;
@@ -12,8 +18,22 @@ layout(location = 3 + AMOUNT_OF_LIGHTS) in float lightUsed[AMOUNT_OF_LIGHTS];
 layout(push_constant) uniform PushConstants
 {
 	vec4 color;			//Fragment
-	int uboModelIndex;	//Vertex
 } pushConts;
+
+struct Light
+{
+	float lightStrength;
+	int falloffMode;
+	float pad1;
+	float pad2;
+	vec4 lightColor;
+	vec4 specularColor;
+};
+
+layout(set = 2, binding = 0) uniform UBOLights
+{
+	Light light[AMOUNT_OF_LIGHTS];
+} uboLights;
 
 void main() {
 	vec3 texColor = pushConts.color.xyz;
@@ -31,18 +51,36 @@ void main() {
 			continue;
 		}
 		float distToLight = length(inLightVec[i]);
-		float lightPower = 1;
+		float lightPower = uboLights.light[i].lightStrength;
 		if(distToLight > 0)
 		{
-			//lightPower = 1 / distToLight * 10.0f;
+			switch(uboLights.light[i].falloffMode)
+			{
+			case FALLOFF_NONE:
+				//Do nothing
+				break;
+			case FALLOFF_LINEAR:
+				lightPower = uboLights.light[i].lightStrength / distToLight;
+				break;
+			case FALLOFF_SQUARED:
+				lightPower = uboLights.light[i].lightStrength / distToLight / distToLight;
+				break;
+			case FALLOFF_CUBIC:
+				lightPower = uboLights.light[i].lightStrength / distToLight / distToLight / distToLight;
+				break;
+			case FALLOFF_SQRT:
+				lightPower = uboLights.light[i].lightStrength / sqrt(distToLight);
+				break;
+			}
+			
 		}
 
 		vec3 L = normalize(inLightVec[i]);
 		vec3 R = reflect(-L, N);
 
 	
-		diffuse += max(dot(N, L), 0.0) * texColor * lightPower;
-		specular += pow(max(dot(R, V), 0.0), 4.0) * vec3(0.35) * lightPower;
+		diffuse += max(dot(N, L), 0.0) * (texColor * uboLights.light[i].lightColor.xyz) * lightPower;
+		specular += pow(max(dot(R, V), 0.0), 4.0) * uboLights.light[i].specularColor.xyz * lightPower;
 	}
 	
 

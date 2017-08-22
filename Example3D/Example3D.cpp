@@ -22,13 +22,13 @@ public:
 
 	bbe::Terrain terrain;
 	bbe::PointLight light;
-
 	bbe::PointLight blinkLight;
+	bbe::PointLight brightLight;
 	
 	bbe::Color colors[AMOUNTOFCUBES];
 
 	MyGame()
-		:light(bbe::Vector3(100, 200, 0))
+		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0))
 	{
 
 	}
@@ -64,10 +64,11 @@ public:
 			cubes[i].set(positions[i], bbe::Vector3(1), rotationAxis[i], rotations[i]);
 		}
 
-		light.setPosition(bbe::Vector3(bbe::Math::sin(timePassed) * 1000, 0, 0));
+		light.setPosition(bbe::Vector3(bbe::Math::sin(timePassed / 2) * 1000, 0, 0));
 
 		int intTimePassed = (int)timePassed;
 		blinkLight.turnOn(intTimePassed % 2 == 0);
+		brightLight.setLightStrength(timePassed);
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
