@@ -11,11 +11,12 @@ layout(location = 3 + AMOUNT_OF_LIGHTS) in float lightUsed[AMOUNT_OF_LIGHTS];
 
 layout(push_constant) uniform PushConstants
 {
-	vec4 color;
+	vec4 color;			//Fragment
+	int uboModelIndex;	//Vertex
 } pushConts;
 
 void main() {
-	vec3 texColor = vec3(1, 1, 1); //TODO change to pushConts.color
+	vec3 texColor = pushConts.color.xyz;
 	vec3 N = normalize(inNormal);	
 	vec3 V = normalize(inViewVec);
 	vec3 ambient = texColor * 0.1;

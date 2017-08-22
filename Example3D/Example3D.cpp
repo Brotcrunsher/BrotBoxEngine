@@ -24,6 +24,8 @@ public:
 	bbe::PointLight light;
 
 	bbe::PointLight blinkLight;
+	
+	bbe::Color colors[AMOUNTOFCUBES];
 
 	MyGame()
 		:light(bbe::Vector3(100, 200, 0))
@@ -41,6 +43,7 @@ public:
 			rotations[i] = rand.randomFloat() * bbe::Math::PI * 2;
 			rotationSpeeds[i] = rand.randomFloat() * bbe::Math::PI * 2 * 0.25f;
 			cubes[i].set(positions[i] , bbe::Vector3(1), rotationAxis[i], rotations[i]);
+			colors[i] = bbe::Color(rand.randomFloat(), rand.randomFloat(), rand.randomFloat(), 1.0f);
 		}
 	}
 	virtual void update(float timeSinceLastFrame) override
@@ -71,9 +74,11 @@ public:
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
+			brush.setColor(colors[i]);
 			brush.fillCube(cubes[i]);
 		}
 
+		brush.setColor(1, 1, 1);
 		brush.drawTerrain(terrain);
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
