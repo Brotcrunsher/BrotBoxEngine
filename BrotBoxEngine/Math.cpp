@@ -62,11 +62,11 @@ float bbe::Math::floor(float val)
 	{
 		if (iVal == val)
 		{
-			return iVal;
+			return (float)iVal;
 		}
 		else
 		{
-			return iVal - 1;
+			return (float)(iVal - 1);
 		}
 	}
 }
@@ -78,7 +78,7 @@ float bbe::Math::ceil(float val)
 
 float bbe::Math::round(float val)
 {
-	return val < 0 ? (int)(val - 0.5) : (int)(val + 0.5);
+	return val < 0 ? (float)(int)(val - 0.5) : (float)(int)(val + 0.5);
 }
 
 float bbe::Math::square(float val)

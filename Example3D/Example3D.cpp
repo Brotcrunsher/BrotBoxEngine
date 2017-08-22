@@ -9,7 +9,7 @@
 class MyGame : public bbe::Game
 {
 public:
-	bbe::Cube cubes[AMOUNTOFCUBES];
+	bbe::IcoSphere cubes[AMOUNTOFCUBES];
 	bbe::Vector3 originalPositions[AMOUNTOFCUBES];
 	bbe::Vector3 positions[AMOUNTOFCUBES];
 	bbe::Vector3 rotationAxis[AMOUNTOFCUBES];
@@ -55,7 +55,7 @@ public:
 
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
-			positions[i] = originalPositions[i] * ((bbe::Math::sin(timePassed / 10.0f) + 1) * 40.0f + 10.0f);
+			positions[i] = originalPositions[i] * ((bbe::Math::sin(timePassed / 1000.0f) + 1) * 40.0f + 10.0f);
 			rotations[i] += rotationSpeeds[i] * timeSinceLastFrame;
 			if (rotations[i] > bbe::Math::PI * 2)
 			{
@@ -76,7 +76,7 @@ public:
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
 			brush.setColor(colors[i]);
-			brush.fillCube(cubes[i]);
+			brush.fillIcoSphere(cubes[i]);
 		}
 
 		brush.setColor(1, 1, 1);

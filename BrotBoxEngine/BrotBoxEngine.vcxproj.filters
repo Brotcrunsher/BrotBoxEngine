@@ -306,6 +306,9 @@
     <ClInclude Include="BBE\LightFalloffMode.h">
       <Filter>Header Files\GFX\Core</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\IcoSphere.h">
+      <Filter>Header Files\Shapes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -438,6 +441,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PointLight.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IcoSphere.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

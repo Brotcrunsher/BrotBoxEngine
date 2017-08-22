@@ -87,6 +87,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	bbe::Circle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::Cube::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::Terrain::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
+	bbe::IcoSphere::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::destroy()
@@ -99,6 +100,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	bbe::Circle::s_destroy();
 	bbe::Rectangle::s_destroy();
 	bbe::PointLight::s_destroy();
+	bbe::IcoSphere::s_destroy();
 
 
 	destroyPendingBuffers();
