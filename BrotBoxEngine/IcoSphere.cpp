@@ -25,7 +25,6 @@ size_t getHalfPointIndex(bbe::List<bbe::Vector3> &vertices, bbe::Vector3 &a, bbe
 
 void createIcoSphereMesh(bbe::List<uint32_t> &indices, bbe::List<bbe::VertexWithNormal> &vertices, int iterations)
 {
-	assert(iterations % 2 == 0);	//Only even amount of iterations is supported right now. Else the faces are flipped.
 	indices.clear();
 	vertices.clear();
 
@@ -84,12 +83,24 @@ void createIcoSphereMesh(bbe::List<uint32_t> &indices, bbe::List<bbe::VertexWith
 			int b = getHalfPointIndex(simpleVertices, simpleVertices[indices[k + 1]], simpleVertices[indices[k + 2]]);
 			int c = getHalfPointIndex(simpleVertices, simpleVertices[indices[k + 2]], simpleVertices[indices[k + 0]]);
 
-			newIndices.addAll(
-				c, a, indices[k + 0],
-				a, b, indices[k + 1],
-				b, c, indices[k + 2],
-				c, b, a
-			);
+			if (iterations % 2 == 0)
+			{
+				newIndices.addAll(
+					c, a, indices[k + 0],
+					a, b, indices[k + 1],
+					b, c, indices[k + 2],
+					c, b, a
+				);
+			}
+			else
+			{
+				newIndices.addAll(
+					a, c, indices[k + 0],
+					b, a, indices[k + 1],
+					c, b, indices[k + 2],
+					b, c, a
+				);
+			}
 		}
 
 		indices = std::move(newIndices);
