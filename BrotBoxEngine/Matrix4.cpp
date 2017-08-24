@@ -43,6 +43,10 @@ bbe::Matrix4 bbe::Matrix4::createTranslationMatrix(const Vector3 & translation)
 
 bbe::Matrix4 bbe::Matrix4::createRotationMatrix(float radians, const Vector3 & rotationAxis)
 {
+	if (radians == 0)
+	{
+		return Matrix4();
+	}
 	Vector3 nra = rotationAxis.normalize();
 	float x = nra.x;
 	float y = nra.y;
