@@ -23,6 +23,12 @@ public:
 		pos = random.randomVector3InUnitSphere() * 100.0f;
 	}
 
+	Particle(const bbe::Vector3 &pos)
+		: pos(pos)
+	{
+		//do nothing
+	}
+
 	void updateSpeed(float timeSinceLastFrame)
 	{
 		for (Particle &p : particles)
@@ -81,6 +87,11 @@ class MyGame : public bbe::Game
 	{
 		ccnc.update(timeSinceLastFrame);
 		std::cout << (1 / timeSinceLastFrame) << std::endl;
+
+		if (isMousePressed(bbe::MouseButton::LEFT))
+		{
+			particles.add(Particle(ccnc.getCameraPos()));
+		}
 
 		timeSinceLastFrame = 0.016f;
 

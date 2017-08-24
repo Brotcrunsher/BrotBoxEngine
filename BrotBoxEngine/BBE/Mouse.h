@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../BBE/MouseButtons.h"
 
 
 namespace bbe
@@ -18,10 +19,15 @@ namespace bbe
 		float m_mouseCurrentFrameY = 0;
 		float m_mouseLastFrameX    = 0;
 		float m_mouseLastFrameY    = 0;
+		bool m_pButtonsNextFrame[(int)MouseButton::LAST + 1];
+		bool m_pButtonsThisFrame[(int)MouseButton::LAST + 1];
+		bool m_pButtonsLastFrame[(int)MouseButton::LAST + 1];
 
 		void update();
 
 	public:
+		Mouse();
+
 
 		float getMouseX();
 		float getMouseY();
@@ -31,6 +37,16 @@ namespace bbe
 		float getMouseYDelta();
 		Vector2 getMouseDelta();
 
+		bool isButtonDown(bbe::MouseButton button);
+		bool isButtonUp(bbe::MouseButton button);
+
+		bool wasButtonDownLastFrame(bbe::MouseButton button);
+		bool wasButtonUpLastFrame(bbe::MouseButton button);
+
+		bool isButtonPressed(bbe::MouseButton button);
+
 		void INTERNAL_moveMouse(float x, float y);
+		void INTERNAL_press(MouseButton button);
+		void INTERNAL_release(MouseButton button);
 	};
 }

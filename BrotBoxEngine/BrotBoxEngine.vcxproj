@@ -233,6 +233,7 @@
     <ClInclude Include="BBE\PointLight.h" />
     <ClInclude Include="BBE\LightFalloffMode.h" />
     <ClInclude Include="BBE\IcoSphere.h" />
+    <ClInclude Include="BBE\MouseButtons.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="BBE\STLAllocator.h" />
     <ClInclude Include="BBE\STLCapsule.h" />
@@ -269,6 +270,7 @@
     <ClInclude Include="BBE\ValueNoise2D.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="MouseButtons.cpp" />
     <ClCompile Include="IcoSphere.cpp" />
     <ClCompile Include="PointLight.cpp" />
     <ClCompile Include="Terrain.cpp" />

@@ -3,6 +3,7 @@
 #include "BBE/PrimitiveBrush2D.h"
 #include "BBE/PrimitiveBrush3D.h"
 #include <iostream>
+#include "BBE/MouseButtons.h"
 
 
 size_t bbe::Window::windowsAliveCounter = 0;
@@ -28,6 +29,7 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 
 	glfwSetKeyCallback(m_pwindow, INTERNAL_keyCallback);
 	glfwSetCursorPosCallback(m_pwindow, INTERNAL_cursorPosCallback);
+	glfwSetMouseButtonCallback(m_pwindow, INTERNAL_mouseButtonCallback);
 	glfwSetWindowSizeCallback(m_pwindow, INTERNAL_windowResizeCallback);
 	double mX = 0;
 	double mY = 0;
@@ -155,6 +157,18 @@ void bbe::INTERNAL_cursorPosCallback(GLFWwindow * window, double xpos, double yp
 void bbe::INTERNAL_windowResizeCallback(GLFWwindow * window, int width, int height)
 {
 	bbe::Window::INTERNAL_firstInstance->INTERNAL_resize(width, height);
+}
+
+void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int action, int mods)
+{
+	if (action == GLFW_PRESS)
+	{
+		bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_press((bbe::MouseButton)button);
+	}
+	else if (action == GLFW_RELEASE)
+	{
+		bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_release((bbe::MouseButton)button);
+	}
 }
 
 template<>

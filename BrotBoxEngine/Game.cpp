@@ -74,6 +74,31 @@ bool bbe::Game::isKeyPressed(bbe::Key key)
 	return m_pwindow->INTERNAL_keyboard.isKeyPressed(key);
 }
 
+bool bbe::Game::isMouseDown(bbe::MouseButton button)
+{
+	return m_pwindow->INTERNAL_mouse.isButtonDown(button);
+}
+
+bool bbe::Game::isMouseUp(bbe::MouseButton button)
+{
+	return m_pwindow->INTERNAL_mouse.isButtonUp(button);
+}
+
+bool bbe::Game::wasMouseDownLastFrame(bbe::MouseButton button)
+{
+	return m_pwindow->INTERNAL_mouse.wasButtonDownLastFrame(button);
+}
+
+bool bbe::Game::wasMouseUpLastFrame(bbe::MouseButton button)
+{
+	return m_pwindow->INTERNAL_mouse.wasButtonUpLastFrame(button);
+}
+
+bool bbe::Game::isMousePressed(bbe::MouseButton button)
+{
+	return m_pwindow->INTERNAL_mouse.isButtonPressed(button);
+}
+
 float bbe::Game::getMouseX()
 {
 	return (float)(m_pwindow->INTERNAL_mouse.getMouseX());

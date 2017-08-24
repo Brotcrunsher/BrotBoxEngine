@@ -19,6 +19,7 @@ namespace bbe
 	CREATE_EXCEPTION(BufferTooSmallException);
 
 	CREATE_EXCEPTION(NoSuchKeycodeException);
+	CREATE_EXCEPTION(NoSuchMouseButtonException);
 
 	CREATE_EXCEPTION(SingletonViolationException);
 

@@ -3,6 +3,7 @@
 #include "../BBE/GameTime.h"
 #include "../BBE/CursorMode.h"
 #include "../BBE/KeyboardKeys.h"
+#include "../BBE/MouseButtons.h"
 
 namespace bbe
 {
@@ -39,6 +40,12 @@ namespace bbe
 		bool wasKeyDownLastFrame(bbe::Key key);
 		bool wasKeyUpLastFrame(bbe::Key key);
 		bool isKeyPressed(bbe::Key key);
+
+		bool isMouseDown(bbe::MouseButton button);
+		bool isMouseUp(bbe::MouseButton button);
+		bool wasMouseDownLastFrame(bbe::MouseButton button);
+		bool wasMouseUpLastFrame(bbe::MouseButton button);
+		bool isMousePressed(bbe::MouseButton button);
 		float getMouseX();
 		float getMouseY();
 		float getMouseXDelta();

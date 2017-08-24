@@ -7,7 +7,7 @@
 
 namespace bbe
 {
-	enum Key
+	enum class Key
 	{
 		LAST = GLFW_KEY_LAST,
 
