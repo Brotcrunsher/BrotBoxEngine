@@ -18,7 +18,7 @@ namespace bbe
 			{
 			private:
 				VkShaderModule m_shaderModule = VK_NULL_HANDLE;
-				VkDevice m_device;
+				VkDevice       m_device       = VK_NULL_HANDLE;
 
 			public:
 				VulkanShader();

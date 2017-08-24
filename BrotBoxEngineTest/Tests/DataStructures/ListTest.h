@@ -456,14 +456,14 @@ namespace bbe
 				assertEquals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), true);
 
-				assertEquals(0, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(0, Person::amountOfCopyConstructorCalls);
-				assertEquals(0, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(0, Person::amountOfParameterConstructorCalls);
-				assertEquals(0, Person::amountOfDestructorCalls);
+				assertEquals(0, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(0, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(0, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(0, Person::s_amountOfDestructorCalls);
 				listEmpty.add(Person("Peter", "AStr", 18));
 				
 				assertEquals(listEmpty.getCapacity(), 1);
@@ -474,14 +474,14 @@ namespace bbe
 				assertEquals(listEmpty[0].age, 18);
 				assertEquals(listEmpty.isEmpty(), false);
 
-				assertEquals(1, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(0, Person::amountOfCopyConstructorCalls);
-				assertEquals(1, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(1, Person::amountOfParameterConstructorCalls);
-				assertEquals(1, Person::amountOfDestructorCalls);
+				assertEquals(1, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(1, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(1, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(1, Person::s_amountOfDestructorCalls);
 
 				listEmpty.popBack();
 				assertEquals(listEmpty.getCapacity(), 1);
@@ -489,14 +489,14 @@ namespace bbe
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), true);
 
-				assertEquals(0, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(0, Person::amountOfCopyConstructorCalls);
-				assertEquals(1, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(1, Person::amountOfParameterConstructorCalls);
-				assertEquals(2, Person::amountOfDestructorCalls);
+				assertEquals(0, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(1, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(1, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(2, Person::s_amountOfDestructorCalls);
 				
 				listEmpty.shrink();
 				assertEquals(listEmpty.getCapacity(), 0);
@@ -512,14 +512,14 @@ namespace bbe
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), false);
 
-				assertEquals(3, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(0, Person::amountOfCopyConstructorCalls);
-				assertEquals(7, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(4, Person::amountOfParameterConstructorCalls);
-				assertEquals(8, Person::amountOfDestructorCalls);
+				assertEquals(3, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(7, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(4, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(8, Person::s_amountOfDestructorCalls);
 
 				assertEquals(listEmpty[0].name, "Petra");
 				assertEquals(listEmpty[0].adress, "BStr");
@@ -549,14 +549,14 @@ namespace bbe
 				assertEquals(listEmpty[3].adress, "EStr");
 				assertEquals(listEmpty[3].age, 22);
 
-				assertEquals(4, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(0, Person::amountOfCopyConstructorCalls);
-				assertEquals(8, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(5, Person::amountOfParameterConstructorCalls);
-				assertEquals(9, Person::amountOfDestructorCalls);
+				assertEquals(4, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(8, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(5, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(9, Person::s_amountOfDestructorCalls);
 
 				listEmpty.popBack();
 				assertEquals(listEmpty.getCapacity(), 4);
@@ -573,14 +573,14 @@ namespace bbe
 				assertEquals(listEmpty[2].adress, "DStr");
 				assertEquals(listEmpty[2].age, 21);
 
-				assertEquals(3, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(0, Person::amountOfCopyConstructorCalls);
-				assertEquals(8, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(5, Person::amountOfParameterConstructorCalls);
-				assertEquals(10, Person::amountOfDestructorCalls);
+				assertEquals(3, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(8, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(5, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(10, Person::s_amountOfDestructorCalls);
 
 				listEmpty.add(Person("Zebramensch", "FStr", 23));
 				assertEquals(listEmpty.getCapacity(), 4);
@@ -600,14 +600,14 @@ namespace bbe
 				assertEquals(listEmpty[3].adress, "FStr");
 				assertEquals(listEmpty[3].age, 23);
 
-				assertEquals(4, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(0, Person::amountOfCopyConstructorCalls);
-				assertEquals(9, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(6, Person::amountOfParameterConstructorCalls);
-				assertEquals(11, Person::amountOfDestructorCalls);
+				assertEquals(4, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(9, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(6, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(11, Person::s_amountOfDestructorCalls);
 
 				listEmpty.clear();
 				assertEquals(listEmpty.getCapacity(), 4);
@@ -615,14 +615,14 @@ namespace bbe
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), true);
 
-				assertEquals(0, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(0, Person::amountOfCopyConstructorCalls);
-				assertEquals(9, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(6, Person::amountOfParameterConstructorCalls);
-				assertEquals(15, Person::amountOfDestructorCalls);
+				assertEquals(0, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(9, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(6, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(15, Person::s_amountOfDestructorCalls);
 
 				listEmpty.add(Person("IDontKnow", "GStr", 24));
 				listEmpty.add(Person("Jesus", "HStr", 25));
@@ -649,14 +649,14 @@ namespace bbe
 				assertEquals(listEmpty[4].adress, "KStr");
 				assertEquals(listEmpty[4].age, 28);
 
-				assertEquals(5, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(0, Person::amountOfCopyConstructorCalls);
-				assertEquals(18, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(11, Person::amountOfParameterConstructorCalls);
-				assertEquals(24, Person::amountOfDestructorCalls);
+				assertEquals(5, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(18, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(11, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(24, Person::s_amountOfDestructorCalls);
 
 				listEmpty.shrink();
 				assertEquals(listEmpty.getCapacity(), 5);
@@ -679,14 +679,14 @@ namespace bbe
 				assertEquals(listEmpty[4].adress, "KStr");
 				assertEquals(listEmpty[4].age, 28);
 
-				assertEquals(5, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(0, Person::amountOfCopyConstructorCalls);
-				assertEquals(23, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(11, Person::amountOfParameterConstructorCalls);
-				assertEquals(29, Person::amountOfDestructorCalls);
+				assertEquals(5, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(23, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(11, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(29, Person::s_amountOfDestructorCalls);
 
 				Person outerPerson("Outlander", "OutStr", 99);
 				listEmpty.add(outerPerson);
@@ -717,14 +717,14 @@ namespace bbe
 				assertEquals(outerPerson.adress, "OutStr");
 				assertEquals(outerPerson.age, 99);
 
-				assertEquals(7, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(1, Person::amountOfCopyConstructorCalls);
-				assertEquals(28, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(12, Person::amountOfParameterConstructorCalls);
-				assertEquals(34, Person::amountOfDestructorCalls);
+				assertEquals(7, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(1, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(28, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(12, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(34, Person::s_amountOfDestructorCalls);
 
 				outerPerson.name = "newName";
 				outerPerson.adress = "OtherStreet";
@@ -757,14 +757,14 @@ namespace bbe
 				assertEquals(outerPerson.adress, "OtherStreet");
 				assertEquals(outerPerson.age, 100);
 
-				assertEquals(7, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(1, Person::amountOfCopyConstructorCalls);
-				assertEquals(28, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(12, Person::amountOfParameterConstructorCalls);
-				assertEquals(34, Person::amountOfDestructorCalls);
+				assertEquals(7, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(1, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(28, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(12, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(34, Person::s_amountOfDestructorCalls);
 
 				listEmpty.add(Person("CopyMan!", "CopyStr!", -7), 3);
 				assertEquals(listEmpty.getCapacity(), 10);
@@ -799,14 +799,14 @@ namespace bbe
 				assertEquals(listEmpty[8].adress, "CopyStr!");
 				assertEquals(listEmpty[8].age, -7);
 
-				assertEquals(10, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(4, Person::amountOfCopyConstructorCalls);
-				assertEquals(28, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(13, Person::amountOfParameterConstructorCalls);
-				assertEquals(35, Person::amountOfDestructorCalls);
+				assertEquals(10, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(4, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(28, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(13, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(35, Person::s_amountOfDestructorCalls);
 
 				listEmpty[7].name = "Changeling";
 				listEmpty[7].adress = "Wabble";
@@ -844,28 +844,28 @@ namespace bbe
 				assertEquals(listEmpty[8].adress, "CopyStr!");
 				assertEquals(listEmpty[8].age, -7);
 
-				assertEquals(10, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(4, Person::amountOfCopyConstructorCalls);
-				assertEquals(28, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(13, Person::amountOfParameterConstructorCalls);
-				assertEquals(35, Person::amountOfDestructorCalls);
+				assertEquals(10, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(4, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(28, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(13, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(35, Person::s_amountOfDestructorCalls);
 
 				List<Person> otherList;
 				otherList.add(Person("Invader #1", "InvasionStr #1", 30));
 				otherList.add(Person("Invader #2", "InvasionStr #2", 31));
 				otherList.add(Person("Invader #3", "InvasionStr #3", 32));
 
-				assertEquals(13, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(4, Person::amountOfCopyConstructorCalls);
-				assertEquals(34, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(16, Person::amountOfParameterConstructorCalls);
-				assertEquals(41, Person::amountOfDestructorCalls);
+				assertEquals(13, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(4, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(34, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(16, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(41, Person::s_amountOfDestructorCalls);
 
 				listEmpty += otherList;
 				assertEquals(listEmpty.getCapacity(), 20);
@@ -909,14 +909,14 @@ namespace bbe
 				assertEquals(listEmpty[11].adress, "InvasionStr #3");
 				assertEquals(listEmpty[11].age, 32);
 
-				assertEquals(16, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(10, Person::amountOfCopyConstructorCalls);
-				assertEquals(44, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(16, Person::amountOfParameterConstructorCalls);
-				assertEquals(54, Person::amountOfDestructorCalls);
+				assertEquals(16, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(10, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(44, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(16, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(54, Person::s_amountOfDestructorCalls);
 
 				otherList[0].name = "Hide #1";
 				otherList[0].adress = "Hide Str #1";
@@ -969,14 +969,14 @@ namespace bbe
 				assertEquals(listEmpty[11].adress, "InvasionStr #3");
 				assertEquals(listEmpty[11].age, 32);
 
-				assertEquals(16, Person::amountOfPersons);
-				assertEquals(0, Person::amountOfDefaulConstructorCalls);
-				assertEquals(10, Person::amountOfCopyConstructorCalls);
-				assertEquals(44, Person::amountOfMoveConstructorCalls);
-				assertEquals(0, Person::amountOfCopyAssignmentCalls);
-				assertEquals(0, Person::amountOfMoveAssignmentCalls);
-				assertEquals(16, Person::amountOfParameterConstructorCalls);
-				assertEquals(54, Person::amountOfDestructorCalls);
+				assertEquals(16, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(10, Person::s_amountOfCopyConstructorCalls);
+				assertEquals(44, Person::s_amountOfMoveConstructorCalls);
+				assertEquals(0, Person::s_amountOfCopyAssignmentCalls);
+				assertEquals(0, Person::s_amountOfMoveAssignmentCalls);
+				assertEquals(16, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(54, Person::s_amountOfDestructorCalls);
 			}
 
 			Person::checkIfAllPersonsWereDestroyed();

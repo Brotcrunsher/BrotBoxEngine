@@ -24,13 +24,13 @@ namespace bbe
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
 	private:
-		VkCommandBuffer m_currentCommandBuffer = VK_NULL_HANDLE;
-		VkDevice m_device                      = VK_NULL_HANDLE;
-		VkPhysicalDevice m_physicalDevice      = VK_NULL_HANDLE;
-		VkPipelineLayout m_layout              = VK_NULL_HANDLE;
-		VkDescriptorSet m_descriptorSet        = VK_NULL_HANDLE;
-		int m_screenWidth;
-		int m_screenHeight;
+		VkCommandBuffer  m_currentCommandBuffer = VK_NULL_HANDLE;
+		VkDevice         m_device               = VK_NULL_HANDLE;
+		VkPhysicalDevice m_physicalDevice       = VK_NULL_HANDLE;
+		VkPipelineLayout m_layout               = VK_NULL_HANDLE;
+		VkDescriptorSet  m_descriptorSet        = VK_NULL_HANDLE;
+		int              m_screenWidth;
+		int              m_screenHeight;
 
 		void INTERNAL_fillRect(const Rectangle &rect);
 		void INTERNAL_fillCircle(const Circle &circle);

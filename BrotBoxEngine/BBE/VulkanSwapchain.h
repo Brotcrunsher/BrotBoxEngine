@@ -18,15 +18,15 @@ namespace bbe
 			class VulkanSwapchain
 			{
 			private:
-				VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
-				VkDevice m_device          = VK_NULL_HANDLE;
-				uint32_t m_amountOfImages  = 0;
+				VkSwapchainKHR m_swapchain      = VK_NULL_HANDLE;
+				VkDevice       m_device         = VK_NULL_HANDLE;
+				uint32_t       m_amountOfImages = 0;
 
-				VkImage *m_pswapchainImages = nullptr;
-				VkImageView *m_pimageViews  = nullptr;
+				VkImage     *m_pswapchainImages = nullptr;
+				VkImageView *m_pimageViews      = nullptr;
 				bbe::List<VkFramebuffer> frameBuffers;
 
-				uint32_t m_width = 0;
+				uint32_t m_width  = 0;
 				uint32_t m_height = 0;
 
 			public:

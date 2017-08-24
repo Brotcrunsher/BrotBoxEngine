@@ -24,31 +24,31 @@ namespace bbe
 		class PointLightVertexData
 		{
 		public:
-			Vector3 position;
-			float used = -1;
+			Vector3 m_position;
+			float   m_used = -1;
 		};
 
 		class PointLightFragmentData
 		{
 		public:
-			float lightStrength;
-			LightFalloffMode lightFallOffMode;
-			float pad1;
-			float pad2;
-			Color lightColor;
-			Color specularColor;
+			float            m_lightStrength;
+			LightFalloffMode m_lightFallOffMode;
+			float            pad1;
+			float            pad2;
+			Color            m_lightColor;
+			Color            m_specularColor;
 		};
 
 		class PointLightWithPos
 		{
 		public:
 			PointLightWithPos(PointLight* pointLight, const Vector3 &pos);
-			PointLight* m_light;
+			PointLight* m_plight;
 			Vector3 m_pos;
 
 			bool operator==(const PointLightWithPos &other) const
 			{
-				return m_light == other.m_light;
+				return m_plight == other.m_plight;
 			}
 		};
 	}

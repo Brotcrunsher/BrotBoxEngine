@@ -176,7 +176,7 @@ namespace bbe
 				}
 				else if(allocationLocation + sizeof(T) < (byte*)oldData)
 				{
-					for (int i = 0; i < m_amountOfObjects; i++)
+					for (size_t i = 0; i < m_amountOfObjects; i++)
 					{
 						new (bbe::addressOf(newData[i])) T(std::move(oldData[i]));
 						bbe::addressOf(oldData[i])->~T();
@@ -187,7 +187,7 @@ namespace bbe
 					byte tempByteArr[sizeof(T) + alignof(T)];
 					T* tempObj = reinterpret_cast<T*>(Math::nextMultiple((size_t)alignof(T), (size_t)tempByteArr));
 
-					for (int i = 0; i < m_amountOfObjects; i++)
+					for (size_t i = 0; i < m_amountOfObjects; i++)
 					{
 						new (tempObj) T(std::move(oldData[i]));
 						bbe::addressOf(oldData[i])->~T();

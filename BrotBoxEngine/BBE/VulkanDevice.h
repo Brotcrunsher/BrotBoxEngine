@@ -16,15 +16,15 @@ namespace bbe
 			class VulkanSharingBehaviour
 			{
 			public:
-				VkSharingMode m_sharingMode;
+				VkSharingMode  m_sharingMode;
 				List<uint32_t> m_queueFamilyIndices;
 			};
 
 			class VulkanDevice
 			{
 			private:
-				VkDevice m_device                 = VK_NULL_HANDLE;
-				VkQueue m_queue                   = VK_NULL_HANDLE;
+				VkDevice         m_device         = VK_NULL_HANDLE;
+				VkQueue          m_queue          = VK_NULL_HANDLE;
 				VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 				List<VkSurfaceFormatKHR> m_formats;
 				uint32_t queueFamilyIndex = 0;

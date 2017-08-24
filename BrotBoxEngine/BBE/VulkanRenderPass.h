@@ -15,7 +15,7 @@ namespace bbe
 			{
 			private:
 				VkRenderPass m_renderPass = VK_NULL_HANDLE;
-				VkDevice m_device         = VK_NULL_HANDLE;
+				VkDevice     m_device     = VK_NULL_HANDLE;
 
 			public:
 				VulkanRenderPass();

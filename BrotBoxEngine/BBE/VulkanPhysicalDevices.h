@@ -34,10 +34,6 @@ namespace bbe
 
 				VulkanPhysicalDevice(const VkPhysicalDevice &device, const VulkanSurface &surface);
 
-				//PhysicalDevice(const PhysicalDevice&) = delete;
-				//PhysicalDevice(PhysicalDevice&&) = delete;
-				//PhysicalDevice& operator=(const PhysicalDevice&) = delete;
-				//PhysicalDevice& operator=(PhysicalDevice&&) = delete;
 
 				uint32_t findBestCompleteQueueIndex() const;
 

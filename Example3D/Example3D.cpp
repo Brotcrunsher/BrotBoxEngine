@@ -9,7 +9,7 @@
 class MyGame : public bbe::Game
 {
 public:
-	bbe::IcoSphere cubes[AMOUNTOFCUBES];
+	bbe::Cube cubes[AMOUNTOFCUBES];
 	bbe::Vector3 originalPositions[AMOUNTOFCUBES];
 	bbe::Vector3 positions[AMOUNTOFCUBES];
 	bbe::Vector3 rotationAxis[AMOUNTOFCUBES];
@@ -76,7 +76,7 @@ public:
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
 			brush.setColor(colors[i]);
-			brush.fillIcoSphere(cubes[i]);
+			brush.fillCube(cubes[i]);
 		}
 
 		brush.setColor(1, 1, 1);

@@ -20,19 +20,19 @@ namespace bbe
 				public:
 					AdvancedBufferInfo(VkDescriptorType type, VkShaderStageFlags shaderStage, const VulkanBuffer &buffer, VkDeviceSize offset, uint32_t binding, uint32_t setIndex);
 
-					VkDescriptorType m_type;
+					VkDescriptorType   m_type;
 					VkShaderStageFlags m_shaderStage;
-					VkBuffer m_buffer;
-					VkDeviceSize m_offset;
-					VkDeviceSize m_bufferSize;
-					uint32_t m_binding;
-					uint32_t m_setIndex;
+					VkBuffer           m_buffer;
+					VkDeviceSize       m_offset;
+					VkDeviceSize       m_bufferSize;
+					uint32_t           m_binding;
+					uint32_t           m_setIndex;
 				};
 
 				List<AdvancedBufferInfo> m_descriptorBufferInfos;
 
-				VkDescriptorPool      m_descriptorPool      = VK_NULL_HANDLE;
-				VkDevice              m_device              = VK_NULL_HANDLE;
+				VkDescriptorPool            m_descriptorPool      = VK_NULL_HANDLE;
+				VkDevice                    m_device              = VK_NULL_HANDLE;
 				List<VkDescriptorSetLayout> m_descriptorSetLayout;
 				List<VkDescriptorSet>       m_descriptorSets;
 

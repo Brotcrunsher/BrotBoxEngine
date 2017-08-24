@@ -20,7 +20,7 @@ namespace bbe
 			class VulkanCommandPool
 			{
 			private:
-				VkDevice m_device           = VK_NULL_HANDLE;
+				VkDevice      m_device      = VK_NULL_HANDLE;
 				VkCommandPool m_commandPool = VK_NULL_HANDLE;
 
 			public:

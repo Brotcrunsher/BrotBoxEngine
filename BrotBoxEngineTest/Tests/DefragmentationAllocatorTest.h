@@ -96,7 +96,7 @@ namespace bbe {
 					}
 				}
 
-				for (int i = 0; i < list.getLength(); i++)
+				for (size_t i = 0; i < list.getLength(); i++)
 				{
 					da.deallocate(list[i]);
 				}

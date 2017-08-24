@@ -18,7 +18,7 @@ namespace bbe
 			class VulkanFence
 			{
 			private:
-				VkFence m_fence   = VK_NULL_HANDLE;
+				VkFence  m_fence  = VK_NULL_HANDLE;
 				VkDevice m_device = VK_NULL_HANDLE;
 
 			public:

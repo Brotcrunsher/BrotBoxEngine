@@ -9,11 +9,11 @@ namespace bbe
 	class CameraControlNoClip
 	{
 	private:
-		Game *m_pgame = nullptr;
-		Vector3 m_cameraPos = bbe::Vector3(0.0f, 0.0f, 0.0f);
-		Vector3 m_forward = bbe::Vector3(1.0f, 0.0f, 0.0f);
-		float horizontalMouse = 0;
-		float verticalMouse = 0;
+		Game   *m_pgame         = nullptr;
+		Vector3 m_cameraPos     = bbe::Vector3(0.0f, 0.0f, 0.0f);
+		Vector3 m_forward       = bbe::Vector3(1.0f, 0.0f, 0.0f);
+		float   m_horizontalMouse = 0;
+		float   m_verticalMouse   = 0;
 
 	public:
 		CameraControlNoClip(Game* game);

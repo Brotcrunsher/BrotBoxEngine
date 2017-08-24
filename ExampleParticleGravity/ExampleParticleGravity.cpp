@@ -35,18 +35,17 @@ public:
 			float length = dir.getLength();
 			if (length != 0)
 			{
-				bbe::Vector3 gravity = dir.normalize() / length / length / 10;
-				bbe::Vector3 antiTouch = dir.normalize() / length / length / length / 10;
+				bbe::Vector3 gravity = dir.normalize() / length / length / 1000;
+				bbe::Vector3 antiTouch = dir.normalize() / length / length / length / 1000;
 				speed = speed + gravity - antiTouch;
 			}
 		}
 
-		speed = speed * 0.9f;
+		speed = speed * 0.999999f;
 	}
 
 	void updatePos(float timeSinceLastFrame)
 	{
-
 
 		pos = pos + speed * timeSinceLastFrame;
 
@@ -81,18 +80,21 @@ class MyGame : public bbe::Game
 	virtual void update(float timeSinceLastFrame) override
 	{
 		ccnc.update(timeSinceLastFrame);
+		std::cout << (1 / timeSinceLastFrame) << std::endl;
 
-		if (isKeyPressed(bbe::KEY_T))
+		timeSinceLastFrame = 0.016f;
+
+		if (isKeyPressed(bbe::Keys::T))
 		{
-			size += 0.1;
+			size += 0.1f;
 		}
 
-		if (isKeyPressed(bbe::KEY_G))
+		if (isKeyPressed(bbe::Keys::G))
 		{
-			size -= 0.1;
+			size -= 0.1f;
 		}
 
-		if (isKeyPressed(bbe::KEY_Z))
+		if (isKeyPressed(bbe::Keys::Z))
 		{
 			for (Particle &p : particles)
 			{
@@ -100,13 +102,17 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		for (Particle &p : particles)
+
+		for (int iterations = 0; iterations < 2; iterations++)
 		{
-			p.updateSpeed(timeSinceLastFrame);
-		}
-		for (Particle &p : particles)
-		{
-			p.updatePos(timeSinceLastFrame);
+			for (Particle &p : particles)
+			{
+				p.updateSpeed(timeSinceLastFrame);
+			}
+			for (Particle &p : particles)
+			{
+				p.updatePos(timeSinceLastFrame);
+			}
 		}
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
@@ -129,7 +135,7 @@ int main()
 {
 	bbe::Settings::setAmountOfTransformContainers(8);
 	MyGame game;
-	game.start(1280, 720, "3D Test");
+	game.start(1280, 720, "Particle Gravity");
     return 0;
 }
 

@@ -9,9 +9,9 @@ namespace bbe
 		friend class Window;
 		friend class Game;
 	private:
-		bool m_keysNextFrame[KEY_LAST + 1];
-		bool m_keysThisFrame[KEY_LAST + 1];
-		bool m_keysLastFrame[KEY_LAST + 1];
+		bool m_pkeysNextFrame[Keys::LAST + 1];
+		bool m_pkeysThisFrame[Keys::LAST + 1];
+		bool m_pkeysLastFrame[Keys::LAST + 1];
 
 		
 

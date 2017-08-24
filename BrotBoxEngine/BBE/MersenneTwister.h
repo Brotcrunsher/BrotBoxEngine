@@ -12,12 +12,12 @@ namespace bbe
 		const uint64_t MASK_LOWER = (1ull << R) - 1;
 		const uint64_t MASK_UPPER = (1ull << R);
 
-		uint16_t index;
-		FieldType mt[N];
+		uint16_t  m_index;
+		FieldType m_mt[N];
 
 		inline void twistIteration(uint32_t i)
 		{
-			uint32_t x = (mt[i] & MASK_UPPER) + (mt[(i + 1) % N] & MASK_LOWER);
+			uint32_t x = (m_mt[i] & MASK_UPPER) + (m_mt[(i + 1) % N] & MASK_LOWER);
 
 			uint32_t xA = x >> 1;
 
@@ -26,7 +26,7 @@ namespace bbe
 				xA ^= A;
 			}
 
-			mt[i] = mt[(i + M) % N] ^ xA;
+			m_mt[i] = m_mt[(i + M) % N] ^ xA;
 		}
 
 		void twist()
@@ -38,7 +38,7 @@ namespace bbe
 
 			twistIteration(N - 1);	//Helps the compiler to calculate % N
 
-			index = 0;
+			m_index = 0;
 		}
 
 	public:
@@ -50,17 +50,17 @@ namespace bbe
 
 		void setSeed(FieldType seed)
 		{
-			mt[0] = seed;
+			m_mt[0] = seed;
 
 			for (uint32_t i = 1; i < N; i++)
 			{
-				mt[i] = (F * (mt[i - 1] ^ (mt[i - 1] >> 30)) + i);
+				m_mt[i] = (F * (m_mt[i - 1] ^ (m_mt[i - 1] >> 30)) + i);
 			}
 
 			//obscurity magic number, decreases the predictability of the MT a little.
-			mt[28] ^= 0xBBEBBEBB;
+			m_mt[28] ^= 0xBBEBBEBB;
 
-			index = N;
+			m_index = N;
 
 			for (uint32_t i = 0; i < 1000 * 1000 * 9; i++)
 			{
@@ -70,13 +70,13 @@ namespace bbe
 
 		FieldType next()
 		{
-			if (index >= N)
+			if (m_index >= N)
 			{
 				twist();
 			}
 
-			FieldType x = mt[index];
-			index++;
+			FieldType x = m_mt[m_index];
+			m_index++;
 
 			x ^= (x >> U);
 			x ^= (x << S) & B;

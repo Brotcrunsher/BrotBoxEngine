@@ -10,7 +10,7 @@ namespace bbe
 		{
 			//this little hack prevents the constructor of T to be called
 			//allows the use of new and its auto alignment features
-			T value;
+			T m_value;
 
 			Unconstructed() {}
 			~Unconstructed() {}

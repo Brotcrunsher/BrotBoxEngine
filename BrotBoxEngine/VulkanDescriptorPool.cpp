@@ -35,7 +35,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
 
 	HashMap<int, List<VkDescriptorSetLayoutBinding>> layoutBindings;
 	List<int> usedSetIndexes;
-	for (int i = 0; i < m_descriptorBufferInfos.getLength(); i++)
+	for (size_t i = 0; i < m_descriptorBufferInfos.getLength(); i++)
 	{
 		VkDescriptorSetLayoutBinding dslb = {};
 		dslb.binding = m_descriptorBufferInfos[i].m_binding;
@@ -53,7 +53,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
 		layoutBindings.get(m_descriptorBufferInfos[i].m_setIndex)->add(dslb);
 	}
 
-	for (int i = 0; i < usedSetIndexes.getLength(); i++)
+	for (size_t i = 0; i < usedSetIndexes.getLength(); i++)
 	{
 		VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
 		List<VkDescriptorSetLayoutBinding> *list = layoutBindings.get(usedSetIndexes[i]);
@@ -73,9 +73,9 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
 	
 
 	List<VkDescriptorPoolSize> poolSizes;
-	for (int i = 0; i < m_descriptorBufferInfos.getLength(); i++)
+	for (size_t i = 0; i < m_descriptorBufferInfos.getLength(); i++)
 	{
-		for (int k = 0; k < poolSizes.getLength(); k++)
+		for (size_t k = 0; k < poolSizes.getLength(); k++)
 		{
 			if (poolSizes[k].type == m_descriptorBufferInfos[i].m_type)
 			{
@@ -121,7 +121,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
 	List<VkWriteDescriptorSet> writeDescriptorSetsUniforms;
 	List<VkDescriptorBufferInfo> descriptorBufferInfo;
 
-	for (int i = 0; i < m_descriptorBufferInfos.getLength(); i++)
+	for (size_t i = 0; i < m_descriptorBufferInfos.getLength(); i++)
 	{
 		VkDescriptorBufferInfo dbi = {};
 		dbi.buffer = m_descriptorBufferInfos[i].m_buffer;
@@ -131,7 +131,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(VkDevice device)
 		descriptorBufferInfo.add(dbi);
 	}
 
-	for (int i = 0; i < m_descriptorBufferInfos.getLength(); i++)
+	for (size_t i = 0; i < m_descriptorBufferInfos.getLength(); i++)
 	{
 		VkWriteDescriptorSet wds = {};
 		wds.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -155,7 +155,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::destroy()
 {
 	if (m_descriptorPool != VK_NULL_HANDLE)
 	{
-		for (int i = 0; i < m_descriptorSetLayout.getLength(); i++)
+		for (size_t i = 0; i < m_descriptorSetLayout.getLength(); i++)
 		{
 			vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout[i], nullptr);
 		}

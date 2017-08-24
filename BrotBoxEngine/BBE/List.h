@@ -22,7 +22,7 @@ namespace bbe
 	private:
 		size_t m_length;
 		size_t m_capacity;
-		INTERNAL::Unconstructed<T>* m_data;
+		INTERNAL::Unconstructed<T>* m_pdata;
 
 		void growIfNeeded(size_t amountOfNewObjects)
 		{
@@ -38,22 +38,22 @@ namespace bbe
 
 				for (size_t i = 0; i < m_length; i++)
 				{
-					new (bbe::addressOf(newData[i].value)) T(std::move(m_data[i].value));
-					m_data[i].value.~T();
+					new (bbe::addressOf(newData[i].m_value)) T(std::move(m_pdata[i].m_value));
+					m_pdata[i].m_value.~T();
 				}
 
-				if (m_data != nullptr)
+				if (m_pdata != nullptr)
 				{
-					delete[] m_data;
+					delete[] m_pdata;
 				}
-				m_data = newData;
+				m_pdata = newData;
 				m_capacity = newCapacity;
 			}
 		}
 
 	public:
 		List()
-			: m_length(0), m_capacity(0), m_data(nullptr)
+			: m_length(0), m_capacity(0), m_pdata(nullptr)
 		{
 			//DO NOTHING
 		}
@@ -62,33 +62,33 @@ namespace bbe
 		List(size_t amountOfObjects, arguments&&... args)
 			: m_length(amountOfObjects), m_capacity(amountOfObjects)
 		{
-			m_data = new INTERNAL::Unconstructed<T>[amountOfObjects];
+			m_pdata = new INTERNAL::Unconstructed<T>[amountOfObjects];
 			for (size_t i = 0; i < amountOfObjects; i++)
 			{
-				new (bbe::addressOf(m_data[i])) T(std::forward<arguments>(args)...);
+				new (bbe::addressOf(m_pdata[i])) T(std::forward<arguments>(args)...);
 			}
 		}
 
 		List(const List<T, keepSorted>& other)
 			: m_length(other.m_length), m_capacity(other.m_capacity)
 		{
-			m_data = new INTERNAL::Unconstructed<T>[m_capacity];
+			m_pdata = new INTERNAL::Unconstructed<T>[m_capacity];
 			for (size_t i = 0; i < m_length; i++)
 			{
-				new (bbe::addressOf(m_data[i])) T(other.m_data[i].value);
+				new (bbe::addressOf(m_pdata[i])) T(other.m_pdata[i].m_value);
 			}
 		}
 
 		List(List<T, keepSorted>&& other)
-			: m_length(other.m_length), m_capacity(other.m_capacity), m_data(other.m_data)
+			: m_length(other.m_length), m_capacity(other.m_capacity), m_pdata(other.m_pdata)
 		{
-			other.m_data = nullptr;
+			other.m_pdata = nullptr;
 			other.m_length = 0;
 			other.m_capacity = 0;
 		}
 
 		List(const std::initializer_list<T> &il)
-			: m_length(0), m_capacity(0), m_data(nullptr)
+			: m_length(0), m_capacity(0), m_pdata(nullptr)
 		{
 			//UNTESTED
 			for (auto iter = il.begin(); iter != il.end(); iter++) {
@@ -98,17 +98,17 @@ namespace bbe
 
 		List& operator=(const List<T, keepSorted>& other)
 		{
-			if (m_data != nullptr)
+			if (m_pdata != nullptr)
 			{
-				delete[] m_data;
+				delete[] m_pdata;
 			}
 
 			m_length = other.m_length;
 			m_capacity = other.m_capacity;
-			m_data = new INTERNAL::Unconstructed<T>[m_capacity];
+			m_pdata = new INTERNAL::Unconstructed<T>[m_capacity];
 			for (size_t i = 0; i < m_capacity; i++)
 			{
-				new (bbe::addressOf(m_data[i])) T(other.m_data[i].value);
+				new (bbe::addressOf(m_pdata[i])) T(other.m_pdata[i].m_value);
 			}
 
 			return *this;
@@ -116,16 +116,16 @@ namespace bbe
 
 		List& operator=(List<T, keepSorted>&& other)
 		{
-			if (m_data != nullptr)
+			if (m_pdata != nullptr)
 			{
-				delete[] m_data;
+				delete[] m_pdata;
 			}
 
 			m_length = other.m_length;
 			m_capacity = other.m_capacity;
-			m_data = other.m_data;
+			m_pdata = other.m_pdata;
 
-			other.m_data = nullptr;
+			other.m_pdata = nullptr;
 			other.m_length = 0;
 			other.m_capacity = 0;
 
@@ -136,12 +136,12 @@ namespace bbe
 		{
 			clear();
 
-			if (m_data != nullptr)
+			if (m_pdata != nullptr)
 			{
-				delete[] m_data;
+				delete[] m_pdata;
 			}
 
-			m_data = nullptr;
+			m_pdata = nullptr;
 			m_length = 0;
 			m_capacity = 0;
 		}
@@ -158,13 +158,13 @@ namespace bbe
 
 		T* getRaw()
 		{
-			return reinterpret_cast<T*>(m_data);
+			return reinterpret_cast<T*>(m_pdata);
 		}
 
 		const T* getRaw() const
 		{
 			//UNTESTED
-			return reinterpret_cast<const T*>(m_data);
+			return reinterpret_cast<const T*>(m_pdata);
 		}
 
 		bool isEmpty() const
@@ -178,7 +178,7 @@ namespace bbe
 			{
 				debugBreak();
 			}
-			return m_data[index].value;
+			return m_pdata[index].m_value;
 		}
 
 		const T& operator[](size_t index) const
@@ -187,7 +187,7 @@ namespace bbe
 			{
 				debugBreak();
 			}
-			return m_data[index].value;
+			return m_pdata[index].m_value;
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
@@ -203,9 +203,9 @@ namespace bbe
 			m_length = newLength;
 			for (size_t i = newLength - 1; i >= m_length; i++)
 			{
-				if (indexThis != std::numeric_limits<size_t>::max() && other[indexOther] >= m_data[indexThis])
+				if (indexThis != std::numeric_limits<size_t>::max() && other[indexOther] >= m_pdata[indexThis])
 				{
-					new (bbe::addressOf(m_data[i])) T(other[indexOther]);
+					new (bbe::addressOf(m_pdata[i])) T(other[indexOther]);
 					indexOther--;
 					if (indexOther == std::numeric_limits<size_t>::max())
 					{
@@ -214,15 +214,15 @@ namespace bbe
 				}
 				else
 				{
-					new (bbe::addressOf(m_data[i])) T(std::move(m_data[indexThis]));
+					new (bbe::addressOf(m_pdata[i])) T(std::move(m_pdata[indexThis]));
 					indexThis--;
 				}
 			}
 			for (size_t i = m_length - 1; i >= 0; i++)
 			{
-				if (indexThis != std::numeric_limits<size_t>::max() && other[indexOther] >= m_data[indexThis])
+				if (indexThis != std::numeric_limits<size_t>::max() && other[indexOther] >= m_pdata[indexThis])
 				{
-					m_data[i] = other[indexOther];
+					m_pdata[i] = other[indexOther];
 					indexOther--;
 					if (indexOther == std::numeric_limits<size_t>::max())
 					{
@@ -231,7 +231,7 @@ namespace bbe
 				}
 				else
 				{
-					m_data[i] = std::move(m_data[indexThis]);
+					m_pdata[i] = std::move(m_pdata[indexThis]);
 					indexThis--;
 				}
 			}
@@ -245,7 +245,7 @@ namespace bbe
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			for (size_t i = 0; i < other.m_length; i++)
 			{
-				add(other.m_data[i].value);
+				add(other.m_pdata[i].m_value);
 			}
 			return *this;
 		}
@@ -265,15 +265,15 @@ namespace bbe
 			for (i = (int)m_length + amount - 1; i >= 0; i--)
 			{
 				int lowerIndex = i - amount;
-				if (lowerIndex >= 0 && val < m_data[lowerIndex].value)
+				if (lowerIndex >= 0 && val < m_pdata[lowerIndex].m_value)
 				{
 					if (i >= m_length)
 					{
-						new (bbe::addressOf(m_data[i])) T(std::move(m_data[lowerIndex].value));
+						new (bbe::addressOf(m_pdata[i])) T(std::move(m_pdata[lowerIndex].m_value));
 					}
 					else
 					{
-						m_data[i].value = std::move(m_data[lowerIndex].value);
+						m_pdata[i].m_value = std::move(m_pdata[lowerIndex].m_value);
 					}
 				}
 				else
@@ -286,11 +286,11 @@ namespace bbe
 			{
 				if (i >= m_length)
 				{
-					new (bbe::addressOf(m_data[i])) T(val);
+					new (bbe::addressOf(m_pdata[i])) T(val);
 				}
 				else
 				{
-					m_data[i].value = val;
+					m_pdata[i].m_value = val;
 				}
 			}
 			m_length += amount;
@@ -303,7 +303,7 @@ namespace bbe
 			growIfNeeded(amount);
 			for (size_t i = 0; i < amount; i++)
 			{
-				new (bbe::addressOf(m_data[m_length + i])) T(val);
+				new (bbe::addressOf(m_pdata[m_length + i])) T(val);
 			}
 			m_length += amount;
 		}
@@ -323,15 +323,15 @@ namespace bbe
 			for (i = (int)m_length + amount - 1; i >= 0; i--)
 			{
 				int lowerIndex = i - amount;
-				if (lowerIndex >= 0 && val < m_data[lowerIndex].value)
+				if (lowerIndex >= 0 && val < m_pdata[lowerIndex].m_value)
 				{
 					if (i >= m_length)
 					{
-						new (bbe::addressOf(m_data[i])) T(std::move(m_data[lowerIndex].value));
+						new (bbe::addressOf(m_pdata[i])) T(std::move(m_pdata[lowerIndex].m_value));
 					}
 					else
 					{
-						m_data[i].value = std::move(m_data[lowerIndex].value);
+						m_pdata[i].m_value = std::move(m_pdata[lowerIndex].m_value);
 					}
 				}
 				else
@@ -346,16 +346,16 @@ namespace bbe
 				{
 					if (amount == 1)
 					{
-						new (bbe::addressOf(m_data[m_length])) T(std::move(val));
+						new (bbe::addressOf(m_pdata[m_length])) T(std::move(val));
 					}
 					else
 					{
-						new (bbe::addressOf(m_data[i])) T(val);
+						new (bbe::addressOf(m_pdata[i])) T(val);
 					}
 				}
 				else
 				{
-					m_data[i].value = val;
+					m_pdata[i].m_value = val;
 				}
 			}
 			m_length += amount;
@@ -368,13 +368,13 @@ namespace bbe
 			growIfNeeded(amount);
 			if (amount == 1)
 			{
-				new (bbe::addressOf(m_data[m_length])) T(std::move(val));
+				new (bbe::addressOf(m_pdata[m_length])) T(std::move(val));
 			}
 			else
 			{
 				for (size_t i = 0; i < amount; i++)
 				{
-					new (bbe::addressOf(m_data[m_length + i])) T(val);
+					new (bbe::addressOf(m_pdata[m_length + i])) T(val);
 				}
 			}
 
@@ -399,7 +399,7 @@ namespace bbe
 			}
 			else if (m_length == 1)
 			{
-				if (m_data[0].value > val)
+				if (m_pdata[0].m_value > val)
 				{
 					return 0;
 				}
@@ -408,11 +408,11 @@ namespace bbe
 					return 1;
 				}
 			}
-			if (val < m_data[0].value)
+			if (val < m_pdata[0].m_value)
 			{
 				return 0;
 			}
-			if (val > m_data[m_length - 1].value)
+			if (val > m_pdata[m_length - 1].m_value)
 			{
 				return m_length;
 			}
@@ -425,13 +425,13 @@ namespace bbe
 			{
 				size_t searchSpace = bigIndex - smallIndex;
 				middleIndex = smallIndex + searchSpace / 2;
-				if (m_data[middleIndex].value == val)
+				if (m_pdata[middleIndex].m_value == val)
 				{
 					return middleIndex;
 				}
 				else
 				{
-					if (m_data[middleIndex].value > val)
+					if (m_pdata[middleIndex].m_value > val)
 					{
 						if (middleIndex == 0)
 						{
@@ -472,22 +472,22 @@ namespace bbe
 			}
 			else if (m_length == 1)
 			{
-				if (m_data[0].value > val)
+				if (m_pdata[0].m_value > val)
 				{
 					leftNeighbor = nullptr;
-					rightNeighbor = reinterpret_cast<T*>(m_data);
+					rightNeighbor = reinterpret_cast<T*>(m_pdata);
 					return;
 				}
 				else
 				{
-					leftNeighbor = reinterpret_cast<T*>(m_data);
+					leftNeighbor = reinterpret_cast<T*>(m_pdata);
 					rightNeighbor = nullptr;
 					return;
 				}
 			}
 
 			size_t index = getIndexOnAdd(val);
-			while (m_data[index].value == val && index < m_length - 1)
+			while (m_pdata[index].m_value == val && index < m_length - 1)
 			{
 				index++;
 			}
@@ -495,18 +495,18 @@ namespace bbe
 			if (index == 0)
 			{
 				leftNeighbor = nullptr;
-				rightNeighbor = reinterpret_cast<T*>(m_data);
+				rightNeighbor = reinterpret_cast<T*>(m_pdata);
 				return;
 			}
 			if (index >= m_length)
 			{
-				leftNeighbor = reinterpret_cast<T*>(m_data + m_length - 1);
+				leftNeighbor = reinterpret_cast<T*>(m_pdata + m_length - 1);
 				rightNeighbor = nullptr;
 				return;
 			}
 
-			leftNeighbor = reinterpret_cast<T*>(m_data + index - 1);
-			rightNeighbor = reinterpret_cast<T*>(m_data + index);
+			leftNeighbor = reinterpret_cast<T*>(m_pdata + index - 1);
+			rightNeighbor = reinterpret_cast<T*>(m_pdata + index);
 
 			return;
 		}
@@ -550,7 +550,7 @@ namespace bbe
 		{
 			for (size_t i = 0; i < amount; i++)
 			{
-				m_data[m_length - 1 - i].value.~T();
+				m_pdata[m_length - 1 - i].m_value.~T();
 			}
 			m_length -= amount;
 		}
@@ -559,7 +559,7 @@ namespace bbe
 		{
 			for (size_t i = 0; i < m_length; i++)
 			{
-				(&(m_data[i].value))->~T();
+				(&(m_pdata[i].m_value))->~T();
 			}
 			m_length = 0;
 		}
@@ -574,27 +574,27 @@ namespace bbe
 
 			if (m_length == 0)
 			{
-				if (m_data != nullptr)
+				if (m_pdata != nullptr)
 				{
-					delete[] m_data;
+					delete[] m_pdata;
 				}
-				m_data = nullptr;
+				m_pdata = nullptr;
 				return true;
 			}
 			INTERNAL::Unconstructed<T>* newList = new INTERNAL::Unconstructed<T>[m_length];
 			for (size_t i = 0; i < m_length; i++)
 			{
-				new (bbe::addressOf(newList[i])) T(std::move(m_data[i].value));
+				new (bbe::addressOf(newList[i])) T(std::move(m_pdata[i].m_value));
 			}
-			if (m_data != nullptr)
+			if (m_pdata != nullptr)
 			{
 				for (size_t i = 0; i < m_length; i++)
 				{
-					bbe::addressOf(m_data[i].value)->~T();
+					bbe::addressOf(m_pdata[i].m_value)->~T();
 				}
-				delete[] m_data;
+				delete[] m_pdata;
 			}
-			m_data = newList;
+			m_pdata = newList;
 			return true;
 		}
 
@@ -625,15 +625,15 @@ namespace bbe
 			INTERNAL::Unconstructed<T>* newList = new INTERNAL::Unconstructed<T>[newCapacity];
 			for (size_t i = 0; i < m_length; i++)
 			{
-				new (bbe::addressOf(newList[i])) T(std::move(m_data[i].value));
+				new (bbe::addressOf(newList[i])) T(std::move(m_pdata[i].m_value));
 			}
-			if (m_data != nullptr) {
+			if (m_pdata != nullptr) {
 				for (size_t i = 0; i < m_length; i++) {
-					bbe::addressOf(m_data[i].value)->~T();
+					bbe::addressOf(m_pdata[i].m_value)->~T();
 				}
-				delete[] m_data;
+				delete[] m_pdata;
 			}
-			m_data = newList;
+			m_pdata = newList;
 		}
 
 		size_t removeAll(const T& remover)
@@ -650,13 +650,13 @@ namespace bbe
 			size_t moveRange = 0;
 			for (size_t i = 0; i < m_length; i++)
 			{
-				if (predicate(m_data[i].value))
+				if (predicate(m_pdata[i].m_value))
 				{
 					moveRange++;
 				}
 				else if (moveRange != 0)
 				{
-					m_data[i - moveRange].value = std::move(m_data[i].value);
+					m_pdata[i - moveRange].m_value = std::move(m_pdata[i].m_value);
 				}
 			}
 			m_length -= moveRange;
@@ -668,14 +668,14 @@ namespace bbe
 				return false;
 			}
 
-			m_data[index].value.~T();
+			m_pdata[index].m_value.~T();
 			if (index != m_length - 1)
 			{
-				new (bbe::addressOf(m_data[index].value)) T(std::move(m_data[index + 1].value));
+				new (bbe::addressOf(m_pdata[index].m_value)) T(std::move(m_pdata[index + 1].m_value));
 
 				for (size_t i = index + 1; i < m_length - 1; i++)
 				{
-					m_data[i].value = std::move(m_data[i + 1].value);
+					m_pdata[i].m_value = std::move(m_pdata[i + 1].m_value);
 				}
 			}
 
@@ -699,7 +699,7 @@ namespace bbe
 			bool found = false;
 			for (size_t i = 0; i < m_length; i++)
 			{
-				if (predicate(m_data[i].value))
+				if (predicate(m_pdata[i].m_value))
 				{
 					index = i;
 					found = true;
@@ -725,7 +725,7 @@ namespace bbe
 			size_t amount = 0;
 			for (size_t i = 0; i < m_length; i++)
 			{
-				if (predicate(m_data[i].value))
+				if (predicate(m_pdata[i].m_value))
 				{
 					amount++;
 				}
@@ -746,7 +746,7 @@ namespace bbe
 		{
 			for (size_t i = 0; i < m_length; i++)
 			{
-				if (predicate(m_data[i].value))
+				if (predicate(m_pdata[i].m_value))
 				{
 					return true;
 				}
@@ -767,57 +767,57 @@ namespace bbe
 		T* begin()
 		{
 			//UNTESTED
-			return &(this->m_data[0].value);
+			return &(this->m_pdata[0].m_value);
 		}
 
 		const T* begin() const
 		{
 			//UNTESTED
-			return &(this->m_data[0].value);
+			return &(this->m_pdata[0].m_value);
 		}
 
 		T* end()
 		{
 			//UNTESTED
-			return &(this->m_data[getLength()].value);
+			return &(this->m_pdata[getLength()].m_value);
 		}
 
 		const T* end() const
 		{
 			//UNTESTED
-			return &(this->m_data[getLength()].value);
+			return &(this->m_pdata[getLength()].m_value);
 		}
 
 		void sort()
 		{
-			sortSTL(reinterpret_cast<T*>(m_data), reinterpret_cast<T*>(m_data + m_length));
+			sortSTL(reinterpret_cast<T*>(m_pdata), reinterpret_cast<T*>(m_pdata + m_length));
 		}
 
 		void sort(std::function<bool(const T&, const T&)> predicate)
 		{
-			sortSTL(reinterpret_cast<T*>(m_data), reinterpret_cast<T*>(m_data + m_length), predicate);
+			sortSTL(reinterpret_cast<T*>(m_pdata), reinterpret_cast<T*>(m_pdata + m_length), predicate);
 		}
 
 		T& first()
 		{
 			//UNTESTED
-			if (m_data == nullptr)
+			if (m_pdata == nullptr)
 			{
 				throw ContainerEmptyException();
 			}
 
-			return (m_data[0].value);
+			return (m_pdata[0].m_value);
 		}
 
 		T& last()
 		{
 			//UNTESTED
-			if (m_data == nullptr)
+			if (m_pdata == nullptr)
 			{
 				throw ContainerEmptyException();
 			}
 
-			return (m_data[m_length - 1].value);
+			return (m_pdata[m_length - 1].m_value);
 		}
 
 		T* find(const T& t)
@@ -833,9 +833,9 @@ namespace bbe
 		{
 			for (size_t i = 0; i < m_length; i++)
 			{
-				if (predicate(m_data[i].value))
+				if (predicate(m_pdata[i].m_value))
 				{
-					return reinterpret_cast<T*>(m_data + i);
+					return reinterpret_cast<T*>(m_pdata + i);
 				}
 			}
 			return nullptr;
@@ -854,9 +854,9 @@ namespace bbe
 		{
 			for (size_t i = m_length - 1; i >= 0 && i != std::numeric_limits<size_t>::max(); i--)
 			{
-				if (predicate(m_data[i].value))
+				if (predicate(m_pdata[i].m_value))
 				{
-					return reinterpret_cast<T*>(m_data + i);
+					return reinterpret_cast<T*>(m_pdata + i);
 				}
 			}
 			return nullptr;
@@ -871,7 +871,7 @@ namespace bbe
 
 			for (size_t i = 0; i < m_length; i++)
 			{
-				if (m_data[i].value != other.m_data[i].value)
+				if (m_pdata[i].m_value != other.m_pdata[i].m_value)
 				{
 					return false;
 				}

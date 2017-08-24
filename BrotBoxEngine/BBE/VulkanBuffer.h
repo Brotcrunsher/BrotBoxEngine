@@ -24,9 +24,9 @@ namespace bbe
 				VkBufferUsageFlags m_usage        = 0;
 
 			public:
-				bool m_wasCreated = false;
+				bool m_wasCreated  = false;
 				bool m_wasUploaded = false;
-				bool m_isMapped = false;
+				bool m_isMapped    = false;
 
 				void create(const VulkanDevice &vulkanDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE, uint32_t queueFamilyIndexCount = 0, const uint32_t* p_queueFamilyIndices = nullptr);
 				void create(VkDevice vulkanDevice, VkPhysicalDevice physicalDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE, uint32_t queueFamilyIndexCount = 0, const uint32_t* p_queueFamilyIndices = nullptr);

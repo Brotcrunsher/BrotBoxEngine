@@ -12,8 +12,8 @@ namespace bbe
 	class Game
 	{
 	private:
-		Window* m_window = nullptr;
-		bool m_started = false;
+		Window*  m_pwindow  = nullptr;
+		bool     m_started  = false;
 		GameTime m_gameTime;
 
 	public:
@@ -27,11 +27,11 @@ namespace bbe
 
 		void start(int windowWidth, int windowHeight, const char* title);
 
-		virtual void onStart() = 0;
-		virtual void update(float timeSinceLastFrame) = 0;
+		virtual void onStart()                            = 0;
+		virtual void update(float timeSinceLastFrame)     = 0;
 		virtual void draw3D(bbe::PrimitiveBrush3D &brush) = 0;
 		virtual void draw2D(bbe::PrimitiveBrush2D &brush) = 0;
-		virtual void onEnd() = 0;
+		virtual void onEnd()                              = 0;
 
 		bool isKeyDown(int keyCode);
 		bool isKeyUp(int keyCode);

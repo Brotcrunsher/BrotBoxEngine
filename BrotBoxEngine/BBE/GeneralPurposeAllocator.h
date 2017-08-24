@@ -15,7 +15,7 @@ namespace bbe
 		class GeneralPurposeAllocatorFreeChunk
 		{
 		public:
-			byte* m_addr;
+			byte  *m_addr;
 			size_t m_length;
 
 			GeneralPurposeAllocatorFreeChunk(byte* addr, size_t size)

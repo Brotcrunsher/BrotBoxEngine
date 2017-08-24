@@ -40,9 +40,9 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_screenWidth = initialWindowWidth;
 	m_screenHeight = initialWindowHeight;
 
-	m_window = window;
+	m_pwindow = window;
 	m_instance.init(appName, major, minor, patch);
-	m_surface.init(m_instance, m_window);
+	m_surface.init(m_instance, m_pwindow);
 	m_physicalDeviceContainer.init(m_instance, m_surface);
 	m_device.init(m_physicalDeviceContainer, m_surface);
 	m_swapchain.init(m_surface, m_device, initialWindowWidth, initialWindowHeight, nullptr);
@@ -281,7 +281,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::resize(int width, int height)
+void bbe::INTERNAL::vulkan::VulkanManager::resize(uint32_t width, uint32_t height)
 {
 	VkSurfaceCapabilitiesKHR surfaceCapabilities;
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_device.getPhysicalDevice(), m_surface.getSurface(), &surfaceCapabilities);

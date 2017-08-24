@@ -32,7 +32,7 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	double mX = 0;
 	double mY = 0;
 	glfwGetCursorPos(m_pwindow, &mX, &mY);
-	INTERNAL_mouse.INTERNAL_moveMouse(mX, mY);
+	INTERNAL_mouse.INTERNAL_moveMouse((float)mX, (float)mY);
 	windowsAliveCounter++;
 }
 
@@ -149,7 +149,7 @@ void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, i
 
 void bbe::INTERNAL_cursorPosCallback(GLFWwindow * window, double xpos, double ypos)
 {
-	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_moveMouse(xpos, ypos);
+	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_moveMouse((float)xpos, (float)ypos);
 }
 
 void bbe::INTERNAL_windowResizeCallback(GLFWwindow * window, int width, int height)

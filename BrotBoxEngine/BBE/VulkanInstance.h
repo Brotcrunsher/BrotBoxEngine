@@ -21,10 +21,10 @@ namespace bbe
 
 				void init(const char *appName, uint32_t major, uint32_t minor, uint32_t patch);
 
-				VulkanInstance(const VulkanInstance& other) = delete;
-				VulkanInstance(VulkanInstance&& other) = delete;
+				VulkanInstance(const VulkanInstance& other)            = delete;
+				VulkanInstance(VulkanInstance&& other)                 = delete;
 				VulkanInstance& operator=(const VulkanInstance& other) = delete;
-				VulkanInstance& operator=(VulkanInstance&& other) = delete;
+				VulkanInstance& operator=(VulkanInstance&& other)      = delete;
 
 
 

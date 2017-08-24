@@ -10,7 +10,7 @@ namespace bbe
 	class Array
 	{
 	private:
-		T m_data[LENGTH];
+		T m_pdata[LENGTH];
 	public:
 		Array()
 		{
@@ -23,7 +23,7 @@ namespace bbe
 			assert((il.end() - il.begin()) == LENGTH);
 			size_t i = 0;
 			for (auto iter = il.begin(); iter != il.end(); iter++) {
-				m_data[i] = *iter;
+				m_pdata[i] = *iter;
 				i++;
 			}
 		}
@@ -32,7 +32,7 @@ namespace bbe
 		{
 			for (size_t i = 0; i < LENGTH; i++)
 			{
-				m_data[i] = other[i];
+				m_pdata[i] = other[i];
 			}
 		}
 
@@ -40,7 +40,7 @@ namespace bbe
 		{
 			for (size_t i = 0; i < LENGTH; i++)
 			{
-				m_data[i] = std::move(other[i]);
+				m_pdata[i] = std::move(other[i]);
 			}
 		}
 
@@ -48,7 +48,7 @@ namespace bbe
 		{
 			for (size_t i = 0; i < LENGTH; i++)
 			{
-				m_data[i] = other[i];
+				m_pdata[i] = other[i];
 			}
 
 			return *this;
@@ -58,7 +58,7 @@ namespace bbe
 		{
 			for (size_t i = 0; i < LENGTH; i++)
 			{
-				m_data[i] = std::move(other[i]);
+				m_pdata[i] = std::move(other[i]);
 			}
 
 			return *this;
@@ -71,12 +71,12 @@ namespace bbe
 
 		T& operator[](size_t index)
 		{
-			return m_data[index];
+			return m_pdata[index];
 		}
 
 		const T& operator[](size_t index) const
 		{
-			return m_data[index];
+			return m_pdata[index];
 		}
 
 		constexpr size_t getLength() const
@@ -86,12 +86,12 @@ namespace bbe
 
 		T* getRaw()
 		{
-			return m_data;
+			return m_pdata;
 		}
 
 		const T* getRaw() const
 		{
-			return m_data;
+			return m_pdata;
 		}
 	};
 
@@ -106,7 +106,7 @@ namespace bbe
 
 		uint32_t _hash = 0;
 
-		for (int i = 0; i < length; i++)
+		for (size_t i = 0; i < length; i++)
 		{
 			_hash += hash(t[i]);
 		}

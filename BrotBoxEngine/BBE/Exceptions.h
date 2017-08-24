@@ -1,10 +1,12 @@
 #pragma once
 
 #include "../BBE/ExceptionHelper.h"
+#include "../BBE/String.h"
 
 namespace bbe
 {
 	CREATE_EXCEPTION(AlreadyCreatedException);
+	CREATE_EXCEPTION(AlreadyStartedException);
 	CREATE_EXCEPTION(AlreadyUploadedException);
 	CREATE_EXCEPTION(NotInitializedException);
 	CREATE_EXCEPTION(NoCorrectMemoryType);
@@ -12,7 +14,7 @@ namespace bbe
 
 	CREATE_EXCEPTION(BufferNoSourceException);
 	CREATE_EXCEPTION(BufferIsNotMappedException);
-	CREATE_EXCEPTION(BufferAlreadyMappedException);
+	CREATE_EXCEPTION(BufferMappedException);
 	CREATE_EXCEPTION(BufferAlreadyUploadedException);
 	CREATE_EXCEPTION(BufferTooSmallException);
 

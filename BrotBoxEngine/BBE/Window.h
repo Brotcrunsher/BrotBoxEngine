@@ -18,11 +18,11 @@ namespace bbe
 		friend class Game;
 	private:
 		static size_t windowsAliveCounter;
-
-		GLFWwindow *m_pwindow;
+		
+		GLFWwindow                     *m_pwindow;
 		INTERNAL::vulkan::VulkanManager m_vulkanManager;
-		int m_width;
-		int m_height;
+		int                             m_width;
+		int                             m_height;
 		
 	public:
 		Window(int width, int height, const char* title, uint32_t major = 0, uint32_t minor = 0, uint32_t patch = 0);

@@ -12,7 +12,7 @@ namespace bbe {
 	{
 	private:
 		std::random_device m_ranDev;
-		std::mt19937 m_mt;
+		std::mt19937       m_mt;
 		
 		template<typename T>
 		T randomInteger()

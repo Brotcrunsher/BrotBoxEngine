@@ -51,6 +51,7 @@ public:
 	virtual void onStart() override
 	{
 		light.setPosition(bbe::Vector3(-1, -1, 1));
+		light.setLightStrength(5);
 
 		bodyParts.add({ GRIDWIDTH / 2, GRIDHEIGHT / 2 });
 		bodyParts.add({ -1, -1 });
@@ -135,22 +136,22 @@ public:
 	{
 		if (dir == left || dir == right)
 		{
-			if (isKeyDown(bbe::KEY_W))
+			if (isKeyDown(bbe::Keys::W))
 			{
 				nextDir = up;
 			}
-			else if (isKeyDown(bbe::KEY_S))
+			else if (isKeyDown(bbe::Keys::S))
 			{
 				nextDir = down;
 			}
 		}
 		else if (dir == up || dir == down)
 		{
-			if (isKeyDown(bbe::KEY_A))
+			if (isKeyDown(bbe::Keys::A))
 			{
 				nextDir = left;
 			}
-			else if (isKeyDown(bbe::KEY_D))
+			else if (isKeyDown(bbe::Keys::D))
 			{
 				nextDir = right;
 			}
@@ -159,7 +160,7 @@ public:
 
 	void checkGameOver()
 	{
-		for (int i = 1; i < bodyParts.getLength(); i++)
+		for (size_t i = 1; i < bodyParts.getLength(); i++)
 		{
 			if (bodyParts[i] == bodyParts[0])
 			{
@@ -203,7 +204,7 @@ public:
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
 		brush.setCamera(bbe::Vector3(0, 0, 1), bbe::Vector3(0, 2, 0));
-		brush.setColor(0.5, 0.3, 0.2);
+		brush.setColor(0.5f, 0.3f, 0.2f);
 		brush.fillCube(cube);
 	}
 };

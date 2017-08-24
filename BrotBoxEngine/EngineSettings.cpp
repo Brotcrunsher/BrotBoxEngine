@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "BBE/EngineSettings.h"
+#include "BBE/Exceptions.h"
 
 static bool started = false;
 static int amountOfTransformContainers = 1;
@@ -12,6 +13,10 @@ void bbe::Settings::INTERNAL_start()
 
 void bbe::Settings::setAmountOfTransformContainers(int amount)
 {
+	if (started)
+	{
+		throw AlreadyStartedException();
+	}
 	amountOfTransformContainers = amount;
 }
 

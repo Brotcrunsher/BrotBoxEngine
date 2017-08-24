@@ -30,39 +30,39 @@ namespace bbe
 			public:
 				static VulkanManager* s_pinstance;
 			private:
-				VulkanInstance m_instance;
-				VulkanSurface m_surface;
+				VulkanInstance          m_instance;
+				VulkanSurface           m_surface;
 				PhysicalDeviceContainer m_physicalDeviceContainer;
-				VulkanDevice m_device;
-				VulkanSwapchain m_swapchain;
-				VulkanRenderPass m_renderPass;
+				VulkanDevice            m_device;
+				VulkanSwapchain         m_swapchain;
+				VulkanRenderPass        m_renderPass;
 
-				VulkanShader m_vertexShader2DPrimitive;
-				VulkanShader m_fragmentShader2DPrimitive;
+				VulkanShader   m_vertexShader2DPrimitive;
+				VulkanShader   m_fragmentShader2DPrimitive;
 				VulkanPipeline m_pipeline2DPrimitive;
 
-				VulkanShader m_vertexShader3DPrimitive;
-				VulkanShader m_fragmentShader3DPrimitive;
+				VulkanShader   m_vertexShader3DPrimitive;
+				VulkanShader   m_fragmentShader3DPrimitive;
 				VulkanPipeline m_pipeline3DPrimitive;
-				VulkanBuffer m_uboMatrixViewProjection;
-				VulkanBuffer m_uboMatrixModel;
+				VulkanBuffer   m_uboMatrixViewProjection;
+				VulkanBuffer   m_uboMatrixModel;
 
-				VulkanCommandPool m_commandPool;
-				VulkanSemaphore m_semaphoreImageAvailable;
-				VulkanSemaphore m_semaphoreRenderingDone;
-				VWDepthImage m_depthImage;
-				VkCommandBuffer m_currentFrameDrawCommandBuffer = VK_NULL_HANDLE;
-				VulkanFence m_presentFence;
+				VulkanCommandPool    m_commandPool;
+				VulkanSemaphore      m_semaphoreImageAvailable;
+				VulkanSemaphore      m_semaphoreRenderingDone;
+				VWDepthImage         m_depthImage;
+				VkCommandBuffer      m_currentFrameDrawCommandBuffer = VK_NULL_HANDLE;
+				VulkanFence          m_presentFence;
 				VulkanDescriptorPool m_descriptorPoolVertex;
-				GLFWwindow *m_window = nullptr;
-				PrimitiveBrush2D m_primitiveBrush2D;
-				PrimitiveBrush3D m_primitiveBrush3D;
+				GLFWwindow          *m_pwindow = nullptr;
+				PrimitiveBrush2D     m_primitiveBrush2D;
+				PrimitiveBrush3D     m_primitiveBrush3D;
 
 				uint32_t m_screenWidth;
 				uint32_t m_screenHeight;
 				uint32_t m_imageIndex;
 
-				Stack<VkBuffer> m_pendingDestructionBuffers;
+				Stack<VkBuffer>       m_pendingDestructionBuffers;
 				Stack<VkDeviceMemory> m_pendingDestructionMemory;
 				void destroyPendingBuffers();
 
@@ -87,7 +87,7 @@ namespace bbe
 
 				void addPendingDestructionBuffer(VkBuffer buffer, VkDeviceMemory memory);
 				void createPipelines();
-				void resize(int width, int height);
+				void resize(uint32_t width, uint32_t height);
 				void recreateSwapchain();
 			};
 		}

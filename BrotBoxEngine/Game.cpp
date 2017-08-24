@@ -12,9 +12,9 @@ bbe::Game::Game()
 
 bbe::Game::~Game()
 {
-	if (m_window != nullptr)
+	if (m_pwindow != nullptr)
 	{
-		delete m_window;
+		delete m_pwindow;
 	}
 }
 
@@ -25,25 +25,25 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 		throw AlreadyCreatedException();
 	}
 
-	m_window = new Window(windowWidth, windowHeight, title);
+	m_pwindow = new Window(windowWidth, windowHeight, title);
 
 	m_gameTime.reset();
 	onStart();
 
-	while (m_window->keepAlive())
+	while (m_pwindow->keepAlive())
 	{
-		m_window->INTERNAL_keyboard.update();
-		m_window->INTERNAL_mouse.update();
+		m_pwindow->INTERNAL_keyboard.update();
+		m_pwindow->INTERNAL_mouse.update();
 		update(m_gameTime.tick());
 
-		m_window->preDraw();
-		PrimitiveBrush3D brush3D = *(m_window->getBrush3D());
-		m_window->preDraw3D();
+		m_pwindow->preDraw();
+		PrimitiveBrush3D brush3D = *(m_pwindow->getBrush3D());
+		m_pwindow->preDraw3D();
 		draw3D(brush3D);
-		PrimitiveBrush2D brush2D = *(m_window->getBrush2D());
-		m_window->preDraw2D();
+		PrimitiveBrush2D brush2D = *(m_pwindow->getBrush2D());
+		m_pwindow->preDraw2D();
 		draw2D(brush2D);
-		m_window->postDraw();
+		m_pwindow->postDraw();
 	}
 
 	onEnd();
@@ -51,50 +51,50 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 
 bool bbe::Game::isKeyDown(int keyCode)
 {
-	return m_window->INTERNAL_keyboard.isKeyDown(keyCode);
+	return m_pwindow->INTERNAL_keyboard.isKeyDown(keyCode);
 }
 
 bool bbe::Game::isKeyUp(int keyCode)
 {
-	return m_window->INTERNAL_keyboard.isKeyUp(keyCode);
+	return m_pwindow->INTERNAL_keyboard.isKeyUp(keyCode);
 }
 
 bool bbe::Game::wasKeyDownLastFrame(int keyCode)
 {
-	return m_window->INTERNAL_keyboard.wasKeyDownLastFrame(keyCode);
+	return m_pwindow->INTERNAL_keyboard.wasKeyDownLastFrame(keyCode);
 }
 
 bool bbe::Game::wasKeyUpLastFrame(int keyCode)
 {
-	return m_window->INTERNAL_keyboard.wasKeyUpLastFrame(keyCode);
+	return m_pwindow->INTERNAL_keyboard.wasKeyUpLastFrame(keyCode);
 }
 
 bool bbe::Game::isKeyPressed(int keyCode)
 {
-	return m_window->INTERNAL_keyboard.isKeyPressed(keyCode);
+	return m_pwindow->INTERNAL_keyboard.isKeyPressed(keyCode);
 }
 
 float bbe::Game::getMouseX()
 {
-	return (float)(m_window->INTERNAL_mouse.getMouseX());
+	return (float)(m_pwindow->INTERNAL_mouse.getMouseX());
 }
 
 float bbe::Game::getMouseY()
 {
-	return (float)(m_window->INTERNAL_mouse.getMouseY());
+	return (float)(m_pwindow->INTERNAL_mouse.getMouseY());
 }
 
 float bbe::Game::getMouseXDelta()
 {
-	return (float)(m_window->INTERNAL_mouse.getMouseXDelta());
+	return (float)(m_pwindow->INTERNAL_mouse.getMouseXDelta());
 }
 
 float bbe::Game::getMouseYDelta()
 {
-	return (float)(m_window->INTERNAL_mouse.getMouseYDelta());
+	return (float)(m_pwindow->INTERNAL_mouse.getMouseYDelta());
 }
 
 void bbe::Game::setCursorMode(bbe::CursorMode cm)
 {
-	m_window->setCursorMode(cm);
+	m_pwindow->setCursorMode(cm);
 }

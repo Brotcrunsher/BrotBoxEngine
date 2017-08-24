@@ -20,7 +20,7 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevi
 	m_physicalDevice = device.getPhysicalDevice();
 	m_screenWidth = width;
 	m_screenHeight = height;
-	m_descriptorPool = descriptorPool;
+	m_pdescriptorPool = descriptorPool;
 	m_lastDraw = NONE;
 
 	setColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -49,7 +49,7 @@ void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 	int index = cube.m_transform.getIndex();
 	int containerIndex = index / 1024;
 	int localOffset = index % 1024;
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layout, 1, 1, m_descriptorPool->getPSet(containerIndex + 2), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layout, 1, 1, m_pdescriptorPool->getPSet(containerIndex + 2), 0, nullptr);
 
 	if (cube.m_bufferDirty)
 	{
@@ -87,7 +87,7 @@ void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 	int index = sphere.m_transform.getIndex();
 	int containerIndex = index / 1024;
 	int localOffset = index % 1024;
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layout, 1, 1, m_descriptorPool->getPSet(containerIndex + 2), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layout, 1, 1, m_pdescriptorPool->getPSet(containerIndex + 2), 0, nullptr);
 
 	if (sphere.m_bufferDirty)
 	{
@@ -123,7 +123,7 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 	int index = terrain.m_transform.getIndex();
 	int containerIndex = index / 1024;
 	int localOffset = index % 1024;
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layout, 1, 1, m_descriptorPool->getPSet(containerIndex + 2), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layout, 1, 1, m_pdescriptorPool->getPSet(containerIndex + 2), 0, nullptr);
 
 	if (terrain.m_bufferDirty)
 	{

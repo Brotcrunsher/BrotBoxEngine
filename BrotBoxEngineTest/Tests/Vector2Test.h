@@ -98,7 +98,7 @@ namespace bbe
 
 			{
 				Vector2 vec1(1, 2);
-				Vector2 vec2(1.0001, 2.000002);
+				Vector2 vec2(1.0001f, 2.000002f);
 				Vector2 vec3(3, 5);
 				Vector2 vec4(-1, -2);
 
@@ -191,7 +191,7 @@ namespace bbe
 			{
 				for (int i = 0; i < 1000; i++)
 				{
-					Vector2 vec = Vector2::createVector2OnUnitCircle(i);
+					Vector2 vec = Vector2::createVector2OnUnitCircle((float)i);
 					assertEquals(vec.isUnit(), true);
 				}
 

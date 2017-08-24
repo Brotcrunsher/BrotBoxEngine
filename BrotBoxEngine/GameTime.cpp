@@ -25,7 +25,7 @@ float bbe::GameTime::timeSinceStartSeconds()
 
 float bbe::GameTime::timeSinceStartMilliseconds()
 {
-	float timeSinceLastTick = std::chrono::duration_cast<std::chrono::milliseconds>(m_lastTickTimestamp - m_gameStartTimestamp).count();
+	float timeSinceLastTick = (float)std::chrono::duration_cast<std::chrono::milliseconds>(m_lastTickTimestamp - m_gameStartTimestamp).count();
 
 	return timeSinceLastTick;
 }

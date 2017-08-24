@@ -36,6 +36,7 @@ void bbe::INTERNAL::vulkan::VulkanShader::destroy()
 	{
 		vkDestroyShaderModule(m_device, m_shaderModule, nullptr);
 		m_shaderModule = VK_NULL_HANDLE;
+		m_device       = VK_NULL_HANDLE;
 	}
 }
 

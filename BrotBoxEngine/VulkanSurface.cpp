@@ -11,7 +11,7 @@ void bbe::INTERNAL::vulkan::VulkanSurface::destroy()
 {
 	if (m_surface != VK_NULL_HANDLE)
 	{
-		vkDestroySurfaceKHR(m_instance->getInstance(), m_surface, nullptr);
+		vkDestroySurfaceKHR(m_pinstance->getInstance(), m_surface, nullptr);
 		m_surface = VK_NULL_HANDLE;
 	}
 
@@ -19,7 +19,7 @@ void bbe::INTERNAL::vulkan::VulkanSurface::destroy()
 
 void bbe::INTERNAL::vulkan::VulkanSurface::init(VulkanInstance & instance, GLFWwindow * window)
 {
-	m_instance = &instance;
+	m_pinstance = &instance;
 	VkResult result = glfwCreateWindowSurface(instance.getInstance(), window, nullptr, &m_surface);
 	ASSERT_VULKAN(result);
 }

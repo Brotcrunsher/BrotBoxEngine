@@ -64,7 +64,7 @@ void bbe::ValueNoise2D::create(int width, int height)
 	for (int octave = 0; octave < m_octaves; octave++)
 	{
 		DynamicArray<float> nodes((frequencyX + 2) * (frequencyY + 3));
-		for (int i = 0; i < nodes.getLength(); i++)
+		for (size_t i = 0; i < nodes.getLength(); i++)
 		{
 			nodes[i] = rand.randomFloat() * alpha;
 		}

@@ -77,7 +77,7 @@ void createIcoSphereMesh(bbe::List<uint32_t> &indices, bbe::List<bbe::VertexWith
 	{
 		bbe::List<uint32_t> newIndices;
 
-		for (int k = 0; k < indices.getLength(); k += 3)
+		for (size_t k = 0; k < indices.getLength(); k += 3)
 		{
 			int a = getHalfPointIndex(simpleVertices, simpleVertices[indices[k + 0]], simpleVertices[indices[k + 1]]);
 			int b = getHalfPointIndex(simpleVertices, simpleVertices[indices[k + 1]], simpleVertices[indices[k + 2]]);
@@ -106,7 +106,7 @@ void createIcoSphereMesh(bbe::List<uint32_t> &indices, bbe::List<bbe::VertexWith
 		indices = std::move(newIndices);
 	}
 
-	for (int i = 0; i < simpleVertices.getLength(); i++)
+	for (size_t i = 0; i < simpleVertices.getLength(); i++)
 	{
 		vertices.add(bbe::VertexWithNormal(simpleVertices[i], simpleVertices[i]));
 	}

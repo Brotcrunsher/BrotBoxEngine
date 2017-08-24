@@ -54,7 +54,7 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::upload(const VulkanCommandPool &comman
 	}
 	if (m_isMapped)
 	{
-		throw BufferAlreadyMappedException();
+		throw BufferMappedException();
 	}
 
 	VkBuffer uploadedBuffer = VK_NULL_HANDLE;
@@ -79,7 +79,7 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::destroy()
 	{
 		if (m_isMapped)
 		{
-			throw BufferAlreadyMappedException();
+			throw BufferMappedException();
 		}
 		vkDestroyBuffer(m_device, m_buffer, nullptr);
 		vkFreeMemory(m_device, m_memory, nullptr);
@@ -112,7 +112,7 @@ void * bbe::INTERNAL::vulkan::VulkanBuffer::map()
 	}
 	if (m_isMapped)
 	{
-		throw BufferAlreadyMappedException();
+		throw BufferMappedException();
 	}
 
 	void* data;

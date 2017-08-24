@@ -129,25 +129,25 @@ namespace bbe
 			assertEquals(Math::isInRangeStrict(3.5, 1.0, 2.0), false);
 			assertEquals(Math::isInRangeStrict(4.5, 1.0, 2.0), false);
 
-			assertEquals(Math::isInRange01(-0.1), false);
-			assertEquals(Math::isInRange01(0.0), true);
-			assertEquals(Math::isInRange01(0.5), true);
-			assertEquals(Math::isInRange01(1.0), true);
-			assertEquals(Math::isInRange01(1.5), false);
-			assertEquals(Math::isInRange01(2.0), false);
-			assertEquals(Math::isInRange01(2.5), false);
-			assertEquals(Math::isInRange01(3.5), false);
-			assertEquals(Math::isInRange01(4.5), false);
+			assertEquals(Math::isInRange01(-0.1f), false);
+			assertEquals(Math::isInRange01(0.0f), true);
+			assertEquals(Math::isInRange01(0.5f), true);
+			assertEquals(Math::isInRange01(1.0f), true);
+			assertEquals(Math::isInRange01(1.5f), false);
+			assertEquals(Math::isInRange01(2.0f), false);
+			assertEquals(Math::isInRange01(2.5f), false);
+			assertEquals(Math::isInRange01(3.5f), false);
+			assertEquals(Math::isInRange01(4.5f), false);
 
-			assertEquals(Math::isInRange01Strict(-0.1), false);
-			assertEquals(Math::isInRange01Strict(0.0), false);
-			assertEquals(Math::isInRange01Strict(0.5), true);
-			assertEquals(Math::isInRange01Strict(1.0), false);
-			assertEquals(Math::isInRange01Strict(1.5), false);
-			assertEquals(Math::isInRange01Strict(2.0), false);
-			assertEquals(Math::isInRange01Strict(2.5), false);
-			assertEquals(Math::isInRange01Strict(3.5), false);
-			assertEquals(Math::isInRange01Strict(4.5), false);
+			assertEquals(Math::isInRange01Strict(-0.1f), false);
+			assertEquals(Math::isInRange01Strict(0.0f), false);
+			assertEquals(Math::isInRange01Strict(0.5f), true);
+			assertEquals(Math::isInRange01Strict(1.0f), false);
+			assertEquals(Math::isInRange01Strict(1.5f), false);
+			assertEquals(Math::isInRange01Strict(2.0f), false);
+			assertEquals(Math::isInRange01Strict(2.5f), false);
+			assertEquals(Math::isInRange01Strict(3.5f), false);
+			assertEquals(Math::isInRange01Strict(4.5f), false);
 
 			assertEqualsFloat(Math::abs(1.0), 1.0);
 			assertEqualsFloat(Math::abs(0.0), 0.0);
@@ -173,11 +173,11 @@ namespace bbe
 			assertEqualsFloat(Math::minAbsKeepSign(-3.0, 2.0), 2.0);
 			assertEqualsFloat(Math::minAbsKeepSign(-2.0, 3.0), -2.0);
 
-			assertEquals(Math::floatEquals(3, 3.0001, 0.1), true);
-			assertEquals(Math::floatEquals(3, 3.1001, 0.1), false);
+			assertEquals(Math::floatEquals(3, 3.0001f, 0.1f), true);
+			assertEquals(Math::floatEquals(3, 3.1001f, 0.1f), false);
 
-			assertEquals(Math::floatEquals(3.0001, 3, 0.1), true);
-			assertEquals(Math::floatEquals(3.1001, 3, 0.1), false);
+			assertEquals(Math::floatEquals(3.0001f, 3, 0.1f), true);
+			assertEquals(Math::floatEquals(3.1001f, 3, 0.1f), false);
 
 			assertEquals(Math::isNaN(0), false);
 			assertEquals(Math::isNaN(10000), false);

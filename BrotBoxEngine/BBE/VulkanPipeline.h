@@ -15,34 +15,32 @@ namespace bbe
 			class VulkanPipeline
 			{
 			private:
-				VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-				VkPipeline pipeline             = VK_NULL_HANDLE;
-				VkDevice device                 = VK_NULL_HANDLE;
-				VkShaderModule geometryShader   = VK_NULL_HANDLE;
+				VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
+				VkPipeline       m_pipeline       = VK_NULL_HANDLE;
+				VkDevice         m_device         = VK_NULL_HANDLE;
+				VkShaderModule   m_geometryShader = VK_NULL_HANDLE;
 
-				VkPipelineShaderStageCreateInfo shaderStageCreateInfoVert;
-				VkPipelineShaderStageCreateInfo shaderStageCreateInfoFrag;
-				VkPipelineInputAssemblyStateCreateInfo inputAssemblyCreateInfo;
-				VkViewport viewport;
-				VkRect2D scissor;
-				VkPipelineViewportStateCreateInfo viewportStateCreateInfo;
-				VkPipelineRasterizationStateCreateInfo rasterizationCreateInfo;
-				VkPipelineMultisampleStateCreateInfo multisampleCreateInfo;
-				VkPipelineColorBlendAttachmentState colorBlendAttachment;
-				//VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo;
-				VkPipelineColorBlendStateCreateInfo colorBlendCreateInfo;
-				bbe::List<VkDynamicState> dynamicStates;
-				VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo;
-				bbe::List<VkPushConstantRange> pushConstantRanges;
+				VkPipelineShaderStageCreateInfo        m_shaderStageCreateInfoVert;
+				VkPipelineShaderStageCreateInfo        m_shaderStageCreateInfoFrag;
+				VkPipelineInputAssemblyStateCreateInfo m_inputAssemblyCreateInfo;
+				VkViewport                             m_viewport;
+				VkRect2D                               m_scissor;
+				VkPipelineViewportStateCreateInfo      m_viewportStateCreateInfo;
+				VkPipelineRasterizationStateCreateInfo m_rasterizationCreateInfo;
+				VkPipelineMultisampleStateCreateInfo   m_multisampleCreateInfo;
+				VkPipelineColorBlendAttachmentState    m_colorBlendAttachment;
+				VkPipelineColorBlendStateCreateInfo    m_colorBlendCreateInfo;
+				bbe::List<VkDynamicState>              m_dynamicStates;
+				VkPipelineDynamicStateCreateInfo       m_dynamicStateCreateInfo;
+				bbe::List<VkPushConstantRange>         m_pushConstantRanges;
 
-				bbe::List<VkVertexInputBindingDescription> vertexBindingDescription;
-				bbe::List<VkVertexInputAttributeDescription> vertexAttributeDescriptions;
-				bbe::List<VkDescriptorSetLayout> descriptorSetLayouts;
+				bbe::List<VkVertexInputBindingDescription>   m_vertexBindingDescription;
+				bbe::List<VkVertexInputAttributeDescription> m_vertexAttributeDescriptions;
+				bbe::List<VkDescriptorSetLayout>             m_descriptorSetLayouts;
 
-				bool wasInitialized = false;
-				bool wasCreated = false;
-
-				bool useDepthBuffer = false;
+				bool m_wasInitialized = false;
+				bool m_wasCreated     = false;
+				bool m_useDepthBuffer = false;
 
 			public:
 				VulkanPipeline();

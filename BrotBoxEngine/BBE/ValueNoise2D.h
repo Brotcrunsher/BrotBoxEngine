@@ -6,12 +6,10 @@ namespace bbe
 	class ValueNoise2D
 	{
 	private:
-		float* m_pdata = nullptr;
-		int m_width = 0;
-		int m_height = 0;
-
-
-		bool m_wasCreated = false;
+		float *m_pdata      = nullptr;
+		int    m_width      = 0;
+		int    m_height     = 0;
+		bool   m_wasCreated = false;
 
 		void standardize();
 

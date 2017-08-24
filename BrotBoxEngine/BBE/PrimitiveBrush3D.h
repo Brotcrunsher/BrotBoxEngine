@@ -31,13 +31,13 @@ namespace bbe
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
 	private:
-		VkCommandBuffer m_currentCommandBuffer = VK_NULL_HANDLE;
-		VkDevice m_device                      = VK_NULL_HANDLE;
-		VkPhysicalDevice m_physicalDevice      = VK_NULL_HANDLE;
-		VkPipelineLayout m_layout              = VK_NULL_HANDLE;
-		INTERNAL::vulkan::VulkanDescriptorPool *m_descriptorPool = nullptr;
-		int m_screenWidth;
-		int m_screenHeight;
+		VkCommandBuffer                         m_currentCommandBuffer = VK_NULL_HANDLE;
+		VkDevice                                m_device               = VK_NULL_HANDLE;
+		VkPhysicalDevice                        m_physicalDevice       = VK_NULL_HANDLE;
+		VkPipelineLayout                        m_layout               = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanDescriptorPool *m_pdescriptorPool      = nullptr;
+		int                                     m_screenWidth;
+		int                                     m_screenHeight;
 
 		DrawRecord m_lastDraw = NONE;
 

@@ -18,12 +18,12 @@ namespace bbe
 	private:
 		union
 		{
-			wchar_t *m_data;
+			wchar_t *m_pdata;
 			wchar_t m_ssoData[SSOSIZE];
 		};
-		bool m_usesSSO = true;
-		size_t m_length = 0;
-		size_t m_capacity;
+		bool   m_usesSSO  = true;
+		size_t m_length   = 0;
+		size_t m_capacity = 0;
 
 		void growIfNeeded(size_t newSize) {
 			if (getCapacity() < newSize) {
@@ -33,21 +33,21 @@ namespace bbe
 				wmemcpy(newData, getRaw(), getCapacity());
 
 				if (!m_usesSSO) {
-					delete[] m_data;
+					delete[] m_pdata;
 				}
 				else {
 					m_usesSSO = false;
 				}
 				
 				m_capacity = newCapa;
-				m_data = newData;
+				m_pdata = newData;
 			}
 		}
 
 		void initializeFromWCharArr(const wchar_t *data)
 		{
 			//PO
-			m_data = nullptr;
+			m_pdata = nullptr;
 			m_capacity = 0;
 
 			if (m_length == 0)
@@ -63,8 +63,8 @@ namespace bbe
 			}
 			else
 			{
-				m_data = new wchar_t[m_length + 1];
-				wmemcpy(m_data, data, m_length + 1);
+				m_pdata = new wchar_t[m_length + 1];
+				wmemcpy(m_pdata, data, m_length + 1);
 				m_usesSSO = false;
 				m_capacity = m_length + 1;
 			}
@@ -73,7 +73,7 @@ namespace bbe
 		void initializeFromCharArr(const char *data)
 		{
 			//PO
-			m_data = nullptr;
+			m_pdata = nullptr;
 			m_capacity = 0;
 
 			if (m_length == 0)
@@ -89,8 +89,8 @@ namespace bbe
 			}
 			else
 			{
-				m_data = new wchar_t[m_length + 1];
-				mbstowcs_s(0, m_data, m_length + 1, data, m_length);
+				m_pdata = new wchar_t[m_length + 1];
+				mbstowcs_s(0, m_pdata, m_length + 1, data, m_length);
 				m_usesSSO = false;
 				m_capacity = m_length + 1;
 			}
@@ -206,7 +206,7 @@ namespace bbe
 			}
 			else
 			{
-				initializeFromWCharArr(other.m_data);
+				initializeFromWCharArr(other.m_pdata);
 			}
 		}
 
@@ -221,18 +221,18 @@ namespace bbe
 			}
 			else
 			{
-				m_data = other.m_data;
+				m_pdata = other.m_pdata;
 				m_capacity = other.m_capacity;
-				other.m_data = nullptr;
+				other.m_pdata = nullptr;
 			}
 			other.m_length = 0;
 		}
 
 		StringBase& operator=(const StringBase<T>&  other) //Copy Assignment
 		{ 
-			if (!m_usesSSO && m_data != nullptr)
+			if (!m_usesSSO && m_pdata != nullptr)
 			{
-				delete[] m_data;
+				delete[] m_pdata;
 			}
 
 			m_length = other.getLength();
@@ -242,16 +242,16 @@ namespace bbe
 			}
 			else
 			{
-				initializeFromWCharArr(other.m_data);
+				initializeFromWCharArr(other.m_pdata);
 			}
 			return *this;
 		}
 
 		StringBase& operator=(StringBase<T>&& other)//Move Assignment
 		{ 
-			if (!m_usesSSO && m_data != nullptr)
+			if (!m_usesSSO && m_pdata != nullptr)
 			{
-				delete[] m_data;
+				delete[] m_pdata;
 			}
 			
 			m_length = other.m_length;
@@ -265,20 +265,20 @@ namespace bbe
 			else
 			{
 				m_capacity = other.m_capacity;
-				m_data = other.m_data;
+				m_pdata = other.m_pdata;
 			}
 			
-			other.m_data = nullptr;
+			other.m_pdata = nullptr;
 			other.m_length = 0;
 			return *this;
 		}
 
 		~StringBase()
 		{
-			if (!m_usesSSO && m_data != nullptr)
+			if (!m_usesSSO && m_pdata != nullptr)
 			{
-				delete[] m_data;
-				m_data = nullptr;
+				delete[] m_pdata;
+				m_pdata = nullptr;
 			}
 		}
 
@@ -401,7 +401,7 @@ namespace bbe
 				newData[totalLength] = 0;
 
 				retVal.m_usesSSO = false;
-				retVal.m_data = newData;
+				retVal.m_pdata = newData;
 			}
 			return retVal;
 		}
@@ -549,7 +549,7 @@ namespace bbe
 			else {
 				growIfNeeded(totalLength + 1);
 				memcpy(getRaw() + oldLength, other.getRaw(), sizeof(wchar_t) * other.m_length);
-				m_data[totalLength] = 0;
+				m_pdata[totalLength] = 0;
 			}
 			return *this;
 		}
@@ -706,9 +706,9 @@ namespace bbe
 				StringBase<T> currentString;
 				size_t currentStringLength = currentFinding - previousFinding;
 				currentString.m_usesSSO = false; //TODO make this better! current string could use SSO!
-				currentString.m_data = new wchar_t[currentStringLength + 1];
-				memcpy(currentString.m_data, previousFinding, currentStringLength * sizeof(wchar_t));
-				currentString.m_data[currentStringLength] = 0;
+				currentString.m_pdata = new wchar_t[currentStringLength + 1];
+				memcpy(currentString.m_pdata, previousFinding, currentStringLength * sizeof(wchar_t));
+				currentString.m_pdata[currentStringLength] = 0;
 				currentString.m_length = currentStringLength;
 
 				retVal[i] = currentString;
@@ -717,11 +717,11 @@ namespace bbe
 			}
 
 			StringBase<T> currentString;
-			size_t currentStringLength = m_data + m_length - previousFinding;
+			size_t currentStringLength = m_pdata + m_length - previousFinding;
 			currentString.m_usesSSO = false; //TODO make this better! current string could use SSO!
-			currentString.m_data = new wchar_t[currentStringLength + 1];
-			memcpy(currentString.m_data, previousFinding, currentStringLength * sizeof(wchar_t));
-			currentString.m_data[currentStringLength] = 0;
+			currentString.m_pdata = new wchar_t[currentStringLength + 1];
+			memcpy(currentString.m_pdata, previousFinding, currentStringLength * sizeof(wchar_t));
+			currentString.m_pdata[currentStringLength] = 0;
 			currentString.m_length = currentStringLength;
 			retVal[retVal.getLength() - 1] = currentString;
 
@@ -845,7 +845,7 @@ namespace bbe
 			}
 			else
 			{
-				return m_data;
+				return m_pdata;
 			}
 		}
 
@@ -857,7 +857,7 @@ namespace bbe
 			}
 			else
 			{
-				return m_data;
+				return m_pdata;
 			}
 		}
 

@@ -13,55 +13,54 @@ namespace bbe {
 		class Person
 		{
 		public:
-			static int nextPersonIndex;
-
-			static int64_t amountOfPersons;
-			static int64_t amountOfDefaulConstructorCalls;
-			static int64_t amountOfCopyConstructorCalls;
-			static int64_t amountOfMoveConstructorCalls;
-			static int64_t amountOfCopyAssignmentCalls;
-			static int64_t amountOfMoveAssignmentCalls;
-			static int64_t amountOfParameterConstructorCalls;
-			static int64_t amountOfDestructorCalls;
+			static int     s_nextPersonIndex;
+			static int64_t s_amountOfPersons;
+			static int64_t s_amountOfDefaulConstructorCalls;
+			static int64_t s_amountOfCopyConstructorCalls;
+			static int64_t s_amountOfMoveConstructorCalls;
+			static int64_t s_amountOfCopyAssignmentCalls;
+			static int64_t s_amountOfMoveAssignmentCalls;
+			static int64_t s_amountOfParameterConstructorCalls;
+			static int64_t s_amountOfDestructorCalls;
 			bbe::String name;
 			bbe::String adress;
 			int age;
 			bool destructed = false;
-			int personIndex = nextPersonIndex++;
+			int personIndex = s_nextPersonIndex++;
 
 			static void resetTestStatistics() {
-				amountOfPersons = 0;
-				amountOfDefaulConstructorCalls = 0;
-				amountOfCopyConstructorCalls = 0;
-				amountOfMoveConstructorCalls = 0;
-				amountOfCopyAssignmentCalls = 0;
-				amountOfMoveAssignmentCalls = 0;
-				amountOfParameterConstructorCalls = 0;
-				amountOfDestructorCalls = 0;
+				s_amountOfPersons = 0;
+				s_amountOfDefaulConstructorCalls = 0;
+				s_amountOfCopyConstructorCalls = 0;
+				s_amountOfMoveConstructorCalls = 0;
+				s_amountOfCopyAssignmentCalls = 0;
+				s_amountOfMoveAssignmentCalls = 0;
+				s_amountOfParameterConstructorCalls = 0;
+				s_amountOfDestructorCalls = 0;
 			}
 
 			Person()
 				: age(0)
 			{
 				//std::cout << "Constructor called!" << std::endl;
-				Person::amountOfPersons++;
-				Person::amountOfDefaulConstructorCalls++;
+				Person::s_amountOfPersons++;
+				Person::s_amountOfDefaulConstructorCalls++;
 			}
 
 			Person(const Person& other) {
 				name = other.name;
 				adress = other.adress;
 				age = other.age;
-				Person::amountOfPersons++;
-				Person::amountOfCopyConstructorCalls++;
+				Person::s_amountOfPersons++;
+				Person::s_amountOfCopyConstructorCalls++;
 			}
 
 			Person(Person&& other) {
 				name = other.name;
 				adress = other.adress;
 				age = other.age;
-				Person::amountOfPersons++;
-				Person::amountOfMoveConstructorCalls++;
+				Person::s_amountOfPersons++;
+				Person::s_amountOfMoveConstructorCalls++;
 			}
 
 			Person& operator=(const Person& other) {
@@ -72,7 +71,7 @@ namespace bbe {
 				name = other.name;
 				adress = other.adress;
 				age = other.age;
-				Person::amountOfCopyAssignmentCalls++;
+				Person::s_amountOfCopyAssignmentCalls++;
 				return *this;
 			}
 
@@ -85,22 +84,22 @@ namespace bbe {
 				name = std::move(other.name);
 				adress = std::move(other.adress);
 				age = other.age;
-				Person::amountOfMoveAssignmentCalls++;
+				Person::s_amountOfMoveAssignmentCalls++;
 				return *this;
 			}
 
 			explicit Person(bbe::String name, bbe::String adress, int age) :
 				name(name), adress(adress), age(age) {
 				//std::cout << "Constructor with parameters called!" << std::endl;
-				amountOfPersons++;
-				Person::amountOfParameterConstructorCalls++;
+				s_amountOfPersons++;
+				Person::s_amountOfParameterConstructorCalls++;
 			}
 
 			explicit Person(ForceException fe)
 				:name("Will throw Name"), adress("Will throw street"), age(-1)
 			{
-				amountOfPersons++;
-				amountOfPersons--;
+				s_amountOfPersons++;
+				s_amountOfPersons--;
 				throw 1;
 			}
 
@@ -110,8 +109,8 @@ namespace bbe {
 					debugBreak();	//Was already destructed!
 				}
 				destructed = true;
-				amountOfPersons--;
-				Person::amountOfDestructorCalls++;
+				s_amountOfPersons--;
+				Person::s_amountOfDestructorCalls++;
 			}
 
 			void print() {
@@ -145,20 +144,20 @@ namespace bbe {
 			}
 
 			static void checkIfAllPersonsWereDestroyed() {
-				if (amountOfPersons != 0) {
+				if (s_amountOfPersons != 0) {
 					debugBreak();
 				}
 			}
 		};
-		int Person::nextPersonIndex = 0;
-		int64_t Person::amountOfPersons = 0;
-		int64_t Person::amountOfDefaulConstructorCalls = 0;
-		int64_t Person::amountOfCopyConstructorCalls = 0;
-		int64_t Person::amountOfMoveConstructorCalls = 0;
-		int64_t Person::amountOfCopyAssignmentCalls = 0;
-		int64_t Person::amountOfMoveAssignmentCalls = 0;
-		int64_t Person::amountOfParameterConstructorCalls = 0;
-		int64_t Person::amountOfDestructorCalls = 0;
+		int     Person::s_nextPersonIndex = 0;
+		int64_t Person::s_amountOfPersons = 0;
+		int64_t Person::s_amountOfDefaulConstructorCalls = 0;
+		int64_t Person::s_amountOfCopyConstructorCalls = 0;
+		int64_t Person::s_amountOfMoveConstructorCalls = 0;
+		int64_t Person::s_amountOfCopyAssignmentCalls = 0;
+		int64_t Person::s_amountOfMoveAssignmentCalls = 0;
+		int64_t Person::s_amountOfParameterConstructorCalls = 0;
+		int64_t Person::s_amountOfDestructorCalls = 0;
 
 		template <typename T, typename U>
 		void assertEquals(T a, U b) {
@@ -171,7 +170,7 @@ namespace bbe {
 		}
 
 		template <typename T, typename U>
-		void assertEqualsFloat(T a, U b, T epsilon = 0.01) {
+		void assertEqualsFloat(T a, U b, T epsilon = 0.01f) {
 			T diff = a - b;
 
 			if (diff > -epsilon && diff < epsilon) {

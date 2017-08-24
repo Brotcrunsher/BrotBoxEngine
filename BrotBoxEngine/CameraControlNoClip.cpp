@@ -13,64 +13,64 @@ bbe::CameraControlNoClip::CameraControlNoClip(Game * game)
 
 void bbe::CameraControlNoClip::update(float timeSinceLastFrame)
 {
-	horizontalMouse += m_pgame->getMouseXDelta() / -100.f;
-	verticalMouse += m_pgame->getMouseYDelta() / 100.f;
-	verticalMouse = bbe::Math::clamp(verticalMouse, -bbe::Math::PI / 2 + 0.001f, bbe::Math::PI / 2 - 0.001f);
-	if (horizontalMouse > bbe::Math::PI * 2)
+	m_horizontalMouse += m_pgame->getMouseXDelta() / -100.f;
+	m_verticalMouse += m_pgame->getMouseYDelta() / 100.f;
+	m_verticalMouse = bbe::Math::clamp(m_verticalMouse, -bbe::Math::PI / 2 + 0.001f, bbe::Math::PI / 2 - 0.001f);
+	if (m_horizontalMouse > bbe::Math::PI * 2)
 	{
-		horizontalMouse -= bbe::Math::PI * 2;
+		m_horizontalMouse -= bbe::Math::PI * 2;
 	}
-	else if (horizontalMouse < 0)
+	else if (m_horizontalMouse < 0)
 	{
-		horizontalMouse += bbe::Math::PI * 2;
+		m_horizontalMouse += bbe::Math::PI * 2;
 	}
 
-	bbe::Matrix4 rotHorizontal = bbe::Matrix4::createRotationMatrix(horizontalMouse, bbe::Vector3(0, 0, 1));
+	bbe::Matrix4 rotHorizontal = bbe::Matrix4::createRotationMatrix(m_horizontalMouse, bbe::Vector3(0, 0, 1));
 	bbe::Vector3 a = rotHorizontal * bbe::Vector3(1, 0, 0);
 	bbe::Vector3 b = a.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1));
-	bbe::Matrix4 rotVertical = bbe::Matrix4::createRotationMatrix(verticalMouse, b);
+	bbe::Matrix4 rotVertical = bbe::Matrix4::createRotationMatrix(m_verticalMouse, b);
 	m_forward = rotVertical * (rotHorizontal * bbe::Vector3(1, 0, 0));
 
-	if (m_pgame->isKeyPressed(bbe::KEY_1))
+	if (m_pgame->isKeyPressed(bbe::Keys::_1))
 	{
 		m_pgame->setCursorMode(bbe::CursorMode::DISABLED);
 	}
-	else if (m_pgame->isKeyPressed(bbe::KEY_2))
+	else if (m_pgame->isKeyPressed(bbe::Keys::_2))
 	{
 		m_pgame->setCursorMode(bbe::CursorMode::HIDDEN);
 	}
-	else if (m_pgame->isKeyPressed(bbe::KEY_3))
+	else if (m_pgame->isKeyPressed(bbe::Keys::_3))
 	{
 		m_pgame->setCursorMode(bbe::CursorMode::NORMAL);
 	}
 
 	float speedFactor = 1;
-	if (m_pgame->isKeyDown(bbe::KEY_LEFT_SHIFT))
+	if (m_pgame->isKeyDown(bbe::Keys::LEFT_SHIFT))
 	{
 		speedFactor = 10;
 	}
 
-	if (m_pgame->isKeyDown(bbe::KEY_W))
+	if (m_pgame->isKeyDown(bbe::Keys::W))
 	{
 		m_cameraPos = m_cameraPos + m_forward * timeSinceLastFrame * 10 * speedFactor;
 	}
-	if (m_pgame->isKeyDown(bbe::KEY_S))
+	if (m_pgame->isKeyDown(bbe::Keys::S))
 	{
 		m_cameraPos = m_cameraPos - m_forward * timeSinceLastFrame * 10 * speedFactor;
 	}
-	if (m_pgame->isKeyDown(bbe::KEY_A))
+	if (m_pgame->isKeyDown(bbe::Keys::A))
 	{
 		m_cameraPos = m_cameraPos + bbe::Vector3(m_forward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1)).xy(), 0).normalize() * timeSinceLastFrame * 10 * speedFactor;
 	}
-	if (m_pgame->isKeyDown(bbe::KEY_D))
+	if (m_pgame->isKeyDown(bbe::Keys::D))
 	{
 		m_cameraPos = m_cameraPos - bbe::Vector3(m_forward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1)).xy(), 0).normalize() * timeSinceLastFrame * 10 * speedFactor;
 	}
-	if (m_pgame->isKeyDown(bbe::KEY_SPACE))
+	if (m_pgame->isKeyDown(bbe::Keys::SPACE))
 	{
 		m_cameraPos = m_cameraPos + bbe::Vector3(0, 0, 1) * timeSinceLastFrame * 10 * speedFactor;
 	}
-	if (m_pgame->isKeyDown(bbe::KEY_C))
+	if (m_pgame->isKeyDown(bbe::Keys::C))
 	{
 		m_cameraPos = m_cameraPos - bbe::Vector3(0, 0, 1) * timeSinceLastFrame * 10 * speedFactor;
 	}

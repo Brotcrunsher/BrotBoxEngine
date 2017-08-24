@@ -17,36 +17,36 @@ namespace bbe
 	{
 	private:
 
-		PointerType m_data;
-		size_t m_length;
-		Allocator* m_pparentAllocator = nullptr;
+		PointerType m_pdata;
+		size_t      m_length;
+		Allocator  *m_pparentAllocator = nullptr;
 
 		void createArray(size_t size, Allocator* parentAllocator)
 		{
 			m_length = size;
 			if (std::is_same<Allocator, NewDeleteAllocator>::value)
 			{
-				m_data = new T[size];
+				m_pdata = new T[size];
 			}
 			else
 			{
 				assert(parentAllocator != nullptr);
-				m_data = parentAllocator->allocateObjects<T>(size);
+				m_pdata = parentAllocator->allocateObjects<T>(size);
 				m_pparentAllocator = parentAllocator;
 			}
 		}
 
 		void deleteArray()
 		{
-			if (m_data != nullptr)
+			if (m_pdata != nullptr)
 			{
 				if (std::is_same<Allocator, NewDeleteAllocator>::value)
 				{
-					delete[] m_data;
+					delete[] m_pdata;
 				}
 				else
 				{
-					m_pparentAllocator->deallocate(m_data);
+					m_pparentAllocator->deallocate(m_pdata);
 				}
 
 				m_length = 0;
@@ -68,7 +68,7 @@ namespace bbe
 			createArray(arr.getLength(), parentAllocator);
 			for (int i = 0; i < size; i++)
 			{
-				m_data[i] = arr[i];
+				m_pdata[i] = arr[i];
 			}
 		}
 
@@ -76,9 +76,9 @@ namespace bbe
 			: m_length(list.getLength())
 		{
 			createArray(list.getLength(), parentAllocator);
-			for (int i = 0; i < m_length; i++)
+			for (size_t i = 0; i < m_length; i++)
 			{
-				m_data[i] = list[i];
+				m_pdata[i] = list[i];
 			}
 		}
 
@@ -86,9 +86,9 @@ namespace bbe
 			: m_length(list.getLength())
 		{
 			createArray(list.getLength(), parentAllocator);
-			for (int i = 0; i < m_length; i++)
+			for (size_t i = 0; i < m_length; i++)
 			{
-				m_data[i] = list[i];
+				m_pdata[i] = list[i];
 			}
 		}
 
@@ -97,7 +97,7 @@ namespace bbe
 			createArray(il.end() - il.begin(), nullptr);
 			size_t i = 0;
 			for (auto iter = il.begin(); iter != il.end(); iter++) {
-				m_data[i] = *iter;
+				m_pdata[i] = *iter;
 				i++;
 			}
 		}
@@ -113,15 +113,15 @@ namespace bbe
 			createArray(other.m_length, other.m_pparentAllocator);
 			for (size_t i = 0; i < m_length; i++)
 			{
-				m_data[i] = other[i];
+				m_pdata[i] = other[i];
 			}
 		}
 		DynamicArray(DynamicArray&& other) //Move Constructor
 		{
-			m_data = other.m_data;
+			m_pdata = other.m_pdata;
 			m_length = other.m_length;
 			m_pparentAllocator = other.m_pparentAllocator;
-			other.m_data = nullptr;
+			other.m_pdata = nullptr;
 			other.m_length = 0;
 			other.m_pparentAllocator = nullptr;
 		}
@@ -132,7 +132,7 @@ namespace bbe
 			createArray(other.m_length, other.m_pparentAllocator);
 			for (size_t i = 0; i < m_length; i++)
 			{
-				m_data[i] = other[i];
+				m_pdata[i] = other[i];
 			}
 
 			return *this;
@@ -141,10 +141,10 @@ namespace bbe
 		{
 			deleteArray();
 
-			m_data = other.m_data;
+			m_pdata = other.m_pdata;
 			m_length = other.m_length;
 			m_pparentAllocator = other.m_pparentAllocator;
-			other.m_data = nullptr;
+			other.m_pdata = nullptr;
 			other.m_length = 0;
 
 			return *this;
@@ -156,7 +156,7 @@ namespace bbe
 			{
 				throw IllegalIndexException();
 			}
-			return m_data[index];
+			return m_pdata[index];
 		}
 
 		const T& operator[](size_t index) const
@@ -165,7 +165,7 @@ namespace bbe
 			{
 				throw IllegalIndexException();
 			}
-			return m_data[index];
+			return m_pdata[index];
 		}
 
 		size_t getLength() const
@@ -175,12 +175,12 @@ namespace bbe
 
 		T* getRaw()
 		{
-			return m_data;
+			return m_pdata;
 		}
 
 		const T* getRaw() const
 		{
-			return m_data;
+			return m_pdata;
 		}
 	};
 
@@ -195,7 +195,7 @@ namespace bbe
 
 		uint32_t _hash = 0;
 
-		for (int i = 0; i < length; i++)
+		for (size_t i = 0; i < length; i++)
 		{
 			_hash += hash(t[i]);
 		}
