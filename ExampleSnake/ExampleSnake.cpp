@@ -31,6 +31,7 @@ public:
 	const float TICKTIME = 0.25f;
 
 	bbe::Cube cube;
+	bbe::PointLight light;
 
 	float x = 0;
 	Direction dir = left;
@@ -49,6 +50,8 @@ public:
 
 	virtual void onStart() override
 	{
+		light.setPosition(bbe::Vector3(-1, -1, 1));
+
 		bodyParts.add({ GRIDWIDTH / 2, GRIDHEIGHT / 2 });
 		bodyParts.add({ -1, -1 });
 		bodyParts.add({ -1, -1 });
@@ -183,6 +186,7 @@ public:
 
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
+		brush.setColor(1, 1, 1);
 		for (BodyPart bp : bodyParts)
 		{
 			brush.fillRect(bp.x * CELLSIZE, bp.y * CELLSIZE, CELLSIZE, CELLSIZE);
@@ -199,6 +203,7 @@ public:
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
 		brush.setCamera(bbe::Vector3(0, 0, 1), bbe::Vector3(0, 2, 0));
+		brush.setColor(0.5, 0.3, 0.2);
 		brush.fillCube(cube);
 	}
 };
