@@ -55,7 +55,7 @@ public:
 
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
-			positions[i] = originalPositions[i] * ((bbe::Math::sin(timePassed / 1000.0f) + 1) * 40.0f + 10.0f);
+			positions[i] = originalPositions[i] * ((bbe::Math::sin(timePassed / 10.0f) + 1) * 40.0f + 10.0f);
 			rotations[i] += rotationSpeeds[i] * timeSinceLastFrame;
 			if (rotations[i] > bbe::Math::PI * 2)
 			{

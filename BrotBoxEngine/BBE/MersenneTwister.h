@@ -5,12 +5,12 @@
 
 namespace bbe
 {
-	template<typename FieldType, uint16_t N, int M, int R, int A, int F, int U, int D, int S, int B, int T, int C, int L>
+	template<typename FieldType, uint16_t N, int M, int R, int A, int F, int U, int S, int B, int T, int C, int L>
 	class MersenneTwisterBase
 	{
 	private:
-		const unsigned long long MASK_LOWER = (1ull << R) - 1;
-		const unsigned long long MASK_UPPER = (1ull << R);
+		const uint64_t MASK_LOWER = (1ull << R) - 1;
+		const uint64_t MASK_UPPER = (1ull << R);
 
 		uint16_t index;
 		FieldType mt[N];
@@ -36,7 +36,7 @@ namespace bbe
 				twistIteration(i);
 			}
 
-			twistIteration(N  - 1);
+			twistIteration(N - 1);	//Helps the compiler to calculate % N
 
 			index = 0;
 		}
@@ -75,17 +75,18 @@ namespace bbe
 				twist();
 			}
 
-			FieldType y = mt[index];
+			FieldType x = mt[index];
 			index++;
 
-			y ^= (y >> U) & D;
-			y ^= (y << S) & B;
-			y ^= (y << T) & C;
-			y ^= (y >> L);
+			x ^= (x >> U);
+			x ^= (x << S) & B;
+			x ^= (x << T) & C;
+			x ^= (x >> L);
 
 			return y;
 		}
 	};
 
-	typedef MersenneTwisterBase<uint32_t, 624, 397, 31, 0x9908B0DF, 1812433253, 11, 0xFFFFFFFF, 7, 0x9D2C5680, 15, 0xEFC60000, 18> mt19937;
+	//                         FieldType   N    M   R        A          F       U   S      B       T       C       L
+	typedef MersenneTwisterBase<uint32_t, 624, 397, 31, 0x9908B0DF, 1812433253, 11, 7, 0x9D2C5680, 15, 0xEFC60000, 18> mt19937;
 }
