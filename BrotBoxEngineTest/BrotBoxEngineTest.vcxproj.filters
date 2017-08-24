@@ -72,6 +72,9 @@
     <ClInclude Include="Tests\Vector2Test.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="LinearCongruentialGeneratorTest.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
