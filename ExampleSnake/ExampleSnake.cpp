@@ -136,22 +136,22 @@ public:
 	{
 		if (dir == left || dir == right)
 		{
-			if (isKeyDown(bbe::Keys::W))
+			if (isKeyDown(bbe::Key::W))
 			{
 				nextDir = up;
 			}
-			else if (isKeyDown(bbe::Keys::S))
+			else if (isKeyDown(bbe::Key::S))
 			{
 				nextDir = down;
 			}
 		}
 		else if (dir == up || dir == down)
 		{
-			if (isKeyDown(bbe::Keys::A))
+			if (isKeyDown(bbe::Key::A))
 			{
 				nextDir = left;
 			}
-			else if (isKeyDown(bbe::Keys::D))
+			else if (isKeyDown(bbe::Key::D))
 			{
 				nextDir = right;
 			}

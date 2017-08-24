@@ -2,6 +2,7 @@
 
 #include "../BBE/GameTime.h"
 #include "../BBE/CursorMode.h"
+#include "../BBE/KeyboardKeys.h"
 
 namespace bbe
 {
@@ -33,11 +34,11 @@ namespace bbe
 		virtual void draw2D(bbe::PrimitiveBrush2D &brush) = 0;
 		virtual void onEnd()                              = 0;
 
-		bool isKeyDown(int keyCode);
-		bool isKeyUp(int keyCode);
-		bool wasKeyDownLastFrame(int keyCode);
-		bool wasKeyUpLastFrame(int keyCode);
-		bool isKeyPressed(int keyCode);
+		bool isKeyDown(bbe::Key key);
+		bool isKeyUp(bbe::Key key);
+		bool wasKeyDownLastFrame(bbe::Key key);
+		bool wasKeyUpLastFrame(bbe::Key key);
+		bool isKeyPressed(bbe::Key key);
 		float getMouseX();
 		float getMouseY();
 		float getMouseXDelta();

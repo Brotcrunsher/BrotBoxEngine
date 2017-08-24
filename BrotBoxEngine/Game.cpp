@@ -49,29 +49,29 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 	onEnd();
 }
 
-bool bbe::Game::isKeyDown(int keyCode)
+bool bbe::Game::isKeyDown(bbe::Key key)
 {
-	return m_pwindow->INTERNAL_keyboard.isKeyDown(keyCode);
+	return m_pwindow->INTERNAL_keyboard.isKeyDown(key);
 }
 
-bool bbe::Game::isKeyUp(int keyCode)
+bool bbe::Game::isKeyUp(bbe::Key key)
 {
-	return m_pwindow->INTERNAL_keyboard.isKeyUp(keyCode);
+	return m_pwindow->INTERNAL_keyboard.isKeyUp(key);
 }
 
-bool bbe::Game::wasKeyDownLastFrame(int keyCode)
+bool bbe::Game::wasKeyDownLastFrame(bbe::Key key)
 {
-	return m_pwindow->INTERNAL_keyboard.wasKeyDownLastFrame(keyCode);
+	return m_pwindow->INTERNAL_keyboard.wasKeyDownLastFrame(key);
 }
 
-bool bbe::Game::wasKeyUpLastFrame(int keyCode)
+bool bbe::Game::wasKeyUpLastFrame(bbe::Key key)
 {
-	return m_pwindow->INTERNAL_keyboard.wasKeyUpLastFrame(keyCode);
+	return m_pwindow->INTERNAL_keyboard.wasKeyUpLastFrame(key);
 }
 
-bool bbe::Game::isKeyPressed(int keyCode)
+bool bbe::Game::isKeyPressed(bbe::Key key)
 {
-	return m_pwindow->INTERNAL_keyboard.isKeyPressed(keyCode);
+	return m_pwindow->INTERNAL_keyboard.isKeyPressed(key);
 }
 
 float bbe::Game::getMouseX()

@@ -9,9 +9,9 @@ namespace bbe
 		friend class Window;
 		friend class Game;
 	private:
-		bool m_pkeysNextFrame[Keys::LAST + 1];
-		bool m_pkeysThisFrame[Keys::LAST + 1];
-		bool m_pkeysLastFrame[Keys::LAST + 1];
+		bool m_pkeysNextFrame[Key::LAST + 1];
+		bool m_pkeysThisFrame[Key::LAST + 1];
+		bool m_pkeysLastFrame[Key::LAST + 1];
 
 		
 
@@ -20,15 +20,15 @@ namespace bbe
 	public:
 		Keyboard();
 
-		bool isKeyDown(int keyCode);
-		bool isKeyUp(int keyCode);
+		bool isKeyDown(bbe::Key key);
+		bool isKeyUp(bbe::Key key);
 
-		bool wasKeyDownLastFrame(int keyCode);
-		bool wasKeyUpLastFrame(int keyCode);
+		bool wasKeyDownLastFrame(bbe::Key key);
+		bool wasKeyUpLastFrame(bbe::Key key);
 
-		bool isKeyPressed(int keyCode);
+		bool isKeyPressed(bbe::Key key);
 
-		void INTERNAL_press(int keyCode);
-		void INTERNAL_release(int keyCode);
+		void INTERNAL_press(bbe::Key key);
+		void INTERNAL_release(bbe::Key key);
 	};
 }

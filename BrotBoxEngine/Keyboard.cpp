@@ -2,85 +2,85 @@
 #include "BBE/Keyboard.h"
 #include "BBE/Exceptions.h"
 
-void bbe::Keyboard::INTERNAL_press(int keyCode)
+void bbe::Keyboard::INTERNAL_press(bbe::Key key)
 {
-	if (!isKeyCodeValid(keyCode))
+	if (!isKeyCodeValid(key))
 	{
 		throw NoSuchKeycodeException();
 	}
 
-	m_pkeysNextFrame[keyCode] = true;
+	m_pkeysNextFrame[key] = true;
 }
 
-void bbe::Keyboard::INTERNAL_release(int keyCode)
+void bbe::Keyboard::INTERNAL_release(bbe::Key key)
 {
-	if (!isKeyCodeValid(keyCode))
+	if (!isKeyCodeValid(key))
 	{
 		throw NoSuchKeycodeException();
 	}
 
-	m_pkeysNextFrame[keyCode] = false;
+	m_pkeysNextFrame[key] = false;
 }
 
 void bbe::Keyboard::update()
 {
-	memcpy(m_pkeysLastFrame, m_pkeysThisFrame, (Keys::LAST + 1) * sizeof(bool));
-	memcpy(m_pkeysThisFrame, m_pkeysNextFrame, (Keys::LAST + 1) * sizeof(bool));
+	memcpy(m_pkeysLastFrame, m_pkeysThisFrame, (Key::LAST + 1) * sizeof(bool));
+	memcpy(m_pkeysThisFrame, m_pkeysNextFrame, (Key::LAST + 1) * sizeof(bool));
 }
 
 bbe::Keyboard::Keyboard()
 {
-	memset(m_pkeysLastFrame, 0, (Keys::LAST + 1) * sizeof(bool));
-	memset(m_pkeysThisFrame, 0, (Keys::LAST + 1) * sizeof(bool));
-	memset(m_pkeysNextFrame, 0, (Keys::LAST + 1) * sizeof(bool));
+	memset(m_pkeysLastFrame, 0, (Key::LAST + 1) * sizeof(bool));
+	memset(m_pkeysThisFrame, 0, (Key::LAST + 1) * sizeof(bool));
+	memset(m_pkeysNextFrame, 0, (Key::LAST + 1) * sizeof(bool));
 }
 
-bool bbe::Keyboard::isKeyDown(int keyCode)
+bool bbe::Keyboard::isKeyDown(bbe::Key key)
 {
-	if (!isKeyCodeValid(keyCode))
+	if (!isKeyCodeValid(key))
 	{
 		throw NoSuchKeycodeException();
 	}
 
-	return m_pkeysThisFrame[keyCode];
+	return m_pkeysThisFrame[key];
 }
 
-bool bbe::Keyboard::isKeyUp(int keyCode)
+bool bbe::Keyboard::isKeyUp(bbe::Key key)
 {
-	if (!isKeyCodeValid(keyCode))
+	if (!isKeyCodeValid(key))
 	{
 		throw NoSuchKeycodeException();
 	}
 
-	return !m_pkeysThisFrame[keyCode];
+	return !m_pkeysThisFrame[key];
 }
 
-bool bbe::Keyboard::wasKeyDownLastFrame(int keyCode)
+bool bbe::Keyboard::wasKeyDownLastFrame(bbe::Key key)
 {
-	if (!isKeyCodeValid(keyCode))
+	if (!isKeyCodeValid(key))
 	{
 		throw NoSuchKeycodeException();
 	}
 
-	return m_pkeysLastFrame[keyCode];
+	return m_pkeysLastFrame[key];
 }
 
-bool bbe::Keyboard::wasKeyUpLastFrame(int keyCode)
+bool bbe::Keyboard::wasKeyUpLastFrame(bbe::Key key)
 {
-	if (!isKeyCodeValid(keyCode))
+	if (!isKeyCodeValid(key))
 	{
 		throw NoSuchKeycodeException();
 	}
 
-	return !m_pkeysLastFrame[keyCode];
+	return !m_pkeysLastFrame[key];
 }
 
-bool bbe::Keyboard::isKeyPressed(int keyCode)
+bool bbe::Keyboard::isKeyPressed(bbe::Key key)
 {
-	if (!isKeyCodeValid(keyCode))
+	if (!isKeyCodeValid(key))
 	{
 		throw NoSuchKeycodeException();
 	}
 
-	return m_pkeysThisFrame[keyCode] && !m_pkeysLastFrame[keyCode];
+	return m_pkeysThisFrame[key] && !m_pkeysLastFrame[key];
 }

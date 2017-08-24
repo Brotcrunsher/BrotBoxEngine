@@ -84,17 +84,17 @@ class MyGame : public bbe::Game
 
 		timeSinceLastFrame = 0.016f;
 
-		if (isKeyPressed(bbe::Keys::T))
+		if (isKeyPressed(bbe::Key::T))
 		{
 			size += 0.1f;
 		}
 
-		if (isKeyPressed(bbe::Keys::G))
+		if (isKeyPressed(bbe::Key::G))
 		{
 			size -= 0.1f;
 		}
 
-		if (isKeyPressed(bbe::Keys::Z))
+		if (isKeyPressed(bbe::Key::Z))
 		{
 			for (Particle &p : particles)
 			{

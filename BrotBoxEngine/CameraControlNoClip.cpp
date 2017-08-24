@@ -31,46 +31,46 @@ void bbe::CameraControlNoClip::update(float timeSinceLastFrame)
 	bbe::Matrix4 rotVertical = bbe::Matrix4::createRotationMatrix(m_verticalMouse, b);
 	m_forward = rotVertical * (rotHorizontal * bbe::Vector3(1, 0, 0));
 
-	if (m_pgame->isKeyPressed(bbe::Keys::_1))
+	if (m_pgame->isKeyPressed(bbe::Key::_1))
 	{
 		m_pgame->setCursorMode(bbe::CursorMode::DISABLED);
 	}
-	else if (m_pgame->isKeyPressed(bbe::Keys::_2))
+	else if (m_pgame->isKeyPressed(bbe::Key::_2))
 	{
 		m_pgame->setCursorMode(bbe::CursorMode::HIDDEN);
 	}
-	else if (m_pgame->isKeyPressed(bbe::Keys::_3))
+	else if (m_pgame->isKeyPressed(bbe::Key::_3))
 	{
 		m_pgame->setCursorMode(bbe::CursorMode::NORMAL);
 	}
 
 	float speedFactor = 1;
-	if (m_pgame->isKeyDown(bbe::Keys::LEFT_SHIFT))
+	if (m_pgame->isKeyDown(bbe::Key::LEFT_SHIFT))
 	{
 		speedFactor = 10;
 	}
 
-	if (m_pgame->isKeyDown(bbe::Keys::W))
+	if (m_pgame->isKeyDown(bbe::Key::W))
 	{
 		m_cameraPos = m_cameraPos + m_forward * timeSinceLastFrame * 10 * speedFactor;
 	}
-	if (m_pgame->isKeyDown(bbe::Keys::S))
+	if (m_pgame->isKeyDown(bbe::Key::S))
 	{
 		m_cameraPos = m_cameraPos - m_forward * timeSinceLastFrame * 10 * speedFactor;
 	}
-	if (m_pgame->isKeyDown(bbe::Keys::A))
+	if (m_pgame->isKeyDown(bbe::Key::A))
 	{
 		m_cameraPos = m_cameraPos + bbe::Vector3(m_forward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1)).xy(), 0).normalize() * timeSinceLastFrame * 10 * speedFactor;
 	}
-	if (m_pgame->isKeyDown(bbe::Keys::D))
+	if (m_pgame->isKeyDown(bbe::Key::D))
 	{
 		m_cameraPos = m_cameraPos - bbe::Vector3(m_forward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1)).xy(), 0).normalize() * timeSinceLastFrame * 10 * speedFactor;
 	}
-	if (m_pgame->isKeyDown(bbe::Keys::SPACE))
+	if (m_pgame->isKeyDown(bbe::Key::SPACE))
 	{
 		m_cameraPos = m_cameraPos + bbe::Vector3(0, 0, 1) * timeSinceLastFrame * 10 * speedFactor;
 	}
-	if (m_pgame->isKeyDown(bbe::Keys::C))
+	if (m_pgame->isKeyDown(bbe::Key::C))
 	{
 		m_cameraPos = m_cameraPos - bbe::Vector3(0, 0, 1) * timeSinceLastFrame * 10 * speedFactor;
 	}

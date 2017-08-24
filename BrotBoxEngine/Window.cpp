@@ -139,11 +139,11 @@ void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, i
 {
 	if (action == GLFW_PRESS)
 	{
-		bbe::Window::INTERNAL_firstInstance->INTERNAL_keyboard.INTERNAL_press(keyCode);
+		bbe::Window::INTERNAL_firstInstance->INTERNAL_keyboard.INTERNAL_press((bbe::Key)keyCode);
 	}
 	else if (action == GLFW_RELEASE)
 	{
-		bbe::Window::INTERNAL_firstInstance->INTERNAL_keyboard.INTERNAL_release(keyCode);
+		bbe::Window::INTERNAL_firstInstance->INTERNAL_keyboard.INTERNAL_release((bbe::Key)keyCode);
 	}
 }
 
