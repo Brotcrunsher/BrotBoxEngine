@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-#define AMOUNT_OF_LIGHTS 4
+layout(constant_id = 0) const int AMOUNT_OF_LIGHTS = 4;
 
 out gl_PerVertex {
 	vec4 gl_Position;
@@ -34,8 +34,11 @@ layout(location = 1) in vec3 inNormal;
 
 layout(location = 0) out vec3 outNormal;
 layout(location = 1) out vec3 outViewVec;
-layout(location = 2) out vec3 outLightVec[AMOUNT_OF_LIGHTS];
-layout(location = 3 + AMOUNT_OF_LIGHTS) out float lightUsed[AMOUNT_OF_LIGHTS];
+layout(location = 2) out OutLightVertexInput
+{
+	vec3 outLightVec;
+	float lightUsed;
+}outLightVertexInput[AMOUNT_OF_LIGHTS];
 
 
 void main() 
@@ -48,11 +51,11 @@ void main()
 	outViewVec = -(uboProjection.view * worldPos).xyz;
 	for(int i = 0; i<AMOUNT_OF_LIGHTS; i++)
 	{
-		lightUsed[i] = uboLights.light[i].used;
+		outLightVertexInput[i].lightUsed = uboLights.light[i].used;
 		if(uboLights.light[i].used > 0.0f)
 		{
 			vec3 lightPos = uboLights.light[i].pos;
-			outLightVec[i] = mat3(uboProjection.view) * (lightPos - vec3(worldPos));
+			outLightVertexInput[i].outLightVec = mat3(uboProjection.view) * (lightPos - vec3(worldPos));
 		}
 	}
 	

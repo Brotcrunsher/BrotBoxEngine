@@ -7,10 +7,8 @@ namespace bbe
 	{
 		void INTERNAL_start();
 
-		void setAmountOfTransformContainers(int amount);
-		int getAmountOfTransformContainers();
-
 		int getAmountOfLightSources();
+		void setAmountOfLightSources(int amount);
 	}
 
 }

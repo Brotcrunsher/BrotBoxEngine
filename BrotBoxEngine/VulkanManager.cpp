@@ -57,7 +57,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_primitiveBrush3D.create(m_device);
 	bbe::PointLight::s_init(m_device.getDevice(), m_device.getPhysicalDevice());
 
-	int amountOfBuffers = Settings::getAmountOfTransformContainers();
 	m_descriptorPoolVertex.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, PointLight::s_bufferVertexData, 0, 0, 0);
 	m_descriptorPoolVertex.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, PointLight::s_bufferFragmentData, 0, 0, 1);
 	m_descriptorPoolVertex.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, m_primitiveBrush3D.m_uboMatrices, 0, 0, 2);
@@ -272,6 +271,9 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPoolVertex.getLayout(2));
 	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPoolVertex.getLayout(1));
 	m_pipeline3DPrimitive.enableDepthBuffer();
+	m_pipeline3DPrimitive.addSpezializationConstant(0, 0, sizeof(int32_t));
+	int32_t spezialization = Settings::getAmountOfLightSources();
+	m_pipeline3DPrimitive.setSpezializationData(sizeof(int32_t), &spezialization);
 	m_pipeline3DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
 }
 

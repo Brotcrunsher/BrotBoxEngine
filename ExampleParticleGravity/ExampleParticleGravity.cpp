@@ -158,7 +158,6 @@ class MyGame : public bbe::Game
 
 int main()
 {
-	bbe::Settings::setAmountOfTransformContainers(8);
 	MyGame game;
 	game.start(1280, 720, "Particle Gravity");
     return 0;

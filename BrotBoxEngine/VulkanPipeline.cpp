@@ -149,6 +149,21 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 		shaderStages.add(geometryShaderStageCreateInfo);
 	}
 
+	VkSpecializationInfo spezializationData = {};
+	if (m_spezializationData != nullptr)
+	{
+		spezializationData.mapEntryCount = m_specializationEntries.getLength();
+		spezializationData.pMapEntries   = m_specializationEntries.getRaw();
+		spezializationData.dataSize      = m_spezializationSize;
+		spezializationData.pData         = m_spezializationData;
+		for (int i = 0; i < shaderStages.getLength(); i++)
+		{
+			shaderStages[i].pSpecializationInfo = &spezializationData;
+		}
+	}
+
+	
+
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo;
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutCreateInfo.pNext = nullptr;
@@ -250,7 +265,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::setGeometryShader(VkShaderModule sha
 	m_geometryShader = shaderModule;
 }
 
-void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexBinding(VkVertexInputBindingDescription vb)
+void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexBinding(const VkVertexInputBindingDescription &vb)
 {
 	if (m_wasCreated)
 	{
@@ -272,7 +287,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexBinding(uint32_t binding, u
 	addVertexBinding(vb);
 }
 
-void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexDescription(VkVertexInputAttributeDescription vd)
+void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexDescription(const VkVertexInputAttributeDescription &vd)
 {
 	if (m_wasCreated)
 	{
@@ -295,7 +310,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexDescription(uint32_t locati
 	addVertexDescription(vd);
 }
 
-void bbe::INTERNAL::vulkan::VulkanPipeline::addDescriptorSetLayout(VkDescriptorSetLayout dsl)
+void bbe::INTERNAL::vulkan::VulkanPipeline::addDescriptorSetLayout(const VkDescriptorSetLayout &dsl)
 {
 	if (m_wasCreated)
 	{
@@ -304,7 +319,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addDescriptorSetLayout(VkDescriptorS
 	m_descriptorSetLayouts.add(dsl);
 }
 
-void bbe::INTERNAL::vulkan::VulkanPipeline::addPushConstantRange(VkPushConstantRange pcr)
+void bbe::INTERNAL::vulkan::VulkanPipeline::addPushConstantRange(const VkPushConstantRange &pcr)
 {
 	if (m_wasCreated)
 	{
@@ -324,6 +339,26 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addPushConstantRange(VkShaderStageFl
 	pcr.offset = offset;
 	pcr.size = size;
 	addPushConstantRange(pcr);
+}
+
+void bbe::INTERNAL::vulkan::VulkanPipeline::addSpezializationConstant(const VkSpecializationMapEntry &sme)
+{
+	m_specializationEntries.add(sme);
+}
+
+void bbe::INTERNAL::vulkan::VulkanPipeline::addSpezializationConstant(uint32_t constantID, uint32_t offset, size_t size)
+{
+	VkSpecializationMapEntry sme = {};
+	sme.constantID = constantID;
+	sme.offset     = offset;
+	sme.size       = size;
+	addSpezializationConstant(sme);
+}
+
+void bbe::INTERNAL::vulkan::VulkanPipeline::setSpezializationData(size_t size, const void * data)
+{
+	m_spezializationSize = size;
+	m_spezializationData = data;
 }
 
 void bbe::INTERNAL::vulkan::VulkanPipeline::enableDepthBuffer()

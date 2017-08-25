@@ -34,6 +34,9 @@ namespace bbe
 				VkPipelineDynamicStateCreateInfo       m_dynamicStateCreateInfo;
 				bbe::List<VkPushConstantRange>         m_pushConstantRanges;
 
+				size_t m_spezializationSize = 0;
+				const void* m_spezializationData = nullptr;
+				bbe::List<VkSpecializationMapEntry>          m_specializationEntries;
 				bbe::List<VkVertexInputBindingDescription>   m_vertexBindingDescription;
 				bbe::List<VkVertexInputAttributeDescription> m_vertexAttributeDescriptions;
 				bbe::List<VkDescriptorSetLayout>             m_descriptorSetLayouts;
@@ -61,16 +64,20 @@ namespace bbe
 
 				void setGeometryShader(VkShaderModule shaderModule);
 
-				void addVertexBinding(VkVertexInputBindingDescription vb);
+				void addVertexBinding(const VkVertexInputBindingDescription &vb);
 				void addVertexBinding(uint32_t binding, uint32_t stride, VkVertexInputRate inputRate);
 
-				void addVertexDescription(VkVertexInputAttributeDescription vd);
+				void addVertexDescription(const VkVertexInputAttributeDescription &vd);
 				void addVertexDescription(uint32_t location, uint32_t binding, VkFormat format, uint32_t offset);
 
-				void addDescriptorSetLayout(VkDescriptorSetLayout dsl);
+				void addDescriptorSetLayout(const VkDescriptorSetLayout &dsl);
 
-				void addPushConstantRange(VkPushConstantRange pcr);
+				void addPushConstantRange(const VkPushConstantRange &pcr);
 				void addPushConstantRange(VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size);
+
+				void addSpezializationConstant(const VkSpecializationMapEntry &sme);
+				void addSpezializationConstant(uint32_t constantID, uint32_t offset, size_t size);
+				void setSpezializationData(size_t size, const void* data);
 
 				void enableDepthBuffer();
 			};

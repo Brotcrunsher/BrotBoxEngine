@@ -24,17 +24,26 @@ public:
 	bbe::PointLight light;
 	bbe::PointLight blinkLight;
 	bbe::PointLight brightLight;
+	bbe::PointLight sunLight;
+	bbe::PointLight extraLight;
 	
 	bbe::Color colors[AMOUNTOFCUBES];
 
 	MyGame()
 		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0))
 	{
-
 	}
 
 	virtual void onStart() override
 	{
+		sunLight.setPosition(bbe::Vector3(10000, 20000, 40000));
+		sunLight.setLightColor(bbe::Color(1, 1, 0.9f));
+		sunLight.setLightStrength(0.5f);
+		sunLight.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_NONE);
+
+		extraLight.setPosition(bbe::Vector3(-400, -400, 0));
+		extraLight.setLightStrength(200.f);
+
 		terrain.setTransform(bbe::Vector3(-750, -750, -120), bbe::Vector3(1), bbe::Vector3(1), 0);
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
@@ -92,7 +101,7 @@ public:
 
 int main()
 {
-	bbe::Settings::setAmountOfTransformContainers(8);
+	bbe::Settings::setAmountOfLightSources(5);
 	MyGame *mg = new MyGame();
 	mg->start(1280, 720, "3D Test");
 

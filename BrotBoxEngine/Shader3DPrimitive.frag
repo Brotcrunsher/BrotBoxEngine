@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-#define AMOUNT_OF_LIGHTS 4
+layout(constant_id = 0) const int AMOUNT_OF_LIGHTS = 4;
 
 #define FALLOFF_NONE    0
 #define	FALLOFF_LINEAR  1
@@ -12,8 +12,11 @@
 layout(location = 0) out vec4 outColor;
 layout(location = 0) in vec3 inNormal;
 layout(location = 1) in vec3 inViewVec;
-layout(location = 2) in vec3 inLightVec[AMOUNT_OF_LIGHTS];
-layout(location = 3 + AMOUNT_OF_LIGHTS) in float lightUsed[AMOUNT_OF_LIGHTS];
+layout(location = 2) in InLightVertexInput
+{
+	vec3 inLightVec;
+	float lightUsed;
+}inLightVertexInput[AMOUNT_OF_LIGHTS];
 
 layout(push_constant) uniform PushConstants
 {
@@ -46,11 +49,11 @@ void main() {
 
 	for(int i = 0; i<AMOUNT_OF_LIGHTS; i++)
 	{
-		if(lightUsed[i] <= 0.0)
+		if(inLightVertexInput[i].lightUsed <= 0.0)
 		{
 			continue;
 		}
-		float distToLight = length(inLightVec[i]);
+		float distToLight = length(inLightVertexInput[i].inLightVec);
 		float lightPower = uboLights.light[i].lightStrength;
 		if(distToLight > 0)
 		{
@@ -75,7 +78,7 @@ void main() {
 			
 		}
 
-		vec3 L = normalize(inLightVec[i]);
+		vec3 L = normalize(inLightVertexInput[i].inLightVec);
 		vec3 R = reflect(-L, N);
 
 	
