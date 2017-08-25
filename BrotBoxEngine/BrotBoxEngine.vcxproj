@@ -266,7 +266,6 @@
     <ClInclude Include="BBE\VulkanDescriptorPool.h" />
     <ClInclude Include="BBE\Vector3.h" />
     <ClInclude Include="BBE\Vector4.h" />
-    <ClInclude Include="BBE\VWTransform.h" />
     <ClInclude Include="BBE\VertexWithNormal.h" />
     <ClInclude Include="BBE\Terrain.h" />
     <ClInclude Include="BBE\ValueNoise2D.h" />
@@ -323,7 +322,6 @@
     <ClCompile Include="VulkanSurface.cpp" />
     <ClCompile Include="VulkanSwapchain.cpp" />
     <ClCompile Include="VWDepthImage.cpp" />
-    <ClCompile Include="VWTransform.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>

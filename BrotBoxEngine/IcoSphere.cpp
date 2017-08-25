@@ -2,6 +2,7 @@
 #include "BBE/IcoSphere.h"
 #include "BBE/VertexWithNormal.h"
 #include "BBE/Math.h"
+#include "BBE/List.h"
 
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::IcoSphere::s_indexBuffer;
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::IcoSphere::s_vertexBuffer;
@@ -161,7 +162,6 @@ bbe::IcoSphere::IcoSphere(const Matrix4 & transform)
 
 void bbe::IcoSphere::set(const Vector3 & pos, const Vector3 & scale, const Vector3 & rotationVector, float radians)
 {
-	m_bufferDirty = true;
 	Matrix4 matTranslation = Matrix4::createTranslationMatrix(pos);
 	Matrix4 matScale = Matrix4::createScaleMatrix(scale);
 	Matrix4 matRotation = Matrix4::createRotationMatrix(radians, rotationVector);

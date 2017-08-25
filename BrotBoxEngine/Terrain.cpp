@@ -51,14 +51,15 @@ void bbe::Terrain::s_initVertexBuffer(VkDevice device, VkPhysicalDevice physical
 {
 	List<VertexWithNormal> vertices;
 	Random rand;
-	ValueNoise2D valueNoise;
-	valueNoise.create(WIDTH, HEIGHT);
+	//ValueNoise2D valueNoise;
+	//valueNoise.create(WIDTH, HEIGHT);
 
 	for (int i = 0; i < HEIGHT; i++)
 	{
 		for (int k = 0; k < WIDTH; k++)
 		{
-			float height = valueNoise.get(i, k);
+			//float height = valueNoise.get(i, k);
+			float height = 0;
 			vertices.add(VertexWithNormal(Vector3(i / 2.0f, k / 2.0f, height * 100.0f), Vector3(0, 0, 1)));
 		}
 	}
@@ -89,7 +90,6 @@ bbe::Matrix4 bbe::Terrain::getTransform() const
 
 void bbe::Terrain::setTransform(const Vector3 & pos, const Vector3 & scale, const Vector3 & rotationVector, float radians)
 {
-	m_bufferDirty = true;
 	Matrix4 matTranslation = Matrix4::createTranslationMatrix(pos);
 	Matrix4 matScale = Matrix4::createScaleMatrix(scale);
 	Matrix4 matRotation = Matrix4::createRotationMatrix(radians, rotationVector);

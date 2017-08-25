@@ -285,9 +285,6 @@
     <ClInclude Include="BBE\CameraControlNoClip.h">
       <Filter>Header Files\Input</Filter>
     </ClInclude>
-    <ClInclude Include="BBE\VWTransform.h">
-      <Filter>Header Files\GFX\Vulkan\Wrappers</Filter>
-    </ClInclude>
     <ClInclude Include="BBE\EngineSettings.h">
       <Filter>Header Files\General</Filter>
     </ClInclude>
@@ -432,9 +429,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CameraControlNoClip.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="VWTransform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="EngineSettings.cpp">

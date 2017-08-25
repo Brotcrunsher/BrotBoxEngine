@@ -24,14 +24,9 @@ layout(set = 1, binding = 0) uniform UBOProjection
 	mat4 projection;
 } uboProjection;
 
-layout(set = 1, binding = 1) uniform UBOModel
-{
-	mat4 model[1024];
-} uboModel;
-
 layout(push_constant) uniform PushConstants
 {
-	layout(offset = 16)int uboModelIndex;	//Vertex
+	layout(offset = 16)mat4 modelMatrix;	//Vertex
 } pushConts;
 
 layout(location = 0) in vec3 inPos;
@@ -47,9 +42,9 @@ void main()
 {
 	
 
-	vec4 worldPos = uboModel.model[pushConts.uboModelIndex] * vec4(inPos, 1.0);
+	vec4 worldPos = pushConts.modelMatrix * vec4(inPos, 1.0);
 	gl_Position = uboProjection.projection * uboProjection.view * worldPos;
-	outNormal = mat3(uboProjection.view) * mat3(uboModel.model[pushConts.uboModelIndex]) * inNormal;
+	outNormal = mat3(uboProjection.view) * mat3(pushConts.modelMatrix) * inNormal;
 	outViewVec = -(uboProjection.view * worldPos).xyz;
 	for(int i = 0; i<AMOUNT_OF_LIGHTS; i++)
 	{

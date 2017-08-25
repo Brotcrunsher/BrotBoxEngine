@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../BBE/VulkanBuffer.h"
-#include "../BBE/VWTransform.h"
+#include "../BBE/Matrix4.h"
 #include "../BBE/Vector3.h"
 
 namespace bbe
@@ -22,8 +22,9 @@ namespace bbe
 		friend class PrimitiveBrush3D;
 		friend class INTERNAL::vulkan::VulkanManager;
 	private:
-		VWTransform m_transform;
-		INTERNAL::vulkan::VulkanBuffer m_transformBuffer;
+		Matrix4 m_transform;
+
+
 		static size_t amountOfVertices;
 		static size_t amountOfIndices;
 
@@ -31,8 +32,6 @@ namespace bbe
 		static void s_destroy();
 		static bbe::INTERNAL::vulkan::VulkanBuffer s_indexBuffer;
 		static bbe::INTERNAL::vulkan::VulkanBuffer s_vertexBuffer;
-
-		mutable bool m_bufferDirty = true;
 
 	public:
 		IcoSphere();

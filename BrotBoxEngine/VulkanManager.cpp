@@ -5,7 +5,6 @@
 #include "BBE/Color.h"
 #include "BBE/Exceptions.h"
 #include "BBE/Rectangle.h"
-#include "BBE/VWTransform.h"
 #include "BBE/EngineSettings.h"
 #include "BBE/VertexWithNormal.h"
 #include "BBE/Terrain.h"
@@ -56,17 +55,12 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_presentFence.init(m_device);
 
 	m_primitiveBrush3D.create(m_device);
-	bbe::VWTransform::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::PointLight::s_init(m_device.getDevice(), m_device.getPhysicalDevice());
 
 	int amountOfBuffers = Settings::getAmountOfTransformContainers();
 	m_descriptorPoolVertex.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, PointLight::s_bufferVertexData, 0, 0, 0);
 	m_descriptorPoolVertex.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, PointLight::s_bufferFragmentData, 0, 0, 1);
-	for (int i = 0; i < amountOfBuffers; i++)
-	{
-		m_descriptorPoolVertex.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, m_primitiveBrush3D.m_uboMatrices, 0, 0, i+2);
-		m_descriptorPoolVertex.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, VWTransform::s_buffers[i], 0, 1, i+2);
-	}
+	m_descriptorPoolVertex.addDescriptor(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, m_primitiveBrush3D.m_uboMatrices, 0, 0, 2);
 	m_descriptorPoolVertex.create(m_device.getDevice());
 
 	m_vertexShader2DPrimitive.init(m_device, "vert2DPrimitive.spv");
@@ -94,7 +88,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 {
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
-	bbe::VWTransform::s_destroy();
 	bbe::Terrain::s_destroy();
 	bbe::Cube::s_destroy();
 	bbe::Circle::s_destroy();
@@ -139,6 +132,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 	vkCmdBindPipeline(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getPipeline());
 	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 0, 1, m_descriptorPoolVertex.getPSet(0), 0, nullptr);
 	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 2, 1, m_descriptorPoolVertex.getPSet(1), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 1, 1, m_descriptorPoolVertex.getPSet(2), 0, nullptr);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
@@ -273,7 +267,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DPrimitive.addVertexDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_pos));
 	m_pipeline3DPrimitive.addVertexDescription(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_normal));
 	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
-	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(uint32_t));
+	m_pipeline3DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(Matrix4));
 	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPoolVertex.getLayout(0));
 	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPoolVertex.getLayout(2));
 	m_pipeline3DPrimitive.addDescriptorSetLayout(m_descriptorPoolVertex.getLayout(1));

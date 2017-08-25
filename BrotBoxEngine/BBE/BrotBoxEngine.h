@@ -26,7 +26,6 @@
 #include "../BBE/Window.h"
 
 #include "../BBE/VWDepthImage.h"
-#include "../BBE/VWTransform.h"
 
 #include "../BBE/VulkanBuffer.h"
 #include "../BBE/VulkanCommandPool.h"

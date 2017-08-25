@@ -46,25 +46,7 @@ void bbe::PrimitiveBrush3D::destroy()
 
 void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 {
-	int index = cube.m_transform.getIndex();
-	int containerIndex = index / 1024;
-	int localOffset = index % 1024;
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layout, 1, 1, m_pdescriptorPool->getPSet(containerIndex + 2), 0, nullptr);
-
-	if (cube.m_bufferDirty)
-	{
-		
-
-		void *data = VWTransform::s_buffers[containerIndex].map();
-		Matrix4 transform = cube.getTransform();
-		memcpy((char*)data + sizeof(Matrix4) * localOffset, &transform, sizeof(Matrix4));
-		VWTransform::s_buffers[containerIndex].unmap();
-
-		cube.m_bufferDirty = false;
-	}
-	
-
-	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(uint32_t) * 1, &localOffset);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &cube.m_transform);
 
 	if (m_lastDraw != CUBE)
 	{
@@ -84,23 +66,7 @@ void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 
 void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 {
-	int index = sphere.m_transform.getIndex();
-	int containerIndex = index / 1024;
-	int localOffset = index % 1024;
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layout, 1, 1, m_pdescriptorPool->getPSet(containerIndex + 2), 0, nullptr);
-
-	if (sphere.m_bufferDirty)
-	{
-		void *data = VWTransform::s_buffers[containerIndex].map();
-		Matrix4 transform = sphere.getTransform();
-		memcpy((char*)data + sizeof(Matrix4) * localOffset, &transform, sizeof(Matrix4));
-		VWTransform::s_buffers[containerIndex].unmap();
-
-		sphere.m_bufferDirty = false;
-	}
-
-
-	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(uint32_t) * 1, &localOffset);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &sphere.m_transform);
 
 	if (m_lastDraw != ICOSPHERE)
 	{
@@ -120,25 +86,7 @@ void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 
 void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 {
-	int index = terrain.m_transform.getIndex();
-	int containerIndex = index / 1024;
-	int localOffset = index % 1024;
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layout, 1, 1, m_pdescriptorPool->getPSet(containerIndex + 2), 0, nullptr);
-
-	if (terrain.m_bufferDirty)
-	{
-
-
-		void *data = VWTransform::s_buffers[containerIndex].map();
-		Matrix4 transform = terrain.getTransform();
-		memcpy((char*)data + sizeof(Matrix4) * localOffset, &transform, sizeof(Matrix4));
-		VWTransform::s_buffers[containerIndex].unmap();
-
-		terrain.m_bufferDirty = false;
-	}
-
-
-	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(uint32_t) * 1, &localOffset);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &terrain.m_transform);
 
 	if (m_lastDraw != TERRAIN)
 	{
