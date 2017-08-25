@@ -150,6 +150,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ImageTest.h" />
     <ClInclude Include="LinearCongruentialGeneratorTest.h" />
     <ClInclude Include="Tests\MathTest.h" />
     <ClInclude Include="stdafx.h" />

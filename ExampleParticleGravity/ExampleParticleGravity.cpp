@@ -41,13 +41,13 @@ public:
 			float length = dir.getLength();
 			if (length != 0)
 			{
-				bbe::Vector3 gravity = dir.normalize() / length / length / 1000;
-				bbe::Vector3 antiTouch = dir.normalize() / length / length / length / 1000;
+				bbe::Vector3 gravity = dir.normalize() / length / length / 10;
+				bbe::Vector3 antiTouch = dir.normalize() / length / length / length / 10;
 				speed = speed + gravity - antiTouch;
 			}
 		}
 
-		speed = speed * 0.999999f;
+		speed = speed * 0.9f;
 	}
 
 	void updatePos(float timeSinceLastFrame)
@@ -71,6 +71,8 @@ class MyGame : public bbe::Game
 	bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
 	bbe::PointLight light;
 
+	float maxSpeed = 0;
+	float minSpeed = 0;
 
 	// Geerbt über Game
 	virtual void onStart() override
@@ -78,7 +80,7 @@ class MyGame : public bbe::Game
 		light.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_NONE);
 		light.setLightStrength(1);
 		light.setPosition(bbe::Vector3(100, 100, 100));
-		for (int i = 0; i < 500; i++)
+		for (int i = 0; i < 100; i++)
 		{
 			particles.add(Particle());
 		}
@@ -114,7 +116,7 @@ class MyGame : public bbe::Game
 		}
 
 
-		for (int iterations = 0; iterations < 2; iterations++)
+		for (int iterations = 0; iterations < 20; iterations++)
 		{
 			for (Particle &p : particles)
 			{
@@ -125,12 +127,24 @@ class MyGame : public bbe::Game
 				p.updatePos(timeSinceLastFrame);
 			}
 		}
+
+		minSpeed = 100000.0f;
+		maxSpeed = 0;
+		for (int i = 0; i < particles.getLength(); i++)
+		{
+			float speed = particles[i].speed.getLength();
+			if (speed > maxSpeed) maxSpeed = speed;
+			if (speed < minSpeed) minSpeed = speed;
+		}
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 		for (Particle &p : particles)
 		{
+			float speed = p.speed.getLength();
+			float percentage = (speed - minSpeed) / (maxSpeed + minSpeed);
+			brush.setColor(1, 1 - percentage, 1 - percentage);
 			p.draw(brush);
 		}
 	}

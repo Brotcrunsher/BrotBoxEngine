@@ -312,6 +312,12 @@
     <ClInclude Include="BBE\MouseButtons.h">
       <Filter>Header Files\Input</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\Image.h">
+      <Filter>Header Files\GFX\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\ColorByte.h">
+      <Filter>Header Files\GFX\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -450,6 +456,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MouseButtons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ColorByte.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

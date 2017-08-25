@@ -1,6 +1,5 @@
 #pragma once
 
-
 namespace bbe
 {
 	class Color

@@ -72,7 +72,7 @@ void bbe::PointLight::s_init(VkDevice device, VkPhysicalDevice physicalDevice)
 	{
 		s_dataFragment[i].m_lightStrength = 10.0f;
 		s_dataFragment[i].m_lightColor = Color(1, 1, 1, 1);
-		s_dataFragment[i].m_specularColor = Color(.35f, .35f, .35f, 1);
+		s_dataFragment[i].m_specularColor = Color(.35f, .35f, .35f, 1.0f);
 		s_dataFragment[i].m_lightFallOffMode = LightFalloffMode::LIGHT_FALLOFF_LINEAR;
 	}
 

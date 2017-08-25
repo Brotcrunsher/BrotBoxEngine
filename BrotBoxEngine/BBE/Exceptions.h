@@ -17,6 +17,7 @@ namespace bbe
 	CREATE_EXCEPTION(BufferMappedException);
 	CREATE_EXCEPTION(BufferAlreadyUploadedException);
 	CREATE_EXCEPTION(BufferTooSmallException);
+	CREATE_EXCEPTION(LoadException);
 
 	CREATE_EXCEPTION(NoSuchKeycodeException);
 	CREATE_EXCEPTION(NoSuchMouseButtonException);
