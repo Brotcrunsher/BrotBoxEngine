@@ -73,7 +73,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutVertexLight         , 1);
 	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutFragmentLight       , 1);
 	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutViewProjectionMatrix, 1);
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutSampler             , 1);
+	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutSampler             , 1024);
 	m_descriptorPool.create(m_device);
 
 	m_setVertexLight              .addUniformBuffer(PointLight::s_bufferVertexData  , 0, 0);

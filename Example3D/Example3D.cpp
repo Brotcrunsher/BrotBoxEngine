@@ -30,6 +30,8 @@ public:
 	bbe::Color colors[AMOUNTOFCUBES];
 
 	bbe::Image image;
+	bbe::Image image2;
+
 	MyGame()
 		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0))
 	{
@@ -58,6 +60,7 @@ public:
 		}
 
 		image.load("images/TestImage.png");
+		image2.load("images/TestImage2.png");
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
@@ -98,6 +101,7 @@ public:
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
 		brush.drawImage(10, 10, 100, 100, image);
+		brush.drawImage(120, 10, 100, 100, image2);
 	}
 	virtual void onEnd() override
 	{
