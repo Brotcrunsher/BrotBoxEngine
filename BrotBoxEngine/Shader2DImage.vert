@@ -6,7 +6,6 @@ out gl_PerVertex {
 };
 
 layout(location = 0) in vec2 inPos;
-layout(location = 1) in vec2 inUvCoord;
 
 layout(location = 0) out vec2 outUvCoord;
 
@@ -19,6 +18,6 @@ void main()
 {
 	vec2 pos = inPos * pushConts.posScale.zw + pushConts.posScale.xy;
 	gl_Position = vec4(pos, 0.0, 1.0);
-	outUvCoord = inUvCoord;
+	outUvCoord = inPos;
 
 }

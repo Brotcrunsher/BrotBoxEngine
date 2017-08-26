@@ -63,6 +63,7 @@ namespace bbe
 				VulkanDescriptorSetLayout m_setLayoutVertexLight;
 				VulkanDescriptorSetLayout m_setLayoutFragmentLight;
 				VulkanDescriptorSetLayout m_setLayoutViewProjectionMatrix;
+				VulkanDescriptorSetLayout m_setLayoutSampler;
 				VulkanDescriptorPool      m_descriptorPool;
 				VulkanDescriptorSet       m_setVertexLight;
 				VulkanDescriptorSet       m_setFragmentLight;
@@ -78,8 +79,6 @@ namespace bbe
 				Stack<VkBuffer>       m_pendingDestructionBuffers;
 				Stack<VkDeviceMemory> m_pendingDestructionMemory;
 				void destroyPendingBuffers();
-
-				Image testImage;
 
 			public:
 				VulkanManager();

@@ -3,12 +3,14 @@
 #include "BBE/Exceptions.h"
 #include "BBE/VulkanDevice.h"
 #include "BBE/VulkanCommandPool.h"
+#include "BBE/VulkanDescriptorPool.h"
+#include "BBE/VulkanDescriptorSetLayout.h"
 #include "BBE/VulkanBuffer.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, const INTERNAL::vulkan::VulkanCommandPool & commandPool)
+void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayout) const
 {
 	if (wasUploadedToVulkan)
 	{
@@ -65,17 +67,20 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	VkResult result = vkCreateSampler(m_device, &samplerCreateInfo, nullptr, &m_sampler);
 	ASSERT_VULKAN(result);
 
+	m_descriptorSet.addCombinedImageSampler(*this, 0);
+	m_descriptorSet.create(device, descriptorPool, setLayout);
+
 	wasUploadedToVulkan = true;
 }
 
-void bbe::Image::changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout)
+void bbe::Image::changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout) const
 {
 	INTERNAL::vulkan::changeImageLayout(device, commandPool, queue, m_image, VK_FORMAT_R8G8B8A8_UNORM, this->m_imageLayout, layout);
 
 	this->m_imageLayout = layout;
 }
 
-void bbe::Image::writeBufferToImage(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuffer buffer)
+void bbe::Image::writeBufferToImage(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuffer buffer) const
 {
 	VkCommandBuffer commandBuffer = INTERNAL::vulkan::startSingleTimeCommandBuffer(device, commandPool);
 

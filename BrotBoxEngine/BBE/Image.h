@@ -4,6 +4,7 @@
 #include "../BBE/ColorByte.h"
 #include "../BBE/Color.h"
 #include "../BBE/String.h"
+#include "../BBE/VulkanDescriptorSet.h"
 
 namespace bbe
 {
@@ -18,26 +19,30 @@ namespace bbe
 		}
 	}
 
+	class PrimitiveBrush2D;
+
 	class Image
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
 		friend class INTERNAL::vulkan::VulkanDescriptorSet;
+		friend class PrimitiveBrush2D;
 	private:
 		ColorByte *m_pdata  = nullptr;
 		int    m_width  = 0;
 		int    m_height = 0;
 
-		VkImage        m_image       = VK_NULL_HANDLE;
-		VkDeviceMemory m_imageMemory = VK_NULL_HANDLE;
-		VkImageView    m_imageView   = VK_NULL_HANDLE;
-		VkImageLayout  m_imageLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-		VkDevice       m_device      = VK_NULL_HANDLE;
-		VkSampler      m_sampler     = VK_NULL_HANDLE;
+		mutable VkImage        m_image       = VK_NULL_HANDLE;
+		mutable VkDeviceMemory m_imageMemory = VK_NULL_HANDLE;
+		mutable VkImageView    m_imageView   = VK_NULL_HANDLE;
+		mutable VkImageLayout  m_imageLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+		mutable VkDevice       m_device      = VK_NULL_HANDLE;
+		mutable VkSampler      m_sampler     = VK_NULL_HANDLE;
+		mutable INTERNAL::vulkan::VulkanDescriptorSet m_descriptorSet;
 
-		bool wasUploadedToVulkan = false;
-		void createAndUpload(const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool &commandPool);
-		void changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout);
-		void writeBufferToImage(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuffer buffer);
+		mutable bool wasUploadedToVulkan = false;
+		void createAndUpload(const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool &commandPool, const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayout) const;
+		void changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout) const;
+		void writeBufferToImage(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuffer buffer) const;
 
 		VkSampler getSampler() const;
 		VkImageView getImageView() const;

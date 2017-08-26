@@ -24,6 +24,7 @@ void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & p
 	deviceQueueCreateInfo.pQueuePriorities = queuePriorities.getRaw();
 
 	VkPhysicalDeviceFeatures usedFeatures = {};
+	usedFeatures.samplerAnisotropy = VK_TRUE;
 
 	const List<const char*> deviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME

@@ -29,6 +29,7 @@ public:
 	
 	bbe::Color colors[AMOUNTOFCUBES];
 
+	bbe::Image image;
 	MyGame()
 		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0))
 	{
@@ -55,6 +56,8 @@ public:
 			cubes[i].set(positions[i] , bbe::Vector3(1), rotationAxis[i], rotations[i]);
 			colors[i] = bbe::Color(rand.randomFloat(), rand.randomFloat(), rand.randomFloat(), 1.0f);
 		}
+
+		image.load("images/TestImage.png");
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
@@ -94,6 +97,7 @@ public:
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
+		brush.drawImage(10, 10, 100, 100, image);
 	}
 	virtual void onEnd() override
 	{

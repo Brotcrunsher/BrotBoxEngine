@@ -4,7 +4,7 @@
 layout(location = 0) in vec2 inUvCoord;
 layout(location = 0) out vec4 outColor;
 
-layout(binding = 4) uniform sampler2D tex;
+layout(binding = 0) uniform sampler2D tex;
 
 layout(push_constant) uniform PushConstants
 {
