@@ -269,6 +269,8 @@
     <ClInclude Include="BBE\VertexWithNormal.h" />
     <ClInclude Include="BBE\Terrain.h" />
     <ClInclude Include="BBE\ValueNoise2D.h" />
+    <ClInclude Include="BBE\VulkanDescriptorSetLayout.h" />
+    <ClInclude Include="BBE\VulkanDescriptorSet.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ColorByte.cpp" />
@@ -309,6 +311,8 @@
     <ClCompile Include="Vector2.cpp" />
     <ClCompile Include="VulkanBuffer.cpp" />
     <ClCompile Include="VulkanCommandPool.cpp" />
+    <ClCompile Include="VulkanDescriptorSet.cpp" />
+    <ClCompile Include="VulkanDescriptorSetLayout.cpp" />
     <ClCompile Include="VulkanDevice.cpp" />
     <ClCompile Include="VulkanFence.cpp" />
     <ClCompile Include="VulkanHelper.cpp" />
@@ -325,6 +329,8 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shader2DImage.frag" />
+    <None Include="Shader2DImage.vert" />
     <None Include="Shader2DPrimitive.frag" />
     <None Include="Shader2DPrimitive.vert" />
     <None Include="Shader3DPrimitive.frag" />

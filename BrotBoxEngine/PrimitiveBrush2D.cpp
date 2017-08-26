@@ -4,9 +4,12 @@
 #include "BBE/VulkanDevice.h"
 #include "BBE/VulkanManager.h"
 
-void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice &device, VkCommandBuffer commandBuffer, VkPipelineLayout layout, int width, int height)
+void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice &device, VkCommandBuffer commandBuffer, VkPipeline pipelinePrimitive, VkPipelineLayout layoutPrimitive, int width, int height)
 {
-	m_layout = layout;
+	m_layoutPrimitive = layoutPrimitive;
+	m_pipelinePrimitive = pipelinePrimitive;
+	//m_layoutImage = layoutImage;
+	//m_pipelineImage = pipelineImage;
 	m_currentCommandBuffer = commandBuffer;
 	m_device = device.getDevice();
 	m_physicalDevice = device.getPhysicalDevice();
@@ -18,9 +21,15 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevi
 
 void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect)
 {
+	if (m_pipelineRecord != PipelineRecord::PRIMITIVE)
+	{
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinePrimitive);
+		m_pipelineRecord = PipelineRecord::PRIMITIVE;
+	}
+
 	float pushConstants[] = {rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f, rect.getWidth() / m_screenWidth * 2.f, rect.getHeight() / m_screenHeight * 2.f};
 
-	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
 
 	VkDeviceSize offsets[] = { 0 };
 	VkBuffer buffer = Rectangle::s_vertexBuffer.getBuffer();
@@ -34,9 +43,14 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect)
 
 void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle)
 {
+	if (m_pipelineRecord != PipelineRecord::PRIMITIVE)
+	{
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinePrimitive);
+		m_pipelineRecord = PipelineRecord::PRIMITIVE;
+	}
 	float pushConstants[] = { circle.getX() / m_screenWidth * 2.f - 1.f, circle.getY() / m_screenHeight * 2.f - 1.f, circle.getWidth() / m_screenWidth * 2.f, circle.getHeight() / m_screenHeight * 2.f };
 
-	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
 
 	VkDeviceSize offsets[] = { 0 };
 	VkBuffer buffer = Circle::s_vertexBuffer.getBuffer();
@@ -51,7 +65,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle)
 void bbe::PrimitiveBrush2D::INTERNAL_setColor(float r, float g, float b, float a)
 {
 	Color c(r, g, b, a);
-	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
 }
 
 void bbe::PrimitiveBrush2D::fillRect(const Rectangle & rect)

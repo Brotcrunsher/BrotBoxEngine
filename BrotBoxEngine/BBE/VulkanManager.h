@@ -16,9 +16,12 @@
 #include "../BBE/VulkanCommandPool.h"
 #include "../BBE/VulkanSemaphore.h"
 #include "../BBE/VulkanDescriptorPool.h"
+#include "../BBE/VulkanDescriptorSet.h"
+#include "../BBE/VulkanDescriptorSetLayout.h"
 #include "../BBE/VWDepthImage.h"
 #include "../BBE/VulkanFence.h"
 #include "../BBE/Stack.h"
+#include "../BBE/Image.h"
 
 namespace bbe
 {
@@ -41,22 +44,32 @@ namespace bbe
 				VulkanShader   m_fragmentShader2DPrimitive;
 				VulkanPipeline m_pipeline2DPrimitive;
 
+				VulkanShader   m_vertexShader2DImage;
+				VulkanShader   m_fragmentShader2DImage;
+				VulkanPipeline m_pipeline2DImage;
+
 				VulkanShader   m_vertexShader3DPrimitive;
 				VulkanShader   m_fragmentShader3DPrimitive;
 				VulkanPipeline m_pipeline3DPrimitive;
 				VulkanBuffer   m_uboMatrixViewProjection;
 				VulkanBuffer   m_uboMatrixModel;
 
-				VulkanCommandPool    m_commandPool;
-				VulkanSemaphore      m_semaphoreImageAvailable;
-				VulkanSemaphore      m_semaphoreRenderingDone;
-				VWDepthImage         m_depthImage;
-				VkCommandBuffer      m_currentFrameDrawCommandBuffer = VK_NULL_HANDLE;
-				VulkanFence          m_presentFence;
-				VulkanDescriptorPool m_descriptorPoolVertex;
-				GLFWwindow          *m_pwindow = nullptr;
-				PrimitiveBrush2D     m_primitiveBrush2D;
-				PrimitiveBrush3D     m_primitiveBrush3D;
+				VulkanCommandPool         m_commandPool;
+				VulkanSemaphore           m_semaphoreImageAvailable;
+				VulkanSemaphore           m_semaphoreRenderingDone;
+				VWDepthImage              m_depthImage;
+				VkCommandBuffer           m_currentFrameDrawCommandBuffer = VK_NULL_HANDLE;
+				VulkanFence               m_presentFence;
+				VulkanDescriptorSetLayout m_setLayoutVertexLight;
+				VulkanDescriptorSetLayout m_setLayoutFragmentLight;
+				VulkanDescriptorSetLayout m_setLayoutViewProjectionMatrix;
+				VulkanDescriptorPool      m_descriptorPool;
+				VulkanDescriptorSet       m_setVertexLight;
+				VulkanDescriptorSet       m_setFragmentLight;
+				VulkanDescriptorSet       m_setViewProjectionMatrixLight;
+				GLFWwindow               *m_pwindow = nullptr;
+				PrimitiveBrush2D          m_primitiveBrush2D;
+				PrimitiveBrush3D          m_primitiveBrush3D;
 
 				uint32_t m_screenWidth;
 				uint32_t m_screenHeight;
@@ -65,6 +78,8 @@ namespace bbe
 				Stack<VkBuffer>       m_pendingDestructionBuffers;
 				Stack<VkDeviceMemory> m_pendingDestructionMemory;
 				void destroyPendingBuffers();
+
+				Image testImage;
 
 			public:
 				VulkanManager();

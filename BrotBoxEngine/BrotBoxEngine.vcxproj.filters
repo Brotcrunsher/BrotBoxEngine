@@ -315,6 +315,12 @@
     <ClInclude Include="BBE\ColorByte.h">
       <Filter>Header Files\GFX\Core</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\VulkanDescriptorSetLayout.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\VulkanDescriptorSet.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -458,6 +464,12 @@
     <ClCompile Include="ColorByte.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="VulkanDescriptorSetLayout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanDescriptorSet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader2DPrimitive.frag">
@@ -470,6 +482,12 @@
       <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
     </None>
     <None Include="Shader3DPrimitive.vert">
+      <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
+    </None>
+    <None Include="Shader2DImage.frag">
+      <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
+    </None>
+    <None Include="Shader2DImage.vert">
       <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
     </None>
   </ItemGroup>

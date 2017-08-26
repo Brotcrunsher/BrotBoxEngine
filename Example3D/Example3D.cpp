@@ -42,7 +42,8 @@ public:
 		sunLight.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_NONE);
 
 		extraLight.setPosition(bbe::Vector3(-400, -400, 0));
-		extraLight.setLightStrength(200.f);
+		extraLight.setLightStrength(5000.f);
+		extraLight.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_SQUARED);
 
 		terrain.setTransform(bbe::Vector3(-750, -750, -120), bbe::Vector3(1), bbe::Vector3(1), 0);
 		for (int i = 0; i < AMOUNTOFCUBES; i++)

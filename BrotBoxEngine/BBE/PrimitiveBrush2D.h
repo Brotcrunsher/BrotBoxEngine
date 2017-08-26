@@ -20,6 +20,11 @@ namespace bbe
 		}
 	}
 
+	enum class PipelineRecord
+	{
+		NONE, PRIMITIVE, IMAGE
+	};
+
 	class PrimitiveBrush2D
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
@@ -27,15 +32,20 @@ namespace bbe
 		VkCommandBuffer  m_currentCommandBuffer = VK_NULL_HANDLE;
 		VkDevice         m_device               = VK_NULL_HANDLE;
 		VkPhysicalDevice m_physicalDevice       = VK_NULL_HANDLE;
-		VkPipelineLayout m_layout               = VK_NULL_HANDLE;
+		VkPipelineLayout m_layoutPrimitive      = VK_NULL_HANDLE;
+		VkPipeline       m_pipelinePrimitive    = VK_NULL_HANDLE;
+		VkPipelineLayout m_layoutImage          = VK_NULL_HANDLE;
+		VkPipeline       m_pipelineImage        = VK_NULL_HANDLE;
 		VkDescriptorSet  m_descriptorSet        = VK_NULL_HANDLE;
 		int              m_screenWidth;
 		int              m_screenHeight;
 
+		PipelineRecord   m_pipelineRecord = PipelineRecord::NONE;
+
 		void INTERNAL_fillRect(const Rectangle &rect);
 		void INTERNAL_fillCircle(const Circle &circle);
 		void INTERNAL_setColor(float r, float g, float b, float a);
-		void INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice &device, VkCommandBuffer commandBuffer, VkPipelineLayout layout, int screenWidth, int screenHeight);
+		void INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice &device, VkCommandBuffer commandBuffer, VkPipeline m_pipelinePrimitive, VkPipelineLayout m_layoutPrimitive, int screenWidth, int screenHeight);
 
 	public:
 

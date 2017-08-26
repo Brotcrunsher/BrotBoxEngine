@@ -12,7 +12,7 @@ void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a
 	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
 }
 
-void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice & device, VkCommandBuffer commandBuffer, VkPipelineLayout layout, int width, int height, INTERNAL::vulkan::VulkanDescriptorPool *descriptorPool)
+void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice & device, VkCommandBuffer commandBuffer, VkPipelineLayout layout, int width, int height)
 {
 	m_layout = layout;
 	m_currentCommandBuffer = commandBuffer;
@@ -20,7 +20,6 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevi
 	m_physicalDevice = device.getPhysicalDevice();
 	m_screenWidth = width;
 	m_screenHeight = height;
-	m_pdescriptorPool = descriptorPool;
 	m_lastDraw = NONE;
 
 	setColor(1.0f, 1.0f, 1.0f, 1.0f);

@@ -47,7 +47,7 @@ namespace bbe
 		INTERNAL::vulkan::VulkanBuffer m_uboMatrices;
 
 		void INTERNAL_setColor(float r, float g, float b, float a);
-		void INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice &device, VkCommandBuffer commandBuffer, VkPipelineLayout layout, int screenWidth, int screenHeight, INTERNAL::vulkan::VulkanDescriptorPool *descriptorPool);
+		void INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice &device, VkCommandBuffer commandBuffer, VkPipelineLayout layout, int screenWidth, int screenHeight);
 		
 		void create(const INTERNAL::vulkan::VulkanDevice &vulkanDevice);
 		void destroy();
