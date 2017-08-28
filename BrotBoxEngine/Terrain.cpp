@@ -5,54 +5,67 @@
 #include "BBE/ValueNoise2D.h"
 
 
-bbe::INTERNAL::vulkan::VulkanBuffer bbe::Terrain::s_indexBuffer;
-bbe::INTERNAL::vulkan::VulkanBuffer bbe::Terrain::s_vertexBuffer;
-int bbe::Terrain::s_numberOfVertices = 0;
-
-static const int WIDTH = 3000;
-static const int HEIGHT = 3000;
+VkDevice         bbe::Terrain::s_device         = VK_NULL_HANDLE;
+VkPhysicalDevice bbe::Terrain::s_physicalDevice = VK_NULL_HANDLE;
+VkQueue          bbe::Terrain::s_queue          = VK_NULL_HANDLE;
+bbe::INTERNAL::vulkan::VulkanCommandPool *bbe::Terrain::s_pcommandPool = nullptr;
 
 void bbe::Terrain::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
 {
-	s_initVertexBuffer(device, physicalDevice, commandPool, queue);
-	s_initIndexBuffer(device, physicalDevice, commandPool, queue);
+	s_device = device;
+	s_physicalDevice = physicalDevice;
+	s_queue = queue;
+	s_pcommandPool = &commandPool;
 }
 
-void bbe::Terrain::s_initIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
+void bbe::Terrain::init() const
+{
+	if (m_created)
+	{
+		return;
+	}
+
+	initIndexBuffer();
+	initVertexBuffer();
+
+	m_created = true;
+}
+
+void bbe::Terrain::initIndexBuffer() const
 {
 	List<uint32_t> indices;
 
-	for (int i = 0; i < WIDTH - 1; i++)
+	for (int i = 0; i < m_width - 1; i++)
 	{
-		for (int k = 0; k < HEIGHT; k++)
+		for (int k = 0; k < m_height; k++)
 		{
-			indices.add(k * WIDTH + i);
-			indices.add(k * WIDTH + i + 1);
+			indices.add(k * m_width + i);
+			indices.add(k * m_width + i + 1);
 		}
 		indices.add(0xFFFFFFFF);
 	}
 
-	s_indexBuffer.create(device, physicalDevice, sizeof(uint32_t) * indices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+	m_indexBuffer.create(s_device, s_physicalDevice, sizeof(uint32_t) * indices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-	void *dataBuf = s_indexBuffer.map();
+	void *dataBuf = m_indexBuffer.map();
 	memcpy(dataBuf, indices.getRaw(), sizeof(uint32_t) * indices.getLength());
-	s_indexBuffer.unmap();
+	m_indexBuffer.unmap();
 
-	s_indexBuffer.upload(commandPool, queue);
+	m_indexBuffer.upload(*s_pcommandPool, s_queue);
 
-	s_numberOfVertices = indices.getLength();
+	m_numberOfVertices = indices.getLength();
 }
 
-void bbe::Terrain::s_initVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
+void bbe::Terrain::initVertexBuffer() const
 {
 	List<VertexWithNormal> vertices;
 	Random rand;
 	ValueNoise2D valueNoise;
-	valueNoise.create(WIDTH, HEIGHT);
+	valueNoise.create(m_width, m_height);
 
-	for (int i = 0; i < HEIGHT; i++)
+	for (int i = 0; i < m_height; i++)
 	{
-		for (int k = 0; k < WIDTH; k++)
+		for (int k = 0; k < m_width; k++)
 		{
 			float height = valueNoise.get(i, k);
 			//float height = 0;
@@ -60,23 +73,29 @@ void bbe::Terrain::s_initVertexBuffer(VkDevice device, VkPhysicalDevice physical
 		}
 	}
 
-	s_vertexBuffer.create(device, physicalDevice, sizeof(VertexWithNormal) * vertices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	m_vertexBuffer.create(s_device, s_physicalDevice, sizeof(VertexWithNormal) * vertices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-	void* dataBuf = s_vertexBuffer.map();
+	void* dataBuf = m_vertexBuffer.map();
 	memcpy(dataBuf, vertices.getRaw(), sizeof(VertexWithNormal) * vertices.getLength());
-	s_vertexBuffer.unmap();
+	m_vertexBuffer.unmap();
 
-	s_vertexBuffer.upload(commandPool, queue);
+	m_vertexBuffer.upload(*s_pcommandPool, s_queue);
 }
 
-void bbe::Terrain::s_destroy()
+void bbe::Terrain::destroy()
 {
-	s_indexBuffer.destroy();
-	s_vertexBuffer.destroy();
+	m_indexBuffer.destroy();
+	m_vertexBuffer.destroy();
 }
 
-bbe::Terrain::Terrain()
+bbe::Terrain::Terrain(int width, int height)
+	: m_width(width), m_height(height)
 {
+}
+
+bbe::Terrain::~Terrain()
+{
+	destroy();
 }
 
 bbe::Matrix4 bbe::Terrain::getTransform() const

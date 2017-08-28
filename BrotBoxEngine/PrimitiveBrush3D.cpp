@@ -100,6 +100,8 @@ void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 
 void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 {
+	terrain.init();
+
 	if (m_pipelineRecord != PipelineRecord3D::TERRAIN)
 	{
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineTerrain);
@@ -110,17 +112,17 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 	if (m_lastDraw != DrawRecord::TERRAIN)
 	{
 		VkDeviceSize offsets[] = { 0 };
-		VkBuffer buffer = Terrain::s_vertexBuffer.getBuffer();
+		VkBuffer buffer = terrain.m_vertexBuffer.getBuffer();
 		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
 
-		buffer = Terrain::s_indexBuffer.getBuffer();
+		buffer = terrain.m_indexBuffer.getBuffer();
 		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 
 		m_lastDraw = DrawRecord::TERRAIN;
 	}
 
 
-	vkCmdDrawIndexed(m_currentCommandBuffer, Terrain::s_numberOfVertices, 1, 0, 0, 0);
+	vkCmdDrawIndexed(m_currentCommandBuffer, terrain.m_numberOfVertices, 1, 0, 0, 0);
 }
 
 void bbe::PrimitiveBrush3D::setColor(float r, float g, float b, float a)

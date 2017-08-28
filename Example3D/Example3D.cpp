@@ -33,7 +33,7 @@ public:
 	bbe::Image image2;
 
 	MyGame()
-		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0))
+		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0)), terrain(3000, 3000)
 	{
 	}
 

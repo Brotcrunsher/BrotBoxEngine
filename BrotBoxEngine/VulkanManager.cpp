@@ -110,7 +110,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 {
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
-	bbe::Terrain::s_destroy();
 	bbe::Cube::s_destroy();
 	bbe::Circle::s_destroy();
 	bbe::Rectangle::s_destroy();
