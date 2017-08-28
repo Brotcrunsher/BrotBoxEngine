@@ -26,7 +26,7 @@ layout(set = 1, binding = 0) uniform UBOProjection
 
 layout(push_constant) uniform PushConstants
 {
-	layout(offset = 16)mat4 modelMatrix;	//Vertex
+	layout(offset = 16)mat4 modelMatrix;
 } pushConts;
 
 layout(location = 0) in vec3 inPos;

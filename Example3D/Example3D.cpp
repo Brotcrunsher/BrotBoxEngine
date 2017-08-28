@@ -96,7 +96,7 @@ public:
 		}
 
 		brush.setColor(1, 1, 1);
-		brush.drawTerrain(terrain);
+		//brush.drawTerrain(terrain);
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
@@ -113,6 +113,7 @@ int main()
 	bbe::Settings::setAmountOfLightSources(5);
 	MyGame *mg = new MyGame();
 	mg->start(1280, 720, "3D Test");
+	delete mg;
 
     return 0;
 }

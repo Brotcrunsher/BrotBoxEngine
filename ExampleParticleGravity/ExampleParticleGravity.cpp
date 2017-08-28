@@ -47,7 +47,7 @@ public:
 			}
 		}
 
-		speed = speed * 0.9f;
+		speed = speed * 0.99f;
 	}
 
 	void updatePos(float timeSinceLastFrame)
