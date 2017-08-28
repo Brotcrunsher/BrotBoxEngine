@@ -20,10 +20,11 @@ namespace bbe
 			class VulkanCommandPool;
 			class VulkanDescriptorPool;
 			class VulkanDescriptorSetLayout;
+			class VulkanPipeline;
 		}
 	}
 
-	enum class PipelineRecord
+	enum class PipelineRecord2D
 	{
 		NONE, PRIMITIVE, IMAGE
 	};
@@ -45,7 +46,7 @@ namespace bbe
 		int                m_screenWidth;
 		int                m_screenHeight;
 
-		PipelineRecord   m_pipelineRecord = PipelineRecord::NONE;
+		PipelineRecord2D   m_pipelineRecord = PipelineRecord2D::NONE;
 
 		void INTERNAL_fillRect(const Rectangle &rect);
 		void INTERNAL_drawImage(const Rectangle &rect, const Image &image);
@@ -57,10 +58,8 @@ namespace bbe
 			INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool,
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayout,
 			VkCommandBuffer commandBuffer,
-			VkPipeline pipelinePrimitive, 
-			VkPipelineLayout layoutPrimitive, 
-			VkPipeline pipelineImage, 
-			VkPipelineLayout layoutImage, 
+			INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive,
+			INTERNAL::vulkan::VulkanPipeline &pipelineImage,
 			int screenWidth, int screenHeight);
 
 	public:

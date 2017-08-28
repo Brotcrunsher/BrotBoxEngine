@@ -154,12 +154,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 {
-	m_primitiveBrush2D.m_pipelineRecord = PipelineRecord::NONE;
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 {
-	vkCmdBindPipeline(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getPipeline());
 	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 0, 1, m_setVertexLight              .getPDescriptorSet(), 0, nullptr);
 	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 2, 1, m_setFragmentLight            .getPDescriptorSet(), 0, nullptr);
 	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
@@ -217,8 +215,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	scissor.extent = { m_screenWidth, m_screenHeight };
 	vkCmdSetScissor(m_currentFrameDrawCommandBuffer, 0, 1, &scissor);
 
-	m_primitiveBrush2D.INTERNAL_beginDraw(m_device, m_commandPool, m_descriptorPool, m_setLayoutSampler, m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getPipeline(), m_pipeline2DPrimitive.getLayout(), m_pipeline2DImage.getPipeline(), m_pipeline2DImage.getLayout(), m_screenWidth, m_screenHeight);
-	m_primitiveBrush3D.INTERNAL_beginDraw(m_device, m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), m_screenWidth, m_screenHeight);
+	m_primitiveBrush2D.INTERNAL_beginDraw(m_device, m_commandPool, m_descriptorPool, m_setLayoutSampler, m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive, m_pipeline2DImage, m_screenWidth, m_screenHeight);
+	m_primitiveBrush3D.INTERNAL_beginDraw(m_device, m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive, m_pipeline3DTerrain, m_screenWidth, m_screenHeight);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::postDraw()

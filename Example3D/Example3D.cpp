@@ -105,8 +105,6 @@ public:
 	}
 	virtual void onEnd() override
 	{
-		image.destroy();
-		image2.destroy();
 	}
 };
 

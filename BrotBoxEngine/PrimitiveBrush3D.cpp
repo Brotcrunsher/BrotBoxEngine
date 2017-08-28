@@ -5,22 +5,27 @@
 #include "BBE/Color.h"
 #include "BBE/Math.h"
 #include "BBE/VulkanDescriptorPool.h"
+#include "BBE/VulkanPipeline.h"
 
 void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a)
 {
 	Color c(r, g, b, a);
-	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
 }
 
-void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice & device, VkCommandBuffer commandBuffer, VkPipelineLayout layout, int width, int height)
+void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice & device, VkCommandBuffer commandBuffer, INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive, INTERNAL::vulkan::VulkanPipeline &pipelineTerrain, int width, int height)
 {
-	m_layout = layout;
+	m_layoutPrimitive = pipelinePrimitive.getLayout();
+	m_pipelinePrimitive = pipelinePrimitive.getPipeline();
+	m_layoutTerrain = pipelineTerrain.getLayout();
+	m_pipelineTerrain = pipelineTerrain.getPipeline();
 	m_currentCommandBuffer = commandBuffer;
 	m_device = device.getDevice();
 	m_physicalDevice = device.getPhysicalDevice();
 	m_screenWidth = width;
 	m_screenHeight = height;
-	m_lastDraw = NONE;
+	m_lastDraw = DrawRecord::NONE;
+	m_pipelineRecord = PipelineRecord3D::NONE;
 
 	setColor(1.0f, 1.0f, 1.0f, 1.0f);
 	setCamera(Vector3(0, 0, 0), Vector3(1, 0, 0), Vector3(0, 0, 1));
@@ -45,9 +50,14 @@ void bbe::PrimitiveBrush3D::destroy()
 
 void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 {
-	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &cube.m_transform);
+	if (m_pipelineRecord != PipelineRecord3D::PRIMITIVE)
+	{
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinePrimitive);
+		m_pipelineRecord = PipelineRecord3D::PRIMITIVE;
+	}
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &cube.m_transform);
 
-	if (m_lastDraw != CUBE)
+	if (m_lastDraw != DrawRecord::CUBE)
 	{
 		VkDeviceSize offsets[] = { 0 };
 		VkBuffer buffer = Cube::s_vertexBuffer.getBuffer();
@@ -56,7 +66,7 @@ void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 		buffer = Cube::s_indexBuffer.getBuffer();
 		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		m_lastDraw = CUBE;
+		m_lastDraw = DrawRecord::CUBE;
 	}
 	
 
@@ -65,9 +75,14 @@ void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 
 void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 {
-	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &sphere.m_transform);
+	if (m_pipelineRecord != PipelineRecord3D::PRIMITIVE)
+	{
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinePrimitive);
+		m_pipelineRecord = PipelineRecord3D::PRIMITIVE;
+	}
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &sphere.m_transform);
 
-	if (m_lastDraw != ICOSPHERE)
+	if (m_lastDraw != DrawRecord::ICOSPHERE)
 	{
 		VkDeviceSize offsets[] = { 0 };
 		VkBuffer buffer = IcoSphere::s_vertexBuffer.getBuffer();
@@ -76,7 +91,7 @@ void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 		buffer = IcoSphere::s_indexBuffer.getBuffer();
 		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		m_lastDraw = ICOSPHERE;
+		m_lastDraw = DrawRecord::ICOSPHERE;
 	}
 
 
@@ -85,9 +100,14 @@ void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 
 void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 {
-	vkCmdPushConstants(m_currentCommandBuffer, m_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &terrain.m_transform);
+	if (m_pipelineRecord != PipelineRecord3D::TERRAIN)
+	{
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineTerrain);
+		m_pipelineRecord = PipelineRecord3D::TERRAIN;
+	}
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &terrain.m_transform);
 
-	if (m_lastDraw != TERRAIN)
+	if (m_lastDraw != DrawRecord::TERRAIN)
 	{
 		VkDeviceSize offsets[] = { 0 };
 		VkBuffer buffer = Terrain::s_vertexBuffer.getBuffer();
@@ -96,7 +116,7 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 		buffer = Terrain::s_indexBuffer.getBuffer();
 		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		m_lastDraw = TERRAIN;
+		m_lastDraw = DrawRecord::TERRAIN;
 	}
 
 

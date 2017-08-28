@@ -3,6 +3,7 @@
 #include "BBE/VulkanBuffer.h"
 #include "BBE/VulkanDevice.h"
 #include "BBE/VulkanManager.h"
+#include "BBE/VulkanPipeline.h"
 #include "BBE/Image.h"
 
 void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
@@ -10,17 +11,15 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	INTERNAL::vulkan::VulkanCommandPool &commandPool,
 	INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool,
 	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayout, 
-	VkCommandBuffer commandBuffer, 
-	VkPipeline pipelinePrimitive, 
-	VkPipelineLayout layoutPrimitive, 
-	VkPipeline pipelineImage, 
-	VkPipelineLayout layoutImage, 
+	VkCommandBuffer commandBuffer,
+	INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive,
+	INTERNAL::vulkan::VulkanPipeline &pipelineImage,
 	int width, int height)
 {
-	m_layoutPrimitive = layoutPrimitive;
-	m_pipelinePrimitive = pipelinePrimitive;
-	m_layoutImage = layoutImage;
-	m_pipelineImage = pipelineImage;
+	m_layoutPrimitive = pipelinePrimitive.getLayout();
+	m_pipelinePrimitive = pipelinePrimitive.getPipeline();
+	m_layoutImage = pipelineImage.getLayout();
+	m_pipelineImage = pipelineImage.getPipeline();
 	m_currentCommandBuffer = commandBuffer;
 	m_pdevice = &device;
 	m_pcommandPool = &commandPool;
@@ -29,15 +28,17 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	m_screenWidth = width;
 	m_screenHeight = height;
 
+	m_pipelineRecord = PipelineRecord2D::NONE;
+
 	setColor(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect)
 {
-	if (m_pipelineRecord != PipelineRecord::PRIMITIVE)
+	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
 	{
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinePrimitive);
-		m_pipelineRecord = PipelineRecord::PRIMITIVE;
+		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 
 	float pushConstants[] = {rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f, rect.getWidth() / m_screenWidth * 2.f, rect.getHeight() / m_screenHeight * 2.f};
@@ -56,10 +57,10 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect)
 
 void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Image & image)
 {
-	if (m_pipelineRecord != PipelineRecord::IMAGE)
+	if (m_pipelineRecord != PipelineRecord2D::IMAGE)
 	{
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineImage);
-		m_pipelineRecord = PipelineRecord::IMAGE;
+		m_pipelineRecord = PipelineRecord2D::IMAGE;
 	}
 
 	image.createAndUpload(*m_pdevice, *m_pcommandPool, *m_pdescriptorPool, *m_pdescriptorSetLayout);
@@ -82,10 +83,10 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 
 void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle)
 {
-	if (m_pipelineRecord != PipelineRecord::PRIMITIVE)
+	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
 	{
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinePrimitive);
-		m_pipelineRecord = PipelineRecord::PRIMITIVE;
+		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 	float pushConstants[] = { circle.getX() / m_screenWidth * 2.f - 1.f, circle.getY() / m_screenHeight * 2.f - 1.f, circle.getWidth() / m_screenWidth * 2.f, circle.getHeight() / m_screenHeight * 2.f };
 

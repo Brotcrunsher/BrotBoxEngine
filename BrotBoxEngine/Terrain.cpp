@@ -24,16 +24,12 @@ void bbe::Terrain::s_initIndexBuffer(VkDevice device, VkPhysicalDevice physicalD
 
 	for (int i = 0; i < WIDTH - 1; i++)
 	{
-		for (int k = 0; k < HEIGHT - 1; k++)
+		for (int k = 0; k < HEIGHT; k++)
 		{
 			indices.add(k * WIDTH + i);
 			indices.add(k * WIDTH + i + 1);
-			indices.add(k * WIDTH + i + WIDTH + 1);
-
-			indices.add(k * WIDTH + i);
-			indices.add(k * WIDTH + i + WIDTH + 1);
-			indices.add(k * WIDTH + i + WIDTH);
 		}
+		indices.add(0xFFFFFFFF);
 	}
 
 	s_indexBuffer.create(device, physicalDevice, sizeof(uint32_t) * indices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
