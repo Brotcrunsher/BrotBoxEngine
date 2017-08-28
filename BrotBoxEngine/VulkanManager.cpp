@@ -128,13 +128,21 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_uboMatrixViewProjection.destroy();
 	m_uboMatrixModel.destroy();
 	m_pipeline3DPrimitive.destroy();
+	m_pipeline3DTerrain.destroy();
 	m_fragmentShader3DPrimitive.destroy();
 	m_vertexShader3DPrimitive.destroy();
 
 	m_pipeline2DPrimitive.destroy();
+	m_pipeline2DImage.destroy();
 	m_fragmentShader2DPrimitive.destroy();
 	m_vertexShader2DPrimitive.destroy();
+	m_vertexShader2DImage.destroy();
+	m_fragmentShader2DImage.destroy();
 
+	m_setLayoutVertexLight.destroy();
+	m_setLayoutFragmentLight.destroy();
+	m_setLayoutViewProjectionMatrix.destroy();
+	m_setLayoutSampler.destroy();
 	m_descriptorPool.destroy();
 	m_primitiveBrush3D.destroy();
 	m_renderPass.destroy();
@@ -307,6 +315,22 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	int32_t spezialization = Settings::getAmountOfLightSources();
 	m_pipeline3DPrimitive.setSpezializationData(sizeof(int32_t), &spezialization);
 	m_pipeline3DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
+
+	m_pipeline3DTerrain.init(m_vertexShader3DPrimitive, m_fragmentShader3DPrimitive, m_screenWidth, m_screenHeight);
+	m_pipeline3DTerrain.addVertexBinding(0, sizeof(VertexWithNormal), VK_VERTEX_INPUT_RATE_VERTEX);
+	m_pipeline3DTerrain.addVertexDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_pos));
+	m_pipeline3DTerrain.addVertexDescription(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_normal));
+	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
+	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(Matrix4));
+	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutVertexLight.getDescriptorSetLayout());
+	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutViewProjectionMatrix.getDescriptorSetLayout());
+	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutFragmentLight.getDescriptorSetLayout());
+	m_pipeline3DTerrain.enableDepthBuffer();
+	m_pipeline3DTerrain.addSpezializationConstant(0, 0, sizeof(int32_t));
+	m_pipeline3DTerrain.setSpezializationData(sizeof(int32_t), &spezialization);
+	m_pipeline3DTerrain.enablePrimitiveRestart(true);
+	m_pipeline3DTerrain.setPrimitiveTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+	m_pipeline3DTerrain.create(m_device.getDevice(), m_renderPass.getRenderPass());
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::resize(uint32_t width, uint32_t height)
@@ -332,7 +356,9 @@ void bbe::INTERNAL::vulkan::VulkanManager::recreateSwapchain()
 
 
 	m_pipeline2DPrimitive.destroy();
+	m_pipeline2DImage.destroy();
 	m_pipeline3DPrimitive.destroy();
+	m_pipeline3DTerrain.destroy();
 	m_renderPass.destroy();
 	m_depthImage.destroy();
 	//m_swapchain.destroy();

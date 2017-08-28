@@ -79,6 +79,9 @@ namespace bbe
 				void addSpezializationConstant(uint32_t constantID, uint32_t offset, size_t size);
 				void setSpezializationData(size_t size, const void* data);
 
+				void setPrimitiveTopology(VkPrimitiveTopology topology);
+				void enablePrimitiveRestart(bool enable);
+
 				void enableDepthBuffer();
 			};
 		}

@@ -96,7 +96,7 @@ public:
 		}
 
 		brush.setColor(1, 1, 1);
-		//brush.drawTerrain(terrain);
+		brush.drawTerrain(terrain);
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
@@ -105,6 +105,8 @@ public:
 	}
 	virtual void onEnd() override
 	{
+		image.destroy();
+		image2.destroy();
 	}
 };
 

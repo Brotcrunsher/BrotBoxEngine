@@ -361,6 +361,24 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::setSpezializationData(size_t size, c
 	m_spezializationData = data;
 }
 
+void bbe::INTERNAL::vulkan::VulkanPipeline::setPrimitiveTopology(VkPrimitiveTopology topology)
+{
+	if (m_wasCreated)
+	{
+		throw AlreadyCreatedException();
+	}
+	m_inputAssemblyCreateInfo.topology = topology;
+}
+
+void bbe::INTERNAL::vulkan::VulkanPipeline::enablePrimitiveRestart(bool enable)
+{
+	if (m_wasCreated)
+	{
+		throw AlreadyCreatedException();
+	}
+	m_inputAssemblyCreateInfo.primitiveRestartEnable = enable ? VK_TRUE : VK_FALSE;
+}
+
 void bbe::INTERNAL::vulkan::VulkanPipeline::enableDepthBuffer()
 {
 	if (m_wasCreated)

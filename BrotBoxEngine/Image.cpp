@@ -200,7 +200,7 @@ void bbe::Image::destroy()
 		wasUploadedToVulkan = false;
 	}
 
-	if(m_sampler == VK_NULL_HANDLE)
+	if(m_sampler != VK_NULL_HANDLE)
 	{
 		vkDestroySampler(m_device, m_sampler, nullptr);
 		vkDestroyImageView(m_device, m_imageView, nullptr);

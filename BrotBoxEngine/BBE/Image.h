@@ -53,7 +53,7 @@ namespace bbe
 		Image(const char* path);
 		Image(int width, int height);
 		Image(int width, int height, const Color &c);
-
+		
 		~Image();
 
 		void load(const char* path);

@@ -51,15 +51,15 @@ void bbe::Terrain::s_initVertexBuffer(VkDevice device, VkPhysicalDevice physical
 {
 	List<VertexWithNormal> vertices;
 	Random rand;
-	//ValueNoise2D valueNoise;
-	//valueNoise.create(WIDTH, HEIGHT);
+	ValueNoise2D valueNoise;
+	valueNoise.create(WIDTH, HEIGHT);
 
 	for (int i = 0; i < HEIGHT; i++)
 	{
 		for (int k = 0; k < WIDTH; k++)
 		{
-			//float height = valueNoise.get(i, k);
-			float height = 0;
+			float height = valueNoise.get(i, k);
+			//float height = 0;
 			vertices.add(VertexWithNormal(Vector3(i / 2.0f, k / 2.0f, height * 100.0f), Vector3(0, 0, 1)));
 		}
 	}
