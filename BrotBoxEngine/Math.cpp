@@ -255,6 +255,15 @@ float bbe::Math::max(float val1, float val2, float val3)
 	return val3;
 }
 
+float bbe::Math::max(float val1, float val2, float val3, float val4)
+{
+	//UNTESTED
+	if (val2 > val1) val1 = val2;
+	if (val3 > val1) val1 = val3;
+	if (val4 > val1) val1 = val4;
+	return val1;
+}
+
 float bbe::Math::min(float val1, float val2)
 {
 	return val1 < val2 ? val1 : val2;
@@ -265,6 +274,15 @@ float bbe::Math::min(float val1, float val2, float val3)
 	//UNTESTED
 	if (val2 < val1) val1 = val2;
 	if (val3 < val1) val1 = val3;
+	return val1;
+}
+
+float bbe::Math::min(float val1, float val2, float val3, float val4)
+{
+	//UNTESTED
+	if (val2 < val1) val1 = val2;
+	if (val3 < val1) val1 = val3;
+	if (val4 < val1) val1 = val4;
 	return val1;
 }
 

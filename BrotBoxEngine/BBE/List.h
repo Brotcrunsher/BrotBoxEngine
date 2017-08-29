@@ -362,7 +362,7 @@ namespace bbe
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<!dummyKeepSorted, void>::type add(T&& val, size_t amount = 1)
+		typename std::enable_if<!dummyKeepSorted, void>::type add(T&& val, size_t amount)
 		{
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			growIfNeeded(amount);
@@ -379,6 +379,16 @@ namespace bbe
 			}
 
 			m_length += amount;
+		}
+
+		template <bool dummyKeepSorted = keepSorted>
+		typename std::enable_if<!dummyKeepSorted, void>::type add(T&& val)
+		{
+			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
+			growIfNeeded(1);
+			new (bbe::addressOf(m_pdata[m_length])) T(std::move(val));
+
+			m_length += 1;
 		}
 
 		template <bool dummyKeepSorted = keepSorted>

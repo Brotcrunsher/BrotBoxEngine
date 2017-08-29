@@ -6,6 +6,9 @@
 #include "BBE/Math.h"
 #include "BBE/VulkanDescriptorPool.h"
 #include "BBE/VulkanPipeline.h"
+#include "BBE/Vector2.h"
+#include "BBE/Matrix4.h"
+#include "BBE/Rectangle.h"
 
 void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a)
 {
@@ -100,6 +103,11 @@ void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 
 void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 {
+	drawTerrain(terrain, 0);
+}
+
+void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain, int lodLevel)
+{
 	terrain.init();
 
 	if (m_pipelineRecord != PipelineRecord3D::TERRAIN)
@@ -107,22 +115,36 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineTerrain);
 		m_pipelineRecord = PipelineRecord3D::TERRAIN;
 	}
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &terrain.m_transform);
-
-	if (m_lastDraw != DrawRecord::TERRAIN)
+	for (int i = 0; i < terrain.m_patches.getLength(); i++)
 	{
+		Rectangle terrainPos2D = Rectangle(terrain.m_patches[i].getTransform().extractTranslation().xy(), 128, 128);
+		float distance = terrainPos2D.getDistanceTo(m_cameraPos.xy());
+		float lodLevelFloat = distance / 128 - 1;
+		lodLevel = (int)lodLevelFloat;
+		if (lodLevel >= Terrain::AMOUNT_OF_LOD_LEVELS)
+		{
+			lodLevel = Terrain::AMOUNT_OF_LOD_LEVELS - 1;
+		}
+		else if (lodLevel < 0)
+		{
+			lodLevel = 0;
+		}
+		float translation = lodLevelFloat * 20;
+		if (translation < 0) translation = 0;
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &((terrain.m_patches[i].m_transform) * (Matrix4::createTranslationMatrix(bbe::Vector3(0, 0, -translation)))));
 		VkDeviceSize offsets[] = { 0 };
-		VkBuffer buffer = terrain.m_vertexBuffer.getBuffer();
+		VkBuffer buffer = terrain.m_patches[i].m_vertexBuffers[lodLevel].getBuffer();
 		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
 
-		buffer = terrain.m_indexBuffer.getBuffer();
+		buffer = terrain.m_patches[i].m_indexBuffers[lodLevel].getBuffer();
 		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		m_lastDraw = DrawRecord::TERRAIN;
+
+		vkCmdDrawIndexed(m_currentCommandBuffer, terrain.m_patches[i].m_numberOfVertices[lodLevel], 1, 0, 0, 0);
 	}
 
-
-	vkCmdDrawIndexed(m_currentCommandBuffer, terrain.m_numberOfVertices, 1, 0, 0, 0);
+	m_lastDraw = DrawRecord::TERRAIN;
+	
 }
 
 void bbe::PrimitiveBrush3D::setColor(float r, float g, float b, float a)
@@ -149,4 +171,6 @@ void bbe::PrimitiveBrush3D::setCamera(const Vector3 & cameraPos, const Vector3 &
 	memcpy((char*)data, &view, sizeof(Matrix4));
 	memcpy((char*)data + sizeof(Matrix4), &projection, sizeof(Matrix4));
 	m_uboMatrices.unmap();
+
+	m_cameraPos = cameraPos;
 }

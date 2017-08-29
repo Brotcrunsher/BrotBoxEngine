@@ -157,3 +157,50 @@ void bbe::Rectangle::translate(const Vector2 & vec)
 {
 	translate(vec.x, vec.y);
 }
+
+float bbe::Rectangle::getDistanceTo(const Vector2 & vec)
+{
+	//UNTESTED
+	if (vec.x < m_x)
+	{
+		if (vec.y < m_y)
+		{
+			return vec.getDistanceTo(Vector2(m_x, m_y));
+		}
+		else if (vec.y > m_y + m_height)
+		{
+			return vec.getDistanceTo(Vector2(m_x, m_y + m_height));
+		}
+		else
+		{
+			return m_x - vec.x;
+		}
+	}
+	else if (vec.x > m_x + m_width)
+	{
+		if (vec.y < m_y)
+		{
+			return vec.getDistanceTo(Vector2(m_x + m_width, m_y));
+		}
+		else if (vec.y > m_y + m_height)
+		{
+			return vec.getDistanceTo(Vector2(m_x + m_width, m_y + m_height));
+		}
+		else
+		{
+			return vec.x - (m_x + m_width);
+		}
+	}
+	else if (vec.y < m_y)
+	{
+		return m_y - vec.y;
+	}
+	else if (vec.y > m_y + m_height)
+	{
+		return vec.y - (m_y + m_height);
+	}
+	else
+	{
+		return 0;
+	}
+}

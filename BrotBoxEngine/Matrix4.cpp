@@ -111,6 +111,15 @@ bbe::Matrix4 bbe::Matrix4::createViewMatrix(const Vector3 & cameraPos, const Vec
 	return retVal;
 }
 
+bbe::Matrix4 bbe::Matrix4::createTransform(const Vector3 & pos, const Vector3 & scale, const Vector3 & rotationVector, float radians)
+{
+	Matrix4 matTranslation = Matrix4::createTranslationMatrix(pos);
+	Matrix4 matScale = Matrix4::createScaleMatrix(scale);
+	Matrix4 matRotation = Matrix4::createRotationMatrix(radians, rotationVector);
+
+	return matTranslation * matRotation * matScale;
+}
+
 float bbe::Matrix4::get(int row, int col) const
 {
 	if (row < 0 || row > 3 || col < 0 || col > 3)

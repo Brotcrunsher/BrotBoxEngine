@@ -51,8 +51,10 @@ namespace bbe
 		float abs(float val);
 		float max(float val1, float val2);
 		float max(float val1, float val2, float val3);
+		float max(float val1, float val2, float val3, float val4);
 		float min(float val1, float val2);
 		float min(float val1, float val2, float val3);
+		float min(float val1, float val2, float val3, float val4);
 		float maxAbs(float val1, float val2);
 		float maxAbs(float val1, float val2, float val3);
 		float minAbs(float val1, float val2);

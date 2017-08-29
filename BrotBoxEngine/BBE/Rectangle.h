@@ -56,5 +56,7 @@ namespace bbe
 
 		void translate(float x, float y);
 		void translate(const Vector2 &vec);
+
+		float getDistanceTo(const Vector2 &vec);
 	};
 }

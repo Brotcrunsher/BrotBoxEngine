@@ -138,6 +138,10 @@ float bbe::ValueNoise2D::get(int x, int y)
 	{
 		throw NotInitializedException();
 	}
+	if (x < 0) x = 0;
+	if (y < 0) y = 0;
+	if (x >= m_width) x = m_width - 1;
+	if (y >= m_height) y = m_height - 1;
 	return m_pdata[x + y * m_width];
 }
 

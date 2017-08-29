@@ -54,6 +54,8 @@ namespace bbe
 		Matrix4 m_modelMatrix;
 		Matrix4 m_viewProjectionMatrix;
 
+		Vector3 m_cameraPos;
+
 		INTERNAL::vulkan::VulkanBuffer m_uboMatrices;
 
 		void INTERNAL_setColor(float r, float g, float b, float a);
@@ -67,6 +69,7 @@ namespace bbe
 		void fillIcoSphere(const IcoSphere &sphere);
 
 		void drawTerrain(const Terrain &terrain);
+		void drawTerrain(const Terrain &terrain, int lod);
 
 		void setColor(float r, float g, float b, float a);
 		void setColor(float r, float g, float b);

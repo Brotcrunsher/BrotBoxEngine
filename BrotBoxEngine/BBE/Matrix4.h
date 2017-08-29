@@ -19,6 +19,7 @@ namespace bbe
 		static Matrix4 createScaleMatrix(const Vector3 &scale);
 		static Matrix4 createPerspectiveMatrix(float fieldOfView, float aspectRatio, float nearClipPlane, float farClipPlane);
 		static Matrix4 createViewMatrix(const Vector3 &cameraPos, const Vector3 &lookTarget, const Vector3 &upDirection);
+		static Matrix4 createTransform(const Vector3 &pos, const Vector3 &scale, const Vector3 &rotationVector, float radians);
 
 		float get(int row, int col) const;
 		void set(int row, int col, float val);
