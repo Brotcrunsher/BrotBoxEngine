@@ -89,6 +89,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_fragmentShader2DImage.init(m_device, "frag2DImage.spv");
 	m_vertexShader3DPrimitive.init(m_device, "vert3DPrimitive.spv");
 	m_fragmentShader3DPrimitive.init(m_device, "frag3DPrimitive.spv");
+	m_vertexShader3DTerrain.init(m_device, "vert3DTerrain.spv");
+	m_fragmentShader3DTerrain.init(m_device, "frag3DTerrain.spv");
 
 	createPipelines();
 
@@ -130,6 +132,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_pipeline3DTerrain.destroy();
 	m_fragmentShader3DPrimitive.destroy();
 	m_vertexShader3DPrimitive.destroy();
+	m_vertexShader3DTerrain.destroy();
+	m_fragmentShader3DTerrain.destroy();
 
 	m_pipeline2DPrimitive.destroy();
 	m_pipeline2DImage.destroy();
@@ -313,12 +317,12 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DPrimitive.setSpezializationData(sizeof(int32_t), &spezialization);
 	m_pipeline3DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
 
-	m_pipeline3DTerrain.init(m_vertexShader3DPrimitive, m_fragmentShader3DPrimitive, m_screenWidth, m_screenHeight);
-	m_pipeline3DTerrain.addVertexBinding(0, sizeof(VertexWithNormal), VK_VERTEX_INPUT_RATE_VERTEX);
-	m_pipeline3DTerrain.addVertexDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_pos));
-	m_pipeline3DTerrain.addVertexDescription(1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexWithNormal, m_normal));
+	m_pipeline3DTerrain.init(m_vertexShader3DTerrain, m_fragmentShader3DTerrain, m_screenWidth, m_screenHeight);
+	m_pipeline3DTerrain.addVertexBinding(0, sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX);
+	m_pipeline3DTerrain.addVertexDescription(0, 0, VK_FORMAT_R32_SFLOAT, 0);
 	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
 	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(Matrix4));
+	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color) + sizeof(Matrix4), sizeof(int32_t));
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutVertexLight.getDescriptorSetLayout());
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutViewProjectionMatrix.getDescriptorSetLayout());
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutFragmentLight.getDescriptorSetLayout());

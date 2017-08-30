@@ -490,5 +490,11 @@
     <None Include="Shader2DImage.vert">
       <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
     </None>
+    <None Include="Shader3DTerrain.vert">
+      <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
+    </None>
+    <None Include="Shader3DTerrain.frag">
+      <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

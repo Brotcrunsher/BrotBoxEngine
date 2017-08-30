@@ -10,7 +10,7 @@ VkDevice         bbe::TerrainPatch::s_device         = VK_NULL_HANDLE;
 VkPhysicalDevice bbe::TerrainPatch::s_physicalDevice = VK_NULL_HANDLE;
 VkQueue          bbe::TerrainPatch::s_queue          = VK_NULL_HANDLE;
 bbe::INTERNAL::vulkan::VulkanCommandPool *bbe::TerrainPatch::s_pcommandPool = nullptr;
-const int bbe::Terrain::AMOUNT_OF_LOD_LEVELS = 4;
+const int bbe::Terrain::AMOUNT_OF_LOD_LEVELS = 5;
 static bbe::Random random;
 
 void bbe::TerrainPatch::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
@@ -79,14 +79,14 @@ void bbe::TerrainPatch::initVertexBuffer() const
 {
 	int lodWidth = m_width;
 	int lodHeight = m_height;
-	List<VertexWithNormal> verticesLast;
+	List<float> verticesLast;
 	int lodWidthLast = m_width;
 	int lodHeightLast = m_height;
 	float distMultiplier = 0.5f;
 
 	for (int lod = 0; lod < Terrain::AMOUNT_OF_LOD_LEVELS; lod++)
 	{
-		List<VertexWithNormal> vertices;
+		List<float> vertices;
 
 		if (lod == 0)
 		{
@@ -97,7 +97,7 @@ void bbe::TerrainPatch::initVertexBuffer() const
 				for (int k = 0; k < lodWidth; k++)
 				{
 					float height = m_pdata[i * lodWidth + k];
-					vertices.add(VertexWithNormal(Vector3(i * distMultiplier, k * distMultiplier, height * 100.0f), Vector3(0, 0, 1)));
+					vertices.add(height * 100.0f);
 				}
 			}
 		}
@@ -120,10 +120,10 @@ void bbe::TerrainPatch::initVertexBuffer() const
 						parentY = (i - 1) * 2;
 					}
 
-					float val1 = verticesLast[parentX + parentY * lodHeightLast].m_pos.z;
-					float val2 = verticesLast[parentX + parentY * lodHeightLast + 1].m_pos.z;
-					float val3 = verticesLast[parentX + parentY * lodHeightLast + lodHeightLast].m_pos.z;
-					float val4 = verticesLast[parentX + parentY * lodHeightLast + lodHeightLast + 1].m_pos.z;
+					float val1 = verticesLast[parentX + parentY * lodHeightLast];
+					float val2 = verticesLast[parentX + parentY * lodHeightLast + 1];
+					float val3 = verticesLast[parentX + parentY * lodHeightLast + lodHeightLast];
+					float val4 = verticesLast[parentX + parentY * lodHeightLast + lodHeightLast + 1];
 
 					/*if ((i & 1) ^ (k & 1))
 					{
@@ -145,7 +145,7 @@ void bbe::TerrainPatch::initVertexBuffer() const
 						height = Math::min(val1, val2, val3, val4);
 					}
 
-					vertices.add(VertexWithNormal(Vector3(i * distMultiplier, k * distMultiplier, height), Vector3(0, 0, 1)));
+					vertices.add(height);
 				}
 			}
 		}
@@ -153,10 +153,10 @@ void bbe::TerrainPatch::initVertexBuffer() const
 
 		INTERNAL::vulkan::VulkanBuffer vertexBuffer;
 
-		vertexBuffer.create(s_device, s_physicalDevice, sizeof(VertexWithNormal) * vertices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+		vertexBuffer.create(s_device, s_physicalDevice, sizeof(float) * vertices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
 		void* dataBuf = vertexBuffer.map();
-		memcpy(dataBuf, vertices.getRaw(), sizeof(VertexWithNormal) * vertices.getLength());
+		memcpy(dataBuf, vertices.getRaw(), sizeof(float) * vertices.getLength());
 		vertexBuffer.unmap();
 
 		vertexBuffer.upload(*s_pcommandPool, s_queue);

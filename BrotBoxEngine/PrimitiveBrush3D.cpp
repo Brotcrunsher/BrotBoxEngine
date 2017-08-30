@@ -131,7 +131,8 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain, int lodLevel)
 		}
 		float translation = lodLevelFloat * 20;
 		if (translation < 0) translation = 0;
-		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &((terrain.m_patches[i].m_transform) * (Matrix4::createTranslationMatrix(bbe::Vector3(0, 0, -translation)))));
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(Matrix4), &((terrain.m_patches[i].m_transform) * (Matrix4::createTranslationMatrix(bbe::Vector3(0, 0, -translation)))));
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color) + sizeof(Matrix4), sizeof(int32_t), &lodLevel);
 		VkDeviceSize offsets[] = { 0 };
 		VkBuffer buffer = terrain.m_patches[i].m_vertexBuffers[lodLevel].getBuffer();
 		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);

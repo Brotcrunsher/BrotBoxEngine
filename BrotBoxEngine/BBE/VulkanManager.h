@@ -50,6 +50,8 @@ namespace bbe
 
 				VulkanShader   m_vertexShader3DPrimitive;
 				VulkanShader   m_fragmentShader3DPrimitive;
+				VulkanShader   m_vertexShader3DTerrain;
+				VulkanShader   m_fragmentShader3DTerrain;
 				VulkanPipeline m_pipeline3DPrimitive;
 				VulkanPipeline m_pipeline3DTerrain;
 
