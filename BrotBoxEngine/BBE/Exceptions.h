@@ -43,4 +43,5 @@ namespace bbe
 	CREATE_EXCEPTION(NoTransformsLeftException);
 
 	CREATE_EXCEPTION(OutOfLightResourcesException);
+	CREATE_EXCEPTION(FormatNotSupportedException);
 }

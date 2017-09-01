@@ -149,6 +149,31 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 		shaderStages.add(geometryShaderStageCreateInfo);
 	}
 
+	if (m_useTessellation)
+	{
+		VkPipelineShaderStageCreateInfo controlShaderStageCreateInfo;
+		controlShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		controlShaderStageCreateInfo.pNext = nullptr;
+		controlShaderStageCreateInfo.flags = 0;
+		controlShaderStageCreateInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+		controlShaderStageCreateInfo.module = m_tessellationShaderControl;
+		controlShaderStageCreateInfo.pName = "main";
+		controlShaderStageCreateInfo.pSpecializationInfo = nullptr;
+
+		shaderStages.add(controlShaderStageCreateInfo);
+
+		VkPipelineShaderStageCreateInfo evaluationShaderStageCreateInfo;
+		evaluationShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		evaluationShaderStageCreateInfo.pNext = nullptr;
+		evaluationShaderStageCreateInfo.flags = 0;
+		evaluationShaderStageCreateInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+		evaluationShaderStageCreateInfo.module = m_tessellationShaderEvaluation;
+		evaluationShaderStageCreateInfo.pName = "main";
+		evaluationShaderStageCreateInfo.pSpecializationInfo = nullptr;
+
+		shaderStages.add(evaluationShaderStageCreateInfo);
+	}
+
 	VkSpecializationInfo spezializationData = {};
 	if (m_spezializationData != nullptr)
 	{
@@ -186,7 +211,14 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 	pipelineCreateInfo.pStages = shaderStages.getRaw();
 	pipelineCreateInfo.pVertexInputState = &vertexInputCreateInfo;
 	pipelineCreateInfo.pInputAssemblyState = &m_inputAssemblyCreateInfo;
-	pipelineCreateInfo.pTessellationState = nullptr;
+	if (m_useTessellation)
+	{
+		pipelineCreateInfo.pTessellationState = &m_tessellationStateCreateInfo;
+	}
+	else
+	{
+		pipelineCreateInfo.pTessellationState = nullptr;
+	}
 	pipelineCreateInfo.pViewportState = &m_viewportStateCreateInfo;
 	pipelineCreateInfo.pRasterizationState = &m_rasterizationCreateInfo;
 	pipelineCreateInfo.pMultisampleState = &m_multisampleCreateInfo;
@@ -263,6 +295,19 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::setGeometryShader(VkShaderModule sha
 		throw AlreadyCreatedException();
 	}
 	m_geometryShader = shaderModule;
+}
+
+void bbe::INTERNAL::vulkan::VulkanPipeline::setTessellationShader(VkShaderModule control, VkShaderModule evaluation, uint32_t patchControlPoints)
+{
+	m_tessellationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+	m_tessellationStateCreateInfo.pNext = nullptr;
+	m_tessellationStateCreateInfo.flags = 0;
+	m_tessellationStateCreateInfo.patchControlPoints = patchControlPoints;
+
+	m_tessellationShaderControl    = control;
+	m_tessellationShaderEvaluation = evaluation;
+
+	m_useTessellation = true;
 }
 
 void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexBinding(const VkVertexInputBindingDescription &vb)

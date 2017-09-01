@@ -34,7 +34,7 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	memcpy(data, m_pdata, imageSize);
 	stagingBuffer.unmap();
 
-	INTERNAL::vulkan::createImage(m_device, device.getPhysicalDevice(), getWidth(), getHeight(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_image, m_imageMemory);
+	INTERNAL::vulkan::createImage(m_device, device.getPhysicalDevice(), getWidth(), getHeight(), (VkFormat)m_format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_image, m_imageMemory);
 
 	changeLayout(m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	writeBufferToImage(m_device, commandPool.getCommandPool(), device.getQueue(), stagingBuffer.getBuffer());
@@ -42,7 +42,7 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 
 	stagingBuffer.destroy();
 
-	INTERNAL::vulkan::createImageView(m_device, m_image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, m_imageView);
+	INTERNAL::vulkan::createImageView(m_device, m_image, (VkFormat)m_format, VK_IMAGE_ASPECT_COLOR_BIT, m_imageView);
 
 	VkSamplerCreateInfo samplerCreateInfo = {};
 	samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -75,7 +75,7 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 
 void bbe::Image::changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout) const
 {
-	INTERNAL::vulkan::changeImageLayout(device, commandPool, queue, m_image, VK_FORMAT_R8G8B8A8_UNORM, this->m_imageLayout, layout);
+	INTERNAL::vulkan::changeImageLayout(device, commandPool, queue, m_image, (VkFormat)m_format, this->m_imageLayout, layout);
 
 	this->m_imageLayout = layout;
 }
@@ -135,6 +135,11 @@ bbe::Image::Image(int width, int height, const Color & c)
 	load(width, height, c);
 }
 
+bbe::Image::Image(int width, int height, const float * data, ImageFormat format)
+{
+	load(width, height, data, format);
+}
+
 bbe::Image::~Image()
 {
 	destroy();
@@ -149,24 +154,15 @@ void bbe::Image::load(const char * path)
 
 	int texChannels = 0;
 	stbi_uc *pixels = stbi_load(path, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
+	m_format = ImageFormat::R8G8B8A8;
 
 	if (pixels == nullptr)
 	{
 		throw LoadException();
 	}
 
-	m_pdata = new ColorByte[m_width * m_height]; //TODO use allocator
-	for (int i = 0; i < m_width; i++)
-	{
-		for (int k = 0; k < m_height; k++)
-		{
-			int index = k * m_width + i;
-			m_pdata[index].r = pixels[index * 4 + 0];
-			m_pdata[index].g = pixels[index * 4 + 1];
-			m_pdata[index].b = pixels[index * 4 + 2];
-			m_pdata[index].a = pixels[index * 4 + 3];
-		}
-	}
+	m_pdata = new byte[getSizeInBytes()]; //TODO use allocator
+	memcpy(m_pdata, pixels, getSizeInBytes());
 
 	stbi_image_free(pixels);
 }
@@ -180,13 +176,20 @@ void bbe::Image::load(int width, int height, const Color & c)
 {
 	m_width = width;
 	m_height = height;
+	m_format = ImageFormat::R8G8B8A8;
 
-	m_pdata = new ColorByte[m_width * m_height]; //TODO use allocator
-	ColorByte cb((byte)(c.r * 255), (byte)(c.g * 255), (byte)(c.b * 255), (byte)(c.a * 255));
-	for (int i = 0; i < m_width * m_height; i++)
+	m_pdata = new byte[getSizeInBytes()]; //TODO use allocator
+	for (int i = 0; i < getSizeInBytes(); i+=4)
 	{
-		m_pdata[i] = cb;
+		m_pdata[i + 0] = (byte)(c.r * 255);
+		m_pdata[i + 1] = (byte)(c.g * 255);
+		m_pdata[i + 2] = (byte)(c.b * 255);
+		m_pdata[i + 3] = (byte)(c.a * 255);
 	}
+}
+
+void bbe::Image::load(int width, int height, const float * data, ImageFormat format)
+{
 }
 
 void bbe::Image::destroy()
@@ -229,7 +232,20 @@ int bbe::Image::getHeight() const
 
 int bbe::Image::getSizeInBytes() const
 {
-	return getWidth() * getHeight() * 4;
+	return getWidth() * getHeight() * getAmountOfChannels();
+}
+
+int bbe::Image::getAmountOfChannels() const
+{
+	switch (m_format)
+	{
+	case ImageFormat::R8:
+		return 1;
+	case ImageFormat::R8G8B8A8:
+		return 4;
+	default:
+		throw FormatNotSupportedException();
+	}
 }
 
 bbe::Color bbe::Image::getPixel(int x, int y) const
@@ -239,6 +255,15 @@ bbe::Color bbe::Image::getPixel(int x, int y) const
 		throw NotInitializedException();
 	}
 
-	int index = y * m_width + x;
-	return Color(m_pdata[index].r / 255.f, m_pdata[index].g / 255.f, m_pdata[index].b / 255.f, m_pdata[index].a / 255.f);
+	int index = (y * m_width + x) * getAmountOfChannels();
+	switch(m_format)
+	{
+	case ImageFormat::R8:
+		return Color(m_pdata[index] / 255.f, m_pdata[index] / 255.f, m_pdata[index] / 255.f, 1.0f);
+	case ImageFormat::R8G8B8A8:
+		return Color(m_pdata[index] / 255.f, m_pdata[index + 1] / 255.f, m_pdata[index + 2] / 255.f, m_pdata[index + 3] / 255.f);
+	default:
+		throw FormatNotSupportedException();
+	}
+	
 }

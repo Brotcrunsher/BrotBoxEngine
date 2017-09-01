@@ -1,5 +1,7 @@
 #pragma once
 
+#define GLFW_INCLUDE_VULKAN
+#include "GLFW\glfw3.h"
 #include "../BBE/VulkanHelper.h"
 #include "../BBE/ColorByte.h"
 #include "../BBE/Color.h"
@@ -21,15 +23,22 @@ namespace bbe
 
 	class PrimitiveBrush2D;
 
+	enum class ImageFormat
+	{
+		R8G8B8A8 = VK_FORMAT_R8G8B8A8_UNORM,
+		R8 = VK_FORMAT_R8_UNORM,
+	};
+
 	class Image
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
 		friend class INTERNAL::vulkan::VulkanDescriptorSet;
 		friend class PrimitiveBrush2D;
 	private:
-		ColorByte *m_pdata  = nullptr;
-		int    m_width  = 0;
-		int    m_height = 0;
+		byte       *m_pdata  = nullptr;
+		int         m_width  = 0;
+		int         m_height = 0;
+		ImageFormat m_format = ImageFormat::R8G8B8A8;
 
 		mutable VkImage        m_image       = VK_NULL_HANDLE;
 		mutable VkDeviceMemory m_imageMemory = VK_NULL_HANDLE;
@@ -53,18 +62,21 @@ namespace bbe
 		Image(const char* path);
 		Image(int width, int height);
 		Image(int width, int height, const Color &c);
+		Image(int width, int height, const float* data, ImageFormat format);
 		
 		~Image();
 
 		void load(const char* path);
 		void load(int width, int height);
 		void load(int width, int height, const Color &c);
+		void load(int width, int height, const float* data, ImageFormat format);
 
 		void destroy();
 
 		int getWidth() const;
 		int getHeight() const;
 		int getSizeInBytes() const;
+		int getAmountOfChannels() const;
 		Color getPixel(int x, int y) const;
 	};
 }
