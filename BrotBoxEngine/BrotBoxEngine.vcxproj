@@ -336,6 +336,8 @@
     <None Include="Shader3DPrimitive.frag" />
     <None Include="Shader3DPrimitive.vert" />
     <None Include="Shader3DTerrain.frag" />
+    <None Include="Shader3DTerrain.tesc" />
+    <None Include="Shader3DTerrain.tese" />
     <None Include="Shader3DTerrain.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -14,6 +14,7 @@ namespace bbe
 		Vector2(float xy);
 		static Vector2 createVector2OnUnitCircle(float radians);
 
+		//TODO add *= /= += -=
 		Vector2 operator*(float scalar) const;
 		Vector2 operator/(float scalar) const;
 		float operator*(const Vector2 &other) const;

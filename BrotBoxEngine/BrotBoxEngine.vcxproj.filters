@@ -496,5 +496,11 @@
     <None Include="Shader3DTerrain.frag">
       <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
     </None>
+    <None Include="Shader3DTerrain.tesc">
+      <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
+    </None>
+    <None Include="Shader3DTerrain.tese">
+      <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

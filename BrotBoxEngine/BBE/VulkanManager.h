@@ -52,6 +52,8 @@ namespace bbe
 				VulkanShader   m_fragmentShader3DPrimitive;
 				VulkanShader   m_vertexShader3DTerrain;
 				VulkanShader   m_fragmentShader3DTerrain;
+				VulkanShader   m_teseShader3DTerrain;
+				VulkanShader   m_tescShader3DTerrain;
 				VulkanPipeline m_pipeline3DPrimitive;
 				VulkanPipeline m_pipeline3DTerrain;
 
@@ -69,6 +71,7 @@ namespace bbe
 				VulkanDescriptorSetLayout m_setLayoutFragmentLight;
 				VulkanDescriptorSetLayout m_setLayoutViewProjectionMatrix;
 				VulkanDescriptorSetLayout m_setLayoutSampler;
+				VulkanDescriptorSetLayout m_setLayoutTerrain;
 				VulkanDescriptorPool      m_descriptorPool;
 				VulkanDescriptorSet       m_setVertexLight;
 				VulkanDescriptorSet       m_setFragmentLight;

@@ -25,6 +25,7 @@ namespace bbe
 		Vector4(const Vector3 &xyz, float w);
 		Vector4(float x, const Vector3 &yzw);
 
+		//TODO add *= /= += -=
 		Vector4 operator+(const Vector4 &other) const;
 		Vector4 operator-(const Vector4 &other) const;
 		Vector4 operator-() const;

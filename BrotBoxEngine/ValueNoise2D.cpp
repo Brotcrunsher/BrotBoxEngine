@@ -7,8 +7,8 @@
 #include "BBE\ValueNoise2D.h"
 
 static int m_octaves = 3;
-static int m_startFrequencyX = 8;
-static int m_startFrequencyY = 8;
+static int m_startFrequencyX = 2;
+static int m_startFrequencyY = 2;
 static float m_startAlpha = 1;
 static float m_alphaChange = 0.5f;
 static int m_frequencyChange = 2;
@@ -152,4 +152,9 @@ void bbe::ValueNoise2D::set(int x, int y, float val)
 		throw NotInitializedException();
 	}
 	m_pdata[x + y * m_width] = val;
+}
+
+float * bbe::ValueNoise2D::getRaw()
+{
+	return m_pdata;
 }

@@ -12,11 +12,12 @@ layout(constant_id = 0) const int AMOUNT_OF_LIGHTS = 4;
 layout(location = 0) out vec4 outColor;
 
 layout(location = 1) in vec3 inViewVec;
-layout(location = 2) in InLightVertexInput
+layout(location = 2) in vec2 inHeightMapPos;
+layout(location = 3) in InLightVertexInput
 {
-	vec3 inLightVec;
-	float lightUsed;
-}inLightVertexInput[AMOUNT_OF_LIGHTS];
+	vec3 inLightVec[AMOUNT_OF_LIGHTS];
+	float lightUsed[AMOUNT_OF_LIGHTS];
+}inLightVertexInput;
 
 layout(push_constant) uniform PushConstants
 {
@@ -32,7 +33,6 @@ struct Light
 	vec4 lightColor;
 	vec4 specularColor;
 };
-
 layout(set = 2, binding = 0) uniform UBOLights
 {
 	Light light[AMOUNT_OF_LIGHTS];
@@ -48,11 +48,11 @@ void main() {
 
 	for(int i = 0; i<AMOUNT_OF_LIGHTS; i++)
 	{
-		if(inLightVertexInput[i].lightUsed <= 0.0)
+		if(inLightVertexInput.lightUsed[i] <= 0.0)
 		{
 			continue;
 		}
-		float distToLight = length(inLightVertexInput[i].inLightVec);
+		float distToLight = length(inLightVertexInput.inLightVec[i]);
 		float lightPower = uboLights.light[i].lightStrength;
 		if(distToLight > 0)
 		{
@@ -77,7 +77,7 @@ void main() {
 			
 		}
 
-		vec3 L = normalize(inLightVertexInput[i].inLightVec);
+		vec3 L = normalize(inLightVertexInput.inLightVec[i]);
 		vec3 R = reflect(-L, vec3(0, 0, 1));
 
 	

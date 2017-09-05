@@ -20,6 +20,9 @@ namespace bbe
 			class VulkanBuffer;
 			class VulkanDescriptorPool;
 			class VulkanPipeline;
+			class VulkanCommandPool;
+			class VulkanDescriptorSetLayout;
+			class VulkanDescriptorPool;
 		}
 	}
 
@@ -37,16 +40,17 @@ namespace bbe
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
 	private:
-		VkCommandBuffer                         m_currentCommandBuffer = VK_NULL_HANDLE;
-		VkDevice                                m_device               = VK_NULL_HANDLE;
-		VkPhysicalDevice                        m_physicalDevice       = VK_NULL_HANDLE;
-		VkPipelineLayout                        m_layoutPrimitive      = VK_NULL_HANDLE;
-		VkPipeline                              m_pipelinePrimitive    = VK_NULL_HANDLE;
-		VkPipelineLayout                        m_layoutTerrain        = VK_NULL_HANDLE;
-		VkPipeline                              m_pipelineTerrain      = VK_NULL_HANDLE;
-		INTERNAL::vulkan::VulkanDescriptorPool *m_pdescriptorPool      = nullptr;
-		int                                     m_screenWidth;
-		int                                     m_screenHeight;
+		VkCommandBuffer                              m_currentCommandBuffer        = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanDevice              *m_pdevice                     = nullptr;
+		VkPipelineLayout                             m_layoutPrimitive             = VK_NULL_HANDLE;
+		VkPipeline                                   m_pipelinePrimitive           = VK_NULL_HANDLE;
+		VkPipelineLayout                             m_layoutTerrain               = VK_NULL_HANDLE;
+		VkPipeline                                   m_pipelineTerrain             = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanDescriptorPool      *m_pdescriptorPool             = nullptr;
+		INTERNAL::vulkan::VulkanCommandPool         *m_pcommandPool                = nullptr;
+		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrain = nullptr;
+		int                                          m_screenWidth;
+		int                                          m_screenHeight;
 
 		DrawRecord m_lastDraw = DrawRecord::NONE;
 		PipelineRecord3D m_pipelineRecord = PipelineRecord3D::NONE;
@@ -59,7 +63,7 @@ namespace bbe
 		INTERNAL::vulkan::VulkanBuffer m_uboMatrices;
 
 		void INTERNAL_setColor(float r, float g, float b, float a);
-		void INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice &device, VkCommandBuffer commandBuffer, INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive, INTERNAL::vulkan::VulkanPipeline &pipelineTerrain, int screenWidth, int screenHeight);
+		void INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice &device, VkCommandBuffer commandBuffer, INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive, INTERNAL::vulkan::VulkanPipeline &pipelineTerrain, INTERNAL::vulkan::VulkanCommandPool &commandPool, INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrain, int screenWidth, int screenHeight);
 		
 		void create(const INTERNAL::vulkan::VulkanDevice &vulkanDevice);
 		void destroy();
@@ -69,7 +73,6 @@ namespace bbe
 		void fillIcoSphere(const IcoSphere &sphere);
 
 		void drawTerrain(const Terrain &terrain);
-		void drawTerrain(const Terrain &terrain, int lod);
 
 		void setColor(float r, float g, float b, float a);
 		void setColor(float r, float g, float b);

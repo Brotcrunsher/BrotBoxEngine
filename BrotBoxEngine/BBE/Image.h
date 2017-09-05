@@ -22,6 +22,8 @@ namespace bbe
 	}
 
 	class PrimitiveBrush2D;
+	class PrimitiveBrush3D;
+	class Terrain;
 
 	enum class ImageFormat
 	{
@@ -34,6 +36,8 @@ namespace bbe
 		friend class INTERNAL::vulkan::VulkanManager;
 		friend class INTERNAL::vulkan::VulkanDescriptorSet;
 		friend class PrimitiveBrush2D;
+		friend class PrimitiveBrush3D;
+		friend class Terrain;
 	private:
 		byte       *m_pdata  = nullptr;
 		int         m_width  = 0;

@@ -25,6 +25,7 @@ void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & p
 
 	VkPhysicalDeviceFeatures usedFeatures = {};
 	usedFeatures.samplerAnisotropy = VK_TRUE;
+	usedFeatures.tessellationShader = VK_TRUE;
 
 	const List<const char*> deviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME

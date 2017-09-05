@@ -51,9 +51,9 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	samplerCreateInfo.magFilter = VK_FILTER_NEAREST;
 	samplerCreateInfo.minFilter = VK_FILTER_NEAREST;
 	samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+	samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+	samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
 	samplerCreateInfo.mipLodBias = 0.0f;
 	samplerCreateInfo.anisotropyEnable = VK_TRUE;
 	samplerCreateInfo.maxAnisotropy = 16;
@@ -190,6 +190,15 @@ void bbe::Image::load(int width, int height, const Color & c)
 
 void bbe::Image::load(int width, int height, const float * data, ImageFormat format)
 {
+	m_width = width;
+	m_height = height;
+	m_format = format;
+
+	m_pdata = new byte[getSizeInBytes()];
+	for (int i = 0; i < getSizeInBytes(); i++)
+	{
+		m_pdata[i] = (byte)(data[i] * 255);
+	}
 }
 
 void bbe::Image::destroy()

@@ -20,8 +20,6 @@ public:
 
 	float timePassed = 0.0f;
 
-	int lodLevel = 0;
-
 	bbe::Terrain terrain;
 	bbe::PointLight light;
 	bbe::PointLight blinkLight;
@@ -35,7 +33,7 @@ public:
 	bbe::Image image2;
 
 	MyGame()
-		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0)), terrain(2048 * 4, 2048 * 4)
+		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0)), terrain(1024 * 1, 1024 * 1)
 	{
 	}
 
@@ -68,7 +66,6 @@ public:
 	{
 		timePassed += timeSinceLastFrame;
 		std::cout << "FPS: " << 1 / timeSinceLastFrame << std::endl;
-		std::cout << "LOD: " << lodLevel << std::endl;
 		std::cout << std::endl;
 		ccnc.update(timeSinceLastFrame);
 
@@ -89,17 +86,6 @@ public:
 		int intTimePassed = (int)timePassed;
 		blinkLight.turnOn(intTimePassed % 2 == 0);
 		brightLight.setLightStrength(timePassed);
-
-
-
-		if (isKeyPressed(bbe::Key::T) && lodLevel < 8)
-		{
-			lodLevel++;
-		}
-		if (isKeyPressed(bbe::Key::G) && lodLevel > 0)
-		{
-			lodLevel--;
-		}
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
@@ -111,7 +97,7 @@ public:
 		}
 
 		brush.setColor(1, 1, 1);
-		brush.drawTerrain(terrain, lodLevel);
+		brush.drawTerrain(terrain);
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{

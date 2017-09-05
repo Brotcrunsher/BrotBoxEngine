@@ -10,7 +10,6 @@ VkDevice         bbe::TerrainPatch::s_device         = VK_NULL_HANDLE;
 VkPhysicalDevice bbe::TerrainPatch::s_physicalDevice = VK_NULL_HANDLE;
 VkQueue          bbe::TerrainPatch::s_queue          = VK_NULL_HANDLE;
 bbe::INTERNAL::vulkan::VulkanCommandPool *bbe::TerrainPatch::s_pcommandPool = nullptr;
-const int bbe::Terrain::AMOUNT_OF_LOD_LEVELS = 5;
 static bbe::Random random;
 
 void bbe::TerrainPatch::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
@@ -36,160 +35,67 @@ void bbe::TerrainPatch::init() const
 
 void bbe::TerrainPatch::initIndexBuffer() const
 {
-	int lodWidth = m_width;
-	int lodHeight = m_height;
-	for (int lod = 0; lod < Terrain::AMOUNT_OF_LOD_LEVELS; lod++)
-	{
-		List<uint32_t> indices;
+	List<uint32_t> indices;
 
-		for (int i = 0; i < lodWidth - 1; i++)
-		{
-			for (int k = 0; k < lodHeight; k++)
-			{
-				indices.add(k * lodWidth + i);
-				indices.add(k * lodWidth + i + 1);
-			}
-			indices.add(0xFFFFFFFF);
-		}
+	indices.add(0);
+	indices.add(1);
+	indices.add(2);
+	indices.add(3);
 
-		INTERNAL::vulkan::VulkanBuffer indexBuffer;
+	m_indexBuffer.create(s_device, s_physicalDevice, sizeof(uint32_t) * indices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-		indexBuffer.create(s_device, s_physicalDevice, sizeof(uint32_t) * indices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+	void *dataBuf = m_indexBuffer.map();
+	memcpy(dataBuf, indices.getRaw(), sizeof(uint32_t) * indices.getLength());
+	m_indexBuffer.unmap();
 
-		void *dataBuf = indexBuffer.map();
-		memcpy(dataBuf, indices.getRaw(), sizeof(uint32_t) * indices.getLength());
-		indexBuffer.unmap();
-
-		indexBuffer.upload(*s_pcommandPool, s_queue);
-
-		m_numberOfVertices.add(indices.getLength());
-
-		m_indexBuffers.add(indexBuffer);
-
-		lodWidth /= 2;
-		lodHeight /= 2;
-
-		lodWidth += 1;
-		lodHeight += 1;
-	}
-	
+	m_indexBuffer.upload(*s_pcommandPool, s_queue);
 }
 
 void bbe::TerrainPatch::initVertexBuffer() const
 {
-	int lodWidth = m_width;
-	int lodHeight = m_height;
-	List<float> verticesLast;
-	int lodWidthLast = m_width;
-	int lodHeightLast = m_height;
-	float distMultiplier = 0.5f;
-
-	for (int lod = 0; lod < Terrain::AMOUNT_OF_LOD_LEVELS; lod++)
+	class TerrainVertex
 	{
-		List<float> vertices;
+	public:
+		Vector3 pos;
+		Vector2 heightMapUV;
 
-		if (lod == 0)
+		TerrainVertex(Vector3 pos, Vector2 heightMapUV)
+			: pos(pos), heightMapUV(heightMapUV)
 		{
-			
 
-			for (int i = 0; i < lodHeight; i++)
-			{
-				for (int k = 0; k < lodWidth; k++)
-				{
-					float height = m_pdata[i * lodWidth + k];
-					vertices.add(height * 100.0f);
-				}
-			}
 		}
-		else
-		{
-			for (int i = 0; i < lodHeight; i++)
-			{
-				for (int k = 0; k < lodWidth; k++)
-				{
-					float height = 0;
-					int parentX = k * 2;
-					int parentY = i * 2;
+	};
+	List<TerrainVertex> vertices;
 
-					if (k == lodWidth - 1)
-					{
-						parentX = (k - 1) * 2;
-					}
-					if (i == lodHeight - 1)
-					{
-						parentY = (i - 1) * 2;
-					}
+	vertices.add(TerrainVertex(Vector3(0,   0,   m_pdata[0            ] * 100.0f), Vector2(m_patchX      , m_patchY      )));
+	vertices.add(TerrainVertex(Vector3(128, 0,   m_pdata[257 * 256    ] * 100.0f), Vector2((m_patchX + m_patchTextureWidth), m_patchY      )));
+	vertices.add(TerrainVertex(Vector3(128, 128, m_pdata[257 * 257 - 1] * 100.0f), Vector2((m_patchX + m_patchTextureWidth), (m_patchY + m_patchTextureHeight))));
+	vertices.add(TerrainVertex(Vector3(0,   128, m_pdata[256          ] * 100.0f), Vector2(m_patchX      , (m_patchY + m_patchTextureHeight))));
 
-					float val1 = verticesLast[parentX + parentY * lodHeightLast];
-					float val2 = verticesLast[parentX + parentY * lodHeightLast + 1];
-					float val3 = verticesLast[parentX + parentY * lodHeightLast + lodHeightLast];
-					float val4 = verticesLast[parentX + parentY * lodHeightLast + lodHeightLast + 1];
+	m_vertexBuffer.create(s_device, s_physicalDevice, sizeof(TerrainVertex) * vertices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-					/*if ((i & 1) ^ (k & 1))
-					{
-						height = Math::max(val1, val2, val3, val4);
-					}
-					else
-					{
-						height = Math::min(val1, val2, val3, val4);
-					}*/
+	void* dataBuf = m_vertexBuffer.map();
+	memcpy(dataBuf, vertices.getRaw(), sizeof(TerrainVertex) * vertices.getLength());
+	m_vertexBuffer.unmap();
 
-					//height = (val1 + val2 + val3 + val4) / 4;
-
-					if (random.randomBool())
-					{
-						height = Math::max(val1, val2, val3, val4);
-					}
-					else
-					{
-						height = Math::min(val1, val2, val3, val4);
-					}
-
-					vertices.add(height);
-				}
-			}
-		}
-		
-
-		INTERNAL::vulkan::VulkanBuffer vertexBuffer;
-
-		vertexBuffer.create(s_device, s_physicalDevice, sizeof(float) * vertices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-
-		void* dataBuf = vertexBuffer.map();
-		memcpy(dataBuf, vertices.getRaw(), sizeof(float) * vertices.getLength());
-		vertexBuffer.unmap();
-
-		vertexBuffer.upload(*s_pcommandPool, s_queue);
-
-		m_vertexBuffers.add(vertexBuffer);
-		lodWidthLast = lodWidth;
-		lodHeightLast = lodHeight;
-
-		lodWidth /= 2;
-		lodHeight /= 2;
-		lodWidth += 1;
-		lodHeight += 1;
-		distMultiplier *= 2;
-
-		verticesLast = std::move(vertices);
-	}
-	
+	m_vertexBuffer.upload(*s_pcommandPool, s_queue);
 }
 
 void bbe::TerrainPatch::destroy() const
 {
-	for (int i = 0; i < Terrain::AMOUNT_OF_LOD_LEVELS; i++)
-	{
-		m_indexBuffers[i].destroy();
-		m_vertexBuffers[i].destroy();
-	}
+	m_indexBuffer.destroy();
+	m_vertexBuffer.destroy();
 }
 
-bbe::TerrainPatch::TerrainPatch(int width, int height, float* data)
-	: m_width(width), m_height(height)
+bbe::TerrainPatch::TerrainPatch(float* data, int patchX, int patchY, int maxPatchX, int maxPatchY)
 {
-	m_pdata = new float[width * height]; //TODO use allocator
-	memcpy(m_pdata, data, width * height * sizeof(float));
+	m_pdata = new float[257 * 257]; //TODO use allocator
+	memcpy(m_pdata, data, 257 * 257 * sizeof(float));
+
+	m_patchX = patchX / (float)maxPatchX;
+	m_patchY = patchY / (float)maxPatchY;
+	m_patchTextureWidth = 1 / (float)maxPatchX;
+	m_patchTextureHeight = 1 / (float)maxPatchY;
 }
 
 bbe::TerrainPatch::~TerrainPatch()
@@ -205,16 +111,17 @@ bbe::TerrainPatch::TerrainPatch(TerrainPatch && other)
 {
 	m_transform        = other.m_transform;
 
-	m_indexBuffers     = other.m_indexBuffers     ;
-	m_vertexBuffers    = other.m_vertexBuffers    ;
-	m_numberOfVertices = other.m_numberOfVertices ;
+	m_indexBuffer     = other.m_indexBuffer;
+	m_vertexBuffer    = other.m_vertexBuffer;
 
-	m_width            = other.m_width            ;
-	m_height           = other.m_height           ;
+	m_created          = other.m_created;
+	m_needsDestruction = other.m_needsDestruction;
+	m_pdata            = other.m_pdata;
 
-	m_created          = other.m_created          ;
-	m_needsDestruction = other.m_needsDestruction ;
-	m_pdata            = other.m_pdata            ;
+	m_patchX             = other.m_patchX;
+	m_patchY             = other.m_patchY;
+	m_patchTextureWidth  = other.m_patchTextureWidth;
+	m_patchTextureHeight = other.m_patchTextureHeight;
 
 	other.m_needsDestruction = false;
 }
@@ -234,12 +141,18 @@ void bbe::TerrainPatch::setTransform(const Matrix4 & transform)
 	m_transform = transform;
 }
 
-void bbe::Terrain::init() const
+void bbe::Terrain::init(const INTERNAL::vulkan::VulkanDevice & device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayout) const
 {
-	for (int i = 0; i < m_patches.getLength(); i++)
+	if (!m_wasInit)
 	{
-		m_patches[i].init();
+		m_heightMap.createAndUpload(device, commandPool, descriptorPool, setLayout);
+		for (int i = 0; i < m_patches.getLength(); i++)
+		{
+			m_patches[i].init();
+		}
+		m_wasInit = true;
 	}
+	
 }
 
 void bbe::Terrain::destroy() const
@@ -283,11 +196,13 @@ bbe::Terrain::Terrain(int width, int height)
 					data[x * 257 + y] = valueNoise.get(i * 256 + x, k * 256 + y);
 				}
 			}
-			m_patches.add(TerrainPatch(257, 257, data));
+			m_patches.add(TerrainPatch(data, i, k, m_patchesWidthAmount, m_patchesHeightAmount));
 		}
 	}
 
 	setTransform(Matrix4());
+
+	m_heightMap.load(width, height, valueNoise.getRaw(), bbe::ImageFormat::R8);
 }
 
 bbe::Terrain::~Terrain()

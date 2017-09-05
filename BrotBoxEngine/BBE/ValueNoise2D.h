@@ -28,5 +28,7 @@ namespace bbe
 
 		float get(int x, int y);
 		void set(int x, int y, float val);
+
+		float* getRaw();
 	};
 }

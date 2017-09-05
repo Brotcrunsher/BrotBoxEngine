@@ -6,6 +6,7 @@
 #include "../BBE/Matrix4.h"
 #include "../BBE/VulkanCommandPool.h"
 #include "../BBE/List.h"
+#include "../BBE/Image.h"
 
 namespace bbe
 {
@@ -41,19 +42,20 @@ namespace bbe
 		void initIndexBuffer() const;
 		void initVertexBuffer() const;
 		void destroy() const;
-		mutable List<bbe::INTERNAL::vulkan::VulkanBuffer> m_indexBuffers;
-		mutable List<bbe::INTERNAL::vulkan::VulkanBuffer> m_vertexBuffers;
-		mutable List<int> m_numberOfVertices = 0;
-
-		int m_width;
-		int m_height;
+		mutable bbe::INTERNAL::vulkan::VulkanBuffer m_indexBuffer;
+		mutable bbe::INTERNAL::vulkan::VulkanBuffer m_vertexBuffer;
 
 		mutable bool m_created = false;
 		mutable bool m_needsDestruction = true;
 		float* m_pdata = nullptr;
 
+		float m_patchX; 
+		float m_patchY;
+		float m_patchTextureWidth;
+		float m_patchTextureHeight;
+
 	public:
-		TerrainPatch(int width, int height, float* data);
+		TerrainPatch(float* data, int patchX, int patchY, int maxPatchX, int maxPatchY);
 		~TerrainPatch();
 
 		TerrainPatch(const TerrainPatch& other) = delete;
@@ -73,8 +75,10 @@ namespace bbe
 	private:
 		Matrix4 m_transform;
 		List<TerrainPatch> m_patches;
+		Image m_heightMap;
+		mutable bool m_wasInit = false;
 
-		void init() const;
+		void init(const INTERNAL::vulkan::VulkanDevice & device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayout) const;
 		void destroy() const;
 
 		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
@@ -83,7 +87,6 @@ namespace bbe
 		int m_patchesHeightAmount = 0;
 
 	public:
-		static const int AMOUNT_OF_LOD_LEVELS;
 		Terrain(int width, int height);
 		~Terrain();
 
