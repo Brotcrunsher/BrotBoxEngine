@@ -36,9 +36,9 @@ layout(location = 0) out vec3 outNormal;
 layout(location = 1) out vec3 outViewVec;
 layout(location = 2) out OutLightVertexInput
 {
-	vec3 outLightVec;
-	float lightUsed;
-}outLightVertexInput[AMOUNT_OF_LIGHTS];
+	vec3 outLightVec[AMOUNT_OF_LIGHTS];
+	float lightUsed[AMOUNT_OF_LIGHTS];
+}outLightVertexInput;
 
 
 void main() 
@@ -51,11 +51,11 @@ void main()
 	outViewVec = -(uboProjection.view * worldPos).xyz;
 	for(int i = 0; i<AMOUNT_OF_LIGHTS; i++)
 	{
-		outLightVertexInput[i].lightUsed = uboLights.light[i].used;
+		outLightVertexInput.lightUsed[i] = uboLights.light[i].used;
 		if(uboLights.light[i].used > 0.0f)
 		{
 			vec3 lightPos = uboLights.light[i].pos;
-			outLightVertexInput[i].outLightVec = mat3(uboProjection.view) * (lightPos - vec3(worldPos));
+			outLightVertexInput.outLightVec[i] = mat3(uboProjection.view) * (lightPos - vec3(worldPos));
 		}
 	}
 	

@@ -13,11 +13,9 @@ layout(location = 0) out vec4 outColor;
 
 layout(location = 1) in vec3 inViewVec;
 layout(location = 2) in vec2 inHeightMapPos;
-layout(location = 3) in InLightVertexInput
-{
-	vec3 inLightVec[AMOUNT_OF_LIGHTS];
-	float lightUsed[AMOUNT_OF_LIGHTS];
-}inLightVertexInput;
+layout(location = 3) in vec3 inNormal;
+layout(location = 4) in vec3 inLightVec[AMOUNT_OF_LIGHTS];
+layout(location = 5 + 5) in float lightUsed[AMOUNT_OF_LIGHTS];
 
 layout(push_constant) uniform PushConstants
 {
@@ -41,6 +39,7 @@ layout(set = 2, binding = 0) uniform UBOLights
 void main() {
 	vec3 texColor = pushConts.color.xyz;
 	vec3 V = normalize(inViewVec);
+	vec3 N = normalize(inNormal);
 	vec3 ambient = texColor * 0.1;
 	vec3 diffuse  = vec3(0);
 	vec3 specular = vec3(0);
@@ -48,11 +47,12 @@ void main() {
 
 	for(int i = 0; i<AMOUNT_OF_LIGHTS; i++)
 	{
-		if(inLightVertexInput.lightUsed[i] <= 0.0)
+		if(lightUsed[i] <= 0.0)
 		{
+			outColor = vec4(0.1, 0.1, 0.1, 1);
 			continue;
 		}
-		float distToLight = length(inLightVertexInput.inLightVec[i]);
+		float distToLight = length(inLightVec[i]);
 		float lightPower = uboLights.light[i].lightStrength;
 		if(distToLight > 0)
 		{
@@ -77,12 +77,12 @@ void main() {
 			
 		}
 
-		vec3 L = normalize(inLightVertexInput.inLightVec[i]);
-		vec3 R = reflect(-L, vec3(0, 0, 1));
+		vec3 L = normalize(inLightVec[i]);
+		vec3 R = reflect(-L, N);
 
 	
-		diffuse += max(L.z, 0.0) * (texColor * uboLights.light[i].lightColor.xyz) * lightPower;
-		specular += pow(max(dot(R, V), 0.0), 4.0) * uboLights.light[i].specularColor.xyz * lightPower;
+		diffuse += max(dot(N, L), 0.0) * (texColor * uboLights.light[i].lightColor.xyz) * lightPower;
+		//specular += pow(max(dot(R, V), 0.0), 4.0) * uboLights.light[i].specularColor.xyz * lightPower;
 	}
 	
 

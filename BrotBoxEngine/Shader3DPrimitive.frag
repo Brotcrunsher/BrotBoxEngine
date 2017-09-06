@@ -14,9 +14,9 @@ layout(location = 0) in vec3 inNormal;
 layout(location = 1) in vec3 inViewVec;
 layout(location = 2) in InLightVertexInput
 {
-	vec3 inLightVec;
-	float lightUsed;
-}inLightVertexInput[AMOUNT_OF_LIGHTS];
+	vec3 inLightVec[AMOUNT_OF_LIGHTS];
+	float lightUsed[AMOUNT_OF_LIGHTS];
+}inLightVertexInput;
 
 layout(push_constant) uniform PushConstants
 {
@@ -49,11 +49,11 @@ void main() {
 
 	for(int i = 0; i<AMOUNT_OF_LIGHTS; i++)
 	{
-		if(inLightVertexInput[i].lightUsed <= 0.0)
+		if(inLightVertexInput.lightUsed[i] <= 0.0)
 		{
 			continue;
 		}
-		float distToLight = length(inLightVertexInput[i].inLightVec);
+		float distToLight = length(inLightVertexInput.inLightVec[i]);
 		float lightPower = uboLights.light[i].lightStrength;
 		if(distToLight > 0)
 		{
@@ -78,7 +78,7 @@ void main() {
 			
 		}
 
-		vec3 L = normalize(inLightVertexInput[i].inLightVec);
+		vec3 L = normalize(inLightVertexInput.inLightVec[i]);
 		vec3 R = reflect(-L, N);
 
 	
