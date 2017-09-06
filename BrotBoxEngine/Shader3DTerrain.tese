@@ -36,8 +36,7 @@ layout(location = 0) in vec2 inHeightMapPos[];
 layout(location = 1) out vec3 outViewVec;
 layout(location = 2) out vec2 outHeightMapPos;
 layout(location = 3) out vec3 outNormal;
-layout(location = 4) out vec3 outLightVec[AMOUNT_OF_LIGHTS];
-layout(location = 5 + 5) out float lightUsed[AMOUNT_OF_LIGHTS];
+layout(location = 4) out Light outLight[AMOUNT_OF_LIGHTS];
 
 layout(set = 3, binding = 0) uniform sampler2D tex;
 
@@ -59,11 +58,11 @@ void main()
 	outViewVec = -(uboProjection.view * worldPos).xyz;
 	for(int i = 0; i<AMOUNT_OF_LIGHTS; i++)
 	{
-		lightUsed[i] = uboLights.light[i].used;
+		outLight[i].used = uboLights.light[i].used;
 		if(uboLights.light[i].used > 0.0f)
 		{
 			vec3 lightPos = uboLights.light[i].pos;
-			outLightVec[i] = mat3(uboProjection.view) * (lightPos - vec3(worldPos));
+			outLight[i].pos = mat3(uboProjection.view) * (lightPos - vec3(worldPos));
 		}
 	}
 	

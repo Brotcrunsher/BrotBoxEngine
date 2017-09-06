@@ -9,13 +9,18 @@ layout(constant_id = 0) const int AMOUNT_OF_LIGHTS = 4;
 #define FALLOFF_CUBIC   3
 #define FALLOFF_SQRT    4
 
+struct LightInput
+{
+	vec3 lightVec;
+	float lightUsed;
+};
+
 layout(location = 0) out vec4 outColor;
 
 layout(location = 1) in vec3 inViewVec;
 layout(location = 2) in vec2 inHeightMapPos;
 layout(location = 3) in vec3 inNormal;
-layout(location = 4) in vec3 inLightVec[AMOUNT_OF_LIGHTS];
-layout(location = 5 + 5) in float lightUsed[AMOUNT_OF_LIGHTS];
+layout(location = 4) in LightInput inLight[AMOUNT_OF_LIGHTS];
 
 layout(push_constant) uniform PushConstants
 {
@@ -47,12 +52,12 @@ void main() {
 
 	for(int i = 0; i<AMOUNT_OF_LIGHTS; i++)
 	{
-		if(lightUsed[i] <= 0.0)
+		if(inLight[i].lightUsed <= 0.0)
 		{
 			outColor = vec4(0.1, 0.1, 0.1, 1);
 			continue;
 		}
-		float distToLight = length(inLightVec[i]);
+		float distToLight = length(inLight[i].lightVec);
 		float lightPower = uboLights.light[i].lightStrength;
 		if(distToLight > 0)
 		{
@@ -77,7 +82,7 @@ void main() {
 			
 		}
 
-		vec3 L = normalize(inLightVec[i]);
+		vec3 L = normalize(inLight[i].lightVec);
 		vec3 R = reflect(-L, N);
 
 	
