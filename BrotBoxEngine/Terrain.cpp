@@ -68,9 +68,9 @@ void bbe::TerrainPatch::initVertexBuffer() const
 	List<TerrainVertex> vertices;
 
 	vertices.add(TerrainVertex(Vector3(0,   0,   m_pdata[0            ] * 100.0f), Vector2(m_patchX      , m_patchY      )));
-	vertices.add(TerrainVertex(Vector3(128, 0,   m_pdata[257 * 256    ] * 100.0f), Vector2((m_patchX + m_patchTextureWidth), m_patchY      )));
-	vertices.add(TerrainVertex(Vector3(128, 128, m_pdata[257 * 257 - 1] * 100.0f), Vector2((m_patchX + m_patchTextureWidth), (m_patchY + m_patchTextureHeight))));
-	vertices.add(TerrainVertex(Vector3(0,   128, m_pdata[256          ] * 100.0f), Vector2(m_patchX      , (m_patchY + m_patchTextureHeight))));
+	vertices.add(TerrainVertex(Vector3(128, 0,   m_pdata[257 * 256    ] * 100.0f), Vector2((m_patchTextureWidth), m_patchY      )));
+	vertices.add(TerrainVertex(Vector3(128, 128, m_pdata[257 * 257 - 1] * 100.0f), Vector2((m_patchTextureWidth), (m_patchTextureHeight))));
+	vertices.add(TerrainVertex(Vector3(0,   128, m_pdata[256          ] * 100.0f), Vector2(m_patchX      , (m_patchTextureHeight))));
 
 	m_vertexBuffer.create(s_device, s_physicalDevice, sizeof(TerrainVertex) * vertices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
@@ -94,8 +94,8 @@ bbe::TerrainPatch::TerrainPatch(float* data, int patchX, int patchY, int maxPatc
 
 	m_patchX = patchX / (float)maxPatchX;
 	m_patchY = patchY / (float)maxPatchY;
-	m_patchTextureWidth = 1 / (float)maxPatchX;
-	m_patchTextureHeight = 1 / (float)maxPatchY;
+	m_patchTextureWidth = (patchX + 1) / (float)maxPatchX;
+	m_patchTextureHeight = (patchY + 1) / (float)maxPatchY;
 }
 
 bbe::TerrainPatch::~TerrainPatch()

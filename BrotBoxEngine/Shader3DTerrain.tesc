@@ -8,17 +8,38 @@ layout(location = 0) in vec2 inHeightMapPos[];
 
 layout(location = 0) out vec2 outHeightMapPos[4];
 
+layout(set = 1, binding = 0) uniform UBOProjection
+{
+	mat4 view;
+	mat4 projection;
+} uboProjection;
+
+layout(push_constant) uniform PushConstants
+{
+	layout(offset = 16)mat4 modelMatrix;
+} pushConts;
 
 void main()
 {
 	if (gl_InvocationID == 0)
 	{
-		gl_TessLevelInner[0] = 8.0;
-		gl_TessLevelInner[1] = 8.0;
-		gl_TessLevelOuter[0] = 8.0;
-		gl_TessLevelOuter[1] = 8.0;
-		gl_TessLevelOuter[2] = 8.0;
-		gl_TessLevelOuter[3] = 8.0;
+		vec3 p0 = (uboProjection.view * pushConts.modelMatrix * gl_in[0].gl_Position).xyz;
+		vec3 p1 = (uboProjection.view * pushConts.modelMatrix * gl_in[1].gl_Position).xyz;
+		vec3 p2 = (uboProjection.view * pushConts.modelMatrix * gl_in[2].gl_Position).xyz;
+		vec3 p3 = (uboProjection.view * pushConts.modelMatrix * gl_in[3].gl_Position).xyz;
+		
+		float l0 = clamp(8196.0f / length(p0), 2, 256);
+		float l1 = clamp(8196.0f / length(p1), 2, 256);
+		float l2 = clamp(8196.0f / length(p2), 2, 256);
+		float l3 = clamp(8196.0f / length(p3), 2, 256);
+
+		
+		gl_TessLevelOuter[0] = max(l0, l3);
+		gl_TessLevelOuter[1] = max(l0, l1);
+		gl_TessLevelOuter[2] = max(l2, l1);
+		gl_TessLevelOuter[3] = max(l2, l3);
+		gl_TessLevelInner[0] = max(gl_TessLevelOuter[0], gl_TessLevelOuter[3]);
+		gl_TessLevelInner[1] = max(gl_TessLevelOuter[2], gl_TessLevelOuter[1]);
 	}
 
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;

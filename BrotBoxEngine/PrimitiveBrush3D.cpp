@@ -118,6 +118,7 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 
 	for (int i = 0; i < terrain.m_patches.getLength(); i++)
 	{
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color), sizeof(Matrix4), &(terrain.m_patches[i].m_transform));
 		vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, sizeof(Color), sizeof(Matrix4), &(terrain.m_patches[i].m_transform));
 		VkDeviceSize offsets[] = { 0 };
 		VkBuffer buffer = terrain.m_patches[i].m_vertexBuffer.getBuffer();
@@ -152,7 +153,7 @@ void bbe::PrimitiveBrush3D::setColor(const Color & c)
 void bbe::PrimitiveBrush3D::setCamera(const Vector3 & cameraPos, const Vector3 & cameraTarget, const Vector3 & cameraUpVector)
 {
 	Matrix4 view = Matrix4::createViewMatrix(cameraPos, cameraTarget, cameraUpVector);
-	Matrix4 projection = Matrix4::createPerspectiveMatrix(Math::toRadians(60.0f), (float)m_screenWidth / (float)m_screenHeight, 0.001f, 10000.0f);
+	Matrix4 projection = Matrix4::createPerspectiveMatrix(Math::toRadians(60.0f), (float)m_screenWidth / (float)m_screenHeight, 0.01f, 10000.0f);
 
 	void *data = m_uboMatrices.map();
 	memcpy((char*)data, &view, sizeof(Matrix4));

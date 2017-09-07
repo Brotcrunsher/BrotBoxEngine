@@ -7,8 +7,8 @@
 #include "BBE\ValueNoise2D.h"
 
 static int m_octaves = 3;
-static int m_startFrequencyX = 8;
-static int m_startFrequencyY = 8;
+static int m_startFrequencyX = 64;
+static int m_startFrequencyY = 64;
 static float m_startAlpha = 1;
 static float m_alphaChange = 0.5f;
 static int m_frequencyChange = 2;
