@@ -36,7 +36,8 @@ layout(location = 0) in vec2 inHeightMapPos[];
 layout(location = 1) out vec3 outViewVec;
 layout(location = 2) out vec2 outHeightMapPos;
 layout(location = 3) out vec3 outNormal;
-layout(location = 4) out Light outLight[AMOUNT_OF_LIGHTS];
+layout(location = 4) out float outDistanceToCamera;
+layout(location = 5) out Light outLight[AMOUNT_OF_LIGHTS];
 
 layout(set = 3, binding = 0) uniform sampler2D tex;
 
@@ -54,7 +55,9 @@ void main()
 	inPos.z = texture(tex, heightMapPos).x * 100;
 
 	vec4 worldPos = pushConts.modelMatrix * vec4(inPos, 1.0);
-	gl_Position = uboProjection.projection * uboProjection.view * worldPos;
+	vec4 viewPos = uboProjection.view * worldPos;
+	outDistanceToCamera = length(viewPos.xyz);
+	gl_Position = uboProjection.projection * viewPos;
 	outViewVec = -(uboProjection.view * worldPos).xyz;
 	for(int i = 0; i<AMOUNT_OF_LIGHTS; i++)
 	{

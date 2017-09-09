@@ -20,7 +20,14 @@ layout(location = 0) out vec4 outColor;
 layout(location = 1) in vec3 inViewVec;
 layout(location = 2) in vec2 inHeightMapPos;
 layout(location = 3) in vec3 inNormal;
-layout(location = 4) in LightInput inLight[AMOUNT_OF_LIGHTS];
+layout(location = 4) in float inDistanceToCamera;
+layout(location = 5) in LightInput inLight[AMOUNT_OF_LIGHTS];
+
+layout(set = 4, binding = 0) uniform sampler2D baseTex;
+layout(set = 5, binding = 0) uniform TextureBias
+{
+	vec4 data;
+}textureBias;
 
 layout(push_constant) uniform PushConstants
 {
@@ -42,7 +49,7 @@ layout(set = 2, binding = 0) uniform UBOLights
 } uboLights;
 
 void main() {
-	vec3 texColor = pushConts.color.xyz;
+	vec3 texColor = textureLod(baseTex, inHeightMapPos * textureBias.data.xy + textureBias.data.zw, inDistanceToCamera).xyz;
 	vec3 V = normalize(inViewVec);
 	vec3 N = normalize(inNormal);
 	vec3 ambient = texColor * 0.1;
@@ -92,4 +99,8 @@ void main() {
 	
 
 	outColor = vec4(ambient + diffuse + specular, 1.0);
+	if(length(textureBias.data.xy) == 0)
+	{
+		outColor = vec4(1, 0, 1, 1);
+	}
 }

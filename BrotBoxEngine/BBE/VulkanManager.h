@@ -71,7 +71,8 @@ namespace bbe
 				VulkanDescriptorSetLayout m_setLayoutFragmentLight;
 				VulkanDescriptorSetLayout m_setLayoutViewProjectionMatrix;
 				VulkanDescriptorSetLayout m_setLayoutSampler;
-				VulkanDescriptorSetLayout m_setLayoutTerrain;
+				VulkanDescriptorSetLayout m_setLayoutTerrainHeightMap;
+				VulkanDescriptorSetLayout m_setLayoutTerrainBaseTextureBias;
 				VulkanDescriptorPool      m_descriptorPool;
 				VulkanDescriptorSet       m_setVertexLight;
 				VulkanDescriptorSet       m_setFragmentLight;

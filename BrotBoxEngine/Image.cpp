@@ -48,12 +48,12 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	samplerCreateInfo.pNext = nullptr;
 	samplerCreateInfo.flags = 0;
-	samplerCreateInfo.magFilter = VK_FILTER_NEAREST;
-	samplerCreateInfo.minFilter = VK_FILTER_NEAREST;
+	samplerCreateInfo.magFilter = (VkFilter)m_filterMode;
+	samplerCreateInfo.minFilter = (VkFilter)m_filterMode;
 	samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-	samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-	samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+	samplerCreateInfo.addressModeU = (VkSamplerAddressMode)m_repeatMode;
+	samplerCreateInfo.addressModeV = (VkSamplerAddressMode)m_repeatMode;
+	samplerCreateInfo.addressModeW = (VkSamplerAddressMode)m_repeatMode;
 	samplerCreateInfo.mipLodBias = 0.0f;
 	samplerCreateInfo.anisotropyEnable = VK_TRUE;
 	samplerCreateInfo.maxAnisotropy = 16;
@@ -275,4 +275,34 @@ bbe::Color bbe::Image::getPixel(int x, int y) const
 		throw FormatNotSupportedException();
 	}
 	
+}
+
+bbe::ImageRepeatMode bbe::Image::getRepeatMode() const
+{
+	return m_repeatMode;
+}
+
+void bbe::Image::setRepeatMode(ImageRepeatMode irm)
+{
+	if (wasUploadedToVulkan)
+	{
+		throw AlreadyUploadedException();
+	}
+
+	m_repeatMode = irm;
+}
+
+bbe::ImageFilterMode bbe::Image::getFilterMode() const
+{
+	return m_filterMode;
+}
+
+void bbe::Image::setFilterMode(ImageFilterMode ifm)
+{
+	if (wasUploadedToVulkan)
+	{
+		throw AlreadyUploadedException();
+	}
+
+	m_filterMode = ifm;
 }

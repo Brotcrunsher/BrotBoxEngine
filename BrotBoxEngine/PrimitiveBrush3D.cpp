@@ -17,7 +17,17 @@ void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
 }
 
-void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevice & device, VkCommandBuffer commandBuffer, INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive, INTERNAL::vulkan::VulkanPipeline &pipelineTerrain, INTERNAL::vulkan::VulkanCommandPool &commandPool, INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayout, int width, int height)
+void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
+	bbe::INTERNAL::vulkan::VulkanDevice & device, 
+	VkCommandBuffer commandBuffer, 
+	INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive, 
+	INTERNAL::vulkan::VulkanPipeline &pipelineTerrain, 
+	INTERNAL::vulkan::VulkanCommandPool &commandPool, 
+	INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, 
+	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainHeightMap, 
+	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTexture, 
+	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainBaseTextureBias,
+	int width, int height)
 {
 	m_layoutPrimitive = pipelinePrimitive.getLayout();
 	m_pipelinePrimitive = pipelinePrimitive.getPipeline();
@@ -25,7 +35,9 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(bbe::INTERNAL::vulkan::VulkanDevi
 	m_pipelineTerrain = pipelineTerrain.getPipeline();
 	m_currentCommandBuffer = commandBuffer;
 	m_pdescriptorPool = &descriptorPool;
-	m_pdescriptorSetLayoutTerrain = &descriptorSetLayout;
+	m_pdescriptorSetLayoutTerrainHeightMap = &descriptorSetLayoutTerrainHeightMap;
+	m_pdescriptorSetLayoutTexture = &descriptorSetLayoutTexture;
+	m_pdescriptorSetLayoutTerrainBaseTextureBias = &descriptorSetLayoutTerrainBaseTextureBias;
 	m_pdevice = &device;
 	m_pcommandPool = &commandPool;
 	m_screenWidth = width;
@@ -106,20 +118,23 @@ void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 
 void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 {
-	terrain.init(*m_pdevice, *m_pcommandPool, *m_pdescriptorPool, *m_pdescriptorSetLayoutTerrain);
-
+	terrain.init(*m_pdevice, *m_pcommandPool, *m_pdescriptorPool, *m_pdescriptorSetLayoutTerrainHeightMap, *m_pdescriptorSetLayoutTexture, *m_pdescriptorSetLayoutTerrainBaseTextureBias);
 	
+	terrain.loadTextureBias();
+
 	if (m_pipelineRecord != PipelineRecord3D::TERRAIN)
 	{
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineTerrain);
 		m_pipelineRecord = PipelineRecord3D::TERRAIN;
 	}
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 3, 1, terrain.m_heightMap.m_descriptorSet.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 4, 1, terrain.m_baseTexture.m_descriptorSet.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 5, 1, terrain.m_baseTextureDescriptor.getPDescriptorSet(), 0, nullptr);
 
 	for (int i = 0; i < terrain.m_patches.getLength(); i++)
 	{
-		vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color), sizeof(Matrix4), &(terrain.m_patches[i].m_transform));
-		vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, sizeof(Color), sizeof(Matrix4), &(terrain.m_patches[i].m_transform));
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color), sizeof(Matrix4), &(terrain.m_patches[i].m_transform));
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color), sizeof(Matrix4), &(terrain.m_patches[i].m_transform));
 		VkDeviceSize offsets[] = { 0 };
 		VkBuffer buffer = terrain.m_patches[i].m_vertexBuffer.getBuffer();
 		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);

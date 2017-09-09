@@ -70,14 +70,18 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_setLayoutSampler.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
 	m_setLayoutSampler.create(m_device);
 
-	m_setLayoutTerrain.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-	m_setLayoutTerrain.create(m_device);
+	m_setLayoutTerrainHeightMap.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+	m_setLayoutTerrainHeightMap.create(m_device);
 
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutVertexLight         , 1);
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutFragmentLight       , 1);
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutViewProjectionMatrix, 1);
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutSampler             , 1024);
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutTerrain             , 16);
+	m_setLayoutTerrainBaseTextureBias.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+	m_setLayoutTerrainBaseTextureBias.create(m_device);
+
+	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutVertexLight           , 1);
+	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutFragmentLight         , 1);
+	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutViewProjectionMatrix  , 1);
+	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutSampler               , 1024);
+	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutTerrainHeightMap      , 16);
+	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutTerrainBaseTextureBias, 16);
 	m_descriptorPool.create(m_device);
 
 	m_setVertexLight              .addUniformBuffer(PointLight::s_bufferVertexData  , 0, 0);
@@ -154,7 +158,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_setLayoutFragmentLight.destroy();
 	m_setLayoutViewProjectionMatrix.destroy();
 	m_setLayoutSampler.destroy();
-	m_setLayoutTerrain.destroy();
+	m_setLayoutTerrainHeightMap.destroy();
+	m_setLayoutTerrainBaseTextureBias.destroy();
 	m_descriptorPool.destroy();
 	m_primitiveBrush3D.destroy();
 	m_renderPass.destroy();
@@ -228,7 +233,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	vkCmdSetScissor(m_currentFrameDrawCommandBuffer, 0, 1, &scissor);
 
 	m_primitiveBrush2D.INTERNAL_beginDraw(m_device, m_commandPool, m_descriptorPool, m_setLayoutSampler, m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive, m_pipeline2DImage, m_screenWidth, m_screenHeight);
-	m_primitiveBrush3D.INTERNAL_beginDraw(m_device, m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive, m_pipeline3DTerrain, m_commandPool, m_descriptorPool, m_setLayoutTerrain, m_screenWidth, m_screenHeight);
+	m_primitiveBrush3D.INTERNAL_beginDraw(m_device, m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive, m_pipeline3DTerrain, m_commandPool, m_descriptorPool, m_setLayoutTerrainHeightMap, m_setLayoutSampler, m_setLayoutTerrainBaseTextureBias, m_screenWidth, m_screenHeight);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::postDraw()
@@ -336,7 +341,9 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutVertexLight.getDescriptorSetLayout());
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutViewProjectionMatrix.getDescriptorSetLayout());
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutFragmentLight.getDescriptorSetLayout());
-	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrain.getDescriptorSetLayout());
+	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainHeightMap.getDescriptorSetLayout());
+	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutSampler.getDescriptorSetLayout());
+	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainBaseTextureBias.getDescriptorSetLayout());
 	m_pipeline3DTerrain.enableDepthBuffer();
 	m_pipeline3DTerrain.addSpezializationConstant(0, 0, sizeof(int32_t));
 	m_pipeline3DTerrain.setSpezializationData(sizeof(int32_t), &spezialization);

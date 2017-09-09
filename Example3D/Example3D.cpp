@@ -33,7 +33,7 @@ public:
 	bbe::Image image2;
 
 	MyGame()
-		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0)), terrain(1024 * 8, 1024 * 8)
+		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0)), terrain(1024 * 8, 1024 * 8, "../Third-Party/textures/dryDirt.png")
 	{
 	}
 
@@ -41,7 +41,7 @@ public:
 	{
 		sunLight.setPosition(bbe::Vector3(10000, 20000, 40000));
 		sunLight.setLightColor(bbe::Color(1, 1, 0.9f));
-		sunLight.setLightStrength(0.5f);
+		sunLight.setLightStrength(0.9f);
 		sunLight.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_NONE);
 
 		extraLight.setPosition(bbe::Vector3(-400, -400, 0));
@@ -61,6 +61,8 @@ public:
 
 		image.load("images/TestImage.png");
 		image2.load("images/TestImage2.png");
+		
+		terrain.setBaseTextureMult(bbe::Vector2(2, 2));
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{

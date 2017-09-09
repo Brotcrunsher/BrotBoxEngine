@@ -28,7 +28,22 @@ namespace bbe
 	enum class ImageFormat
 	{
 		R8G8B8A8 = VK_FORMAT_R8G8B8A8_UNORM,
-		R8 = VK_FORMAT_R8_UNORM,
+		R8       = VK_FORMAT_R8_UNORM,
+	};
+
+	enum class ImageRepeatMode
+	{
+		REPEAT               = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		MIRRORED_REPEAT      = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT,
+		CLAMP_TO_EDGE        = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+		CLAMP_TO_BORDER      = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+		MIRROR_CLAMP_TO_EDGE = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE,
+	};
+
+	enum class ImageFilterMode
+	{
+		LINEAR  = VK_FILTER_LINEAR,
+		NEAREST = VK_FILTER_NEAREST
 	};
 
 	class Image
@@ -39,10 +54,12 @@ namespace bbe
 		friend class PrimitiveBrush3D;
 		friend class Terrain;
 	private:
-		byte       *m_pdata  = nullptr;
-		int         m_width  = 0;
-		int         m_height = 0;
-		ImageFormat m_format = ImageFormat::R8G8B8A8;
+		byte           *m_pdata  = nullptr;
+		int             m_width  = 0;
+		int             m_height = 0;
+		ImageFormat     m_format = ImageFormat::R8G8B8A8;
+		ImageRepeatMode m_repeatMode = ImageRepeatMode::REPEAT;
+		ImageFilterMode m_filterMode = ImageFilterMode::LINEAR;
 
 		mutable VkImage        m_image       = VK_NULL_HANDLE;
 		mutable VkDeviceMemory m_imageMemory = VK_NULL_HANDLE;
@@ -82,5 +99,11 @@ namespace bbe
 		int getSizeInBytes() const;
 		int getAmountOfChannels() const;
 		Color getPixel(int x, int y) const;
+
+		ImageRepeatMode getRepeatMode() const;
+		void setRepeatMode(ImageRepeatMode irm);
+
+		ImageFilterMode getFilterMode() const;
+		void setFilterMode(ImageFilterMode ifm);
 	};
 }

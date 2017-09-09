@@ -4,6 +4,7 @@
 #include "BBE/Random.h"
 #include "BBE/Math.h"
 #include "BBE/ValueNoise2D.h"
+#include "BBE/VulkanBuffer.h"
 
 
 VkDevice         bbe::TerrainPatch::s_device         = VK_NULL_HANDLE;
@@ -141,26 +142,42 @@ void bbe::TerrainPatch::setTransform(const Matrix4 & transform)
 	m_transform = transform;
 }
 
-void bbe::Terrain::init(const INTERNAL::vulkan::VulkanDevice & device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayout) const
+void bbe::Terrain::init(
+	const INTERNAL::vulkan::VulkanDevice & device, 
+	const INTERNAL::vulkan::VulkanCommandPool & commandPool, 
+	const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, 
+	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutHeightMap, 
+	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutTexture,
+	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutBaseTextureBias) const
 {
 	if (!m_wasInit)
 	{
-		m_heightMap.createAndUpload(device, commandPool, descriptorPool, setLayout);
+		m_heightMap.createAndUpload(device, commandPool, descriptorPool, setLayoutHeightMap);
 		for (int i = 0; i < m_patches.getLength(); i++)
 		{
 			m_patches[i].init();
 		}
 		m_wasInit = true;
+
+		m_baseTexture.createAndUpload(device, commandPool, descriptorPool, setLayoutTexture);
+
+
+		m_baseTextureBiasBuffer.create(device, sizeof(TextureBias), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+		m_baseTextureDescriptor.addUniformBuffer(m_baseTextureBiasBuffer, 0, 0);
+		m_baseTextureDescriptor.create(device, descriptorPool, setLayoutBaseTextureBias);
 	}
+
 	
 }
 
-void bbe::Terrain::destroy() const
+void bbe::Terrain::destroy()
 {
 	for (int i = 0; i < m_patches.getLength(); i++)
 	{
 		m_patches[i].destroy();
 	}
+	m_baseTexture.destroy();
+	m_baseTextureBiasBuffer.destroy();
 }
 
 void bbe::Terrain::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
@@ -168,7 +185,23 @@ void bbe::Terrain::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTE
 	TerrainPatch::s_init(device, physicalDevice, commandPool, queue);
 }
 
-bbe::Terrain::Terrain(int width, int height)
+void bbe::Terrain::loadTextureBias() const
+{
+	if (!m_wasInit)
+	{
+		throw NotInitializedException();
+	}
+
+	TextureBias tb = m_baseTextureBias;
+	tb.m_textureMult.x *= m_patchesWidthAmount;
+	tb.m_textureMult.y *= m_patchesHeightAmount;
+
+	void* data = m_baseTextureBiasBuffer.map();
+	memcpy(data, &tb, sizeof(TextureBias));
+	m_baseTextureBiasBuffer.unmap();
+}
+
+bbe::Terrain::Terrain(int width, int height, const char* baseTexturePath)
 {
 	if (width % 256 != 0)
 	{
@@ -200,9 +233,13 @@ bbe::Terrain::Terrain(int width, int height)
 		}
 	}
 
+
 	setTransform(Matrix4());
 
+	m_heightMap.setRepeatMode(bbe::ImageRepeatMode::MIRRORED_REPEAT);
 	m_heightMap.load(width, height, valueNoise.getRaw(), bbe::ImageFormat::R8);
+
+	m_baseTexture.load(baseTexturePath);
 }
 
 bbe::Terrain::~Terrain()
@@ -231,5 +268,33 @@ void bbe::Terrain::setTransform(const Matrix4 & transform)
 			int index = i * m_patchesWidthAmount + k;
 			m_patches[index].setTransform(Matrix4::createTranslationMatrix(Vector3(i * 128.f, k * 128.f, 0)) * m_transform);
 		}
+	}
+}
+
+bbe::Vector2 bbe::Terrain::getBaseTextureOffset()
+{
+	return m_baseTextureBias.m_textureOffset;
+}
+
+void bbe::Terrain::setBaseTextureOffset(const Vector2 & offset)
+{
+	m_baseTextureBias.m_textureOffset = offset;
+	if (m_wasInit)
+	{
+		loadTextureBias();
+	}
+}
+
+bbe::Vector2 bbe::Terrain::getBaseTextureMult()
+{
+	return m_baseTextureBias.m_textureMult;
+}
+
+void bbe::Terrain::setBaseTextureMult(const Vector2 & mult)
+{
+	m_baseTextureBias.m_textureMult = mult;
+	if (m_wasInit)
+	{
+		loadTextureBias();
 	}
 }
