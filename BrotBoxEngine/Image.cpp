@@ -6,6 +6,7 @@
 #include "BBE/VulkanDescriptorPool.h"
 #include "BBE/VulkanDescriptorSetLayout.h"
 #include "BBE/VulkanBuffer.h"
+#include "BBE/Math.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -23,7 +24,12 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	}
 
 	m_device = device.getDevice();
-
+	int amountOfMips = Math::log2Floor(Math::max(getWidth(), getHeight())) + 1;
+	m_imageLayout = new VkImageLayout[amountOfMips]; //TODO use allocator
+	for (int i = 0; i < amountOfMips; i++)
+	{
+		m_imageLayout[i] = VK_IMAGE_LAYOUT_PREINITIALIZED;
+	}
 
 	VkDeviceSize imageSize = getSizeInBytes();
 
@@ -34,15 +40,55 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	memcpy(data, m_pdata, imageSize);
 	stagingBuffer.unmap();
 
-	INTERNAL::vulkan::createImage(m_device, device.getPhysicalDevice(), getWidth(), getHeight(), (VkFormat)m_format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_image, m_imageMemory);
+
+	INTERNAL::vulkan::createImage(
+		m_device, 
+		device.getPhysicalDevice(), 
+		getWidth(), getHeight(), 
+		(VkFormat)m_format, 
+		VK_IMAGE_TILING_OPTIMAL, 
+		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+		m_image, m_imageMemory, 
+		amountOfMips);
 
 	changeLayout(m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	writeBufferToImage(m_device, commandPool.getCommandPool(), device.getQueue(), stagingBuffer.getBuffer());
-	changeLayout(m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	changeLayout(m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+	for (int i = 1; i < amountOfMips; i++)
+	{
+		VkImageBlit ib = {};
+		ib.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		ib.srcSubresource.mipLevel = i - 1;
+		ib.srcSubresource.baseArrayLayer = 0;
+		ib.srcSubresource.layerCount = 1;
+		ib.srcOffsets[1].x = getWidth() >> (i - 1);
+		ib.srcOffsets[1].y = getHeight() >> (i - 1);
+		ib.srcOffsets[1].z = 1;
+
+		ib.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		ib.dstSubresource.mipLevel = i;
+		ib.dstSubresource.baseArrayLayer = 0;
+		ib.dstSubresource.layerCount = 1;
+		ib.dstOffsets[1].x = getWidth() >> i;
+		ib.dstOffsets[1].y = getHeight() >> i;
+		ib.dstOffsets[1].z = 1;
+
+		changeLayout(m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, i);
+
+		VkCommandBuffer commandBuffer = INTERNAL::vulkan::startSingleTimeCommandBuffer(device.getDevice(), commandPool.getCommandPool());
+		vkCmdBlitImage(commandBuffer, m_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &ib, VK_FILTER_LINEAR);
+		INTERNAL::vulkan::endSingleTimeCommandBuffer(device.getDevice(), device.getQueue(), commandPool.getCommandPool(), commandBuffer);
+
+		changeLayout(m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, i);
+	}
+	
+	changeLayout(m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, amountOfMips);
 
 	stagingBuffer.destroy();
 
-	INTERNAL::vulkan::createImageView(m_device, m_image, (VkFormat)m_format, VK_IMAGE_ASPECT_COLOR_BIT, m_imageView);
+	INTERNAL::vulkan::createImageView(m_device, m_image, (VkFormat)m_format, VK_IMAGE_ASPECT_COLOR_BIT, m_imageView, amountOfMips);
 
 	VkSamplerCreateInfo samplerCreateInfo = {};
 	samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -58,10 +104,10 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	samplerCreateInfo.anisotropyEnable = VK_TRUE;
 	samplerCreateInfo.maxAnisotropy = 16;
 	samplerCreateInfo.compareEnable = VK_FALSE;
-	samplerCreateInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
 	samplerCreateInfo.minLod = 0.0f;
-	samplerCreateInfo.maxLod = 0.0f;
-	samplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerCreateInfo.maxLod = amountOfMips;
+	samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 	samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
 
 	VkResult result = vkCreateSampler(m_device, &samplerCreateInfo, nullptr, &m_sampler);
@@ -73,11 +119,11 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	wasUploadedToVulkan = true;
 }
 
-void bbe::Image::changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout) const
+void bbe::Image::changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout, uint32_t baseMipLevel, uint32_t levelCount) const
 {
-	INTERNAL::vulkan::changeImageLayout(device, commandPool, queue, m_image, (VkFormat)m_format, this->m_imageLayout, layout);
+	INTERNAL::vulkan::changeImageLayout(device, commandPool, queue, m_image, (VkFormat)m_format, this->m_imageLayout[baseMipLevel], layout, baseMipLevel, levelCount);
 
-	this->m_imageLayout = layout;
+	this->m_imageLayout[baseMipLevel] = layout;
 }
 
 void bbe::Image::writeBufferToImage(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuffer buffer) const
@@ -113,7 +159,7 @@ VkImageView bbe::Image::getImageView() const
 
 VkImageLayout bbe::Image::getImageLayout() const
 {
-	return m_imageLayout;
+	return m_imageLayout[0];
 }
 
 bbe::Image::Image()
@@ -223,7 +269,8 @@ void bbe::Image::destroy()
 		m_image       = VK_NULL_HANDLE;
 		m_imageMemory = VK_NULL_HANDLE;
 		m_imageView   = VK_NULL_HANDLE;
-		m_imageLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+		delete[] m_imageLayout;
+		m_imageLayout = nullptr;
 		m_device      = VK_NULL_HANDLE;
 		m_sampler     = VK_NULL_HANDLE;
 	}

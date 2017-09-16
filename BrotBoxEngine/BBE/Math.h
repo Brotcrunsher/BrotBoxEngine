@@ -77,6 +77,8 @@ namespace bbe
 		bool isOdd(int val);
 		bool isEven(int val);
 
+		int log2Floor(unsigned int val);
+
 		float interpolateLinear(float a, float b, float t);
 		float interpolateBool(float a, float b, float t);
 		float interpolateCosine(float a, float b, float t);

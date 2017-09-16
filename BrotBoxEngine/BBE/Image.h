@@ -64,14 +64,14 @@ namespace bbe
 		mutable VkImage        m_image       = VK_NULL_HANDLE;
 		mutable VkDeviceMemory m_imageMemory = VK_NULL_HANDLE;
 		mutable VkImageView    m_imageView   = VK_NULL_HANDLE;
-		mutable VkImageLayout  m_imageLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+		mutable VkImageLayout *m_imageLayout = nullptr;
 		mutable VkDevice       m_device      = VK_NULL_HANDLE;
 		mutable VkSampler      m_sampler     = VK_NULL_HANDLE;
 		mutable INTERNAL::vulkan::VulkanDescriptorSet m_descriptorSet;
 
 		mutable bool wasUploadedToVulkan = false;
 		void createAndUpload(const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool &commandPool, const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayout) const;
-		void changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout) const;
+		void changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout, uint32_t baseMipLevel = 0, uint32_t levelCount = 1) const;
 		void writeBufferToImage(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuffer buffer) const;
 
 		VkSampler getSampler() const;

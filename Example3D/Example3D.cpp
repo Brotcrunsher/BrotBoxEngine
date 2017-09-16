@@ -5,7 +5,8 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 
-#define AMOUNTOFCUBES 1024 * 7
+//#define AMOUNTOFCUBES 1024 * 7
+#define AMOUNTOFCUBES 1024 * 4
 class MyGame : public bbe::Game
 {
 public:

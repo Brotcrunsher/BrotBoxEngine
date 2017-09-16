@@ -194,6 +194,40 @@ bool bbe::Math::isEven(int val)
 	return (val & 1) == 0;
 }
 
+int bbe::Math::log2Floor(unsigned int val)
+{
+	//UNTESTED
+	//Should be the fastest possible way to calculate a floored log 2 of a number. 
+	//Inspired by https://graphics.stanford.edu/~seander/bithacks.html#IntegerLog
+	unsigned int retVal = 0;
+	if (val & 0xFFFF0000)
+	{
+		val >>= 16;
+		retVal |= 16;
+	}
+	if (val & 0xFF00)
+	{
+		val >>= 8;
+		retVal |= 8;
+	}
+	if (val & 0xF0)
+	{
+		val >>= 4;
+		retVal |= 4;
+	}
+	if (val & 0xC)
+	{
+		val >>= 2;
+		retVal |= 2;
+	}
+	if (val & 0x2)
+	{
+		val >>= 1;
+		retVal |= 1;
+	}
+	return retVal;
+}
+
 float bbe::Math::clamp01(float val)
 {
 	return (val < 0) ? 0 : (val > 1 ? 1 : val);

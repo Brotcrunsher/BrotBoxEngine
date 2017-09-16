@@ -49,7 +49,7 @@ layout(set = 2, binding = 0) uniform UBOLights
 } uboLights;
 
 void main() {
-	vec3 texColor = textureLod(baseTex, inHeightMapPos * textureBias.data.xy + textureBias.data.zw, inDistanceToCamera).xyz;
+	vec3 texColor = texture(baseTex, inHeightMapPos * textureBias.data.xy + textureBias.data.zw, 0).xyz;
 	vec3 V = normalize(inViewVec);
 	vec3 N = normalize(inNormal);
 	vec3 ambient = texColor * 0.1;
@@ -99,8 +99,5 @@ void main() {
 	
 
 	outColor = vec4(ambient + diffuse + specular, 1.0);
-	if(length(textureBias.data.xy) == 0)
-	{
-		outColor = vec4(1, 0, 1, 1);
-	}
+
 }

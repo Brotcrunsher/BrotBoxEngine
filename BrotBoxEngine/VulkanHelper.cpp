@@ -108,7 +108,7 @@ VkCommandBuffer bbe::INTERNAL::vulkan::startSingleTimeCommandBuffer(VkDevice dev
 	return commandBuffer;
 }
 
-void bbe::INTERNAL::vulkan::endSingleTimeCommandBuffer(VkDevice device, VkQueue queue, VkCommandPool commandPool, VkCommandBuffer commandBuffer)
+void bbe::INTERNAL::vulkan::endSingleTimeCommandBuffer(VkDevice device, VkQueue queue, VkCommandPool commandPool, VkCommandBuffer &commandBuffer)
 {
 	VkResult result = vkEndCommandBuffer(commandBuffer);
 	ASSERT_VULKAN(result);
@@ -130,9 +130,11 @@ void bbe::INTERNAL::vulkan::endSingleTimeCommandBuffer(VkDevice device, VkQueue 
 	vkQueueWaitIdle(queue);
 
 	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+
+	commandBuffer = VK_NULL_HANDLE;
 }
 
-void bbe::INTERNAL::vulkan::createImage(VkDevice device, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags, VkImage & image, VkDeviceMemory & imageMemory)
+void bbe::INTERNAL::vulkan::createImage(VkDevice device, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags, VkImage & image, VkDeviceMemory & imageMemory, int amountOfMipLevels)
 {
 	VkImageCreateInfo imageCreateInfo;
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -143,7 +145,7 @@ void bbe::INTERNAL::vulkan::createImage(VkDevice device, VkPhysicalDevice physic
 	imageCreateInfo.extent.width = width;
 	imageCreateInfo.extent.height = height;
 	imageCreateInfo.extent.depth = 1;
-	imageCreateInfo.mipLevels = 1;
+	imageCreateInfo.mipLevels = amountOfMipLevels;
 	imageCreateInfo.arrayLayers = 1;
 	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageCreateInfo.tiling = tiling;
@@ -171,7 +173,7 @@ void bbe::INTERNAL::vulkan::createImage(VkDevice device, VkPhysicalDevice physic
 	vkBindImageMemory(device, image, imageMemory, 0);
 }
 
-void bbe::INTERNAL::vulkan::createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView & imageView)
+void bbe::INTERNAL::vulkan::createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView & imageView, uint32_t mipLevels)
 {
 	VkImageViewCreateInfo imageViewCreateInfo;
 	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -186,7 +188,7 @@ void bbe::INTERNAL::vulkan::createImageView(VkDevice device, VkImage image, VkFo
 	imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 	imageViewCreateInfo.subresourceRange.aspectMask = aspectFlags;
 	imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-	imageViewCreateInfo.subresourceRange.levelCount = 1;
+	imageViewCreateInfo.subresourceRange.levelCount = mipLevels;
 	imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 	imageViewCreateInfo.subresourceRange.layerCount = 1;
 
@@ -207,7 +209,7 @@ void bbe::INTERNAL::vulkan::copyBuffer(VkDevice device, VkCommandPool commandPoo
 	endSingleTimeCommandBuffer(device, queue, commandPool, commandBuffer);
 }
 
-void bbe::INTERNAL::vulkan::changeImageLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+void bbe::INTERNAL::vulkan::changeImageLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t baseMipLevel, uint32_t levelCount)
 {
 	VkCommandBuffer commandBuffer = startSingleTimeCommandBuffer(device, commandPool);
 
@@ -228,6 +230,21 @@ void bbe::INTERNAL::vulkan::changeImageLayout(VkDevice device, VkCommandPool com
 	{
 		imageMemoryBarrier.srcAccessMask = 0;
 		imageMemoryBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+	{
+		imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+		imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 	}
 	else
 	{
@@ -252,8 +269,8 @@ void bbe::INTERNAL::vulkan::changeImageLayout(VkDevice device, VkCommandPool com
 	{
 		imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	}
-	imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-	imageMemoryBarrier.subresourceRange.levelCount = 1;
+	imageMemoryBarrier.subresourceRange.baseMipLevel = baseMipLevel;
+	imageMemoryBarrier.subresourceRange.levelCount = levelCount;
 	imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
 	imageMemoryBarrier.subresourceRange.layerCount = 1;
 

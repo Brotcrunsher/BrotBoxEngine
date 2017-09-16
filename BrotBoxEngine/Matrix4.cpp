@@ -7,21 +7,25 @@ bbe::Matrix4::Matrix4()
 {
 	static_assert(sizeof(Matrix4) == sizeof(float) * 16, "The size of a Matrix4 must be sizeof(float) * 16!");
 
+	m_cols[0].x = 1;
+	m_cols[0].y = 0;
+	m_cols[0].z = 0;
+	m_cols[0].w = 0;
 
-	for (int i = 0; i < 4; i++)
-	{
-		for (int k = 0; k < 4; k++)
-		{
-			if (i == k)
-			{
-				m_cols[i][k] = 1;
-			}
-			else
-			{
-				m_cols[i][k] = 0;
-			}
-		}
-	}
+	m_cols[1].x = 0;
+	m_cols[1].y = 1;
+	m_cols[1].z = 0;
+	m_cols[1].w = 0;
+
+	m_cols[2].x = 0;
+	m_cols[2].y = 0;
+	m_cols[2].z = 1;
+	m_cols[2].w = 0;
+
+	m_cols[3].x = 0;
+	m_cols[3].y = 0;
+	m_cols[3].z = 0;
+	m_cols[3].w = 1;
 }
 
 bbe::Matrix4::Matrix4(const Vector4 & col0, const Vector4 & col1, const Vector4 & col2, const Vector4 & col3)
