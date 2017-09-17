@@ -108,6 +108,8 @@ namespace bbe
 		} m_baseTextureBias;
 
 		void loadTextureBias() const;
+
+		float m_maxHeight = 100;
 	public:
 		Terrain(int width, int height, const char* baseTexturePath);
 		~Terrain();
@@ -121,5 +123,7 @@ namespace bbe
 		Vector2 getBaseTextureMult();
 		void setBaseTextureMult(const Vector2 &mult);
 
+		void setMaxHeight(float height);
+		float getMaxHeight() const;
 	};
 }

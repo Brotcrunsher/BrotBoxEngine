@@ -131,10 +131,19 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 4, 1, terrain.m_baseTexture.m_descriptorSet.getPDescriptorSet(), 0, nullptr);
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 5, 1, terrain.m_baseTextureDescriptor.getPDescriptorSet(), 0, nullptr);
 
+	class PushConts
+	{
+	public:
+		Matrix4 mat;
+		float height;
+	}pushConts;
+
+	pushConts.height = terrain.getMaxHeight();
+
 	for (int i = 0; i < terrain.m_patches.getLength(); i++)
 	{
-		vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color), sizeof(Matrix4), &(terrain.m_patches[i].m_transform));
-		vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color), sizeof(Matrix4), &(terrain.m_patches[i].m_transform));
+		pushConts.mat = terrain.m_patches[i].m_transform;
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color), sizeof(PushConts), &(pushConts));
 		VkDeviceSize offsets[] = { 0 };
 		VkBuffer buffer = terrain.m_patches[i].m_vertexBuffer.getBuffer();
 		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);

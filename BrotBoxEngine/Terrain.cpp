@@ -298,3 +298,13 @@ void bbe::Terrain::setBaseTextureMult(const Vector2 & mult)
 		loadTextureBias();
 	}
 }
+
+void bbe::Terrain::setMaxHeight(float height)
+{
+	m_maxHeight = height;
+}
+
+float bbe::Terrain::getMaxHeight() const
+{
+	return m_maxHeight;
+}

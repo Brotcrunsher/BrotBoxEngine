@@ -29,6 +29,7 @@ layout(set = 1, binding = 0) uniform UBOProjection
 layout(push_constant) uniform PushConstants
 {
 	layout(offset = 16)mat4 modelMatrix;
+	layout(offset = 80)float maxTerrainHeight;
 } pushConts;
 
 layout(location = 0) in vec2 inHeightMapPos[];
@@ -52,7 +53,7 @@ void main()
 	vec4 pos = mix(pos1, pos2, gl_TessCoord.y);
 
 	vec3 inPos = pos.xyz;
-	inPos.z = texture(tex, heightMapPos).x * 100;
+	inPos.z = texture(tex, heightMapPos).x * pushConts.maxTerrainHeight;
 
 	vec4 worldPos = pushConts.modelMatrix * vec4(inPos, 1.0);
 	vec4 viewPos = uboProjection.view * worldPos;

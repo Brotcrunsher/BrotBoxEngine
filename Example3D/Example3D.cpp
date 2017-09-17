@@ -36,6 +36,7 @@ public:
 	MyGame()
 		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0)), terrain(1024 * 8, 1024 * 8, "../Third-Party/textures/dryDirt.png")
 	{
+		terrain.setMaxHeight(200);
 	}
 
 	virtual void onStart() override
