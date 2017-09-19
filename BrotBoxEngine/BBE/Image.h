@@ -67,16 +67,19 @@ namespace bbe
 		mutable VkImageLayout *m_imageLayout = nullptr;
 		mutable VkDevice       m_device      = VK_NULL_HANDLE;
 		mutable VkSampler      m_sampler     = VK_NULL_HANDLE;
-		mutable INTERNAL::vulkan::VulkanDescriptorSet m_descriptorSet;
+		mutable INTERNAL::vulkan::VulkanDescriptorSet m_descriptorrSet;
+		mutable const Image*   m_parentImage = nullptr;
 
 		mutable bool wasUploadedToVulkan = false;
-		void createAndUpload(const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool &commandPool, const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayout) const;
+		void createAndUpload(const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool &commandPool, const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayout, const Image* parentImage = nullptr) const;
 		void changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout, uint32_t baseMipLevel = 0, uint32_t levelCount = 1) const;
 		void writeBufferToImage(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuffer buffer) const;
 
 		VkSampler getSampler() const;
 		VkImageView getImageView() const;
 		VkImageLayout getImageLayout() const;
+
+		INTERNAL::vulkan::VulkanDescriptorSet& getDescriptorSet() const;
 
 	public:
 		Image();

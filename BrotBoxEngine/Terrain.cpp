@@ -148,7 +148,9 @@ void bbe::Terrain::init(
 	const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, 
 	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutHeightMap, 
 	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutTexture,
-	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutBaseTextureBias) const
+	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutBaseTextureBias,
+	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextures,
+	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextureWeights) const
 {
 	if (!m_wasInit)
 	{
@@ -165,6 +167,17 @@ void bbe::Terrain::init(
 		m_baseTextureBiasBuffer.create(device, sizeof(TextureBias), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 		m_baseTextureDescriptor.addUniformBuffer(m_baseTextureBiasBuffer, 0, 0);
 		m_baseTextureDescriptor.create(device, descriptorPool, setLayoutBaseTextureBias);
+
+		
+
+		for (int i = 1; i < m_currentAdditionalTexture; i++)
+		{
+			m_additionalTextures[i].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures, &(m_additionalTextures[0]));
+			m_additionalTextureWeights[i].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures, &(m_additionalTextureWeights[0]));
+		}
+
+		m_additionalTextures[0].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures);
+		m_additionalTextureWeights[0].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures);
 	}
 
 	
@@ -202,6 +215,7 @@ void bbe::Terrain::loadTextureBias() const
 }
 
 bbe::Terrain::Terrain(int width, int height, const char* baseTexturePath)
+	: m_width(width), m_height(height)
 {
 	if (width % 256 != 0)
 	{
@@ -307,4 +321,22 @@ void bbe::Terrain::setMaxHeight(float height)
 float bbe::Terrain::getMaxHeight() const
 {
 	return m_maxHeight;
+}
+
+void bbe::Terrain::addTexture(const char * texturePath, const float * weights)
+{
+	m_additionalTextures[m_currentAdditionalTexture].load(texturePath);
+	m_additionalTextureWeights[m_currentAdditionalTexture].load(m_width, m_height, weights, bbe::ImageFormat::R8);
+
+	m_currentAdditionalTexture++;
+}
+
+int bbe::Terrain::getWidth() const
+{
+	return m_width;
+}
+
+int bbe::Terrain::getHeight() const
+{
+	return m_height;
 }

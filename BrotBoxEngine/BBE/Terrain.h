@@ -8,6 +8,7 @@
 #include "../BBE/List.h"
 #include "../BBE/Image.h"
 #include "../BBE/Vector2.h"
+#include "../BBE/EngineSettings.h"
 
 namespace bbe
 {
@@ -82,6 +83,11 @@ namespace bbe
 		List<TerrainPatch> m_patches;
 		Image m_heightMap;
 		Image m_baseTexture;
+
+		Image m_additionalTextures[16];
+		Image m_additionalTextureWeights[16];
+		int m_currentAdditionalTexture = 0;
+
 		mutable bool m_wasInit = false;
 		mutable INTERNAL::vulkan::VulkanBuffer m_baseTextureBiasBuffer;
 		mutable INTERNAL::vulkan::VulkanDescriptorSet m_baseTextureDescriptor;
@@ -92,7 +98,9 @@ namespace bbe
 			const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, 
 			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutHeightMap, 
 			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutTexture,
-			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutBaseTextureBias) const;
+			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutBaseTextureBias,
+			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextures,
+			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextureWeights) const;
 		void destroy();
 
 		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
@@ -110,6 +118,9 @@ namespace bbe
 		void loadTextureBias() const;
 
 		float m_maxHeight = 100;
+		int m_width = 0;
+		int m_height = 0;
+
 	public:
 		Terrain(int width, int height, const char* baseTexturePath);
 		~Terrain();
@@ -125,5 +136,10 @@ namespace bbe
 
 		void setMaxHeight(float height);
 		float getMaxHeight() const;
+
+		void addTexture(const char* texturePath, const float* weights);
+
+		int getWidth() const;
+		int getHeight() const;
 	};
 }

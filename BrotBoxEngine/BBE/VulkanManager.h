@@ -73,6 +73,8 @@ namespace bbe
 				VulkanDescriptorSetLayout m_setLayoutSampler;
 				VulkanDescriptorSetLayout m_setLayoutTerrainHeightMap;
 				VulkanDescriptorSetLayout m_setLayoutTerrainBaseTextureBias;
+				VulkanDescriptorSetLayout m_setLayoutTerrainAdditionalTexture;
+				VulkanDescriptorSetLayout m_setLayoutTerrainAdditionalTextureWeight;
 				VulkanDescriptorPool      m_descriptorPool;
 				VulkanDescriptorSet       m_setVertexLight;
 				VulkanDescriptorSet       m_setFragmentLight;

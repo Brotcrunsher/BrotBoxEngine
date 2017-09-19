@@ -24,3 +24,8 @@ void bbe::Settings::setAmountOfLightSources(int amount)
 
 	amountOfLightSources = amount;
 }
+
+int bbe::Settings::getTerrainAdditionalTextures()
+{
+	return 2;
+}

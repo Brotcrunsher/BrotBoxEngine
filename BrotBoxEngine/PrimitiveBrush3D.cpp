@@ -27,6 +27,8 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainHeightMap, 
 	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTexture, 
 	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainBaseTextureBias,
+	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainAdditionalTexture,
+	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainAdditionalTextureWeight,
 	int width, int height)
 {
 	m_layoutPrimitive = pipelinePrimitive.getLayout();
@@ -38,6 +40,8 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 	m_pdescriptorSetLayoutTerrainHeightMap = &descriptorSetLayoutTerrainHeightMap;
 	m_pdescriptorSetLayoutTexture = &descriptorSetLayoutTexture;
 	m_pdescriptorSetLayoutTerrainBaseTextureBias = &descriptorSetLayoutTerrainBaseTextureBias;
+	m_pdescriptorSetLayoutTerrainAdditionalTexture = &descriptorSetLayoutTerrainAdditionalTexture;
+	m_pdescriptorSetLayoutTerrainAdditionalTextureWeight = &descriptorSetLayoutTerrainAdditionalTextureWeight;
 	m_pdevice = &device;
 	m_pcommandPool = &commandPool;
 	m_screenWidth = width;
@@ -118,7 +122,16 @@ void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 
 void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 {
-	terrain.init(*m_pdevice, *m_pcommandPool, *m_pdescriptorPool, *m_pdescriptorSetLayoutTerrainHeightMap, *m_pdescriptorSetLayoutTexture, *m_pdescriptorSetLayoutTerrainBaseTextureBias);
+	terrain.init(
+		*m_pdevice, 
+		*m_pcommandPool, 
+		*m_pdescriptorPool, 
+		*m_pdescriptorSetLayoutTerrainHeightMap, 
+		*m_pdescriptorSetLayoutTexture, 
+		*m_pdescriptorSetLayoutTerrainBaseTextureBias,
+		*m_pdescriptorSetLayoutTerrainAdditionalTexture,
+		*m_pdescriptorSetLayoutTerrainAdditionalTextureWeight
+	);
 	
 	terrain.loadTextureBias();
 
@@ -127,9 +140,12 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineTerrain);
 		m_pipelineRecord = PipelineRecord3D::TERRAIN;
 	}
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 3, 1, terrain.m_heightMap.m_descriptorSet.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 4, 1, terrain.m_baseTexture.m_descriptorSet.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 3, 1, terrain.m_heightMap.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 4, 1, terrain.m_baseTexture.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 5, 1, terrain.m_baseTextureDescriptor.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 6, 1, terrain.m_additionalTextures[0].getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 7, 1, terrain.m_additionalTextureWeights[0].getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+
 
 	class PushConts
 	{

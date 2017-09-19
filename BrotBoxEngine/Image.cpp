@@ -11,7 +11,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayout) const
+void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayout, const Image* parentImage) const
 {
 	if (wasUploadedToVulkan)
 	{
@@ -113,8 +113,13 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	VkResult result = vkCreateSampler(m_device, &samplerCreateInfo, nullptr, &m_sampler);
 	ASSERT_VULKAN(result);
 
-	m_descriptorSet.addCombinedImageSampler(*this, 0);
-	m_descriptorSet.create(device, descriptorPool, setLayout);
+	m_parentImage = parentImage;
+
+	getDescriptorSet().addCombinedImageSampler(*this, 0);
+	if (m_parentImage == nullptr)
+	{
+		getDescriptorSet().create(device, descriptorPool, setLayout);
+	}
 
 	wasUploadedToVulkan = true;
 }
@@ -160,6 +165,18 @@ VkImageView bbe::Image::getImageView() const
 VkImageLayout bbe::Image::getImageLayout() const
 {
 	return m_imageLayout[0];
+}
+
+bbe::INTERNAL::vulkan::VulkanDescriptorSet & bbe::Image::getDescriptorSet() const
+{
+	if (m_parentImage == nullptr)
+	{
+		return m_descriptorrSet;
+	}
+	else
+	{
+		return m_parentImage->m_descriptorrSet;
+	}
 }
 
 bbe::Image::Image()

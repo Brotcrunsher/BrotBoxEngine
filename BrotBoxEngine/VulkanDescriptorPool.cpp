@@ -19,6 +19,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(const VulkanDevice & de
 	m_device = device.getDevice();
 	uint32_t amountOfUniformBuffer = 0;
 	uint32_t amountOfCombinedImageSampler = 0;
+	uint32_t amountOfSampler = 0;
 	uint32_t amountOfSets = 0;
 
 	for (int i = 0; i < m_setLayouts.getLength(); i++)
@@ -28,10 +29,13 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(const VulkanDevice & de
 			switch (m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings[k].descriptorType)
 			{
 			case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-				amountOfUniformBuffer += m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings[k].descriptorCount * m_setLayouts[i].m_amountOfSets;
+				amountOfUniformBuffer        += m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings[k].descriptorCount * m_setLayouts[i].m_amountOfSets;
 				break;
 			case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
 				amountOfCombinedImageSampler += m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings[k].descriptorCount * m_setLayouts[i].m_amountOfSets;
+				break;
+			case VK_DESCRIPTOR_TYPE_SAMPLER:
+				amountOfSampler              += m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings[k].descriptorCount * m_setLayouts[i].m_amountOfSets;
 				break;
 			default:
 				throw NotImplementedException();
@@ -55,6 +59,14 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(const VulkanDevice & de
 		VkDescriptorPoolSize dps = {};
 		dps.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		dps.descriptorCount = amountOfCombinedImageSampler;
+		poolSizes.add(dps);
+	}
+
+	if (amountOfSampler > 0)
+	{
+		VkDescriptorPoolSize dps = {};
+		dps.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+		dps.descriptorCount = amountOfSampler;
 		poolSizes.add(dps);
 	}
 

@@ -9,6 +9,8 @@ namespace bbe
 
 		int getAmountOfLightSources();
 		void setAmountOfLightSources(int amount);
+
+		int getTerrainAdditionalTextures();
 	}
 
 }

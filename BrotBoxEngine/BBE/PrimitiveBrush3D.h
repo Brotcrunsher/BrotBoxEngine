@@ -40,17 +40,19 @@ namespace bbe
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
 	private:
-		VkCommandBuffer                              m_currentCommandBuffer                       = VK_NULL_HANDLE;
-		INTERNAL::vulkan::VulkanDevice              *m_pdevice                                    = nullptr;
-		VkPipelineLayout                             m_layoutPrimitive                            = VK_NULL_HANDLE;
-		VkPipeline                                   m_pipelinePrimitive                          = VK_NULL_HANDLE;
-		VkPipelineLayout                             m_layoutTerrain                              = VK_NULL_HANDLE;
-		VkPipeline                                   m_pipelineTerrain                            = VK_NULL_HANDLE;
-		INTERNAL::vulkan::VulkanDescriptorPool      *m_pdescriptorPool                            = nullptr;
-		INTERNAL::vulkan::VulkanCommandPool         *m_pcommandPool                               = nullptr;
-		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainHeightMap       = nullptr;
-		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTexture                = nullptr;
-		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainBaseTextureBias = nullptr;
+		VkCommandBuffer                              m_currentCommandBuffer                               = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanDevice              *m_pdevice                                            = nullptr;
+		VkPipelineLayout                             m_layoutPrimitive                                    = VK_NULL_HANDLE;
+		VkPipeline                                   m_pipelinePrimitive                                  = VK_NULL_HANDLE;
+		VkPipelineLayout                             m_layoutTerrain                                      = VK_NULL_HANDLE;
+		VkPipeline                                   m_pipelineTerrain                                    = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanDescriptorPool      *m_pdescriptorPool                                    = nullptr;
+		INTERNAL::vulkan::VulkanCommandPool         *m_pcommandPool                                       = nullptr;
+		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainHeightMap               = nullptr;
+		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTexture                        = nullptr;
+		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainBaseTextureBias         = nullptr;
+		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainAdditionalTexture       = nullptr;
+		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainAdditionalTextureWeight = nullptr;
 		int                                          m_screenWidth;
 		int                                          m_screenHeight;
 
@@ -75,6 +77,8 @@ namespace bbe
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainHeightMap,
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTexture,
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainBaseTextureBias,
+			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainAdditionalTexture,
+			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainAdditionalTextureWeight,
 			int screenWidth, int screenHeight);
 		
 		void create(const INTERNAL::vulkan::VulkanDevice &vulkanDevice);

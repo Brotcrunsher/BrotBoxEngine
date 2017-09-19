@@ -45,6 +45,11 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::create(const VulkanDevice &devi
 
 	vkAllocateDescriptorSets(device.getDevice(), &dsai, &m_descriptorSet);
 
+	List<VkDescriptorImageInfo> imageInfos;
+	for (int i = 0; i < m_descriptorImageInfos.getLength(); i++)
+	{
+		imageInfos.add(m_descriptorImageInfos[i].m_descriptorImageInfo);
+	}
 
 
 	List<VkWriteDescriptorSet> writeDescriptorSets;
@@ -67,19 +72,34 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::create(const VulkanDevice &devi
 
 	for (int i = 0; i < m_descriptorImageInfos.getLength(); i++)
 	{
+		uint32_t descriptorCount = 1;
+		for (int k = i + 1; k < m_descriptorImageInfos.getLength(); k++)
+		{
+			if (m_descriptorImageInfos[k].m_binding == m_descriptorImageInfos[i].m_binding)
+			{
+				descriptorCount++;
+			}
+			else
+			{
+				break;
+			}
+		}
+
 		VkWriteDescriptorSet wds = {};
 		wds.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		wds.pNext = nullptr;
 		wds.dstSet = m_descriptorSet;
 		wds.dstBinding = m_descriptorImageInfos[i].m_binding;
 		wds.dstArrayElement = 0;
-		wds.descriptorCount = 1;
+		wds.descriptorCount = descriptorCount;
 		wds.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		wds.pImageInfo = &(m_descriptorImageInfos[i].m_descriptorImageInfo);
+		wds.pImageInfo = &(imageInfos[i]);
 		wds.pBufferInfo = nullptr;
 		wds.pTexelBufferView = nullptr;
 
 		writeDescriptorSets.add(wds);
+
+		i += descriptorCount - 1;
 	}
 
 	vkUpdateDescriptorSets(device.getDevice(), writeDescriptorSets.getLength(), writeDescriptorSets.getRaw(), 0, nullptr);

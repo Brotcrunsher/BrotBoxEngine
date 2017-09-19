@@ -27,7 +27,7 @@ public:
 	bbe::PointLight brightLight;
 	bbe::PointLight sunLight;
 	bbe::PointLight extraLight;
-	
+
 	bbe::Color colors[AMOUNTOFCUBES];
 
 	bbe::Image image;
@@ -37,6 +37,27 @@ public:
 		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0)), terrain(1024 * 8, 1024 * 8, "../Third-Party/textures/dryDirt.png")
 	{
 		terrain.setMaxHeight(200);
+		float *weightsGrass = new float[terrain.getWidth() * terrain.getHeight()];
+		float *weightsSand  = new float[terrain.getWidth() * terrain.getHeight()];
+		for (int i = 0; i < terrain.getHeight(); i++)
+		{
+			for (int k = 0; k < terrain.getWidth(); k++)
+			{
+				int index = i * terrain.getWidth() + k;
+				weightsGrass[index] = (float)i / (float)terrain.getHeight();
+				weightsSand[index]  = (float)k / (float)terrain.getWidth();
+
+				float weightSum = weightsGrass[index] + weightsSand[index];
+				if (weightSum > 1)
+				{
+					weightsGrass[index] /= weightSum;
+					weightsSand[index] /= weightSum;
+				}
+			}
+		}
+		terrain.addTexture("../Third-Party/textures/cf_ter_gcs_01.png", weightsGrass);
+		terrain.addTexture("../Third-Party/textures/sand.png", weightsSand);
+		delete weightsGrass;
 	}
 
 	virtual void onStart() override

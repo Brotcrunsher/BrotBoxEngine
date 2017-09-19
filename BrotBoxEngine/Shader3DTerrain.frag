@@ -1,7 +1,8 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(constant_id = 0) const int AMOUNT_OF_LIGHTS = 4;
+layout(constant_id = 0) const int AMOUNT_OF_LIGHTS   = 4;
+layout(constant_id = 1) const int AMOUNT_OF_TEXTURES = 2;
 
 #define FALLOFF_NONE    0
 #define	FALLOFF_LINEAR  1
@@ -28,6 +29,8 @@ layout(set = 5, binding = 0) uniform TextureBias
 {
 	vec4 data;
 }textureBias;
+layout(set = 6, binding = 0) uniform sampler2D additionalTex[AMOUNT_OF_TEXTURES];
+layout(set = 7, binding = 0) uniform sampler2D textureWeights[AMOUNT_OF_TEXTURES];
 
 layout(push_constant) uniform PushConstants
 {
@@ -49,7 +52,28 @@ layout(set = 2, binding = 0) uniform UBOLights
 } uboLights;
 
 void main() {
-	vec3 texColor = texture(baseTex, inHeightMapPos * textureBias.data.xy + textureBias.data.zw, 0).xyz;
+	float weights[AMOUNT_OF_TEXTURES];
+	float weightSum = 0;
+	vec3 texColors[AMOUNT_OF_TEXTURES];
+	vec3 texColor = vec3(0);
+	for(int i = 0; i<AMOUNT_OF_TEXTURES; i++)
+	{
+		weights[i] = texture(textureWeights[i], inHeightMapPos).x;
+		weightSum += weights[i];
+		texColors[i] = texture(additionalTex[i], inHeightMapPos * textureBias.data.xy + textureBias.data.zw, 0).xyz;
+
+		texColor += texColors[i] * weights[i];
+	}
+
+	if(weightSum < 1)
+	{
+		vec3 texColorBase = texture(baseTex, inHeightMapPos * textureBias.data.xy + textureBias.data.zw, 0).xyz;
+		texColor += texColorBase * (1 - weightSum);
+	}
+	
+
+
+
 	vec3 V = normalize(inViewVec);
 	vec3 N = normalize(inNormal);
 	vec3 ambient = texColor * 0.1;
