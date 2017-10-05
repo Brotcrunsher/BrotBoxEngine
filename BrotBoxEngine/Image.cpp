@@ -101,8 +101,8 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	samplerCreateInfo.addressModeV = (VkSamplerAddressMode)m_repeatMode;
 	samplerCreateInfo.addressModeW = (VkSamplerAddressMode)m_repeatMode;
 	samplerCreateInfo.mipLodBias = 0.0f;
-	samplerCreateInfo.anisotropyEnable = VK_TRUE;
-	samplerCreateInfo.maxAnisotropy = 16;
+	//samplerCreateInfo.anisotropyEnable = VK_TRUE;
+	//samplerCreateInfo.maxAnisotropy = 16;
 	samplerCreateInfo.compareEnable = VK_FALSE;
 	samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
 	samplerCreateInfo.minLod = 0.0f;

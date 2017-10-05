@@ -2,6 +2,7 @@
 #include "BBE/VulkanPipeline.h"
 #include "BBE/VWDepthImage.h"
 #include "BBE/VulkanShader.h"
+#include "BBE/Exceptions.h"
 
 bbe::INTERNAL::vulkan::VulkanPipeline::VulkanPipeline()
 {
@@ -238,7 +239,12 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 	pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineCreateInfo.basePipelineIndex = -1;
 
-	result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &m_pipeline);
+	result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &m_pipeline[0]);
+	ASSERT_VULKAN(result);
+
+	m_rasterizationCreateInfo.polygonMode = VkPolygonMode::VK_POLYGON_MODE_LINE;
+
+	result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &m_pipeline[1]);
 	ASSERT_VULKAN(result);
 
 	m_wasCreated = true;
@@ -248,7 +254,8 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::destroy()
 {
 	if (m_wasCreated)
 	{
-		vkDestroyPipeline(m_device, m_pipeline, nullptr);
+		vkDestroyPipeline(m_device, m_pipeline[0], nullptr);
+		vkDestroyPipeline(m_device, m_pipeline[1], nullptr);
 		vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 
 		m_dynamicStates.clear();
@@ -261,13 +268,22 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::destroy()
 	}
 }
 
-VkPipeline bbe::INTERNAL::vulkan::VulkanPipeline::getPipeline() const
+VkPipeline bbe::INTERNAL::vulkan::VulkanPipeline::getPipeline(FillMode fm) const
 {
 	if (!m_wasCreated)
 	{
 		throw std::logic_error("Pipeline was not created!");
 	}
-	return m_pipeline;
+	
+	switch (fm)
+	{
+	case FillMode::SOLID:
+		return m_pipeline[0];
+	case FillMode::WIREFRAME:
+		return m_pipeline[1];
+	default:
+		throw VulkanPipelineModeNotSupportedException();
+	}
 }
 
 VkPipelineLayout bbe::INTERNAL::vulkan::VulkanPipeline::getLayout() const
@@ -277,15 +293,6 @@ VkPipelineLayout bbe::INTERNAL::vulkan::VulkanPipeline::getLayout() const
 		throw std::logic_error("Pipeline was not created!");
 	}
 	return m_pipelineLayout;
-}
-
-void bbe::INTERNAL::vulkan::VulkanPipeline::setPolygonMode(VkPolygonMode polygonMode)
-{
-	if (m_wasCreated)
-	{
-		throw AlreadyCreatedException();
-	}
-	m_rasterizationCreateInfo.polygonMode = polygonMode;
 }
 
 void bbe::INTERNAL::vulkan::VulkanPipeline::setGeometryShader(VkShaderModule shaderModule)

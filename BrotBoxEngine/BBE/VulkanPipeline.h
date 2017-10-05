@@ -3,6 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW\glfw3.h"
 #include "../BBE/List.h"
+#include "../BBE/FillMode.h"
 
 namespace bbe
 {
@@ -16,7 +17,7 @@ namespace bbe
 			{
 			private:
 				VkPipelineLayout m_pipelineLayout               = VK_NULL_HANDLE;
-				VkPipeline       m_pipeline                     = VK_NULL_HANDLE;
+				VkPipeline       m_pipeline[2]                  = { VK_NULL_HANDLE, VK_NULL_HANDLE};
 				VkDevice         m_device                       = VK_NULL_HANDLE;
 				VkShaderModule   m_geometryShader               = VK_NULL_HANDLE;
 				VkShaderModule   m_tessellationShaderControl    = VK_NULL_HANDLE;
@@ -60,11 +61,9 @@ namespace bbe
 
 				void destroy();
 
-				VkPipeline getPipeline() const;
+				VkPipeline getPipeline(FillMode fm) const;
 
 				VkPipelineLayout getLayout() const;
-
-				void setPolygonMode(VkPolygonMode polygonMode);
 
 				void setGeometryShader(VkShaderModule shaderModule);
 				void setTessellationShader(VkShaderModule control, VkShaderModule evaluation, uint32_t patchControlPoints);

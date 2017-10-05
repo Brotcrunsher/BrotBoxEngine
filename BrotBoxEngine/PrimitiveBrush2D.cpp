@@ -17,9 +17,9 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	int width, int height)
 {
 	m_layoutPrimitive = pipelinePrimitive.getLayout();
-	m_pipelinePrimitive = pipelinePrimitive.getPipeline();
+	m_ppipelinePrimitive = &pipelinePrimitive;
 	m_layoutImage = pipelineImage.getLayout();
-	m_pipelineImage = pipelineImage.getPipeline();
+	m_ppipelineImage = &pipelineImage;
 	m_currentCommandBuffer = commandBuffer;
 	m_pdevice = &device;
 	m_pcommandPool = &commandPool;
@@ -37,7 +37,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect)
 {
 	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
 	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinePrimitive);
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(m_fillMode));
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 
@@ -59,7 +59,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 {
 	if (m_pipelineRecord != PipelineRecord2D::IMAGE)
 	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineImage);
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelineImage->getPipeline(m_fillMode));
 		m_pipelineRecord = PipelineRecord2D::IMAGE;
 	}
 
@@ -85,7 +85,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle)
 {
 	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
 	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinePrimitive);
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(m_fillMode));
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 	float pushConstants[] = { circle.getX() / m_screenWidth * 2.f - 1.f, circle.getY() / m_screenHeight * 2.f - 1.f, circle.getWidth() / m_screenWidth * 2.f, circle.getHeight() / m_screenHeight * 2.f };
@@ -177,4 +177,14 @@ void bbe::PrimitiveBrush2D::setColor(float r, float g, float b)
 void bbe::PrimitiveBrush2D::setColor(const Color & c)
 {
 	INTERNAL_setColor(c.r, c.g, c.b, c.a);
+}
+
+void bbe::PrimitiveBrush2D::setFillMode(FillMode fm)
+{
+	m_fillMode = fm;
+}
+
+bbe::FillMode bbe::PrimitiveBrush2D::getFillMode()
+{
+	return m_fillMode;
 }

@@ -4,6 +4,7 @@
 #include "BBE/Exceptions.h"
 #include "BBE/PrimitiveBrush2D.h"
 #include "BBE/PrimitiveBrush3D.h"
+#include "BBE/Math.h"
 
 bbe::Game::Game()
 {
@@ -24,6 +25,7 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 	{
 		throw AlreadyCreatedException();
 	}
+	bbe::Math::INTERNAL::startMath();
 
 	m_pwindow = new Window(windowWidth, windowHeight, title);
 

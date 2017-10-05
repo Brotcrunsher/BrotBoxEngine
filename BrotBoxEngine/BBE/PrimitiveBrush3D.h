@@ -7,6 +7,7 @@
 #include "../BBE/Cube.h"
 #include "../BBE/IcoSphere.h"
 #include "../BBE/Terrain.h"
+#include "../BBE/FillMode.h"
 
 namespace bbe
 {
@@ -43,9 +44,9 @@ namespace bbe
 		VkCommandBuffer                              m_currentCommandBuffer                               = VK_NULL_HANDLE;
 		INTERNAL::vulkan::VulkanDevice              *m_pdevice                                            = nullptr;
 		VkPipelineLayout                             m_layoutPrimitive                                    = VK_NULL_HANDLE;
-		VkPipeline                                   m_pipelinePrimitive                                  = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanPipeline            *m_ppipelinePrimitive                                 = nullptr;
 		VkPipelineLayout                             m_layoutTerrain                                      = VK_NULL_HANDLE;
-		VkPipeline                                   m_pipelineTerrain                                    = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineTerrain                                    = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorPool      *m_pdescriptorPool                                    = nullptr;
 		INTERNAL::vulkan::VulkanCommandPool         *m_pcommandPool                                       = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainHeightMap               = nullptr;
@@ -84,6 +85,8 @@ namespace bbe
 		void create(const INTERNAL::vulkan::VulkanDevice &vulkanDevice);
 		void destroy();
 
+		FillMode m_fillMode = FillMode::SOLID;
+
 	public:
 		void fillCube(const Cube &cube);
 		void fillIcoSphere(const IcoSphere &sphere);
@@ -95,5 +98,8 @@ namespace bbe
 		void setColor(const Color &c);
 
 		void setCamera(const Vector3 &cameraPos, const Vector3 &cameraTarget, const Vector3 &cameraUpVector = Vector3(0, 0, 1.0f));
+
+		void setFillMode(FillMode fm);
+		FillMode getFillMode();
 	};
 }

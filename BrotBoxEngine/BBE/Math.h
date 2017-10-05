@@ -9,6 +9,15 @@ namespace bbe
 
 	namespace Math
 	{
+		namespace INTERNAL
+		{
+			void startMath();
+#define TABLE_SIZES 2048
+			static float sinTable[TABLE_SIZES];
+			static float cosTable[TABLE_SIZES];
+			static float tanTable[TABLE_SIZES];
+		}
+
 		extern const float PI;
 		extern const float TAU;
 		extern const float E;

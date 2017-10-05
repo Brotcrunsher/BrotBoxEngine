@@ -33,10 +33,18 @@ public:
 	bbe::Image image;
 	bbe::Image image2;
 
+	bool wireframe = false;
+
 	MyGame()
 		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0)), terrain(1024 * 8, 1024 * 8, "../Third-Party/textures/dryDirt.png")
 	{
-		terrain.setMaxHeight(200);
+		for (int i = -5; i <= 5; i++)
+		{
+			std::cout << i << " " << bbe::Math::mod(i, 2) << std::endl;
+		}
+
+		terrain.setBaseTextureMult(bbe::Vector2(4, 4));
+		terrain.setMaxHeight(50);
 		float *weightsGrass = new float[terrain.getWidth() * terrain.getHeight()];
 		float *weightsSand  = new float[terrain.getWidth() * terrain.getHeight()];
 		for (int i = 0; i < terrain.getHeight(); i++)
@@ -84,8 +92,6 @@ public:
 
 		image.load("images/TestImage.png");
 		image2.load("images/TestImage2.png");
-		
-		terrain.setBaseTextureMult(bbe::Vector2(2, 2));
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
@@ -111,9 +117,16 @@ public:
 		int intTimePassed = (int)timePassed;
 		blinkLight.turnOn(intTimePassed % 2 == 0);
 		brightLight.setLightStrength(timePassed);
+
+		if (isKeyPressed(bbe::Key::I))
+		{
+			wireframe = !wireframe;
+		}
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
+		brush.setFillMode(wireframe ? bbe::FillMode::WIREFRAME : bbe::FillMode::SOLID);
+
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
@@ -121,7 +134,14 @@ public:
 			brush.fillCube(cubes[i]);
 		}
 
+		for (int i = 0; i < 200; i++)
+		{
+			brush.setColor(bbe::Color(rand.randomFloat(), rand.randomFloat(), rand.randomFloat(), 1.0f));
+			brush.fillCube(bbe::Cube(bbe::Vector3(0, 0, 100 - i), bbe::Vector3(1, 1, 1), bbe::Vector3(), 0));
+		}
+
 		brush.setColor(1, 1, 1);
+
 		brush.drawTerrain(terrain);
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override

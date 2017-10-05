@@ -18,7 +18,9 @@ const float bbe::Math::NaN = std::numeric_limits<float>::quiet_NaN();;
 
 float bbe::Math::cos(float val)
 {
-	return ::cos(val);
+	val = bbe::Math::mod(val, TAU);
+	int index = (int)(val / TAU * TABLE_SIZES);
+	return INTERNAL::cosTable[index];
 }
 
 float bbe::Math::acos(float val)
@@ -28,7 +30,9 @@ float bbe::Math::acos(float val)
 
 float bbe::Math::sin(float val)
 {
-	return ::sin(val);
+	val = bbe::Math::mod(val, TAU);
+	int index = (int)(val / TAU * TABLE_SIZES);
+	return INTERNAL::sinTable[index];
 }
 
 float bbe::Math::asin(float val)
@@ -38,7 +42,9 @@ float bbe::Math::asin(float val)
 
 float bbe::Math::tan(float val)
 {
-	return ::tan(val);
+	val = bbe::Math::mod(val, TAU);
+	int index = (int)(val / TAU * TABLE_SIZES);
+	return INTERNAL::tanTable[index];
 }
 
 float bbe::Math::atan(float val)
@@ -235,7 +241,20 @@ float bbe::Math::clamp01(float val)
 
 float bbe::Math::mod(float val, float mod)
 {
-	return ::fmod(val, mod);
+	if (val >= 0)
+	{
+		if (val < mod)
+		{
+			return val;
+		}
+		int div = (int)(val / mod);
+		return val - div * mod;
+	}
+	else
+	{
+		val = val - (int)(val / mod) * mod + mod;
+		return val - (int)(val / mod) * mod;
+	}
 }
 
 float bbe::Math::pingpong(float val, float border)
@@ -514,4 +533,15 @@ bbe::Vector4 bbe::Math::interpolateBezier(Vector4 a, Vector4 b, float t, Vector4
 		interpolateBezier(a.z, b.z, t, control.z),
 		interpolateBezier(a.w, b.w, t, control.w)
 	);
+}
+
+void bbe::Math::INTERNAL::startMath()
+{
+	for (int i = 0; i < TABLE_SIZES; i++)
+	{
+		float val = (float)i / TABLE_SIZES * TAU;
+		sinTable[i] = ::sin(val);
+		cosTable[i] = ::cos(val);
+		tanTable[i] = ::tan(val);
+	}
 }

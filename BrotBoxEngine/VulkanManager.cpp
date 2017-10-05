@@ -382,7 +382,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DTerrain.setSpezializationData(sizeof(int32_t), &spezialization);
 	m_pipeline3DTerrain.enablePrimitiveRestart(true);
 	m_pipeline3DTerrain.setPrimitiveTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
-	//m_pipeline3DTerrain.setPolygonMode(VkPolygonMode::VK_POLYGON_MODE_LINE);
 	m_pipeline3DTerrain.create(m_device.getDevice(), m_renderPass.getRenderPass());
 }
 

@@ -321,6 +321,9 @@
     <ClInclude Include="BBE\VulkanDescriptorSet.h">
       <Filter>Header Files\GFX\Vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\FillMode.h">
+      <Filter>Header Files\GFX\Vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -502,5 +505,6 @@
     <None Include="Shader3DTerrain.tese">
       <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

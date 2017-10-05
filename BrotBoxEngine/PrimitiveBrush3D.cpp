@@ -32,9 +32,9 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 	int width, int height)
 {
 	m_layoutPrimitive = pipelinePrimitive.getLayout();
-	m_pipelinePrimitive = pipelinePrimitive.getPipeline();
+	m_ppipelinePrimitive = &pipelinePrimitive;
 	m_layoutTerrain = pipelineTerrain.getLayout();
-	m_pipelineTerrain = pipelineTerrain.getPipeline();
+	m_ppipelineTerrain = &pipelineTerrain;
 	m_currentCommandBuffer = commandBuffer;
 	m_pdescriptorPool = &descriptorPool;
 	m_pdescriptorSetLayoutTerrainHeightMap = &descriptorSetLayoutTerrainHeightMap;
@@ -74,7 +74,7 @@ void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 {
 	if (m_pipelineRecord != PipelineRecord3D::PRIMITIVE)
 	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinePrimitive);
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(m_fillMode));
 		m_pipelineRecord = PipelineRecord3D::PRIMITIVE;
 	}
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &cube.m_transform);
@@ -99,7 +99,7 @@ void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 {
 	if (m_pipelineRecord != PipelineRecord3D::PRIMITIVE)
 	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinePrimitive);
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(m_fillMode));
 		m_pipelineRecord = PipelineRecord3D::PRIMITIVE;
 	}
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &sphere.m_transform);
@@ -133,11 +133,14 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 		*m_pdescriptorSetLayoutTerrainAdditionalTextureWeight
 	);
 	
-	terrain.loadTextureBias();
+	if (terrain.m_textureBiasDirty)
+	{
+		terrain.loadTextureBias();
+	}
 
 	if (m_pipelineRecord != PipelineRecord3D::TERRAIN)
 	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineTerrain);
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelineTerrain->getPipeline(m_fillMode));
 		m_pipelineRecord = PipelineRecord3D::TERRAIN;
 	}
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 3, 1, terrain.m_heightMap.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
@@ -155,11 +158,11 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 	}pushConts;
 
 	pushConts.height = terrain.getMaxHeight();
+	pushConts.mat = terrain.m_transform;
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color), sizeof(PushConts), &(pushConts));
 
 	for (int i = 0; i < terrain.m_patches.getLength(); i++)
 	{
-		pushConts.mat = terrain.m_patches[i].m_transform;
-		vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color), sizeof(PushConts), &(pushConts));
 		VkDeviceSize offsets[] = { 0 };
 		VkBuffer buffer = terrain.m_patches[i].m_vertexBuffer.getBuffer();
 		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
@@ -201,4 +204,14 @@ void bbe::PrimitiveBrush3D::setCamera(const Vector3 & cameraPos, const Vector3 &
 	m_uboMatrices.unmap();
 
 	m_cameraPos = cameraPos;
+}
+
+void bbe::PrimitiveBrush3D::setFillMode(FillMode fm)
+{
+	m_fillMode = fm;
+}
+
+bbe::FillMode bbe::PrimitiveBrush3D::getFillMode()
+{
+	return m_fillMode;
 }

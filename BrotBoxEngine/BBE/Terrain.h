@@ -31,8 +31,6 @@ namespace bbe
 		friend class INTERNAL::vulkan::VulkanManager;
 		friend class Terrain;
 	private:
-		Matrix4 m_transform;
-
 		static VkDevice         s_device;
 		static VkPhysicalDevice s_physicalDevice;
 		static VkQueue          s_queue;
@@ -57,7 +55,8 @@ namespace bbe
 		float m_patchTextureWidth;
 		float m_patchTextureHeight;
 
-		
+		int m_patchXInt;
+		int m_patchYInt;
 		
 
 	public:
@@ -68,10 +67,6 @@ namespace bbe
 		TerrainPatch(TerrainPatch&& other);
 		TerrainPatch& operator=(const TerrainPatch& other) = delete;
 		TerrainPatch& operator=(TerrainPatch&& other) = delete;
-
-		Matrix4 getTransform() const;
-		void setTransform(const Vector3 &pos, const Vector3 &scale, const Vector3 &rotationVector, float radians);
-		void setTransform(const Matrix4 &transform);
 	};
 
 	class Terrain
@@ -120,6 +115,8 @@ namespace bbe
 		float m_maxHeight = 100;
 		int m_width = 0;
 		int m_height = 0;
+
+		mutable bool m_textureBiasDirty = false;
 
 	public:
 		Terrain(int width, int height, const char* baseTexturePath);

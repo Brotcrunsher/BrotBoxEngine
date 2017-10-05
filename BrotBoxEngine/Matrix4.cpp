@@ -39,9 +39,9 @@ bbe::Matrix4::Matrix4(const Vector4 & col0, const Vector4 & col1, const Vector4 
 bbe::Matrix4 bbe::Matrix4::createTranslationMatrix(const Vector3 & translation)
 {
 	Matrix4 retVal;
-	retVal.set(0, 3, translation.x);
-	retVal.set(1, 3, translation.y);
-	retVal.set(2, 3, translation.z);
+	retVal.m_cols[3].x = translation.x;
+	retVal.m_cols[3].y = translation.y;
+	retVal.m_cols[3].z = translation.z;
 	return retVal;
 }
 
@@ -59,9 +59,17 @@ bbe::Matrix4 bbe::Matrix4::createRotationMatrix(float radians, const Vector3 & r
 	float sin = Math::sin(radians);
 
 	Matrix4 retVal;
-	retVal.set(0, 0, cos + x * x * (1 - cos)    );   retVal.set(0, 1, x * y * (1 - cos) - z * sin);   retVal.set(0, 2, x * z * (1 - cos) + y * sin);
-	retVal.set(1, 0, y * x * (1 - cos) + z * sin);   retVal.set(1, 1, cos + y * y * (1 - cos)    );   retVal.set(1, 2, y * z * (1 - cos) - x * sin);
-	retVal.set(2, 0, z * x * (1 - cos) - y * sin);   retVal.set(2, 1, z * y * (1 - cos) + x * sin);   retVal.set(2, 2, cos + z * z * (1 - cos)    );
+	retVal.m_cols[0].x = cos + x * x * (1 - cos);
+	retVal.m_cols[1].x = x * y * (1 - cos) - z * sin;
+	retVal.m_cols[2].x = x * z * (1 - cos) + y * sin;
+
+	retVal.m_cols[0].y = y * x * (1 - cos) + z * sin;
+	retVal.m_cols[1].y = cos + y * y * (1 - cos);
+	retVal.m_cols[2].y = y * z * (1 - cos) - x * sin;
+
+	retVal.m_cols[0].z = z * x * (1 - cos) - y * sin;
+	retVal.m_cols[1].z = z * y * (1 - cos) + x * sin;
+	retVal.m_cols[2].z = cos + z * z * (1 - cos);
 
 	return retVal;
 }
@@ -69,9 +77,9 @@ bbe::Matrix4 bbe::Matrix4::createRotationMatrix(float radians, const Vector3 & r
 bbe::Matrix4 bbe::Matrix4::createScaleMatrix(const Vector3 & scale)
 {
 	Matrix4 retVal;
-	retVal.set(0, 0, scale.x);
-	retVal.set(1, 1, scale.y);
-	retVal.set(2, 2, scale.z);
+	retVal.m_cols[0].x = scale.x;
+	retVal.m_cols[1].y = scale.y;
+	retVal.m_cols[2].z = scale.z;
 	return retVal;
 }
 
@@ -80,13 +88,13 @@ bbe::Matrix4 bbe::Matrix4::createPerspectiveMatrix(float fieldOfView, float aspe
 	float tanFoV = Math::tan(fieldOfView / 2.0f);
 
 	Matrix4 retVal;
-	retVal.set(0, 0, 1.0f / tanFoV / aspectRatio);
-	retVal.set(1, 1, -1.0f / tanFoV);
-	retVal.set(2, 2, -(farClipPlane + nearClipPlane) / (farClipPlane - nearClipPlane));
-	retVal.set(3, 3, 0);
-	
-	retVal.set(3, 2, -1);
-	retVal.set(2, 3, -(2 * farClipPlane * nearClipPlane) / (farClipPlane - nearClipPlane));
+	retVal.m_cols[0].x = 1.0f / tanFoV / aspectRatio;
+	retVal.m_cols[1].y = -1.0f / tanFoV;
+	retVal.m_cols[2].z = -(farClipPlane + nearClipPlane) / (farClipPlane - nearClipPlane);
+	retVal.m_cols[3].w = 0;
+
+	retVal.m_cols[2].w = -1;
+	retVal.m_cols[3].z = -(2 * farClipPlane * nearClipPlane) / (farClipPlane - nearClipPlane);
 
 	return retVal;
 }
@@ -98,19 +106,21 @@ bbe::Matrix4 bbe::Matrix4::createViewMatrix(const Vector3 & cameraPos, const Vec
 	Vector3 down = right.cross(direction);
 
 	Matrix4 retVal;
+	retVal.m_cols[0].x = right.x;
+	retVal.m_cols[1].x = right.y;
+	retVal.m_cols[2].x = right.z;
 
-	retVal.set(0, 0, right.x);
-	retVal.set(0, 1, right.y);
-	retVal.set(0, 2, right.z);
-	retVal.set(1, 0, down.x);
-	retVal.set(1, 1, down.y);
-	retVal.set(1, 2, down.z);
-	retVal.set(2, 0, -direction.x);
-	retVal.set(2, 1, -direction.y);
-	retVal.set(2, 2, -direction.z);
-	retVal.set(0, 3, -(right * cameraPos));
-	retVal.set(1, 3, -(down * cameraPos));
-	retVal.set(2, 3, direction * cameraPos);
+	retVal.m_cols[0].y = down.x;
+	retVal.m_cols[1].y = down.y;
+	retVal.m_cols[2].y = down.z;
+
+	retVal.m_cols[0].z = -direction.x;
+	retVal.m_cols[1].z = -direction.y;
+	retVal.m_cols[2].z = -direction.z;
+
+	retVal.m_cols[3].x = -(right * cameraPos);
+	retVal.m_cols[3].y = -(down * cameraPos);
+	retVal.m_cols[3].z = direction * cameraPos;
 	
 	return retVal;
 }
@@ -131,7 +141,17 @@ float bbe::Matrix4::get(int row, int col) const
 		throw IllegalIndexException();
 	}
 
-	return operator[](row + col * 4);
+	switch (row)
+	{
+	case 0:
+		return m_cols[col].x;
+	case 1:
+		return m_cols[col].y;
+	case 2:
+		return m_cols[col].z;
+	case 3:
+		return m_cols[col].w;
+	}
 }
 
 void bbe::Matrix4::set(int row, int col, float val)
@@ -141,7 +161,17 @@ void bbe::Matrix4::set(int row, int col, float val)
 		throw IllegalIndexException();
 	}
 
-	operator[](row + col * 4) = val;
+	switch (row)
+	{
+	case 0:
+		m_cols[col].x = val;
+	case 1:
+		m_cols[col].y = val;
+	case 2:
+		m_cols[col].z = val;
+	case 3:
+		m_cols[col].w = val;
+	}
 }
 
 float & bbe::Matrix4::operator[](int index)
@@ -169,10 +199,10 @@ const float & bbe::Matrix4::operator[](int index) const
 bbe::Vector4 bbe::Matrix4::operator*(const Vector4 & other) const
 {
 	return Vector4(
-		get(0, 0) * other.x + get(0, 1) * other.y + get(0, 2) * other.z + get(0, 3) * other.w,
-		get(1, 0) * other.x + get(1, 1) * other.y + get(1, 2) * other.z + get(1, 3) * other.w,
-		get(2, 0) * other.x + get(2, 1) * other.y + get(2, 2) * other.z + get(2, 3) * other.w,
-		get(3, 0) * other.x + get(3, 1) * other.y + get(3, 2) * other.z + get(3, 3) * other.w
+		m_cols[0].x * other.x + m_cols[1].x * other.y + m_cols[2].x * other.z + m_cols[3].x * other.w,
+		m_cols[0].y * other.x + m_cols[1].y * other.y + m_cols[2].y * other.z + m_cols[3].y * other.w,
+		m_cols[0].z * other.x + m_cols[1].z * other.y + m_cols[2].z * other.z + m_cols[3].z * other.w,
+		m_cols[0].w * other.x + m_cols[1].w * other.y + m_cols[2].w * other.z + m_cols[3].w * other.w
 	);
 }
 
@@ -222,25 +252,25 @@ bbe::Matrix4 bbe::Matrix4::extractRotation() const
 bbe::Matrix4 bbe::Matrix4::operator*(const Matrix4 &other) const
 {
 	Matrix4 retVal;
-	retVal.set(0, 0, get(0, 0) * other.get(0, 0) + get(0, 1) * other.get(1, 0) + get(0, 2) * other.get(2, 0) + get(0, 3) * other.get(3, 0));
-	retVal.set(0, 1, get(0, 0) * other.get(0, 1) + get(0, 1) * other.get(1, 1) + get(0, 2) * other.get(2, 1) + get(0, 3) * other.get(3, 1));
-	retVal.set(0, 2, get(0, 0) * other.get(0, 2) + get(0, 1) * other.get(1, 2) + get(0, 2) * other.get(2, 2) + get(0, 3) * other.get(3, 2));
-	retVal.set(0, 3, get(0, 0) * other.get(0, 3) + get(0, 1) * other.get(1, 3) + get(0, 2) * other.get(2, 3) + get(0, 3) * other.get(3, 3));
-
-	retVal.set(1, 0, get(1, 0) * other.get(0, 0) + get(1, 1) * other.get(1, 0) + get(1, 2) * other.get(2, 0) + get(1, 3) * other.get(3, 0));
-	retVal.set(1, 1, get(1, 0) * other.get(0, 1) + get(1, 1) * other.get(1, 1) + get(1, 2) * other.get(2, 1) + get(1, 3) * other.get(3, 1));
-	retVal.set(1, 2, get(1, 0) * other.get(0, 2) + get(1, 1) * other.get(1, 2) + get(1, 2) * other.get(2, 2) + get(1, 3) * other.get(3, 2));
-	retVal.set(1, 3, get(1, 0) * other.get(0, 3) + get(1, 1) * other.get(1, 3) + get(1, 2) * other.get(2, 3) + get(1, 3) * other.get(3, 3));
-
-	retVal.set(2, 0, get(2, 0) * other.get(0, 0) + get(2, 1) * other.get(1, 0) + get(2, 2) * other.get(2, 0) + get(2, 3) * other.get(3, 0));
-	retVal.set(2, 1, get(2, 0) * other.get(0, 1) + get(2, 1) * other.get(1, 1) + get(2, 2) * other.get(2, 1) + get(2, 3) * other.get(3, 1));
-	retVal.set(2, 2, get(2, 0) * other.get(0, 2) + get(2, 1) * other.get(1, 2) + get(2, 2) * other.get(2, 2) + get(2, 3) * other.get(3, 2));
-	retVal.set(2, 3, get(2, 0) * other.get(0, 3) + get(2, 1) * other.get(1, 3) + get(2, 2) * other.get(2, 3) + get(2, 3) * other.get(3, 3));
-
-	retVal.set(3, 0, get(3, 0) * other.get(0, 0) + get(3, 1) * other.get(1, 0) + get(3, 2) * other.get(2, 0) + get(3, 3) * other.get(3, 0));
-	retVal.set(3, 1, get(3, 0) * other.get(0, 1) + get(3, 1) * other.get(1, 1) + get(3, 2) * other.get(2, 1) + get(3, 3) * other.get(3, 1));
-	retVal.set(3, 2, get(3, 0) * other.get(0, 2) + get(3, 1) * other.get(1, 2) + get(3, 2) * other.get(2, 2) + get(3, 3) * other.get(3, 2));
-	retVal.set(3, 3, get(3, 0) * other.get(0, 3) + get(3, 1) * other.get(1, 3) + get(3, 2) * other.get(2, 3) + get(3, 3) * other.get(3, 3));
+	retVal.m_cols[0].x = m_cols[0].x * other.m_cols[0].x + m_cols[1].x * other.m_cols[0].y + m_cols[2].x * other.m_cols[0].z + m_cols[3].x * other.m_cols[0].w;
+	retVal.m_cols[1].x = m_cols[0].x * other.m_cols[1].x + m_cols[1].x * other.m_cols[1].y + m_cols[2].x * other.m_cols[1].z + m_cols[3].x * other.m_cols[1].w;
+	retVal.m_cols[2].x = m_cols[0].x * other.m_cols[2].x + m_cols[1].x * other.m_cols[2].y + m_cols[2].x * other.m_cols[2].z + m_cols[3].x * other.m_cols[2].w;
+	retVal.m_cols[3].x = m_cols[0].x * other.m_cols[3].x + m_cols[1].x * other.m_cols[3].y + m_cols[2].x * other.m_cols[3].z + m_cols[3].x * other.m_cols[3].w;
+																					 				   				   				 				 
+	retVal.m_cols[0].y = m_cols[0].y * other.m_cols[0].x + m_cols[1].y * other.m_cols[0].y + m_cols[2].y * other.m_cols[0].z + m_cols[3].y * other.m_cols[0].w;
+	retVal.m_cols[1].y = m_cols[0].y * other.m_cols[1].x + m_cols[1].y * other.m_cols[1].y + m_cols[2].y * other.m_cols[1].z + m_cols[3].y * other.m_cols[1].w;
+	retVal.m_cols[2].y = m_cols[0].y * other.m_cols[2].x + m_cols[1].y * other.m_cols[2].y + m_cols[2].y * other.m_cols[2].z + m_cols[3].y * other.m_cols[2].w;
+	retVal.m_cols[3].y = m_cols[0].y * other.m_cols[3].x + m_cols[1].y * other.m_cols[3].y + m_cols[2].y * other.m_cols[3].z + m_cols[3].y * other.m_cols[3].w;
+																					 				   				   				 				 
+	retVal.m_cols[0].z = m_cols[0].z * other.m_cols[0].x + m_cols[1].z * other.m_cols[0].y + m_cols[2].z * other.m_cols[0].z + m_cols[3].z * other.m_cols[0].w;
+	retVal.m_cols[1].z = m_cols[0].z * other.m_cols[1].x + m_cols[1].z * other.m_cols[1].y + m_cols[2].z * other.m_cols[1].z + m_cols[3].z * other.m_cols[1].w;
+	retVal.m_cols[2].z = m_cols[0].z * other.m_cols[2].x + m_cols[1].z * other.m_cols[2].y + m_cols[2].z * other.m_cols[2].z + m_cols[3].z * other.m_cols[2].w;
+	retVal.m_cols[3].z = m_cols[0].z * other.m_cols[3].x + m_cols[1].z * other.m_cols[3].y + m_cols[2].z * other.m_cols[3].z + m_cols[3].z * other.m_cols[3].w;
+																					 				   				   				 				 
+	retVal.m_cols[0].w = m_cols[0].w * other.m_cols[0].x + m_cols[1].w * other.m_cols[0].y + m_cols[2].w * other.m_cols[0].z + m_cols[3].w * other.m_cols[0].w;
+	retVal.m_cols[1].w = m_cols[0].w * other.m_cols[1].x + m_cols[1].w * other.m_cols[1].y + m_cols[2].w * other.m_cols[1].z + m_cols[3].w * other.m_cols[1].w;
+	retVal.m_cols[2].w = m_cols[0].w * other.m_cols[2].x + m_cols[1].w * other.m_cols[2].y + m_cols[2].w * other.m_cols[2].z + m_cols[3].w * other.m_cols[2].w;
+	retVal.m_cols[3].w = m_cols[0].w * other.m_cols[3].x + m_cols[1].w * other.m_cols[3].y + m_cols[2].w * other.m_cols[3].z + m_cols[3].w * other.m_cols[3].w;
 	return retVal;
 }
 

@@ -44,4 +44,6 @@ namespace bbe
 
 	CREATE_EXCEPTION(OutOfLightResourcesException);
 	CREATE_EXCEPTION(FormatNotSupportedException);
+
+	CREATE_EXCEPTION(VulkanPipelineModeNotSupportedException);
 }

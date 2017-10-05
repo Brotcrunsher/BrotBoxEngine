@@ -6,6 +6,7 @@
 #include "../BBE/Rectangle.h"
 #include "../BBE/Circle.h"
 #include "../BBE/Color.h"
+#include "../BBE/FillMode.h"
 
 namespace bbe
 {
@@ -37,14 +38,14 @@ namespace bbe
 		INTERNAL::vulkan::VulkanCommandPool         *m_pcommandPool         = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorPool      *m_pdescriptorPool      = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayout = nullptr;
-		VkCommandBuffer    m_currentCommandBuffer = VK_NULL_HANDLE;
-		VkPipelineLayout   m_layoutPrimitive      = VK_NULL_HANDLE;
-		VkPipeline         m_pipelinePrimitive    = VK_NULL_HANDLE;
-		VkPipelineLayout   m_layoutImage          = VK_NULL_HANDLE;
-		VkPipeline         m_pipelineImage        = VK_NULL_HANDLE;
-		VkDescriptorSet    m_descriptorSet        = VK_NULL_HANDLE;
-		int                m_screenWidth;
-		int                m_screenHeight;
+		VkCommandBuffer                              m_currentCommandBuffer = VK_NULL_HANDLE;
+		VkPipelineLayout                             m_layoutPrimitive      = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanPipeline            *m_ppipelinePrimitive    = nullptr;
+		VkPipelineLayout                             m_layoutImage          = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineImage        = nullptr;
+		VkDescriptorSet                              m_descriptorSet        = VK_NULL_HANDLE;
+		int                                          m_screenWidth;
+		int                                          m_screenHeight;
 
 		PipelineRecord2D   m_pipelineRecord = PipelineRecord2D::NONE;
 
@@ -62,6 +63,8 @@ namespace bbe
 			INTERNAL::vulkan::VulkanPipeline &pipelineImage,
 			int screenWidth, int screenHeight);
 
+		FillMode m_fillMode = FillMode::SOLID;
+
 	public:
 
 
@@ -77,5 +80,8 @@ namespace bbe
 		void setColor(float r, float g, float b, float a);
 		void setColor(float r, float g, float b);
 		void setColor(const Color &c);
+
+		void setFillMode(FillMode fm);
+		FillMode getFillMode();
 	};
 }
