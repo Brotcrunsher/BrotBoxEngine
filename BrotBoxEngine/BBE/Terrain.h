@@ -118,8 +118,11 @@ namespace bbe
 
 		mutable bool m_textureBiasDirty = false;
 
+		void construct(int width, int height, const char* baseTexturePath, int seed);
+
 	public:
 		Terrain(int width, int height, const char* baseTexturePath);
+		Terrain(int width, int height, const char* baseTexturePath, int seed);
 		~Terrain();
 
 		Matrix4 getTransform() const;

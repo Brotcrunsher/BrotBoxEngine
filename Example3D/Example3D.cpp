@@ -22,11 +22,11 @@ public:
 	float timePassed = 0.0f;
 
 	bbe::Terrain terrain;
-	bbe::PointLight light;
-	bbe::PointLight blinkLight;
-	bbe::PointLight brightLight;
+	//bbe::PointLight light;
+	//bbe::PointLight blinkLight;
+	//bbe::PointLight brightLight;
 	bbe::PointLight sunLight;
-	bbe::PointLight extraLight;
+	//bbe::PointLight extraLight;
 
 	bbe::Color colors[AMOUNTOFCUBES];
 
@@ -36,7 +36,7 @@ public:
 	bool wireframe = false;
 
 	MyGame()
-		:light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0)), terrain(1024 * 8, 1024 * 8, "../Third-Party/textures/dryDirt.png")
+		:/*light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0)), */terrain(1024 * 8, 1024 * 8, "../Third-Party/textures/dryDirt.png", 12)
 	{
 		for (int i = -5; i <= 5; i++)
 		{
@@ -61,11 +61,16 @@ public:
 					weightsGrass[index] /= weightSum;
 					weightsSand[index] /= weightSum;
 				}
+
+				weightsGrass[index] = 1;
+				weightsSand[index] = 0;
 			}
 		}
-		terrain.addTexture("../Third-Party/textures/cf_ter_gcs_01.png", weightsGrass);
+		//terrain.addTexture("../Third-Party/textures/cf_ter_gcs_01.png", weightsGrass);
+		terrain.addTexture("../Third-Party/textures/dryDirt.png", weightsGrass); //TODO DELETE THIS LINE AND UNCOMMENT ABOVE!
 		terrain.addTexture("../Third-Party/textures/sand.png", weightsSand);
 		delete weightsGrass;
+		delete weightsSand;
 	}
 
 	virtual void onStart() override
@@ -75,9 +80,9 @@ public:
 		sunLight.setLightStrength(0.9f);
 		sunLight.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_NONE);
 
-		extraLight.setPosition(bbe::Vector3(-400, -400, 0));
-		extraLight.setLightStrength(5000.f);
-		extraLight.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_SQUARED);
+		//extraLight.setPosition(bbe::Vector3(-400, -400, 0));
+		//extraLight.setLightStrength(5000.f);
+		//extraLight.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_SQUARED);
 
 		terrain.setTransform(bbe::Vector3(-750, -750, -120), bbe::Vector3(1), bbe::Vector3(1), 0);
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
@@ -97,7 +102,6 @@ public:
 	{
 		timePassed += timeSinceLastFrame;
 		std::cout << "FPS: " << 1 / timeSinceLastFrame << std::endl;
-		std::cout << std::endl;
 		ccnc.update(timeSinceLastFrame);
 
 
@@ -112,11 +116,11 @@ public:
 			cubes[i].set(positions[i], bbe::Vector3(1), rotationAxis[i], rotations[i]);
 		}
 
-		light.setPosition(bbe::Vector3(bbe::Math::sin(timePassed / 2) * 1000, 0, 0));
+		//light.setPosition(bbe::Vector3(bbe::Math::sin(timePassed / 2) * 1000, 0, 0));
 
 		int intTimePassed = (int)timePassed;
-		blinkLight.turnOn(intTimePassed % 2 == 0);
-		brightLight.setLightStrength(timePassed);
+		//blinkLight.turnOn(intTimePassed % 2 == 0);
+		//brightLight.setLightStrength(timePassed);
 
 		if (isKeyPressed(bbe::Key::I))
 		{
@@ -127,7 +131,11 @@ public:
 	{
 		brush.setFillMode(wireframe ? bbe::FillMode::WIREFRAME : bbe::FillMode::SOLID);
 
+		
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
+		//brush.setCamera(bbe::Vector3(-330.355, -442.006, -65.8855), bbe::Vector3(-331.114, -442.015, -66.5364));
+
+
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
 			brush.setColor(colors[i]);
@@ -146,8 +154,8 @@ public:
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
-		brush.drawImage(10, 10, 100, 100, image);
-		brush.drawImage(120, 10, 100, 100, image2);
+		//brush.drawImage(10, 10, 100, 100, image);
+		//brush.drawImage(120, 10, 100, 100, image2);
 	}
 	virtual void onEnd() override
 	{

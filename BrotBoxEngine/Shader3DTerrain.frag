@@ -70,7 +70,6 @@ void main() {
 		vec3 texColorBase = texture(baseTex, inHeightMapPos * textureBias.data.xy + textureBias.data.zw, 0).xyz;
 		texColor += texColorBase * (1 - weightSum);
 	}
-	
 
 
 
@@ -120,7 +119,6 @@ void main() {
 		diffuse += max(dot(N, L), 0.0) * (texColor * uboLights.light[i].lightColor.xyz) * lightPower;
 		//specular += pow(max(dot(R, V), 0.0), 4.0) * uboLights.light[i].specularColor.xyz * lightPower;
 	}
-	
 
 	outColor = vec4(ambient + diffuse + specular, 1.0);
 

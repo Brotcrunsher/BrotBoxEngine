@@ -165,12 +165,16 @@ void bbe::Matrix4::set(int row, int col, float val)
 	{
 	case 0:
 		m_cols[col].x = val;
+		break;
 	case 1:
 		m_cols[col].y = val;
+		break;
 	case 2:
 		m_cols[col].z = val;
+		break;
 	case 3:
 		m_cols[col].w = val;
+		break;
 	}
 }
 

@@ -5,6 +5,11 @@ namespace bbe
 	class NewDeleteAllocator
 	{
 	public:
+		NewDeleteAllocator(size_t size)
+		{
+			assert(size == 0 && "size can't be set for a NewDeleteAllocator!");
+		}
+
 		template <typename T, typename... arguments>
 		T* allocateObject(arguments&&... args)
 		{

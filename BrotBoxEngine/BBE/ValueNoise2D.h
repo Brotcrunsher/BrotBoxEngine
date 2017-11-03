@@ -24,6 +24,7 @@ namespace bbe
 		~ValueNoise2D();
 
 		void create(int width, int height);
+		void create(int width, int height, int seed);
 		void destroy();
 
 		float get(int x, int y);

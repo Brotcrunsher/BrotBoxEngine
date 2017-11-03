@@ -8,6 +8,8 @@ namespace bbe
 	{
 		void testMath()
 		{
+			bbe::Math::INTERNAL::startMath();
+
 			assertEqualsFloat(Math::cos(0               ), 1);
 			assertEqualsFloat(Math::cos(Math::PI / 2    ), 0);
 			assertEqualsFloat(Math::cos(Math::PI        ), -1);

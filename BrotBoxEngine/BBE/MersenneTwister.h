@@ -9,8 +9,8 @@ namespace bbe
 	class MersenneTwisterBase
 	{
 	private:
-		const uint64_t MASK_LOWER = (1ull << R) - 1;
-		const uint64_t MASK_UPPER = (1ull << R);
+		static constexpr uint64_t MASK_LOWER = (1ull << R) - 1;
+		static constexpr uint64_t MASK_UPPER = (1ull << R);
 
 		uint16_t  m_index;
 		FieldType m_mt[N];
@@ -83,7 +83,7 @@ namespace bbe
 			x ^= (x << T) & C;
 			x ^= (x >> L);
 
-			return y;
+			return x;
 		}
 	};
 

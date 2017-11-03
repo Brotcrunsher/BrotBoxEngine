@@ -5,6 +5,7 @@
 #include "BBE/Math.h"
 #include "BBE/ValueNoise2D.h"
 #include "BBE/VulkanBuffer.h"
+#include "BBE/TimeHelper.h"
 
 static const int PATCH_SIZE = 256;
 static const float VERTICES_PER_METER = 8;
@@ -212,9 +213,11 @@ void bbe::Terrain::loadTextureBias() const
 	m_textureBiasDirty = false;
 }
 
-bbe::Terrain::Terrain(int width, int height, const char* baseTexturePath)
-	: m_width(width), m_height(height)
+void bbe::Terrain::construct(int width, int height, const char * baseTexturePath, int seed)
 {
+	m_width = width;
+	m_height = height;
+
 	if (width % PATCH_SIZE != 0)
 	{
 		throw IllegalArgumentException();
@@ -227,7 +230,7 @@ bbe::Terrain::Terrain(int width, int height, const char* baseTexturePath)
 	m_patchesWidthAmount = width / PATCH_SIZE;
 	m_patchesHeightAmount = height / PATCH_SIZE;
 	ValueNoise2D valueNoise;
-	valueNoise.create(width, height);
+	valueNoise.create(width, height, seed);
 
 	for (int i = 0; i < m_patchesWidthAmount; i++)
 	{
@@ -252,6 +255,16 @@ bbe::Terrain::Terrain(int width, int height, const char* baseTexturePath)
 	m_heightMap.load(width, height, valueNoise.getRaw(), bbe::ImageFormat::R8);
 
 	m_baseTexture.load(baseTexturePath);
+}
+
+bbe::Terrain::Terrain(int width, int height, const char* baseTexturePath)
+{
+	construct(width, height, baseTexturePath, (int)TimeHelper::getTimeStamp());
+}
+
+bbe::Terrain::Terrain(int width, int height, const char * baseTexturePath, int seed)
+{
+	construct(width, height, baseTexturePath, seed);
 }
 
 bbe::Terrain::~Terrain()

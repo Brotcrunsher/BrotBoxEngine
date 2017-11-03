@@ -25,7 +25,7 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 
 	m_device = device.getDevice();
 	int amountOfMips = Math::log2Floor(Math::max(getWidth(), getHeight())) + 1;
-	m_imageLayout = new VkImageLayout[amountOfMips]; //TODO use allocator
+	m_imageLayout = std::make_unique<VkImageLayout[]>(amountOfMips); //TODO use allocator
 	for (int i = 0; i < amountOfMips; i++)
 	{
 		m_imageLayout[i] = VK_IMAGE_LAYOUT_PREINITIALIZED;
@@ -286,7 +286,6 @@ void bbe::Image::destroy()
 		m_image       = VK_NULL_HANDLE;
 		m_imageMemory = VK_NULL_HANDLE;
 		m_imageView   = VK_NULL_HANDLE;
-		delete[] m_imageLayout;
 		m_imageLayout = nullptr;
 		m_device      = VK_NULL_HANDLE;
 		m_sampler     = VK_NULL_HANDLE;

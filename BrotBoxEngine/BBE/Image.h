@@ -64,7 +64,7 @@ namespace bbe
 		mutable VkImage        m_image       = VK_NULL_HANDLE;
 		mutable VkDeviceMemory m_imageMemory = VK_NULL_HANDLE;
 		mutable VkImageView    m_imageView   = VK_NULL_HANDLE;
-		mutable VkImageLayout *m_imageLayout = nullptr;
+		mutable std::unique_ptr<VkImageLayout[]> m_imageLayout = nullptr;
 		mutable VkDevice       m_device      = VK_NULL_HANDLE;
 		mutable VkSampler      m_sampler     = VK_NULL_HANDLE;
 		mutable INTERNAL::vulkan::VulkanDescriptorSet m_descriptorrSet;
