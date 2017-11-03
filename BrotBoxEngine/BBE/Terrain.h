@@ -39,21 +39,20 @@ namespace bbe
 
 		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
 
-		void init() const;
-		void initIndexBuffer() const;
-		void initVertexBuffer() const;
-		void destroy() const;
-		mutable bbe::INTERNAL::vulkan::VulkanBuffer m_indexBuffer;
-		mutable bbe::INTERNAL::vulkan::VulkanBuffer m_vertexBuffer;
+		static void s_initIndexBuffer();
+		static void s_initVertexBuffer();
+		static void s_destroy();
+		static bbe::INTERNAL::vulkan::VulkanBuffer s_indexBuffer;
+		static bbe::INTERNAL::vulkan::VulkanBuffer s_vertexBuffer;
 
-		mutable bool m_created = false;
-		mutable bool m_needsDestruction = true;
 		float* m_pdata = nullptr;
 
-		float m_patchX; 
-		float m_patchY;
+		Vector2 m_offset;
+
 		float m_patchTextureWidth;
 		float m_patchTextureHeight;
+		float m_patchX;
+		float m_patchY;
 
 		int m_patchXInt;
 		int m_patchYInt;
@@ -87,6 +86,8 @@ namespace bbe
 		mutable INTERNAL::vulkan::VulkanBuffer m_baseTextureBiasBuffer;
 		mutable INTERNAL::vulkan::VulkanDescriptorSet m_baseTextureDescriptor;
 
+		float m_patchSize;
+
 		void init(
 			const INTERNAL::vulkan::VulkanDevice & device, 
 			const INTERNAL::vulkan::VulkanCommandPool & commandPool, 
@@ -99,6 +100,9 @@ namespace bbe
 		void destroy();
 
 		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
+		static void s_destroy();
+
+		Vector2 m_heightmapScale;
 
 		int m_patchesWidthAmount  = 0; 
 		int m_patchesHeightAmount = 0;

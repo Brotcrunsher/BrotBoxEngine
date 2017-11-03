@@ -33,6 +33,7 @@ layout(push_constant) uniform PushConstants
 } pushConts;
 
 layout(location = 0) in vec2 inHeightMapPos[];
+layout(location = 1) in float inHeightOffset[];
 
 layout(location = 1) out vec3 outViewVec;
 layout(location = 2) out vec2 outHeightMapPos;
@@ -53,7 +54,7 @@ void main()
 	vec4 pos = mix(pos1, pos2, gl_TessCoord.y);
 
 	vec3 inPos = pos.xyz;
-	inPos.z = texture(tex, heightMapPos).x * pushConts.maxTerrainHeight;
+	inPos.z = texture(tex, heightMapPos).x * pushConts.maxTerrainHeight + inHeightOffset[0];
 
 	vec4 worldPos = pushConts.modelMatrix * vec4(inPos, 1.0);
 	vec4 viewPos = uboProjection.view * worldPos;

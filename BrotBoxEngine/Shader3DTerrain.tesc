@@ -7,6 +7,8 @@ layout (vertices = 4) out;
 layout(location = 0) in vec2 inHeightMapPos[];
 
 layout(location = 0) out vec2 outHeightMapPos[4];
+layout(location = 1) in float inHeightOffset[];
+layout(location = 1) out float outHeightOffset[4];
 
 layout(set = 1, binding = 0) uniform UBOProjection
 {
@@ -23,15 +25,15 @@ void main()
 {
 	if (gl_InvocationID == 0)
 	{
-		vec3 p0 = (uboProjection.view * pushConts.modelMatrix * gl_in[0].gl_Position).xyz;
-		vec3 p1 = (uboProjection.view * pushConts.modelMatrix * gl_in[1].gl_Position).xyz;
-		vec3 p2 = (uboProjection.view * pushConts.modelMatrix * gl_in[2].gl_Position).xyz;
-		vec3 p3 = (uboProjection.view * pushConts.modelMatrix * gl_in[3].gl_Position).xyz;
-		
-		float l0 = clamp(4096.0f / length(p0), 2, 1024);
-		float l1 = clamp(4096.0f / length(p1), 2, 1024);
-		float l2 = clamp(4096.0f / length(p2), 2, 1024);
-		float l3 = clamp(4096.0f / length(p3), 2, 1024);
+		vec3 p0 = (/*uboProjection.view **/ pushConts.modelMatrix * gl_in[0].gl_Position).xyz;
+		vec3 p1 = (/*uboProjection.view **/ pushConts.modelMatrix * gl_in[1].gl_Position).xyz;
+		vec3 p2 = (/*uboProjection.view **/ pushConts.modelMatrix * gl_in[2].gl_Position).xyz;
+		vec3 p3 = (/*uboProjection.view **/ pushConts.modelMatrix * gl_in[3].gl_Position).xyz;
+
+		float l0 = clamp(16384.0f / length(p0), 2, 1024);
+		float l1 = clamp(16384.0f / length(p1), 2, 1024);
+		float l2 = clamp(16384.0f / length(p2), 2, 1024);
+		float l3 = clamp(16384.0f / length(p3), 2, 1024);
 
 		
 		gl_TessLevelOuter[0] = max(l0, l3);
@@ -44,4 +46,6 @@ void main()
 
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 	outHeightMapPos[gl_InvocationID] = inHeightMapPos[gl_InvocationID];
+
+	outHeightOffset[gl_InvocationID] = inHeightOffset[gl_InvocationID];
 }

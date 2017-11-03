@@ -44,7 +44,7 @@ public:
 		}
 
 		terrain.setBaseTextureMult(bbe::Vector2(4, 4));
-		terrain.setMaxHeight(50);
+		terrain.setMaxHeight(150);
 		float *weightsGrass = new float[terrain.getWidth() * terrain.getHeight()];
 		float *weightsSand  = new float[terrain.getWidth() * terrain.getHeight()];
 		for (int i = 0; i < terrain.getHeight(); i++)

@@ -160,17 +160,19 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 	pushConts.height = terrain.getMaxHeight();
 	pushConts.mat = terrain.m_transform;
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color), sizeof(PushConts), &(pushConts));
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_VERTEX_BIT, 92, sizeof(float), &terrain.m_patchSize);
 
+	VkDeviceSize offsets[] = { 0 };
+	VkBuffer buffer = TerrainPatch::s_vertexBuffer.getBuffer();
+	vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
+
+	buffer = TerrainPatch::s_indexBuffer.getBuffer();
+	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_VERTEX_BIT, 96, sizeof(Vector2), &terrain.m_heightmapScale);
 	for (int i = 0; i < terrain.m_patches.getLength(); i++)
 	{
-		VkDeviceSize offsets[] = { 0 };
-		VkBuffer buffer = terrain.m_patches[i].m_vertexBuffer.getBuffer();
-		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
-
-		buffer = terrain.m_patches[i].m_indexBuffer.getBuffer();
-		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
-
-
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_VERTEX_BIT, 84, sizeof(Vector2), &terrain.m_patches[i].m_offset);
+		
 		vkCmdDrawIndexed(m_currentCommandBuffer, 4, 1, 0, 0, 0);
 	}
 

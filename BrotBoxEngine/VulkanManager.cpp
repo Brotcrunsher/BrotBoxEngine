@@ -136,6 +136,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	bbe::PointLight::s_destroy();
 	bbe::IcoSphere::s_destroy();
 
+	bbe::Terrain::s_destroy();
 
 	destroyPendingBuffers();
 	m_presentFence.destroy();
@@ -364,11 +365,12 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 
 	m_pipeline3DTerrain.init(m_vertexShader3DTerrain, m_fragmentShader3DTerrain, m_screenWidth, m_screenHeight);
 	m_pipeline3DTerrain.setTessellationShader(m_tescShader3DTerrain.getModule(), m_teseShader3DTerrain.getModule(), 4);
-	m_pipeline3DTerrain.addVertexBinding(0, sizeof(Vector3) + sizeof(Vector2), VK_VERTEX_INPUT_RATE_VERTEX);
+	m_pipeline3DTerrain.addVertexBinding(0, sizeof(Vector2), VK_VERTEX_INPUT_RATE_VERTEX);
 	m_pipeline3DTerrain.addVertexDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0);
 	m_pipeline3DTerrain.addVertexDescription(1, 0, VK_FORMAT_R32G32_SFLOAT, sizeof(Vector3));
 	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
 	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color), sizeof(Matrix4) + sizeof(float));
+	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, 84, sizeof(float) * 5);
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutVertexLight.getDescriptorSetLayout());
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutViewProjectionMatrix.getDescriptorSetLayout());
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutFragmentLight.getDescriptorSetLayout());

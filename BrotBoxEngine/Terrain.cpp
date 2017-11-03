@@ -8,13 +8,15 @@
 #include "BBE/TimeHelper.h"
 
 static const int PATCH_SIZE = 256;
-static const float VERTICES_PER_METER = 8;
+static const float VERTICES_PER_METER = 2;
 
 VkDevice         bbe::TerrainPatch::s_device         = VK_NULL_HANDLE;
 VkPhysicalDevice bbe::TerrainPatch::s_physicalDevice = VK_NULL_HANDLE;
 VkQueue          bbe::TerrainPatch::s_queue          = VK_NULL_HANDLE;
 bbe::INTERNAL::vulkan::VulkanCommandPool *bbe::TerrainPatch::s_pcommandPool = nullptr;
 static bbe::Random random;
+bbe::INTERNAL::vulkan::VulkanBuffer bbe::TerrainPatch::s_indexBuffer;
+bbe::INTERNAL::vulkan::VulkanBuffer bbe::TerrainPatch::s_vertexBuffer;
 
 void bbe::TerrainPatch::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
 {
@@ -22,22 +24,11 @@ void bbe::TerrainPatch::s_init(VkDevice device, VkPhysicalDevice physicalDevice,
 	s_physicalDevice = physicalDevice;
 	s_queue = queue;
 	s_pcommandPool = &commandPool;
+	s_initIndexBuffer();
+	s_initVertexBuffer();
 }
 
-void bbe::TerrainPatch::init() const
-{
-	if (m_created)
-	{
-		return;
-	}
-
-	initIndexBuffer();
-	initVertexBuffer();
-
-	m_created = true;
-}
-
-void bbe::TerrainPatch::initIndexBuffer() const
+void bbe::TerrainPatch::s_initIndexBuffer()
 {
 	List<uint32_t> indices;
 
@@ -46,52 +37,38 @@ void bbe::TerrainPatch::initIndexBuffer() const
 	indices.add(2);
 	indices.add(3);
 
-	m_indexBuffer.create(s_device, s_physicalDevice, sizeof(uint32_t) * indices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+	s_indexBuffer.create(s_device, s_physicalDevice, sizeof(uint32_t) * indices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-	void *dataBuf = m_indexBuffer.map();
+	void *dataBuf = s_indexBuffer.map();
 	memcpy(dataBuf, indices.getRaw(), sizeof(uint32_t) * indices.getLength());
-	m_indexBuffer.unmap();
+	s_indexBuffer.unmap();
 
-	m_indexBuffer.upload(*s_pcommandPool, s_queue);
+	s_indexBuffer.upload(*s_pcommandPool, s_queue);
 }
 
-void bbe::TerrainPatch::initVertexBuffer() const
+void bbe::TerrainPatch::s_initVertexBuffer()
 {
-	class TerrainVertex
-	{
-	public:
-		Vector3 pos;
-		Vector2 heightMapUV;
+	List<Vector2> vertices;
+	//TODO change heightmap UV coords
 
-		TerrainVertex(Vector3 pos, Vector2 heightMapUV)
-			: pos(pos), heightMapUV(heightMapUV)
-		{
+	vertices.add(Vector2(0, 0));
+	vertices.add(Vector2(1, 0));
+	vertices.add(Vector2(1, 1));
+	vertices.add(Vector2(0, 1));
 
-		}
-	};
-	List<TerrainVertex> vertices;
+	s_vertexBuffer.create(s_device, s_physicalDevice, sizeof(Vector2) * vertices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-	float x = m_patchXInt * PATCH_SIZE / VERTICES_PER_METER;
-	float y = m_patchYInt * PATCH_SIZE / VERTICES_PER_METER;
+	void* dataBuf = s_vertexBuffer.map();
+	memcpy(dataBuf, vertices.getRaw(), sizeof(Vector2) * vertices.getLength());
+	s_vertexBuffer.unmap();
 
-	vertices.add(TerrainVertex(Vector3(x,                                   y,                                   0), Vector2(m_patchX             , m_patchY      )));
-	vertices.add(TerrainVertex(Vector3(x + PATCH_SIZE / VERTICES_PER_METER, y,                                   0), Vector2((m_patchTextureWidth), m_patchY      )));
-	vertices.add(TerrainVertex(Vector3(x + PATCH_SIZE / VERTICES_PER_METER, y + PATCH_SIZE / VERTICES_PER_METER, 0), Vector2((m_patchTextureWidth), (m_patchTextureHeight))));
-	vertices.add(TerrainVertex(Vector3(x,                                   y + PATCH_SIZE / VERTICES_PER_METER, 0), Vector2(m_patchX             , (m_patchTextureHeight))));
-
-	m_vertexBuffer.create(s_device, s_physicalDevice, sizeof(TerrainVertex) * vertices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-
-	void* dataBuf = m_vertexBuffer.map();
-	memcpy(dataBuf, vertices.getRaw(), sizeof(TerrainVertex) * vertices.getLength());
-	m_vertexBuffer.unmap();
-
-	m_vertexBuffer.upload(*s_pcommandPool, s_queue);
+	s_vertexBuffer.upload(*s_pcommandPool, s_queue);
 }
 
-void bbe::TerrainPatch::destroy() const
+void bbe::TerrainPatch::s_destroy()
 {
-	m_indexBuffer.destroy();
-	m_vertexBuffer.destroy();
+	s_indexBuffer.destroy();
+	s_vertexBuffer.destroy();
 }
 
 bbe::TerrainPatch::TerrainPatch(float* data, int patchX, int patchY, int maxPatchX, int maxPatchY)
@@ -99,42 +76,32 @@ bbe::TerrainPatch::TerrainPatch(float* data, int patchX, int patchY, int maxPatc
 	m_pdata = new float[(PATCH_SIZE + 1) * (PATCH_SIZE + 1)]; //TODO use allocator
 	memcpy(m_pdata, data, (PATCH_SIZE + 1) * (PATCH_SIZE + 1) * sizeof(float));
 
-	m_patchX = patchX / (float)maxPatchX;
-	m_patchY = patchY / (float)maxPatchY;
 	m_patchTextureWidth = (patchX + 1) / (float)maxPatchX;
 	m_patchTextureHeight = (patchY + 1) / (float)maxPatchY;
+	m_patchX = patchX / (float)maxPatchX;
+	m_patchY = patchY / (float)maxPatchY;
 
-	m_patchXInt = patchX;
-	m_patchYInt = patchY;
+	m_offset = Vector2(patchX * PATCH_SIZE / VERTICES_PER_METER, patchY * PATCH_SIZE / VERTICES_PER_METER);
 }
 
 bbe::TerrainPatch::~TerrainPatch()
 {
-	if (m_needsDestruction)
-	{
-		destroy();
-		delete[] m_pdata;
-	}
+	delete[] m_pdata;
 }
 
 bbe::TerrainPatch::TerrainPatch(TerrainPatch && other)
 {
-	m_indexBuffer     = other.m_indexBuffer;
-	m_vertexBuffer    = other.m_vertexBuffer;
-
-	m_created          = other.m_created;
-	m_needsDestruction = other.m_needsDestruction;
 	m_pdata            = other.m_pdata;
 
-	m_patchX             = other.m_patchX;
-	m_patchY             = other.m_patchY;
+	m_offset             = other.m_offset;
 	m_patchTextureWidth  = other.m_patchTextureWidth;
 	m_patchTextureHeight = other.m_patchTextureHeight;
+	m_patchX             = other.m_patchX;
+	m_patchY             = other.m_patchY;
 
-	m_patchXInt = other.m_patchXInt;
-	m_patchYInt = other.m_patchYInt;
+	m_offset = other.m_offset;
 
-	other.m_needsDestruction = false;
+	other.m_pdata = nullptr;
 }
 
 void bbe::Terrain::init(
@@ -150,10 +117,6 @@ void bbe::Terrain::init(
 	if (!m_wasInit)
 	{
 		m_heightMap.createAndUpload(device, commandPool, descriptorPool, setLayoutHeightMap);
-		for (int i = 0; i < m_patches.getLength(); i++)
-		{
-			m_patches[i].init();
-		}
 		m_wasInit = true;
 
 		m_baseTexture.createAndUpload(device, commandPool, descriptorPool, setLayoutTexture);
@@ -182,10 +145,6 @@ void bbe::Terrain::init(
 
 void bbe::Terrain::destroy()
 {
-	for (int i = 0; i < m_patches.getLength(); i++)
-	{
-		m_patches[i].destroy();
-	}
 	m_baseTexture.destroy();
 	m_baseTextureBiasBuffer.destroy();
 }
@@ -193,6 +152,11 @@ void bbe::Terrain::destroy()
 void bbe::Terrain::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
 {
 	TerrainPatch::s_init(device, physicalDevice, commandPool, queue);
+}
+
+void bbe::Terrain::s_destroy()
+{
+	TerrainPatch::s_destroy();
 }
 
 void bbe::Terrain::loadTextureBias() const
@@ -255,6 +219,11 @@ void bbe::Terrain::construct(int width, int height, const char * baseTexturePath
 	m_heightMap.load(width, height, valueNoise.getRaw(), bbe::ImageFormat::R8);
 
 	m_baseTexture.load(baseTexturePath);
+
+	m_patchSize = PATCH_SIZE / VERTICES_PER_METER;
+
+	m_heightmapScale.x = 1.0f / m_patchesWidthAmount;
+	m_heightmapScale.y = 1.0f / m_patchesHeightAmount;
 }
 
 bbe::Terrain::Terrain(int width, int height, const char* baseTexturePath)
