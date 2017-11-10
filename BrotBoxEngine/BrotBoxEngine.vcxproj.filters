@@ -327,6 +327,9 @@
     <ClInclude Include="BBE\TimeHelper.h">
       <Filter>Header Files\Time</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\TerrainMesh.h">
+      <Filter>Header Files\Shapes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -479,6 +482,9 @@
     <ClCompile Include="TimeHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TerrainMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader2DPrimitive.frag">
@@ -512,5 +518,8 @@
       <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="Shader3DTerrainMesh.vert">
+      <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

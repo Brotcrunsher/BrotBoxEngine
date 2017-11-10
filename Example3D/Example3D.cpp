@@ -21,7 +21,7 @@ public:
 
 	float timePassed = 0.0f;
 
-	bbe::Terrain terrain;
+	bbe::TerrainMesh terrain;
 	//bbe::PointLight light;
 	//bbe::PointLight blinkLight;
 	//bbe::PointLight brightLight;
@@ -62,12 +62,12 @@ public:
 					weightsSand[index] /= weightSum;
 				}
 
-				weightsGrass[index] = 1;
-				weightsSand[index] = 0;
+				//weightsGrass[index] = 1;
+				//weightsSand[index] = 0;
 			}
 		}
-		//terrain.addTexture("../Third-Party/textures/cf_ter_gcs_01.png", weightsGrass);
-		terrain.addTexture("../Third-Party/textures/dryDirt.png", weightsGrass); //TODO DELETE THIS LINE AND UNCOMMENT ABOVE!
+		terrain.addTexture("../Third-Party/textures/cf_ter_gcs_01.png", weightsGrass);
+		//terrain.addTexture("../Third-Party/textures/dryDirt.png", weightsGrass); //TODO DELETE THIS LINE AND UNCOMMENT ABOVE!
 		terrain.addTexture("../Third-Party/textures/sand.png", weightsSand);
 		delete weightsGrass;
 		delete weightsSand;

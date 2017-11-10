@@ -7,6 +7,7 @@
 #include "../BBE/Cube.h"
 #include "../BBE/IcoSphere.h"
 #include "../BBE/Terrain.h"
+#include "../BBE/TerrainMesh.h"
 #include "../BBE/FillMode.h"
 
 namespace bbe
@@ -29,12 +30,12 @@ namespace bbe
 
 	enum class DrawRecord
 	{
-		NONE, CUBE, ICOSPHERE, TERRAIN
+		NONE, CUBE, ICOSPHERE, TERRAIN, TERRAINMESH
 	};
 
 	enum class PipelineRecord3D
 	{
-		NONE, PRIMITIVE, TERRAIN
+		NONE, PRIMITIVE, TERRAIN, TERRAINMESH
 	};
 
 	class PrimitiveBrush3D
@@ -46,7 +47,9 @@ namespace bbe
 		VkPipelineLayout                             m_layoutPrimitive                                    = VK_NULL_HANDLE;
 		INTERNAL::vulkan::VulkanPipeline            *m_ppipelinePrimitive                                 = nullptr;
 		VkPipelineLayout                             m_layoutTerrain                                      = VK_NULL_HANDLE;
-		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineTerrain                                    = nullptr;
+		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineTerrain                                   = nullptr;
+		VkPipelineLayout                             m_layoutTerrainMesh                                  = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineTerrainMesh                               = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorPool      *m_pdescriptorPool                                    = nullptr;
 		INTERNAL::vulkan::VulkanCommandPool         *m_pcommandPool                                       = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainHeightMap               = nullptr;
@@ -73,6 +76,7 @@ namespace bbe
 			VkCommandBuffer commandBuffer,
 			INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive,
 			INTERNAL::vulkan::VulkanPipeline &pipelineTerrain,
+			INTERNAL::vulkan::VulkanPipeline &pipelineTerrainMesh,
 			INTERNAL::vulkan::VulkanCommandPool &commandPool,
 			INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool,
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainHeightMap,
@@ -92,6 +96,7 @@ namespace bbe
 		void fillIcoSphere(const IcoSphere &sphere);
 
 		void drawTerrain(const Terrain &terrain);
+		void drawTerrain(const TerrainMesh &terrain);
 
 		void setColor(float r, float g, float b, float a);
 		void setColor(float r, float g, float b);

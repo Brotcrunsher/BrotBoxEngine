@@ -297,6 +297,7 @@
     <ClInclude Include="BBE\VulkanDescriptorSet.h" />
     <ClInclude Include="BBE\FillMode.h" />
     <ClInclude Include="BBE\TimeHelper.h" />
+    <ClInclude Include="BBE\TerrainMesh.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ColorByte.cpp" />
@@ -311,6 +312,7 @@
     <ClCompile Include="Matrix4.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="PrimitiveBrush3D.cpp" />
+    <ClCompile Include="TerrainMesh.cpp" />
     <ClCompile Include="TimeHelper.cpp" />
     <ClCompile Include="ValueNoise2D.cpp" />
     <ClCompile Include="Vector3.cpp" />
@@ -367,6 +369,7 @@
     <None Include="Shader3DTerrain.tesc" />
     <None Include="Shader3DTerrain.tese" />
     <None Include="Shader3DTerrain.vert" />
+    <None Include="Shader3DTerrainMesh.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

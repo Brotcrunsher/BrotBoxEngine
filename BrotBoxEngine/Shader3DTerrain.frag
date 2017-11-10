@@ -19,10 +19,9 @@ struct LightInput
 layout(location = 0) out vec4 outColor;
 
 layout(location = 1) in vec3 inViewVec;
-layout(location = 2) in vec2 inHeightMapPos;
+layout(location = 2) in vec2 inUVPos;
 layout(location = 3) in vec3 inNormal;
-layout(location = 4) in float inDistanceToCamera;
-layout(location = 5) in LightInput inLight[AMOUNT_OF_LIGHTS];
+layout(location = 4) in LightInput inLight[AMOUNT_OF_LIGHTS];
 
 layout(set = 4, binding = 0) uniform sampler2D baseTex;
 layout(set = 5, binding = 0) uniform TextureBias
@@ -58,16 +57,16 @@ void main() {
 	vec3 texColor = vec3(0);
 	for(int i = 0; i<AMOUNT_OF_TEXTURES; i++)
 	{
-		weights[i] = texture(textureWeights[i], inHeightMapPos).x;
+		weights[i] = texture(textureWeights[i], inUVPos).x;
 		weightSum += weights[i];
-		texColors[i] = texture(additionalTex[i], inHeightMapPos * textureBias.data.xy + textureBias.data.zw, 0).xyz;
+		texColors[i] = texture(additionalTex[i], inUVPos * textureBias.data.xy + textureBias.data.zw, 0).xyz;
 
 		texColor += texColors[i] * weights[i];
 	}
 
 	if(weightSum < 1)
 	{
-		vec3 texColorBase = texture(baseTex, inHeightMapPos * textureBias.data.xy + textureBias.data.zw, 0).xyz;
+		vec3 texColorBase = texture(baseTex, inUVPos * textureBias.data.xy + textureBias.data.zw, 0).xyz;
 		texColor += texColorBase * (1 - weightSum);
 	}
 
@@ -121,5 +120,4 @@ void main() {
 	}
 
 	outColor = vec4(ambient + diffuse + specular, 1.0);
-
 }

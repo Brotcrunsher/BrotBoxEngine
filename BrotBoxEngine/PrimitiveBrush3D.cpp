@@ -21,7 +21,8 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 	bbe::INTERNAL::vulkan::VulkanDevice & device, 
 	VkCommandBuffer commandBuffer, 
 	INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive, 
-	INTERNAL::vulkan::VulkanPipeline &pipelineTerrain, 
+	INTERNAL::vulkan::VulkanPipeline &pipelineTerrain,
+	INTERNAL::vulkan::VulkanPipeline &pipelineTerrainMesh,
 	INTERNAL::vulkan::VulkanCommandPool &commandPool, 
 	INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, 
 	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainHeightMap, 
@@ -35,6 +36,8 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 	m_ppipelinePrimitive = &pipelinePrimitive;
 	m_layoutTerrain = pipelineTerrain.getLayout();
 	m_ppipelineTerrain = &pipelineTerrain;
+	m_layoutTerrainMesh = pipelineTerrainMesh.getLayout();
+	m_ppipelineTerrainMesh = &pipelineTerrainMesh;
 	m_currentCommandBuffer = commandBuffer;
 	m_pdescriptorPool = &descriptorPool;
 	m_pdescriptorSetLayoutTerrainHeightMap = &descriptorSetLayoutTerrainHeightMap;
@@ -178,6 +181,51 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 
 	m_lastDraw = DrawRecord::TERRAIN;
 	
+}
+
+void bbe::PrimitiveBrush3D::drawTerrain(const TerrainMesh & terrain)
+{
+	terrain.init(
+		*m_pdevice,
+		*m_pcommandPool,
+		*m_pdescriptorPool,
+		*m_pdescriptorSetLayoutTerrainHeightMap,
+		*m_pdescriptorSetLayoutTexture,
+		*m_pdescriptorSetLayoutTerrainBaseTextureBias,
+		*m_pdescriptorSetLayoutTerrainAdditionalTexture,
+		*m_pdescriptorSetLayoutTerrainAdditionalTextureWeight
+	);
+
+	if (terrain.m_textureBiasDirty)
+	{
+		terrain.loadTextureBias();
+	}
+
+	if (m_pipelineRecord != PipelineRecord3D::TERRAINMESH)
+	{
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelineTerrainMesh->getPipeline(m_fillMode));
+		m_pipelineRecord = PipelineRecord3D::TERRAINMESH;
+	}
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainMesh, 3, 1, terrain.m_heightMap.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainMesh, 4, 1, terrain.m_baseTexture.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainMesh, 5, 1, terrain.m_baseTextureDescriptor.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainMesh, 6, 1, terrain.m_additionalTextures[0].getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainMesh, 7, 1, terrain.m_additionalTextureWeights[0].getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrainMesh, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(Matrix4), &(terrain.m_transform));
+
+	VkDeviceSize offsets[] = { 0 };
+	for (int i = 0; i < terrain.m_patches.getLength(); i++)
+	{
+		VkBuffer buffer = terrain.m_patches[i].m_vertexBuffer.getBuffer();
+		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
+
+		buffer = terrain.m_patches[i].m_indexBuffer.getBuffer();
+		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdDrawIndexed(m_currentCommandBuffer, terrain.m_patches[i].m_indexCount, 1, 0, 0, 0);
+	}
+
+	m_lastDraw = DrawRecord::TERRAINMESH;
 }
 
 void bbe::PrimitiveBrush3D::setColor(float r, float g, float b, float a)

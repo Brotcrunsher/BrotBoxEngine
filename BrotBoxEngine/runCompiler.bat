@@ -11,3 +11,5 @@ glslangvalidator -V Shader3DTerrain.vert -o vert3DTerrain.spv
 glslangvalidator -V Shader3DTerrain.frag -o frag3DTerrain.spv
 glslangvalidator -V Shader3DTerrain.tesc -o tesc3DTerrain.spv
 glslangvalidator -V Shader3DTerrain.tese -o tese3DTerrain.spv
+
+glslangvalidator -V Shader3DTerrainMesh.vert -o vert3DTerrainMesh.spv
