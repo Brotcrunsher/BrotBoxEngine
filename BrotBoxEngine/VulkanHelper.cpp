@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "BBE/VulkanHelper.h"
+#include "BBE/Math.h"
 
 uint32_t bbe::INTERNAL::vulkan::findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
 	VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;
@@ -53,7 +54,7 @@ bool bbe::INTERNAL::vulkan::isStencilFormat(VkFormat format)
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void bbe::INTERNAL::vulkan::createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkDeviceSize deviceSize, VkBufferUsageFlags bufferUsageFlags, VkBuffer & buffer, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceMemory & deviceMemory, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t* p_queueFamilyIndices)
+void bbe::INTERNAL::vulkan::preCreateBuffer(VkDevice device, VkDeviceSize deviceSize, VkBufferUsageFlags bufferUsageFlags, VkBuffer & buffer, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t * p_queueFamilyIndices)
 {
 	VkBufferCreateInfo bufferCreateInfo;
 	bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -67,20 +68,49 @@ void bbe::INTERNAL::vulkan::createBuffer(VkDevice device, VkPhysicalDevice physi
 
 	VkResult result = vkCreateBuffer(device, &bufferCreateInfo, nullptr, &buffer);
 	ASSERT_VULKAN(result);
+}
 
-	VkMemoryRequirements memoryRequirements;
-	vkGetBufferMemoryRequirements(device, buffer, &memoryRequirements);
+void bbe::INTERNAL::vulkan::postCreateBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkBuffer & buffer, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceMemory & deviceMemory, VkDeviceMemory parentDeviceMemory, VkDeviceSize offset)
+{
+	if (parentDeviceMemory == VK_NULL_HANDLE)
+	{
+		VkMemoryRequirements memoryRequirements;
+		vkGetBufferMemoryRequirements(device, buffer, &memoryRequirements);
 
-	VkMemoryAllocateInfo memoryAllocateInfo;
-	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	memoryAllocateInfo.pNext = nullptr;
-	memoryAllocateInfo.allocationSize = memoryRequirements.size;
-	memoryAllocateInfo.memoryTypeIndex = findMemoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits, memoryPropertyFlags);
+		VkMemoryAllocateInfo memoryAllocateInfo;
+		memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		memoryAllocateInfo.pNext = nullptr;
+		memoryAllocateInfo.allocationSize = memoryRequirements.size;
+		memoryAllocateInfo.memoryTypeIndex = findMemoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits, memoryPropertyFlags);
 
-	result = vkAllocateMemory(device, &memoryAllocateInfo, nullptr, &deviceMemory);
-	ASSERT_VULKAN(result);
+		VkResult result = vkAllocateMemory(device, &memoryAllocateInfo, nullptr, &deviceMemory);
+		ASSERT_VULKAN(result);
+		vkBindBufferMemory(device, buffer, deviceMemory, 0);
+	}
+	else
+	{
+		vkBindBufferMemory(device, buffer, parentDeviceMemory, offset);
+	}
+}
 
-	vkBindBufferMemory(device, buffer, deviceMemory, 0);
+void bbe::INTERNAL::vulkan::createBuffer
+	(
+		VkDevice device, 
+		VkPhysicalDevice physicalDevice, 
+		VkDeviceSize deviceSize, 
+		VkBufferUsageFlags bufferUsageFlags, 
+		VkBuffer & buffer, 
+		VkMemoryPropertyFlags memoryPropertyFlags, 
+		VkDeviceMemory & deviceMemory, 
+		VkSharingMode sharingMode, 
+		uint32_t queueFamilyIndexCount, 
+		const uint32_t* p_queueFamilyIndices, 
+		VkDeviceMemory parentDeviceMemory, 
+		VkDeviceSize offset
+	)
+{
+	preCreateBuffer(device, deviceSize, bufferUsageFlags, buffer, sharingMode, queueFamilyIndexCount, p_queueFamilyIndices);
+	postCreateBuffer(device, physicalDevice, buffer, memoryPropertyFlags, deviceMemory, parentDeviceMemory, offset);
 }
 
 VkCommandBuffer bbe::INTERNAL::vulkan::startSingleTimeCommandBuffer(VkDevice device, VkCommandPool commandPool)
@@ -213,6 +243,9 @@ void bbe::INTERNAL::vulkan::changeImageLayout(VkDevice device, VkCommandPool com
 {
 	VkCommandBuffer commandBuffer = startSingleTimeCommandBuffer(device, commandPool);
 
+	VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;	//see: https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html#synchronization-access-types-supported
+	VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
 	VkImageMemoryBarrier imageMemoryBarrier;
 	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	imageMemoryBarrier.pNext = nullptr;
@@ -220,31 +253,48 @@ void bbe::INTERNAL::vulkan::changeImageLayout(VkDevice device, VkCommandPool com
 	{
 		imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
 		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_HOST_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 	}
 	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 	{
 		imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
 	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
 	{
 		imageMemoryBarrier.srcAccessMask = 0;
 		imageMemoryBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+		destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	}
 	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
 	{
 		imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 	}
 	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 	{
 		imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 	}
 	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 	{
 		imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 		imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
 	else
 	{
@@ -274,7 +324,7 @@ void bbe::INTERNAL::vulkan::changeImageLayout(VkDevice device, VkCommandPool com
 	imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
 	imageMemoryBarrier.subresourceRange.layerCount = 1;
 
-	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+	vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
 
 	endSingleTimeCommandBuffer(device, queue, commandPool, commandBuffer);
 }

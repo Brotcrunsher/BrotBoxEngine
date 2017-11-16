@@ -1,17 +1,20 @@
 #pragma once
 
+#include "../BBE/List.h"
 
 namespace bbe
 {
 	class ValueNoise2D
 	{
 	private:
-		float *m_pdata      = nullptr;
+		//float *m_pdata      = nullptr;
 		int    m_width      = 0;
 		int    m_height     = 0;
 		bool   m_wasCreated = false;
 
-		void standardize();
+		//void standardize();
+
+		List<DynamicArray<float>> nodes;
 
 	public:
 		ValueNoise2D();
@@ -28,8 +31,8 @@ namespace bbe
 		void destroy();
 
 		float get(int x, int y);
-		void set(int x, int y, float val);
+		//void set(int x, int y, float val);
 
-		float* getRaw();
+		//float* getRaw();
 	};
 }

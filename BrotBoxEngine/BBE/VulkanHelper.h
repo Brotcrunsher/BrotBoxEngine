@@ -24,7 +24,33 @@ namespace bbe
 
 			bool isStencilFormat(VkFormat format);
 
-			void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkDeviceSize deviceSize, VkBufferUsageFlags bufferUsageFlags, VkBuffer &buffer, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceMemory &deviceMemory, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t* p_queueFamilyIndices);
+			void preCreateBuffer(VkDevice device,
+				VkDeviceSize deviceSize,
+				VkBufferUsageFlags bufferUsageFlags,
+				VkBuffer & buffer,
+				VkSharingMode sharingMode,
+				uint32_t queueFamilyIndexCount,
+				const uint32_t* p_queueFamilyIndices);
+			void postCreateBuffer(
+				VkDevice device,
+				VkPhysicalDevice physicalDevice,
+				VkBuffer & buffer,
+				VkMemoryPropertyFlags memoryPropertyFlags,
+				VkDeviceMemory & deviceMemory,
+				VkDeviceMemory parentDeviceMemory,
+				VkDeviceSize offset);
+			void createBuffer(VkDevice device, 
+				VkPhysicalDevice physicalDevice, 
+				VkDeviceSize deviceSize, 
+				VkBufferUsageFlags bufferUsageFlags, 
+				VkBuffer &buffer, 
+				VkMemoryPropertyFlags memoryPropertyFlags, 
+				VkDeviceMemory &deviceMemory, 
+				VkSharingMode sharingMode, 
+				uint32_t queueFamilyIndexCount, 
+				const uint32_t* p_queueFamilyIndices, 
+				VkDeviceMemory parentDeviceMemory = VK_NULL_HANDLE, 
+				VkDeviceSize offset = 0);
 
 			VkCommandBuffer startSingleTimeCommandBuffer(VkDevice device, VkCommandPool commandPool);
 

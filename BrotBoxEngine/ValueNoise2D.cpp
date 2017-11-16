@@ -14,7 +14,7 @@ static float m_startAlpha = 1;
 static float m_alphaChange = 0.5f;
 static int m_frequencyChange = 2;
 
-void bbe::ValueNoise2D::standardize()
+/*void bbe::ValueNoise2D::standardize()
 {
 	float min = 100000000.0f;
 	float max = -100000000.0f;
@@ -29,7 +29,7 @@ void bbe::ValueNoise2D::standardize()
 	{
 		m_pdata[i] = (m_pdata[i] - min) / (max - min);
 	}
-}
+}*/
 
 bbe::ValueNoise2D::ValueNoise2D()
 {
@@ -55,8 +55,8 @@ void bbe::ValueNoise2D::create(int width, int height, int seed)
 		throw AlreadyCreatedException();
 	}
 
-	m_pdata = new float[width * height];
-	memset(m_pdata, 0, sizeof(float) * width * height);
+	//m_pdata = new float[width * height];
+	//memset(m_pdata, 0, sizeof(float) * width * height);
 	m_width = width;
 	m_height = height;
 	m_wasCreated = true;
@@ -76,38 +76,14 @@ void bbe::ValueNoise2D::create(int width, int height, int seed)
 			nodes[i] = rand.randomFloat() * alpha;
 		}
 
-		for (int i = 0; i < m_width; i++)
-		{
-			for (int k = 0; k < m_height; k++)
-			{
-				float percentX = (float)i / (float)m_width;
-				float percentY = (float)k / (float)m_height;
-
-				float currentX = percentX * frequencyX;
-				float currentY = percentY * frequencyY;
-
-				int indexX = (int)currentX;
-				int indexY = (int)currentY;
-
-
-				float preA = Math::interpolateCubic(nodes[indexX + 0 + (indexY + 0) * (frequencyX + 1)], nodes[indexX + 1 + (indexY + 0) * (frequencyX + 1)], nodes[indexX + 2 + (indexY + 0) * (frequencyX + 1)], nodes[indexX + 3 + (indexY + 0) * (frequencyX + 1)], currentX - indexX);
-				float a = Math::interpolateCubic(nodes[indexX + 0 + (indexY + 1) * (frequencyX + 1)], nodes[indexX + 1 + (indexY + 1) * (frequencyX + 1)], nodes[indexX + 2 + (indexY + 1) * (frequencyX + 1)], nodes[indexX + 3 + (indexY + 1) * (frequencyX + 1)], currentX - indexX);
-				float b = Math::interpolateCubic(nodes[indexX + 0 + (indexY + 2) * (frequencyX + 1)], nodes[indexX + 1 + (indexY + 2) * (frequencyX + 1)], nodes[indexX + 2 + (indexY + 2) * (frequencyX + 1)], nodes[indexX + 3 + (indexY + 2) * (frequencyX + 1)], currentX - indexX);
-				float postB = Math::interpolateCubic(nodes[indexX + 0 + (indexY + 3) * (frequencyX + 1)], nodes[indexX + 1 + (indexY + 3) * (frequencyX + 1)], nodes[indexX + 2 + (indexY + 3) * (frequencyX + 1)], nodes[indexX + 3 + (indexY + 3) * (frequencyX + 1)], currentX - indexX);
-				float w = Math::interpolateCubic(preA, a, b, postB, currentY - indexY);
-
-				int index = i + k * m_width;
-				m_pdata[index] += w;
-			}
-		}
-
+		this->nodes.add(nodes);
 
 		alpha *= m_alphaChange;
 		frequencyX *= m_frequencyChange;
 		frequencyY *= m_frequencyChange;
 	}
 
-	standardize();
+	//standardize();
 
 }
 
@@ -118,9 +94,9 @@ void bbe::ValueNoise2D::destroy()
 		throw NotInitializedException();
 	}
 
-	delete[] m_pdata;
+	//delete[] m_pdata;
 
-	m_pdata = nullptr;
+	//m_pdata = nullptr;
 	m_width = 0;
 	m_height = 0;
 
@@ -138,10 +114,46 @@ float bbe::ValueNoise2D::get(int x, int y)
 	if (y < 0) y = 0;
 	if (x >= m_width) x = m_width - 1;
 	if (y >= m_height) y = m_height - 1;
-	return m_pdata[x + y * m_width];
+
+	float val = 0;
+	float alpha = m_startAlpha;
+	int frequencyX = m_startFrequencyX;
+	int frequencyY = m_startFrequencyY;
+
+	for (int octave = 0; octave < m_octaves; octave++)
+	{
+		int i = x;
+		int k = y;
+		float percentX = (float)i / (float)m_width;
+		float percentY = (float)k / (float)m_height;
+
+		float currentX = percentX * frequencyX;
+		float currentY = percentY * frequencyY;
+
+		int indexX = (int)currentX;
+		int indexY = (int)currentY;
+
+
+		float preA = Math::interpolateCubic(nodes[octave][indexX + 0 + (indexY + 0) * (frequencyX + 1)], nodes[octave][indexX + 1 + (indexY + 0) * (frequencyX + 1)], nodes[octave][indexX + 2 + (indexY + 0) * (frequencyX + 1)], nodes[octave][indexX + 3 + (indexY + 0) * (frequencyX + 1)], currentX - indexX);
+		float a = Math::interpolateCubic(nodes[octave][indexX + 0 + (indexY + 1) * (frequencyX + 1)], nodes[octave][indexX + 1 + (indexY + 1) * (frequencyX + 1)], nodes[octave][indexX + 2 + (indexY + 1) * (frequencyX + 1)], nodes[octave][indexX + 3 + (indexY + 1) * (frequencyX + 1)], currentX - indexX);
+		float b = Math::interpolateCubic(nodes[octave][indexX + 0 + (indexY + 2) * (frequencyX + 1)], nodes[octave][indexX + 1 + (indexY + 2) * (frequencyX + 1)], nodes[octave][indexX + 2 + (indexY + 2) * (frequencyX + 1)], nodes[octave][indexX + 3 + (indexY + 2) * (frequencyX + 1)], currentX - indexX);
+		float postB = Math::interpolateCubic(nodes[octave][indexX + 0 + (indexY + 3) * (frequencyX + 1)], nodes[octave][indexX + 1 + (indexY + 3) * (frequencyX + 1)], nodes[octave][indexX + 2 + (indexY + 3) * (frequencyX + 1)], nodes[octave][indexX + 3 + (indexY + 3) * (frequencyX + 1)], currentX - indexX);
+		float w = Math::interpolateCubic(preA, a, b, postB, currentY - indexY);
+
+		int index = i + k * m_width;
+		val += w;
+
+		alpha *= m_alphaChange;
+		frequencyX *= m_frequencyChange;
+		frequencyY *= m_frequencyChange;
+	}
+
+	
+
+	return val;
 }
 
-void bbe::ValueNoise2D::set(int x, int y, float val)
+/*void bbe::ValueNoise2D::set(int x, int y, float val)
 {
 	if (!m_wasCreated)
 	{
@@ -153,4 +165,4 @@ void bbe::ValueNoise2D::set(int x, int y, float val)
 float * bbe::ValueNoise2D::getRaw()
 {
 	return m_pdata;
-}
+}*/

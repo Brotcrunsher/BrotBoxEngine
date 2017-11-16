@@ -206,7 +206,6 @@ void bbe::PrimitiveBrush3D::drawTerrain(const TerrainMesh & terrain)
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelineTerrainMesh->getPipeline(m_fillMode));
 		m_pipelineRecord = PipelineRecord3D::TERRAINMESH;
 	}
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainMesh, 3, 1, terrain.m_heightMap.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainMesh, 4, 1, terrain.m_baseTexture.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainMesh, 5, 1, terrain.m_baseTextureDescriptor.getPDescriptorSet(), 0, nullptr);
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainMesh, 6, 1, terrain.m_additionalTextures[0].getDescriptorSet().getPDescriptorSet(), 0, nullptr);
@@ -215,14 +214,38 @@ void bbe::PrimitiveBrush3D::drawTerrain(const TerrainMesh & terrain)
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrainMesh, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(Matrix4), &(terrain.m_transform));
 
 	VkDeviceSize offsets[] = { 0 };
+	Vector3 terrainPos = terrain.getTransform().extractTranslation();
 	for (int i = 0; i < terrain.m_patches.getLength(); i++)
 	{
-		VkBuffer buffer = terrain.m_patches[i].m_vertexBuffer.getBuffer();
+		Vector3 patchPos0 = terrainPos + Vector3(terrain.m_patches[i].getOffset(), 0);
+		Vector3 patchPos1 = patchPos0;
+		Vector3 patchPos2 = patchPos0;
+		Vector3 patchPos3 = patchPos0;
+
+		patchPos1.x += terrain.m_patches[i].getSize();
+		patchPos2.y += terrain.m_patches[i].getSize();
+		patchPos3.x += terrain.m_patches[i].getSize();
+		patchPos3.y += terrain.m_patches[i].getSize();
+
+		float distance0 = patchPos0.getDistanceTo(m_cameraPos);
+		float distance1 = patchPos0.getDistanceTo(m_cameraPos);
+		float distance2 = patchPos0.getDistanceTo(m_cameraPos);
+		float distance3 = patchPos0.getDistanceTo(m_cameraPos);
+
+		float distance = bbe::Math::min(distance0, distance1, distance2, distance3);
+
+		int lod = bbe::Math::log2Floor(distance / 100);
+		if (lod > terrain.m_patches[i].getMaxLod())
+		{
+			lod = terrain.m_patches[i].getMaxLod();
+		}
+
+		VkBuffer buffer = TerrainMeshPatch::s_indexBuffer[lod].getBuffer();
+		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+		buffer = terrain.m_patches[i].m_vertexBuffer[lod].getBuffer();
 		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
 
-		buffer = terrain.m_patches[i].m_indexBuffer.getBuffer();
-		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
-		vkCmdDrawIndexed(m_currentCommandBuffer, terrain.m_patches[i].m_indexCount, 1, 0, 0, 0);
+		vkCmdDrawIndexed(m_currentCommandBuffer, TerrainMeshPatch::s_indexCount[lod], 1, 0, 0, 0);
 	}
 
 	m_lastDraw = DrawRecord::TERRAINMESH;

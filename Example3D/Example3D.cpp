@@ -2,6 +2,7 @@
 //
 
 #include "stdafx.h"
+#define _CRTDBG_MAP_ALLOC
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 
@@ -35,14 +36,11 @@ public:
 
 	bool wireframe = false;
 
+	int lod = 0;
+
 	MyGame()
 		:/*light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0)), */terrain(1024 * 8, 1024 * 8, "../Third-Party/textures/dryDirt.png", 12)
 	{
-		for (int i = -5; i <= 5; i++)
-		{
-			std::cout << i << " " << bbe::Math::mod(i, 2) << std::endl;
-		}
-
 		terrain.setBaseTextureMult(bbe::Vector2(4, 4));
 		terrain.setMaxHeight(150);
 		float *weightsGrass = new float[terrain.getWidth() * terrain.getHeight()];
@@ -126,6 +124,15 @@ public:
 		{
 			wireframe = !wireframe;
 		}
+		
+		if (isKeyPressed(bbe::Key::U))
+		{
+			lod++;
+		}
+		if (isKeyPressed(bbe::Key::J))
+		{
+			lod--;
+		}
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
@@ -151,6 +158,7 @@ public:
 		brush.setColor(1, 1, 1);
 
 		brush.drawTerrain(terrain);
+		
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
@@ -164,6 +172,7 @@ public:
 
 int main()
 {
+	_CrtDumpMemoryLeaks();
 	bbe::Settings::setAmountOfLightSources(5);
 	MyGame *mg = new MyGame();
 	mg->start(1280, 720, "3D Test");

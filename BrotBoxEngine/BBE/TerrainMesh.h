@@ -33,20 +33,25 @@ namespace bbe
 		static INTERNAL::vulkan::VulkanCommandPool *s_pcommandPool;
 
 		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
-		void init(float height) const;
+		void init(float height, bbe::INTERNAL::vulkan::VulkanBuffer &parentBuffer, VkDeviceSize &offset, VkDeviceSize alignment) const;
 
-		void initIndexBuffer() const;
-		void initVertexBuffer(float height) const;
+		static void s_initIndexBuffer();
+		void initVertexBuffer(float height, bbe::INTERNAL::vulkan::VulkanBuffer &parentBuffer, VkDeviceSize &offset, VkDeviceSize alignment) const;
 		void destroy() const;
-		mutable bbe::INTERNAL::vulkan::VulkanBuffer m_indexBuffer;
-		mutable bbe::INTERNAL::vulkan::VulkanBuffer m_vertexBuffer;
+		static void s_destroy();
+		static List<bbe::INTERNAL::vulkan::VulkanBuffer> s_indexBuffer;
+		mutable List<bbe::INTERNAL::vulkan::VulkanBuffer> m_vertexBuffer;
 
 		float* m_pdata = nullptr;
 
 		int m_patchX;
 		int m_patchY;
 
-		mutable int m_indexCount = 0;
+		Vector2 getOffset() const;
+		float getSize() const;
+		int getMaxLod() const;
+
+		static List<int> s_indexCount;
 
 	public:
 		TerrainMeshPatch(float* data, int patchX, int patchY);
@@ -66,8 +71,9 @@ namespace bbe
 	private:
 		Matrix4 m_transform;
 		List<TerrainMeshPatch> m_patches;
-		Image m_heightMap;
 		Image m_baseTexture;
+
+		mutable bbe::INTERNAL::vulkan::VulkanBuffer m_meshBuffer;
 
 		Image m_additionalTextures[16];
 		Image m_additionalTextureWeights[16];
@@ -91,6 +97,7 @@ namespace bbe
 		void destroy();
 
 		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
+		static void s_destroy();
 
 		Vector2 m_heightmapScale;
 
@@ -114,6 +121,9 @@ namespace bbe
 
 		void construct(int width, int height, const char* baseTexturePath, int seed);
 
+		int getAmountOfVerticesPerPatch() const;
+		int getAmountOfLoDs() const;
+
 	public:
 		TerrainMesh(int width, int height, const char* baseTexturePath);
 		TerrainMesh(int width, int height, const char* baseTexturePath, int seed);
@@ -127,6 +137,7 @@ namespace bbe
 		void setBaseTextureOffset(const Vector2 &offset);
 		Vector2 getBaseTextureMult();
 		void setBaseTextureMult(const Vector2 &mult);
+
 
 		void setMaxHeight(float height);
 		float getMaxHeight() const;

@@ -6,12 +6,18 @@
 #include "BBE/VulkanCommandPool.h"
 #include "BBE/VulkanManager.h"
 
-void bbe::INTERNAL::vulkan::VulkanBuffer::create(const VulkanDevice &vulkanDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t* p_queueFamilyIndices)
+void bbe::INTERNAL::vulkan::VulkanBuffer::preCreate(const VulkanDevice & vulkanDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t * p_queueFamilyIndices)
 {
-	create(vulkanDevice.getDevice(), vulkanDevice.getPhysicalDevice(), sizeInBytes, usage, sharingMode, queueFamilyIndexCount, p_queueFamilyIndices);
+	preCreateBuffer(vulkanDevice.getDevice(), sizeInBytes, usage, m_buffer, sharingMode, queueFamilyIndexCount, p_queueFamilyIndices);
+	m_wasPreCreated = true;
 }
 
-void bbe::INTERNAL::vulkan::VulkanBuffer::create(VkDevice vulkanDevice, VkPhysicalDevice physicalDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t * p_queueFamilyIndices)
+void bbe::INTERNAL::vulkan::VulkanBuffer::create(const VulkanDevice &vulkanDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t* p_queueFamilyIndices, VkMemoryPropertyFlags memoryPropertyFlags)
+{
+	create(vulkanDevice.getDevice(), vulkanDevice.getPhysicalDevice(), sizeInBytes, usage, sharingMode, queueFamilyIndexCount, p_queueFamilyIndices, memoryPropertyFlags);
+}
+
+void bbe::INTERNAL::vulkan::VulkanBuffer::create(VkDevice vulkanDevice, VkPhysicalDevice physicalDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t * p_queueFamilyIndices, VkMemoryPropertyFlags memoryPropertyFlags)
 {
 	if (sizeInBytes == 0)
 	{
@@ -33,7 +39,14 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::create(VkDevice vulkanDevice, VkPhysic
 	m_physicalDevice = physicalDevice;
 	m_usage = usage;
 
-	createBuffer(m_device, m_physicalDevice, m_bufferSize, m_usage, m_buffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_memory, sharingMode, queueFamilyIndexCount, p_queueFamilyIndices);
+	if (m_wasPreCreated)
+	{
+		postCreateBuffer(m_device, m_physicalDevice, m_buffer, memoryPropertyFlags, m_memory, VK_NULL_HANDLE, 0);
+	}
+	else
+	{
+		createBuffer(m_device, m_physicalDevice, m_bufferSize, m_usage, m_buffer, memoryPropertyFlags, m_memory, sharingMode, queueFamilyIndexCount, p_queueFamilyIndices);
+	}
 
 	m_wasCreated = true;
 }
@@ -73,6 +86,41 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::upload(const VulkanCommandPool &comman
 	m_wasUploaded = true;
 }
 
+void bbe::INTERNAL::vulkan::VulkanBuffer::upload(const VulkanCommandPool & commandPool, VkQueue queue, const VulkanBuffer & parentBuffer, VkDeviceSize offset, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t * p_queueFamilyIndices)
+{
+	if ((m_usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT) == 0)
+	{
+		throw BufferNoSourceException();
+	}
+	if (!m_wasCreated)
+	{
+		throw NotInitializedException();
+	}
+	if (m_wasUploaded)
+	{
+		throw BufferAlreadyUploadedException();
+	}
+	if (m_isMapped)
+	{
+		throw BufferMappedException();
+	}
+
+	VkBuffer uploadedBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory uploadedMemory = VK_NULL_HANDLE;
+
+	createBuffer(m_device, m_physicalDevice, m_bufferSize, m_usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT, uploadedBuffer, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uploadedMemory, sharingMode, queueFamilyIndexCount, p_queueFamilyIndices, parentBuffer.m_memory, offset);
+
+	copyBuffer(m_device, commandPool.getCommandPool(), queue, m_buffer, uploadedBuffer, m_bufferSize);
+
+	vkDestroyBuffer(m_device, m_buffer, nullptr);
+	vkFreeMemory(m_device, m_memory, nullptr);
+
+	m_buffer = uploadedBuffer;
+	m_memory = VK_NULL_HANDLE; //The Buffer does not own the memory!
+
+	m_wasUploaded = true;
+}
+
 void bbe::INTERNAL::vulkan::VulkanBuffer::destroy()
 {
 	if (m_wasCreated)
@@ -82,9 +130,12 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::destroy()
 			throw BufferMappedException();
 		}
 		vkDestroyBuffer(m_device, m_buffer, nullptr);
-		vkFreeMemory(m_device, m_memory, nullptr);
 		m_buffer = VK_NULL_HANDLE;
-		m_memory = VK_NULL_HANDLE;
+		if (m_memory != VK_NULL_HANDLE)
+		{
+			vkFreeMemory(m_device, m_memory, nullptr);
+			m_memory = VK_NULL_HANDLE;
+		}
 
 		m_wasCreated = false;
 		m_wasUploaded = false;

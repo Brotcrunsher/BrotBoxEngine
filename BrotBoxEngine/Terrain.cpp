@@ -8,7 +8,7 @@
 #include "BBE/TimeHelper.h"
 
 static const int PATCH_SIZE = 256;
-static const float VERTICES_PER_METER = 2;
+static const float VERTICES_PER_METER = 1;
 
 VkDevice         bbe::TerrainPatch::s_device         = VK_NULL_HANDLE;
 VkPhysicalDevice bbe::TerrainPatch::s_physicalDevice = VK_NULL_HANDLE;
@@ -215,8 +215,8 @@ void bbe::Terrain::construct(int width, int height, const char * baseTexturePath
 
 	setTransform(Matrix4());
 
-	m_heightMap.setRepeatMode(bbe::ImageRepeatMode::MIRROR_CLAMP_TO_EDGE);
-	m_heightMap.load(width, height, valueNoise.getRaw(), bbe::ImageFormat::R8);
+	//m_heightMap.setRepeatMode(bbe::ImageRepeatMode::MIRROR_CLAMP_TO_EDGE);
+	//m_heightMap.load(width, height, valueNoise.getRaw(), bbe::ImageFormat::R8);
 
 	m_baseTexture.load(baseTexturePath);
 

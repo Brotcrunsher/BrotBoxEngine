@@ -138,6 +138,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	bbe::PointLight::s_destroy();
 	bbe::IcoSphere::s_destroy();
 
+	bbe::TerrainMesh::s_destroy();
 	bbe::Terrain::s_destroy();
 
 	destroyPendingBuffers();
@@ -225,7 +226,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	renderPassBeginInfo.framebuffer = m_swapchain.getFrameBuffer(m_imageIndex);
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent = { m_screenWidth, m_screenHeight };
-	VkClearValue clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
+	//VkClearValue clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
+	VkClearValue clearValue = { 1.0f, 20.f/255.f, 147.f/255.f, 1.0f };
 	VkClearValue depthClearValue = { 1.0f, 0 };
 
 	bbe::List<VkClearValue> clearValues = { 
