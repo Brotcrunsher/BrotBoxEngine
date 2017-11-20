@@ -11,6 +11,8 @@ namespace bbe
 	CREATE_EXCEPTION(NotInitializedException);
 	CREATE_EXCEPTION(NoCorrectMemoryType);
 	CREATE_EXCEPTION(IllegalBufferSize);
+	CREATE_EXCEPTION(OutOfQuerysException);
+	CREATE_EXCEPTION(QueryWasNotStartedException);
 
 	CREATE_EXCEPTION(BufferNoSourceException);
 	CREATE_EXCEPTION(BufferIsNotMappedException);

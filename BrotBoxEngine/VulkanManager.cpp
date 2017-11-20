@@ -10,6 +10,8 @@
 #include "BBE/Terrain.h"
 #include "BBE/PointLight.h"
 
+#include <iostream>
+
 bbe::INTERNAL::vulkan::VulkanManager *bbe::INTERNAL::vulkan::VulkanManager::s_pinstance = nullptr;
 
 void bbe::INTERNAL::vulkan::VulkanManager::destroyPendingBuffers()
@@ -126,12 +128,17 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	bbe::Terrain::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::TerrainMesh::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::IcoSphere::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
+
+	m_renderPassStopWatch.create(m_device);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 {
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
+	
+	m_renderPassStopWatch.destroy();
+	
 	bbe::Cube::s_destroy();
 	bbe::Circle::s_destroy();
 	bbe::Rectangle::s_destroy();
@@ -209,6 +216,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 
 	m_currentFrameDrawCommandBuffer = m_commandPool.getCommandBuffer();
 
+
 	VkCommandBufferBeginInfo cbbi;
 	cbbi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	cbbi.pNext = nullptr;
@@ -218,6 +226,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 
 	VkResult result = vkBeginCommandBuffer(m_currentFrameDrawCommandBuffer, &cbbi);
 	ASSERT_VULKAN(result);
+
+	m_renderPassStopWatch.arm(m_currentFrameDrawCommandBuffer);
 
 	VkRenderPassBeginInfo renderPassBeginInfo;
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -286,6 +296,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::postDraw()
 {
 	vkCmdEndRenderPass(m_currentFrameDrawCommandBuffer);
 
+	m_renderPassStopWatch.end(m_currentFrameDrawCommandBuffer);
+
 	VkResult result = vkEndCommandBuffer(m_currentFrameDrawCommandBuffer);
 	ASSERT_VULKAN(result);
 
@@ -319,11 +331,16 @@ void bbe::INTERNAL::vulkan::VulkanManager::postDraw()
 	pi.pImageIndices = &m_imageIndex;
 	pi.pResults = nullptr;
 
+	
+
 	result = vkQueuePresentKHR(m_device.getQueue(), &pi);
 	ASSERT_VULKAN(result);
 	m_presentFence.waitForFence();
 	m_commandPool.freeCommandBuffer(m_currentFrameDrawCommandBuffer);
 	destroyPendingBuffers();
+
+	m_renderPassStopWatch.finish(m_commandPool, m_device.getQueue());
+	std::cout << "Passed: " << m_renderPassStopWatch.getTimePassed() << std::endl;
 }
 
 bbe::PrimitiveBrush2D * bbe::INTERNAL::vulkan::VulkanManager::getBrush2D()
@@ -403,7 +420,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DTerrainMesh.addVertexBinding(0, sizeof(Vector3), VK_VERTEX_INPUT_RATE_VERTEX);
 	m_pipeline3DTerrainMesh.addVertexDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0);
 	m_pipeline3DTerrainMesh.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
-	m_pipeline3DTerrainMesh.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(Matrix4));
+	m_pipeline3DTerrainMesh.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(Matrix4) + sizeof(Vector4));
 	m_pipeline3DTerrainMesh.addDescriptorSetLayout(m_setLayoutVertexLight.getDescriptorSetLayout());
 	m_pipeline3DTerrainMesh.addDescriptorSetLayout(m_setLayoutViewProjectionMatrix.getDescriptorSetLayout());
 	m_pipeline3DTerrainMesh.addDescriptorSetLayout(m_setLayoutFragmentLight.getDescriptorSetLayout());

@@ -212,6 +212,14 @@ void bbe::PrimitiveBrush3D::drawTerrain(const TerrainMesh & terrain)
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainMesh, 7, 1, terrain.m_additionalTextureWeights[0].getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrainMesh, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(Matrix4), &(terrain.m_transform));
+	Vector4 sizeAndOffset;
+	sizeAndOffset.x = terrain.m_width / TerrainMesh::s_getVerticesPerMeter();
+	sizeAndOffset.y = terrain.m_height / TerrainMesh::s_getVerticesPerMeter();
+	Vector2 pos = terrain.getTransform().extractTranslation().xy();
+	sizeAndOffset.z = pos.x;
+	sizeAndOffset.w = pos.y;
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrainMesh, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color) + sizeof(Matrix4), sizeof(Vector4), &(sizeAndOffset));
+
 
 	VkDeviceSize offsets[] = { 0 };
 	Vector3 terrainPos = terrain.getTransform().extractTranslation();

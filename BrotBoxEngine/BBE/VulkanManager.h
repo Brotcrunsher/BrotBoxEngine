@@ -22,6 +22,7 @@
 #include "../BBE/VulkanFence.h"
 #include "../BBE/Stack.h"
 #include "../BBE/Image.h"
+#include "../BBE/VulkanStopWatch.h"
 
 namespace bbe
 {
@@ -92,6 +93,8 @@ namespace bbe
 				Stack<VkBuffer>       m_pendingDestructionBuffers;
 				Stack<VkDeviceMemory> m_pendingDestructionMemory;
 				void destroyPendingBuffers();
+
+				VulkanStopWatch m_renderPassStopWatch;
 
 			public:
 				VulkanManager();

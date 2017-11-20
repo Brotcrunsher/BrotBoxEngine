@@ -298,6 +298,8 @@
     <ClInclude Include="BBE\FillMode.h" />
     <ClInclude Include="BBE\TimeHelper.h" />
     <ClInclude Include="BBE\TerrainMesh.h" />
+    <ClInclude Include="BBE\VulkanQueryPool.h" />
+    <ClInclude Include="BBE\VulkanStopWatch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ColorByte.cpp" />
@@ -349,9 +351,11 @@
     <ClCompile Include="VulkanManager.cpp" />
     <ClCompile Include="VulkanPhysicalDevices.cpp" />
     <ClCompile Include="VulkanPipeline.cpp" />
+    <ClCompile Include="VulkanQueryPool.cpp" />
     <ClCompile Include="VulkanRenderPass.cpp" />
     <ClCompile Include="VulkanSemaphore.cpp" />
     <ClCompile Include="VulkanShader.cpp" />
+    <ClCompile Include="VulkanStopWatch.cpp" />
     <ClCompile Include="VulkanSurface.cpp" />
     <ClCompile Include="VulkanSwapchain.cpp" />
     <ClCompile Include="VWDepthImage.cpp" />

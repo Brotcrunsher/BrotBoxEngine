@@ -119,5 +119,5 @@ void main() {
 		//specular += pow(max(dot(R, V), 0.0), 4.0) * uboLights.light[i].specularColor.xyz * lightPower;
 	}
 
-	outColor = vec4(ambient + diffuse + specular, 1.0);
+	outColor = vec4(ambient + diffuse + specular, 1.0) * pushConts.color;
 }

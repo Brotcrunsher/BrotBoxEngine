@@ -146,5 +146,7 @@ namespace bbe
 
 		int getWidth() const;
 		int getHeight() const;
+
+		static float s_getVerticesPerMeter();
 	};
 }

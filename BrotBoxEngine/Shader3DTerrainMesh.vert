@@ -36,6 +36,7 @@ layout(set = 1, binding = 0) uniform UBOProjection
 layout(push_constant) uniform PushConstants
 {
 	layout(offset = 16)mat4 modelMatrix;
+	layout(offset = 16 + 64)vec4 sizeAndOffset;
 } pushConts;
 
 
@@ -48,7 +49,7 @@ void main()
 	
 	outViewVec = -(uboProjection.view * worldPos).xyz;
 
-	outUVPos = worldPos.xy / 4096; //TODO
+	outUVPos = (worldPos.xy - pushConts.sizeAndOffset.zw) / pushConts.sizeAndOffset.xy;
 	outNormal = mat3(uboProjection.view) * vec3(0, 0, 1);
 	for(int i = 0; i<AMOUNT_OF_LIGHTS; i++)
 	{

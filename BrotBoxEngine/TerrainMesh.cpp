@@ -255,6 +255,11 @@ int bbe::TerrainMesh::getHeight() const
 	return m_height;
 }
 
+float bbe::TerrainMesh::s_getVerticesPerMeter()
+{
+	return VERTICES_PER_METER;
+}
+
 void bbe::TerrainMeshPatch::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
 {
 	s_device = device;
