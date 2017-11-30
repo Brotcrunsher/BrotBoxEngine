@@ -4,6 +4,7 @@
 #include "BBE/Vector4.h"
 #include "BBE/Exceptions.h"
 #include "BBE\Vector4.h"
+#include "BBE/Math.h"
 
 bbe::Vector4::Vector4()
 	: x(0), y(0), z(0), w(0)
@@ -126,6 +127,12 @@ const float& bbe::Vector4::operator[](int index) const
 	default:
 		throw IllegalIndexException();
 	}
+}
+
+bbe::Vector4 bbe::Vector4::normalizeXYZ() const
+{
+	float length = bbe::Math::sqrt(x * x + y * y + z * z);
+	return Vector4(x / length, y / length, z / length, w / length);
 }
 
 

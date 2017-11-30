@@ -19,7 +19,9 @@ namespace bbe
 		CameraControlNoClip(Game* game);
 
 		void update(float timeSinceLastFrame);
-		Vector3 getCameraPos();
-		Vector3 getCameraTarget();
+		Vector3 getCameraPos() const;
+		Vector3 getCameraTarget() const;
+
+		void setCameraPos(const Vector3 &pos);
 	};
 }

@@ -14,10 +14,14 @@ static float m_startAlpha = 1;
 static float m_alphaChange = 0.5f;
 static int m_frequencyChange = 2;
 
-/*void bbe::ValueNoise2D::standardize()
+void bbe::ValueNoise2D::standardize()
 {
-	float min = 100000000.0f;
-	float max = -100000000.0f;
+	if (m_pdata == nullptr)
+	{
+		throw IllegalStateException();
+	}
+	min = 100000000.0f;
+	max = -100000000.0f;
 	for (int i = 0; i < m_width * m_height; i++)
 	{
 		float val = m_pdata[i];
@@ -25,11 +29,14 @@ static int m_frequencyChange = 2;
 		if (val > max) max = val;
 	}
 
+	float maxMin = max - min;
 	for (int i = 0; i < m_width * m_height; i++)
 	{
-		m_pdata[i] = (m_pdata[i] - min) / (max - min);
+		m_pdata[i] = (m_pdata[i] - min) / maxMin;
 	}
-}*/
+
+	wasStandardized = true;
+}
 
 bbe::ValueNoise2D::ValueNoise2D()
 {
@@ -94,9 +101,7 @@ void bbe::ValueNoise2D::destroy()
 		throw NotInitializedException();
 	}
 
-	//delete[] m_pdata;
-
-	//m_pdata = nullptr;
+	unload();
 	m_width = 0;
 	m_height = 0;
 
@@ -104,7 +109,16 @@ void bbe::ValueNoise2D::destroy()
 	m_wasCreated = false;
 }
 
-float bbe::ValueNoise2D::get(int x, int y)
+void bbe::ValueNoise2D::unload()
+{
+	if (m_pdata != nullptr)
+	{
+		delete[] m_pdata;
+		m_pdata = nullptr;
+	}
+}
+
+float bbe::ValueNoise2D::get(int x, int y) const
 {
 	if (!m_wasCreated)
 	{
@@ -114,6 +128,12 @@ float bbe::ValueNoise2D::get(int x, int y)
 	if (y < 0) y = 0;
 	if (x >= m_width) x = m_width - 1;
 	if (y >= m_height) y = m_height - 1;
+
+	if (m_pdata != nullptr)
+	{
+		return m_pdata[x * m_height + y];
+	}
+
 
 	float val = 0;
 	float alpha = m_startAlpha;
@@ -149,12 +169,41 @@ float bbe::ValueNoise2D::get(int x, int y)
 	}
 
 	
+	if (wasStandardized)
+	{
+		float maxMin = max - min;
+		val = (val - min) / maxMin;
+	}
 
 	return val;
 }
 
-/*void bbe::ValueNoise2D::set(int x, int y, float val)
+void bbe::ValueNoise2D::preCalculate()
 {
+	if (m_pdata != nullptr)
+	{
+		throw IllegalStateException();
+	}
+
+	float *data = new float[m_width * m_height];
+
+	for (int i = 0; i < m_width; i++)
+	{
+		for (int k = 0; k < m_height; k++)
+		{
+			data[k * m_width + i] = get(i, k);
+		}
+	}
+
+	m_pdata = data;
+}
+
+void bbe::ValueNoise2D::set(int x, int y, float val)
+{
+	if (m_pdata == nullptr)
+	{
+		throw IllegalStateException();
+	}
 	if (!m_wasCreated)
 	{
 		throw NotInitializedException();
@@ -164,5 +213,9 @@ float bbe::ValueNoise2D::get(int x, int y)
 
 float * bbe::ValueNoise2D::getRaw()
 {
+	if (m_pdata == nullptr)
+	{
+		throw IllegalStateException();
+	}
 	return m_pdata;
-}*/
+}

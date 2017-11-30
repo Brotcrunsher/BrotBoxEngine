@@ -5,6 +5,7 @@
 #include "../BBE/Hash.h"
 #include "../BBE/HashMap.h"
 #include "../BBE/List.h"
+#include "../BBE/RingArray.h"
 #include "../BBE/Stack.h"
 
 #include "../BBE/ExceptionHelper.h"
@@ -13,6 +14,7 @@
 #include "../BBE/SimpleFile.h"
 
 #include "../BBE/EngineSettings.h"
+#include "../BBE/Profiler.h"
 #include "../BBE/String.h"
 
 #include "../BBE/Color.h"

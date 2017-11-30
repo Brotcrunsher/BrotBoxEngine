@@ -258,10 +258,30 @@ void bbe::Image::load(int width, int height, const float * data, ImageFormat for
 	m_format = format;
 
 	m_pdata = new byte[getSizeInBytes()];
-	for (int i = 0; i < getSizeInBytes(); i++)
+	if (format == ImageFormat::R8)
 	{
-		m_pdata[i] = (byte)(data[i] * 255);
+		for (int i = 0; i < getSizeInBytes(); i++)
+		{
+			m_pdata[i] = (byte)(data[i] * 255);
+		}
 	}
+	else if (format == ImageFormat::R32FLOAT)
+	{
+		for (int i = 0; i < getSizeInBytes(); i += 4)
+		{
+			byte *ptr = (byte*)(data + i / 4);
+			m_pdata[i + 0] = ptr[0];
+			m_pdata[i + 1] = ptr[1];
+			m_pdata[i + 2] = ptr[2];
+			m_pdata[i + 3] = ptr[3];
+
+		}
+	}
+	else
+	{
+		throw FormatNotSupportedException();
+	}
+	
 }
 
 void bbe::Image::destroy()
@@ -304,7 +324,7 @@ int bbe::Image::getHeight() const
 
 int bbe::Image::getSizeInBytes() const
 {
-	return getWidth() * getHeight() * getAmountOfChannels();
+	return getWidth() * getHeight() * getAmountOfChannels() * getBytesPerChannel();
 }
 
 int bbe::Image::getAmountOfChannels() const
@@ -314,6 +334,23 @@ int bbe::Image::getAmountOfChannels() const
 	case ImageFormat::R8:
 		return 1;
 	case ImageFormat::R8G8B8A8:
+		return 4;
+	case ImageFormat::R32FLOAT:
+		return 1;
+	default:
+		throw FormatNotSupportedException();
+	}
+}
+
+int bbe::Image::getBytesPerChannel() const
+{
+	switch (m_format)
+	{
+	case ImageFormat::R8:
+		return 1;
+	case ImageFormat::R8G8B8A8:
+		return 1;
+	case ImageFormat::R32FLOAT:
 		return 4;
 	default:
 		throw FormatNotSupportedException();

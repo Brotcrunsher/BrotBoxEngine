@@ -30,6 +30,7 @@ namespace bbe
 	{
 		R8G8B8A8 = VK_FORMAT_R8G8B8A8_UNORM,
 		R8       = VK_FORMAT_R8_UNORM,
+		R32FLOAT = VK_FORMAT_R32_SFLOAT
 	};
 
 	enum class ImageRepeatMode
@@ -103,6 +104,7 @@ namespace bbe
 		int getHeight() const;
 		int getSizeInBytes() const;
 		int getAmountOfChannels() const;
+		int getBytesPerChannel() const;
 		Color getPixel(int x, int y) const;
 
 		ImageRepeatMode getRepeatMode() const;

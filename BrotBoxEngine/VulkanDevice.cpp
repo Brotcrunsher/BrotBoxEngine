@@ -29,7 +29,8 @@ void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & p
 	usedFeatures.fillModeNonSolid = VK_TRUE;
 
 	const List<const char*> deviceExtensions = {
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		"VK_KHR_sampler_mirror_clamp_to_edge"
 	};
 
 	VkDeviceCreateInfo deviceCreateInfo;
@@ -54,6 +55,8 @@ void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & p
 	vkGetPhysicalDeviceSurfaceFormatsKHR(m_physicalDevice, surface.getSurface(), &amountOfFormats, nullptr);
 	m_formats.resizeCapacityAndLength(amountOfFormats);
 	vkGetPhysicalDeviceSurfaceFormatsKHR(m_physicalDevice, surface.getSurface(), &amountOfFormats, m_formats.getRaw());
+
+	vkGetPhysicalDeviceProperties(m_physicalDevice, &m_properties);
 }
 
 void bbe::INTERNAL::vulkan::VulkanDevice::destroy()

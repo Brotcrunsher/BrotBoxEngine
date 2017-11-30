@@ -36,6 +36,7 @@ namespace bbe
 		float& operator[](int index);
 		const float& operator[](int index) const;
 
+		Vector4 normalizeXYZ() const;
 
 		//Start Swizzles
 		Vector2 xx() const;

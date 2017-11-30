@@ -9,6 +9,8 @@
 #include "../BBE/Image.h"
 #include "../BBE/Vector2.h"
 #include "../BBE/EngineSettings.h"
+#include "../BBE/ValueNoise2D.h"
+#include "../BBE/ViewFrustum.h"
 
 namespace bbe
 {
@@ -83,8 +85,8 @@ namespace bbe
 		int m_currentAdditionalTexture = 0;
 
 		mutable bool m_wasInit = false;
-		mutable INTERNAL::vulkan::VulkanBuffer m_baseTextureBiasBuffer;
-		mutable INTERNAL::vulkan::VulkanDescriptorSet m_baseTextureDescriptor;
+		mutable INTERNAL::vulkan::VulkanBuffer m_viewFrustrumBuffer;
+		mutable INTERNAL::vulkan::VulkanDescriptorSet m_viewFrustrumDescriptor;
 
 		float m_patchSize;
 
@@ -94,9 +96,9 @@ namespace bbe
 			const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, 
 			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutHeightMap, 
 			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutTexture,
-			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutBaseTextureBias,
 			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextures,
-			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextureWeights) const;
+			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextureWeights,
+			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutViewFrustrums) const;
 		void destroy();
 
 		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
@@ -114,15 +116,17 @@ namespace bbe
 			Vector2 m_textureOffset = Vector2(0, 0);
 		} m_baseTextureBias;
 
-		void loadTextureBias() const;
+		void loadViewFrustrum(const bbe::Matrix4 &mvpMat) const;
 
 		float m_maxHeight = 100;
 		int m_width = 0;
 		int m_height = 0;
 
-		mutable bool m_textureBiasDirty = false;
-
 		void construct(int width, int height, const char* baseTexturePath, int seed);
+
+		ValueNoise2D m_valueNoise;
+
+		mutable bbe::INTERNAL::vulkan::ViewFrustum m_viewFrustum;
 
 	public:
 		Terrain(int width, int height, const char* baseTexturePath);
@@ -142,6 +146,7 @@ namespace bbe
 		float getMaxHeight() const;
 
 		void addTexture(const char* texturePath, const float* weights);
+		Vector3 projectOnTerrain(const Vector3& pos) const;
 
 		int getWidth() const;
 		int getHeight() const;

@@ -12,6 +12,7 @@ namespace bbe
 		{
 			class PhysicalDeviceContainer;
 			class VulkanSurface;
+			class VulkanManager;
 
 			class VulkanSharingBehaviour
 			{
@@ -22,12 +23,14 @@ namespace bbe
 
 			class VulkanDevice
 			{
+				friend class VulkanManager;
 			private:
-				VkDevice         m_device         = VK_NULL_HANDLE;
-				VkQueue          m_queue          = VK_NULL_HANDLE;
-				VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
-				List<VkSurfaceFormatKHR> m_formats;
-				uint32_t queueFamilyIndex = 0;
+				VkDevice                   m_device         = VK_NULL_HANDLE;
+				VkQueue                    m_queue          = VK_NULL_HANDLE;
+				VkPhysicalDevice           m_physicalDevice = VK_NULL_HANDLE;
+				List<VkSurfaceFormatKHR>   m_formats;
+				uint32_t                   queueFamilyIndex = 0;
+				VkPhysicalDeviceProperties m_properties     = {};
 
 			public:
 				VulkanDevice() {};

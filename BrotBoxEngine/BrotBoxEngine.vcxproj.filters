@@ -336,6 +336,15 @@
     <ClInclude Include="BBE\VulkanStopWatch.h">
       <Filter>Header Files\GFX\Vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\RingArray.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\Profiler.h">
+      <Filter>Header Files\General</Filter>
+    </ClInclude>
+    <ClInclude Include="BBE\ViewFrustum.h">
+      <Filter>Header Files\GFX\Vulkan\Wrappers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -495,6 +504,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VulkanStopWatch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Profiler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ViewFrustum.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

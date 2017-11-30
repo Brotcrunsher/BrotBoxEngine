@@ -5,6 +5,7 @@
 #include "../BBE/List.h"
 #include "../BBE/Image.h"
 #include "../BBE/VulkanBuffer.h"
+#include "BBE/ValueNoise2D.h"
 
 
 namespace bbe
@@ -80,8 +81,6 @@ namespace bbe
 		int m_currentAdditionalTexture = 0;
 
 		mutable bool m_wasInit = false;
-		mutable INTERNAL::vulkan::VulkanBuffer m_baseTextureBiasBuffer;
-		mutable INTERNAL::vulkan::VulkanDescriptorSet m_baseTextureDescriptor;
 
 		float m_patchSize;
 
@@ -91,7 +90,6 @@ namespace bbe
 			const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool,
 			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutHeightMap,
 			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutTexture,
-			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutBaseTextureBias,
 			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextures,
 			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextureWeights) const;
 		void destroy();
@@ -111,18 +109,18 @@ namespace bbe
 			Vector2 m_textureOffset = Vector2(0, 0);
 		} m_baseTextureBias;
 
-		void loadTextureBias() const;
 
 		float m_maxHeight = 100;
 		int m_width = 0;
 		int m_height = 0;
 
-		mutable bool m_textureBiasDirty = false;
-
 		void construct(int width, int height, const char* baseTexturePath, int seed);
 
 		int getAmountOfVerticesPerPatch() const;
 		int getAmountOfLoDs() const;
+
+
+		ValueNoise2D m_valueNoise;
 
 	public:
 		TerrainMesh(int width, int height, const char* baseTexturePath);
@@ -146,6 +144,8 @@ namespace bbe
 
 		int getWidth() const;
 		int getHeight() const;
+
+		Vector3 projectOnTerrain(const Vector3& pos) const;
 
 		static float s_getVerticesPerMeter();
 	};

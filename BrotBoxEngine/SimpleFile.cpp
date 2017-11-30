@@ -21,3 +21,13 @@ bbe::List<char> bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 		throw std::runtime_error("Failed to open file!");
 	}
 }
+
+void bbe::simpleFile::writeFloatArrToFile(const bbe::String & filePath, float * arr, size_t size)
+{
+	std::ofstream file(filePath.getRaw());
+	for (int i = 0; i < size; i++)
+	{
+		file << arr[i] << "\n";
+	}
+	file.close();
+}

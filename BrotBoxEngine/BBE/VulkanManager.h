@@ -75,9 +75,9 @@ namespace bbe
 				VulkanDescriptorSetLayout m_setLayoutViewProjectionMatrix;
 				VulkanDescriptorSetLayout m_setLayoutSampler;
 				VulkanDescriptorSetLayout m_setLayoutTerrainHeightMap;
-				VulkanDescriptorSetLayout m_setLayoutTerrainBaseTextureBias;
 				VulkanDescriptorSetLayout m_setLayoutTerrainAdditionalTexture;
 				VulkanDescriptorSetLayout m_setLayoutTerrainAdditionalTextureWeight;
+				VulkanDescriptorSetLayout m_setLayoutTerrainViewFrustum;
 				VulkanDescriptorPool      m_descriptorPool;
 				VulkanDescriptorSet       m_setVertexLight;
 				VulkanDescriptorSet       m_setFragmentLight;
@@ -111,6 +111,7 @@ namespace bbe
 				void preDraw3D();
 				void preDraw();
 				void postDraw();
+				void waitEndDraw();
 
 				bbe::PrimitiveBrush2D *getBrush2D();
 				bbe::PrimitiveBrush3D *getBrush3D();

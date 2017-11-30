@@ -7,12 +7,14 @@ namespace bbe
 	class ValueNoise2D
 	{
 	private:
-		//float *m_pdata      = nullptr;
+		float *m_pdata      = nullptr;
 		int    m_width      = 0;
 		int    m_height     = 0;
 		bool   m_wasCreated = false;
 
-		//void standardize();
+		float min = 0;
+		float max = 0;
+		bool wasStandardized = false;
 
 		List<DynamicArray<float>> nodes;
 
@@ -29,10 +31,13 @@ namespace bbe
 		void create(int width, int height);
 		void create(int width, int height, int seed);
 		void destroy();
+		void unload();
 
-		float get(int x, int y);
-		//void set(int x, int y, float val);
+		float get(int x, int y) const;
+		void preCalculate(); 
+		void standardize();
+		void set(int x, int y, float val);
 
-		//float* getRaw();
+		float* getRaw();
 	};
 }

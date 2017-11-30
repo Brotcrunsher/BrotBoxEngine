@@ -260,6 +260,8 @@
     <ClInclude Include="BBE\MouseButtons.h" />
     <ClInclude Include="BBE\Image.h" />
     <ClInclude Include="BBE\ColorByte.h" />
+    <ClInclude Include="BBE\RingArray.h" />
+    <ClInclude Include="BBE\Profiler.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="BBE\STLAllocator.h" />
     <ClInclude Include="BBE\STLCapsule.h" />
@@ -300,6 +302,7 @@
     <ClInclude Include="BBE\TerrainMesh.h" />
     <ClInclude Include="BBE\VulkanQueryPool.h" />
     <ClInclude Include="BBE\VulkanStopWatch.h" />
+    <ClInclude Include="BBE\ViewFrustum.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ColorByte.cpp" />
@@ -307,6 +310,7 @@
     <ClCompile Include="MouseButtons.cpp" />
     <ClCompile Include="IcoSphere.cpp" />
     <ClCompile Include="PointLight.cpp" />
+    <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="CameraControlNoClip.cpp" />
     <ClCompile Include="Cube.cpp" />
@@ -320,6 +324,7 @@
     <ClCompile Include="Vector3.cpp" />
     <ClCompile Include="Vector4.cpp" />
     <ClCompile Include="VertexWithNormal.cpp" />
+    <ClCompile Include="ViewFrustum.cpp" />
     <ClCompile Include="VulkanDescriptorPool.cpp" />
     <ClCompile Include="Circle.cpp" />
     <ClCompile Include="Color.cpp" />

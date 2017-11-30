@@ -5,6 +5,8 @@
 #include "BBE/PrimitiveBrush2D.h"
 #include "BBE/PrimitiveBrush3D.h"
 #include "BBE/Math.h"
+#include "BBE/StopWatch.h"
+#include "BBE/Profiler.h"
 
 bbe::Game::Game()
 {
@@ -34,6 +36,7 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 
 	while (m_pwindow->keepAlive())
 	{
+		StopWatch sw;
 		m_pwindow->INTERNAL_keyboard.update();
 		m_pwindow->INTERNAL_mouse.update();
 		update(m_gameTime.tick());
@@ -46,6 +49,8 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 		m_pwindow->preDraw2D();
 		draw2D(brush2D);
 		m_pwindow->postDraw();
+		bbe::Profiler::INTERNAL::setCPUTime(sw.getTimeExpiredNanoseconds() / 1000.f / 1000.f / 1000.f);
+		m_pwindow->waitEndDraw();
 	}
 
 	onEnd();

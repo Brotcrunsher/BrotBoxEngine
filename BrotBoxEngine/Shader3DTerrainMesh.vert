@@ -35,14 +35,16 @@ layout(set = 1, binding = 0) uniform UBOProjection
 
 layout(push_constant) uniform PushConstants
 {
-	layout(offset = 16)mat4 modelMatrix;
-	layout(offset = 16 + 64)vec4 sizeAndOffset;
+	layout(offset = 16 + 16)mat4 modelMatrix;
+	layout(offset = 16 + 16 + 64)vec4 sizeAndOffset;
+	layout(offset = 16 + 16 + 64 + 16)float upOffset;
 } pushConts;
 
 
 void main() 
 {
 	vec4 worldPos = pushConts.modelMatrix * vec4(inPos, 1.0);
+	worldPos.z += pushConts.upOffset;
 	vec4 viewPos = uboProjection.view * worldPos;
 
 	gl_Position = uboProjection.projection * viewPos;

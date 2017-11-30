@@ -37,6 +37,7 @@ namespace bbe
 		void preDraw();
 		bool keepAlive();
 		void postDraw();
+		void waitEndDraw();
 
 		void setCursorMode(bbe::CursorMode cursorMode);
 

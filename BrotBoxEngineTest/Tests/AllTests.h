@@ -16,6 +16,7 @@
 #include "Matrix4Test.h"
 #include "MathTest.h"
 #include "Vector2Test.h"
+#include "Vector3Test.h"
 #include "LinearCongruentialGeneratorTest.h"
 #include "ImageTest.h"
 
@@ -50,6 +51,8 @@ namespace bbe {
 			bbe::test::testMath();
 			Person::checkIfAllPersonsWereDestroyed();
 			bbe::test::testVector2();
+			Person::checkIfAllPersonsWereDestroyed();
+			bbe::test::testVector3();
 			Person::checkIfAllPersonsWereDestroyed();
 			bbe::test::testLinearCongruentailGenerators();
 			Person::checkIfAllPersonsWereDestroyed();

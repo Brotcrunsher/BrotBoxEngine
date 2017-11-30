@@ -24,16 +24,14 @@ layout(location = 3) in vec3 inNormal;
 layout(location = 4) in LightInput inLight[AMOUNT_OF_LIGHTS];
 
 layout(set = 4, binding = 0) uniform sampler2D baseTex;
-layout(set = 5, binding = 0) uniform TextureBias
-{
-	vec4 data;
-}textureBias;
+
 layout(set = 6, binding = 0) uniform sampler2D additionalTex[AMOUNT_OF_TEXTURES];
 layout(set = 7, binding = 0) uniform sampler2D textureWeights[AMOUNT_OF_TEXTURES];
 
 layout(push_constant) uniform PushConstants
 {
-	vec4 color;
+	layout(offset = 0)vec4 color;
+	layout(offset = 16)vec4 textureBias;
 } pushConts;
 
 struct Light
@@ -59,14 +57,14 @@ void main() {
 	{
 		weights[i] = texture(textureWeights[i], inUVPos).x;
 		weightSum += weights[i];
-		texColors[i] = texture(additionalTex[i], inUVPos * textureBias.data.xy + textureBias.data.zw, 0).xyz;
+		texColors[i] = texture(additionalTex[i], inUVPos * pushConts.textureBias.xy + pushConts.textureBias.zw, 0).xyz;
 
 		texColor += texColors[i] * weights[i];
 	}
 
 	if(weightSum < 1)
 	{
-		vec3 texColorBase = texture(baseTex, inUVPos * textureBias.data.xy + textureBias.data.zw, 0).xyz;
+		vec3 texColorBase = texture(baseTex, inUVPos * pushConts.textureBias.xy + pushConts.textureBias.zw, 0).xyz;
 		texColor += texColorBase * (1 - weightSum);
 	}
 

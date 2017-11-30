@@ -76,12 +76,17 @@ void bbe::CameraControlNoClip::update(float timeSinceLastFrame)
 	}
 }
 
-bbe::Vector3 bbe::CameraControlNoClip::getCameraPos()
+bbe::Vector3 bbe::CameraControlNoClip::getCameraPos() const
 {
 	return m_cameraPos;
 }
 
-bbe::Vector3 bbe::CameraControlNoClip::getCameraTarget()
+bbe::Vector3 bbe::CameraControlNoClip::getCameraTarget() const
 {
 	return m_cameraPos + m_forward;
+}
+
+void bbe::CameraControlNoClip::setCameraPos(const Vector3 &pos)
+{
+	m_cameraPos = pos;
 }

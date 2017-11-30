@@ -169,6 +169,7 @@
     <ClInclude Include="Tests\StringTest.h" />
     <ClInclude Include="Tests\UniquePointerTest.h" />
     <ClInclude Include="Tests\Vector2Test.h" />
+    <ClInclude Include="Vector3Test.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BrotBoxEngineTest.cpp" />

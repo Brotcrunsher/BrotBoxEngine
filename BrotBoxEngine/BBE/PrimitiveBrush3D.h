@@ -9,6 +9,7 @@
 #include "../BBE/Terrain.h"
 #include "../BBE/TerrainMesh.h"
 #include "../BBE/FillMode.h"
+#include "../BBE/ViewFrustum.h"
 
 namespace bbe
 {
@@ -54,9 +55,9 @@ namespace bbe
 		INTERNAL::vulkan::VulkanCommandPool         *m_pcommandPool                                       = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainHeightMap               = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTexture                        = nullptr;
-		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainBaseTextureBias         = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainAdditionalTexture       = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainAdditionalTextureWeight = nullptr;
+		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutViewFrustum                    = nullptr;
 		int                                          m_screenWidth;
 		int                                          m_screenHeight;
 
@@ -81,15 +82,20 @@ namespace bbe
 			INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool,
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainHeightMap,
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTexture,
-			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainBaseTextureBias,
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainAdditionalTexture,
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainAdditionalTextureWeight,
+			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutViewFrustum,
 			int screenWidth, int screenHeight);
 		
 		void create(const INTERNAL::vulkan::VulkanDevice &vulkanDevice);
 		void destroy();
 
 		FillMode m_fillMode = FillMode::SOLID;
+
+		Matrix4 m_view;
+		Matrix4 m_projection;
+
+		Color m_color;
 
 	public:
 		void fillCube(const Cube &cube);

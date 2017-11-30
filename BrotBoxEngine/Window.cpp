@@ -69,6 +69,11 @@ void bbe::Window::postDraw()
 	m_vulkanManager.postDraw();
 }
 
+void bbe::Window::waitEndDraw()
+{
+	m_vulkanManager.waitEndDraw();
+}
+
 void bbe::Window::setCursorMode(bbe::CursorMode cursorMode)
 {
 	switch (cursorMode)

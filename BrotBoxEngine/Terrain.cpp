@@ -3,12 +3,11 @@
 #include "BBE/VertexWithNormal.h"
 #include "BBE/Random.h"
 #include "BBE/Math.h"
-#include "BBE/ValueNoise2D.h"
 #include "BBE/VulkanBuffer.h"
 #include "BBE/TimeHelper.h"
 
-static const int PATCH_SIZE = 256;
-static const float VERTICES_PER_METER = 1;
+static const int PATCH_SIZE = 32;
+static const float VERTICES_PER_METER = 2;
 
 VkDevice         bbe::TerrainPatch::s_device         = VK_NULL_HANDLE;
 VkPhysicalDevice bbe::TerrainPatch::s_physicalDevice = VK_NULL_HANDLE;
@@ -110,9 +109,9 @@ void bbe::Terrain::init(
 	const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, 
 	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutHeightMap, 
 	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutTexture,
-	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutBaseTextureBias,
 	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextures,
-	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextureWeights) const
+	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextureWeights,
+	const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutViewFrustrums) const
 {
 	if (!m_wasInit)
 	{
@@ -121,11 +120,9 @@ void bbe::Terrain::init(
 
 		m_baseTexture.createAndUpload(device, commandPool, descriptorPool, setLayoutTexture);
 
-
-		m_baseTextureBiasBuffer.create(device, sizeof(TextureBias), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-		m_baseTextureDescriptor.addUniformBuffer(m_baseTextureBiasBuffer, 0, 0);
-		m_baseTextureDescriptor.create(device, descriptorPool, setLayoutBaseTextureBias);
-
+		m_viewFrustrumBuffer.create(device, sizeof(bbe::Vector4) * 5, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+		m_viewFrustrumDescriptor.addUniformBuffer(m_viewFrustrumBuffer, 0, 0);
+		m_viewFrustrumDescriptor.create(device, descriptorPool, setLayoutViewFrustrums);
 		
 
 		for (int i = 1; i < m_currentAdditionalTexture; i++)
@@ -136,8 +133,6 @@ void bbe::Terrain::init(
 
 		m_additionalTextures[0].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures);
 		m_additionalTextureWeights[0].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures);
-
-		loadTextureBias();
 	}
 
 	
@@ -146,7 +141,6 @@ void bbe::Terrain::init(
 void bbe::Terrain::destroy()
 {
 	m_baseTexture.destroy();
-	m_baseTextureBiasBuffer.destroy();
 }
 
 void bbe::Terrain::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
@@ -159,22 +153,17 @@ void bbe::Terrain::s_destroy()
 	TerrainPatch::s_destroy();
 }
 
-void bbe::Terrain::loadTextureBias() const
+void bbe::Terrain::loadViewFrustrum(const bbe::Matrix4 &mvpMat) const
 {
 	if (!m_wasInit)
 	{
 		throw NotInitializedException();
 	}
 
-	TextureBias tb = m_baseTextureBias;
-	tb.m_textureMult.x *= m_patchesWidthAmount;
-	tb.m_textureMult.y *= m_patchesHeightAmount;
-
-	void* data = m_baseTextureBiasBuffer.map();
-	memcpy(data, &tb, sizeof(TextureBias));
-	m_baseTextureBiasBuffer.unmap();
-
-	m_textureBiasDirty = false;
+	m_viewFrustum.updatePlanes(mvpMat);
+	void *data = m_viewFrustrumBuffer.map();
+	memcpy(data, m_viewFrustum.getPlanes(), sizeof(bbe::Vector4) * 5);
+	m_viewFrustrumBuffer.unmap();
 }
 
 void bbe::Terrain::construct(int width, int height, const char * baseTexturePath, int seed)
@@ -193,30 +182,35 @@ void bbe::Terrain::construct(int width, int height, const char * baseTexturePath
 
 	m_patchesWidthAmount = width / PATCH_SIZE;
 	m_patchesHeightAmount = height / PATCH_SIZE;
-	ValueNoise2D valueNoise;
-	valueNoise.create(width, height, seed);
+	m_valueNoise.create(width, height, seed);
+	m_valueNoise.preCalculate();
+	m_valueNoise.standardize();
 
-	for (int i = 0; i < m_patchesWidthAmount; i++)
 	{
-		for (int k = 0; k < m_patchesHeightAmount; k++)
+		float data[(PATCH_SIZE + 1) * (PATCH_SIZE + 1)];
+		for (int i = 0; i < m_patchesWidthAmount; i++)
 		{
-			float data[(PATCH_SIZE + 1) * (PATCH_SIZE + 1)];
-			for (int x = 0; x < (PATCH_SIZE + 1); x++)
+			for (int k = 0; k < m_patchesHeightAmount; k++)
 			{
-				for (int y = 0; y < (PATCH_SIZE + 1); y++)
+				for (int x = 0; x < (PATCH_SIZE + 1); x++)
 				{
-					data[x * (PATCH_SIZE + 1) + y] = valueNoise.get(i * PATCH_SIZE + x, k * PATCH_SIZE + y);
+					for (int y = 0; y < (PATCH_SIZE + 1); y++)
+					{
+						data[x * (PATCH_SIZE + 1) + y] = m_valueNoise.get(i * PATCH_SIZE + x, k * PATCH_SIZE + y);
+					}
 				}
+				m_patches.add(TerrainPatch(data, i, k, m_patchesWidthAmount, m_patchesHeightAmount));
 			}
-			m_patches.add(TerrainPatch(data, i, k, m_patchesWidthAmount, m_patchesHeightAmount));
 		}
 	}
 
 
 	setTransform(Matrix4());
 
-	//m_heightMap.setRepeatMode(bbe::ImageRepeatMode::MIRROR_CLAMP_TO_EDGE);
-	//m_heightMap.load(width, height, valueNoise.getRaw(), bbe::ImageFormat::R8);
+	m_heightMap.setRepeatMode(bbe::ImageRepeatMode::MIRROR_CLAMP_TO_EDGE);
+	m_heightMap.load(width, height, m_valueNoise.getRaw(), bbe::ImageFormat::R32FLOAT);
+
+	m_valueNoise.unload();
 
 	m_baseTexture.load(baseTexturePath);
 
@@ -264,7 +258,6 @@ bbe::Vector2 bbe::Terrain::getBaseTextureOffset()
 void bbe::Terrain::setBaseTextureOffset(const Vector2 & offset)
 {
 	m_baseTextureBias.m_textureOffset = offset;
-	m_textureBiasDirty = true;
 }
 
 bbe::Vector2 bbe::Terrain::getBaseTextureMult()
@@ -275,7 +268,6 @@ bbe::Vector2 bbe::Terrain::getBaseTextureMult()
 void bbe::Terrain::setBaseTextureMult(const Vector2 & mult)
 {
 	m_baseTextureBias.m_textureMult = mult;
-	m_textureBiasDirty = true;
 }
 
 void bbe::Terrain::setMaxHeight(float height)
@@ -294,6 +286,28 @@ void bbe::Terrain::addTexture(const char * texturePath, const float * weights)
 	m_additionalTextureWeights[m_currentAdditionalTexture].load(m_width, m_height, weights, bbe::ImageFormat::R8);
 
 	m_currentAdditionalTexture++;
+}
+
+bbe::Vector3 bbe::Terrain::projectOnTerrain(const Vector3 & pos) const
+{
+	Vector3 terrainPos = m_transform.extractTranslation();
+	Vector3 transformedPos = pos - terrainPos;
+	Vector3 transformedPos2 = transformedPos * VERTICES_PER_METER;
+	int indexX = (int)transformedPos2.x;
+	int indexY = (int)transformedPos2.y;
+	float px = transformedPos2.x - indexX;
+	float py = transformedPos2.y - indexY;
+	float h1 = m_valueNoise.get(indexX + 0, indexY + 0);
+	float h2 = m_valueNoise.get(indexX + 0, indexY + 1);
+	float h3 = m_valueNoise.get(indexX + 1, indexY + 0);
+	float h4 = m_valueNoise.get(indexX + 1, indexY + 1);
+
+	float w1 = bbe::Math::interpolateLinear(h1, h2, py);
+	float w2 = bbe::Math::interpolateLinear(h3, h4, py);
+
+	float w = bbe::Math::interpolateLinear(w1, w2, px);
+
+	return Vector3(pos.x, pos.y, w * getMaxHeight() + terrainPos.z);
 }
 
 int bbe::Terrain::getWidth() const
