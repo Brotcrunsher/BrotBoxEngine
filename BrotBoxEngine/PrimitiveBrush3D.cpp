@@ -309,7 +309,7 @@ void bbe::PrimitiveBrush3D::drawTerrain(const TerrainMesh & terrain)
 
 		VkBuffer buffer = TerrainMeshPatch::s_indexBuffer[lod].getBuffer();
 		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
-		buffer = terrain.m_patches[i].m_vertexBuffer[lod].getBuffer();
+		buffer = terrain.m_patches[i].m_vertexBuffer.getBuffer();
 		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
 
 		float offset = -lod * 0.1f;
@@ -339,7 +339,7 @@ void bbe::PrimitiveBrush3D::setColor(const Color & c)
 void bbe::PrimitiveBrush3D::setCamera(const Vector3 & cameraPos, const Vector3 & cameraTarget, const Vector3 & cameraUpVector)
 {
 	m_view = Matrix4::createViewMatrix(cameraPos, cameraTarget, cameraUpVector);
-	m_projection = Matrix4::createPerspectiveMatrix(Math::toRadians(60.0f), (float)m_screenWidth / (float)m_screenHeight, 0.01f, 10000.0f);
+	m_projection = Matrix4::createPerspectiveMatrix(Math::toRadians(60.0f), (float)m_screenWidth / (float)m_screenHeight, 0.01f, 20000.0f);
 
 	void *data = m_uboMatrices.map();
 	memcpy((char*)data, &m_view, sizeof(Matrix4));

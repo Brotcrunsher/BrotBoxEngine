@@ -297,20 +297,19 @@ void bbe::TerrainMeshPatch::init(float height, bbe::INTERNAL::vulkan::VulkanBuff
 void bbe::TerrainMeshPatch::s_initIndexBuffer()
 {
 	int size = PATCH_SIZE;
+	int prevSize = size;
+	int adder = 1;
+
 	while (size > 0)
 	{
 		List<uint32_t> indices;
-
-		for (int i = 0; i < size; i++)
+		for (int i = 0; i < PATCH_SIZE; i += adder)
 		{
-			uint32_t coord = i * (size + 1);
-			indices.add(coord);
-			indices.add(coord + size + 1);
-			for (int k = 0; k < size; k++)
+			for (int k = 0; k < PATCH_SIZE + 1; k += adder)
 			{
-				coord = i * (size + 1) + k;
-				indices.add(coord + 1);
-				indices.add(coord + size + 2);
+				uint32_t coord = i * (PATCH_SIZE + 1) + k;
+				indices.add(coord);
+				indices.add(coord + PATCH_SIZE * adder + adder);
 			}
 			indices.add(0xFFFFFFFF);
 		}
@@ -328,82 +327,52 @@ void bbe::TerrainMeshPatch::s_initIndexBuffer()
 		s_indexCount.add(indices.getLength());
 		s_indexBuffer.add(localBuff);
 
+		prevSize = size;
 		size /= 2;
+		adder *= 2;
 	}
 	
 }
 
 void bbe::TerrainMeshPatch::initVertexBuffer(float height, bbe::INTERNAL::vulkan::VulkanBuffer &parentBuffer, VkDeviceSize &offset, VkDeviceSize alignment) const
 {
-	int size = PATCH_SIZE;
-	int prevSize = PATCH_SIZE;
-	float verticesPerMeter = VERTICES_PER_METER;
 	float* lodData = new float[(PATCH_SIZE + 1) * (PATCH_SIZE + 1)];
 	float* prevLodData = nullptr;
 	memcpy(lodData, m_pdata, (PATCH_SIZE + 1) * (PATCH_SIZE + 1) * sizeof(float));
-	int additionalOffset = 0;
 
+	m_lodDatas.add(lodData);
+	List<Vector3> vertices;
 
-	while (size > 0)
+	const float OFFSETX = PATCH_SIZE / VERTICES_PER_METER * m_patchX;
+	const float OFFSETY = PATCH_SIZE / VERTICES_PER_METER * m_patchY;
+
+	for (int i = 0; i < PATCH_SIZE + 1; i++)
 	{
-		if (size != PATCH_SIZE) //NOT first iteration
+		for (int k = 0; k < PATCH_SIZE + 1; k++)
 		{
-			lodData = new float[(size + 1) * (size + 1)];
-			for (int k = 0; k < size + 1; k++)
-			{
-				for (int i = 0; i < size + 1; i++)
-				{
-					lodData[k * (size + 1) + i] = prevLodData[k * 2 * (prevSize + 1) + i * 2];
-				}
-			}
+			vertices.add(
+				Vector3(
+					OFFSETX + k / VERTICES_PER_METER,
+					OFFSETY + i / VERTICES_PER_METER,
+					lodData[k * (PATCH_SIZE + 1) + i] * height)
+			);
 		}
-		m_lodDatas.add(lodData);
-		List<Vector3> vertices;
-
-		const float OFFSETX = size / verticesPerMeter * m_patchX;
-		const float OFFSETY = size / verticesPerMeter * m_patchY;
-
-		for (int i = 0; i < size + 1; i++)
-		{
-			for (int k = 0; k < size + 1; k++)
-			{
-				vertices.add(
-					Vector3(
-						OFFSETX + k / verticesPerMeter,
-						OFFSETY + i / verticesPerMeter,
-						lodData[k * (size + 1) + i] * height)
-				);
-			}
-		}
-
-
-		bbe::INTERNAL::vulkan::VulkanBuffer localBuff;
-		
-		localBuff.create(s_device, s_physicalDevice, sizeof(Vector3) * vertices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-
-		void* dataBuf = localBuff.map();
-		memcpy(dataBuf, vertices.getRaw(), sizeof(Vector3) * vertices.getLength());
-		localBuff.unmap();
-
-		offset = bbe::Math::nextMultiple<VkDeviceSize>(alignment, offset);
-		localBuff.upload(*s_pcommandPool, s_queue, parentBuffer, offset);
-		offset += sizeof(Vector3) * vertices.getLength();
-
-		m_vertexBuffer.add(localBuff);
-		prevSize = size;
-		additionalOffset += size;
-		size /= 2;
-		verticesPerMeter /= 2.0f;
-		prevLodData = lodData;
 	}
+	
+	m_vertexBuffer.create(s_device, s_physicalDevice, sizeof(Vector3) * vertices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+	void* dataBuf = m_vertexBuffer.map();
+	memcpy(dataBuf, vertices.getRaw(), sizeof(Vector3) * vertices.getLength());
+	m_vertexBuffer.unmap();
+
+	offset = bbe::Math::nextMultiple<VkDeviceSize>(alignment, offset);
+	m_vertexBuffer.upload(*s_pcommandPool, s_queue, parentBuffer, offset);
+	offset += sizeof(Vector3) * vertices.getLength();
 }
 
 void bbe::TerrainMeshPatch::destroy() const
 {
-	for (int i = 0; i < m_vertexBuffer.getLength(); i++)
-	{
-		m_vertexBuffer[i].destroy();
-	}
+	m_vertexBuffer.destroy();
 
 	for (int i = 0; i < m_lodDatas.getLength(); i++)
 	{
@@ -437,7 +406,7 @@ float bbe::TerrainMeshPatch::getSize() const
 
 int bbe::TerrainMeshPatch::getMaxLod() const
 {
-	return m_vertexBuffer.getLength() - 1;
+	return s_indexBuffer.getLength() - 1;
 }
 
 void bbe::TerrainMeshPatch::setNeighbors(TerrainMeshPatch * up, TerrainMeshPatch * down, TerrainMeshPatch * left, TerrainMeshPatch * right)

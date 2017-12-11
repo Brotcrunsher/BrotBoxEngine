@@ -28,7 +28,7 @@ public:
 	//bbe::Vector3 rotationAxis[AMOUNTOFCUBES];
 	//float rotationSpeeds[AMOUNTOFCUBES];
 	//float rotations[AMOUNTOFCUBES];
-	//bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
+	bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
 	bbe::Random rand;
 
 	bbe::TerrainMesh terrain;
@@ -112,7 +112,7 @@ public:
 	virtual void update(float timeSinceLastFrame) override
 	{
 		//std::cout << "FPS: " << 1 / timeSinceLastFrame << "\n";
-		//ccnc.update(timeSinceLastFrame);
+		ccnc.update(timeSinceLastFrame);
 		//std::cout << "Highest FPS: " << 1 / lowestDelta << "\n";
 		//std::cout << "Lowest FPS:  " << 1 / highestDelta << "\n";
 		//std::cout << std::endl;
@@ -149,11 +149,11 @@ public:
 		brush.setFillMode(wireframe ? bbe::FillMode::WIREFRAME : bbe::FillMode::SOLID);
 
 		//ccnc.setCameraPos(terrain.projectOnTerrain(ccnc.getCameraPos()));
-		//brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
+		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 
 		//std::cout << ccnc.getCameraPos().x << "\t" << ccnc.getCameraPos().y << "\t" << ccnc.getCameraPos().z;
 
-		float angle = (float)frameNumber / (float)AMOUNTOFFRAMES * bbe::Math::PI * 2;
+		/*float angle = (float)frameNumber / (float)AMOUNTOFFRAMES * bbe::Math::PI * 2;
 		bbe::Vector3 center(4 * 1024, 4 * 1024, 0);
 		bbe::Vector3 distTo(2 * 1024, 4 * 1024, 0);
 
@@ -161,7 +161,7 @@ public:
 
 		bbe::Vector3 pos = terrain.projectOnTerrain(distTo) + bbe::Vector3(0, 0, height);
 
-		brush.setCamera(pos, center);
+		brush.setCamera(pos, center);*/
 
 		/*for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{

@@ -41,7 +41,7 @@ namespace bbe
 		void destroy() const;
 		static void s_destroy();
 		static List<bbe::INTERNAL::vulkan::VulkanBuffer> s_indexBuffer;
-		mutable List<bbe::INTERNAL::vulkan::VulkanBuffer> m_vertexBuffer;
+		mutable bbe::INTERNAL::vulkan::VulkanBuffer m_vertexBuffer;
 		mutable List<float*> m_lodDatas;
 
 		float* m_pdata = nullptr;
