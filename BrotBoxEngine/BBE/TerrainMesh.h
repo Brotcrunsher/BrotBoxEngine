@@ -40,7 +40,7 @@ namespace bbe
 		void initVertexBuffer(float height, bbe::INTERNAL::vulkan::VulkanBuffer &parentBuffer, VkDeviceSize &offset, VkDeviceSize alignment) const;
 		void destroy() const;
 		static void s_destroy();
-		static List<bbe::INTERNAL::vulkan::VulkanBuffer> s_indexBuffer;
+		static List<List<bbe::INTERNAL::vulkan::VulkanBuffer>> s_indexBuffer;
 		mutable bbe::INTERNAL::vulkan::VulkanBuffer m_vertexBuffer;
 		mutable List<float*> m_lodDatas;
 
@@ -53,7 +53,7 @@ namespace bbe
 		float getSize() const;
 		int getMaxLod() const;
 
-		static List<int> s_indexCount;
+		static List<List<int>> s_indexCount;
 
 		TerrainMeshPatch *m_pneighborUp = nullptr;
 		TerrainMeshPatch *m_pneighborDown = nullptr;
@@ -64,6 +64,8 @@ namespace bbe
 		mutable int m_lodLevel;
 		void calculateLodLevel(const Vector3 &cameraPos, const Vector3 &terrainPos) const;
 		int getLodLevel() const;
+		bbe::INTERNAL::vulkan::VulkanBuffer getIndexBuffer() const;
+		uint32_t getAmountOfIndices() const;
 
 	public:
 		TerrainMeshPatch(float* data, int patchX, int patchY);

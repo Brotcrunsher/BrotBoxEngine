@@ -239,6 +239,14 @@ float bbe::Math::clamp01(float val)
 	return (val < 0) ? 0 : (val > 1 ? 1 : val);
 }
 
+float bbe::Math::normalDist(float x, float u, float o)
+{
+	const float MULT = 1.0f / bbe::Math::sqrt(2 * bbe::Math::PI);
+	float partExponent = (x - u) / o;
+	float exponent = -0.5f * partExponent * partExponent;
+	return MULT * ::pow(bbe::Math::E, exponent);
+}
+
 float bbe::Math::mod(float val, float mod)
 {
 	if (val >= 0)

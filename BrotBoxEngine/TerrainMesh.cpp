@@ -12,8 +12,8 @@ VkDevice         bbe::TerrainMeshPatch::s_device = VK_NULL_HANDLE;
 VkPhysicalDevice bbe::TerrainMeshPatch::s_physicalDevice = VK_NULL_HANDLE;
 VkQueue          bbe::TerrainMeshPatch::s_queue = VK_NULL_HANDLE;
 bbe::INTERNAL::vulkan::VulkanCommandPool *bbe::TerrainMeshPatch::s_pcommandPool = nullptr;
-bbe::List<bbe::INTERNAL::vulkan::VulkanBuffer> bbe::TerrainMeshPatch::s_indexBuffer;
-bbe::List<int> bbe::TerrainMeshPatch::s_indexCount;
+bbe::List<bbe::List<bbe::INTERNAL::vulkan::VulkanBuffer>> bbe::TerrainMeshPatch::s_indexBuffer;
+bbe::List<bbe::List<int>> bbe::TerrainMeshPatch::s_indexCount;
 static bbe::Random random;
 
 void bbe::TerrainMesh::init(
@@ -101,6 +101,8 @@ void bbe::TerrainMesh::construct(int width, int height, const char * baseTexture
 	m_patchesWidthAmount = width / PATCH_SIZE;
 	m_patchesHeightAmount = height / PATCH_SIZE;
 	m_valueNoise.create(width, height, seed);
+	m_valueNoise.preCalculate();
+	m_valueNoise.standardize();
 
 	for (int i = 0; i < m_patchesWidthAmount; i++)
 	{
@@ -294,42 +296,170 @@ void bbe::TerrainMeshPatch::init(float height, bbe::INTERNAL::vulkan::VulkanBuff
 	initVertexBuffer(height, parentBuffer, offset, alignment);
 }
 
+enum class Side
+{
+	UP, LEFT, DOWN, RIGHT
+};
+void addSingleSide(bbe::List<uint32_t> &indices, Side side, int adder)
+{
+	if (side == Side::LEFT)
+	{
+		for (int i = 0; i < PATCH_SIZE; i += adder * 2)
+		{
+			uint32_t coord = i * (PATCH_SIZE + 1);
+			indices.add(coord);
+			indices.add(coord + (PATCH_SIZE + 1) * adder + adder);
+			indices.add(coord + adder);
+			indices.add(0xFFFFFFFF);
+			indices.add(coord + (PATCH_SIZE + 1) * adder + adder);
+			indices.add(coord);
+			indices.add(coord + (PATCH_SIZE + 1) * adder * 2 + adder);
+			indices.add(0xFFFFFFFF);
+			indices.add(coord);
+			indices.add(coord + (PATCH_SIZE + 1) * adder * 2);
+			indices.add(coord + (PATCH_SIZE + 1) * adder * 2 + adder);
+			indices.add(0xFFFFFFFF);
+		}
+	}
+	else if (side == Side::RIGHT)
+	{
+		for (int i = 0; i < PATCH_SIZE; i += adder * 2)
+		{
+			uint32_t coord = i * (PATCH_SIZE + 1) + PATCH_SIZE - adder;
+			indices.add(coord + adder);
+			indices.add(coord);
+			indices.add(coord + (PATCH_SIZE + 1) * adder);
+			indices.add(0xFFFFFFFF);
+			indices.add(coord + adder);
+			indices.add(coord + (PATCH_SIZE + 1) * adder);
+			indices.add(coord + (PATCH_SIZE + 1) * (adder * 2));
+			indices.add(0xFFFFFFFF);
+			indices.add(coord + adder);
+			indices.add(coord + (PATCH_SIZE + 1) * (adder * 2));
+			indices.add(coord + (PATCH_SIZE + 1) * (adder * 2) + adder);
+			indices.add(0xFFFFFFFF);
+		}
+	}
+	else if (side == Side::UP)
+	{
+		for (int i = 0; i < PATCH_SIZE; i += adder * 2)
+		{
+			uint32_t coord = i;
+			indices.add(coord);
+			indices.add(coord + (PATCH_SIZE + 1) * adder);
+			indices.add(coord + (PATCH_SIZE + 1) * adder + adder);
+			indices.add(0xFFFFFFFF);
+			indices.add(coord);
+			indices.add(coord + (PATCH_SIZE + 1) * adder + adder);
+			indices.add(coord + (PATCH_SIZE + 1) * adder + adder * 2);
+			indices.add(0xFFFFFFFF);
+			indices.add(coord);
+			indices.add(coord + (PATCH_SIZE + 1) * adder + adder * 2);
+			indices.add(coord + adder * 2);
+			indices.add(0xFFFFFFFF);
+		}
+	}
+	else if (side == Side::DOWN)
+	{
+		for (int i = 0; i < PATCH_SIZE; i += adder * 2)
+		{
+			uint32_t coord = i + (PATCH_SIZE + 1) * (PATCH_SIZE - adder);
+			indices.add(coord);
+			indices.add(coord + (PATCH_SIZE + 1) * adder);
+			indices.add(coord + adder);
+			indices.add(0xFFFFFFFF);
+			indices.add(coord + adder);
+			indices.add(coord + (PATCH_SIZE + 1) * adder);
+			indices.add(coord + adder * 2);
+			indices.add(0xFFFFFFFF);
+			indices.add(coord + (PATCH_SIZE + 1) * adder);
+			indices.add(coord + (PATCH_SIZE + 1) * adder + adder * 2);
+			indices.add(coord + adder * 2);
+			indices.add(0xFFFFFFFF);
+		}
+	}
+}
+
 void bbe::TerrainMeshPatch::s_initIndexBuffer()
 {
 	int size = PATCH_SIZE;
-	int prevSize = size;
 	int adder = 1;
+
+	int lod = 0;
 
 	while (size > 0)
 	{
-		List<uint32_t> indices;
-		for (int i = 0; i < PATCH_SIZE; i += adder)
+		s_indexBuffer.add(bbe::List<bbe::INTERNAL::vulkan::VulkanBuffer>());
+		s_indexCount.add(bbe::List<int>());
+		for (int i = 0; i < 16; i++)
 		{
-			for (int k = 0; k < PATCH_SIZE + 1; k += adder)
+			List<uint32_t> indices;
+			bool up    = (i & 1) > 0;
+			bool left  = (i & 2) > 0;
+			bool down  = (i & 4) > 0;
+			bool right = (i & 8) > 0;
+
+			int startX = 0;
+			int startY = 0;
+			int endX = PATCH_SIZE;
+			int endY = PATCH_SIZE + 1;
+
+			if (up)
 			{
-				uint32_t coord = i * (PATCH_SIZE + 1) + k;
-				indices.add(coord);
-				indices.add(coord + PATCH_SIZE * adder + adder);
+				startX += adder;
+			}
+			if (down)
+			{
+				endX -= adder;
+			}
+			if (left)
+			{
+				startY += adder;
+			}
+			if (right)
+			{
+				endY -= adder;
+			}
+
+			for (int i = startX; i < endX; i += adder)
+			{
+				for (int k = startY; k < endY; k += adder)
+				{
+					uint32_t coord = i * (PATCH_SIZE + 1) + k;
+					indices.add(coord);
+					indices.add(coord + PATCH_SIZE * adder + adder);
+				}
+				indices.add(0xFFFFFFFF);
 			}
 			indices.add(0xFFFFFFFF);
+
+			if (up)
+				addSingleSide(indices, Side::UP, adder);
+			if (down)
+				addSingleSide(indices, Side::DOWN, adder);
+			if (left)
+				addSingleSide(indices, Side::LEFT, adder);
+			if (right)
+				addSingleSide(indices, Side::RIGHT, adder);
+
+			bbe::INTERNAL::vulkan::VulkanBuffer localBuff;
+
+			localBuff.create(s_device, s_physicalDevice, sizeof(uint32_t) * indices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+			void *dataBuf = localBuff.map();
+			memcpy(dataBuf, indices.getRaw(), sizeof(uint32_t) * indices.getLength());
+			localBuff.unmap();
+
+			localBuff.upload(*s_pcommandPool, s_queue);
+
+			s_indexCount[lod].add(indices.getLength());
+			s_indexBuffer[lod].add(localBuff);
 		}
+		
 
-		bbe::INTERNAL::vulkan::VulkanBuffer localBuff;
-
-		localBuff.create(s_device, s_physicalDevice, sizeof(uint32_t) * indices.getLength(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-
-		void *dataBuf = localBuff.map();
-		memcpy(dataBuf, indices.getRaw(), sizeof(uint32_t) * indices.getLength());
-		localBuff.unmap();
-
-		localBuff.upload(*s_pcommandPool, s_queue);
-
-		s_indexCount.add(indices.getLength());
-		s_indexBuffer.add(localBuff);
-
-		prevSize = size;
 		size /= 2;
 		adder *= 2;
+		lod++;
 	}
 	
 }
@@ -387,7 +517,10 @@ void bbe::TerrainMeshPatch::s_destroy()
 {
 	for (int i = 0; i < s_indexBuffer.getLength(); i++)
 	{
-		s_indexBuffer[i].destroy();
+		for (int k = 0; k < 16; k++)
+		{
+			s_indexBuffer[i][k].destroy();
+		}
 	}
 }
 
@@ -446,6 +579,26 @@ void bbe::TerrainMeshPatch::calculateLodLevel(const Vector3 &cameraPos, const Ve
 int bbe::TerrainMeshPatch::getLodLevel() const
 {
 	return m_lodLevel;
+}
+
+bbe::INTERNAL::vulkan::VulkanBuffer bbe::TerrainMeshPatch::getIndexBuffer() const
+{
+	int up    = (m_pneighborUp    != nullptr && m_pneighborUp   ->getLodLevel() > getLodLevel()) ? 1 : 0;
+	int left  = (m_pneighborLeft  != nullptr && m_pneighborLeft ->getLodLevel() > getLodLevel()) ? 1 : 0;
+	int down  = (m_pneighborDown  != nullptr && m_pneighborDown ->getLodLevel() > getLodLevel()) ? 1 : 0;
+	int right = (m_pneighborRight != nullptr && m_pneighborRight->getLodLevel() > getLodLevel()) ? 1 : 0;
+	int index = up * 1 + left * 2 + down * 4 + right * 8;
+	return s_indexBuffer[getLodLevel()][index];
+}
+
+uint32_t bbe::TerrainMeshPatch::getAmountOfIndices() const
+{
+	int up    = (m_pneighborUp    != nullptr && m_pneighborUp   ->getLodLevel() > getLodLevel()) ? 1 : 0;
+	int left  = (m_pneighborLeft  != nullptr && m_pneighborLeft ->getLodLevel() > getLodLevel()) ? 1 : 0;
+	int down  = (m_pneighborDown  != nullptr && m_pneighborDown ->getLodLevel() > getLodLevel()) ? 1 : 0;
+	int right = (m_pneighborRight != nullptr && m_pneighborRight->getLodLevel() > getLodLevel()) ? 1 : 0;
+	int index = up * 1 + left * 2 + down * 4 + right * 8;
+	return s_indexCount[getLodLevel()][index];
 }
 
 bbe::TerrainMeshPatch::TerrainMeshPatch(float * data, int patchX, int patchY)

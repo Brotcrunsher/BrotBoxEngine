@@ -53,6 +53,7 @@ namespace bbe
 		float square(float val);
 		float clamp(float val, float min, float max);
 		float clamp01(float val);
+		float normalDist(float x, float u, float o);
 		bool  isInRange(float val, float min, float max);
 		bool  isInRangeStrict(float val, float min, float max);
 		bool  isInRange01(float val);

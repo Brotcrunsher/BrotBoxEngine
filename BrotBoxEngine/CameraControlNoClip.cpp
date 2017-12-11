@@ -47,32 +47,50 @@ void bbe::CameraControlNoClip::update(float timeSinceLastFrame)
 	float speedFactor = 1;
 	if (m_pgame->isKeyDown(bbe::Key::LEFT_SHIFT))
 	{
-		speedFactor = 10;
+		m_timeSinceShiftPress += timeSinceLastFrame;
+		speedFactor = 10 * m_timeSinceShiftPress * m_timeSinceShiftPress;
+	}
+	else
+	{
+		m_timeSinceShiftPress = 1;
 	}
 
+
+	bool moving = false;
 	if (m_pgame->isKeyDown(bbe::Key::W))
 	{
 		m_cameraPos = m_cameraPos + m_forward * timeSinceLastFrame * 10 * speedFactor;
+		moving = true;
 	}
 	if (m_pgame->isKeyDown(bbe::Key::S))
 	{
 		m_cameraPos = m_cameraPos - m_forward * timeSinceLastFrame * 10 * speedFactor;
+		moving = true;
 	}
 	if (m_pgame->isKeyDown(bbe::Key::A))
 	{
 		m_cameraPos = m_cameraPos + bbe::Vector3(m_forward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1)).xy(), 0).normalize() * timeSinceLastFrame * 10 * speedFactor;
+		moving = true;
 	}
 	if (m_pgame->isKeyDown(bbe::Key::D))
 	{
 		m_cameraPos = m_cameraPos - bbe::Vector3(m_forward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1)).xy(), 0).normalize() * timeSinceLastFrame * 10 * speedFactor;
+		moving = true;
 	}
 	if (m_pgame->isKeyDown(bbe::Key::SPACE))
 	{
 		m_cameraPos = m_cameraPos + bbe::Vector3(0, 0, 1) * timeSinceLastFrame * 10 * speedFactor;
+		moving = true;
 	}
 	if (m_pgame->isKeyDown(bbe::Key::C))
 	{
 		m_cameraPos = m_cameraPos - bbe::Vector3(0, 0, 1) * timeSinceLastFrame * 10 * speedFactor;
+		moving = true;
+	}
+
+	if (!moving)
+	{
+		m_timeSinceShiftPress = 1;
 	}
 }
 

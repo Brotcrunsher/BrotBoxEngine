@@ -14,6 +14,7 @@ namespace bbe
 		Vector3 m_forward       = bbe::Vector3(1.0f, 0.0f, 0.0f);
 		float   m_horizontalMouse = 0;
 		float   m_verticalMouse   = 0;
+		float   m_timeSinceShiftPress = 0;
 
 	public:
 		CameraControlNoClip(Game* game);
