@@ -135,7 +135,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Third-Party\stb;$(SolutionDir)\Third-Party\Vulkan\Include;$(SolutionDir)\Third-Party\GLFW\glfw-3.2.1.bin.WIN32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Third-Party\stb;$(SolutionDir)\Third-Party\Vulkan\Include;E:\Visual Studio Projekte\BrotboxEngine\Third-Party\GLFW\glfw-3.2.1.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalOptions>/permissive- %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -191,7 +191,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Third-Party\stb;$(SolutionDir)\Third-Party\Vulkan\Include;$(SolutionDir)\Third-Party\GLFW\glfw-3.2.1.bin.WIN32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Third-Party\stb;$(SolutionDir)\Third-Party\Vulkan\Include;E:\Visual Studio Projekte\BrotboxEngine\Third-Party\GLFW\glfw-3.2.1.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalOptions>/permissive- %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -303,8 +303,10 @@
     <ClInclude Include="BBE\VulkanQueryPool.h" />
     <ClInclude Include="BBE\VulkanStopWatch.h" />
     <ClInclude Include="BBE\ViewFrustum.h" />
+    <ClInclude Include="BBE\TerrainSingle.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="TerrainSingle.cpp" />
     <ClCompile Include="ColorByte.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="MouseButtons.cpp" />

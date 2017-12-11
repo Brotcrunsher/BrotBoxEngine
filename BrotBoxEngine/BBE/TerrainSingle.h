@@ -1,5 +1,7 @@
 #pragma once
 
+//Like Terrain but with a single mesh which is then used as a list of Patches for tessellation
+
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW\glfw3.h"
 #include "../BBE/VulkanBuffer.h"
@@ -11,6 +13,7 @@
 #include "../BBE/EngineSettings.h"
 #include "../BBE/ValueNoise2D.h"
 #include "../BBE/ViewFrustum.h"
+#include "../BBE/VulkanDevice.h"
 
 namespace bbe
 {
@@ -25,55 +28,12 @@ namespace bbe
 		}
 	}
 
-	class Terrain;
-
-	class TerrainPatch
-	{
-		friend class PrimitiveBrush3D;
-		friend class INTERNAL::vulkan::VulkanManager;
-		friend class Terrain;
-	private:
-		static VkDevice         s_device;
-		static VkPhysicalDevice s_physicalDevice;
-		static VkQueue          s_queue;
-		static INTERNAL::vulkan::VulkanCommandPool *s_pcommandPool;
-
-
-		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
-
-		static void s_initIndexBuffer();
-		static void s_initVertexBuffer();
-		static void s_destroy();
-		static bbe::INTERNAL::vulkan::VulkanBuffer s_indexBuffer;
-		static bbe::INTERNAL::vulkan::VulkanBuffer s_vertexBuffer;
-
-		Vector2 m_offset;
-
-		float m_patchTextureWidth;
-		float m_patchTextureHeight;
-		float m_patchX;
-		float m_patchY;
-
-		int m_patchXInt;
-		int m_patchYInt;
-		
-
-	public:
-		TerrainPatch(int patchX, int patchY, int maxPatchX, int maxPatchY);
-
-		TerrainPatch(const TerrainPatch& other) = delete;
-		TerrainPatch(TerrainPatch&& other);
-		TerrainPatch& operator=(const TerrainPatch& other) = delete;
-		TerrainPatch& operator=(TerrainPatch&& other) = delete;
-	};
-
-	class Terrain
+	class TerrainSingle
 	{
 		friend class PrimitiveBrush3D;
 		friend class INTERNAL::vulkan::VulkanManager;
 	private:
 		Matrix4 m_transform;
-		List<TerrainPatch> m_patches;
 		Image m_heightMap;
 		Image m_baseTexture;
 
@@ -88,22 +48,24 @@ namespace bbe
 		float m_patchSize;
 
 		void init(
-			const INTERNAL::vulkan::VulkanDevice & device, 
-			const INTERNAL::vulkan::VulkanCommandPool & commandPool, 
-			const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, 
-			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutHeightMap, 
+			const INTERNAL::vulkan::VulkanDevice & device,
+			const INTERNAL::vulkan::VulkanCommandPool & commandPool,
+			const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool,
+			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutHeightMap,
 			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutTexture,
 			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextures,
 			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutAdditionalTextureWeights,
 			const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayoutViewFrustrums) const;
 		void destroy();
 
-		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
-		static void s_destroy();
+		void initIndexBuffer(const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue) const;
+		void initVertexBuffer(const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue) const;
+		mutable bbe::INTERNAL::vulkan::VulkanBuffer m_indexBuffer;
+		mutable bbe::INTERNAL::vulkan::VulkanBuffer m_vertexBuffer;
 
 		Vector2 m_heightmapScale;
 
-		int m_patchesWidthAmount  = 0; 
+		int m_patchesWidthAmount = 0;
 		int m_patchesHeightAmount = 0;
 
 		class TextureBias
@@ -125,10 +87,13 @@ namespace bbe
 
 		mutable bbe::INTERNAL::vulkan::ViewFrustum m_viewFrustum;
 
+		mutable uint32_t m_amountOfIndizes = 0;
+		uint32_t getAmountOfIndizes() const;
+
 	public:
-		Terrain(int width, int height, const char* baseTexturePath);
-		Terrain(int width, int height, const char* baseTexturePath, int seed);
-		~Terrain();
+		TerrainSingle(int width, int height, const char* baseTexturePath);
+		TerrainSingle(int width, int height, const char* baseTexturePath, int seed);
+		~TerrainSingle();
 
 		Matrix4 getTransform() const;
 		void setTransform(const Vector3 &pos, const Vector3 &scale, const Vector3 &rotationVector, float radians);

@@ -45,12 +45,16 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::create(const VulkanDevice &devi
 
 	vkAllocateDescriptorSets(device.getDevice(), &dsai, &m_descriptorSet);
 
+	update(device);
+}
+
+void bbe::INTERNAL::vulkan::VulkanDescriptorSet::update(const VulkanDevice & device)
+{
 	List<VkDescriptorImageInfo> imageInfos;
 	for (int i = 0; i < m_descriptorImageInfos.getLength(); i++)
 	{
 		imageInfos.add(m_descriptorImageInfos[i].m_descriptorImageInfo);
 	}
-
 
 	List<VkWriteDescriptorSet> writeDescriptorSets;
 	for (int i = 0; i < m_descriptorBufferInfos.getLength(); i++)

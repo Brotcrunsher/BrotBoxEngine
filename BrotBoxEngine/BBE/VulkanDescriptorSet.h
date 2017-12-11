@@ -43,6 +43,7 @@ namespace bbe
 				void addUniformBuffer(const VulkanBuffer &buffer, VkDeviceSize offset, uint32_t binding);
 				void addCombinedImageSampler(const Image& image, uint32_t binding);
 				void create(const VulkanDevice &device, const VulkanDescriptorPool &descriptorPool, const VulkanDescriptorSetLayout &setLayout);
+				void update(const VulkanDevice &device);
 
 				VkDescriptorSet getDescriptorSet() const;
 				const VkDescriptorSet* getPDescriptorSet() const;

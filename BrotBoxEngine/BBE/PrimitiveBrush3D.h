@@ -7,6 +7,7 @@
 #include "../BBE/Cube.h"
 #include "../BBE/IcoSphere.h"
 #include "../BBE/Terrain.h"
+#include "../BBE/TerrainSingle.h"
 #include "../BBE/TerrainMesh.h"
 #include "../BBE/FillMode.h"
 #include "../BBE/ViewFrustum.h"
@@ -36,7 +37,7 @@ namespace bbe
 
 	enum class PipelineRecord3D
 	{
-		NONE, PRIMITIVE, TERRAIN, TERRAINMESH
+		NONE, PRIMITIVE, TERRAIN, TERRAINMESH, TERRAINSINGLE
 	};
 
 	class PrimitiveBrush3D
@@ -49,6 +50,8 @@ namespace bbe
 		INTERNAL::vulkan::VulkanPipeline            *m_ppipelinePrimitive                                 = nullptr;
 		VkPipelineLayout                             m_layoutTerrain                                      = VK_NULL_HANDLE;
 		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineTerrain                                   = nullptr;
+		VkPipelineLayout                             m_layoutTerrainSingle                                = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineTerrainSingle                             = nullptr;
 		VkPipelineLayout                             m_layoutTerrainMesh                                  = VK_NULL_HANDLE;
 		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineTerrainMesh                               = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorPool      *m_pdescriptorPool                                    = nullptr;
@@ -77,6 +80,7 @@ namespace bbe
 			VkCommandBuffer commandBuffer,
 			INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive,
 			INTERNAL::vulkan::VulkanPipeline &pipelineTerrain,
+			INTERNAL::vulkan::VulkanPipeline &pipelineTerrainSingle,
 			INTERNAL::vulkan::VulkanPipeline &pipelineTerrainMesh,
 			INTERNAL::vulkan::VulkanCommandPool &commandPool,
 			INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool,
@@ -103,6 +107,7 @@ namespace bbe
 
 		void drawTerrain(const Terrain &terrain);
 		void drawTerrain(const TerrainMesh &terrain);
+		void drawTerrain(const TerrainSingle &terrain);
 
 		void setColor(float r, float g, float b, float a);
 		void setColor(float r, float g, float b);

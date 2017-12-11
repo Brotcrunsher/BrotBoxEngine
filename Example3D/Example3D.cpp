@@ -8,7 +8,7 @@
 //#define AMOUNTOFCUBES 1024 * 7
 #define AMOUNTOFCUBES 1024 * 4
 
-#define AMOUNTOFFRAMES (1000 * 1)
+#define AMOUNTOFFRAMES (1000 * 10)
 #define AMOUNTOFBATCHES (1000)
 
 class MyGame : public bbe::Game
@@ -31,7 +31,7 @@ public:
 	//bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
 	bbe::Random rand;
 
-	bbe::Terrain terrain;
+	bbe::TerrainMesh terrain;
 	//bbe::PointLight light;
 	//bbe::PointLight blinkLight;
 	//bbe::PointLight brightLight;
@@ -52,7 +52,7 @@ public:
 		:/*light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0)), */terrain(1024 * 8, 1024 * 8, "../Third-Party/textures/dryDirt.png", 12)
 	{
 		terrain.setBaseTextureMult(bbe::Vector2(2, 2));
-		terrain.setMaxHeight(150);
+		terrain.setMaxHeight(350);
 		float *weightsGrass = new float[terrain.getWidth() * terrain.getHeight()];
 		float *weightsSand  = new float[terrain.getWidth() * terrain.getHeight()];
 		for (int i = 0; i < terrain.getHeight(); i++)
@@ -140,6 +140,8 @@ public:
 			frameTimes[frameNumber] = timeSinceLastFrame;
 		}
 
+		//std::cout << 1 / timeSinceLastFrame << "\n";
+
 	}
 	int height = 2;
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
@@ -152,8 +154,8 @@ public:
 		//std::cout << ccnc.getCameraPos().x << "\t" << ccnc.getCameraPos().y << "\t" << ccnc.getCameraPos().z;
 
 		float angle = (float)frameNumber / (float)AMOUNTOFFRAMES * bbe::Math::PI * 2;
-		bbe::Vector3 center(2 * 1024, 2 * 1024, 0);
-		bbe::Vector3 distTo(1 * 1024, 2 * 1024, 0);
+		bbe::Vector3 center(4 * 1024, 4 * 1024, 0);
+		bbe::Vector3 distTo(2 * 1024, 4 * 1024, 0);
 
 		distTo = distTo.rotate(angle, bbe::Vector3(0, 0, 1), center);
 

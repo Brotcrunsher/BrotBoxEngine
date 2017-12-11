@@ -31,7 +31,7 @@ bool isInsideFrustum()
 
 	for(int i = 0; i<5; i++)
 	{
-		if(dot(pos, frustUbo.frustum[i]) + 128.0f < 0.0f)
+		if(dot(pos, frustUbo.frustum[i]) + 512.0f < 0.0f)
 		{
 			return false;
 		}

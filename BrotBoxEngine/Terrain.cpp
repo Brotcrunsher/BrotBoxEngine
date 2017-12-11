@@ -6,8 +6,8 @@
 #include "BBE/VulkanBuffer.h"
 #include "BBE/TimeHelper.h"
 
-static const int PATCH_SIZE = 32;
-static const float VERTICES_PER_METER = 2;
+static const int PATCH_SIZE = 64;
+static const float VERTICES_PER_METER = 1;
 
 VkDevice         bbe::TerrainPatch::s_device         = VK_NULL_HANDLE;
 VkPhysicalDevice bbe::TerrainPatch::s_physicalDevice = VK_NULL_HANDLE;
@@ -70,11 +70,8 @@ void bbe::TerrainPatch::s_destroy()
 	s_vertexBuffer.destroy();
 }
 
-bbe::TerrainPatch::TerrainPatch(float* data, int patchX, int patchY, int maxPatchX, int maxPatchY)
+bbe::TerrainPatch::TerrainPatch(int patchX, int patchY, int maxPatchX, int maxPatchY)
 {
-	m_pdata = new float[(PATCH_SIZE + 1) * (PATCH_SIZE + 1)]; //TODO use allocator
-	memcpy(m_pdata, data, (PATCH_SIZE + 1) * (PATCH_SIZE + 1) * sizeof(float));
-
 	m_patchTextureWidth = (patchX + 1) / (float)maxPatchX;
 	m_patchTextureHeight = (patchY + 1) / (float)maxPatchY;
 	m_patchX = patchX / (float)maxPatchX;
@@ -83,15 +80,9 @@ bbe::TerrainPatch::TerrainPatch(float* data, int patchX, int patchY, int maxPatc
 	m_offset = Vector2(patchX * PATCH_SIZE / VERTICES_PER_METER, patchY * PATCH_SIZE / VERTICES_PER_METER);
 }
 
-bbe::TerrainPatch::~TerrainPatch()
-{
-	delete[] m_pdata;
-}
 
 bbe::TerrainPatch::TerrainPatch(TerrainPatch && other)
 {
-	m_pdata            = other.m_pdata;
-
 	m_offset             = other.m_offset;
 	m_patchTextureWidth  = other.m_patchTextureWidth;
 	m_patchTextureHeight = other.m_patchTextureHeight;
@@ -99,8 +90,6 @@ bbe::TerrainPatch::TerrainPatch(TerrainPatch && other)
 	m_patchY             = other.m_patchY;
 
 	m_offset = other.m_offset;
-
-	other.m_pdata = nullptr;
 }
 
 void bbe::Terrain::init(
@@ -153,7 +142,7 @@ void bbe::Terrain::s_destroy()
 	TerrainPatch::s_destroy();
 }
 
-void bbe::Terrain::loadViewFrustrum(const bbe::Matrix4 &mvpMat) const
+void bbe::Terrain::loadViewFrustrum(const bbe::Matrix4 &mvpMat, const bbe::INTERNAL::vulkan::VulkanDevice &device) const
 {
 	if (!m_wasInit)
 	{
@@ -164,6 +153,7 @@ void bbe::Terrain::loadViewFrustrum(const bbe::Matrix4 &mvpMat) const
 	void *data = m_viewFrustrumBuffer.map();
 	memcpy(data, m_viewFrustum.getPlanes(), sizeof(bbe::Vector4) * 5);
 	m_viewFrustrumBuffer.unmap();
+	m_viewFrustrumDescriptor.update(device);
 }
 
 void bbe::Terrain::construct(int width, int height, const char * baseTexturePath, int seed)
@@ -186,21 +176,11 @@ void bbe::Terrain::construct(int width, int height, const char * baseTexturePath
 	m_valueNoise.preCalculate();
 	m_valueNoise.standardize();
 
+	for (int i = 0; i < m_patchesWidthAmount; i++)
 	{
-		float data[(PATCH_SIZE + 1) * (PATCH_SIZE + 1)];
-		for (int i = 0; i < m_patchesWidthAmount; i++)
+		for (int k = 0; k < m_patchesHeightAmount; k++)
 		{
-			for (int k = 0; k < m_patchesHeightAmount; k++)
-			{
-				for (int x = 0; x < (PATCH_SIZE + 1); x++)
-				{
-					for (int y = 0; y < (PATCH_SIZE + 1); y++)
-					{
-						data[x * (PATCH_SIZE + 1) + y] = m_valueNoise.get(i * PATCH_SIZE + x, k * PATCH_SIZE + y);
-					}
-				}
-				m_patches.add(TerrainPatch(data, i, k, m_patchesWidthAmount, m_patchesHeightAmount));
-			}
+			m_patches.add(TerrainPatch(i, k, m_patchesWidthAmount, m_patchesHeightAmount));
 		}
 	}
 

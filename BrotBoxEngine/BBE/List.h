@@ -58,6 +58,12 @@ namespace bbe
 			//DO NOTHING
 		}
 
+		List(size_t amountOfData)
+			: m_length(0), m_capacity(amountOfData)
+		{
+			m_pdata = new INTERNAL::Unconstructed<T>[amountOfData];
+		}
+
 		template <typename... arguments>
 		List(size_t amountOfObjects, arguments&&... args)
 			: m_length(amountOfObjects), m_capacity(amountOfObjects)

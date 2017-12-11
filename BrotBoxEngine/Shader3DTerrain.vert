@@ -23,8 +23,8 @@ layout(location = 0) out vec2 outHeightMapPos;
 
 void main() 
 {
-	float x = pushConts.offsetX / pushConts.patchSize;
-	float y = pushConts.offsetY / pushConts.patchSize;
-	gl_Position = vec4(inPos.x * pushConts.patchSize + pushConts.offsetX, inPos.y * pushConts.patchSize + pushConts.offsetY, 0, 1.0);
-	outHeightMapPos = vec2((x + inPos.x) * pushConts.heightmapScaleX, (y + inPos.y) * pushConts.heightmapScaleY);
+	float x = inPos.x + pushConts.offsetX / pushConts.patchSize;
+	float y = inPos.y + pushConts.offsetY / pushConts.patchSize;
+	gl_Position = vec4(x * pushConts.patchSize, y * pushConts.patchSize, 0, 1.0);
+	outHeightMapPos = vec2(x * pushConts.heightmapScaleX, y * pushConts.heightmapScaleY);
 }

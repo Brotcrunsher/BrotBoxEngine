@@ -6,7 +6,7 @@
 #include "BBE/VulkanDevice.h"
 
 static const int PATCH_SIZE = 256;
-static const float VERTICES_PER_METER = 2;
+static const float VERTICES_PER_METER = 1;
 
 VkDevice         bbe::TerrainMeshPatch::s_device = VK_NULL_HANDLE;
 VkPhysicalDevice bbe::TerrainMeshPatch::s_physicalDevice = VK_NULL_HANDLE;
@@ -115,6 +115,24 @@ void bbe::TerrainMesh::construct(int width, int height, const char * baseTexture
 				}
 			}
 			m_patches.add(TerrainMeshPatch(data, i, k));
+		}
+	}
+
+	for (int x = 0; x < m_patchesWidthAmount; x++)
+	{
+		for (int y = 0; y < m_patchesHeightAmount; y++)
+		{
+			TerrainMeshPatch *up    = nullptr;
+			TerrainMeshPatch *down  = nullptr;
+			TerrainMeshPatch *left  = nullptr;
+			TerrainMeshPatch *right = nullptr;
+
+			if (y > 0)                         up    = &(m_patches[(x    ) * m_patchesHeightAmount + (y - 1)]);
+			if (y < m_patchesHeightAmount - 1) down  = &(m_patches[(x    ) * m_patchesHeightAmount + (y + 1)]);
+			if (x > 0)                         left  = &(m_patches[(x - 1) * m_patchesHeightAmount + (y    )]);
+			if (x < m_patchesWidthAmount - 1)  right = &(m_patches[(x + 1) * m_patchesHeightAmount + (y    )]);
+
+			m_patches[x * m_patchesHeightAmount + y].setNeighbors(up, down, left, right);
 		}
 	}
 
@@ -285,11 +303,12 @@ void bbe::TerrainMeshPatch::s_initIndexBuffer()
 
 		for (int i = 0; i < size; i++)
 		{
+			uint32_t coord = i * (size + 1);
+			indices.add(coord);
+			indices.add(coord + size + 1);
 			for (int k = 0; k < size; k++)
 			{
-				uint32_t coord = i * (size + 1) + k;
-				indices.add(coord);
-				indices.add(coord + size + 1);
+				coord = i * (size + 1) + k;
 				indices.add(coord + 1);
 				indices.add(coord + size + 2);
 			}
@@ -320,6 +339,7 @@ void bbe::TerrainMeshPatch::initVertexBuffer(float height, bbe::INTERNAL::vulkan
 	int prevSize = PATCH_SIZE;
 	float verticesPerMeter = VERTICES_PER_METER;
 	float* lodData = new float[(PATCH_SIZE + 1) * (PATCH_SIZE + 1)];
+	float* prevLodData = nullptr;
 	memcpy(lodData, m_pdata, (PATCH_SIZE + 1) * (PATCH_SIZE + 1) * sizeof(float));
 	int additionalOffset = 0;
 
@@ -328,14 +348,16 @@ void bbe::TerrainMeshPatch::initVertexBuffer(float height, bbe::INTERNAL::vulkan
 	{
 		if (size != PATCH_SIZE) //NOT first iteration
 		{
+			lodData = new float[(size + 1) * (size + 1)];
 			for (int k = 0; k < size + 1; k++)
 			{
 				for (int i = 0; i < size + 1; i++)
 				{
-					lodData[k * (size + 1) + i] = lodData[k * 2 * (prevSize + 1) + i * 2];
+					lodData[k * (size + 1) + i] = prevLodData[k * 2 * (prevSize + 1) + i * 2];
 				}
 			}
 		}
+		m_lodDatas.add(lodData);
 		List<Vector3> vertices;
 
 		const float OFFSETX = size / verticesPerMeter * m_patchX;
@@ -372,9 +394,8 @@ void bbe::TerrainMeshPatch::initVertexBuffer(float height, bbe::INTERNAL::vulkan
 		additionalOffset += size;
 		size /= 2;
 		verticesPerMeter /= 2.0f;
+		prevLodData = lodData;
 	}
-	
-	delete[] lodData;
 }
 
 void bbe::TerrainMeshPatch::destroy() const
@@ -383,6 +404,14 @@ void bbe::TerrainMeshPatch::destroy() const
 	{
 		m_vertexBuffer[i].destroy();
 	}
+
+	for (int i = 0; i < m_lodDatas.getLength(); i++)
+	{
+		delete[] m_lodDatas[i];
+	}
+
+	m_lodDatas.clear();
+	m_lodDatas.shrink();
 }
 
 void bbe::TerrainMeshPatch::s_destroy()
@@ -409,6 +438,45 @@ float bbe::TerrainMeshPatch::getSize() const
 int bbe::TerrainMeshPatch::getMaxLod() const
 {
 	return m_vertexBuffer.getLength() - 1;
+}
+
+void bbe::TerrainMeshPatch::setNeighbors(TerrainMeshPatch * up, TerrainMeshPatch * down, TerrainMeshPatch * left, TerrainMeshPatch * right)
+{
+	m_pneighborUp    = up;
+	m_pneighborDown  = down;
+	m_pneighborLeft  = left;
+	m_pneighborRight = right;
+}
+
+void bbe::TerrainMeshPatch::calculateLodLevel(const Vector3 &cameraPos, const Vector3 &terrainPos) const
+{
+	Vector3 patchPos0 = terrainPos + Vector3(getOffset(), 0);
+	Vector3 patchPos1 = patchPos0;
+	Vector3 patchPos2 = patchPos0;
+	Vector3 patchPos3 = patchPos0;
+
+	patchPos1.x += getSize();
+	patchPos2.y += getSize();
+	patchPos3.x += getSize();
+	patchPos3.y += getSize();
+
+	float distance0 = patchPos0.getDistanceTo(cameraPos);
+	float distance1 = patchPos1.getDistanceTo(cameraPos);
+	float distance2 = patchPos2.getDistanceTo(cameraPos);
+	float distance3 = patchPos3.getDistanceTo(cameraPos);
+
+	float distance = bbe::Math::min(distance0, distance1, distance2, distance3);
+
+	m_lodLevel = bbe::Math::log2Floor(distance / 100);
+	if (m_lodLevel > getMaxLod())
+	{
+		m_lodLevel = getMaxLod();
+	}
+}
+
+int bbe::TerrainMeshPatch::getLodLevel() const
+{
+	return m_lodLevel;
 }
 
 bbe::TerrainMeshPatch::TerrainMeshPatch(float * data, int patchX, int patchY)
