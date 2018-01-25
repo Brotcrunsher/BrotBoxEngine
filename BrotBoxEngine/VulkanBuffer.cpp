@@ -8,6 +8,10 @@
 
 void bbe::INTERNAL::vulkan::VulkanBuffer::preCreate(const VulkanDevice & vulkanDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t * p_queueFamilyIndices)
 {
+	m_bufferSize = sizeInBytes;
+	m_device = vulkanDevice.getDevice();
+	m_physicalDevice = vulkanDevice.getPhysicalDevice();
+	m_usage = usage;
 	preCreateBuffer(vulkanDevice.getDevice(), sizeInBytes, usage, m_buffer, sharingMode, queueFamilyIndexCount, p_queueFamilyIndices);
 	m_wasPreCreated = true;
 }
@@ -123,7 +127,7 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::upload(const VulkanCommandPool & comma
 
 void bbe::INTERNAL::vulkan::VulkanBuffer::destroy()
 {
-	if (m_wasCreated)
+	if (m_wasCreated || m_wasPreCreated)
 	{
 		if (m_isMapped)
 		{

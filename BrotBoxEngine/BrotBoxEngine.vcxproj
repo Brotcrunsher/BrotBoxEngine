@@ -135,7 +135,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Third-Party\stb;$(SolutionDir)\Third-Party\Vulkan\Include;E:\Visual Studio Projekte\BrotboxEngine\Third-Party\GLFW\glfw-3.2.1.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Third-Party\stb;$(SolutionDir)\Third-Party\Vulkan\Include;$(SolutionDir)\Third-Party\GLFW\glfw-3.2.1.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalOptions>/permissive- %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -191,7 +191,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Third-Party\stb;$(SolutionDir)\Third-Party\Vulkan\Include;E:\Visual Studio Projekte\BrotboxEngine\Third-Party\GLFW\glfw-3.2.1.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Third-Party\stb;$(SolutionDir)\Third-Party\Vulkan\Include;$(SolutionDir)\Third-Party\GLFW\glfw-3.2.1.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalOptions>/permissive- %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -304,6 +304,7 @@
     <ClInclude Include="BBE\VulkanStopWatch.h" />
     <ClInclude Include="BBE\ViewFrustum.h" />
     <ClInclude Include="BBE\TerrainSingle.h" />
+    <ClInclude Include="BBE\TerrainTransformed.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TerrainSingle.cpp" />
@@ -321,6 +322,7 @@
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="PrimitiveBrush3D.cpp" />
     <ClCompile Include="TerrainMesh.cpp" />
+    <ClCompile Include="TerrainTransformed.cpp" />
     <ClCompile Include="TimeHelper.cpp" />
     <ClCompile Include="ValueNoise2D.cpp" />
     <ClCompile Include="Vector3.cpp" />
@@ -381,6 +383,8 @@
     <None Include="Shader3DTerrain.tese" />
     <None Include="Shader3DTerrain.vert" />
     <None Include="Shader3DTerrainMesh.vert" />
+    <None Include="Shader3DTerrainTransformed.frag" />
+    <None Include="Shader3DTerrainTransformed.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

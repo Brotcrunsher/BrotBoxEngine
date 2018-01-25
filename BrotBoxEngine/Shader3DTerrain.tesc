@@ -20,12 +20,12 @@ layout(push_constant) uniform PushConstants
 } pushConts;
 
 
-layout(set = 5, binding = 0) uniform frustUBO 
+/*layout(set = 5, binding = 0) uniform frustUBO 
 {
 	vec4 frustum[5];
-} frustUbo;
+} frustUbo;*/
 
-bool isInsideFrustum()
+/*bool isInsideFrustum()
 {
 	vec4 pos = gl_in[0].gl_Position;
 
@@ -37,13 +37,13 @@ bool isInsideFrustum()
 		}
 	}
 	return true;
-}
+}*/
 
 void main()
 {
 	if (gl_InvocationID == 0)
 	{
-		if(!isInsideFrustum())
+		/*if(!isInsideFrustum())
 		{
 			gl_TessLevelOuter[0] = 0;
 			gl_TessLevelOuter[1] = 0;
@@ -53,7 +53,7 @@ void main()
 			gl_TessLevelInner[1] = 0;
 		}
 		else
-		{
+		{*/
 			vec3 p0 = (uboProjection.view * pushConts.modelMatrix * gl_in[0].gl_Position).xyz;
 			vec3 p1 = (uboProjection.view * pushConts.modelMatrix * gl_in[1].gl_Position).xyz;
 			vec3 p2 = (uboProjection.view * pushConts.modelMatrix * gl_in[2].gl_Position).xyz;
@@ -71,7 +71,7 @@ void main()
 			gl_TessLevelOuter[3] = max(l2, l3);
 			gl_TessLevelInner[0] = max(gl_TessLevelOuter[0], gl_TessLevelOuter[3]);
 			gl_TessLevelInner[1] = max(gl_TessLevelOuter[2], gl_TessLevelOuter[1]);
-		}
+		//}
 	}
 
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;

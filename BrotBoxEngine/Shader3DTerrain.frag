@@ -25,8 +25,8 @@ layout(location = 4) in LightInput inLight[AMOUNT_OF_LIGHTS];
 
 layout(set = 4, binding = 0) uniform sampler2D baseTex;
 
-layout(set = 6, binding = 0) uniform sampler2D additionalTex[AMOUNT_OF_TEXTURES];
-layout(set = 7, binding = 0) uniform sampler2D textureWeights[AMOUNT_OF_TEXTURES];
+layout(set = 5, binding = 0) uniform sampler2D additionalTex[AMOUNT_OF_TEXTURES];
+layout(set = 6, binding = 0) uniform sampler2D textureWeights[AMOUNT_OF_TEXTURES];
 
 layout(push_constant) uniform PushConstants
 {

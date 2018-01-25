@@ -54,6 +54,12 @@ void bbe::TerrainSingle::destroy()
 	m_baseTexture.destroy();
 	m_indexBuffer.destroy();
 	m_vertexBuffer.destroy();
+	m_viewFrustrumBuffer.destroy();
+	for (int i = 0; i < m_currentAdditionalTexture; i++)
+	{
+		m_additionalTextures[i].destroy();
+		m_additionalTextureWeights[i].destroy();
+	}
 }
 
 void bbe::TerrainSingle::initIndexBuffer(const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue) const

@@ -22,6 +22,7 @@ namespace bbe
 
 		class StackAllocatorDestructor
 		{
+			//Based on https://stackoverflow.com/questions/43483814/is-it-well-defined-behaviour-to-save-a-destructor-adress-of-an-object-and-call-i
 		private:
 			const void* m_data;
 			void(*destructor)(const void*);

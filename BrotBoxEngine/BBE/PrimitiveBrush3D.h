@@ -9,6 +9,7 @@
 #include "../BBE/Terrain.h"
 #include "../BBE/TerrainSingle.h"
 #include "../BBE/TerrainMesh.h"
+#include "../BBE/TerrainTransformed.h"
 #include "../BBE/FillMode.h"
 #include "../BBE/ViewFrustum.h"
 
@@ -37,7 +38,7 @@ namespace bbe
 
 	enum class PipelineRecord3D
 	{
-		NONE, PRIMITIVE, TERRAIN, TERRAINMESH, TERRAINSINGLE
+		NONE, PRIMITIVE, TERRAIN, TERRAINMESH, TERRAINSINGLE, TERRAINTRANSFORMED
 	};
 
 	class PrimitiveBrush3D
@@ -54,6 +55,8 @@ namespace bbe
 		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineTerrainSingle                             = nullptr;
 		VkPipelineLayout                             m_layoutTerrainMesh                                  = VK_NULL_HANDLE;
 		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineTerrainMesh                               = nullptr;
+		VkPipelineLayout                             m_layoutTerrainTransformed                           = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineTerrainTransformed                        = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorPool      *m_pdescriptorPool                                    = nullptr;
 		INTERNAL::vulkan::VulkanCommandPool         *m_pcommandPool                                       = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainHeightMap               = nullptr;
@@ -82,6 +85,7 @@ namespace bbe
 			INTERNAL::vulkan::VulkanPipeline &pipelineTerrain,
 			INTERNAL::vulkan::VulkanPipeline &pipelineTerrainSingle,
 			INTERNAL::vulkan::VulkanPipeline &pipelineTerrainMesh,
+			INTERNAL::vulkan::VulkanPipeline &pipelineTerrainTransformed,
 			INTERNAL::vulkan::VulkanCommandPool &commandPool,
 			INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool,
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainHeightMap,
@@ -108,6 +112,7 @@ namespace bbe
 		void drawTerrain(const Terrain &terrain);
 		void drawTerrain(const TerrainMesh &terrain);
 		void drawTerrain(const TerrainSingle &terrain);
+		void drawTerrain(const TerrainTransformed &terrain);
 
 		void setColor(float r, float g, float b, float a);
 		void setColor(float r, float g, float b);

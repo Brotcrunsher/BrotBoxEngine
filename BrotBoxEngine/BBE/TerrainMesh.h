@@ -5,7 +5,7 @@
 #include "../BBE/List.h"
 #include "../BBE/Image.h"
 #include "../BBE/VulkanBuffer.h"
-#include "BBE/ValueNoise2D.h"
+#include "../BBE/ValueNoise2D.h"
 
 
 namespace bbe
@@ -62,6 +62,7 @@ namespace bbe
 		void setNeighbors(TerrainMeshPatch *up, TerrainMeshPatch *down, TerrainMeshPatch *left, TerrainMeshPatch *right);
 
 		mutable int m_lodLevel;
+		mutable float m_distanceToCamera;
 		void calculateLodLevel(const Vector3 &cameraPos, const Vector3 &terrainPos) const;
 		int getLodLevel() const;
 		bbe::INTERNAL::vulkan::VulkanBuffer getIndexBuffer() const;

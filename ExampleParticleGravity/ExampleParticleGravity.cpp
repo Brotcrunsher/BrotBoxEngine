@@ -18,6 +18,7 @@ public:
 	bbe::Vector3 speed;
 	bbe::IcoSphere m_sphere;
 
+
 	Particle()
 	{
 		pos = random.randomVector3InUnitSphere() * 100.0f;
@@ -47,13 +48,14 @@ public:
 			}
 		}
 
+		
 		speed = speed * 0.99f;
 	}
 
 	void updatePos(float timeSinceLastFrame)
 	{
 
-		pos = pos + speed * timeSinceLastFrame;
+		pos = pos + speed * timeSinceLastFrame * 0.2f;
 
 		m_sphere.set(pos, bbe::Vector3(size), bbe::Vector3(1), 0);
 	}
@@ -73,6 +75,7 @@ class MyGame : public bbe::Game
 
 	float maxSpeed = 0;
 	float minSpeed = 0;
+	bool wireframe = false;
 
 	// Geerbt über Game
 	virtual void onStart() override
@@ -80,7 +83,7 @@ class MyGame : public bbe::Game
 		light.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_NONE);
 		light.setLightStrength(1);
 		light.setPosition(bbe::Vector3(100, 100, 100));
-		for (int i = 0; i < 100; i++)
+		for (int i = 0; i < 200; i++)
 		{
 			particles.add(Particle());
 		}
@@ -136,9 +139,14 @@ class MyGame : public bbe::Game
 			if (speed > maxSpeed) maxSpeed = speed;
 			if (speed < minSpeed) minSpeed = speed;
 		}
+		if (isKeyPressed(bbe::Key::I))
+		{
+			wireframe = !wireframe;
+		}
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
+		brush.setFillMode(wireframe ? bbe::FillMode::WIREFRAME : bbe::FillMode::SOLID);
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 		for (Particle &p : particles)
 		{

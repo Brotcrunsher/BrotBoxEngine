@@ -274,7 +274,6 @@ void bbe::Image::load(int width, int height, const float * data, ImageFormat for
 			m_pdata[i + 1] = ptr[1];
 			m_pdata[i + 2] = ptr[2];
 			m_pdata[i + 3] = ptr[3];
-
 		}
 	}
 	else

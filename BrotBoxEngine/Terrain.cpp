@@ -129,6 +129,7 @@ void bbe::Terrain::init(
 
 void bbe::Terrain::destroy()
 {
+	m_viewFrustrumBuffer.destroy();
 	m_baseTexture.destroy();
 }
 

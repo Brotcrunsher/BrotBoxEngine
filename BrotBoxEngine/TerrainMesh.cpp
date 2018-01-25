@@ -33,14 +33,7 @@ void bbe::TerrainMesh::init(
 
 
 
-		for (int i = 1; i < m_currentAdditionalTexture; i++)
-		{
-			m_additionalTextures[i].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures, &(m_additionalTextures[0]));
-			m_additionalTextureWeights[i].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures, &(m_additionalTextureWeights[0]));
-		}
-
-		m_additionalTextures[0].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures);
-		m_additionalTextureWeights[0].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures);
+		
 
 		int amountOfVerticesPerPatch = getAmountOfVerticesPerPatch();
 		int amountOfLoDs = getAmountOfLoDs();
@@ -61,7 +54,15 @@ void bbe::TerrainMesh::init(
 		{
 			m_patches[i].init(getMaxHeight(), m_meshBuffer, offset, alignment);
 		}
-		int i = 0;
+
+		for (int i = 1; i < m_currentAdditionalTexture; i++)
+		{
+			m_additionalTextures[i].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures, &(m_additionalTextures[0]));
+			m_additionalTextureWeights[i].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures, &(m_additionalTextureWeights[0]));
+		}
+
+		m_additionalTextures[0].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures);
+		m_additionalTextureWeights[0].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures);
 	}
 }
 
@@ -72,6 +73,7 @@ void bbe::TerrainMesh::destroy()
 	{
 		m_patches[i].destroy();
 	}
+	m_meshBuffer.destroy();
 }
 
 void bbe::TerrainMesh::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
@@ -574,6 +576,8 @@ void bbe::TerrainMeshPatch::calculateLodLevel(const Vector3 &cameraPos, const Ve
 	{
 		m_lodLevel = getMaxLod();
 	}
+
+	m_distanceToCamera = distance;
 }
 
 int bbe::TerrainMeshPatch::getLodLevel() const

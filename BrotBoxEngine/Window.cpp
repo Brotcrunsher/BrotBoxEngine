@@ -22,6 +22,7 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 		glfwInit();
 	}
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
 	m_pwindow = glfwCreateWindow(width, height, title, nullptr, nullptr);
 

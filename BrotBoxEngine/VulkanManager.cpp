@@ -78,7 +78,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_setLayoutSampler.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
 	m_setLayoutSampler.create(m_device);
 
-	m_setLayoutTerrainHeightMap.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+	m_setLayoutTerrainHeightMap.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 	m_setLayoutTerrainHeightMap.create(m_device);
 
 	m_setLayoutTerrainAdditionalTexture.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, Settings::getTerrainAdditionalTextures(), VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -107,17 +107,19 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_setFragmentLight            .create(m_device, m_descriptorPool, m_setLayoutFragmentLight);
 	m_setViewProjectionMatrixLight.create(m_device, m_descriptorPool, m_setLayoutViewProjectionMatrix);
 
-	m_vertexShader2DPrimitive.init(m_device, "vert2DPrimitive.spv");
-	m_fragmentShader2DPrimitive.init(m_device, "frag2DPrimitive.spv");
-	m_vertexShader2DImage.init(m_device, "vert2DImage.spv");
-	m_fragmentShader2DImage.init(m_device, "frag2DImage.spv");
-	m_vertexShader3DPrimitive.init(m_device, "vert3DPrimitive.spv");
-	m_fragmentShader3DPrimitive.init(m_device, "frag3DPrimitive.spv");
-	m_vertexShader3DTerrain.init(m_device, "vert3DTerrain.spv");
-	m_fragmentShader3DTerrain.init(m_device, "frag3DTerrain.spv");
-	m_teseShader3DTerrain.init(m_device, "tese3DTerrain.spv");
-	m_tescShader3DTerrain.init(m_device, "tesc3DTerrain.spv");
-	m_vertexShader3DTerrainMesh.init(m_device, "vert3DTerrainMesh.spv");
+	m_vertexShader2DPrimitive           .init(m_device, "vert2DPrimitive.spv");
+	m_fragmentShader2DPrimitive         .init(m_device, "frag2DPrimitive.spv");
+	m_vertexShader2DImage               .init(m_device, "vert2DImage.spv");
+	m_fragmentShader2DImage             .init(m_device, "frag2DImage.spv");
+	m_vertexShader3DPrimitive           .init(m_device, "vert3DPrimitive.spv");
+	m_fragmentShader3DPrimitive         .init(m_device, "frag3DPrimitive.spv");
+	m_vertexShader3DTerrain             .init(m_device, "vert3DTerrain.spv");
+	m_fragmentShader3DTerrain           .init(m_device, "frag3DTerrain.spv");
+	m_teseShader3DTerrain               .init(m_device, "tese3DTerrain.spv");
+	m_tescShader3DTerrain               .init(m_device, "tesc3DTerrain.spv");
+	m_vertexShader3DTerrainMesh         .init(m_device, "vert3DTerrainMesh.spv");
+	m_vertexShader3DTerrainTransformed  .init(m_device, "vert3DTerrainTransformed.spv");
+	m_fragmentShader3DTerrainTransformed.init(m_device, "frag3DTerrainTransformed.spv");
 
 	createPipelines();
 
@@ -155,6 +157,9 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_pipeline3DPrimitive.destroy();
 	m_pipeline3DTerrainSingle.destroy();
 	m_pipeline3DTerrain.destroy();
+	m_pipeline3DTerrainMesh.destroy();
+	m_pipeline3DTerrainTransformed.destroy();
+
 	m_fragmentShader3DPrimitive.destroy();
 	m_vertexShader3DPrimitive.destroy();
 	m_vertexShader3DTerrain.destroy();
@@ -162,6 +167,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_teseShader3DTerrain.destroy();
 	m_tescShader3DTerrain.destroy();
 	m_vertexShader3DTerrainMesh.destroy();
+	m_vertexShader3DTerrainTransformed.destroy();
+	m_fragmentShader3DTerrainTransformed.destroy();
 
 	m_pipeline2DPrimitive.destroy();
 	m_pipeline2DImage.destroy();
@@ -236,8 +243,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	renderPassBeginInfo.framebuffer = m_swapchain.getFrameBuffer(m_imageIndex);
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent = { m_screenWidth, m_screenHeight };
-	//VkClearValue clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
-	VkClearValue clearValue = { 1.0f, 20.f/255.f, 147.f/255.f, 1.0f };
+	VkClearValue clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
+	//VkClearValue clearValue = { 1.0f, 20.f/255.f, 147.f/255.f, 1.0f };
 	VkClearValue depthClearValue = { 1.0f, 0 };
 
 	bbe::List<VkClearValue> clearValues = { 
@@ -283,6 +290,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 		m_pipeline3DTerrain, 
 		m_pipeline3DTerrainSingle,
 		m_pipeline3DTerrainMesh,
+		m_pipeline3DTerrainTransformed,
 		m_commandPool, 
 		m_descriptorPool, 
 		m_setLayoutTerrainHeightMap, 
@@ -411,7 +419,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutFragmentLight.getDescriptorSetLayout());
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainHeightMap.getDescriptorSetLayout());
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutSampler.getDescriptorSetLayout());
-	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainViewFrustum.getDescriptorSetLayout());
+	//m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainViewFrustum.getDescriptorSetLayout());
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTexture.getDescriptorSetLayout());
 	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTextureWeight.getDescriptorSetLayout());
 	m_pipeline3DTerrain.enableDepthBuffer();
@@ -433,7 +441,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutFragmentLight.getDescriptorSetLayout());
 	m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutTerrainHeightMap.getDescriptorSetLayout());
 	m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutSampler.getDescriptorSetLayout());
-	m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutTerrainViewFrustum.getDescriptorSetLayout());
+	//m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutTerrainViewFrustum.getDescriptorSetLayout());
 	m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTexture.getDescriptorSetLayout());
 	m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTextureWeight.getDescriptorSetLayout());
 	m_pipeline3DTerrainSingle.enableDepthBuffer();
@@ -443,7 +451,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DTerrainSingle.setPrimitiveTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
 	m_pipeline3DTerrainSingle.create(m_device.getDevice(), m_renderPass.getRenderPass());
 
-	m_pipeline3DTerrainMesh.init(m_vertexShader3DTerrainMesh, m_fragmentShader3DTerrain, m_screenWidth, m_screenHeight); 
+	m_pipeline3DTerrainMesh.init(m_vertexShader3DTerrainMesh, m_fragmentShader3DTerrain, m_screenWidth, m_screenHeight);
 	m_pipeline3DTerrainMesh.addVertexBinding(0, sizeof(Vector3), VK_VERTEX_INPUT_RATE_VERTEX);
 	m_pipeline3DTerrainMesh.addVertexDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0);
 	m_pipeline3DTerrainMesh.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color) + sizeof(Vector4));
@@ -453,7 +461,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DTerrainMesh.addDescriptorSetLayout(m_setLayoutFragmentLight.getDescriptorSetLayout());
 	m_pipeline3DTerrainMesh.addDescriptorSetLayout(m_setLayoutTerrainHeightMap.getDescriptorSetLayout());
 	m_pipeline3DTerrainMesh.addDescriptorSetLayout(m_setLayoutSampler.getDescriptorSetLayout());
-	m_pipeline3DTerrainMesh.addDescriptorSetLayout(m_setLayoutSampler.getDescriptorSetLayout());
+	//m_pipeline3DTerrainMesh.addDescriptorSetLayout(m_setLayoutSampler.getDescriptorSetLayout());
 	m_pipeline3DTerrainMesh.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTexture.getDescriptorSetLayout());
 	m_pipeline3DTerrainMesh.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTextureWeight.getDescriptorSetLayout());
 	m_pipeline3DTerrainMesh.enableDepthBuffer();
@@ -462,6 +470,28 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DTerrainMesh.enablePrimitiveRestart(true);
 	m_pipeline3DTerrainMesh.setPrimitiveTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
 	m_pipeline3DTerrainMesh.create(m_device.getDevice(), m_renderPass.getRenderPass());
+
+
+	m_pipeline3DTerrainTransformed.init(m_vertexShader3DTerrainTransformed, m_fragmentShader3DTerrain, m_screenWidth, m_screenHeight);
+	m_pipeline3DTerrainTransformed.addVertexBinding(0, sizeof(Vector2), VK_VERTEX_INPUT_RATE_VERTEX);
+	m_pipeline3DTerrainTransformed.addVertexDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
+	m_pipeline3DTerrainTransformed.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color) + sizeof(Vector4));
+	m_pipeline3DTerrainTransformed.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(Matrix4) + sizeof(Vector4) + sizeof(Vector4) + sizeof(float));
+	m_pipeline3DTerrainTransformed.addDescriptorSetLayout(m_setLayoutVertexLight.getDescriptorSetLayout());
+	m_pipeline3DTerrainTransformed.addDescriptorSetLayout(m_setLayoutViewProjectionMatrix.getDescriptorSetLayout());
+	m_pipeline3DTerrainTransformed.addDescriptorSetLayout(m_setLayoutFragmentLight.getDescriptorSetLayout());
+	m_pipeline3DTerrainTransformed.addDescriptorSetLayout(m_setLayoutTerrainHeightMap.getDescriptorSetLayout());
+	m_pipeline3DTerrainTransformed.addDescriptorSetLayout(m_setLayoutSampler.getDescriptorSetLayout());
+	m_pipeline3DTerrainTransformed.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTexture.getDescriptorSetLayout());
+	m_pipeline3DTerrainTransformed.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTextureWeight.getDescriptorSetLayout());
+	m_pipeline3DTerrainTransformed.enableDepthBuffer();
+	m_pipeline3DTerrainTransformed.addSpezializationConstant(0, 0, sizeof(int32_t));
+	m_pipeline3DTerrainTransformed.setSpezializationData(sizeof(int32_t), &spezAmountOfLights);
+	m_pipeline3DTerrainTransformed.enablePrimitiveRestart(true);
+	m_pipeline3DTerrainTransformed.setPrimitiveTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+	m_pipeline3DTerrainTransformed.create(m_device.getDevice(), m_renderPass.getRenderPass());
+
+
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::resize(uint32_t width, uint32_t height)

@@ -29,9 +29,10 @@ namespace bbe
 
 	enum class ImageFormat
 	{
-		R8G8B8A8 = VK_FORMAT_R8G8B8A8_UNORM,
-		R8       = VK_FORMAT_R8_UNORM,
-		R32FLOAT = VK_FORMAT_R32_SFLOAT
+		R8G8B8A8    = VK_FORMAT_R8G8B8A8_UNORM,
+		R8          = VK_FORMAT_R8_UNORM,
+		R32FLOAT    = VK_FORMAT_R32_SFLOAT,
+		R32FLOATBC6 = VK_FORMAT_BC6H_UFLOAT_BLOCK
 	};
 
 	enum class ImageRepeatMode
@@ -58,6 +59,7 @@ namespace bbe
 		friend class Terrain;
 		friend class TerrainMesh;
 		friend class TerrainSingle;
+		friend class TerrainTransformed;
 	private:
 		byte           *m_pdata  = nullptr;
 		int             m_width  = 0;

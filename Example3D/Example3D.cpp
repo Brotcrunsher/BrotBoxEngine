@@ -5,52 +5,53 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 
-//#define AMOUNTOFCUBES 1024 * 7
-#define AMOUNTOFCUBES 1024 * 4
+#define PERFORMANCETEST 0
 
+#if PERFORMANCETEST
 #define AMOUNTOFFRAMES (1000 * 10)
 #define AMOUNTOFBATCHES (1000)
+#endif
 
 class MyGame : public bbe::Game
 {
 public:
-	float renderTimes[AMOUNTOFFRAMES];
-	float cpuTimes[AMOUNTOFFRAMES];
-	float frameTimes[AMOUNTOFFRAMES];
+#if PERFORMANCETEST
+	float renderTimes[AMOUNTOFFRAMES * AMOUNTOFBATCHES];
+	float cpuTimes[AMOUNTOFFRAMES * AMOUNTOFBATCHES];
+	float frameTimes[AMOUNTOFFRAMES * AMOUNTOFBATCHES];
 
 	float avg_renderTimes[AMOUNTOFBATCHES];
 	float avg_cpuTimes[AMOUNTOFBATCHES];
 	float avg_frameTimes[AMOUNTOFBATCHES];
+#endif
 
-	//bbe::Cube cubes[AMOUNTOFCUBES];
-	//bbe::Vector3 originalPositions[AMOUNTOFCUBES];
-	//bbe::Vector3 positions[AMOUNTOFCUBES];
-	//bbe::Vector3 rotationAxis[AMOUNTOFCUBES];
-	//float rotationSpeeds[AMOUNTOFCUBES];
-	//float rotations[AMOUNTOFCUBES];
-	//bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
+#if !PERFORMANCETEST
+	bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
+#endif
+
 	bbe::Random rand;
 
-	bbe::TerrainMesh terrain;
-	//bbe::PointLight light;
-	//bbe::PointLight blinkLight;
-	//bbe::PointLight brightLight;
+	bbe::TerrainSingle terrain;		//Terrain Single Draw Call (Tessellation)
+	//bbe::Terrain terrain;			//Terrain Multi  Draw Call (Tessellation)
+	//bbe::TerrainMesh terrain;		//Meshimplementation
+
 	bbe::PointLight sunLight;
-	//bbe::PointLight extraLight;
-
-	//bbe::Color colors[AMOUNTOFCUBES];
-
-	//bbe::Image image;
-	//bbe::Image image2;
 
 	bool wireframe = false;
 
+
+#if PERFORMANCETEST
 	int frameNumber = 0;
 	int batch = 0;
+#endif
 
 	MyGame()
-		:/*light(bbe::Vector3(100, 200, 0)), brightLight(bbe::Vector3(200, 200, 0)), */terrain(1024 * 8, 1024 * 8, "../Third-Party/textures/dryDirt.png", 12)
+		:terrain(8 * 1024, 8 * 1024, "../Third-Party/textures/dryDirt.png", 12)
 	{
+#if !PERFORMANCETEST
+		ccnc.setCameraPos(bbe::Vector3(1000, 1000, 500));
+#endif
+
 		terrain.setBaseTextureMult(bbe::Vector2(2, 2));
 		terrain.setMaxHeight(350);
 		float *weightsGrass = new float[terrain.getWidth() * terrain.getHeight()];
@@ -60,22 +61,6 @@ public:
 			for (int k = 0; k < terrain.getWidth(); k++)
 			{
 				int index = i * terrain.getWidth() + k;
-				weightsGrass[index] = (float)i / (float)terrain.getHeight();
-				weightsSand[index]  = (float)k / (float)terrain.getWidth();
-
-				float weightSum = weightsGrass[index] + weightsSand[index];
-				if (weightSum > 1)
-				{
-					weightsGrass[index] /= weightSum;
-					weightsSand[index] /= weightSum;
-				}
-
-				//weightsGrass[index] = 1;
-				//weightsSand[index] = 0;
-
-
-
-				/*int index = i * terrain.getWidth() + k;
 				float heightValue = (float)terrain.projectOnTerrain(bbe::Vector3(k, i, 0)).z / 350;
 
 				float weightSand = bbe::Math::normalDist(heightValue, 0, 0.3);
@@ -88,11 +73,11 @@ public:
 				weightStone /= weightSum;
 
 				weightsGrass[index] = weightGras;
-				weightsSand[index] = weightSand;*/
+				weightsSand[index] = weightSand;
 			}
 		}
-		terrain.addTexture("../Third-Party/textures/cf_ter_gcs_01.png", weightsGrass);
 		terrain.addTexture("../Third-Party/textures/sand.png", weightsSand);
+		terrain.addTexture("../Third-Party/textures/cf_ter_gcs_01.png", weightsGrass);
 		delete weightsGrass;
 		delete weightsSand;
 	}
@@ -104,71 +89,38 @@ public:
 		sunLight.setLightStrength(0.9f);
 		sunLight.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_NONE);
 
-		//extraLight.setPosition(bbe::Vector3(-400, -400, 0));
-		//extraLight.setLightStrength(5000.f);
-		//extraLight.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_SQUARED);
-
-		//terrain.setTransform(bbe::Vector3(-750, -750, -120), bbe::Vector3(1), bbe::Vector3(1), 0);
-		/*for (int i = 0; i < AMOUNTOFCUBES; i++)
-		{
-			originalPositions[i] = rand.randomVector3InUnitSphere();
-			rotationAxis[i] = rand.randomVector3InUnitSphere();
-			rotations[i] = rand.randomFloat() * bbe::Math::PI * 2;
-			rotationSpeeds[i] = rand.randomFloat() * bbe::Math::PI * 2 * 0.25f;
-			cubes[i].set(positions[i] , bbe::Vector3(1), rotationAxis[i], rotations[i]);
-			colors[i] = bbe::Color(rand.randomFloat(), rand.randomFloat(), rand.randomFloat(), 1.0f);
-		}*/
-
-		//image.load("images/TestImage.png");
-		//image2.load("images/TestImage2.png");
-
 		terrain.setBaseTextureMult(bbe::Vector2(128, 128));
 	}
 
 	virtual void update(float timeSinceLastFrame) override
 	{
-		//std::cout << "FPS: " << 1 / timeSinceLastFrame << "\n";
-		//ccnc.update(timeSinceLastFrame);
-		//std::cout << "Highest FPS: " << 1 / lowestDelta << "\n";
-		//std::cout << "Lowest FPS:  " << 1 / highestDelta << "\n";
-		//std::cout << std::endl;
-
-		/*for (int i = 0; i < AMOUNTOFCUBES; i++)
-		{
-			positions[i] = originalPositions[i] * ((bbe::Math::sin(timePassed / 10.0f) + 1) * 40.0f + 10.0f);
-			rotations[i] += rotationSpeeds[i] * timeSinceLastFrame;
-			if (rotations[i] > bbe::Math::PI * 2)
-			{
-				rotations[i] -= bbe::Math::PI * 2;
-			}
-			cubes[i].set(positions[i], bbe::Vector3(1), rotationAxis[i], rotations[i]);
-		}*/
-
-		//light.setPosition(bbe::Vector3(bbe::Math::sin(timePassed / 2) * 1000, 0, 0));
+#if !PERFORMANCETEST
+		std::cout << "FPS: " << 1 / timeSinceLastFrame << "\n";
+		ccnc.update(timeSinceLastFrame);
+#endif
 
 		if (isKeyPressed(bbe::Key::I))
 		{
 			wireframe = !wireframe;
 		}
 
+#if PERFORMANCETEST
 		if (frameNumber < AMOUNTOFFRAMES)
 		{
-			frameTimes[frameNumber] = timeSinceLastFrame;
+			frameTimes[frameNumber + batch * AMOUNTOFFRAMES] = timeSinceLastFrame;
 		}
-
-		//std::cout << 1 / timeSinceLastFrame << "\n";
-
+#endif
 	}
 	int height = 2;
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
 		brush.setFillMode(wireframe ? bbe::FillMode::WIREFRAME : bbe::FillMode::SOLID);
 
-		//ccnc.setCameraPos(terrain.projectOnTerrain(ccnc.getCameraPos()));
-		//brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
+#if !PERFORMANCETEST
+		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
+#endif
 
-		//std::cout << ccnc.getCameraPos().x << "\t" << ccnc.getCameraPos().y << "\t" << ccnc.getCameraPos().z;
-
+#if PERFORMANCETEST
 		float angle = (float)frameNumber / (float)AMOUNTOFFRAMES * bbe::Math::PI * 2;
 		bbe::Vector3 center(4 * 1024, 4 * 1024, 0);
 		bbe::Vector3 distTo(2 * 1024, 4 * 1024, 0);
@@ -178,48 +130,26 @@ public:
 		bbe::Vector3 pos = terrain.projectOnTerrain(distTo) + bbe::Vector3(0, 0, height);
 
 		brush.setCamera(pos, center);
-
-		/*for (int i = 0; i < AMOUNTOFCUBES; i++)
-		{
-			brush.setColor(colors[i]);
-			brush.fillCube(cubes[i]);
-		}*/
-
-		/*for (int i = 0; i < 200; i++)
-		{
-			brush.setColor(bbe::Color(rand.randomFloat(), rand.randomFloat(), rand.randomFloat(), 1.0f));
-			brush.fillCube(bbe::Cube(bbe::Vector3(0, 0, 100 - i), bbe::Vector3(1, 1, 1), bbe::Vector3(), 0));
-		}*/
-
-		//brush.setColor(1, 1, 1);
+#endif
 
 		brush.drawTerrain(terrain);
-		
-		//std::cout << bbe::Profiler::getRenderTime() << "\t\t\t" << bbe::Profiler::getCPUTime() << std::endl;
 
+#if PERFORMANCETEST
 		if (frameNumber < AMOUNTOFFRAMES)
 		{
-			renderTimes[frameNumber] = bbe::Profiler::getRenderTime();
-			cpuTimes[frameNumber] = bbe::Profiler::getCPUTime();
+			renderTimes[frameNumber + batch * AMOUNTOFFRAMES] = bbe::Profiler::getRenderTime();
+			cpuTimes[frameNumber + batch * AMOUNTOFFRAMES] = bbe::Profiler::getCPUTime();
 		}
 		else if(frameNumber == AMOUNTOFFRAMES)
 		{
-			/*bbe::simpleFile::writeFloatArrToFile(bbe::String("_renderTimes") + height + ".txt", renderTimes, AMOUNTOFFRAMES);
-			bbe::simpleFile::writeFloatArrToFile(bbe::String("_cpuTimes") + height + ".txt", cpuTimes, AMOUNTOFFRAMES);
-			bbe::simpleFile::writeFloatArrToFile(bbe::String("_frameTimes") + height + ".txt", frameTimes, AMOUNTOFFRAMES);
-			//std::exit(0);
-			frameNumber = 0;
-			height += 100;*/
-
-
 			float avgRenderTime = 0;
 			float avgCpuTime = 0;
 			float avgFrameTime = 0;
 			for (int i = 3; i < AMOUNTOFFRAMES; i++)
 			{
-				avgRenderTime += renderTimes[i];
-				avgCpuTime    += cpuTimes[i];
-				avgFrameTime  += frameTimes[i];
+				avgRenderTime += renderTimes[i + batch * AMOUNTOFFRAMES];
+				avgCpuTime    += cpuTimes[i + batch * AMOUNTOFFRAMES];
+				avgFrameTime  += frameTimes[i + batch * AMOUNTOFFRAMES];
 			}
 			avgRenderTime /= (AMOUNTOFFRAMES - 3);
 			avgCpuTime    /= (AMOUNTOFFRAMES - 3);
@@ -235,6 +165,9 @@ public:
 			height++;
 			if (batch == AMOUNTOFBATCHES)
 			{
+				bbe::simpleFile::writeFloatArrToFile(bbe::String("__REALrenderTimes") + height + ".txt", renderTimes, AMOUNTOFBATCHES * AMOUNTOFFRAMES);
+				bbe::simpleFile::writeFloatArrToFile(bbe::String("__REALcpuTimes") + height + ".txt", cpuTimes, AMOUNTOFBATCHES * AMOUNTOFFRAMES);
+				bbe::simpleFile::writeFloatArrToFile(bbe::String("__REALframeTimes") + height + ".txt", frameTimes, AMOUNTOFBATCHES * AMOUNTOFFRAMES);
 				bbe::simpleFile::writeFloatArrToFile(bbe::String("__AVGrenderTimes") + height + ".txt", avg_renderTimes, AMOUNTOFBATCHES);
 				bbe::simpleFile::writeFloatArrToFile(bbe::String("__AVGcpuTimes") + height + ".txt", avg_cpuTimes, AMOUNTOFBATCHES);
 				bbe::simpleFile::writeFloatArrToFile(bbe::String("__AVGframeTimes") + height + ".txt", avg_frameTimes, AMOUNTOFBATCHES);
@@ -244,11 +177,10 @@ public:
 		}
 
 		frameNumber++;
+#endif
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
-		//brush.drawImage(10, 10, 100, 100, image);
-		//brush.drawImage(120, 10, 100, 100, image2);
 	}
 	virtual void onEnd() override
 	{

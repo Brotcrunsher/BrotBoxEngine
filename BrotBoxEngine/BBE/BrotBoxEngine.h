@@ -77,6 +77,7 @@
 #include "../BBE/Terrain.h"
 #include "../BBE/TerrainSingle.h"
 #include "../BBE/TerrainMesh.h"
+#include "../BBE/TerrainTransformed.h"
 
 #include "../BBE/CPUWatch.h"
 #include "../BBE/GameTime.h"

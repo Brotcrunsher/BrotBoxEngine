@@ -348,6 +348,9 @@
     <ClInclude Include="BBE\TerrainSingle.h">
       <Filter>Header Files\Shapes</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\TerrainTransformed.h">
+      <Filter>Header Files\Shapes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -518,6 +521,9 @@
     <ClCompile Include="TerrainSingle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TerrainTransformed.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader2DPrimitive.frag">
@@ -552,6 +558,12 @@
     </None>
     <None Include="packages.config" />
     <None Include="Shader3DTerrainMesh.vert">
+      <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
+    </None>
+    <None Include="Shader3DTerrainTransformed.vert">
+      <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
+    </None>
+    <None Include="Shader3DTerrainTransformed.frag">
       <Filter>Header Files\GFX\Vulkan\Shaders</Filter>
     </None>
   </ItemGroup>

@@ -60,6 +60,9 @@ namespace bbe
 				VulkanShader   m_vertexShader3DTerrainMesh;
 				VulkanPipeline m_pipeline3DTerrainMesh;
 				VulkanPipeline m_pipeline3DTerrainSingle;
+				VulkanShader   m_vertexShader3DTerrainTransformed;
+				VulkanShader   m_fragmentShader3DTerrainTransformed;
+				VulkanPipeline m_pipeline3DTerrainTransformed;
 
 
 				VulkanBuffer   m_uboMatrixViewProjection;
