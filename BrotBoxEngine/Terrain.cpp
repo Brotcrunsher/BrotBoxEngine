@@ -13,7 +13,6 @@ VkDevice         bbe::TerrainPatch::s_device         = VK_NULL_HANDLE;
 VkPhysicalDevice bbe::TerrainPatch::s_physicalDevice = VK_NULL_HANDLE;
 VkQueue          bbe::TerrainPatch::s_queue          = VK_NULL_HANDLE;
 bbe::INTERNAL::vulkan::VulkanCommandPool *bbe::TerrainPatch::s_pcommandPool = nullptr;
-static bbe::Random random;
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::TerrainPatch::s_indexBuffer;
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::TerrainPatch::s_vertexBuffer;
 

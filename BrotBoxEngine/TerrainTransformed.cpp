@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "BBE\TerrainTransformed.h"
-#include "BBE\VulkanDevice.h"
+#include "BBE/TerrainTransformed.h"
+#include "BBE/VulkanDevice.h"
 #include "BBE/TimeHelper.h"
-#include "BBE\Math.h"
+#include "BBE/Math.h"
 
 #define VERTICES_PER_DIMENSION (512)
 static const float VERTICES_PER_METER = 1;

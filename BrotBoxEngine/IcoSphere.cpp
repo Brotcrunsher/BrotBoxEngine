@@ -3,6 +3,7 @@
 #include "BBE/VertexWithNormal.h"
 #include "BBE/Math.h"
 #include "BBE/List.h"
+#include <string.h>
 
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::IcoSphere::s_indexBuffer;
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::IcoSphere::s_vertexBuffer;

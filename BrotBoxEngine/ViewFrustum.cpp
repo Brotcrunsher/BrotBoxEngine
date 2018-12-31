@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "BBE/ViewFrustum.h"
-#include "BBE\ViewFrustum.h"
 
 void bbe::INTERNAL::vulkan::ViewFrustum::updatePlanes(bbe::Matrix4 mvpMatrix)
 {

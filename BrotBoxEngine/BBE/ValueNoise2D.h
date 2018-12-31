@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../BBE/List.h"
+#include "../BBE/DynamicArray.h"
 
 namespace bbe
 {

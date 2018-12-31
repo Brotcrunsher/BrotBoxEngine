@@ -1,17 +1,15 @@
 #pragma once
 
-#include "../BBE/String.h"
-
 namespace bbe
 {
 #define CREATE_EXCEPTION(n)							\
 	class n					                        \
 	{												\
 	private:										\
-		bbe::String m_msg = L"";					\
+		const wchar_t* m_msg = L"";					\
 													\
 	public:											\
-		n(bbe::String msg)	                        \
+		n(const wchar_t* msg)	                        \
 			: m_msg(msg)							\
 		{}											\
 													\

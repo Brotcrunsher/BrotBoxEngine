@@ -14,7 +14,6 @@ uint32_t bbe::INTERNAL::vulkan::findMemoryTypeIndex(VkPhysicalDevice physicalDev
 		}
 	}
 
-	__debugbreak();
 	throw NoCorrectMemoryType();
 }
 

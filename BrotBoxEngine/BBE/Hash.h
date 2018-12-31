@@ -3,6 +3,7 @@
 
 #include "../BBE/Array.h"
 #include <stdint.h>
+#include <type_traits>
 
 namespace bbe
 {

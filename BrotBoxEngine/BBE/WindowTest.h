@@ -15,6 +15,7 @@ namespace bbe
 			virtual void onStart() override;
 			virtual void update(float timeSinceLastFrame) override;
 			virtual void draw2D(PrimitiveBrush2D &brush) override;
+			virtual void draw3D(PrimitiveBrush3D &brush) override;
 			virtual void onEnd() override;
 		};
 

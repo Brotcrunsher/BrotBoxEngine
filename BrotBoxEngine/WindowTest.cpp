@@ -12,7 +12,7 @@ void bbe::test::MyGame::onStart()
 void bbe::test::MyGame::update(float timeSinceLastFrame)
 {
 	std::cout << "Update! " << timeSinceLastFrame << std::endl;
-	if (isKeyDown(KEY_A))
+	if (isKeyDown(Key::A))
 	{
 		std::cout << "A is down! :-)" << std::endl;
 	}
@@ -27,6 +27,10 @@ void bbe::test::MyGame::draw2D(PrimitiveBrush2D &brush)
 	brush.setColor(1.0f, 1.0f, 0.0f);
 	brush.fillRect(200.f, 100.f, 100.f, 100.f);
 	std::cout << "Draw! " << std::endl;
+}
+
+void bbe::test::MyGame::draw3D(PrimitiveBrush3D &brush)
+{
 }
 
 void bbe::test::MyGame::onEnd()

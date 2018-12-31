@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "BBE\Image.h"
+#include "BBE/Image.h"
 #include "BBE/Exceptions.h"
 #include "BBE/VulkanDevice.h"
 #include "BBE/VulkanCommandPool.h"

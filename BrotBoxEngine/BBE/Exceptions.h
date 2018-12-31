@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../BBE/ExceptionHelper.h"
-#include "../BBE/String.h"
 
 namespace bbe
 {

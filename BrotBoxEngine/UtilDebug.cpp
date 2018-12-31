@@ -3,5 +3,9 @@
 
 void bbe::debugBreak()
 {
-	__debugbreak();
+	#ifdef _MSC_VER
+		__debugbreak();
+	#else
+		//Todo find gcc equivalent to __debugbreak()
+	#endif
 }

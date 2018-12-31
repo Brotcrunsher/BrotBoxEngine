@@ -3,7 +3,6 @@
 #include <functional>
 #include "../BBE/STLCapsule.h"
 #include "../BBE/Array.h"
-#include "../BBE/DynamicArray.h"
 #include "../BBE/Unconstructed.h"
 #include "../BBE/UtilDebug.h"
 #include "../BBE/Hash.h"
@@ -197,7 +196,7 @@ namespace bbe
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<dummyKeepSorted, List<typename T, dummyKeepSorted>&>::type
+		typename std::enable_if<dummyKeepSorted, List<T, dummyKeepSorted>&>::type
 		operator+=(List<T, dummyKeepSorted> other)
 		{
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
@@ -400,7 +399,7 @@ namespace bbe
 		template <bool dummyKeepSorted = keepSorted>
 		typename std::enable_if<!dummyKeepSorted, size_t>::type getIndexOnAdd(const T& val)
 		{
-			static_assert(false, "Only sorted Lists can getIndexWhenPushedBack!");
+			assert(false && "Only sorted Lists can getIndexWhenPushedBack!");
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
@@ -471,7 +470,7 @@ namespace bbe
 		template <bool dummyKeepSorted = keepSorted>
 		typename std::enable_if<!dummyKeepSorted, void>::type getNeighbors(const T& val, T*& leftNeighbor, T*& rightNeighbor)
 		{
-			static_assert(false, "Only sorted Lists can getIndexWhenPushedBack!");
+			assert(false && "Only sorted Lists can getIndexWhenPushedBack!");
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
@@ -527,16 +526,16 @@ namespace bbe
 			return;
 		}
 
-		template <typename T>
-		void addAll(T&& t)
+		template <typename U>
+		void addAll(U&& t)
 		{
-			add(std::forward<T>(t));
+			add(std::forward<U>(t));
 		}
 
-		template<typename T, typename... arguments>
-		void addAll(T&& t, arguments&&... args)
+		template<typename U, typename... arguments>
+		void addAll(U&& t, arguments&&... args)
 		{
-			add(std::forward<T>(t));
+			add(std::forward<U>(t));
 			addAll(std::forward<arguments>(args)...);
 		}
 
@@ -554,12 +553,6 @@ namespace bbe
 		{
 			//UNTESTED
 			addAll(arr.getRaw(), size);
-		}
-
-		void addAll(DynamicArray<T>& arr)
-		{
-			//UNTESTED
-			addAll(arr.getRaw(), arr.getLength());
 		}
 
 		void popBack(size_t amount = 1)

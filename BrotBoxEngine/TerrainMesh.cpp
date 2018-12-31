@@ -14,7 +14,6 @@ VkQueue          bbe::TerrainMeshPatch::s_queue = VK_NULL_HANDLE;
 bbe::INTERNAL::vulkan::VulkanCommandPool *bbe::TerrainMeshPatch::s_pcommandPool = nullptr;
 bbe::List<bbe::List<bbe::INTERNAL::vulkan::VulkanBuffer>> bbe::TerrainMeshPatch::s_indexBuffer;
 bbe::List<bbe::List<int>> bbe::TerrainMeshPatch::s_indexCount;
-static bbe::Random random;
 
 void bbe::TerrainMesh::init(
 	const INTERNAL::vulkan::VulkanDevice & device, 

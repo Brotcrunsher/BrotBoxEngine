@@ -3,6 +3,7 @@
 #include "BBE/Vector2.h"
 #include "BBE/List.h"
 #include "BBE/Math.h"
+#include <cstring>
 
 const uint32_t bbe::Circle::AMOUNTOFVERTICES = 32;
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::Circle::s_indexBuffer;

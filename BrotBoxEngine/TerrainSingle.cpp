@@ -9,8 +9,6 @@
 static const int PATCH_SIZE = 64;
 static const float VERTICES_PER_METER = 1;
 
-static bbe::Random random;
-
 void bbe::TerrainSingle::init(
 	const INTERNAL::vulkan::VulkanDevice & device,
 	const INTERNAL::vulkan::VulkanCommandPool & commandPool,

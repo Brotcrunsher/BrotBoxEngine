@@ -1,15 +1,19 @@
 #pragma once
 
-#include <string>
+#include <cstring>
 #include <cwchar>
 #include <stdlib.h>
+#include <iostream>
+#include "../BBE/NewDeleteAllocator.h"
 #include "../BBE/DynamicArray.h"
 #include "../BBE/Array.h"
 #include "../BBE/UtilDebug.h"
 #include "../BBE/Hash.h"
 
+
 namespace bbe
 {
+
 	template <typename Allocator, size_t allocatorSize>
 	class StringBase
 	{
@@ -31,7 +35,7 @@ namespace bbe
 			if (getCapacity() < newSize) {
 				size_t newCapa = newSize * 2;
 				
-				wchar_t *newData = s_allocator.allocateObjects<wchar_t>(newCapa);
+				wchar_t *newData = s_allocator.template allocateObjects<wchar_t>(newCapa);
 				wmemcpy(newData, getRaw(), getCapacity());
 
 				if (!m_usesSSO) {
@@ -65,7 +69,7 @@ namespace bbe
 			}
 			else
 			{
-				m_pdata = s_allocator.allocateObjects<wchar_t>(m_length + 1);
+				m_pdata = s_allocator.template allocateObjects<wchar_t>(m_length + 1);
 				wmemcpy(m_pdata, data, m_length + 1);
 				m_usesSSO = false;
 				m_capacity = m_length + 1;
@@ -85,14 +89,18 @@ namespace bbe
 			
 			if (m_length < SSOSIZE)
 			{
-				mbstowcs_s(0, m_ssoData, m_length + 1, data, m_length);
+				for(size_t i = 0; i<m_length; i++){
+					m_ssoData[i] = (wchar_t)data[i];
+				}
 				m_usesSSO = true;
 				m_capacity = SSOSIZE;
 			}
 			else
 			{
-				m_pdata = s_allocator.allocateObjects<wchar_t>(m_length + 1);
-				mbstowcs_s(0, m_pdata, m_length + 1, data, m_length);
+				m_pdata = s_allocator.template allocateObjects<wchar_t>(m_length + 1);
+				for(size_t i = 0; i<m_length; i++){
+					m_ssoData[i] = (wchar_t)data[i];
+				}
 				m_usesSSO = false;
 				m_capacity = m_length + 1;
 			}
@@ -112,7 +120,8 @@ namespace bbe
 			initializeFromWCharArr(arr.getRaw());
 		}
 
-		StringBase(const DynamicArray<wchar_t>& arr)
+		template<typename T>
+		StringBase(const DynamicArray<T>& arr)
 		{
 			//UNTESTED
 			initializeFromWCharArr(arr.getRaw());
@@ -120,12 +129,6 @@ namespace bbe
 
 		template<int size>
 		StringBase(const Array<char, size>& arr)
-		{
-			//UNTESTED
-			initializeFromCharArr(arr.getRaw());
-		}
-
-		StringBase(const DynamicArray<char>& arr)
 		{
 			//UNTESTED
 			initializeFromCharArr(arr.getRaw());
@@ -140,18 +143,6 @@ namespace bbe
 		StringBase(const char* data)
 		{
 			initializeFromCharArr(data);
-		}
-
-		StringBase(const std::string &data)
-		{
-			m_length = data.length();
-			initializeFromCharArr(data.c_str());
-		}
-
-		StringBase(const std::wstring &data)
-		{
-			m_length = data.length();
-			initializeFromWCharArr(data.c_str());
 		}
 
 		StringBase(double number)
@@ -300,18 +291,6 @@ namespace bbe
 			return operator==(localString);
 		}
 
-		bool operator==(const std::string& str) const
-		{
-			StringBase<Allocator, allocatorSize> localString(str);
-			return operator==(localString);
-		}
-
-		bool operator==(const std::wstring& str) const
-		{
-			StringBase<Allocator, allocatorSize> localString(str);
-			return operator==(localString);
-		}
-
 		friend bool operator==(const wchar_t* arr, const StringBase<Allocator, allocatorSize>& a)
 		{
 			return a.operator==(arr);
@@ -320,16 +299,6 @@ namespace bbe
 		friend bool operator==(const char* arr, const StringBase<Allocator, allocatorSize>& a)
 		{
 			return a.operator==(arr);
-		}
-
-		friend bool operator==(std::string& str, const StringBase<Allocator, allocatorSize>& a)
-		{
-			return a.operator==(str);
-		}
-
-		friend bool operator==(std::wstring& str, const StringBase<Allocator, allocatorSize>& a)
-		{
-			return a.operator==(str);
 		}
 
 		bool operator!=(const StringBase<Allocator, allocatorSize>& other) const
@@ -347,16 +316,6 @@ namespace bbe
 			return !operator==(arr);
 		}
 
-		bool operator!=(const std::string& str) const
-		{
-			return !operator==(str);
-		}
-
-		bool operator!=(const std::wstring& str) const
-		{
-			return !operator==(str);
-		}
-
 		friend std::ostream &operator<<(std::ostream &os, const bbe::StringBase<Allocator, allocatorSize> &string)
 		{
 			return os << string.getRaw();
@@ -370,16 +329,6 @@ namespace bbe
 		friend bool operator!=(const char* arr, const StringBase<Allocator, allocatorSize>& string)
 		{
 			return string.operator!=(arr);
-		}
-
-		friend bool operator!=(const std::string& str, const StringBase<Allocator, allocatorSize>& string)
-		{
-			return string.operator!=(str);
-		}
-
-		friend bool operator!=(const std::wstring& str, const StringBase<Allocator, allocatorSize>& string)
-		{
-			return string.operator!=(str);
 		}
 
 		StringBase<Allocator, allocatorSize> operator+(const StringBase<Allocator, allocatorSize>& other) const
@@ -397,7 +346,7 @@ namespace bbe
 			}
 			else
 			{
-				wchar_t *newData = s_allocator.allocateObjects<wchar_t>(totalLength + 1);
+				wchar_t *newData = s_allocator.template allocateObjects<wchar_t>(totalLength + 1);
 				memcpy(newData, getRaw(), sizeof(wchar_t) * m_length);
 				memcpy(newData + m_length, other.getRaw(), sizeof(wchar_t) * other.m_length);
 				newData[totalLength] = 0;
@@ -406,16 +355,6 @@ namespace bbe
 				retVal.m_pdata = newData;
 			}
 			return retVal;
-		}
-
-		StringBase<Allocator, allocatorSize> operator+(const std::string& other) const
-		{
-			return operator+(StringBase<Allocator, allocatorSize>(other));
-		}
-
-		StringBase<Allocator, allocatorSize> operator+(const std::wstring& other) const
-		{
-			return operator+(StringBase<Allocator, allocatorSize>(other));
 		}
 
 		StringBase<Allocator, allocatorSize> operator+(const wchar_t* other) const
@@ -471,16 +410,6 @@ namespace bbe
 		StringBase<Allocator, allocatorSize> operator+(unsigned int number) const
 		{
 			return operator+(StringBase<Allocator, allocatorSize>(number));
-		}
-
-		friend StringBase<Allocator, allocatorSize> operator+(const std::string& other, const StringBase<Allocator, allocatorSize>& string)
-		{
-			return StringBase<Allocator, allocatorSize>(other) + string;
-		}
-
-		friend StringBase<Allocator, allocatorSize> operator+(const std::wstring& other, const StringBase<Allocator, allocatorSize>& string)
-		{
-			return StringBase<Allocator, allocatorSize>(other) + string;
 		}
 
 		friend StringBase<Allocator, allocatorSize> operator+(const wchar_t* other, const StringBase<Allocator, allocatorSize>& string)
@@ -554,16 +483,6 @@ namespace bbe
 				m_pdata[totalLength] = 0;
 			}
 			return *this;
-		}
-
-		StringBase<Allocator, allocatorSize>& operator+=(const std::string& other)
-		{
-			return operator+=(bbe::StringBase<Allocator, allocatorSize>(other));
-		}
-
-		StringBase<Allocator, allocatorSize>& operator+=(const std::wstring& other)
-		{
-			return operator+=(bbe::StringBase<Allocator, allocatorSize>(other));
 		}
 
 		StringBase<Allocator, allocatorSize>& operator+=(const wchar_t* other)
@@ -680,16 +599,6 @@ namespace bbe
 			return count(StringBase<Allocator, allocatorSize>(countand));
 		}
 
-		size_t count(std::string countand) const
-		{
-			return count(StringBase<Allocator, allocatorSize>(countand));
-		}
-
-		size_t count(std::wstring countand) const
-		{
-			return count(StringBase<Allocator, allocatorSize>(countand));
-		}
-
 		DynamicArray<StringBase<Allocator, allocatorSize>> split(const StringBase<Allocator, allocatorSize>& splitAt) const
 		{
 			//TODO this method is a little mess. Clean it up!
@@ -708,7 +617,7 @@ namespace bbe
 				StringBase<Allocator, allocatorSize> currentString;
 				size_t currentStringLength = currentFinding - previousFinding;
 				currentString.m_usesSSO = false; //TODO make this better! current string could use SSO!
-				currentString.m_pdata = s_allocator.allocateObjects<wchar_t>(currentStringLength + 1);
+				currentString.m_pdata = s_allocator.template allocateObjects<wchar_t>(currentStringLength + 1);
 				memcpy(currentString.m_pdata, previousFinding, currentStringLength * sizeof(wchar_t));
 				currentString.m_pdata[currentStringLength] = 0;
 				currentString.m_length = currentStringLength;
@@ -721,7 +630,7 @@ namespace bbe
 			StringBase<Allocator, allocatorSize> currentString;
 			size_t currentStringLength = m_pdata + m_length - previousFinding;
 			currentString.m_usesSSO = false; //TODO make this better! current string could use SSO!
-			currentString.m_pdata = s_allocator.allocateObjects<wchar_t>(currentStringLength + 1);
+			currentString.m_pdata = s_allocator.template allocateObjects<wchar_t>(currentStringLength + 1);
 			memcpy(currentString.m_pdata, previousFinding, currentStringLength * sizeof(wchar_t));
 			currentString.m_pdata[currentStringLength] = 0;
 			currentString.m_length = currentStringLength;
@@ -740,32 +649,12 @@ namespace bbe
 			return split(StringBase<Allocator, allocatorSize>(splitAt));
 		}
 
-		DynamicArray<StringBase<Allocator, allocatorSize>> split(std::string splitAt) const
-		{
-			return split(StringBase<Allocator, allocatorSize>(splitAt));
-		}
-
-		DynamicArray<StringBase<Allocator, allocatorSize>> split(std::wstring splitAt) const
-		{
-			return split(StringBase<Allocator, allocatorSize>(splitAt));
-		}
-
 		bool contains(const wchar_t* string) const
 		{
 			return contains(StringBase<Allocator, allocatorSize>(string));
 		}
 
 		bool contains(const char* string) const
-		{
-			return contains(StringBase<Allocator, allocatorSize>(string));
-		}
-
-		bool contains(const std::string& string) const
-		{
-			return contains(StringBase<Allocator, allocatorSize>(string));
-		}
-
-		bool contains(const std::wstring& string) const
 		{
 			return contains(StringBase<Allocator, allocatorSize>(string));
 		}
@@ -781,16 +670,6 @@ namespace bbe
 		}
 
 		int64_t search(const char* string) const
-		{
-			return search(StringBase<Allocator, allocatorSize>(string));
-		}
-
-		int64_t search(const std::string& string) const
-		{
-			return search(StringBase<Allocator, allocatorSize>(string));
-		}
-
-		int64_t search(const std::wstring& string) const
 		{
 			return search(StringBase<Allocator, allocatorSize>(string));
 		}

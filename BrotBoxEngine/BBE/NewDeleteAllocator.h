@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cassert>
+#include <utility>
+
 namespace bbe
 {
 	class NewDeleteAllocator

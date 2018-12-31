@@ -3,6 +3,7 @@
 #include "../BBE/Array.h"
 #include "../BBE/Hash.h"
 #include "../BBE/NewDeleteAllocator.h"
+#include "../BBE/Exceptions.h"
 #include <type_traits>
 #include <cassert>
 #include <initializer_list>
@@ -24,14 +25,14 @@ namespace bbe
 		void createArray(size_t size, Allocator* parentAllocator)
 		{
 			m_length = size;
-			if (std::is_same<Allocator, NewDeleteAllocator>::value)
+			if constexpr (std::is_same<Allocator, NewDeleteAllocator>::value)
 			{
 				m_pdata = new T[size];
 			}
 			else
 			{
 				assert(parentAllocator != nullptr);
-				m_pdata = parentAllocator->allocateObjects<T>(size);
+				m_pdata = parentAllocator->template allocateObjects<T>(size);
 				m_pparentAllocator = parentAllocator;
 			}
 		}
@@ -40,7 +41,7 @@ namespace bbe
 		{
 			if (m_pdata != nullptr)
 			{
-				if (std::is_same<Allocator, NewDeleteAllocator>::value)
+				if constexpr (std::is_same<Allocator, NewDeleteAllocator>::value)
 				{
 					delete[] m_pdata;
 				}

@@ -4,7 +4,7 @@
 #include "BBE/DynamicArray.h"
 #include "BBE/Random.h"
 #include "BBE/Math.h"
-#include "BBE\ValueNoise2D.h"
+#include "BBE/ValueNoise2D.h"
 #include "BBE/TimeHelper.h"
 
 static int m_octaves = 1;

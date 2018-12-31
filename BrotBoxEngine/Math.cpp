@@ -177,17 +177,17 @@ float bbe::Math::isNaN(float val)
 
 float bbe::Math::isInfinity(float val)
 {
-	return ::isinf(val);
+	return std::isinf(val);
 }
 
 float bbe::Math::isPositiveInfinity(float val)
 {
-	return ::isinf(val) && val > 0;
+	return std::isinf(val) && val > 0;
 }
 
 float bbe::Math::isNegativeInfinity(float val)
 {
-	return ::isinf(val) && val < 0;
+	return std::isinf(val) && val < 0;
 }
 
 bool bbe::Math::isOdd(int val)

@@ -1,7 +1,7 @@
 #pragma once
 
 #define GLFW_INCLUDE_VULKAN
-#include "GLFW\glfw3.h"
+#include "GLFW/glfw3.h"
 
 #include "../BBE/PrimitiveBrush2D.h"
 #include "../BBE/PrimitiveBrush3D.h"

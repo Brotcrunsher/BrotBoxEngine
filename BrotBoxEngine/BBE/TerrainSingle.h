@@ -3,7 +3,7 @@
 //Like Terrain but with a single mesh which is then used as a list of Patches for tessellation
 
 #define GLFW_INCLUDE_VULKAN
-#include "GLFW\glfw3.h"
+#include "GLFW/glfw3.h"
 #include "../BBE/VulkanBuffer.h"
 #include "../BBE/Matrix4.h"
 #include "../BBE/VulkanCommandPool.h"

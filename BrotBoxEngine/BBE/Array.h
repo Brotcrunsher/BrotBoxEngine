@@ -3,6 +3,7 @@
 #include "../BBE/Hash.h"
 #include <cassert>
 #include <initializer_list>
+#include <utility>
 
 namespace bbe
 {

@@ -3,7 +3,7 @@
 #include "BBE/Vector3.h"
 #include "BBE/Vector4.h"
 #include "BBE/Exceptions.h"
-#include "BBE\Vector4.h"
+#include "BBE/Vector4.h"
 #include "BBE/Math.h"
 
 bbe::Vector4::Vector4()

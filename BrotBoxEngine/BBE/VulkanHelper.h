@@ -1,7 +1,7 @@
 #pragma once
 
 #define GLFW_INCLUDE_VULKAN
-#include "GLFW\glfw3.h"
+#include "GLFW/glfw3.h"
 #include "../BBE/List.h"
 #include "../BBE/Exceptions.h"
 
@@ -11,10 +11,14 @@ namespace bbe
 	{
 		namespace vulkan
 		{
+			#ifdef _MSC_VER
 			#define ASSERT_VULKAN(val)\
 			if(val != VK_SUCCESS){\
 				__debugbreak();\
 			}
+			#else
+			#define ASSERT_VULKAN(val) //TODO find some GCC equivalent to __debugbreak
+			#endif
 
 			uint32_t findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 

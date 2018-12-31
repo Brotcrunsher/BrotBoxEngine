@@ -7,8 +7,8 @@ namespace bbe
 	class GameTime
 	{
 	private:
-		std::chrono::time_point<std::chrono::steady_clock> m_gameStartTimestamp;
-		std::chrono::time_point<std::chrono::steady_clock> m_lastTickTimestamp;
+		std::chrono::time_point<std::chrono::system_clock> m_gameStartTimestamp;
+		std::chrono::time_point<std::chrono::system_clock> m_lastTickTimestamp;
 
 	public:
 		GameTime();
