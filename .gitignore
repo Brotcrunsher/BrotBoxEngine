@@ -224,6 +224,7 @@ FakesAssemblies/
 *.opt
 
 *.o
+ExampleParticleGravity/EPG.exec
 
 # Visual Studio LightSwitch build output
 **/*.HTMLClient/GeneratedArtifacts

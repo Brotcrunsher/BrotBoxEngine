@@ -43,20 +43,33 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_screenHeight = initialWindowHeight;
 
 	m_pwindow = window;
+	std::cout << "Vulkan Manager: init instance" << std::endl;
 	m_instance.init(appName, major, minor, patch);
+	std::cout << "Vulkan Manager: init surface" << std::endl;
 	m_surface.init(m_instance, m_pwindow);
+	std::cout << "Vulkan Manager: init physicalDeviceContainer" << std::endl;
 	m_physicalDeviceContainer.init(m_instance, m_surface);
+	std::cout << "Vulkan Manager: init device" << std::endl;
 	m_device.init(m_physicalDeviceContainer, m_surface);
+	std::cout << "Vulkan Manager: init swapchain" << std::endl;
 	m_swapchain.init(m_surface, m_device, initialWindowWidth, initialWindowHeight, nullptr);
+	std::cout << "Vulkan Manager: init renderPass" << std::endl;
 	m_renderPass.init(m_device);
 
+	std::cout << "Vulkan Manager: init commandPool" << std::endl;
 	m_commandPool.init(m_device);
+	std::cout << "Vulkan Manager: creating depthImage" << std::endl;
 	m_depthImage.create(m_device, m_commandPool, initialWindowWidth, initialWindowHeight);
+	std::cout << "Vulkan Manager: creating Framebuffers" << std::endl;
 	m_swapchain.createFramebuffers(m_depthImage, m_renderPass);
+	std::cout << "Vulkan Manager: init semaphoreImageAvailable" << std::endl;
 	m_semaphoreImageAvailable.init(m_device);
+	std::cout << "Vulkan Manager: init semaphoreRenderingDone" << std::endl;
 	m_semaphoreRenderingDone.init(m_device);
+	std::cout << "Vulkan Manager: init presentFece" << std::endl;
 	m_presentFence.init(m_device);
 
+	std::cout << "Vulkan Manager: creating 3DBrush" << std::endl;
 	m_primitiveBrush3D.create(m_device);
 	bbe::PointLight::s_init(m_device.getDevice(), m_device.getPhysicalDevice());
 	bbe::Rectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
@@ -66,6 +79,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	bbe::TerrainMesh::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::IcoSphere::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 
+
+	std::cout << "Vulkan Manager: Setting Bindings" << std::endl;
 	m_setLayoutVertexLight.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 	m_setLayoutVertexLight.create(m_device);
 
@@ -107,20 +122,23 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_setFragmentLight            .create(m_device, m_descriptorPool, m_setLayoutFragmentLight);
 	m_setViewProjectionMatrixLight.create(m_device, m_descriptorPool, m_setLayoutViewProjectionMatrix);
 
-	m_vertexShader2DPrimitive           .init(m_device, "vert2DPrimitive.spv");
-	m_fragmentShader2DPrimitive         .init(m_device, "frag2DPrimitive.spv");
-	m_vertexShader2DImage               .init(m_device, "vert2DImage.spv");
-	m_fragmentShader2DImage             .init(m_device, "frag2DImage.spv");
-	m_vertexShader3DPrimitive           .init(m_device, "vert3DPrimitive.spv");
-	m_fragmentShader3DPrimitive         .init(m_device, "frag3DPrimitive.spv");
-	m_vertexShader3DTerrain             .init(m_device, "vert3DTerrain.spv");
-	m_fragmentShader3DTerrain           .init(m_device, "frag3DTerrain.spv");
-	m_teseShader3DTerrain               .init(m_device, "tese3DTerrain.spv");
-	m_tescShader3DTerrain               .init(m_device, "tesc3DTerrain.spv");
-	m_vertexShader3DTerrainMesh         .init(m_device, "vert3DTerrainMesh.spv");
-	m_vertexShader3DTerrainTransformed  .init(m_device, "vert3DTerrainTransformed.spv");
-	m_fragmentShader3DTerrainTransformed.init(m_device, "frag3DTerrainTransformed.spv");
 
+	std::cout << "Vulkan Manager: Loading Shaders" << std::endl;
+	m_vertexShader2DPrimitive           .init(m_device, L"vert2DPrimitive.spv");
+	m_fragmentShader2DPrimitive         .init(m_device, L"frag2DPrimitive.spv");
+	m_vertexShader2DImage               .init(m_device, L"vert2DImage.spv");
+	m_fragmentShader2DImage             .init(m_device, L"frag2DImage.spv");
+	m_vertexShader3DPrimitive           .init(m_device, L"vert3DPrimitive.spv");
+	m_fragmentShader3DPrimitive         .init(m_device, L"frag3DPrimitive.spv");
+	m_vertexShader3DTerrain             .init(m_device, L"vert3DTerrain.spv");
+	m_fragmentShader3DTerrain           .init(m_device, L"frag3DTerrain.spv");
+	m_teseShader3DTerrain               .init(m_device, L"tese3DTerrain.spv");
+	m_tescShader3DTerrain               .init(m_device, L"tesc3DTerrain.spv");
+	m_vertexShader3DTerrainMesh         .init(m_device, L"vert3DTerrainMesh.spv");
+	m_vertexShader3DTerrainTransformed  .init(m_device, L"vert3DTerrainTransformed.spv");
+	m_fragmentShader3DTerrainTransformed.init(m_device, L"frag3DTerrainTransformed.spv");
+
+	std::cout << "Vulkan Manager: creating pipeline" << std::endl;
 	createPipelines();
 
 	m_uboMatrixViewProjection.create(m_device, sizeof(Matrix4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);

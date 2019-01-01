@@ -138,7 +138,7 @@ namespace bbe
 
 			void destroy(void* data)
 			{
-				m_pa->deallocateObjects(m_data);
+				m_pa->deallocate(m_data);
 			}
 		};
 

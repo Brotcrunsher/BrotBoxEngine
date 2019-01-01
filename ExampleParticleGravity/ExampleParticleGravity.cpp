@@ -6,7 +6,7 @@
 
 class Particle;
 
-static bbe::Random random;
+static bbe::Random s_random;
 static bbe::List<Particle> particles;
 
 static float size = 1;
@@ -21,7 +21,7 @@ public:
 
 	Particle()
 	{
-		pos = random.randomVector3InUnitSphere() * 100.0f;
+		pos = s_random.randomVector3InUnitSphere() * 100.0f;
 	}
 
 	Particle(const bbe::Vector3 &pos)
@@ -80,6 +80,7 @@ class MyGame : public bbe::Game
 	// Geerbt über Game
 	virtual void onStart() override
 	{
+		std::cout << "hai onStart" << std::endl;
 		light.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_NONE);
 		light.setLightStrength(1);
 		light.setPosition(bbe::Vector3(100, 100, 100));
@@ -164,8 +165,10 @@ class MyGame : public bbe::Game
 	}
 };
 
+#include <iostream>
 int main()
 {
+	std::cout << "hai main" << std::endl;
 	MyGame game;
 	game.start(1280, 720, "Particle Gravity");
     return 0;

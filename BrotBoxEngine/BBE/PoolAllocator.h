@@ -27,14 +27,14 @@ namespace bbe
 	class PoolAllocator
 	{
 	public:
-		typedef typename T                                           value_type;
-		typedef typename T*                                          pointer;
-		typedef typename const T*                                    const_pointer;
-		typedef typename T&                                          reference;
-		typedef typename const T&                                    const_reference;
-		typedef typename size_t                                      size_type;
-		typedef typename std::pointer_traits<T*>::difference_type    difference_type;
-		typedef typename std::pointer_traits<T*>::rebind<const void> const_void_pointer;
+		typedef T                                                 value_type;
+		typedef T*                                                pointer;
+		typedef const T*                                          const_pointer;
+		typedef T&                                                reference;
+		typedef const T&                                          const_reference;
+		typedef std::size_t                                       size_type;
+		typedef typename std::pointer_traits<T*>::difference_type difference_type;
+		typedef typename std::pointer_traits<T*>::rebind          const_void_pointer;
 
 	private:
 		class PoolAllocatorDestroyer
@@ -54,20 +54,20 @@ namespace bbe
 			}
 		};
 
-		static constexpr size_t POOL_ALLOCATOR_DEFAULT_SIZE = 1024;
+		static constexpr std::size_t POOL_ALLOCATOR_DEFAULT_SIZE = 1024;
 #ifndef BBE_DISABLE_ALL_SECURITY_CHECKS
-		size_t m_openAllocations = 0;		//Used to find memory leaks
+		std::size_t m_openAllocations = 0;		//Used to find memory leaks
 #endif //!BBE_DISABLE_ALL_SECURITY_CHECKS
 
 		INTERNAL::PoolChunk<T>* m_data = nullptr;
 		INTERNAL::PoolChunk<T>* m_head = nullptr;
-		size_t m_length;
+		std::size_t m_length;
 
 		Allocator* m_parentAllocator = nullptr;
 		bool m_needsToDeleteParentAllocator = false;
 
 	public:
-		explicit PoolAllocator(size_t size = POOL_ALLOCATOR_DEFAULT_SIZE, Allocator* parentAllocator = nullptr)
+		explicit PoolAllocator(std::size_t size = POOL_ALLOCATOR_DEFAULT_SIZE, Allocator* parentAllocator = nullptr)
 			: m_length(size), m_parentAllocator(parentAllocator)
 		{
 			if (m_parentAllocator == nullptr)
@@ -76,7 +76,7 @@ namespace bbe
 				m_needsToDeleteParentAllocator = true;
 			}
 			m_data = m_parentAllocator->allocate(m_length);
-			for (size_t i = 0; i < m_length - 1; i++)
+			for (std::size_t i = 0; i < m_length - 1; i++)
 			{
 				m_data[i].nextPoolChunk = bbe::addressOf(m_data[i + 1]);
 			}

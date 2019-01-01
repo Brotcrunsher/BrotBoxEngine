@@ -19,10 +19,10 @@ namespace bbe
 	private:
 
 		PointerType m_pdata;
-		size_t      m_length;
+		std::size_t      m_length;
 		Allocator  *m_pparentAllocator = nullptr;
 
-		void createArray(size_t size, Allocator* parentAllocator)
+		void createArray(std::size_t size, Allocator* parentAllocator)
 		{
 			m_length = size;
 			if constexpr (std::is_same<Allocator, NewDeleteAllocator>::value)
@@ -56,7 +56,7 @@ namespace bbe
 		}
 
 	public:
-		DynamicArray(size_t size, Allocator* parentAllocator = nullptr)
+		DynamicArray(std::size_t size, Allocator* parentAllocator = nullptr)
 			: m_length(size)
 		{
 			createArray(size, parentAllocator);
@@ -77,7 +77,7 @@ namespace bbe
 			: m_length(list.getLength())
 		{
 			createArray(list.getLength(), parentAllocator);
-			for (size_t i = 0; i < m_length; i++)
+			for (std::size_t i = 0; i < m_length; i++)
 			{
 				m_pdata[i] = list[i];
 			}
@@ -87,7 +87,7 @@ namespace bbe
 			: m_length(list.getLength())
 		{
 			createArray(list.getLength(), parentAllocator);
-			for (size_t i = 0; i < m_length; i++)
+			for (std::size_t i = 0; i < m_length; i++)
 			{
 				m_pdata[i] = list[i];
 			}
@@ -96,7 +96,7 @@ namespace bbe
 		DynamicArray(const std::initializer_list<T> &il)
 		{
 			createArray(il.end() - il.begin(), nullptr);
-			size_t i = 0;
+			std::size_t i = 0;
 			for (auto iter = il.begin(); iter != il.end(); iter++) {
 				m_pdata[i] = *iter;
 				i++;
@@ -112,7 +112,7 @@ namespace bbe
 			: m_length(other.m_length), m_pparentAllocator(other.m_pparentAllocator)
 		{
 			createArray(other.m_length, other.m_pparentAllocator);
-			for (size_t i = 0; i < m_length; i++)
+			for (std::size_t i = 0; i < m_length; i++)
 			{
 				m_pdata[i] = other[i];
 			}
@@ -131,7 +131,7 @@ namespace bbe
 			deleteArray();
 
 			createArray(other.m_length, other.m_pparentAllocator);
-			for (size_t i = 0; i < m_length; i++)
+			for (std::size_t i = 0; i < m_length; i++)
 			{
 				m_pdata[i] = other[i];
 			}
@@ -151,7 +151,7 @@ namespace bbe
 			return *this;
 		}
 
-		T& operator[](size_t index)
+		T& operator[](std::size_t index)
 		{
 			if (index < 0 || index >= m_length)
 			{
@@ -160,7 +160,7 @@ namespace bbe
 			return m_pdata[index];
 		}
 
-		const T& operator[](size_t index) const
+		const T& operator[](std::size_t index) const
 		{
 			if (index < 0 || index >= m_length)
 			{
@@ -169,7 +169,7 @@ namespace bbe
 			return m_pdata[index];
 		}
 
-		size_t getLength() const
+		std::size_t getLength() const
 		{
 			return m_length;
 		}
@@ -188,7 +188,7 @@ namespace bbe
 	template<typename T>
 	uint32_t hash(const DynamicArray<T> &t)
 	{
-		size_t length = t.getLength();
+		std::size_t length = t.getLength();
 		if (length > 16)
 		{
 			length = 16;
@@ -196,7 +196,7 @@ namespace bbe
 
 		uint32_t _hash = 0;
 
-		for (size_t i = 0; i < length; i++)
+		for (std::size_t i = 0; i < length; i++)
 		{
 			_hash += hash(t[i]);
 		}

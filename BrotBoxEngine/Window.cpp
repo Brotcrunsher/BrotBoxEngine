@@ -26,8 +26,11 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 
 	m_pwindow = glfwCreateWindow(width, height, title, nullptr, nullptr);
 
+	std::cout << "Init vulkan manager" << std::endl;
 	m_vulkanManager.init(title, major, minor, patch, m_pwindow, width, height);
 
+
+	std::cout << "Setting glwf callbacks" << std::endl;
 	glfwSetKeyCallback(m_pwindow, INTERNAL_keyCallback);
 	glfwSetCursorPosCallback(m_pwindow, INTERNAL_cursorPosCallback);
 	glfwSetMouseButtonCallback(m_pwindow, INTERNAL_mouseButtonCallback);
@@ -35,6 +38,8 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	double mX = 0;
 	double mY = 0;
 	glfwGetCursorPos(m_pwindow, &mX, &mY);
+	
+	std::cout << "Init mouse" << std::endl;
 	INTERNAL_mouse.INTERNAL_moveMouse((float)mX, (float)mY);
 	windowsAliveCounter++;
 }

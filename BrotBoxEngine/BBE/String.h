@@ -20,7 +20,7 @@ namespace bbe
 #define SSOSIZE (16)
 		//TODO use allocators
 	private:
-		static Allocator s_allocator;
+		static inline Allocator s_allocator;
 
 		union
 		{
@@ -142,6 +142,7 @@ namespace bbe
 
 		StringBase(const char* data)
 		{
+			//TODO this constructor sometimes crashes the engine (on g++)
 			initializeFromCharArr(data);
 		}
 

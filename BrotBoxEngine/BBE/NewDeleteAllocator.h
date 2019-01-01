@@ -8,7 +8,7 @@ namespace bbe
 	class NewDeleteAllocator
 	{
 	public:
-		NewDeleteAllocator(size_t size)
+		NewDeleteAllocator(std::size_t size)
 		{
 			assert(size == 0 && "size can't be set for a NewDeleteAllocator!");
 		}
@@ -20,7 +20,7 @@ namespace bbe
 		}
 
 		template <typename T>
-		T* allocateObjects(size_t amountOfObjects = 1)
+		T* allocateObjects(std::size_t amountOfObjects = 1)
 		{
 			return new T[amountOfObjects];
 		}

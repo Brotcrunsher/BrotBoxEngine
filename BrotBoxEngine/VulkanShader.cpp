@@ -4,6 +4,7 @@
 #include "BBE/VulkanHelper.h"
 #include "BBE/VulkanDevice.h"
 #include "BBE/List.h"
+#include <iostream>
 
 bbe::INTERNAL::vulkan::VulkanShader::VulkanShader()
 {
@@ -11,7 +12,9 @@ bbe::INTERNAL::vulkan::VulkanShader::VulkanShader()
 
 void bbe::INTERNAL::vulkan::VulkanShader::init(const VulkanDevice & device, const bbe::String & path)
 {
+	std::cout << "Loading Shader: " << path.getRaw() << std::endl;
 	auto data = simpleFile::readBinaryFile(path);
+	std::cout << "Init Shader: " << path.getRaw() << std::endl;
 	init(device, data);
 }
 

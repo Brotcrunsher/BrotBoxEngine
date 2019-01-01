@@ -7,6 +7,7 @@
 #include "BBE/Math.h"
 #include "BBE/StopWatch.h"
 #include "BBE/Profiler.h"
+#include <iostream>
 
 bbe::Game::Game()
 {
@@ -23,15 +24,22 @@ bbe::Game::~Game()
 
 void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 {
+	std::cout << "Starting Game: " << title << std::endl;
 	if (m_started)
 	{
 		throw AlreadyCreatedException();
 	}
+
+	std::cout << "Starting math" << std::endl;
 	bbe::Math::INTERNAL::startMath();
 
+	std::cout << "Creating window" << std::endl;
 	m_pwindow = new Window(windowWidth, windowHeight, title);
 
+	std::cout << "Reseting game time" << std::endl;
 	m_gameTime.reset();
+
+	std::cout << "Calling onStart()" << std::endl;
 	onStart();
 
 	while (m_pwindow->keepAlive())

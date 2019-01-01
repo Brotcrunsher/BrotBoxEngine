@@ -49,8 +49,8 @@ namespace bbe
 	{
 	public:
 		T* m_markerValue;
-		size_t m_destructorHandle;
-		StackAllocatorMarker(T* markerValue, size_t destructorHandle) :
+		std::size_t m_destructorHandle;
+		StackAllocatorMarker(T* markerValue, std::size_t destructorHandle) :
 			m_markerValue(markerValue), m_destructorHandle(destructorHandle)
 		{
 			//do nothing
@@ -61,19 +61,19 @@ namespace bbe
 	class StackAllocator
 	{
 	public:
-		typedef typename T                                           value_type;
-		typedef typename T*                                          pointer;
-		typedef typename const T*                                    const_pointer;
-		typedef typename T&                                          reference;
-		typedef typename const T&                                    const_reference;
-		typedef typename size_t                                      size_type;
-		typedef typename std::pointer_traits<T*>::difference_type    difference_type;
-		typedef typename std::pointer_traits<T*>::rebind<const void> const_void_pointer;
+		typedef T                                                 value_type;
+		typedef T*                                                pointer;
+		typedef const T*                                          const_pointer;
+		typedef T&                                                reference;
+		typedef const T&                                          const_reference;
+		typedef std::size_t                                            size_type;
+		typedef typename std::pointer_traits<T*>::difference_type difference_type;
+		typedef typename std::pointer_traits<T*>::rebind          const_void_pointer;
 	private:
-		static constexpr size_t STACK_ALLOCATOR_DEFAULT_SIZE = 1024;
+		static constexpr std::size_t STACK_ALLOCATOR_DEFAULT_SIZE = 1024;
 		T* m_data = nullptr;
 		T* m_head = nullptr;
-		size_t m_length = 0;
+		std::size_t m_length = 0;
 
 		Allocator* m_parentAllocator = nullptr;
 		bool m_needsToDeleteParentAllocator = false;
@@ -95,7 +95,7 @@ namespace bbe
 		}
 
 	public:
-		explicit StackAllocator(size_t size = STACK_ALLOCATOR_DEFAULT_SIZE, Allocator* parentAllocator = nullptr)
+		explicit StackAllocator(std::size_t size = STACK_ALLOCATOR_DEFAULT_SIZE, Allocator* parentAllocator = nullptr)
 			: m_length(size), m_parentAllocator(parentAllocator) 
 		{
 			if (m_parentAllocator == nullptr)
@@ -131,15 +131,15 @@ namespace bbe
 		StackAllocator& operator=(StackAllocator&& other) = delete; //Move Assignment
 
 		template <typename U, typename... arguments>
-		U* allocateObjects(size_t amountOfObjects = 1, arguments&&... args)
+		U* allocateObjects(std::size_t amountOfObjects = 1, arguments&&... args)
 		{
-			T* allocationLocation = (T*)Math::nextMultiple(alignof(U), (size_t)m_head);
+			T* allocationLocation = (T*)Math::nextMultiple(alignof(U), (std::size_t)m_head);
 			T* newHeadPointer = allocationLocation + amountOfObjects * sizeof(U);
 			if (newHeadPointer <= m_data + m_length)
 			{
 				U* returnPointer = reinterpret_cast<U*>(allocationLocation);
 				m_head = newHeadPointer;
-				for (size_t i = 0; i < amountOfObjects; i++)
+				for (std::size_t i = 0; i < amountOfObjects; i++)
 				{
 					U* object = bbe::addressOf(returnPointer[i]);
 					new (object) U(std::forward<arguments>(args)...);
@@ -160,9 +160,9 @@ namespace bbe
 		}
 
 
-		void* allocate(size_t amountOfBytes, size_t alignment = 1)
+		void* allocate(std::size_t amountOfBytes, std::size_t alignment = 1)
 		{
-			T* allocationLocation = (T*)Math::nextMultiple(alignment, (size_t)m_head);
+			T* allocationLocation = (T*)Math::nextMultiple(alignment, (std::size_t)m_head);
 			T* newHeadPointer = allocationLocation + amountOfBytes;
 			if (newHeadPointer <= m_data + m_length)
 			{
@@ -193,10 +193,10 @@ namespace bbe
 		void deallocateAll()
 		{
 			m_head = m_data;
-			while (m_destructors.size() > 0)
+			while (m_destructors.getLength() > 0)
 			{
-				m_destructors.back()();
-				m_destructors.pop_back();
+				m_destructors.last()();
+				m_destructors.popBack();
 			}
 		}
 

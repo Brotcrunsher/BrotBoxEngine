@@ -22,7 +22,7 @@ namespace bbe
 		{
 			//UNTESTED
 			assert((il.end() - il.begin()) == LENGTH);
-			size_t i = 0;
+			std::size_t i = 0;
 			for (auto iter = il.begin(); iter != il.end(); iter++) {
 				m_pdata[i] = *iter;
 				i++;
@@ -31,7 +31,7 @@ namespace bbe
 
 		Array(const Array<T, LENGTH>& other)
 		{
-			for (size_t i = 0; i < LENGTH; i++)
+			for (std::size_t i = 0; i < LENGTH; i++)
 			{
 				m_pdata[i] = other[i];
 			}
@@ -39,7 +39,7 @@ namespace bbe
 
 		Array(Array<T, LENGTH>&& other)
 		{
-			for (size_t i = 0; i < LENGTH; i++)
+			for (std::size_t i = 0; i < LENGTH; i++)
 			{
 				m_pdata[i] = std::move(other[i]);
 			}
@@ -47,7 +47,7 @@ namespace bbe
 
 		Array& operator=(const Array<T, LENGTH>& other)
 		{
-			for (size_t i = 0; i < LENGTH; i++)
+			for (std::size_t i = 0; i < LENGTH; i++)
 			{
 				m_pdata[i] = other[i];
 			}
@@ -57,7 +57,7 @@ namespace bbe
 
 		Array& operator=(Array<T, LENGTH>&& other)
 		{
-			for (size_t i = 0; i < LENGTH; i++)
+			for (std::size_t i = 0; i < LENGTH; i++)
 			{
 				m_pdata[i] = std::move(other[i]);
 			}
@@ -70,17 +70,17 @@ namespace bbe
 			//do nothing
 		}
 
-		T& operator[](size_t index)
+		T& operator[](std::size_t index)
 		{
 			return m_pdata[index];
 		}
 
-		const T& operator[](size_t index) const
+		const T& operator[](std::size_t index) const
 		{
 			return m_pdata[index];
 		}
 
-		constexpr size_t getLength() const
+		constexpr std::size_t getLength() const
 		{
 			return LENGTH;
 		}
@@ -99,7 +99,7 @@ namespace bbe
 	template<typename T, int LENGTH>
 	uint32_t hash(const Array<T, LENGTH> &t)
 	{
-		size_t length = t.getLength();
+		std::size_t length = t.getLength();
 		if (length > 16)
 		{
 			length = 16;
@@ -107,7 +107,7 @@ namespace bbe
 
 		uint32_t _hash = 0;
 
-		for (size_t i = 0; i < length; i++)
+		for (std::size_t i = 0; i < length; i++)
 		{
 			_hash += hash(t[i]);
 		}
