@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "BBE/String.h"
 #include "BBE/DataType.h"
+#include "BBE/Exceptions.h"
 
 template<>
 uint32_t bbe::hash(const bbe::String & t)
@@ -29,6 +30,10 @@ uint32_t bbe::hash(const bbe::String & t)
 
 std::size_t bbe::utf8len(const char* ptr)
 {
+	if(ptr == nullptr)
+	{
+		return 0;
+	}
 	std::size_t len = 0;
 	const byte* bptr = reinterpret_cast<const byte*>(ptr);
 	while(*bptr != (byte)0b00000000)
@@ -40,4 +45,20 @@ std::size_t bbe::utf8len(const char* ptr)
 		bptr++;
 	}
 	return len;
+}
+
+std::size_t bbe::utf8charlen(const char* ptr)
+{
+	if(ptr == nullptr)
+	{
+		return 0;
+	}
+	const byte* bptr = reinterpret_cast<const byte*>(ptr);
+
+	if(((*bptr) & (byte)0b10000000) == (byte)0b00000000) return 1;
+	if(((*bptr) & (byte)0b11100000) == (byte)0b11000000) return 2;
+	if(((*bptr) & (byte)0b11110000) == (byte)0b11100000) return 3;
+	if(((*bptr) & (byte)0b11111000) == (byte)0b11110000) return 4;
+
+	throw NotStartOfUtf8Exception();
 }

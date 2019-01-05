@@ -14,6 +14,36 @@ namespace bbe {
 			assertEquals(bbe::utf8len(u8"αβγδ"), 4);				//Okay...
 			assertEquals(bbe::utf8len(u8"Großmütterchäään"), 16);	//Get ready!
 			assertEquals(bbe::utf8len(u8"💣🍣💃"), 3);				//God damn, I bet this line will break a few compilers... or git! 🤣
+			assertEquals(bbe::utf8len(nullptr), 0);					//Special case
+
+			assertEquals(bbe::utf8charlen(u8""), 1);
+			assertEquals(bbe::utf8charlen(u8"a"), 1);
+			assertEquals(bbe::utf8charlen(u8"aaaa"), 1);
+
+			assertEquals(bbe::utf8charlen(u8"")      , 1);
+			assertEquals(bbe::utf8charlen(u8"B")     , 1);
+			assertEquals(bbe::utf8charlen(u8"α")     , 2);
+			assertEquals(bbe::utf8charlen(u8"β")     , 2);
+			assertEquals(bbe::utf8charlen(u8"γ")     , 2);
+			assertEquals(bbe::utf8charlen(u8"δ")     , 2);
+			assertEquals(bbe::utf8charlen(u8"ß")     , 2);
+			assertEquals(bbe::utf8charlen(u8"ä")     , 2);
+			assertEquals(bbe::utf8charlen(u8"ö")     , 2);
+			assertEquals(bbe::utf8charlen(u8"ü")     , 2);
+			assertEquals(bbe::utf8charlen(u8"💣")    , 4);
+			assertEquals(bbe::utf8charlen(u8"🍣")    , 4);
+			assertEquals(bbe::utf8charlen(u8"💃")    , 4);
+
+			try
+			{
+				bbe::utf8charlen(u8"💃" + 1); //This should create an exception.
+				debugBreak();
+			}
+			catch (bbe::NotStartOfUtf8Exception e)
+			{
+				//Do nothing, everything worked as expected.
+			}
+
 
 			//TODO add non SSO Tests
 			bbe::String emptyString;

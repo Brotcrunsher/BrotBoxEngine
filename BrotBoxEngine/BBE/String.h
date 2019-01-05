@@ -14,7 +14,8 @@
 namespace bbe
 {
 
-	std::size_t utf8len(const char* ptr);
+	std::size_t utf8len(const char* ptr);		//Length of a utf8 encoded string.
+	std::size_t utf8charlen(const char* ptr);	//Length in byte of a single utf8 char.
 
 
 	template <typename Allocator, size_t allocatorSize>

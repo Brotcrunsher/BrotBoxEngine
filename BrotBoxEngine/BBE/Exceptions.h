@@ -47,4 +47,6 @@ namespace bbe
 	CREATE_EXCEPTION(FormatNotSupportedException);
 
 	CREATE_EXCEPTION(VulkanPipelineModeNotSupportedException);
+
+	CREATE_EXCEPTION(NotStartOfUtf8Exception);
 }
