@@ -125,3 +125,61 @@ bool bbe::utf8IsWhitespace(const char* ptr)
 
 	return false;
 }
+
+bool bbe::utf8IsLatinChar(const char* ptr)
+{
+	//UNTESTED
+	if(ptr == nullptr)
+	{
+		throw NullPointerException();
+	}
+
+	return (*ptr >= 'a' && *ptr <= 'z') || (*ptr >= 'A' && *ptr <= 'Z');
+}
+
+bool bbe::utf8IsDigitChar(const char* ptr)
+{
+	//UNTESTED
+	if(ptr == nullptr)
+	{
+		throw NullPointerException();
+	}
+
+	return (*ptr >= '0' && *ptr <= '9');
+}
+
+bool bbe::utf8IsAsciiChar(const char* ptr)
+{
+	//UNTESTED
+	if(ptr == nullptr)
+	{
+		throw NullPointerException();
+	}
+
+	const byte* bptr = reinterpret_cast<const byte*>(ptr);
+
+	return ((*bptr) & (byte)0b10000000) == (byte)0;
+}
+
+bool bbe::utf8IsSmallerCodePoint(const char* ptr1, const char* ptr2)
+{
+	//UNTESTED
+	if(ptr1 == nullptr || ptr2 == nullptr)
+	{
+		throw NullPointerException();
+	}
+
+	auto size1 = bbe::utf8charlen(ptr1);
+	auto size2 = bbe::utf8charlen(ptr2);
+
+	if(size1 < size2) return true;
+	if(size2 > size1) return false;
+
+	for(std::size_t i = 0; i<size1; i++)
+	{
+		if(ptr1[i] < ptr2[i]) return true;
+		if(ptr1[i] > ptr1[i]) return false;
+	}
+
+	return false;
+}
