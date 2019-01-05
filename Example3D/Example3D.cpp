@@ -78,8 +78,8 @@ public:
 		}
 		terrain.addTexture("../Third-Party/textures/sand.png", weightsSand);
 		terrain.addTexture("../Third-Party/textures/cf_ter_gcs_01.png", weightsGrass);
-		delete weightsGrass;
-		delete weightsSand;
+		delete[] weightsGrass;
+		delete[] weightsSand;
 	}
 
 	virtual void onStart() override
