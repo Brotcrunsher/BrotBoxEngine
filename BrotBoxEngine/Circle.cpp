@@ -58,7 +58,7 @@ void bbe::Circle::s_destroy()
 }
 
 bbe::Circle::Circle()
-	: m_x(0), m_y(0), m_width(0), m_height(0)
+	: m_x(0), m_y(0), m_width(0), m_height(0)	//Todo Rethink: Should this constructor really initialize the member?
 {
 	//UNTESTED
 }

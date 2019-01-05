@@ -70,21 +70,25 @@ void bbe::Cube::s_destroy()
 
 bbe::Cube::Cube()
 {
+	//UNTESTED
 }
 
 bbe::Cube::Cube(const Vector3 & pos, const Vector3 & scale, const Vector3 & rotationVector, float radians)
 {
+	//UNTESTED
 	set(pos, scale, rotationVector, radians);
 }
 
 bbe::Cube::Cube(const Matrix4 & transform)
 {
+	//UNTESTED
 	m_transform = transform;
 }
 
 
 void bbe::Cube::set(const Vector3 & pos, const Vector3 & scale, const Vector3 & rotationVector, float radians)
 {
+	//UNTESTED
 	Matrix4 matTranslation = Matrix4::createTranslationMatrix(pos);
 	Matrix4 matScale = Matrix4::createScaleMatrix(scale);
 	Matrix4 matRotation = Matrix4::createRotationMatrix(radians, rotationVector);
@@ -94,45 +98,54 @@ void bbe::Cube::set(const Vector3 & pos, const Vector3 & scale, const Vector3 & 
 
 bbe::Vector3 bbe::Cube::getPos() const
 {
+	//UNTESTED
 	return m_transform.extractTranslation();
 }
 
 float bbe::Cube::getX() const
 {
+	//UNTESTED
 	return getPos().x;
 }
 
 float bbe::Cube::getY() const
 {
+	//UNTESTED
 	return getPos().y;
 }
 
 float bbe::Cube::getZ() const
 {
+	//UNTESTED
 	return getPos().z;
 }
 
 bbe::Vector3 bbe::Cube::getScale() const
 {
+	//UNTESTED
 	return m_transform.extractScale();
 }
 
 float bbe::Cube::getWidth() const
 {
+	//UNTESTED
 	return getScale().x;
 }
 
 float bbe::Cube::getHeight() const
 {
+	//UNTESTED
 	return getScale().z;
 }
 
 float bbe::Cube::getDepth() const
 {
+	//UNTESTED
 	return getScale().y;
 }
 
 bbe::Matrix4 bbe::Cube::getTransform() const
 {
+	//UNTESTED
 	return m_transform;
 }
