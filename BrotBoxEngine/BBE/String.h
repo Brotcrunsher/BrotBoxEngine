@@ -14,6 +14,9 @@
 namespace bbe
 {
 
+	std::size_t utf8len(const char* ptr);
+
+
 	template <typename Allocator, size_t allocatorSize>
 	class StringBase
 	{

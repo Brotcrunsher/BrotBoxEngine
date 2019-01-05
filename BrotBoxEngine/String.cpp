@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "BBE/String.h"
+#include "BBE/DataType.h"
 
 template<>
 uint32_t bbe::hash(const bbe::String & t)
@@ -24,4 +25,19 @@ uint32_t bbe::hash(const bbe::String & t)
 	}
 
 	return _hash;
+}
+
+std::size_t bbe::utf8len(const char* ptr)
+{
+	std::size_t len = 0;
+	const byte* bptr = reinterpret_cast<const byte*>(ptr);
+	while(*bptr != (byte)0b00000000)
+	{
+		if(((*bptr) & (byte)0b11000000) != (byte)0b10000000)
+		{
+			len++;
+		}
+		bptr++;
+	}
+	return len;
 }

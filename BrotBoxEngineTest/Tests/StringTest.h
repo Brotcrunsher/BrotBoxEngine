@@ -8,6 +8,12 @@
 namespace bbe {
 	namespace test {
 		void testString() {
+			assertEquals(bbe::utf8len(u8"") , 0);					//Simple!
+			assertEquals(bbe::utf8len(u8"a"), 1);					//A bit harder!
+			assertEquals(bbe::utf8len(u8"BrotBoxEngine!"), 14);		//Still normal...
+			assertEquals(bbe::utf8len(u8"αβγδ"), 4);				//Okay...
+			assertEquals(bbe::utf8len(u8"Großmütterchäään"), 16);	//Get ready!
+			assertEquals(bbe::utf8len(u8"💣🍣💃"), 3);				//God damn, I bet this line will break a few compilers... or git! 🤣
 
 			//TODO add non SSO Tests
 			bbe::String emptyString;
@@ -49,9 +55,9 @@ namespace bbe {
 				bbe::String stringAdd1WOSSO("Hallo Welt! Das ist ein langer Text! ");
 				bbe::String stringAddr = stringAdd0WOSSO + stringAdd1WOSSO;
 				assertEquals(stringAddr, "Kurz Hallo Welt! Das ist ein langer Text! ");
-				bbe::String stringAdd2WOSSO("Und hierdurch wird er sogar noch l�nger!");
+				bbe::String stringAdd2WOSSO("Und hierdurch wird er sogar noch länger!");
 				bbe::String stringAdd3WOSSO = stringAdd1WOSSO + stringAdd2WOSSO;
-				assertEquals(stringAdd3WOSSO, "Hallo Welt! Das ist ein langer Text! Und hierdurch wird er sogar noch l�nger!");
+				assertEquals(stringAdd3WOSSO, "Hallo Welt! Das ist ein langer Text! Und hierdurch wird er sogar noch länger!");
 			}
 
 			{
