@@ -54,4 +54,5 @@ clean:
 	rm -f ExampleParticleGravity/obj/*
 	rm -f BrotBoxEngineTest/obj/*
 	rm -f ExampleParticleGravity/EPG
+	rm -f BrotBoxEngineTest/Test.exec
 	rm -f BBE.o
