@@ -20,20 +20,20 @@ namespace bbe {
 			assertEquals(bbe::utf8charlen(u8"a"), 1);
 			assertEquals(bbe::utf8charlen(u8"aaaa"), 1);
 
-			assertEquals(bbe::utf8charlen(u8"")      , 1);
-			assertEquals(bbe::utf8charlen(u8"B")     , 1);
-			assertEquals(bbe::utf8charlen(u8"α")     , 2);
-			assertEquals(bbe::utf8charlen(u8"β")     , 2);
-			assertEquals(bbe::utf8charlen(u8"γ")     , 2);
-			assertEquals(bbe::utf8charlen(u8"δ")     , 2);
-			assertEquals(bbe::utf8charlen(u8"ß")     , 2);
-			assertEquals(bbe::utf8charlen(u8"ä")     , 2);
-			assertEquals(bbe::utf8charlen(u8"ö")     , 2);
-			assertEquals(bbe::utf8charlen(u8"ü")     , 2);
-			assertEquals(bbe::utf8charlen(u8"💣")    , 4);
-			assertEquals(bbe::utf8charlen(u8"🍣")    , 4);
-			assertEquals(bbe::utf8charlen(u8"💃")    , 4);
-
+			assertEquals(bbe::utf8charlen(u8""),       1);
+			assertEquals(bbe::utf8charlen(u8"B"),      1);
+			assertEquals(bbe::utf8charlen(u8"α"),      2);
+			assertEquals(bbe::utf8charlen(u8"β"),      2);
+			assertEquals(bbe::utf8charlen(u8"γ"),      2);
+			assertEquals(bbe::utf8charlen(u8"δ"),      2);
+			assertEquals(bbe::utf8charlen(u8"ß"),      2);
+			assertEquals(bbe::utf8charlen(u8"ä"),      2);
+			assertEquals(bbe::utf8charlen(u8"ö"),      2);
+			assertEquals(bbe::utf8charlen(u8"ü"),      2);
+			assertEquals(bbe::utf8charlen(u8"💣"),     4);
+			assertEquals(bbe::utf8charlen(u8"🍣"),     4);
+			assertEquals(bbe::utf8charlen(u8"💃"),     4);
+			assertEquals(bbe::utf8charlen(u8"\uFEFF"), 3);
 			try
 			{
 				bbe::utf8charlen(u8"💃" + 1); //This should create an exception.
@@ -43,6 +43,27 @@ namespace bbe {
 			{
 				//Do nothing, everything worked as expected.
 			}
+
+			{
+				char data[] = u8"a";
+				assertEquals(true, bbe::utf8IsSameChar(u8"a", data));
+				assertEquals(true, bbe::utf8IsSameChar(data, u8"a"));
+				assertEquals(false, bbe::utf8IsSameChar(u8"b", data));
+				assertEquals(false, bbe::utf8IsSameChar(data, u8"b"));
+			}
+			{
+				char data[] = u8"💣";
+				assertEquals(true, bbe::utf8IsSameChar(u8"💣", data));
+				assertEquals(true, bbe::utf8IsSameChar(data, u8"💣"));
+				assertEquals(false, bbe::utf8IsSameChar(u8"b", data));
+				assertEquals(false, bbe::utf8IsSameChar(data, u8"b"));
+			}
+
+			assertEquals(true, bbe::utf8IsWhitespace(u8" "));
+			assertEquals(true, bbe::utf8IsWhitespace(u8"\t"));
+			assertEquals(true, bbe::utf8IsWhitespace(u8"\n"));
+			assertEquals(true, bbe::utf8IsWhitespace(u8"\uFEFF"));
+			assertEquals(false, bbe::utf8IsWhitespace(u8"a"));
 
 
 			//TODO add non SSO Tests

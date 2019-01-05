@@ -16,7 +16,8 @@ namespace bbe
 
 	std::size_t utf8len(const char* ptr);		//Length of a utf8 encoded string.
 	std::size_t utf8charlen(const char* ptr);	//Length in byte of a single utf8 char.
-
+	bool utf8IsWhitespace(const char* ptr);
+	bool utf8IsSameChar(const char* ptr1, const char* ptr2);
 
 	template <typename Allocator, size_t allocatorSize>
 	class StringBase
