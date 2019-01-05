@@ -66,9 +66,7 @@ namespace bbe
 		typedef const T*                                          const_pointer;
 		typedef T&                                                reference;
 		typedef const T&                                          const_reference;
-		typedef std::size_t                                            size_type;
-		typedef typename std::pointer_traits<T*>::difference_type difference_type;
-		typedef typename std::pointer_traits<T*>::rebind          const_void_pointer;
+		typedef std::size_t                                       size_type;
 	private:
 		static constexpr std::size_t STACK_ALLOCATOR_DEFAULT_SIZE = 1024;
 		T* m_data = nullptr;
@@ -129,6 +127,8 @@ namespace bbe
 		StackAllocator(StackAllocator&& other) = delete; //Move Constructor
 		StackAllocator& operator=(const StackAllocator&  other) = delete; //Copy Assignment
 		StackAllocator& operator=(StackAllocator&& other) = delete; //Move Assignment
+
+		#include <iostream>
 
 		template <typename U, typename... arguments>
 		U* allocateObjects(std::size_t amountOfObjects = 1, arguments&&... args)

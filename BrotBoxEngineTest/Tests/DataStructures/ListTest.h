@@ -1517,6 +1517,7 @@ namespace bbe
 				);
 
 				Person* find = findList.find(Person("0 year", "0 Street", 0));
+				std::cout << (long long) find << std::endl;
 				assertUnequals(find, nullptr);
 				assertEquals(find->name, "0 year");
 				assertEquals(find->adress, "0 Street");

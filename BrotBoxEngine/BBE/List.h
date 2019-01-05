@@ -8,6 +8,7 @@
 #include "../BBE/Hash.h"
 #include "../BBE/Exceptions.h"
 #include <initializer_list>
+#include <iostream>
 
 namespace bbe
 {
@@ -502,7 +503,7 @@ namespace bbe
 			}
 
 			size_t index = getIndexOnAdd(val);
-			while (m_pdata[index].m_value == val && index < m_length - 1)
+			while (index < m_length - 1 && m_pdata[index].m_value == val)
 			{
 				index++;
 			}

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdio>
 
 namespace bbe
 {
@@ -15,7 +16,7 @@ namespace bbe
 			}
 
 			template <typename T>
-			void destroy(T* data, size_t size)
+			void destroy(T* data, std::size_t size)
 			{
 				delete[] data;
 			}

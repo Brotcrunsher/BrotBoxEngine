@@ -100,7 +100,7 @@ namespace bbe {
 			{
 				s_amountOfPersons++;
 				s_amountOfPersons--;
-				throw 1;
+				throw (int)1;
 			}
 
 			~Person() {
@@ -118,9 +118,15 @@ namespace bbe {
 			}
 
 			bool operator==(const Person& other) const {
-				return name == other.name
+				//std::cout << "Comparing---" << std::endl;
+				//std::wcout << this->name   << " " << other.name   << (this->name   == other.name)   << std::endl;
+				//std::wcout << this->adress << " " << other.adress << (this->adress == other.adress) << std::endl;
+				//std::wcout << this->age    << " " << other.age    << (this->age    == other.age)    << std::endl;
+				bool same = name == other.name
 					&& adress == other.adress
 					&& age == other.age;
+				//std::cout << "Comparison: " << same << std::endl;
+				return same;
 			}
 
 			bool operator!=(const Person& other) const {
@@ -160,7 +166,7 @@ namespace bbe {
 		int64_t Person::s_amountOfDestructorCalls = 0;
 
 		template <typename T, typename U>
-		void assertEquals(T a, U b) {
+		void assertEquals(const T &a, const U &b) {
 			if (a == b) {
 				//Do nothing, test passed
 			}

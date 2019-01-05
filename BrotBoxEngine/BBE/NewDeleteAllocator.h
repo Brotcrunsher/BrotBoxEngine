@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <utility>
+#include <iostream>
 
 namespace bbe
 {

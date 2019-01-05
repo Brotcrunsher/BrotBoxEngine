@@ -92,6 +92,7 @@ namespace bbe
 				for(size_t i = 0; i<m_length; i++){
 					m_ssoData[i] = (wchar_t)data[i];
 				}
+				m_ssoData[m_length] = (wchar_t)0;
 				m_usesSSO = true;
 				m_capacity = SSOSIZE;
 			}
@@ -99,8 +100,9 @@ namespace bbe
 			{
 				m_pdata = s_allocator.template allocateObjects<wchar_t>(m_length + 1);
 				for(size_t i = 0; i<m_length; i++){
-					m_ssoData[i] = (wchar_t)data[i];
+					m_pdata[i] = (wchar_t)data[i];
 				}
+				m_pdata[m_length] = (wchar_t)0;
 				m_usesSSO = false;
 				m_capacity = m_length + 1;
 			}
@@ -318,6 +320,11 @@ namespace bbe
 		}
 
 		friend std::ostream &operator<<(std::ostream &os, const bbe::StringBase<Allocator, allocatorSize> &string)
+		{
+			return os << string.getRaw();
+		}
+
+		friend std::wostream &operator<<(std::wostream &os, const bbe::StringBase<Allocator, allocatorSize> &string)
 		{
 			return os << string.getRaw();
 		}
@@ -572,6 +579,29 @@ namespace bbe
 			}
 		}
 
+		void substring(size_t start, size_t end = -1)
+		{
+			if(end == (size_t)-1)
+			{
+				end = m_length;
+			}
+			auto raw = getRaw();
+			if (start != 0 || end != m_length)
+			{
+				if (end == 0) //Special Case, if the string only contains whitespace
+				{ 
+					m_length = 0;
+					raw[m_length] = 0;
+				}
+				else
+				{
+					m_length = end - start + 1;
+					memmove(raw, &raw[start], sizeof(wchar_t) * m_length);
+					raw[m_length] = 0;
+				}
+			}
+		}
+
 		size_t count(const StringBase<Allocator, allocatorSize>& countand) const
 		{
 			size_t countandLength = countand.getLength();
@@ -595,7 +625,7 @@ namespace bbe
 			return count(StringBase<Allocator, allocatorSize>(countand));
 		}
 
-		size_t count(char* countand) const
+		size_t count(const char* countand) const
 		{
 			return count(StringBase<Allocator, allocatorSize>(countand));
 		}

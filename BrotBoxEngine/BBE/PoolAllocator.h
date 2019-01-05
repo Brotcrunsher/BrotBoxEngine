@@ -5,6 +5,7 @@
 #include "../BBE/STLAllocator.h"
 #include "../BBE/STLCapsule.h"
 #include "../BBE/Exceptions.h"
+#include <memory>
 
 namespace bbe
 {
@@ -27,14 +28,12 @@ namespace bbe
 	class PoolAllocator
 	{
 	public:
-		typedef T                                                 value_type;
-		typedef T*                                                pointer;
-		typedef const T*                                          const_pointer;
-		typedef T&                                                reference;
-		typedef const T&                                          const_reference;
-		typedef std::size_t                                       size_type;
-		typedef typename std::pointer_traits<T*>::difference_type difference_type;
-		typedef typename std::pointer_traits<T*>::rebind          const_void_pointer;
+		typedef T                                                          value_type;
+		typedef T*                                                         pointer;
+		typedef const T*                                                   const_pointer;
+		typedef T&                                                         reference;
+		typedef const T&                                                   const_reference;
+		typedef std::size_t                                                size_type;
 
 	private:
 		class PoolAllocatorDestroyer
