@@ -32,7 +32,7 @@ std::size_t bbe::utf8len(const char* ptr)
 {
 	if(ptr == nullptr)
 	{
-		return 0;
+		throw NullPointerException();
 	}
 	std::size_t len = 0;
 	const byte* bptr = reinterpret_cast<const byte*>(ptr);
@@ -51,7 +51,7 @@ std::size_t bbe::utf8charlen(const char* ptr)
 {
 	if(ptr == nullptr)
 	{
-		return 0;
+		throw NullPointerException();
 	}
 	const byte* bptr = reinterpret_cast<const byte*>(ptr);
 
@@ -88,7 +88,7 @@ bool bbe::utf8IsWhitespace(const char* ptr)
 {
 	if(ptr == nullptr)
 	{
-		return false;
+		throw NullPointerException();
 	}
 
 	if(bbe::utf8IsSameChar("\u0009", ptr)) return true; // CHARACTER TABULATION

@@ -14,7 +14,6 @@ namespace bbe {
 			assertEquals(bbe::utf8len(u8"αβγδ"), 4);				//Okay...
 			assertEquals(bbe::utf8len(u8"Großmütterchäään"), 16);	//Get ready!
 			assertEquals(bbe::utf8len(u8"💣🍣💃"), 3);				//God damn, I bet this line will break a few compilers... or git! 🤣
-			assertEquals(bbe::utf8len(nullptr), 0);					//Special case
 
 			assertEquals(bbe::utf8charlen(u8""), 1);
 			assertEquals(bbe::utf8charlen(u8"a"), 1);
