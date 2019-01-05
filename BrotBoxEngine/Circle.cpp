@@ -92,6 +92,11 @@ float bbe::Circle::getY() const
 	return m_y;
 }
 
+bbe::Vector2 bbe::Circle::getPos() const
+{
+	return bbe::Vector2(m_x, m_y);
+}
+
 float bbe::Circle::getWidth() const
 {
 	return m_width;
@@ -100,6 +105,11 @@ float bbe::Circle::getWidth() const
 float bbe::Circle::getHeight() const
 {
 	return m_height;
+}
+
+bbe::Vector2 bbe::Circle::getDim() const
+{
+	return bbe::Vector2(m_width, m_height);
 }
 
 void bbe::Circle::setX(float x)
