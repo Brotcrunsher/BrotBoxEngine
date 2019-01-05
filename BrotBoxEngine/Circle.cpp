@@ -60,104 +60,124 @@ void bbe::Circle::s_destroy()
 bbe::Circle::Circle()
 	: m_x(0), m_y(0), m_width(0), m_height(0)
 {
+	//UNTESTED
 }
 
 bbe::Circle::Circle(float x, float y, float width, float height)
 	: m_x(x), m_y(y), m_width(width), m_height(height)
 {
+	//UNTESTED
 }
 
 bbe::Circle::Circle(const Vector2 & vec, float width, float height)
 	: m_x(vec.x), m_y(vec.y), m_width(width), m_height(height)
 {
+	//UNTESTED
 }
 
 bbe::Circle::Circle(float x, float y, const Vector2 & dim)
 	: m_x(x), m_y(y), m_width(dim.x), m_height(dim.y)
 {
+	//UNTESTED
 }
 
 bbe::Circle::Circle(const Vector2 & vec, const Vector2 & dim)
 	: m_x(vec.x), m_y(vec.y), m_width(dim.x), m_height(dim.y)
 {
+	//UNTESTED
 }
 
 float bbe::Circle::getX() const
 {
+	//UNTESTED
 	return m_x;
 }
 
 float bbe::Circle::getY() const
 {
+	//UNTESTED
 	return m_y;
 }
 
 bbe::Vector2 bbe::Circle::getPos() const
 {
+	//UNTESTED
 	return bbe::Vector2(m_x, m_y);
 }
 
 float bbe::Circle::getWidth() const
 {
+	//UNTESTED
 	return m_width;
 }
 
 float bbe::Circle::getHeight() const
 {
+	//UNTESTED
 	return m_height;
 }
 
 bbe::Vector2 bbe::Circle::getDim() const
 {
+	//UNTESTED
 	return bbe::Vector2(m_width, m_height);
 }
 
 void bbe::Circle::setX(float x)
 {
+	//UNTESTED
 	m_x = x;
 }
 
 void bbe::Circle::setY(float y)
 {
+	//UNTESTED
 	m_y = y;
 }
 
 void bbe::Circle::setPos(float x, float y)
 {
+	//UNTESTED
 	m_x = x;
 	m_y = y;
 }
 
 void bbe::Circle::setPos(const Vector2 & vec)
 {
+	//UNTESTED
 	m_x = vec.x;
 	m_y = vec.y;
 }
 
 void bbe::Circle::setWidth(float width)
 {
+	//UNTESTED
 	m_width = width;
 }
 
 void bbe::Circle::setHeight(float height)
 {
+	//UNTESTED
 	m_height = height;
 }
 
 void bbe::Circle::setDim(float width, float height)
 {
+	//UNTESTED
 	m_width = width;
 	m_height = height;
 }
 
 void bbe::Circle::setDim(const Vector2 & vec)
 {
+	//UNTESTED
 	m_width = vec.x;
 	m_height = vec.y;
 }
 
 void bbe::Circle::set(float x, float y, float width, float height)
 {
+	//UNTESTED
 	m_x = x;
 	m_y = y;
 	m_width = width;
@@ -166,11 +186,13 @@ void bbe::Circle::set(float x, float y, float width, float height)
 
 void bbe::Circle::translate(float x, float y)
 {
+	//UNTESTED
 	m_x += x;
 	m_y += y;
 }
 
 void bbe::Circle::translate(const Vector2 & vec)
 {
+	//UNTESTED
 	translate(vec.x, vec.y);
 }
