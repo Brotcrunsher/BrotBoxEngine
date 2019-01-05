@@ -60,7 +60,7 @@ void bbe::INTERNAL::vulkan::PhysicalDeviceContainer::init(const VulkanInstance &
 	{
 		m_devices.add(VulkanPhysicalDevice(physicalDevices[i], surface));
 	}
-	delete physicalDevices;
+	delete[] physicalDevices;
 }
 
 const bbe::INTERNAL::vulkan::VulkanPhysicalDevice & bbe::INTERNAL::vulkan::PhysicalDeviceContainer::findBestDevice(const VulkanSurface & surface) const

@@ -13,9 +13,9 @@ void bbe::debugBreak()
 	#if defined(_MSC_VER) && defined(_WIN32)
 		__debugbreak();
 	#elif defined(__linux__)
-		/*void *stackTrace[1024];
+		void *stackTrace[1024];
 		std::size_t size = backtrace(stackTrace, sizeof(stackTrace));
 		backtrace_symbols_fd(stackTrace, size, STDERR_FILENO); 
-		__builtin_trap();*/
+		__builtin_trap();
 	#endif
 }
