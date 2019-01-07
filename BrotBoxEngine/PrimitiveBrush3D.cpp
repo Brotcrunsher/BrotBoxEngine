@@ -190,7 +190,7 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain & terrain)
 	buffer = TerrainPatch::s_indexBuffer.getBuffer();
 	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_VERTEX_BIT, 112, sizeof(Vector2), &terrain.m_heightmapScale);
-	for (int i = 0; i < terrain.m_patches.getLength(); i++)
+	for (std::size_t i = 0; i < terrain.m_patches.getLength(); i++)
 	{
 		vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_VERTEX_BIT, 100, sizeof(Vector2), &terrain.m_patches[i].m_offset);
 
@@ -365,13 +365,13 @@ void bbe::PrimitiveBrush3D::drawTerrain(const TerrainMesh & terrain)
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrainMesh, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color) + sizeof(Vector4) + sizeof(Matrix4), sizeof(Vector4), &(sizeAndOffset));
 
 	Vector3 terrainPos = terrain.getTransform().extractTranslation();
-	for (int i = 0; i < terrain.m_patches.getLength(); i++)
+	for (std::size_t i = 0; i < terrain.m_patches.getLength(); i++)
 	{
 		terrain.m_patches[i].calculateLodLevel(m_cameraPos, terrainPos);
 	}
 
 	VkDeviceSize offsets[] = { 0 };
-	for (int i = 0; i < terrain.m_patches.getLength(); i++)
+	for (std::size_t i = 0; i < terrain.m_patches.getLength(); i++)
 	{
 		int lod = terrain.m_patches[i].getLodLevel();
 

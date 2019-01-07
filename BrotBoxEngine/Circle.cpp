@@ -37,7 +37,7 @@ void bbe::Circle::s_initIndexBuffer(VkDevice device, VkPhysicalDevice physicalDe
 void bbe::Circle::s_initVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
 {
 	List<Vector2> vertices;
-	for (int i = 0; i < AMOUNTOFVERTICES; i++)
+	for (std::size_t i = 0; i < AMOUNTOFVERTICES; i++)
 	{
 		vertices.add(Vector2::createVector2OnUnitCircle((float)i / (float)AMOUNTOFVERTICES * 2 * Math::PI) / 2 + Vector2(0.5f, 0.5f));
 	}

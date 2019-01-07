@@ -51,13 +51,13 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::create(const VulkanDevice &devi
 void bbe::INTERNAL::vulkan::VulkanDescriptorSet::update(const VulkanDevice & device)
 {
 	List<VkDescriptorImageInfo> imageInfos;
-	for (int i = 0; i < m_descriptorImageInfos.getLength(); i++)
+	for (std::size_t i = 0; i < m_descriptorImageInfos.getLength(); i++)
 	{
 		imageInfos.add(m_descriptorImageInfos[i].m_descriptorImageInfo);
 	}
 
 	List<VkWriteDescriptorSet> writeDescriptorSets;
-	for (int i = 0; i < m_descriptorBufferInfos.getLength(); i++)
+	for (std::size_t i = 0; i < m_descriptorBufferInfos.getLength(); i++)
 	{
 		VkWriteDescriptorSet wds = {};
 		wds.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -74,10 +74,10 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::update(const VulkanDevice & dev
 		writeDescriptorSets.add(wds);
 	}
 
-	for (int i = 0; i < m_descriptorImageInfos.getLength(); i++)
+	for (std::size_t i = 0; i < m_descriptorImageInfos.getLength(); i++)
 	{
 		uint32_t descriptorCount = 1;
-		for (int k = i + 1; k < m_descriptorImageInfos.getLength(); k++)
+		for (std::size_t k = i + 1; k < m_descriptorImageInfos.getLength(); k++)
 		{
 			if (m_descriptorImageInfos[k].m_binding == m_descriptorImageInfos[i].m_binding)
 			{

@@ -8,31 +8,31 @@
 namespace bbe {
 	namespace test {
 		void testString() {
-			assertEquals(bbe::utf8len(u8"") , 0);					//Simple!
-			assertEquals(bbe::utf8len(u8"a"), 1);					//A bit harder!
-			assertEquals(bbe::utf8len(u8"BrotBoxEngine!"), 14);		//Still normal...
-			assertEquals(bbe::utf8len(u8"αβγδ"), 4);				//Okay...
-			assertEquals(bbe::utf8len(u8"Großmütterchäään"), 16);	//Get ready!
-			assertEquals(bbe::utf8len(u8"💣🍣💃"), 3);				//God damn, I bet this line will break a few compilers... or git! 🤣
+			assertEquals((int)bbe::utf8len(u8"") , 0);					//Simple!
+			assertEquals((int)bbe::utf8len(u8"a"), 1);					//A bit harder!
+			assertEquals((int)bbe::utf8len(u8"BrotBoxEngine!"), 14);		//Still normal...
+			assertEquals((int)bbe::utf8len(u8"αβγδ"), 4);				//Okay...
+			assertEquals((int)bbe::utf8len(u8"Großmütterchäään"), 16);	//Get ready!
+			assertEquals((int)bbe::utf8len(u8"💣🍣💃"), 3);				//God damn, I bet this line will break a few compilers... or git! 🤣
 
-			assertEquals(bbe::utf8charlen(u8""), 1);
-			assertEquals(bbe::utf8charlen(u8"a"), 1);
-			assertEquals(bbe::utf8charlen(u8"aaaa"), 1);
+			assertEquals((int)bbe::utf8charlen(u8""), 1);
+			assertEquals((int)bbe::utf8charlen(u8"a"), 1);
+			assertEquals((int)bbe::utf8charlen(u8"aaaa"), 1);
 
-			assertEquals(bbe::utf8charlen(u8""),       1);
-			assertEquals(bbe::utf8charlen(u8"B"),      1);
-			assertEquals(bbe::utf8charlen(u8"α"),      2);
-			assertEquals(bbe::utf8charlen(u8"β"),      2);
-			assertEquals(bbe::utf8charlen(u8"γ"),      2);
-			assertEquals(bbe::utf8charlen(u8"δ"),      2);
-			assertEquals(bbe::utf8charlen(u8"ß"),      2);
-			assertEquals(bbe::utf8charlen(u8"ä"),      2);
-			assertEquals(bbe::utf8charlen(u8"ö"),      2);
-			assertEquals(bbe::utf8charlen(u8"ü"),      2);
-			assertEquals(bbe::utf8charlen(u8"💣"),     4);
-			assertEquals(bbe::utf8charlen(u8"🍣"),     4);
-			assertEquals(bbe::utf8charlen(u8"💃"),     4);
-			assertEquals(bbe::utf8charlen(u8"\uFEFF"), 3);
+			assertEquals((int)bbe::utf8charlen(u8""),       1);
+			assertEquals((int)bbe::utf8charlen(u8"B"),      1);
+			assertEquals((int)bbe::utf8charlen(u8"α"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"β"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"γ"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"δ"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"ß"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"ä"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"ö"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"ü"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"💣"),     4);
+			assertEquals((int)bbe::utf8charlen(u8"🍣"),     4);
+			assertEquals((int)bbe::utf8charlen(u8"💃"),     4);
+			assertEquals((int)bbe::utf8charlen(u8"\uFEFF"), 3);
 			try
 			{
 				bbe::utf8charlen(u8"💃" + 1); //This should create an exception.

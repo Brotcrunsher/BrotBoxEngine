@@ -160,7 +160,6 @@ float bbe::ValueNoise2D::get(int x, int y) const
 		float postB = Math::interpolateCubic(nodes[octave][indexX + 0 + (indexY + 3) * (frequencyX + 1)], nodes[octave][indexX + 1 + (indexY + 3) * (frequencyX + 1)], nodes[octave][indexX + 2 + (indexY + 3) * (frequencyX + 1)], nodes[octave][indexX + 3 + (indexY + 3) * (frequencyX + 1)], currentX - indexX);
 		float w = Math::interpolateCubic(preA, a, b, postB, currentY - indexY);
 
-		int index = i + k * m_width;
 		val += w;
 
 		alpha *= m_alphaChange;

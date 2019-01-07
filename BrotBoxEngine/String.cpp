@@ -462,7 +462,6 @@ void bbe::Utf8String::trimInPlace()
 	size_t start = 0;
 	size_t end = m_length;
 	const char* raw = getRaw();
-	const char* endPtr = &raw[end];
 
 	while (utf8IsWhitespace(&raw[start]))
 	{
@@ -950,7 +949,7 @@ bool bbe::utf8IsSmallerCodePoint(const char* ptr1, const char* ptr2)
 	for(std::size_t i = 0; i<size1; i++)
 	{
 		if(ptr1[i] < ptr2[i]) return true;
-		if(ptr1[i] > ptr1[i]) return false;
+		if(ptr1[i] > ptr2[i]) return false;
 	}
 
 	return false;
@@ -964,7 +963,7 @@ int bbe::utf8Distance(const char* ptr1, const char* ptr2)
 	{
 		const char* temp = ptr1;
 		ptr1 = ptr2;
-		ptr2 = ptr1;
+		ptr2 = temp;
 		negative = true;
 	}
 

@@ -49,7 +49,7 @@ void bbe::TerrainMesh::init(
 		m_meshBuffer.create(device, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, 0, nullptr, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 		VkDeviceSize offset = 0;
-		for (int i = 0; i < m_patches.getLength(); i++)
+		for (std::size_t i = 0; i < m_patches.getLength(); i++)
 		{
 			m_patches[i].init(getMaxHeight(), m_meshBuffer, offset, alignment);
 		}
@@ -68,7 +68,7 @@ void bbe::TerrainMesh::init(
 void bbe::TerrainMesh::destroy()
 {
 	m_baseTexture.destroy();
-	for (int i = 0; i < m_patches.getLength(); i++)
+	for (std::size_t i = 0; i < m_patches.getLength(); i++)
 	{
 		m_patches[i].destroy();
 	}
@@ -468,7 +468,6 @@ void bbe::TerrainMeshPatch::s_initIndexBuffer()
 void bbe::TerrainMeshPatch::initVertexBuffer(float height, bbe::INTERNAL::vulkan::VulkanBuffer &parentBuffer, VkDeviceSize &offset, VkDeviceSize alignment) const
 {
 	float* lodData = new float[(PATCH_SIZE + 1) * (PATCH_SIZE + 1)];
-	float* prevLodData = nullptr;
 	memcpy(lodData, m_pdata, (PATCH_SIZE + 1) * (PATCH_SIZE + 1) * sizeof(float));
 
 	m_lodDatas.add(lodData);
@@ -505,7 +504,7 @@ void bbe::TerrainMeshPatch::destroy() const
 {
 	m_vertexBuffer.destroy();
 
-	for (int i = 0; i < m_lodDatas.getLength(); i++)
+	for (std::size_t i = 0; i < m_lodDatas.getLength(); i++)
 	{
 		delete[] m_lodDatas[i];
 	}
@@ -516,7 +515,7 @@ void bbe::TerrainMeshPatch::destroy() const
 
 void bbe::TerrainMeshPatch::s_destroy()
 {
-	for (int i = 0; i < s_indexBuffer.getLength(); i++)
+	for (std::size_t i = 0; i < s_indexBuffer.getLength(); i++)
 	{
 		for (int k = 0; k < 16; k++)
 		{

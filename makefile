@@ -48,7 +48,7 @@ BBE.o: $(OBJ_FILES)
 
 
 $(SRC_DIR_TEST)/obj/%.o: $(SRC_DIR_TEST)/%.cpp
-	g++ $(COMPILER_FLAGS) -c -I $(GLFW_PATH) -I Third-Party/stb -I BrotBoxEngine -I BrotBoxEngine/BrotBoxEngineTest -I BrotBoxEngine/BrotBoxEngineTest/Tests -I BrotBoxEngine/BrotBoxEngineTest/Tests/DataStructures -std=c++17 -o $@ $<
+	g++ $(COMPILER_FLAGS) -Wno-sign-compare -c -I $(GLFW_PATH) -I Third-Party/stb -I BrotBoxEngine -I BrotBoxEngine/BrotBoxEngineTest -I BrotBoxEngine/BrotBoxEngineTest/Tests -I BrotBoxEngine/BrotBoxEngineTest/Tests/DataStructures -std=c++17 -o $@ $<
 
 $(SRC_DIR_EPG)/obj/%.o: $(SRC_DIR_EPG)/%.cpp
 	g++ $(COMPILER_FLAGS) -c -I $(GLFW_PATH) -I Third-Party/stb -I BrotBoxEngine -std=c++17 -o $@ $<

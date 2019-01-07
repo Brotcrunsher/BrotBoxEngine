@@ -550,7 +550,7 @@ bbe::Vector4 bbe::Math::interpolateBezier(Vector4 a, Vector4 b, float t, Vector4
 
 void bbe::Math::INTERNAL::startMath()
 {
-	for (int i = 0; i < INTERNAL::TABLE_SIZES; i++)
+	for (std::size_t i = 0; i < INTERNAL::TABLE_SIZES; i++)
 	{
 		float val = (float)i / INTERNAL::TABLE_SIZES * TAU;
 		sinTable[i] = ::sin(val);

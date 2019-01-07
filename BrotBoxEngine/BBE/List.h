@@ -273,7 +273,7 @@ namespace bbe
 				int lowerIndex = i - amount;
 				if (lowerIndex >= 0 && val < m_pdata[lowerIndex].m_value)
 				{
-					if (i >= m_length)
+					if (i >= (int)m_length)
 					{
 						new (bbe::addressOf(m_pdata[i])) T(std::move(m_pdata[lowerIndex].m_value));
 					}
@@ -290,7 +290,7 @@ namespace bbe
 			int insertionIndex = i;
 			for (; i >= insertionIndex - amount + 1 && i >= 0; i--)
 			{
-				if (i >= m_length)
+				if (i >= (int)m_length)
 				{
 					new (bbe::addressOf(m_pdata[i])) T(val);
 				}
@@ -331,7 +331,7 @@ namespace bbe
 				int lowerIndex = i - amount;
 				if (lowerIndex >= 0 && val < m_pdata[lowerIndex].m_value)
 				{
-					if (i >= m_length)
+					if (i >= (int)m_length)
 					{
 						new (bbe::addressOf(m_pdata[i])) T(std::move(m_pdata[lowerIndex].m_value));
 					}
@@ -348,7 +348,7 @@ namespace bbe
 			int insertionIndex = i;
 			for (; i >= insertionIndex - amount + 1 && i >= 0; i--)
 			{
-				if (i >= m_length)
+				if (i >= (int)m_length)
 				{
 					if (amount == 1)
 					{
