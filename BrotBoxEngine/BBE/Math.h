@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdio>
 
 namespace bbe
 {
@@ -12,10 +13,10 @@ namespace bbe
 		namespace INTERNAL
 		{
 			void startMath();
-#define TABLE_SIZES 2048
-			static float sinTable[TABLE_SIZES];
-			static float cosTable[TABLE_SIZES];
-			static float tanTable[TABLE_SIZES];
+			constexpr std::size_t TABLE_SIZES = 2048;
+			extern float sinTable[TABLE_SIZES];
+			extern float cosTable[TABLE_SIZES];
+			extern float tanTable[TABLE_SIZES];
 		}
 
 		extern const float PI;
