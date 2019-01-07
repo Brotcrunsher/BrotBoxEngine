@@ -50,4 +50,6 @@ namespace bbe
 
 	CREATE_EXCEPTION(NotStartOfUtf8Exception);
 	CREATE_EXCEPTION(NullPointerException);
+	CREATE_EXCEPTION(UnexpectedEndOfStringException);
+	CREATE_EXCEPTION(NotAUtf8CharException);
 }
