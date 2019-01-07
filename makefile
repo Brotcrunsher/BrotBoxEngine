@@ -1,5 +1,5 @@
 GLFW_PATH := ~/Schreibtisch/glfw-3.2.1/include
-COMPILER_FLAGS := -g -fsanitize=address -rdynamic -Wall
+COMPILER_FLAGS := -g -fsanitize=address -rdynamic -Wall -pedantic-errors
 
 SRC_DIR := BrotBoxEngine
 SRC_FILES := $(wildcard $(SRC_DIR)/*.cpp)

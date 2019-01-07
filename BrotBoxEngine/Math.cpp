@@ -14,7 +14,7 @@ const float bbe::Math::SQRT2 = 1.41421356237f;
 const float bbe::Math::SQRT2INV = 0.70710678118f;
 const float bbe::Math::INFINITY_POSITIVE = std::numeric_limits<float>::infinity();
 const float bbe::Math::INFINITY_NEGATIVE = -std::numeric_limits<float>::infinity();
-const float bbe::Math::NaN = std::numeric_limits<float>::quiet_NaN();;
+const float bbe::Math::NaN = std::numeric_limits<float>::quiet_NaN();
 
 float bbe::Math::INTERNAL::sinTable[TABLE_SIZES];
 float bbe::Math::INTERNAL::cosTable[TABLE_SIZES];
