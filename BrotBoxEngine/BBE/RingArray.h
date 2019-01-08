@@ -13,7 +13,7 @@ namespace bbe
 		DynamicArray<T> m_data;
 
 	public:
-		RingArray(size_t size)
+		explicit RingArray(size_t size)
 			: m_data(size)
 		{
 			//do nothing
