@@ -57,9 +57,6 @@ namespace bbe {
 			Person(Person&& other)
 				: name(other.name), adress(other.adress), age(other.age)
 			{
-				name = other.name;
-				adress = other.adress;
-				age = other.age;
 				Person::s_amountOfPersons++;
 				Person::s_amountOfMoveConstructorCalls++;
 			}
