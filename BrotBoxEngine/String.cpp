@@ -944,7 +944,7 @@ bool bbe::utf8IsSmallerCodePoint(const char* ptr1, const char* ptr2)
 	auto size2 = bbe::utf8charlen(ptr2);
 
 	if(size1 < size2) return true;
-	if(size2 > size1) return false;
+	if(size1 > size2) return false;
 
 	for(std::size_t i = 0; i<size1; i++)
 	{
