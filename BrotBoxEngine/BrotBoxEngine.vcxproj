@@ -22,7 +22,7 @@
     <ProjectGuid>{4FBD385B-15BA-43EE-A6BE-0B702B15B972}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>BrotBoxEngine</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -111,10 +111,9 @@
       </SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\Third-Party\stb;$(SolutionDir)\Third-Party\Vulkan\Include;$(SolutionDir)\Third-Party\GLFW\glfw-3.2.1.bin.WIN32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <AdditionalOptions>/permissive- %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnablePREfast>false</EnablePREfast>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

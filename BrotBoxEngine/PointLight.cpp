@@ -16,7 +16,7 @@ bbe::Vector3 bbe::PointLight::getPosition()
 {
 	if (!s_staticIniCalled)
 	{
-		throw IllegalStateException(L"Engine must have started!");
+		throw IllegalStateException("Engine must have started!");
 	}
 	return s_dataVertex[m_index].m_position;
 }
@@ -25,7 +25,7 @@ void bbe::PointLight::setPosition(Vector3 pos)
 {
 	if (!s_staticIniCalled)
 	{
-		throw IllegalStateException(L"Engine must have started!");
+		throw IllegalStateException("Engine must have started!");
 	}
 	s_dataVertex[m_index].m_position = pos;
 }
@@ -43,7 +43,7 @@ void bbe::PointLight::turnOn(bool on)
 {
 	if (!s_staticIniCalled)
 	{
-		throw IllegalStateException(L"Engine must have started!");
+		throw IllegalStateException("Engine must have started!");
 	}
 
 	s_dataVertex[m_index].m_used = on ? 1.0f : -1.0f;
@@ -54,7 +54,7 @@ bool bbe::PointLight::isOn()
 {
 	if (!s_staticIniCalled)
 	{
-		throw IllegalStateException(L"Engine must have started!");
+		throw IllegalStateException("Engine must have started!");
 	}
 	return s_dataVertex[m_index].m_used > 0.0f;
 }
@@ -147,7 +147,7 @@ void bbe::PointLight::setLightStrength(float lightStrength)
 {
 	if (!s_staticIniCalled)
 	{
-		throw IllegalStateException(L"Engine must have started!");
+		throw IllegalStateException("Engine must have started!");
 	}
 	s_dataFragment[m_index].m_lightStrength = lightStrength;
 }
@@ -156,7 +156,7 @@ float bbe::PointLight::getLightStrength()
 {
 	if (!s_staticIniCalled)
 	{
-		throw IllegalStateException(L"Engine must have started!");
+		throw IllegalStateException("Engine must have started!");
 	}
 	return s_dataFragment[m_index].m_lightStrength;
 }
@@ -165,7 +165,7 @@ void bbe::PointLight::setLightColor(const Color & color)
 {
 	if (!s_staticIniCalled)
 	{
-		throw IllegalStateException(L"Engine must have started!");
+		throw IllegalStateException("Engine must have started!");
 	}
 	s_dataFragment[m_index].m_lightColor = color;
 }
@@ -174,7 +174,7 @@ bbe::Color bbe::PointLight::getLightColor()
 {
 	if (!s_staticIniCalled)
 	{
-		throw IllegalStateException(L"Engine must have started!");
+		throw IllegalStateException("Engine must have started!");
 	}
 	return s_dataFragment[m_index].m_lightColor;
 }
@@ -183,7 +183,7 @@ void bbe::PointLight::setSpecularColor(const Color & color)
 {
 	if (!s_staticIniCalled)
 	{
-		throw IllegalStateException(L"Engine must have started!");
+		throw IllegalStateException("Engine must have started!");
 	}
 	s_dataFragment[m_index].m_specularColor = color;
 }
@@ -192,7 +192,7 @@ bbe::Color bbe::PointLight::getSpecularColor()
 {
 	if (!s_staticIniCalled)
 	{
-		throw IllegalStateException(L"Engine must have started!");
+		throw IllegalStateException("Engine must have started!");
 	}
 	return s_dataFragment[m_index].m_specularColor;
 }
@@ -201,7 +201,7 @@ void bbe::PointLight::setFalloffMode(LightFalloffMode falloffMode)
 {
 	if (!s_staticIniCalled)
 	{
-		throw IllegalStateException(L"Engine must have started!");
+		throw IllegalStateException("Engine must have started!");
 	}
 	s_dataFragment[m_index].m_lightFallOffMode = falloffMode;
 }
@@ -210,7 +210,7 @@ bbe::LightFalloffMode bbe::PointLight::getFalloffMode()
 {
 	if (!s_staticIniCalled)
 	{
-		throw IllegalStateException(L"Engine must have started!");
+		throw IllegalStateException("Engine must have started!");
 	}
 	return s_dataFragment[m_index].m_lightFallOffMode;
 }

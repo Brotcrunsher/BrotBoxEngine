@@ -124,19 +124,19 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 
 
 	std::cout << "Vulkan Manager: Loading Shaders" << std::endl;
-	m_vertexShader2DPrimitive           .init(m_device, L"vert2DPrimitive.spv");
-	m_fragmentShader2DPrimitive         .init(m_device, L"frag2DPrimitive.spv");
-	m_vertexShader2DImage               .init(m_device, L"vert2DImage.spv");
-	m_fragmentShader2DImage             .init(m_device, L"frag2DImage.spv");
-	m_vertexShader3DPrimitive           .init(m_device, L"vert3DPrimitive.spv");
-	m_fragmentShader3DPrimitive         .init(m_device, L"frag3DPrimitive.spv");
-	m_vertexShader3DTerrain             .init(m_device, L"vert3DTerrain.spv");
-	m_fragmentShader3DTerrain           .init(m_device, L"frag3DTerrain.spv");
-	m_teseShader3DTerrain               .init(m_device, L"tese3DTerrain.spv");
-	m_tescShader3DTerrain               .init(m_device, L"tesc3DTerrain.spv");
-	m_vertexShader3DTerrainMesh         .init(m_device, L"vert3DTerrainMesh.spv");
-	m_vertexShader3DTerrainTransformed  .init(m_device, L"vert3DTerrainTransformed.spv");
-	m_fragmentShader3DTerrainTransformed.init(m_device, L"frag3DTerrainTransformed.spv");
+	m_vertexShader2DPrimitive           .init(m_device, "vert2DPrimitive.spv");
+	m_fragmentShader2DPrimitive         .init(m_device, "frag2DPrimitive.spv");
+	m_vertexShader2DImage               .init(m_device, "vert2DImage.spv");
+	m_fragmentShader2DImage             .init(m_device, "frag2DImage.spv");
+	m_vertexShader3DPrimitive           .init(m_device, "vert3DPrimitive.spv");
+	m_fragmentShader3DPrimitive         .init(m_device, "frag3DPrimitive.spv");
+	m_vertexShader3DTerrain             .init(m_device, "vert3DTerrain.spv");
+	m_fragmentShader3DTerrain           .init(m_device, "frag3DTerrain.spv");
+	m_teseShader3DTerrain               .init(m_device, "tese3DTerrain.spv");
+	m_tescShader3DTerrain               .init(m_device, "tesc3DTerrain.spv");
+	m_vertexShader3DTerrainMesh         .init(m_device, "vert3DTerrainMesh.spv");
+	m_vertexShader3DTerrainTransformed  .init(m_device, "vert3DTerrainTransformed.spv");
+	m_fragmentShader3DTerrainTransformed.init(m_device, "frag3DTerrainTransformed.spv");
 
 	std::cout << "Vulkan Manager: creating pipeline" << std::endl;
 	createPipelines();

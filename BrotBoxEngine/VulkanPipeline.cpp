@@ -113,12 +113,12 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 {
 	if (!m_wasInitialized)
 	{
-		throw bbe::NotInitializedException(L"Call init first!");
+		throw bbe::NotInitializedException("Call init first!");
 	}
 
 	if (m_wasCreated)
 	{
-		throw bbe::AlreadyCreatedException(L"VulkanPipeline was already created!");
+		throw bbe::AlreadyCreatedException("VulkanPipeline was already created!");
 	}
 
 	VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo;
