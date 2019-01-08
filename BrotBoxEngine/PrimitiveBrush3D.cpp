@@ -82,7 +82,8 @@ void bbe::PrimitiveBrush3D::destroy()
 
 bbe::PrimitiveBrush3D::PrimitiveBrush3D()
 {
-	//Do nothing.
+	m_screenWidth = -1;
+	m_screenHeight = -1;
 }
 
 void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
