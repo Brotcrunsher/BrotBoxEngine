@@ -19,7 +19,7 @@ namespace bbe
 			class AdvancedDescriptorBufferInfo
 			{
 			public:
-				AdvancedDescriptorBufferInfo(VkDescriptorBufferInfo descriptorBufferInfo, uint32_t binding);
+				AdvancedDescriptorBufferInfo(const VkDescriptorBufferInfo &descriptorBufferInfo, uint32_t binding);
 				VkDescriptorBufferInfo m_descriptorBufferInfo;
 				uint32_t m_binding;
 			};
@@ -27,7 +27,7 @@ namespace bbe
 			class AdvancedDescriptorImageInfo
 			{
 			public:
-				AdvancedDescriptorImageInfo(VkDescriptorImageInfo descriptorImageInfo, uint32_t binding);
+				AdvancedDescriptorImageInfo(const VkDescriptorImageInfo &descriptorImageInfo, uint32_t binding);
 				VkDescriptorImageInfo m_descriptorImageInfo;
 				uint32_t m_binding;
 			};

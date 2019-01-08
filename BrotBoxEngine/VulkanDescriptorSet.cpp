@@ -119,14 +119,14 @@ const VkDescriptorSet * bbe::INTERNAL::vulkan::VulkanDescriptorSet::getPDescript
 	return &m_descriptorSet;
 }
 
-bbe::INTERNAL::vulkan::AdvancedDescriptorBufferInfo::AdvancedDescriptorBufferInfo(VkDescriptorBufferInfo descriptorBufferInfo, uint32_t binding)
+bbe::INTERNAL::vulkan::AdvancedDescriptorBufferInfo::AdvancedDescriptorBufferInfo(const VkDescriptorBufferInfo &descriptorBufferInfo, uint32_t binding)
+	: m_descriptorBufferInfo(descriptorBufferInfo)
 {
-	m_descriptorBufferInfo = descriptorBufferInfo;
 	m_binding = binding;
 }
 
-bbe::INTERNAL::vulkan::AdvancedDescriptorImageInfo::AdvancedDescriptorImageInfo(VkDescriptorImageInfo descriptorImageInfo, uint32_t binding)
+bbe::INTERNAL::vulkan::AdvancedDescriptorImageInfo::AdvancedDescriptorImageInfo(const VkDescriptorImageInfo &descriptorImageInfo, uint32_t binding)
+	: m_descriptorImageInfo(descriptorImageInfo)
 {
-	m_descriptorImageInfo = descriptorImageInfo;
 	m_binding = binding;
 }
