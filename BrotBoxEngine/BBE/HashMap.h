@@ -78,6 +78,8 @@ namespace bbe
 					m_pcontainers[i].add(hm.m_pcontainers[i][k]);
 				}
 			}
+
+			return *this;
 		}
 
 		HashMap& operator=(HashMap&& hm)
@@ -93,6 +95,8 @@ namespace bbe
 
 			hm.m_pcontainers = nullptr;
 			hm.m_amountOfContainers = 0;
+
+			return *this;
 		}
 
 		~HashMap()
