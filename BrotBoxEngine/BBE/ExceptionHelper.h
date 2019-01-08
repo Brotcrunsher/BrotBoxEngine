@@ -9,7 +9,7 @@ namespace bbe
 		const char* m_msg = "";					\
 													\
 	public:											\
-		n(const char* msg)	                        \
+		explicit n(const char* msg)	                        \
 			: m_msg(msg)							\
 		{}											\
 													\
