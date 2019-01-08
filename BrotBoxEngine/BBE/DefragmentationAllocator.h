@@ -184,7 +184,7 @@ namespace bbe
 				}
 				else
 				{
-					byte tempByteArr[sizeof(T) + alignof(T)];	//Needs no initialization!
+					byte tempByteArr[sizeof(T) + alignof(T)];	//TODO: Needs no initialization but an instance of T could be put on the stack directly!
 					T* tempObj = reinterpret_cast<T*>(Math::nextMultiple((size_t)alignof(T), (size_t)tempByteArr));
 
 					for (size_t i = 0; i < m_amountOfObjects; i++)
