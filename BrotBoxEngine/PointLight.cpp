@@ -138,9 +138,9 @@ bbe::PointLight::~PointLight()
 }
 
 bbe::INTERNAL::PointLightWithPos::PointLightWithPos(PointLight *pointLight, const Vector3 & pos)
+	: m_pos(pos)
 {
 	m_plight = pointLight;
-	m_pos = pos;
 }
 
 void bbe::PointLight::setLightStrength(float lightStrength)
