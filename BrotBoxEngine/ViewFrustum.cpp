@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "BBE/ViewFrustum.h"
 
-void bbe::INTERNAL::vulkan::ViewFrustum::updatePlanes(bbe::Matrix4 mvpMatrix)
+void bbe::INTERNAL::vulkan::ViewFrustum::updatePlanes(const bbe::Matrix4 &mvpMatrix)
 {
 	planes[0].x = mvpMatrix.get(3, 0) + mvpMatrix.get(0, 0);
 	planes[0].y = mvpMatrix.get(3, 1) + mvpMatrix.get(0, 1);
