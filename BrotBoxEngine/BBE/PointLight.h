@@ -85,7 +85,7 @@ namespace bbe
 		PointLight& operator=(PointLight&&) = delete;
 
 		Vector3 getPosition();
-		void setPosition(Vector3 pos);
+		void setPosition(const Vector3 &pos);
 
 		void destroy();
 		void turnOn(bool on);

@@ -21,7 +21,7 @@ bbe::Vector3 bbe::PointLight::getPosition()
 	return s_dataVertex[m_index].m_position;
 }
 
-void bbe::PointLight::setPosition(Vector3 pos)
+void bbe::PointLight::setPosition(const Vector3 &pos)
 {
 	if (!s_staticIniCalled)
 	{
