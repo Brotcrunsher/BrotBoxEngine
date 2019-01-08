@@ -13,8 +13,29 @@ bbe::List<char> bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 		std::cout << filepath.getRaw()[i] << std::endl;
 	}
 
-	std::cout << "Reading File: " << filepath << std::endl;
-	std::ifstream file(filepath.getRaw(), std::ios::binary | std::ios::ate);
+	wchar_t path_w[1024];
+	char path[1024];	
+	memset(path_w, 0, 1024*sizeof(wchar_t));
+
+	std::cout << "OLA!" << std::endl;
+	if(filepath.getLength() >= sizeof(path) - 1)
+	{
+		throw std::runtime_error("Path too long!");
+	}
+	for(std::size_t i = 0; i<filepath.getLength(); i++)
+	{
+		std::cout << "OLA!" << std::endl;
+		path_w[i] = filepath.getRaw()[i];
+	}
+
+	std::cout << "OLA!" << std::endl;
+	std::size_t length = wcstombs(path, path_w, sizeof(path));
+	if(length >= sizeof(path) - 1)
+	{
+		throw std::runtime_error("Path too long!");
+	}
+	std::cout << "Reading File: " << path << std::endl;
+	std::ifstream file(path, std::ios::binary | std::ios::ate);
 
 	if (file)
 	{
@@ -34,7 +55,13 @@ bbe::List<char> bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 
 void bbe::simpleFile::writeFloatArrToFile(const bbe::String & filePath, float * arr, size_t size)
 {	
-	std::ofstream file(filePath.getRaw());
+	char path[1024];
+	std::size_t length = wcstombs(path, filePath.getRaw(), sizeof(path));
+	if(length >= sizeof(path) - 1)
+	{
+		throw std::runtime_error("Path too long!");
+	}
+	std::ofstream file(path);
 	for (std::size_t i = 0; i < size; i++)
 	{
 		file << arr[i] << "\n";
