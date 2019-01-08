@@ -81,14 +81,12 @@ bbe::TerrainPatch::TerrainPatch(int patchX, int patchY, int maxPatchX, int maxPa
 
 
 bbe::TerrainPatch::TerrainPatch(TerrainPatch && other)
+	: m_offset(other.m_offset)
 {
-	m_offset             = other.m_offset;
 	m_patchTextureWidth  = other.m_patchTextureWidth;
 	m_patchTextureHeight = other.m_patchTextureHeight;
 	m_patchX             = other.m_patchX;
 	m_patchY             = other.m_patchY;
-
-	m_offset = other.m_offset;
 }
 
 void bbe::Terrain::init(
