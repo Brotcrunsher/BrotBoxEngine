@@ -157,8 +157,8 @@ bbe::IcoSphere::IcoSphere(const Vector3 & pos, const Vector3 & scale, const Vect
 }
 
 bbe::IcoSphere::IcoSphere(const Matrix4 & transform)
+	: m_transform(transform)
 {
-	m_transform = transform;
 }
 
 void bbe::IcoSphere::set(const Vector3 & pos, const Vector3 & scale, const Vector3 & rotationVector, float radians)
