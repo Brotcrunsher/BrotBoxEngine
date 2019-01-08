@@ -378,8 +378,6 @@ void bbe::PrimitiveBrush3D::drawTerrain(const TerrainMesh & terrain)
 	VkDeviceSize offsets[] = { 0 };
 	for (std::size_t i = 0; i < terrain.m_patches.getLength(); i++)
 	{
-		int lod = terrain.m_patches[i].getLodLevel();
-
 		VkBuffer buffer = terrain.m_patches[i].getIndexBuffer().getBuffer();
 		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 		buffer = terrain.m_patches[i].m_vertexBuffer.getBuffer();
