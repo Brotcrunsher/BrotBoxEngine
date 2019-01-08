@@ -47,15 +47,16 @@ namespace bbe {
 				Person::s_amountOfDefaulConstructorCalls++;
 			}
 
-			Person(const Person& other) {
-				name = other.name;
-				adress = other.adress;
-				age = other.age;
+			Person(const Person& other)
+				: name(other.name), adress(other.adress), age(other.age)
+			{
 				Person::s_amountOfPersons++;
 				Person::s_amountOfCopyConstructorCalls++;
 			}
 
-			Person(Person&& other) {
+			Person(Person&& other)
+				: name(other.name), adress(other.adress), age(other.age)
+			{
 				name = other.name;
 				adress = other.adress;
 				age = other.age;
