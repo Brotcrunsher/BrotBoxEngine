@@ -54,7 +54,7 @@ namespace bbe {
 				}
 			}
 
-			for(int i = 0; i<1; i++)
+			for(int repeat = 0; repeat<1; repeat++)
 			{
 				State states[1024 * 128];
 				for (int i = 0; i < 1024 * 128; i++)
