@@ -12,6 +12,6 @@ namespace bbe
 		Vector3 m_normal;
 
 	
-		VertexWithNormal(Vector3 pos, Vector3 normal);
+		VertexWithNormal(const Vector3 &pos, const Vector3 &normal);
 	};
 }
