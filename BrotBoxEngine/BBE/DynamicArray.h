@@ -93,7 +93,7 @@ namespace bbe
 			}
 		}
 
-		DynamicArray(const std::initializer_list<T> &il)
+		explicit DynamicArray(const std::initializer_list<T> &il)
 		{
 			createArray(il.end() - il.begin(), nullptr);
 			std::size_t i = 0;
@@ -118,8 +118,8 @@ namespace bbe
 			}
 		}
 		DynamicArray(DynamicArray&& other) //Move Constructor
+			: m_pdata(other.m_pdata)
 		{
-			m_pdata = other.m_pdata;
 			m_length = other.m_length;
 			m_pparentAllocator = other.m_pparentAllocator;
 			other.m_pdata = nullptr;
