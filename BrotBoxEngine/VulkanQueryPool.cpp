@@ -5,7 +5,8 @@
 
 bbe::INTERNAL::vulkan::VulkanQueryPool::VulkanQueryPool()
 {
-	//Do nothing
+	m_type  = VK_QUERY_TYPE_MAX_ENUM;
+	m_count = -1;
 }
 
 void bbe::INTERNAL::vulkan::VulkanQueryPool::create(VulkanDevice &device, VkQueryType type, uint32_t count, VkQueryPipelineStatisticFlags statisticFlags)
