@@ -130,7 +130,7 @@ namespace bbe
 			DefragmentationAllocator* m_pa;
 			DefragmentationAllocatorPointer<T> m_data;
 		public:
-			DefragmentationAllocatorDestroyer(DefragmentationAllocator *pa, DefragmentationAllocatorPointer<T> data)
+			DefragmentationAllocatorDestroyer(DefragmentationAllocator *pa, const DefragmentationAllocatorPointer<T> &data)
 				: m_pa(pa), m_data(data)
 			{
 				//do nothing
@@ -184,7 +184,7 @@ namespace bbe
 				}
 				else
 				{
-					byte tempByteArr[sizeof(T) + alignof(T)];
+					byte tempByteArr[sizeof(T) + alignof(T)];	//Needs no initialization!
 					T* tempObj = reinterpret_cast<T*>(Math::nextMultiple((size_t)alignof(T), (size_t)tempByteArr));
 
 					for (size_t i = 0; i < m_amountOfObjects; i++)
