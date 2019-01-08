@@ -18,7 +18,7 @@ namespace bbe
 			//do nothing
 		}
 
-		Array(const std::initializer_list<T> &il)
+		explicit Array(const std::initializer_list<T> &il)
 		{
 			//UNTESTED
 			assert((il.end() - il.begin()) == LENGTH);

@@ -13,7 +13,7 @@ namespace bbe
 		float z;
 
 		Vector3();
-		Vector3(float xyz);
+		explicit Vector3(float xyz);
 		Vector3(float x, float y, float z);
 		Vector3(float x, const Vector2 &yz);
 		Vector3(const Vector2 &xy, float z);

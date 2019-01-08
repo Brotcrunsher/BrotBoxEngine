@@ -11,7 +11,7 @@ namespace bbe
 
 		Vector2();
 		Vector2(float x, float y);
-		Vector2(float xy);
+		explicit Vector2(float xy);
 		static Vector2 createVector2OnUnitCircle(float radians);
 
 		//TODO add *= /= += -=

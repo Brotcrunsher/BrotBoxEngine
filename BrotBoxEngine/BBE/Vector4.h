@@ -15,7 +15,7 @@ namespace bbe
 		float w;
 
 		Vector4();
-		Vector4(float xyzw);
+		explicit Vector4(float xyzw);
 		Vector4(float xyz, float w);
 		Vector4(float x, float y, float z, float w);
 		Vector4(float x, float y, const Vector2 &zw);
