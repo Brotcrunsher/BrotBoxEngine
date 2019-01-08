@@ -41,7 +41,7 @@ namespace bbe
 		private:
 			PoolAllocator* m_pa;
 		public:
-			PoolAllocatorDestroyer(PoolAllocator *pa)
+			explicit PoolAllocatorDestroyer(PoolAllocator *pa)
 				: m_pa(pa)
 			{
 				//do nothing
