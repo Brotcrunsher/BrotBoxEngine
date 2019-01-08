@@ -77,7 +77,7 @@ namespace bbe {
 			}
 
 
-			for(int i = 0; i<1; i++)
+			for(int repeat = 0; repeat<1; repeat++)
 			{
 				GeneralPurposeAllocator gpa(sizeof(float) * 128);
 				List<GeneralPurposeAllocator::GeneralPurposeAllocatorPointer<float>> list;
