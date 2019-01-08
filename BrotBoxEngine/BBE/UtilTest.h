@@ -89,8 +89,9 @@ namespace bbe {
 				return *this;
 			}
 
-			explicit Person(bbe::String name, bbe::String adress, int age) :
-				name(name), adress(adress), age(age) {
+			explicit Person(const bbe::String &name, const bbe::String &adress, int age) 
+				: name(name), adress(adress), age(age) 
+			{
 				//std::cout << "Constructor with parameters called!" << std::endl;
 				s_amountOfPersons++;
 				Person::s_amountOfParameterConstructorCalls++;
