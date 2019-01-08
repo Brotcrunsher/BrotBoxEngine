@@ -80,9 +80,9 @@ bbe::Cube::Cube(const Vector3 & pos, const Vector3 & scale, const Vector3 & rota
 }
 
 bbe::Cube::Cube(const Matrix4 & transform)
+	: m_transform(transform)
 {
 	//UNTESTED
-	m_transform = transform;
 }
 
 
