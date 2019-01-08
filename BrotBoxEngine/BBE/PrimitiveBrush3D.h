@@ -106,6 +106,8 @@ namespace bbe
 		Color m_color;
 
 	public:
+		PrimitiveBrush3D();
+
 		void fillCube(const Cube &cube);
 		void fillIcoSphere(const IcoSphere &sphere);
 

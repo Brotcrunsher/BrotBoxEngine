@@ -80,6 +80,11 @@ void bbe::PrimitiveBrush3D::destroy()
 	m_uboMatrices.destroy();
 }
 
+bbe::PrimitiveBrush3D::PrimitiveBrush3D()
+{
+	//Do nothing.
+}
+
 void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 {
 	if (m_pipelineRecord != PipelineRecord3D::PRIMITIVE)
