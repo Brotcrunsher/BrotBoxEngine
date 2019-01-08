@@ -19,9 +19,9 @@ public:
 	bbe::IcoSphere m_sphere;
 
 
-	Particle()
+	explicit Particle()
+		: pos(s_random.randomVector3InUnitSphere() * 100.0f)
 	{
-		pos = s_random.randomVector3InUnitSphere() * 100.0f;
 	}
 
 	Particle(const bbe::Vector3 &pos)
