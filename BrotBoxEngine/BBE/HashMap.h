@@ -64,6 +64,10 @@ namespace bbe
 		HashMap& operator=(const HashMap& hm)
 		{
 			//UNTESTED
+			if (this == &hm)
+			{
+				return *this;
+			}
 			if (m_pcontainers != nullptr)
 			{
 				delete[] m_pcontainers;
@@ -85,6 +89,10 @@ namespace bbe
 		HashMap& operator=(HashMap&& hm)
 		{
 			//UNTESTED
+			if (this == &hm)
+			{
+				return *this;
+			}
 			if (m_pcontainers != nullptr)
 			{
 				delete[] m_pcontainers;
