@@ -31,7 +31,7 @@ namespace bbe
 	public:
 		Cube();
 		Cube(const Vector3 &pos, const Vector3 &scale, const Vector3 &rotationVector, float radians);
-		Cube(const Matrix4 &transform);
+		explicit Cube(const Matrix4 &transform);
 
 		void set(const Vector3 &pos, const Vector3 &scale, const Vector3 &rotationVector, float radians);
 
