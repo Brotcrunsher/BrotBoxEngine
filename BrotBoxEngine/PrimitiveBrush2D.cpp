@@ -108,6 +108,11 @@ void bbe::PrimitiveBrush2D::INTERNAL_setColor(float r, float g, float b, float a
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
 }
 
+bbe::PrimitiveBrush2D::PrimitiveBrush2D()
+{
+	//do nothing
+}
+
 void bbe::PrimitiveBrush2D::fillRect(const Rectangle & rect)
 {
 	INTERNAL_fillRect(rect);

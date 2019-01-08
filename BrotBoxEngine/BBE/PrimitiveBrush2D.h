@@ -66,7 +66,7 @@ namespace bbe
 		FillMode m_fillMode = FillMode::SOLID;
 
 	public:
-
+		PrimitiveBrush2D();
 
 		void fillRect(const Rectangle &rect);
 		void fillRect(float x, float y, float width, float height);
