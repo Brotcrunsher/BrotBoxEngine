@@ -110,6 +110,8 @@ void bbe::PrimitiveBrush2D::INTERNAL_setColor(float r, float g, float b, float a
 
 bbe::PrimitiveBrush2D::PrimitiveBrush2D()
 {
+	m_screenHeight = -1;
+	m_screenWidth  = -1;
 	//do nothing
 }
 
