@@ -9,7 +9,7 @@ namespace bbe
 	class NewDeleteAllocator
 	{
 	public:
-		NewDeleteAllocator(std::size_t size)
+		explicit NewDeleteAllocator(std::size_t size)
 		{
 			assert(size == 0 && "size can't be set for a NewDeleteAllocator!");
 		}
