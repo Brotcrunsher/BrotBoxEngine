@@ -17,7 +17,7 @@ namespace bbe
 		float   m_timeSinceShiftPress = 0;
 
 	public:
-		CameraControlNoClip(Game* game);
+		explicit CameraControlNoClip(Game* game);
 
 		void update(float timeSinceLastFrame);
 		Vector3 getCameraPos() const;
