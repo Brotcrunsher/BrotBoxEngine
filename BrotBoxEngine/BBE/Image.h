@@ -90,7 +90,7 @@ namespace bbe
 
 	public:
 		Image();
-		Image(const char* path);
+		explicit Image(const char* path);
 		Image(int width, int height);
 		Image(int width, int height, const Color &c);
 		Image(int width, int height, const float* data, ImageFormat format);
