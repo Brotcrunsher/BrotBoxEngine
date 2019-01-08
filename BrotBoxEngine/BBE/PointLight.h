@@ -76,7 +76,7 @@ namespace bbe
 
 
 		PointLight();
-		PointLight(const Vector3 &pos);
+		explicit PointLight(const Vector3 &pos);
 		~PointLight();
 
 		PointLight(const PointLight&) = delete;
