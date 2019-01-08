@@ -20,7 +20,7 @@ namespace bbe
 
 	public:
 		Game();
-		~Game();
+		virtual ~Game();
 
 		Game(const Game&)            = delete;
 		Game(Game&&)                 = delete;

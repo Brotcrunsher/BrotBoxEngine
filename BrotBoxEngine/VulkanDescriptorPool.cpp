@@ -22,9 +22,9 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(const VulkanDevice & de
 	uint32_t amountOfSampler = 0;
 	uint32_t amountOfSets = 0;
 
-	for (int i = 0; i < m_setLayouts.getLength(); i++)
+	for (std::size_t i = 0; i < m_setLayouts.getLength(); i++)
 	{
-		for (int k = 0; k < m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings.getLength(); k++)
+		for (std::size_t k = 0; k < m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings.getLength(); k++)
 		{
 			switch (m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings[k].descriptorType)
 			{

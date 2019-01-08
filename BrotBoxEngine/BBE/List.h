@@ -8,6 +8,7 @@
 #include "../BBE/Hash.h"
 #include "../BBE/Exceptions.h"
 #include <initializer_list>
+#include <iostream>
 
 namespace bbe
 {
@@ -272,7 +273,7 @@ namespace bbe
 				int lowerIndex = i - amount;
 				if (lowerIndex >= 0 && val < m_pdata[lowerIndex].m_value)
 				{
-					if (i >= m_length)
+					if (i >= (int)m_length)
 					{
 						new (bbe::addressOf(m_pdata[i])) T(std::move(m_pdata[lowerIndex].m_value));
 					}
@@ -289,7 +290,7 @@ namespace bbe
 			int insertionIndex = i;
 			for (; i >= insertionIndex - amount + 1 && i >= 0; i--)
 			{
-				if (i >= m_length)
+				if (i >= (int)m_length)
 				{
 					new (bbe::addressOf(m_pdata[i])) T(val);
 				}
@@ -330,7 +331,7 @@ namespace bbe
 				int lowerIndex = i - amount;
 				if (lowerIndex >= 0 && val < m_pdata[lowerIndex].m_value)
 				{
-					if (i >= m_length)
+					if (i >= (int)m_length)
 					{
 						new (bbe::addressOf(m_pdata[i])) T(std::move(m_pdata[lowerIndex].m_value));
 					}
@@ -347,7 +348,7 @@ namespace bbe
 			int insertionIndex = i;
 			for (; i >= insertionIndex - amount + 1 && i >= 0; i--)
 			{
-				if (i >= m_length)
+				if (i >= (int)m_length)
 				{
 					if (amount == 1)
 					{
@@ -502,7 +503,7 @@ namespace bbe
 			}
 
 			size_t index = getIndexOnAdd(val);
-			while (m_pdata[index].m_value == val && index < m_length - 1)
+			while (index < m_length - 1 && m_pdata[index].m_value == val)
 			{
 				index++;
 			}

@@ -152,6 +152,8 @@ float bbe::Matrix4::get(int row, int col) const
 	case 3:
 		return m_cols[col].w;
 	}
+
+	throw IllegalIndexException();
 }
 
 void bbe::Matrix4::set(int row, int col, float val)

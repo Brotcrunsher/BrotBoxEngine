@@ -244,19 +244,12 @@ namespace bbe
 			{
 				List<Person, true> list;
 				list.add(Person("E Name", "E Str", 5));
-				int breakPoint = 0;
 				list.add(Person("D Name", "D Str", 4));
-				breakPoint = 0;
 				list.add(Person("C Name", "C Str", 3));
-				breakPoint = 0;
 				Person lPerson("C Name", "C Str", 3);
-				breakPoint = 0;
 				list.add(lPerson);
-				breakPoint = 0;
 				list.add(Person("B Name", "B Str", 2));
-				breakPoint = 0;
 				list.add(Person("A Name", "A Str", 1));
-				breakPoint = 0;
 			}
 
 			Person::checkIfAllPersonsWereDestroyed();
@@ -1517,6 +1510,7 @@ namespace bbe
 				);
 
 				Person* find = findList.find(Person("0 year", "0 Street", 0));
+				std::cout << (long long) find << std::endl;
 				assertUnequals(find, nullptr);
 				assertEquals(find->name, "0 year");
 				assertEquals(find->adress, "0 Street");

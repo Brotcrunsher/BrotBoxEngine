@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 
-#include "BBE\BrotBoxEngine.h"
+#include "BBE/BrotBoxEngine.h"
 #include <iostream>
 
 enum Direction

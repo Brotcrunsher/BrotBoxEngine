@@ -182,7 +182,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 		spezializationData.pMapEntries   = m_specializationEntries.getRaw();
 		spezializationData.dataSize      = m_spezializationSize;
 		spezializationData.pData         = m_spezializationData;
-		for (int i = 0; i < shaderStages.getLength(); i++)
+		for (std::size_t i = 0; i < shaderStages.getLength(); i++)
 		{
 			shaderStages[i].pSpecializationInfo = &spezializationData;
 		}

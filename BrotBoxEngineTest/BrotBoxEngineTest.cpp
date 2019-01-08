@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-#include "Tests\AllTests.h"
+#include "Tests/AllTests.h"
 
 int main()
 {

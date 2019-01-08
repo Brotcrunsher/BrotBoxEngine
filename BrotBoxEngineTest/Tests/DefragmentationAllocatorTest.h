@@ -54,8 +54,9 @@ namespace bbe {
 				}
 			}
 
+			for(int i = 0; i<1; i++)
 			{
-				State *states = new State[1024 * 128];
+				State states[1024 * 128];
 				for (int i = 0; i < 1024 * 128; i++)
 				{
 					states[i] = unused;

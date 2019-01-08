@@ -35,7 +35,6 @@ namespace bbe
 				{
 					return true;
 				}
-
 				return false;
 			}
 

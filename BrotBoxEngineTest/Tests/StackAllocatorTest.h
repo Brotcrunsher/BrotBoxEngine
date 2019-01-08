@@ -62,16 +62,24 @@ namespace bbe {
 			Person* pOut3 = sa.allocateObject<Person>();
 			Person* pOut4 = sa.allocateObject<Person>();
 			Person* pOut5 = sa.allocateObject<Person>();
+
+			pOut1->name="Outer1"; pOut1->adress="Addr1"; pOut1->age=1;
+			pOut2->name="Outer2"; pOut2->adress="Addr2"; pOut2->age=2;
+			pOut3->name="Outer3"; pOut3->adress="Addr3"; pOut3->age=3;
+			pOut4->name="Outer4"; pOut4->adress="Addr4"; pOut4->age=4;
+			pOut5->name="Outer5"; pOut5->adress="Addr5"; pOut5->age=5;
+
 			for (int i = 0; i < 512; i++) {
 				auto marker = sa.getMarker();
 				Person* person1 = sa.allocateObject<Person>();
 				Person* person2 = sa.allocateObject<Person>();
 				Person* person3 = sa.allocateObject<Person>();
 				Person* person4 = sa.allocateObject<Person>();
-				float* data = sa.allocateObject<float>(50);
+				sa.allocateObject<float>(50);
 				Person* person5 = sa.allocateObject<Person>();
 				try {
 					Person* person6 = sa.allocateObjects<Person>(1, ForceException());
+					person6->age++; //Anti unused warning
 				}
 				catch (int) {
 					//do nothing
@@ -115,6 +123,12 @@ namespace bbe {
 
 				sa.deallocateToMarker(marker);
 			}
+
+			assertEquals(pOut1->name, "Outer1"); assertEquals(pOut1->adress, "Addr1"); assertEquals(pOut1->age, 1);
+			assertEquals(pOut2->name, "Outer2"); assertEquals(pOut2->adress, "Addr2"); assertEquals(pOut2->age, 2);
+			assertEquals(pOut3->name, "Outer3"); assertEquals(pOut3->adress, "Addr3"); assertEquals(pOut3->age, 3);
+			assertEquals(pOut4->name, "Outer4"); assertEquals(pOut4->adress, "Addr4"); assertEquals(pOut4->age, 4);
+			assertEquals(pOut5->name, "Outer5"); assertEquals(pOut5->adress, "Addr5"); assertEquals(pOut5->age, 5);
 
 			
 

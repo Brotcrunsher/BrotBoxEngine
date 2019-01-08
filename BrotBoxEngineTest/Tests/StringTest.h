@@ -8,14 +8,67 @@
 namespace bbe {
 	namespace test {
 		void testString() {
+			assertEquals((int)bbe::utf8len(u8"") , 0);					//Simple!
+			assertEquals((int)bbe::utf8len(u8"a"), 1);					//A bit harder!
+			assertEquals((int)bbe::utf8len(u8"BrotBoxEngine!"), 14);		//Still normal...
+			assertEquals((int)bbe::utf8len(u8"αβγδ"), 4);				//Okay...
+			assertEquals((int)bbe::utf8len(u8"Großmütterchäään"), 16);	//Get ready!
+			assertEquals((int)bbe::utf8len(u8"💣🍣💃"), 3);				//God damn, I bet this line will break a few compilers... or git! 🤣
+
+			assertEquals((int)bbe::utf8charlen(u8""), 1);
+			assertEquals((int)bbe::utf8charlen(u8"a"), 1);
+			assertEquals((int)bbe::utf8charlen(u8"aaaa"), 1);
+
+			assertEquals((int)bbe::utf8charlen(u8""),       1);
+			assertEquals((int)bbe::utf8charlen(u8"B"),      1);
+			assertEquals((int)bbe::utf8charlen(u8"α"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"β"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"γ"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"δ"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"ß"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"ä"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"ö"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"ü"),      2);
+			assertEquals((int)bbe::utf8charlen(u8"💣"),     4);
+			assertEquals((int)bbe::utf8charlen(u8"🍣"),     4);
+			assertEquals((int)bbe::utf8charlen(u8"💃"),     4);
+			assertEquals((int)bbe::utf8charlen(u8"\uFEFF"), 3);
+			try
+			{
+				bbe::utf8charlen(u8"💃" + 1); //This should create an exception.
+				debugBreak();
+			}
+			catch (bbe::NotStartOfUtf8Exception e)
+			{
+				//Do nothing, everything worked as expected.
+			}
+
+			{
+				char data[] = u8"a";
+				assertEquals(true, bbe::utf8IsSameChar(u8"a", data));
+				assertEquals(true, bbe::utf8IsSameChar(data, u8"a"));
+				assertEquals(false, bbe::utf8IsSameChar(u8"b", data));
+				assertEquals(false, bbe::utf8IsSameChar(data, u8"b"));
+			}
+			{
+				char data[] = u8"💣";
+				assertEquals(true, bbe::utf8IsSameChar(u8"💣", data));
+				assertEquals(true, bbe::utf8IsSameChar(data, u8"💣"));
+				assertEquals(false, bbe::utf8IsSameChar(u8"b", data));
+				assertEquals(false, bbe::utf8IsSameChar(data, u8"b"));
+			}
+
+			assertEquals(true, bbe::utf8IsWhitespace(u8" "));
+			assertEquals(true, bbe::utf8IsWhitespace(u8"\t"));
+			assertEquals(true, bbe::utf8IsWhitespace(u8"\n"));
+			assertEquals(true, bbe::utf8IsWhitespace(u8"\uFEFF"));
+			assertEquals(false, bbe::utf8IsWhitespace(u8"a"));
+
 
 			//TODO add non SSO Tests
-
 			bbe::String emptyString;
 			bbe::String stringWChar  (L"Hallo WChar");
 			bbe::String stringClassic("Hallo Classic");
-			bbe::String stringStd(std::string("Hallo STD!"));
-			bbe::String stringStdw(std::string("Hallo WSTD!"));
 			bbe::String stringNumber(2839.192);
 
 			bbe::String stringCopyConstructor(stringWChar);
@@ -33,8 +86,6 @@ namespace bbe {
 			assertEquals(emptyString.getLength()           , 0);
 			assertEquals(stringWChar.getLength()           , 11);
 			assertEquals(stringClassic.getLength()         , 13);
-			assertEquals(stringStd.getLength()             , 10);
-			assertEquals(stringStdw.getLength()            , 11);
 			assertEquals(stringNumber.getLength()          , 11);
 			assertEquals(stringCopyConstructor.getLength() , 11);
 			assertEquals(stringMovedTo.getLength()         , 16);
@@ -54,9 +105,9 @@ namespace bbe {
 				bbe::String stringAdd1WOSSO("Hallo Welt! Das ist ein langer Text! ");
 				bbe::String stringAddr = stringAdd0WOSSO + stringAdd1WOSSO;
 				assertEquals(stringAddr, "Kurz Hallo Welt! Das ist ein langer Text! ");
-				bbe::String stringAdd2WOSSO("Und hierdurch wird er sogar noch l�nger!");
+				bbe::String stringAdd2WOSSO("Und hierdurch wird er sogar noch länger!");
 				bbe::String stringAdd3WOSSO = stringAdd1WOSSO + stringAdd2WOSSO;
-				assertEquals(stringAdd3WOSSO, "Hallo Welt! Das ist ein langer Text! Und hierdurch wird er sogar noch l�nger!");
+				assertEquals(stringAdd3WOSSO, "Hallo Welt! Das ist ein langer Text! Und hierdurch wird er sogar noch länger!");
 			}
 
 			{
@@ -71,20 +122,6 @@ namespace bbe {
 				bbe::String stringAdd2("con");
 				bbe::String stringAdd3 = stringAdd1 + stringAdd2;
 				assertEquals(stringAdd3, "con");
-			}
-
-			{
-				bbe::String stringAdd1("con");
-				std::string stringAdd2("cattttt");
-				bbe::String stringAdd3 = stringAdd1 + stringAdd2;
-				assertEquals(stringAdd3, "concattttt");
-			}
-
-			{
-				bbe::String stringAdd1("con");
-				std::wstring stringAdd2(L"cattttt");
-				bbe::String stringAdd3 = stringAdd1 + stringAdd2;
-				assertEquals(stringAdd3, "concattttt");
 			}
 
 			{
@@ -108,20 +145,6 @@ namespace bbe {
 
 			{
 				bbe::String stringAdd1("con");
-				std::string stringAdd2("cattttt");
-				bbe::String stringAdd3 = stringAdd2 + stringAdd1;
-				assertEquals(stringAdd3, "catttttcon");
-			}
-
-			{
-				bbe::String stringAdd1("con");
-				std::wstring stringAdd2(L"cattttt");
-				bbe::String stringAdd3 = stringAdd2 + stringAdd1;
-				assertEquals(stringAdd3, "catttttcon");
-			}
-
-			{
-				bbe::String stringAdd1("con");
 				bbe::String stringAdd3 = "cattttt" + stringAdd1;
 				assertEquals(stringAdd3, "catttttcon");
 			}
@@ -131,7 +154,6 @@ namespace bbe {
 				bbe::String stringAdd3 = L"cattttt" + stringAdd1;
 				assertEquals(stringAdd3, "catttttcon");
 			}
-
 
 			{
 				bbe::String s1("A");
@@ -152,18 +174,6 @@ namespace bbe {
 			{
 				bbe::String stringAddTest("con");
 				stringAddTest += L"cattt";
-				assertEquals(stringAddTest, "concattt");
-			}
-
-			{
-				bbe::String stringAddTest("con");
-				stringAddTest += std::string("cattt");
-				assertEquals(stringAddTest, "concattt");
-			}
-
-			{
-				bbe::String stringAddTest("con");
-				stringAddTest += std::wstring(L"cattt");
 				assertEquals(stringAddTest, "concattt");
 			}
 
@@ -215,14 +225,6 @@ namespace bbe {
 				assertEquals(countTest.count(bbe::String("")), 0);
 				assertEquals(countTest.count(bbe::String(" ")), 12);
 				assertEquals(countTest.count(bbe::String("this")), 2);
-				assertEquals(countTest.count(std::string("s")), 5);
-				assertEquals(countTest.count(std::string("")), 0);
-				assertEquals(countTest.count(std::string(" ")), 12);
-				assertEquals(countTest.count(std::string("this")), 2);
-				assertEquals(countTest.count(std::wstring(L"s")), 5);
-				assertEquals(countTest.count(std::wstring(L"")), 0);
-				assertEquals(countTest.count(std::wstring(L" ")), 12);
-				assertEquals(countTest.count(std::wstring(L"this")), 2);
 				assertEquals(countTest.count("s"), 5);
 				assertEquals(countTest.count(""), 0);
 				assertEquals(countTest.count(" "), 12);
@@ -243,6 +245,8 @@ namespace bbe {
 				assertEquals(splitSpace[4], "");
 				assertEquals(splitSpace[5], "splitted!");
 				assertEquals(splitSpace.getLength(), 6);
+
+
 
 				auto splitTwoChar = splitter.split(" s");
 				assertEquals(splitTwoChar[0], "This");
@@ -278,50 +282,6 @@ namespace bbe {
 			}
 
 			{
-				bbe::String splitter("This string will be  splitted!");
-				auto splitSpace = splitter.split(std::string(" "));
-				assertEquals(splitSpace[0], "This");
-				assertEquals(splitSpace[1], "string");
-				assertEquals(splitSpace[2], "will");
-				assertEquals(splitSpace[3], "be");
-				assertEquals(splitSpace[4], "");
-				assertEquals(splitSpace[5], "splitted!");
-				assertEquals(splitSpace.getLength(), 6);
-
-				auto splitTwoChar = splitter.split(std::string(" s"));
-				assertEquals(splitTwoChar[0], "This");
-				assertEquals(splitTwoChar[1], "tring will be ");
-				assertEquals(splitTwoChar[2], "plitted!");
-				assertEquals(splitTwoChar.getLength(), 3);
-
-				auto splitNotHappening = splitter.split(std::string("This is no part of the string"));
-				assertEquals(splitNotHappening[0], "This string will be  splitted!");
-				assertEquals(splitNotHappening.getLength(), 1);
-			}
-
-			{
-				bbe::String splitter("This string will be  splitted!");
-				auto splitSpace = splitter.split(std::wstring(L" "));
-				assertEquals(splitSpace[0], "This");
-				assertEquals(splitSpace[1], "string");
-				assertEquals(splitSpace[2], "will");
-				assertEquals(splitSpace[3], "be");
-				assertEquals(splitSpace[4], "");
-				assertEquals(splitSpace[5], "splitted!");
-				assertEquals(splitSpace.getLength(), 6);
-
-				auto splitTwoChar = splitter.split(std::wstring(L" s"));
-				assertEquals(splitTwoChar[0], "This");
-				assertEquals(splitTwoChar[1], "tring will be ");
-				assertEquals(splitTwoChar[2], "plitted!");
-				assertEquals(splitTwoChar.getLength(), 3);
-
-				auto splitNotHappening = splitter.split(std::wstring(L"This is no part of the string"));
-				assertEquals(splitNotHappening[0], "This string will be  splitted!");
-				assertEquals(splitNotHappening.getLength(), 1);
-			}
-
-			{
 				bbe::String containString("This string will be analyzed if it contains various stuff");
 				assertEquals(containString.contains(" "), true);
 				assertEquals(containString.contains("will"), true);
@@ -340,24 +300,6 @@ namespace bbe {
 			}
 
 			{
-				bbe::String containString("This string will be analyzed if it contains various stuff");
-				assertEquals(containString.contains(std::string(" ")), true);
-				assertEquals(containString.contains(std::string("will")), true);
-				assertEquals(containString.contains(std::string("t c")), true);
-				assertEquals(containString.contains(std::string("apple")), false);
-				assertEquals(containString.contains(std::string("not contained")), false);
-			}
-
-			{
-				bbe::String containString("This string will be analyzed if it contains various stuff");
-				assertEquals(containString.contains(std::wstring(L" ")), true);
-				assertEquals(containString.contains(std::wstring(L"will")), true);
-				assertEquals(containString.contains(std::wstring(L"t c")), true);
-				assertEquals(containString.contains(std::wstring(L"apple")), false);
-				assertEquals(containString.contains(std::wstring(L"not contained")), false);
-			}
-
-			{
 				bbe::String searchString("This string will be for searched through for various words!");
 				assertEquals(searchString.search("This"), 0);
 				assertEquals(searchString.search(""), 0);
@@ -373,24 +315,6 @@ namespace bbe {
 				assertEquals(searchString.search(L"s"), 3);
 				assertEquals(searchString.search(L"for"), 20);
 				assertEquals(searchString.search(L"not contained"), -1);
-			}
-
-			{
-				bbe::String searchString("This string will be for searched through for various words!");
-				assertEquals(searchString.search(std::string("This")), 0);
-				assertEquals(searchString.search(std::string("")), 0);
-				assertEquals(searchString.search(std::string("s")), 3);
-				assertEquals(searchString.search(std::string("for")), 20);
-				assertEquals(searchString.search(std::string("not contained")), -1);
-			}
-
-			{
-				bbe::String searchString("This string will be for searched through for various words!");
-				assertEquals(searchString.search(std::wstring(L"This")), 0);
-				assertEquals(searchString.search(std::wstring(L"")), 0);
-				assertEquals(searchString.search(std::wstring(L"s")), 3);
-				assertEquals(searchString.search(std::wstring(L"for")), 20);
-				assertEquals(searchString.search(std::wstring(L"not contained")), -1);
 			}
 
 			{
@@ -472,16 +396,8 @@ namespace bbe {
 				assertEquals(lowerUpperShifter, "THIS STRING WILL SWITCH BETWEEN LOWER AND UPPER CASE!");
 			}
 
-			assertEquals(stringWChar, std::string("Hallo WChar"));
-			assertEquals(std::string("Hallo WChar"), stringWChar);
-			assertEquals(stringWChar, std::wstring(L"Hallo WChar"));
-			assertEquals(std::wstring(L"Hallo WChar"), stringWChar);
 			assertEquals(stringWChar, String(L"Hallo WChar"));
 			assertEquals(String(L"Hallo WChar"), stringWChar);
-			assertUnequals(stringWChar, std::string("Hallo Wshar"));
-			assertUnequals(std::string("Hallo WCha!"), stringWChar);
-			assertUnequals(stringWChar, std::wstring(L"Hajlo WChar"));
-			assertUnequals(std::wstring(L"hallo WChar"), stringWChar);
 			assertUnequals(stringWChar, String(L"Hallo WChaa"));
 			assertUnequals(String(L"Haloo WChar"), stringWChar);
 
@@ -511,24 +427,6 @@ namespace bbe {
 			assertEquals  (L"Hallo Classic", stringClassic);
 			assertUnequals(stringClassic, L"HalloClassic");
 			assertUnequals(L"HalloClassic", stringClassic);
-
-			assertEquals  (stringStd, "Hallo STD!");
-			assertEquals  ("Hallo STD!", stringStd);
-			assertUnequals(stringStd, "HalloSTD!");
-			assertUnequals("HalloSTD!", stringStd);
-			assertEquals  (stringStd, L"Hallo STD!");
-			assertEquals  (L"Hallo STD!", stringStd);
-			assertUnequals(stringStd, L"HalloSTD!");
-			assertUnequals(L"HalloSTD!", stringStd);
-
-			assertEquals  (stringStdw, "Hallo WSTD!");
-			assertEquals  ("Hallo WSTD!", stringStdw);
-			assertUnequals(stringStdw, "HalloWSTD!");
-			assertUnequals("HalloWSTD!", stringStdw);
-			assertEquals  (stringStdw, L"Hallo WSTD!");
-			assertEquals  (L"Hallo WSTD!", stringStdw);
-			assertUnequals(stringStdw, L"HalloWSTD!");
-			assertUnequals(L"HalloWSTD!", stringStdw);
 			
 			assertEquals  (stringNumber, "2839.192000");
 			assertEquals  ("2839.192000", stringNumber);

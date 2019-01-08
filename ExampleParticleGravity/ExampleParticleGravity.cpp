@@ -134,7 +134,7 @@ class MyGame : public bbe::Game
 
 		minSpeed = 100000.0f;
 		maxSpeed = 0;
-		for (int i = 0; i < particles.getLength(); i++)
+		for (std::size_t i = 0; i < particles.getLength(); i++)
 		{
 			float speed = particles[i].speed.getLength();
 			if (speed > maxSpeed) maxSpeed = speed;

@@ -120,6 +120,21 @@ namespace bbe
 				}
 			}
 
+			{
+				bbe::Array<int, 10> arr{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+				assertEquals(arr[0], 0);
+				assertEquals(arr[1], 1);
+				assertEquals(arr[2], 2);
+				assertEquals(arr[3], 3);
+				assertEquals(arr[4], 4);
+				assertEquals(arr[5], 5);
+				assertEquals(arr[6], 6);
+				assertEquals(arr[7], 7);
+				assertEquals(arr[8], 8);
+				assertEquals(arr[9], 9);
+				assertEquals(arr.getLength(), 10);
+			}
+
 
 			{
 				bbe::Array<Person, 16> arr;

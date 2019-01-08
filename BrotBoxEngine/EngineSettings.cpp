@@ -12,11 +12,13 @@ void bbe::Settings::INTERNAL_start()
 
 int bbe::Settings::getAmountOfLightSources()
 {
+	//UNTESTED
 	return amountOfLightSources;
 }
 
 void bbe::Settings::setAmountOfLightSources(int amount)
 {
+	//UNTESTED
 	if (started)
 	{
 		throw AlreadyStartedException();
@@ -27,5 +29,6 @@ void bbe::Settings::setAmountOfLightSources(int amount)
 
 int bbe::Settings::getTerrainAdditionalTextures()
 {
+	//UNTESTED
 	return 2;
 }

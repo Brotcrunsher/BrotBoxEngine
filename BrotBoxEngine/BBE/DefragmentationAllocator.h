@@ -35,7 +35,7 @@ namespace bbe
 			}
 
 			DefragmentationAllocatorPointer(DefragmentationAllocator *parent, size_t handleIndex, size_t size)
-				: m_pparent(parent), m_handleIndex(handleIndex), m_length(size)
+				: m_handleIndex(handleIndex), m_length(size), m_pparent(parent)
 			{
 				//do nothing
 			}

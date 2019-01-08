@@ -14,12 +14,17 @@ const float bbe::Math::SQRT2 = 1.41421356237f;
 const float bbe::Math::SQRT2INV = 0.70710678118f;
 const float bbe::Math::INFINITY_POSITIVE = std::numeric_limits<float>::infinity();
 const float bbe::Math::INFINITY_NEGATIVE = -std::numeric_limits<float>::infinity();
-const float bbe::Math::NaN = std::numeric_limits<float>::quiet_NaN();;
+const float bbe::Math::NaN = std::numeric_limits<float>::quiet_NaN();
+
+float bbe::Math::INTERNAL::sinTable[TABLE_SIZES];
+float bbe::Math::INTERNAL::cosTable[TABLE_SIZES];
+float bbe::Math::INTERNAL::tanTable[TABLE_SIZES];
+
 
 float bbe::Math::cos(float val)
 {
 	val = bbe::Math::mod(val, TAU);
-	int index = (int)(val / TAU * TABLE_SIZES);
+	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
 	return INTERNAL::cosTable[index];
 }
 
@@ -31,7 +36,7 @@ float bbe::Math::acos(float val)
 float bbe::Math::sin(float val)
 {
 	val = bbe::Math::mod(val, TAU);
-	int index = (int)(val / TAU * TABLE_SIZES);
+	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
 	return INTERNAL::sinTable[index];
 }
 
@@ -43,7 +48,7 @@ float bbe::Math::asin(float val)
 float bbe::Math::tan(float val)
 {
 	val = bbe::Math::mod(val, TAU);
-	int index = (int)(val / TAU * TABLE_SIZES);
+	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
 	return INTERNAL::tanTable[index];
 }
 
@@ -545,9 +550,9 @@ bbe::Vector4 bbe::Math::interpolateBezier(Vector4 a, Vector4 b, float t, Vector4
 
 void bbe::Math::INTERNAL::startMath()
 {
-	for (int i = 0; i < TABLE_SIZES; i++)
+	for (std::size_t i = 0; i < INTERNAL::TABLE_SIZES; i++)
 	{
-		float val = (float)i / TABLE_SIZES * TAU;
+		float val = (float)i / INTERNAL::TABLE_SIZES * TAU;
 		sinTable[i] = ::sin(val);
 		cosTable[i] = ::cos(val);
 		tanTable[i] = ::tan(val);

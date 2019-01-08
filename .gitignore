@@ -225,6 +225,10 @@ FakesAssemblies/
 
 *.o
 ExampleParticleGravity/EPG.exec
+BrotBoxEngineTest/Test.exec
+Example3D/E3D.exec
+ExampleSnake/Snake.exec
+
 
 # Visual Studio LightSwitch build output
 **/*.HTMLClient/GeneratedArtifacts

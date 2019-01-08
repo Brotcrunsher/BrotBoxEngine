@@ -44,8 +44,10 @@ namespace bbe
 
 		float getX() const;
 		float getY() const;
+		Vector2 getPos() const;
 		float getWidth() const;
 		float getHeight() const;
+		Vector2 getDim() const;
 
 		void setX(float x);
 		void setY(float y);
