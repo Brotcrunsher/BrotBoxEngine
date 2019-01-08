@@ -233,7 +233,7 @@ int bbe::Math::log2Floor(unsigned int val)
 	}
 	if (val & 0x2)
 	{
-		val >>= 1;
+		//val >>= 1; Has no effect.
 		retVal |= 1;
 	}
 	return retVal;
