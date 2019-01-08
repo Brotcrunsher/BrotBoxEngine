@@ -52,6 +52,7 @@ namespace bbe
 
 			m_ptr = other.m_ptr;
 			other.m_ptr = nullptr;
+			return *this;
 		}
 
 		UniquePointer& operator= (T* ptr)
@@ -63,7 +64,7 @@ namespace bbe
 			}
 
 			m_ptr = std::move(ptr);
-
+			return *this;
 		}
 
 		
