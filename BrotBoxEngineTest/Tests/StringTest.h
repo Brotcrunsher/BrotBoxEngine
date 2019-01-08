@@ -38,7 +38,7 @@ namespace bbe {
 				bbe::utf8charlen(u8"💃" + 1); //This should create an exception.
 				debugBreak();
 			}
-			catch (bbe::NotStartOfUtf8Exception e)
+			catch (const bbe::NotStartOfUtf8Exception &e)
 			{
 				//Do nothing, everything worked as expected.
 			}
