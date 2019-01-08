@@ -29,6 +29,9 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroyPendingBuffers()
 
 bbe::INTERNAL::vulkan::VulkanManager::VulkanManager()
 {
+	m_screenWidth  = -1;
+	m_screenHeight = -1;
+	m_imageIndex   = -1;
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow * window, uint32_t initialWindowWidth, uint32_t initialWindowHeight)
