@@ -93,7 +93,7 @@ namespace bbe
 			other.m_capacity = 0;
 		}
 
-		explicit List(const std::initializer_list<T> &il)
+		/*nonexplicit*/ List(const std::initializer_list<T> &il)
 			: m_length(0), m_capacity(0), m_pdata(nullptr)
 		{
 			//UNTESTED
