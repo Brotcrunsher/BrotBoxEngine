@@ -380,8 +380,7 @@ void bbe::PrimitiveBrush3D::drawTerrain(const TerrainMesh & terrain)
 		buffer = terrain.m_patches[i].m_vertexBuffer.getBuffer();
 		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
 
-		float offset = -lod * 0.1f;
-		offset = 0;
+		float offset = 0; //TODO remove offset from shader code (not needed anymore).
 		//offset = -terrain.m_patches[i].m_distanceToCamera * 0.1f;
 		vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrainMesh, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color) + sizeof(Matrix4) + sizeof(Vector4) + sizeof(Vector4), sizeof(float), &(offset));
 
