@@ -58,7 +58,7 @@ namespace bbe
 			//DO NOTHING
 		}
 
-		List(size_t amountOfData)
+		explicit List(size_t amountOfData)
 			: m_length(0), m_capacity(amountOfData)
 		{
 			m_pdata = new INTERNAL::Unconstructed<T>[amountOfData];
@@ -93,7 +93,7 @@ namespace bbe
 			other.m_capacity = 0;
 		}
 
-		List(const std::initializer_list<T> &il)
+		explicit List(const std::initializer_list<T> &il)
 			: m_length(0), m_capacity(0), m_pdata(nullptr)
 		{
 			//UNTESTED
@@ -435,12 +435,11 @@ namespace bbe
 
 			size_t smallIndex = 0;
 			size_t bigIndex = m_length - 1;
-			size_t middleIndex;
 
 			while (smallIndex <= bigIndex)
 			{
 				size_t searchSpace = bigIndex - smallIndex;
-				middleIndex = smallIndex + searchSpace / 2;
+				size_t middleIndex = smallIndex + searchSpace / 2;
 				if (m_pdata[middleIndex].m_value == val)
 				{
 					return middleIndex;
