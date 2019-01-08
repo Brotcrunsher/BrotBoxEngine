@@ -46,16 +46,16 @@ namespace bbe
 
 	public:
 		Utf8String();
-		Utf8String(const char* data);		
-		Utf8String(double             number);
-		Utf8String(int                number);
-		Utf8String(long long          number);
-		Utf8String(long double        number);
-		Utf8String(float              number);
-		Utf8String(unsigned long long number);
-		Utf8String(unsigned long      number);
-		Utf8String(long               number);
-		Utf8String(unsigned int       number);
+		/*nonexplicit*/ Utf8String(const char* data);		
+		explicit Utf8String(double             number);
+		explicit Utf8String(int                number);
+		explicit Utf8String(long long          number);
+		explicit Utf8String(long double        number);
+		explicit Utf8String(float              number);
+		explicit Utf8String(unsigned long long number);
+		explicit Utf8String(unsigned long      number);
+		explicit Utf8String(long               number);
+		explicit Utf8String(unsigned int       number);
 
 		Utf8String(const Utf8String&  other);//Copy Constructor
 		Utf8String(Utf8String&& other);      //Move Constructor
