@@ -422,11 +422,11 @@ void bbe::TerrainMeshPatch::s_initIndexBuffer()
 				endY -= adder;
 			}
 
-			for (int i = startX; i < endX; i += adder)
+			for (int j = startX; j < endX; j += adder)
 			{
 				for (int k = startY; k < endY; k += adder)
 				{
-					uint32_t coord = i * (PATCH_SIZE + 1) + k;
+					uint32_t coord = j * (PATCH_SIZE + 1) + k;
 					indices.add(coord);
 					indices.add(coord + PATCH_SIZE * adder + adder);
 				}
