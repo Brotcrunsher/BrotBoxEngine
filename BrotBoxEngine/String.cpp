@@ -192,7 +192,7 @@ bool bbe::Utf8String::operator==(const char*       other) const
 {
 	return strcmp(getRaw(), other) == 0;
 }
-bool operator==(const char* arr, const bbe::Utf8String& string)
+bool bbe::operator==(const char* arr, const bbe::Utf8String& string)
 {
 	return strcmp(arr, string.getRaw()) == 0;
 }
@@ -204,12 +204,12 @@ bool bbe::Utf8String::operator!=(const char*       other) const
 {
 	return strcmp(getRaw(), other) != 0;
 }
-bool operator!=(const char* arr, const bbe::Utf8String& string)
+bool bbe::operator!=(const char* arr, const bbe::Utf8String& string)
 {
 	return strcmp(arr, string.getRaw()) != 0;
 }
 
-std::ostream& operator<<(std::ostream &os, const bbe::Utf8String &string)
+std::ostream& bbe::operator<<(std::ostream &os, const bbe::Utf8String &string)
 {
 	return os << string.getRaw();
 }
@@ -301,61 +301,61 @@ bbe::Utf8String bbe::Utf8String::operator+(unsigned int number) const
 	return operator+(Utf8String(number));
 }
 
-bbe::Utf8String operator+(const char* other, const bbe::Utf8String& string)
+bbe::Utf8String bbe::operator+(const char* other, const bbe::Utf8String& string)
 {
 	//UNTESTED
 	return bbe::Utf8String(other) + string;
 }
 
-bbe::Utf8String operator+(double number, const bbe::Utf8String& string)
+bbe::Utf8String bbe::operator+(double number, const bbe::Utf8String& string)
 {
 	//UNTESTED
 	return bbe::Utf8String(number) + string;
 }
 
-bbe::Utf8String operator+(int number, const bbe::Utf8String& string)
+bbe::Utf8String bbe::operator+(int number, const bbe::Utf8String& string)
 {
 	//UNTESTED
 	return bbe::Utf8String(number) + string;
 }
 
-bbe::Utf8String operator+(long long number, const bbe::Utf8String& string)
+bbe::Utf8String bbe::operator+(long long number, const bbe::Utf8String& string)
 {
 	//UNTESTED
 	return bbe::Utf8String(number) + string;
 }
 
-bbe::Utf8String operator+(long double number, const bbe::Utf8String& string)
+bbe::Utf8String bbe::operator+(long double number, const bbe::Utf8String& string)
 {
 	//UNTESTED
 	return bbe::Utf8String(number) + string;
 }
 
-bbe::Utf8String operator+(float number, const bbe::Utf8String& string)
+bbe::Utf8String bbe::operator+(float number, const bbe::Utf8String& string)
 {
 	//UNTESTED
 	return bbe::Utf8String(number) + string;
 }
 
-bbe::Utf8String operator+(unsigned long long number, const bbe::Utf8String& string)
+bbe::Utf8String bbe::operator+(unsigned long long number, const bbe::Utf8String& string)
 {
 	//UNTESTED
 	return bbe::Utf8String(number) + string;
 }
 
-bbe::Utf8String operator+(unsigned long number, const bbe::Utf8String& string)
+bbe::Utf8String bbe::operator+(unsigned long number, const bbe::Utf8String& string)
 {
 	//UNTESTED
 	return bbe::Utf8String(number) + string;
 }
 
-bbe::Utf8String operator+(long number, const bbe::Utf8String& string)
+bbe::Utf8String bbe::operator+(long number, const bbe::Utf8String& string)
 {
 	//UNTESTED
 	return bbe::Utf8String(number) + string;
 }
 
-bbe::Utf8String operator+(unsigned int number, const bbe::Utf8String& string)
+bbe::Utf8String bbe::operator+(unsigned int number, const bbe::Utf8String& string)
 {
 	//UNTESTED
 	return bbe::Utf8String(number) + string;

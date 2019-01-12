@@ -63,7 +63,7 @@ namespace bbe {
 					else
 					{
 						bbe::String number_s = splits[i];
-						number_s.substring(1);
+						number_s.substringInPlace(1);
 						int number_i =  number_s.toLong();
 						gpa.deallocate(list[number_i]);
 						list.removeIndex(number_i);
@@ -103,9 +103,13 @@ namespace bbe {
 						if (list.getLength() > 0)
 						{
 							size_t index = (size_t)rand.randomInt((int)list.getLength());
+							std::cout << history << std::endl;
 							history += "-";
+							std::cout << history << std::endl;
 							history += index;
+							std::cout << history << std::endl;
 							history += " ";
+							std::cout << history << std::endl;
 							float savedValue = *list[index];
 							int savedValue_i = (int)savedValue;
 							assertEquals(deallocated[savedValue_i], false);

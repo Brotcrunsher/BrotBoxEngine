@@ -72,13 +72,13 @@
     <ClInclude Include="Tests\Vector2Test.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="LinearCongruentialGeneratorTest.h">
+    <ClInclude Include="Tests\ImageTest.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="ImageTest.h">
+    <ClInclude Include="Tests\LinearCongruentialGeneratorTest.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="Vector3Test.h">
+    <ClInclude Include="Tests\Vector3Test.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
