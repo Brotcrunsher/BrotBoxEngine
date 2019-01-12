@@ -14,7 +14,6 @@ namespace bbe
 			{
 			private:
 				VulkanQueryPool m_queryPool;
-				VkDevice m_device = VK_NULL_HANDLE;
 				uint64_t m_timePassed = std::numeric_limits<uint64_t>::max();
 
 			public:

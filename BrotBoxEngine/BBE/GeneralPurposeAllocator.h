@@ -64,7 +64,7 @@ namespace bbe
 			}
 
 			template <typename T, int ALIGNMENT, typename... arguments>
-			T* allocateObject(size_t amountOfObjects = 1, arguments&&... args)
+			T* allocateObject(size_t amountOfObjects, arguments&&... args)
 			{
 				//UNTESTED
 				static_assert(alignof(T) <= 128, "Max alignment of 128 was exceeded");
@@ -223,13 +223,13 @@ namespace bbe
 		GeneralPurposeAllocator& operator=(GeneralPurposeAllocator&& other) = delete;
 
 		template <typename T, typename... arguments>
-		GeneralPurposeAllocatorPointer<T> allocateObjects(size_t amountOfObjects = 1, arguments&&... args)
+		GeneralPurposeAllocatorPointer<T> allocateObjects(size_t amountOfObjects, arguments&&... args)
 		{
 			return allocateObjectsAligned<T, alignof(T), arguments&&...>(amountOfObjects, std::forward<arguments>(args)...);
 		}
 
 		template <typename T, int ALIGNMENT, typename... arguments>
-		GeneralPurposeAllocatorPointer<T> allocateObjectsAligned(size_t amountOfObjects = 1, arguments&&... args)
+		GeneralPurposeAllocatorPointer<T> allocateObjectsAligned(size_t amountOfObjects, arguments&&... args)
 		{
 			//UNTESTED
 			static_assert(ALIGNMENT <= 128, "Max alignment of 128 was exceeded");
@@ -259,7 +259,7 @@ namespace bbe
 		}
 
 		template <typename T, typename... arguments>
-		UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>> allocateObjectsUniquePointer(size_t amountOfObjects = 1, arguments&&... args)
+		UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>> allocateObjectsUniquePointer(size_t amountOfObjects, arguments&&... args)
 		{
 			auto pointer = allocateObjects<T>(amountOfObjects, std::forward<arguments>(args)...);
 			return UniquePointer<T, GeneralPurposeAllocatorDestroyer<T>>(pointer.m_pdata, GeneralPurposeAllocatorDestroyer<T>(this, pointer));

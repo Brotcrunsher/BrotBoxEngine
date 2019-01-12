@@ -326,7 +326,7 @@ namespace bbe
 		DefragmentationAllocator& operator=(DefragmentationAllocator&& other) = delete;
 
 		template <typename T, int ALIGNMENT, typename... arguments>
-		DefragmentationAllocatorPointer<T> allocateObjectsAligned(size_t amountOfObjects = 1, arguments&&... args)
+		DefragmentationAllocatorPointer<T> allocateObjectsAligned(size_t amountOfObjects, arguments&&... args)
 		{
 			//UNTESTED
 			static_assert(ALIGNMENT <= 128, "Max alignment of 128 was exceeded");
@@ -357,7 +357,7 @@ namespace bbe
 		}
 
 		template <typename T, typename... arguments>
-		DefragmentationAllocatorPointer<T> allocateObjects(size_t amountOfObjects = 1, arguments&&... args)
+		DefragmentationAllocatorPointer<T> allocateObjects(size_t amountOfObjects, arguments&&... args)
 		{
 			return allocateObjectsAligned<T, alignof(T), arguments&&...>(amountOfObjects, std::forward<arguments>(args)...);
 		}
@@ -370,7 +370,7 @@ namespace bbe
 		}
 
 		template <typename T, typename... arguments>
-		UniquePointer<T, DefragmentationAllocatorDestroyer<T>> allocateObjectsUniquePointer(size_t amountOfObjects = 1, arguments&&... args)
+		UniquePointer<T, DefragmentationAllocatorDestroyer<T>> allocateObjectsUniquePointer(size_t amountOfObjects, arguments&&... args)
 		{
 			auto pointer = allocateObjects<T>(amountOfObjects, std::forward<arguments>(args)...);
 			return UniquePointer<T, DefragmentationAllocatorDestroyer<T>>(pointer.m_pdata, DefragmentationAllocatorDestroyer<T>(this, pointer));

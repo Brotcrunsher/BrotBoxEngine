@@ -16,5 +16,10 @@ namespace bbe
 		n()					                        \
 		{}											\
 													\
+		const char* getMessage() const				\
+		{											\
+			return m_msg;							\
+		}											\
+													\
 	}
 }
