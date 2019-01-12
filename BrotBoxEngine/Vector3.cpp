@@ -33,6 +33,44 @@ bbe::Vector3::Vector3(const Vector2 &xy, float z)
 	//UNTESTED
 }
 
+
+
+bbe::Vector3 & bbe::Vector3::operator+=(const Vector3 & other)
+{
+	//UNTESTED
+	this->x += other.x;
+	this->y += other.y;
+	this->z += other.z;
+	return *this;
+}
+
+bbe::Vector3 & bbe::Vector3::operator-=(const Vector3 & other)
+{
+	//UNTESTED
+	this->x -= other.x;
+	this->y -= other.y;
+	this->z -= other.z;
+	return *this;
+}
+
+bbe::Vector3 & bbe::Vector3::operator*=(const Vector3 & other)
+{
+	//UNTESTED
+	this->x *= other.x;
+	this->y *= other.y;
+	this->z *= other.z;
+	return *this;
+}
+
+bbe::Vector3 & bbe::Vector3::operator/=(const Vector3 & other)
+{
+	//UNTESTED
+	this->x /= other.x;
+	this->y /= other.y;
+	this->z /= other.z;
+	return *this;
+}
+
 bbe::Vector3 bbe::Vector3::operator+(const Vector3 & other) const
 {
 	//UNTESTED

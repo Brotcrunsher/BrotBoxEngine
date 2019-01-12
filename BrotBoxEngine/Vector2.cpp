@@ -55,6 +55,40 @@ bbe::Vector2 bbe::Vector2::createVector2OnUnitCircle(float radians)
 	return Vector2(x, y);
 }
 
+
+
+bbe::Vector2 & bbe::Vector2::operator+=(const Vector2 & other)
+{
+	//UNTESTED
+	this->x += other.x;
+	this->y += other.y;
+	return *this;
+}
+
+bbe::Vector2 & bbe::Vector2::operator-=(const Vector2 & other)
+{
+	//UNTESTED
+	this->x -= other.x;
+	this->y -= other.y;
+	return *this;
+}
+
+bbe::Vector2 & bbe::Vector2::operator*=(const Vector2 & other)
+{
+	//UNTESTED
+	this->x *= other.x;
+	this->y *= other.y;
+	return *this;
+}
+
+bbe::Vector2 & bbe::Vector2::operator/=(const Vector2 & other)
+{
+	//UNTESTED
+	this->x /= other.x;
+	this->y /= other.y;
+	return *this;
+}
+
 float & bbe::Vector2::operator[](int index)
 {
 	switch (index)

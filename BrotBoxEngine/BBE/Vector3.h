@@ -18,7 +18,11 @@ namespace bbe
 		Vector3(float x, const Vector2 &yz);
 		Vector3(const Vector2 &xy, float z);
 
-		//TODO add *= /= += -=
+		Vector3& operator+=(const Vector3& other);
+		Vector3& operator-=(const Vector3& other);
+		Vector3& operator*=(const Vector3& other);
+		Vector3& operator/=(const Vector3& other);
+
 		Vector3 operator*(float scalar) const;
 		Vector3 operator/(float scalar) const;
 		float operator*(const Vector3 &other) const;

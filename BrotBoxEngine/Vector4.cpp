@@ -63,6 +63,46 @@ bbe::Vector4::Vector4(float x, const bbe::Vector3 &yzw)
 	//UNTESTED
 }
 
+bbe::Vector4 & bbe::Vector4::operator+=(const Vector4 & other)
+{
+	//UNTESTED
+	this->x += other.x;
+	this->y += other.y;
+	this->z += other.z;
+	this->w += other.w;
+	return *this;
+}
+
+bbe::Vector4 & bbe::Vector4::operator-=(const Vector4 & other)
+{
+	//UNTESTED
+	this->x -= other.x;
+	this->y -= other.y;
+	this->z -= other.z;
+	this->w -= other.w;
+	return *this;
+}
+
+bbe::Vector4 & bbe::Vector4::operator*=(const Vector4 & other)
+{
+	//UNTESTED
+	this->x *= other.x;
+	this->y *= other.y;
+	this->z *= other.z;
+	this->w *= other.w;
+	return *this;
+}
+
+bbe::Vector4 & bbe::Vector4::operator/=(const Vector4 & other)
+{
+	//UNTESTED
+	this->x /= other.x;
+	this->y /= other.y;
+	this->z /= other.z;
+	this->w /= other.w;
+	return *this;
+}
+
 bbe::Vector4 bbe::Vector4::operator+(const bbe::Vector4 & other) const
 {
 	//UNTESTED
