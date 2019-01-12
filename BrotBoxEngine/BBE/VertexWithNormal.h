@@ -4,14 +4,16 @@
 
 namespace bbe
 {
-
-	class VertexWithNormal
+	namespace INTERNAL
 	{
-	public:
-		Vector3 m_pos;
-		Vector3 m_normal;
+		class VertexWithNormal
+		{
+		public:
+			Vector3 m_pos;
+			Vector3 m_normal;
 
-	
-		VertexWithNormal(const Vector3 &pos, const Vector3 &normal);
-	};
+
+			VertexWithNormal(const Vector3 &pos, const Vector3 &normal);
+		};
+	}
 }

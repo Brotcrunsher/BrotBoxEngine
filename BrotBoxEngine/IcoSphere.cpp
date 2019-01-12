@@ -24,7 +24,7 @@ size_t getHalfPointIndex(bbe::List<bbe::Vector3> &vertices, bbe::Vector3 &a, bbe
 	return vertices.getLength() - 1;
 }
 
-void createIcoSphereMesh(bbe::List<uint32_t> &indices, bbe::List<bbe::VertexWithNormal> &vertices, int iterations)
+void createIcoSphereMesh(bbe::List<uint32_t> &indices, bbe::List<bbe::INTERNAL::VertexWithNormal> &vertices, int iterations)
 {
 	indices.clear();
 	vertices.clear();
@@ -109,7 +109,7 @@ void createIcoSphereMesh(bbe::List<uint32_t> &indices, bbe::List<bbe::VertexWith
 
 	for (size_t i = 0; i < simpleVertices.getLength(); i++)
 	{
-		vertices.add(bbe::VertexWithNormal(simpleVertices[i], simpleVertices[i]));
+		vertices.add(bbe::INTERNAL::VertexWithNormal(simpleVertices[i], simpleVertices[i]));
 	}
 
 }
@@ -117,7 +117,7 @@ void createIcoSphereMesh(bbe::List<uint32_t> &indices, bbe::List<bbe::VertexWith
 void bbe::IcoSphere::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
 {
 	bbe::List<uint32_t> indices;
-	bbe::List<bbe::VertexWithNormal> vertices;
+	bbe::List<bbe::INTERNAL::VertexWithNormal> vertices;
 
 	createIcoSphereMesh(indices, vertices, 2);
 
@@ -131,10 +131,10 @@ void bbe::IcoSphere::s_init(VkDevice device, VkPhysicalDevice physicalDevice, IN
 	s_indexBuffer.upload(commandPool, queue);
 
 	amountOfVertices = vertices.getLength();
-	s_vertexBuffer.create(device, physicalDevice, sizeof(VertexWithNormal) * amountOfVertices, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	s_vertexBuffer.create(device, physicalDevice, sizeof(INTERNAL::VertexWithNormal) * amountOfVertices, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
 	dataBuf = s_vertexBuffer.map();
-	memcpy(dataBuf, vertices.getRaw(), sizeof(VertexWithNormal) * amountOfVertices);
+	memcpy(dataBuf, vertices.getRaw(), sizeof(INTERNAL::VertexWithNormal) * amountOfVertices);
 	s_vertexBuffer.unmap();
 
 	s_vertexBuffer.upload(commandPool, queue);
