@@ -131,7 +131,7 @@ namespace bbe
 		#include <iostream>
 
 		template <typename U, typename... arguments>
-		U* allocateObjects(std::size_t amountOfObjects = 1, arguments&&... args)
+		U* allocateObjects(std::size_t amountOfObjects, arguments&&... args)
 		{
 			T* allocationLocation = (T*)Math::nextMultiple(alignof(U), (std::size_t)m_head);
 			T* newHeadPointer = allocationLocation + amountOfObjects * sizeof(U);

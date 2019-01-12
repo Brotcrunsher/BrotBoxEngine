@@ -127,7 +127,7 @@ namespace bbe {
 			{
 				GeneralPurposeAllocator gpa;
 
-				auto f1 = gpa.allocateObjects<Person>();
+				auto f1 = gpa.allocateObject<Person>();
 
 				f1->print();
 

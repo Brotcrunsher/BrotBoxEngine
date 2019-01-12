@@ -5,7 +5,7 @@
 
 namespace bbe
 {
-	template<typename FieldType, uint16_t N, int M, int R, int A, int F, int U, int S, int B, int T, int C, int L>
+	template<typename FieldType, uint16_t N, int M, int R, unsigned int A, int F, int U, int S, unsigned int B, int T, unsigned int C, int L>
 	class MersenneTwisterBase
 	{
 	private:
@@ -87,6 +87,6 @@ namespace bbe
 		}
 	};
 
-	//                         FieldType   N    M   R        A          F       U   S      B       T       C       L
+	//                         FieldType   N    M   R        A            F       U   S      B       T       C       L
 	typedef MersenneTwisterBase<uint32_t, 624, 397, 31, 0x9908B0DF, 1812433253, 11, 7, 0x9D2C5680, 15, 0xEFC60000, 18> mt19937;
 }

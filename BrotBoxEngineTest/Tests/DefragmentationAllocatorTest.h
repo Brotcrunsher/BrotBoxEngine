@@ -107,7 +107,7 @@ namespace bbe {
 			{
 				DefragmentationAllocator da;
 
-				auto f1 = da.allocateObjects<Person>();
+				auto f1 = da.allocateObject<Person>();
 
 				f1->print();
 
