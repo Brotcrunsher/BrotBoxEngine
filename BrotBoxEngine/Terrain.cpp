@@ -69,7 +69,9 @@ void bbe::TerrainPatch::s_destroy()
 }
 
 bbe::TerrainPatch::TerrainPatch(int patchX, int patchY, int maxPatchX, int maxPatchY)
-	: m_offset(Vector2(patchX * PATCH_SIZE / VERTICES_PER_METER, patchY * PATCH_SIZE / VERTICES_PER_METER))
+	: m_offset(Vector2(patchX * PATCH_SIZE / VERTICES_PER_METER, patchY * PATCH_SIZE / VERTICES_PER_METER)),
+	  m_patchXInt(-1),
+	  m_patchYInt(-1)
 {
 	m_patchTextureWidth = (patchX + 1) / (float)maxPatchX;
 	m_patchTextureHeight = (patchY + 1) / (float)maxPatchY;
