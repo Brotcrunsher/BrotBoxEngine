@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/String.h"
 #include "BBE/DataType.h"
 #include "BBE/Exceptions.h"

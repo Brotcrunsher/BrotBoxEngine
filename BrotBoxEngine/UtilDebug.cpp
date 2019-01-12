@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/UtilDebug.h"
 #include <iostream>
 

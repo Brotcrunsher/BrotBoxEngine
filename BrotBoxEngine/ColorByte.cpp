@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/ColorByte.h"
 
 bbe::ColorByte::ColorByte()

@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/VulkanPipeline.h"
 #include "BBE/VWDepthImage.h"
 #include "BBE/VulkanShader.h"

@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/VulkanDevice.h"
 #include "BBE/VWDepthImage.h"
 

@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/Math.h"
 #include "BBE/UtilTest.h"
 

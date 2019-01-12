@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/Profiler.h"
 
 static float renderTime = 0;

@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/VulkanQueryPool.h"
 #include "BBE/Exceptions.h"
 #include "BBE/VulkanHelper.h"

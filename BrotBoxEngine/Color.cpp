@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/Color.h"
 
 bbe::Color::Color()

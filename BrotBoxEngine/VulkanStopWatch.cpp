@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/VulkanStopWatch.h"
 #include "BBE/VulkanStopWatch.h"
 #include "BBE/VulkanHelper.h"

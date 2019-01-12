@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/PointLight.h"
 #include "BBE/Exceptions.h"
 #include "BBE/EngineSettings.h"

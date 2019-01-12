@@ -1,7 +1,3 @@
-// ExampleParticleGravity.cpp : Definiert den Einstiegspunkt für die Konsolenanwendung.
-//
-
-#include "stdafx.h"
 #include "BBE/BrotBoxEngine.h"
 
 class Particle;

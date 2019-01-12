@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/VulkanPhysicalDevices.h"
 #include "BBE/VulkanInstance.h"
 #include "BBE/VulkanSurface.h"

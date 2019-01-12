@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/SimpleFile.h"
 #include <fstream>
 #include <iostream>

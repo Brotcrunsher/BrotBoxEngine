@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/TerrainMesh.h"
 #include "BBE/TimeHelper.h"
 #include "BBE/Random.h"

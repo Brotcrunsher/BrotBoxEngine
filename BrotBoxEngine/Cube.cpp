@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/Cube.h"
 #include "BBE/VertexWithNormal.h"
 #include "string.h"

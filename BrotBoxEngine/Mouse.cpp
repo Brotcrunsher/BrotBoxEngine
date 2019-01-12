@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/Mouse.h"
 #include "BBE/Vector2.h"
 #include "BBE/Exceptions.h"

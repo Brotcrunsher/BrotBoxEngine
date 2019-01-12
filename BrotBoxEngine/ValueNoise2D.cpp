@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/ValueNoise2D.h"
 #include "BBE/Exceptions.h"
 #include "BBE/DynamicArray.h"

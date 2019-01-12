@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/VulkanDescriptorSet.h"
 #include "BBE/VulkanDescriptorPool.h"
 #include "BBE/VulkanDescriptorSetLayout.h"

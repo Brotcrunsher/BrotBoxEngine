@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/PrimitiveBrush3D.h"
 #include "BBE/VulkanDevice.h"
 #include "BBE/VulkanBuffer.h"

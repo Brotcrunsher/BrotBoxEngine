@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/VulkanShader.h"
 #include "BBE/SimpleFile.h"
 #include "BBE/VulkanHelper.h"

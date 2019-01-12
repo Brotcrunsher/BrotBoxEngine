@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/CameraControlNoClip.h"
 #include "BBE/Game.h"
 #include "BBE/Math.h"

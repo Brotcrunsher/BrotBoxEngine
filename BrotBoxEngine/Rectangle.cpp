@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/Rectangle.h"
 #include "BBE/Vector2.h"
 #include "BBE/VulkanDevice.h"

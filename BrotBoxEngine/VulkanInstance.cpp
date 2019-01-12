@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/VulkanInstance.h"
 #include "BBE/List.h"
 #include "BBE/VulkanHelper.h"

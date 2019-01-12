@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/IcoSphere.h"
 #include "BBE/VertexWithNormal.h"
 #include "BBE/Math.h"

@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/VulkanSwapchain.h"
 #include "BBE/VulkanSurface.h"
 #include "BBE/VulkanRenderPass.h"

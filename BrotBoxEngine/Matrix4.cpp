@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/Matrix4.h"
 #include "BBE/Math.h"
 #include "BBE/Exceptions.h"

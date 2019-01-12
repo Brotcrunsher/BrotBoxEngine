@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/KeyboardKeys.h"
 #include "BBE/Exceptions.h"
 

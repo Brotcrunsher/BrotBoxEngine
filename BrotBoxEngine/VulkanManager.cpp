@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/Vector2.h"
 #include "BBE/Vector3.h"
 #include "BBE/VulkanManager.h"

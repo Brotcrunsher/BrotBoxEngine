@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/Game.h"
 #include "BBE/Window.h"
 #include "BBE/Exceptions.h"

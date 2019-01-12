@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/VulkanBuffer.h"
 #include "BBE/Exceptions.h"
 #include "BBE/VulkanDevice.h"

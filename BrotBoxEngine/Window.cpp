@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/Window.h"
 #include "BBE/PrimitiveBrush2D.h"
 #include "BBE/PrimitiveBrush3D.h"

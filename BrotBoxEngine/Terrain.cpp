@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BBE/Terrain.h"
 #include "BBE/VertexWithNormal.h"
 #include "BBE/Random.h"

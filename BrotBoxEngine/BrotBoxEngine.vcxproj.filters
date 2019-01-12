@@ -84,9 +84,6 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="BBE\Array.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
@@ -243,9 +240,6 @@
     <ClInclude Include="BBE\Window.h">
       <Filter>Header Files\GFX\Core</Filter>
     </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="BBE\UtilTest.h">
       <Filter>Header Files\Util</Filter>
     </ClInclude>
@@ -353,9 +347,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Window.cpp">
       <Filter>Source Files\GFX\Core</Filter>
     </ClCompile>
