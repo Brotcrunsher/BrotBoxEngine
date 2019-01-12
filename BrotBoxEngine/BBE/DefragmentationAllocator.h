@@ -184,17 +184,14 @@ namespace bbe
 				}
 				else
 				{
-					byte tempByteArr[sizeof(T) + alignof(T)];	//TODO: Needs no initialization but an instance of T could be put on the stack directly!
-					T* tempObj = reinterpret_cast<T*>(Math::nextMultiple((size_t)alignof(T), (size_t)tempByteArr));
-
 					for (size_t i = 0; i < m_amountOfObjects; i++)
 					{
-						new (tempObj) T(std::move(oldData[i]));
+						T tempObj(std::move(oldData[i]));
 						bbe::addressOf(oldData[i])->~T();
 
 						T* object = bbe::addressOf(newData[i]);
-						new (object) T(std::move(*tempObj));
-						tempObj->~T();
+						new (object) T(std::move(tempObj));
+						tempObj.~T();
 					}
 				}
 
