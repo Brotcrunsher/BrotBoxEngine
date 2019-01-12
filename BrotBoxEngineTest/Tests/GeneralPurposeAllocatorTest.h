@@ -103,13 +103,9 @@ namespace bbe {
 						if (list.getLength() > 0)
 						{
 							size_t index = (size_t)rand.randomInt((int)list.getLength());
-							std::cout << history << std::endl;
 							history += "-";
-							std::cout << history << std::endl;
 							history += index;
-							std::cout << history << std::endl;
 							history += " ";
-							std::cout << history << std::endl;
 							float savedValue = *list[index];
 							int savedValue_i = (int)savedValue;
 							assertEquals(deallocated[savedValue_i], false);

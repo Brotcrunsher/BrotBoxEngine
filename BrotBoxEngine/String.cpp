@@ -29,19 +29,20 @@ void bbe::Utf8String::growIfNeeded(std::size_t newSize)
 void bbe::Utf8String::initializeFromCharArr(const char* data)
 {
 	m_length = utf8len(data);
+	auto amountOfByte = strlen(data);
 
-	if(m_length < BBE_UTF8STRING_SSOSIZE - 1)
+	if(amountOfByte < BBE_UTF8STRING_SSOSIZE - 1)
 	{
-		memcpy(m_UNION.m_ssoData, data, m_length + 1);
+		memcpy(m_UNION.m_ssoData, data, amountOfByte + 1);
 		m_usesSSO = true;
 		m_capacity = BBE_UTF8STRING_SSOSIZE;
 	}
 	else
 	{
-		m_UNION.m_pdata = new char[m_length + 1];
-		memcpy(m_UNION.m_pdata, data, m_length + 1);
+		m_UNION.m_pdata = new char[amountOfByte + 1];
+		memcpy(m_UNION.m_pdata, data, amountOfByte + 1);
 		m_usesSSO = false;
-		m_capacity = m_length + 1;
+		m_capacity = amountOfByte + 1;
 	}
 }
 
@@ -224,28 +225,9 @@ namespace bbe{
 
 bbe::Utf8String bbe::Utf8String::operator+(const Utf8String& other) const
 {
-	//PO
 	//UNTESTED
-	size_t totalLength = m_length + other.m_length;
-	Utf8String retVal;
-	retVal.m_length = totalLength;
-
-	if (totalLength + 1 < BBE_UTF8STRING_SSOSIZE)
-	{
-		memcpy(retVal.m_UNION.m_ssoData, getRaw(), m_length);
-		memcpy(retVal.m_UNION.m_ssoData + m_length, other.getRaw(), other.m_length);
-		retVal.m_UNION.m_ssoData[totalLength + 1] = '\0';
-	}
-	else
-	{
-		char *newData = new char[totalLength + 1];
-		memcpy(newData, getRaw(), m_length);
-		memcpy(newData + m_length, other.getRaw(), other.m_length);
-		newData[totalLength] = 0;
-
-		retVal.m_usesSSO = false;
-		retVal.m_UNION.m_pdata = newData;
-	}
+	Utf8String retVal = *this;
+	retVal += other;
 	return retVal;
 }
 
@@ -374,27 +356,13 @@ namespace bbe{
 bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8String& other)
 {
 	//UNTESTED
-	size_t totalLength = m_length + other.m_length;
-	size_t oldLength = m_length;
-	m_length = totalLength;
+	size_t totalLength = getLengthBytes() + other.getLengthBytes();
+	size_t oldLength = getLengthBytes();
+	m_length = getLength() + other.getLength();
+	growIfNeeded(totalLength + 1);
+	memcpy(getRaw() + oldLength, other.getRaw(), other.getLengthBytes());
+	getRaw()[totalLength] = 0;
 
-	if(m_usesSSO && totalLength + 1 >= BBE_UTF8STRING_SSOSIZE)
-	{
-		char *newData = new char[totalLength + 1];
-		memcpy(newData, getRaw(), oldLength);
-		m_UNION.m_pdata = newData;
-		m_usesSSO = false;
-	}
-
-	if (m_usesSSO) {
-		memcpy(m_UNION.m_ssoData + oldLength, other.getRaw(), other.m_length);
-		m_UNION.m_ssoData[totalLength] = 0;
-	}
-	else {
-		growIfNeeded(totalLength + 1);
-		memcpy(getRaw() + oldLength, other.getRaw(), sizeof(wchar_t) * other.m_length);
-		m_UNION.m_pdata[totalLength] = 0;
-	}
 	return *this;
 }
 
@@ -470,14 +438,13 @@ void bbe::Utf8String::trimInPlace()
 {
 	//UNTESTED
 	size_t start = 0;
-	size_t end = m_length;
-	const char* raw = getRaw();
+	size_t end = m_length - 1;
 
-	while (utf8IsWhitespace(&raw[start]))
+	while (utf8IsWhitespace(&(*this)[start]) && start != m_length - 1)
 	{
-		start ++;
+		start++;
 	}
-	while (utf8IsWhitespace(&raw[end]) && end != 0)
+	while (utf8IsWhitespace(&(*this)[end]) && end != 0)
 	{
 		end--;
 	}
@@ -498,7 +465,7 @@ void bbe::Utf8String::substringInPlace(size_t start, size_t end)
 	//UNTESTED
 	if(end == (size_t)-1)
 	{
-		end = m_length;
+		end = m_length - 1;
 	}
 	auto raw = getRaw();
 	if (start != 0 || end != m_length)
@@ -510,9 +477,14 @@ void bbe::Utf8String::substringInPlace(size_t start, size_t end)
 		}
 		else
 		{
+			std::size_t sizeOfSubstringInByte = 0;
+			for(std::size_t i = start; i<=end; i++)
+			{
+				sizeOfSubstringInByte += utf8charlen(&(*this)[i]);
+			}
+			memmove(raw, &raw[start], sizeOfSubstringInByte);
+			raw[sizeOfSubstringInByte] = 0;
 			m_length = end - start + 1;
-			memmove(raw, &raw[start], m_length);
-			raw[m_length] = 0;
 		}
 	}
 }
@@ -638,6 +610,10 @@ float bbe::Utf8String::toFloat() const
 
 const char& bbe::Utf8String::operator[](std::size_t index) const
 {
+	if(index >= m_length)
+	{
+		throw IllegalIndexException();
+	}
 	const char* ptr = getRaw();
 	for(size_t i = 0; i<index; i++)
 	{

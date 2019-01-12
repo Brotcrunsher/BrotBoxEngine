@@ -105,7 +105,7 @@ namespace bbe {
 				bbe::String stringAdd1WOSSO("Hallo Welt! Das ist ein langer Text! ");
 				bbe::String stringAddr = stringAdd0WOSSO + stringAdd1WOSSO;
 				assertEquals(stringAddr, "Kurz Hallo Welt! Das ist ein langer Text! ");
-				bbe::String stringAdd2WOSSO("Und hierdurch wird er sogar noch länger!");
+				bbe::String stringAdd2WOSSO(u8"Und hierdurch wird er sogar noch länger!");
 				bbe::String stringAdd3WOSSO = stringAdd1WOSSO + stringAdd2WOSSO;
 				assertEquals(stringAdd3WOSSO, "Hallo Welt! Das ist ein langer Text! Und hierdurch wird er sogar noch länger!");
 			}
@@ -191,31 +191,37 @@ namespace bbe {
 			
 			{
 				bbe::String stringTrim("   This is gonna get trimmed! :)          ");
-				stringTrim.trim();
+				stringTrim.trimInPlace();
 				assertEquals(stringTrim, "This is gonna get trimmed! :)");
 			}
 
 			{
 				bbe::String stringTrim("   This is gonna get trimmed! :)");
-				stringTrim.trim();
+				stringTrim.trimInPlace();
 				assertEquals(stringTrim, "This is gonna get trimmed! :)");
 			}
 
 			{
 				bbe::String stringTrim("This is gonna get trimmed! :)                      ");
-				stringTrim.trim();
+				stringTrim.trimInPlace();
 				assertEquals(stringTrim, "This is gonna get trimmed! :)");
 			}
 
 			{
 				bbe::String stringTrim("This is gonna get trimmed! :)");
-				stringTrim.trim();
+				stringTrim.trimInPlace();
 				assertEquals(stringTrim, "This is gonna get trimmed! :)");
 			}
 
 			{
+				bbe::String stringTrim("💣🍣💃");
+				stringTrim.trimInPlace();
+				assertEquals(stringTrim, "💣🍣💃");
+			}
+
+			{
 				bbe::String stringTrim("          ");
-				stringTrim.trim();
+				stringTrim.trimInPlace();
 				assertEquals(stringTrim, "");
 			}
 
@@ -379,17 +385,17 @@ namespace bbe {
 
 			{
 				bbe::String lowerUpperShifter("ThIs stRing will swiTCH BeTWeen lowER and UPPer cAse!");
-				lowerUpperShifter.toLowerCase();
+				lowerUpperShifter.toLowerCaseInPlace();
 				assertEquals(lowerUpperShifter, "this string will switch between lower and upper case!");
-				lowerUpperShifter.toLowerCase();
+				lowerUpperShifter.toLowerCaseInPlace();
 				assertEquals(lowerUpperShifter, "this string will switch between lower and upper case!");
-				lowerUpperShifter.toUpperCase();
+				lowerUpperShifter.toUpperCaseInPlace();
 				assertEquals(lowerUpperShifter, "THIS STRING WILL SWITCH BETWEEN LOWER AND UPPER CASE!");
-				lowerUpperShifter.toUpperCase();
+				lowerUpperShifter.toUpperCaseInPlace();
 				assertEquals(lowerUpperShifter, "THIS STRING WILL SWITCH BETWEEN LOWER AND UPPER CASE!");
-				lowerUpperShifter.toLowerCase();
+				lowerUpperShifter.toLowerCaseInPlace();
 				assertEquals(lowerUpperShifter, "this string will switch between lower and upper case!");
-				lowerUpperShifter.toUpperCase();
+				lowerUpperShifter.toUpperCaseInPlace();
 				assertEquals(lowerUpperShifter, "THIS STRING WILL SWITCH BETWEEN LOWER AND UPPER CASE!");
 			}
 
