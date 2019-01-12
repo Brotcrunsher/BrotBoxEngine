@@ -1853,13 +1853,13 @@ stbi_inline static int stbi__extend_receive(stbi__jpeg *j, int n)
    int sgn;
    if (j->code_bits < n) stbi__grow_buffer_unsafe(j);
 
-   sgn = (stbi__int32)j->code_buffer >> 31; // sign bit is always in MSB
+   sgn = (stbi__int32)j->code_buffer; //Fixed an UB from the original.
    k = stbi_lrot(j->code_buffer, n);
    STBI_ASSERT(n >= 0 && n < (int) (sizeof(stbi__bmask)/sizeof(*stbi__bmask)));
    j->code_buffer = k & ~stbi__bmask[n];
    k &= stbi__bmask[n];
    j->code_bits -= n;
-   return k + (stbi__jbias[n] & ~sgn);
+   return k + (stbi__jbias[n] * (sgn < 0 ? 0 : 1));
 }
 
 // get some unsigned bits
