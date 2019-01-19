@@ -1,5 +1,6 @@
-GLFW_PATH := ~/Schreibtisch/glfw-3.2.1/include
+GLFW_PATH := Third-Party/GLFW/linux/include
 COMPILER_FLAGS := -g -fsanitize=address -rdynamic -Wall -pedantic-errors
+LINKER_DEPS := -lglfw3 -lGL -lGLU -lX11 -lXxf86vm -lXrandr -pthread -lXi -ldl -ldmx -lXinerama -lXcursor -lvulkan
 
 SRC_DIR := BrotBoxEngine
 SRC_FILES := $(wildcard $(SRC_DIR)/*.cpp)
@@ -31,16 +32,16 @@ ExampleParticleGravity: EPG.exec Test.exec E3D.exec Snake.exec BBE.o
 
 
 Test.exec: $(OBJ_FILES_TEST) BBE.o
-	g++ -fsanitize=address -rdynamic -o $(SRC_DIR_TEST)/$@ $^ -lGL -lGLU -lglfw3 -lX11 -lXxf86vm -lXrandr -pthread -lXi -ldl -ldmx -lXinerama -lXcursor -lvulkan
+	g++ -fsanitize=address -rdynamic -o $(SRC_DIR_TEST)/$@ $^ $(LINKER_DEPS)
 
 EPG.exec: $(OBJ_FILES_EPG) BBE.o
-	g++ -fsanitize=address -rdynamic -o $(SRC_DIR_EPG)/$@ $^ -lGL -lGLU -lglfw3 -lX11 -lXxf86vm -lXrandr -pthread -lXi -ldl -ldmx -lXinerama -lXcursor -lvulkan
+	g++ -fsanitize=address -rdynamic -o $(SRC_DIR_EPG)/$@ $^ $(LINKER_DEPS)
 
 E3D.exec: $(OBJ_FILES_3D) BBE.o
-	g++ -fsanitize=address -rdynamic -o $(SRC_DIR_3D)/$@ $^ -lGL -lGLU -lglfw3 -lX11 -lXxf86vm -lXrandr -pthread -lXi -ldl -ldmx -lXinerama -lXcursor -lvulkan
+	g++ -fsanitize=address -rdynamic -o $(SRC_DIR_3D)/$@ $^ $(LINKER_DEPS)
 
 Snake.exec: $(OBJ_FILES_SNAKE) BBE.o
-	g++ -fsanitize=address -rdynamic -o $(SRC_DIR_SNAKE)/$@ $^ -lGL -lGLU -lglfw3 -lX11 -lXxf86vm -lXrandr -pthread -lXi -ldl -ldmx -lXinerama -lXcursor -lvulkan
+	g++ -fsanitize=address -rdynamic -o $(SRC_DIR_SNAKE)/$@ $^ $(LINKER_DEPS)
 
 BBE.o: $(OBJ_FILES)
 	ld -r $^ -o $@
@@ -48,19 +49,20 @@ BBE.o: $(OBJ_FILES)
 
 
 $(SRC_DIR_TEST)/obj/%.o: $(SRC_DIR_TEST)/%.cpp
-	g++ $(COMPILER_FLAGS) -Wno-sign-compare -c -I $(GLFW_PATH) -I Third-Party/stb -I BrotBoxEngine -I BrotBoxEngine/BrotBoxEngineTest -I BrotBoxEngine/BrotBoxEngineTest/Tests -I BrotBoxEngine/BrotBoxEngineTest/Tests/DataStructures -std=c++17 -o $@ $<
+	g++ $(COMPILER_FLAGS) -Wno-sign-compare -c -I $(GLFW_PATH) -I Third-Party/Vulkan/Include -I Third-Party/stb -I BrotBoxEngine -I BrotBoxEngine/BrotBoxEngineTest -I BrotBoxEngine/BrotBoxEngineTest/Tests -I BrotBoxEngine/BrotBoxEngineTest/Tests/DataStructures -std=c++17 -o $@ $<
 
 $(SRC_DIR_EPG)/obj/%.o: $(SRC_DIR_EPG)/%.cpp
-	g++ $(COMPILER_FLAGS) -c -I $(GLFW_PATH) -I Third-Party/stb -I BrotBoxEngine -std=c++17 -o $@ $<
+	g++ --version
+	g++ $(COMPILER_FLAGS) -c -I $(GLFW_PATH) -I Third-Party/Vulkan/Include -I Third-Party/stb -I BrotBoxEngine -std=c++17 -o $@ $<
 
 $(SRC_DIR_3D)/obj/%.o: $(SRC_DIR_3D)/%.cpp
-	g++ $(COMPILER_FLAGS) -c -I $(GLFW_PATH) -I Third-Party/stb -I BrotBoxEngine -std=c++17 -o $@ $<
+	g++ $(COMPILER_FLAGS) -c -I $(GLFW_PATH) -I Third-Party/Vulkan/Include -I Third-Party/stb -I BrotBoxEngine -std=c++17 -o $@ $<
 
 $(SRC_DIR_SNAKE)/obj/%.o: $(SRC_DIR_SNAKE)/%.cpp
-	g++ $(COMPILER_FLAGS) -c -I $(GLFW_PATH) -I Third-Party/stb -I BrotBoxEngine -std=c++17 -o $@ $<
+	g++ $(COMPILER_FLAGS) -c -I $(GLFW_PATH) -I Third-Party/Vulkan/Include -I Third-Party/stb -I BrotBoxEngine -std=c++17 -o $@ $<
 
 $(SRC_DIR)/obj/%.o: $(SRC_DIR)/%.cpp
-	g++ $(COMPILER_FLAGS) -c -I $(GLFW_PATH) -I Third-Party/stb -std=c++17 -o $@ $<
+	g++ $(COMPILER_FLAGS) -c -I $(GLFW_PATH) -I Third-Party/Vulkan/Include -I Third-Party/stb -std=c++17 -o $@ $<
 
 
 
