@@ -26,3 +26,5 @@ script:
   - sudo ln -s /usr/bin/g++-8 /usr/local/bin/g++
   - make dirs
   - make all
+  - cd BrotBoxEngineTest
+  - ./Test.exec
