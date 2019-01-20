@@ -40,9 +40,23 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect)
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 
-	float pushConstants[] = {rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f, rect.getWidth() / m_screenWidth * 2.f, rect.getHeight() / m_screenHeight * 2.f};
+	
+	static float previousWidth  = -10000000;
+	static float previousHeight = -10000000;
 
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
+	if (rect.getWidth() != previousWidth || rect.getHeight() != previousHeight)
+	{
+		float pushConstants[] = { rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f, rect.getWidth() / m_screenWidth * 2.f, rect.getHeight() / m_screenHeight * 2.f };
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
+		previousWidth = rect.getWidth();
+		previousHeight = rect.getHeight();
+	}
+	else
+	{
+		float pushConstants[] = { rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f };
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 2, pushConstants);
+	}
+
 
 	VkDeviceSize offsets[] = { 0 };
 	VkBuffer buffer = Rectangle::s_vertexBuffer.getBuffer();
