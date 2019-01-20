@@ -103,8 +103,13 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle)
 
 void bbe::PrimitiveBrush2D::INTERNAL_setColor(float r, float g, float b, float a)
 {
+	static Color lastColor(-1000, -1000, -1000);
 	Color c(r, g, b, a);
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
+	if (c.r != lastColor.r || c.g != lastColor.g || c.b != lastColor.b || c.a != lastColor.a)
+	{
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
+		lastColor = c;
+	}
 }
 
 bbe::PrimitiveBrush2D::PrimitiveBrush2D()
