@@ -13,8 +13,11 @@
 void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a)
 {
 	Color c(r, g, b, a);
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
-	m_color = c;
+	if (c.r != m_color.r || c.g != m_color.g || c.b != m_color.b || c.a != m_color.a)
+	{
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
+		m_color = c;
+	}
 }
 
 void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
@@ -83,6 +86,7 @@ bbe::PrimitiveBrush3D::PrimitiveBrush3D()
 {
 	m_screenWidth = -1;
 	m_screenHeight = -1;
+	m_color = Color(-1000, -1000, -1000);
 }
 
 void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
