@@ -29,7 +29,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 
 	m_pipelineRecord = PipelineRecord2D::NONE;
 
-	setColor(1.0f, 1.0f, 1.0f, 1.0f);
+	setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect)
@@ -170,19 +170,36 @@ void bbe::PrimitiveBrush2D::drawImage(float x, float y, float width, float heigh
 	INTERNAL_drawImage(Rectangle(x, y, width, height), image);
 }
 
-void bbe::PrimitiveBrush2D::setColor(float r, float g, float b, float a)
+void bbe::PrimitiveBrush2D::setColorRGB(float r, float g, float b, float a)
 {
 	INTERNAL_setColor(r, g, b, a);
 }
 
-void bbe::PrimitiveBrush2D::setColor(float r, float g, float b)
+void bbe::PrimitiveBrush2D::setColorRGB(const Vector3& c)
+{
+	//UNTESTED
+	setColorRGB(c.x, c.y, c.z);
+}
+
+void bbe::PrimitiveBrush2D::setColorRGB(float r, float g, float b)
 {
 	INTERNAL_setColor(r, g, b, 1.0f);
 }
 
-void bbe::PrimitiveBrush2D::setColor(const Color & c)
+void bbe::PrimitiveBrush2D::setColorRGB(const Color & c)
 {
 	INTERNAL_setColor(c.r, c.g, c.b, c.a);
+}
+
+void bbe::PrimitiveBrush2D::setColorHSV(float h, float s, float v, float a)
+{
+	auto rgb = bbe::Color::HSVtoRGB(h, s, v);
+	setColorRGB(rgb.x, rgb.y, rgb.z, a);
+}
+
+void bbe::PrimitiveBrush2D::setColorHSV(float h, float s, float v)
+{
+	setColorHSV(h, s, v, 1);
 }
 
 void bbe::PrimitiveBrush2D::setFillMode(FillMode fm)

@@ -77,9 +77,13 @@ namespace bbe
 		void drawImage(const Rectangle &rect, const Image &image);
 		void drawImage(float x, float y, float width, float height, const Image &image);
 
-		void setColor(float r, float g, float b, float a);
-		void setColor(float r, float g, float b);
-		void setColor(const Color &c);
+		void setColorRGB(float r, float g, float b, float a);
+		void setColorRGB(float r, float g, float b);
+		void setColorRGB(const Vector3& c);
+		void setColorRGB(const Color &c);
+
+		void setColorHSV(float h, float s, float v, float a);
+		void setColorHSV(float h, float s, float v);
 
 		void setFillMode(FillMode fm);
 		FillMode getFillMode();

@@ -1,4 +1,5 @@
 #pragma once
+#include "BBE/Vector3.h"
 
 namespace bbe
 {
@@ -14,5 +15,6 @@ namespace bbe
 		Color(float r, float g, float b);
 		Color(float r, float g, float b, float a);
 
+		static Vector3 HSVtoRGB(float h, float s, float v);
 	};
 }
