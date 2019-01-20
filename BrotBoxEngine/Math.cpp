@@ -241,19 +241,19 @@ int bbe::Math::log2Floor(unsigned int val)
 float bbe::Math::log2(float val)
 {
 	//UNTESTED
-	return std::log2f(val);
+	return log2f(val);
 }
 
 float bbe::Math::logn(float val)
 {
 	//UNTESTED
-	return std::log(val);
+	return log(val);
 }
 
 float bbe::Math::log10(float val)
 {
 	//UNTESTED
-	return std::log10f(val);
+	return log10f(val);
 }
 
 float bbe::Math::clamp01(float val)
