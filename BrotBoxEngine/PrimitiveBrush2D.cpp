@@ -44,7 +44,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect)
 	static float previousWidth  = -10000000;
 	static float previousHeight = -10000000;
 
-	if (rect.getWidth() != previousWidth || rect.getHeight() != previousHeight)
+	if (rect.getWidth() != previousWidth || rect.getHeight() != previousHeight || m_shapeRecord != ShapeRecord2D::RECTANGLE)
 	{
 		float pushConstants[] = { rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f, rect.getWidth() / m_screenWidth * 2.f, rect.getHeight() / m_screenHeight * 2.f };
 		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);

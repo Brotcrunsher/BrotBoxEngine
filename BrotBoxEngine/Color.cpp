@@ -1,4 +1,5 @@
 #include "BBE/Color.h"
+#include "BBE/Math.h"
 
 bbe::Color::Color()
 	: r(0), g(0), b(0), a(1)
@@ -21,6 +22,7 @@ bbe::Color::Color(float r, float g, float b, float a)
 bbe::Vector3 bbe::Color::HSVtoRGB(float h, float s, float v)
 {
 	//UNTESTED
+	h = bbe::Math::mod(h, 360);
 	int hi = (int)(h / 60);
 	float f = (h / 60 - hi);
 

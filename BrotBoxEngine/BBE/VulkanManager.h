@@ -98,7 +98,7 @@ namespace bbe
 				uint32_t m_screenHeight;
 				uint32_t m_imageIndex;
 
-				VulkanStopWatch m_renderPassStopWatch;
+				//VulkanStopWatch m_renderPassStopWatch;
 
 			public:
 				VulkanManager();

@@ -135,7 +135,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_uboMatrixViewProjection.create(m_device, sizeof(Matrix4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 	m_uboMatrixModel.create(m_device, sizeof(Matrix4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-	m_renderPassStopWatch.create(m_device);
+	//m_renderPassStopWatch.create(m_device);
 
 	m_presentFence = &m_presentFence1;
 	m_currentFrameDrawCommandBuffer = &m_currentFrameDrawCommandBuffer1;
@@ -146,7 +146,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
 	
-	m_renderPassStopWatch.destroy();
+	//m_renderPassStopWatch.destroy();
 	
 	bbe::Cube::s_destroy();
 	bbe::Circle::s_destroy();
@@ -246,7 +246,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	VkResult result = vkBeginCommandBuffer(*m_currentFrameDrawCommandBuffer, &cbbi);
 	ASSERT_VULKAN(result);
 
-	m_renderPassStopWatch.arm(*m_currentFrameDrawCommandBuffer);
+	//m_renderPassStopWatch.arm(*m_currentFrameDrawCommandBuffer);
 
 	VkRenderPassBeginInfo renderPassBeginInfo;
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -317,7 +317,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::postDraw()
 {
 	vkCmdEndRenderPass(*m_currentFrameDrawCommandBuffer);
 
-	m_renderPassStopWatch.end(*m_currentFrameDrawCommandBuffer);
+	//m_renderPassStopWatch.end(*m_currentFrameDrawCommandBuffer);
 
 	VkResult result = vkEndCommandBuffer(*m_currentFrameDrawCommandBuffer);
 	ASSERT_VULKAN(result);
@@ -377,8 +377,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::waitEndDraw()
 		m_commandPool.freeCommandBuffer(*m_currentFrameDrawCommandBuffer);
 	}
 
-	m_renderPassStopWatch.finish(m_commandPool, m_device.getQueue());
-	bbe::Profiler::INTERNAL::setRenderTime(m_renderPassStopWatch.getTimePassed() * m_device.m_properties.limits.timestampPeriod / 1000.f / 1000.f / 1000.f);
+	//m_renderPassStopWatch.finish(m_commandPool, m_device.getQueue());
+	//bbe::Profiler::INTERNAL::setRenderTime(m_renderPassStopWatch.getTimePassed() * m_device.m_properties.limits.timestampPeriod / 1000.f / 1000.f / 1000.f);
 	firstFrame = false;
 }
 
