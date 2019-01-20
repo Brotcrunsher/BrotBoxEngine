@@ -94,10 +94,6 @@ namespace bbe
 				uint32_t m_screenHeight;
 				uint32_t m_imageIndex;
 
-				Stack<VkBuffer>       m_pendingDestructionBuffers;
-				Stack<VkDeviceMemory> m_pendingDestructionMemory;
-				void destroyPendingBuffers();
-
 				VulkanStopWatch m_renderPassStopWatch;
 
 			public:
@@ -120,7 +116,6 @@ namespace bbe
 				bbe::PrimitiveBrush2D *getBrush2D();
 				bbe::PrimitiveBrush3D *getBrush3D();
 
-				void addPendingDestructionBuffer(VkBuffer buffer, VkDeviceMemory memory);
 				void createPipelines();
 				void resize(uint32_t width, uint32_t height);
 				void recreateSwapchain();

@@ -35,7 +35,6 @@ namespace bbe
 				void upload(const VulkanCommandPool &commandPool, VkQueue queue, VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE, uint32_t queueFamilyIndexCount = 0, const uint32_t* p_queueFamilyIndices = nullptr);
 				void upload(const VulkanCommandPool &commandPool, VkQueue queue, const VulkanBuffer &parentBuffer, VkDeviceSize offset, VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE, uint32_t queueFamilyIndexCount = 0, const uint32_t* p_queueFamilyIndices = nullptr);
 				void destroy();
-				void destroyAtEndOfFrame();
 				void* map();
 				void unmap();
 				void copy(const VulkanBuffer &other, VkCommandPool commandPool, VkQueue queue);

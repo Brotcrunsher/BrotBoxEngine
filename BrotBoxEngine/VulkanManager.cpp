@@ -14,18 +14,6 @@
 
 bbe::INTERNAL::vulkan::VulkanManager *bbe::INTERNAL::vulkan::VulkanManager::s_pinstance = nullptr;
 
-void bbe::INTERNAL::vulkan::VulkanManager::destroyPendingBuffers()
-{
-	while (m_pendingDestructionBuffers.hasDataLeft())
-	{
-		vkDestroyBuffer(m_device.getDevice(), m_pendingDestructionBuffers.pop(), nullptr);
-	}
-	while (m_pendingDestructionMemory.hasDataLeft())
-	{
-		vkFreeMemory(m_device.getDevice(), m_pendingDestructionMemory.pop(), nullptr);
-	}
-}
-
 bbe::INTERNAL::vulkan::VulkanManager::VulkanManager()
 {
 	m_screenWidth  = -1;
@@ -165,7 +153,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	bbe::TerrainMesh::s_destroy();
 	bbe::Terrain::s_destroy();
 
-	destroyPendingBuffers();
 	m_presentFence.destroy();
 	m_semaphoreRenderingDone.destroy();
 	m_semaphoreImageAvailable.destroy();
@@ -370,7 +357,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::waitEndDraw()
 {
 	m_presentFence.waitForFence();
 	m_commandPool.freeCommandBuffer(m_currentFrameDrawCommandBuffer);
-	destroyPendingBuffers();
 
 	m_renderPassStopWatch.finish(m_commandPool, m_device.getQueue());
 	bbe::Profiler::INTERNAL::setRenderTime(m_renderPassStopWatch.getTimePassed() * m_device.m_properties.limits.timestampPeriod / 1000.f / 1000.f / 1000.f);
@@ -384,12 +370,6 @@ bbe::PrimitiveBrush2D * bbe::INTERNAL::vulkan::VulkanManager::getBrush2D()
 bbe::PrimitiveBrush3D * bbe::INTERNAL::vulkan::VulkanManager::getBrush3D()
 {
 	return &m_primitiveBrush3D;
-}
-
-void bbe::INTERNAL::vulkan::VulkanManager::addPendingDestructionBuffer(VkBuffer buffer, VkDeviceMemory memory)
-{
-	m_pendingDestructionBuffers.push(buffer);
-	m_pendingDestructionMemory.push(memory);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
