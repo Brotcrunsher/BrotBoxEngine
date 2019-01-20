@@ -19,6 +19,10 @@ namespace bbe
 		float m_mouseCurrentFrameY = 0;
 		float m_mouseLastFrameX    = 0;
 		float m_mouseLastFrameY    = 0;
+		float m_mouseScrollX       = 0;
+		float m_mouseScrollY       = 0;
+		float m_mouseScrollXNext   = 0;
+		float m_mouseScrollYNext   = 0;
 		bool m_pButtonsNextFrame[(int)MouseButton::LAST + 1];
 		bool m_pButtonsThisFrame[(int)MouseButton::LAST + 1];
 		bool m_pButtonsLastFrame[(int)MouseButton::LAST + 1];
@@ -32,6 +36,10 @@ namespace bbe
 		float getMouseX();
 		float getMouseY();
 		Vector2 getMouse();
+
+		float getScrollX();
+		float getScrollY();
+		Vector2 getScroll();
 
 		float getMouseXDelta();
 		float getMouseYDelta();
@@ -48,5 +56,6 @@ namespace bbe
 		void INTERNAL_moveMouse(float x, float y);
 		void INTERNAL_press(MouseButton button);
 		void INTERNAL_release(MouseButton button);
+		void INTERNAL_scroll(float x, float y);
 	};
 }

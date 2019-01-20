@@ -133,6 +133,16 @@ float bbe::Game::getMouseYDelta()
 	return (float)(m_pwindow->INTERNAL_mouse.getMouseYDelta());
 }
 
+float bbe::Game::getMouseScrollX()
+{
+	return (float)(m_pwindow->INTERNAL_mouse.getScrollX());
+}
+
+float bbe::Game::getMouseScrollY()
+{
+	return (float)(m_pwindow->INTERNAL_mouse.getScrollY());
+}
+
 void bbe::Game::setCursorMode(bbe::CursorMode cm)
 {
 	m_pwindow->setCursorMode(cm);
