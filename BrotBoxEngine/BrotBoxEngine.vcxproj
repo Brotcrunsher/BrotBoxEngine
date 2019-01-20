@@ -221,9 +221,6 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="BBE\Array.h" />
     <ClInclude Include="BBE\BrotBoxEngine.h" />
     <ClInclude Include="BBE\Color.h" />

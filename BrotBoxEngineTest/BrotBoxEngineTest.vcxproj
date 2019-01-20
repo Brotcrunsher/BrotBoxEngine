@@ -161,9 +161,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="Tests\ImageTest.h" />
     <ClInclude Include="Tests\LinearCongruentialGeneratorTest.h" />
     <ClInclude Include="Tests\MathTest.h" />
