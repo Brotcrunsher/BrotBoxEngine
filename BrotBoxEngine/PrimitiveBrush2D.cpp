@@ -57,13 +57,15 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect)
 		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 2, pushConstants);
 	}
 
+	if (m_shapeRecord != ShapeRecord2D::RECTANGLE) {
+		VkDeviceSize offsets[] = { 0 };
+		VkBuffer buffer = Rectangle::s_vertexBuffer.getBuffer();
+		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
 
-	VkDeviceSize offsets[] = { 0 };
-	VkBuffer buffer = Rectangle::s_vertexBuffer.getBuffer();
-	vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
-
-	buffer = Rectangle::s_indexBuffer.getBuffer();
-	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+		buffer = Rectangle::s_indexBuffer.getBuffer();
+		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+		m_shapeRecord = ShapeRecord2D::RECTANGLE;
+	}
 
 	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
 }
@@ -84,12 +86,16 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
 
-	VkDeviceSize offsets[] = { 0 };
-	VkBuffer buffer = Rectangle::s_vertexBuffer.getBuffer();
-	vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
 
-	buffer = Rectangle::s_indexBuffer.getBuffer();
-	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+	if (m_shapeRecord != ShapeRecord2D::RECTANGLE) {
+		VkDeviceSize offsets[] = { 0 };
+		VkBuffer buffer = Rectangle::s_vertexBuffer.getBuffer();
+		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
+
+		buffer = Rectangle::s_indexBuffer.getBuffer();
+		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+		m_shapeRecord = ShapeRecord2D::RECTANGLE;
+	}
 
 	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
 }
@@ -105,12 +111,16 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle)
 
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
 
-	VkDeviceSize offsets[] = { 0 };
-	VkBuffer buffer = Circle::s_vertexBuffer.getBuffer();
-	vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
 
-	buffer = Circle::s_indexBuffer.getBuffer();
-	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+	if (m_shapeRecord != ShapeRecord2D::CIRCLE) {
+		VkDeviceSize offsets[] = { 0 };
+		VkBuffer buffer = Circle::s_vertexBuffer.getBuffer();
+		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
+
+		buffer = Circle::s_indexBuffer.getBuffer();
+		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+		m_shapeRecord = ShapeRecord2D::CIRCLE;
+	}
 
 	vkCmdDrawIndexed(m_currentCommandBuffer, (Circle::AMOUNTOFVERTICES - 2) * 3, 1, 0, 0, 0);
 }

@@ -30,6 +30,11 @@ namespace bbe
 		NONE, PRIMITIVE, IMAGE
 	};
 
+	enum class ShapeRecord2D
+	{
+		NONE, RECTANGLE, CIRCLE
+	};
+
 	class PrimitiveBrush2D
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
@@ -48,6 +53,7 @@ namespace bbe
 		int                                          m_screenHeight;
 
 		PipelineRecord2D   m_pipelineRecord = PipelineRecord2D::NONE;
+		ShapeRecord2D      m_shapeRecord    = ShapeRecord2D::NONE;
 
 		void INTERNAL_fillRect(const Rectangle &rect);
 		void INTERNAL_drawImage(const Rectangle &rect, const Image &image);
