@@ -72,8 +72,12 @@ namespace bbe
 				VulkanSemaphore           m_semaphoreImageAvailable;
 				VulkanSemaphore           m_semaphoreRenderingDone;
 				VWDepthImage              m_depthImage;
-				VkCommandBuffer           m_currentFrameDrawCommandBuffer = VK_NULL_HANDLE;
-				VulkanFence               m_presentFence;
+				VkCommandBuffer           m_currentFrameDrawCommandBuffer1 = VK_NULL_HANDLE;
+				VulkanFence               m_presentFence1;
+				VkCommandBuffer           m_currentFrameDrawCommandBuffer2 = VK_NULL_HANDLE;
+				VulkanFence               m_presentFence2;
+				VkCommandBuffer           *m_currentFrameDrawCommandBuffer = VK_NULL_HANDLE;
+				VulkanFence               *m_presentFence;
 				VulkanDescriptorSetLayout m_setLayoutVertexLight;
 				VulkanDescriptorSetLayout m_setLayoutFragmentLight;
 				VulkanDescriptorSetLayout m_setLayoutViewProjectionMatrix;
