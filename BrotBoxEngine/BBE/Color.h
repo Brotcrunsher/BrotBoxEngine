@@ -1,5 +1,5 @@
 #pragma once
-#include "BBE/Vector3.h"
+#include "../BBE/Vector3.h"
 
 namespace bbe
 {
