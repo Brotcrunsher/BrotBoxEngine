@@ -22,12 +22,17 @@ SRC_DIR_SNAKE := ExampleSnake
 SRC_FILES_SNAKE := $(wildcard $(SRC_DIR_SNAKE)/*.cpp)
 OBJ_FILES_SNAKE := $(patsubst $(SRC_DIR_SNAKE)/%.cpp,$(SRC_DIR_SNAKE)/obj/%.o,$(SRC_FILES_SNAKE))
 
+SRC_DIR_MANDELBROT := ExampleMandelbrot
+SRC_FILES_MANDELBROT := $(wildcard $(SRC_DIR_MANDELBROT)/*.cpp)
+OBJ_FILES_MANDELBROT := $(patsubst $(SRC_DIR_MANDELBROT)/%.cpp,$(SRC_DIR_MANDELBROT)/obj/%.o,$(SRC_FILES_MANDELBROT))
+
+
 
 .PHONY: all clean dirs
 
 all: ExampleParticleGravity
 
-ExampleParticleGravity: EPG.exec Test.exec E3D.exec Snake.exec BBE.o
+ExampleParticleGravity: EPG.exec Test.exec E3D.exec Snake.exec Mandelbrot.exec BBE.o
 
 
 
@@ -42,6 +47,9 @@ E3D.exec: $(OBJ_FILES_3D) BBE.o
 
 Snake.exec: $(OBJ_FILES_SNAKE) BBE.o
 	g++ -fsanitize=address -rdynamic -o $(SRC_DIR_SNAKE)/$@ $^ $(LINKER_DEPS)
+	
+Mandelbrot.exec: $(OBJ_FILES_MANDELBROT) BBE.o
+	g++ -fsanitize=address -rdynamic -o $(SRC_DIR_MANDELBROT)/$@ $^ $(LINKER_DEPS)
 
 BBE.o: $(OBJ_FILES)
 	ld -r $^ -o $@
@@ -72,6 +80,7 @@ dirs:
 	mkdir -p BrotBoxEngineTest/obj
 	mkdir -p Example3D/obj
 	mkdir -p ExampleSnake/obj
+	mkdir -p ExampleMandelbrot/obj
 
 clean:
 	rm -f BrotBoxEngine/obj/*
@@ -79,8 +88,10 @@ clean:
 	rm -f BrotBoxEngineTest/obj/*
 	rm -f Example3D/obj/*
 	rm -f ExampleSnake/obj/*
+	rm -f ExampleMandelbrot/obj/*
 	rm -f ExampleParticleGravity/EPG.exec
 	rm -f BrotBoxEngineTest/Test.exec
 	rm -f Example3D/E3D.exec
 	rm -f ExampleSnake/Snake.exec
+	rm -f ExampleMandelbrot/Mandelbrot.exec
 	rm -f BBE.o
