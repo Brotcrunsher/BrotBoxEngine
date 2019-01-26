@@ -68,6 +68,9 @@ $(SRC_DIR_3D)/obj/%.o: $(SRC_DIR_3D)/%.cpp
 
 $(SRC_DIR_SNAKE)/obj/%.o: $(SRC_DIR_SNAKE)/%.cpp
 	g++ $(COMPILER_FLAGS) -c -I $(GLFW_PATH) -I Third-Party/Vulkan/Include -I Third-Party/stb -I BrotBoxEngine -std=c++17 -o $@ $<
+	
+$(SRC_DIR_MANDELBROT)/obj/%.o: $(SRC_DIR_MANDELBROT)/%.cpp
+	g++ $(COMPILER_FLAGS) -c -I $(GLFW_PATH) -I Third-Party/Vulkan/Include -I Third-Party/stb -I BrotBoxEngine -std=c++17 -o $@ $<
 
 $(SRC_DIR)/obj/%.o: $(SRC_DIR)/%.cpp
 	g++ $(COMPILER_FLAGS) -c -I $(GLFW_PATH) -I Third-Party/Vulkan/Include -I Third-Party/stb -std=c++17 -o $@ $<
