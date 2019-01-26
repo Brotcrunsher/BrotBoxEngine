@@ -68,7 +68,7 @@ const bbe::INTERNAL::vulkan::VulkanPhysicalDevice & bbe::INTERNAL::vulkan::Physi
 	for (size_t i = 0; i < m_devices.getLength(); i++)
 	{
 		VkBool32 supported = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(m_devices[i].getDevice(), m_devices[i].findBestCompleteQueueIndex(), surface.getSurface(), &supported);
+		ASSERT_VULKAN(vkGetPhysicalDeviceSurfaceSupportKHR(m_devices[i].getDevice(), m_devices[i].findBestCompleteQueueIndex(), surface.getSurface(), &supported));
 		if (supported)
 		{
 			return m_devices[i];
