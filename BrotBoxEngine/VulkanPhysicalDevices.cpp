@@ -2,6 +2,7 @@
 #include "BBE/VulkanInstance.h"
 #include "BBE/VulkanSurface.h"
 #include "BBE/List.h"
+#include "BBE/VulkanHelper.h"
 
 bbe::INTERNAL::vulkan::VulkanPhysicalDevice::VulkanPhysicalDevice(const VkPhysicalDevice & device, const VulkanSurface & surface)
 	: m_device(device)
@@ -51,9 +52,9 @@ void bbe::INTERNAL::vulkan::PhysicalDeviceContainer::init(const VulkanInstance &
 {
 	VkPhysicalDevice *physicalDevices = nullptr;
 	uint32_t length = 0;
-	vkEnumeratePhysicalDevices(instance.getInstance(), &length, nullptr);
+	ASSERT_VULKAN(vkEnumeratePhysicalDevices(instance.getInstance(), &length, nullptr));
 	physicalDevices = new VkPhysicalDevice[length];
-	vkEnumeratePhysicalDevices(instance.getInstance(), &length, physicalDevices);
+	ASSERT_VULKAN(vkEnumeratePhysicalDevices(instance.getInstance(), &length, physicalDevices));
 
 	for (size_t i = 0; i < length; i++)
 	{
