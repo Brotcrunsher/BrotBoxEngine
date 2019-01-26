@@ -30,6 +30,11 @@ namespace bbe
 		NONE, PRIMITIVE, IMAGE
 	};
 
+	enum class ShapeRecord2D
+	{
+		NONE, RECTANGLE, CIRCLE
+	};
+
 	class PrimitiveBrush2D
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
@@ -48,6 +53,7 @@ namespace bbe
 		int                                          m_screenHeight;
 
 		PipelineRecord2D   m_pipelineRecord = PipelineRecord2D::NONE;
+		ShapeRecord2D      m_shapeRecord    = ShapeRecord2D::NONE;
 
 		void INTERNAL_fillRect(const Rectangle &rect);
 		void INTERNAL_drawImage(const Rectangle &rect, const Image &image);
@@ -77,9 +83,13 @@ namespace bbe
 		void drawImage(const Rectangle &rect, const Image &image);
 		void drawImage(float x, float y, float width, float height, const Image &image);
 
-		void setColor(float r, float g, float b, float a);
-		void setColor(float r, float g, float b);
-		void setColor(const Color &c);
+		void setColorRGB(float r, float g, float b, float a);
+		void setColorRGB(float r, float g, float b);
+		void setColorRGB(const Vector3& c);
+		void setColorRGB(const Color &c);
+
+		void setColorHSV(float h, float s, float v, float a);
+		void setColorHSV(float h, float s, float v);
 
 		void setFillMode(FillMode fm);
 		FillMode getFillMode();

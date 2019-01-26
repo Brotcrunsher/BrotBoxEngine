@@ -145,15 +145,6 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::destroy()
 	}
 }
 
-void bbe::INTERNAL::vulkan::VulkanBuffer::destroyAtEndOfFrame()
-{
-	if (m_wasCreated)
-	{
-		VulkanManager::s_pinstance->addPendingDestructionBuffer(m_buffer, m_memory);
-	}
-	
-}
-
 void * bbe::INTERNAL::vulkan::VulkanBuffer::map()
 {
 	if (m_wasUploaded)

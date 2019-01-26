@@ -89,6 +89,9 @@ namespace bbe
 		bool isEven(int val);
 
 		int log2Floor(unsigned int val);
+		float log2(float val);
+		float logn(float val);
+		float log10(float val);
 
 		float interpolateLinear(float a, float b, float t);
 		float interpolateBool(float a, float b, float t);

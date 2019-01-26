@@ -50,6 +50,8 @@ namespace bbe
 		float getMouseY();
 		float getMouseXDelta();
 		float getMouseYDelta();
+		float getMouseScrollX();
+		float getMouseScrollY();
 
 		void setCursorMode(bbe::CursorMode cm);
 	};

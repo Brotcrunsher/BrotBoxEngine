@@ -73,6 +73,12 @@ void bbe::Mouse::INTERNAL_release(MouseButton button)
 	m_pButtonsNextFrame[(int)button] = false;
 }
 
+void bbe::Mouse::INTERNAL_scroll(float x, float y)
+{
+	m_mouseScrollXNext = x;
+	m_mouseScrollYNext = y;
+}
+
 
 void bbe::Mouse::update()
 {
@@ -80,6 +86,11 @@ void bbe::Mouse::update()
 	m_mouseLastFrameY = m_mouseCurrentFrameY;
 	m_mouseCurrentFrameX = m_mouseNextFrameX;
 	m_mouseCurrentFrameY = m_mouseNextFrameY;
+
+	m_mouseScrollX = m_mouseScrollXNext;
+	m_mouseScrollY = m_mouseScrollYNext;
+	m_mouseScrollXNext = 0;
+	m_mouseScrollYNext = 0;
 
 	memcpy(m_pButtonsLastFrame, m_pButtonsThisFrame, ((int)MouseButton::LAST + 1) * sizeof(bool));
 	memcpy(m_pButtonsThisFrame, m_pButtonsNextFrame, ((int)MouseButton::LAST + 1) * sizeof(bool));
@@ -105,6 +116,24 @@ float bbe::Mouse::getMouseY()
 bbe::Vector2 bbe::Mouse::getMouse()
 {
 	return Vector2(getMouseX(), getMouseY());
+}
+
+float bbe::Mouse::getScrollX()
+{
+	return m_mouseScrollX;
+}
+
+float bbe::Mouse::getScrollY()
+{
+	return m_mouseScrollY;
+}
+
+bbe::Vector2 bbe::Mouse::getScroll()
+{
+	return Vector2(
+		getScrollX(),
+		getScrollY()
+	);
 }
 
 float bbe::Mouse::getMouseXDelta()

@@ -34,6 +34,7 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	glfwSetCursorPosCallback(m_pwindow, INTERNAL_cursorPosCallback);
 	glfwSetMouseButtonCallback(m_pwindow, INTERNAL_mouseButtonCallback);
 	glfwSetWindowSizeCallback(m_pwindow, INTERNAL_windowResizeCallback);
+	glfwSetScrollCallback(m_pwindow, INTERNAL_mouseScrollCallback);
 	double mX = 0;
 	double mY = 0;
 	glfwGetCursorPos(m_pwindow, &mX, &mY);
@@ -179,6 +180,11 @@ void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int acti
 	{
 		bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_release((bbe::MouseButton)button);
 	}
+}
+
+void bbe::INTERNAL_mouseScrollCallback(GLFWwindow * window, double xoffset, double yoffset)
+{
+	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_scroll(xoffset, yoffset);
 }
 
 template<>

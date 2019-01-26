@@ -72,8 +72,12 @@ namespace bbe
 				VulkanSemaphore           m_semaphoreImageAvailable;
 				VulkanSemaphore           m_semaphoreRenderingDone;
 				VWDepthImage              m_depthImage;
-				VkCommandBuffer           m_currentFrameDrawCommandBuffer = VK_NULL_HANDLE;
-				VulkanFence               m_presentFence;
+				VkCommandBuffer           m_currentFrameDrawCommandBuffer1 = VK_NULL_HANDLE;
+				VulkanFence               m_presentFence1;
+				VkCommandBuffer           m_currentFrameDrawCommandBuffer2 = VK_NULL_HANDLE;
+				VulkanFence               m_presentFence2;
+				VkCommandBuffer           *m_currentFrameDrawCommandBuffer = VK_NULL_HANDLE;
+				VulkanFence               *m_presentFence;
 				VulkanDescriptorSetLayout m_setLayoutVertexLight;
 				VulkanDescriptorSetLayout m_setLayoutFragmentLight;
 				VulkanDescriptorSetLayout m_setLayoutViewProjectionMatrix;
@@ -94,11 +98,7 @@ namespace bbe
 				uint32_t m_screenHeight;
 				uint32_t m_imageIndex;
 
-				Stack<VkBuffer>       m_pendingDestructionBuffers;
-				Stack<VkDeviceMemory> m_pendingDestructionMemory;
-				void destroyPendingBuffers();
-
-				VulkanStopWatch m_renderPassStopWatch;
+				//VulkanStopWatch m_renderPassStopWatch;
 
 			public:
 				VulkanManager();
@@ -120,7 +120,6 @@ namespace bbe
 				bbe::PrimitiveBrush2D *getBrush2D();
 				bbe::PrimitiveBrush3D *getBrush3D();
 
-				void addPendingDestructionBuffer(VkBuffer buffer, VkDeviceMemory memory);
 				void createPipelines();
 				void resize(uint32_t width, uint32_t height);
 				void recreateSwapchain();

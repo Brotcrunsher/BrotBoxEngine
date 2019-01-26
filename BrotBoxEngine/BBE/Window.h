@@ -64,6 +64,7 @@ namespace bbe
 	void INTERNAL_cursorPosCallback(GLFWwindow *window, double xpos, double ypos);
 	void INTERNAL_windowResizeCallback(GLFWwindow *window, int width, int height);
 	void INTERNAL_mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
+	void INTERNAL_mouseScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 
 	template<>
 	uint32_t hash(const Window &t);

@@ -14,18 +14,6 @@
 
 bbe::INTERNAL::vulkan::VulkanManager *bbe::INTERNAL::vulkan::VulkanManager::s_pinstance = nullptr;
 
-void bbe::INTERNAL::vulkan::VulkanManager::destroyPendingBuffers()
-{
-	while (m_pendingDestructionBuffers.hasDataLeft())
-	{
-		vkDestroyBuffer(m_device.getDevice(), m_pendingDestructionBuffers.pop(), nullptr);
-	}
-	while (m_pendingDestructionMemory.hasDataLeft())
-	{
-		vkFreeMemory(m_device.getDevice(), m_pendingDestructionMemory.pop(), nullptr);
-	}
-}
-
 bbe::INTERNAL::vulkan::VulkanManager::VulkanManager()
 {
 	m_screenWidth  = -1;
@@ -69,7 +57,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	std::cout << "Vulkan Manager: init semaphoreRenderingDone" << std::endl;
 	m_semaphoreRenderingDone.init(m_device);
 	std::cout << "Vulkan Manager: init presentFece" << std::endl;
-	m_presentFence.init(m_device);
+	m_presentFence1.init(m_device);
+	m_presentFence2.init(m_device);
 
 	std::cout << "Vulkan Manager: creating 3DBrush" << std::endl;
 	m_primitiveBrush3D.create(m_device);
@@ -146,7 +135,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_uboMatrixViewProjection.create(m_device, sizeof(Matrix4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 	m_uboMatrixModel.create(m_device, sizeof(Matrix4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-	m_renderPassStopWatch.create(m_device);
+	//m_renderPassStopWatch.create(m_device);
+
+	m_presentFence = &m_presentFence1;
+	m_currentFrameDrawCommandBuffer = &m_currentFrameDrawCommandBuffer1;
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::destroy()
@@ -154,7 +146,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
 	
-	m_renderPassStopWatch.destroy();
+	//m_renderPassStopWatch.destroy();
 	
 	bbe::Cube::s_destroy();
 	bbe::Circle::s_destroy();
@@ -165,8 +157,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	bbe::TerrainMesh::s_destroy();
 	bbe::Terrain::s_destroy();
 
-	destroyPendingBuffers();
-	m_presentFence.destroy();
+	m_presentFence1.destroy();
+	m_presentFence2.destroy();
 	m_semaphoreRenderingDone.destroy();
 	m_semaphoreImageAvailable.destroy();
 	m_depthImage.destroy();
@@ -220,28 +212,28 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 {
-	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
 
-	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
 
-	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainSingle.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainSingle.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainSingle.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainSingle.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainSingle.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainSingle.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
 
-	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainMesh.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainMesh.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainMesh.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainMesh.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainMesh.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainMesh.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 {
 	vkAcquireNextImageKHR(m_device.getDevice(), m_swapchain.getSwapchain(), std::numeric_limits<uint64_t>::max(), m_semaphoreImageAvailable.getSemaphore(), VK_NULL_HANDLE, &m_imageIndex);
 
-	m_currentFrameDrawCommandBuffer = m_commandPool.getCommandBuffer();
+	*m_currentFrameDrawCommandBuffer = m_commandPool.getCommandBuffer();
 
 
 	VkCommandBufferBeginInfo cbbi;
@@ -251,10 +243,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	cbbi.pInheritanceInfo = nullptr;
 
 
-	VkResult result = vkBeginCommandBuffer(m_currentFrameDrawCommandBuffer, &cbbi);
+	VkResult result = vkBeginCommandBuffer(*m_currentFrameDrawCommandBuffer, &cbbi);
 	ASSERT_VULKAN(result);
 
-	m_renderPassStopWatch.arm(m_currentFrameDrawCommandBuffer);
+	//m_renderPassStopWatch.arm(*m_currentFrameDrawCommandBuffer);
 
 	VkRenderPassBeginInfo renderPassBeginInfo;
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -276,7 +268,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	renderPassBeginInfo.pClearValues = clearValues.getRaw();
 
 
-	vkCmdBeginRenderPass(m_currentFrameDrawCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(*m_currentFrameDrawCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 	
 
 	VkViewport viewport;
@@ -286,26 +278,26 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	viewport.height = (float)m_screenHeight;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(m_currentFrameDrawCommandBuffer, 0, 1, &viewport);
+	vkCmdSetViewport(*m_currentFrameDrawCommandBuffer, 0, 1, &viewport);
 
 	VkRect2D scissor;
 	scissor.offset = { 0, 0 };
 	scissor.extent = { m_screenWidth, m_screenHeight };
-	vkCmdSetScissor(m_currentFrameDrawCommandBuffer, 0, 1, &scissor);
+	vkCmdSetScissor(*m_currentFrameDrawCommandBuffer, 0, 1, &scissor);
 
 	m_primitiveBrush2D.INTERNAL_beginDraw(
 		m_device, 
 		m_commandPool, 
 		m_descriptorPool, 
 		m_setLayoutSampler, 
-		m_currentFrameDrawCommandBuffer, 
+		*m_currentFrameDrawCommandBuffer, 
 		m_pipeline2DPrimitive, 
 		m_pipeline2DImage, 
 		m_screenWidth, m_screenHeight);
 	
 	m_primitiveBrush3D.INTERNAL_beginDraw(
 		m_device, 
-		m_currentFrameDrawCommandBuffer, 
+		*m_currentFrameDrawCommandBuffer, 
 		m_pipeline3DPrimitive, 
 		m_pipeline3DTerrain, 
 		m_pipeline3DTerrainSingle,
@@ -323,11 +315,11 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 
 void bbe::INTERNAL::vulkan::VulkanManager::postDraw()
 {
-	vkCmdEndRenderPass(m_currentFrameDrawCommandBuffer);
+	vkCmdEndRenderPass(*m_currentFrameDrawCommandBuffer);
 
-	m_renderPassStopWatch.end(m_currentFrameDrawCommandBuffer);
+	//m_renderPassStopWatch.end(*m_currentFrameDrawCommandBuffer);
 
-	VkResult result = vkEndCommandBuffer(m_currentFrameDrawCommandBuffer);
+	VkResult result = vkEndCommandBuffer(*m_currentFrameDrawCommandBuffer);
 	ASSERT_VULKAN(result);
 
 	VkSemaphore semImAv = m_semaphoreImageAvailable.getSemaphore();
@@ -343,11 +335,11 @@ void bbe::INTERNAL::vulkan::VulkanManager::postDraw()
 	si.pWaitSemaphores = &(semImAv);
 	si.pWaitDstStageMask = waitStageMask;
 	si.commandBufferCount = 1;
-	si.pCommandBuffers = &m_currentFrameDrawCommandBuffer;
+	si.pCommandBuffers = m_currentFrameDrawCommandBuffer;
 	si.signalSemaphoreCount = 1;
 	si.pSignalSemaphores = &semReDo;
 
-	result = vkQueueSubmit(queue, 1, &si, m_presentFence.getFence());
+	result = vkQueueSubmit(queue, 1, &si, m_presentFence->getFence());
 	ASSERT_VULKAN(result);
 
 	VkPresentInfoKHR pi = {};
@@ -368,12 +360,26 @@ void bbe::INTERNAL::vulkan::VulkanManager::postDraw()
 
 void bbe::INTERNAL::vulkan::VulkanManager::waitEndDraw()
 {
-	m_presentFence.waitForFence();
-	m_commandPool.freeCommandBuffer(m_currentFrameDrawCommandBuffer);
-	destroyPendingBuffers();
+	static bool firstFrame = true;
+	if (m_presentFence == &m_presentFence1)
+	{
+		m_presentFence = &m_presentFence2;
+		m_currentFrameDrawCommandBuffer = &m_currentFrameDrawCommandBuffer2;
+	}
+	else
+	{
+		m_presentFence = &m_presentFence1;
+		m_currentFrameDrawCommandBuffer = &m_currentFrameDrawCommandBuffer1;
+	}
+	if (!firstFrame)
+	{
+		m_presentFence->waitForFence();
+		m_commandPool.freeCommandBuffer(*m_currentFrameDrawCommandBuffer);
+	}
 
-	m_renderPassStopWatch.finish(m_commandPool, m_device.getQueue());
-	bbe::Profiler::INTERNAL::setRenderTime(m_renderPassStopWatch.getTimePassed() * m_device.m_properties.limits.timestampPeriod / 1000.f / 1000.f / 1000.f);
+	//m_renderPassStopWatch.finish(m_commandPool, m_device.getQueue());
+	//bbe::Profiler::INTERNAL::setRenderTime(m_renderPassStopWatch.getTimePassed() * m_device.m_properties.limits.timestampPeriod / 1000.f / 1000.f / 1000.f);
+	firstFrame = false;
 }
 
 bbe::PrimitiveBrush2D * bbe::INTERNAL::vulkan::VulkanManager::getBrush2D()
@@ -384,12 +390,6 @@ bbe::PrimitiveBrush2D * bbe::INTERNAL::vulkan::VulkanManager::getBrush2D()
 bbe::PrimitiveBrush3D * bbe::INTERNAL::vulkan::VulkanManager::getBrush3D()
 {
 	return &m_primitiveBrush3D;
-}
-
-void bbe::INTERNAL::vulkan::VulkanManager::addPendingDestructionBuffer(VkBuffer buffer, VkDeviceMemory memory)
-{
-	m_pendingDestructionBuffers.push(buffer);
-	m_pendingDestructionMemory.push(memory);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
