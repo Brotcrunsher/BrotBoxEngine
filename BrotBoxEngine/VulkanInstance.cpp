@@ -1,6 +1,7 @@
 #include "BBE/VulkanInstance.h"
 #include "BBE/List.h"
 #include "BBE/VulkanHelper.h"
+#include "BBE/FatalErrors.h"
 
 bbe::INTERNAL::vulkan::VulkanInstance::VulkanInstance()
 {
@@ -43,6 +44,31 @@ void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t 
 	instanceInfo.ppEnabledExtensionNames = glfwExtensions;
 
 	VkResult result = vkCreateInstance(&instanceInfo, nullptr, &m_instance);
+
+	if (result == VkResult::VK_ERROR_OUT_OF_HOST_MEMORY)
+	{
+		bbe::INTERNAL::triggerFatalError("No more host memory!");
+	}
+	else if (result == VkResult::VK_ERROR_OUT_OF_DEVICE_MEMORY)
+	{
+		bbe::INTERNAL::triggerFatalError("No more device memory!");
+	}
+	else if (result == VkResult::VK_ERROR_INITIALIZATION_FAILED)
+	{
+		bbe::INTERNAL::triggerFatalError("Failed to initialize vulkan!");
+	}
+	else if (result == VkResult::VK_ERROR_LAYER_NOT_PRESENT)
+	{
+		bbe::INTERNAL::triggerFatalError("A layer was not present!");
+	}
+	else if (result == VkResult::VK_ERROR_EXTENSION_NOT_PRESENT)
+	{
+		bbe::INTERNAL::triggerFatalError("An extension was not present!");
+	}
+	else if (result == VkResult::VK_ERROR_INCOMPATIBLE_DRIVER)
+	{
+		bbe::INTERNAL::triggerFatalError("Your driver does not support vulkan.");
+	}
 	ASSERT_VULKAN(result);
 }
 

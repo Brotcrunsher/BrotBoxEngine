@@ -3,6 +3,7 @@
 #include "BBE/PrimitiveBrush3D.h"
 #include <iostream>
 #include "BBE/MouseButtons.h"
+#include "BBE/FatalErrors.h"
 
 
 size_t bbe::Window::windowsAliveCounter = 0;
@@ -18,12 +19,23 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	}
 	if (windowsAliveCounter == 0)
 	{
-		glfwInit();
+		if (glfwInit() == GLFW_FALSE)
+		{
+			bbe::INTERNAL::triggerFatalError("An error occurred while initializing GLFW.");
+		}
+		if (glfwVulkanSupported() == GLFW_FALSE)
+		{
+			bbe::INTERNAL::triggerFatalError("Your GPU and/or driver does not support vulkan!");
+		}
 	}
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
 	m_pwindow = glfwCreateWindow(width, height, title, nullptr, nullptr);
+	if (m_pwindow == nullptr)
+	{
+		bbe::INTERNAL::triggerFatalError("Could not create window!");
+	}
 
 	std::cout << "Init vulkan manager" << std::endl;
 	m_vulkanManager.init(title, major, minor, patch, m_pwindow, width, height);

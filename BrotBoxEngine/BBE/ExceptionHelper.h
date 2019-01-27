@@ -6,10 +6,10 @@ namespace bbe
 	class n					                        \
 	{												\
 	private:										\
-		const char* m_msg = "";					\
+		const char* m_msg = "";					    \
 													\
 	public:											\
-		explicit n(const char* msg)	                        \
+		explicit n(const char* msg)	                \
 			: m_msg(msg)							\
 		{}											\
 													\

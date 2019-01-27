@@ -342,6 +342,9 @@
     <ClInclude Include="BBE\TerrainTransformed.h">
       <Filter>Header Files\Shapes</Filter>
     </ClInclude>
+    <ClInclude Include="BBE\FatalErrors.h">
+      <Filter>Header Files\Exceptions</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Window.cpp">
@@ -510,6 +513,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TerrainTransformed.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FatalErrors.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

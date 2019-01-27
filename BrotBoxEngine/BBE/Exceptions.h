@@ -52,4 +52,6 @@ namespace bbe
 	CREATE_EXCEPTION(NullPointerException);
 	CREATE_EXCEPTION(UnexpectedEndOfStringException);
 	CREATE_EXCEPTION(NotAUtf8CharException);
+
+	CREATE_EXCEPTION(FatalError);
 }
