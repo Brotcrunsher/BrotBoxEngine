@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12.4 FATAL_ERROR)
-project(BrotboxEngine)
+project(BrotboxEngine CXX)
 
 macro(install_compiled_shaders currProject)
   foreach(shader_path ${compiled_shaders})
