@@ -17,14 +17,7 @@ addons:
 compiler:
   - g++-8
 script: 
-  - git clone https://github.com/glfw/glfw
-  - cd glfw
-  - sudo cmake .
-  - sudo make
-  - sudo make install
-  - cd ..
-  - sudo ln -s /usr/bin/g++-8 /usr/local/bin/g++
-  - make dirs
-  - make all
-  - cd BrotBoxEngineTest
-  - ./Test.exec
+  - mkdir cmakebuild
+  - cd cmakebuild
+  - cmake ..
+  - cmake --build .
