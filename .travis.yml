@@ -20,4 +20,4 @@ script:
   - mkdir cmakebuild
   - cd cmakebuild
   - cmake ..
-  - cmake --build .
+  - cmake --build . --target Example3D ExampleMandelbrot ExampleParticleGravity ExampleSnake
