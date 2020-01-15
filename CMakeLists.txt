@@ -22,7 +22,7 @@ find_package(Vulkan REQUIRED)
 target_include_directories(BrotboxEngine PUBLIC Vulkan::Vulkan)
 target_link_libraries(BrotboxEngine Vulkan::Vulkan)
 
-add_subdirectory(BrotboxEngine)
+add_subdirectory(BrotBoxEngine)
 add_subdirectory(Third-Party/glfw-3.3.1)
 include_directories(Third-Party/glfw-3.3.1/include)
 target_link_libraries(BrotboxEngine glfw ${GLFW_LIBRARIES})
