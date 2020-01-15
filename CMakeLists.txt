@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.12.4 FATAL_ERROR)
 project(BrotboxEngine)
 
 macro(install_compiled_shaders currProject)
