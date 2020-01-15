@@ -25,7 +25,7 @@ namespace bbe
 		void createArray(std::size_t size, Allocator* parentAllocator)
 		{
 			m_length = size;
-			if constexpr (std::is_same<Allocator, NewDeleteAllocator>::value)
+			if (std::is_same<Allocator, NewDeleteAllocator>::value)
 			{
 				m_pdata = new T[size];
 			}
@@ -41,7 +41,7 @@ namespace bbe
 		{
 			if (m_pdata != nullptr)
 			{
-				if constexpr (std::is_same<Allocator, NewDeleteAllocator>::value)
+				if (std::is_same<Allocator, NewDeleteAllocator>::value)
 				{
 					delete[] m_pdata;
 				}
