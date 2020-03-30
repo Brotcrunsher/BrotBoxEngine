@@ -4,6 +4,7 @@
 #include "BBE/VulkanManager.h"
 #include "BBE/VulkanPipeline.h"
 #include "BBE/Image.h"
+#include "BBE/Math.h"
 
 void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	INTERNAL::vulkan::VulkanDevice &device,
@@ -56,7 +57,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotat
 	}
 	else
 	{
-		float pushConstants[] = { rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f };
+		float pushConstants[] = { rect.getX(), rect.getY() };
 		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 2, pushConstants);
 	}
 
@@ -202,6 +203,34 @@ void bbe::PrimitiveBrush2D::drawImage(const Rectangle & rect, const Image & imag
 void bbe::PrimitiveBrush2D::drawImage(float x, float y, float width, float height, const Image & image)
 {
 	INTERNAL_drawImage(Rectangle(x, y, width, height), image);
+}
+
+void bbe::PrimitiveBrush2D::fillLine(float x1, float y1, float x2, float y2, float lineWidth)
+{
+	fillLine(Vector2(x1, y1), Vector2(x2, y2), lineWidth);
+}
+
+void bbe::PrimitiveBrush2D::fillLine(const Vector2& p1, float x2, float y2, float lineWidth)
+{
+	fillLine(p1, Vector2(x2, y2), lineWidth);
+}
+
+void bbe::PrimitiveBrush2D::fillLine(float x1, float y1, const Vector2& p2, float lineWidth)
+{
+	fillLine(Vector2(x1, y1), p2, lineWidth);
+}
+
+void bbe::PrimitiveBrush2D::fillLine(const Vector2& p1, const Vector2& p2, float lineWidth)
+{
+	const Vector2 dir = p2 - p1;
+	const float dist = dir.getLength();
+	if (dist == 0) return;
+	const Vector2 midPoint = p1 + dir * 0.5;
+	const Vector2 topLeft = midPoint - Vector2(lineWidth / 2, dist / 2);
+	const Rectangle rect(topLeft, lineWidth, dist);
+	const float angle = dir.getAngle() - bbe::Math::toRadians(90);
+
+	fillRect(rect, angle);
 }
 
 void bbe::PrimitiveBrush2D::setColorRGB(float r, float g, float b, float a)
