@@ -12,9 +12,6 @@
 
 namespace bbe
 {
-
-	
-
 	template <typename T, bool keepSorted = false>
 	class List
 	{
@@ -224,7 +221,8 @@ namespace bbe
 					indexThis--;
 				}
 			}
-			for (size_t i = m_length - 1; i >= 0; i++)
+			static_assert(std::is_unsigned<size_t>::value, "size_t is expected to be unsigned for the following loop.");
+			for (size_t i = m_length - 1; i != std::numeric_limits<size_t>::max(); i--)
 			{
 				if (indexThis != std::numeric_limits<size_t>::max() && other[indexOther] >= m_pdata[indexThis])
 				{
