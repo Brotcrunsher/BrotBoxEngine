@@ -27,6 +27,9 @@ bbe::List<char> bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 void bbe::simpleFile::writeFloatArrToFile(const bbe::String & filePath, float * arr, size_t size)
 {	
 	std::ofstream file(filePath.getRaw());
+	if (!file.is_open()) {
+		throw std::runtime_error("Could not open file!");
+	}
 	for (std::size_t i = 0; i < size; i++)
 	{
 		file << arr[i] << "\n";
