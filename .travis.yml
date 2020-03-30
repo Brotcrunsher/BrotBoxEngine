@@ -24,3 +24,4 @@ script:
   - cmake --build . --target ExampleMandelbrot
   - cmake --build . --target ExampleParticleGravity
   - cmake --build . --target ExampleSnake
+  - cmake --build . --target ExampleCurves
