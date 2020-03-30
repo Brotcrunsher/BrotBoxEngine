@@ -123,6 +123,11 @@ float bbe::Game::getMouseY()
 	return (float)(m_pwindow->INTERNAL_mouse.getMouseY());
 }
 
+bbe::Vector2 bbe::Game::getMouse()
+{
+	return Vector2(getMouseX(), getMouseY());
+}
+
 float bbe::Game::getMouseXDelta()
 {
 	return (float)(m_pwindow->INTERNAL_mouse.getMouseXDelta());
@@ -133,6 +138,11 @@ float bbe::Game::getMouseYDelta()
 	return (float)(m_pwindow->INTERNAL_mouse.getMouseYDelta());
 }
 
+bbe::Vector2 bbe::Game::getMouseDelta()
+{
+	return Vector2(getMouseXDelta(), getMouseYDelta());
+}
+
 float bbe::Game::getMouseScrollX()
 {
 	return (float)(m_pwindow->INTERNAL_mouse.getScrollX());
@@ -141,6 +151,21 @@ float bbe::Game::getMouseScrollX()
 float bbe::Game::getMouseScrollY()
 {
 	return (float)(m_pwindow->INTERNAL_mouse.getScrollY());
+}
+
+bbe::Vector2 bbe::Game::getMouseScroll()
+{
+	return Vector2(getMouseScrollX(), getMouseScrollY());
+}
+
+float bbe::Game::getTimeSinceStartSeconds()
+{
+	return m_gameTime.timeSinceStartSeconds();
+}
+
+float bbe::Game::getTimeSinceStartMilliseconds()
+{
+	return m_gameTime.timeSinceStartMilliseconds();
 }
 
 void bbe::Game::setCursorMode(bbe::CursorMode cm)

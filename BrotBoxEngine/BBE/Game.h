@@ -4,6 +4,7 @@
 #include "../BBE/CursorMode.h"
 #include "../BBE/KeyboardKeys.h"
 #include "../BBE/MouseButtons.h"
+#include "../BBE/Vector2.h"
 
 namespace bbe
 {
@@ -48,10 +49,16 @@ namespace bbe
 		bool isMousePressed(bbe::MouseButton button);
 		float getMouseX();
 		float getMouseY();
+		Vector2 getMouse();
 		float getMouseXDelta();
 		float getMouseYDelta();
+		Vector2 getMouseDelta();
 		float getMouseScrollX();
 		float getMouseScrollY();
+		Vector2 getMouseScroll();
+
+		float getTimeSinceStartSeconds();
+		float getTimeSinceStartMilliseconds(); 
 
 		void setCursorMode(bbe::CursorMode cm);
 	};
