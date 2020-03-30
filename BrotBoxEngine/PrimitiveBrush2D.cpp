@@ -30,9 +30,12 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	m_pipelineRecord = PipelineRecord2D::NONE;
 
 	setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
+
+	float pushConstants[] = { m_screenWidth, m_screenHeight };
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 40, sizeof(float) * 2, pushConstants);
 }
 
-void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect)
+void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotation)
 {
 	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
 	{
@@ -46,7 +49,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect)
 
 	if (rect.getWidth() != previousWidth || rect.getHeight() != previousHeight || m_shapeRecord != ShapeRecord2D::RECTANGLE)
 	{
-		float pushConstants[] = { rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f, rect.getWidth() / m_screenWidth * 2.f, rect.getHeight() / m_screenHeight * 2.f };
+		float pushConstants[] = { rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight() };
 		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
 		previousWidth = rect.getWidth();
 		previousHeight = rect.getHeight();
@@ -56,6 +59,8 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect)
 		float pushConstants[] = { rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f };
 		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 2, pushConstants);
 	}
+
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color) + sizeof(float) * 4, sizeof(float), &rotation);
 
 	if (m_shapeRecord != ShapeRecord2D::RECTANGLE) {
 		VkDeviceSize offsets[] = { 0 };
@@ -82,7 +87,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutImage, 0, 1, image.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 
-	float pushConstants[] = { rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f, rect.getWidth() / m_screenWidth * 2.f, rect.getHeight() / m_screenHeight * 2.f };
+	float pushConstants[] = { rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight() };
 
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
 
@@ -107,9 +112,9 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle)
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(m_fillMode));
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
-	float pushConstants[] = { circle.getX() / m_screenWidth * 2.f - 1.f, circle.getY() / m_screenHeight * 2.f - 1.f, circle.getWidth() / m_screenWidth * 2.f, circle.getHeight() / m_screenHeight * 2.f };
+	float pushConstants[] = { circle.getX(), circle.getY(), circle.getWidth(), circle.getHeight(), 0};
 
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 5, pushConstants);
 
 
 	if (m_shapeRecord != ShapeRecord2D::CIRCLE) {
@@ -143,12 +148,12 @@ bbe::PrimitiveBrush2D::PrimitiveBrush2D()
 	//do nothing
 }
 
-void bbe::PrimitiveBrush2D::fillRect(const Rectangle & rect)
+void bbe::PrimitiveBrush2D::fillRect(const Rectangle & rect, float rotation)
 {
-	INTERNAL_fillRect(rect);
+	INTERNAL_fillRect(rect, rotation);
 }
 
-void bbe::PrimitiveBrush2D::fillRect(float x, float y, float width, float height)
+void bbe::PrimitiveBrush2D::fillRect(float x, float y, float width, float height, float rotation)
 {
 	if (width < 0)
 	{
@@ -163,7 +168,7 @@ void bbe::PrimitiveBrush2D::fillRect(float x, float y, float width, float height
 	}
 
 	Rectangle rect(x, y, width, height);
-	INTERNAL_fillRect(rect);
+	INTERNAL_fillRect(rect, rotation);
 }
 
 void bbe::PrimitiveBrush2D::fillCircle(const Circle & circle)
