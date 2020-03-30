@@ -18,7 +18,7 @@ namespace bbe
 			//do nothing
 		}
 
-		explicit Array(const std::initializer_list<T> &il)
+		/*nonexplicit*/ Array(const std::initializer_list<T> &il)
 		{
 			//UNTESTED
 			assert((il.end() - il.begin()) == LENGTH);
@@ -93,6 +93,30 @@ namespace bbe
 		const T* getRaw() const
 		{
 			return m_pdata;
+		}
+
+		T* begin()
+		{
+			//UNTESTED
+			return &(this->m_pdata[0]);
+		}
+
+		const T* begin() const
+		{
+			//UNTESTED
+			return &(this->m_pdata[0]);
+		}
+
+		T* end()
+		{
+			//UNTESTED
+			return &(this->m_pdata[getLength()]);
+		}
+
+		const T* end() const
+		{
+			//UNTESTED
+			return &(this->m_pdata[getLength()]);
 		}
 	};
 
