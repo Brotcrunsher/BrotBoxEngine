@@ -7,6 +7,7 @@
 #include "../BBE/Circle.h"
 #include "../BBE/Color.h"
 #include "../BBE/FillMode.h"
+#include "../BBE/BezierCurve2.h"
 
 namespace bbe
 {
@@ -87,6 +88,12 @@ namespace bbe
 		void fillLine(const Vector2 &p1, float x2, float y2, float lineWidth = 1);
 		void fillLine(float x1, float y1, const Vector2 &p2, float lineWidth = 1);
 		void fillLine(const Vector2 &p1, const Vector2 &p2, float lineWidth = 1);
+
+		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const bbe::List<Vector2>& controlPoints);
+		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint);
+		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const Vector2& control);
+		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const Vector2& control1, const Vector2& control2);
+		void fillBezierCurve(const BezierCurve2& bc, float lineWidth = 1);
 
 		void setColorRGB(float r, float g, float b, float a);
 		void setColorRGB(float r, float g, float b);

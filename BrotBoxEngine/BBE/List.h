@@ -537,7 +537,7 @@ namespace bbe
 			addAll(std::forward<arguments>(args)...);
 		}
 
-		void addAll(T* data, size_t size)
+		void addArray(const T* data, size_t size)
 		{
 			//UNTESTED
 			for (size_t i = 0; i < size; i++)
@@ -547,7 +547,7 @@ namespace bbe
 		}
 
 		template<int size>
-		void addAll(Array<T, size>& arr)
+		void addArray(Array<T, size>& arr)
 		{
 			//UNTESTED
 			addAll(arr.getRaw(), size);

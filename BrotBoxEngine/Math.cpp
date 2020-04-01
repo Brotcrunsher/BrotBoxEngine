@@ -483,6 +483,29 @@ bbe::Vector2 bbe::Math::interpolateBezier(Vector2 a, Vector2 b, float t, Vector2
 	);
 }
 
+bbe::Vector2 bbe::Math::interpolateBezier(Vector2 a, Vector2 b, float t, const bbe::List<Vector2> &controlPoints)
+{
+	if (controlPoints.getLength() == 0) return bbe::Math::interpolateLinear(a, b, t);
+	if (controlPoints.getLength() == 1) return bbe::Math::interpolateBezier(a, b, t, controlPoints[0]);
+
+	bbe::List<Vector2> intermediatePoints(controlPoints.getLength() + 2);
+	intermediatePoints.add(a);
+	intermediatePoints.addArray(controlPoints.getRaw(), controlPoints.getLength());
+	intermediatePoints.add(b);
+
+	const size_t originalLength = intermediatePoints.getLength();
+
+	for (size_t i = 0; i < originalLength - 1; i++)
+	{
+		for (size_t k = 0; k < originalLength - i - 1; k++)
+		{
+			intermediatePoints[k] = bbe::Math::interpolateLinear(intermediatePoints[k], intermediatePoints[k + 1], t);
+		}
+	}
+
+	return intermediatePoints[0];
+}
+
 bbe::Vector2 bbe::Math::interpolateHermite(Vector2 a, Vector2 b, float t, Vector2 tangent1, Vector2 tangent2)
 {
 	return Vector2(

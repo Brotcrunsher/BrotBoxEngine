@@ -56,6 +56,7 @@
 #include "../BBE/Vector2.h"
 #include "../BBE/Vector3.h"
 #include "../BBE/Vector4.h"
+#include "../BBE/BezierCurve2.h"
 
 #include "../BBE/DefaultDestroyer.h"
 #include "../BBE/DefragmentationAllocator.h"

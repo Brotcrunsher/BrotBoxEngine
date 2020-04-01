@@ -220,6 +220,39 @@ void bbe::PrimitiveBrush2D::fillLine(float x1, float y1, const Vector2& p2, floa
 	fillLine(Vector2(x1, y1), p2, lineWidth);
 }
 
+void bbe::PrimitiveBrush2D::fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const bbe::List<Vector2>& controlPoints)
+{
+	fillBezierCurve(BezierCurve2(startPoint, endPoint, controlPoints));
+}
+
+void bbe::PrimitiveBrush2D::fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint)
+{
+	fillBezierCurve(BezierCurve2(startPoint, endPoint));
+}
+
+void bbe::PrimitiveBrush2D::fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const Vector2& control)
+{
+	fillBezierCurve(BezierCurve2(startPoint, endPoint, control));
+}
+
+void bbe::PrimitiveBrush2D::fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const Vector2& control1, const Vector2& control2)
+{
+	fillBezierCurve(BezierCurve2(startPoint, endPoint, control1, control2));
+}
+
+void bbe::PrimitiveBrush2D::fillBezierCurve(const BezierCurve2& bc, float lineWidth)
+{
+	bbe::Vector2 previousPoint = bc.getStartPoint();
+	for (float t = 0; t <= 1; t += 0.01)
+	{
+		const bbe::Vector2 currentPoint = bc.evaluate(t);
+
+		fillLine(previousPoint, currentPoint, lineWidth);
+
+		previousPoint = currentPoint;
+	}
+}
+
 void bbe::PrimitiveBrush2D::fillLine(const Vector2& p1, const Vector2& p2, float lineWidth)
 {
 	const Vector2 dir = p2 - p1;

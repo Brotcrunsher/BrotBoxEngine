@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdio>
+#include "../BBE/List.h"
 
 namespace bbe
 {
@@ -105,6 +106,7 @@ namespace bbe
 		Vector2 interpolateCosine(Vector2 a, Vector2 b, float t);
 		Vector2 interpolateCubic(Vector2 preA, Vector2 a, Vector2 b, Vector2 postB, float t);
 		Vector2 interpolateBezier(Vector2 a, Vector2 b, float t, Vector2 control);
+		Vector2 interpolateBezier(Vector2 a, Vector2 b, float t, const bbe::List<Vector2> &controlPoints);
 		Vector2 interpolateHermite(Vector2 a, Vector2 b, float t, Vector2 tangent1, Vector2 tangent2);
 
 		Vector3 interpolateLinear(Vector3 a, Vector3 b, float t);
