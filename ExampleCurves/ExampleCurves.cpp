@@ -8,6 +8,8 @@ class MyGame : public bbe::Game
 {
 	bbe::Array<bbe::Vector2, 3> bezierPoints = { {100, 500}, {500, 100}, {100, 100} };
 
+	bbe::Array<bbe::Vector2, 4> hermitePoints = { {600, 500}, {1100, 100}, {600, 400}, {1100, 200} };
+
 	bbe::List<bbe::Vector2*> allPoints;
 
 	bbe::Vector2* getClosest(const bbe::Vector2& pos)
@@ -31,6 +33,10 @@ class MyGame : public bbe::Game
 	virtual void onStart() override
 	{
 		for (bbe::Vector2& p : bezierPoints)
+		{
+			allPoints.add(&p);
+		}
+		for (bbe::Vector2& p : hermitePoints)
 		{
 			allPoints.add(&p);
 		}
@@ -76,6 +82,15 @@ class MyGame : public bbe::Game
 			previousPoint = currentPoint;
 		}
 
+		previousPoint = hermitePoints[0];
+		for (float t = 0; t <= 1; t += 0.01)
+		{
+			const bbe::Vector2 currentPoint = bbe::Math::interpolateHermite(hermitePoints[0], hermitePoints[1], t, (hermitePoints[2] - hermitePoints[0]) * 10, (hermitePoints[1] - hermitePoints[3]) * 10);
+
+			brush.fillLine(previousPoint, currentPoint);
+
+			previousPoint = currentPoint;
+		}
 
 		const float interpVal = (bbe::Math::sin(getTimeSinceStartSeconds()) + 1) * 0.5f;
 		const bbe::Vector2 a = bbe::Math::interpolateLinear(bezierPoints[0], bezierPoints[2], interpVal);

@@ -430,6 +430,19 @@ float bbe::Math::interpolateBezier(float a, float b, float t, float control)
 	return b*t2 + 2 * control * t - 2 * control*t2 + a - 2 * a*t + a*t2;
 }
 
+float bbe::Math::interpolateHermite(float a, float b, float t, float tangent1, float tangent2)
+{
+	const float t2 = t * t;
+	const float t3 = t2 * t;
+	const float tm = t - 1;
+	const float tm2 = tm * tm;
+
+	return (1 - 3 * t2 + 2 * t3) * a
+		+ t2 * (3 - 2 * t) * b
+		+ t * tm2 * tangent1
+		+ t2 * tm * tangent2;
+}
+
 bbe::Vector2 bbe::Math::interpolateLinear(Vector2 a, Vector2 b, float t)
 {
 	return Vector2(
@@ -467,6 +480,14 @@ bbe::Vector2 bbe::Math::interpolateBezier(Vector2 a, Vector2 b, float t, Vector2
 	return Vector2(
 		interpolateBezier(a.x, b.x, t, control.x),
 		interpolateBezier(a.y, b.y, t, control.y)
+	);
+}
+
+bbe::Vector2 bbe::Math::interpolateHermite(Vector2 a, Vector2 b, float t, Vector2 tangent1, Vector2 tangent2)
+{
+	return Vector2(
+		interpolateHermite(a.x, b.x, t, tangent1.x, tangent2.x),
+		interpolateHermite(a.y, b.y, t, tangent1.y, tangent2.y)
 	);
 }
 
@@ -512,6 +533,15 @@ bbe::Vector3 bbe::Math::interpolateBezier(Vector3 a, Vector3 b, float t, Vector3
 		interpolateBezier(a.x, b.x, t, control.x),
 		interpolateBezier(a.y, b.y, t, control.y),
 		interpolateBezier(a.z, b.z, t, control.z)
+	);
+}
+
+bbe::Vector3 bbe::Math::interpolateHermite(Vector3 a, Vector3 b, float t, Vector3 tangent1, Vector3 tangent2)
+{
+	return Vector3(
+		interpolateHermite(a.x, b.x, t, tangent1.x, tangent2.x),
+		interpolateHermite(a.y, b.y, t, tangent1.y, tangent2.y),
+		interpolateHermite(a.z, b.z, t, tangent1.z, tangent2.z)
 	);
 }
 
@@ -562,6 +592,16 @@ bbe::Vector4 bbe::Math::interpolateBezier(Vector4 a, Vector4 b, float t, Vector4
 		interpolateBezier(a.y, b.y, t, control.y),
 		interpolateBezier(a.z, b.z, t, control.z),
 		interpolateBezier(a.w, b.w, t, control.w)
+	);
+}
+
+bbe::Vector4 bbe::Math::interpolateHermite(Vector4 a, Vector4 b, float t, Vector4 tangent1, Vector4 tangent2)
+{
+	return Vector4(
+		interpolateHermite(a.x, b.x, t, tangent1.x, tangent2.x),
+		interpolateHermite(a.y, b.y, t, tangent1.y, tangent2.y),
+		interpolateHermite(a.z, b.z, t, tangent1.z, tangent2.z),
+		interpolateHermite(a.w, b.w, t, tangent1.w, tangent2.w)
 	);
 }
 
