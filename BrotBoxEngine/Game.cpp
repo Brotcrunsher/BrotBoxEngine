@@ -49,11 +49,11 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 		update(m_gameTime.tick());
 
 		m_pwindow->preDraw();
-		PrimitiveBrush3D brush3D = *(m_pwindow->getBrush3D());
 		m_pwindow->preDraw3D();
+		PrimitiveBrush3D brush3D = *(m_pwindow->getBrush3D());
 		draw3D(brush3D);
-		PrimitiveBrush2D brush2D = *(m_pwindow->getBrush2D());
 		m_pwindow->preDraw2D();
+		PrimitiveBrush2D brush2D = *(m_pwindow->getBrush2D());
 		draw2D(brush2D);
 		m_pwindow->postDraw();
 		bbe::Profiler::INTERNAL::setCPUTime(sw.getTimeExpiredNanoseconds() / 1000.f / 1000.f / 1000.f);

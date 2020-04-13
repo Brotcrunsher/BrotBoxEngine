@@ -67,16 +67,16 @@ VkAttachmentDescription bbe::INTERNAL::vulkan::VWDepthImage::getDepthAttachment(
 	return depthAttachment;
 }
 
-VkPipelineDepthStencilStateCreateInfo bbe::INTERNAL::vulkan::VWDepthImage::getDepthStencilStateCreateInfoOpaque()
+VkPipelineDepthStencilStateCreateInfo bbe::INTERNAL::vulkan::VWDepthImage::getDepthStencilStateCreateInfoOpaque(bool useDepthBuffer)
 {
 	VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo;
 
 	depthStencilStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	depthStencilStateCreateInfo.pNext = nullptr;
 	depthStencilStateCreateInfo.flags = 0;
-	depthStencilStateCreateInfo.depthTestEnable = VK_TRUE;
-	depthStencilStateCreateInfo.depthWriteEnable = VK_TRUE;
-	depthStencilStateCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+	depthStencilStateCreateInfo.depthTestEnable = useDepthBuffer ? VK_TRUE : VK_FALSE;
+	depthStencilStateCreateInfo.depthWriteEnable = useDepthBuffer ? VK_TRUE : VK_FALSE;
+	depthStencilStateCreateInfo.depthCompareOp = useDepthBuffer ? VK_COMPARE_OP_LESS : VK_COMPARE_OP_NEVER;
 	depthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
 	depthStencilStateCreateInfo.stencilTestEnable = VK_FALSE;
 	depthStencilStateCreateInfo.front = {};

@@ -182,13 +182,13 @@ public:
 
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
-		brush.setColorRGB(1, 1, 1);
+		brush.setColorRGB(1, 1, 1, 0.5f);
 		for (BodyPart bp : bodyParts)
 		{
 			brush.fillRect(bp.x * CELLSIZE, bp.y * CELLSIZE, CELLSIZE, CELLSIZE);
 		}
 
-		brush.setColorRGB(0.5f, 1, 0.5f);
+		brush.setColorRGB(0.5f, 1, 0.5f, 0.5f);
 		brush.fillCircle(food.x * CELLSIZE, food.y * CELLSIZE, CELLSIZE, CELLSIZE);
 	}
 

@@ -36,6 +36,20 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 40, sizeof(float) * 2, pushConstants);
 }
 
+void bbe::PrimitiveBrush2D::INTERNAL_bindRectBuffers()
+{
+	VkDeviceSize offsets[] = { 0 };
+	VkBuffer buffer = bbe::Rectangle::s_vertexBuffer.getBuffer();
+	vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
+
+	buffer = Rectangle::s_indexBuffer.getBuffer();
+	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+
+	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
+
+	m_shapeRecord = ShapeRecord2D::RECTANGLE;
+}
+
 void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotation)
 {
 	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
@@ -50,13 +64,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotat
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color) + sizeof(float) * 4, sizeof(float), &rotation);
 
 	if (m_shapeRecord != ShapeRecord2D::RECTANGLE || true) {
-		VkDeviceSize offsets[] = { 0 };
-		VkBuffer buffer = Rectangle::s_vertexBuffer.getBuffer();
-		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
-
-		buffer = Rectangle::s_indexBuffer.getBuffer();
-		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
-		m_shapeRecord = ShapeRecord2D::RECTANGLE;
+		INTERNAL_bindRectBuffers();
 	}
 
 	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
@@ -71,7 +79,6 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 	}
 
 	image.createAndUpload(*m_pdevice, *m_pcommandPool, *m_pdescriptorPool, *m_pdescriptorSetLayout);
-
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutImage, 0, 1, image.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 
 	float pushConstants[] = { rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f, rect.getWidth() / m_screenWidth * 2.f, rect.getHeight() / m_screenHeight * 2.f };
@@ -79,13 +86,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 
 
 	if (m_shapeRecord != ShapeRecord2D::RECTANGLE || true) {
-		VkDeviceSize offsets[] = { 0 };
-		VkBuffer buffer = Rectangle::s_vertexBuffer.getBuffer();
-		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
-
-		buffer = Rectangle::s_indexBuffer.getBuffer();
-		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
-		m_shapeRecord = ShapeRecord2D::RECTANGLE;
+		INTERNAL_bindRectBuffers();
 	}
 
 	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);

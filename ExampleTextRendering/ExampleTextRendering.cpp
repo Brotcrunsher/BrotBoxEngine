@@ -20,10 +20,14 @@ class MyGame : public bbe::Game
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
+		brush.setColorRGB(1, 0, 0);
+		brush.fillRect(10, 10, 200, 50);
+		brush.setColorRGB(0, 0.5, 0, 0.5);
+		brush.fillRect(20, 40, 200, 50);
 		brush.setColorRGB(1, 1, 1);
 		brush.fillText(20, 20, "This is the first string that is ever fully drawn with BBE! ygpq", myFont);
-		brush.setColorRGB(0.5, 0.5, 0.5);
-		brush.fillRect(10, 10, 200, 50);
+		brush.setColorRGB(0, 0.5, 0, 0.5);
+		brush.fillRect(22, 42, 200, 50);
 	}
 	virtual void onEnd() override
 	{

@@ -201,7 +201,6 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 	VkResult result = vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout);
 	ASSERT_VULKAN(result);
 
-	VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = VWDepthImage::getDepthStencilStateCreateInfoOpaque();
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo;
 	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -222,14 +221,8 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 	pipelineCreateInfo.pViewportState = &m_viewportStateCreateInfo;
 	pipelineCreateInfo.pRasterizationState = &m_rasterizationCreateInfo;
 	pipelineCreateInfo.pMultisampleState = &m_multisampleCreateInfo;
-	if (m_useDepthBuffer)
-	{
-		pipelineCreateInfo.pDepthStencilState = &depthStencilStateCreateInfo;
-	}
-	else
-	{
-		pipelineCreateInfo.pDepthStencilState = nullptr;
-	}
+	VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = VWDepthImage::getDepthStencilStateCreateInfoOpaque(m_useDepthBuffer);
+	pipelineCreateInfo.pDepthStencilState = &depthStencilStateCreateInfo;
 	pipelineCreateInfo.pColorBlendState = &m_colorBlendCreateInfo;
 	pipelineCreateInfo.pDynamicState = &m_dynamicStateCreateInfo;
 	pipelineCreateInfo.layout = m_pipelineLayout;

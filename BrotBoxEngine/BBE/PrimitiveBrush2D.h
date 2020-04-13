@@ -57,6 +57,7 @@ namespace bbe
 		PipelineRecord2D   m_pipelineRecord = PipelineRecord2D::NONE;
 		ShapeRecord2D      m_shapeRecord    = ShapeRecord2D::NONE;
 
+		void INTERNAL_bindRectBuffers();
 		void INTERNAL_fillRect(const Rectangle &rect, float rotation);
 		void INTERNAL_drawImage(const Rectangle &rect, const Image &image);
 		void INTERNAL_fillCircle(const Circle &circle);

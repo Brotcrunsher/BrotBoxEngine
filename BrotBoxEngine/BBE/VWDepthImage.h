@@ -41,7 +41,7 @@ namespace bbe
 
 				static VkAttachmentDescription getDepthAttachment(VkPhysicalDevice physicalDevice);
 
-				static VkPipelineDepthStencilStateCreateInfo getDepthStencilStateCreateInfoOpaque();
+				static VkPipelineDepthStencilStateCreateInfo getDepthStencilStateCreateInfoOpaque(bool useDepthBuffer);
 			};
 		}
 	}
