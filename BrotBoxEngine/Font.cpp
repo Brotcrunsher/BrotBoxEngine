@@ -57,6 +57,12 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 	stbtt_InitFont(&fontInfo, font.getRaw(), stbtt_GetFontOffsetForIndex(font.getRaw(), 0));
 	const float scale = stbtt_ScaleForPixelHeight(&fontInfo, fontSize);
 
+	int ascent = 0;
+	int descent = 0;
+	int lineGap = 0;
+	stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
+	pixelsFromLineToLine = (ascent - descent + lineGap) * scale;
+
 	for (size_t i = 0; i < chars.getLength(); i++)
 	{
 		if (chars[i] == ' ') throw IllegalArgumentException(); // It is not required to have a space as it will just advance the caret position and is always supported.
@@ -65,6 +71,10 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 		stbtt_GetCodepointHMetrics(&fontInfo, chars[i], advanceWidths + chars[i], leftSideBearings + chars[i]);
 		advanceWidths[chars[i]] *= scale;
 		leftSideBearings[chars[i]] *= scale;
+
+		int y1 = 0;
+		stbtt_GetCodepointBox(&fontInfo, chars[i], nullptr, nullptr, nullptr, &y1);
+		verticalOffsets[chars[i]] = (-y1) * scale;
 
 		int width = 0;
 		int height = 0;
@@ -108,11 +118,10 @@ unsigned bbe::Font::getFontSize() const
 	return fontSize;
 }
 
-float bbe::Font::getDistanceBetweenLines() const
+int bbe::Font::getPixelsFromLineToLine() const
 {
-	//TODO this calculation is not correct.
 	if (!isInit) throw NotInitializedException();
-	return getImage('A').getHeight() * 1.5f;
+	return pixelsFromLineToLine;
 }
 
 const bbe::Image& bbe::Font::getImage(char c) const
@@ -121,14 +130,20 @@ const bbe::Image& bbe::Font::getImage(char c) const
 	return charImages[c];
 }
 
-const int bbe::Font::getLeftSideBearing(char c) const
+int bbe::Font::getLeftSideBearing(char c) const
 {
 	if (!isInit) throw NotInitializedException();
 	return leftSideBearings[c];
 }
 
-const int bbe::Font::getAdvanceWidth(char c) const
+int bbe::Font::getAdvanceWidth(char c) const
 {
 	if (!isInit) throw NotInitializedException();
 	return advanceWidths[c];
+}
+
+int bbe::Font::getVerticalOffset(char c) const
+{
+	if (!isInit) throw NotInitializedException();
+	return verticalOffsets[c];
 }

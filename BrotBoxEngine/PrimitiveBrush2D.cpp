@@ -283,7 +283,7 @@ void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, const b
 		if (*text == '\n')
 		{
 			currentPosition.x = lineStart;
-			currentPosition.y += font.getDistanceBetweenLines();
+			currentPosition.y += font.getPixelsFromLineToLine();
 		}
 		else if (*text == ' ')
 		{
@@ -294,7 +294,7 @@ void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, const b
 		{
 			currentPosition.x += font.getLeftSideBearing(*text);
 			const bbe::Image& charImage = font.getImage(*text);
-			drawImage(currentPosition, charImage.getDimensions(), charImage);
+			drawImage(currentPosition.x, currentPosition.y + font.getVerticalOffset(*text), charImage.getDimensions(), charImage);
 			currentPosition.x += font.getAdvanceWidth(*text);
 		}
 

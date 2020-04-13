@@ -25,9 +25,7 @@ class MyGame : public bbe::Game
 		brush.setColorRGB(0, 0.5, 0, 0.5);
 		brush.fillRect(20, 40, 200, 50);
 		brush.setColorRGB(1, 1, 1);
-		brush.fillText(20, 20, "This is the first string that is ever fully drawn with BBE! ygpq", myFont);
-		brush.setColorRGB(0, 0.5, 0, 0.5);
-		brush.fillRect(22, 42, 200, 50);
+		brush.fillText(20, 20, "This is the first string that is\never fully drawn with BBE! ygpq", myFont);
 	}
 	virtual void onEnd() override
 	{
