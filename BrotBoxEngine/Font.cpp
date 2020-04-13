@@ -63,6 +63,12 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 	stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
 	pixelsFromLineToLine = (ascent - descent + lineGap) * scale;
 
+	int spaceAdvance = 0;
+	int spaceLeftSideBearing = 0;
+	stbtt_GetCodepointHMetrics(&fontInfo, ' ', &spaceAdvance, &spaceLeftSideBearing);
+	advanceWidths[' '] = spaceAdvance * scale;
+	leftSideBearings[' '] = spaceLeftSideBearing * scale;
+
 	for (size_t i = 0; i < chars.getLength(); i++)
 	{
 		if (chars[i] == ' ') throw IllegalArgumentException(); // It is not required to have a space as it will just advance the caret position and is always supported.

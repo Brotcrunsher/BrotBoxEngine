@@ -287,8 +287,7 @@ void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, const b
 		}
 		else if (*text == ' ')
 		{
-			//TODO this calculation is not correct.
-			currentPosition.x += font.getImage('A').getWidth();
+			currentPosition.x += font.getLeftSideBearing(*text) + font.getAdvanceWidth(*text);
 		}
 		else
 		{
