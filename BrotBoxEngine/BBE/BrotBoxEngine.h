@@ -90,3 +90,5 @@
 #include "../BBE/Unconstructed.h"
 #include "../BBE/UtilDebug.h"
 #include "../BBE/UtilTest.h"
+
+#include "../BBE/Font.h"

@@ -17,7 +17,7 @@ void bbe::INTERNAL::vulkan::VulkanShader::init(const VulkanDevice & device, cons
 	init(device, data);
 }
 
-void bbe::INTERNAL::vulkan::VulkanShader::init(const VulkanDevice & device, const bbe::List<char>& code)
+void bbe::INTERNAL::vulkan::VulkanShader::init(const VulkanDevice & device, const bbe::List<unsigned char>& code)
 {
 	m_device = device.getDevice();
 

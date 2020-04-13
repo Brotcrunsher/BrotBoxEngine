@@ -202,6 +202,53 @@ bbe::Image::Image(int width, int height, const float * data, ImageFormat format)
 	load(width, height, data, format);
 }
 
+bbe::Image::Image(Image&& other)
+{
+	this->operator=(std::move(other));
+}
+
+bbe::Image& bbe::Image::operator=(Image&& other)
+{
+	destroy();
+
+	this->m_pdata = other.m_pdata;
+	this->m_width = other.m_width;
+	this->m_height = other.m_height;
+	this->m_format = other.m_format;
+	this->m_repeatMode = other.m_repeatMode;
+	this->m_filterMode = other.m_filterMode;
+
+	this->m_image = other.m_image;
+	this->m_imageMemory = other.m_imageMemory;
+	this->m_imageView = other.m_imageView;
+	this->m_imageLayout = std::move(other.m_imageLayout);
+	this->m_device = other.m_device;
+	this->m_sampler = other.m_sampler;
+	this->m_descriptorrSet = other.m_descriptorrSet;
+	this->m_parentImage = other.m_parentImage;
+
+	this->wasUploadedToVulkan = other.wasUploadedToVulkan;
+
+	other.m_pdata = nullptr;
+	other.m_width = 0;
+	other.m_height = 0;
+	other.m_format = (ImageFormat)0;
+	other.m_repeatMode = (ImageRepeatMode)0;
+	other.m_filterMode = (ImageFilterMode)0;
+
+	other.m_image = 0;
+	other.m_imageMemory = 0;
+	other.m_imageView = 0;
+	other.m_imageLayout = 0;
+	other.m_device = 0;
+	other.m_sampler = 0;
+	other.m_parentImage = 0;
+
+	other.wasUploadedToVulkan = false;
+
+	return *this;
+}
+
 bbe::Image::~Image()
 {
 	destroy();
@@ -209,7 +256,7 @@ bbe::Image::~Image()
 
 void bbe::Image::load(const char * path)
 {
-	if (m_pdata != nullptr)
+	if (isLoaded())
 	{
 		throw AlreadyCreatedException();
 	}
@@ -264,7 +311,7 @@ void bbe::Image::load(int width, int height, const float * data, ImageFormat for
 			m_pdata[i] = (byte)(data[i] * 255);
 		}
 	}
-	else if (format == ImageFormat::R32FLOAT)
+	else if (format == ImageFormat::R32FLOAT || format == ImageFormat::R8G8B8A8)
 	{
 		for (int i = 0; i < getSizeInBytes(); i += 4)
 		{
@@ -320,12 +367,17 @@ int bbe::Image::getHeight() const
 	return m_height;
 }
 
+bbe::Vector2 bbe::Image::getDimensions() const
+{
+	return Vector2(getWidth(), getHeight());
+}
+
 int bbe::Image::getSizeInBytes() const
 {
 	return getWidth() * getHeight() * getAmountOfChannels() * getBytesPerChannel();
 }
 
-int bbe::Image::getAmountOfChannels() const
+size_t bbe::Image::getAmountOfChannels() const
 {
 	switch (m_format)
 	{
@@ -355,14 +407,14 @@ int bbe::Image::getBytesPerChannel() const
 	}
 }
 
-bbe::Color bbe::Image::getPixel(int x, int y) const
+bbe::Color bbe::Image::getPixel(size_t x, size_t y) const
 {
 	if (m_pdata == nullptr)
 	{
 		throw NotInitializedException();
 	}
 
-	int index = (y * m_width + x) * getAmountOfChannels();
+	const size_t index = getIndexForRawAccess(x, y);
 	switch(m_format)
 	{
 	case ImageFormat::R8:
@@ -373,6 +425,11 @@ bbe::Color bbe::Image::getPixel(int x, int y) const
 		throw FormatNotSupportedException();
 	}
 	
+}
+
+size_t bbe::Image::getIndexForRawAccess(size_t x, size_t y) const
+{
+	return (y * m_width + x) * getAmountOfChannels();
 }
 
 bbe::ImageRepeatMode bbe::Image::getRepeatMode() const
@@ -403,4 +460,9 @@ void bbe::Image::setFilterMode(ImageFilterMode ifm)
 	}
 
 	m_filterMode = ifm;
+}
+
+bool bbe::Image::isLoaded() const
+{
+	return m_pdata != nullptr;
 }

@@ -8,6 +8,7 @@
 #include "../BBE/Color.h"
 #include "../BBE/FillMode.h"
 #include "../BBE/BezierCurve2.h"
+#include "../BBE/Font.h"
 
 namespace bbe
 {
@@ -46,9 +47,9 @@ namespace bbe
 		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayout = nullptr;
 		VkCommandBuffer                              m_currentCommandBuffer = VK_NULL_HANDLE;
 		VkPipelineLayout                             m_layoutPrimitive      = VK_NULL_HANDLE;
-		INTERNAL::vulkan::VulkanPipeline            *m_ppipelinePrimitive    = nullptr;
+		INTERNAL::vulkan::VulkanPipeline            *m_ppipelinePrimitive   = nullptr;
 		VkPipelineLayout                             m_layoutImage          = VK_NULL_HANDLE;
-		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineImage        = nullptr;
+		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineImage       = nullptr;
 		VkDescriptorSet                              m_descriptorSet        = VK_NULL_HANDLE;
 		int                                          m_screenWidth;
 		int                                          m_screenHeight;
@@ -83,6 +84,9 @@ namespace bbe
 
 		void drawImage(const Rectangle &rect, const Image &image);
 		void drawImage(float x, float y, float width, float height, const Image &image);
+		void drawImage(const Vector2& pos, float width, float height, const Image& image);
+		void drawImage(float x, float y, const Vector2& dimensions, const Image& image);
+		void drawImage(const Vector2& pos, const Vector2& dimensions, const Image& image);
 
 		void fillLine(float x1, float y1, float x2, float y2, float lineWidth = 1);
 		void fillLine(const Vector2 &p1, float x2, float y2, float lineWidth = 1);
@@ -94,6 +98,9 @@ namespace bbe
 		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const Vector2& control);
 		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const Vector2& control1, const Vector2& control2);
 		void fillBezierCurve(const BezierCurve2& bc, float lineWidth = 1);
+
+		void fillText(float x, float y, const char* text, const bbe::Font& font);
+		void fillText(const Vector2& p, const char* text, const bbe::Font& font);
 
 		void setColorRGB(float r, float g, float b, float a);
 		void setColorRGB(float r, float g, float b);

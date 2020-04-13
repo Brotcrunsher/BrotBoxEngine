@@ -12,5 +12,10 @@ layout(push_constant) uniform PushConstants
 } pushConts;
 
 void main() {
-	outColor = pushConts.color * texture(tex, inUvCoord);
+	vec4 c = pushConts.color * texture(tex, inUvCoord);
+	if(c.w == 0) 
+	{
+		discard;
+	}
+	outColor = c;
 }

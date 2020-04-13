@@ -7,6 +7,7 @@
 #include "../BBE/Color.h"
 #include "../BBE/String.h"
 #include "../BBE/VulkanDescriptorSet.h"
+#include "../BBE/Vector2.h"
 
 namespace bbe
 {
@@ -95,8 +96,13 @@ namespace bbe
 		Image(int width, int height, const Color &c);
 		Image(int width, int height, const float* data, ImageFormat format);
 		
-		~Image();
+		Image(const Image& other) = delete; //Copy Constructor
+		Image(Image&& other); //Move Constructor
+		Image& operator=(const Image& other) = delete; //Copy Assignment
+		Image& operator=(Image&& other); //Move Assignment
 
+		~Image();
+		
 		void load(const char* path);
 		void load(int width, int height);
 		void load(int width, int height, const Color &c);
@@ -106,15 +112,19 @@ namespace bbe
 
 		int getWidth() const;
 		int getHeight() const;
+		Vector2 getDimensions() const;
 		int getSizeInBytes() const;
-		int getAmountOfChannels() const;
+		size_t getAmountOfChannels() const;
 		int getBytesPerChannel() const;
-		Color getPixel(int x, int y) const;
+		Color getPixel(size_t x, size_t y) const;
+		size_t getIndexForRawAccess(size_t x, size_t y) const;
 
 		ImageRepeatMode getRepeatMode() const;
 		void setRepeatMode(ImageRepeatMode irm);
 
 		ImageFilterMode getFilterMode() const;
 		void setFilterMode(ImageFilterMode ifm);
+
+		bool isLoaded() const;
 	};
 }

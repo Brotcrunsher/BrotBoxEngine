@@ -48,6 +48,8 @@ namespace bbe
 
 	CREATE_EXCEPTION(VulkanPipelineModeNotSupportedException);
 
+	CREATE_EXCEPTION(UnsupportedException);
+
 	CREATE_EXCEPTION(NotStartOfUtf8Exception);
 	CREATE_EXCEPTION(NullPointerException);
 	CREATE_EXCEPTION(UnexpectedEndOfStringException);

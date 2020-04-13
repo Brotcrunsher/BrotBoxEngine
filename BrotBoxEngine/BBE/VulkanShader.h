@@ -26,7 +26,7 @@ namespace bbe
 
 				void init(const VulkanDevice &device, const bbe::String &path);
 
-				void init(const VulkanDevice &device, const bbe::List<char> &code);
+				void init(const VulkanDevice &device, const bbe::List<unsigned char> &code);
 
 				void destroy();
 

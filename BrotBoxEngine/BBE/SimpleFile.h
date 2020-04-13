@@ -8,7 +8,7 @@ namespace bbe
 {
 	namespace simpleFile
 	{
-		bbe::List<char> readBinaryFile(const bbe::String &filepath);
+		bbe::List<unsigned char> readBinaryFile(const bbe::String &filepath);
 
 		void writeFloatArrToFile(const bbe::String &filePath, float *arr, size_t size);
 	}

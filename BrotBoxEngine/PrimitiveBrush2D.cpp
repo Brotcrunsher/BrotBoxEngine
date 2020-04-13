@@ -44,26 +44,12 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotat
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 
-	
-	static float previousWidth  = -10000000;
-	static float previousHeight = -10000000;
-
-	if (rect.getWidth() != previousWidth || rect.getHeight() != previousHeight || m_shapeRecord != ShapeRecord2D::RECTANGLE)
-	{
-		float pushConstants[] = { rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight() };
-		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
-		previousWidth = rect.getWidth();
-		previousHeight = rect.getHeight();
-	}
-	else
-	{
-		float pushConstants[] = { rect.getX(), rect.getY() };
-		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 2, pushConstants);
-	}
+	float pushConstants[] = { rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight() };
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
 
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color) + sizeof(float) * 4, sizeof(float), &rotation);
 
-	if (m_shapeRecord != ShapeRecord2D::RECTANGLE) {
+	if (m_shapeRecord != ShapeRecord2D::RECTANGLE || true) {
 		VkDeviceSize offsets[] = { 0 };
 		VkBuffer buffer = Rectangle::s_vertexBuffer.getBuffer();
 		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
@@ -88,12 +74,11 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutImage, 0, 1, image.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 
-	float pushConstants[] = { rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight() };
-
+	float pushConstants[] = { rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f, rect.getWidth() / m_screenWidth * 2.f, rect.getHeight() / m_screenHeight * 2.f };
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
 
 
-	if (m_shapeRecord != ShapeRecord2D::RECTANGLE) {
+	if (m_shapeRecord != ShapeRecord2D::RECTANGLE || true) {
 		VkDeviceSize offsets[] = { 0 };
 		VkBuffer buffer = Rectangle::s_vertexBuffer.getBuffer();
 		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
@@ -205,6 +190,21 @@ void bbe::PrimitiveBrush2D::drawImage(float x, float y, float width, float heigh
 	INTERNAL_drawImage(Rectangle(x, y, width, height), image);
 }
 
+void bbe::PrimitiveBrush2D::drawImage(const Vector2& pos, float width, float height, const Image& image)
+{
+	INTERNAL_drawImage(Rectangle(pos.x, pos.y, width, height), image);
+}
+
+void bbe::PrimitiveBrush2D::drawImage(float x, float y, const Vector2& dimensions, const Image& image)
+{
+	INTERNAL_drawImage(Rectangle(x, y, dimensions.x, dimensions.y), image);
+}
+
+void bbe::PrimitiveBrush2D::drawImage(const Vector2& pos, const Vector2& dimensions, const Image& image)
+{
+	INTERNAL_drawImage(Rectangle(pos.x, pos.y, dimensions.x, dimensions.y), image);
+}
+
 void bbe::PrimitiveBrush2D::fillLine(float x1, float y1, float x2, float y2, float lineWidth)
 {
 	fillLine(Vector2(x1, y1), Vector2(x2, y2), lineWidth);
@@ -264,6 +264,41 @@ void bbe::PrimitiveBrush2D::fillLine(const Vector2& p1, const Vector2& p2, float
 	const float angle = dir.getAngle() - bbe::Math::toRadians(90);
 
 	fillRect(rect, angle);
+}
+
+void bbe::PrimitiveBrush2D::fillText(float x, float y, const char* text, const bbe::Font& font)
+{
+	fillText(Vector2(x, y), text, font);
+}
+
+void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, const bbe::Font& font)
+{
+	const float lineStart = p.x;
+	
+	Vector2 currentPosition = p;
+
+	while (*text)
+	{
+		if (*text == '\n')
+		{
+			currentPosition.x = lineStart;
+			currentPosition.y += font.getDistanceBetweenLines();
+		}
+		else if (*text == ' ')
+		{
+			//TODO this calculation is not correct.
+			currentPosition.x += font.getImage('A').getWidth();
+		}
+		else
+		{
+			currentPosition.x += font.getLeftSideBearing(*text);
+			const bbe::Image& charImage = font.getImage(*text);
+			drawImage(currentPosition, charImage.getDimensions(), charImage);
+			currentPosition.x += font.getAdvanceWidth(*text);
+		}
+
+		text++;
+	}
 }
 
 void bbe::PrimitiveBrush2D::setColorRGB(float r, float g, float b, float a)

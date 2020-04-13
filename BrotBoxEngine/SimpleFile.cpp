@@ -3,7 +3,7 @@
 #include <iostream>
 #include <stdlib.h>
 
-bbe::List<char> bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
+bbe::List<unsigned char> bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 {
 	//UNTESTED
 	std::ifstream file(filepath.getRaw(), std::ios::binary | std::ios::ate);
@@ -11,10 +11,10 @@ bbe::List<char> bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 	if (file)
 	{
 		size_t fileSize = (size_t)file.tellg();
-		bbe::List<char> fileBuffer;
+		bbe::List<unsigned char> fileBuffer;
 		fileBuffer.resizeCapacityAndLength(fileSize);
 		file.seekg(0);
-		file.read(fileBuffer.getRaw(), fileSize);
+		file.read((char*)fileBuffer.getRaw(), fileSize);
 		file.close();
 		return fileBuffer;
 	}
