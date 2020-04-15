@@ -17,6 +17,8 @@ addons:
 compiler:
   - g++-8
 script: 
+  - g++ --version
+  - gcc --version
   - mkdir cmakebuild
   - cd cmakebuild
   - cmake ..
