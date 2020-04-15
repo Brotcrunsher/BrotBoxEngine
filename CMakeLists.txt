@@ -23,6 +23,7 @@ endmacro()
 add_library(BrotboxEngine STATIC)
 set_property(TARGET BrotboxEngine PROPERTY CXX_STANDARD 17)
 set_property(TARGET BrotboxEngine PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET BrotboxEngine PROPERTY CXX_EXTENSIONS OFF)
 
 find_package(Vulkan REQUIRED)
 target_include_directories(BrotboxEngine PUBLIC Vulkan::Vulkan)
