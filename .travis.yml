@@ -16,9 +16,7 @@ addons:
       - xorg-dev
 compiler:
   - g++-8
-script: 
-  - g++ --version
-  - gcc --version
+script:
   - mkdir cmakebuild
   - cd cmakebuild
   - cmake -DCMAKE_C_COMPILER=/usr/bin/gcc-8 -DCMAKE_CXX_COMPILER=/usr/bin/g++-8 ..
