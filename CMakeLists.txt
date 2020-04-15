@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(BrotboxEngine CXX)
+set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "" FORCE)
 
 macro(install_compiled_shaders currProject)
   foreach(shader_path ${compiled_shaders})
