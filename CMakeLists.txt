@@ -30,8 +30,8 @@ target_include_directories(BrotboxEngine PUBLIC Vulkan::Vulkan)
 target_link_libraries(BrotboxEngine Vulkan::Vulkan)
 
 add_subdirectory(BrotBoxEngine)
-add_subdirectory(Third-Party/glfw-3.3.1)
-include_directories(Third-Party/glfw-3.3.1/include)
+add_subdirectory(Third-Party/glfw-3.3.2)
+include_directories(Third-Party/glfw-3.3.2/include)
 target_link_libraries(BrotboxEngine glfw ${GLFW_LIBRARIES})
 
 target_include_directories(BrotboxEngine PUBLIC "Third-Party/Vulkan/Include")
