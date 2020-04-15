@@ -21,7 +21,7 @@ script:
   - gcc --version
   - mkdir cmakebuild
   - cd cmakebuild
-  - cmake ..
+  - cmake -DCMAKE_C_COMPILER=/usr/bin/gcc-8 -DCMAKE_CXX_COMPILER=/usr/bin/g++-8 ..
   - cmake --build . --target BrotBoxEngineGTest
   - cmake --build . --target Example3D
   - cmake --build . --target ExampleMandelbrot
