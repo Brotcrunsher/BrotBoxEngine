@@ -381,14 +381,14 @@ void bbe::INTERNAL::vulkan::VulkanManager::waitEndDraw()
 	firstFrame = false;
 }
 
-bbe::PrimitiveBrush2D * bbe::INTERNAL::vulkan::VulkanManager::getBrush2D()
+bbe::PrimitiveBrush2D& bbe::INTERNAL::vulkan::VulkanManager::getBrush2D()
 {
-	return &m_primitiveBrush2D;
+	return m_primitiveBrush2D;
 }
 
-bbe::PrimitiveBrush3D * bbe::INTERNAL::vulkan::VulkanManager::getBrush3D()
+bbe::PrimitiveBrush3D& bbe::INTERNAL::vulkan::VulkanManager::getBrush3D()
 {
-	return &m_primitiveBrush3D;
+	return m_primitiveBrush3D;
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()

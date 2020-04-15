@@ -142,12 +142,12 @@ int bbe::Window::getHeight() const
 	return m_height;
 }
 
-bbe::PrimitiveBrush2D * bbe::Window::getBrush2D()
+bbe::PrimitiveBrush2D& bbe::Window::getBrush2D()
 {
 	return m_vulkanManager.getBrush2D();
 }
 
-bbe::PrimitiveBrush3D * bbe::Window::getBrush3D()
+bbe::PrimitiveBrush3D& bbe::Window::getBrush3D()
 {
 	return m_vulkanManager.getBrush3D();
 }

@@ -117,8 +117,8 @@ namespace bbe
 				void postDraw();
 				void waitEndDraw();
 
-				bbe::PrimitiveBrush2D *getBrush2D();
-				bbe::PrimitiveBrush3D *getBrush3D();
+				bbe::PrimitiveBrush2D &getBrush2D();
+				bbe::PrimitiveBrush3D &getBrush3D();
 
 				void createPipelines();
 				void resize(uint32_t width, uint32_t height);
