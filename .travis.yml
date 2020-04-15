@@ -22,6 +22,7 @@ script:
   - cmake ..
   - cmake --build . --target Example3D
   - cmake --build . --target ExampleMandelbrot
+  - cmake --build . --target ExampleMandelbrotShader
   - cmake --build . --target ExampleParticleGravity
   - cmake --build . --target ExampleSnake
   - cmake --build . --target ExampleCurves
