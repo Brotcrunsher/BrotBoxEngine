@@ -123,6 +123,10 @@ namespace bbe
 				void createPipelines();
 				void resize(uint32_t width, uint32_t height);
 				void recreateSwapchain();
+
+				VulkanDevice& getVulkanDevice();
+				VulkanRenderPass& getVulkanRenderPass();
+				VulkanShader& getVertexShader2DPrimitive();
 			};
 		}
 	}

@@ -554,3 +554,18 @@ void bbe::INTERNAL::vulkan::VulkanManager::recreateSwapchain()
 	m_swapchain = newChain;
 }
 
+bbe::INTERNAL::vulkan::VulkanDevice& bbe::INTERNAL::vulkan::VulkanManager::getVulkanDevice()
+{
+	return m_device;
+}
+
+bbe::INTERNAL::vulkan::VulkanRenderPass& bbe::INTERNAL::vulkan::VulkanManager::getVulkanRenderPass()
+{
+	return m_renderPass;
+}
+
+bbe::INTERNAL::vulkan::VulkanShader& bbe::INTERNAL::vulkan::VulkanManager::getVertexShader2DPrimitive()
+{
+	return m_vertexShader2DPrimitive;
+}
+

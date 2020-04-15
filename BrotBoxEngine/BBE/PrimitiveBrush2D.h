@@ -13,6 +13,7 @@
 namespace bbe
 {
 	class Image;
+	class FragmentShader;
 
 	namespace INTERNAL
 	{
@@ -58,7 +59,7 @@ namespace bbe
 		ShapeRecord2D      m_shapeRecord    = ShapeRecord2D::NONE;
 
 		void INTERNAL_bindRectBuffers();
-		void INTERNAL_fillRect(const Rectangle &rect, float rotation);
+		void INTERNAL_fillRect(const Rectangle &rect, float rotation, FragmentShader* shader);
 		void INTERNAL_drawImage(const Rectangle &rect, const Image &image);
 		void INTERNAL_fillCircle(const Circle &circle);
 		void INTERNAL_setColor(float r, float g, float b, float a);
@@ -77,8 +78,8 @@ namespace bbe
 	public:
 		PrimitiveBrush2D();
 
-		void fillRect(const Rectangle &rect, float rotation = 0);
-		void fillRect(float x, float y, float width, float height, float rotation = 0);
+		void fillRect(const Rectangle& rect, float rotation = 0, FragmentShader* shader = nullptr);
+		void fillRect(float x, float y, float width, float height, float rotation = 0, FragmentShader* shader = nullptr);
 
 		void fillCircle(const Circle &circle);
 		void fillCircle(float x, float y, float width, float height);
@@ -113,5 +114,8 @@ namespace bbe
 
 		void setFillMode(FillMode fm);
 		FillMode getFillMode();
+
+		VkCommandBuffer INTERNAL_getCurrentCommandBuffer();
+		VkPipelineLayout INTERNAL_getLayoutPrimitive();
 	};
 }

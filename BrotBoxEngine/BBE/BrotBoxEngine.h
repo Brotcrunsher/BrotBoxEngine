@@ -92,3 +92,4 @@
 #include "../BBE/UtilTest.h"
 
 #include "../BBE/Font.h"
+#include "../BBE/FragmentShader.h"

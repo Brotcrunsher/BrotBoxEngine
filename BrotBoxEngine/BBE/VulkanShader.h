@@ -23,9 +23,8 @@ namespace bbe
 			public:
 				VulkanShader();
 
-
+				void init(const bbe::String& path);
 				void init(const VulkanDevice &device, const bbe::String &path);
-
 				void init(const VulkanDevice &device, const bbe::List<unsigned char> &code);
 
 				void destroy();

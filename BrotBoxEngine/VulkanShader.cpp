@@ -2,11 +2,21 @@
 #include "BBE/SimpleFile.h"
 #include "BBE/VulkanHelper.h"
 #include "BBE/VulkanDevice.h"
+#include "BBE/VulkanManager.h"
 #include "BBE/List.h"
 #include <iostream>
 
 bbe::INTERNAL::vulkan::VulkanShader::VulkanShader()
 {
+}
+
+void bbe::INTERNAL::vulkan::VulkanShader::init(const bbe::String& path)
+{
+	if (VulkanManager::s_pinstance == nullptr)
+	{
+		throw NullPointerException();
+	}
+	init(VulkanManager::s_pinstance->getVulkanDevice(), path);
 }
 
 void bbe::INTERNAL::vulkan::VulkanShader::init(const VulkanDevice & device, const bbe::String & path)

@@ -1,6 +1,5 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
-#include <thread>
 
 constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
@@ -8,6 +7,8 @@ constexpr int WINDOW_HEIGHT = 720;
 class MyGame : public bbe::Game
 {
 public:
+	bbe::FragmentShader mandelbrotShader;
+
 	int max_iteration = 100;
 
 	double middleX = -0.75;
@@ -16,44 +17,11 @@ public:
 	double rangeX = 3.5;
 	double rangeY = 2;
 
-	double picData[WINDOW_WIDTH][WINDOW_HEIGHT];
-
-	constexpr static int numThreads = 16;
-
-	void work(int id)
-	{
-		for (int x = id; x < WINDOW_WIDTH; x += numThreads)
-		{
-			for (int y = 0; y < WINDOW_HEIGHT; y++)
-			{
-				double x0 = (double)x / (double)WINDOW_WIDTH;
-				double y0 = (double)y / (double)WINDOW_HEIGHT;
-
-				x0 = x0 * rangeX + middleX - rangeX / 2;
-				y0 = y0 * rangeY + middleY - rangeY / 2;
-
-				double real = 0;
-				double imaginary = 0;
-
-				int iteration = 0;
-				while (real * real + imaginary * imaginary <= 4 && iteration < max_iteration)
-				{
-					double temp = real * real - imaginary * imaginary + x0;
-					imaginary = 2 * real * imaginary + y0;
-					real = temp;
-					iteration++;
-				}
-
-				double colorVal = (double)iteration / max_iteration;
-
-				picData[x][y] = colorVal;
-			}
-		}
-	}
-
 	virtual void onStart() override
 	{
+		mandelbrotShader.load("fragMandelbrot.spv");
 	}
+
 	virtual void update(float timeSinceLastFrame) override
 	{
 		std::cout << "FPS: " << (1 / timeSinceLastFrame) << std::endl;
@@ -108,35 +76,18 @@ public:
 			rangeX /= 0.8;
 			rangeY /= 0.8;
 		}
-
-
-		bbe::List<std::thread> threads;
-
-		for (int i = 0; i < numThreads; i++)
-		{
-			threads.add(std::thread(&MyGame::work, this, i));
-		}
-
-		for (int i = 0; i < numThreads; i++)
-		{
-			threads[i].join();
-		}
-
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
-		for (int x = 0; x < WINDOW_WIDTH; x++)
-		{
-			for (int y = 0; y < WINDOW_HEIGHT; y++)
-			{
-				brush.setColorHSV(-picData[x][y] * 360 + 240, 1, 1 - picData[x][y]);
-
-				brush.fillRect(x, y, 1, 1);
-			}
-		}
+		mandelbrotShader.setPushConstant(brush, 128, 8, &middleX);
+		mandelbrotShader.setPushConstant(brush, 136, 8, &middleY);
+		mandelbrotShader.setPushConstant(brush, 144, 8, &rangeX);
+		mandelbrotShader.setPushConstant(brush, 152, 8, &rangeY);
+		mandelbrotShader.setPushConstant(brush, 160, 4, &max_iteration);
+		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, &mandelbrotShader);
 	}
 	virtual void onEnd() override
 	{
@@ -146,6 +97,6 @@ public:
 int main()
 {
 	MyGame *mg = new MyGame();
-	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "Mandelbrot");
+	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "MandelbrotShader");
 	delete mg;
 }

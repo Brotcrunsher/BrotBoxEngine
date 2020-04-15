@@ -1,0 +1,62 @@
+#include "BBE/FragmentShader.h"
+#include "BBE/Window.h"
+#include "BBE/VulkanManager.h"
+#include "BBE/VulkanDevice.h"
+#include "BBE/VulkanRenderPass.h"
+#include "BBE/PrimitiveBrush2D.h"
+
+bbe::FragmentShader::FragmentShader()
+{
+}
+
+bbe::FragmentShader::FragmentShader(const char* path)
+{
+	load(path);
+}
+
+bbe::FragmentShader::~FragmentShader()
+{
+	m_pipeline.destroy();
+	m_shader.destroy();
+}
+
+void bbe::FragmentShader::load(const char* path)
+{
+	if (bbe::Window::INTERNAL_firstInstance == nullptr)
+	{
+		throw NullPointerException();
+	}
+	if (bbe::INTERNAL::vulkan::VulkanManager::s_pinstance == nullptr)
+	{
+		throw NullPointerException();
+	}
+	if (isLoaded)
+	{
+		throw AlreadyCreatedException();
+	}
+
+	m_shader.init(path);
+
+	m_pipeline.init(bbe::INTERNAL::vulkan::VulkanManager::s_pinstance->getVertexShader2DPrimitive(), m_shader, bbe::Window::INTERNAL_firstInstance->getWidth(), bbe::Window::INTERNAL_firstInstance->getHeight());
+	m_pipeline.addVertexBinding(0, sizeof(Vector2), VK_VERTEX_INPUT_RATE_VERTEX);
+	m_pipeline.addVertexDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
+	m_pipeline.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
+	m_pipeline.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4);
+	m_pipeline.create(bbe::INTERNAL::vulkan::VulkanManager::s_pinstance->getVulkanDevice().getDevice(), bbe::INTERNAL::vulkan::VulkanManager::s_pinstance->getVulkanRenderPass().getRenderPass());
+
+	isLoaded = true;
+}
+
+bbe::INTERNAL::vulkan::VulkanPipeline& bbe::FragmentShader::INTERNAL_getPipeline()
+{
+	if (!isLoaded)
+	{
+		throw NotInitializedException();
+	}
+	return m_pipeline;
+}
+
+void bbe::FragmentShader::setPushConstant(PrimitiveBrush2D& brush, size_t offset, size_t length, const void* data)
+{
+	vkCmdPushConstants(brush.INTERNAL_getCurrentCommandBuffer(), brush.INTERNAL_getLayoutPrimitive(), VK_SHADER_STAGE_FRAGMENT_BIT, offset, length, data);
+}

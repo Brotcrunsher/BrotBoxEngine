@@ -5,6 +5,7 @@
 #include "BBE/VulkanPipeline.h"
 #include "BBE/Image.h"
 #include "BBE/Math.h"
+#include "BBE/FragmentShader.h"
 
 void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	INTERNAL::vulkan::VulkanDevice &device,
@@ -50,9 +51,13 @@ void bbe::PrimitiveBrush2D::INTERNAL_bindRectBuffers()
 	m_shapeRecord = ShapeRecord2D::RECTANGLE;
 }
 
-void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotation)
+void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotation, FragmentShader* shader)
 {
-	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
+	if (shader != nullptr)
+	{
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->INTERNAL_getPipeline().getPipeline(m_fillMode));
+	}
+	else if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
 	{
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(m_fillMode));
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
@@ -135,12 +140,12 @@ bbe::PrimitiveBrush2D::PrimitiveBrush2D()
 	//do nothing
 }
 
-void bbe::PrimitiveBrush2D::fillRect(const Rectangle & rect, float rotation)
+void bbe::PrimitiveBrush2D::fillRect(const Rectangle & rect, float rotation, FragmentShader* shader)
 {
-	INTERNAL_fillRect(rect, rotation);
+	INTERNAL_fillRect(rect, rotation, shader);
 }
 
-void bbe::PrimitiveBrush2D::fillRect(float x, float y, float width, float height, float rotation)
+void bbe::PrimitiveBrush2D::fillRect(float x, float y, float width, float height, float rotation, FragmentShader* shader)
 {
 	if (width < 0)
 	{
@@ -155,7 +160,7 @@ void bbe::PrimitiveBrush2D::fillRect(float x, float y, float width, float height
 	}
 
 	Rectangle rect(x, y, width, height);
-	INTERNAL_fillRect(rect, rotation);
+	INTERNAL_fillRect(rect, rotation, shader);
 }
 
 void bbe::PrimitiveBrush2D::fillCircle(const Circle & circle)
@@ -341,4 +346,14 @@ void bbe::PrimitiveBrush2D::setFillMode(FillMode fm)
 bbe::FillMode bbe::PrimitiveBrush2D::getFillMode()
 {
 	return m_fillMode;
+}
+
+VkCommandBuffer bbe::PrimitiveBrush2D::INTERNAL_getCurrentCommandBuffer()
+{
+	return m_currentCommandBuffer;
+}
+
+VkPipelineLayout bbe::PrimitiveBrush2D::INTERNAL_getLayoutPrimitive()
+{
+	return m_layoutPrimitive;
 }
