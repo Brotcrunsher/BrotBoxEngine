@@ -20,6 +20,7 @@ script:
   - mkdir cmakebuild
   - cd cmakebuild
   - cmake ..
+  - cmake --build . --target BrotBoxEngineGTest
   - cmake --build . --target Example3D
   - cmake --build . --target ExampleMandelbrot
   - cmake --build . --target ExampleMandelbrotShader
