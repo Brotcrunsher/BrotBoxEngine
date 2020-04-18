@@ -27,3 +27,4 @@ script:
   - cmake --build . --target ExampleParticleGravity
   - cmake --build . --target ExampleSnake
   - cmake --build . --target ExampleCurves
+  - cmake --build . --target ExampleBalloonGame
