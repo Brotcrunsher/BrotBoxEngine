@@ -75,7 +75,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotat
 	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
 }
 
-void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Image & image)
+void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Image & image, float rotation)
 {
 	if (m_pipelineRecord != PipelineRecord2D::IMAGE)
 	{
@@ -86,9 +86,10 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 	image.createAndUpload(*m_pdevice, *m_pcommandPool, *m_pdescriptorPool, *m_pdescriptorSetLayout);
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutImage, 0, 1, image.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 
-	float pushConstants[] = { rect.getX() / m_screenWidth * 2.f - 1.f, rect.getY() / m_screenHeight * 2.f - 1.f, rect.getWidth() / m_screenWidth * 2.f, rect.getHeight() / m_screenHeight * 2.f };
+	float pushConstants[] = { rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight() };
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
 
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color) + sizeof(float) * 4, sizeof(float), &rotation);
 
 	if (m_shapeRecord != ShapeRecord2D::RECTANGLE || true) {
 		INTERNAL_bindRectBuffers();
@@ -186,29 +187,29 @@ void bbe::PrimitiveBrush2D::fillCircle(float x, float y, float width, float heig
 	INTERNAL_fillCircle(circle);
 }
 
-void bbe::PrimitiveBrush2D::drawImage(const Rectangle & rect, const Image & image)
+void bbe::PrimitiveBrush2D::drawImage(const Rectangle & rect, const Image & image, float rotation)
 {
-	INTERNAL_drawImage(rect, image);
+	INTERNAL_drawImage(rect, image, rotation);
 }
 
-void bbe::PrimitiveBrush2D::drawImage(float x, float y, float width, float height, const Image & image)
+void bbe::PrimitiveBrush2D::drawImage(float x, float y, float width, float height, const Image & image, float rotation)
 {
-	INTERNAL_drawImage(Rectangle(x, y, width, height), image);
+	INTERNAL_drawImage(Rectangle(x, y, width, height), image, rotation);
 }
 
-void bbe::PrimitiveBrush2D::drawImage(const Vector2& pos, float width, float height, const Image& image)
+void bbe::PrimitiveBrush2D::drawImage(const Vector2& pos, float width, float height, const Image& image, float rotation)
 {
-	INTERNAL_drawImage(Rectangle(pos.x, pos.y, width, height), image);
+	INTERNAL_drawImage(Rectangle(pos.x, pos.y, width, height), image, rotation);
 }
 
-void bbe::PrimitiveBrush2D::drawImage(float x, float y, const Vector2& dimensions, const Image& image)
+void bbe::PrimitiveBrush2D::drawImage(float x, float y, const Vector2& dimensions, const Image& image, float rotation)
 {
-	INTERNAL_drawImage(Rectangle(x, y, dimensions.x, dimensions.y), image);
+	INTERNAL_drawImage(Rectangle(x, y, dimensions.x, dimensions.y), image, rotation);
 }
 
-void bbe::PrimitiveBrush2D::drawImage(const Vector2& pos, const Vector2& dimensions, const Image& image)
+void bbe::PrimitiveBrush2D::drawImage(const Vector2& pos, const Vector2& dimensions, const Image& image, float rotation)
 {
-	INTERNAL_drawImage(Rectangle(pos.x, pos.y, dimensions.x, dimensions.y), image);
+	INTERNAL_drawImage(Rectangle(pos.x, pos.y, dimensions.x, dimensions.y), image, rotation);
 }
 
 void bbe::PrimitiveBrush2D::fillLine(float x1, float y1, float x2, float y2, float lineWidth)

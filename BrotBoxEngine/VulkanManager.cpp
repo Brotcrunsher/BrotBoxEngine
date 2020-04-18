@@ -117,7 +117,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	std::cout << "Vulkan Manager: Loading Shaders" << std::endl;
 	m_vertexShader2DPrimitive           .init(m_device, "vert2DPrimitive.spv");
 	m_fragmentShader2DPrimitive         .init(m_device, "frag2DPrimitive.spv");
-	m_vertexShader2DImage               .init(m_device, "vert2DImage.spv");
 	m_fragmentShader2DImage             .init(m_device, "frag2DImage.spv");
 	m_vertexShader3DPrimitive           .init(m_device, "vert3DPrimitive.spv");
 	m_fragmentShader3DPrimitive         .init(m_device, "frag3DPrimitive.spv");
@@ -186,7 +185,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_pipeline2DImage.destroy();
 	m_fragmentShader2DPrimitive.destroy();
 	m_vertexShader2DPrimitive.destroy();
-	m_vertexShader2DImage.destroy();
 	m_fragmentShader2DImage.destroy();
 
 	m_setLayoutVertexLight.destroy();
@@ -400,7 +398,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline2DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4);
 	m_pipeline2DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
 
-	m_pipeline2DImage.init(m_vertexShader2DImage, m_fragmentShader2DImage, m_screenWidth, m_screenHeight);
+	m_pipeline2DImage.init(m_vertexShader2DPrimitive, m_fragmentShader2DImage, m_screenWidth, m_screenHeight);
 	m_pipeline2DImage.addVertexBinding(0, sizeof(Vector2), VK_VERTEX_INPUT_RATE_VERTEX);
 	m_pipeline2DImage.addVertexDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
 	m_pipeline2DImage.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
@@ -536,6 +534,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::recreateSwapchain()
 	m_pipeline2DPrimitive.destroy();
 	m_pipeline2DImage.destroy();
 	m_pipeline3DPrimitive.destroy();
+	m_pipeline3DTerrainTransformed.destroy();
 	m_pipeline3DTerrainSingle.destroy();
 	m_pipeline3DTerrain.destroy();
 	m_pipeline3DTerrainMesh.destroy();
