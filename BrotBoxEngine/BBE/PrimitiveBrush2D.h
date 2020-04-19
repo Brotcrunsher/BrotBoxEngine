@@ -80,9 +80,13 @@ namespace bbe
 
 		void fillRect(const Rectangle& rect, float rotation = 0, FragmentShader* shader = nullptr);
 		void fillRect(float x, float y, float width, float height, float rotation = 0, FragmentShader* shader = nullptr);
+		void fillRect(const Vector2 &pos, float width, float height, float rotation = 0, FragmentShader* shader = nullptr);
 
 		void fillCircle(const Circle &circle);
 		void fillCircle(float x, float y, float width, float height);
+		void fillCircle(const Vector2& pos, float width, float height);
+		void fillCircle(float x, float y, const Vector2& dimensions);
+		void fillCircle(const Vector2& pos, const Vector2& dimensions);
 
 		void drawImage(const Rectangle &rect, const Image &image, float rotation = 0);
 		void drawImage(float x, float y, float width, float height, const Image &image, float rotation = 0);

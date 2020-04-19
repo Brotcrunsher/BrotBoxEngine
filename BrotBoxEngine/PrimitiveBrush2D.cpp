@@ -164,6 +164,11 @@ void bbe::PrimitiveBrush2D::fillRect(float x, float y, float width, float height
 	INTERNAL_fillRect(rect, rotation, shader);
 }
 
+void bbe::PrimitiveBrush2D::fillRect(const Vector2& pos, float width, float height, float rotation, FragmentShader* shader)
+{
+	fillRect(pos.x, pos.y, width, height, rotation, shader);
+}
+
 void bbe::PrimitiveBrush2D::fillCircle(const Circle & circle)
 {
 	INTERNAL_fillCircle(circle);
@@ -185,6 +190,21 @@ void bbe::PrimitiveBrush2D::fillCircle(float x, float y, float width, float heig
 
 	Circle circle(x, y, width, height);
 	INTERNAL_fillCircle(circle);
+}
+
+void bbe::PrimitiveBrush2D::fillCircle(const Vector2& pos, float width, float height)
+{
+	fillCircle(pos.x, pos.y, width, height);
+}
+
+void bbe::PrimitiveBrush2D::fillCircle(float x, float y, const Vector2& dimensions)
+{
+	fillCircle(x, y, dimensions.x, dimensions.y);
+}
+
+void bbe::PrimitiveBrush2D::fillCircle(const Vector2& pos, const Vector2& dimensions)
+{
+	fillCircle(pos.x, pos.y, dimensions.x, dimensions.y);
 }
 
 void bbe::PrimitiveBrush2D::drawImage(const Rectangle & rect, const Image & image, float rotation)
