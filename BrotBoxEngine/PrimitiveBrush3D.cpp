@@ -24,7 +24,7 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 	bbe::INTERNAL::vulkan::VulkanDevice & device, 
 	VkCommandBuffer commandBuffer, 
 	INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive, 
-	INTERNAL::vulkan::VulkanPipeline &pipelineTerrainSingle,
+	INTERNAL::vulkan::VulkanPipeline &pipelineTerrain,
 	INTERNAL::vulkan::VulkanCommandPool &commandPool, 
 	INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, 
 	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainHeightMap, 
@@ -36,8 +36,8 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 {
 	m_layoutPrimitive = pipelinePrimitive.getLayout();
 	m_ppipelinePrimitive = &pipelinePrimitive;
-	m_layoutTerrainSingle = pipelineTerrainSingle.getLayout();
-	m_ppipelineTerrainSingle = &pipelineTerrainSingle;
+	m_layoutTerrain = pipelineTerrain.getLayout();
+	m_ppipelineTerrain = &pipelineTerrain;
 	m_currentCommandBuffer = commandBuffer;
 	m_pdescriptorPool = &descriptorPool;
 	m_pdescriptorSetLayoutTerrainHeightMap = &descriptorSetLayoutTerrainHeightMap;
@@ -130,7 +130,7 @@ void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 	vkCmdDrawIndexed(m_currentCommandBuffer, IcoSphere::amountOfIndices, 1, 0, 0, 0);
 }
 
-void bbe::PrimitiveBrush3D::drawTerrain(const TerrainSingle & terrain)
+void bbe::PrimitiveBrush3D::drawTerrain(const Terrain& terrain)
 {
 	terrain.init(
 		*m_pdevice,
@@ -143,16 +143,16 @@ void bbe::PrimitiveBrush3D::drawTerrain(const TerrainSingle & terrain)
 		*m_pdescriptorSetLayoutViewFrustum
 	);
 	//terrain.loadViewFrustrum(m_projection * m_view * terrain.m_transform, *m_pdevice);
-	if (m_pipelineRecord != PipelineRecord3D::TERRAINSINGLE)
+	if (m_pipelineRecord != PipelineRecord3D::TERRAIN)
 	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelineTerrainSingle->getPipeline(m_fillMode));
-		m_pipelineRecord = PipelineRecord3D::TERRAINSINGLE;
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelineTerrain->getPipeline(m_fillMode));
+		m_pipelineRecord = PipelineRecord3D::TERRAIN;
 	}
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainSingle, 3, 1, terrain.m_heightMap.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainSingle, 4, 1, terrain.m_baseTexture.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
-	//vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainSingle, 5, 1, terrain.m_viewFrustrumDescriptor.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainSingle, 5, 1, terrain.m_additionalTextures[0].getDescriptorSet().getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrainSingle, 6, 1, terrain.m_additionalTextureWeights[0].getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 3, 1, terrain.m_heightMap.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 4, 1, terrain.m_baseTexture.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	//vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 5, 1, terrain.m_viewFrustrumDescriptor.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 5, 1, terrain.m_additionalTextures[0].getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 6, 1, terrain.m_additionalTextureWeights[0].getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 
 
 	class PushConts
@@ -177,10 +177,10 @@ void bbe::PrimitiveBrush3D::drawTerrain(const TerrainSingle & terrain)
 
 	pushConts.height = terrain.getMaxHeight();
 	pushConts.mat = terrain.m_transform;
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrainSingle, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(PushContsFragmentShader), sizeof(PushConts), &(pushConts));
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrainSingle, VK_SHADER_STAGE_VERTEX_BIT, 108, sizeof(float), &terrain.m_patchSize);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(PushContsFragmentShader), sizeof(PushConts), &(pushConts));
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_VERTEX_BIT, 108, sizeof(float), &terrain.m_patchSize);
 
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrainSingle, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushContsFragmentShader), &(pushContsFragmenShader));
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushContsFragmentShader), &(pushContsFragmenShader));
 
 	VkDeviceSize offsets[] = { 0 };
 	VkBuffer buffer = terrain.m_vertexBuffer.getBuffer();
@@ -188,9 +188,9 @@ void bbe::PrimitiveBrush3D::drawTerrain(const TerrainSingle & terrain)
 
 	buffer = terrain.m_indexBuffer.getBuffer();
 	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrainSingle, VK_SHADER_STAGE_VERTEX_BIT, 112, sizeof(Vector2), &terrain.m_heightmapScale);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_VERTEX_BIT, 112, sizeof(Vector2), &terrain.m_heightmapScale);
 	Vector2 emptyOffset(0, 0);
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrainSingle, VK_SHADER_STAGE_VERTEX_BIT, 100, sizeof(Vector2), &emptyOffset);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutTerrain, VK_SHADER_STAGE_VERTEX_BIT, 100, sizeof(Vector2), &emptyOffset);
 	vkCmdDrawIndexed(m_currentCommandBuffer, terrain.getAmountOfIndizes(), 1, 0, 0, 0);
 
 	m_lastDraw = DrawRecord::TERRAIN;

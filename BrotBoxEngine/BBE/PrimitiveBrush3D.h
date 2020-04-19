@@ -6,7 +6,7 @@
 #include "../BBE/VulkanBuffer.h"
 #include "../BBE/Cube.h"
 #include "../BBE/IcoSphere.h"
-#include "../BBE/TerrainSingle.h"
+#include "../BBE/Terrain.h"
 #include "../BBE/FillMode.h"
 #include "../BBE/ViewFrustum.h"
 
@@ -35,7 +35,7 @@ namespace bbe
 
 	enum class PipelineRecord3D
 	{
-		NONE, PRIMITIVE, TERRAINSINGLE
+		NONE, PRIMITIVE, TERRAIN
 	};
 
 	class PrimitiveBrush3D
@@ -46,8 +46,8 @@ namespace bbe
 		INTERNAL::vulkan::VulkanDevice              *m_pdevice                                            = nullptr;
 		VkPipelineLayout                             m_layoutPrimitive                                    = VK_NULL_HANDLE;
 		INTERNAL::vulkan::VulkanPipeline            *m_ppipelinePrimitive                                 = nullptr;
-		VkPipelineLayout                             m_layoutTerrainSingle                                = VK_NULL_HANDLE;
-		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineTerrainSingle                             = nullptr;
+		VkPipelineLayout                             m_layoutTerrain                                      = VK_NULL_HANDLE;
+		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineTerrain                                   = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorPool      *m_pdescriptorPool                                    = nullptr;
 		INTERNAL::vulkan::VulkanCommandPool         *m_pcommandPool                                       = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainHeightMap               = nullptr;
@@ -73,7 +73,7 @@ namespace bbe
 			bbe::INTERNAL::vulkan::VulkanDevice &device,
 			VkCommandBuffer commandBuffer,
 			INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive,
-			INTERNAL::vulkan::VulkanPipeline &pipelineTerrainSingle,
+			INTERNAL::vulkan::VulkanPipeline &pipelineTerrain,
 			INTERNAL::vulkan::VulkanCommandPool &commandPool,
 			INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool,
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainHeightMap,
@@ -99,7 +99,7 @@ namespace bbe
 		void fillCube(const Cube &cube);
 		void fillIcoSphere(const IcoSphere &sphere);
 
-		void drawTerrain(const TerrainSingle &terrain);
+		void drawTerrain(const Terrain &terrain);
 
 		void setColor(float r, float g, float b, float a);
 		void setColor(float r, float g, float b);

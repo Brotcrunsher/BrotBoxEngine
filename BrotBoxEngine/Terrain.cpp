@@ -1,4 +1,4 @@
-#include "BBE/TerrainSingle.h"
+#include "BBE/Terrain.h"
 #include "BBE/VertexWithNormal.h"
 #include "BBE/Random.h"
 #include "BBE/Math.h"
@@ -8,7 +8,7 @@
 static const int PATCH_SIZE = 64;
 static const float VERTICES_PER_METER = 1;
 
-void bbe::TerrainSingle::init(
+void bbe::Terrain::init(
 	const INTERNAL::vulkan::VulkanDevice & device,
 	const INTERNAL::vulkan::VulkanCommandPool & commandPool,
 	const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool,
@@ -46,7 +46,7 @@ void bbe::TerrainSingle::init(
 
 }
 
-void bbe::TerrainSingle::destroy()
+void bbe::Terrain::destroy()
 {
 	m_baseTexture.destroy();
 	m_indexBuffer.destroy();
@@ -59,7 +59,7 @@ void bbe::TerrainSingle::destroy()
 	}
 }
 
-void bbe::TerrainSingle::initIndexBuffer(const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue) const
+void bbe::Terrain::initIndexBuffer(const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue) const
 {
 	int w = m_width / PATCH_SIZE;
 	int h = m_height / PATCH_SIZE;
@@ -87,7 +87,7 @@ void bbe::TerrainSingle::initIndexBuffer(const INTERNAL::vulkan::VulkanDevice &d
 	m_amountOfIndizes = indices.getLength();
 }
 
-void bbe::TerrainSingle::initVertexBuffer(const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue) const
+void bbe::Terrain::initVertexBuffer(const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue) const
 {
 	List<Vector2> vertices;
 
@@ -111,7 +111,7 @@ void bbe::TerrainSingle::initVertexBuffer(const INTERNAL::vulkan::VulkanDevice &
 	m_vertexBuffer.upload(commandPool, queue);
 }
 
-void bbe::TerrainSingle::loadViewFrustrum(const bbe::Matrix4 &mvpMat, const bbe::INTERNAL::vulkan::VulkanDevice &device) const
+void bbe::Terrain::loadViewFrustrum(const bbe::Matrix4 &mvpMat, const bbe::INTERNAL::vulkan::VulkanDevice &device) const
 {
 	if (!m_wasInit)
 	{
@@ -125,7 +125,7 @@ void bbe::TerrainSingle::loadViewFrustrum(const bbe::Matrix4 &mvpMat, const bbe:
 	m_viewFrustrumDescriptor.update(device);
 }
 
-void bbe::TerrainSingle::construct(int width, int height, const char * baseTexturePath, int seed)
+void bbe::Terrain::construct(int width, int height, const char * baseTexturePath, int seed)
 {
 	m_width = width;
 	m_height = height;
@@ -161,72 +161,72 @@ void bbe::TerrainSingle::construct(int width, int height, const char * baseTextu
 	m_heightmapScale.y = 1.0f / m_patchesHeightAmount;
 }
 
-uint32_t bbe::TerrainSingle::getAmountOfIndizes() const
+uint32_t bbe::Terrain::getAmountOfIndizes() const
 {
 	return m_amountOfIndizes;
 }
 
-bbe::TerrainSingle::TerrainSingle(int width, int height, const char* baseTexturePath)
+bbe::Terrain::Terrain(int width, int height, const char* baseTexturePath)
 {
 	construct(width, height, baseTexturePath, (int)TimeHelper::getTimeStamp());
 }
 
-bbe::TerrainSingle::TerrainSingle(int width, int height, const char * baseTexturePath, int seed)
+bbe::Terrain::Terrain(int width, int height, const char * baseTexturePath, int seed)
 {
 	construct(width, height, baseTexturePath, seed);
 }
 
-bbe::TerrainSingle::~TerrainSingle()
+bbe::Terrain::~Terrain()
 {
 	destroy();
 }
 
-bbe::Matrix4 bbe::TerrainSingle::getTransform() const
+bbe::Matrix4 bbe::Terrain::getTransform() const
 {
 	return m_transform;
 }
 
-void bbe::TerrainSingle::setTransform(const Vector3 & pos, const Vector3 & scale, const Vector3 & rotationVector, float radians)
+void bbe::Terrain::setTransform(const Vector3 & pos, const Vector3 & scale, const Vector3 & rotationVector, float radians)
 {
 	setTransform(Matrix4::createTransform(pos, scale, rotationVector, radians));
 }
 
-void bbe::TerrainSingle::setTransform(const Matrix4 & transform)
+void bbe::Terrain::setTransform(const Matrix4 & transform)
 {
 	m_transform = transform;
 }
 
-bbe::Vector2 bbe::TerrainSingle::getBaseTextureOffset()
+bbe::Vector2 bbe::Terrain::getBaseTextureOffset()
 {
 	return m_baseTextureBias.m_textureOffset;
 }
 
-void bbe::TerrainSingle::setBaseTextureOffset(const Vector2 & offset)
+void bbe::Terrain::setBaseTextureOffset(const Vector2 & offset)
 {
 	m_baseTextureBias.m_textureOffset = offset;
 }
 
-bbe::Vector2 bbe::TerrainSingle::getBaseTextureMult()
+bbe::Vector2 bbe::Terrain::getBaseTextureMult()
 {
 	return m_baseTextureBias.m_textureMult;
 }
 
-void bbe::TerrainSingle::setBaseTextureMult(const Vector2 & mult)
+void bbe::Terrain::setBaseTextureMult(const Vector2 & mult)
 {
 	m_baseTextureBias.m_textureMult = mult;
 }
 
-void bbe::TerrainSingle::setMaxHeight(float height)
+void bbe::Terrain::setMaxHeight(float height)
 {
 	m_maxHeight = height;
 }
 
-float bbe::TerrainSingle::getMaxHeight() const
+float bbe::Terrain::getMaxHeight() const
 {
 	return m_maxHeight;
 }
 
-void bbe::TerrainSingle::addTexture(const char * texturePath, const float * weights)
+void bbe::Terrain::addTexture(const char * texturePath, const float * weights)
 {
 	m_additionalTextures[m_currentAdditionalTexture].load(texturePath);
 	m_additionalTextureWeights[m_currentAdditionalTexture].load(m_width, m_height, weights, bbe::ImageFormat::R8);
@@ -234,10 +234,10 @@ void bbe::TerrainSingle::addTexture(const char * texturePath, const float * weig
 	m_currentAdditionalTexture++;
 }
 
-bbe::Vector3 bbe::TerrainSingle::projectOnTerrain(const Vector3 & pos) const
+bbe::Vector3 bbe::Terrain::projectOnTerrain(const Vector3 & pos) const
 {
-	Vector3 TerrainSinglePos = m_transform.extractTranslation();
-	Vector3 transformedPos = pos - TerrainSinglePos;
+	Vector3 TerrainPos = m_transform.extractTranslation();
+	Vector3 transformedPos = pos - TerrainPos;
 	Vector3 transformedPos2 = transformedPos * VERTICES_PER_METER;
 	int indexX = (int)transformedPos2.x;
 	int indexY = (int)transformedPos2.y;
@@ -253,15 +253,15 @@ bbe::Vector3 bbe::TerrainSingle::projectOnTerrain(const Vector3 & pos) const
 
 	float w = bbe::Math::interpolateLinear(w1, w2, px);
 
-	return Vector3(pos.x, pos.y, w * getMaxHeight() + TerrainSinglePos.z);
+	return Vector3(pos.x, pos.y, w * getMaxHeight() + TerrainPos.z);
 }
 
-int bbe::TerrainSingle::getWidth() const
+int bbe::Terrain::getWidth() const
 {
 	return m_width;
 }
 
-int bbe::TerrainSingle::getHeight() const
+int bbe::Terrain::getHeight() const
 {
 	return m_height;
 }

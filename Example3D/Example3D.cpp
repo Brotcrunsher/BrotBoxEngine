@@ -8,9 +8,7 @@ public:
 
 	bbe::Random rand;
 
-	bbe::TerrainSingle terrain;		//Terrain Single Draw Call (Tessellation)
-	//bbe::Terrain terrain;			//Terrain Multi  Draw Call (Tessellation)
-	//bbe::TerrainMesh terrain;		//Meshimplementation
+	bbe::Terrain terrain;
 
 	bbe::PointLight sunLight;
 

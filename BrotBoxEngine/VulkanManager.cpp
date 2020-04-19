@@ -157,7 +157,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_uboMatrixViewProjection.destroy();
 	m_uboMatrixModel.destroy();
 	m_pipeline3DPrimitive.destroy();
-	m_pipeline3DTerrainSingle.destroy();
+	m_pipeline3DTerrain.destroy();
 
 	m_fragmentShader3DPrimitive.destroy();
 	m_vertexShader3DPrimitive.destroy();
@@ -208,7 +208,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 		m_device,
 		*m_currentFrameDrawCommandBuffer,
 		m_pipeline3DPrimitive,
-		m_pipeline3DTerrainSingle,
+		m_pipeline3DTerrain,
 		m_commandPool,
 		m_descriptorPool,
 		m_setLayoutTerrainHeightMap,
@@ -222,9 +222,9 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
 	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
 
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainSingle.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainSingle.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrainSingle.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
@@ -396,27 +396,27 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline3DPrimitive.setSpezializationData(sizeof(int32_t), &spezAmountOfLights);
 	m_pipeline3DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
 
-	m_pipeline3DTerrainSingle.init(m_vertexShader3DTerrain, m_fragmentShader3DTerrain, m_screenWidth, m_screenHeight);
-	m_pipeline3DTerrainSingle.setTessellationShader(m_tescShader3DTerrain.getModule(), m_teseShader3DTerrain.getModule(), 4);
-	m_pipeline3DTerrainSingle.addVertexBinding(0, sizeof(Vector2), VK_VERTEX_INPUT_RATE_VERTEX);
-	m_pipeline3DTerrainSingle.addVertexDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
-	m_pipeline3DTerrainSingle.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color) + sizeof(Vector4));
-	m_pipeline3DTerrainSingle.addPushConstantRange(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color) + sizeof(Vector4), sizeof(Matrix4) + sizeof(float));
-	m_pipeline3DTerrainSingle.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, 100, sizeof(float) * 5);
-	m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutVertexLight.getDescriptorSetLayout());
-	m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutViewProjectionMatrix.getDescriptorSetLayout());
-	m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutFragmentLight.getDescriptorSetLayout());
-	m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutTerrainHeightMap.getDescriptorSetLayout());
-	m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutSampler.getDescriptorSetLayout());
-	//m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutTerrainViewFrustum.getDescriptorSetLayout());
-	m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTexture.getDescriptorSetLayout());
-	m_pipeline3DTerrainSingle.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTextureWeight.getDescriptorSetLayout());
-	m_pipeline3DTerrainSingle.enableDepthBuffer();
-	m_pipeline3DTerrainSingle.addSpezializationConstant(0, 0, sizeof(int32_t));
-	m_pipeline3DTerrainSingle.setSpezializationData(sizeof(int32_t), &spezAmountOfLights);
-	m_pipeline3DTerrainSingle.enablePrimitiveRestart(false);
-	m_pipeline3DTerrainSingle.setPrimitiveTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
-	m_pipeline3DTerrainSingle.create(m_device.getDevice(), m_renderPass.getRenderPass());
+	m_pipeline3DTerrain.init(m_vertexShader3DTerrain, m_fragmentShader3DTerrain, m_screenWidth, m_screenHeight);
+	m_pipeline3DTerrain.setTessellationShader(m_tescShader3DTerrain.getModule(), m_teseShader3DTerrain.getModule(), 4);
+	m_pipeline3DTerrain.addVertexBinding(0, sizeof(Vector2), VK_VERTEX_INPUT_RATE_VERTEX);
+	m_pipeline3DTerrain.addVertexDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
+	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color) + sizeof(Vector4));
+	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color) + sizeof(Vector4), sizeof(Matrix4) + sizeof(float));
+	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, 100, sizeof(float) * 5);
+	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutVertexLight.getDescriptorSetLayout());
+	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutViewProjectionMatrix.getDescriptorSetLayout());
+	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutFragmentLight.getDescriptorSetLayout());
+	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainHeightMap.getDescriptorSetLayout());
+	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutSampler.getDescriptorSetLayout());
+	//m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainViewFrustum.getDescriptorSetLayout());
+	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTexture.getDescriptorSetLayout());
+	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTextureWeight.getDescriptorSetLayout());
+	m_pipeline3DTerrain.enableDepthBuffer();
+	m_pipeline3DTerrain.addSpezializationConstant(0, 0, sizeof(int32_t));
+	m_pipeline3DTerrain.setSpezializationData(sizeof(int32_t), &spezAmountOfLights);
+	m_pipeline3DTerrain.enablePrimitiveRestart(false);
+	m_pipeline3DTerrain.setPrimitiveTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
+	m_pipeline3DTerrain.create(m_device.getDevice(), m_renderPass.getRenderPass());
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::resize(uint32_t width, uint32_t height)
@@ -444,7 +444,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::recreateSwapchain()
 	m_pipeline2DPrimitive.destroy();
 	m_pipeline2DImage.destroy();
 	m_pipeline3DPrimitive.destroy();
-	m_pipeline3DTerrainSingle.destroy();
+	m_pipeline3DTerrain.destroy();
 	m_renderPass.destroy();
 	m_depthImage.destroy();
 	//m_swapchain.destroy();

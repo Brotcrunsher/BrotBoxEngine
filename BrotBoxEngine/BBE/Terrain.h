@@ -28,7 +28,7 @@ namespace bbe
 		}
 	}
 
-	class TerrainSingle
+	class Terrain
 	{
 		friend class PrimitiveBrush3D;
 		friend class INTERNAL::vulkan::VulkanManager;
@@ -91,9 +91,9 @@ namespace bbe
 		uint32_t getAmountOfIndizes() const;
 
 	public:
-		TerrainSingle(int width, int height, const char* baseTexturePath);
-		TerrainSingle(int width, int height, const char* baseTexturePath, int seed);
-		~TerrainSingle();
+		Terrain(int width, int height, const char* baseTexturePath);
+		Terrain(int width, int height, const char* baseTexturePath, int seed);
+		~Terrain();
 
 		Matrix4 getTransform() const;
 		void setTransform(const Vector3 &pos, const Vector3 &scale, const Vector3 &rotationVector, float radians);

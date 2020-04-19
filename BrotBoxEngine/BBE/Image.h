@@ -25,8 +25,6 @@ namespace bbe
 	class PrimitiveBrush2D;
 	class PrimitiveBrush3D;
 	class Terrain;
-	class TerrainMesh;
-	class TerrainSingle;
 
 	enum class ImageFormat
 	{
@@ -58,9 +56,6 @@ namespace bbe
 		friend class PrimitiveBrush2D;
 		friend class PrimitiveBrush3D;
 		friend class Terrain;
-		friend class TerrainMesh;
-		friend class TerrainSingle;
-		friend class TerrainTransformed;
 	private:
 		byte           *m_pdata  = nullptr;
 		int             m_width  = 0;

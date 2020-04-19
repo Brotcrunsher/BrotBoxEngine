@@ -55,7 +55,7 @@ namespace bbe
 				VulkanShader   m_teseShader3DTerrain;
 				VulkanShader   m_tescShader3DTerrain;
 				VulkanPipeline m_pipeline3DPrimitive;
-				VulkanPipeline m_pipeline3DTerrainSingle;
+				VulkanPipeline m_pipeline3DTerrain;
 
 
 				VulkanBuffer   m_uboMatrixViewProjection;
