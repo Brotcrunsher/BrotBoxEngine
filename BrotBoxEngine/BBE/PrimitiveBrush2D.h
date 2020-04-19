@@ -60,7 +60,7 @@ namespace bbe
 
 		void INTERNAL_bindRectBuffers();
 		void INTERNAL_fillRect(const Rectangle &rect, float rotation, FragmentShader* shader);
-		void INTERNAL_drawImage(const Rectangle &rect, const Image &image);
+		void INTERNAL_drawImage(const Rectangle &rect, const Image &image, float rotation);
 		void INTERNAL_fillCircle(const Circle &circle);
 		void INTERNAL_setColor(float r, float g, float b, float a);
 		void INTERNAL_beginDraw(
@@ -84,11 +84,11 @@ namespace bbe
 		void fillCircle(const Circle &circle);
 		void fillCircle(float x, float y, float width, float height);
 
-		void drawImage(const Rectangle &rect, const Image &image);
-		void drawImage(float x, float y, float width, float height, const Image &image);
-		void drawImage(const Vector2& pos, float width, float height, const Image& image);
-		void drawImage(float x, float y, const Vector2& dimensions, const Image& image);
-		void drawImage(const Vector2& pos, const Vector2& dimensions, const Image& image);
+		void drawImage(const Rectangle &rect, const Image &image, float rotation = 0);
+		void drawImage(float x, float y, float width, float height, const Image &image, float rotation = 0);
+		void drawImage(const Vector2& pos, float width, float height, const Image& image, float rotation = 0);
+		void drawImage(float x, float y, const Vector2& dimensions, const Image& image, float rotation = 0);
+		void drawImage(const Vector2& pos, const Vector2& dimensions, const Image& image, float rotation = 0);
 
 		void fillLine(float x1, float y1, float x2, float y2, float lineWidth = 1);
 		void fillLine(const Vector2 &p1, float x2, float y2, float lineWidth = 1);

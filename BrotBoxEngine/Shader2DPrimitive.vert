@@ -6,7 +6,7 @@ out gl_PerVertex {
 };
 
 layout(location = 0) in vec2 inPos;
-layout(location = 1) out vec2 passOnPos;
+layout(location = 0) out vec2 passOnPos;
 
 layout(push_constant) uniform PushConstants
 {

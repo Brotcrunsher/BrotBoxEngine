@@ -45,7 +45,6 @@ namespace bbe
 				VulkanShader   m_fragmentShader2DPrimitive;
 				VulkanPipeline m_pipeline2DPrimitive;
 
-				VulkanShader   m_vertexShader2DImage;
 				VulkanShader   m_fragmentShader2DImage;
 				VulkanPipeline m_pipeline2DImage;
 
