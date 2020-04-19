@@ -79,8 +79,10 @@ namespace bbe
 		PrimitiveBrush2D();
 
 		void fillRect(const Rectangle& rect, float rotation = 0, FragmentShader* shader = nullptr);
-		void fillRect(float x, float y, float width, float height, float rotation = 0, FragmentShader* shader = nullptr);
-		void fillRect(const Vector2 &pos, float width, float height, float rotation = 0, FragmentShader* shader = nullptr);
+		void fillRect(float x, float y,   float width, float height, float rotation = 0, FragmentShader* shader = nullptr);
+		void fillRect(const Vector2& pos, float width, float height, float rotation = 0, FragmentShader* shader = nullptr);
+		void fillRect(float x, float y,   const Vector2& dimensions, float rotation = 0, FragmentShader* shader = nullptr);
+		void fillRect(const Vector2& pos, const Vector2& dimensions, float rotation = 0, FragmentShader* shader = nullptr);
 
 		void fillCircle(const Circle &circle);
 		void fillCircle(float x, float y, float width, float height);
@@ -89,15 +91,15 @@ namespace bbe
 		void fillCircle(const Vector2& pos, const Vector2& dimensions);
 
 		void drawImage(const Rectangle &rect, const Image &image, float rotation = 0);
-		void drawImage(float x, float y, float width, float height, const Image &image, float rotation = 0);
+		void drawImage(float x, float y,   float width, float height, const Image &image, float rotation = 0);
 		void drawImage(const Vector2& pos, float width, float height, const Image& image, float rotation = 0);
-		void drawImage(float x, float y, const Vector2& dimensions, const Image& image, float rotation = 0);
+		void drawImage(float x, float y,   const Vector2& dimensions, const Image& image, float rotation = 0);
 		void drawImage(const Vector2& pos, const Vector2& dimensions, const Image& image, float rotation = 0);
 
 		void fillLine(float x1, float y1, float x2, float y2, float lineWidth = 1);
-		void fillLine(const Vector2 &p1, float x2, float y2, float lineWidth = 1);
-		void fillLine(float x1, float y1, const Vector2 &p2, float lineWidth = 1);
-		void fillLine(const Vector2 &p1, const Vector2 &p2, float lineWidth = 1);
+		void fillLine(const Vector2 &p1,  float x2, float y2, float lineWidth = 1);
+		void fillLine(float x1, float y1, const Vector2 &p2,  float lineWidth = 1);
+		void fillLine(const Vector2 &p1,  const Vector2 &p2,  float lineWidth = 1);
 
 		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const bbe::List<Vector2>& controlPoints);
 		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint);
@@ -111,6 +113,7 @@ namespace bbe
 		void setColorRGB(float r, float g, float b, float a);
 		void setColorRGB(float r, float g, float b);
 		void setColorRGB(const Vector3& c);
+		void setColorRGB(const Vector3& c, float a);
 		void setColorRGB(const Color &c);
 
 		void setColorHSV(float h, float s, float v, float a);

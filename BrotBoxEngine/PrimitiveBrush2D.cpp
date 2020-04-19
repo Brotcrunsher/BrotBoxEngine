@@ -169,6 +169,16 @@ void bbe::PrimitiveBrush2D::fillRect(const Vector2& pos, float width, float heig
 	fillRect(pos.x, pos.y, width, height, rotation, shader);
 }
 
+void bbe::PrimitiveBrush2D::fillRect(float x, float y, const Vector2& dimensions, float rotation, FragmentShader* shader)
+{
+	fillRect(x, y, dimensions.x, dimensions.y, rotation, shader);
+}
+
+void bbe::PrimitiveBrush2D::fillRect(const Vector2& pos, const Vector2& dimensions, float rotation, FragmentShader* shader)
+{
+	fillRect(pos.x, pos.y, dimensions.x, dimensions.y, rotation, shader);
+}
+
 void bbe::PrimitiveBrush2D::fillCircle(const Circle & circle)
 {
 	INTERNAL_fillCircle(circle);
@@ -336,6 +346,11 @@ void bbe::PrimitiveBrush2D::setColorRGB(const Vector3& c)
 {
 	//UNTESTED
 	setColorRGB(c.x, c.y, c.z);
+}
+
+void bbe::PrimitiveBrush2D::setColorRGB(const Vector3& c, float a)
+{
+	setColorRGB(c.x, c.y, c.z, a);
 }
 
 void bbe::PrimitiveBrush2D::setColorRGB(float r, float g, float b)
