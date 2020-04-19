@@ -6,6 +6,7 @@
 namespace bbe
 {
 	class VulkanDevice;
+	class Circle;
 
 	namespace INTERNAL
 	{
@@ -58,5 +59,7 @@ namespace bbe
 		void translate(const Vector2 &vec);
 
 		float getDistanceTo(const Vector2 &vec);
+
+		bool intersects(const Circle& circle) const;
 	};
 }

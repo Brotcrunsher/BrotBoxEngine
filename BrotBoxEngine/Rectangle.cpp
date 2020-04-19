@@ -203,3 +203,29 @@ float bbe::Rectangle::getDistanceTo(const Vector2 & vec)
 		return 0;
 	}
 }
+
+bool bbe::Rectangle::intersects(const Circle& circle) const
+{
+	if (circle.getWidth() != circle.getHeight()) throw NotImplementedException();
+
+	const bbe::Vector2 circleMidPoint = circle.getPos() - circle.getDim() / 2;
+
+	if (   circleMidPoint.x >= m_x           - circle.getWidth() / 2
+		&& circleMidPoint.x <= m_x + m_width + circle.getWidth() / 2
+		&& circleMidPoint.y >= m_y
+		&& circleMidPoint.y <= m_y + m_height)
+		return true;
+
+	if (   circleMidPoint.x >= m_x
+		&& circleMidPoint.x <= m_x + m_width
+		&& circleMidPoint.y >= m_y            - circle.getHeight() / 2
+		&& circleMidPoint.y <= m_y + m_height + circle.getHeight() / 2)
+		return true;
+
+	if (circleMidPoint.getDistanceTo(m_x          , m_y           ) < circle.getWidth() / 2) return true;
+	if (circleMidPoint.getDistanceTo(m_x + m_width, m_y           ) < circle.getWidth() / 2) return true;
+	if (circleMidPoint.getDistanceTo(m_x          , m_y + m_height) < circle.getWidth() / 2) return true;
+	if (circleMidPoint.getDistanceTo(m_x + m_width, m_y + m_height) < circle.getWidth() / 2) return true;
+
+	return false;
+}
