@@ -60,7 +60,8 @@ namespace bbe
 
 		float getLength() const;
 		float getLengthSq() const;
-		float getDistanceTo(const Vector2 &other) const;
+		float getDistanceTo(const Vector2& other) const;
+		float getDistanceTo(float x, float y) const;
 		float getMax() const;
 		float getMin() const;
 		float getMaxAbs() const;

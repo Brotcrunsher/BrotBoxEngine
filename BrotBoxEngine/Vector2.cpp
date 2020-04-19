@@ -283,6 +283,11 @@ float bbe::Vector2::getDistanceTo(const Vector2 & other) const
 	return (operator-(other)).getLength();
 }
 
+float bbe::Vector2::getDistanceTo(float x, float y) const
+{
+	return getDistanceTo(Vector2(x, y));
+}
+
 float bbe::Vector2::getMax() const
 {
 	return Math::max(x, y);
