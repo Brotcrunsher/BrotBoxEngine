@@ -1,0 +1,1 @@
+glslangvalidator -V sdf.frag -o fragSdf.spv

@@ -98,6 +98,11 @@ bbe::Vector3 bbe::CameraControlNoClip::getCameraPos() const
 	return m_cameraPos;
 }
 
+bbe::Vector3 bbe::CameraControlNoClip::getCameraForward() const
+{
+	return m_forward;
+}
+
 bbe::Vector3 bbe::CameraControlNoClip::getCameraTarget() const
 {
 	return m_cameraPos + m_forward;

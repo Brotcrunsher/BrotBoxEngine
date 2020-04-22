@@ -47,5 +47,6 @@ add_subdirectory(ExampleSnake)
 add_subdirectory(ExampleCurves)
 add_subdirectory(ExampleTextRendering)
 add_subdirectory(ExampleBalloonGame)
+add_subdirectory(ExampleSingedDistanceField)
 
 

@@ -21,6 +21,7 @@ namespace bbe
 
 		void update(float timeSinceLastFrame);
 		Vector3 getCameraPos() const;
+		Vector3 getCameraForward() const;
 		Vector3 getCameraTarget() const;
 
 		void setCameraPos(const Vector3 &pos);
