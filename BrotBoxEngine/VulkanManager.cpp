@@ -360,6 +360,11 @@ void bbe::INTERNAL::vulkan::VulkanManager::waitEndDraw()
 	firstFrame = false;
 }
 
+void bbe::INTERNAL::vulkan::VulkanManager::waitTillIdle()
+{
+	m_device.waitIdle();
+}
+
 bbe::PrimitiveBrush2D& bbe::INTERNAL::vulkan::VulkanManager::getBrush2D()
 {
 	return m_primitiveBrush2D;

@@ -42,5 +42,7 @@ namespace bbe
 		int getLeftSideBearing(char c) const;
 		int getAdvanceWidth(char c) const;
 		int getVerticalOffset(char c) const;
+
+		void destroy();
 	};
 }

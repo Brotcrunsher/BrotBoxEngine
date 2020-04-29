@@ -109,6 +109,7 @@ namespace bbe
 				void preDraw();
 				void postDraw();
 				void waitEndDraw();
+				void waitTillIdle();
 
 				bbe::PrimitiveBrush2D &getBrush2D();
 				bbe::PrimitiveBrush3D &getBrush3D();

@@ -92,6 +92,11 @@ void bbe::Window::waitEndDraw()
 	m_vulkanManager.waitEndDraw();
 }
 
+void bbe::Window::waitTillIdle()
+{
+	m_vulkanManager.waitTillIdle();
+}
+
 void bbe::Window::setCursorMode(bbe::CursorMode cursorMode)
 {
 	switch (cursorMode)

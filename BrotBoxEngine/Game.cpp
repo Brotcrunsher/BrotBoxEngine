@@ -58,6 +58,8 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 		m_pwindow->waitEndDraw();
 	}
 
+	m_pwindow->waitTillIdle();
+
 	onEnd();
 }
 

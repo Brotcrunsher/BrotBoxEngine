@@ -153,3 +153,14 @@ int bbe::Font::getVerticalOffset(char c) const
 	if (!isInit) throw NotInitializedException();
 	return verticalOffsets[c];
 }
+
+void bbe::Font::destroy()
+{
+	for (size_t i = 0; i < chars.getLength(); i++)
+	{
+		if (charImages[chars[i]].isLoaded())
+		{
+			charImages[chars[i]].destroy();
+		}
+	}
+}
