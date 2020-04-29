@@ -28,7 +28,7 @@ void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t 
 
 	const bbe::List<const char*> validationLayers = {
 #ifdef _DEBUG
-		"VK_LAYER_LUNARG_standard_validation"
+		"VK_LAYER_KHRONOS_validation"
 #endif
 	};
 
