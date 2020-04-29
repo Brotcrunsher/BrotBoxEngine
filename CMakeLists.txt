@@ -34,7 +34,6 @@ add_subdirectory(Third-Party/glfw-3.3.2)
 include_directories(Third-Party/glfw-3.3.2/include)
 target_link_libraries(BrotboxEngine glfw ${GLFW_LIBRARIES})
 
-target_include_directories(BrotboxEngine PUBLIC "Third-Party/Vulkan/Include")
 target_include_directories(BrotboxEngine PUBLIC "Third-Party/stb")
 
 add_subdirectory(BrotBoxEngineTest)
