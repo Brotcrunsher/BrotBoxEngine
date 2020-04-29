@@ -24,7 +24,7 @@ void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t 
 	appInfo.applicationVersion = VK_MAKE_VERSION(major, minor, patch);
 	appInfo.pEngineName = "Brot Box Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_2;
+	appInfo.apiVersion = VK_API_VERSION_1_0;
 
 	const bbe::List<const char*> validationLayers = {
 #ifdef _DEBUG
