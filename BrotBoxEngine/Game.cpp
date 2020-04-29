@@ -166,6 +166,16 @@ float bbe::Game::getTimeSinceStartMilliseconds()
 	return m_gameTime.timeSinceStartMilliseconds();
 }
 
+int bbe::Game::getWindowWidth()
+{
+	return m_pwindow->getWidth();
+}
+
+int bbe::Game::getWindowHeight()
+{
+	return m_pwindow->getHeight();
+}
+
 void bbe::Game::setCursorMode(bbe::CursorMode cm)
 {
 	m_pwindow->setCursorMode(cm);

@@ -1,9 +1,6 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 
-constexpr int WINDOW_WIDTH = 1280;
-constexpr int WINDOW_HEIGHT = 720;
-
 class MyGame : public bbe::Game
 {
 public:
@@ -87,7 +84,7 @@ public:
 		mandelbrotShader.setPushConstant(brush, 144, 8, &rangeX);
 		mandelbrotShader.setPushConstant(brush, 152, 8, &rangeY);
 		mandelbrotShader.setPushConstant(brush, 160, 4, &max_iteration);
-		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, &mandelbrotShader);
+		brush.fillRect(0, 0, getWindowWidth(), getWindowHeight(), 0, &mandelbrotShader);
 	}
 	virtual void onEnd() override
 	{
@@ -97,6 +94,8 @@ public:
 int main()
 {
 	MyGame *mg = new MyGame();
+	constexpr int WINDOW_WIDTH = 1280;
+	constexpr int WINDOW_HEIGHT = 720;
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "MandelbrotShader");
 	delete mg;
 }

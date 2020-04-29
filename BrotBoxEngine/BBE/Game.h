@@ -60,6 +60,9 @@ namespace bbe
 		float getTimeSinceStartSeconds();
 		float getTimeSinceStartMilliseconds(); 
 
+		int getWindowWidth();
+		int getWindowHeight();
+
 		void setCursorMode(bbe::CursorMode cm);
 	};
 }
