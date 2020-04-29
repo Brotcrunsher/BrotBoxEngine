@@ -6,7 +6,7 @@ layout(location = 0) in vec2 inPos;
 
 layout(push_constant) uniform PushConstants
 {
-	vec4 color;
+	layout(offset = 64) vec4 color;
 } pushConts;
 
 void main() {

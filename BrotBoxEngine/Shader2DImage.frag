@@ -8,7 +8,7 @@ layout(binding = 0) uniform sampler2D tex;
 
 layout(push_constant) uniform PushConstants
 {
-	vec4 color;
+	layout(offset = 64) vec4 color;
 } pushConts;
 
 void main() {

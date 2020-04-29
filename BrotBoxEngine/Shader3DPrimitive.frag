@@ -20,7 +20,7 @@ layout(location = 2) in InLightVertexInput
 
 layout(push_constant) uniform PushConstants
 {
-	vec4 color;
+	layout(offset = 0)vec4 color;
 } pushConts;
 
 struct Light

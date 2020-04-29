@@ -9,14 +9,14 @@ layout(location = 0) in vec2 inPos;
 
 layout(push_constant) uniform PushConstants
 {
-	vec4 color;
+	layout(offset = 64) vec4 color;
 	
-	layout(offset = 128) float camX;
-	layout(offset = 132) float camY;
-	layout(offset = 136) float camZ;
-	layout(offset = 140) float camForwardX;
-	layout(offset = 144) float camForwardY;
-	layout(offset = 148) float camForwardZ;
+	layout(offset =  80) float camX;
+	layout(offset =  84) float camY;
+	layout(offset =  88) float camZ;
+	layout(offset =  92) float camForwardX;
+	layout(offset =  96) float camForwardY;
+	layout(offset = 100) float camForwardZ;
 } pushConts;
 
 vec3 sunDirection = vec3(-1, -5, -1);

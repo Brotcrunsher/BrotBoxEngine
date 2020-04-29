@@ -380,15 +380,15 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline2DPrimitive.init(m_vertexShader2DPrimitive, m_fragmentShader2DPrimitive, m_screenWidth, m_screenHeight);
 	m_pipeline2DPrimitive.addVertexBinding(0, sizeof(Vector2), VK_VERTEX_INPUT_RATE_VERTEX);
 	m_pipeline2DPrimitive.addVertexDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
-	m_pipeline2DPrimitive.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
-	m_pipeline2DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, 16, sizeof(float) * 8);
+	m_pipeline2DPrimitive.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, 0, 64);
+	m_pipeline2DPrimitive.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 64, 64);
 	m_pipeline2DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
 
 	m_pipeline2DImage.init(m_vertexShader2DPrimitive, m_fragmentShader2DImage, m_screenWidth, m_screenHeight);
 	m_pipeline2DImage.addVertexBinding(0, sizeof(Vector2), VK_VERTEX_INPUT_RATE_VERTEX);
 	m_pipeline2DImage.addVertexDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
-	m_pipeline2DImage.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color));
-	m_pipeline2DImage.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, 16, sizeof(float) * 8);
+	m_pipeline2DImage.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, 0, 64);
+	m_pipeline2DImage.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 64, 64);
 	m_pipeline2DImage.addDescriptorSetLayout(m_setLayoutSampler.getDescriptorSetLayout());
 	m_pipeline2DImage.create(m_device.getDevice(), m_renderPass.getRenderPass());
 

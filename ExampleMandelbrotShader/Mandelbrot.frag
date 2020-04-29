@@ -6,13 +6,13 @@ layout(location = 0) in vec2 inPos;
 
 layout(push_constant) uniform PushConstants
 {
-	vec4 color;
+	layout(offset = 64) vec4 color;
 	
-	layout(offset = 128) double middleX;
-	layout(offset = 136) double middleY;
-	layout(offset = 144) double rangeX;
-	layout(offset = 152) double rangeY;
-	layout(offset = 160) int max_iteration;
+	layout(offset =  80) double middleX;
+	layout(offset =  88) double middleY;
+	layout(offset =  96) double rangeX;
+	layout(offset = 104) double rangeY;
+	layout(offset = 112) int max_iteration;
 } pushConts;
 
 float myMod(float val, float mod)
@@ -61,7 +61,6 @@ vec4 HSVtoRGBA(float h, float s, float v)
 }
 
 void main() {
-	//TODO set these from C++!
 	int max_iteration = pushConts.max_iteration;
 	double middleX = pushConts.middleX;
 	double middleY = pushConts.middleY;

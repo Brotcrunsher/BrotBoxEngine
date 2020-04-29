@@ -31,15 +31,15 @@ public:
 	{
 		bbe::Vector3 camPos = ccnc.getCameraPos();
 		camPos.z *= -1;
-		sdfShader.setPushConstant(brush, 128, sizeof(float), &camPos.x);
-		sdfShader.setPushConstant(brush, 132, sizeof(float), &camPos.z);
-		sdfShader.setPushConstant(brush, 136, sizeof(float), &camPos.y);
+		sdfShader.setPushConstant(brush, 80, sizeof(float), &camPos.x);
+		sdfShader.setPushConstant(brush, 84, sizeof(float), &camPos.z);
+		sdfShader.setPushConstant(brush, 88, sizeof(float), &camPos.y);
 
 		bbe::Vector3 forward = ccnc.getCameraForward();
 		forward.z *= -1;
-		sdfShader.setPushConstant(brush, 140, sizeof(float), &forward.x);
-		sdfShader.setPushConstant(brush, 144, sizeof(float), &forward.z);
-		sdfShader.setPushConstant(brush, 148, sizeof(float), &forward.y);
+		sdfShader.setPushConstant(brush,  92, sizeof(float), &forward.x);
+		sdfShader.setPushConstant(brush,  96, sizeof(float), &forward.z);
+		sdfShader.setPushConstant(brush, 100, sizeof(float), &forward.y);
 
 		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, &sdfShader);
 	}

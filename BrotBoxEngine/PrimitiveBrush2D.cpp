@@ -34,7 +34,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
 
 	float pushConstants[] = { m_screenWidth, m_screenHeight };
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 40, sizeof(float) * 2, pushConstants);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 24, sizeof(float) * 2, pushConstants);
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_bindRectBuffers()
@@ -63,10 +63,8 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotat
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 
-	float pushConstants[] = { rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight() };
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
-
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color) + sizeof(float) * 4, sizeof(float), &rotation);
+	float pushConstants[] = { rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight(), rotation};
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
 
 	if (m_shapeRecord != ShapeRecord2D::RECTANGLE || true) {
 		INTERNAL_bindRectBuffers();
@@ -87,9 +85,9 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutImage, 0, 1, image.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 
 	float pushConstants[] = { rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight() };
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 4, pushConstants);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 4, pushConstants);
 
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color) + sizeof(float) * 4, sizeof(float), &rotation);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 16, sizeof(float), &rotation);
 
 	if (m_shapeRecord != ShapeRecord2D::RECTANGLE || true) {
 		INTERNAL_bindRectBuffers();
@@ -107,7 +105,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle)
 	}
 	float pushConstants[] = { circle.getX(), circle.getY(), circle.getWidth(), circle.getHeight(), 0};
 
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Color), sizeof(float) * 5, pushConstants);
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
 
 
 	if (m_shapeRecord != ShapeRecord2D::CIRCLE) {
@@ -129,7 +127,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_setColor(float r, float g, float b, float a
 	Color c(r, g, b, a);
 	if (c.r != lastColor.r || c.g != lastColor.g || c.b != lastColor.b || c.a != lastColor.a)
 	{
-		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(Color), &c);
 		lastColor = c;
 	}
 }
