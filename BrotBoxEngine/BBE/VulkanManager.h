@@ -115,7 +115,7 @@ namespace bbe
 
 				void createPipelines();
 				void resize(uint32_t width, uint32_t height);
-				void recreateSwapchain();
+				void recreateSwapchain(bool useIconifyRestoreWorkaround);
 
 				VulkanDevice& getVulkanDevice();
 				VulkanRenderPass& getVulkanRenderPass();
