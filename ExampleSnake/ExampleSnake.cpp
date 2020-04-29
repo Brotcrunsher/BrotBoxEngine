@@ -207,7 +207,6 @@ public:
 
 int main()
 {
-	std::cout << "hai" << std::endl;
 	MyGame mg;
 	mg.start(mg.CELLSIZE * mg.GRIDWIDTH, mg.CELLSIZE * mg.GRIDHEIGHT, "Snake!");
 
