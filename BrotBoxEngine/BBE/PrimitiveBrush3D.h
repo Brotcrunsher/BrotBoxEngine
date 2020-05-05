@@ -55,6 +55,9 @@ namespace bbe
 		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainAdditionalTexture       = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainAdditionalTextureWeight = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutViewFrustum                    = nullptr;
+		VkDescriptorSet                              m_setVertexLight                                     = VK_NULL_HANDLE;
+		VkDescriptorSet                              m_setViewProjectionMatrixLight                       = VK_NULL_HANDLE;
+		VkDescriptorSet                              m_setFragmentLight                                   = VK_NULL_HANDLE;
 		int                                          m_screenWidth;
 		int                                          m_screenHeight;
 
@@ -81,6 +84,9 @@ namespace bbe
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainAdditionalTexture,
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainAdditionalTextureWeight,
 			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutViewFrustum,
+			VkDescriptorSet setVertexLight,
+			VkDescriptorSet setViewProjectionMatrixLight, 
+			VkDescriptorSet setFragmentLight,
 			int screenWidth, int screenHeight);
 		
 		void create(const INTERNAL::vulkan::VulkanDevice &vulkanDevice);
@@ -92,6 +98,9 @@ namespace bbe
 		Matrix4 m_projection;
 
 		Color m_color;
+
+		void bindPipelinePrimitive();
+		void bindPipelineTerrain();
 
 	public:
 		PrimitiveBrush3D();

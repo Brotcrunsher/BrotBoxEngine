@@ -125,9 +125,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	std::cout << "Vulkan Manager: creating pipeline" << std::endl;
 	createPipelines();
 
-	m_uboMatrixViewProjection.create(m_device, sizeof(Matrix4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-	m_uboMatrixModel.create(m_device, sizeof(Matrix4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-
 	//m_renderPassStopWatch.create(m_device);
 
 	m_presentFence = &m_presentFence1;
@@ -154,8 +151,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_depthImage.destroy();
 	m_commandPool.destroy();
 
-	m_uboMatrixViewProjection.destroy();
-	m_uboMatrixModel.destroy();
 	m_pipeline3DPrimitive.destroy();
 	m_pipeline3DTerrain.destroy();
 
@@ -216,15 +211,14 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 		m_setLayoutTerrainAdditionalTexture,
 		m_setLayoutTerrainAdditionalTextureWeight,
 		m_setLayoutTerrainViewFrustum,
+		m_setVertexLight.getDescriptorSet(),
+		m_setViewProjectionMatrixLight.getDescriptorSet(),
+		m_setFragmentLight.getDescriptorSet(),
 		m_screenWidth, m_screenHeight);
 
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
-
 	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
 	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw()

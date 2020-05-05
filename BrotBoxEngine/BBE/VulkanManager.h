@@ -57,10 +57,6 @@ namespace bbe
 				VulkanPipeline m_pipeline3DPrimitive;
 				VulkanPipeline m_pipeline3DTerrain;
 
-
-				VulkanBuffer   m_uboMatrixViewProjection;
-				VulkanBuffer   m_uboMatrixModel;
-
 				VulkanCommandPool         m_commandPool;
 				VulkanSemaphore           m_semaphoreImageAvailable;
 				VulkanSemaphore           m_semaphoreRenderingDone;
