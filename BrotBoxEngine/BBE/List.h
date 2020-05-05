@@ -91,9 +91,9 @@ namespace bbe
 		}
 
 		/*nonexplicit*/ List(const std::initializer_list<T> &il)
-			: m_length(0), m_capacity(0), m_pdata(nullptr)
+			: m_length(0), m_capacity(il.size())
 		{
-			//UNTESTED
+			m_pdata = new INTERNAL::Unconstructed<T>[m_capacity];
 			for (auto iter = il.begin(); iter != il.end(); iter++) {
 				add(*iter);
 			}
@@ -221,7 +221,7 @@ namespace bbe
 					indexThis--;
 				}
 			}
-			static_assert(std::is_unsigned<size_t>::value, "size_t is expected to be unsigned for the following loop.");
+
 			for (size_t i = m_length - 1; i != std::numeric_limits<size_t>::max(); i--)
 			{
 				if (indexThis != std::numeric_limits<size_t>::max() && other[indexOther] >= m_pdata[indexThis])
