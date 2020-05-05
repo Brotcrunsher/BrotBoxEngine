@@ -12,7 +12,7 @@ namespace bbe
 		{
 			{
 				Image image;
-				image.load("images/TestImage.png");
+				image.load("TestImage.png");
 
 				Color c = image.getPixel(0, 0);
 				assertEquals(c.r, 0);
