@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.12.4 FATAL_ERROR)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+
 project(BrotboxEngine CXX)
 
 macro(install_compiled_shaders currProject)
