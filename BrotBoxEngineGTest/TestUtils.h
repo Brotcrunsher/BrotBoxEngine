@@ -72,12 +72,14 @@ public:
 	{
 		cleanup();
 		copyDataFrom(other);
+		return *this;
 	}
 
 	SomeClass<T>& operator=(SomeClass<T>&& other)
 	{
 		cleanup();
-		stealDataFrom(other);
+		stealDataFrom(std::move(other));
+		return *this;
 	}
 
 	size_t getLength()

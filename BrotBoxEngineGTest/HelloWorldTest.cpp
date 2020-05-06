@@ -169,3 +169,22 @@ TEST(List, RecursiveList)
 		}
 	}
 }
+
+TEST(List, Add)
+{
+	bbe::List<SomeClass<int>> list;
+	for (size_t i = 1; i < 52; i++)
+	{
+		list.add(SomeClass<int>(i));
+	}
+	bbe::List<SomeClass<int>> copy = list;
+	list[13] = SomeClass<int>(1337);
+
+	ASSERT_EQ(list.getLength(), copy.getLength());
+	for (size_t i = 0; i < list.getLength(); i++)
+	{
+		ASSERT_EQ(copy[i].getLength(), i + 1);
+		if (i != 13) ASSERT_EQ(list[i].getLength(), i + 1);
+		else ASSERT_EQ(list[i].getLength(), 1337);
+	}
+}
