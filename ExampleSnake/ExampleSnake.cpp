@@ -1,9 +1,9 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 
-enum Direction
+enum class Direction
 {
-	up, down, left, right
+	UP, DOWN, LEFT, RIGHT
 };
 
 struct BodyPart
@@ -29,8 +29,8 @@ public:
 	bbe::PointLight light;
 
 	float x = 0;
-	Direction dir = left;
-	Direction nextDir = left;
+	Direction dir = Direction::LEFT;
+	Direction nextDir = Direction::LEFT;
 
 	bbe::List<BodyPart> bodyParts;
 	BodyPart food;
@@ -84,16 +84,16 @@ public:
 		}
 		switch (dir)
 		{
-		case up:
+		case Direction::UP:
 			bodyParts[0].y--;
 			break;
-		case down:
+		case Direction::DOWN:
 			bodyParts[0].y++;
 			break;
-		case left:
+		case Direction::LEFT:
 			bodyParts[0].x--;
 			break;
-		case right:
+		case Direction::RIGHT:
 			bodyParts[0].x++;
 			break;
 		default:
@@ -129,26 +129,26 @@ public:
 
 	void input()
 	{
-		if (dir == left || dir == right)
+		if (dir == Direction::LEFT || dir == Direction::RIGHT)
 		{
 			if (isKeyDown(bbe::Key::W))
 			{
-				nextDir = up;
+				nextDir = Direction::UP;
 			}
 			else if (isKeyDown(bbe::Key::S))
 			{
-				nextDir = down;
+				nextDir = Direction::DOWN;
 			}
 		}
-		else if (dir == up || dir == down)
+		else if (dir == Direction::UP || dir == Direction::DOWN)
 		{
 			if (isKeyDown(bbe::Key::A))
 			{
-				nextDir = left;
+				nextDir = Direction::LEFT;
 			}
 			else if (isKeyDown(bbe::Key::D))
 			{
-				nextDir = right;
+				nextDir = Direction::RIGHT;
 			}
 		}
 	}
