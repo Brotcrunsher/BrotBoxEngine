@@ -236,8 +236,6 @@ TEST(List, CombineUnorderedLists)
 	ASSERT_EQ(list1[11].getLength(), 2);
 }
 
-//TODO Currently broken test!
-#if 0
 TEST(List, CombineOrderedLists)
 {
 	SomeClass<int> a = 17;
@@ -284,4 +282,3 @@ TEST(List, CombineOrderedLists)
 	ASSERT_EQ(list1[10].getLength(),  100);
 	ASSERT_EQ(list1[11].getLength(), 1337);
 }
-#endif

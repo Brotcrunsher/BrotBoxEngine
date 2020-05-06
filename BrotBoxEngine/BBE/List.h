@@ -198,60 +198,8 @@ namespace bbe
 			return m_pdata[index].m_value;
 		}
 
-		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<dummyKeepSorted, List<T, dummyKeepSorted>&>::type
-		operator+=(List<T, dummyKeepSorted> other)
+		List<T, keepSorted>& operator+=(List<T, keepSorted> other)
 		{
-			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
-			//UNTESTED
-			growIfNeeded(other.m_length);
-			size_t newLength = m_length + other.m_length;
-			size_t indexThis = m_length - 1;
-			size_t indexOther = other.m_length - 1;
-			m_length = newLength;
-			for (size_t i = newLength - 1; i >= m_length; i++)
-			{
-				if (indexThis != std::numeric_limits<size_t>::max() && other[indexOther] >= m_pdata[indexThis])
-				{
-					new (bbe::addressOf(m_pdata[i])) T(other[indexOther]);
-					indexOther--;
-					if (indexOther == std::numeric_limits<size_t>::max())
-					{
-						return *this;
-					}
-				}
-				else
-				{
-					new (bbe::addressOf(m_pdata[i])) T(std::move(m_pdata[indexThis]));
-					indexThis--;
-				}
-			}
-
-			for (size_t i = m_length - 1; i != std::numeric_limits<size_t>::max(); i--)
-			{
-				if (indexThis != std::numeric_limits<size_t>::max() && other[indexOther] >= m_pdata[indexThis])
-				{
-					m_pdata[i] = other[indexOther];
-					indexOther--;
-					if (indexOther == std::numeric_limits<size_t>::max())
-					{
-						return *this;
-					}
-				}
-				else
-				{
-					m_pdata[i] = std::move(m_pdata[indexThis]);
-					indexThis--;
-				}
-			}
-			return *this;
-		}
-
-		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<!dummyKeepSorted, List&>::type
-			operator+=(List<T, dummyKeepSorted> other)
-		{
-			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			for (size_t i = 0; i < other.m_length; i++)
 			{
 				add(other.m_pdata[i].m_value);
