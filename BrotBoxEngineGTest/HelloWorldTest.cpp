@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "BBE/BrotBoxEngine.h"
+#include "TestUtils.h"
 
 TEST(List, ConstructorDefault)
 {
@@ -124,4 +125,13 @@ TEST(List, OperatorMove)
 	{
 		ASSERT_EQ(list1[i], 1000);
 	}
+}
+
+TEST(List, RecursiveList)
+{
+	bbe::List<SomeClass<int>> layer1_1(12, SomeClass<int>(18));
+	bbe::List<SomeClass<int>> layer1_2(32, SomeClass<int>(20));
+
+	bbe::List<bbe::List<SomeClass<int>>> layer2_1(3, layer1_1);
+	bbe::List<bbe::List<SomeClass<int>>> layer2_2 = { layer1_1, layer1_2 };
 }
