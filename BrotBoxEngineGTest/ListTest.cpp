@@ -252,6 +252,7 @@ TEST(List, CombineOrderedLists)
 	ASSERT_EQ(list1[3].getLength(),   13);
 	ASSERT_EQ(list1[4].getLength(),   17);
 	ASSERT_EQ(list1[5].getLength(), 1337);
+	ASSERT_EQ(list1.getLength(), 6);
 
 	SomeClass<int> g = 18;
 	SomeClass<int> h = 4;
@@ -267,6 +268,7 @@ TEST(List, CombineOrderedLists)
 	ASSERT_EQ(list2[3].getLength(),   4);
 	ASSERT_EQ(list2[4].getLength(),  18);
 	ASSERT_EQ(list2[5].getLength(), 100);
+	ASSERT_EQ(list2.getLength(), 6);
 
 	list1 += list2;
 	ASSERT_EQ(list1[ 0].getLength(),    1);
@@ -281,4 +283,5 @@ TEST(List, CombineOrderedLists)
 	ASSERT_EQ(list1[ 9].getLength(),   18);
 	ASSERT_EQ(list1[10].getLength(),  100);
 	ASSERT_EQ(list1[11].getLength(), 1337);
+	ASSERT_EQ(list1.getLength(), 12);
 }
