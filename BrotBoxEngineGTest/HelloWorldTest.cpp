@@ -4,8 +4,8 @@
 
 TEST(List, ConstructorDefault)
 {
-	bbe::List<int> list;
-	bbe::List<int> const * pList = &list;
+	bbe::List<SomeClass<int>> list;
+	bbe::List<SomeClass<int>> const * pList = &list;
 	ASSERT_EQ(list.getCapacity(), 0);
 	ASSERT_EQ(list.getLength(), 0);
 	ASSERT_EQ(list.getRaw(), nullptr);
@@ -16,8 +16,8 @@ TEST(List, ConstructorDefault)
 
 TEST(List, ConstructorAmountOfData)
 {
-	bbe::List<int> list(17);
-	bbe::List<int> const* pList = &list;
+	bbe::List<SomeClass<int>> list(17);
+	bbe::List<SomeClass<int>> const* pList = &list;
 	ASSERT_EQ(list.getCapacity(), 17);
 	ASSERT_EQ(list.getLength(), 0);
 	ASSERT_NE(list.getRaw(), nullptr);
@@ -29,8 +29,8 @@ TEST(List, ConstructorAmountOfData)
 
 TEST(List, ConstructorWithData)
 {
-	bbe::List<int> list(17, 1337);
-	bbe::List<int> const* pList = &list;
+	bbe::List<SomeClass<int>> list(17, 1337);
+	bbe::List<SomeClass<int>> const* pList = &list;
 	ASSERT_EQ(list.getCapacity(), 17);
 	ASSERT_EQ(list.getLength(), 17);
 	ASSERT_NE(list.getRaw(), nullptr);
@@ -39,42 +39,42 @@ TEST(List, ConstructorWithData)
 	ASSERT_FALSE(list.shrink());
 	for (size_t i = 0; i < list.getLength(); i++)
 	{
-		ASSERT_EQ(list[i], 1337);
+		ASSERT_EQ(list[i].getLength(), 1337);
 	}
 }
 
 TEST(List, ConstructorCopy)
 {
-	bbe::List<int> list(1000, 42);
-	bbe::List<int> copy(list);
-	ASSERT_EQ(list.getCapacity(), 1000);
-	ASSERT_EQ(list.getLength(), 1000);
-	ASSERT_EQ(copy.getCapacity(), 1000);
-	ASSERT_EQ(copy.getLength(), 1000);
+	bbe::List<SomeClass<int>> list(100, 42);
+	bbe::List<SomeClass<int>> copy(list);
+	ASSERT_EQ(list.getCapacity(), 100);
+	ASSERT_EQ(list.getLength(), 100);
+	ASSERT_EQ(copy.getCapacity(), 100);
+	ASSERT_EQ(copy.getLength(), 100);
 	for (size_t i = 0; i < list.getLength(); i++)
 	{
-		ASSERT_EQ(list[i], 42);
-		ASSERT_EQ(copy[i], 42);
+		ASSERT_EQ(list[i].getLength(), 42);
+		ASSERT_EQ(copy[i].getLength(), 42);
 	}
 
-	copy[17] = 13;
-	ASSERT_EQ(copy[17], 13);
-	ASSERT_EQ(list[17], 42);
+	copy[17].resize(13);
+	ASSERT_EQ(copy[17].getLength(), 13);
+	ASSERT_EQ(list[17].getLength(), 42);
 }
 
 TEST(List, ConstructorMove)
 {
-	bbe::List<int> list(400, 123);
-	bbe::List<int> move(std::move(list));
+	bbe::List<SomeClass<int>> list(81, 123);
+	bbe::List<SomeClass<int>> move(std::move(list));
 	ASSERT_EQ(list.getCapacity(), 0);
 	ASSERT_EQ(list.getLength(), 0);
 	ASSERT_EQ(list.getRaw(), nullptr);
-	ASSERT_EQ(move.getCapacity(), 400);
-	ASSERT_EQ(move.getLength(), 400);
+	ASSERT_EQ(move.getCapacity(), 81);
+	ASSERT_EQ(move.getLength(), 81);
 	ASSERT_NE(move.getRaw(), nullptr);
 	for (size_t i = 0; i < move.getLength(); i++)
 	{
-		ASSERT_EQ(move[i], 123);
+		ASSERT_EQ(move[i].getLength(), 123);
 	}
 }
 
@@ -93,8 +93,8 @@ TEST(List, ConstructorInitializer)
 
 TEST(List, OperatorAssignment)
 {
-	bbe::List<int> list1(17, 100);
-	bbe::List<int> list2(32, 1000);
+	bbe::List<SomeClass<int>> list1(17, 100);
+	bbe::List<SomeClass<int>> list2(32, 1000);
 
 	list1 = list2;
 
@@ -105,14 +105,14 @@ TEST(List, OperatorAssignment)
 	ASSERT_EQ(list1.getLength(), 32);
 	for (size_t i = 0; i < list1.getLength(); i++)
 	{
-		ASSERT_EQ(list1[i], 1000);
+		ASSERT_EQ(list1[i].getLength(), 1000);
 	}
 }
 
 TEST(List, OperatorMove)
 {
-	bbe::List<int> list1(17, 100);
-	bbe::List<int> list2(32, 1000);
+	bbe::List<SomeClass<int>> list1(17, 100);
+	bbe::List<SomeClass<int>> list2(32, 1000);
 
 	list1 = std::move(list2);
 
@@ -123,7 +123,7 @@ TEST(List, OperatorMove)
 	ASSERT_EQ(list1.getLength(), 32);
 	for (size_t i = 0; i < list1.getLength(); i++)
 	{
-		ASSERT_EQ(list1[i], 1000);
+		ASSERT_EQ(list1[i].getLength(), 1000);
 	}
 }
 
