@@ -351,7 +351,7 @@ namespace bbe
 		template <bool dummyKeepSorted = keepSorted>
 		typename std::enable_if<!dummyKeepSorted, size_t>::type getIndexOnAdd(const T& val)
 		{
-			assert(false && "Only sorted Lists can getIndexWhenPushedBack!");
+			return m_length;
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
