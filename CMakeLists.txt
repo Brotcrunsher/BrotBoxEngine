@@ -31,21 +31,27 @@ set_property(TARGET BrotboxEngine PROPERTY CXX_EXTENSIONS OFF)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   message(STATUS "Adding sanitizers")
-  target_compile_options(BrotboxEngine PUBLIC "-fsanitize=address"
-                                              "-fsanitize=pointer-compare"
-                                              "-fsanitize=pointer-subtract"
-                                              "-fsanitize=undefined"
-                                              "-fsanitize=integer-divide-by-zero"
-                                              "-fsanitize=unreachable"
-                                              "-fsanitize=vla-bound"
-                                              "-fsanitize=null"
-                                              "-fsanitize=return"
-                                              "-fsanitize=signed-integer-overflow"
-                                              "-fsanitize=bounds-strict"
-                                              "-fsanitize=enum"
-                                              "-fsanitize=bool"
-                                              "-fsanitize=vptr"
-                                              "-fsanitize=pointer-overflow")
+  
+  macro(add_sanitizer_flag flag)
+    target_compile_options(BrotboxEngine PUBLIC "-fsanitize=${flag}")
+    target_link_libraries(BrotboxEngine "-fsanitize=${flag}")
+  endmacro()
+  
+  add_sanitizer_flag("address")
+  add_sanitizer_flag("pointer-compare")
+  add_sanitizer_flag("pointer-subtract")
+  add_sanitizer_flag("undefined")
+  add_sanitizer_flag("integer-divide-by-zero")
+  add_sanitizer_flag("unreachable")
+  add_sanitizer_flag("vla-bound")
+  add_sanitizer_flag("null")
+  add_sanitizer_flag("return")
+  add_sanitizer_flag("signed-integer-overflow")
+  add_sanitizer_flag("bounds-strict")
+  add_sanitizer_flag("enum")
+  add_sanitizer_flag("bool")
+  add_sanitizer_flag("vptr")
+  add_sanitizer_flag("pointer-overflow")
 endif()
 
 find_package(Vulkan REQUIRED)
