@@ -102,6 +102,8 @@ namespace bbe
 
 		List& operator=(const List<T, keepSorted>& other)
 		{
+			clear();
+
 			if (m_pdata != nullptr)
 			{
 				delete[] m_pdata;
@@ -120,6 +122,8 @@ namespace bbe
 
 		List& operator=(List<T, keepSorted>&& other)
 		{
+			clear();
+
 			if (m_pdata != nullptr)
 			{
 				delete[] m_pdata;
