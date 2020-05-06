@@ -188,3 +188,100 @@ TEST(List, Add)
 		else ASSERT_EQ(list[i].getLength(), 1337);
 	}
 }
+
+TEST(List, CombineUnorderedLists)
+{
+	SomeClass<int> a = 17;
+	SomeClass<int> b = 13;
+	SomeClass<int> c = 1337;
+	SomeClass<int> d = 2;
+	SomeClass<int> e = 4;
+	SomeClass<int> f = 2;
+
+	bbe::List<SomeClass<int>> list1 = { a, b, c, d, e, f };
+	ASSERT_EQ(list1[0].getLength(), 17);
+	ASSERT_EQ(list1[1].getLength(), 13);
+	ASSERT_EQ(list1[2].getLength(), 1337);
+	ASSERT_EQ(list1[3].getLength(), 2);
+	ASSERT_EQ(list1[4].getLength(), 4);
+	ASSERT_EQ(list1[5].getLength(), 2);
+
+	SomeClass<int> g = 18;
+	SomeClass<int> h = 4;
+	SomeClass<int> i = 100;
+	SomeClass<int> j = 1;
+	SomeClass<int> k = 1;
+	SomeClass<int> l = 2;
+
+	bbe::List<SomeClass<int>> list2 = { g, h, i, j, k, l };
+	ASSERT_EQ(list2[0].getLength(), 18);
+	ASSERT_EQ(list2[1].getLength(), 4);
+	ASSERT_EQ(list2[2].getLength(), 100);
+	ASSERT_EQ(list2[3].getLength(), 1);
+	ASSERT_EQ(list2[4].getLength(), 1);
+	ASSERT_EQ(list2[5].getLength(), 2);
+
+	list1 += list2;
+	ASSERT_EQ(list1[ 0].getLength(), 17);
+	ASSERT_EQ(list1[ 1].getLength(), 13);
+	ASSERT_EQ(list1[ 2].getLength(), 1337);
+	ASSERT_EQ(list1[ 3].getLength(), 2);
+	ASSERT_EQ(list1[ 4].getLength(), 4);
+	ASSERT_EQ(list1[ 5].getLength(), 2);
+	ASSERT_EQ(list1[ 6].getLength(), 18);
+	ASSERT_EQ(list1[ 7].getLength(), 4);
+	ASSERT_EQ(list1[ 8].getLength(), 100);
+	ASSERT_EQ(list1[ 9].getLength(), 1);
+	ASSERT_EQ(list1[10].getLength(), 1);
+	ASSERT_EQ(list1[11].getLength(), 2);
+}
+
+//TODO Currently broken test!
+#if 0
+TEST(List, CombineOrderedLists)
+{
+	SomeClass<int> a = 17;
+	SomeClass<int> b = 13;
+	SomeClass<int> c = 1337;
+	SomeClass<int> d = 2;
+	SomeClass<int> e = 4;
+	SomeClass<int> f = 2;
+
+	bbe::List<SomeClass<int>, true> list1 = { a, b, c, d, e, f };
+	ASSERT_EQ(list1[0].getLength(),    2);
+	ASSERT_EQ(list1[1].getLength(),    2);
+	ASSERT_EQ(list1[2].getLength(),    4);
+	ASSERT_EQ(list1[3].getLength(),   13);
+	ASSERT_EQ(list1[4].getLength(),   17);
+	ASSERT_EQ(list1[5].getLength(), 1337);
+
+	SomeClass<int> g = 18;
+	SomeClass<int> h = 4;
+	SomeClass<int> i = 100;
+	SomeClass<int> j = 1;
+	SomeClass<int> k = 1;
+	SomeClass<int> l = 2;
+
+	bbe::List<SomeClass<int>, true> list2 = { g, h, i, j, k, l };
+	ASSERT_EQ(list2[0].getLength(),   1);
+	ASSERT_EQ(list2[1].getLength(),   1);
+	ASSERT_EQ(list2[2].getLength(),   2);
+	ASSERT_EQ(list2[3].getLength(),   4);
+	ASSERT_EQ(list2[4].getLength(),  18);
+	ASSERT_EQ(list2[5].getLength(), 100);
+
+	list1 += list2;
+	ASSERT_EQ(list1[ 0].getLength(),    1);
+	ASSERT_EQ(list1[ 1].getLength(),    1);
+	ASSERT_EQ(list1[ 2].getLength(),    2);
+	ASSERT_EQ(list1[ 3].getLength(),    2);
+	ASSERT_EQ(list1[ 4].getLength(),    2);
+	ASSERT_EQ(list1[ 5].getLength(),    4);
+	ASSERT_EQ(list1[ 6].getLength(),    4);
+	ASSERT_EQ(list1[ 7].getLength(),   13);
+	ASSERT_EQ(list1[ 8].getLength(),   17);
+	ASSERT_EQ(list1[ 9].getLength(),   18);
+	ASSERT_EQ(list1[10].getLength(),  100);
+	ASSERT_EQ(list1[11].getLength(), 1337);
+}
+#endif

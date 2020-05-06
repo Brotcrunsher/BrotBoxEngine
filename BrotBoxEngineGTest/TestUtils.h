@@ -82,6 +82,36 @@ public:
 		return *this;
 	}
 
+	bool operator<(const SomeClass<T>& other) const
+	{
+		return m_length < other.m_length;
+	}
+
+	bool operator>(const SomeClass<T>& other) const
+	{
+		return m_length > other.m_length;
+	}
+
+	bool operator<=(const SomeClass<T>& other) const
+	{
+		return m_length <= other.m_length;
+	}
+
+	bool operator>=(const SomeClass<T>& other) const
+	{
+		return m_length >= other.m_length;
+	}
+
+	bool operator==(const SomeClass<T>& other) const
+	{
+		return m_length == other.m_length;
+	}
+
+	bool operator!=(const SomeClass<T>& other) const
+	{
+		return m_length != other.m_length;
+	}
+
 	size_t getLength()
 	{
 		return m_length;
