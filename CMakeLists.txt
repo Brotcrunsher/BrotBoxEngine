@@ -21,12 +21,32 @@ macro(add_trivial_project name)
   file(GLOB local_src CONFIGURE_DEPENDS "*.cpp")
   target_sources(${name} PUBLIC "${local_src}")
   install_compiled_shaders(${name})
+  target_include_directories(${name} PUBLIC .)
 endmacro()
 
 add_library(BrotboxEngine STATIC)
 set_property(TARGET BrotboxEngine PROPERTY CXX_STANDARD 17)
 set_property(TARGET BrotboxEngine PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET BrotboxEngine PROPERTY CXX_EXTENSIONS OFF)
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  message(STATUS "Adding sanitizers")
+  target_compile_options(BrotboxEngine PUBLIC "-fsanitize=address"
+                                              "-fsanitize=pointer-compare"
+                                              "-fsanitize=pointer-subtract"
+                                              "-fsanitize=undefined"
+                                              "-fsanitize=integer-divide-by-zero"
+                                              "-fsanitize=unreachable"
+                                              "-fsanitize=vla-bound"
+                                              "-fsanitize=null"
+                                              "-fsanitize=return"
+                                              "-fsanitize=signed-integer-overflow"
+                                              "-fsanitize=bounds-strict"
+                                              "-fsanitize=enum"
+                                              "-fsanitize=bool"
+                                              "-fsanitize=vptr"
+                                              "-fsanitize=pointer-overflow")
+endif()
 
 find_package(Vulkan REQUIRED)
 target_include_directories(BrotboxEngine PUBLIC Vulkan::Vulkan)
