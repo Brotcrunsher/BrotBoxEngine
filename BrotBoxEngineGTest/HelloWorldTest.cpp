@@ -134,4 +134,38 @@ TEST(List, RecursiveList)
 
 	bbe::List<bbe::List<SomeClass<int>>> layer2_1(3, layer1_1);
 	bbe::List<bbe::List<SomeClass<int>>> layer2_2 = { layer1_1, layer1_2 };
+
+	ASSERT_EQ(layer1_1.getLength(), 12);
+	ASSERT_EQ(layer1_2.getLength(), 32);
+
+	ASSERT_EQ(layer2_1.getLength(), 3);
+	ASSERT_EQ(layer2_2.getLength(), 2);
+
+	for (size_t i = 0; i < layer2_1.getLength(); i++)
+	{
+		ASSERT_EQ(layer2_1[i].getLength(), 12);
+	}
+
+	ASSERT_EQ(layer2_2[0].getLength(), 12);
+	ASSERT_EQ(layer2_2[1].getLength(), 32);
+
+	for (size_t i = 0; i < layer2_1.getLength(); i++)
+	{
+		for (size_t k = 0; k < layer2_1[i].getLength(); k++)
+		{
+			ASSERT_EQ(layer2_1[i][k].getLength(), 18);
+		}
+	}
+
+	layer2_1[1][6].resize(1000);
+	for (size_t i = 0; i < layer2_1.getLength(); i++)
+	{
+		for (size_t k = 0; k < layer2_1[i].getLength(); k++)
+		{
+			if(i == 1 && k == 6)
+				ASSERT_EQ(layer2_1[i][k].getLength(), 1000);
+			else
+				ASSERT_EQ(layer2_1[i][k].getLength(), 18);
+		}
+	}
 }

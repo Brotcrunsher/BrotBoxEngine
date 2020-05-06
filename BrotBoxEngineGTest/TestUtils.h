@@ -80,6 +80,16 @@ public:
 		stealDataFrom(other);
 	}
 
+	size_t getLength()
+	{
+		return m_length;
+	}
+
+	void resize(size_t length)
+	{
+		init(length);
+	}
+
 	~SomeClass()
 	{
 		cleanup();
