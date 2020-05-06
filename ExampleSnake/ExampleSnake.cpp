@@ -131,22 +131,22 @@ public:
 	{
 		if (dir == Direction::LEFT || dir == Direction::RIGHT)
 		{
-			if (isKeyDown(bbe::Key::W))
+			if (isKeyDown(bbe::Key::W) || isKeyDown(bbe::Key::UP))
 			{
 				nextDir = Direction::UP;
 			}
-			else if (isKeyDown(bbe::Key::S))
+			else if (isKeyDown(bbe::Key::S) || isKeyDown(bbe::Key::DOWN))
 			{
 				nextDir = Direction::DOWN;
 			}
 		}
 		else if (dir == Direction::UP || dir == Direction::DOWN)
 		{
-			if (isKeyDown(bbe::Key::A))
+			if (isKeyDown(bbe::Key::A) || isKeyDown(bbe::Key::LEFT))
 			{
 				nextDir = Direction::LEFT;
 			}
-			else if (isKeyDown(bbe::Key::D))
+			else if (isKeyDown(bbe::Key::D) || isKeyDown(bbe::Key::RIGHT))
 			{
 				nextDir = Direction::RIGHT;
 			}
