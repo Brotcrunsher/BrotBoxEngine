@@ -20,7 +20,6 @@ script:
   - mkdir cmakebuild
   - cd cmakebuild
   - cmake -DCMAKE_C_COMPILER=/usr/bin/gcc-8 -DCMAKE_CXX_COMPILER=/usr/bin/g++-8 ..
-  - cmake --build . --target BrotBoxEngineGTest
   - cmake --build . --target Example3D
   - cmake --build . --target ExampleMandelbrot
   - cmake --build . --target ExampleMandelbrotShader
@@ -28,3 +27,6 @@ script:
   - cmake --build . --target ExampleSnake
   - cmake --build . --target ExampleCurves
   - cmake --build . --target ExampleBalloonGame
+  - cmake --build . --target BrotBoxEngineGTest
+  - cd BrotBoxEngineGTest
+  - ./BrotBoxEngineGTest
