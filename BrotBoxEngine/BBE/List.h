@@ -66,9 +66,10 @@ namespace bbe
 			: m_length(amountOfObjects), m_capacity(amountOfObjects)
 		{
 			m_pdata = new INTERNAL::Unconstructed<T>[amountOfObjects];
+			const T copyVal = T(std::forward<arguments>(args)...);
 			for (size_t i = 0; i < amountOfObjects; i++)
 			{
-				new (bbe::addressOf(m_pdata[i])) T(std::forward<arguments>(args)...);
+				new (bbe::addressOf(m_pdata[i])) T(copyVal);
 			}
 		}
 
