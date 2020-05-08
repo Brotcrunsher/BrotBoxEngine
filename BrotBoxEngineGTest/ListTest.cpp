@@ -529,6 +529,17 @@ TEST(List, removeIndex)
 	ASSERT_EQ(list[2].getLength(), 4);
 }
 
+TEST(List, containsAmountByExample)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(4) };
+	ASSERT_EQ(list.getLength(), 6);
+	ASSERT_EQ(list.containsAmount(SomeClass<int>(1)), 1);
+	ASSERT_EQ(list.containsAmount(SomeClass<int>(2)), 2);
+	ASSERT_EQ(list.containsAmount(SomeClass<int>(3)), 1);
+	ASSERT_EQ(list.containsAmount(SomeClass<int>(4)), 2);
+	ASSERT_EQ(list.containsAmount(SomeClass<int>(5)), 0);
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
