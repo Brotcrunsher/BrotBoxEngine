@@ -112,7 +112,7 @@ public:
 		return m_length != other.m_length;
 	}
 
-	size_t getLength()
+	size_t getLength() const
 	{
 		return m_length;
 	}
