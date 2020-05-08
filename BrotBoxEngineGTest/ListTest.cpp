@@ -457,6 +457,18 @@ TEST(List, resizeCapacityAndLength)
 	ASSERT_EQ(list.getLength(), 100);
 }
 
+TEST(List, removeAllByExample)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(4) };
+	ASSERT_EQ(list.getLength(), 6);
+	list.removeAll(SomeClass<int>(2));
+	ASSERT_EQ(list.getLength(), 4);
+	ASSERT_EQ(list[0].getLength(), 1);
+	ASSERT_EQ(list[1].getLength(), 3);
+	ASSERT_EQ(list[2].getLength(), 4);
+	ASSERT_EQ(list[3].getLength(), 4);
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
