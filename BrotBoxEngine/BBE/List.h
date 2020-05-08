@@ -492,7 +492,6 @@ namespace bbe
 
 		void addArray(const T* data, size_t size)
 		{
-			//UNTESTED
 			for (size_t i = 0; i < size; i++)
 			{
 				add(data[i]);
