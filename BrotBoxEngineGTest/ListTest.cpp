@@ -479,6 +479,30 @@ TEST(List, removeAllByPredicate)
 	ASSERT_EQ(list[1].getLength(), 3);
 }
 
+TEST(List, removeIndex)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(6) };
+	ASSERT_EQ(list.getLength(), 6);
+	list.removeIndex(4);
+	ASSERT_EQ(list.getLength(), 5);
+	ASSERT_EQ(list[0].getLength(), 1);
+	ASSERT_EQ(list[1].getLength(), 2);
+	ASSERT_EQ(list[2].getLength(), 3);
+	ASSERT_EQ(list[3].getLength(), 4);
+	ASSERT_EQ(list[4].getLength(), 6);
+	list.removeIndex(0);
+	ASSERT_EQ(list.getLength(), 4);
+	ASSERT_EQ(list[0].getLength(), 2);
+	ASSERT_EQ(list[1].getLength(), 3);
+	ASSERT_EQ(list[2].getLength(), 4);
+	ASSERT_EQ(list[3].getLength(), 6);
+	list.removeIndex(3);
+	ASSERT_EQ(list.getLength(), 3);
+	ASSERT_EQ(list[0].getLength(), 2);
+	ASSERT_EQ(list[1].getLength(), 3);
+	ASSERT_EQ(list[2].getLength(), 4);
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
