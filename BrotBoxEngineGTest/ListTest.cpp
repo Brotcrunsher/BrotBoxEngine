@@ -679,6 +679,42 @@ TEST(List, findByPredicate)
 	ASSERT_EQ(ptr, nullptr);
 }
 
+TEST(List, findLastByExample)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(3) };
+
+	SomeClass<int>* ptr = list.findLast(SomeClass<int>(4));
+	ASSERT_EQ(ptr, &list[3]);
+	ptr = list.findLast(SomeClass<int>(2));
+	ASSERT_EQ(ptr, &list[1]);
+	ptr = list.findLast(SomeClass<int>(1));
+	ASSERT_EQ(ptr, &list[2]);
+	ptr = list.findLast(SomeClass<int>(7));
+	ASSERT_EQ(ptr, &list[4]);
+	ptr = list.findLast(SomeClass<int>(3));
+	ASSERT_EQ(ptr, &list[5]);
+	ptr = list.findLast(SomeClass<int>(100));
+	ASSERT_EQ(ptr, nullptr);
+}
+
+TEST(List, findLastByPredicate)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(3) };
+
+	SomeClass<int>* ptr = list.findLast([](const SomeClass<int>& s) { return s.getLength() == 4; });
+	ASSERT_EQ(ptr, &list[3]);
+	ptr = list.findLast([](const SomeClass<int>& s) { return s.getLength() == 2; });
+	ASSERT_EQ(ptr, &list[1]);
+	ptr = list.findLast([](const SomeClass<int>& s) { return s.getLength() == 1; });
+	ASSERT_EQ(ptr, &list[2]);
+	ptr = list.findLast([](const SomeClass<int>& s) { return s.getLength() == 7; });
+	ASSERT_EQ(ptr, &list[4]);
+	ptr = list.findLast([](const SomeClass<int>& s) { return s.getLength() == 3; });
+	ASSERT_EQ(ptr, &list[5]);
+	ptr = list.findLast([](const SomeClass<int>& s) { return s.getLength() == 100; });
+	ASSERT_EQ(ptr, nullptr);
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
