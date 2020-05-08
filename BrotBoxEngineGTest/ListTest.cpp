@@ -202,6 +202,36 @@ TEST(List, AddOrdered)
 	}
 }
 
+TEST(List, AddUnorderedMove)
+{
+	bbe::List<SomeClass<int>, true> list;
+	for (size_t i = 0; i < 51; i++)
+	{
+		SomeClass data = SomeClass<int>(i + 1);
+		list.add(std::move(data));
+		ASSERT_EQ(data.getLength(), 0);
+	}
+	for (size_t i = 0; i < 51; i++)
+	{
+		ASSERT_EQ(list[i].getLength(), i + 1);
+	}
+}
+
+TEST(List, AddOrderedMove)
+{
+	bbe::List<SomeClass<int>, true> list;
+	for (size_t i = 0; i < 51; i++)
+	{
+		SomeClass data = SomeClass<int>(((i + 10) * bbe::Math::BIGGEST_PRIME_32_SIGNED % 51) + 1);
+		list.add(std::move(data));
+		ASSERT_EQ(data.getLength(), 0);
+	}
+	for (size_t i = 0; i < 51; i++)
+	{
+		ASSERT_EQ(list[i].getLength(), i + 1);
+	}
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
