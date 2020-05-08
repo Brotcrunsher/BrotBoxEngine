@@ -232,6 +232,78 @@ TEST(List, AddOrderedMove)
 	}
 }
 
+TEST(List, GetIndexOnAddUnordered)
+{
+	bbe::List<SomeClass<int>> list;
+	for (size_t i = 0; i < 51; i++)
+	{
+		SomeClass data = SomeClass<int>(((i + 10) * bbe::Math::BIGGEST_PRIME_32_SIGNED % 51) + 1);
+		ASSERT_EQ(list.getIndexOnAdd(data), i);
+		list.add(data);
+	}
+}
+
+TEST(List, GetIndexOnAddOrdered)
+{
+	bbe::List<SomeClass<int>, true> list;
+	for (size_t i = 0; i < 51; i++)
+	{
+		SomeClass data = SomeClass<int>(((i + 10) * bbe::Math::BIGGEST_PRIME_32_SIGNED % 51) + 1);
+		if(i ==  0) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i ==  1) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i ==  2) ASSERT_EQ(list.getIndexOnAdd(data),  1);
+		if(i ==  3) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i ==  4) ASSERT_EQ(list.getIndexOnAdd(data),  2);
+		if(i ==  5) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i ==  6) ASSERT_EQ(list.getIndexOnAdd(data),  3);
+		if(i ==  7) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i ==  8) ASSERT_EQ(list.getIndexOnAdd(data),  4);
+		if(i ==  9) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 10) ASSERT_EQ(list.getIndexOnAdd(data),  5);
+		if(i == 11) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 12) ASSERT_EQ(list.getIndexOnAdd(data),  6);
+		if(i == 13) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 14) ASSERT_EQ(list.getIndexOnAdd(data),  7);
+		if(i == 15) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 16) ASSERT_EQ(list.getIndexOnAdd(data),  8);
+		if(i == 17) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 18) ASSERT_EQ(list.getIndexOnAdd(data),  9);
+		if(i == 19) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 20) ASSERT_EQ(list.getIndexOnAdd(data), 10);
+		if(i == 21) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 22) ASSERT_EQ(list.getIndexOnAdd(data), 11);
+		if(i == 23) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 24) ASSERT_EQ(list.getIndexOnAdd(data), 12);
+		if(i == 25) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 26) ASSERT_EQ(list.getIndexOnAdd(data), 13);
+		if(i == 27) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 28) ASSERT_EQ(list.getIndexOnAdd(data), 14);
+		if(i == 29) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 30) ASSERT_EQ(list.getIndexOnAdd(data), 15);
+		if(i == 31) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 32) ASSERT_EQ(list.getIndexOnAdd(data), 16);
+		if(i == 33) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 34) ASSERT_EQ(list.getIndexOnAdd(data), 17);
+		if(i == 35) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 36) ASSERT_EQ(list.getIndexOnAdd(data), 18);
+		if(i == 37) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 38) ASSERT_EQ(list.getIndexOnAdd(data), 19);
+		if(i == 39) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 40) ASSERT_EQ(list.getIndexOnAdd(data), 20);
+		if(i == 41) ASSERT_EQ(list.getIndexOnAdd(data),  0);
+		if(i == 42) ASSERT_EQ(list.getIndexOnAdd(data), 21);
+		if(i == 43) ASSERT_EQ(list.getIndexOnAdd(data), 43);
+		if(i == 44) ASSERT_EQ(list.getIndexOnAdd(data), 21);
+		if(i == 45) ASSERT_EQ(list.getIndexOnAdd(data), 44);
+		if(i == 46) ASSERT_EQ(list.getIndexOnAdd(data), 21);
+		if(i == 47) ASSERT_EQ(list.getIndexOnAdd(data), 45);
+		if(i == 48) ASSERT_EQ(list.getIndexOnAdd(data), 21);
+		if(i == 49) ASSERT_EQ(list.getIndexOnAdd(data), 46);
+		if(i == 50) ASSERT_EQ(list.getIndexOnAdd(data), 21);
+		list.add(data);
+	}
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
