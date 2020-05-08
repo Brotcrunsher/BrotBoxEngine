@@ -540,6 +540,14 @@ TEST(List, containsAmountByExample)
 	ASSERT_EQ(list.containsAmount(SomeClass<int>(5)), 0);
 }
 
+TEST(List, containsAmountByPredicate)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(4) };
+	ASSERT_EQ(list.getLength(), 6);
+	ASSERT_EQ(list.containsAmount([](const SomeClass<int> s) { return s.getLength() % 2 == 0;  }), 4);
+	ASSERT_EQ(list.containsAmount([](const SomeClass<int> s) { return s.getLength() % 2 == 1;  }), 2);
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
