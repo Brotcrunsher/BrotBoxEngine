@@ -615,6 +615,7 @@ namespace bbe
 			{
 				if (predicate(m_pdata[i].m_value))
 				{
+					bbe::addressOf(m_pdata[i].m_value)->~T();
 					moveRange++;
 				}
 				else if (moveRange != 0)
