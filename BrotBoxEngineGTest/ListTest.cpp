@@ -304,6 +304,47 @@ TEST(List, GetIndexOnAddOrdered)
 	}
 }
 
+TEST(List, getNeighbors)
+{
+	SomeClass<int> a = 2;
+	SomeClass<int> b = 2;
+	SomeClass<int> c = 4;
+	SomeClass<int> d = 13;
+	SomeClass<int> e = 13;
+	SomeClass<int> f = 1337;
+	bbe::List<SomeClass<int>, true> list1 = { a, b, c, d, e, f };
+
+	SomeClass<int>* left  = nullptr;
+	SomeClass<int>* right = nullptr;
+	list1.getNeighbors(SomeClass<int>(1), left, right);
+	ASSERT_EQ(left, nullptr);
+	ASSERT_EQ(right->getLength(), 2);
+	list1.getNeighbors(SomeClass<int>(2), left, right);
+	ASSERT_EQ(left->getLength() , 2);
+	ASSERT_EQ(right->getLength(), 4);
+	list1.getNeighbors(SomeClass<int>(3), left, right);
+	ASSERT_EQ(left->getLength() , 2);
+	ASSERT_EQ(right->getLength(), 4);
+	list1.getNeighbors(SomeClass<int>(4), left, right);
+	ASSERT_EQ(left->getLength() , 4);
+	ASSERT_EQ(right->getLength(), 13);
+	list1.getNeighbors(SomeClass<int>(10), left, right);
+	ASSERT_EQ(left->getLength() , 4);
+	ASSERT_EQ(right->getLength(), 13);
+	list1.getNeighbors(SomeClass<int>(13), left, right);
+	ASSERT_EQ(left->getLength() , 13);
+	ASSERT_EQ(right->getLength(), 1337);
+	list1.getNeighbors(SomeClass<int>(200), left, right);
+	ASSERT_EQ(left->getLength() , 13);
+	ASSERT_EQ(right->getLength(), 1337);
+	list1.getNeighbors(SomeClass<int>(1337), left, right);
+	ASSERT_EQ(left->getLength() , 13);
+	ASSERT_EQ(right->getLength(), 1337);
+	list1.getNeighbors(SomeClass<int>(1338), left, right);
+	ASSERT_EQ(left->getLength() , 1337);
+	ASSERT_EQ(right, nullptr);
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
