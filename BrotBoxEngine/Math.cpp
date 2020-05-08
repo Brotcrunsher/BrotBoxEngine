@@ -2,18 +2,7 @@
 #include "BBE/Vector2.h"
 #include "BBE/Vector3.h"
 #include "BBE/Vector4.h"
-#include <limits>
 #include <cmath>
-
-
-const float bbe::Math::PI = 3.14159265359f;
-const float bbe::Math::TAU = 6.28318530718f;
-const float bbe::Math::E = 2.71828182845f;
-const float bbe::Math::SQRT2 = 1.41421356237f;
-const float bbe::Math::SQRT2INV = 0.70710678118f;
-const float bbe::Math::INFINITY_POSITIVE = std::numeric_limits<float>::infinity();
-const float bbe::Math::INFINITY_NEGATIVE = -std::numeric_limits<float>::infinity();
-const float bbe::Math::NaN = std::numeric_limits<float>::quiet_NaN();
 
 float bbe::Math::INTERNAL::sinTable[TABLE_SIZES];
 float bbe::Math::INTERNAL::cosTable[TABLE_SIZES];

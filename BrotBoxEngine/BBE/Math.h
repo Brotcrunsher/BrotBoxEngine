@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdio>
+#include <limits>
 #include "../BBE/List.h"
 
 namespace bbe
@@ -20,14 +21,18 @@ namespace bbe
 			extern float tanTable[TABLE_SIZES];
 		}
 
-		extern const float PI;
-		extern const float TAU;
-		extern const float E;
-		extern const float SQRT2;
-		extern const float SQRT2INV;
-		extern const float INFINITY_POSITIVE;
-		extern const float INFINITY_NEGATIVE;
-		extern const float NaN;
+		constexpr  int32_t BIGGEST_PRIME_32_SIGNED   = 2147483647;
+		constexpr uint32_t BIGGEST_PRIME_32_UNSIGNED = 4294967295;
+
+
+		constexpr float PI                = 3.14159265359f;
+		constexpr float TAU               = 6.28318530718f;
+		constexpr float E                 = 2.71828182845f;
+		constexpr float SQRT2             = 1.41421356237f;
+		constexpr float SQRT2INV          = 0.70710678118f;
+		constexpr float INFINITY_POSITIVE = std::numeric_limits<float>::infinity();
+		constexpr float INFINITY_NEGATIVE = -std::numeric_limits<float>::infinity();
+		constexpr float NaN               = std::numeric_limits<float>::quiet_NaN();
 
 		float cos(float val);
 		float acos(float val);
