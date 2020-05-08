@@ -569,6 +569,27 @@ TEST(List, containsByPredicate)
 	ASSERT_EQ(list.contains([](const SomeClass<int> s) { return s.getLength() == 10000;  }), false);
 }
 
+TEST(List, containsUniqueByExample)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(4) };
+	ASSERT_EQ(list.getLength(), 6);
+	ASSERT_EQ(list.containsUnique(SomeClass<int>(1)), true);
+	ASSERT_EQ(list.containsUnique(SomeClass<int>(2)), false);
+	ASSERT_EQ(list.containsUnique(SomeClass<int>(3)), true);
+	ASSERT_EQ(list.containsUnique(SomeClass<int>(4)), false);
+	ASSERT_EQ(list.containsUnique(SomeClass<int>(5)), false);
+}
+
+TEST(List, containsUniqueByPredicate)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(4) };
+	ASSERT_EQ(list.getLength(), 6);
+	ASSERT_EQ(list.containsUnique([](const SomeClass<int> s) { return s.getLength() % 2 == 0;  }), false);
+	ASSERT_EQ(list.containsUnique([](const SomeClass<int> s) { return s.getLength() % 2 == 1;  }), false);
+	ASSERT_EQ(list.containsUnique([](const SomeClass<int> s) { return s.getLength() == 10000;  }), false);
+	ASSERT_EQ(list.containsUnique([](const SomeClass<int> s) { return s.getLength() == 3;      }), true);
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
