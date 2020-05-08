@@ -546,6 +546,27 @@ TEST(List, containsAmountByPredicate)
 	ASSERT_EQ(list.getLength(), 6);
 	ASSERT_EQ(list.containsAmount([](const SomeClass<int> s) { return s.getLength() % 2 == 0;  }), 4);
 	ASSERT_EQ(list.containsAmount([](const SomeClass<int> s) { return s.getLength() % 2 == 1;  }), 2);
+	ASSERT_EQ(list.containsAmount([](const SomeClass<int> s) { return s.getLength() == 10000;  }), 0);
+}
+
+TEST(List, containsByExample)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(4) };
+	ASSERT_EQ(list.getLength(), 6);
+	ASSERT_EQ(list.contains(SomeClass<int>(1)), true);
+	ASSERT_EQ(list.contains(SomeClass<int>(2)), true);
+	ASSERT_EQ(list.contains(SomeClass<int>(3)), true);
+	ASSERT_EQ(list.contains(SomeClass<int>(4)), true);
+	ASSERT_EQ(list.contains(SomeClass<int>(5)), false);
+}
+
+TEST(List, containsByPredicate)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(4) };
+	ASSERT_EQ(list.getLength(), 6);
+	ASSERT_EQ(list.contains([](const SomeClass<int> s) { return s.getLength() % 2 == 0;  }), true);
+	ASSERT_EQ(list.contains([](const SomeClass<int> s) { return s.getLength() % 2 == 1;  }), true);
+	ASSERT_EQ(list.contains([](const SomeClass<int> s) { return s.getLength() == 10000;  }), false);
 }
 
 TEST(List, CombineUnorderedLists)
