@@ -312,7 +312,7 @@ namespace bbe
 				}
 				else
 				{
-					m_pdata[i].m_value = val;
+					m_pdata[i].m_value = std::move(val);
 				}
 			}
 			m_length += amount;
