@@ -387,6 +387,22 @@ TEST(List, addCArray)
 	}
 }
 
+TEST(List, addArray)
+{
+	bbe::Array<SomeClass<int>, 10> arr;
+	for (size_t i = 0; i < 10; i++)
+	{
+		arr[i] = SomeClass<int>(i + 1);
+	}
+	bbe::List<SomeClass<int>, true> list;
+	list.addArray(arr);
+	ASSERT_EQ(list.getLength(), 10);
+	for (size_t i = 0; i < 10; i++)
+	{
+		ASSERT_EQ(list[i].getLength(), i + 1);
+	}
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;

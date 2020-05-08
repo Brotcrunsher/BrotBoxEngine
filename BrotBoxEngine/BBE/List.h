@@ -501,8 +501,7 @@ namespace bbe
 		template<int size>
 		void addArray(Array<T, size>& arr)
 		{
-			//UNTESTED
-			addAll(arr.getRaw(), size);
+			addArray(arr.getRaw(), size);
 		}
 
 		void popBack(size_t amount = 1)
