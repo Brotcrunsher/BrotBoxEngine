@@ -629,6 +629,20 @@ TEST(List, sort)
 	ASSERT_EQ(list[5].getLength(), 1);
 }
 
+TEST(List, first)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(3) };
+	ASSERT_EQ(list.getLength(), 6);
+	ASSERT_EQ(list[0], list.first());
+}
+
+TEST(List, last)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(3) };
+	ASSERT_EQ(list.getLength(), 6);
+	ASSERT_EQ(list[5], list.last());
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
