@@ -428,6 +428,19 @@ TEST(List, clear)
 	ASSERT_EQ(list.getCapacity(), oldCapacity);
 }
 
+TEST(List, shrink)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4) };
+	const size_t oldCapacity = list.getCapacity();
+	list.popBack(1);
+	ASSERT_EQ(list.getCapacity(), oldCapacity);
+	ASSERT_NE(list.getCapacity(), 3);
+
+	list.shrink();
+	ASSERT_EQ(list.getCapacity(), 3);
+	ASSERT_EQ(list.getLength(), 3);
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
