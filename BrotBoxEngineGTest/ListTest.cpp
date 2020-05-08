@@ -590,6 +590,23 @@ TEST(List, containsUniqueByPredicate)
 	ASSERT_EQ(list.containsUnique([](const SomeClass<int> s) { return s.getLength() == 3;      }), true);
 }
 
+TEST(List, beginEnd)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(5), SomeClass<int>(6) };
+	size_t i = 1;
+	for (auto it = list.begin(); it != list.end(); it++, i++)
+	{
+		ASSERT_EQ(it->getLength(), i);
+	}
+
+	const bbe::List<SomeClass<int>>& con = list;
+	i = 1;
+	for (auto it = con.begin(); it != con.end(); it++, i++)
+	{
+		ASSERT_EQ(it->getLength(), i);
+	}
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
