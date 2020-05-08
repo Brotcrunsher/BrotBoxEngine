@@ -643,6 +643,22 @@ TEST(List, last)
 	ASSERT_EQ(list[5], list.last());
 }
 
+TEST(List, findByExample)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(3) };
+	
+	SomeClass<int>* ptr = list.find(SomeClass<int>(4));
+	ASSERT_EQ(ptr, &list[0]);
+	ptr = list.find(SomeClass<int>(2));
+	ASSERT_EQ(ptr, &list[1]);
+	ptr = list.find(SomeClass<int>(1));
+	ASSERT_EQ(ptr, &list[2]);
+	ptr = list.find(SomeClass<int>(7));
+	ASSERT_EQ(ptr, &list[4]);
+	ptr = list.find(SomeClass<int>(3));
+	ASSERT_EQ(ptr, &list[5]);
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
