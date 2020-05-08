@@ -721,13 +721,28 @@ TEST(List, equalsOperator)
 	bbe::List<SomeClass<int>> list2 = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(3) };
 	bbe::List<SomeClass<int>> list3 = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(5), SomeClass<int>(7), SomeClass<int>(3) };
 	bbe::List<SomeClass<int>> list4 = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(4) };
-	bbe::List<SomeClass<int>> list5 = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7)};
+	bbe::List<SomeClass<int>> list5 = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7) };
 
 	ASSERT_EQ(list1 == list1, true);
 	ASSERT_EQ(list1 == list2, true);
 	ASSERT_EQ(list1 == list3, false);
 	ASSERT_EQ(list1 == list4, false);
 	ASSERT_EQ(list1 == list5, false);
+}
+
+TEST(List, unequalsOperator)
+{
+	bbe::List<SomeClass<int>> list1 = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(3) };
+	bbe::List<SomeClass<int>> list2 = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(3) };
+	bbe::List<SomeClass<int>> list3 = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(5), SomeClass<int>(7), SomeClass<int>(3) };
+	bbe::List<SomeClass<int>> list4 = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(4) };
+	bbe::List<SomeClass<int>> list5 = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7) };
+
+	ASSERT_EQ(list1 != list1, false);
+	ASSERT_EQ(list1 != list2, false);
+	ASSERT_EQ(list1 != list3, true);
+	ASSERT_EQ(list1 != list4, true);
+	ASSERT_EQ(list1 != list5, true);
 }
 
 TEST(List, CombineUnorderedLists)
