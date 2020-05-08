@@ -16,7 +16,7 @@ A C++ prototyping engine that is striving to have an easy to use API, hiding all
 
 ## Quick Start
 
-There are a lot of examples in the repository. Have a look at [ExampleSnake](https://github.com/Brotcrunsher/BrotboxEngine/tree/master/ExampleSnake) for a first start. To create build files for your local machine you have to download and install [CMake](https://cmake.org/) and the [Vulkan SDK](https://vulkan.lunarg.com/). Then, while being in the main folder of the repository, execute the following commands in a terminal:
+There are a lot of examples in the repository. Have a look at [ExampleSnake](https://github.com/Brotcrunsher/BrotboxEngine/tree/master/ExampleSnake) for a first start. To create build files for your local machine you have to download and install [CMake](https://cmake.org/) and the [Vulkan SDK](https://vulkan.lunarg.com/). Then, while being in the main directory of the repository, execute the following commands in a terminal:
 
     mkdir Build
     cd Build
