@@ -170,7 +170,7 @@ TEST(List, RecursiveList)
 	}
 }
 
-TEST(List, Add)
+TEST(List, AddUnordered)
 {
 	bbe::List<SomeClass<int>> list;
 	for (size_t i = 1; i < 52; i++)
@@ -186,6 +186,19 @@ TEST(List, Add)
 		ASSERT_EQ(copy[i].getLength(), i + 1);
 		if (i != 13) ASSERT_EQ(list[i].getLength(), i + 1);
 		else ASSERT_EQ(list[i].getLength(), 1337);
+	}
+}
+
+TEST(List, AddOrdered)
+{
+	bbe::List<SomeClass<int>, true> list;
+	for (size_t i = 0; i < 51; i++)
+	{
+		list.add(SomeClass<int>(((i + 10) * bbe::Math::BIGGEST_PRIME_32_SIGNED % 51) + 1));
+	}
+	for (size_t i = 0; i < 51; i++)
+	{
+		ASSERT_EQ(list[i].getLength(), i + 1);
 	}
 }
 
