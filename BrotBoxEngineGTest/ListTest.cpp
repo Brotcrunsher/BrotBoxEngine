@@ -345,6 +345,32 @@ TEST(List, getNeighbors)
 	ASSERT_EQ(right, nullptr);
 }
 
+TEST(List, addAllUnordered)
+{
+	bbe::List<SomeClass<int>> list;
+	list.addAll(SomeClass<int>(3), SomeClass<int>(18), SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(1337), SomeClass<int>(3));
+	ASSERT_EQ(list.getLength(), 6);
+	ASSERT_EQ(list[0].getLength(), 3);
+	ASSERT_EQ(list[1].getLength(), 18);
+	ASSERT_EQ(list[2].getLength(), 1);
+	ASSERT_EQ(list[3].getLength(), 2);
+	ASSERT_EQ(list[4].getLength(), 1337);
+	ASSERT_EQ(list[5].getLength(), 3);
+}
+
+TEST(List, addAllOrdered)
+{
+	bbe::List<SomeClass<int>, true> list;
+	list.addAll(SomeClass<int>(3), SomeClass<int>(18), SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(1337), SomeClass<int>(3));
+	ASSERT_EQ(list.getLength(), 6);
+	ASSERT_EQ(list[0].getLength(), 1);
+	ASSERT_EQ(list[1].getLength(), 2);
+	ASSERT_EQ(list[2].getLength(), 3);
+	ASSERT_EQ(list[3].getLength(), 3);
+	ASSERT_EQ(list[4].getLength(), 18);
+	ASSERT_EQ(list[5].getLength(), 1337);
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;
