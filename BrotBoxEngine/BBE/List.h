@@ -596,6 +596,7 @@ namespace bbe
 				delete[] m_pdata;
 			}
 			m_pdata = newList;
+			m_capacity = newCapacity;
 		}
 
 		size_t removeAll(const T& remover)
