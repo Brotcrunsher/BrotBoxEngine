@@ -492,6 +492,19 @@ TEST(List, removeSingleByExample)
 	ASSERT_EQ(list[4].getLength(), 4);
 }
 
+TEST(List, removeSingleByPredicate)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(4) };
+	ASSERT_EQ(list.getLength(), 6);
+	list.removeSingle([](const SomeClass<int>& s) { return s.getLength() % 2 == 0; });
+	ASSERT_EQ(list.getLength(), 5);
+	ASSERT_EQ(list[0].getLength(), 1);
+	ASSERT_EQ(list[1].getLength(), 3);
+	ASSERT_EQ(list[2].getLength(), 4);
+	ASSERT_EQ(list[3].getLength(), 2);
+	ASSERT_EQ(list[4].getLength(), 4);
+}
+
 TEST(List, removeIndex)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(6) };
