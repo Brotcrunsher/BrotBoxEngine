@@ -403,6 +403,22 @@ TEST(List, addArray)
 	}
 }
 
+TEST(List, popBack)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4) };
+	list.popBack();
+	ASSERT_EQ(list.getLength(), 3);
+	ASSERT_EQ(list[0].getLength(), 1);
+	ASSERT_EQ(list[1].getLength(), 2);
+	ASSERT_EQ(list[2].getLength(), 3);
+
+	list.add(SomeClass<int>(1337));
+	list.popBack(2);
+	ASSERT_EQ(list.getLength(), 2);
+	ASSERT_EQ(list[0].getLength(), 1);
+	ASSERT_EQ(list[1].getLength(), 2);
+}
+
 TEST(List, CombineUnorderedLists)
 {
 	SomeClass<int> a = 17;

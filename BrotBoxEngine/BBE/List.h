@@ -506,6 +506,10 @@ namespace bbe
 
 		void popBack(size_t amount = 1)
 		{
+			if (amount > m_length)
+			{
+				debugBreak();
+			}
 			for (size_t i = 0; i < amount; i++)
 			{
 				m_pdata[m_length - 1 - i].m_value.~T();
