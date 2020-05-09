@@ -1,7 +1,7 @@
 # Brotbox Engine
 ![Build Status](https://travis-ci.org/Brotcrunsher/BrotboxEngine.svg?branch=master)
 
-A C++ prototyping engine that is striving to have an easy to use API, hiding all the dirty details so that you don't have to care.
+A C++ prototyping engine that is striving for an easy to use API, hiding all the dirty details so that you don't have to care.
 
 #### Used technology
 
@@ -22,13 +22,13 @@ There are a lot of examples in the repository. Have a look at [ExampleSnake](htt
     cd Build
     cmake ..
 
-After that, build files like (on Windows) Solution Files are created. Build and launch ExampleSnake and have a look at its Source Code.
+After that, build files like Solution Files (on Windows) are created. Build and launch ExampleSnake and have a look at its source code.
 
 
 ## FAQ
 
 ### Would you recommend using the Brotbox Engine to create a game right now?
-*No.* The Brotbox Engine is still in a very, very early state. The API is changing rapidly, without warning, and without changelogs. As such, upgrading the Engine for one your games could turn out to be incredibly hard.
+*No.* The Brotbox Engine is still in a very, very early state. The API is changing rapidly, without warning, without changelogs and without backwards compatibility. 
 
-### Would you recommend using the Brotbox Engine to work on an actual game engine?
-*Yes.* Feel free to open merge requests! They are always welcome! Even if they are bad. In such a case you get information about what can be improved, and you can learn from it. Don't be shy, just go for it.
+### Can I contribute to the Brotbox Engine?
+*Yes.* Feel free to open merge requests! They are always welcome, even if you are a beginner. In such a case you get information about what can be improved, and you can learn from it. Don't be shy, just go for it!
