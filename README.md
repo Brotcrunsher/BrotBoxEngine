@@ -22,7 +22,11 @@ There are a lot of examples in the repository. Have a look at [ExampleSnake](htt
     cd Build
     cmake ..
 
-After that, build files like Solution Files (on Windows) are created. Build and launch ExampleSnake and have a look at its source code.
+After that, build files like Solution Files (on Windows) are created. To build the projects you can either use your favorite IDE or directly interact with CMake using the following command while you are in the Build directory:
+
+    cmake --build . --target ExampleSnake
+
+This will build an executable that you may run.
 
 
 ## FAQ
