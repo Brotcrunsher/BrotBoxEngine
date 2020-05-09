@@ -36,3 +36,6 @@ This will build an executable that you may run.
 
 ### Can I contribute to the Brotbox Engine?
 *Yes.* Feel free to open merge requests! They are always welcome, even if you are a beginner. In such a case you get information about what can be improved, and you can learn from it. Don't be shy, just go for it!
+
+### Which compilers are supported?
+The project is regularly build with Microsoft Visual Studio Version 16.5.4 (with its default MSVC) as well as GCC Version 8.4.0. Other versions of said compilers probably also work as long as they have full C++17 support. Completely different compilers like clang are untested, though it's quite possible that they work as well. Feel free to try and let me know.
