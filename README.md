@@ -39,3 +39,7 @@ This will build an executable that you may run.
 
 ### Which compilers are supported?
 The project is regularly build with Microsoft Visual Studio Version 16.5.4 (with its default MSVC) as well as GCC Version 8.4.0. Other versions of said compilers probably also work as long as they have full C++17 support. Completely different compilers like clang are untested, though it's quite possible that they work as well. Feel free to try and let me know.
+
+## Other Resources
+
+[This](https://github.com/Brotcrunsher/BrotboxEngineExampleExternal) shows you how you can set up an external project that uses the Brotbox Engine. The repository itself is tiny, but it's CMake code downloads and integrates the Brotbox Engine in an easy to use way.
