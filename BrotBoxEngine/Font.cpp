@@ -75,8 +75,8 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 		if (charImages[chars[i]].isLoaded()) throw IllegalArgumentException(); // A char was passed twice.
 		
 		stbtt_GetCodepointHMetrics(&fontInfo, chars[i], advanceWidths + chars[i], leftSideBearings + chars[i]);
-		advanceWidths[chars[i]] *= static_cast<int>(scale);
-		leftSideBearings[chars[i]] *= static_cast<int>(scale);
+		advanceWidths[chars[i]] = static_cast<int>(advanceWidths[chars[i]] * scale);
+		leftSideBearings[chars[i]] = static_cast<int>(leftSideBearings[chars[i]] * scale);
 
 		int y1 = 0;
 		stbtt_GetCodepointBox(&fontInfo, chars[i], nullptr, nullptr, nullptr, &y1);
