@@ -14,7 +14,7 @@ public:
 
 	virtual void onStart() override
 	{
-		sdfShader.load("fragSdf.spv");
+		sdfShader.load(BBE_APPLICATION_ASSET_PATH "/fragSdf.spv");
 		ccnc.setCameraPos(bbe::Vector3(0, 0, 0));
 	}
 

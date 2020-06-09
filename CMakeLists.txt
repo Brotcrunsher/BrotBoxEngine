@@ -18,6 +18,7 @@ macro(install_compiled_shaders currProject)
 endmacro()
 
 macro(add_trivial_project name)
+  add_compile_definitions(BBE_APPLICATION_ASSET_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
   add_executable(${name})
   target_link_libraries(${name} BrotboxEngine)
   file(GLOB local_src CONFIGURE_DEPENDS "*.cpp")

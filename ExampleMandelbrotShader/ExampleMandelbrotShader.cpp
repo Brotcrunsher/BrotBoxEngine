@@ -16,7 +16,7 @@ public:
 
 	virtual void onStart() override
 	{
-		mandelbrotShader.load("fragMandelbrot.spv");
+		mandelbrotShader.load(BBE_APPLICATION_ASSET_PATH "/fragMandelbrot.spv");
 	}
 
 	virtual void update(float timeSinceLastFrame) override
