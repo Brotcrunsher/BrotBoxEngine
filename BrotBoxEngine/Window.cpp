@@ -201,7 +201,7 @@ void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int acti
 
 void bbe::INTERNAL_mouseScrollCallback(GLFWwindow * window, double xoffset, double yoffset)
 {
-	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_scroll(xoffset, yoffset);
+	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_scroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
 }
 
 template<>

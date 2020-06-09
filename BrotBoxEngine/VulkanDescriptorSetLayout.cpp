@@ -31,7 +31,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSetLayout::create(const VulkanDevice
 	dslci.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	dslci.pNext        = nullptr;
 	dslci.flags        = 0;
-	dslci.bindingCount = m_bindings.getLength();
+	dslci.bindingCount = static_cast<uint32_t>(m_bindings.getLength());
 	dslci.pBindings    = m_bindings.getRaw();
 
 	VkResult result = vkCreateDescriptorSetLayout(m_device, &dslci, nullptr, &m_descriptorSetLayout);

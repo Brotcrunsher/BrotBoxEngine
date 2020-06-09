@@ -93,7 +93,7 @@ void bbe::INTERNAL::vulkan::VulkanSwapchain::createFramebuffers(const VWDepthIma
 		framebufferCreateInfo.pNext = nullptr;
 		framebufferCreateInfo.flags = 0;
 		framebufferCreateInfo.renderPass = renderPass.getRenderPass();
-		framebufferCreateInfo.attachmentCount = attachmentViews.getLength();
+		framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachmentViews.getLength());
 		framebufferCreateInfo.pAttachments = attachmentViews.getRaw();
 		framebufferCreateInfo.width = m_width;
 		framebufferCreateInfo.height = m_height;

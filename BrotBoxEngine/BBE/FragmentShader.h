@@ -29,6 +29,6 @@ namespace bbe
 
 		INTERNAL::vulkan::VulkanPipeline& INTERNAL_getPipeline();
 
-		void setPushConstant(PrimitiveBrush2D& brush, size_t offset, size_t length, const void* data);
+		void setPushConstant(PrimitiveBrush2D& brush, uint32_t offset, uint32_t length, const void* data);
 	};
 }

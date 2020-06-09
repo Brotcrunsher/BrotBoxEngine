@@ -23,7 +23,8 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	}
 
 	m_device = device.getDevice();
-	int amountOfMips = Math::log2Floor(Math::max(getWidth(), getHeight())) + 1;
+	// TODO: uff @static_cast madness...
+	int amountOfMips = static_cast<int>(Math::log2Floor(static_cast<int>(Math::max(static_cast<float>(getWidth()), static_cast<float>(getHeight()))))) + 1;
 	m_imageLayout = std::make_unique<VkImageLayout[]>(amountOfMips); //TODO use allocator
 	for (int i = 0; i < amountOfMips; i++)
 	{
@@ -105,7 +106,7 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	samplerCreateInfo.compareEnable = VK_FALSE;
 	samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
 	samplerCreateInfo.minLod = 0.0f;
-	samplerCreateInfo.maxLod = amountOfMips;
+	samplerCreateInfo.maxLod = static_cast<float>(amountOfMips);
 	samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 	samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
 
@@ -369,12 +370,12 @@ int bbe::Image::getHeight() const
 
 bbe::Vector2 bbe::Image::getDimensions() const
 {
-	return Vector2(getWidth(), getHeight());
+	return Vector2(static_cast<float>(getWidth()), static_cast<float>(getHeight()));
 }
 
 int bbe::Image::getSizeInBytes() const
 {
-	return getWidth() * getHeight() * getAmountOfChannels() * getBytesPerChannel();
+	return static_cast<int>(getWidth() * getHeight() * getAmountOfChannels() * getBytesPerChannel());
 }
 
 size_t bbe::Image::getAmountOfChannels() const

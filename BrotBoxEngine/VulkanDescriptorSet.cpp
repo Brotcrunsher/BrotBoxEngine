@@ -105,7 +105,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::update(const VulkanDevice & dev
 		i += descriptorCount - 1;
 	}
 
-	vkUpdateDescriptorSets(device.getDevice(), writeDescriptorSets.getLength(), writeDescriptorSets.getRaw(), 0, nullptr);
+	vkUpdateDescriptorSets(device.getDevice(), static_cast<uint32_t>(writeDescriptorSets.getLength()), writeDescriptorSets.getRaw(), 0, nullptr);
 }
 
 VkDescriptorSet bbe::INTERNAL::vulkan::VulkanDescriptorSet::getDescriptorSet() const

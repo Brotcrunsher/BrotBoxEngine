@@ -68,7 +68,7 @@ void bbe::INTERNAL::vulkan::VulkanRenderPass::init(const VulkanDevice & device)
 	renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassCreateInfo.pNext = nullptr;
 	renderPassCreateInfo.flags = 0;
-	renderPassCreateInfo.attachmentCount = attachments.getLength();
+	renderPassCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.getLength());
 	renderPassCreateInfo.pAttachments = attachments.getRaw();
 	renderPassCreateInfo.subpassCount = 1;
 	renderPassCreateInfo.pSubpasses = &subpassDescription;

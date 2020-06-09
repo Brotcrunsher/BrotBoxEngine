@@ -56,7 +56,7 @@ bbe::INTERNAL::vulkan::VulkanPipeline& bbe::FragmentShader::INTERNAL_getPipeline
 	return m_pipeline;
 }
 
-void bbe::FragmentShader::setPushConstant(PrimitiveBrush2D& brush, size_t offset, size_t length, const void* data)
+void bbe::FragmentShader::setPushConstant(PrimitiveBrush2D& brush, uint32_t offset, uint32_t length, const void* data)
 {
 	if (offset < 80 || offset + length > 128)
 	{

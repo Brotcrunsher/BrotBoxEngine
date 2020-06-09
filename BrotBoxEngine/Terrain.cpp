@@ -84,7 +84,7 @@ void bbe::Terrain::initIndexBuffer(const INTERNAL::vulkan::VulkanDevice &device,
 	m_indexBuffer.unmap();
 
 	m_indexBuffer.upload(commandPool, queue);
-	m_amountOfIndizes = indices.getLength();
+	m_amountOfIndizes = static_cast<uint32_t>(indices.getLength());
 }
 
 void bbe::Terrain::initVertexBuffer(const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue) const
@@ -98,7 +98,7 @@ void bbe::Terrain::initVertexBuffer(const INTERNAL::vulkan::VulkanDevice &device
 	{
 		for (int k = 0; k <= h; k++)
 		{
-			vertices.add(Vector2(k, i));
+			vertices.add(Vector2(static_cast<float>(k), static_cast<float>(i)));
 		}
 	}
 

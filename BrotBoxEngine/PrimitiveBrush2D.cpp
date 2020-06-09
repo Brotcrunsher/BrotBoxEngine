@@ -33,7 +33,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 
 	setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
 
-	float pushConstants[] = { m_screenWidth, m_screenHeight };
+	float pushConstants[] = { static_cast<float>(m_screenWidth), static_cast<float>(m_screenHeight) };
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 24, sizeof(float) * 2, pushConstants);
 }
 
@@ -278,7 +278,7 @@ void bbe::PrimitiveBrush2D::fillBezierCurve(const Vector2& startPoint, const Vec
 void bbe::PrimitiveBrush2D::fillBezierCurve(const BezierCurve2& bc, float lineWidth)
 {
 	bbe::Vector2 previousPoint = bc.getStartPoint();
-	for (float t = 0; t <= 1; t += 0.01)
+	for (float t = 0; t <= 1; t += 0.01f)
 	{
 		const bbe::Vector2 currentPoint = bc.evaluate(t);
 

@@ -256,7 +256,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 		depthClearValue
 	};
 
-	renderPassBeginInfo.clearValueCount = clearValues.getLength();
+	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.getLength());
 	renderPassBeginInfo.pClearValues = clearValues.getRaw();
 
 

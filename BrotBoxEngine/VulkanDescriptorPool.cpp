@@ -74,7 +74,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(const VulkanDevice & de
 	dpci.pNext = nullptr;
 	dpci.flags = 0;
 	dpci.maxSets = amountOfSets;
-	dpci.poolSizeCount = poolSizes.getLength();
+	dpci.poolSizeCount = static_cast<uint32_t>(poolSizes.getLength());
 	dpci.pPoolSizes = poolSizes.getRaw();
 
 	VkResult result = vkCreateDescriptorPool(m_device, &dpci, nullptr, &m_descriptorPool);

@@ -25,8 +25,8 @@ namespace bbe
 		Matrix4 m_transform;
 
 
-		static size_t amountOfVertices;
-		static size_t amountOfIndices;
+		static uint32_t amountOfVertices;
+		static uint32_t amountOfIndices;
 
 		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
 		static void s_destroy();

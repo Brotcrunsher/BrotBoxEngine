@@ -55,19 +55,19 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 	const bbe::List<unsigned char> font = bbe::simpleFile::readBinaryFile(this->fontPath);
 	stbtt_fontinfo fontInfo;
 	stbtt_InitFont(&fontInfo, font.getRaw(), stbtt_GetFontOffsetForIndex(font.getRaw(), 0));
-	const float scale = stbtt_ScaleForPixelHeight(&fontInfo, fontSize);
+	const float scale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(fontSize));
 
 	int ascent = 0;
 	int descent = 0;
 	int lineGap = 0;
 	stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
-	pixelsFromLineToLine = (ascent - descent + lineGap) * scale;
+	pixelsFromLineToLine = static_cast<int>((ascent - descent + lineGap) * scale);
 
 	int spaceAdvance = 0;
 	int spaceLeftSideBearing = 0;
 	stbtt_GetCodepointHMetrics(&fontInfo, ' ', &spaceAdvance, &spaceLeftSideBearing);
-	advanceWidths[' '] = spaceAdvance * scale;
-	leftSideBearings[' '] = spaceLeftSideBearing * scale;
+	advanceWidths[' '] = static_cast<int>(spaceAdvance * scale);
+	leftSideBearings[' '] = static_cast<int>(spaceLeftSideBearing * scale);
 
 	for (size_t i = 0; i < chars.getLength(); i++)
 	{
@@ -75,12 +75,12 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 		if (charImages[chars[i]].isLoaded()) throw IllegalArgumentException(); // A char was passed twice.
 		
 		stbtt_GetCodepointHMetrics(&fontInfo, chars[i], advanceWidths + chars[i], leftSideBearings + chars[i]);
-		advanceWidths[chars[i]] *= scale;
-		leftSideBearings[chars[i]] *= scale;
+		advanceWidths[chars[i]] *= static_cast<int>(scale);
+		leftSideBearings[chars[i]] *= static_cast<int>(scale);
 
 		int y1 = 0;
 		stbtt_GetCodepointBox(&fontInfo, chars[i], nullptr, nullptr, nullptr, &y1);
-		verticalOffsets[chars[i]] = (-y1) * scale;
+		verticalOffsets[chars[i]] = static_cast<int>((-y1) * scale);
 
 		int width = 0;
 		int height = 0;

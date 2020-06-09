@@ -102,7 +102,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::init(VulkanShader vertexShader, Vulk
 	m_dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 	m_dynamicStateCreateInfo.pNext = nullptr;
 	m_dynamicStateCreateInfo.flags = 0;
-	m_dynamicStateCreateInfo.dynamicStateCount = m_dynamicStates.getLength();
+	m_dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(m_dynamicStates.getLength());
 	m_dynamicStateCreateInfo.pDynamicStates = m_dynamicStates.getRaw();
 
 	m_wasInitialized = true;
@@ -124,9 +124,9 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 	vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertexInputCreateInfo.pNext = nullptr;
 	vertexInputCreateInfo.flags = 0;
-	vertexInputCreateInfo.vertexBindingDescriptionCount = m_vertexBindingDescription.getLength();
+	vertexInputCreateInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(m_vertexBindingDescription.getLength());
 	vertexInputCreateInfo.pVertexBindingDescriptions = m_vertexBindingDescription.getRaw();
-	vertexInputCreateInfo.vertexAttributeDescriptionCount = m_vertexAttributeDescriptions.getLength();
+	vertexInputCreateInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(m_vertexAttributeDescriptions.getLength());
 	vertexInputCreateInfo.pVertexAttributeDescriptions = m_vertexAttributeDescriptions.getRaw();
 
 	m_device = device;
@@ -177,7 +177,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 	VkSpecializationInfo spezializationData = {};
 	if (m_spezializationData != nullptr)
 	{
-		spezializationData.mapEntryCount = m_specializationEntries.getLength();
+		spezializationData.mapEntryCount = static_cast<uint32_t>(m_specializationEntries.getLength());
 		spezializationData.pMapEntries   = m_specializationEntries.getRaw();
 		spezializationData.dataSize      = m_spezializationSize;
 		spezializationData.pData         = m_spezializationData;
@@ -193,9 +193,9 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutCreateInfo.pNext = nullptr;
 	pipelineLayoutCreateInfo.flags = 0;
-	pipelineLayoutCreateInfo.setLayoutCount = m_descriptorSetLayouts.getLength();
+	pipelineLayoutCreateInfo.setLayoutCount = static_cast<uint32_t>(m_descriptorSetLayouts.getLength());
 	pipelineLayoutCreateInfo.pSetLayouts = m_descriptorSetLayouts.getRaw();
-	pipelineLayoutCreateInfo.pushConstantRangeCount = m_pushConstantRanges.getLength();
+	pipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(m_pushConstantRanges.getLength());
 	pipelineLayoutCreateInfo.pPushConstantRanges = m_pushConstantRanges.getRaw();
 
 	VkResult result = vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout);
@@ -206,7 +206,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineCreateInfo.pNext = nullptr;
 	pipelineCreateInfo.flags = 0;
-	pipelineCreateInfo.stageCount = shaderStages.getLength();
+	pipelineCreateInfo.stageCount = static_cast<uint32_t>(shaderStages.getLength());
 	pipelineCreateInfo.pStages = shaderStages.getRaw();
 	pipelineCreateInfo.pVertexInputState = &vertexInputCreateInfo;
 	pipelineCreateInfo.pInputAssemblyState = &m_inputAssemblyCreateInfo;
