@@ -15,7 +15,7 @@ public:
 	bool wireframe = false;
 
 	MyGame()
-		:terrain(8 * 1024, 8 * 1024, "../../Third-Party/textures/dryDirt.png", 12)
+		:terrain(8 * 1024, 8 * 1024, BBE_APPLICATION_ASSET_PATH "/dryDirt.png", 12)
 	{
 		ccnc.setCameraPos(bbe::Vector3(1000, 1000, 500));
 
@@ -43,8 +43,8 @@ public:
 				weightsSand[index] = weightSand;
 			}
 		}
-		terrain.addTexture("../../Third-Party/textures/sand.png", weightsSand);
-		terrain.addTexture("../../Third-Party/textures/cf_ter_gcs_01.png", weightsGrass);
+		terrain.addTexture(BBE_APPLICATION_ASSET_PATH "/sand.png", weightsSand);
+		terrain.addTexture(BBE_APPLICATION_ASSET_PATH "/cf_ter_gcs_01.png", weightsGrass);
 		delete[] weightsGrass;
 		delete[] weightsSand;
 	}
