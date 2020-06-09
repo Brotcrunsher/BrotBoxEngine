@@ -54,7 +54,7 @@ public:
 	virtual void onStart() override
 	{
 		font.load("arial.ttf", 200);
-		background.load("sky.jpg");
+		background.load(BBE_APPLICATION_ASSET_PATH "/sky.jpg");
 		addBalloon();
 	}
 
