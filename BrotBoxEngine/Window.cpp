@@ -30,6 +30,7 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	}
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 
 	m_pwindow = glfwCreateWindow(width, height, title, nullptr, nullptr);
 	if (m_pwindow == nullptr)
@@ -179,7 +180,10 @@ void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, i
 
 void bbe::INTERNAL_cursorPosCallback(GLFWwindow * window, double xpos, double ypos)
 {
-	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_moveMouse((float)xpos, (float)ypos);
+	float windowXScale = 0;
+	float windowYScale = 0;
+	glfwGetWindowContentScale(window, &windowXScale, &windowYScale);
+	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_moveMouse((float)(xpos / windowXScale), (float)(ypos / windowYScale));
 }
 
 void bbe::INTERNAL_windowResizeCallback(GLFWwindow * window, int width, int height)

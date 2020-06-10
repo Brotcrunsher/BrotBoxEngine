@@ -52,6 +52,8 @@ namespace bbe
 		VkPipelineLayout                             m_layoutImage          = VK_NULL_HANDLE;
 		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineImage       = nullptr;
 		VkDescriptorSet                              m_descriptorSet        = VK_NULL_HANDLE;
+		float                                        m_windowXScale;
+		float                                        m_windowYScale;
 		int                                          m_screenWidth;
 		int                                          m_screenHeight;
 
@@ -71,6 +73,7 @@ namespace bbe
 			VkCommandBuffer commandBuffer,
 			INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive,
 			INTERNAL::vulkan::VulkanPipeline &pipelineImage,
+			GLFWwindow* window,
 			int screenWidth, int screenHeight);
 
 		FillMode m_fillMode = FillMode::SOLID;

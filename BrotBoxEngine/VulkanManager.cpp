@@ -194,6 +194,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 		*m_currentFrameDrawCommandBuffer,
 		m_pipeline2DPrimitive,
 		m_pipeline2DImage,
+		m_pwindow,
 		m_screenWidth, m_screenHeight);
 }
 

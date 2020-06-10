@@ -1,8 +1,8 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 
-constexpr int WINDOW_WIDTH = 1920;
-constexpr int WINDOW_HEIGHT = 1080;
+constexpr int WINDOW_WIDTH = 1280;
+constexpr int WINDOW_HEIGHT = 720;
 
 class MyGame : public bbe::Game
 {
@@ -53,7 +53,7 @@ private:
 public:
 	virtual void onStart() override
 	{
-		font.load("arial.ttf", 200);
+		font.load("arial.ttf", 100);
 		background.load(BBE_APPLICATION_ASSET_PATH "/sky.jpg");
 		addBalloon();
 	}

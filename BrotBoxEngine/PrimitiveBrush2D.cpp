@@ -15,6 +15,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	VkCommandBuffer commandBuffer,
 	INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive,
 	INTERNAL::vulkan::VulkanPipeline &pipelineImage,
+	GLFWwindow* window,
 	int width, int height)
 {
 	m_layoutPrimitive = pipelinePrimitive.getLayout();
@@ -35,6 +36,8 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 
 	float pushConstants[] = { static_cast<float>(m_screenWidth), static_cast<float>(m_screenHeight) };
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 24, sizeof(float) * 2, pushConstants);
+
+	glfwGetWindowContentScale(window, &m_windowXScale, &m_windowYScale);
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_bindRectBuffers()
@@ -63,7 +66,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotat
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 
-	float pushConstants[] = { rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight(), rotation};
+	float pushConstants[] = { rect.getX() * m_windowXScale, rect.getY() * m_windowYScale, rect.getWidth() * m_windowXScale, rect.getHeight() * m_windowYScale, rotation};
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
 
 	if (m_shapeRecord != ShapeRecord2D::RECTANGLE || true) {
@@ -84,7 +87,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 	image.createAndUpload(*m_pdevice, *m_pcommandPool, *m_pdescriptorPool, *m_pdescriptorSetLayout);
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutImage, 0, 1, image.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 
-	float pushConstants[] = { rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight() };
+	float pushConstants[] = { rect.getX() * m_windowXScale, rect.getY() * m_windowYScale, rect.getWidth() * m_windowXScale, rect.getHeight() * m_windowYScale };
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 4, pushConstants);
 
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 16, sizeof(float), &rotation);
@@ -103,7 +106,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle)
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(m_fillMode));
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
-	float pushConstants[] = { circle.getX(), circle.getY(), circle.getWidth(), circle.getHeight(), 0};
+	float pushConstants[] = { circle.getX() * m_windowXScale, circle.getY() * m_windowYScale, circle.getWidth() * m_windowXScale, circle.getHeight() * m_windowYScale, 0};
 
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
 
