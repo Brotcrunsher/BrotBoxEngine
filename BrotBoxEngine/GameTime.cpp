@@ -11,6 +11,7 @@ float bbe::GameTime::tick()
 
 	float timeSinceLastTick = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTickTimestamp - m_lastTickTimestamp).count() / 1000000000.0f;
 	m_lastTickTimestamp = currentTickTimestamp;
+	m_amountOfTicks++;
 
 	return timeSinceLastTick;
 }
@@ -29,8 +30,14 @@ float bbe::GameTime::timeSinceStartMilliseconds()
 	return timeSinceLastTick;
 }
 
+uint64_t bbe::GameTime::getAmountOfTicks()
+{
+	return m_amountOfTicks;
+}
+
 void bbe::GameTime::reset()
 {
 	m_gameStartTimestamp = std::chrono::high_resolution_clock::now();
 	m_lastTickTimestamp = m_gameStartTimestamp;
+	m_amountOfTicks = 0;
 }

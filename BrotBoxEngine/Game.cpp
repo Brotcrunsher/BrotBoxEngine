@@ -178,6 +178,11 @@ int bbe::Game::getWindowHeight()
 	return m_pwindow->getHeight();
 }
 
+uint64_t bbe::Game::getAmountOfFrames()
+{
+	return m_gameTime.getAmountOfTicks();
+}
+
 void bbe::Game::setCursorMode(bbe::CursorMode cm)
 {
 	m_pwindow->setCursorMode(cm);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "../BBE/GameTime.h"
 #include "../BBE/CursorMode.h"
 #include "../BBE/KeyboardKeys.h"
@@ -62,6 +64,8 @@ namespace bbe
 
 		int getWindowWidth();
 		int getWindowHeight();
+
+		uint64_t getAmountOfFrames();
 
 		void setCursorMode(bbe::CursorMode cm);
 	};
