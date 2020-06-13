@@ -34,6 +34,7 @@ namespace bbe
 		explicit Cube(const Matrix4 &transform);
 
 		void set(const Vector3 &pos, const Vector3 &scale, const Vector3 &rotationVector, float radians);
+		void setRotation(const Vector3 &rotationVector, float radians);
 
 		Vector3 getPos() const;
 		float getX() const;

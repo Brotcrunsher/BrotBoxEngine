@@ -1,11 +1,10 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 
-#define AMOUNTOFCUBES 1024 * 8
+constexpr size_t AMOUNTOFCUBES = 1024 * 8;
 class MyGame : public bbe::Game
 {
 	bbe::Cube cubes[AMOUNTOFCUBES];
-	bbe::Vector3 positions[AMOUNTOFCUBES];
 	bbe::Vector3 rotationAxis[AMOUNTOFCUBES];
 	float rotationSpeeds[AMOUNTOFCUBES];
 	float rotations[AMOUNTOFCUBES];
@@ -19,11 +18,10 @@ class MyGame : public bbe::Game
 		light.setLightStrength(5);
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
-			positions[i] = rand.randomVector3InUnitSphere() * 100.0f;
 			rotationAxis[i] = rand.randomVector3InUnitSphere();
 			rotations[i] = rand.randomFloat() * bbe::Math::PI * 2;
 			rotationSpeeds[i] = rand.randomFloat() * bbe::Math::PI * 2 * 0.25f;
-			cubes[i].set(positions[i] , bbe::Vector3(1), rotationAxis[i], rotations[i]);
+			cubes[i].set(rand.randomVector3InUnitSphere() * 100.0f, bbe::Vector3(1), rotationAxis[i], rotations[i]);
 		}
 		
 	}
@@ -38,7 +36,7 @@ class MyGame : public bbe::Game
 			{
 				rotations[i] -= bbe::Math::PI * 2;
 			}
-			cubes[i].set(positions[i], bbe::Vector3(1), rotationAxis[i], rotations[i]);
+			cubes[i].setRotation(rotationAxis[i], rotations[i]);
 		}
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override

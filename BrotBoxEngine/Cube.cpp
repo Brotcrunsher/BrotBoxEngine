@@ -88,9 +88,18 @@ bbe::Cube::Cube(const Matrix4 & transform)
 void bbe::Cube::set(const Vector3 & pos, const Vector3 & scale, const Vector3 & rotationVector, float radians)
 {
 	//UNTESTED
-	Matrix4 matTranslation = Matrix4::createTranslationMatrix(pos);
-	Matrix4 matScale = Matrix4::createScaleMatrix(scale);
-	Matrix4 matRotation = Matrix4::createRotationMatrix(radians, rotationVector);
+	const Matrix4 matTranslation = Matrix4::createTranslationMatrix(pos);
+	const Matrix4 matScale = Matrix4::createScaleMatrix(scale);
+	const Matrix4 matRotation = Matrix4::createRotationMatrix(radians, rotationVector);
+
+	m_transform = matTranslation * matRotation * matScale;
+}
+
+void bbe::Cube::setRotation(const Vector3 & rotationVector, float radians)
+{
+	const Matrix4 matTranslation = Matrix4::createTranslationMatrix(m_transform.extractTranslation());
+	const Matrix4 matScale = Matrix4::createScaleMatrix(m_transform.extractScale());
+	const Matrix4 matRotation = Matrix4::createRotationMatrix(radians, rotationVector);
 
 	m_transform = matTranslation * matRotation * matScale;
 }
