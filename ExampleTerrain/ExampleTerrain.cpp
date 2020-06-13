@@ -91,7 +91,7 @@ int main()
 	std::cout << "Loading. Please wait. This might take a while." << std::endl;
 	bbe::Settings::setAmountOfLightSources(5);
 	MyGame *mg = new MyGame();
-	mg->start(1280, 720, "3D Test");
+	mg->start(1280, 720, "Example Terrain");
 	delete mg;
 
     return 0;

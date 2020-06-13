@@ -1,1 +1,0 @@
-add_trivial_project(Example3D)

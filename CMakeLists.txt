@@ -73,7 +73,7 @@ target_include_directories(BrotboxEngine PUBLIC "Third-Party/stb")
 
 add_subdirectory(BrotBoxEngineTest)
 add_subdirectory(BrotBoxEngineGTest)
-add_subdirectory(Example3D)
+add_subdirectory(ExampleTerrain)
 add_subdirectory(ExampleMandelbrot)
 add_subdirectory(ExampleMandelbrotShader)
 add_subdirectory(ExampleParticleGravity)
