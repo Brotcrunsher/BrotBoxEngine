@@ -1,7 +1,7 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 
-constexpr size_t AMOUNTOFCUBES = 1024 * 2;
+constexpr size_t AMOUNT_OF_CUBES = 1024 * 2;
 class MyGame : public bbe::Game
 {
 	struct CubeEntity
@@ -12,7 +12,7 @@ class MyGame : public bbe::Game
 		float rotationSpeed;
 		float rotation;
 	};
-	CubeEntity cubeEntities[AMOUNTOFCUBES];
+	CubeEntity cubeEntities[AMOUNT_OF_CUBES];
 	bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
 	bbe::PointLight light;
 
@@ -21,7 +21,7 @@ class MyGame : public bbe::Game
 		light.setPosition(bbe::Vector3(-1, -1, 1));
 		light.setLightStrength(5);
 		bbe::Random rand;
-		for (int i = 0; i < AMOUNTOFCUBES; i++)
+		for (int i = 0; i < AMOUNT_OF_CUBES; i++)
 		{
 			cubeEntities[i].rotationAxis = rand.randomVector3InUnitSphere();
 			cubeEntities[i].rotation = rand.randomFloat() * bbe::Math::PI * 2;
@@ -35,7 +35,7 @@ class MyGame : public bbe::Game
 	{
 		std::cout << 1 / timeSinceLastFrame << std::endl;
 		ccnc.update(timeSinceLastFrame);
-		for (int i = 0; i < AMOUNTOFCUBES; i++)
+		for (int i = 0; i < AMOUNT_OF_CUBES; i++)
 		{
 			cubeEntities[i].rotation += cubeEntities[i].rotationSpeed * timeSinceLastFrame;
 			if (cubeEntities[i].rotation > bbe::Math::PI * 2)
@@ -48,7 +48,7 @@ class MyGame : public bbe::Game
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
-		for (int i = 0; i < AMOUNTOFCUBES; i++)
+		for (int i = 0; i < AMOUNT_OF_CUBES; i++)
 		{
 			brush.setColor(cubeEntities[i].color);
 			brush.fillCube(cubeEntities[i].cube);
