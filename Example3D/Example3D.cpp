@@ -39,7 +39,7 @@ class MyGame : public bbe::Game
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
-		std::cout << "FPS: " << (1.f / timeSinceLastFrame) << std::endl;
+		if(getAmountOfFrames() % 1000 == 0) std::cout << "FPS: " << (1.f / timeSinceLastFrame) << std::endl;
 		ccnc.update(timeSinceLastFrame);
 		for (int i = 0; i < AMOUNT_OF_CUBES; i++)
 		{

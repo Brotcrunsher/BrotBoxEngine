@@ -21,9 +21,7 @@ void bbe::INTERNAL::vulkan::VulkanShader::init(const bbe::String& path)
 
 void bbe::INTERNAL::vulkan::VulkanShader::init(const VulkanDevice & device, const bbe::String & path)
 {
-	std::cout << "Loading Shader: " << path.getRaw() << std::endl;
 	auto data = simpleFile::readBinaryFile(path);
-	std::cout << "Init Shader: " << path.getRaw() << std::endl;
 	init(device, data);
 }
 
