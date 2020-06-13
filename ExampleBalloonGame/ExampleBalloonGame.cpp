@@ -62,7 +62,9 @@ public:
 	{
 		if (gameover) return;
 
-		for (Balloon& b : balloons) {
+		const size_t amountOfBalloons = balloons.getLength();
+		for (size_t i = 0; i < amountOfBalloons; i++) {
+			Balloon& b = balloons[i];
 			if (checkGameOver(b)) {
 				gameover = true;
 			}
