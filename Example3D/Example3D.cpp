@@ -4,10 +4,14 @@
 constexpr size_t AMOUNTOFCUBES = 1024 * 8;
 class MyGame : public bbe::Game
 {
-	bbe::Cube cubes[AMOUNTOFCUBES];
-	bbe::Vector3 rotationAxis[AMOUNTOFCUBES];
-	float rotationSpeeds[AMOUNTOFCUBES];
-	float rotations[AMOUNTOFCUBES];
+	struct CubeEntity
+	{
+		bbe::Cube cube;
+		bbe::Vector3 rotationAxis;
+		float rotationSpeed;
+		float rotation;
+	};
+	CubeEntity cubeEntities[AMOUNTOFCUBES];
 	bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
 	bbe::PointLight light;
 
@@ -18,10 +22,10 @@ class MyGame : public bbe::Game
 		bbe::Random rand;
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
-			rotationAxis[i] = rand.randomVector3InUnitSphere();
-			rotations[i] = rand.randomFloat() * bbe::Math::PI * 2;
-			rotationSpeeds[i] = rand.randomFloat() * bbe::Math::PI * 2 * 0.25f;
-			cubes[i].set(rand.randomVector3InUnitSphere() * 100.0f, bbe::Vector3(1), rotationAxis[i], rotations[i]);
+			cubeEntities[i].rotationAxis = rand.randomVector3InUnitSphere();
+			cubeEntities[i].rotation = rand.randomFloat() * bbe::Math::PI * 2;
+			cubeEntities[i].rotationSpeed = rand.randomFloat() * bbe::Math::PI * 2 * 0.25f;
+			cubeEntities[i].cube.set(rand.randomVector3InUnitSphere() * 100.0f, bbe::Vector3(1), cubeEntities[i].rotationAxis, cubeEntities[i].rotation);
 		}
 		
 	}
@@ -31,12 +35,12 @@ class MyGame : public bbe::Game
 		ccnc.update(timeSinceLastFrame);
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
-			rotations[i] += rotationSpeeds[i] * timeSinceLastFrame;
-			if (rotations[i] > bbe::Math::PI * 2)
+			cubeEntities[i].rotation += cubeEntities[i].rotationSpeed * timeSinceLastFrame;
+			if (cubeEntities[i].rotation > bbe::Math::PI * 2)
 			{
-				rotations[i] -= bbe::Math::PI * 2;
+				cubeEntities[i].rotation -= bbe::Math::PI * 2;
 			}
-			cubes[i].setRotation(rotationAxis[i], rotations[i]);
+			cubeEntities[i].cube.setRotation(cubeEntities[i].rotationAxis, cubeEntities[i].rotation);
 		}
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
@@ -44,7 +48,7 @@ class MyGame : public bbe::Game
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
-			brush.fillCube(cubes[i]);
+			brush.fillCube(cubeEntities[i].cube);
 		}
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
