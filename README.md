@@ -1,5 +1,5 @@
-# Brotbox Engine
-![Build Status](https://travis-ci.org/Brotcrunsher/BrotboxEngine.svg?branch=master)
+# Brot Box Engine
+![Build Status](https://travis-ci.org/Brotcrunsher/BrotBoxEngine.svg?branch=master)
 
 A C++ prototyping engine that is striving for an easy to use API, hiding all the dirty details so that you don't have to care.
 
@@ -16,7 +16,7 @@ A C++ prototyping engine that is striving for an easy to use API, hiding all the
 
 ## Quick Start
 
-There are a lot of examples in the repository. Have a look at [ExampleSnake](https://github.com/Brotcrunsher/BrotboxEngine/tree/master/ExampleSnake) for a first start. To create build files for your local machine you have to download and install [CMake](https://cmake.org/) and the [Vulkan SDK](https://vulkan.lunarg.com/). Then, while being in the main directory of the repository, execute the following commands in a terminal:
+There are a lot of examples in the repository. Have a look at [ExampleSnake](https://github.com/Brotcrunsher/BrotBoxEngine/tree/master/ExampleSnake) for a first start. To create build files for your local machine you have to download and install [CMake](https://cmake.org/) and the [Vulkan SDK](https://vulkan.lunarg.com/). Then, while being in the main directory of the repository, execute the following commands in a terminal:
 
     mkdir Build
     cd Build
@@ -31,10 +31,10 @@ This will build an executable that you may run.
 
 ## FAQ
 
-### Would you recommend using the Brotbox Engine to create a game right now?
-*No.* The Brotbox Engine is still in a very, very early state. The API is changing rapidly, without warning, without changelogs and without backwards compatibility. 
+### Would you recommend using the Brot Box Engine to create a game right now?
+*No.* The Brot Box Engine is still in a very, very early state. The API is changing rapidly, without warning, without changelogs and without backwards compatibility. 
 
-### Can I contribute to the Brotbox Engine?
+### Can I contribute to the Brot Box Engine?
 *Yes.* Feel free to open merge requests! They are always welcome, even if you are a beginner. In such a case you get information about what can be improved, and you can learn from it. Don't be shy, just go for it!
 
 ### Which compilers are supported?
@@ -42,4 +42,4 @@ The project is regularly build with Microsoft Visual Studio Version 16.5.4 (with
 
 ## Other Resources
 
-[This](https://github.com/Brotcrunsher/BrotboxEngineExampleExternal) shows you how you can set up an external project that uses the Brotbox Engine. The repository itself is tiny, but it's CMake code downloads and integrates the Brotbox Engine in an easy to use way.
+[This](https://github.com/Brotcrunsher/BrotBoxEngineExampleExternal) shows you how you can set up an external project that uses the Brot Box Engine. The repository itself is tiny, but it's CMake code downloads and integrates the Brot Box Engine in an easy to use way.
