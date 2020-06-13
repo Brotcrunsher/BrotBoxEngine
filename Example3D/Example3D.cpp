@@ -19,21 +19,27 @@ class MyGame : public bbe::Game
 	virtual void onStart() override
 	{
 		light.setPosition(bbe::Vector3(-1, -1, 1));
-		light.setLightStrength(5);
+		light.setLightStrength(10);
 		bbe::Random rand;
 		for (int i = 0; i < AMOUNT_OF_CUBES; i++)
 		{
+			bbe::Vector3 position = rand.randomVector3InUnitSphere() * 50.0f;
+			if (position.getLength() < 10)
+			{
+				i--;
+				continue;
+			}
 			cubeEntities[i].rotationAxis = rand.randomVector3InUnitSphere();
 			cubeEntities[i].rotation = rand.randomFloat() * bbe::Math::PI * 2;
 			cubeEntities[i].rotationSpeed = rand.randomFloat() * bbe::Math::PI * 2 * 0.25f;
-			cubeEntities[i].cube.set(rand.randomVector3InUnitSphere() * 50.0f, bbe::Vector3(1), cubeEntities[i].rotationAxis, cubeEntities[i].rotation);
+			cubeEntities[i].cube.set(position, bbe::Vector3(1), cubeEntities[i].rotationAxis, cubeEntities[i].rotation);
 			cubeEntities[i].color = bbe::Color(rand.randomFloat(), rand.randomFloat(), rand.randomFloat());
 		}
 		
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
-		std::cout << 1 / timeSinceLastFrame << std::endl;
+		std::cout << "FPS: " << (1.f / timeSinceLastFrame) << std::endl;
 		ccnc.update(timeSinceLastFrame);
 		for (int i = 0; i < AMOUNT_OF_CUBES; i++)
 		{

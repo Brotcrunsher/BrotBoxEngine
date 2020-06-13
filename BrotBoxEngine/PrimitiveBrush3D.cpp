@@ -128,7 +128,7 @@ void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 	}
 	
 
-	vkCmdDrawIndexed(m_currentCommandBuffer, 12 * 3, 1, 0, 0, 0);
+	vkCmdDrawIndexed(m_currentCommandBuffer, Cube::amountOfIndices, 1, 0, 0, 0);
 }
 
 void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
