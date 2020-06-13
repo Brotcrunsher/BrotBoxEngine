@@ -9,13 +9,13 @@ class MyGame : public bbe::Game
 	float rotationSpeeds[AMOUNTOFCUBES];
 	float rotations[AMOUNTOFCUBES];
 	bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
-	bbe::Random rand;
 	bbe::PointLight light;
 
 	virtual void onStart() override
 	{
 		light.setPosition(bbe::Vector3(-1, -1, 1));
 		light.setLightStrength(5);
+		bbe::Random rand;
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
 			rotationAxis[i] = rand.randomVector3InUnitSphere();
