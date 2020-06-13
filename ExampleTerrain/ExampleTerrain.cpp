@@ -25,6 +25,11 @@ public:
 		float *weightsSand  = new float[terrain.getWidth() * terrain.getHeight()];
 		for (int i = 0; i < terrain.getHeight(); i++)
 		{
+			if (i % 100 == 0)
+			{
+				float percentageDone = 100.f * ((float)i / (float)terrain.getHeight());
+				std::cout << percentageDone << "%" << std::endl;
+			}
 			for (int k = 0; k < terrain.getWidth(); k++)
 			{
 				int index = i * terrain.getWidth() + k;
