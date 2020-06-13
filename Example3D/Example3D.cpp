@@ -1,13 +1,14 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 
-constexpr size_t AMOUNTOFCUBES = 1024 * 8;
+constexpr size_t AMOUNTOFCUBES = 1024 * 2;
 class MyGame : public bbe::Game
 {
 	struct CubeEntity
 	{
 		bbe::Cube cube;
 		bbe::Vector3 rotationAxis;
+		bbe::Color color;
 		float rotationSpeed;
 		float rotation;
 	};
@@ -25,7 +26,8 @@ class MyGame : public bbe::Game
 			cubeEntities[i].rotationAxis = rand.randomVector3InUnitSphere();
 			cubeEntities[i].rotation = rand.randomFloat() * bbe::Math::PI * 2;
 			cubeEntities[i].rotationSpeed = rand.randomFloat() * bbe::Math::PI * 2 * 0.25f;
-			cubeEntities[i].cube.set(rand.randomVector3InUnitSphere() * 100.0f, bbe::Vector3(1), cubeEntities[i].rotationAxis, cubeEntities[i].rotation);
+			cubeEntities[i].cube.set(rand.randomVector3InUnitSphere() * 50.0f, bbe::Vector3(1), cubeEntities[i].rotationAxis, cubeEntities[i].rotation);
+			cubeEntities[i].color = bbe::Color(rand.randomFloat(), rand.randomFloat(), rand.randomFloat());
 		}
 		
 	}
@@ -48,6 +50,7 @@ class MyGame : public bbe::Game
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 		for (int i = 0; i < AMOUNTOFCUBES; i++)
 		{
+			brush.setColor(cubeEntities[i].color);
 			brush.fillCube(cubeEntities[i].cube);
 		}
 	}
