@@ -39,7 +39,11 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	}
 
 	std::cout << "Init vulkan manager" << std::endl;
-	m_vulkanManager.init(title, major, minor, patch, m_pwindow, width, height);
+
+	float windowXScale = 0;
+	float windowYScale = 0;
+	glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
+	m_vulkanManager.init(title, major, minor, patch, m_pwindow, static_cast<uint32_t>(width * windowXScale), static_cast<uint32_t>(height * windowYScale));
 
 
 	std::cout << "Setting glwf callbacks" << std::endl;
