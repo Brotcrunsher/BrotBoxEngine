@@ -12,17 +12,17 @@ private:
 		float x;
 		float y;
 		float width;
-		float heigth;
+		float height;
 		float hue;
 
-		Balloon(float x, float y, float width, float heigth, float hue)
-			: x(x), y(y), width(width), heigth(heigth), hue(hue)
+		Balloon(float x, float y, float width, float height, float hue)
+			: x(x), y(y), width(width), height(height), hue(hue)
 		{
 		}
 	};
 
 	static constexpr int BALLOON_WIDTH = 40;
-	static constexpr int BALLOON_HEIGTH = 60;
+	static constexpr int BALLOON_HEIGHT = 60;
 
 	bool gameover = false;
 	int score = 0;
@@ -34,7 +34,7 @@ private:
 
 	void addBalloon() {
 		balloons.add(Balloon(random.randomInt(WINDOW_WIDTH - BALLOON_WIDTH), WINDOW_HEIGHT,
-			BALLOON_WIDTH, BALLOON_HEIGTH, randomBalloonHue()));
+			BALLOON_WIDTH, BALLOON_HEIGHT, randomBalloonHue()));
 	}
 
 	float randomBalloonHue() {
@@ -46,7 +46,7 @@ private:
 	}
 
 	bool checkMousePosition(const Balloon& b) {
-		return (getMouseY() < b.y + b.heigth && getMouseY() > b.y)
+		return (getMouseY() < b.y + b.height && getMouseY() > b.y)
 			&& (getMouseX() < b.x + b.width  && getMouseX() > b.x);
 	}
 
@@ -105,7 +105,7 @@ public:
 
 		for (Balloon& b : balloons) {
 			brush.setColorHSV(b.hue, 1, 1);
-			brush.fillCircle(bbe::Circle(b.x, b.y, b.width, b.heigth));
+			brush.fillCircle(bbe::Circle(b.x, b.y, b.width, b.height));
 		}
 		
 		if (gameover){
