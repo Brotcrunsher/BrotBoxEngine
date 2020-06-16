@@ -29,7 +29,6 @@ class MyGame : public bbe::Game
 	}
 	virtual void onEnd() override
 	{
-		myFont.destroy();
 	}
 };
 

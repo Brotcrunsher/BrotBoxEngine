@@ -106,8 +106,6 @@ public:
 
 	virtual void onEnd() override
 	{
-		background.destroy();
-		font.destroy();
 	}
 };
 
