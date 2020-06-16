@@ -14,7 +14,7 @@ void bbe::CameraControlNoClip::update(float timeSinceLastFrame)
 {
 	m_horizontalMouse += m_pgame->getMouseXDelta() / -300.0f;
 	m_verticalMouse += m_pgame->getMouseYDelta() / 300.f;
-	m_verticalMouse = bbe::Math::clamp(m_verticalMouse, -bbe::Math::PI / 2 + 0.001f, bbe::Math::PI / 2 - 0.001f);
+	m_verticalMouse = bbe::Math::clamp(m_verticalMouse, -bbe::Math::PI / 2 + 0.01f, bbe::Math::PI / 2 - 0.01f);
 	if (m_horizontalMouse > bbe::Math::PI * 2)
 	{
 		m_horizontalMouse -= bbe::Math::PI * 2;
