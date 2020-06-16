@@ -7,18 +7,12 @@ constexpr int WINDOW_HEIGHT = 720;
 class MyGame : public bbe::Game
 {
 private:
-	class Balloon {
-	public:
+	struct Balloon {
 		float x;
 		float y;
 		float width;
 		float height;
 		float hue;
-
-		Balloon(float x, float y, float width, float height, float hue)
-			: x(x), y(y), width(width), height(height), hue(hue)
-		{
-		}
 	};
 
 	static constexpr int BALLOON_WIDTH = 40;
@@ -33,8 +27,15 @@ private:
 	bbe::List<Balloon> balloons;
 
 	void addBalloon() {
-		balloons.add(Balloon(random.randomInt(WINDOW_WIDTH - BALLOON_WIDTH), WINDOW_HEIGHT,
-			BALLOON_WIDTH, BALLOON_HEIGHT, randomBalloonHue()));
+		balloons.add(
+			Balloon { 
+				random.randomFloat() * (WINDOW_WIDTH - BALLOON_WIDTH),
+				WINDOW_HEIGHT,
+				BALLOON_WIDTH, 
+				BALLOON_HEIGHT, 
+				randomBalloonHue() 
+			}
+		);
 	}
 
 	float randomBalloonHue() {
