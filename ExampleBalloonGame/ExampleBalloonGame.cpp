@@ -7,7 +7,7 @@ constexpr int WINDOW_HEIGHT = 720;
 class MyGame : public bbe::Game
 {
 private:
-	static inline bbe::Random random;
+	static inline bbe::Random random = bbe::Random();
 	struct Balloon {
 		static constexpr float WIDTH = 40;
 		static constexpr float HEIGHT = 60;
