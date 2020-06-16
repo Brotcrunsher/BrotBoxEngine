@@ -7,39 +7,25 @@ constexpr int WINDOW_HEIGHT = 720;
 class MyGame : public bbe::Game
 {
 private:
+	static inline bbe::Random random;
 	struct Balloon {
-		float x;
-		float y;
-		float width;
-		float height;
-		float hue;
+		static constexpr float WIDTH = 40;
+		static constexpr float HEIGHT = 60;
+		float x = random.randomFloat(WINDOW_WIDTH - Balloon::WIDTH);
+		float y = WINDOW_HEIGHT;
+		float hue = random.randomFloat(360.f);
 	};
 
-	static constexpr int BALLOON_WIDTH = 40;
-	static constexpr int BALLOON_HEIGHT = 60;
 
 	bool gameover = false;
 	int score = 0;
 
 	bbe::Font font;
-	bbe::Random random;
 	bbe::Image background;
 	bbe::List<Balloon> balloons;
 
 	void addBalloon() {
-		balloons.add(
-			Balloon { 
-				random.randomFloat() * (WINDOW_WIDTH - BALLOON_WIDTH),
-				WINDOW_HEIGHT,
-				BALLOON_WIDTH, 
-				BALLOON_HEIGHT, 
-				randomBalloonHue() 
-			}
-		);
-	}
-
-	float randomBalloonHue() {
-		return random.randomFloat() * 360;
+		balloons.add(Balloon());
 	}
 
 	bool checkGameOver(const Balloon& b) {
@@ -47,8 +33,8 @@ private:
 	}
 
 	bool checkMousePosition(const Balloon& b) {
-		return (getMouseY() < b.y + b.height && getMouseY() > b.y)
-			&& (getMouseX() < b.x + b.width  && getMouseX() > b.x);
+		return (getMouseX() < b.x + Balloon::WIDTH  && getMouseX() > b.x)
+		    && (getMouseY() < b.y + Balloon::HEIGHT && getMouseY() > b.y);
 	}
 
 public:
@@ -63,24 +49,26 @@ public:
 	{
 		if (gameover) return;
 
-		const size_t amountOfBalloons = balloons.getLength();
-		for (size_t i = 0; i < amountOfBalloons; i++) {
-			Balloon& b = balloons[i];
+		size_t amountOfBalloonsToAdd = 0;
+		bool balloonClickedThisFrame = false;
+		for (Balloon& b : balloons) {
 			if (checkGameOver(b)) {
 				gameover = true;
 			}
 
-			if (checkMousePosition(b) && isMousePressed(bbe::MouseButton::LEFT)) {
-				b.y = WINDOW_HEIGHT;
-				b.x = random.randomFloat(WINDOW_WIDTH - b.width);
-				b.hue = randomBalloonHue();
+			if (checkMousePosition(b) && isMousePressed(bbe::MouseButton::LEFT) && !balloonClickedThisFrame) {
+				b = Balloon();
 				score++;
-
+				balloonClickedThisFrame = true;
 				if (random.randomFloat()<0.2) {
-					addBalloon();
+					amountOfBalloonsToAdd++;
 				}
 			}
+
 			b.y-=timeSinceLastFrame*60;
+		}
+		for (size_t i = 0; i < amountOfBalloonsToAdd; i++) {
+			addBalloon();
 		}
 	}
 
@@ -106,7 +94,7 @@ public:
 
 		for (Balloon& b : balloons) {
 			brush.setColorHSV(b.hue, 1, 1);
-			brush.fillCircle(bbe::Circle(b.x, b.y, b.width, b.height));
+			brush.fillCircle(bbe::Circle(b.x, b.y, Balloon::WIDTH, Balloon::HEIGHT));
 		}
 		
 		if (gameover){
