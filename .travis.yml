@@ -26,6 +26,7 @@ script:
   - cmake --build . --target ExampleMandelbrotShader
   - cmake --build . --target ExampleParticleGravity
   - cmake --build . --target ExampleSnake
+  - cmake --build . --target ExampleSnake3D
   - cmake --build . --target ExampleCurves
   - cmake --build . --target ExampleBalloonGame
   - cmake --build . --target BrotBoxEngineGTest
