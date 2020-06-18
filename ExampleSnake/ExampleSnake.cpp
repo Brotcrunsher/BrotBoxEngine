@@ -20,16 +20,15 @@ struct BodyPart
 class MyGame : public bbe::Game
 {
 public:
-	const int GRIDWIDTH = 20;
-	const int GRIDHEIGHT = 20;
-	const int CELLSIZE = 10;
-	const float TICKTIME = 0.25f;
+	constexpr static int GRIDWIDTH  = 20;
+	constexpr static int GRIDHEIGHT = 20;
+	constexpr static int CELLSIZE   = 10;
+	constexpr static float TICKTIME = 0.25f;
 
 	bbe::Cube cube;
 	bbe::PointLight light;
 
-	float x = 0;
-	Direction dir = Direction::LEFT;
+	Direction dir     = Direction::LEFT;
 	Direction nextDir = Direction::LEFT;
 
 	bbe::List<BodyPart> bodyParts;
