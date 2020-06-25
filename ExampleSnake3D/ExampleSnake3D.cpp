@@ -20,7 +20,6 @@ struct BodyPart
 
 class MyGame : public bbe::Game
 {
-	//TODO there is a visible flicker some times that needs to be fixed.
 public:
 	constexpr static int GRIDDIMENSIONSIZE = 10;
 	const float TICKTIME = 0.25f;

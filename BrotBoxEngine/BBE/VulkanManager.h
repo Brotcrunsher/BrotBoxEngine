@@ -78,10 +78,10 @@ namespace bbe
 				VulkanDescriptorPool      m_descriptorPool;
 				VulkanDescriptorSet       m_setVertexLight;
 				VulkanDescriptorSet       m_setFragmentLight;
-				VulkanDescriptorSet       m_setViewProjectionMatrixLight;
+				bbe::List<VulkanDescriptorSet> m_setViewProjectionMatrixLights;
 				GLFWwindow               *m_pwindow = nullptr;
 				PrimitiveBrush2D          m_primitiveBrush2D;
-				PrimitiveBrush3D          m_primitiveBrush3D;
+				bbe::List<PrimitiveBrush3D> m_primitiveBrushes3D;
 
 				uint32_t m_screenWidth;
 				uint32_t m_screenHeight;

@@ -60,7 +60,11 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_presentFence2.init(m_device);
 
 	std::cout << "Vulkan Manager: creating 3DBrush" << std::endl;
-	m_primitiveBrush3D.create(m_device);
+	m_primitiveBrushes3D.resizeCapacityAndLength(m_swapchain.getAmountOfImages());
+	for (uint32_t i = 0; i < m_swapchain.getAmountOfImages(); i++)
+	{
+		m_primitiveBrushes3D[i].create(m_device);
+	}
 	bbe::PointLight::s_init(m_device.getDevice(), m_device.getPhysicalDevice());
 	bbe::Rectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::Circle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
@@ -103,12 +107,16 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutTerrainAdditionalTextureWeight, 1);
 	m_descriptorPool.create(m_device);
 
+	m_setViewProjectionMatrixLights.resizeCapacityAndLength(m_swapchain.getAmountOfImages());
+	for (uint32_t i = 0; i < m_setViewProjectionMatrixLights.getLength(); i++)
+	{
+		m_setViewProjectionMatrixLights[i].addUniformBuffer(m_primitiveBrushes3D[i].m_uboMatrices, 0, 0);
+		m_setViewProjectionMatrixLights[i].create(m_device, m_descriptorPool, m_setLayoutViewProjectionMatrix);
+	}
 	m_setVertexLight              .addUniformBuffer(PointLight::s_bufferVertexData  , 0, 0);
 	m_setFragmentLight            .addUniformBuffer(PointLight::s_bufferFragmentData, 0, 0);
-	m_setViewProjectionMatrixLight.addUniformBuffer(m_primitiveBrush3D.m_uboMatrices, 0, 0);
 	m_setVertexLight              .create(m_device, m_descriptorPool, m_setLayoutVertexLight);
 	m_setFragmentLight            .create(m_device, m_descriptorPool, m_setLayoutFragmentLight);
-	m_setViewProjectionMatrixLight.create(m_device, m_descriptorPool, m_setLayoutViewProjectionMatrix);
 
 
 	std::cout << "Vulkan Manager: Loading Shaders" << std::endl;
@@ -176,7 +184,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_setLayoutTerrainViewFrustum.destroy();
 	m_setLayoutTerrainAdditionalTextureWeight.destroy();
 	m_descriptorPool.destroy();
-	m_primitiveBrush3D.destroy();
+	for (uint32_t i = 0; i < m_primitiveBrushes3D.getLength(); i++)
+	{
+		m_primitiveBrushes3D[i].destroy();
+	}
 	m_renderPass.destroy();
 	m_swapchain.destroy();
 	m_device.destroy();
@@ -200,7 +211,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 {
-	m_primitiveBrush3D.INTERNAL_beginDraw(
+	m_primitiveBrushes3D[m_imageIndex].INTERNAL_beginDraw(
 		m_device,
 		*m_currentFrameDrawCommandBuffer,
 		m_pipeline3DPrimitive,
@@ -213,12 +224,12 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 		m_setLayoutTerrainAdditionalTextureWeight,
 		m_setLayoutTerrainViewFrustum,
 		m_setVertexLight.getDescriptorSet(),
-		m_setViewProjectionMatrixLight.getDescriptorSet(),
+		m_setViewProjectionMatrixLights[m_imageIndex].getDescriptorSet(),
 		m_setFragmentLight.getDescriptorSet(),
 		m_screenWidth, m_screenHeight);
 
 	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 1, 1, m_setViewProjectionMatrixLight.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 1, 1, m_setViewProjectionMatrixLights[m_imageIndex].getPDescriptorSet(), 0, nullptr);
 	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
 }
 
@@ -367,7 +378,7 @@ bbe::PrimitiveBrush2D& bbe::INTERNAL::vulkan::VulkanManager::getBrush2D()
 
 bbe::PrimitiveBrush3D& bbe::INTERNAL::vulkan::VulkanManager::getBrush3D()
 {
-	return m_primitiveBrush3D;
+	return m_primitiveBrushes3D[m_imageIndex];
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
