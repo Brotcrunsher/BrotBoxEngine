@@ -50,8 +50,6 @@ void bbe::PrimitiveBrush2D::INTERNAL_bindRectBuffers()
 	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
-
-	m_shapeRecord = ShapeRecord2D::RECTANGLE;
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotation, FragmentShader* shader)
@@ -69,9 +67,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotat
 	float pushConstants[] = { rect.getX() * m_windowXScale, rect.getY() * m_windowYScale, rect.getWidth() * m_windowXScale, rect.getHeight() * m_windowYScale, rotation};
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
 
-	if (m_shapeRecord != ShapeRecord2D::RECTANGLE || true) {
-		INTERNAL_bindRectBuffers();
-	}
+	INTERNAL_bindRectBuffers();
 
 	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
 }
@@ -92,9 +88,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 16, sizeof(float), &rotation);
 
-	if (m_shapeRecord != ShapeRecord2D::RECTANGLE || true) {
-		INTERNAL_bindRectBuffers();
-	}
+	INTERNAL_bindRectBuffers();
 
 	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
 }
@@ -111,15 +105,12 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle)
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
 
 
-	if (m_shapeRecord != ShapeRecord2D::CIRCLE) {
-		VkDeviceSize offsets[] = { 0 };
-		VkBuffer buffer = Circle::s_vertexBuffer.getBuffer();
-		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
+	VkDeviceSize offsets[] = { 0 };
+	VkBuffer buffer = Circle::s_vertexBuffer.getBuffer();
+	vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
 
-		buffer = Circle::s_indexBuffer.getBuffer();
-		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
-		m_shapeRecord = ShapeRecord2D::CIRCLE;
-	}
+	buffer = Circle::s_indexBuffer.getBuffer();
+	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdDrawIndexed(m_currentCommandBuffer, (Circle::AMOUNTOFVERTICES - 2) * 3, 1, 0, 0, 0);
 }
@@ -182,7 +173,7 @@ void bbe::PrimitiveBrush2D::fillRect(const Vector2& pos, const Vector2& dimensio
 
 void bbe::PrimitiveBrush2D::fillCircle(const Circle & circle)
 {
-	INTERNAL_fillCircle(circle);
+	INTERNAL_fillCircle(Circle(circle));
 }
 
 void bbe::PrimitiveBrush2D::fillCircle(float x, float y, float width, float height)
