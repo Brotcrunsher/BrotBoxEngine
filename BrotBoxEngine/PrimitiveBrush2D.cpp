@@ -173,7 +173,7 @@ void bbe::PrimitiveBrush2D::fillRect(const Vector2& pos, const Vector2& dimensio
 
 void bbe::PrimitiveBrush2D::fillCircle(const Circle & circle)
 {
-	INTERNAL_fillCircle(Circle(circle));
+	INTERNAL_fillCircle(circle);
 }
 
 void bbe::PrimitiveBrush2D::fillCircle(float x, float y, float width, float height)
