@@ -92,6 +92,20 @@ namespace bbe {
 			}
 		}
 
+		Vector2 randomVector2InUnitSphere()
+		{
+			while (true)
+			{
+				float x = randomFloat() * 2 - 1;
+				float y = randomFloat() * 2 - 1;
+				Vector2 retVal(x, y);
+				if (retVal.getLengthSq() <= 1)
+				{
+					return retVal;
+				}
+			}
+		}
+
 		Vector4 randomVector4()
 		{
 			//UNTESTED
