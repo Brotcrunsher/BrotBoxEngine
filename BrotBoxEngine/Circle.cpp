@@ -104,6 +104,11 @@ bbe::Vector2 bbe::Circle::getPos() const
 	return bbe::Vector2(m_x, m_y);
 }
 
+bbe::Vector2 bbe::Circle::getMiddle() const
+{
+	return getPos() + getDim() / 2;
+}
+
 float bbe::Circle::getWidth() const
 {
 	//UNTESTED
@@ -194,4 +199,50 @@ void bbe::Circle::translate(const Vector2 & vec)
 {
 	//UNTESTED
 	translate(vec.x, vec.y);
+}
+
+bool bbe::Circle::intersects(const Circle& other)
+{
+	if (getWidth() != getHeight() || other.getWidth() != other.getHeight())
+	{
+		//Only supported for circles, not ovals!
+		throw NotImplementedException();
+	}
+
+	const float distance = getMiddle().getDistanceTo(other.getMiddle());
+
+	return distance < (getWidth() + other.getWidth()) / 2;
+}
+
+bool bbe::Circle::resolveIntersection(Circle& other, float massThis, float massOther)
+{
+	if (this == &other)
+	{
+		//Can't resolve intersection with itself!
+		throw IllegalArgumentException();
+	}
+
+	if (!intersects(other))
+	{
+		//They don't interesect. Nothing to do!
+		return false;
+	}
+
+	const Vector2 midThis  =       getMiddle();
+	const Vector2 midOther = other.getMiddle();
+
+	const Vector2 direction = midThis - midOther;
+	const Vector2 normalizedDirection = direction.normalize();
+
+	const float distanceBeforeResolve = direction.getLength();
+	const float distanceAfterResolve = (getWidth() + other.getWidth()) / 2;
+	const float massSum = massThis + massOther;
+	
+	const Vector2 moveVectorThis  =  normalizedDirection * (massOther / massSum);
+	const Vector2 moveVectorOther = -normalizedDirection * (massThis  / massSum);
+
+	this->setPos(this->getPos() + moveVectorThis);
+	other.setPos(other.getPos() + moveVectorOther);
+
+	return true;
 }

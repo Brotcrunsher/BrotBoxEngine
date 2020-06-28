@@ -45,6 +45,7 @@ namespace bbe
 		float getX() const;
 		float getY() const;
 		Vector2 getPos() const;
+		Vector2 getMiddle() const;
 		float getWidth() const;
 		float getHeight() const;
 		Vector2 getDim() const;
@@ -61,5 +62,8 @@ namespace bbe
 
 		void translate(float x, float y);
 		void translate(const Vector2 &vec);
+
+		bool intersects(const Circle& other);
+		bool resolveIntersection(Circle& other, float massThis = 1, float massOther = 1);
 	};
 }
