@@ -74,6 +74,11 @@ bbe::Rectangle::Rectangle(const Vector2 & vec, const Vector2 & dim)
 {
 }
 
+bbe::Vector2 bbe::Rectangle::getPos() const
+{
+	return Vector2(m_x, m_y);
+}
+
 float bbe::Rectangle::getX() const
 {
 	return m_x;
@@ -82,6 +87,11 @@ float bbe::Rectangle::getX() const
 float bbe::Rectangle::getY() const
 {
 	return m_y;
+}
+
+bbe::Vector2 bbe::Rectangle::getDim() const
+{
+	return Vector2(m_width, m_height);
 }
 
 float bbe::Rectangle::getWidth() const
@@ -202,6 +212,23 @@ float bbe::Rectangle::getDistanceTo(const Vector2 & vec)
 	{
 		return 0;
 	}
+}
+
+bool bbe::Rectangle::isPointInRectangle(const Vector2 point) const
+{
+	return point.x > this->getX() && point.x < this->getX() + this->getWidth()
+		&& point.y > this->getY() && point.y < this->getY() + this->getHeight();
+}
+
+bool bbe::Rectangle::intersects(const Rectangle& rectangle) const
+{
+	const Rectangle hitZone(
+		rectangle.getX() - this->getWidth(),
+		rectangle.getY() - this->getHeight(),
+		this->getWidth()  + rectangle.getWidth(),
+		this->getHeight() + rectangle.getHeight()
+	);
+	return hitZone.isPointInRectangle(this->getPos());
 }
 
 bool bbe::Rectangle::intersects(const Circle& circle) const

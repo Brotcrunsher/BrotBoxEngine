@@ -40,6 +40,9 @@ namespace bbe
 		Rectangle(float x, float y, const Vector2 &dim);
 		Rectangle(const Vector2 &vec, const Vector2 &dim);
 
+		Vector2 getPos() const;
+		Vector2 getDim() const;
+
 		float getX() const;
 		float getY() const;
 		float getWidth() const;
@@ -60,6 +63,8 @@ namespace bbe
 
 		float getDistanceTo(const Vector2 &vec);
 
+		bool isPointInRectangle(const Vector2 point) const;
+		bool intersects(const Rectangle& rectangle) const;
 		bool intersects(const Circle& circle) const;
 	};
 }
