@@ -73,11 +73,19 @@ bbe::Vector2 & bbe::Vector2::operator-=(const Vector2 & other)
 	return *this;
 }
 
-bbe::Vector2 & bbe::Vector2::operator*=(const Vector2 & other)
+bbe::Vector2& bbe::Vector2::operator*=(const Vector2& other)
 {
 	//UNTESTED
 	this->x *= other.x;
 	this->y *= other.y;
+	return *this;
+}
+
+bbe::Vector2& bbe::Vector2::operator*=(float scalar)
+{
+	//UNTESTED
+	this->x *= scalar;
+	this->y *= scalar;
 	return *this;
 }
 
