@@ -21,7 +21,7 @@ class MyGame : public bbe::Game
 	bbe::List<PhysCircle> circles;
 	bbe::Random rand;
 	
-	constexpr static float MAX_RADIUS = 1.f;
+	constexpr static float MAX_RADIUS = 10.f;
 	constexpr static size_t GRID_WIDTH  = size_t(WINDOW_WIDTH  / (MAX_RADIUS * 2)) + 1;
 	constexpr static size_t GRID_HEIGHT = size_t(WINDOW_HEIGHT / (MAX_RADIUS * 2)) + 1;
 	bbe::List<size_t> grid[GRID_WIDTH][GRID_HEIGHT];
@@ -150,9 +150,9 @@ class MyGame : public bbe::Game
 		};
 		circles.add(playerCircle);
 
-		for (uint32_t i = 0; i < 12800 * 4; i++)
+		for (uint32_t i = 0; i < 1024 * 8; i++)
 		{
-			const float radius = 1;
+			const float radius = MAX_RADIUS * 0.25f;
 			circles.add(PhysCircle{
 				bbe::Circle(
 					rand.randomFloat(WINDOW_WIDTH - radius * 2),
