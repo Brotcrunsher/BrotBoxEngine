@@ -15,13 +15,15 @@ namespace bbe
 		bool isInit              = false;
 		bbe::String fontPath     = "";
 		bbe::String chars        = "";
-		unsigned fontSize        = 0;
-		int pixelsFromLineToLine = 0;
+		uint32_t fontSize        = 0;
+		int32_t pixelsFromLineToLine = 0;
+
+		int32_t fixedWidth = 0;
 		
 		bbe::Image charImages     [256];
-		int advanceWidths         [256] = {};
-		int leftSideBearings      [256] = {};
-		int verticalOffsets       [256] = {};
+		int32_t advanceWidths         [256] = {};
+		int32_t leftSideBearings      [256] = {};
+		int32_t verticalOffsets       [256] = {};
 
 	public:
 		Font();
@@ -35,13 +37,16 @@ namespace bbe
 
 		const    bbe::String& getFontPath() const;
 		const    bbe::String& getChars()    const;
-		unsigned getFontSize()              const;
-		int      getPixelsFromLineToLine()  const;
+		uint32_t getFontSize()              const;
+		int32_t  getPixelsFromLineToLine()  const;
 
 		const bbe::Image& getImage(char c) const;
-		int getLeftSideBearing(char c) const;
-		int getAdvanceWidth(char c) const;
-		int getVerticalOffset(char c) const;
+		int32_t getLeftSideBearing(char c) const;
+		int32_t getAdvanceWidth(char c) const;
+		int32_t getVerticalOffset(char c) const;
+
+		void setFixedWidth(int32_t val);
+		int32_t getFixedWidth() const;
 
 		void destroy();
 	};

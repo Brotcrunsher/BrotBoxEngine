@@ -57,14 +57,14 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 	stbtt_InitFont(&fontInfo, font.getRaw(), stbtt_GetFontOffsetForIndex(font.getRaw(), 0));
 	const float scale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(fontSize));
 
-	int ascent = 0;
-	int descent = 0;
-	int lineGap = 0;
+	int32_t ascent = 0;
+	int32_t descent = 0;
+	int32_t lineGap = 0;
 	stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
 	pixelsFromLineToLine = static_cast<int>((ascent - descent + lineGap) * scale);
 
-	int spaceAdvance = 0;
-	int spaceLeftSideBearing = 0;
+	int32_t spaceAdvance = 0;
+	int32_t spaceLeftSideBearing = 0;
 	stbtt_GetCodepointHMetrics(&fontInfo, ' ', &spaceAdvance, &spaceLeftSideBearing);
 	advanceWidths[' '] = static_cast<int>(spaceAdvance * scale);
 	leftSideBearings[' '] = static_cast<int>(spaceLeftSideBearing * scale);
@@ -78,12 +78,12 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 		advanceWidths[chars[i]] = static_cast<int>(advanceWidths[chars[i]] * scale);
 		leftSideBearings[chars[i]] = static_cast<int>(leftSideBearings[chars[i]] * scale);
 
-		int y1 = 0;
+		int32_t y1 = 0;
 		stbtt_GetCodepointBox(&fontInfo, chars[i], nullptr, nullptr, nullptr, &y1);
 		verticalOffsets[chars[i]] = static_cast<int>((-y1) * scale);
 
-		int width = 0;
-		int height = 0;
+		int32_t width = 0;
+		int32_t height = 0;
 		unsigned char* bitmap = stbtt_GetCodepointBitmap(&fontInfo, 0, scale, chars[i], &width, &height, 0, 0);
 		if (bitmap == nullptr) throw NullPointerException();
 		
@@ -118,13 +118,13 @@ const bbe::String& bbe::Font::getChars() const
 	return chars;
 }
 
-unsigned bbe::Font::getFontSize() const
+uint32_t bbe::Font::getFontSize() const
 {
 	if (!isInit) throw NotInitializedException();
 	return fontSize;
 }
 
-int bbe::Font::getPixelsFromLineToLine() const
+int32_t bbe::Font::getPixelsFromLineToLine() const
 {
 	if (!isInit) throw NotInitializedException();
 	return pixelsFromLineToLine;
@@ -136,22 +136,46 @@ const bbe::Image& bbe::Font::getImage(char c) const
 	return charImages[c];
 }
 
-int bbe::Font::getLeftSideBearing(char c) const
+int32_t bbe::Font::getLeftSideBearing(char c) const
 {
 	if (!isInit) throw NotInitializedException();
-	return leftSideBearings[c];
+	if (getFixedWidth() > 0)
+	{
+		return 0;
+	}
+	else
+	{
+		return leftSideBearings[c];
+	}
 }
 
-int bbe::Font::getAdvanceWidth(char c) const
+int32_t bbe::Font::getAdvanceWidth(char c) const
 {
 	if (!isInit) throw NotInitializedException();
-	return advanceWidths[c];
+	if (getFixedWidth() > 0)
+	{
+		return getFixedWidth();
+	}
+	else
+	{
+		return advanceWidths[c];
+	}
 }
 
-int bbe::Font::getVerticalOffset(char c) const
+int32_t bbe::Font::getVerticalOffset(char c) const
 {
 	if (!isInit) throw NotInitializedException();
 	return verticalOffsets[c];
+}
+
+void bbe::Font::setFixedWidth(int32_t val)
+{
+	fixedWidth = val;
+}
+
+int32_t bbe::Font::getFixedWidth() const
+{
+	return fixedWidth;
 }
 
 void bbe::Font::destroy()
