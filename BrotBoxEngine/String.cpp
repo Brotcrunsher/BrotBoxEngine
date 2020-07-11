@@ -57,6 +57,12 @@ bbe::Utf8String::Utf8String(const char* data)
 	initializeFromCharArr(data);
 }
 
+bbe::Utf8String::Utf8String(char c)
+{
+	char arr[] = { c, 0 };
+	initializeFromCharArr(arr);
+}
+
 bbe::Utf8String::Utf8String(double number)
 {
 	//UNTESTED
@@ -369,6 +375,12 @@ bbe::Utf8String& bbe::Utf8String::operator+=(const char* other)
 {
 	//UNTESTED
 	return operator+=(bbe::Utf8String(other));
+}
+
+bbe::Utf8String& bbe::Utf8String::operator+=(char c)
+{
+	//UNTESTED
+	return operator+=(bbe::Utf8String(c));
 }
 
 bbe::Utf8String& bbe::Utf8String::operator+=(double number)
@@ -696,7 +708,20 @@ std::size_t bbe::Utf8String::getCapacity() const
 	return m_capacity;
 }
 
-
+bbe::Utf8String bbe::Utf8String::leftFill(char c, size_t length)
+{
+	bbe::String retVal = "";
+	if (length > getLength())
+	{
+		const size_t charsToPlace = length - getLength();
+		for (size_t i = 0; i < charsToPlace; i++)
+		{
+			retVal += c;
+		}
+	}
+	retVal += *this;
+	return retVal;
+}
 
 
 

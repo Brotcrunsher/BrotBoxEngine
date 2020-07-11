@@ -47,6 +47,7 @@ namespace bbe
 	public:
 		Utf8String();
 		/*nonexplicit*/ Utf8String(const char* data);		
+		explicit Utf8String(char               c);
 		explicit Utf8String(double             number);
 		explicit Utf8String(int                number);
 		explicit Utf8String(long long          number);
@@ -99,6 +100,7 @@ namespace bbe
 
 		Utf8String& operator+=(const Utf8String& other);
 		Utf8String& operator+=(const char*       other);
+		Utf8String& operator+=(char              c);
 		Utf8String& operator+=(double             number);
 		Utf8String& operator+=(int                number);
 		Utf8String& operator+=(long long          number);
@@ -147,7 +149,7 @@ namespace bbe
 		size_t getLengthBytes() const;
 		size_t getCapacity   () const;
 
-
+		Utf8String leftFill(char c, size_t length);
 	};
 
 	typedef Utf8String String;
