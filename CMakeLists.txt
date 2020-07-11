@@ -85,5 +85,6 @@ add_subdirectory(ExampleTextRendering)
 add_subdirectory(ExampleBalloonGame)
 add_subdirectory(ExampleSignedDistanceField)
 add_subdirectory(Example2DPhysics)
+add_subdirectory(ExampleStreamCountdown)
 
 
