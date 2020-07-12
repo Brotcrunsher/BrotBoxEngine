@@ -19,9 +19,9 @@ class MyGame : public bbe::Game
 	{
 		std::tm targetTimeVerbose{};
 		targetTimeVerbose.tm_sec = 0;   // seconds after the minute - [0, 60] including leap second
-		targetTimeVerbose.tm_min = 55;   // minutes after the hour - [0, 59]
-		targetTimeVerbose.tm_hour = 16;  // hours since midnight - [0, 23]
-		targetTimeVerbose.tm_mday = 11;  // day of the month - [1, 31]
+		targetTimeVerbose.tm_min = 0;   // minutes after the hour - [0, 59]
+		targetTimeVerbose.tm_hour = 14;  // hours since midnight - [0, 23]
+		targetTimeVerbose.tm_mday = 12;  // day of the month - [1, 31]
 		targetTimeVerbose.tm_mon = 6;   // months since January - [0, 11]
 		targetTimeVerbose.tm_year = 120;  // years since 1900
 
