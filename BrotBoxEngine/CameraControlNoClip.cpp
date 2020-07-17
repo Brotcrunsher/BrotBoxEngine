@@ -68,12 +68,14 @@ void bbe::CameraControlNoClip::update(float timeSinceLastFrame)
 	}
 	if (m_pgame->isKeyDown(bbe::Key::A))
 	{
-		m_cameraPos = m_cameraPos + bbe::Vector3(m_forward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1)).xy(), 0).normalize() * timeSinceLastFrame * 10 * speedFactor;
+		const bbe::Vector3 rot = m_forward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1));
+		m_cameraPos = m_cameraPos + bbe::Vector3(rot.x, rot.y, 0).normalize() * timeSinceLastFrame * 10 * speedFactor;
 		moving = true;
 	}
 	if (m_pgame->isKeyDown(bbe::Key::D))
 	{
-		m_cameraPos = m_cameraPos - bbe::Vector3(m_forward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1)).xy(), 0).normalize() * timeSinceLastFrame * 10 * speedFactor;
+		const bbe::Vector3 rot = m_forward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1));
+		m_cameraPos = m_cameraPos - bbe::Vector3(rot.x, rot.y, 0).normalize() * timeSinceLastFrame * 10 * speedFactor;
 		moving = true;
 	}
 	if (m_pgame->isKeyDown(bbe::Key::SPACE))

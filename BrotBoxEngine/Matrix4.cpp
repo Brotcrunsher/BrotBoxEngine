@@ -231,7 +231,8 @@ bbe::Vector4 bbe::Matrix4::getRow(int rowIndex) const
 
 bbe::Vector3 bbe::Matrix4::extractTranslation() const
 {
-	return getColumn(3).xyz();
+	const Vector4 col = getColumn(3);
+	return Vector3(col.x, col.y, col.z);
 }
 
 bbe::Vector3 bbe::Matrix4::extractScale() const

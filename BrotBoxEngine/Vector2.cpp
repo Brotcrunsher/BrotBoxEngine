@@ -89,6 +89,14 @@ bbe::Vector2& bbe::Vector2::operator*=(float scalar)
 	return *this;
 }
 
+bbe::Vector2& bbe::Vector2::operator/=(float scalar)
+{
+	//UNTESTED
+	this->x /= scalar;
+	this->y /= scalar;
+	return *this;
+}
+
 bbe::Vector2 & bbe::Vector2::operator/=(const Vector2 & other)
 {
 	//UNTESTED

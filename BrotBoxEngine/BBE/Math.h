@@ -114,6 +114,13 @@ namespace bbe
 		Vector2 interpolateBezier(Vector2 a, Vector2 b, float t, const bbe::List<Vector2> &controlPoints);
 		Vector2 interpolateHermite(Vector2 a, Vector2 b, float t, Vector2 tangent1, Vector2 tangent2);
 
+		Vector2 minComponent(const bbe::List<Vector2>& vectors);
+		Vector2 maxComponent(const bbe::List<Vector2>& vectors);
+		Vector2 minAbsComponent(const bbe::List<Vector2>& vectors);
+		Vector2 maxAbsComponent(const bbe::List<Vector2>& vectors);
+		Vector2 average(const bbe::List<Vector2>& vectors);
+		Vector2 medianComponent(const bbe::List<Vector2>& vectors);
+
 		Vector3 interpolateLinear(Vector3 a, Vector3 b, float t);
 		Vector3 interpolateBool(Vector3 a, Vector3 b, float t);
 		Vector3 interpolateCosine(Vector3 a, Vector3 b, float t);

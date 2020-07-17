@@ -503,6 +503,91 @@ bbe::Vector2 bbe::Math::interpolateHermite(Vector2 a, Vector2 b, float t, Vector
 	);
 }
 
+bbe::Vector2 bbe::Math::minComponent(const bbe::List<Vector2>& vectors)
+{
+	bbe::Vector2 retVal(INFINITY_POSITIVE, INFINITY_POSITIVE);
+
+	for (const Vector2& vec : vectors)
+	{
+		if (vec.x < retVal.x) retVal.x = vec.x;
+		if (vec.y < retVal.y) retVal.y = vec.y;
+	}
+
+	return retVal;
+}
+
+bbe::Vector2 bbe::Math::maxComponent(const bbe::List<Vector2>& vectors)
+{
+	bbe::Vector2 retVal(INFINITY_NEGATIVE, INFINITY_NEGATIVE);
+
+	for (const Vector2& vec : vectors)
+	{
+		if (vec.x > retVal.x) retVal.x = vec.x;
+		if (vec.y > retVal.y) retVal.y = vec.y;
+	}
+
+	return retVal;
+}
+
+bbe::Vector2 bbe::Math::minAbsComponent(const bbe::List<Vector2>& vectors)
+{
+	bbe::Vector2 retVal(INFINITY_POSITIVE, INFINITY_POSITIVE);
+
+	for (const Vector2& vec : vectors)
+	{
+		if (vec.x < abs(retVal.x)) retVal.x = abs(vec.x);
+		if (vec.y < abs(retVal.y)) retVal.y = abs(vec.y);
+	}
+
+	return retVal;
+}
+
+bbe::Vector2 bbe::Math::maxAbsComponent(const bbe::List<Vector2>& vectors)
+{
+	bbe::Vector2 retVal(INFINITY_NEGATIVE, INFINITY_NEGATIVE);
+
+	for (const Vector2& vec : vectors)
+	{
+		if (vec.x > abs(retVal.x)) retVal.x = abs(vec.x);
+		if (vec.y > abs(retVal.y)) retVal.y = abs(vec.y);
+	}
+
+	return retVal;
+}
+
+bbe::Vector2 bbe::Math::average(const bbe::List<Vector2>& vectors)
+{
+	bbe::Vector2 retVal = bbe::Vector2();
+	
+	for (const bbe::Vector2& v : vectors)
+	{
+		retVal += v;
+	}
+
+	return retVal / vectors.getLength();;
+}
+
+bbe::Vector2 bbe::Math::medianComponent(const bbe::List<Vector2>& vectors)
+{
+	bbe::List<float> xs;
+	bbe::List<float> ys;
+
+	for (const bbe::Vector2& v : vectors)
+	{
+		if (!isNaN(v.x)) xs.add(v.x);
+		if (!isNaN(v.y)) ys.add(v.y);
+	}
+	xs.sort();
+	ys.sort();
+
+	bbe::Vector2 retVal(NaN, NaN);
+
+	if (xs.getLength() > 0) retVal.x = xs[xs.getLength() / 2];
+	if (ys.getLength() > 0) retVal.y = ys[ys.getLength() / 2];
+
+	return retVal;
+}
+
 bbe::Vector3 bbe::Math::interpolateLinear(Vector3 a, Vector3 b, float t)
 {
 	return Vector3(
