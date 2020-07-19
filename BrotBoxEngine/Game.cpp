@@ -46,6 +46,7 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 		StopWatch sw;
 		m_pwindow->INTERNAL_keyboard.update();
 		m_pwindow->INTERNAL_mouse.update();
+		m_physWorld.update(m_gameTime.tick());
 		update(m_gameTime.tick());
 
 		m_pwindow->preDraw();
@@ -186,4 +187,9 @@ uint64_t bbe::Game::getAmountOfFrames()
 void bbe::Game::setCursorMode(bbe::CursorMode cm)
 {
 	m_pwindow->setCursorMode(cm);
+}
+
+bbe::PhysWorld* bbe::Game::getPhysWorld()
+{
+	return &m_physWorld;
 }

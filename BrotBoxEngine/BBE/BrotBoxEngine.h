@@ -90,3 +90,6 @@
 
 #include "../BBE/Font.h"
 #include "../BBE/FragmentShader.h"
+
+#include "../BBE/PhysWorld.h"
+#include "../BBE/PhysRectangle.h"

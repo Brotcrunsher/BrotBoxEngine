@@ -31,6 +31,7 @@ add_library(BrotBoxEngine STATIC)
 set_property(TARGET BrotBoxEngine PROPERTY CXX_STANDARD 17)
 set_property(TARGET BrotBoxEngine PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET BrotBoxEngine PROPERTY CXX_EXTENSIONS OFF)
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   macro(add_cxx_linker_flag flag)
@@ -65,9 +66,15 @@ target_include_directories(BrotBoxEngine PUBLIC Vulkan::Vulkan)
 target_link_libraries(BrotBoxEngine Vulkan::Vulkan)
 
 add_subdirectory(BrotBoxEngine)
+
 add_subdirectory(Third-Party/glfw-3.3.2)
 include_directories(Third-Party/glfw-3.3.2/include)
 target_link_libraries(BrotBoxEngine glfw ${GLFW_LIBRARIES})
+
+add_subdirectory(Third-Party/box2d-master)
+include_directories(Third-Party/box2d-master/include)
+target_link_libraries(BrotBoxEngine box2d)
+set_target_properties(box2d glad imgui sajson testbed unit_test PROPERTIES FOLDER box2d)
 
 target_include_directories(BrotBoxEngine PUBLIC "Third-Party/stb")
 
@@ -85,6 +92,7 @@ add_subdirectory(ExampleTextRendering)
 add_subdirectory(ExampleBalloonGame)
 add_subdirectory(ExampleSignedDistanceField)
 add_subdirectory(Example2DPhysics)
+add_subdirectory(Example2DPhysicsBox2D)
 add_subdirectory(ExampleStreamCountdown)
 add_subdirectory(ExampleTemplate)
 

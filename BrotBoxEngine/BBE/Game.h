@@ -7,6 +7,7 @@
 #include "../BBE/KeyboardKeys.h"
 #include "../BBE/MouseButtons.h"
 #include "../BBE/Vector2.h"
+#include "../BBE/PhysWorld.h";
 
 namespace bbe
 {
@@ -17,9 +18,10 @@ namespace bbe
 	class Game
 	{
 	private:
-		Window*  m_pwindow  = nullptr;
-		bool     m_started  = false;
-		GameTime m_gameTime;
+		Window*   m_pwindow  = nullptr;
+		bool      m_started  = false;
+		GameTime  m_gameTime;
+		PhysWorld m_physWorld = PhysWorld({ 0, -10 });
 
 	public:
 		Game();
@@ -68,5 +70,7 @@ namespace bbe
 		uint64_t getAmountOfFrames();
 
 		void setCursorMode(bbe::CursorMode cm);
+
+		PhysWorld* getPhysWorld();
 	};
 }

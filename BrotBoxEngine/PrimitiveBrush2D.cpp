@@ -33,6 +33,8 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	m_pipelineRecord = PipelineRecord2D::NONE;
 
 	setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
+	setOutlineRGB(1.0f, 1.0f, 1.0f, 1.0f);
+	setOutlineWidth(0.f);
 
 	float pushConstants[] = { static_cast<float>(m_screenWidth), static_cast<float>(m_screenHeight) };
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 24, sizeof(float) * 2, pushConstants);
@@ -52,8 +54,15 @@ void bbe::PrimitiveBrush2D::INTERNAL_bindRectBuffers()
 	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
 }
 
-void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotation, FragmentShader* shader)
+void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotation, float outlineWidth, FragmentShader* shader)
 {
+	if (outlineWidth > 0)
+	{
+		Color oldColor = m_color;
+		setColorRGB(m_outlineColor);
+		INTERNAL_fillRect(rect, rotation, 0, shader);
+		setColorRGB(oldColor);
+	}
 	if (shader != nullptr)
 	{
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->INTERNAL_getPipeline().getPipeline(m_fillMode));
@@ -64,7 +73,13 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotat
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 
-	float pushConstants[] = { rect.getX() * m_windowXScale, rect.getY() * m_windowYScale, rect.getWidth() * m_windowXScale, rect.getHeight() * m_windowYScale, rotation};
+	float pushConstants[] = {
+		(rect.getX() + outlineWidth) * m_windowXScale, 
+		(rect.getY() + outlineWidth) * m_windowYScale, 
+		(rect.getWidth()  - outlineWidth * 2) * m_windowXScale,
+		(rect.getHeight() - outlineWidth * 2) * m_windowYScale,
+		rotation
+	};
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
 
 	INTERNAL_bindRectBuffers();
@@ -93,14 +108,27 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
 }
 
-void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle)
+void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle, float outlineWidth)
 {
+	if (outlineWidth > 0)
+	{
+		Color oldColor = m_color;
+		setColorRGB(m_outlineColor);
+		INTERNAL_fillCircle(circle, 0);
+		setColorRGB(oldColor);
+	}
 	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
 	{
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(m_fillMode));
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
-	float pushConstants[] = { circle.getX() * m_windowXScale, circle.getY() * m_windowYScale, circle.getWidth() * m_windowXScale, circle.getHeight() * m_windowYScale, 0};
+	float pushConstants[] = {
+		(circle.getX() + outlineWidth) * m_windowXScale, 
+		(circle.getY() + outlineWidth) * m_windowYScale, 
+		(circle.getWidth() - outlineWidth * 2) * m_windowXScale, 
+		(circle.getHeight() - outlineWidth * 2) * m_windowYScale,
+		0
+	};
 
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
 
@@ -117,12 +145,11 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle)
 
 void bbe::PrimitiveBrush2D::INTERNAL_setColor(float r, float g, float b, float a)
 {
-	static Color lastColor(-1000, -1000, -1000);
-	Color c(r, g, b, a);
-	if (c.r != lastColor.r || c.g != lastColor.g || c.b != lastColor.b || c.a != lastColor.a)
+	Color newColor(r, g, b, a);
+	if (newColor.r != m_color.r || newColor.g != m_color.g || newColor.b != m_color.b || newColor.a != m_color.a)
 	{
-		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(Color), &c);
-		lastColor = c;
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(Color), &newColor);
+		m_color = newColor;
 	}
 }
 
@@ -135,7 +162,7 @@ bbe::PrimitiveBrush2D::PrimitiveBrush2D()
 
 void bbe::PrimitiveBrush2D::fillRect(const Rectangle & rect, float rotation, FragmentShader* shader)
 {
-	INTERNAL_fillRect(rect, rotation, shader);
+	INTERNAL_fillRect(rect, rotation, m_outlineWidth, shader);
 }
 
 void bbe::PrimitiveBrush2D::fillRect(float x, float y, float width, float height, float rotation, FragmentShader* shader)
@@ -153,7 +180,7 @@ void bbe::PrimitiveBrush2D::fillRect(float x, float y, float width, float height
 	}
 
 	Rectangle rect(x, y, width, height);
-	INTERNAL_fillRect(rect, rotation, shader);
+	INTERNAL_fillRect(rect, rotation, m_outlineWidth, shader);
 }
 
 void bbe::PrimitiveBrush2D::fillRect(const Vector2& pos, float width, float height, float rotation, FragmentShader* shader)
@@ -171,9 +198,14 @@ void bbe::PrimitiveBrush2D::fillRect(const Vector2& pos, const Vector2& dimensio
 	fillRect(pos.x, pos.y, dimensions.x, dimensions.y, rotation, shader);
 }
 
+void bbe::PrimitiveBrush2D::fillRect(const PhysRectangle& rect, FragmentShader* shader)
+{
+	fillRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight(), rect.getAngle(), shader);
+}
+
 void bbe::PrimitiveBrush2D::fillCircle(const Circle & circle)
 {
-	INTERNAL_fillCircle(circle);
+	INTERNAL_fillCircle(circle, m_outlineWidth);
 }
 
 void bbe::PrimitiveBrush2D::fillCircle(float x, float y, float width, float height)
@@ -191,7 +223,7 @@ void bbe::PrimitiveBrush2D::fillCircle(float x, float y, float width, float heig
 	}
 
 	Circle circle(x, y, width, height);
-	INTERNAL_fillCircle(circle);
+	INTERNAL_fillCircle(circle, m_outlineWidth);
 }
 
 void bbe::PrimitiveBrush2D::fillCircle(const Vector2& pos, float width, float height)
@@ -355,6 +387,31 @@ void bbe::PrimitiveBrush2D::setColorRGB(const Color & c)
 	INTERNAL_setColor(c.r, c.g, c.b, c.a);
 }
 
+void bbe::PrimitiveBrush2D::setOutlineRGB(float r, float g, float b, float a)
+{
+	setOutlineRGB(bbe::Color(r, g, b, a));
+}
+
+void bbe::PrimitiveBrush2D::setOutlineRGB(float r, float g, float b)
+{
+	setOutlineRGB(bbe::Color(r, g, b, 1));
+}
+
+void bbe::PrimitiveBrush2D::setOutlineRGB(const Vector3& c)
+{
+	setOutlineRGB(bbe::Color(c.x, c.y, c.z, 1));
+}
+
+void bbe::PrimitiveBrush2D::setOutlineRGB(const Vector3& c, float a)
+{
+	setOutlineRGB(bbe::Color(c.x, c.y, c.z, a));
+}
+
+void bbe::PrimitiveBrush2D::setOutlineRGB(const Color& c)
+{
+	m_outlineColor = c;
+}
+
 void bbe::PrimitiveBrush2D::setColorHSV(float h, float s, float v, float a)
 {
 	auto rgb = bbe::Color::HSVtoRGB(h, s, v);
@@ -364,6 +421,22 @@ void bbe::PrimitiveBrush2D::setColorHSV(float h, float s, float v, float a)
 void bbe::PrimitiveBrush2D::setColorHSV(float h, float s, float v)
 {
 	setColorHSV(h, s, v, 1);
+}
+
+void bbe::PrimitiveBrush2D::setOutlineHSV(float h, float s, float v, float a)
+{
+	auto rgb = bbe::Color::HSVtoRGB(h, s, v);
+	setOutlineRGB(rgb, a);
+}
+
+void bbe::PrimitiveBrush2D::setOutlineHSV(float h, float s, float v)
+{
+	setOutlineHSV(h, s, v, 1);
+}
+
+void bbe::PrimitiveBrush2D::setOutlineWidth(float outlineWidht)
+{
+	m_outlineWidth = outlineWidht;
 }
 
 void bbe::PrimitiveBrush2D::setFillMode(FillMode fm)

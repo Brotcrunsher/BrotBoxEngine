@@ -4,6 +4,7 @@
 #include "GLFW/glfw3.h"
 
 #include "../BBE/Rectangle.h"
+#include "../BBE/PhysRectangle.h"
 #include "../BBE/Circle.h"
 #include "../BBE/Color.h"
 #include "../BBE/FillMode.h"
@@ -47,17 +48,20 @@ namespace bbe
 		VkPipelineLayout                             m_layoutImage          = VK_NULL_HANDLE;
 		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineImage       = nullptr;
 		VkDescriptorSet                              m_descriptorSet        = VK_NULL_HANDLE;
-		float                                        m_windowXScale;
-		float                                        m_windowYScale;
-		int                                          m_screenWidth;
-		int                                          m_screenHeight;
+		float                                        m_windowXScale = 0;
+		float                                        m_windowYScale = 0;
+		int                                          m_screenWidth  = 0;
+		int                                          m_screenHeight = 0;
+		float                                        m_outlineWidth = 0;
+		Color m_color = Color(-1000, -1000, -1000);
+		Color m_outlineColor = Color(-1000, -1000, -1000);
 
 		PipelineRecord2D   m_pipelineRecord = PipelineRecord2D::NONE;
 
 		void INTERNAL_bindRectBuffers();
-		void INTERNAL_fillRect(const Rectangle &rect, float rotation, FragmentShader* shader);
+		void INTERNAL_fillRect(const Rectangle &rect, float rotation, float outlineWidth, FragmentShader* shader);
 		void INTERNAL_drawImage(const Rectangle &rect, const Image &image, float rotation);
-		void INTERNAL_fillCircle(const Circle &circle);
+		void INTERNAL_fillCircle(const Circle &circle, float outlineWidth);
 		void INTERNAL_setColor(float r, float g, float b, float a);
 		void INTERNAL_beginDraw(
 			INTERNAL::vulkan::VulkanDevice &device,
@@ -80,6 +84,7 @@ namespace bbe
 		void fillRect(const Vector2& pos, float width, float height, float rotation = 0, FragmentShader* shader = nullptr);
 		void fillRect(float x, float y,   const Vector2& dimensions, float rotation = 0, FragmentShader* shader = nullptr);
 		void fillRect(const Vector2& pos, const Vector2& dimensions, float rotation = 0, FragmentShader* shader = nullptr);
+		void fillRect(const PhysRectangle& rect, FragmentShader* shader = nullptr);
 
 		void fillCircle(const Circle &circle);
 		void fillCircle(float x, float y, float width, float height);
@@ -112,9 +117,18 @@ namespace bbe
 		void setColorRGB(const Vector3& c);
 		void setColorRGB(const Vector3& c, float a);
 		void setColorRGB(const Color &c);
+		void setOutlineRGB(float r, float g, float b, float a);
+		void setOutlineRGB(float r, float g, float b);
+		void setOutlineRGB(const Vector3& c);
+		void setOutlineRGB(const Vector3& c, float a);
+		void setOutlineRGB(const Color& c);
 
 		void setColorHSV(float h, float s, float v, float a);
 		void setColorHSV(float h, float s, float v);
+		void setOutlineHSV(float h, float s, float v, float a);
+		void setOutlineHSV(float h, float s, float v);
+
+		void setOutlineWidth(float outlineWidht);
 
 		void setFillMode(FillMode fm);
 		FillMode getFillMode();
