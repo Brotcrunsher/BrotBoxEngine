@@ -5,6 +5,7 @@
 
 #include "../BBE/Rectangle.h"
 #include "../BBE/PhysRectangle.h"
+#include "../BBE/PhysCircle.h"
 #include "../BBE/Circle.h"
 #include "../BBE/Color.h"
 #include "../BBE/FillMode.h"
@@ -91,6 +92,7 @@ namespace bbe
 		void fillCircle(const Vector2& pos, float width, float height);
 		void fillCircle(float x, float y, const Vector2& dimensions);
 		void fillCircle(const Vector2& pos, const Vector2& dimensions);
+		void fillCircle(const PhysCircle& circle);
 
 		void drawImage(const Rectangle &rect, const Image &image, float rotation = 0);
 		void drawImage(float x, float y,   float width, float height, const Image &image, float rotation = 0);

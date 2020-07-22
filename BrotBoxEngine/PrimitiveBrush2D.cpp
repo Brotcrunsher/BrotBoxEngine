@@ -241,6 +241,11 @@ void bbe::PrimitiveBrush2D::fillCircle(const Vector2& pos, const Vector2& dimens
 	fillCircle(pos.x, pos.y, dimensions.x, dimensions.y);
 }
 
+void bbe::PrimitiveBrush2D::fillCircle(const PhysCircle& circle)
+{
+	fillCircle(circle.getX(), circle.getY(), circle.getRadius() * 2, circle.getRadius() * 2);
+}
+
 void bbe::PrimitiveBrush2D::drawImage(const Rectangle & rect, const Image & image, float rotation)
 {
 	INTERNAL_drawImage(rect, image, rotation);
