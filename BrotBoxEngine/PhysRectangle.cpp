@@ -33,26 +33,31 @@ void bbe::PhysRectangle::init(Game* context, float x, float y, float width, floa
 }
 
 bbe::PhysRectangle::PhysRectangle(Game* context, float x, float y, float width, float height, float angle)
+	: PhysShape(context)
 {
 	init(context, x, y, width, height, angle);
 }
 
 bbe::PhysRectangle::PhysRectangle(Game* context, const Vector2& vec, float width, float height, float angle)
+	: PhysShape(context)
 {
 	init(context, vec.x, vec.y, width, height, angle);
 }
 
 bbe::PhysRectangle::PhysRectangle(Game* context, float x, float y, const Vector2& dim, float angle)
+	: PhysShape(context)
 {
 	init(context, x, y, dim.x, dim.y, angle);
 }
 
 bbe::PhysRectangle::PhysRectangle(Game* context, const Vector2& vec, const Vector2& dim, float angle)
+	: PhysShape(context)
 {
 	init(context, vec.x, vec.y, dim.x, dim.y, angle);
 }
 
 bbe::PhysRectangle::PhysRectangle(Game* context, const Rectangle& rect, float angle)
+	: PhysShape(context)
 {
 	init(context, rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight(), angle);
 }
@@ -67,6 +72,11 @@ float bbe::PhysRectangle::getY() const
 	return m_pbody->GetPosition().y * m_pcontext->getPhysWorld()->getPhysicsScale() - m_height / 2;
 }
 
+bbe::Vector2 bbe::PhysRectangle::getCenterOfMass() const
+{
+	return Vector2(getX() + getWidth() / 2, getY() + getHeight() / 2);
+}
+
 float bbe::PhysRectangle::getWidth() const
 {
 	return m_width;
@@ -77,12 +87,7 @@ float bbe::PhysRectangle::getHeight() const
 	return m_height;
 }
 
-float bbe::PhysRectangle::getAngle() const
+bbe::Vector2 bbe::PhysRectangle::getDim() const
 {
-	return m_pbody->GetAngle();
-}
-
-void bbe::PhysRectangle::freeze()
-{
-	m_pbody->SetType(b2BodyType::b2_staticBody);
+	return Vector2(getWidth(), getHeight());
 }

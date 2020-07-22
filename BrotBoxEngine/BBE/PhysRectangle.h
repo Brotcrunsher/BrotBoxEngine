@@ -1,5 +1,6 @@
 #pragma once
 
+#include "PhysShape.h"
 
 class b2Body;
 class b2Fixture;
@@ -10,12 +11,9 @@ namespace bbe
 	class Vector2;
 	class Rectangle;
 
-	class PhysRectangle
+	class PhysRectangle : public PhysShape
 	{
 	private:
-		b2Body*    m_pbody    = nullptr;
-		b2Fixture* m_pfixture = nullptr;
-		Game*      m_pcontext = nullptr;
 		float m_width = 0;
 		float m_height = 0;
 
@@ -29,12 +27,11 @@ namespace bbe
 		PhysRectangle(Game* context, const Vector2& vec, const Vector2& dim, float angle = 0);
 		PhysRectangle(Game* context, const Rectangle &rect, float angle = 0);
 
-		float getX() const;
-		float getY() const;
+		float getX() const override;
+		float getY() const override;
+		Vector2 getCenterOfMass() const override;
 		float getWidth() const;
 		float getHeight() const;
-		float getAngle() const;
-
-		void freeze();
+		Vector2 getDim() const;
 	};
 }
