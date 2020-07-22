@@ -7,13 +7,13 @@ constexpr float WINDOW_HEIGHT =  720.f;
 
 class MyGame : public bbe::Game
 {
-	struct CircleWithHue
+	struct CircleWithExtraData
 	{
 		float hue = 0;
 		float value = 0;
 		bbe::PhysCircle circle;
 	};
-	bbe::List<CircleWithHue> circles;
+	bbe::List<CircleWithExtraData> circles;
 	bbe::Random rand;
 
 	virtual void onStart() override
@@ -93,7 +93,7 @@ class MyGame : public bbe::Game
 		brush.setColorRGB(1, 1, 1);
 		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-		for (const CircleWithHue& c : circles)
+		for (const CircleWithExtraData& c : circles)
 		{
 			brush.setColorHSV(c.hue, 1, c.value);
 			brush.fillCircle(c.circle);
