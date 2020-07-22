@@ -21,7 +21,7 @@ namespace bbe
 		Window*   m_pwindow  = nullptr;
 		bool      m_started  = false;
 		GameTime  m_gameTime;
-		PhysWorld m_physWorld = PhysWorld({ 0, -10 });
+		PhysWorld m_physWorld = PhysWorld({ 0, -20 });
 
 	public:
 		Game();
