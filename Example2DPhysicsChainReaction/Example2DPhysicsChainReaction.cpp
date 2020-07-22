@@ -1,8 +1,6 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 #include <set>
-#include "box2d/b2_revolute_joint.h"
-#include "box2d/b2_world.h"
 
 constexpr float WINDOW_WIDTH  = 1280.f;
 constexpr float WINDOW_HEIGHT =  720.f;
