@@ -13,6 +13,7 @@ A C++ prototyping engine that is striving for an easy to use API, hiding all the
 * [stb_truetype](https://github.com/nothings/stb/blob/master/stb_truetype.h)
 * [Google Test](https://github.com/google/googletest)
 * [Travis CI](https://travis-ci.com/)
+* [Box2D](https://box2d.org/)
 
 ## Quick Start
 
