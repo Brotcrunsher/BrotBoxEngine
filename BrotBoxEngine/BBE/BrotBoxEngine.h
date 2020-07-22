@@ -93,3 +93,4 @@
 
 #include "../BBE/PhysWorld.h"
 #include "../BBE/PhysRectangle.h"
+#include "../BBE/PhysCircle.h"
