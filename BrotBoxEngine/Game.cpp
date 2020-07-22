@@ -46,8 +46,9 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 		StopWatch sw;
 		m_pwindow->INTERNAL_keyboard.update();
 		m_pwindow->INTERNAL_mouse.update();
-		m_physWorld.update(m_gameTime.tick());
-		update(m_gameTime.tick());
+		const float timeSinceLastFrame = m_gameTime.tick();
+		m_physWorld.update(timeSinceLastFrame);
+		update(timeSinceLastFrame);
 
 		m_pwindow->preDraw();
 		m_pwindow->preDraw3D();
