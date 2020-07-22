@@ -31,7 +31,7 @@ script:
   - cmake --build . --target ExampleTextRendering
   - cmake --build . --target ExampleBalloonGame
   - cmake --build . --target ExampleSignedDistanceField
-  - cmake --build . --target Example2DPhysics
+  - cmake --build . --target Example2DPhysicsBallPit
   - cmake --build . --target Example2DPhysicsBox2D
   - cmake --build . --target ExampleStreamCountdown
   - cmake --build . --target ExampleTemplate
