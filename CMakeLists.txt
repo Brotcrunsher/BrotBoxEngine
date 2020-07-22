@@ -92,7 +92,7 @@ add_subdirectory(ExampleTextRendering)
 add_subdirectory(ExampleBalloonGame)
 add_subdirectory(ExampleSignedDistanceField)
 add_subdirectory(Example2DPhysicsBallPit)
-add_subdirectory(Example2DPhysicsBox2D)
+add_subdirectory(Example2DPhysicsChainReaction)
 add_subdirectory(ExampleStreamCountdown)
 add_subdirectory(ExampleTemplate)
 
