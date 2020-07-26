@@ -7,7 +7,7 @@
 #include "../BBE/KeyboardKeys.h"
 #include "../BBE/MouseButtons.h"
 #include "../BBE/Vector2.h"
-#include "../BBE/PhysWorld.h";
+#include "../BBE/PhysWorld.h"
 
 namespace bbe
 {
