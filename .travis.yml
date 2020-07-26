@@ -8,14 +8,14 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - g++-8
+      - g++-10
       - freeglut3-dev
       - libvulkan-dev
       - libdmx-dev
       - cmake
       - xorg-dev
 compiler:
-  - g++-8
+  - g++-10
 script:
   - mkdir cmakebuild
   - cd cmakebuild
