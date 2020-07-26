@@ -98,7 +98,7 @@ namespace bbe
 
 			{
 				Vector2 vec1(1, 2);
-				Vector2 vec2(1.0001f, 2.000002f);
+				Vector2 vec2(1.0000001f, 2.000000002f);
 				Vector2 vec3(3, 5);
 				Vector2 vec4(-1, -2);
 
