@@ -28,7 +28,7 @@ namespace bbe {
 			bool destructed = false;
 			int personIndex = s_nextPersonIndex++;
 
-			static void resetTestStatistics() {
+			static inline void resetTestStatistics() {
 				s_amountOfPersons = 0;
 				s_amountOfDefaulConstructorCalls = 0;
 				s_amountOfCopyConstructorCalls = 0;
@@ -39,7 +39,7 @@ namespace bbe {
 				s_amountOfDestructorCalls = 0;
 			}
 
-			Person()
+			inline Person()
 				: age(0)
 			{
 				//std::cout << "Constructor called!" << std::endl;
@@ -47,21 +47,21 @@ namespace bbe {
 				Person::s_amountOfDefaulConstructorCalls++;
 			}
 
-			Person(const Person& other)
+			inline Person(const Person& other)
 				: name(other.name), adress(other.adress), age(other.age)
 			{
 				Person::s_amountOfPersons++;
 				Person::s_amountOfCopyConstructorCalls++;
 			}
 
-			Person(Person&& other)
+			inline Person(Person&& other)
 				: name(other.name), adress(other.adress), age(other.age)
 			{
 				Person::s_amountOfPersons++;
 				Person::s_amountOfMoveConstructorCalls++;
 			}
 
-			Person& operator=(const Person& other) {
+			inline Person& operator=(const Person& other) {
 				if (destructed)
 				{
 					debugBreak(); //Destructed Object got equal to other object
@@ -73,7 +73,7 @@ namespace bbe {
 				return *this;
 			}
 
-			Person& operator=(Person&& other) {
+			inline Person& operator=(Person&& other) {
 				if (destructed)
 				{
 					debugBreak(); //Destructed Object got equal to other object
@@ -86,7 +86,7 @@ namespace bbe {
 				return *this;
 			}
 
-			explicit Person(const bbe::String &name, const bbe::String &adress, int age) 
+			explicit inline Person(const bbe::String &name, const bbe::String &adress, int age)
 				: name(name), adress(adress), age(age) 
 			{
 				//std::cout << "Constructor with parameters called!" << std::endl;
@@ -94,7 +94,7 @@ namespace bbe {
 				Person::s_amountOfParameterConstructorCalls++;
 			}
 
-			explicit Person(ForceException fe)
+			explicit inline Person(ForceException fe)
 				:name("Will throw Name"), adress("Will throw street"), age(-1)
 			{
 				s_amountOfPersons++;
@@ -102,7 +102,7 @@ namespace bbe {
 				throw (int)1;
 			}
 
-			~Person() {
+			inline ~Person() {
 				if (destructed)
 				{
 					debugBreak();	//Was already destructed!
@@ -112,11 +112,11 @@ namespace bbe {
 				Person::s_amountOfDestructorCalls++;
 			}
 
-			void print() {
+			void inline print() {
 				std::cout << "name: " << name << " adress: " << adress << " age: " << age << std::endl;
 			}
 
-			bool operator==(const Person& other) const {
+			bool inline operator==(const Person& other) const {
 				//std::cout << "Comparing---" << std::endl;
 				//std::wcout << this->name   << " " << other.name   << (this->name   == other.name)   << std::endl;
 				//std::wcout << this->adress << " " << other.adress << (this->adress == other.adress) << std::endl;
@@ -128,41 +128,41 @@ namespace bbe {
 				return same;
 			}
 
-			bool operator!=(const Person& other) const {
+			bool inline operator!=(const Person& other) const {
 				return !operator==(other);
 			}
 
-			bool operator>(const Person& other) const {
+			bool inline operator>(const Person& other) const {
 				return age > other.age;
 			}
 
-			bool operator>=(const Person& other) const {
+			bool inline operator>=(const Person& other) const {
 				return age >= other.age;
 			}
 
-			bool operator<(const Person& other) const {
+			bool inline operator<(const Person& other) const {
 				return age < other.age;
 			}
 
-			bool operator<=(const Person& other) const {
+			bool inline operator<=(const Person& other) const {
 				return age <= other.age;
 			}
 
-			static void checkIfAllPersonsWereDestroyed() {
+			static inline void checkIfAllPersonsWereDestroyed() {
 				if (s_amountOfPersons != 0) {
 					debugBreak();
 				}
 			}
 		};
-		int     Person::s_nextPersonIndex = 0;
-		int64_t Person::s_amountOfPersons = 0;
-		int64_t Person::s_amountOfDefaulConstructorCalls = 0;
-		int64_t Person::s_amountOfCopyConstructorCalls = 0;
-		int64_t Person::s_amountOfMoveConstructorCalls = 0;
-		int64_t Person::s_amountOfCopyAssignmentCalls = 0;
-		int64_t Person::s_amountOfMoveAssignmentCalls = 0;
-		int64_t Person::s_amountOfParameterConstructorCalls = 0;
-		int64_t Person::s_amountOfDestructorCalls = 0;
+		int     inline Person::s_nextPersonIndex = 0;
+		int64_t inline Person::s_amountOfPersons = 0;
+		int64_t inline Person::s_amountOfDefaulConstructorCalls = 0;
+		int64_t inline Person::s_amountOfCopyConstructorCalls = 0;
+		int64_t inline Person::s_amountOfMoveConstructorCalls = 0;
+		int64_t inline Person::s_amountOfCopyAssignmentCalls = 0;
+		int64_t inline Person::s_amountOfMoveAssignmentCalls = 0;
+		int64_t inline Person::s_amountOfParameterConstructorCalls = 0;
+		int64_t inline Person::s_amountOfDestructorCalls = 0;
 
 		template <typename T, typename U>
 		void assertEquals(const T &a, const U &b) {
@@ -238,7 +238,7 @@ namespace bbe {
 	}
 
 	template<>
-	uint32_t hash(const test::Person &person)
+	uint32_t inline hash(const test::Person &person)
 	{
 		uint32_t hashValue = hash(person.age);
 		hashValue += hash(person.adress);
