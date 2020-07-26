@@ -15,7 +15,7 @@ namespace bbe
 		namespace INTERNAL
 		{
 			void startMath();
-			constexpr std::size_t TABLE_SIZES = 2048;
+			constexpr std::size_t TABLE_SIZES = 1024 * 64;
 			extern float sinTable[TABLE_SIZES];
 			extern float cosTable[TABLE_SIZES];
 			extern float tanTable[TABLE_SIZES];

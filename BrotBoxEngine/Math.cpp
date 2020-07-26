@@ -4,13 +4,30 @@
 #include "BBE/Vector4.h"
 #include <cmath>
 
-float bbe::Math::INTERNAL::sinTable[TABLE_SIZES];
-float bbe::Math::INTERNAL::cosTable[TABLE_SIZES];
-float bbe::Math::INTERNAL::tanTable[TABLE_SIZES];
+float bbe::Math::INTERNAL::sinTable[TABLE_SIZES] = {};
+float bbe::Math::INTERNAL::cosTable[TABLE_SIZES] = {};
+float bbe::Math::INTERNAL::tanTable[TABLE_SIZES] = {};
 
+#ifdef _DEBUG
+static bool isMathInitialized()
+{
+	return bbe::Math::INTERNAL::cosTable[0] == 1.0f;
+}
+#endif
+
+static void throwIfUninitializedAndDebug()
+{
+#ifdef _DEBUG
+	if (!isMathInitialized())
+	{
+		throw bbe::NotInitializedException();
+	}
+#endif
+}
 
 float bbe::Math::cos(float val)
 {
+	throwIfUninitializedAndDebug();
 	val = bbe::Math::mod(val, TAU);
 	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
 	return INTERNAL::cosTable[index];
@@ -23,6 +40,7 @@ float bbe::Math::acos(float val)
 
 float bbe::Math::sin(float val)
 {
+	throwIfUninitializedAndDebug();
 	val = bbe::Math::mod(val, TAU);
 	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
 	return INTERNAL::sinTable[index];
@@ -35,6 +53,7 @@ float bbe::Math::asin(float val)
 
 float bbe::Math::tan(float val)
 {
+	throwIfUninitializedAndDebug();
 	val = bbe::Math::mod(val, TAU);
 	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
 	return INTERNAL::tanTable[index];
