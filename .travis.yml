@@ -39,6 +39,3 @@ script:
   - cmake --build . --target BrotBoxEngineTest
   - cd BrotBoxEngineGTest
   - ./BrotBoxEngineGTest
-  - cd ..
-  - cd BrotBoxEngineTest
-  - ./BrotBoxEngineTest
