@@ -19,7 +19,7 @@ compiler:
 script:
   - mkdir cmakebuild
   - cd cmakebuild
-  - cmake -DCMAKE_C_COMPILER=/usr/bin/gcc-8 -DCMAKE_CXX_COMPILER=/usr/bin/g++-8 ..
+  - cmake -DCMAKE_C_COMPILER=/usr/bin/gcc-10 -DCMAKE_CXX_COMPILER=/usr/bin/g++-10 ..
   - cmake --build . --target Example3D
   - cmake --build . --target ExampleTerrain
   - cmake --build . --target ExampleMandelbrot
