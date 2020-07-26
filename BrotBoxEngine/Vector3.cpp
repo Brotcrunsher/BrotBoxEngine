@@ -256,7 +256,7 @@ bbe::Vector3 bbe::Vector3::rotate(float radians, const Vector3 & axisOfRotation,
 	return rotVec + center;
 }
 
-bbe::Vector3 bbe::Vector3::setLenght(float length) const
+bbe::Vector3 bbe::Vector3::withLenght(float length) const
 {
 	//UNTESTED
 	return normalize() * length;

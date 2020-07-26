@@ -280,7 +280,7 @@ namespace bbe
 
 			{
 				Vector2 vec1(2, 2);
-				Vector2 vec2 = vec1.setLenght(16);
+				Vector2 vec2 = vec1.withLenght(16);
 
 				assertEqualsFloat(vec2.getLength(), 16);
 				assertEqualsFloat(vec2.x, 11.3137f);

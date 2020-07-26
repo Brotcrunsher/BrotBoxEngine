@@ -169,7 +169,7 @@ bool bbe::Vector2::equals(const Vector2 & other, float epsilon) const
 
 bool bbe::Vector2::isSameLength(const Vector2 & other, float epsilon) const
 {
-	return Math::floatEquals(getLengthSq(), other.getLengthSq(), epsilon);
+	return Math::floatEquals(getLengthSq(), other.getLengthSq(), epsilon * epsilon);
 }
 
 bool bbe::Vector2::isSameDirection(const Vector2 & other) const
@@ -246,17 +246,17 @@ bbe::Vector2 bbe::Vector2::rotate90CounterClockwise() const
 	return Vector2(y, -x);
 }
 
-bbe::Vector2 bbe::Vector2::setLenght(float length) const
+bbe::Vector2 bbe::Vector2::withLenght(float length) const
 {
 	return normalize()*length;
 }
 
-bbe::Vector2 bbe::Vector2::normalize() const
+bbe::Vector2 bbe::Vector2::normalize(const bbe::Vector2& zeroBehavior) const
 {
 	float length = getLength();
 	if (length == 0)
 	{
-		return Vector2(1, 0);
+		return zeroBehavior;
 	}
 	return Vector2(x / length, y / length);
 }

@@ -53,7 +53,7 @@ namespace bbe
 
 		Vector3 rotate(float radians, const Vector3 &axisOfRotation) const;
 		Vector3 rotate(float radians, const Vector3 &axisOfRotation, const Vector3 &center) const;
-		Vector3 setLenght(float length) const;
+		Vector3 withLenght(float length) const;
 		Vector3 normalize() const;
 		Vector3 abs() const;
 		Vector3 clampComponents(float min, float max) const;

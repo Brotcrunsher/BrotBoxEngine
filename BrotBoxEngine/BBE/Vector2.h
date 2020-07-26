@@ -54,8 +54,8 @@ namespace bbe
 		Vector2 rotate(float radians, const Vector2 &center) const;
 		Vector2 rotate90Clockwise() const;
 		Vector2 rotate90CounterClockwise() const;
-		Vector2 setLenght(float length) const;
-		Vector2 normalize() const;
+		Vector2 withLenght(float length) const;
+		Vector2 normalize(const bbe::Vector2& zeroBehavior = bbe::Vector2(1, 0)) const;
 		Vector2 abs() const;
 		Vector2 clampComponents(float min, float max) const;
 		Vector2 project(const Vector2 &other) const;
