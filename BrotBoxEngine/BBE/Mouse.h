@@ -5,7 +5,8 @@
 
 namespace bbe
 {
-	class Vector2;
+	template<typename T> class Vector2_t;
+	using Vector2 = Vector2_t<float>;
 
 	class Mouse
 	{
