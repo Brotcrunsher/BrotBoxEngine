@@ -17,17 +17,17 @@ namespace bbe
 		{
 			void startMath();
 			constexpr std::size_t TABLE_SIZES = 1024 * 64;
-			extern float sinTable[TABLE_SIZES];
-			extern float cosTable[TABLE_SIZES];
-			extern float tanTable[TABLE_SIZES];
+			extern double sinTable[TABLE_SIZES];
+			extern double cosTable[TABLE_SIZES];
+			extern double tanTable[TABLE_SIZES];
 		}
 
 		constexpr  int32_t BIGGEST_PRIME_32_SIGNED   = 2147483647;
 		constexpr uint32_t BIGGEST_PRIME_32_UNSIGNED = 4294967295;
 
 
-		constexpr float PI                = 3.14159265359f;
-		constexpr float TAU               = 6.28318530718f;
+		constexpr double PI               = 3.1415926535897932384626433832795028841;
+		constexpr double TAU              = 6.2831853071795864769252867665590057682;
 		constexpr float E                 = 2.71828182845f;
 		constexpr float SQRT2             = 1.41421356237f;
 		constexpr float SQRT2INV          = 0.70710678118f;
@@ -35,14 +35,31 @@ namespace bbe
 		constexpr float INFINITY_NEGATIVE = -std::numeric_limits<float>::infinity();
 		constexpr float NaN               = std::numeric_limits<float>::quiet_NaN();
 
-		float cos(float val);
+		double cos(double val);
 		float acos(float val);
-		float sin(float val);
+		double sin(double val);
 		float asin(float val);
-		float tan(float val);
+		double tan(double val);
 		float atan(float val);
 		float sqrt(float val);
-		float mod(float val, float mod);
+		template<typename T>
+		T mod(T val, T mod)
+		{
+			if (val >= 0)
+			{
+				if (val < mod)
+				{
+					return val;
+				}
+				int div = (int)(val / mod);
+				return val - div * mod;
+			}
+			else
+			{
+				val = val - (int)(val / mod) * mod + mod;
+				return val - (int)(val / mod) * mod;
+			}
+		}
 		float pingpong(float val, float border);
 
 		constexpr float toRadians(float val)
@@ -59,29 +76,79 @@ namespace bbe
 		float ceil(float val);
 		float round(float val);
 		float square(float val);
-		float clamp(float val, float min, float max);
+		template <typename T>
+		T clamp(T val, T min, T max)
+		{
+			return val < min ? min : (val > max ? max : val);
+		}
 		float clamp01(float val);
 		float normalDist(float x, float u, float o);
 		bool  isInRange(float val, float min, float max);
 		bool  isInRangeStrict(float val, float min, float max);
 		bool  isInRange01(float val);
 		bool  isInRange01Strict(float val);
-		float abs(float val);
-		float (max)(float val1, float val2);
+		template <typename T>
+		T abs(T val)
+		{
+			return val < 0 ? -val : val;
+		}
+		template <typename T>
+		T (max)(T val1, T val2)
+		{
+			return val1 > val2 ? val1 : val2;
+		}
 		float (max)(float val1, float val2, float val3);
 		float (max)(float val1, float val2, float val3, float val4);
-		float (min)(float val1, float val2);
+		template <typename T>
+		T (min)(T val1, T val2)
+		{
+			return val1 < val2 ? val1 : val2;
+		}
 		float (min)(float val1, float val2, float val3);
 		float (min)(float val1, float val2, float val3, float val4);
-		float maxAbs(float val1, float val2);
+		template <typename T>
+		T maxAbs(T val1, T val2)
+		{
+			return max(abs(val1), abs(val2));
+		}
 		float maxAbs(float val1, float val2, float val3);
-		float minAbs(float val1, float val2);
+		template <typename T>
+		T minAbs(T val1, T val2)
+		{
+			return min(abs(val1), abs(val2));
+		}
 		float minAbs(float val1, float val2, float val3);
-		float maxAbsKeepSign(float val1, float val2);
+		template <typename T>
+		T maxAbsKeepSign(T val1, T val2)
+		{
+			if (abs(val1) > abs(val2))
+			{
+				return val1;
+			}
+			else
+			{
+				return val2;
+			}
+		}
 		float maxAbsKeepSign(float val1, float val2, float val3);
-		float minAbsKeepSign(float val1, float val2);
+		template <typename T>
+		T minAbsKeepSign(T val1, T val2)
+		{
+			if (abs(val1) < abs(val2))
+			{
+				return val1;
+			}
+			else
+			{
+				return val2;
+			}
+		}
 		float minAbsKeepSign(float val1, float val2, float val3);
-		bool floatEquals(float val1, float val2, float epsilon);
+		template <typename T>
+		bool floatEquals(T val1, T val2, T epsilon)
+		{
+			return (val1 - val2) > epsilon ? false : ((val1 - val2) < -epsilon ? false : true);
+		}
 		float isNaN(float val);
 		float isInfinity(float val);
 		float isPositiveInfinity(float val);

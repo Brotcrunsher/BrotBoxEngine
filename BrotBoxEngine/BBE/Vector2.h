@@ -9,28 +9,28 @@ namespace bbe
 	class Vector2_t
 	{
 	public:
-		float x;
-		float y;
+		T x;
+		T y;
 
 		Vector2_t()
 			: x(0), y(0)
 		{
 		}
 
-		Vector2_t(float x, float y)
+		Vector2_t(T x, T y)
 			: x(x), y(y)
 		{
 		}
 
-		explicit Vector2_t(float xy)
+		explicit Vector2_t(T xy)
 			: x(xy), y(xy)
 		{
 		}
 
-		static Vector2_t createVector2OnUnitCircle(float radians)
+		static Vector2_t createVector2OnUnitCircle(T radians)
 		{
-			float x = Math::cos(radians);
-			float y = Math::sin(radians);
+			T x = Math::cos(radians);
+			T y = Math::sin(radians);
 			return Vector2(x, y);
 		}
 
@@ -62,7 +62,7 @@ namespace bbe
 			return *this;
 		}
 
-		Vector2_t& operator*=(float scalar)
+		Vector2_t& operator*=(T scalar)
 		{
 			//UNTESTED
 			this->x *= scalar;
@@ -70,7 +70,7 @@ namespace bbe
 			return *this;
 		}
 
-		Vector2_t& operator/=(float scalar)
+		Vector2_t& operator/=(T scalar)
 		{
 			//UNTESTED
 			this->x /= scalar;
@@ -78,17 +78,17 @@ namespace bbe
 			return *this;
 		}
 
-		Vector2_t operator*(float scalar) const
+		Vector2_t operator*(T scalar) const
 		{
 			return Vector2_t<T>(x * scalar, y * scalar);
 		}
 
-		Vector2_t operator/(float scalar) const
+		Vector2_t operator/(T scalar) const
 		{
 			return Vector2_t<T>(x / scalar, y / scalar);
 		}
 
-		float operator*(const Vector2_t<T> &other) const
+		T operator*(const Vector2_t<T> &other) const
 		{
 			return x * other.x + y * other.y;
 		}
@@ -108,7 +108,7 @@ namespace bbe
 			return Vector2_t<T>(-x, -y);
 		}
 
-		float& operator[](int index)
+		T& operator[](int index)
 		{
 			switch (index)
 			{
@@ -121,7 +121,7 @@ namespace bbe
 			}
 		}
 
-		const float& operator[](int index) const
+		const T& operator[](int index) const
 		{
 			switch (index)
 			{
@@ -159,12 +159,12 @@ namespace bbe
 			return getLengthSq() <= other.getLengthSq();
 		}
 
-		bool equals(const Vector2_t<T> &other, float epsilon = 0.001f) const
+		bool equals(const Vector2_t<T> &other, T epsilon = 0.001f) const
 		{
 			return Math::floatEquals(x, other.x, epsilon)
 				&& Math::floatEquals(y, other.y, epsilon);
 		}
-		bool isSameLength(const Vector2_t<T> &other, float epsilon = 0.001f) const
+		bool isSameLength(const Vector2_t<T> &other, T epsilon = 0.001f) const
 		{
 			return Math::floatEquals(getLengthSq(), other.getLengthSq(), epsilon * epsilon);
 		}
@@ -192,12 +192,12 @@ namespace bbe
 		{
 			return Math::isInfinity(x) || Math::isInfinity(y);
 		}
-		bool isUnit(float epsilon = 0.001f) const
+		bool isUnit(T epsilon = 0.001) const
 		{
-			float length = getLength();
+			T length = getLength();
 			return length > 1 - epsilon && length < 1 + epsilon;
 		}
-		bool isCloseTo(const Vector2_t<T> &other, float maxDistance) const
+		bool isCloseTo(const Vector2_t<T> &other, T maxDistance) const
 		{
 			return (operator-(other)).getLength() <= maxDistance;
 		}
@@ -206,17 +206,17 @@ namespace bbe
 			return x == 0 && y == 0;
 		}
 
-		Vector2_t rotate(float radians) const
+		Vector2_t rotate(T radians) const
 		{
-			float sin = Math::sin(radians);
-			float cos = Math::cos(radians);
+			T sin = Math::sin(radians);
+			T cos = Math::cos(radians);
 
 			return Vector2_t<T>(
 				x * cos - y * sin,
 				x * sin + y * cos
 			);
 		}
-		Vector2_t rotate(float radians, const Vector2_t<T> &center) const
+		Vector2_t rotate(T radians, const Vector2_t<T> &center) const
 		{
 			Vector2_t<T> rotVec = operator-(center);
 			rotVec = rotVec.rotate(radians);
@@ -230,13 +230,13 @@ namespace bbe
 		{
 			return Vector2_t<T>(y, -x);
 		}
-		Vector2_t withLenght(float length) const
+		Vector2_t withLenght(T length) const
 		{
 			return normalize() * length;
 		}
 		Vector2_t normalize(const bbe::Vector2_t<T>& zeroBehavior = bbe::Vector2_t<T>(1, 0)) const
 		{
-			float length = getLength();
+			T length = getLength();
 			if (length == 0)
 			{
 				return zeroBehavior;
@@ -247,13 +247,13 @@ namespace bbe
 		{
 			return Vector2_t<T>(Math::abs(x), Math::abs(y));
 		}
-		Vector2_t clampComponents(float min, float max) const
+		Vector2_t clampComponents(T min, T max) const
 		{
 			return Vector2_t<T>(Math::clamp(x, min, max), Math::clamp(y, min, max));
 		}
 		Vector2_t project(const Vector2_t<T> &other) const
 		{
-			float scalar = operator*(other);
+			T scalar = operator*(other);
 			scalar /= other.getLengthSq();
 			return other * scalar;
 		}
@@ -263,49 +263,49 @@ namespace bbe
 			return operator-(normalized * 2 * (operator*(normalized)));
 		}
 
-		float getLength() const
+		T getLength() const
 		{
 			return Math::sqrt(getLengthSq());
 		}
-		float getLengthSq() const
+		T getLengthSq() const
 		{
 			return x * x + y * y;
 		}
-		float getDistanceTo(const Vector2_t<T>& other) const
+		T getDistanceTo(const Vector2_t<T>& other) const
 		{
 			return (operator-(other)).getLength();
 		}
-		float getDistanceTo(float x, float y) const
+		T getDistanceTo(T x, T y) const
 		{
 			return getDistanceTo(Vector2_t<T>(x, y));
 		}
-		float getMax() const
+		T getMax() const
 		{
 			return Math::max(x, y);
 		}
-		float getMin() const
+		T getMin() const
 		{
 			return Math::min(x, y);
 		}
-		float getMaxAbs() const
+		T getMaxAbs() const
 		{
 			return Math::maxAbs(x, y);
 		}
-		float getMinAbs() const
+		T getMinAbs() const
 		{
 			return Math::minAbs(x, y);
 		}
-		float getMaxAbsKeepSign() const
+		T getMaxAbsKeepSign() const
 		{
 			return Math::maxAbsKeepSign(x, y);
 		}
-		float getMinAbsKeepSign() const
+		T getMinAbsKeepSign() const
 		{
 			return Math::minAbsKeepSign(x, y);
 		}
-		float getAngle() const
+		T getAngle() const
 		{
-			float angle = Math::acos(x / getLength());
+			T angle = Math::acos(x / getLength());
 			if (y >= 0)
 			{
 				return angle;
@@ -315,9 +315,9 @@ namespace bbe
 				return Math::TAU - angle;
 			}
 		}
-		float getAngle(const Vector2_t<T> &other) const
+		T getAngle(const Vector2_t<T> &other) const
 		{
-			float angle = Math::acos(operator*(other) / getLength() / other.getLength());
+			T angle = Math::acos(operator*(other) / getLength() / other.getLength());
 			if (isLeft(other))
 			{
 				return angle;

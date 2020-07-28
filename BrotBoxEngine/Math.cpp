@@ -4,9 +4,9 @@
 #include "BBE/Vector4.h"
 #include <cmath>
 
-float bbe::Math::INTERNAL::sinTable[TABLE_SIZES] = {};
-float bbe::Math::INTERNAL::cosTable[TABLE_SIZES] = {};
-float bbe::Math::INTERNAL::tanTable[TABLE_SIZES] = {};
+double bbe::Math::INTERNAL::sinTable[TABLE_SIZES] = {};
+double bbe::Math::INTERNAL::cosTable[TABLE_SIZES] = {};
+double bbe::Math::INTERNAL::tanTable[TABLE_SIZES] = {};
 
 #ifdef _DEBUG
 static bool isMathInitialized()
@@ -25,7 +25,7 @@ static void throwIfUninitializedAndDebug()
 #endif
 }
 
-float bbe::Math::cos(float val)
+double bbe::Math::cos(double val)
 {
 	throwIfUninitializedAndDebug();
 	val = bbe::Math::mod(val, TAU);
@@ -38,7 +38,7 @@ float bbe::Math::acos(float val)
 	return ::acos(val);
 }
 
-float bbe::Math::sin(float val)
+double bbe::Math::sin(double val)
 {
 	throwIfUninitializedAndDebug();
 	val = bbe::Math::mod(val, TAU);
@@ -51,7 +51,7 @@ float bbe::Math::asin(float val)
 	return ::asin(val);
 }
 
-float bbe::Math::tan(float val)
+double bbe::Math::tan(double val)
 {
 	throwIfUninitializedAndDebug();
 	val = bbe::Math::mod(val, TAU);
@@ -104,16 +104,6 @@ float bbe::Math::square(float val)
 	return val * val;
 }
 
-float bbe::Math::clamp(float val, float min, float max)
-{
-	return val < min ? min : (val > max ? max : val);
-}
-
-float bbe::Math::minAbs(float val1, float val2)
-{
-	return min(abs(val1), abs(val2));
-}
-
 float bbe::Math::minAbs(float val1, float val2, float val3)
 {
 	//UNTESTED
@@ -125,18 +115,6 @@ float bbe::Math::minAbs(float val1, float val2, float val3)
 	if (val3 < val1) val1 = val3;
 
 	return val1;
-}
-
-float bbe::Math::maxAbsKeepSign(float val1, float val2)
-{
-	if (abs(val1) > abs(val2))
-	{
-		return val1;
-	}
-	else
-	{
-		return val2;
-	}
 }
 
 float bbe::Math::maxAbsKeepSign(float val1, float val2, float val3)
@@ -152,18 +130,6 @@ float bbe::Math::maxAbsKeepSign(float val1, float val2, float val3)
 	return val1;
 }
 
-float bbe::Math::minAbsKeepSign(float val1, float val2)
-{
-	if (abs(val1) < abs(val2))
-	{
-		return val1;
-	}
-	else
-	{
-		return val2;
-	}
-}
-
 float bbe::Math::minAbsKeepSign(float val1, float val2, float val3)
 {
 	//UNTESTED
@@ -175,11 +141,6 @@ float bbe::Math::minAbsKeepSign(float val1, float val2, float val3)
 	if (aVal3 < aVal1) val1 = val3;
 
 	return val1;
-}
-
-bool bbe::Math::floatEquals(float val1, float val2, float epsilon)
-{
-	return (val1 - val2) > epsilon ? false : ((val1 - val2) < -epsilon ? false : true);
 }
 
 float bbe::Math::isNaN(float val)
@@ -277,24 +238,6 @@ float bbe::Math::normalDist(float x, float u, float o)
 	return MULT * ::pow(bbe::Math::E, exponent);
 }
 
-float bbe::Math::mod(float val, float mod)
-{
-	if (val >= 0)
-	{
-		if (val < mod)
-		{
-			return val;
-		}
-		int div = (int)(val / mod);
-		return val - div * mod;
-	}
-	else
-	{
-		val = val - (int)(val / mod) * mod + mod;
-		return val - (int)(val / mod) * mod;
-	}
-}
-
 float bbe::Math::pingpong(float val, float border)
 {
 	val = mod(val, border * 2);
@@ -328,16 +271,6 @@ bool bbe::Math::isInRange01Strict(float val)
 	return val > 0 && val < 1;
 }
 
-float bbe::Math::abs(const float val)
-{
-	return val < 0 ? -val : val;
-}
-
-float bbe::Math::max(float val1, float val2)
-{
-	return val1 > val2 ? val1 : val2;
-}
-
 float bbe::Math::max(float val1, float val2, float val3)
 {
 	//UNTESTED
@@ -355,11 +288,6 @@ float bbe::Math::max(float val1, float val2, float val3, float val4)
 	return val1;
 }
 
-float bbe::Math::min(float val1, float val2)
-{
-	return val1 < val2 ? val1 : val2;
-}
-
 float bbe::Math::min(float val1, float val2, float val3)
 {
 	//UNTESTED
@@ -375,11 +303,6 @@ float bbe::Math::min(float val1, float val2, float val3, float val4)
 	if (val3 < val1) val1 = val3;
 	if (val4 < val1) val1 = val4;
 	return val1;
-}
-
-float bbe::Math::maxAbs(float val1, float val2)
-{
-	return max(abs(val1), abs(val2));
 }
 
 float bbe::Math::maxAbs(float val1, float val2, float val3)

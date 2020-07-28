@@ -58,13 +58,13 @@ class MyGame : public bbe::Game
 		}
 		float stringOffsetX = 120;
 		float stringOffsetY = 400;
-		brush.fillText(stringOffsetX,                      stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.1) * bbe::Math::min(timeSinceTimeUp * 10, 100), hours       .getRaw(), font);
-		brush.fillText(stringOffsetX + widthOfChars * 2.4, stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.2) * bbe::Math::min(timeSinceTimeUp * 10, 100), ":", font);
-		brush.fillText(stringOffsetX + widthOfChars * 3,   stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.3) * bbe::Math::min(timeSinceTimeUp * 10, 100), minutes     .getRaw(), font);
-		brush.fillText(stringOffsetX + widthOfChars * 5.4, stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.4) * bbe::Math::min(timeSinceTimeUp * 10, 100), ":", font);
-		brush.fillText(stringOffsetX + widthOfChars * 6,   stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.5) * bbe::Math::min(timeSinceTimeUp * 10, 100), seconds     .getRaw(), font);
-		brush.fillText(stringOffsetX + widthOfChars * 8.4, stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.6) * bbe::Math::min(timeSinceTimeUp * 10, 100), ":", font);
-		brush.fillText(stringOffsetX + widthOfChars * 9,   stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.7) * bbe::Math::min(timeSinceTimeUp * 10, 100), milliseconds.getRaw(), font);
+		brush.fillText(stringOffsetX,                      stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.1) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), hours       .getRaw(), font);
+		brush.fillText(stringOffsetX + widthOfChars * 2.4, stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.2) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), ":", font);
+		brush.fillText(stringOffsetX + widthOfChars * 3,   stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.3) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), minutes     .getRaw(), font);
+		brush.fillText(stringOffsetX + widthOfChars * 5.4, stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.4) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), ":", font);
+		brush.fillText(stringOffsetX + widthOfChars * 6,   stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.5) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), seconds     .getRaw(), font);
+		brush.fillText(stringOffsetX + widthOfChars * 8.4, stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.6) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), ":", font);
+		brush.fillText(stringOffsetX + widthOfChars * 9,   stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.7) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), milliseconds.getRaw(), font);
 	}
 	virtual void onEnd() override
 	{

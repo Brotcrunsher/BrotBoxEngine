@@ -174,11 +174,11 @@ namespace bbe
 			assertEqualsFloat(Math::minAbsKeepSign(-3.0, 2.0), 2.0);
 			assertEqualsFloat(Math::minAbsKeepSign(-2.0, 3.0), -2.0);
 
-			assertEquals(Math::floatEquals(3, 3.0001f, 0.1f), true);
-			assertEquals(Math::floatEquals(3, 3.1001f, 0.1f), false);
+			assertEquals(Math::floatEquals(3.f, 3.0001f, 0.1f), true);
+			assertEquals(Math::floatEquals(3.f, 3.1001f, 0.1f), false);
 
-			assertEquals(Math::floatEquals(3.0001f, 3, 0.1f), true);
-			assertEquals(Math::floatEquals(3.1001f, 3, 0.1f), false);
+			assertEquals(Math::floatEquals(3.0001f, 3.f, 0.1f), true);
+			assertEquals(Math::floatEquals(3.1001f, 3.f, 0.1f), false);
 
 			assertEquals(Math::isNaN(0), false);
 			assertEquals(Math::isNaN(10000), false);

@@ -71,7 +71,7 @@ void bbe::PhysWorld::setGravity(const bbe::Vector2& gravity)
 void bbe::PhysWorld::update(float timeSinceLastFrame)
 {
 	timeSinceLastStep += timeSinceLastFrame;
-	timeSinceLastStep = bbe::Math::clamp(timeSinceLastStep, 0, TIME_BETWEEN_STEPS * 2);
+	timeSinceLastStep = bbe::Math::clamp(timeSinceLastStep, 0.0f, TIME_BETWEEN_STEPS * 2);
 
 	if (timeSinceLastStep > TIME_BETWEEN_STEPS)
 	{
