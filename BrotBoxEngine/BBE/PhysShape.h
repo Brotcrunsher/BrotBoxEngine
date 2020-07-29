@@ -44,6 +44,8 @@ namespace bbe
 		virtual void setRestitution(float restitution) const;
 
 		virtual void freeze();
+		virtual void destroy();
+
 		virtual void addJointRope(PhysShape& other, float maxLength);
 		virtual void addJointRevolute(PhysShape& other, const bbe::Vector2& anchor);
 	};

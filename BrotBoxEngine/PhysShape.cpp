@@ -21,6 +21,11 @@ void bbe::PhysShape::freeze()
 	m_pbody->SetType(b2BodyType::b2_staticBody);
 }
 
+void bbe::PhysShape::destroy()
+{
+	m_pcontext->getPhysWorld()->getRaw()->DestroyBody(m_pbody);
+}
+
 void bbe::PhysShape::addJointRope(PhysShape& other, float maxLength)
 {
 	b2RopeJointDef ropeJoint;
