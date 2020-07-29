@@ -149,6 +149,26 @@ class MyGame : public bbe::Game
 	bbe::List<bbe::PhysCircle> rightToLeftCircles;
 	bbe::Random rand;
 
+	void reinitialize()
+	{
+		for (bbe::PhysCircle& c : leftToRightCircles)
+		{
+			c.destroy();
+		}
+		leftToRightCircles.clear();
+		for (bbe::PhysCircle& c : rightToLeftCircles)
+		{
+			c.destroy();
+		}
+		rightToLeftCircles.clear();
+
+		for (uint32_t i = 0; i < 256; i++)
+		{
+			leftToRightCircles.add(bbe::PhysCircle(this, rand.randomFloat(300.f), rand.randomFloat(WINDOW_HEIGHT - 20), 10));
+			rightToLeftCircles.add(bbe::PhysCircle(this, WINDOW_WIDTH - 300.f + rand.randomFloat(300.f), rand.randomFloat(WINDOW_HEIGHT - 20), 10));
+		}
+	}
+
 	virtual void onStart() override
 	{
 		constexpr float blockerWidth = 20;
@@ -163,15 +183,15 @@ class MyGame : public bbe::Game
 
 		getPhysWorld()->setGravity({ 0, 0 });
 
-		for (uint32_t i = 0; i < 256; i++)
-		{
-			leftToRightCircles.add(bbe::PhysCircle(this, rand.randomFloat(300.f), rand.randomFloat(WINDOW_HEIGHT - 20), 10));
-			rightToLeftCircles.add(bbe::PhysCircle(this, WINDOW_WIDTH - 300.f + rand.randomFloat(300.f), rand.randomFloat(WINDOW_HEIGHT - 20), 10));
-		}
+		reinitialize();
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
 		std::cout << "FPS: " << (1.f / timeSinceLastFrame) << std::endl;
+		if (isKeyPressed(bbe::Key::SPACE))
+		{
+			reinitialize();
+		}
 		flowField.reset();
 		for (bbe::PhysCircle& c : leftToRightCircles)
 		{
