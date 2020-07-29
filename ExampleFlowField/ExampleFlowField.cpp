@@ -207,12 +207,12 @@ class MyGame : public bbe::Game
 		brush.setColorRGB(1, 0, 0);
 		for (const bbe::PhysCircle& c : leftToRightCircles)
 		{
-			//brush.fillCircle(c);
+			brush.fillCircle(c);
 		}
 		brush.setColorRGB(0, 0, 1);
 		for (const bbe::PhysCircle& c : rightToLeftCircles)
 		{
-			//brush.fillCircle(c);
+			brush.fillCircle(c);
 		}
 
 		brush.setColorRGB(0, 1, 0);
