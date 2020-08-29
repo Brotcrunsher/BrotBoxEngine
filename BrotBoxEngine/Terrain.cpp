@@ -151,8 +151,6 @@ void bbe::Terrain::construct(int width, int height, const char * baseTexturePath
 	m_heightMap.setRepeatMode(bbe::ImageRepeatMode::MIRROR_CLAMP_TO_EDGE);
 	m_heightMap.load(width, height, m_valueNoise.getRaw(), bbe::ImageFormat::R32FLOAT);
 
-	m_valueNoise.unload();
-
 	m_baseTexture.load(baseTexturePath);
 
 	m_patchSize = PATCH_SIZE / VERTICES_PER_METER;

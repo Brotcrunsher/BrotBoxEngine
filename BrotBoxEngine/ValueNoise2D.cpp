@@ -130,7 +130,7 @@ float bbe::ValueNoise2D::get(int x, int y) const
 
 	if (m_pdata != nullptr)
 	{
-		return m_pdata[x * m_height + y];
+		return m_pdata[y * m_width + x];
 	}
 
 
