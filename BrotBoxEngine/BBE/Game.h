@@ -8,6 +8,7 @@
 #include "../BBE/MouseButtons.h"
 #include "../BBE/Vector2.h"
 #include "../BBE/PhysWorld.h"
+#include "../BBE/SoundManager.h"
 
 namespace bbe
 {
@@ -22,6 +23,7 @@ namespace bbe
 		bool      m_started  = false;
 		GameTime  m_gameTime;
 		PhysWorld m_physWorld = PhysWorld({ 0, -20 });
+		bbe::INTERNAL::SoundManager m_soundManager;
 
 	public:
 		Game();

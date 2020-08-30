@@ -28,6 +28,7 @@ namespace bbe
 	CREATE_EXCEPTION(IllegalStateException);
 
 	CREATE_EXCEPTION(AllocatorOutOfMemoryException);
+	CREATE_EXCEPTION(OutOfMemoryException);
 	CREATE_EXCEPTION(AllocatorOutOfHandlesException);
 	CREATE_EXCEPTION(NullptrDeallocationException);
 	CREATE_EXCEPTION(MalformedPointerException);
@@ -40,6 +41,9 @@ namespace bbe
 	CREATE_EXCEPTION(IllegalIndexException);
 
 	CREATE_EXCEPTION(NotImplementedException);
+
+	CREATE_EXCEPTION(DecodeException);
+	CREATE_EXCEPTION(UnknownException);
 
 	CREATE_EXCEPTION(NoTransformsLeftException);
 

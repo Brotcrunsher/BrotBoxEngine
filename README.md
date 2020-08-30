@@ -14,6 +14,8 @@ A C++ prototyping engine that is striving for an easy to use API, hiding all the
 * [Google Test](https://github.com/google/googletest)
 * [Travis CI](https://travis-ci.com/)
 * [Box2D](https://box2d.org/)
+* [PortAudio](http://www.portaudio.com/)
+* [minimp3](https://github.com/lieff/minimp3)
 
 ## Quick Start
 

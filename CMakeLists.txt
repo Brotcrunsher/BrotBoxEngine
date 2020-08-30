@@ -4,6 +4,7 @@ add_compile_definitions(BBE_ENGINE_ASSET_PATH="${CMAKE_CURRENT_SOURCE_DIR}/BrotB
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
@@ -76,7 +77,12 @@ include_directories(Third-Party/box2d-master/include)
 target_link_libraries(BrotBoxEngine box2d)
 set_target_properties(box2d glad imgui sajson testbed unit_test PROPERTIES FOLDER box2d)
 
+add_subdirectory("Third-Party/portaudio")
+include_directories(Third-Party/portaudio/include)
+target_link_libraries(BrotBoxEngine portaudio portaudio_static)
+
 target_include_directories(BrotBoxEngine PUBLIC "Third-Party/stb")
+target_include_directories(BrotBoxEngine PUBLIC "Third-Party/minimp3")
 
 add_subdirectory(BrotBoxEngineTest)
 add_subdirectory(BrotBoxEngineGTest)
@@ -87,6 +93,7 @@ add_subdirectory(ExampleMandelbrotShader)
 add_subdirectory(ExampleParticleGravity)
 add_subdirectory(ExampleSnake)
 add_subdirectory(ExampleSnake3D)
+add_subdirectory(ExampleSound)
 add_subdirectory(ExampleCurves)
 add_subdirectory(ExampleFlowField)
 add_subdirectory(ExampleTextRendering)

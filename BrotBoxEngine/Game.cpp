@@ -38,6 +38,9 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 	std::cout << "Reseting game time" << std::endl;
 	m_gameTime.reset();
 
+	std::cout << "Initializing SoundManager" << std::endl;
+	m_soundManager.init();
+
 	std::cout << "Calling onStart()" << std::endl;
 	onStart();
 
@@ -63,6 +66,8 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 	m_pwindow->waitTillIdle();
 
 	onEnd();
+
+	m_soundManager.destroy();
 }
 
 bool bbe::Game::isKeyDown(bbe::Key key)
