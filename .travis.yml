@@ -46,6 +46,5 @@ script:
   - cmake --build . --target BrotBoxEngineGTest
   - cmake --build . --target BrotBoxEngineTest
   - cd bin
-  - ls
   - ./BrotBoxEngineGTest
   - ./BrotBoxEngineTest
