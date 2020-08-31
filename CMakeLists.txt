@@ -80,7 +80,7 @@ set_target_properties(box2d glad imgui sajson testbed unit_test PROPERTIES FOLDE
 if(WIN32)
   add_subdirectory("Third-Party/portaudio")
 else()
-  link_directories("/opt/lib")
+  link_directories("${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/portaudio/_Build")
 endif()
 
 include_directories(Third-Party/portaudio/include)
