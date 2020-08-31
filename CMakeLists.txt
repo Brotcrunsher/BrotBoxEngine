@@ -77,7 +77,11 @@ include_directories(Third-Party/box2d-master/include)
 target_link_libraries(BrotBoxEngine box2d)
 set_target_properties(box2d glad imgui sajson testbed unit_test PROPERTIES FOLDER box2d)
 
-add_subdirectory("Third-Party/portaudio")
+if(WIN32)
+  add_subdirectory("Third-Party/portaudio")
+else()
+  find_package(portaudio)
+endif()
 include_directories(Third-Party/portaudio/include)
 target_link_libraries(BrotBoxEngine portaudio portaudio_static)
 
