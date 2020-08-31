@@ -148,16 +148,15 @@ void bbe::INTERNAL::SoundManager::destroy()
 bbe::SoundInstance bbe::INTERNAL::SoundManager::play(const Sound& sound, float volume)
 {
 	SoundInstanceData sid;
-	sid.m_index = getNextIndex();
+	uint64_t index = getNextIndex();
 	sid.m_sample = 0;
-	sid.m_refCount = 1;
 	sid.m_psound = &sound;
 	sid.m_volume = volume;
-	SoundInstance si(sid.m_index);
+	SoundInstance si(index);
 
 	{
 		std::lock_guard<std::mutex> lock(playingSoundsChangeMutex);
-		playingSounds.insert({ sid.m_index, sid });
+		playingSounds.insert({ index, sid });
 	}
 
 	return si;

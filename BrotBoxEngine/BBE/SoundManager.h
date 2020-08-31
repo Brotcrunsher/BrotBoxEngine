@@ -15,9 +15,7 @@ namespace bbe
 	{
 		struct SoundInstanceData
 		{
-			uint64_t m_index = 0;
 			uint64_t m_sample = 0;
-			uint64_t m_refCount = 0;
 			const Sound* m_psound = nullptr;
 			bool m_markedForDeletion = false;
 			float m_volume = 0;
