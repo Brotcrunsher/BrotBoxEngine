@@ -20,7 +20,7 @@ script:
   - cd Third-Party/portaudio
   - mkdir _Build
   - cd _Build
-  - cmake .. -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr/bin
+  - cmake .. -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/opt
   - make
   - make install
   - cd ../../..
