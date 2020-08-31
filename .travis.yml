@@ -45,8 +45,7 @@ script:
   - cmake --build . --target ExampleTemplate
   - cmake --build . --target BrotBoxEngineGTest
   - cmake --build . --target BrotBoxEngineTest
-  - cd BrotBoxEngineGTest
+  - cd bin
+  - ls
   - ./BrotBoxEngineGTest
-  - cd ..
-  - cd BrotBoxEngineTest
   - ./BrotBoxEngineTest
