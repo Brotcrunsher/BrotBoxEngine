@@ -12,7 +12,7 @@ namespace bbe
 		{
 			{
 				Image image;
-				image.load("TestImage.png");
+				image.load(BBE_APPLICATION_ASSET_PATH "/TestImage.png");
 
 				Color c = image.getPixel(0, 0);
 				assertEquals(c.r, 0);
