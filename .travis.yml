@@ -14,10 +14,16 @@ addons:
       - libdmx-dev
       - cmake
       - xorg-dev
-      - libportaudio2
 compiler:
   - g++-10
 script:
+  - cd Third-Party/portaudio
+  - mkdir _Build
+  - cd _Build
+  - cmake .. -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr/bin
+  - make
+  - make install
+  - cd ../../..
   - mkdir cmakebuild
   - cd cmakebuild
   - cmake -DCMAKE_C_COMPILER=/usr/bin/gcc-10 -DCMAKE_CXX_COMPILER=/usr/bin/g++-10 ..
