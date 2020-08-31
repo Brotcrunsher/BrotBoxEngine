@@ -80,9 +80,9 @@ set_target_properties(box2d glad imgui sajson testbed unit_test PROPERTIES FOLDE
 if(WIN32)
   add_subdirectory("Third-Party/portaudio")
 else()
-  set(CMAKE_MODULE_PATH "/opt")
-  find_package(portaudio)
+  link_directories("/opt/lib")
 endif()
+
 include_directories(Third-Party/portaudio/include)
 target_link_libraries(BrotBoxEngine portaudio portaudio_static)
 
