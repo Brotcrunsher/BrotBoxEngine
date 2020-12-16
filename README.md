@@ -1,5 +1,5 @@
 # Brot Box Engine
-![Build Status](https://travis-ci.org/Brotcrunsher/BrotBoxEngine.svg?branch=master)
+![Build Status](https://www.travis-ci.com/Brotcrunsher/BrotBoxEngine.svg?branch=master)
 
 A C++ prototyping engine that is striving for an easy to use API, hiding all the dirty details so that you don't have to care.
 
