@@ -14,7 +14,7 @@ namespace bbe
 		{
 			#define ASSERT_VULKAN(val)\
 			if(val != VK_SUCCESS){\
-				debugBreak();\
+				bbe::debugBreak();\
 			}
 
 			uint32_t findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
