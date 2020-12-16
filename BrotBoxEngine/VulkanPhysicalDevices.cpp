@@ -36,6 +36,7 @@ bbe::INTERNAL::vulkan::VulkanPhysicalDevice::VulkanPhysicalDevice(const VkPhysic
 uint32_t bbe::INTERNAL::vulkan::VulkanPhysicalDevice::findBestCompleteQueueIndex() const
 {
 	return 0; //TODO find best queue index which is complete
+	          //TODO check if VK_QUEUE_GRAPHICS_BIT is supported via vkGetPhysicalDeviceQueueFamilyProperties
 }
 
 VkPhysicalDevice bbe::INTERNAL::vulkan::VulkanPhysicalDevice::getDevice() const
