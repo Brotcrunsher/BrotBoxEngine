@@ -11,6 +11,7 @@ A C++ prototyping engine that is striving for an easy to use API, hiding all the
 * [GLFW](https://www.glfw.org/)
 * [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h)
 * [stb_truetype](https://github.com/nothings/stb/blob/master/stb_truetype.h)
+* [Dear ImGui](https://github.com/ocornut/imgui)
 * [Google Test](https://github.com/google/googletest)
 * [Travis CI](https://travis-ci.com/)
 * [Box2D](https://box2d.org/)

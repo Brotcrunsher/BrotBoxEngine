@@ -137,6 +137,9 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 
 	m_presentFence = &m_presentFence1;
 	m_currentFrameDrawCommandBuffer = &m_currentFrameDrawCommandBuffer1;
+
+	std::cout << "Vulkan Manager: Starting Dear ImGui" << std::endl;
+	m_imguiManager.start(m_instance, m_commandPool, m_device, m_surface, m_physicalDeviceContainer.findBestDevice(m_surface), m_descriptorPool, m_renderPass, m_pwindow);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::destroy()
@@ -144,6 +147,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
 	
+	m_imguiManager.destroy();
+
 	//m_renderPassStopWatch.destroy();
 	
 	bbe::Cube::s_destroy();
@@ -235,6 +240,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 {
+	m_imguiManager.startFrame();
+
 	vkAcquireNextImageKHR(m_device.getDevice(), m_swapchain.getSwapchain(), std::numeric_limits<uint64_t>::max(), m_semaphoreImageAvailable.getSemaphore(), VK_NULL_HANDLE, &m_imageIndex);
 
 	*m_currentFrameDrawCommandBuffer = m_commandPool.getCommandBuffer();
@@ -292,6 +299,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 
 void bbe::INTERNAL::vulkan::VulkanManager::postDraw()
 {
+	m_imguiManager.endFrame(*m_currentFrameDrawCommandBuffer);
+
 	vkCmdEndRenderPass(*m_currentFrameDrawCommandBuffer);
 
 	//m_renderPassStopWatch.end(*m_currentFrameDrawCommandBuffer);

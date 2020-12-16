@@ -23,6 +23,7 @@
 #include "../BBE/Stack.h"
 #include "../BBE/Image.h"
 #include "../BBE/VulkanStopWatch.h"
+#include "../BBE/ImguiManager.h"
 
 namespace bbe
 {
@@ -88,6 +89,8 @@ namespace bbe
 				uint32_t m_imageIndex;
 
 				//VulkanStopWatch m_renderPassStopWatch;
+
+				ImguiManager m_imguiManager;
 
 			public:
 				VulkanManager();

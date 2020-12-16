@@ -44,36 +44,29 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(const VulkanDevice & de
 		}
 	}
 
+	// Although we nicely calculate the exact amount of required buffers,
+	// some dependencies may choose not to do so or don't give us the
+	// exact amount. For such dependencies we just add more to some types.
+	constexpr uint32_t additionalSizes = 1000;
+
 	List<VkDescriptorPoolSize> poolSizes;
-	if (amountOfUniformBuffer > 0)
-	{
-		VkDescriptorPoolSize dps = {};
-		dps.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		dps.descriptorCount = amountOfUniformBuffer;
-		poolSizes.add(dps);
-	}
-
-	if (amountOfCombinedImageSampler > 0)
-	{
-		VkDescriptorPoolSize dps = {};
-		dps.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		dps.descriptorCount = amountOfCombinedImageSampler;
-		poolSizes.add(dps);
-	}
-
-	if (amountOfSampler > 0)
-	{
-		VkDescriptorPoolSize dps = {};
-		dps.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-		dps.descriptorCount = amountOfSampler;
-		poolSizes.add(dps);
-	}
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         amountOfUniformBuffer        + additionalSizes});
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, amountOfCombinedImageSampler + additionalSizes});
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_SAMPLER,                amountOfSampler              + additionalSizes});
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          0                            + additionalSizes});
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          0                            + additionalSizes});
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,   0                            + additionalSizes});
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,   0                            + additionalSizes});
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         0                            + additionalSizes});
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0                            + additionalSizes});
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 0                            + additionalSizes});
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       0                            + additionalSizes});
 
 	VkDescriptorPoolCreateInfo dpci = {};
 	dpci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	dpci.pNext = nullptr;
-	dpci.flags = 0;
-	dpci.maxSets = amountOfSets;
+	dpci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	dpci.maxSets = amountOfSets + additionalSizes * poolSizes.getLength();
 	dpci.poolSizeCount = static_cast<uint32_t>(poolSizes.getLength());
 	dpci.pPoolSizes = poolSizes.getRaw();
 
