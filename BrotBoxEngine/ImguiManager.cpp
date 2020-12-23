@@ -30,6 +30,12 @@ void bbe::INTERNAL::vulkan::ImguiManager::startFrame()
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+
+    // TODO: This is not the best approach! Dear ImGUI recommends not using FontGlobalScale but to recreate the font.
+    float scale = 0;
+    glfwGetWindowContentScale(m_window, &scale, nullptr);
+    ImGuiIO& io = ImGui::GetIO();
+    io.FontGlobalScale = scale;
 }
 
 void bbe::INTERNAL::vulkan::ImguiManager::endFrame(VkCommandBuffer commandBuffer)
@@ -50,7 +56,7 @@ void bbe::INTERNAL::vulkan::ImguiManager::start(const VulkanInstance& instance, 
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
 
-    ImGui_ImplGlfw_InitForVulkan(window, true);
+    ImGui_ImplGlfw_InitForVulkan(window, false);
 
     ImGui_ImplVulkan_InitInfo implVulkanInitInfo = {};
     implVulkanInitInfo.Instance = instance.getInstance();
@@ -74,4 +80,6 @@ void bbe::INTERNAL::vulkan::ImguiManager::start(const VulkanInstance& instance, 
     VkCommandBuffer commandBuffer = INTERNAL::vulkan::startSingleTimeCommandBuffer(device.getDevice(), commandPool.getCommandPool());
     ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
     INTERNAL::vulkan::endSingleTimeCommandBuffer(device.getDevice(), device.getQueue(), commandPool.getCommandPool(), commandBuffer);
+
+    m_window = window;
 }

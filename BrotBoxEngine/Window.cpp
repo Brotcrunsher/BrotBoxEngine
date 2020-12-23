@@ -4,6 +4,7 @@
 #include <iostream>
 #include "BBE/MouseButtons.h"
 #include "BBE/FatalErrors.h"
+#include "imgui_impl_glfw.h"
 
 
 size_t bbe::Window::windowsAliveCounter = 0;
@@ -48,6 +49,7 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 
 	std::cout << "Setting glwf callbacks" << std::endl;
 	glfwSetKeyCallback(m_pwindow, INTERNAL_keyCallback);
+	glfwSetCharCallback(m_pwindow, INTERNAL_charCallback);
 	glfwSetCursorPosCallback(m_pwindow, INTERNAL_cursorPosCallback);
 	glfwSetMouseButtonCallback(m_pwindow, INTERNAL_mouseButtonCallback);
 	glfwSetWindowSizeCallback(m_pwindow, INTERNAL_windowResizeCallback);
@@ -172,6 +174,7 @@ void bbe::Window::INTERNAL_resize(int width, int height)
 
 void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, int action, int mods)
 {
+	ImGui_ImplGlfw_KeyCallback(window, keyCode, scanCode, action, mods);
 	if (ImGui::GetIO().WantCaptureKeyboard) return;
 	if (action == GLFW_PRESS)
 	{
@@ -181,6 +184,11 @@ void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, i
 	{
 		bbe::Window::INTERNAL_firstInstance->INTERNAL_keyboard.INTERNAL_release((bbe::Key)keyCode);
 	}
+}
+
+void bbe::INTERNAL_charCallback(GLFWwindow* window, unsigned int c)
+{
+	ImGui_ImplGlfw_CharCallback(window, c);
 }
 
 void bbe::INTERNAL_cursorPosCallback(GLFWwindow * window, double xpos, double ypos)
@@ -199,6 +207,7 @@ void bbe::INTERNAL_windowResizeCallback(GLFWwindow * window, int width, int heig
 
 void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int action, int mods)
 {
+	ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
 	if (ImGui::GetIO().WantCaptureMouse) return;
 	if (action == GLFW_PRESS)
 	{
@@ -212,6 +221,7 @@ void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int acti
 
 void bbe::INTERNAL_mouseScrollCallback(GLFWwindow * window, double xoffset, double yoffset)
 {
+	ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
 	if (ImGui::GetIO().WantCaptureMouse) return;
 	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_scroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
 }

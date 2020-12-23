@@ -24,6 +24,7 @@ namespace bbe
 			private:
 				constexpr static uint32_t m_minImageCount = 2;
 				bool m_initSuccessful = false;
+				GLFWwindow* m_window = nullptr;
 
 			public:
 				ImguiManager();
