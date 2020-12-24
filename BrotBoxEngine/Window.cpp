@@ -149,9 +149,23 @@ int bbe::Window::getWidth() const
 	return m_width;
 }
 
+int bbe::Window::getScaledWidth() const
+{
+	float scale = 0;
+	glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
+	return getWidth() * scale;
+}
+
 int bbe::Window::getHeight() const
 {
 	return m_height;
+}
+
+int bbe::Window::getScaledHeight() const
+{
+	float scale = 0;
+	glfwGetWindowContentScale(m_pwindow, nullptr, &scale);
+	return getHeight() * scale;
 }
 
 bbe::PrimitiveBrush2D& bbe::Window::getBrush2D()
@@ -166,8 +180,11 @@ bbe::PrimitiveBrush3D& bbe::Window::getBrush3D()
 
 void bbe::Window::INTERNAL_resize(int width, int height)
 {
-	m_width = width;
-	m_height = height;
+	float windowXScale = 0;
+	float windowYScale = 0;
+	glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
+	m_width = width / windowXScale;
+	m_height = height / windowYScale;
 
 	m_vulkanManager.resize(width, height);
 }

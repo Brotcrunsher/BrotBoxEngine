@@ -47,8 +47,10 @@ namespace bbe
 		~Window();
 
 		int getWidth() const;
+		int getScaledWidth() const;
 
 		int getHeight() const;
+		int getScaledHeight() const;
 
 		PrimitiveBrush2D& getBrush2D();
 		PrimitiveBrush3D& getBrush3D();

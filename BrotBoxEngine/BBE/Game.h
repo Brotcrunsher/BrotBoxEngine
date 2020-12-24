@@ -67,7 +67,9 @@ namespace bbe
 		float getTimeSinceStartMilliseconds(); 
 
 		int getWindowWidth();
+		int getScaledWindowWidth();
 		int getWindowHeight();
+		int getScaledWindowHeight();
 
 		uint64_t getAmountOfFrames();
 

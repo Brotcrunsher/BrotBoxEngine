@@ -180,9 +180,19 @@ int bbe::Game::getWindowWidth()
 	return m_pwindow->getWidth();
 }
 
+int bbe::Game::getScaledWindowWidth()
+{
+	return m_pwindow->getScaledWidth();
+}
+
 int bbe::Game::getWindowHeight()
 {
 	return m_pwindow->getHeight();
+}
+
+int bbe::Game::getScaledWindowHeight()
+{
+	return m_pwindow->getScaledHeight();
 }
 
 uint64_t bbe::Game::getAmountOfFrames()

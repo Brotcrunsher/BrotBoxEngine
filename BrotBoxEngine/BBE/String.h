@@ -27,6 +27,22 @@ namespace bbe
 	bool utf8IsSmallerCodePoint(const char* ptr1, const char* ptr2);
 	int utf8Distance(const char* ptr1, const char* ptr2);
 
+	class Utf8String;
+
+	class Utf8StringView
+	{
+		friend class Utf8String;
+	private:
+		const Utf8String* m_pstring = nullptr;
+		std::size_t m_start = 0;
+		std::size_t m_end = 0;
+
+		Utf8StringView();
+		Utf8StringView(const Utf8String& string, std::size_t m_start, std::size_t m_end);
+
+		std::size_t getEnd() const;
+	};
+
 	class Utf8String
 	{
 	private:
@@ -99,6 +115,7 @@ namespace bbe
 		friend Utf8String operator+(unsigned int       number, const Utf8String& string);
 
 		Utf8String& operator+=(const Utf8String& other);
+		Utf8String& operator+=(const Utf8StringView& other);
 		Utf8String& operator+=(const char*       other);
 		Utf8String& operator+=(char              c);
 		Utf8String& operator+=(double             number);
@@ -116,6 +133,7 @@ namespace bbe
 
 		bbe::Utf8String substring       (std::size_t start, std::size_t end = -1) const;
 		void            substringInPlace(std::size_t start, std::size_t end = -1);
+		bbe::Utf8StringView substringView(std::size_t start, std::size_t end = -1) const;
 
 		size_t count(const Utf8String& countand) const;
 		size_t count(const char*       countand) const;
@@ -126,8 +144,8 @@ namespace bbe
 		bool contains(const char*       string) const;
 		bool contains(const Utf8String& string) const;
 
-		int64_t search(const char*       string) const;		//TODO
-		int64_t search(const Utf8String& string) const;		//TODO
+		int64_t search(const char*       string, int64_t startIndex = 0) const;		//TODO
+		int64_t search(const Utf8String& string, int64_t startIndex = 0) const;		//TODO
 
 		long   toLong  (int base = 10) const;
 		double toDouble() const;
@@ -139,6 +157,7 @@ namespace bbe
 		      char* getRaw();
 		const char* getRaw() const;
 
+		bbe::Utf8String replace(const Utf8String& searchString, const Utf8String& replaceString) const;
 
 		Utf8String toUpperCase() const;
 		Utf8String toLowerCase() const;

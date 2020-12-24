@@ -36,3 +36,19 @@ void bbe::simpleFile::writeFloatArrToFile(const bbe::String & filePath, float * 
 	}
 	file.close();
 }
+
+void bbe::simpleFile::writeStringToFile(const bbe::String& filePath, const bbe::String& stringToWrite)
+{
+	std::ofstream file(filePath.getRaw());
+	if (!file.is_open()) {
+		throw std::runtime_error("Could not open file!");
+	}
+	file << stringToWrite.getRaw();
+	file.close();
+}
+
+bool bbe::simpleFile::doesFileExist(const bbe::String& filePath)
+{
+	std::ifstream f(filePath.getRaw());
+	return (bool)f;
+}

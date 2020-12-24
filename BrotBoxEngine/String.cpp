@@ -206,6 +206,22 @@ namespace bbe
 	}
 }
 
+bbe::Utf8StringView::Utf8StringView()
+{
+}
+bbe::Utf8StringView::Utf8StringView(const Utf8String& string, std::size_t m_start, std::size_t m_end)
+	:m_pstring(&string), m_start(m_start), m_end(m_end)
+{
+}
+std::size_t bbe::Utf8StringView::getEnd() const
+{
+	if (m_end == (std::size_t) - 1)
+	{
+		return m_pstring->getLength();
+	}
+	return m_end;
+}
+
 bool bbe::Utf8String::operator!=(const Utf8String& other) const
 {
 	return strcmp(getRaw(), other.getRaw()) != 0;
@@ -361,11 +377,24 @@ namespace bbe{
 bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8String& other)
 {
 	//UNTESTED
-	size_t totalLength = getLengthBytes() + other.getLengthBytes();
-	size_t oldLength = getLengthBytes();
+	const size_t totalLength = getLengthBytes() + other.getLengthBytes();
+	const size_t oldLength = getLengthBytes();
 	m_length = getLength() + other.getLength();
 	growIfNeeded(totalLength + 1);
 	memcpy(getRaw() + oldLength, other.getRaw(), other.getLengthBytes());
+	getRaw()[totalLength] = 0;
+
+	return *this;
+}
+
+bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8StringView& other)
+{
+	//UNTESTED
+	const size_t totalLength = getLengthBytes() + other.getEnd() - other.m_start;
+	const size_t oldLength = getLengthBytes();
+	m_length = getLength() + other.getEnd() - other.m_start + 1;
+	growIfNeeded(totalLength + 1);
+	memcpy(getRaw() + oldLength, other.m_pstring->getRaw() + other.m_start, other.getEnd() - other.m_start);
 	getRaw()[totalLength] = 0;
 
 	return *this;
@@ -474,7 +503,7 @@ bbe::Utf8String bbe::Utf8String::substring(std::size_t start, std::size_t end) c
 void bbe::Utf8String::substringInPlace(size_t start, size_t end)
 {
 	//UNTESTED
-	if(end == (size_t)-1)
+	if(end > m_length - 1)
 	{
 		end = m_length - 1;
 	}
@@ -498,6 +527,11 @@ void bbe::Utf8String::substringInPlace(size_t start, size_t end)
 			m_length = end - start + 1;
 		}
 	}
+}
+
+bbe::Utf8StringView bbe::Utf8String::substringView(std::size_t start, std::size_t end) const
+{
+	return bbe::Utf8StringView(*this, start, end);
 }
 
 size_t bbe::Utf8String::count(const Utf8String& countand) const
@@ -584,10 +618,10 @@ bool bbe::Utf8String::contains(const Utf8String &string) const
 	return contains(string.getRaw());
 }
 
-int64_t bbe::Utf8String::search(const char* string) const
+int64_t bbe::Utf8String::search(const char* string, int64_t startIndex) const
 {
 	//UNTESTED
-	const char* firstOcc = strstr(getRaw(), string);
+	const char* firstOcc = strstr(getRaw() + startIndex, string);
 	if(firstOcc == nullptr)
 	{
 		return -1;
@@ -596,9 +630,9 @@ int64_t bbe::Utf8String::search(const char* string) const
 	return utf8Distance(getRaw(), firstOcc);
 }
 
-int64_t bbe::Utf8String::search(const Utf8String &string) const
+int64_t bbe::Utf8String::search(const Utf8String &string, int64_t startIndex) const
 {
-	return bbe::Utf8String::search(string.getRaw());
+	return bbe::Utf8String::search(string.getRaw(), startIndex);
 }
 
 long bbe::Utf8String::toLong(int base) const
@@ -621,7 +655,7 @@ float bbe::Utf8String::toFloat() const
 
 const char& bbe::Utf8String::operator[](std::size_t index) const
 {
-	if(index >= m_length)
+	if(index > m_length)
 	{
 		throw IllegalIndexException();
 	}
@@ -657,6 +691,24 @@ const char* bbe::Utf8String::getRaw() const
 	{
 		return m_UNION.m_pdata;
 	}
+}
+
+bbe::Utf8String bbe::Utf8String::replace(const Utf8String& searchString, const Utf8String& replaceString) const
+{
+	bbe::Utf8String retVal = "";
+	retVal.growIfNeeded(getLength());
+	uint64_t currentFoundIndex = 0;
+	uint64_t lastFoundIndex = 0;
+	while ((currentFoundIndex = search(searchString, currentFoundIndex)) != (uint64_t)-1)
+	{
+		retVal += substringView(lastFoundIndex, currentFoundIndex);
+		retVal += replaceString;
+		
+		currentFoundIndex += searchString.getLength();
+		lastFoundIndex = currentFoundIndex;
+	}
+	retVal += substringView(lastFoundIndex, getLength());
+	return retVal;
 }
 
 bbe::Utf8String bbe::Utf8String::toUpperCase() const
