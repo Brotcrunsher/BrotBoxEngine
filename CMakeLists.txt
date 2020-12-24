@@ -78,8 +78,8 @@ target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/img
 target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-master/imgui_draw.cpp)
 target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-master/imgui_demo.cpp)
 target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-master/imgui_widgets.cpp)
-include_directories(Third-Party/imgui-master)
-include_directories(Third-Party/imgui-master/backends)
+target_include_directories(BrotBoxEngine PUBLIC Third-Party/imgui-master)
+target_include_directories(BrotBoxEngine PUBLIC Third-Party/imgui-master/backends)
 
 add_subdirectory(Third-Party/box2d-master)
 include_directories(Third-Party/box2d-master/include)
