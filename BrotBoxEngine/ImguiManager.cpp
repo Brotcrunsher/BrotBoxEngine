@@ -64,7 +64,7 @@ void bbe::INTERNAL::vulkan::ImguiManager::start(const VulkanInstance& instance, 
     implVulkanInitInfo.Device = device.getDevice();
     implVulkanInitInfo.QueueFamily = device.getQueueFamilyIndex();
     implVulkanInitInfo.Queue = device.getQueue();
-    implVulkanInitInfo.PipelineCache = nullptr;
+    implVulkanInitInfo.PipelineCache = VK_NULL_HANDLE;
     implVulkanInitInfo.DescriptorPool = descriptorPool.getDescriptorPool();
     implVulkanInitInfo.Subpass = 0;
     implVulkanInitInfo.MinImageCount = m_minImageCount;
