@@ -19,8 +19,9 @@ namespace bbe
 	class Game
 	{
 	private:
-		Window*   m_pwindow  = nullptr;
-		bool      m_started  = false;
+		Window*   m_pwindow           = nullptr;
+		bool      m_started           = false;
+		bool      m_externallyManaged = false;
 		GameTime  m_gameTime;
 		PhysWorld m_physWorld = PhysWorld({ 0, -20 });
 		bbe::INTERNAL::SoundManager m_soundManager;
@@ -35,12 +36,18 @@ namespace bbe
 		Game& operator=(Game&&)      = delete;
 
 		void start(int windowWidth, int windowHeight, const char* title);
+		bool keepAlive();
+		void frame();
+		void shutdown();
 
 		virtual void onStart()                            = 0;
 		virtual void update(float timeSinceLastFrame)     = 0;
 		virtual void draw3D(bbe::PrimitiveBrush3D &brush) = 0;
 		virtual void draw2D(bbe::PrimitiveBrush2D &brush) = 0;
 		virtual void onEnd()                              = 0;
+
+		void setExternallyManaged(bool managed);
+		bool isExternallyManaged() const;
 
 		bool isKeyDown(bbe::Key key);
 		bool isKeyUp(bbe::Key key);

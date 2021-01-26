@@ -28,6 +28,7 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 	{
 		throw AlreadyCreatedException();
 	}
+	m_started = true;
 
 	std::cout << "Starting math" << std::endl;
 	bbe::Math::INTERNAL::startMath();
@@ -44,30 +45,63 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 	std::cout << "Calling onStart()" << std::endl;
 	onStart();
 
-	while (m_pwindow->keepAlive())
+	if (!isExternallyManaged())
 	{
-		StopWatch sw;
-		m_pwindow->INTERNAL_keyboard.update();
-		m_pwindow->INTERNAL_mouse.update();
-		const float timeSinceLastFrame = m_gameTime.tick();
-		m_physWorld.update(timeSinceLastFrame);
-		update(timeSinceLastFrame);
+		while (keepAlive())
+		{
+			frame();
+		}
 
-		m_pwindow->preDraw();
-		m_pwindow->preDraw3D();
-		draw3D(m_pwindow->getBrush3D());
-		m_pwindow->preDraw2D();
-		draw2D(m_pwindow->getBrush2D());
-		m_pwindow->postDraw();
-		bbe::Profiler::INTERNAL::setCPUTime(sw.getTimeExpiredNanoseconds() / 1000.f / 1000.f / 1000.f);
-		m_pwindow->waitEndDraw();
+		shutdown();
 	}
+}
 
+bool bbe::Game::keepAlive()
+{
+	return m_pwindow->keepAlive();
+}
+
+void bbe::Game::frame()
+{
+	StopWatch sw;
+	m_pwindow->INTERNAL_keyboard.update();
+	m_pwindow->INTERNAL_mouse.update();
+	const float timeSinceLastFrame = m_gameTime.tick();
+	m_physWorld.update(timeSinceLastFrame);
+	update(timeSinceLastFrame);
+
+	m_pwindow->preDraw();
+	m_pwindow->preDraw3D();
+	draw3D(m_pwindow->getBrush3D());
+	m_pwindow->preDraw2D();
+	draw2D(m_pwindow->getBrush2D());
+	m_pwindow->postDraw();
+	bbe::Profiler::INTERNAL::setCPUTime(sw.getTimeExpiredNanoseconds() / 1000.f / 1000.f / 1000.f);
+	m_pwindow->waitEndDraw();
+}
+
+void bbe::Game::shutdown()
+{
 	m_pwindow->waitTillIdle();
 
 	onEnd();
 
 	m_soundManager.destroy();
+}
+
+void bbe::Game::setExternallyManaged(bool managed)
+{
+	if (m_started)
+	{
+		// Managed must be set before calling start!
+		throw AlreadyCreatedException();
+	}
+	m_externallyManaged = managed;
+}
+
+bool bbe::Game::isExternallyManaged() const
+{
+	return m_externallyManaged;
 }
 
 bool bbe::Game::isKeyDown(bbe::Key key)
