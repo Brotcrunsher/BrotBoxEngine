@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef BBE_NO_AUDIO
+
 #include <cstdint>
 
 namespace bbe
@@ -31,3 +33,5 @@ namespace bbe
 		bool isPlaying();
 	};
 }
+
+#endif

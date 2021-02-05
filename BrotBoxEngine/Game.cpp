@@ -39,8 +39,10 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 	std::cout << "Reseting game time" << std::endl;
 	m_gameTime.reset();
 
+#ifndef BBE_NO_AUDIO
 	std::cout << "Initializing SoundManager" << std::endl;
 	m_soundManager.init();
+#endif
 
 	std::cout << "Calling onStart()" << std::endl;
 	onStart();
@@ -86,7 +88,9 @@ void bbe::Game::shutdown()
 
 	onEnd();
 
+#ifndef BBE_NO_AUDIO
 	m_soundManager.destroy();
+#endif
 }
 
 void bbe::Game::setExternallyManaged(bool managed)

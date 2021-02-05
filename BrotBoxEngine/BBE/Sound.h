@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef BBE_NO_AUDIO
+
 #include "../BBE/String.h"
 #include "../BBE/List.h"
 #include "../BBE/SoundInstance.h"
@@ -39,3 +41,5 @@ namespace bbe
 		SoundInstance play(float volume = 1);
 	};
 }
+
+#endif

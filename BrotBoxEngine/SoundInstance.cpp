@@ -1,3 +1,5 @@
+#ifndef BBE_NO_AUDIO
+
 #include "BBE/SoundInstance.h"
 #include "BBE/SoundManager.h"
 
@@ -15,3 +17,5 @@ bool bbe::SoundInstance::isPlaying()
 {
 	return bbe::INTERNAL::SoundManager::getInstance()->isSoundWithIndexPlaying(m_index);
 }
+
+#endif

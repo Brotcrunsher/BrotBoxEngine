@@ -1,3 +1,5 @@
+#ifndef BBE_NO_AUDIO
+
 #include "BBE/SoundManager.h"
 #include "BBE/Exceptions.h"
 #include "portaudio.h"
@@ -168,3 +170,5 @@ uint64_t bbe::INTERNAL::SoundManager::getNextIndex()
 	nextIndex++;
 	return retVal;
 }
+
+#endif

@@ -24,7 +24,9 @@ namespace bbe
 		bool      m_externallyManaged = false;
 		GameTime  m_gameTime;
 		PhysWorld m_physWorld = PhysWorld({ 0, -20 });
+#ifndef BBE_NO_AUDIO
 		bbe::INTERNAL::SoundManager m_soundManager;
+#endif
 
 	public:
 		Game();

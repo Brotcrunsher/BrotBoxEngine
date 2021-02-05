@@ -2,6 +2,8 @@
 #include "BBE/SoundManager.h"
 #include "BBE/Exceptions.h"
 #define MINIMP3_IMPLEMENTATION
+#ifndef BBE_NO_AUDIO
+
 #include "minimp3_ex.h"
 
 void bbe::Sound::loadMp3(const bbe::String& path)
@@ -135,3 +137,5 @@ bbe::SoundInstance bbe::Sound::play(float volume)
 {
 	return bbe::INTERNAL::SoundManager::getInstance()->play(*this, volume);
 }
+
+#endif

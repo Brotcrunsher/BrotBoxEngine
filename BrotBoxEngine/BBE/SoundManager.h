@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef BBE_NO_AUDIO
+
 #include <cstdint>
 #include <map>
 #include <mutex>
@@ -52,3 +54,5 @@ namespace bbe
 		};
 	}
 }
+
+#endif

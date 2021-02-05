@@ -99,6 +99,8 @@ if(BBE_ADD_AUDIO)
   
   include_directories(Third-Party/portaudio/include)
   target_link_libraries(BrotBoxEngine portaudio portaudio_static)
+else()
+  add_compile_definitions(BBE_NO_AUDIO)
 endif()
 
 target_include_directories(BrotBoxEngine PUBLIC "Third-Party/stb")
