@@ -10,7 +10,7 @@ namespace bbe
 	private:
 		static constexpr unsigned    DEFAULT_FONT_SIZE  = 20;
 		// constexpr const is necessary for some compilers to avoid false warnings
-		static constexpr const char* DEFAULT_CHARSET    = u8"1234567890!\"/()=\\abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+#-.,_:;<>|^";
+		static constexpr const char* DEFAULT_CHARSET    = "1234567890!\"/()=\\abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+#-.,_:;<>|^";
 
 		bool isInit              = false;
 		bbe::String fontPath     = "";
