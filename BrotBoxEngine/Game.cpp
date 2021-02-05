@@ -158,17 +158,17 @@ bool bbe::Game::isMousePressed(bbe::MouseButton button)
 	return m_pwindow->INTERNAL_mouse.isButtonPressed(button);
 }
 
-float bbe::Game::getMouseX()
+float bbe::Game::getMouseX() const
 {
 	return (float)(m_pwindow->INTERNAL_mouse.getMouseX());
 }
 
-float bbe::Game::getMouseY()
+float bbe::Game::getMouseY() const
 {
 	return (float)(m_pwindow->INTERNAL_mouse.getMouseY());
 }
 
-bbe::Vector2 bbe::Game::getMouse()
+bbe::Vector2 bbe::Game::getMouse() const
 {
 	return Vector2(getMouseX(), getMouseY());
 }

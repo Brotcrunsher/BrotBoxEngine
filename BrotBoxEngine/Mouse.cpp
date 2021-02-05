@@ -103,17 +103,17 @@ bbe::Mouse::Mouse()
 	memset(m_pButtonsNextFrame, 0, ((int)MouseButton::LAST + 1) * sizeof(bool));
 }
 
-float bbe::Mouse::getMouseX()
+float bbe::Mouse::getMouseX() const
 {
 	return m_mouseCurrentFrameX;
 }
 
-float bbe::Mouse::getMouseY()
+float bbe::Mouse::getMouseY() const
 {
 	return m_mouseCurrentFrameY;
 }
 
-bbe::Vector2 bbe::Mouse::getMouse()
+bbe::Vector2 bbe::Mouse::getMouse() const
 {
 	return Vector2(getMouseX(), getMouseY());
 }

@@ -34,9 +34,9 @@ namespace bbe
 		Mouse();
 
 
-		float getMouseX();
-		float getMouseY();
-		Vector2 getMouse();
+		float getMouseX() const;
+		float getMouseY() const;
+		Vector2 getMouse() const;
 
 		float getScrollX();
 		float getScrollY();
