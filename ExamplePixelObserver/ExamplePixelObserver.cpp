@@ -1,5 +1,4 @@
 #include "BBE/BrotBoxEngine.h"
-#include <windows.h>
 
 /*
 * An example that utilizes both the bbe::SoundDataSource and the bbe::PixelObserver.
