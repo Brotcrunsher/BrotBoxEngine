@@ -52,6 +52,8 @@ namespace bbe
 		int getHeight() const;
 		int getScaledHeight() const;
 
+		Vector2 getGlobalMousePos() const;
+
 		PrimitiveBrush2D& getBrush2D();
 		PrimitiveBrush3D& getBrush3D();
 

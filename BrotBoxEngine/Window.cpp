@@ -168,6 +168,19 @@ int bbe::Window::getScaledHeight() const
 	return getHeight() * scale;
 }
 
+bbe::Vector2 bbe::Window::getGlobalMousePos() const
+{
+	int windowPosX;
+	int windowPosY;
+	glfwGetWindowPos(m_pwindow, &windowPosX, &windowPosY);
+
+	double mousePosX;
+	double mousePosY;
+	glfwGetCursorPos(m_pwindow, &mousePosX, &mousePosY);
+
+	return Vector2(mousePosX + windowPosX, mousePosY + windowPosY);
+}
+
 bbe::PrimitiveBrush2D& bbe::Window::getBrush2D()
 {
 	return m_vulkanManager.getBrush2D();
