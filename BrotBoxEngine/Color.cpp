@@ -46,3 +46,12 @@ bbe::Vector3 bbe::Color::HSVtoRGB(float h, float s, float v)
 		return Vector3(v, t, p);
 	}
 }
+
+bool bbe::Color::operator==(const Color& other) const
+{
+	return r == other.r && g == other.g && b == other.b && a == other.a;
+}
+bool bbe::Color::operator!=(const Color& other) const
+{
+	return !(*this == other);
+}
