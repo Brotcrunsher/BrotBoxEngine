@@ -18,7 +18,7 @@ namespace bbe
 		struct SoundInstanceData
 		{
 			uint64_t m_sample = 0;
-			const Sound* m_psound = nullptr;
+			const SoundDataSource* m_psound = nullptr;
 			bool m_markedForDeletion = false;
 			float m_volume = 0;
 		};
@@ -46,7 +46,7 @@ namespace bbe
 
 			void init();
 			void destroy();
-			SoundInstance play(const Sound& sound, float volume);
+			SoundInstance play(const SoundDataSource& sound, float volume);
 			int soundCallback(const void* inputBuffer, void* outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags);
 
 			void stopSoundWithIndex(uint64_t index);

@@ -48,7 +48,7 @@ int bbe::INTERNAL::SoundManager::soundCallback(const void* inputBuffer, void* ou
 		for (std::pair<const uint64_t, SoundInstanceData>& elem : playingSounds)
 		{
 			SoundInstanceData& sd = elem.second;
-			const Sound* sound = sd.m_psound;
+			const SoundDataSource* sound = sd.m_psound;
 			if (sd.m_markedForDeletion)
 			{
 				continue;
@@ -147,7 +147,7 @@ void bbe::INTERNAL::SoundManager::destroy()
 	Pa_Terminate();
 }
 
-bbe::SoundInstance bbe::INTERNAL::SoundManager::play(const Sound& sound, float volume)
+bbe::SoundInstance bbe::INTERNAL::SoundManager::play(const SoundDataSource& sound, float volume)
 {
 	SoundInstanceData sid;
 	uint64_t index = getNextIndex();

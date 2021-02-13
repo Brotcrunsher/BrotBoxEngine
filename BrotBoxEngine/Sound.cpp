@@ -93,7 +93,7 @@ bool bbe::Sound::isLoaded() const
 	return m_loaded;
 }
 
-bool bbe::Sound::isLooped() const
+bool bbe::SoundDataSource::isLooped() const
 {
 	return m_looped;
 }
@@ -128,12 +128,12 @@ size_t bbe::Sound::getAmountOfSamples() const
 	return m_data.getLength() / m_channels;
 }
 
-void bbe::Sound::setLooped(bool looped)
+void bbe::SoundDataSource::setLooped(bool looped)
 {
 	m_looped = looped;
 }
 
-bbe::SoundInstance bbe::Sound::play(float volume)
+bbe::SoundInstance bbe::SoundDataSource::play(float volume)
 {
 	return bbe::INTERNAL::SoundManager::getInstance()->play(*this, volume);
 }
