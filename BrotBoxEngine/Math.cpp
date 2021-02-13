@@ -458,6 +458,20 @@ bbe::Vector2 bbe::Math::minComponent(const bbe::List<Vector2>& vectors)
 	return retVal;
 }
 
+bbe::Vector3 bbe::Math::minComponent(const bbe::List<Vector3>& vectors)
+{
+	bbe::Vector3 retVal(INFINITY_POSITIVE, INFINITY_POSITIVE, INFINITY_POSITIVE);
+
+	for (const Vector3& vec : vectors)
+	{
+		if (vec.x < retVal.x) retVal.x = vec.x;
+		if (vec.y < retVal.y) retVal.y = vec.y;
+		if (vec.z < retVal.z) retVal.z = vec.z;
+	}
+
+	return retVal;
+}
+
 bbe::Vector2 bbe::Math::maxComponent(const bbe::List<Vector2>& vectors)
 {
 	bbe::Vector2 retVal(INFINITY_NEGATIVE, INFINITY_NEGATIVE);
@@ -466,6 +480,20 @@ bbe::Vector2 bbe::Math::maxComponent(const bbe::List<Vector2>& vectors)
 	{
 		if (vec.x > retVal.x) retVal.x = vec.x;
 		if (vec.y > retVal.y) retVal.y = vec.y;
+	}
+
+	return retVal;
+}
+
+bbe::Vector3 bbe::Math::maxComponent(const bbe::List<Vector3>& vectors)
+{
+	bbe::Vector3 retVal(INFINITY_NEGATIVE, INFINITY_NEGATIVE, INFINITY_NEGATIVE);
+
+	for (const Vector3& vec : vectors)
+	{
+		if (vec.x > retVal.x) retVal.x = vec.x;
+		if (vec.y > retVal.y) retVal.y = vec.y;
+		if (vec.z > retVal.z) retVal.z = vec.z;
 	}
 
 	return retVal;
@@ -500,8 +528,20 @@ bbe::Vector2 bbe::Math::maxAbsComponent(const bbe::List<Vector2>& vectors)
 bbe::Vector2 bbe::Math::average(const bbe::List<Vector2>& vectors)
 {
 	bbe::Vector2 retVal = bbe::Vector2();
-	
+
 	for (const bbe::Vector2& v : vectors)
+	{
+		retVal += v;
+	}
+
+	return retVal / vectors.getLength();;
+}
+
+bbe::Vector3 bbe::Math::average(const bbe::List<Vector3>& vectors)
+{
+	bbe::Vector3 retVal = bbe::Vector3();
+
+	for (const bbe::Vector3& v : vectors)
 	{
 		retVal += v;
 	}

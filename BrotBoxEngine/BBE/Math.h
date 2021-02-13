@@ -189,6 +189,10 @@ namespace bbe
 		Vector2 average(const bbe::List<Vector2>& vectors);
 		Vector2 medianComponent(const bbe::List<Vector2>& vectors);
 
+		Vector3 minComponent(const bbe::List<Vector3>& vectors);
+		Vector3 maxComponent(const bbe::List<Vector3>& vectors);
+		Vector3 average(const bbe::List<Vector3>& vectors);
+
 		Vector3 interpolateLinear(Vector3 a, Vector3 b, float t);
 		Vector3 interpolateBool(Vector3 a, Vector3 b, float t);
 		Vector3 interpolateCosine(Vector3 a, Vector3 b, float t);
