@@ -18,6 +18,7 @@
 #include "../BBE/String.h"
 
 #include "../BBE/Color.h"
+#include "../BBE/PixelObserver.h"
 #include "../BBE/CursorMode.h"
 #include "../BBE/Game.h"
 #include "../BBE/LightFalloffMode.h"
