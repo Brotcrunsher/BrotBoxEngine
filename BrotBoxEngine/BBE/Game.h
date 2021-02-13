@@ -65,6 +65,9 @@ namespace bbe
 		float getMouseX() const;
 		float getMouseY() const;
 		Vector2 getMouse() const;
+		float getMouseXGlobal() const;
+		float getMouseYGlobal() const;
+		Vector2 getMouseGlobal() const;
 		float getMouseXDelta();
 		float getMouseYDelta();
 		Vector2 getMouseDelta();

@@ -80,12 +80,17 @@ void bbe::Mouse::INTERNAL_scroll(float x, float y)
 }
 
 
-void bbe::Mouse::update()
+void bbe::Mouse::update(float globalMousePosX, float globalMousePosY)
 {
 	m_mouseLastFrameX = m_mouseCurrentFrameX;
 	m_mouseLastFrameY = m_mouseCurrentFrameY;
 	m_mouseCurrentFrameX = m_mouseNextFrameX;
 	m_mouseCurrentFrameY = m_mouseNextFrameY;
+
+	m_mouseLastFrameXGlobal = m_mouseCurrentFrameXGlobal;
+	m_mouseLastFrameYGlobal = m_mouseCurrentFrameYGlobal;
+	m_mouseCurrentFrameXGlobal = globalMousePosX;
+	m_mouseCurrentFrameYGlobal = globalMousePosY;
 
 	m_mouseScrollX = m_mouseScrollXNext;
 	m_mouseScrollY = m_mouseScrollYNext;
@@ -116,6 +121,21 @@ float bbe::Mouse::getMouseY() const
 bbe::Vector2 bbe::Mouse::getMouse() const
 {
 	return Vector2(getMouseX(), getMouseY());
+}
+
+float bbe::Mouse::getMouseXGlobal() const
+{
+	return m_mouseCurrentFrameXGlobal;
+}
+
+float bbe::Mouse::getMouseYGlobal() const
+{
+	return m_mouseCurrentFrameYGlobal;
+}
+
+bbe::Vector2 bbe::Mouse::getMouseGlobal() const
+{
+	return Vector2(getMouseXGlobal(), getMouseYGlobal());
 }
 
 float bbe::Mouse::getScrollX()

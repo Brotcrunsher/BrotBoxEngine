@@ -67,7 +67,8 @@ void bbe::Game::frame()
 {
 	StopWatch sw;
 	m_pwindow->INTERNAL_keyboard.update();
-	m_pwindow->INTERNAL_mouse.update();
+	const bbe::Vector2 globalMousePos = m_pwindow->getGlobalMousePos();
+	m_pwindow->INTERNAL_mouse.update(globalMousePos.x, globalMousePos.y);
 	const float timeSinceLastFrame = m_gameTime.tick();
 	m_physWorld.update(timeSinceLastFrame);
 	update(timeSinceLastFrame);
@@ -171,6 +172,21 @@ float bbe::Game::getMouseY() const
 bbe::Vector2 bbe::Game::getMouse() const
 {
 	return Vector2(getMouseX(), getMouseY());
+}
+
+float bbe::Game::getMouseXGlobal() const
+{
+	return (float)(m_pwindow->INTERNAL_mouse.getMouseXGlobal());
+}
+
+float bbe::Game::getMouseYGlobal() const
+{
+	return (float)(m_pwindow->INTERNAL_mouse.getMouseYGlobal());
+}
+
+bbe::Vector2 bbe::Game::getMouseGlobal() const
+{
+	return Vector2(getMouseXGlobal(), getMouseYGlobal());
 }
 
 float bbe::Game::getMouseXDelta()
