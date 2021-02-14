@@ -25,9 +25,15 @@ static void throwIfUninitializedAndDebug()
 #endif
 }
 
+double bbe::Math::pow(double base, double expo)
+{
+	return ::pow(base, expo);
+}
+
 double bbe::Math::cos(double val)
 {
 	throwIfUninitializedAndDebug();
+	if (val == INFINITY_POSITIVE || val == INFINITY_NEGATIVE) return 0;
 	val = bbe::Math::mod(val, TAU);
 	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
 	return INTERNAL::cosTable[index];
@@ -41,6 +47,7 @@ float bbe::Math::acos(float val)
 double bbe::Math::sin(double val)
 {
 	throwIfUninitializedAndDebug();
+	if (val == INFINITY_POSITIVE || val == INFINITY_NEGATIVE) return 0;
 	val = bbe::Math::mod(val, TAU);
 	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
 	return INTERNAL::sinTable[index];

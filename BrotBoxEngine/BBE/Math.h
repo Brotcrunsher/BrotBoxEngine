@@ -35,6 +35,8 @@ namespace bbe
 		constexpr float INFINITY_NEGATIVE = -std::numeric_limits<float>::infinity();
 		constexpr float NaN               = std::numeric_limits<float>::quiet_NaN();
 
+		double pow(double base, double expo);
+
 		double cos(double val);
 		float acos(float val);
 		double sin(double val);
