@@ -10,10 +10,10 @@
 #include "BBE/Rectangle.h"
 #include "BBE/VulkanCommandPool.h"
 
-void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a)
+void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a, bool force)
 {
 	Color c(r, g, b, a);
-	if (c.r != m_color.r || c.g != m_color.g || c.b != m_color.b || c.a != m_color.a)
+	if (c.r != m_color.r || c.g != m_color.g || c.b != m_color.b || c.a != m_color.a || force)
 	{
 		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
 		m_color = c;
@@ -58,7 +58,7 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 	m_lastDraw = DrawRecord::NONE;
 	m_pipelineRecord = PipelineRecord3D::NONE;
 
-	setColor(1.0f, 1.0f, 1.0f, 1.0f);
+	INTERNAL_setColor(1.0f, 1.0f, 1.0f, 1.0f, true);
 	setCamera(Vector3(0, 0, 0), Vector3(1, 0, 0), Vector3(0, 0, 1));
 }
 
@@ -217,17 +217,17 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain& terrain)
 
 void bbe::PrimitiveBrush3D::setColor(float r, float g, float b, float a)
 {
-	INTERNAL_setColor(r, g, b, a);
+	INTERNAL_setColor(r, g, b, a, false);
 }
 
 void bbe::PrimitiveBrush3D::setColor(float r, float g, float b)
 {
-	INTERNAL_setColor(r, g, b, 1.0f);
+	INTERNAL_setColor(r, g, b, 1.0f, false);
 }
 
 void bbe::PrimitiveBrush3D::setColor(const Color & c)
 {
-	INTERNAL_setColor(c.r, c.g, c.b, c.a);
+	INTERNAL_setColor(c.r, c.g, c.b, c.a, false);
 }
 
 void bbe::PrimitiveBrush3D::setCamera(const Vector3 & cameraPos, const Vector3 & cameraTarget, const Vector3 & cameraUpVector)

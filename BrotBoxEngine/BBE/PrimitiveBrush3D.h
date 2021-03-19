@@ -71,7 +71,7 @@ namespace bbe
 
 		INTERNAL::vulkan::VulkanBuffer m_uboMatrices;
 
-		void INTERNAL_setColor(float r, float g, float b, float a);
+		void INTERNAL_setColor(float r, float g, float b, float a, bool force);
 		void INTERNAL_beginDraw(
 			bbe::INTERNAL::vulkan::VulkanDevice &device,
 			VkCommandBuffer commandBuffer,
