@@ -16,6 +16,7 @@ namespace bbe
 {
 	class Image;
 	class FragmentShader;
+	class RectangleRotated;
 
 	namespace INTERNAL
 	{
@@ -86,6 +87,7 @@ namespace bbe
 		void fillRect(float x, float y,   const Vector2& dimensions, float rotation = 0, FragmentShader* shader = nullptr);
 		void fillRect(const Vector2& pos, const Vector2& dimensions, float rotation = 0, FragmentShader* shader = nullptr);
 		void fillRect(const PhysRectangle& rect, FragmentShader* shader = nullptr);
+		void fillRect(const RectangleRotated& rect, FragmentShader* shader = nullptr);
 
 		void fillCircle(const Circle &circle);
 		void fillCircle(float x, float y, float width, float height);

@@ -6,6 +6,7 @@
 #include "BBE/Image.h"
 #include "BBE/Math.h"
 #include "BBE/FragmentShader.h"
+#include "BBE/RectangleRotated.h"
 
 void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	INTERNAL::vulkan::VulkanDevice &device,
@@ -201,6 +202,11 @@ void bbe::PrimitiveBrush2D::fillRect(const Vector2& pos, const Vector2& dimensio
 void bbe::PrimitiveBrush2D::fillRect(const PhysRectangle& rect, FragmentShader* shader)
 {
 	fillRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight(), rect.getAngle(), shader);
+}
+
+void bbe::PrimitiveBrush2D::fillRect(const RectangleRotated& rect, FragmentShader* shader)
+{
+	fillRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight(), rect.getRotation(), shader);
 }
 
 void bbe::PrimitiveBrush2D::fillCircle(const Circle & circle)
