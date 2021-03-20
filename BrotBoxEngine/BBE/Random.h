@@ -65,6 +65,12 @@ namespace bbe {
 			return Vector2(randomFloat(max), randomFloat(max));
 		}
 
+		Vector2 randomVector2(float maxX, float maxY)
+		{
+			//UNTESTED
+			return Vector2(randomFloat(maxX), randomFloat(maxY));
+		}
+
 		Vector3 randomVector3()
 		{
 			//UNTESTED
