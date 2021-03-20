@@ -71,6 +71,22 @@ bbe::Vector3 & bbe::Vector3::operator/=(const Vector3 & other)
 	return *this;
 }
 
+bbe::Vector3& bbe::Vector3::operator*=(const float scalar)
+{
+	this->x *= scalar;
+	this->y *= scalar;
+	this->z *= scalar;
+	return *this;
+}
+
+bbe::Vector3& bbe::Vector3::operator/=(const float scalar)
+{
+	this->x /= scalar;
+	this->y /= scalar;
+	this->z /= scalar;
+	return *this;
+}
+
 bbe::Vector3 bbe::Vector3::operator+(const Vector3 & other) const
 {
 	//UNTESTED
