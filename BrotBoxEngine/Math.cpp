@@ -461,6 +461,19 @@ bbe::Vector2* bbe::Math::getClosest(const bbe::Vector2& pos, bbe::List<bbe::Vect
 	return const_cast<bbe::Vector2*>(minVec);
 }
 
+bbe::List<bbe::Vector2> bbe::Math::project(const bbe::List<bbe::Vector2>& points, const bbe::Vector2& projection)
+{
+	bbe::List<bbe::Vector2> retVal;
+	retVal.resizeCapacityAndLength(points.getLength());
+
+	for (size_t i = 0; i < points.getLength(); i++)
+	{
+		retVal[i] = points[i].project(projection);
+	}
+
+	return retVal;
+}
+
 bbe::Vector2 bbe::Math::interpolateLinear(Vector2 a, Vector2 b, float t)
 {
 	return Vector2(

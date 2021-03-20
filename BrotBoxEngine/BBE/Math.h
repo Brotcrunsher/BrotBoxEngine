@@ -180,6 +180,8 @@ namespace bbe
 		bbe::List<bbe::Vector2> getConvexHull(const bbe::List<bbe::Vector2>& points);
 		const bbe::Vector2* getClosest(const bbe::Vector2& pos, const bbe::List<bbe::Vector2>& points);
 		      bbe::Vector2* getClosest(const bbe::Vector2& pos,       bbe::List<bbe::Vector2>& points);
+		
+		bbe::List<bbe::Vector2> project(const bbe::List<bbe::Vector2>& points, const bbe::Vector2& projection);
 
 		Vector2 interpolateLinear(Vector2 a, Vector2 b, float t);
 		Vector2 interpolateBool(Vector2 a, Vector2 b, float t);
