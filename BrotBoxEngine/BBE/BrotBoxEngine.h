@@ -76,6 +76,7 @@
 #include "../BBE/Cube.h"
 #include "../BBE/IcoSphere.h"
 #include "../BBE/Rectangle.h"
+#include "../BBE/RectangleRotated.h"
 #include "../BBE/Terrain.h"
 
 #include "../BBE/CPUWatch.h"
