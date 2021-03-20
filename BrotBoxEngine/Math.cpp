@@ -381,6 +381,86 @@ float bbe::Math::interpolateHermite(float a, float b, float t, float tangent1, f
 		+ t2 * tm * tangent2;
 }
 
+bool bbe::Math::isLeftTurn(const bbe::Vector2& a, const bbe::Vector2& b, const bbe::Vector2& c)
+{
+	const bbe::Vector2 aToB = b - a;
+	const bbe::Vector2 bToC = c - b;
+	return aToB.isLeft(bToC);
+}
+
+bbe::List<bbe::Vector2> bbe::Math::getConvexHull(const bbe::List<bbe::Vector2>& points)
+{
+	if (points.getLength() < 3) return {};
+
+	auto copy = points;
+	copy.sort([](const bbe::Vector2& a, const bbe::Vector2& b)
+		{
+			if (a.x < b.x) return true;
+			else if (a.x > b.x) return false;
+			else
+			{
+				return a.y < b.y;
+			}
+		});
+
+	bbe::List<bbe::Vector2> retVal;
+	retVal.add(copy[0]);
+	retVal.add(copy[1]);
+	for (size_t i = 2; i < copy.getLength(); i++)
+	{
+		while (retVal.getLength() >= 2 && bbe::Math::isLeftTurn(retVal[retVal.getLength() - 1], retVal[retVal.getLength() - 2], copy[i]))
+		{
+			retVal.removeIndex(retVal.getLength() - 1);
+		}
+		if (retVal[retVal.getLength() - 1] != copy[i])
+		{
+			retVal.add(copy[i]);
+		}
+	}
+
+	retVal.add(copy[copy.getLength() - 2]);
+	for (size_t i = copy.getLength() - 3; i != (size_t)-1; i--)
+	{
+		while (retVal.getLength() >= 2 && bbe::Math::isLeftTurn(retVal[retVal.getLength() - 1], retVal[retVal.getLength() - 2], copy[i]))
+		{
+			retVal.removeIndex(retVal.getLength() - 1);
+		}
+		if (retVal[retVal.getLength() - 1] != copy[i])
+		{
+			retVal.add(copy[i]);
+		}
+	}
+	if (retVal.getLength() > 0) retVal.removeIndex(retVal.getLength() - 1);
+
+	return retVal;
+}
+
+const bbe::Vector2* bbe::Math::getClosest(const bbe::Vector2& pos, const bbe::List<bbe::Vector2>& points)
+{
+	if (points.getLength() == 0) return nullptr;
+
+	float minDist = pos.getDistanceTo(points[0]);
+	const bbe::Vector2* minVec = &points[0];
+
+	for (size_t i = 1; i < points.getLength(); i++)
+	{
+		const float dist = pos.getDistanceTo(points[i]);
+		if (dist < minDist)
+		{
+			minDist = dist;
+			minVec = &points[i];
+		}
+	}
+	return minVec;
+}
+
+bbe::Vector2* bbe::Math::getClosest(const bbe::Vector2& pos, bbe::List<bbe::Vector2>& points)
+{
+	const bbe::List<bbe::Vector2>& cPoints = points;
+	const bbe::Vector2* minVec = getClosest(pos, cPoints);
+	return const_cast<bbe::Vector2*>(minVec);
+}
+
 bbe::Vector2 bbe::Math::interpolateLinear(Vector2 a, Vector2 b, float t)
 {
 	return Vector2(

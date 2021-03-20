@@ -176,6 +176,11 @@ namespace bbe
 		float interpolateBezier(float a, float b, float t, float control);
 		float interpolateHermite(float a, float b, float t, float tangent1, float tangent2);
 
+		bool isLeftTurn(const bbe::Vector2& a, const bbe::Vector2& b, const bbe::Vector2& c);
+		bbe::List<bbe::Vector2> getConvexHull(const bbe::List<bbe::Vector2>& points);
+		const bbe::Vector2* getClosest(const bbe::Vector2& pos, const bbe::List<bbe::Vector2>& points);
+		      bbe::Vector2* getClosest(const bbe::Vector2& pos,       bbe::List<bbe::Vector2>& points);
+
 		Vector2 interpolateLinear(Vector2 a, Vector2 b, float t);
 		Vector2 interpolateBool(Vector2 a, Vector2 b, float t);
 		Vector2 interpolateCosine(Vector2 a, Vector2 b, float t);
