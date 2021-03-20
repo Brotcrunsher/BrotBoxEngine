@@ -105,6 +105,8 @@ namespace bbe
 		void fillLine(float x1, float y1, const Vector2 &p2,  float lineWidth = 1);
 		void fillLine(const Vector2 &p1,  const Vector2 &p2,  float lineWidth = 1);
 
+		void fillLineStrip(const bbe::List<bbe::Vector2> &points, bool closed, float lineWidth = 1);
+
 		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const bbe::List<Vector2>& controlPoints);
 		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint);
 		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const Vector2& control);

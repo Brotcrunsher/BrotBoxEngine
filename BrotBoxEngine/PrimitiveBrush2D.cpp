@@ -332,6 +332,18 @@ void bbe::PrimitiveBrush2D::fillLine(const Vector2& p1, const Vector2& p2, float
 	fillRect(rect, angle);
 }
 
+void bbe::PrimitiveBrush2D::fillLineStrip(const bbe::List<bbe::Vector2> &points, bool closed, float lineWidth)
+{
+	for (size_t i = 1; i < points.getLength(); i++)
+	{
+		fillLine(points[i - 1], points[i], lineWidth);
+	}
+	if (closed && points.getLength() > 0)
+	{
+		fillLine(points[0], points[points.getLength() - 1], lineWidth);
+	}
+}
+
 void bbe::PrimitiveBrush2D::fillText(float x, float y, const char* text, const bbe::Font& font)
 {
 	fillText(Vector2(x, y), text, font);
