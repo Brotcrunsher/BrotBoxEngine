@@ -271,6 +271,10 @@ namespace bbe
 		{
 			return x * x + y * y;
 		}
+		T getLengthSqSigned() const
+		{
+			return bbe::Math::abs(x) * x + bbe::Math::abs(y) * y;
+		}
 		T getDistanceTo(const Vector2_t<T>& other) const
 		{
 			return (operator-(other)).getLength();
