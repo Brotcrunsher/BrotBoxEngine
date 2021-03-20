@@ -2,6 +2,7 @@
 #include "../BBE/VulkanBuffer.h"
 #include "../BBE/VulkanCommandPool.h"
 #include "../BBE/Vector2.h"
+#include "../BBE/Shape2.h"
 
 namespace bbe
 {
@@ -16,7 +17,7 @@ namespace bbe
 		}
 	}
 
-	class Rectangle
+	class Rectangle : public bbe::Shape2
 	{
 		friend class PrimitiveBrush2D;
 		friend class ::bbe::INTERNAL::vulkan::VulkanManager;
@@ -47,6 +48,8 @@ namespace bbe
 		float getY() const;
 		float getWidth() const;
 		float getHeight() const;
+		virtual bbe::Vector2 getCenter() const override;
+		virtual void getVertices(bbe::List<bbe::Vector2>& outVertices) const override;
 
 		void setX(float x);
 		void setY(float y);
@@ -64,6 +67,7 @@ namespace bbe
 		float getDistanceTo(const Vector2 &vec);
 
 		bool isPointInRectangle(const Vector2 point) const;
+		using Shape2::intersects;
 		bool intersects(const Rectangle& rectangle) const;
 		bool intersects(const Circle& circle) const;
 	};

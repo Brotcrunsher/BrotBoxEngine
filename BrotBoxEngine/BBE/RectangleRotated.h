@@ -2,21 +2,15 @@
 #include "../BBE/VulkanBuffer.h"
 #include "../BBE/VulkanCommandPool.h"
 #include "../BBE/Vector2.h"
+#include "../BBE/Shape2.h"
 
 namespace bbe
 {
 	class Rectangle;
 
-	class RectangleRotated
+	class RectangleRotated : public bbe::Shape2
 	{
 		friend class PrimitiveBrush2D;
-
-	public:
-		struct ProjectionResult
-		{
-			bbe::Vector2 start;
-			bbe::Vector2 stop;
-		};
 
 	private:
 		float m_x;
@@ -24,8 +18,6 @@ namespace bbe
 		float m_width;
 		float m_height;
 		float m_rotation;
-
-		static bool projectionsIntersect(const ProjectionResult& pr1, const ProjectionResult& pr2);
 
 	public:
 		RectangleRotated();
@@ -51,15 +43,9 @@ namespace bbe
 		void setHeight(float height);
 		void setRotation(float rotation);
 
-		bbe::Vector2 getCenter() const;
+		virtual bbe::Vector2 getCenter() const override;
 
-		bbe::List<bbe::Vector2> getVertices() const;
-		void getVertices(bbe::List<bbe::Vector2>& outVertices) const;
-
-		bbe::List<bbe::Vector2> getNormals() const;
-
-		ProjectionResult project(const bbe::Vector2& projection) const;
-
-		bool intersects(const RectangleRotated& other) const;
+		using Shape2::getVertices;
+		virtual void getVertices(bbe::List<bbe::Vector2>& outVertices) const override;
 	};
 }

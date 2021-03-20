@@ -104,6 +104,24 @@ float bbe::Rectangle::getHeight() const
 	return m_height;
 }
 
+bbe::Vector2 bbe::Rectangle::getCenter() const
+{
+	return bbe::Vector2(
+		getX() + getWidth()  / 2,
+		getY() + getHeight() / 2
+	);
+}
+
+void bbe::Rectangle::getVertices(bbe::List<bbe::Vector2>& outVertices) const
+{
+	outVertices.clear();
+
+	outVertices.add({ m_x,           m_y });
+	outVertices.add({ m_x,           m_y + m_height });
+	outVertices.add({ m_x + m_width, m_y + m_height });
+	outVertices.add({ m_x + m_width, m_y });
+}
+
 void bbe::Rectangle::setX(float x)
 {
 	m_x = x;
