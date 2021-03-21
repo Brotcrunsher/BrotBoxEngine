@@ -160,6 +160,11 @@ float bbe::Cube::getZ() const
 	return getPos().z;
 }
 
+bbe::Vector3 bbe::Cube::getCenter() const
+{
+	return getPos();
+}
+
 bbe::Vector3 bbe::Cube::getScale() const
 {
 	//UNTESTED
@@ -206,19 +211,16 @@ bbe::List<bbe::Vector3> bbe::Cube::getNormals() const
 	return retVal;
 }
 
-bbe::List<bbe::Vector3> bbe::Cube::getVertices() const
+void bbe::Cube::getVertices(bbe::List<bbe::Vector3>& outVertices) const
 {
-	bbe::List<bbe::Vector3> retVal;
-	retVal.resizeCapacityAndLength(8);
+	outVertices.clear();
 
-	retVal[0] = m_transform * bbe::Vector3(+0.5f, +0.5f, +0.5f);
-	retVal[1] = m_transform * bbe::Vector3(+0.5f, +0.5f, -0.5f);
-	retVal[2] = m_transform * bbe::Vector3(+0.5f, -0.5f, +0.5f);
-	retVal[3] = m_transform * bbe::Vector3(+0.5f, -0.5f, -0.5f);
-	retVal[4] = m_transform * bbe::Vector3(-0.5f, +0.5f, +0.5f);
-	retVal[5] = m_transform * bbe::Vector3(-0.5f, +0.5f, -0.5f);
-	retVal[6] = m_transform * bbe::Vector3(-0.5f, -0.5f, +0.5f);
-	retVal[7] = m_transform * bbe::Vector3(-0.5f, -0.5f, -0.5f);
-
-	return retVal;
+	outVertices.add(m_transform * bbe::Vector3(+0.5f, +0.5f, +0.5f));
+	outVertices.add(m_transform * bbe::Vector3(+0.5f, +0.5f, -0.5f));
+	outVertices.add(m_transform * bbe::Vector3(+0.5f, -0.5f, +0.5f));
+	outVertices.add(m_transform * bbe::Vector3(+0.5f, -0.5f, -0.5f));
+	outVertices.add(m_transform * bbe::Vector3(-0.5f, +0.5f, +0.5f));
+	outVertices.add(m_transform * bbe::Vector3(-0.5f, +0.5f, -0.5f));
+	outVertices.add(m_transform * bbe::Vector3(-0.5f, -0.5f, +0.5f));
+	outVertices.add(m_transform * bbe::Vector3(-0.5f, -0.5f, -0.5f));
 }

@@ -66,6 +66,7 @@ namespace bbe
 
 		float getLength() const;
 		float getLengthSq() const;
+		float getLengthSqSigned() const;
 		float getDistanceTo(const Vector3 &other) const;
 		float getMax() const;
 		float getMin() const;

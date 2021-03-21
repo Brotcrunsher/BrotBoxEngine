@@ -339,6 +339,11 @@ float bbe::Vector3::getLengthSq() const
 	return x * x + y * y + z * z;
 }
 
+float bbe::Vector3::getLengthSqSigned() const
+{
+	return bbe::Math::abs(x) * x + bbe::Math::abs(y) * y + bbe::Math::abs(z) * z;
+}
+
 float bbe::Vector3::getDistanceTo(const Vector3 & other) const
 {
 	//UNTESTED

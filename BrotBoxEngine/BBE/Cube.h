@@ -4,6 +4,7 @@
 #include "../BBE/Matrix4.h"
 #include "../BBE/Vector3.h"
 #include "../BBE/List.h"
+#include "../BBE/Shape2.h"
 
 namespace bbe
 {
@@ -15,7 +16,7 @@ namespace bbe
 		}
 	}
 
-	class Cube
+	class Cube : public bbe::Shape3
 	{
 		friend class PrimitiveBrush3D;
 		friend class INTERNAL::vulkan::VulkanManager;
@@ -42,6 +43,7 @@ namespace bbe
 		float getX() const;
 		float getY() const;
 		float getZ() const;
+		virtual Vector3 getCenter() const override;
 
 		Vector3 getScale() const;
 		float getWidth() const;
@@ -50,7 +52,8 @@ namespace bbe
 
 		Matrix4 getTransform() const;
 
-		bbe::List<bbe::Vector3> getNormals() const;
-		bbe::List<bbe::Vector3> getVertices() const;
+		virtual bbe::List<bbe::Vector3> getNormals() const override;
+		using Shape3::getVertices;
+		virtual void getVertices(bbe::List<bbe::Vector3> &outVertices) const override;
 	};
 }

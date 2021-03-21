@@ -48,27 +48,7 @@ namespace bbe
 
 		virtual void getVertices(bbe::List<Vec>& outVertices) const = 0;
 
-		virtual bbe::List<Vec> getNormals() const
-		{
-			auto vertices = getVertices();
-			bbe::List<Vec> retVal;
-			retVal.resizeCapacityAndLength(vertices.getLength());
-
-			for (size_t i = 0; i < vertices.getLength() - 1; i++)
-			{
-				retVal[i] = vertices[i + 1] - vertices[i];
-			}
-
-			retVal[retVal.getLength() - 1] = vertices[0] - vertices[vertices.getLength() - 1];
-
-			for (size_t i = 0; i < retVal.getLength(); i++)
-			{
-				retVal[i] = retVal[i].rotate90Clockwise();
-				retVal[i] = retVal[i].normalize();
-			}
-
-			return retVal;
-		}
+		virtual bbe::List<Vec> getNormals() const = 0;
 
 		virtual ProjectionResult project(const Vec& projection) const
 		{
@@ -120,5 +100,30 @@ namespace bbe
 		}
 	};
 
-	using Shape2 = Shape<bbe::Vector2>;
+	class Shape2 : public Shape<bbe::Vector2>
+	{
+		virtual bbe::List<Vector2> getNormals() const
+		{
+			auto vertices = getVertices();
+			bbe::List<Vector2> retVal;
+			retVal.resizeCapacityAndLength(vertices.getLength());
+
+			for (size_t i = 0; i < vertices.getLength() - 1; i++)
+			{
+				retVal[i] = vertices[i + 1] - vertices[i];
+			}
+
+			retVal[retVal.getLength() - 1] = vertices[0] - vertices[vertices.getLength() - 1];
+
+			for (size_t i = 0; i < retVal.getLength(); i++)
+			{
+				retVal[i] = retVal[i].rotate90Clockwise();
+				retVal[i] = retVal[i].normalize();
+			}
+
+			return retVal;
+		}
+	};
+
+	using Shape3 = Shape<bbe::Vector3>;
 }
