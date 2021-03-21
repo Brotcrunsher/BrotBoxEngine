@@ -181,7 +181,19 @@ namespace bbe
 		const bbe::Vector2* getClosest(const bbe::Vector2& pos, const bbe::List<bbe::Vector2>& points);
 		      bbe::Vector2* getClosest(const bbe::Vector2& pos,       bbe::List<bbe::Vector2>& points);
 		
-		bbe::List<bbe::Vector2> project(const bbe::List<bbe::Vector2>& points, const bbe::Vector2& projection);
+		template<typename Vec>
+		bbe::List<Vec> project(const bbe::List<Vec>& points, const Vec& projection)
+		{
+			bbe::List<Vec> retVal;
+			retVal.resizeCapacityAndLength(points.getLength());
+
+			for (size_t i = 0; i < points.getLength(); i++)
+			{
+				retVal[i] = points[i].project(projection);
+			}
+
+			return retVal;
+		}
 
 		Vector2 interpolateLinear(Vector2 a, Vector2 b, float t);
 		Vector2 interpolateBool(Vector2 a, Vector2 b, float t);
