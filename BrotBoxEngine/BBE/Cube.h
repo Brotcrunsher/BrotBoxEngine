@@ -3,6 +3,7 @@
 #include "../BBE/VulkanBuffer.h"
 #include "../BBE/Matrix4.h"
 #include "../BBE/Vector3.h"
+#include "../BBE/List.h"
 
 namespace bbe
 {
@@ -48,5 +49,8 @@ namespace bbe
 		float getDepth() const;
 
 		Matrix4 getTransform() const;
+
+		bbe::List<bbe::Vector3> getNormals() const;
+		bbe::List<bbe::Vector3> getVertices() const;
 	};
 }

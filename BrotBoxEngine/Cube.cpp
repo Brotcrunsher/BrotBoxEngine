@@ -189,3 +189,36 @@ bbe::Matrix4 bbe::Cube::getTransform() const
 	//UNTESTED
 	return m_transform;
 }
+
+bbe::List<bbe::Vector3> bbe::Cube::getNormals() const
+{
+	bbe::List<bbe::Vector3> retVal;
+	retVal.resizeCapacityAndLength(6);
+
+	const bbe::Matrix4 rotationMatrix = m_transform.extractRotation();
+	retVal[0] = rotationMatrix * bbe::Vector3(1, 0, 0);
+	retVal[1] = -retVal[0];
+	retVal[2] = rotationMatrix * bbe::Vector3(0, 1, 0);
+	retVal[3] = -retVal[2];
+	retVal[4] = rotationMatrix * bbe::Vector3(0, 0, 1);
+	retVal[5] = -retVal[4];
+
+	return retVal;
+}
+
+bbe::List<bbe::Vector3> bbe::Cube::getVertices() const
+{
+	bbe::List<bbe::Vector3> retVal;
+	retVal.resizeCapacityAndLength(8);
+
+	retVal[0] = m_transform * bbe::Vector3(+0.5f, +0.5f, +0.5f);
+	retVal[1] = m_transform * bbe::Vector3(+0.5f, +0.5f, -0.5f);
+	retVal[2] = m_transform * bbe::Vector3(+0.5f, -0.5f, +0.5f);
+	retVal[3] = m_transform * bbe::Vector3(+0.5f, -0.5f, -0.5f);
+	retVal[4] = m_transform * bbe::Vector3(-0.5f, +0.5f, +0.5f);
+	retVal[5] = m_transform * bbe::Vector3(-0.5f, +0.5f, -0.5f);
+	retVal[6] = m_transform * bbe::Vector3(-0.5f, -0.5f, +0.5f);
+	retVal[7] = m_transform * bbe::Vector3(-0.5f, -0.5f, -0.5f);
+
+	return retVal;
+}
