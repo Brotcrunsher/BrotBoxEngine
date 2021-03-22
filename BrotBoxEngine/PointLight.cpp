@@ -169,6 +169,11 @@ void bbe::PointLight::setLightColor(const Color & color)
 	s_dataFragment[m_index].m_lightColor = color;
 }
 
+void bbe::PointLight::setLightColor(float r, float g, float b, float a)
+{
+	setLightColor(bbe::Color(r, g, b, a));
+}
+
 bbe::Color bbe::PointLight::getLightColor()
 {
 	if (!s_staticIniCalled)

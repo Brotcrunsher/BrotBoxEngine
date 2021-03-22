@@ -94,6 +94,7 @@ namespace bbe
 		void setLightStrength(float lightStrength);
 		float getLightStrength();
 		void setLightColor(const Color &color);
+		void setLightColor(float r, float g, float b, float a = 1);
 		Color getLightColor();
 		void setSpecularColor(const Color &color);
 		Color getSpecularColor();
