@@ -61,6 +61,6 @@ namespace bbe
 		using Shape3::getVertices;
 		virtual void getVertices(bbe::List<bbe::Vector3> &outVertices) const override;
 
-		bbe::Vector3 approach(const bbe::Cube& other, const bbe::Vector3& approachVector);
+		bbe::Vector3 approach(const bbe::Cube& other, const bbe::Vector3& approachVector) const;
 	};
 }

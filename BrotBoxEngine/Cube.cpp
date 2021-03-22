@@ -252,7 +252,7 @@ void bbe::Cube::getVertices(bbe::List<bbe::Vector3>& outVertices) const
 	outVertices.add(m_transform * bbe::Vector3(-0.5f, -0.5f, -0.5f));
 }
 
-bbe::Vector3 bbe::Cube::approach(const bbe::Cube& other, const bbe::Vector3& approachVector)
+bbe::Vector3 bbe::Cube::approach(const bbe::Cube& other, const bbe::Vector3& approachVector) const
 {
 	//TODO This implementation is very, very naive. It can be implemented in a much faster
 	// 	   and robust way.
