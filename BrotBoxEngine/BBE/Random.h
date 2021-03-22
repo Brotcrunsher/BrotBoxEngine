@@ -15,7 +15,7 @@ namespace bbe {
 		std::mt19937       m_mt;
 		
 		template<typename T>
-		T randomInteger()
+		T randomInteger_()
 		{
 			//UNTESTED
 			std::uniform_int_distribution<T> dist(std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
@@ -23,7 +23,7 @@ namespace bbe {
 		}
 
 		template<typename T>
-		T randomInteger(T max)
+		T randomInteger_(T max)
 		{
 			//UNTESTED
 			std::uniform_int_distribution<T> dist(0, max - 1);
@@ -31,7 +31,7 @@ namespace bbe {
 		}
 
 		template<typename T>
-		T randomFloat()
+		T randomFloat_()
 		{
 			//UNTESTED
 			std::uniform_real_distribution<T> dist(0.0, 1.0);
@@ -39,7 +39,7 @@ namespace bbe {
 		}
 
 		template<typename T>
-		T randomFloat(T max)
+		T randomFloat_(T max)
 		{
 			//UNTESTED
 			std::uniform_real_distribution<T> dist(0.0, max);
@@ -81,6 +81,12 @@ namespace bbe {
 		{
 			//UNTESTED
 			return Vector3(randomFloat(max), randomFloat(max), randomFloat(max));
+		}
+
+		Vector3 randomVector3(float maxX, float maxY, float maxZ)
+		{
+			//UNTESTED
+			return Vector3(randomFloat(maxX), randomFloat(maxY), randomFloat(maxZ));
 		}
 
 		Vector3 randomVector3InUnitSphere()
@@ -127,115 +133,115 @@ namespace bbe {
 		byte randomByte()
 		{
 			//UNTESTED
-			return (byte)(randomInteger<unsigned short>() & 0xff);
+			return (byte)(randomInteger_<unsigned short>() & 0xff);
 		}
 
 		byte randomByte(byte max)
 		{
 			//UNTESTED
-			return (byte)(randomInteger<unsigned short>(max) & 0xff);
+			return (byte)(randomInteger_<unsigned short>(max) & 0xff);
 		}
 
 		char randomChar()
 		{
 			//UNTESTED
-			return (char)(randomInteger<short>() & 0xff);
+			return (char)(randomInteger_<short>() & 0xff);
 		}
 
 		short randomShort()
 		{
 			//UNTESTED
-			return randomInteger<short>();
+			return randomInteger_<short>();
 		}
 
 		short randomShort(short max)
 		{
 			//UNTESTED
-			return randomInteger<short>(max);
+			return randomInteger_<short>(max);
 		}
 
 		unsigned short randomUShort()
 		{
 			//UNTESTED
-			return randomInteger<unsigned short>();
+			return randomInteger_<unsigned short>();
 		}
 
 		unsigned short randomUShort(unsigned short max)
 		{
 			//UNTESTED
-			return randomInteger<unsigned short>(max);
+			return randomInteger_<unsigned short>(max);
 		}
 
 		int randomInt()
 		{
 			//UNTESTED
-			return randomInteger<int>();
+			return randomInteger_<int>();
 		}
 
 		int randomInt(int max)
 		{
 			//UNTESTED
-			return randomInteger<int>(max);
+			return randomInteger_<int>(max);
 		}
 
 		unsigned int randomUInt()
 		{
 			//UNTESTED
-			return randomInteger<unsigned int>();
+			return randomInteger_<unsigned int>();
 		}
 
 		unsigned int randomUInt(unsigned int max)
 		{
 			//UNTESTED
-			return randomInteger<unsigned int>(max);
+			return randomInteger_<unsigned int>(max);
 		}
 
 		long randomLong()
 		{
 			//UNTESTED
-			return randomInteger<long>();
+			return randomInteger_<long>();
 		}
 
 		long randomLong(long max)
 		{
 			//UNTESTED
-			return randomInteger<long>(max);
+			return randomInteger_<long>(max);
 		}
 
 		unsigned long randomULong()
 		{
 			//UNTESTED
-			return randomInteger<unsigned long>();
+			return randomInteger_<unsigned long>();
 		}
 
 		unsigned long randomULong(unsigned long max)
 		{
 			//UNTESTED
-			return randomInteger<unsigned long>(max);
+			return randomInteger_<unsigned long>(max);
 		}
 		
 		float randomFloat()
 		{
 			//UNTESTED
-			return randomFloat<float>();
+			return randomFloat_<float>();
 		}
 
 		float randomFloat(float max)
 		{
 			//UNTESTED
-			return randomFloat<float>(max);
+			return randomFloat_<float>(max);
 		}
 
 		double randomDouble()
 		{
 			//UNTESTED
-			return randomFloat<double>();
+			return randomFloat_<double>();
 		}
 
 		double randomDouble(double max)
 		{
 			//UNTESTED
-			return randomFloat<double>(max);
+			return randomFloat_<double>(max);
 		}
 
 		bool randomBool()
