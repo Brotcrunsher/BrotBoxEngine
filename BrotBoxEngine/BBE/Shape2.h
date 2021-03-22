@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../BBE/Vector2.h"
+#include "../BBE/Vector3.h"
 
 namespace bbe
 {
@@ -102,7 +103,8 @@ namespace bbe
 
 	class Shape2 : public Shape<bbe::Vector2>
 	{
-		virtual bbe::List<Vector2> getNormals() const
+	public:
+		virtual bbe::List<Vector2> getNormals() const override
 		{
 			auto vertices = getVertices();
 			bbe::List<Vector2> retVal;
@@ -125,5 +127,30 @@ namespace bbe
 		}
 	};
 
-	using Shape3 = Shape<bbe::Vector3>;
+	class Shape3 : public Shape<bbe::Vector3>
+	{
+	public:
+		virtual bool intersects(const Shape<bbe::Vector3>& other) const override
+		{
+			if (!Shape<bbe::Vector3>::intersects(other)) return false;
+
+			// See: https://gamedev.stackexchange.com/questions/44500/how-many-and-which-axes-to-use-for-3d-obb-collision-with-sat
+			auto normalsThis = getNormals();
+			auto normalsOther = other.getNormals();
+
+			for (const bbe::Vector3& normalThis : normalsThis)
+			{
+				for (const bbe::Vector3& normalOther : normalsOther)
+				{
+					const bbe::Vector3 cross = normalThis.cross(normalOther);
+					auto p1 = project(cross);
+					auto p2 = other.project(cross);
+					if (!projectionsIntersect(p1, p2)) return false;
+				}
+			}
+
+			return true;
+		}
+	};
+
 }
