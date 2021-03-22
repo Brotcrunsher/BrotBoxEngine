@@ -287,5 +287,5 @@ bbe::Vector3 bbe::Cube::approach(const bbe::Cube& other, const bbe::Vector3& app
 		}
 	}
 
-	return approachVector * upperBound;
+	return approachVector * lowerBound;
 }
