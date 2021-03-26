@@ -8,9 +8,9 @@ constexpr int WINDOW_HEIGHT = 720;
 
 class MyGame : public bbe::Game
 {
+	constexpr static size_t amountOfParticles = 500;
 	constexpr static int particleTypes = 10;
 	constexpr static float particleSize = 3;
-	constexpr static float maxSpeed = 10;
 
 	struct Particle
 	{
@@ -88,7 +88,7 @@ class MyGame : public bbe::Game
 	void generateRandomParticles()
 	{
 		particles.clear();
-		for (int i = 0; i < 500; i++)
+		for (int i = 0; i < amountOfParticles; i++)
 		{
 			placeRandomParticle();
 		}
