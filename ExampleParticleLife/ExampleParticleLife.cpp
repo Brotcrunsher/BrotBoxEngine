@@ -196,15 +196,6 @@ class MyGame : public bbe::Game
 			brush.setColorHSV(particles[i].particleType * 360 * bbe::Math::GOLDEN_RATIO, 1, 1);
 			brush.fillCircle(particles[i].pos.x - particleSize, particles[i].pos.y - particleSize, particleSize * 2, particleSize * 2);
 		}
-
-		brush.setColorRGB(1, 1, 1);
-		for (int i = 1; i < WINDOW_WIDTH; i++)
-		{
-			bbe::Vector2 prev = { (float)0 , 0 };
-			bbe::Vector2 curr = { (float)i , 0 };
-			bbe::Vector2 to = attractionMatrix[0][0](prev, curr);
-			brush.fillRect({ (float)i, to.x * 10 + WINDOW_HEIGHT / 2 }, 1, 1);
-		}
 	}
 	virtual void onEnd() override
 	{
