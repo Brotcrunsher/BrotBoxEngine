@@ -9,8 +9,11 @@ constexpr int WINDOW_HEIGHT = 720;
 class MyGame : public bbe::Game
 {
 	constexpr static size_t amountOfParticles = 500;
-	constexpr static int particleTypes = 10;
 	constexpr static float particleSize = 3;
+	int particleTypes = 3;
+	float maxMax = 600;
+	float minMin = 20;
+	float maxAttraction;
 
 	struct Particle
 	{
@@ -34,8 +37,8 @@ class MyGame : public bbe::Game
 
 		AttractionFunction(const AttractionFunction& other) = default;
 		AttractionFunction(AttractionFunction&& other) = default;
-		AttractionFunction& operator=(const AttractionFunction & other) = default;
-		AttractionFunction& operator=(AttractionFunction && other) = default;
+		AttractionFunction& operator=(const AttractionFunction& other) = default;
+		AttractionFunction& operator=(AttractionFunction&& other) = default;
 
 		bbe::Vector2 operator() (bbe::Vector2 a, bbe::Vector2 b) const
 		{
@@ -60,7 +63,7 @@ class MyGame : public bbe::Game
 			else if (dist >= 0.1f)
 			{
 				const float t = 2.f * min * (1.f / (min + 2.f) - 1.f / (dist + 2.f));
-				return norm * t;
+				return norm * t * 10;
 			}
 			else
 			{
@@ -82,7 +85,7 @@ class MyGame : public bbe::Game
 			rand.randomVector2(WINDOW_WIDTH, WINDOW_HEIGHT),
 			{0, 0},
 			rand.randomInt(particleTypes)
-		});
+			});
 	}
 
 	void generateRandomParticles()
@@ -102,23 +105,31 @@ class MyGame : public bbe::Game
 			attractionMatrix.add({});
 			for (size_t k = 0; k < particleTypes; k++)
 			{
-				const float min = rand.randomFloat() * 20 + 20 + particleSize;
-				float attraction = rand.randomFloat() * 10 - 5;
+				float attraction = rand.randomFloat() * maxAttraction * 2 - maxAttraction;
 				if (i == k)
 				{
-					attraction = 10;
+					attraction = bbe::Math::abs(attraction);
 				}
 				attractionMatrix[i].add(AttractionFunction(
-					particleSize * 20,
-					200,
+					rand.randomFloat(minMin),
+					rand.randomFloat(maxMax),
 					attraction
 				));
 			}
 		}
 	}
 
+	void randomizeWorldSettings()
+	{
+		particleTypes = rand.randomFloat(10) + 2;
+		minMin = rand.randomFloat(10) + 10;
+		maxMax = rand.randomFloat(600) + minMin + 1;
+		maxAttraction = rand.randomFloat() * 10;
+	}
+
 	void gameStart()
 	{
+		randomizeWorldSettings();
 		generateRandomAttractionMatrix();
 		generateRandomParticles();
 	}
@@ -186,14 +197,14 @@ class MyGame : public bbe::Game
 			gameStart();
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
 		for (size_t i = 0; i < particles.getLength(); i++)
 		{
-			brush.setColorHSV(particles[i].particleType * 360 * bbe::Math::GOLDEN_RATIO, 1, 1);
+			brush.setColorHSV(particles[i].particleType * 360 * bbe::Math::GOLDEN_RATIO, 1 - particles[i].particleType / 10, 1);
 			brush.fillCircle(particles[i].pos.x - particleSize, particles[i].pos.y - particleSize, particleSize * 2, particleSize * 2);
 		}
 	}
@@ -206,6 +217,6 @@ int main()
 {
 	MyGame game;
 	game.start(WINDOW_WIDTH, WINDOW_HEIGHT, "Particle Life");
-    return 0;
+	return 0;
 }
 
