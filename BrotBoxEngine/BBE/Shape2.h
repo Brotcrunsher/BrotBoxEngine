@@ -17,20 +17,8 @@ namespace bbe
 	protected:
 		static bool projectionsIntersect(const ProjectionResult& pr1, const ProjectionResult& pr2)
 		{
-			if (pr1.start < pr2.start)
-			{
-				return pr2.start <= pr1.stop;
-			}
-			else if (pr2.start < pr1.start)
-			{
-				return pr1.start <= pr2.stop;
-			}
-			else
-			{
-				return true;
-			}
-
-			return false;
+			const float lengthPr2 = pr2.stop - pr2.start;
+			return pr2.start > (pr1.start - lengthPr2) && pr2.start < pr1.stop;
 		}
 	public:
 		virtual Vec getCenter() const = 0;
