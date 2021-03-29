@@ -44,6 +44,8 @@ namespace bbe
 		void setRotation(const Vector3 &rotationVector, float radians);
 		void setPosition(const Vector3& pos);
 
+		virtual void translate(const bbe::Vector3& translation) override;
+
 		Vector3 getPos() const;
 		float getX() const;
 		float getY() const;

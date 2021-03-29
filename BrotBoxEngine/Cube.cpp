@@ -163,6 +163,13 @@ void bbe::Cube::setPosition(const Vector3& pos)
 	set(matTranslation, matScale, matRotation);
 }
 
+void bbe::Cube::translate(const bbe::Vector3& translation)
+{
+	const Matrix4 matScale = Matrix4::createScaleMatrix(m_transform.extractScale());
+	const Matrix4 matRotation = m_transform.extractRotation();
+	set(getPos() + translation, matScale, matRotation);
+}
+
 bbe::Vector3 bbe::Cube::getPos() const
 {
 	//UNTESTED

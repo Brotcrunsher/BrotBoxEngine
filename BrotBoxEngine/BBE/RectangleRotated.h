@@ -42,6 +42,7 @@ namespace bbe
 		void setWidth(float width);
 		void setHeight(float height);
 		void setRotation(float rotation);
+		virtual void translate(const Vector2& vec) override;
 
 		virtual bbe::Vector2 getCenter() const override;
 

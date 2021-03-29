@@ -62,7 +62,7 @@ namespace bbe
 		void set(float x, float y, float width, float height);
 
 		void translate(float x, float y);
-		void translate(const Vector2 &vec);
+		virtual void translate(const bbe::Vector2 &vec) override;
 
 		float getDistanceTo(const Vector2 &vec);
 

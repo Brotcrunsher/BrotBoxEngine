@@ -51,6 +51,8 @@ namespace bbe
 
 		virtual bbe::List<Vec> getNormals() const = 0;
 
+		virtual void translate(const Vec& translation) = 0;
+
 		virtual ProjectionResult project(const Vec& projection) const
 		{
 			auto vertices = getVertices();

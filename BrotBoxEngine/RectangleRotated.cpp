@@ -102,6 +102,12 @@ void bbe::RectangleRotated::setRotation(float rotation)
 	m_rotation = rotation;
 }
 
+void bbe::RectangleRotated::translate(const Vector2& vec)
+{
+	setX(getX() + vec.x);
+	setY(getY() + vec.y);
+}
+
 bbe::Vector2 bbe::RectangleRotated::getCenter() const
 {
 	return bbe::Vector2(
