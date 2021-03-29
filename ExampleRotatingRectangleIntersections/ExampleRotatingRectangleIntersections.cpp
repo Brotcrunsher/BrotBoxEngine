@@ -6,7 +6,7 @@ constexpr int WINDOW_HEIGHT = 720;
 
 class MyGame : public bbe::Game
 {
-	bbe::Vector2 projectionsPoint = { 4, 1 };
+	bbe::Vector2 projectionsPoint = bbe::Vector2{ 4, 1 }.normalize();
 	bbe::RectangleRotated rr;
 	bbe::RectangleRotated rrMouse;
 	static constexpr float rectangleRotationSpeed = 1;
@@ -24,7 +24,7 @@ class MyGame : public bbe::Game
 		rrMouse.setY(getMouseY());
 		if (isMouseDown(bbe::MouseButton::LEFT))
 		{
-			projectionsPoint = getMouse();
+			projectionsPoint = getMouse().normalize();
 		}
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
@@ -41,7 +41,7 @@ class MyGame : public bbe::Game
 
 		const bbe::RectangleRotated::ProjectionResult pr = rr.project(projectionsPoint);
 		brush.setColorRGB(0, 1, 0);
-		brush.fillLine(pr.start, pr.stop);
+		brush.fillLine(projectionsPoint * pr.start, projectionsPoint * pr.stop);
 
 		auto projections = bbe::Math::project(vertices, projectionsPoint);
 		assert(projections.getLength() == vertices.getLength());

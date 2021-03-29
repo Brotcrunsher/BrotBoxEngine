@@ -11,24 +11,19 @@ namespace bbe
 	public:
 		struct ProjectionResult
 		{
-			Vec start;
-			Vec stop;
+			float start;
+			float stop;
 		};
 	protected:
 		static bool projectionsIntersect(const ProjectionResult& pr1, const ProjectionResult& pr2)
 		{
-			const float pr1StartLengthSq = pr1.start.getLengthSqSigned();
-			const float pr2StartLengthSq = pr2.start.getLengthSqSigned();
-
-			if (pr1StartLengthSq < pr2StartLengthSq)
+			if (pr1.start < pr2.start)
 			{
-				const float pr1StopLengthSq = pr1.stop.getLengthSqSigned();
-				return pr2StartLengthSq <= pr1StopLengthSq;
+				return pr2.start <= pr1.stop;
 			}
-			else if (pr2StartLengthSq < pr1StartLengthSq)
+			else if (pr2.start < pr1.start)
 			{
-				const float pr2StopLengthSq = pr2.stop.getLengthSqSigned();
-				return pr1StartLengthSq <= pr2StopLengthSq;
+				return pr1.start <= pr2.stop;
 			}
 			else
 			{
@@ -55,25 +50,22 @@ namespace bbe
 
 		virtual ProjectionResult project(const Vec& projection) const
 		{
-			auto vertices = getVertices();
-			auto projections = bbe::Math::project(vertices, projection);
+			const bbe::List<Vec> vertices = getVertices();
+			const bbe::List<Vec> projections = bbe::Math::project(vertices, projection);
 
-			float minLengthSq = projections[0].getLengthSqSigned();
-			float maxLengthSq = minLengthSq;
-			ProjectionResult retVal{ projections[0], projections[0] };
+			const float init = projections[0] * projection;
+			ProjectionResult retVal{ init, init };
 
 			for (size_t i = 1; i < projections.getLength(); i++)
 			{
-				const float lengthSq = projections[i].getLengthSqSigned();
-				if (lengthSq > maxLengthSq)
+				const float dot = projections[i] * projection;
+				if (dot > retVal.stop)
 				{
-					maxLengthSq = lengthSq;
-					retVal.stop = projections[i];
+					retVal.stop = dot;
 				}
-				if (lengthSq < minLengthSq)
+				if (dot < retVal.start)
 				{
-					minLengthSq = lengthSq;
-					retVal.start = projections[i];
+					retVal.start = dot;
 				}
 			}
 
