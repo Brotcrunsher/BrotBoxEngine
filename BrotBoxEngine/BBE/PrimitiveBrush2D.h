@@ -57,6 +57,7 @@ namespace bbe
 		float                                        m_outlineWidth = 0;
 		Color m_color = Color(-1000, -1000, -1000);
 		Color m_outlineColor = Color(-1000, -1000, -1000);
+		bbe::Vector2 m_offset = {0, 0};
 
 		PipelineRecord2D   m_pipelineRecord = PipelineRecord2D::NONE;
 
@@ -133,6 +134,10 @@ namespace bbe
 		void setColorHSV(float h, float s, float v);
 		void setOutlineHSV(float h, float s, float v, float a);
 		void setOutlineHSV(float h, float s, float v);
+
+		void setOffset(float x, float y);
+		void setOffset(const bbe::Vector2& offset);
+		bbe::Vector2 getOffset() const;
 
 		void setOutlineWidth(float outlineWidht);
 

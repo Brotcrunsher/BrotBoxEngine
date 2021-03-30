@@ -75,8 +75,8 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotat
 	}
 
 	float pushConstants[] = {
-		(rect.getX() + outlineWidth) * m_windowXScale, 
-		(rect.getY() + outlineWidth) * m_windowYScale, 
+		(rect.getX() + outlineWidth + m_offset.x) * m_windowXScale, 
+		(rect.getY() + outlineWidth + m_offset.y) * m_windowYScale, 
 		(rect.getWidth()  - outlineWidth * 2) * m_windowXScale,
 		(rect.getHeight() - outlineWidth * 2) * m_windowYScale,
 		rotation
@@ -99,7 +99,12 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 	image.createAndUpload(*m_pdevice, *m_pcommandPool, *m_pdescriptorPool, *m_pdescriptorSetLayout);
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutImage, 0, 1, image.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 
-	float pushConstants[] = { rect.getX() * m_windowXScale, rect.getY() * m_windowYScale, rect.getWidth() * m_windowXScale, rect.getHeight() * m_windowYScale };
+	float pushConstants[] = {
+		(rect.getX() + m_offset.x) * m_windowXScale,
+		(rect.getY() + m_offset.y) * m_windowYScale,
+		rect.getWidth() * m_windowXScale,
+		rect.getHeight() * m_windowYScale
+	};
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 4, pushConstants);
 
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 16, sizeof(float), &rotation);
@@ -124,8 +129,8 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle, float out
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 	float pushConstants[] = {
-		(circle.getX() + outlineWidth) * m_windowXScale, 
-		(circle.getY() + outlineWidth) * m_windowYScale, 
+		(circle.getX() + outlineWidth + m_offset.x) * m_windowXScale, 
+		(circle.getY() + outlineWidth + m_offset.y) * m_windowYScale, 
 		(circle.getWidth() - outlineWidth * 2) * m_windowXScale, 
 		(circle.getHeight() - outlineWidth * 2) * m_windowYScale,
 		0
@@ -455,6 +460,21 @@ void bbe::PrimitiveBrush2D::setOutlineHSV(float h, float s, float v, float a)
 void bbe::PrimitiveBrush2D::setOutlineHSV(float h, float s, float v)
 {
 	setOutlineHSV(h, s, v, 1);
+}
+
+void bbe::PrimitiveBrush2D::setOffset(float x, float y)
+{
+	setOffset(bbe::Vector2{ x, y });
+}
+
+void bbe::PrimitiveBrush2D::setOffset(const bbe::Vector2& offset)
+{
+	m_offset = offset;
+}
+
+bbe::Vector2 bbe::PrimitiveBrush2D::getOffset() const
+{
+	return m_offset;
 }
 
 void bbe::PrimitiveBrush2D::setOutlineWidth(float outlineWidht)
