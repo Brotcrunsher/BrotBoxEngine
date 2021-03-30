@@ -15,10 +15,23 @@ namespace bbe
 			float stop;
 		};
 	protected:
+		static float projectionsPenetration(const ProjectionResult& pr1, const ProjectionResult& pr2)
+		{
+			const float midPr1 = (pr1.start + pr1.stop) / 2.f;
+			const float midPr2 = (pr2.start + pr2.stop) / 2.f;
+			const float midDist = midPr2 - midPr1;
+			const float lengthPr1 = pr1.stop - pr1.start;
+			const float lengthPr2 = pr2.stop - pr2.start;
+			const float lengthAvg = (lengthPr1 + lengthPr2) / 2.f;
+			
+			if (bbe::Math::abs(midDist) >= bbe::Math::abs(lengthAvg)) return 0.f;
+
+			return lengthAvg - midDist;
+		}
+
 		static bool projectionsIntersect(const ProjectionResult& pr1, const ProjectionResult& pr2)
 		{
-			const float lengthPr2 = pr2.stop - pr2.start;
-			return pr2.start > (pr1.start - lengthPr2) && pr2.start < pr1.stop;
+			return projectionsPenetration(pr1, pr2) != 0;
 		}
 	public:
 		virtual Vec getCenter() const = 0;
@@ -106,6 +119,45 @@ namespace bbe
 			}
 
 			return retVal;
+		}
+
+		virtual bool resolveIntersection(const Shape<Vector2>& other)
+		{
+			auto normalsThis = getNormals();
+			auto normalsOther = other.getNormals();
+
+			float minPenetration = bbe::Math::INFINITY_POSITIVE;
+			Vector2 resolveAxis;
+
+			for (const Vector2& normal : normalsThis)
+			{
+				auto p1 = project(normal);
+				auto p2 = other.project(normal);
+				float penetration = projectionsPenetration(p1, p2);
+				if (penetration == 0) return false;
+				if (bbe::Math::abs(penetration) < bbe::Math::abs(minPenetration))
+				{
+					minPenetration = penetration;
+					resolveAxis = normal;
+				}
+			}
+
+			for (const Vector2& normal : normalsOther)
+			{
+				auto p1 = project(normal);
+				auto p2 = other.project(normal);
+				float penetration = projectionsPenetration(p1, p2);
+				if (penetration == 0) return false;
+				if (bbe::Math::abs(penetration) < bbe::Math::abs(minPenetration))
+				{
+					minPenetration = penetration;
+					resolveAxis = normal;
+				}
+			}
+
+			this->translate(-resolveAxis * minPenetration);
+
+			return true;
 		}
 	};
 
