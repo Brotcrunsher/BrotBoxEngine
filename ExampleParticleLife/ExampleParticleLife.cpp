@@ -1,4 +1,5 @@
 #include "BBE/BrotBoxEngine.h"
+#include <future>
 
 constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
@@ -147,9 +148,10 @@ class MyGame : public bbe::Game
 		offsets.add({ +WINDOW_WIDTH, +WINDOW_HEIGHT });
 		gameStart();
 	}
-	virtual void update(float timeSinceLastFrame) override
+
+	void updateParticleSpeed(size_t index, size_t max)
 	{
-		for (size_t i = 0; i < particles.getLength(); i++)
+		for (size_t i = index; i < max && i < particles.getLength(); i++)
 		{
 			for (size_t k = 0; k < particles.getLength(); k++)
 			{
@@ -167,6 +169,22 @@ class MyGame : public bbe::Game
 			}
 			particles[i].speed *= 0.9f;
 		}
+	}
+
+	virtual void update(float timeSinceLastFrame) override
+	{
+		bbe::List<std::future<void>> futures;
+		futures.resizeCapacity(particles.getLength());
+		const size_t increment = amountOfParticles / 12;
+		for (size_t i = 0; i < particles.getLength(); i += increment)
+		{
+			futures.add(std::async(std::launch::async, &MyGame::updateParticleSpeed, this, i, i + increment));
+		}
+		for (size_t i = 0; i < futures.getLength(); i++)
+		{
+			futures[i].wait();
+		}
+
 		for (size_t i = 0; i < particles.getLength(); i++)
 		{
 			particles[i].pos += particles[i].speed * 0.03;
