@@ -133,6 +133,7 @@ public:
 
 	static void linearSolveThread(size_t start, size_t end, size_t width, size_t height, bbe::List<float>* x, const bbe::List<float>* x0, float a, float cReciprocal)
 	{
+		// See: Gauss-Seidel
 		for (size_t i = start; i < end && i < width - 1; i++) {
 			for (size_t j = 1; j < height - 1; j++) {
 				(*x)[coordToIndex(i, j, width)] =
@@ -172,11 +173,12 @@ public:
 		linearSolve(b, x, x0, a, 1 + 4 * a);
 	}
 
-	void project(bbe::List<float>& velocX, bbe::List<float>& velocY, bbe::List<float>& p, bbe::List<float>& div)
+	void clearDivergence(bbe::List<float>& velocX, bbe::List<float>& velocY, bbe::List<float>& p, bbe::List<float>& divergence)
 	{
+		// See Helmholtz Decomposition
 		for (size_t i = 1; i < getWidth() - 1; i++) {
 			for (size_t j = 1; j < getHeight() - 1; j++) {
-				div[coordToIndex(i, j)] = -0.5f * (
+				divergence[coordToIndex(i, j)] = -0.5f * (
 					velocX[coordToIndex(i + 1, j)]
 					- velocX[coordToIndex(i - 1, j)]
 					+ velocY[coordToIndex(i, j + 1)]
@@ -188,8 +190,8 @@ public:
 		{
 			p[i] = 0;
 		}
-		setBound(BoundBehaviour::DENSITY, div);
-		linearSolve(BoundBehaviour::DENSITY, p, div, 1, 4);
+		setBound(BoundBehaviour::DENSITY, divergence);
+		linearSolve(BoundBehaviour::DENSITY, p, divergence, 1, 4);
 
 		for (size_t i = 1; i < getWidth() - 1; i++) {
 			for (size_t j = 1; j < getHeight() - 1; j++) {
@@ -246,12 +248,12 @@ public:
 		diffuse(BoundBehaviour::X_SPEED, Vx0, Vx, visc, dt);
 		diffuse(BoundBehaviour::Y_SPEED, Vy0, Vy, visc, dt);
 
-		project(Vx0, Vy0, Vx, Vy);
+		clearDivergence(Vx0, Vy0, Vx, Vy);
 
 		advect(BoundBehaviour::X_SPEED, Vx, Vx0, Vx0, Vy0, dt);
 		advect(BoundBehaviour::Y_SPEED, Vy, Vy0, Vx0, Vy0, dt);
 
-		project(Vx, Vy, Vx0, Vy0);
+		clearDivergence(Vx, Vy, Vx0, Vy0);
 
 		auto futureR = std::async(std::launch::async, &FluidSquare::densityStep, this, &densityR, dt);
 		auto futureG = std::async(std::launch::async, &FluidSquare::densityStep, this, &densityG, dt);
