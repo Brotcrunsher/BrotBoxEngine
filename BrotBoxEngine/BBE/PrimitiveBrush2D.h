@@ -40,6 +40,12 @@ namespace bbe
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
 	private:
+		struct BufferMemoryPair
+		{
+			VkBuffer       m_buffer;
+			VkDeviceMemory m_memory;
+		};
+
 		INTERNAL::vulkan::VulkanDevice              *m_pdevice              = nullptr;
 		INTERNAL::vulkan::VulkanCommandPool         *m_pcommandPool         = nullptr;
 		INTERNAL::vulkan::VulkanDescriptorPool      *m_pdescriptorPool      = nullptr;
@@ -57,6 +63,8 @@ namespace bbe
 		float                                        m_outlineWidth = 0;
 		Color m_color = Color(-1000, -1000, -1000);
 		Color m_outlineColor = Color(-1000, -1000, -1000);
+		bbe::List<bbe::List<BufferMemoryPair>> m_delayedBufferDeletes;
+		uint32_t m_imageIndex = 0xFFFFFFFF;
 		bbe::Vector2 m_offset = {0, 0};
 
 		PipelineRecord2D   m_pipelineRecord = PipelineRecord2D::NONE;
@@ -75,7 +83,10 @@ namespace bbe
 			INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive,
 			INTERNAL::vulkan::VulkanPipeline &pipelineImage,
 			GLFWwindow* window,
-			int screenWidth, int screenHeight);
+			int screenWidth, int screenHeight,
+			uint32_t imageIndex);
+
+		void INTERNAL_init(const uint32_t amountOfFrames);
 
 		FillMode m_fillMode = FillMode::SOLID;
 
@@ -96,6 +107,8 @@ namespace bbe
 		void fillCircle(float x, float y, const Vector2& dimensions);
 		void fillCircle(const Vector2& pos, const Vector2& dimensions);
 		void fillCircle(const PhysCircle& circle);
+
+		void fillTriangle(const Vector2& a,   const Vector2& b,   const Vector2& c);
 
 		void drawImage(const Rectangle &rect, const Image &image, float rotation = 0);
 		void drawImage(float x, float y,   float width, float height, const Image &image, float rotation = 0);
@@ -143,6 +156,9 @@ namespace bbe
 
 		void setFillMode(FillMode fm);
 		FillMode getFillMode();
+
+		void fillVertexIndexList(const bbe::List<uint32_t>& indices, const bbe::List<bbe::Vector2>& vertices);
+		void fillVertexIndexList(const uint32_t *indices, uint32_t amountOfIndices, const bbe::Vector2 *vertices, uint32_t amountOfVertices);
 
 		VkCommandBuffer INTERNAL_getCurrentCommandBuffer();
 		VkPipelineLayout INTERNAL_getLayoutPrimitive();

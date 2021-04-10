@@ -198,6 +198,11 @@ VkBuffer bbe::INTERNAL::vulkan::VulkanBuffer::getBuffer() const
 	return m_buffer;
 }
 
+VkDeviceMemory bbe::INTERNAL::vulkan::VulkanBuffer::getMemory() const
+{
+	return m_memory;
+}
+
 VkDeviceSize bbe::INTERNAL::vulkan::VulkanBuffer::getSize() const
 {
 	return m_bufferSize;

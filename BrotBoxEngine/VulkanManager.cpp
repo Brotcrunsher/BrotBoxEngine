@@ -140,6 +140,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 
 	std::cout << "Vulkan Manager: Starting Dear ImGui" << std::endl;
 	m_imguiManager.start(m_instance, m_commandPool, m_device, m_surface, m_physicalDeviceContainer.findBestDevice(m_surface), m_descriptorPool, m_renderPass, m_pwindow);
+
+	m_primitiveBrush2D.INTERNAL_init(m_swapchain.getAmountOfImages());
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::destroy()
@@ -211,7 +213,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 		m_pipeline2DPrimitive,
 		m_pipeline2DImage,
 		m_pwindow,
-		m_screenWidth, m_screenHeight);
+		m_screenWidth, m_screenHeight,
+		m_imageIndex);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
@@ -496,6 +499,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::recreateSwapchain(bool useIconifyRest
 
 	m_swapchain.destroy();
 	m_swapchain = newChain;
+
+	m_primitiveBrush2D.INTERNAL_init(m_swapchain.getAmountOfImages());
 }
 
 bbe::INTERNAL::vulkan::VulkanDevice& bbe::INTERNAL::vulkan::VulkanManager::getVulkanDevice()

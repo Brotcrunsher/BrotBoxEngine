@@ -17,7 +17,8 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive,
 	INTERNAL::vulkan::VulkanPipeline &pipelineImage,
 	GLFWwindow* window,
-	int width, int height)
+	int width, int height,
+	uint32_t imageIndex)
 {
 	m_layoutPrimitive = pipelinePrimitive.getLayout();
 	m_ppipelinePrimitive = &pipelinePrimitive;
@@ -41,6 +42,22 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 24, sizeof(float) * 2, pushConstants);
 
 	glfwGetWindowContentScale(window, &m_windowXScale, &m_windowYScale);
+
+	for (size_t i = 0; i < m_delayedBufferDeletes[imageIndex].getLength(); i++)
+	{
+		vkDestroyBuffer(m_pdevice->getDevice(), m_delayedBufferDeletes[imageIndex][i].m_buffer, nullptr);
+		vkFreeMemory   (m_pdevice->getDevice(), m_delayedBufferDeletes[imageIndex][i].m_memory, nullptr);
+	}
+	m_delayedBufferDeletes[imageIndex].clear();
+	m_imageIndex = imageIndex;
+}
+
+void bbe::PrimitiveBrush2D::INTERNAL_init(const uint32_t amountOfFrames)
+{
+	if (m_delayedBufferDeletes.getLength() < amountOfFrames)
+	{
+		m_delayedBufferDeletes.resizeCapacityAndLength(amountOfFrames);
+	}
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_bindRectBuffers()
@@ -51,8 +68,6 @@ void bbe::PrimitiveBrush2D::INTERNAL_bindRectBuffers()
 
 	buffer = Rectangle::s_indexBuffer.getBuffer();
 	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
-
-	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotation, float outlineWidth, FragmentShader* shader)
@@ -270,6 +285,11 @@ void bbe::PrimitiveBrush2D::drawImage(float x, float y, float width, float heigh
 void bbe::PrimitiveBrush2D::drawImage(const Vector2& pos, float width, float height, const Image& image, float rotation)
 {
 	INTERNAL_drawImage(Rectangle(pos.x, pos.y, width, height), image, rotation);
+}
+
+void bbe::PrimitiveBrush2D::fillTriangle(const Vector2& a, const Vector2& b, const Vector2& c)
+{
+	fillVertexIndexList({ 0, 1, 2 }, { a, b, c });
 }
 
 void bbe::PrimitiveBrush2D::drawImage(float x, float y, const Vector2& dimensions, const Image& image, float rotation)
@@ -500,4 +520,56 @@ VkCommandBuffer bbe::PrimitiveBrush2D::INTERNAL_getCurrentCommandBuffer()
 VkPipelineLayout bbe::PrimitiveBrush2D::INTERNAL_getLayoutPrimitive()
 {
 	return m_layoutPrimitive;
+}
+
+void bbe::PrimitiveBrush2D::fillVertexIndexList(const bbe::List<uint32_t>& indices, const bbe::List<bbe::Vector2>& vertices)
+{
+	fillVertexIndexList(indices.getRaw(), indices.getLength(), vertices.getRaw(), vertices.getLength());
+}
+
+void bbe::PrimitiveBrush2D::fillVertexIndexList(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, uint32_t amountOfVertices)
+{
+	// These two asserts make sure that we can cast the vertices array to a float array.
+	static_assert(alignof(bbe::Vector2) == alignof(float));
+	static_assert(sizeof(bbe::Vector2) == 2 * sizeof(float));
+
+	bbe::INTERNAL::vulkan::VulkanBuffer indexBuffer;
+	bbe::INTERNAL::vulkan::VulkanBuffer vertexBuffer;
+	indexBuffer.create(m_pdevice->getDevice(), m_pdevice->getPhysicalDevice(), sizeof(uint32_t) * amountOfIndices, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+	void* indexDataBuf = indexBuffer.map();
+	memcpy(indexDataBuf, indices, sizeof(uint32_t) * amountOfIndices);
+	indexBuffer.unmap();
+
+	vertexBuffer.create(m_pdevice->getDevice(), m_pdevice->getPhysicalDevice(), sizeof(Vector2) * amountOfVertices, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	void* vertexDataBuf = vertexBuffer.map();
+	memcpy(vertexDataBuf, (float*)vertices, sizeof(Vector2) * amountOfVertices);
+	vertexBuffer.unmap();
+
+	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
+	{
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(m_fillMode));
+		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
+	}
+
+	float pushConstants[] = {
+		m_offset.x * m_windowXScale,
+		m_offset.y * m_windowYScale,
+		m_windowXScale,
+		m_windowYScale,
+		0
+	};
+	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
+
+	VkDeviceSize offsets[] = { 0 };
+	VkBuffer buffer = vertexBuffer.getBuffer();
+	vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
+
+	buffer = indexBuffer.getBuffer();
+	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+
+	vkCmdDrawIndexed(m_currentCommandBuffer, amountOfIndices, 1, 0, 0, 0);
+
+	m_delayedBufferDeletes[m_imageIndex].add({ indexBuffer .getBuffer(), indexBuffer .getMemory() });
+	m_delayedBufferDeletes[m_imageIndex].add({ vertexBuffer.getBuffer(), vertexBuffer.getMemory() });
 }

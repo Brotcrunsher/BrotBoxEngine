@@ -40,6 +40,7 @@ namespace bbe
 				void copy(const VulkanBuffer &other, VkCommandPool commandPool, VkQueue queue);
 
 				VkBuffer getBuffer() const;
+				VkDeviceMemory getMemory() const;
 				VkDeviceSize getSize() const;
 
 				bool isUsable();
