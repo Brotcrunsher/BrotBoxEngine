@@ -174,6 +174,18 @@ void bbe::PrimitiveBrush2D::INTERNAL_setColor(float r, float g, float b, float a
 	}
 }
 
+void bbe::PrimitiveBrush2D::INTERNAL_destroy()
+{
+	for (size_t i = 0; i < m_delayedBufferDeletes.getLength(); i++)
+	{
+		for (size_t k = 0; k < m_delayedBufferDeletes[i].getLength(); k++)
+		{
+			vkDestroyBuffer(m_pdevice->getDevice(), m_delayedBufferDeletes[i][k].m_buffer, nullptr);
+			vkFreeMemory   (m_pdevice->getDevice(), m_delayedBufferDeletes[i][k].m_memory, nullptr);
+		}
+	}
+}
+
 bbe::PrimitiveBrush2D::PrimitiveBrush2D()
 {
 	m_screenHeight = -1;
@@ -332,6 +344,38 @@ void bbe::PrimitiveBrush2D::fillBezierCurve(const Vector2& startPoint, const Vec
 	fillBezierCurve(BezierCurve2(startPoint, endPoint, control));
 }
 
+void bbe::PrimitiveBrush2D::fillArrow(const Vector2& p1, const Vector2& p2, float tailWidth, float spikeInnerLength, float spikeOuterLength, float spikeAngle, bool dynamicSpikeLength)
+{
+	const Vector2 dir = p2 - p1;
+	const Vector2 dirNorm = dir.normalize();
+	const Vector2 leftNorm = dirNorm.rotate90CounterClockwise();
+
+	if (dynamicSpikeLength)
+	{
+		const float dirLength = dir.getLength();
+		if (dirLength < spikeInnerLength)
+		{
+			const float ratio = dirLength / spikeInnerLength;
+			spikeInnerLength = dirLength;
+			spikeOuterLength *= ratio;
+		}
+	}
+
+	const Vector2 spikeStart = p2 - dirNorm * spikeInnerLength;
+	const Vector2 tailEndLeft = spikeStart + leftNorm * tailWidth * 0.5f;
+	const Vector2 tailEndRight = spikeStart - leftNorm * tailWidth * 0.5f;
+	const Vector2 tailStartLeft = p1 + leftNorm * tailWidth * 0.5f;
+	const Vector2 tailStartRight = p1 - leftNorm * tailWidth * 0.5f;
+
+	const Vector2 spikeStartLeft  = (spikeStart - p2).withLenght(spikeOuterLength).rotate(+spikeAngle) + p2;
+	const Vector2 spikeStartRight = (spikeStart - p2).withLenght(spikeOuterLength).rotate(-spikeAngle) + p2;
+
+	const Vector2 tailSpikeIntersectionLeft  = bbe::Line2{ tailStartLeft,  tailEndLeft } .getIntersection(bbe::Line2{ spikeStart, spikeStartLeft });
+	const Vector2 tailSpikeIntersectionRight = bbe::Line2{ tailStartRight, tailEndRight }.getIntersection(bbe::Line2{ spikeStart, spikeStartRight });
+
+	fillVertexIndexList({0, 4, 6, 1, 6, 5, 0, 6, 1, 2, 0, 1, 2, 1, 3}, { tailSpikeIntersectionLeft, tailSpikeIntersectionRight, tailStartLeft, tailStartRight, spikeStartLeft, spikeStartRight, p2});
+}
+
 void bbe::PrimitiveBrush2D::fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const Vector2& control1, const Vector2& control2)
 {
 	fillBezierCurve(BezierCurve2(startPoint, endPoint, control1, control2));
@@ -361,6 +405,11 @@ void bbe::PrimitiveBrush2D::fillLine(const Vector2& p1, const Vector2& p2, float
 	const float angle = dir.getAngle() - bbe::Math::toRadians(90);
 
 	fillRect(rect, angle);
+}
+
+void bbe::PrimitiveBrush2D::fillLine(const Line2& line, float lineWidth)
+{
+	fillLine(line.m_start, line.m_stop, lineWidth);
 }
 
 void bbe::PrimitiveBrush2D::fillLineStrip(const bbe::List<bbe::Vector2> &points, bool closed, float lineWidth)

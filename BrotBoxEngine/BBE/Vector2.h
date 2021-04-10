@@ -206,6 +206,11 @@ namespace bbe
 			return x == 0 && y == 0;
 		}
 
+		T cross(const Vector2_t& other) const
+		{
+			return this->x * other.y - this->y * other.x;
+		}
+
 		Vector2_t rotate(T radians) const
 		{
 			T sin = Math::sin(radians);

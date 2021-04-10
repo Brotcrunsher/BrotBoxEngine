@@ -149,6 +149,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
 	
+	m_primitiveBrush2D.INTERNAL_destroy();
+
 	m_imguiManager.destroy();
 
 	//m_renderPassStopWatch.destroy();
