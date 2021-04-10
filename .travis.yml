@@ -58,6 +58,9 @@ script:
   - cmake --build . --target ExampleTextRendering
   - cmake --build . --target ExampleWaveDrawer
   
+  - cmake --build . --target BrotBoxEngineGTest
+  - cmake --build . --target BrotBoxEngineTest
+  
   - cd bin
   - ./BrotBoxEngineGTest
   - ./BrotBoxEngineTest
