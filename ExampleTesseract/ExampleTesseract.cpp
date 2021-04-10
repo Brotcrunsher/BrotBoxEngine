@@ -37,7 +37,7 @@ class MyGame : public bbe::Game
 
 	void moveShape(bbe::Rectangle &shape, const bbe::Vector2 &speed, float timeSinceLastFrame)
 	{
-		shape.setX(bbe::Math::clamp(shape.getX() + speed.x * timeSinceLastFrame, 0, WINDOW_WIDTH - shape.getWidth()));
+		shape.setX(bbe::Math::clamp(shape.getX() + speed.x * timeSinceLastFrame, 0.f, WINDOW_WIDTH - shape.getWidth()));
 		for (const Barricade& b : barricades)
 		{
 			if (b.shape.intersects(shape))
@@ -52,7 +52,7 @@ class MyGame : public bbe::Game
 				}
 			}
 		}
-		shape.setY(bbe::Math::clamp(shape.getY() + speed.y * timeSinceLastFrame, 0, WINDOW_HEIGHT - shape.getHeight()));
+		shape.setY(bbe::Math::clamp(shape.getY() + speed.y * timeSinceLastFrame, 0.f, WINDOW_HEIGHT - shape.getHeight()));
 		for (const Barricade& b : barricades)
 		{
 			if (b.shape.intersects(shape))
