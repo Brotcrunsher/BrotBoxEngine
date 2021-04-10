@@ -27,24 +27,37 @@ script:
   - mkdir cmakebuild
   - cd cmakebuild
   - cmake -DCMAKE_C_COMPILER=/usr/bin/gcc-10 -DCMAKE_CXX_COMPILER=/usr/bin/g++-10 ..
+  
+  - cmake --build . --target Example2DPhysicsBallPit
+  - cmake --build . --target Example2DPhysicsChainReaction
   - cmake --build . --target Example3D
-  - cmake --build . --target ExampleTerrain
+  - cmake --build . --target ExampleBalloonGame
+  - cmake --build . --target ExampleConvexHull
+  - cmake --build . --target ExampleCurves
+  - cmake --build . --target ExampleDivergence
+  - cmake --build . --target ExampleDoublePendulum
+  - cmake --build . --target ExampleFlowField
+  - cmake --build . --target ExampleFluidSimulation
   - cmake --build . --target ExampleMandelbrot
   - cmake --build . --target ExampleMandelbrotShader
   - cmake --build . --target ExampleParticleGravity
+  - cmake --build . --target ExampleParticleLife
+  - cmake --build . --target ExamplePixelObserver
+  - cmake --build . --target ExampleRotatingCubeIntersections
+  - cmake --build . --target ExampleRotatingRectangleIntersections
+  - cmake --build . --target ExampleSandGame
+  - cmake --build . --target ExampleSignedDistanceField
   - cmake --build . --target ExampleSnake
   - cmake --build . --target ExampleSnake3D
   - cmake --build . --target ExampleSound
-  - cmake --build . --target ExampleCurves
-  - cmake --build . --target ExampleTextRendering
-  - cmake --build . --target ExampleBalloonGame
-  - cmake --build . --target ExampleSignedDistanceField
-  - cmake --build . --target Example2DPhysicsBallPit
-  - cmake --build . --target Example2DPhysicsChainReaction
+  - cmake --build . --target ExampleSoundDataSource
   - cmake --build . --target ExampleStreamCountdown
   - cmake --build . --target ExampleTemplate
-  - cmake --build . --target BrotBoxEngineGTest
-  - cmake --build . --target BrotBoxEngineTest
+  - cmake --build . --target ExampleTerrain
+  - cmake --build . --target ExampleTesseract
+  - cmake --build . --target ExampleTextRendering
+  - cmake --build . --target ExampleWaveDrawer
+  
   - cd bin
   - ./BrotBoxEngineGTest
   - ./BrotBoxEngineTest
