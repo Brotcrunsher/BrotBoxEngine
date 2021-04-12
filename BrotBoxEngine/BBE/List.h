@@ -519,9 +519,12 @@ namespace bbe
 
 		void clear()
 		{
-			for (size_t i = 0; i < m_length; i++)
+			if (!std::is_trivially_destructible_v<T>)
 			{
-				(&(m_pdata[i].m_value))->~T();
+				for (size_t i = 0; i < m_length; i++)
+				{
+					(&(m_pdata[i].m_value))->~T();
+				}
 			}
 			m_length = 0;
 		}
@@ -567,7 +570,14 @@ namespace bbe
 			//UNTESTED
 			static_assert(std::is_same<dummyT, T>::value, "Do not specify dummyT!");
 			resizeCapacity(newCapacity);
-			add(T(), newCapacity - m_length);
+			if constexpr (std::is_trivially_constructible_v<T>)
+			{
+				m_length = newCapacity;
+			}
+			else
+			{
+				add(T(), newCapacity - m_length);
+			}
 		}
 
 		void resizeCapacity(size_t newCapacity)
