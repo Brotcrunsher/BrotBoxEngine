@@ -39,6 +39,24 @@ uint32_t bbe::INTERNAL::vulkan::VulkanPhysicalDevice::findBestCompleteQueueIndex
 	          //TODO check if VK_QUEUE_GRAPHICS_BIT is supported via vkGetPhysicalDeviceQueueFamilyProperties
 }
 
+uint32_t bbe::INTERNAL::vulkan::VulkanPhysicalDevice::getMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags memoryPropertyFlags) const
+{
+	for (uint32_t i = 0; i < m_memoryProperties.memoryTypeCount; i++)
+	{
+		if (typeBits & 1)
+		{
+			if ((m_memoryProperties.memoryTypes[i].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags)
+			{
+				return i;
+			}
+		}
+		typeBits = typeBits >> 1;
+	}
+
+	ASSERT_VULKAN(false);
+	return 0;
+}
+
 VkPhysicalDevice bbe::INTERNAL::vulkan::VulkanPhysicalDevice::getDevice() const
 {
 	return m_device;

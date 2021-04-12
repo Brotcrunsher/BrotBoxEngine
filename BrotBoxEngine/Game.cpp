@@ -263,3 +263,8 @@ bbe::PhysWorld* bbe::Game::getPhysWorld()
 {
 	return &m_physWorld;
 }
+
+void bbe::Game::screenshot(const char* path)
+{
+	m_pwindow->screenshot(path);
+}

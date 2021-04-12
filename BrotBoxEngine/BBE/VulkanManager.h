@@ -33,6 +33,19 @@ namespace bbe
 		{
 			class VulkanManager {
 			public:
+				struct ScreenshotFirstStage
+				{
+					VkDevice            device;
+					VkDeviceMemory      dstImageMemory;
+					VkImage             dstImage;
+					VkSubresourceLayout subResourceLayout;
+					VkFormat            format;
+					uint32_t            height;
+					uint32_t            width;
+
+					unsigned char* toPixelData();
+				};
+			public:
 				static VulkanManager* s_pinstance;
 			private:
 				VulkanInstance          m_instance;
@@ -92,6 +105,9 @@ namespace bbe
 
 				ImguiManager m_imguiManager;
 
+			private:
+				ScreenshotFirstStage getRawScreenshot();
+
 			public:
 				VulkanManager();
 
@@ -120,6 +136,8 @@ namespace bbe
 				VulkanDevice& getVulkanDevice();
 				VulkanRenderPass& getVulkanRenderPass();
 				VulkanShader& getVertexShader2DPrimitive();
+
+				void screenshot(const char* path);
 			};
 		}
 	}

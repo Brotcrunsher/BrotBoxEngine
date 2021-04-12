@@ -9,6 +9,11 @@
 #include "BBE/PointLight.h"
 #include "BBE/Profiler.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "../Third-Party/stb/stb_image_write.h"
+
+#include <future>
+#include <fstream>
 #include <iostream>
 
 bbe::INTERNAL::vulkan::VulkanManager *bbe::INTERNAL::vulkan::VulkanManager::s_pinstance = nullptr;
@@ -520,3 +525,223 @@ bbe::INTERNAL::vulkan::VulkanShader& bbe::INTERNAL::vulkan::VulkanManager::getVe
 	return m_vertexShader2DPrimitive;
 }
 
+static void insertImageMemoryBarrier(
+	VkCommandBuffer cmdbuffer,
+	VkImage image,
+	VkAccessFlags srcAccessMask,
+	VkAccessFlags dstAccessMask,
+	VkImageLayout oldImageLayout,
+	VkImageLayout newImageLayout,
+	VkPipelineStageFlags srcStageMask,
+	VkPipelineStageFlags dstStageMask,
+	VkImageSubresourceRange subresourceRange)
+{
+	VkImageMemoryBarrier imageMemoryBarrier = {};
+	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imageMemoryBarrier.srcAccessMask = srcAccessMask;
+	imageMemoryBarrier.dstAccessMask = dstAccessMask;
+	imageMemoryBarrier.oldLayout = oldImageLayout;
+	imageMemoryBarrier.newLayout = newImageLayout;
+	imageMemoryBarrier.image = image;
+	imageMemoryBarrier.subresourceRange = subresourceRange;
+
+	vkCmdPipelineBarrier(
+		cmdbuffer,
+		srcStageMask,
+		dstStageMask,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &imageMemoryBarrier);
+}
+
+static void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, VkCommandPool pool, VkDevice device)
+{
+	if (commandBuffer == VK_NULL_HANDLE)
+	{
+		return;
+	}
+
+	ASSERT_VULKAN(vkEndCommandBuffer(commandBuffer));
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	VkFenceCreateInfo fenceInfo = {};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	VkFence fence;
+	ASSERT_VULKAN(vkCreateFence(device, &fenceInfo, nullptr, &fence));
+
+	ASSERT_VULKAN(vkQueueSubmit(queue, 1, &submitInfo, fence));
+
+	ASSERT_VULKAN(vkWaitForFences(device, 1, &fence, VK_TRUE, 100000000));
+	vkDestroyFence(device, fence, nullptr);
+	vkFreeCommandBuffers(device, pool, 1, &commandBuffer);
+}
+
+bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage bbe::INTERNAL::vulkan::VulkanManager::getRawScreenshot()
+{
+	ScreenshotFirstStage screenshotFirstStage = {};
+	screenshotFirstStage.device = m_device.getDevice();
+	screenshotFirstStage.subResourceLayout;
+	screenshotFirstStage.format = m_device.getFormat();
+	screenshotFirstStage.height = m_screenHeight;
+	screenshotFirstStage.width = m_screenWidth;
+
+	VkImage srcImage = m_swapchain.getImage(m_imageIndex);
+
+	VkImageCreateInfo imageCreateCI = {};
+	imageCreateCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageCreateCI.imageType = VK_IMAGE_TYPE_2D;
+	imageCreateCI.format = VK_FORMAT_R8G8B8A8_UNORM;
+	imageCreateCI.extent.width = m_screenWidth;
+	imageCreateCI.extent.height = m_screenHeight;
+	imageCreateCI.extent.depth = 1;
+	imageCreateCI.arrayLayers = 1;
+	imageCreateCI.mipLevels = 1;
+	imageCreateCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageCreateCI.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageCreateCI.tiling = VK_IMAGE_TILING_LINEAR;
+	imageCreateCI.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	ASSERT_VULKAN(vkCreateImage(m_device.getDevice(), &imageCreateCI, nullptr, &screenshotFirstStage.dstImage));
+	VkMemoryRequirements memRequirements;
+	VkMemoryAllocateInfo memAllocInfo{};
+	memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	vkGetImageMemoryRequirements(m_device.getDevice(), screenshotFirstStage.dstImage, &memRequirements);
+	memAllocInfo.allocationSize = memRequirements.size;
+	memAllocInfo.memoryTypeIndex = m_physicalDeviceContainer.findBestDevice(m_surface).getMemoryTypeIndex(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	ASSERT_VULKAN(vkAllocateMemory(m_device.getDevice(), &memAllocInfo, nullptr, &screenshotFirstStage.dstImageMemory));
+	ASSERT_VULKAN(vkBindImageMemory(m_device.getDevice(), screenshotFirstStage.dstImage, screenshotFirstStage.dstImageMemory, 0));
+
+	VkCommandBuffer copyCmd = startSingleTimeCommandBuffer(m_device.getDevice(), m_commandPool.getCommandPool());
+
+	insertImageMemoryBarrier(
+		copyCmd,
+		screenshotFirstStage.dstImage,
+		0,
+		VK_ACCESS_TRANSFER_WRITE_BIT,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+	insertImageMemoryBarrier(
+		copyCmd,
+		srcImage,
+		VK_ACCESS_MEMORY_READ_BIT,
+		VK_ACCESS_TRANSFER_READ_BIT,
+		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+
+	VkImageCopy imageCopyRegion{};
+	imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageCopyRegion.srcSubresource.layerCount = 1;
+	imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageCopyRegion.dstSubresource.layerCount = 1;
+	imageCopyRegion.extent.width = m_screenWidth;
+	imageCopyRegion.extent.height = m_screenHeight;
+	imageCopyRegion.extent.depth = 1;
+
+	vkCmdCopyImage(
+		copyCmd,
+		srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		screenshotFirstStage.dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1,
+		&imageCopyRegion);
+
+	insertImageMemoryBarrier(
+		copyCmd,
+		screenshotFirstStage.dstImage,
+		VK_ACCESS_TRANSFER_WRITE_BIT,
+		VK_ACCESS_MEMORY_READ_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_GENERAL,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+	insertImageMemoryBarrier(
+		copyCmd,
+		srcImage,
+		VK_ACCESS_TRANSFER_READ_BIT,
+		VK_ACCESS_MEMORY_READ_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+	flushCommandBuffer(copyCmd, m_device.getQueue(), m_commandPool.getCommandPool(), m_device.getDevice());
+
+	VkImageSubresource subResource{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
+	vkGetImageSubresourceLayout(m_device.getDevice(), screenshotFirstStage.dstImage, &subResource, &screenshotFirstStage.subResourceLayout);
+
+	return screenshotFirstStage;
+}
+
+static void writeThread(const char* path, bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage screenshotFirstStage)
+{
+	const unsigned char* rawScreenshot = screenshotFirstStage.toPixelData();
+	stbi_write_png(path, screenshotFirstStage.width, screenshotFirstStage.height, 3, rawScreenshot, 0);
+	delete[] rawScreenshot;
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::screenshot(const char* path)
+{
+	ScreenshotFirstStage screenshotFirstStage = getRawScreenshot();
+	
+	static std::future<void> f; // The future has to be stored in a variable that is not destroyed (at least temporarily). If it doesn't then
+                                // (in some situations) the compiler has to wait in the destructor of the future until the thread ends.
+	                            // For more info, see: https://scottmeyers.blogspot.com/2013/03/stdfutures-from-stdasync-arent-special.html
+	f = std::async(std::launch::async, &writeThread, path, screenshotFirstStage);
+	
+}
+
+unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData()
+{
+	unsigned char* data;
+	vkMapMemory(device, dstImageMemory, 0, VK_WHOLE_SIZE, 0, (void**)&data);
+	data += subResourceLayout.offset;
+
+	unsigned char* retVal = new unsigned char[height * width * 3u];
+	unsigned char* writeHead = retVal;
+	std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
+	bool colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), format) != formatsBGR.end());
+
+	for (uint32_t y = 0; y < height; y++)
+	{
+		unsigned char* row = data;
+		for (uint32_t x = 0; x < width; x++)
+		{
+			if (colorSwizzle)
+			{
+				*writeHead = *(row + 2); writeHead++;
+				*writeHead = *(row + 1); writeHead++;
+				*writeHead = *(row + 0); writeHead++;
+			}
+			else
+			{
+				*writeHead = *(row + 0); writeHead++;
+				*writeHead = *(row + 1); writeHead++;
+				*writeHead = *(row + 2); writeHead++;
+			}
+			row += 4;
+		}
+		data += subResourceLayout.rowPitch;
+	}
+
+	vkUnmapMemory(device, dstImageMemory);
+	vkFreeMemory(device, dstImageMemory, nullptr);
+	vkDestroyImage(device, dstImage, nullptr);
+
+	return retVal;
+}

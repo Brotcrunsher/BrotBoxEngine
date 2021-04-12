@@ -202,6 +202,11 @@ void bbe::Window::INTERNAL_resize(int width, int height)
 	m_vulkanManager.resize(width, height);
 }
 
+void bbe::Window::screenshot(const char* path)
+{
+	m_vulkanManager.screenshot(path);
+}
+
 void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, int action, int mods)
 {
 	ImGui_ImplGlfw_KeyCallback(window, keyCode, scanCode, action, mods);

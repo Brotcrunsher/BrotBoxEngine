@@ -88,5 +88,7 @@ namespace bbe
 		void setCursorMode(bbe::CursorMode cm);
 
 		PhysWorld* getPhysWorld();
+
+		void screenshot(const char* path);
 	};
 }

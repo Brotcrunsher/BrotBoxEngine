@@ -36,6 +36,7 @@ namespace bbe
 
 
 				uint32_t findBestCompleteQueueIndex() const;
+				uint32_t getMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags memoryPropertyFlags) const;
 
 				VkPhysicalDevice getDevice() const;
 			};

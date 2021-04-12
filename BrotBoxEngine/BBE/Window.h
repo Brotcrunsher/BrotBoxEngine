@@ -61,6 +61,8 @@ namespace bbe
 		Keyboard INTERNAL_keyboard;
 		Mouse INTERNAL_mouse;
 		void INTERNAL_resize(int width, int height);
+
+		void screenshot(const char* path);
 	};
 
 

@@ -44,6 +44,8 @@ namespace bbe
 
 				VkSwapchainKHR getSwapchain() const;
 
+				VkImage getImage(size_t index) const;
+
 			private:
 				void createImageViews(VkFormat deviceFormat);
 

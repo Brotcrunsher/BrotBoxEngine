@@ -127,6 +127,11 @@ VkSwapchainKHR bbe::INTERNAL::vulkan::VulkanSwapchain::getSwapchain() const
 	return m_swapchain;
 }
 
+VkImage bbe::INTERNAL::vulkan::VulkanSwapchain::getImage(size_t index) const
+{
+	return m_pswapchainImages[index];
+}
+
 void bbe::INTERNAL::vulkan::VulkanSwapchain::createImageViews(VkFormat deviceFormat)
 {
 	vkGetSwapchainImagesKHR(m_device, m_swapchain, &m_amountOfImages, nullptr);
