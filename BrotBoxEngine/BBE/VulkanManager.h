@@ -1,4 +1,5 @@
 #pragma once
+#include <future>
 
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
@@ -96,6 +97,8 @@ namespace bbe
 				GLFWwindow               *m_pwindow = nullptr;
 				PrimitiveBrush2D          m_primitiveBrush2D;
 				bbe::List<PrimitiveBrush3D> m_primitiveBrushes3D;
+
+				bbe::List<std::future<void>> screenshotFutures;
 
 				uint32_t m_screenWidth;
 				uint32_t m_screenHeight;

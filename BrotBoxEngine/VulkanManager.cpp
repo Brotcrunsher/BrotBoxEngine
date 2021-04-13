@@ -151,6 +151,11 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 
 void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 {
+	for (size_t i = 0; i < screenshotFutures.getLength(); i++)
+	{
+		screenshotFutures[i].wait();
+	}
+
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
 	
@@ -697,13 +702,17 @@ static void writeThread(const char* path, bbe::INTERNAL::vulkan::VulkanManager::
 
 void bbe::INTERNAL::vulkan::VulkanManager::screenshot(const char* path)
 {
+	while (screenshotFutures.getLength() > 16)
+	{
+		screenshotFutures[0].wait();
+		screenshotFutures.removeIndex(0);
+	}
+
 	ScreenshotFirstStage screenshotFirstStage = getRawScreenshot();
-	
-	static std::future<void> f; // The future has to be stored in a variable that is not destroyed (at least temporarily). If it doesn't then
-                                // (in some situations) the compiler has to wait in the destructor of the future until the thread ends.
-	                            // For more info, see: https://scottmeyers.blogspot.com/2013/03/stdfutures-from-stdasync-arent-special.html
-	f = std::async(std::launch::async, &writeThread, path, screenshotFirstStage);
-	
+	// The future has to be stored in a variable that is not destroyed (at least temporarily). If it doesn't then
+	// (in some situations) the compiler has to wait in the destructor of the future until the thread ends.
+	// For more info, see: https://scottmeyers.blogspot.com/2013/03/stdfutures-from-stdasync-arent-special.html
+	screenshotFutures.add(std::async(std::launch::async, &writeThread, path, screenshotFirstStage));
 }
 
 unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData()
@@ -717,9 +726,11 @@ unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPix
 	std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
 	bool colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), format) != formatsBGR.end());
 
+#pragma omp simd
 	for (uint32_t y = 0; y < height; y++)
 	{
 		unsigned char* row = data;
+#pragma omp simd
 		for (uint32_t x = 0; x < width; x++)
 		{
 			if (colorSwizzle)
