@@ -44,7 +44,7 @@ namespace bbe
 					uint32_t            height;
 					uint32_t            width;
 
-					unsigned char* toPixelData();
+					unsigned char* toPixelData(bool* outRequiresSwizzle);
 				};
 			public:
 				static VulkanManager* s_pinstance;
@@ -99,6 +99,7 @@ namespace bbe
 				bbe::List<PrimitiveBrush3D> m_primitiveBrushes3D;
 
 				bbe::List<std::future<void>> screenshotFutures;
+				bbe::List<std::shared_future<void>> videoFutures;
 
 				uint32_t m_screenWidth;
 				uint32_t m_screenHeight;
@@ -107,6 +108,7 @@ namespace bbe
 				//VulkanStopWatch m_renderPassStopWatch;
 
 				ImguiManager m_imguiManager;
+				FILE* videoFile = nullptr;
 
 			private:
 				ScreenshotFirstStage getRawScreenshot();
@@ -141,6 +143,9 @@ namespace bbe
 				VulkanShader& getVertexShader2DPrimitive();
 
 				void screenshot(const char* path);
+				void saveVideoFrame();
+				void setVideoRenderingMode(const char* path);
+				void stopRecording();
 			};
 		}
 	}

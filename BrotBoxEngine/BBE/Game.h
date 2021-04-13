@@ -19,11 +19,14 @@ namespace bbe
 	class Game
 	{
 	private:
-		Window*   m_pwindow           = nullptr;
-		bool      m_started           = false;
-		bool      m_externallyManaged = false;
-		GameTime  m_gameTime;
-		PhysWorld m_physWorld = PhysWorld({ 0, -20 });
+		const char* videoRenderingPath  = nullptr;
+		Window*     m_pwindow           = nullptr;
+		bool        m_started           = false;
+		bool        m_externallyManaged = false;
+		uint64_t    m_frameNumber = 0;
+		uint64_t    m_maxFrameNumber = 0;
+		GameTime    m_gameTime;
+		PhysWorld   m_physWorld = PhysWorld({ 0, -20 });
 #ifndef BBE_NO_AUDIO
 		bbe::INTERNAL::SoundManager m_soundManager;
 #endif
@@ -90,5 +93,7 @@ namespace bbe
 		PhysWorld* getPhysWorld();
 
 		void screenshot(const char* path);
+		void setVideoRenderingMode(const char* path);
+		void setMaxFrame(uint64_t maxFrame);
 	};
 }

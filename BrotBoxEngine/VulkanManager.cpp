@@ -12,6 +12,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../Third-Party/stb/stb_image_write.h"
 
+#include "../Third-Party/jo/jo_mpeg.cpp"
+
 #include <future>
 #include <fstream>
 #include <iostream>
@@ -155,6 +157,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	{
 		screenshotFutures[i].wait();
 	}
+	stopRecording();
 
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
@@ -255,6 +258,13 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 {
+	static bool first = true;
+	if (!first)
+	{
+		saveVideoFrame();
+	}
+	first = false;
+
 	m_imguiManager.startFrame();
 
 	vkAcquireNextImageKHR(m_device.getDevice(), m_swapchain.getSwapchain(), std::numeric_limits<uint64_t>::max(), m_semaphoreImageAvailable.getSemaphore(), VK_NULL_HANDLE, &m_imageIndex);
@@ -693,10 +703,31 @@ bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage bbe::INTERNAL::vulkan
 	return screenshotFirstStage;
 }
 
-static void writeThread(const char* path, bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage screenshotFirstStage)
+static void writeThreadScreenshot(const char* path, bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage screenshotFirstStage)
 {
-	const unsigned char* rawScreenshot = screenshotFirstStage.toPixelData();
-	stbi_write_png(path, screenshotFirstStage.width, screenshotFirstStage.height, 3, rawScreenshot, 0);
+	bool requiresSwizzle = false;
+	unsigned char* rawScreenshot = screenshotFirstStage.toPixelData(&requiresSwizzle);
+	if (requiresSwizzle)
+	{
+		unsigned char* swizzleHead = rawScreenshot;
+		for (size_t i = 0; i < screenshotFirstStage.width * screenshotFirstStage.height; i++)
+		{
+			unsigned char temp = swizzleHead[0];
+			swizzleHead[0] = swizzleHead[2];
+			swizzleHead[2] = temp;
+
+			swizzleHead += 4;
+		}
+	}
+
+	unsigned char* alphaHead = rawScreenshot;
+	for (size_t i = 0; i < screenshotFirstStage.width * screenshotFirstStage.height; i++)
+	{
+		alphaHead[3] = 255;
+		alphaHead += 4;
+	}
+
+	stbi_write_png(path, screenshotFirstStage.width, screenshotFirstStage.height, 4, rawScreenshot, 0);
 	delete[] rawScreenshot;
 }
 
@@ -712,43 +743,87 @@ void bbe::INTERNAL::vulkan::VulkanManager::screenshot(const char* path)
 	// The future has to be stored in a variable that is not destroyed (at least temporarily). If it doesn't then
 	// (in some situations) the compiler has to wait in the destructor of the future until the thread ends.
 	// For more info, see: https://scottmeyers.blogspot.com/2013/03/stdfutures-from-stdasync-arent-special.html
-	screenshotFutures.add(std::async(std::launch::async, &writeThread, path, screenshotFirstStage));
+	screenshotFutures.add(std::async(std::launch::async, &writeThreadScreenshot, path, screenshotFirstStage));
 }
 
-unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData()
+static void writeThreadVideo(bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage screenshotFirstStage, FILE *videoFile, std::shared_future<void> previousFrameFuture)
 {
+	bool requiresSwizzle = false;
+	const unsigned char* rawScreenshot = screenshotFirstStage.toPixelData(&requiresSwizzle);
+
+	constexpr size_t bufferSize = 1024 * 1024 * 64;
+	char* buffer = new char[bufferSize];
+	size_t amount = 0;
+	jo_write_mpeg(buffer, bufferSize, amount, rawScreenshot, screenshotFirstStage.width, screenshotFirstStage.height, 60, requiresSwizzle);
+	delete[] rawScreenshot;
+
+	if (previousFrameFuture.valid())
+	{
+		previousFrameFuture.wait();
+	}
+
+	fwrite(buffer, 1, amount, videoFile);
+
+	delete[] buffer;
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::saveVideoFrame()
+{
+	while (videoFutures.getLength() > 128)
+	{
+		videoFutures[0].wait();
+		videoFutures.removeIndex(0);
+	}
+
+	ScreenshotFirstStage screenshotFirstStage = getRawScreenshot();
+	// The future has to be stored in a variable that is not destroyed (at least temporarily). If it doesn't then
+	// (in some situations) the compiler has to wait in the destructor of the future until the thread ends.
+	// For more info, see: https://scottmeyers.blogspot.com/2013/03/stdfutures-from-stdasync-arent-special.html
+	static std::shared_future<void> previousFrameFuture;
+	std::shared_future<void> currentFrameFuture = std::async(std::launch::async, &writeThreadVideo, screenshotFirstStage, videoFile, previousFrameFuture);
+	videoFutures.add(currentFrameFuture);
+	previousFrameFuture = currentFrameFuture;
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::setVideoRenderingMode(const char* path)
+{
+	stopRecording();
+	videoFile = fopen(path, "wb");
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::stopRecording()
+{
+	if (videoFile)
+	{
+		for (size_t i = 0; i < videoFutures.getLength(); i++)
+		{
+			videoFutures[i].wait();
+		}
+		fclose(videoFile);
+	}
+}
+
+unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData(bool* outRequiresSwizzle)
+{
+	if (subResourceLayout.rowPitch != width * 4u)
+	{
+		// This assumption is not conform to the vulkan spec, but in my tests
+		// always held. It makes things much, much more performant as we are
+		// able to simply memcpy the memory.
+		std::cout << "VIDEO PIXEL PANIC!" << std::endl;
+		exit(1);
+	}
 	unsigned char* data;
 	vkMapMemory(device, dstImageMemory, 0, VK_WHOLE_SIZE, 0, (void**)&data);
 	data += subResourceLayout.offset;
 
-	unsigned char* retVal = new unsigned char[height * width * 3u];
-	unsigned char* writeHead = retVal;
+	unsigned char* retVal = new unsigned char[height * width * 4u];
+	memcpy(retVal, data, height * width * 4u);
+
 	std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
 	bool colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), format) != formatsBGR.end());
-
-#pragma omp simd
-	for (uint32_t y = 0; y < height; y++)
-	{
-		unsigned char* row = data;
-#pragma omp simd
-		for (uint32_t x = 0; x < width; x++)
-		{
-			if (colorSwizzle)
-			{
-				*writeHead = *(row + 2); writeHead++;
-				*writeHead = *(row + 1); writeHead++;
-				*writeHead = *(row + 0); writeHead++;
-			}
-			else
-			{
-				*writeHead = *(row + 0); writeHead++;
-				*writeHead = *(row + 1); writeHead++;
-				*writeHead = *(row + 2); writeHead++;
-			}
-			row += 4;
-		}
-		data += subResourceLayout.rowPitch;
-	}
+	
+	if (outRequiresSwizzle) *outRequiresSwizzle = colorSwizzle;
 
 	vkUnmapMemory(device, dstImageMemory);
 	vkFreeMemory(device, dstImageMemory, nullptr);

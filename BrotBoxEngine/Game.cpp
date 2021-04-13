@@ -47,10 +47,16 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 	std::cout << "Calling onStart()" << std::endl;
 	onStart();
 
+	if (videoRenderingPath)
+	{
+		m_pwindow->setVideoRenderingMode(videoRenderingPath);
+	}
+
 	if (!isExternallyManaged())
 	{
-		while (keepAlive())
+		while (keepAlive() && (m_maxFrameNumber == 0 || m_frameNumber < m_maxFrameNumber))
 		{
+			m_frameNumber++;
 			frame();
 		}
 
@@ -69,7 +75,8 @@ void bbe::Game::frame()
 	m_pwindow->INTERNAL_keyboard.update();
 	const bbe::Vector2 globalMousePos = m_pwindow->getGlobalMousePos();
 	m_pwindow->INTERNAL_mouse.update(globalMousePos.x, globalMousePos.y);
-	const float timeSinceLastFrame = m_gameTime.tick();
+	float timeSinceLastFrame = m_gameTime.tick();
+	if (videoRenderingPath) timeSinceLastFrame = 1.f / 60.f;
 	m_physWorld.update(timeSinceLastFrame);
 	update(timeSinceLastFrame);
 
@@ -267,4 +274,19 @@ bbe::PhysWorld* bbe::Game::getPhysWorld()
 void bbe::Game::screenshot(const char* path)
 {
 	m_pwindow->screenshot(path);
+}
+
+void bbe::Game::setVideoRenderingMode(const char* path)
+{
+	if (m_started)
+	{
+		// Video Rendering must be enabled before start()!
+		throw IllegalStateException();
+	}
+	videoRenderingPath = path;
+}
+
+void bbe::Game::setMaxFrame(uint64_t maxFrame)
+{
+	m_maxFrameNumber = maxFrame;
 }

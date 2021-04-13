@@ -63,6 +63,7 @@ namespace bbe
 		void INTERNAL_resize(int width, int height);
 
 		void screenshot(const char* path);
+		void setVideoRenderingMode(const char* path);
 	};
 
 

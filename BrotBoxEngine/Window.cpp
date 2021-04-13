@@ -207,6 +207,11 @@ void bbe::Window::screenshot(const char* path)
 	m_vulkanManager.screenshot(path);
 }
 
+void bbe::Window::setVideoRenderingMode(const char* path)
+{
+	m_vulkanManager.setVideoRenderingMode(path);
+}
+
 void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, int action, int mods)
 {
 	ImGui_ImplGlfw_KeyCallback(window, keyCode, scanCode, action, mods);
