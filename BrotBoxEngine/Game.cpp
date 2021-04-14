@@ -76,7 +76,7 @@ void bbe::Game::frame()
 	const bbe::Vector2 globalMousePos = m_pwindow->getGlobalMousePos();
 	m_pwindow->INTERNAL_mouse.update(globalMousePos.x, globalMousePos.y);
 	float timeSinceLastFrame = m_gameTime.tick();
-	if (videoRenderingPath) timeSinceLastFrame = 1.f / 60.f;
+	if (m_fixedFrameTime != 0.f) timeSinceLastFrame = m_fixedFrameTime;
 	m_physWorld.update(timeSinceLastFrame);
 	update(timeSinceLastFrame);
 
@@ -271,7 +271,7 @@ bbe::PhysWorld* bbe::Game::getPhysWorld()
 	return &m_physWorld;
 }
 
-void bbe::Game::screenshot(const char* path)
+void bbe::Game::screenshot(const bbe::String &path)
 {
 	m_pwindow->screenshot(path);
 }
@@ -284,9 +284,15 @@ void bbe::Game::setVideoRenderingMode(const char* path)
 		throw IllegalStateException();
 	}
 	videoRenderingPath = path;
+	setFixedFrametime(1.f / 60.f);
 }
 
 void bbe::Game::setMaxFrame(uint64_t maxFrame)
 {
 	m_maxFrameNumber = maxFrame;
+}
+
+void bbe::Game::setFixedFrametime(float time)
+{
+	m_fixedFrameTime = time;
 }

@@ -202,7 +202,7 @@ void bbe::Window::INTERNAL_resize(int width, int height)
 	m_vulkanManager.resize(width, height);
 }
 
-void bbe::Window::screenshot(const char* path)
+void bbe::Window::screenshot(const bbe::String& path)
 {
 	m_vulkanManager.screenshot(path);
 }

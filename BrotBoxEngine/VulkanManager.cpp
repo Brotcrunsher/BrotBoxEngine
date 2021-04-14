@@ -15,6 +15,7 @@
 #include "../Third-Party/jo/jo_mpeg.cpp"
 
 #include <future>
+#include <mutex>
 #include <fstream>
 #include <iostream>
 
@@ -258,12 +259,16 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 {
-	static bool first = true;
-	if (!first)
+	if (videoFile)
 	{
-		saveVideoFrame();
+		// Urghs! Hacky!
+		static bool first = true;
+		if (!first)
+		{
+			saveVideoFrame();
+		}
+		first = false;
 	}
-	first = false;
 
 	m_imguiManager.startFrame();
 
@@ -703,7 +708,7 @@ bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage bbe::INTERNAL::vulkan
 	return screenshotFirstStage;
 }
 
-static void writeThreadScreenshot(const char* path, bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage screenshotFirstStage)
+static void writeThreadScreenshot(const bbe::String /*copy*/ path, bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage screenshotFirstStage)
 {
 	bool requiresSwizzle = false;
 	unsigned char* rawScreenshot = screenshotFirstStage.toPixelData(&requiresSwizzle);
@@ -727,11 +732,11 @@ static void writeThreadScreenshot(const char* path, bbe::INTERNAL::vulkan::Vulka
 		alphaHead += 4;
 	}
 
-	stbi_write_png(path, screenshotFirstStage.width, screenshotFirstStage.height, 4, rawScreenshot, 0);
+	stbi_write_png(path.getRaw(), screenshotFirstStage.width, screenshotFirstStage.height, 4, rawScreenshot, 0);
 	delete[] rawScreenshot;
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::screenshot(const char* path)
+void bbe::INTERNAL::vulkan::VulkanManager::screenshot(const bbe::String& path)
 {
 	while (screenshotFutures.getLength() > 16)
 	{
@@ -761,8 +766,12 @@ static void writeThreadVideo(bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFir
 	{
 		previousFrameFuture.wait();
 	}
+	static std::mutex m;
 
-	fwrite(buffer, 1, amount, videoFile);
+	{
+		std::lock_guard lg(m);
+		fwrite(buffer, 1, amount, videoFile);
+	}
 
 	delete[] buffer;
 }

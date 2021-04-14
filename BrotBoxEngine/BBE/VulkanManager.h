@@ -142,7 +142,7 @@ namespace bbe
 				VulkanRenderPass& getVulkanRenderPass();
 				VulkanShader& getVertexShader2DPrimitive();
 
-				void screenshot(const char* path);
+				void screenshot(const bbe::String& path);
 				void saveVideoFrame();
 				void setVideoRenderingMode(const char* path);
 				void stopRecording();

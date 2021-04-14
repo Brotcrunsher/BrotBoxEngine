@@ -62,7 +62,7 @@ namespace bbe
 		Mouse INTERNAL_mouse;
 		void INTERNAL_resize(int width, int height);
 
-		void screenshot(const char* path);
+		void screenshot(const bbe::String& path);
 		void setVideoRenderingMode(const char* path);
 	};
 

@@ -27,6 +27,7 @@ namespace bbe
 		uint64_t    m_maxFrameNumber = 0;
 		GameTime    m_gameTime;
 		PhysWorld   m_physWorld = PhysWorld({ 0, -20 });
+		float       m_fixedFrameTime = 0;
 #ifndef BBE_NO_AUDIO
 		bbe::INTERNAL::SoundManager m_soundManager;
 #endif
@@ -92,8 +93,9 @@ namespace bbe
 
 		PhysWorld* getPhysWorld();
 
-		void screenshot(const char* path);
+		void screenshot(const bbe::String& path);
 		void setVideoRenderingMode(const char* path);
 		void setMaxFrame(uint64_t maxFrame);
+		void setFixedFrametime(float time);
 	};
 }
