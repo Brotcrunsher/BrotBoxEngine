@@ -19,10 +19,11 @@ namespace bbe
 	class Game
 	{
 	private:
-		const char* videoRenderingPath  = nullptr;
-		Window*     m_pwindow           = nullptr;
-		bool        m_started           = false;
-		bool        m_externallyManaged = false;
+		const char* videoRenderingPath      = nullptr;
+		const char* screenshotRenderingPath = nullptr;
+		Window*     m_pwindow               = nullptr;
+		bool        m_started               = false;
+		bool        m_externallyManaged     = false;
 		uint64_t    m_frameNumber = 0;
 		uint64_t    m_maxFrameNumber = 0;
 		GameTime    m_gameTime;
@@ -95,6 +96,7 @@ namespace bbe
 
 		void screenshot(const bbe::String& path);
 		void setVideoRenderingMode(const char* path);
+		void setScreenshotRecordingMode(const char* path = "images/img");
 		void setMaxFrame(uint64_t maxFrame);
 		void setFixedFrametime(float time);
 	};

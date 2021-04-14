@@ -58,6 +58,11 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 		{
 			m_frameNumber++;
 			frame();
+			
+			if (screenshotRenderingPath)
+			{
+				screenshot((bbe::String(screenshotRenderingPath) + m_frameNumber + ".png").getRaw());
+			}
 		}
 
 		shutdown();
@@ -284,6 +289,21 @@ void bbe::Game::setVideoRenderingMode(const char* path)
 		throw IllegalStateException();
 	}
 	videoRenderingPath = path;
+	setFixedFrametime(1.f / 60.f);
+}
+
+void bbe::Game::setScreenshotRecordingMode(const char* path)
+{
+	// If you want to make a movie out of these screenshots,
+	// you can use ffmpeg with the following command:
+	// 
+	// ffmpeg -framerate 60 -f image2 -i 'img%d.png' out.mp4
+	if (m_started)
+	{
+		// Screenshot Recording must be enabled before start()!
+		throw IllegalStateException();
+	}
+	screenshotRenderingPath = path;
 	setFixedFrametime(1.f / 60.f);
 }
 
