@@ -349,6 +349,8 @@ void bbe::Image::destroy()
 		vkDestroyImage(m_device, m_image, nullptr);
 		vkFreeMemory(m_device, m_imageMemory, nullptr);
 
+		m_descriptorrSet.destroy();
+
 		m_image       = VK_NULL_HANDLE;
 		m_imageMemory = VK_NULL_HANDLE;
 		m_imageView   = VK_NULL_HANDLE;

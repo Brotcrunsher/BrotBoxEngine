@@ -34,6 +34,9 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addCombinedImageSampler(const I
 
 void bbe::INTERNAL::vulkan::VulkanDescriptorSet::create(const VulkanDevice &device, const VulkanDescriptorPool & descriptorPool, const VulkanDescriptorSetLayout & setLayout)
 {
+	m_device = device.getDevice();
+	m_descriptorPool = descriptorPool.getDescriptorPool();
+
 	VkDescriptorSetAllocateInfo dsai = {};
 	dsai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	dsai.pNext = nullptr;
@@ -45,6 +48,18 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::create(const VulkanDevice &devi
 	vkAllocateDescriptorSets(device.getDevice(), &dsai, &m_descriptorSet);
 
 	update(device);
+}
+
+void bbe::INTERNAL::vulkan::VulkanDescriptorSet::destroy()
+{
+	if (m_descriptorSet != VK_NULL_HANDLE)
+	{
+		vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_descriptorSet);
+
+		m_descriptorSet  = VK_NULL_HANDLE;
+		m_device         = VK_NULL_HANDLE;
+		m_descriptorPool = VK_NULL_HANDLE;
+	}
 }
 
 void bbe::INTERNAL::vulkan::VulkanDescriptorSet::update(const VulkanDevice & device)
