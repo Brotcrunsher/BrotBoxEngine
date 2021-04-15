@@ -9,6 +9,7 @@
 #include "../BBE/Exceptions.h"
 #include <initializer_list>
 #include <iostream>
+#include <cstring>
 
 namespace bbe
 {
@@ -576,7 +577,7 @@ namespace bbe
 				m_length = newCapacity;
 				if (oldLength != m_length)
 				{
-					memset(getRaw() + oldLength, 0, sizeof(T) * (m_length - oldLength));
+					std::memset(getRaw() + oldLength, 0, sizeof(T) * (m_length - oldLength));
 				}
 			}
 			else
