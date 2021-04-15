@@ -569,10 +569,15 @@ namespace bbe
 		{
 			//UNTESTED
 			static_assert(std::is_same<dummyT, T>::value, "Do not specify dummyT!");
+			const size_t oldLength = getLength();
 			resizeCapacity(newCapacity);
 			if constexpr (std::is_trivially_constructible_v<T>)
 			{
 				m_length = newCapacity;
+				if (oldLength != m_length)
+				{
+					memset(getRaw() + oldLength, 0, sizeof(T) * (m_length - oldLength));
+				}
 			}
 			else
 			{
