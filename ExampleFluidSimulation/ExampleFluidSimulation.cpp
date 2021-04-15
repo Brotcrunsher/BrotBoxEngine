@@ -335,10 +335,6 @@ public:
 
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
-		// TODO: This multi buffering strategy is really ugly and should be taken care of
-		//       by the engine, not by the example code. Problem is that a newly created image
-		//       that lies on the stack crashes the engine because the VkSampler is removed when
-		//       draw2D returns. That's why we need several images here as a work around.
 		bbe::List<float> data;
 		data.resizeCapacityAndLength(square.getWidth() * square.getHeight());
 		for (size_t i = 0; i < square.getWidth(); i++)
