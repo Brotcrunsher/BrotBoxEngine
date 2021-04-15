@@ -65,6 +65,7 @@ namespace bbe
 		Color m_color = Color(-1000, -1000, -1000);
 		Color m_outlineColor = Color(-1000, -1000, -1000);
 		bbe::List<bbe::List<BufferMemoryPair>> m_delayedBufferDeletes;
+		bbe::List<bbe::List<bbe::Image::VulkanData*>> imageDatas;
 		uint32_t m_imageIndex = 0xFFFFFFFF;
 		bbe::Vector2 m_offset = {0, 0};
 

@@ -22,13 +22,13 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 		throw NotInitializedException();
 	}
 
-	m_device = device.getDevice();
+	m_pVulkanData->m_device = device.getDevice();
 	// TODO: uff @static_cast madness...
 	int amountOfMips = static_cast<int>(Math::log2Floor(static_cast<int>(Math::max(static_cast<float>(getWidth()), static_cast<float>(getHeight()))))) + 1;
-	m_imageLayout = std::make_unique<VkImageLayout[]>(amountOfMips); //TODO use allocator
+	m_pVulkanData->m_imageLayout = std::make_unique<VkImageLayout[]>(amountOfMips); //TODO use allocator
 	for (int i = 0; i < amountOfMips; i++)
 	{
-		m_imageLayout[i] = VK_IMAGE_LAYOUT_PREINITIALIZED;
+		m_pVulkanData->m_imageLayout[i] = VK_IMAGE_LAYOUT_PREINITIALIZED;
 	}
 
 	VkDeviceSize imageSize = getSizeInBytes();
@@ -42,19 +42,19 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 
 
 	INTERNAL::vulkan::createImage(
-		m_device, 
+		m_pVulkanData->m_device,
 		device.getPhysicalDevice(), 
 		getWidth(), getHeight(), 
 		(VkFormat)m_format, 
 		VK_IMAGE_TILING_OPTIMAL, 
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-		m_image, m_imageMemory, 
+		m_pVulkanData->m_image, m_pVulkanData->m_imageMemory,
 		amountOfMips);
 
-	changeLayout(m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	writeBufferToImage(m_device, commandPool.getCommandPool(), device.getQueue(), stagingBuffer.getBuffer());
-	changeLayout(m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+	changeLayout(m_pVulkanData->m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	writeBufferToImage(m_pVulkanData->m_device, commandPool.getCommandPool(), device.getQueue(), stagingBuffer.getBuffer());
+	changeLayout(m_pVulkanData->m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
 	for (int i = 1; i < amountOfMips; i++)
 	{
@@ -75,20 +75,20 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 		ib.dstOffsets[1].y = getHeight() >> i;
 		ib.dstOffsets[1].z = 1;
 
-		changeLayout(m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, i);
+		changeLayout(m_pVulkanData->m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, i);
 
 		VkCommandBuffer commandBuffer = INTERNAL::vulkan::startSingleTimeCommandBuffer(device.getDevice(), commandPool.getCommandPool());
-		vkCmdBlitImage(commandBuffer, m_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &ib, VK_FILTER_LINEAR);
+		vkCmdBlitImage(commandBuffer, m_pVulkanData->m_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, m_pVulkanData->m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &ib, VK_FILTER_LINEAR);
 		INTERNAL::vulkan::endSingleTimeCommandBuffer(device.getDevice(), device.getQueue(), commandPool.getCommandPool(), commandBuffer);
 
-		changeLayout(m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, i);
+		changeLayout(m_pVulkanData->m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, i);
 	}
 	
-	changeLayout(m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, amountOfMips);
+	changeLayout(m_pVulkanData->m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, amountOfMips);
 
 	stagingBuffer.destroy();
 
-	INTERNAL::vulkan::createImageView(m_device, m_image, (VkFormat)m_format, VK_IMAGE_ASPECT_COLOR_BIT, m_imageView, amountOfMips);
+	INTERNAL::vulkan::createImageView(m_pVulkanData->m_device, m_pVulkanData->m_image, (VkFormat)m_format, VK_IMAGE_ASPECT_COLOR_BIT, m_pVulkanData->m_imageView, amountOfMips);
 
 	VkSamplerCreateInfo samplerCreateInfo = {};
 	samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -110,7 +110,7 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 	samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
 
-	VkResult result = vkCreateSampler(m_device, &samplerCreateInfo, nullptr, &m_sampler);
+	VkResult result = vkCreateSampler(m_pVulkanData->m_device, &samplerCreateInfo, nullptr, &m_pVulkanData->m_sampler);
 	ASSERT_VULKAN(result);
 
 	m_parentImage = parentImage;
@@ -126,9 +126,9 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 
 void bbe::Image::changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout, uint32_t baseMipLevel, uint32_t levelCount) const
 {
-	INTERNAL::vulkan::changeImageLayout(device, commandPool, queue, m_image, (VkFormat)m_format, this->m_imageLayout[baseMipLevel], layout, baseMipLevel, levelCount);
+	INTERNAL::vulkan::changeImageLayout(device, commandPool, queue, m_pVulkanData->m_image, (VkFormat)m_format, this->m_pVulkanData->m_imageLayout[baseMipLevel], layout, baseMipLevel, levelCount);
 
-	this->m_imageLayout[baseMipLevel] = layout;
+	this->m_pVulkanData->m_imageLayout[baseMipLevel] = layout;
 }
 
 void bbe::Image::writeBufferToImage(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuffer buffer) const
@@ -147,59 +147,64 @@ void bbe::Image::writeBufferToImage(VkDevice device, VkCommandPool commandPool, 
 	bufferImageCopy.imageOffset = { 0, 0, 0 };
 	bufferImageCopy.imageExtent = { (uint32_t)getWidth(), (uint32_t)getHeight(), 1 };
 
-	vkCmdCopyBufferToImage(commandBuffer, buffer, m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &bufferImageCopy);
+	vkCmdCopyBufferToImage(commandBuffer, buffer, m_pVulkanData->m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &bufferImageCopy);
 
 	INTERNAL::vulkan::endSingleTimeCommandBuffer(device, queue, commandPool, commandBuffer);
 }
 
 VkSampler bbe::Image::getSampler() const
 {
-	return m_sampler;
+	return m_pVulkanData->m_sampler;
 }
 
 VkImageView bbe::Image::getImageView() const
 {
-	return m_imageView;
+	return m_pVulkanData->m_imageView;
 }
 
 VkImageLayout bbe::Image::getImageLayout() const
 {
-	return m_imageLayout[0];
+	return m_pVulkanData->m_imageLayout[0];
 }
 
 bbe::INTERNAL::vulkan::VulkanDescriptorSet & bbe::Image::getDescriptorSet() const
 {
 	if (m_parentImage == nullptr)
 	{
-		return m_descriptorrSet;
+		return m_pVulkanData->m_descriptorrSet;
 	}
 	else
 	{
-		return m_parentImage->m_descriptorrSet;
+		return m_parentImage->m_pVulkanData->m_descriptorrSet;
 	}
 }
 
 bbe::Image::Image()
 {
+	m_pVulkanData = new VulkanData();
 }
 
 bbe::Image::Image(const char * path)
 {
+	m_pVulkanData = new VulkanData();
 	load(path);
 }
 
 bbe::Image::Image(int width, int height)
 {
+	m_pVulkanData = new VulkanData();
 	load(width, height);
 }
 
 bbe::Image::Image(int width, int height, const Color & c)
 {
+	m_pVulkanData = new VulkanData();
 	load(width, height, c);
 }
 
 bbe::Image::Image(int width, int height, const float * data, ImageFormat format)
 {
+	m_pVulkanData = new VulkanData();
 	load(width, height, data, format);
 }
 
@@ -219,13 +224,7 @@ bbe::Image& bbe::Image::operator=(Image&& other)
 	this->m_repeatMode = other.m_repeatMode;
 	this->m_filterMode = other.m_filterMode;
 
-	this->m_image = other.m_image;
-	this->m_imageMemory = other.m_imageMemory;
-	this->m_imageView = other.m_imageView;
-	this->m_imageLayout = std::move(other.m_imageLayout);
-	this->m_device = other.m_device;
-	this->m_sampler = other.m_sampler;
-	this->m_descriptorrSet = other.m_descriptorrSet;
+	this->m_pVulkanData = other.m_pVulkanData;
 	this->m_parentImage = other.m_parentImage;
 
 	this->wasUploadedToVulkan = other.wasUploadedToVulkan;
@@ -237,12 +236,7 @@ bbe::Image& bbe::Image::operator=(Image&& other)
 	other.m_repeatMode = (ImageRepeatMode)0;
 	other.m_filterMode = (ImageFilterMode)0;
 
-	other.m_image = 0;
-	other.m_imageMemory = 0;
-	other.m_imageView = 0;
-	other.m_imageLayout = 0;
-	other.m_device = 0;
-	other.m_sampler = 0;
+	other.m_pVulkanData = nullptr;
 	other.m_parentImage = 0;
 
 	other.wasUploadedToVulkan = false;
@@ -341,22 +335,9 @@ void bbe::Image::destroy()
 		wasUploadedToVulkan = false;
 	}
 
-	if(m_sampler != VK_NULL_HANDLE)
+	if(m_pVulkanData)
 	{
-		vkDestroySampler(m_device, m_sampler, nullptr);
-		vkDestroyImageView(m_device, m_imageView, nullptr);
-
-		vkDestroyImage(m_device, m_image, nullptr);
-		vkFreeMemory(m_device, m_imageMemory, nullptr);
-
-		m_descriptorrSet.destroy();
-
-		m_image       = VK_NULL_HANDLE;
-		m_imageMemory = VK_NULL_HANDLE;
-		m_imageView   = VK_NULL_HANDLE;
-		m_imageLayout = nullptr;
-		m_device      = VK_NULL_HANDLE;
-		m_sampler     = VK_NULL_HANDLE;
+		m_pVulkanData->decRef();
 	}
 }
 
@@ -468,4 +449,47 @@ void bbe::Image::setFilterMode(ImageFilterMode ifm)
 bool bbe::Image::isLoaded() const
 {
 	return m_pdata != nullptr;
+}
+
+bbe::Image::VulkanData::VulkanData()
+{
+	incRef();
+}
+
+bbe::Image::VulkanData::~VulkanData()
+{
+	if(m_sampler != VK_NULL_HANDLE)
+	{
+		vkDestroySampler(m_device, m_sampler, nullptr);
+		vkDestroyImageView(m_device, m_imageView, nullptr);
+
+		vkDestroyImage(m_device, m_image, nullptr);
+		vkFreeMemory(m_device, m_imageMemory, nullptr);
+
+		m_descriptorrSet.destroy();
+
+		m_image       = VK_NULL_HANDLE;
+		m_imageMemory = VK_NULL_HANDLE;
+		m_imageView   = VK_NULL_HANDLE;
+		m_imageLayout = nullptr;
+		m_device      = VK_NULL_HANDLE;
+		m_sampler     = VK_NULL_HANDLE;
+	}
+}
+
+void bbe::Image::VulkanData::incRef()
+{
+	m_refCount++;
+}
+
+void bbe::Image::VulkanData::decRef()
+{
+	m_refCount--;
+	if (m_refCount <= 0)
+	{
+		// TODO: Yeah, well... This is standard comform as long as this actually was allocated with new.
+		//       So this is perfectly fine! Except that it's BS of course and I really should write some
+		//       shared Pointer class.
+		delete this;
+	}
 }

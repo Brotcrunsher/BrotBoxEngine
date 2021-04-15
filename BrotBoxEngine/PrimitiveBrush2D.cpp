@@ -50,6 +50,12 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	}
 	m_delayedBufferDeletes[imageIndex].clear();
 	m_imageIndex = imageIndex;
+
+	for (size_t i = 0; i < imageDatas[m_imageIndex].getLength(); i++)
+	{
+		imageDatas[m_imageIndex][i]->decRef();
+	}
+	imageDatas[m_imageIndex].clear();
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_init(const uint32_t amountOfFrames)
@@ -57,6 +63,10 @@ void bbe::PrimitiveBrush2D::INTERNAL_init(const uint32_t amountOfFrames)
 	if (m_delayedBufferDeletes.getLength() < amountOfFrames)
 	{
 		m_delayedBufferDeletes.resizeCapacityAndLength(amountOfFrames);
+	}
+	if (imageDatas.getLength() < amountOfFrames)
+	{
+		imageDatas.resizeCapacityAndLength(amountOfFrames);
 	}
 }
 
@@ -113,6 +123,10 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 
 	image.createAndUpload(*m_pdevice, *m_pcommandPool, *m_pdescriptorPool, *m_pdescriptorSetLayout);
 	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutImage, 0, 1, image.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+
+	auto vulkanData = image.m_pVulkanData;
+	imageDatas[m_imageIndex].add(vulkanData);
+	vulkanData->incRef();
 
 	float pushConstants[] = {
 		(rect.getX() + m_offset.x) * m_windowXScale,
@@ -182,6 +196,14 @@ void bbe::PrimitiveBrush2D::INTERNAL_destroy()
 		{
 			vkDestroyBuffer(m_pdevice->getDevice(), m_delayedBufferDeletes[i][k].m_buffer, nullptr);
 			vkFreeMemory   (m_pdevice->getDevice(), m_delayedBufferDeletes[i][k].m_memory, nullptr);
+		}
+	}
+
+	for (size_t i = 0; i < imageDatas.getLength(); i++)
+	{
+		for (size_t k = 0; k < imageDatas[i].getLength(); k++)
+		{
+			imageDatas[i][k]->decRef();
 		}
 	}
 }

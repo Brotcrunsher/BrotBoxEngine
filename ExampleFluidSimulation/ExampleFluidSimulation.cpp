@@ -286,10 +286,6 @@ public:
 
 	virtual void onStart() override
 	{
-		for (int i = 0; i < 10; i++)
-		{
-			images.add(bbe::Image());
-		}
 	}
 
 	virtual void update(float timeSinceLastFrame) override
@@ -337,7 +333,6 @@ public:
 	{
 	}
 
-	bbe::List<bbe::Image> images;
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
 		// TODO: This multi buffering strategy is really ugly and should be taken care of
@@ -361,12 +356,8 @@ public:
 				c[3] = 255;
 			}
 		}
-		static size_t imageIndex = 0;
-		images[imageIndex] = std::move(bbe::Image(square.getWidth(), square.getHeight(), data.getRaw(), bbe::ImageFormat::R8G8B8A8));
-		brush.drawImage(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, images[imageIndex], 0);
-
-		imageIndex++;
-		if (imageIndex >= images.getLength()) imageIndex = 0;
+		bbe::Image image = bbe::Image(square.getWidth(), square.getHeight(), data.getRaw(), bbe::ImageFormat::R8G8B8A8);
+		brush.drawImage(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, image, 0);
 	}
 
 	virtual void onEnd() override

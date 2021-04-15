@@ -64,13 +64,31 @@ namespace bbe
 		ImageRepeatMode m_repeatMode = ImageRepeatMode::REPEAT;
 		ImageFilterMode m_filterMode = ImageFilterMode::LINEAR;
 
-		mutable VkImage        m_image       = VK_NULL_HANDLE;
-		mutable VkDeviceMemory m_imageMemory = VK_NULL_HANDLE;
-		mutable VkImageView    m_imageView   = VK_NULL_HANDLE;
-		mutable std::unique_ptr<VkImageLayout[]> m_imageLayout = nullptr;
-		mutable VkDevice       m_device      = VK_NULL_HANDLE;
-		mutable VkSampler      m_sampler     = VK_NULL_HANDLE;
-		mutable INTERNAL::vulkan::VulkanDescriptorSet m_descriptorrSet;
+		struct VulkanData
+		{
+			int32_t        m_refCount    = 0;
+			VkImage        m_image       = VK_NULL_HANDLE;
+			VkDeviceMemory m_imageMemory = VK_NULL_HANDLE;
+			VkImageView    m_imageView   = VK_NULL_HANDLE;
+			std::unique_ptr<VkImageLayout[]> m_imageLayout = nullptr;
+			VkDevice       m_device      = VK_NULL_HANDLE;
+			VkSampler      m_sampler     = VK_NULL_HANDLE;
+			INTERNAL::vulkan::VulkanDescriptorSet m_descriptorrSet;
+
+			VulkanData();
+			~VulkanData();
+
+			VulkanData(const VulkanData&) = delete;
+			VulkanData(VulkanData&&) = delete;
+			VulkanData& operator =(const VulkanData&) = delete;
+			VulkanData&& operator ==(const VulkanData&&) = delete;
+
+			void incRef();
+			void decRef();
+		};
+		VulkanData* m_pVulkanData = nullptr;
+
+		
 		mutable const Image*   m_parentImage = nullptr;
 
 		mutable bool wasUploadedToVulkan = false;
