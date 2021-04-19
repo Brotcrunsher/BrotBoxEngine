@@ -315,10 +315,13 @@ public:
 							bbe::Vector2 brushLocation(i, k);
 							if (brushLocation.getLength() <= brushSize)
 							{
-								square.addVelocity(mouseX + i, mouseY + k, (getMouseDelta().x + i) * 0.1f, (getMouseDelta().y + k) * 10.f / amountOfSteps);
-								square.addDensityR(mouseX + i, mouseY + k, color.x * 1.f / amountOfSteps);
-								square.addDensityG(mouseX + i, mouseY + k, color.y * 1.f / amountOfSteps);
-								square.addDensityB(mouseX + i, mouseY + k, color.z * 1.f / amountOfSteps);
+								const float distance = brushLocation.getLength();
+								const float t = distance / brushSize;
+								brushLocation = brushLocation.normalize({ 0, 0 });
+								square.addVelocity(mouseX + i, mouseY + k, (getMouseDelta().x + brushLocation.x) * 10.f, (getMouseDelta().y + brushLocation.y) * 10.f);
+								square.addDensityR(mouseX + i, mouseY + k, bbe::Math::interpolateLinear(color.x * 1.f / amountOfSteps, 0, t));
+								square.addDensityG(mouseX + i, mouseY + k, bbe::Math::interpolateLinear(color.y * 1.f / amountOfSteps, 0, t));
+								square.addDensityB(mouseX + i, mouseY + k, bbe::Math::interpolateLinear(color.z * 1.f / amountOfSteps, 0, t));
 							}
 						}
 					}
