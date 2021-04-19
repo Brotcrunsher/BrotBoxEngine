@@ -8,6 +8,7 @@
 #include "BBE/VertexWithNormal.h"
 #include "BBE/PointLight.h"
 #include "BBE/Profiler.h"
+#include "EmbedOutput.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../Third-Party/stb/stb_image_write.h"
@@ -126,17 +127,16 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_setVertexLight              .create(m_device, m_descriptorPool, m_setLayoutVertexLight);
 	m_setFragmentLight            .create(m_device, m_descriptorPool, m_setLayoutFragmentLight);
 
-
 	std::cout << "Vulkan Manager: Loading Shaders" << std::endl;
-	m_vertexShader2DPrimitive           .init(m_device, BBE_ENGINE_ASSET_PATH "/vert2DPrimitive.spv");
-	m_fragmentShader2DPrimitive         .init(m_device, BBE_ENGINE_ASSET_PATH "/frag2DPrimitive.spv");
-	m_fragmentShader2DImage             .init(m_device, BBE_ENGINE_ASSET_PATH "/frag2DImage.spv");
-	m_vertexShader3DPrimitive           .init(m_device, BBE_ENGINE_ASSET_PATH "/vert3DPrimitive.spv");
-	m_fragmentShader3DPrimitive         .init(m_device, BBE_ENGINE_ASSET_PATH "/frag3DPrimitive.spv");
-	m_vertexShader3DTerrain             .init(m_device, BBE_ENGINE_ASSET_PATH "/vert3DTerrain.spv");
-	m_fragmentShader3DTerrain           .init(m_device, BBE_ENGINE_ASSET_PATH "/frag3DTerrain.spv");
-	m_teseShader3DTerrain               .init(m_device, BBE_ENGINE_ASSET_PATH "/tese3DTerrain.spv");
-	m_tescShader3DTerrain               .init(m_device, BBE_ENGINE_ASSET_PATH "/tesc3DTerrain.spv");
+	m_vertexShader2DPrimitive           .init(m_device, vert2DPrimitive);
+	m_fragmentShader2DPrimitive         .init(m_device, frag2DPrimitive);
+	m_fragmentShader2DImage             .init(m_device, frag2DImage);
+	m_vertexShader3DPrimitive           .init(m_device, vert3DPrimitive);
+	m_fragmentShader3DPrimitive         .init(m_device, frag3DPrimitive);
+	m_vertexShader3DTerrain             .init(m_device, vert3DTerrain);
+	m_fragmentShader3DTerrain           .init(m_device, frag3DTerrain);
+	m_teseShader3DTerrain               .init(m_device, tese3DTerrain);
+	m_tescShader3DTerrain               .init(m_device, tesc3DTerrain);
 
 	std::cout << "Vulkan Manager: creating pipeline" << std::endl;
 	createPipelines();

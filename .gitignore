@@ -249,3 +249,5 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+/BrotBoxEngine/EmbedOutput.cpp
+/BrotBoxEngine/EmbedOutput.h
