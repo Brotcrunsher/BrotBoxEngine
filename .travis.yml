@@ -42,6 +42,7 @@ script:
   - cmake --build . --target ExampleMandelbrotShader
   - cmake --build . --target ExampleParticleGravity
   - cmake --build . --target ExampleParticleLife
+  - cmake --build . --target ExamplePendulumChaosShader
   - cmake --build . --target ExamplePixelObserver
   - cmake --build . --target ExampleRotatingCubeIntersections
   - cmake --build . --target ExampleRotatingRectangleIntersections
