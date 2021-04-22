@@ -86,7 +86,7 @@ namespace bbe
 			void incRef();
 			void decRef();
 		};
-		VulkanData* m_pVulkanData = nullptr;
+		mutable VulkanData* m_pVulkanData = nullptr;
 
 		
 		mutable const Image*   m_parentImage = nullptr;

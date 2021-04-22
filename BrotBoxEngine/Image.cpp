@@ -22,6 +22,13 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 		throw NotInitializedException();
 	}
 
+	if (m_pVulkanData)
+	{
+		throw IllegalStateException();
+	}
+
+	m_pVulkanData = new VulkanData();
+
 	m_pVulkanData->m_device = device.getDevice();
 	// TODO: uff @static_cast madness...
 	int amountOfMips = static_cast<int>(Math::log2Floor(static_cast<int>(Math::max(static_cast<float>(getWidth()), static_cast<float>(getHeight()))))) + 1;
@@ -181,30 +188,25 @@ bbe::INTERNAL::vulkan::VulkanDescriptorSet & bbe::Image::getDescriptorSet() cons
 
 bbe::Image::Image()
 {
-	m_pVulkanData = new VulkanData();
 }
 
 bbe::Image::Image(const char * path)
 {
-	m_pVulkanData = new VulkanData();
 	load(path);
 }
 
 bbe::Image::Image(int width, int height)
 {
-	m_pVulkanData = new VulkanData();
 	load(width, height);
 }
 
 bbe::Image::Image(int width, int height, const Color & c)
 {
-	m_pVulkanData = new VulkanData();
 	load(width, height, c);
 }
 
 bbe::Image::Image(int width, int height, const float * data, ImageFormat format)
 {
-	m_pVulkanData = new VulkanData();
 	load(width, height, data, format);
 }
 
@@ -294,6 +296,8 @@ void bbe::Image::load(int width, int height, const Color & c)
 
 void bbe::Image::load(int width, int height, const float * data, ImageFormat format)
 {
+	destroy();
+
 	m_width = width;
 	m_height = height;
 	m_format = format;
@@ -338,6 +342,7 @@ void bbe::Image::destroy()
 	if(m_pVulkanData)
 	{
 		m_pVulkanData->decRef();
+		m_pVulkanData = nullptr;
 	}
 }
 
