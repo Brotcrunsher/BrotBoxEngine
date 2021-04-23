@@ -40,6 +40,7 @@ script:
   - cmake --build . --target ExampleFluidSimulation
   - cmake --build . --target ExampleMandelbrot
   - cmake --build . --target ExampleMandelbrotShader
+  - cmake --build . --target ExampleNeuralRocket
   - cmake --build . --target ExampleParticleGravity
   - cmake --build . --target ExampleParticleLife
   - cmake --build . --target ExamplePendulumChaosShader
