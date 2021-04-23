@@ -8,7 +8,7 @@ constexpr int32_t WINDOW_HEIGHT = 720;
 constexpr int32_t AMOUNT_OF_SENSOR_ARMS = 64;
 constexpr int32_t AMOUNT_OF_SENSORS_PER_ARM = 1;
 
-static bbe::Random random;
+static bbe::Random bbeRandom;
 static float mutationRate = 0.1f;
 static int32_t maxTick = 1000;
 static bool editMode = true;
@@ -50,10 +50,10 @@ class MyGame : public bbe::Game
 
 		void randomize()
 		{
-			bias = random.randomFloat() * 2 - 1;
+			bias = bbeRandom.randomFloat() * 2 - 1;
 			for (size_t i = 0; i < weights.getLength(); i++)
 			{
-				weights[i] = random.randomFloat() * 2 - 1;
+				weights[i] = bbeRandom.randomFloat() * 2 - 1;
 			}
 		}
 
@@ -61,14 +61,14 @@ class MyGame : public bbe::Game
 		{
 			for (int i = 0; i < amountOfMutations; i++)
 			{
-				size_t mutationIndex = random.randomInt(weights.getLength() + 10);
+				size_t mutationIndex = bbeRandom.randomInt(weights.getLength() + 10);
 				if (mutationIndex >= weights.getLength())
 				{
-					bias += random.randomFloat() * 2.f * mutationRate - mutationRate;
+					bias += bbeRandom.randomFloat() * 2.f * mutationRate - mutationRate;
 				}
 				else
 				{
-					weights[mutationIndex] += random.randomFloat() * 2.f * mutationRate - mutationRate;
+					weights[mutationIndex] += bbeRandom.randomFloat() * 2.f * mutationRate - mutationRate;
 				}
 			}
 		}
@@ -594,7 +594,7 @@ class MyGame : public bbe::Game
 					constexpr int survivors = 50;
 					for (size_t i = 0; i < rockets.getLength() - survivors; i++)
 					{
-						rockets[i] = rockets[random.randomInt(survivors) + rockets.getLength() - survivors];
+						rockets[i] = rockets[bbeRandom.randomInt(survivors) + rockets.getLength() - survivors];
 					}
 					for (size_t i = 0; i < rockets.getLength() - survivors; i++)
 					{
