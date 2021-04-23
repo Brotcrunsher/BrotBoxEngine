@@ -713,6 +713,23 @@ namespace bbe
 			return amount;
 		}
 
+		size_t getBiggestIndex() const
+		{
+			if (getLength() == 0) return (size_t)-1;
+
+			size_t biggestIndex = 0;
+
+			for (size_t i = 1; i < getLength(); i++)
+			{
+				if (operator[](i) > operator[](biggestIndex))
+				{
+					biggestIndex = i;
+				}
+			}
+
+			return biggestIndex;
+		}
+
 		bool contains(const T& t) const
 		{
 			return contains(
