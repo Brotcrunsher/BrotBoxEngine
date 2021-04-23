@@ -500,50 +500,10 @@ class MyGame : public bbe::Game
 		}
 	}
 
-	bbe::List<std::future<Rocket>> rocketFutures;
 	virtual void onStart() override
 	{
 		clearMap();
 		clearRockets();
-		for (int i = 0; i < 8; i++)
-		{
-			rocketFutures.add(std::future<Rocket>());
-		}
-	}
-
-	bool threadStop = false;
-	std::mutex m;
-	void setThreadStop(bool val)
-	{
-		std::lock_guard lg(m);
-		threadStop = val;
-	}
-	
-	bool shoulThreadsStop()
-	{
-		std::lock_guard lg(m);
-		return threadStop;
-	}
-
-	Rocket findBetterRocket(const Rocket parent)
-	{
-		Rocket currentlyBestRocket(parent);
-		
-		while (!shoulThreadsStop())
-		{
-			Rocket newRocket(currentlyBestRocket);
-			newRocket.reset(startPos);
-			for (int32_t i = 0; i < maxTick; i++)
-			{
-				if (isBlocked(newRocket.pos.x, newRocket.pos.y))
-				{
-					break;
-				}
-				newRocket.brainToControl(i);
-			}
-			if (currentlyBestRocket < newRocket) currentlyBestRocket = newRocket;
-		}
-		return currentlyBestRocket;
 	}
 
 	virtual void update(float timeSinceLastFrame) override
@@ -579,14 +539,6 @@ class MyGame : public bbe::Game
 				if (tick >= maxTick || !isAnyoneAlive)
 				{
 					generation++;
-					setThreadStop(true);
-					for (size_t i = 0; i < rocketFutures.getLength(); i++)
-					{
-						if (rocketFutures[i].valid())
-						{
-							rocketFutures[i].wait();
-						}
-					}
 
 					tick = 0;
 					rockets.sort();
@@ -600,23 +552,9 @@ class MyGame : public bbe::Game
 					{
 						rockets[i].mutate();
 					}
-
-					for (size_t i = 0; i < rocketFutures.getLength(); i++)
-					{
-						if (rocketFutures[i].valid())
-						{
-							rockets[i] = rocketFutures[i].get();
-						}
-					}
 					for (size_t i = 0; i < rockets.getLength(); i++)
 					{
 						rockets[i].reset(startPos);
-					}
-
-					setThreadStop(false);
-					for (size_t i = 0; i < rocketFutures.getLength(); i++)
-					{
-						//rocketFutures[i] = std::async(std::launch::async, &MyGame::findBetterRocket, this, rockets.last());
 					}
 				}
 			}
