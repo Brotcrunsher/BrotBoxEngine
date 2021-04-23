@@ -76,6 +76,16 @@ float bbe::Math::sqrt(float val)
 	return ::sqrt(val);
 }
 
+float bbe::Math::sigmoid(float val)
+{
+	return 1.f / (1 + pow(bbe::Math::E, -val));
+}
+
+float bbe::Math::hyperbolicTangent(float val)
+{
+	return sigmoid(val) * 2.f - 1.f;
+}
+
 float bbe::Math::floor(float val)
 {
 	int iVal = (int)val;

@@ -75,6 +75,9 @@ namespace bbe
 			return val * 57.295779513f;
 		}
 
+		float sigmoid(float val);
+		float hyperbolicTangent(float val);
+
 		float floor(float val);
 		float ceil(float val);
 		float round(float val);
