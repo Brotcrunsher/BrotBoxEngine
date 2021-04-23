@@ -10,10 +10,11 @@ constexpr int32_t AMOUNT_OF_SENSORS_PER_ARM = 1;
 
 static bbe::Random bbeRandom;
 static float mutationRate = 0.1f;
-static int32_t maxTick = 1000;
+static int32_t maxTick = 2000;
 static bool editMode = true;
 static bool editModeLastFrame = true;
 static bool renderSensors = false;
+static bool unlimitedFrames = false;
 
 static int32_t generation = 1;
 static float minDist = 100000;
@@ -268,12 +269,14 @@ class MyGame : public bbe::Game
 
 		void control(float steer, float push, int32_t tick)
 		{
-			const float dist = game->getSmoothDistance(pos);
+			float dist = game->getSmoothDistance(pos);
+			if (dist < 10) dist = 0;
 			if (dist < closestDistance)
 			{
 				closestDistance = dist;
 				reachedInTick = tick;
 			}
+			if (dist == 0) return;
 
 			push = bbe::Math::clamp(bbe::Math::abs(push), 0.f, 1.f);
 			steer = bbe::Math::clamp(steer, -1.f, +1.f);
@@ -521,15 +524,16 @@ class MyGame : public bbe::Game
 		if (!editMode)
 		{
 			timeSinceLastTick += timeSinceLastFrame;
-			//if (timeSinceLastTick > tickTime)
+			if (timeSinceLastTick > tickTime || unlimitedFrames)
 			{
 				timeSinceLastTick -= tickTime;
+				if (timeSinceLastTick < 0) timeSinceLastTick = 0;
 				tick++;
 
 				bool isAnyoneAlive = false;
 				for (size_t i = 0; i < rockets.getLength(); i++)
 				{
-					if (!isBlocked(rockets[i].pos.x, rockets[i].pos.y))
+					if (!isBlocked(rockets[i].pos.x, rockets[i].pos.y) && rockets[i].closestDistance > 0)
 					{
 						rockets[i].brainToControl(tick);
 						isAnyoneAlive = true;
@@ -609,9 +613,10 @@ class MyGame : public bbe::Game
 	{
 		ImGui::InputFloat("Mutation Rate: ", &mutationRate);
 		ImGui::InputInt  ("Amount of Mutations: ", &amountOfMutations);
-		ImGui::InputInt  ("Max Tick:      ", &maxTick);
+		ImGui::InputInt  ("Max Tick:      ", &maxTick, 1000);
 		ImGui::Checkbox("Edit Mode", &editMode);
 		ImGui::Checkbox("Render Sensors", &renderSensors);
+		ImGui::Checkbox("Unlimited Frames", &unlimitedFrames);
 		ImGui::Text("Min Dist:     %f", minDist);
 		ImGui::Text("Generation:   %d", generation);
 		//if (ImGui::Button("Restart"))
