@@ -180,7 +180,7 @@ namespace bbe {
 
 		int randomInt(int max)
 		{
-			//UNTESTED
+			// max is exclusive! [0, max)
 			return randomInteger_<int>(max);
 		}
 
