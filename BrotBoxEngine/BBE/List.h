@@ -809,7 +809,7 @@ namespace bbe
 		T& last()
 		{
 			//UNTESTED
-			if (m_pdata == nullptr)
+			if (m_pdata == nullptr || m_length == 0)
 			{
 				throw ContainerEmptyException();
 			}
