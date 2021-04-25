@@ -15,10 +15,13 @@ static bool editMode = true;
 static bool editModeLastFrame = true;
 static bool renderSensors = false;
 static bool unlimitedFrames = false;
+static bool renderNeuralNetwork = false;
 
 static int32_t generation = 1;
 static float minDist = 100000;
 static int32_t amountOfMutations = 1;
+
+constexpr float targetHitDistance = 20.f;
 
 class MyGame : public bbe::Game
 {
@@ -29,6 +32,7 @@ class MyGame : public bbe::Game
 		const bbe::List<Neuron>* previousLayer = nullptr;
 		bbe::List<float> weights;
 		float bias = 0;
+		bbe::Vector2 renderPos;
 
 		void setPreviousLayer(const bbe::List<Neuron>& pl)
 		{
@@ -72,6 +76,32 @@ class MyGame : public bbe::Game
 					weights[mutationIndex] += bbeRandom.randomFloat() * 2.f * mutationRate - mutationRate;
 				}
 			}
+		}
+
+		void draw(bbe::PrimitiveBrush2D& brush, float valueMult)
+		{
+			constexpr float alpha = 0.5f;
+			constexpr float neuronSize = 25.f;
+
+			brush.setColorRGB(1, 1, 1, alpha);
+			if (previousLayer)
+			{
+				for (size_t i = 0; i < previousLayer->getLength(); i++)
+				{
+					const float connectionValue = weights[i] * (*previousLayer)[i].val;
+					const float connectionAlpha = alpha * bbe::Math::abs(connectionValue);
+					if (connectionValue < 0) brush.setColorRGB(1, 0, 0, connectionAlpha);
+					else                     brush.setColorRGB(0, 1, 0, connectionAlpha);
+					brush.fillLine(renderPos, (*previousLayer)[i].renderPos, bbe::Math::abs(weights[i]));
+				}
+			}
+
+			brush.setColorRGB(1, 1, 1, alpha);
+			brush.fillCircle(renderPos - bbe::Vector2(neuronSize / 2, neuronSize / 2), bbe::Vector2(neuronSize, neuronSize));
+			if (val < 0) brush.setColorRGB(1, 0, 0, alpha);
+			else         brush.setColorRGB(0, 1, 0, alpha);
+			const float valAbs = bbe::Math::abs(val) * valueMult;
+			brush.fillCircle(renderPos - bbe::Vector2(neuronSize / 2, neuronSize / 2) * valAbs, bbe::Vector2(neuronSize, neuronSize) * valAbs);
 		}
 	};
 
@@ -117,6 +147,34 @@ class MyGame : public bbe::Game
 			for (size_t i = 0; i < layer.getLength(); i++)
 			{
 				layer[i].mutate();
+			}
+		}
+
+		void updateRenderPos(bbe::List<Neuron>& layer, float xOffset, float minY, float maxY, float maxDistance)
+		{
+			float yRange = maxY - minY;
+			const float requiredYRange = layer.getLength() * maxDistance;
+			if (yRange > requiredYRange)
+			{
+				const float diff = yRange - requiredYRange;
+				minY += diff * 0.5f;
+				maxY -= diff * 0.5f;
+				yRange = requiredYRange;
+			}
+
+			float yOffsetPerNeuron = yRange / layer.getLength();
+
+			for (size_t i = 0; i < layer.getLength(); i++)
+			{
+				layer[i].renderPos = bbe::Vector2(xOffset, minY + i * yOffsetPerNeuron);
+			}
+		}
+
+		void drawLayer(bbe::List<Neuron>& layer, bbe::PrimitiveBrush2D &brush, float valueMult)
+		{
+			for (size_t i = 0; i < layer.getLength(); i++)
+			{
+				layer[i].draw(brush, valueMult);
 			}
 		}
 
@@ -185,6 +243,20 @@ class MyGame : public bbe::Game
 		{
 			mutateLayer(hidden);
 			mutateLayer(output);
+		}
+
+		void draw(bbe::PrimitiveBrush2D& brush)
+		{
+			const float minY = 50;
+			const float maxY = WINDOW_HEIGHT - 50;
+			const float maxDistance = 30.f;
+			updateRenderPos(input,  110, minY, maxY, maxDistance);
+			updateRenderPos(hidden, 350, minY, maxY, maxDistance);
+			updateRenderPos(output, 590, minY, maxY, maxDistance);
+
+			drawLayer(input, brush, 0.1f);
+			drawLayer(hidden, brush, 1.0f);
+			drawLayer(output, brush, 1.0f);
 		}
 	};
 
@@ -255,7 +327,8 @@ class MyGame : public bbe::Game
 					for (float approach = 0; approach <= 1; approach += 0.01f)
 					{
 						bbe::Vector2 checkPos = add * approach + pos;
-						if (game->isBlocked(checkPos.x, checkPos.y))
+						if (game->isBlocked(checkPos.x, checkPos.y)
+							|| checkPos.getDistanceTo(game->target) < targetHitDistance)
 						{
 							add = checkPos - pos;
 							break;
@@ -270,7 +343,7 @@ class MyGame : public bbe::Game
 		void control(float steer, float push, int32_t tick)
 		{
 			float dist = game->getSmoothDistance(pos);
-			if (dist < 10) dist = 0;
+			if (dist < targetHitDistance) dist = 0;
 			if (dist < closestDistance)
 			{
 				closestDistance = dist;
@@ -299,14 +372,16 @@ class MyGame : public bbe::Game
 
 			for (size_t i = 0; i < s.getLength(); i++)
 			{
+				constexpr float blockedVal = 30;
 				const bool blocked = game->isBlocked(s[i].x, s[i].y);
 				if (blocked || game->distanceToTarget[(uint32_t)s[i].x][(uint32_t)s[i].y] == -1)
 				{
-					brain.input[i].val = 10;
+					brain.input[i].val = blockedVal;
 				}
 				else
 				{
-					brain.input[i].val = (game->getSmoothDistance(s[i]) - ownDistance) * 0.1f;
+					float distVal = bbe::Math::clamp((game->getSmoothDistance(s[i]) - ownDistance) * 0.1f, -blockedVal, blockedVal);
+					brain.input[i].val = distVal;
 				}
 			}
 
@@ -617,6 +692,7 @@ class MyGame : public bbe::Game
 		ImGui::Checkbox("Edit Mode", &editMode);
 		ImGui::Checkbox("Render Sensors", &renderSensors);
 		ImGui::Checkbox("Unlimited Frames", &unlimitedFrames);
+		ImGui::Checkbox("Render Neural Network", &renderNeuralNetwork);
 		ImGui::Text("Min Dist:     %f", minDist);
 		ImGui::Text("Generation:   %d", generation);
 		//if (ImGui::Button("Restart"))
@@ -632,7 +708,7 @@ class MyGame : public bbe::Game
 		brush.drawImage(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, mapImage);
 
 		brush.setColorRGB(1, 0, 0, 1);
-		brush.fillRect(target - bbe::Vector2{ 1, 1 }, bbe::Vector2{ 3, 3 });
+		brush.fillCircle(target - bbe::Vector2{ targetHitDistance, targetHitDistance }, bbe::Vector2{ targetHitDistance * 2, targetHitDistance * 2 });
 
 		brush.setColorRGB(1, 1, 0, 1);
 		brush.fillRect(startPos - bbe::Vector2{ 1, 1 }, bbe::Vector2{ 3, 3 });
@@ -640,6 +716,11 @@ class MyGame : public bbe::Game
 		for (size_t i = 0; i < rockets.getLength(); i++)
 		{
 			rockets[i].draw(brush);
+		}
+
+		if (renderNeuralNetwork)
+		{
+			rockets.last().brain.draw(brush);
 		}
 	}
 	virtual void onEnd() override
