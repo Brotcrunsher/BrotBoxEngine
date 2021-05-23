@@ -16,6 +16,7 @@ static bool editModeLastFrame = true;
 static bool renderSensors = false;
 static bool unlimitedFrames = false;
 static bool renderNeuralNetwork = false;
+static bool highlightPreviousBest = false;
 
 static int32_t generation = 1;
 static float minDist = 100000;
@@ -394,7 +395,7 @@ class MyGame : public bbe::Game
 			control(brain.output[0].val, brain.output[1].val, tick);
 		}
 
-		void draw(bbe::PrimitiveBrush2D& brush)
+		void draw(bbe::PrimitiveBrush2D& brush, bool best)
 		{
 			bbe::Vector2 p1 = bbe::Vector2(20,   0).rotate(angle) + pos;
 			bbe::Vector2 p2 = bbe::Vector2( 0, +10).rotate(angle) + pos;
@@ -403,7 +404,14 @@ class MyGame : public bbe::Game
 			brush.setColorRGB(1, 0.5, 0, 1);
 			brush.fillCircle(pos - bbe::Vector2{ 8, 8 } * currentRenderPush, 16 * currentRenderPush, 16 * currentRenderPush);
 
-			brush.setColorRGB(0, 1, 0, 1);
+			if (best && highlightPreviousBest)
+			{
+				brush.setColorRGB(0, 0, 1, 1);
+			}
+			else
+			{
+				brush.setColorRGB(0, 1, 0, 1);
+			}
 			brush.fillTriangle(p1, p2, p3);
 
 			if (renderSensors)
@@ -693,30 +701,30 @@ class MyGame : public bbe::Game
 		ImGui::Checkbox("Render Sensors", &renderSensors);
 		ImGui::Checkbox("Unlimited Frames", &unlimitedFrames);
 		ImGui::Checkbox("Render Neural Network", &renderNeuralNetwork);
+		ImGui::Checkbox("Highlight previous best", &highlightPreviousBest);
 		ImGui::Text("Min Dist:     %f", minDist);
 		ImGui::Text("Generation:   %d", generation);
-		//if (ImGui::Button("Restart"))
-		//{
-		//	clearRockets();
-		//}
+		
 		if (ImGui::Button("Clear Map"))
 		{
 			clearMap();
 		}
-
+		
 		brush.setColorRGB(1, 1, 1, 1);
 		brush.drawImage(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, mapImage);
-
+		
 		brush.setColorRGB(1, 0, 0, 1);
 		brush.fillCircle(target - bbe::Vector2{ targetHitDistance, targetHitDistance }, bbe::Vector2{ targetHitDistance * 2, targetHitDistance * 2 });
-
+		
 		brush.setColorRGB(1, 1, 0, 1);
 		brush.fillRect(startPos - bbe::Vector2{ 1, 1 }, bbe::Vector2{ 3, 3 });
 
 		for (size_t i = 0; i < rockets.getLength(); i++)
 		{
-			rockets[i].draw(brush);
+			rockets[i].draw(brush, false);
 		}
+
+		rockets[rockets.getLength() - 1].draw(brush, true);
 
 		if (renderNeuralNetwork)
 		{
