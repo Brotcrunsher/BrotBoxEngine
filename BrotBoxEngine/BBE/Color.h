@@ -18,6 +18,8 @@ namespace bbe
 		bool operator== (const bbe::Color& other) const;
 		bool operator!= (const bbe::Color& other) const;
 
+		bbe::Color operator* (float scalar) const;
+
 		static Vector3 HSVtoRGB(float h, float s, float v);
 	};
 }

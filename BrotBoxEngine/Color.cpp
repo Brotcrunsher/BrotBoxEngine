@@ -55,3 +55,8 @@ bool bbe::Color::operator!=(const Color& other) const
 {
 	return !(*this == other);
 }
+
+bbe::Color bbe::Color::operator*(float scalar) const
+{
+	return bbe::Color(r * scalar, g * scalar, b * scalar, a * scalar);
+}
