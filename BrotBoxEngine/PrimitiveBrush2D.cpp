@@ -446,12 +446,12 @@ void bbe::PrimitiveBrush2D::fillLineStrip(const bbe::List<bbe::Vector2> &points,
 	}
 }
 
-void bbe::PrimitiveBrush2D::fillText(float x, float y, const char* text, const bbe::Font& font)
+void bbe::PrimitiveBrush2D::fillText(float x, float y, const char* text, const bbe::Font& font, float rotation)
 {
-	fillText(Vector2(x, y), text, font);
+	fillText(Vector2(x, y), text, font, rotation);
 }
 
-void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, const bbe::Font& font)
+void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, const bbe::Font& font, float rotation)
 {
 	const float lineStart = p.x;
 	
@@ -472,7 +472,7 @@ void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, const b
 		{
 			currentPosition.x += font.getLeftSideBearing(*text);
 			const bbe::Image& charImage = font.getImage(*text);
-			drawImage(currentPosition.x, currentPosition.y + font.getVerticalOffset(*text), charImage.getDimensions(), charImage);
+			drawImage((bbe::Vector2(currentPosition.x, currentPosition.y + font.getVerticalOffset(*text)) + charImage.getDimensions() / 2).rotate(rotation, p) - charImage.getDimensions() / 2, charImage.getDimensions(), charImage, rotation);
 			currentPosition.x += font.getAdvanceWidth(*text);
 		}
 

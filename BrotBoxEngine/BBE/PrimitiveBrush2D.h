@@ -135,8 +135,8 @@ namespace bbe
 		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const Vector2& control1, const Vector2& control2);
 		void fillBezierCurve(const BezierCurve2& bc, float lineWidth = 1);
 
-		void fillText(float x, float y, const char* text, const bbe::Font& font);
-		void fillText(const Vector2& p, const char* text, const bbe::Font& font);
+		void fillText(float x, float y, const char* text, const bbe::Font& font, float rotation = 0);
+		void fillText(const Vector2& p, const char* text, const bbe::Font& font, float rotation = 0);
 
 		void setColorRGB(float r, float g, float b, float a);
 		void setColorRGB(float r, float g, float b);
