@@ -1,4 +1,5 @@
 #include "BBE/Circle.h"
+#include "BBE/Rectangle.h"
 #include "BBE/Vector2.h"
 #include "BBE/List.h"
 #include "BBE/Math.h"
@@ -201,7 +202,7 @@ void bbe::Circle::translate(const Vector2 & vec)
 	translate(vec.x, vec.y);
 }
 
-bool bbe::Circle::intersects(const Circle& other)
+bool bbe::Circle::intersects(const Circle& other) const
 {
 	if (getWidth() != getHeight() || other.getWidth() != other.getHeight())
 	{
@@ -212,6 +213,11 @@ bool bbe::Circle::intersects(const Circle& other)
 	const float distance = getMiddle().getDistanceTo(other.getMiddle());
 
 	return distance < (getWidth() + other.getWidth()) / 2;
+}
+
+bool bbe::Circle::intersects(const Rectangle& other) const
+{
+	return other.intersects(*this);
 }
 
 bool bbe::Circle::resolveIntersection(Circle& other, float massThis, float massOther)

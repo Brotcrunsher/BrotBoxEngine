@@ -16,6 +16,8 @@ namespace bbe
 		}
 	}
 
+	class Rectangle;
+
 	class Circle
 	{
 		friend class PrimitiveBrush2D;
@@ -63,7 +65,8 @@ namespace bbe
 		void translate(float x, float y);
 		void translate(const Vector2 &vec);
 
-		bool intersects(const Circle& other);
+		bool intersects(const Circle& other) const;
+		bool intersects(const Rectangle& other) const;
 		bool resolveIntersection(Circle& other, float massThis = 1, float massOther = 1);
 	};
 }
