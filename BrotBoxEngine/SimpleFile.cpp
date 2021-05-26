@@ -2,6 +2,8 @@
 #include <fstream>
 #include <iostream>
 #include <stdlib.h>
+#include <string>
+#include <sstream>
 
 bbe::List<unsigned char> bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 {
@@ -22,6 +24,22 @@ bbe::List<unsigned char> bbe::simpleFile::readBinaryFile(const bbe::String & fil
 	{
 		throw std::runtime_error("Failed to open file!");
 	}
+}
+
+bbe::List<float> bbe::simpleFile::readFloatArrFromFile(const bbe::String& filePath)
+{
+	std::ifstream file(filePath.getRaw());
+	std::string line;
+	bbe::List<float> retVal;
+	while(std::getline(file, line))
+	{
+		std::istringstream s(line);
+		float f;
+		if (!(s >> f)) throw IllegalArgumentException();
+		retVal.add(f);
+	}
+
+	return retVal;
 }
 
 void bbe::simpleFile::writeFloatArrToFile(const bbe::String & filePath, float * arr, size_t size)
