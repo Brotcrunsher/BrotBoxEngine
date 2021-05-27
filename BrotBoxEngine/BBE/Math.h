@@ -31,7 +31,7 @@ namespace bbe
 		constexpr float E                 = 2.71828182845f;
 		constexpr float SQRT2             = 1.41421356237f;
 		constexpr float SQRT2INV          = 0.70710678118f;
-		constexpr float GOLDEN_RATIO      = 1.6180339887498948482045868343656381177;
+		constexpr float GOLDEN_RATIO      = 1.6180339887498948482045868343656381177f;
 		constexpr float INFINITY_POSITIVE = std::numeric_limits<float>::infinity();
 		constexpr float INFINITY_NEGATIVE = -std::numeric_limits<float>::infinity();
 		constexpr float NaN               = std::numeric_limits<float>::quiet_NaN();
