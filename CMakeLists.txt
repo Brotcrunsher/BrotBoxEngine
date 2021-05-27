@@ -89,6 +89,7 @@ target_link_libraries(BrotBoxEngine box2d)
 set_target_properties(box2d glad imgui sajson testbed unit_test PROPERTIES FOLDER box2d)
 
 set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
+set(CURL_DISABLE_TESTS ON CACHE BOOL "" FORCE)
 if(WIN32)
   set(CMAKE_USE_SCHANNEL ON CACHE BOOL "" FORCE)
 endif()
