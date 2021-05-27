@@ -12,6 +12,7 @@
 #include "../BBE/Exceptions.h"
 
 #include "../BBE/SimpleFile.h"
+#include "../BBE/SimpleUrlRequest.h"
 
 #include "../BBE/EngineSettings.h"
 #include "../BBE/Profiler.h"
