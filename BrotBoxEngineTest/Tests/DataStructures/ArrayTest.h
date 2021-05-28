@@ -11,7 +11,7 @@ namespace bbe
 		void testArray()
 		{
 			{
-				bbe::Array<int, 16> arr;
+				bbe::Array<size_t, 16> arr;
 
 				assertUnequals(arr.getRaw(), nullptr);
 				assertEquals(arr.getLength(), 16);
@@ -30,7 +30,7 @@ namespace bbe
 					assertEquals(arr[i], i + 1000);
 				}
 
-				const bbe::Array<int, 16> constArr2 = arr;
+				const bbe::Array<size_t, 16> constArr2 = arr;
 
 				for (size_t i = 0; i < arr.getLength(); i++)
 				{
@@ -56,7 +56,7 @@ namespace bbe
 					assertEquals(constArr2[i], i + 1000);
 				}
 
-				bbe::Array<int, 16> arr2 = std::move(arr);
+				bbe::Array<size_t, 16> arr2 = std::move(arr);
 				for (size_t i = 0; i < arr2.getLength(); i++)
 				{
 					assertEquals(arr2[i], i + 2000);
@@ -71,7 +71,7 @@ namespace bbe
 					assertEquals(arr2[i], i + 3000);
 				}
 
-				bbe::Array<int, 16> arr3;
+				bbe::Array<size_t, 16> arr3;
 				arr3 = arr2;
 
 				for (size_t i = 0; i < arr3.getLength(); i++)
@@ -108,7 +108,7 @@ namespace bbe
 					assertEquals(arr2[i], i + 4000);
 				}
 
-				bbe::Array<int, 16> arr4;
+				bbe::Array<size_t, 16> arr4;
 				arr4 = arr2;
 
 				assertEquals(hash(arr4), hash(arr2));

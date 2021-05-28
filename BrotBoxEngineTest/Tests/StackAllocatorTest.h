@@ -144,7 +144,7 @@ namespace bbe {
 			{
 				sa.allocateObject<Person>();
 			}
-			catch (const AllocatorOutOfMemoryException &aoome)
+			catch (const AllocatorOutOfMemoryException &)
 			{
 				caughtException = true;
 			}

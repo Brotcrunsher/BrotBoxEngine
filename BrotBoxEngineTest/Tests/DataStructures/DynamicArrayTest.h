@@ -14,7 +14,7 @@ namespace bbe
 		void testDynamicArray()
 		{
 			{
-				DynamicArray<int> da(16);
+				DynamicArray<size_t> da(16);
 
 				assertEquals(da.getLength(), 16);
 				assertUnequals(da.getRaw(), nullptr);
@@ -29,7 +29,7 @@ namespace bbe
 					assertEquals(da[i], i + 1000);
 				}
 
-				DynamicArray<int> da2 = da;
+				DynamicArray<size_t> da2 = da;
 
 				assertEquals(da.getLength(), 16);
 				assertUnequals(da.getRaw(), nullptr);
@@ -53,7 +53,7 @@ namespace bbe
 					assertEquals(da2[i], i + 1000);
 				}
 
-				DynamicArray<int> da3 = std::move(da);
+				DynamicArray<size_t> da3 = std::move(da);
 
 				assertEquals(da3.getLength(), 16);
 				assertUnequals(da3.getRaw(), nullptr);
@@ -77,7 +77,7 @@ namespace bbe
 					assertEquals(da2[i], i + 4000);
 				}
 
-				const DynamicArray<int> da4 = da3;
+				const DynamicArray<size_t> da4 = da3;
 				for (size_t i = 0; i < da3.getLength(); i++)
 				{
 					assertEquals(da4[i], i + 2000);
@@ -97,7 +97,7 @@ namespace bbe
 					assertEquals(da2[i], i + 4000);
 				}
 
-				DynamicArray<int> da5(128);
+				DynamicArray<size_t> da5(128);
 				for (size_t i = 0; i < da5.getLength(); i++)
 				{
 					da5[i] = 6000 + i;

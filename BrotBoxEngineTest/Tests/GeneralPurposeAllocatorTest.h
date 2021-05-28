@@ -94,7 +94,7 @@ namespace bbe {
 						{
 							history += "+ ";
 							auto addr = gpa.allocateObject<float>();
-							*addr = i;
+							*addr = static_cast<float>(i);
 							list.add(addr);
 						}
 					}
