@@ -26,12 +26,15 @@ namespace bbe
 		constexpr uint32_t BIGGEST_PRIME_32_UNSIGNED = 4294967295;
 
 
-		constexpr double PI               = 3.1415926535897932384626433832795028841;
-		constexpr double TAU              = 6.2831853071795864769252867665590057682;
+		constexpr double PI_d             = 3.1415926535897932384626433832795028841;
+		constexpr double TAU_d            = 6.2831853071795864769252867665590057682;
+		constexpr double GOLDEN_RATIO_d   = 1.6180339887498948482045868343656381177;
+		constexpr float PI                = (float)PI_d;
+		constexpr float TAU               = (float)TAU_d;
+		constexpr float GOLDEN_RATIO      = (float)GOLDEN_RATIO_d;
 		constexpr float E                 = 2.71828182845f;
 		constexpr float SQRT2             = 1.41421356237f;
 		constexpr float SQRT2INV          = 0.70710678118f;
-		constexpr float GOLDEN_RATIO      = 1.6180339887498948482045868343656381177f;
 		constexpr float INFINITY_POSITIVE = std::numeric_limits<float>::infinity();
 		constexpr float INFINITY_NEGATIVE = -std::numeric_limits<float>::infinity();
 		constexpr float NaN               = std::numeric_limits<float>::quiet_NaN();

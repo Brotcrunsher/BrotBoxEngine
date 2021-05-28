@@ -54,8 +54,8 @@ bbe::Matrix4 bbe::Matrix4::createRotationMatrix(float radians, const Vector3 & r
 	float x = nra.x;
 	float y = nra.y;
 	float z = nra.z;
-	float cos = Math::cos(radians);
-	float sin = Math::sin(radians);
+	float cos = static_cast<float>(Math::cos(radians));
+	float sin = static_cast<float>(Math::sin(radians));
 
 	Matrix4 retVal;
 	retVal.m_cols[0].x = cos + x * x * (1 - cos);

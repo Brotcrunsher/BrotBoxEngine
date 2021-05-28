@@ -34,7 +34,7 @@ double bbe::Math::cos(double val)
 {
 	throwIfUninitializedAndDebug();
 	if (val == INFINITY_POSITIVE || val == INFINITY_NEGATIVE) return 0;
-	val = bbe::Math::mod(val, TAU);
+	val = bbe::Math::mod(val, TAU_d);
 	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
 	return INTERNAL::cosTable[index];
 }
@@ -48,7 +48,7 @@ double bbe::Math::sin(double val)
 {
 	throwIfUninitializedAndDebug();
 	if (val == INFINITY_POSITIVE || val == INFINITY_NEGATIVE) return 0;
-	val = bbe::Math::mod(val, TAU);
+	val = bbe::Math::mod(val, TAU_d);
 	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
 	return INTERNAL::sinTable[index];
 }
@@ -61,7 +61,7 @@ float bbe::Math::asin(float val)
 double bbe::Math::tan(double val)
 {
 	throwIfUninitializedAndDebug();
-	val = bbe::Math::mod(val, TAU);
+	val = bbe::Math::mod(val, TAU_d);
 	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
 	return INTERNAL::tanTable[index];
 }
@@ -78,7 +78,7 @@ float bbe::Math::sqrt(float val)
 
 float bbe::Math::sigmoid(float val)
 {
-	return 1.f / (1 + pow(bbe::Math::E, -val));
+	return 1.f / (1 + static_cast<float>(pow(bbe::Math::E, -val)));
 }
 
 float bbe::Math::hyperbolicTangent(float val)
@@ -354,7 +354,7 @@ float bbe::Math::interpolateCosine(float a, float b, float t)
 {
 	//UNTESTED
 	if (a == b) return a;
-	return interpolateLinear(a, b, (1 - cos(t * PI)) / 2);
+	return interpolateLinear(a, b, (1 - static_cast<float>(cos(t * PI_d))) / 2);
 }
 
 float bbe::Math::interpolateCubic(float preA, float a, float b, float postB, float t)
@@ -643,7 +643,7 @@ bbe::Vector3 bbe::Math::average(const bbe::List<Vector3>& vectors)
 		retVal += v;
 	}
 
-	return retVal / vectors.getLength();;
+	return retVal / static_cast<float>(vectors.getLength());
 }
 
 bbe::Vector2 bbe::Math::medianComponent(const bbe::List<Vector2>& vectors)

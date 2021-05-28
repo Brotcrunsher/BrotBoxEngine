@@ -7,7 +7,7 @@
 
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::Cube::s_indexBuffer;
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::Cube::s_vertexBuffer;
-size_t bbe::Cube::amountOfIndices = 0;
+uint32_t bbe::Cube::amountOfIndices = 0;
 
 void bbe::Cube::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool & commandPool, VkQueue queue)
 {

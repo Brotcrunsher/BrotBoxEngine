@@ -598,7 +598,7 @@ void bbe::PrimitiveBrush2D::fillVertexIndexList(const bbe::List<uint32_t>& indic
 	fillVertexIndexList(indices.getRaw(), indices.getLength(), vertices.getRaw(), vertices.getLength());
 }
 
-void bbe::PrimitiveBrush2D::fillVertexIndexList(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, uint32_t amountOfVertices)
+void bbe::PrimitiveBrush2D::fillVertexIndexList(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices)
 {
 	// These two asserts make sure that we can cast the vertices array to a float array.
 	static_assert(alignof(bbe::Vector2) == alignof(float));

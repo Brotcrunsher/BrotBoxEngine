@@ -29,7 +29,7 @@ namespace bbe
 		static void s_destroy();
 		static bbe::INTERNAL::vulkan::VulkanBuffer s_indexBuffer;
 		static bbe::INTERNAL::vulkan::VulkanBuffer s_vertexBuffer;
-		static size_t amountOfIndices;
+		static uint32_t amountOfIndices;
 
 	public:
 		Cube();

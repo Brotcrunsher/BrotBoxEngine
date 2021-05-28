@@ -153,7 +153,7 @@ int bbe::Window::getScaledWidth() const
 {
 	float scale = 0;
 	glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
-	return getWidth() * scale;
+	return static_cast<int>(getWidth() * scale);
 }
 
 int bbe::Window::getHeight() const
@@ -165,7 +165,7 @@ int bbe::Window::getScaledHeight() const
 {
 	float scale = 0;
 	glfwGetWindowContentScale(m_pwindow, nullptr, &scale);
-	return getHeight() * scale;
+	return static_cast<int>(getHeight() * scale);
 }
 
 bbe::Vector2 bbe::Window::getGlobalMousePos() const
@@ -178,7 +178,7 @@ bbe::Vector2 bbe::Window::getGlobalMousePos() const
 	double mousePosY;
 	glfwGetCursorPos(m_pwindow, &mousePosX, &mousePosY);
 
-	return Vector2(mousePosX + windowPosX, mousePosY + windowPosY);
+	return Vector2(static_cast<float>(mousePosX + windowPosX), static_cast<float>(mousePosY + windowPosY));
 }
 
 bbe::PrimitiveBrush2D& bbe::Window::getBrush2D()

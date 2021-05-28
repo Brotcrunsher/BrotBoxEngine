@@ -29,8 +29,8 @@ namespace bbe
 
 		static Vector2_t createVector2OnUnitCircle(T radians)
 		{
-			T x = Math::cos(radians);
-			T y = Math::sin(radians);
+			T x = static_cast<T>(Math::cos(radians));
+			T y = static_cast<T>(Math::sin(radians));
 			return Vector2(x, y);
 		}
 
@@ -213,8 +213,8 @@ namespace bbe
 
 		Vector2_t rotate(T radians) const
 		{
-			T sin = Math::sin(radians);
-			T cos = Math::cos(radians);
+			T sin = static_cast<T>(Math::sin(radians));
+			T cos = static_cast<T>(Math::cos(radians));
 
 			return Vector2_t<T>(
 				x * cos - y * sin,
