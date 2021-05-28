@@ -83,10 +83,12 @@ target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/img
 target_include_directories(BrotBoxEngine PUBLIC Third-Party/imgui-master)
 target_include_directories(BrotBoxEngine PUBLIC Third-Party/imgui-master/backends)
 
+set(BOX2D_BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(BOX2D_BUILD_TESTBED OFF CACHE BOOL "" FORCE)
 add_subdirectory(Third-Party/box2d-master)
 include_directories(Third-Party/box2d-master/include)
 target_link_libraries(BrotBoxEngine box2d)
-set_target_properties(box2d glad imgui sajson testbed unit_test PROPERTIES FOLDER box2d)
+set_target_properties(box2d PROPERTIES FOLDER box2d)
 
 set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
 set(CURL_DISABLE_TESTS ON CACHE BOOL "" FORCE)
