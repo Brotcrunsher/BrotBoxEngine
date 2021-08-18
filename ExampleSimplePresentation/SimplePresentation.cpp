@@ -39,7 +39,7 @@ SimplePresentation::SimplePresentation(SimplePresentationType simplePresentation
 
 	for (size_t i = 0; i < fonts.size(); i++)
 	{
-		fonts[i].load("consola.ttf", i + 1);
+		fonts[i].load("consola.ttf", i + 20);
 	}
 }
 
@@ -50,7 +50,7 @@ void SimplePresentation::addText(const char* txt)
 	text += bbe::String(txt).replace("\t", "    ");
 }
 
-void SimplePresentation::update(PresentationControl pc)
+void SimplePresentation::update(PresentationControl pc, float scrollValue)
 {
 	if (pc == PresentationControl::none)
 	{
@@ -68,6 +68,11 @@ void SimplePresentation::update(PresentationControl pc)
 	{
 		throw bbe::IllegalArgumentException();
 	}
+
+	if (scrollingAllowed)
+	{
+		this->scrollValue += scrollValue;
+	}
 }
 
 void SimplePresentation::draw(bbe::PrimitiveBrush2D& brush)
@@ -81,12 +86,17 @@ void SimplePresentation::draw(bbe::PrimitiveBrush2D& brush)
 	brush.fillRect(0, 0, 10000, 10000);
 
 	brush.setColorRGB(1, 1, 1);
+
+	bbe::Vector2 offset = -textAabb.getPos() - textAabb.getDim() * 0.5f + bbe::Vector2(1280, 720) * 0.5f;
+	if (offset.y < 20) offset.y = 20;
+	offset.y += scrollValue;
+
 	for (size_t i = 0; i < tokenizer->tokens.getLength(); i++)
 	{
 		if (tokenizer->tokens[i].showIndex > currentEntry) continue;
 		const Token& token = tokenizer->tokens[i];
 		//brush.setColorRGB(1, 1, 0);
-		//brush.sketchRect(token.aabb.offset(offset));
+		//brush.sketchRect(textAabb.offset(bbe::Vector2{0, 100}));
 		if (tokenizer->tokens[i].showIndex == currentEntry || (currentEntry == amountOfEntries && tokenizer->hasFinalBrightState()))
 		{
 			brush.setColorRGB(tokenTypeToColor(token.type));
@@ -97,7 +107,7 @@ void SimplePresentation::draw(bbe::PrimitiveBrush2D& brush)
 		}
 		for (size_t k = 0; k < token.chars.getLength(); k++)
 		{
-			brush.fillChar(token.chars[k].pos - textAabb.getPos() - textAabb.getDim() * 0.5f + bbe::Vector2(1280 / 2, 720 / 2), token.chars[k].c, getFont());
+			brush.fillChar(token.chars[k].pos + offset, token.chars[k].c, getFont());
 		}
 	}
 }
@@ -132,8 +142,7 @@ bool SimplePresentation::hasPrev() const
 void SimplePresentation::compile()
 {
 	selectedFont = nullptr;
-	bbe::List<char> singleSignTokens = { '{', '}', '(', ')', '[', ']', ';', '*', '<', '>', '=', '.', '&', '+' };
-	tokenizer->tokenize(singleSignTokens, text, getFont());
+	tokenizer->tokenize(text, getFont());
 
 	for (size_t i = 0; i < tokenizer->tokens.getLength(); i++)
 	{
@@ -150,7 +159,7 @@ void SimplePresentation::compile()
 			}
 		}
 	}
-	tokenizer->determineTokenTypes(singleSignTokens, additionalTypes);
+	tokenizer->determineTokenTypes(additionalTypes);
 	tokenizer->animateTokens();
 
 
@@ -169,19 +178,36 @@ bbe::Font& SimplePresentation::getFont()
 	if (selectedFont == nullptr)
 	{
 		selectedFont = &fonts[0];
+		scrollingAllowed = true;
 		for (size_t i = 0; i < fonts.size(); i++)
 		{
 			bbe::List<bbe::Vector2> renderPositions = fonts[i].getRenderPositions(bbe::Vector2(0, 0), text);
-			textAabb = bbe::Rectangle(renderPositions[0], getFont().getDimensions(text[0]));
+			bbe::Rectangle textAabb = bbe::Rectangle(renderPositions[0], getFont().getDimensions(text[0]));
 			for (size_t k = 1; k < renderPositions.getLength(); k++)
 			{
 				textAabb = textAabb.combine(bbe::Rectangle(renderPositions[k], getFont().getDimensions(text[k])));
 			}
 
-			if (textAabb.getHeight() > 520 || textAabb.getWidth() > 1080) break;
+			if (i == 0)
+			{
+				// Make sure we have an Aabb, even if it is large.
+				this->textAabb = textAabb;
+			}
+			else if (i == 1)
+			{
+				scrollingAllowed = false;
+			}
 
-			selectedFont = &fonts[i];
+			if (textAabb.getHeight() < 720 - 10 && textAabb.getWidth() < 1280 - 10)
+			{
+				selectedFont = &fonts[i];
+				this->textAabb = textAabb;
+			}
+
+			if (textAabb.getHeight() > 720 - 50 || textAabb.getWidth() > 1280 - 50) break;
 		}
+
+		selectedFont->setFixedWidth(selectedFont->getAdvanceWidth(' '));
 	}
 
 	return *selectedFont;
@@ -196,7 +222,7 @@ void SimplePresentation::Token::submit(bbe::List<Token>& tokens)
 	}
 }
 
-void SimplePresentation::CppTokenizer::tokenize(const bbe::List<char>& singleSignTokens, const bbe::String& text, const bbe::Font& font)
+void SimplePresentation::CppTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 {
 	bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(bbe::Vector2(0, 0), text);
 	if (renderPositions.getLength() != text.getLength())
@@ -269,7 +295,7 @@ void SimplePresentation::CppTokenizer::tokenize(const bbe::List<char>& singleSig
 	}
 }
 
-void SimplePresentation::CppTokenizer::determineTokenTypes(const bbe::List<char>& singleSignTokens, const bbe::List<bbe::String>& additionalTypes)
+void SimplePresentation::CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes)
 {
 	const bbe::List<bbe::String> keywords = { "constexpr", "class", "public", "private", "protected", "virtual", "override", "if", "else", "alignas", "alignof", "delete", "operator", "sizeof", "template", "typename", "struct", "return", "noexcept", "this", "void", "int", "float", "co_yield", "true", "false", "auto", "char", "const", "mutable", "while", "for", "do" };
 	const bbe::List<bbe::String> preprocessor = { "#include", "#define", "#ifdef", "#endif" };
@@ -472,7 +498,7 @@ void SimplePresentation::CppTokenizer::animateTokens()
 				}
 			}
 		}
-		else if (i > 0 && tokens[i - 1].text == "#include")
+		else if (tokens[i].type == TokenType::include_path)
 		{
 			tokens[i].showIndex = currentShowIndex;
 		}
@@ -489,7 +515,7 @@ bool SimplePresentation::CppTokenizer::hasFinalBrightState()
 	return true;
 }
 
-void SimplePresentation::LineTokenizer::tokenize(const bbe::List<char>& singleSignTokens, const bbe::String& text, const bbe::Font& font)
+void SimplePresentation::LineTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 {
 	bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(bbe::Vector2(0, 0), text);
 	if (renderPositions.getLength() != text.getLength())
@@ -519,7 +545,7 @@ void SimplePresentation::LineTokenizer::tokenize(const bbe::List<char>& singleSi
 	currentToken.submit(tokens);
 }
 
-void SimplePresentation::LineTokenizer::determineTokenTypes(const bbe::List<char>& singleSignTokens, const bbe::List<bbe::String>& additionalTypes)
+void SimplePresentation::LineTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes)
 {
 	for (size_t i = 0; i < tokens.getLength(); i++)
 	{

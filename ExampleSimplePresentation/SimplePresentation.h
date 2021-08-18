@@ -68,8 +68,8 @@ private:
 	public:
 		bbe::List<Token> tokens;
 
-		virtual void tokenize(const bbe::List<char>& singleSignTokens, const bbe::String& text, const bbe::Font& font) = 0;
-		virtual void determineTokenTypes(const bbe::List<char>& singleSignTokens, const bbe::List<bbe::String> &additionalTypes) = 0;
+		virtual void tokenize(const bbe::String& text, const bbe::Font& font) = 0;
+		virtual void determineTokenTypes(const bbe::List<bbe::String> &additionalTypes) = 0;
 		virtual void animateTokens() = 0;
 		virtual bool hasFinalBrightState() = 0;
 	};
@@ -77,8 +77,10 @@ private:
 	class CppTokenizer : public Tokenizer
 	{
 	public:
-		virtual void tokenize(const bbe::List<char>& singleSignTokens, const bbe::String& text, const bbe::Font& font) override;
-		virtual void determineTokenTypes(const bbe::List<char>& singleSignTokens, const bbe::List<bbe::String>& additionalTypes) override;
+		const bbe::List<char> singleSignTokens = { '{', '}', '(', ')', '[', ']', ';', '*', '<', '>', '=', '.', '&', '+' };
+
+		virtual void tokenize(const bbe::String& text, const bbe::Font& font) override;
+		virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes) override;
 		virtual void animateTokens() override;
 		virtual bool hasFinalBrightState() override;
 	};
@@ -86,20 +88,22 @@ private:
 	class LineTokenizer : public Tokenizer
 	{
 	public:
-		virtual void tokenize(const bbe::List<char>& singleSignTokens, const bbe::String& text, const bbe::Font& font) override;
-		virtual void determineTokenTypes(const bbe::List<char>& singleSignTokens, const bbe::List<bbe::String>& additionalTypes) override;
+		virtual void tokenize(const bbe::String& text, const bbe::Font& font) override;
+		virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes) override;
 		virtual void animateTokens() override;
 		virtual bool hasFinalBrightState() override;
 	};
 
 	std::unique_ptr<Tokenizer> tokenizer;
+	float scrollValue = 0;
+	bool scrollingAllowed = false;
 
 public:
 	SimplePresentation(SimplePresentationType simplePresentationType);
 
 	void addText(const char* txt);
 
-	void update(PresentationControl pc);
+	void update(PresentationControl pc, float scrollValue);
 	void draw(bbe::PrimitiveBrush2D& brush);
 	void addType(const bbe::String& type);
 

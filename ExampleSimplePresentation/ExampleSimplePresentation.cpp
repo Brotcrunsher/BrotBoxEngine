@@ -2,8 +2,8 @@
 #include "SimplePresentation.h"
 #include <iostream>
 
-constexpr int WINDOW_WIDTH = 1280 + 50;
-constexpr int WINDOW_HEIGHT = 720 + 50;
+constexpr int WINDOW_WIDTH = 1280;
+constexpr int WINDOW_HEIGHT = 720;
 
 class MyGame : public bbe::Game
 {
@@ -43,7 +43,7 @@ public:
 //"    };																					   \n"
 //		);
 
-		sp.addText(bbe::simpleFile::readFile("C:/Users/BrotcrunsherPC11/Desktop/generator.txt").getRaw());
+		sp.addText(bbe::simpleFile::readFile("D:/Videos/C++ Tutorial/Episode Bonus 038 - Coroutinen - Generatoren/usage.txt").getRaw());
 		sp.addType("Generator");
 	}
 
@@ -52,7 +52,7 @@ public:
 		SimplePresentation::PresentationControl pc = SimplePresentation::PresentationControl::none;
 		     if (isKeyPressed(bbe::Key::LEFT))  pc = SimplePresentation::PresentationControl::previous;
 		else if (isKeyPressed(bbe::Key::RIGHT)) pc = SimplePresentation::PresentationControl::next;
-		sp.update(pc);
+		sp.update(pc, getMouseScrollY() * 10);
 	}
 
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
