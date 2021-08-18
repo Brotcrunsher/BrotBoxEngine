@@ -263,6 +263,39 @@ void bbe::PrimitiveBrush2D::fillRect(const RectangleRotated& rect, FragmentShade
 	fillRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight(), rect.getRotation(), shader);
 }
 
+void bbe::PrimitiveBrush2D::sketchRect(float x, float y, float width, float height)
+{
+	const bbe::Vector2 p1(x, y);
+	const bbe::Vector2 p2(x + width, y);
+	const bbe::Vector2 p3(x + width, y + height);
+	const bbe::Vector2 p4(x, y + height);
+
+	fillLine(p1, p2);
+	fillLine(p2, p3);
+	fillLine(p3, p4);
+	fillLine(p4, p1);
+}
+
+void bbe::PrimitiveBrush2D::sketchRect(const Vector2& pos, float width, float height)
+{
+	sketchRect(pos.x, pos.y, width, height);
+}
+
+void bbe::PrimitiveBrush2D::sketchRect(float x, float y, const Vector2& dim)
+{
+	sketchRect(x, y, dim.x, dim.y);
+}
+
+void bbe::PrimitiveBrush2D::sketchRect(const Vector2& pos, const Vector2& dim)
+{
+	sketchRect(pos.x, pos.y, dim.x, dim.y);
+}
+
+void bbe::PrimitiveBrush2D::sketchRect(const Rectangle& rect)
+{
+	sketchRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+}
+
 void bbe::PrimitiveBrush2D::fillCircle(const Circle & circle)
 {
 	INTERNAL_fillCircle(circle, m_outlineWidth);
@@ -416,6 +449,18 @@ void bbe::PrimitiveBrush2D::fillBezierCurve(const BezierCurve2& bc, float lineWi
 	}
 }
 
+void bbe::PrimitiveBrush2D::fillChar(float x, float y, char c, const bbe::Font& font, float rotation)
+{
+	fillChar(Vector2(x, y), c, font, rotation);
+}
+
+void bbe::PrimitiveBrush2D::fillChar(const Vector2& p, char c, const bbe::Font& font, float rotation)
+{
+	if (c == ' ' || c == '\n' || c == '\r' || c == '\t') return;
+	const bbe::Image& charImage = font.getImage(c);
+	drawImage(p, font.getDimensions(c), charImage, rotation);
+}
+
 void bbe::PrimitiveBrush2D::fillLine(const Vector2& p1, const Vector2& p2, float lineWidth)
 {
 	const Vector2 dir = p2 - p1;
@@ -472,12 +517,22 @@ void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, const b
 		{
 			currentPosition.x += font.getLeftSideBearing(*text);
 			const bbe::Image& charImage = font.getImage(*text);
-			drawImage((bbe::Vector2(currentPosition.x, currentPosition.y + font.getVerticalOffset(*text)) + charImage.getDimensions() / 2).rotate(rotation, p) - charImage.getDimensions() / 2, charImage.getDimensions(), charImage, rotation);
+			fillChar((bbe::Vector2(currentPosition.x, currentPosition.y + font.getVerticalOffset(*text)) + charImage.getDimensions() / 2).rotate(rotation, p) - charImage.getDimensions() / 2, *text, font, rotation);
 			currentPosition.x += font.getAdvanceWidth(*text);
 		}
 
 		text++;
 	}
+}
+
+void bbe::PrimitiveBrush2D::fillText(float x, float y, const bbe::String& text, const bbe::Font& font, float rotation)
+{
+	fillText(x, y, text.getRaw(), font, rotation);
+}
+
+void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const bbe::String& text, const bbe::Font& font, float rotation)
+{
+	fillText(p, text, font, rotation);
 }
 
 void bbe::PrimitiveBrush2D::setColorRGB(float r, float g, float b, float a)

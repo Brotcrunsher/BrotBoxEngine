@@ -104,6 +104,12 @@ namespace bbe
 		void fillRect(const PhysRectangle& rect, FragmentShader* shader = nullptr);
 		void fillRect(const RectangleRotated& rect, FragmentShader* shader = nullptr);
 
+		void sketchRect(float x, float y, float width, float height);
+		void sketchRect(const Vector2& pos, float width, float height);
+		void sketchRect(float x, float y, const Vector2& dim);
+		void sketchRect(const Vector2& pos, const Vector2& dim);
+		void sketchRect(const Rectangle& rect);
+
 		void fillCircle(const Circle &circle);
 		void fillCircle(float x, float y, float width, float height);
 		void fillCircle(const Vector2& pos, float width, float height);
@@ -135,8 +141,13 @@ namespace bbe
 		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const Vector2& control1, const Vector2& control2);
 		void fillBezierCurve(const BezierCurve2& bc, float lineWidth = 1);
 
+		void fillChar(float x, float y, char c, const bbe::Font& font, float rotation = 0);
+		void fillChar(const Vector2& p, char c, const bbe::Font& font, float rotation = 0);
+
 		void fillText(float x, float y, const char* text, const bbe::Font& font, float rotation = 0);
 		void fillText(const Vector2& p, const char* text, const bbe::Font& font, float rotation = 0);
+		void fillText(float x, float y, const bbe::String &text, const bbe::Font& font, float rotation = 0);
+		void fillText(const Vector2& p, const bbe::String& text, const bbe::Font& font, float rotation = 0);
 
 		void setColorRGB(float r, float g, float b, float a);
 		void setColorRGB(float r, float g, float b);

@@ -5,6 +5,8 @@
 #include <stb_truetype.h>
 #include "BBE/SimpleFile.h"
 
+constexpr uint32_t sharpnessFactor = 4;
+
 bbe::Font::Font()
 {
 	// Do nothing.
@@ -55,19 +57,19 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 	const bbe::List<unsigned char> font = bbe::simpleFile::readBinaryFile(this->fontPath);
 	stbtt_fontinfo fontInfo;
 	stbtt_InitFont(&fontInfo, font.getRaw(), stbtt_GetFontOffsetForIndex(font.getRaw(), 0));
-	const float scale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(fontSize));
+	const float scale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(fontSize * sharpnessFactor));
 
 	int32_t ascent = 0;
 	int32_t descent = 0;
 	int32_t lineGap = 0;
 	stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
-	pixelsFromLineToLine = static_cast<int>((ascent - descent + lineGap) * scale);
+	pixelsFromLineToLine = static_cast<int>((ascent - descent + lineGap) * scale / sharpnessFactor);
 
 	int32_t spaceAdvance = 0;
 	int32_t spaceLeftSideBearing = 0;
 	stbtt_GetCodepointHMetrics(&fontInfo, ' ', &spaceAdvance, &spaceLeftSideBearing);
-	advanceWidths[' '] = static_cast<int>(spaceAdvance * scale);
-	leftSideBearings[' '] = static_cast<int>(spaceLeftSideBearing * scale);
+	advanceWidths[' '] = static_cast<int>(spaceAdvance * scale / sharpnessFactor);
+	leftSideBearings[' '] = static_cast<int>(spaceLeftSideBearing * scale / sharpnessFactor);
 
 	for (size_t i = 0; i < chars.getLength(); i++)
 	{
@@ -75,12 +77,12 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 		if (charImages[chars[i]].isLoaded()) throw IllegalArgumentException(); // A char was passed twice.
 		
 		stbtt_GetCodepointHMetrics(&fontInfo, chars[i], advanceWidths + chars[i], leftSideBearings + chars[i]);
-		advanceWidths[chars[i]] = static_cast<int>(advanceWidths[chars[i]] * scale);
-		leftSideBearings[chars[i]] = static_cast<int>(leftSideBearings[chars[i]] * scale);
+		advanceWidths[chars[i]] = static_cast<int>(advanceWidths[chars[i]] * scale / sharpnessFactor);
+		leftSideBearings[chars[i]] = static_cast<int>(leftSideBearings[chars[i]] * scale / sharpnessFactor);
 
 		int32_t y1 = 0;
 		stbtt_GetCodepointBox(&fontInfo, chars[i], nullptr, nullptr, nullptr, &y1);
-		verticalOffsets[chars[i]] = static_cast<int>((-y1) * scale);
+		verticalOffsets[chars[i]] = static_cast<int>((-y1) * scale / sharpnessFactor);
 
 		int32_t width = 0;
 		int32_t height = 0;
@@ -121,7 +123,7 @@ const bbe::String& bbe::Font::getChars() const
 uint32_t bbe::Font::getFontSize() const
 {
 	if (!isInit) throw NotInitializedException();
-	return fontSize;
+	return fontSize / sharpnessFactor;
 }
 
 int32_t bbe::Font::getPixelsFromLineToLine() const
@@ -168,6 +170,11 @@ int32_t bbe::Font::getVerticalOffset(char c) const
 	return verticalOffsets[c];
 }
 
+bbe::Vector2 bbe::Font::getDimensions(char c) const
+{
+	return getImage(c).getDimensions() / getSharpnessFactor();
+}
+
 void bbe::Font::setFixedWidth(int32_t val)
 {
 	fixedWidth = val;
@@ -187,4 +194,49 @@ void bbe::Font::destroy()
 			charImages[chars[i]].destroy();
 		}
 	}
+}
+
+uint32_t bbe::Font::getSharpnessFactor() const
+{
+	return sharpnessFactor;
+}
+
+bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const char* text, float rotation) const
+{
+	bbe::List<bbe::Vector2> retVal;
+
+	const float lineStart = p.x;
+
+	Vector2 currentPosition = p;
+
+	while (*text)
+	{
+		if (*text == '\n')
+		{
+			retVal.add(currentPosition);
+			currentPosition.x = lineStart;
+			currentPosition.y += getPixelsFromLineToLine();
+		}
+		else if (*text == ' ')
+		{
+			retVal.add(currentPosition);
+			currentPosition.x += getLeftSideBearing(*text) + getAdvanceWidth(*text);
+		}
+		else
+		{
+			currentPosition.x += getLeftSideBearing(*text);
+			const bbe::Image& charImage = getImage(*text);
+			retVal.add((bbe::Vector2(currentPosition.x, currentPosition.y + getVerticalOffset(*text)) + charImage.getDimensions() / 2).rotate(rotation, p) - charImage.getDimensions() / 2);
+			currentPosition.x += getAdvanceWidth(*text);
+		}
+
+		text++;
+	}
+
+	return retVal;
+}
+
+bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const bbe::String& text, float rotation) const
+{
+	return getRenderPositions(p, text.getRaw(), rotation);
 }

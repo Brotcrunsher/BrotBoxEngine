@@ -10,7 +10,7 @@ namespace bbe
 	private:
 		static constexpr unsigned    DEFAULT_FONT_SIZE  = 20;
 		// constexpr const is necessary for some compilers to avoid false warnings
-		static constexpr const char* DEFAULT_CHARSET    = "1234567890!\"/()=\\abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+#-.,_:;<>|^";
+		static constexpr const char* DEFAULT_CHARSET    = "1234567890!\"/()=\\abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+#-.,_:;<>|^{}[]*~&?";
 
 		bool isInit              = false;
 		bbe::String fontPath     = "";
@@ -45,9 +45,16 @@ namespace bbe
 		int32_t getAdvanceWidth(char c) const;
 		int32_t getVerticalOffset(char c) const;
 
+		bbe::Vector2 getDimensions(char c) const;
+
 		void setFixedWidth(int32_t val);
 		int32_t getFixedWidth() const;
 
 		void destroy();
+
+		uint32_t getSharpnessFactor() const;
+
+		bbe::List<Vector2> getRenderPositions(const Vector2& p, const char* text, float rotation = 0) const;
+		bbe::List<Vector2> getRenderPositions(const Vector2& p, const bbe::String &text, float rotation = 0) const;
 	};
 }
