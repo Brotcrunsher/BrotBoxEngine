@@ -484,6 +484,15 @@ namespace bbe
 		{
 			add(std::forward<U>(t));
 		}
+		
+		void addList(const List<T>& other)
+		{
+			const size_t len = other.getLength();
+			for (size_t i = 0; i < len; i++)
+			{
+				add(other[i]);
+			}
+		}
 
 		template<typename U, typename... arguments>
 		void addAll(U&& t, arguments&&... args)
