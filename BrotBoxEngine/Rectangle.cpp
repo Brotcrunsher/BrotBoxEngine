@@ -94,6 +94,45 @@ bbe::Vector2 bbe::Rectangle::getDim() const
 	return Vector2(m_width, m_height);
 }
 
+bbe::Rectangle bbe::Rectangle::combine(const Rectangle& other) const
+{
+	const float left   = bbe::Math::min(this->getLeft(), other.getLeft());
+	const float right  = bbe::Math::max(this->getRight(), other.getRight());
+	const float top    = bbe::Math::min(this->getTop(), other.getTop());
+	const float bottom = bbe::Math::max(this->getBottom(), other.getBottom());
+	return Rectangle(
+		left, 
+		top,
+		right - left,
+		bottom - top
+	);
+}
+
+bbe::Rectangle bbe::Rectangle::offset(const Vector2& off) const
+{
+	return Rectangle(m_x + off.x, m_y + off.y, m_width, m_height);
+}
+
+float bbe::Rectangle::getLeft() const
+{
+	return bbe::Math::min(m_x, m_x + m_width);
+}
+
+float bbe::Rectangle::getRight() const
+{
+	return bbe::Math::max(m_x, m_x + m_width);
+}
+
+float bbe::Rectangle::getTop() const
+{
+	return bbe::Math::min(m_y, m_y + m_height);
+}
+
+float bbe::Rectangle::getBottom() const
+{
+	return bbe::Math::max(m_y, m_y + m_height);
+}
+
 float bbe::Rectangle::getWidth() const
 {
 	return m_width;

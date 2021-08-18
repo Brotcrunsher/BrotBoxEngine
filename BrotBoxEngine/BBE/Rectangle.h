@@ -44,6 +44,14 @@ namespace bbe
 		Vector2 getPos() const;
 		Vector2 getDim() const;
 
+		Rectangle combine(const Rectangle& other) const;
+		Rectangle offset(const Vector2& off) const;
+
+		float getLeft() const;
+		float getRight() const;
+		float getTop() const;
+		float getBottom() const;
+
 		float getX() const;
 		float getY() const;
 		float getWidth() const;
