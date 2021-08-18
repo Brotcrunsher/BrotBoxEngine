@@ -70,3 +70,10 @@ bool bbe::simpleFile::doesFileExist(const bbe::String& filePath)
 	std::ifstream f(filePath.getRaw());
 	return (bool)f;
 }
+
+bbe::String bbe::simpleFile::readFile(const bbe::String& filePath)
+{
+	std::ifstream f(filePath.getRaw());
+	std::string str((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+	return bbe::String(str.data());
+}

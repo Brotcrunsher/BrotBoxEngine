@@ -14,5 +14,6 @@ namespace bbe
 		void writeFloatArrToFile(const bbe::String &filePath, float *arr, size_t size);
 		void writeStringToFile(const bbe::String& filePath, const bbe::String& stringToWrite);
 		bool doesFileExist(const bbe::String& filePath);
+		bbe::String readFile(const bbe::String& filePath);
 	}
 }
