@@ -144,8 +144,13 @@ namespace bbe
 		bool contains(const char*       string) const;
 		bool contains(const Utf8String& string) const;
 
+		bool isTextAtLocation(const char* string, int64_t index) const;
+		bool startsWith(const char* string) const;
+
 		int64_t search(const char*       string, int64_t startIndex = 0) const;		//TODO
 		int64_t search(const Utf8String& string, int64_t startIndex = 0) const;		//TODO
+
+		bool isNumber() const;
 
 		long   toLong  (int base = 10) const;
 		double toDouble() const;

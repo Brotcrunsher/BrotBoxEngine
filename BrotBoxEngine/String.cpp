@@ -392,7 +392,7 @@ bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8StringView& other)
 	//UNTESTED
 	const size_t totalLength = getLengthBytes() + other.getEnd() - other.m_start;
 	const size_t oldLength = getLengthBytes();
-	m_length = getLength() + other.getEnd() - other.m_start + 1;
+	m_length = getLength() + other.getEnd() - other.m_start;
 	growIfNeeded(totalLength + 1);
 	memcpy(getRaw() + oldLength, other.m_pstring->getRaw() + other.m_start, other.getEnd() - other.m_start);
 	getRaw()[totalLength] = 0;
@@ -618,6 +618,25 @@ bool bbe::Utf8String::contains(const Utf8String &string) const
 	return contains(string.getRaw());
 }
 
+bool bbe::Utf8String::isTextAtLocation(const char* string, int64_t index) const
+{
+	while (*string)
+	{
+		if (index >= m_length || *string != operator[](index))
+		{
+			return false;
+		}
+		index++;
+		string++;
+	}
+	return true;
+}
+
+bool bbe::Utf8String::startsWith(const char* string) const
+{
+	return isTextAtLocation(string, 0);
+}
+
 int64_t bbe::Utf8String::search(const char* string, int64_t startIndex) const
 {
 	//UNTESTED
@@ -633,6 +652,22 @@ int64_t bbe::Utf8String::search(const char* string, int64_t startIndex) const
 int64_t bbe::Utf8String::search(const Utf8String &string, int64_t startIndex) const
 {
 	return bbe::Utf8String::search(string.getRaw(), startIndex);
+}
+
+bool bbe::Utf8String::isNumber() const
+{
+	if (m_length == 0) return false;
+
+	for (size_t i = 0; i < m_length; i++)
+	{
+		const char& c = operator[](i);
+		if (c < '0' || c > '9')
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 long bbe::Utf8String::toLong(int base) const
