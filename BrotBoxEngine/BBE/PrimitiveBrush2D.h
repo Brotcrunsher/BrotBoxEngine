@@ -124,6 +124,8 @@ namespace bbe
 		void drawImage(const Vector2& pos, float width, float height, const Image& image, float rotation = 0);
 		void drawImage(float x, float y,   const Vector2& dimensions, const Image& image, float rotation = 0);
 		void drawImage(const Vector2& pos, const Vector2& dimensions, const Image& image, float rotation = 0);
+		void drawImage(float x, float y, const Image& image, float rotation = 0);
+		void drawImage(const Vector2& pos, const Image& image, float rotation = 0);
 
 		void fillLine(float x1, float y1, float x2, float y2, float lineWidth = 1);
 		void fillLine(const Vector2 &p1,  float x2, float y2, float lineWidth = 1);
@@ -141,14 +143,14 @@ namespace bbe
 		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const Vector2& control1, const Vector2& control2);
 		void fillBezierCurve(const BezierCurve2& bc, float lineWidth = 1);
 
-		void fillChar(float x, float y, char c, const bbe::Font& font, float rotation = 0);
-		void fillChar(const Vector2& p, char c, const bbe::Font& font, float rotation = 0);
+		void fillChar(float x, float y, int32_t c, const bbe::Font& font, float rotation = 0);
+		void fillChar(const Vector2& p, int32_t c, const bbe::Font& font, float rotation = 0);
 
 		void fillText(float x, float y, const char* text, const bbe::Font& font, float rotation = 0);
 		void fillText(const Vector2& p, const char* text, const bbe::Font& font, float rotation = 0);
 		void fillText(float x, float y, const bbe::String &text, const bbe::Font& font, float rotation = 0);
 		void fillText(const Vector2& p, const bbe::String& text, const bbe::Font& font, float rotation = 0);
-
+		
 		void setColorRGB(float r, float g, float b, float a);
 		void setColorRGB(float r, float g, float b);
 		void setColorRGB(const Vector3& c);

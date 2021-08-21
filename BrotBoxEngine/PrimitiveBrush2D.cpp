@@ -369,6 +369,16 @@ void bbe::PrimitiveBrush2D::drawImage(const Vector2& pos, const Vector2& dimensi
 	INTERNAL_drawImage(Rectangle(pos.x, pos.y, dimensions.x, dimensions.y), image, rotation);
 }
 
+void bbe::PrimitiveBrush2D::drawImage(float x, float y, const Image& image, float rotation)
+{
+	drawImage(x, y, image.getWidth(), image.getHeight(), image, rotation);
+}
+
+void bbe::PrimitiveBrush2D::drawImage(const Vector2& pos, const Image& image, float rotation)
+{
+	drawImage(pos, image.getWidth(), image.getHeight(), image, rotation);
+}
+
 void bbe::PrimitiveBrush2D::fillLine(float x1, float y1, float x2, float y2, float lineWidth)
 {
 	fillLine(Vector2(x1, y1), Vector2(x2, y2), lineWidth);
@@ -449,12 +459,12 @@ void bbe::PrimitiveBrush2D::fillBezierCurve(const BezierCurve2& bc, float lineWi
 	}
 }
 
-void bbe::PrimitiveBrush2D::fillChar(float x, float y, char c, const bbe::Font& font, float rotation)
+void bbe::PrimitiveBrush2D::fillChar(float x, float y, int32_t c, const bbe::Font& font, float rotation)
 {
 	fillChar(Vector2(x, y), c, font, rotation);
 }
 
-void bbe::PrimitiveBrush2D::fillChar(const Vector2& p, char c, const bbe::Font& font, float rotation)
+void bbe::PrimitiveBrush2D::fillChar(const Vector2& p, int32_t c, const bbe::Font& font, float rotation)
 {
 	if (c == ' ' || c == '\n' || c == '\r' || c == '\t') return;
 	const bbe::Image& charImage = font.getImage(c);
