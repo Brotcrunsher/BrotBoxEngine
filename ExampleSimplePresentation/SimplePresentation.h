@@ -29,7 +29,7 @@ private:
 
 	struct Char
 	{
-		char c = '\0';
+		int32_t c = '\0';
 		bbe::Vector2 pos;
 	};
 	enum class TokenType

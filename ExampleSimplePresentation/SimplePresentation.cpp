@@ -103,7 +103,8 @@ void SimplePresentation::draw(bbe::PrimitiveBrush2D& brush)
 		}
 		else
 		{
-			brush.setColorRGB(0.3, 0.3, 0.3);
+			//brush.setColorRGB(0.3, 0.3, 0.3);
+			brush.setColorRGB(tokenTypeToColor(token.type) * 0.8f);
 		}
 		for (size_t k = 0; k < token.chars.getLength(); k++)
 		{
@@ -182,10 +183,10 @@ bbe::Font& SimplePresentation::getFont()
 		for (size_t i = 0; i < fonts.size(); i++)
 		{
 			bbe::List<bbe::Vector2> renderPositions = fonts[i].getRenderPositions(bbe::Vector2(0, 0), text);
-			bbe::Rectangle textAabb = bbe::Rectangle(renderPositions[0], getFont().getDimensions(text[0]));
+			bbe::Rectangle textAabb = bbe::Rectangle(renderPositions[0], getFont().getDimensions(text.getCodepoint(0)));
 			for (size_t k = 1; k < renderPositions.getLength(); k++)
 			{
-				textAabb = textAabb.combine(bbe::Rectangle(renderPositions[k], getFont().getDimensions(text[k])));
+				textAabb = textAabb.combine(bbe::Rectangle(renderPositions[k], getFont().getDimensions(text.getCodepoint(k))));
 			}
 
 			if (i == 0)
@@ -273,7 +274,7 @@ void SimplePresentation::CppTokenizer::tokenize(const bbe::String& text, const b
 		if (text[i] != ' ' && text[i] != '\t' && text[i] != '\n' && text[i] != '\r')
 		{
 			Char c;
-			c.c = text[i];
+			c.c = text.getCodepoint(i);
 			c.pos = renderPositions[i];
 
 			currentToken.chars.add(c);
@@ -535,7 +536,7 @@ void SimplePresentation::LineTokenizer::tokenize(const bbe::String& text, const 
 		if (text[i] != ' ' && text[i] != '\t' && text[i] != '\n' && text[i] != '\r')
 		{
 			Char c;
-			c.c = text[i];
+			c.c = text.getCodepoint(i);
 			c.pos = renderPositions[i];
 
 			currentToken.chars.add(c);
