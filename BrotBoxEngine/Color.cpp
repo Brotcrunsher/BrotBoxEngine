@@ -60,3 +60,8 @@ bbe::Color bbe::Color::operator*(float scalar) const
 {
 	return bbe::Color(r * scalar, g * scalar, b * scalar, a * scalar);
 }
+
+bbe::Color bbe::Color::operator/(float scalar) const
+{
+	return bbe::Color(r / scalar, g / scalar, b / scalar, a / scalar);
+}
