@@ -871,7 +871,7 @@ std::size_t bbe::utf8len(const char* ptr, const char* end)
 	}
 	std::size_t len = 0;
 	const byte* bptr = reinterpret_cast<const byte*>(ptr);
-	while(*bptr != (byte)0b00000000 && ptr != end)
+	while(*bptr != (byte)0b00000000 && bptr != reinterpret_cast<const byte*>(end))
 	{
 		if(((*bptr) & (byte)0b11000000) != (byte)0b10000000)
 		{
