@@ -15,7 +15,9 @@ namespace bbe
 {
 
 	std::size_t utf8len(const char* ptr);		//Length of a utf8 encoded string.
+	std::size_t utf8len(const char* ptr, const char* end);
 	std::size_t utf8charlen(const char* ptr);	//Length in byte of a single utf8 char.
+	int32_t utf8CharToCodePoint(const char* ptr);
 	bool utf8IsStartOfChar(const char* ptr);
 	const char* utf8GetStartAddrOfCodePoint(const char* ptr);
 	const char* utf8GetNextChar(const char* ptr);
@@ -158,6 +160,8 @@ namespace bbe
 
 		//      char& operator[](size_t index);		THIS METHOD IS ILLEGAL ON PURPOSE! A single char can be multiple bytes long. Giving direct access to member variables could lead to problems when the programer tries to manipulate the string directly. TODO: Add a "Change char" method.
 		const char& operator[](size_t index) const;
+
+		int32_t getCodepoint(size_t index) const;
 
 		      char* getRaw();
 		const char* getRaw() const;

@@ -392,7 +392,8 @@ bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8StringView& other)
 	//UNTESTED
 	const size_t totalLength = getLengthBytes() + other.getEnd() - other.m_start;
 	const size_t oldLength = getLengthBytes();
-	m_length = getLength() + other.getEnd() - other.m_start;
+	const char* otherRaw = other.m_pstring->getRaw();
+	m_length = getLength() + utf8len(otherRaw + other.m_start, otherRaw + other.getEnd());
 	growIfNeeded(totalLength + 1);
 	memcpy(getRaw() + oldLength, other.m_pstring->getRaw() + other.m_start, other.getEnd() - other.m_start);
 	getRaw()[totalLength] = 0;
@@ -702,6 +703,11 @@ const char& bbe::Utf8String::operator[](std::size_t index) const
 	return *ptr;
 }
 
+int32_t bbe::Utf8String::getCodepoint(size_t index) const
+{
+	return utf8CharToCodePoint(&operator[](index));
+}
+
 char* bbe::Utf8String::getRaw()
 {
 	//UNTESTED
@@ -731,7 +737,7 @@ const char* bbe::Utf8String::getRaw() const
 bbe::Utf8String bbe::Utf8String::replace(const Utf8String& searchString, const Utf8String& replaceString) const
 {
 	bbe::Utf8String retVal = "";
-	retVal.growIfNeeded(getLength());
+	retVal.growIfNeeded(getLengthBytes());
 	uint64_t currentFoundIndex = 0;
 	uint64_t lastFoundIndex = 0;
 	while ((currentFoundIndex = search(searchString, currentFoundIndex)) != (uint64_t)-1)
@@ -739,10 +745,10 @@ bbe::Utf8String bbe::Utf8String::replace(const Utf8String& searchString, const U
 		retVal += substringView(lastFoundIndex, currentFoundIndex);
 		retVal += replaceString;
 		
-		currentFoundIndex += searchString.getLength();
+		currentFoundIndex += searchString.getLengthBytes();
 		lastFoundIndex = currentFoundIndex;
 	}
-	retVal += substringView(lastFoundIndex, getLength());
+	retVal += substringView(lastFoundIndex, getLengthBytes());
 	return retVal;
 }
 
@@ -857,6 +863,25 @@ std::size_t bbe::utf8len(const char* ptr)
 	return len;
 }
 
+std::size_t bbe::utf8len(const char* ptr, const char* end)
+{
+	if(ptr == nullptr)
+	{
+		throw NullPointerException();
+	}
+	std::size_t len = 0;
+	const byte* bptr = reinterpret_cast<const byte*>(ptr);
+	while(*bptr != (byte)0b00000000 && ptr != end)
+	{
+		if(((*bptr) & (byte)0b11000000) != (byte)0b10000000)
+		{
+			len++;
+		}
+		bptr++;
+	}
+	return len;
+}
+
 std::size_t bbe::utf8charlen(const char* ptr)
 {
 	if(ptr == nullptr)
@@ -871,6 +896,23 @@ std::size_t bbe::utf8charlen(const char* ptr)
 	if(((*bptr) & (byte)0b11111000) == (byte)0b11110000) return 4;
 
 	throw NotStartOfUtf8Exception();
+}
+
+int32_t bbe::utf8CharToCodePoint(const char* ptr)
+{
+	const std::size_t length = utf8charlen(ptr);
+	const byte* bptr = reinterpret_cast<const byte*>(ptr);
+
+	// TODO it's probably possible to do this a bit more clever.
+	switch (length)
+	{
+	case 1: return *ptr;
+	case 2: return ((bptr[0] & 0b00011111) <<  6) | ((bptr[1] & 0b00111111));
+	case 3: return ((bptr[0] & 0b00001111) << 12) | ((bptr[1] & 0b00111111) <<  6) | ((bptr[2] & 0b00111111));
+	case 4: return ((bptr[0] & 0b00000111) << 18) | ((bptr[1] & 0b00111111) << 12) | ((bptr[2] & 0b00111111) << 6) | ((bptr[3] & 0b00111111));
+	}
+
+	throw IllegalArgumentException();
 }
 
 bool bbe::utf8IsStartOfChar(const char* ptr)
