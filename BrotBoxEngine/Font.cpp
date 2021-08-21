@@ -1,6 +1,6 @@
 #include "BBE/Font.h"
 #include <filesystem>
-
+#define STBTT_RASTERIZER_VERSION 1
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <stb_truetype.h>
 #include "BBE/SimpleFile.h"
@@ -52,7 +52,6 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 		if (!found) throw NullPointerException();
 	}
 	this->fontSize   = fontSize;
-	this->chars      = chars;
 
 	const bbe::List<unsigned char> font = bbe::simpleFile::readBinaryFile(this->fontPath);
 	stbtt_fontinfo fontInfo;
@@ -68,25 +67,43 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 	int32_t spaceAdvance = 0;
 	int32_t spaceLeftSideBearing = 0;
 	stbtt_GetCodepointHMetrics(&fontInfo, ' ', &spaceAdvance, &spaceLeftSideBearing);
-	advanceWidths[' '] = static_cast<int>(spaceAdvance * scale / sharpnessFactor);
-	leftSideBearings[' '] = static_cast<int>(spaceLeftSideBearing * scale / sharpnessFactor);
-
-	for (size_t i = 0; i < chars.getLength(); i++)
+	
 	{
-		if (chars[i] == ' ') throw IllegalArgumentException(); // It is not required to have a space as it will just advance the caret position and is always supported.
-		if (charImages[chars[i]].isLoaded()) throw IllegalArgumentException(); // A char was passed twice.
+		CharData space;
+		space.advanceWidth = static_cast<int>(spaceAdvance * scale / sharpnessFactor);
+		space.leftSideBearing = static_cast<int>(spaceLeftSideBearing * scale / sharpnessFactor);
+		charDatas[' '] = std::move(space);
+	}
+
+	{
+		CharData empty;
+		charDatas['\n'] = std::move(empty);
+	}
+
+	const bbe::String string = chars;
+	//TODO Wasteful! This could really use an iterator.
+	for (size_t i = 0; i < string.getLength(); i++)
+	{
+		const int32_t codePoint = string.getCodepoint(i);
+		if (codePoint == ' ') throw IllegalArgumentException(); // It is not required to have a space as it will just advance the caret position and is always supported.
 		
-		stbtt_GetCodepointHMetrics(&fontInfo, chars[i], advanceWidths + chars[i], leftSideBearings + chars[i]);
-		advanceWidths[chars[i]] = static_cast<int>(advanceWidths[chars[i]] * scale / sharpnessFactor);
-		leftSideBearings[chars[i]] = static_cast<int>(leftSideBearings[chars[i]] * scale / sharpnessFactor);
+		if (charDatas.find(codePoint) != charDatas.end()) throw IllegalArgumentException(); // A char was passed twice.
+		
+		CharData cd;
+
+		stbtt_GetCodepointHMetrics(&fontInfo, codePoint, &cd.advanceWidth, &cd.leftSideBearing);
+		cd.advanceWidth = static_cast<int>(cd.advanceWidth * scale / sharpnessFactor);
+		cd.leftSideBearing = static_cast<int>(cd.leftSideBearing * scale / sharpnessFactor);
 
 		int32_t y1 = 0;
-		stbtt_GetCodepointBox(&fontInfo, chars[i], nullptr, nullptr, nullptr, &y1);
-		verticalOffsets[chars[i]] = static_cast<int>((-y1) * scale / sharpnessFactor);
+		stbtt_GetCodepointBox(&fontInfo, codePoint, nullptr, nullptr, nullptr, &y1);
+		cd.verticalOffset = static_cast<int>((-y1) * scale / sharpnessFactor);
 
-		int32_t width = 0;
-		int32_t height = 0;
-		unsigned char* bitmap = stbtt_GetCodepointBitmap(&fontInfo, 0, scale, chars[i], &width, &height, 0, 0);
+		int width = 0;
+		int height = 0;
+		int xoff = 0;
+		int yoff = 0;
+		unsigned char* bitmap = stbtt_GetCodepointBitmap(&fontInfo, 0, scale, codePoint, &width, &height, &xoff, &yoff);
 		if (bitmap == nullptr) throw NullPointerException();
 		
 		bbe::List<byte> convertedList = bbe::List<byte>((size_t)width * (size_t)height * sizeof(float));
@@ -101,8 +118,9 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 
 		//TODO: Currently this is a very wasteful approach to rendering text as we create a separate image for every distinct
 		//      char. It would be much more efficient to implement some form of texture atlas and use that here instead.
-		bbe::Image image = bbe::Image(width, height, (float*)convertedList.getRaw(), bbe::ImageFormat::R8G8B8A8);
-		charImages[chars[i]] = std::move(image);
+		cd.charImage = bbe::Image(width, height, (float*)convertedList.getRaw(), bbe::ImageFormat::R8G8B8A8);
+		cd.charImage.setRepeatMode(bbe::ImageRepeatMode::CLAMP_TO_EDGE);
+		charDatas[codePoint] = std::move(cd);
 	}
 
 	isInit = true;
@@ -112,12 +130,6 @@ const bbe::String& bbe::Font::getFontPath() const
 {
 	if (!isInit) throw NotInitializedException();
 	return fontPath;
-}
-
-const bbe::String& bbe::Font::getChars() const
-{
-	if (!isInit) throw NotInitializedException();
-	return chars;
 }
 
 uint32_t bbe::Font::getFontSize() const
@@ -132,13 +144,13 @@ int32_t bbe::Font::getPixelsFromLineToLine() const
 	return pixelsFromLineToLine;
 }
 
-const bbe::Image& bbe::Font::getImage(char c) const
+const bbe::Image& bbe::Font::getImage(int32_t c) const
 {
 	if (!isInit) throw NotInitializedException();
-	return charImages[c];
+	return charDatas.at(c).charImage;
 }
 
-int32_t bbe::Font::getLeftSideBearing(char c) const
+int32_t bbe::Font::getLeftSideBearing(int32_t c) const
 {
 	if (!isInit) throw NotInitializedException();
 	if (getFixedWidth() > 0)
@@ -147,11 +159,11 @@ int32_t bbe::Font::getLeftSideBearing(char c) const
 	}
 	else
 	{
-		return leftSideBearings[c];
+		return charDatas.at(c).leftSideBearing;
 	}
 }
 
-int32_t bbe::Font::getAdvanceWidth(char c) const
+int32_t bbe::Font::getAdvanceWidth(int32_t c) const
 {
 	if (!isInit) throw NotInitializedException();
 	if (getFixedWidth() > 0)
@@ -160,17 +172,17 @@ int32_t bbe::Font::getAdvanceWidth(char c) const
 	}
 	else
 	{
-		return advanceWidths[c];
+		return charDatas.at(c).advanceWidth;
 	}
 }
 
-int32_t bbe::Font::getVerticalOffset(char c) const
+int32_t bbe::Font::getVerticalOffset(int32_t c) const
 {
 	if (!isInit) throw NotInitializedException();
-	return verticalOffsets[c];
+	return charDatas.at(c).verticalOffset;
 }
 
-bbe::Vector2 bbe::Font::getDimensions(char c) const
+bbe::Vector2 bbe::Font::getDimensions(int32_t c) const
 {
 	return getImage(c).getDimensions() / getSharpnessFactor();
 }
@@ -187,11 +199,11 @@ int32_t bbe::Font::getFixedWidth() const
 
 void bbe::Font::destroy()
 {
-	for (size_t i = 0; i < chars.getLength(); i++)
+	for (auto& cd : charDatas)
 	{
-		if (charImages[chars[i]].isLoaded())
+		if (cd.second.charImage.isLoaded())
 		{
-			charImages[chars[i]].destroy();
+			cd.second.charImage.destroy();
 		}
 	}
 }
@@ -209,28 +221,29 @@ bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const ch
 
 	Vector2 currentPosition = p;
 
-	while (*text)
+	const bbe::String string = text;
+	//TODO Wasteful! This could really use an iterator.
+	for (size_t i = 0; i < string.getLength(); i++)
 	{
-		if (*text == '\n')
+		const int32_t codePoint = string.getCodepoint(i);
+		if (codePoint == '\n')
 		{
 			retVal.add(currentPosition);
 			currentPosition.x = lineStart;
 			currentPosition.y += getPixelsFromLineToLine();
 		}
-		else if (*text == ' ')
+		else if (codePoint == ' ')
 		{
 			retVal.add(currentPosition);
-			currentPosition.x += getLeftSideBearing(*text) + getAdvanceWidth(*text);
+			currentPosition.x += getLeftSideBearing(codePoint) + getAdvanceWidth(codePoint);
 		}
 		else
 		{
-			currentPosition.x += getLeftSideBearing(*text);
-			const bbe::Image& charImage = getImage(*text);
-			retVal.add((bbe::Vector2(currentPosition.x, currentPosition.y + getVerticalOffset(*text)) + charImage.getDimensions() / 2).rotate(rotation, p) - charImage.getDimensions() / 2);
-			currentPosition.x += getAdvanceWidth(*text);
+			currentPosition.x += getLeftSideBearing(codePoint);
+			const bbe::Image& charImage = getImage(codePoint);
+			retVal.add((bbe::Vector2(currentPosition.x, currentPosition.y + getVerticalOffset(codePoint)) + charImage.getDimensions() / 2).rotate(rotation, p) - charImage.getDimensions() / 2);
+			currentPosition.x += getAdvanceWidth(codePoint);
 		}
-
-		text++;
 	}
 
 	return retVal;
