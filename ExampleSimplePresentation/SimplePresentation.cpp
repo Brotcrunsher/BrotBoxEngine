@@ -1,7 +1,10 @@
 #include "BBE/BrotBoxEngine.h"
 #include "SimplePresentation.h"
 
-bbe::Color SimplePresentation::tokenTypeToColor(TokenType type)
+int32_t Slide::fontsLoaded = 0;
+std::array<bbe::Font, 64> Slide::fonts;
+
+bbe::Color Slide::tokenTypeToColor(TokenType type)
 {
 	switch (type)
 	{
@@ -23,34 +26,76 @@ bbe::Color SimplePresentation::tokenTypeToColor(TokenType type)
 	throw bbe::IllegalArgumentException();
 }
 
-SimplePresentation::SimplePresentation(SimplePresentationType simplePresentationType)
+Slide::Slide(const char* path)
 {
-	switch (simplePresentationType)
+	bbe::String fileContent = bbe::simpleFile::readFile(path);
+
+	if (fileContent.startsWith("//c++"))
 	{
-	case SimplePresentationType::cpp:
 		tokenizer.reset(new CppTokenizer());
-		break;
-	case SimplePresentationType::lines:
+	}
+	else if (fileContent.startsWith("//lines"))
+	{
 		tokenizer.reset(new LineTokenizer());
-		break;
-	default:
-		throw bbe::IllegalStateException();
+	}
+	else
+	{
+		throw bbe::IllegalArgumentException();
 	}
 
-	for (size_t i = 0; i < fonts.size(); i++)
+	addText(fileContent.getRaw() + fileContent.search("\n"));
+
+	if (!fontsLoaded)
 	{
-		fonts[i].load("consola.ttf", i + 20);
+		for (size_t i = 0; i < fonts.size(); i++)
+		{
+			fonts[i].load("consola.ttf", i + 20);
+		}
+	}
+	fontsLoaded++;
+}
+
+Slide::~Slide()
+{
+	fontsLoaded--;
+	if (fontsLoaded == 0)
+	{
+		for (size_t i = 0; i < fonts.size(); i++)
+		{
+			fonts[i].destroy();
+		}
 	}
 }
 
-void SimplePresentation::addText(const char* txt)
+Slide::Slide(Slide&& other)
+{
+	currentEntry     = std::move(other.currentEntry);
+	amountOfEntries  = std::move(other.amountOfEntries);
+	dirty            = std::move(other.dirty);
+	selectedFont     = std::move(other.selectedFont);
+	additionalTypes  = std::move(other.additionalTypes);
+	textAabb         = std::move(other.textAabb);
+	text             = std::move(other.text);
+	tokenizer        = std::move(other.tokenizer);
+	scrollValue      = std::move(other.scrollValue);
+	scrollingAllowed = std::move(other.scrollingAllowed);
+
+	fontsLoaded++;
+}
+
+void Slide::addText(const char* txt)
 {
 	dirty = true;
 
 	text += bbe::String(txt).replace("\t", "    ");
 }
 
-void SimplePresentation::update(PresentationControl pc, float scrollValue)
+bool Slide::isFirstEntry() const
+{
+	return currentEntry == 0;
+}
+
+void Slide::update(PresentationControl pc, float scrollValue)
 {
 	if (pc == PresentationControl::none)
 	{
@@ -75,7 +120,12 @@ void SimplePresentation::update(PresentationControl pc, float scrollValue)
 	}
 }
 
-void SimplePresentation::draw(bbe::PrimitiveBrush2D& brush)
+bool Slide::isLastEntry() const
+{
+	return currentEntry == amountOfEntries;
+}
+
+void Slide::draw(bbe::PrimitiveBrush2D& brush)
 {
 	if (dirty)
 	{
@@ -113,34 +163,34 @@ void SimplePresentation::draw(bbe::PrimitiveBrush2D& brush)
 	}
 }
 
-void SimplePresentation::addType(const bbe::String& type)
+void Slide::addType(const bbe::String& type)
 {
 	additionalTypes.add(type);
 }
 
-void SimplePresentation::next()
+void Slide::next()
 {
 	if (hasNext()) currentEntry++;
 	std::cout << "Now at Entry: " << currentEntry << std::endl;
 }
 
-bool SimplePresentation::hasNext() const
+bool Slide::hasNext() const
 {
 	return currentEntry < amountOfEntries;
 }
 
-void SimplePresentation::prev()
+void Slide::prev()
 {
 	if (hasPrev()) currentEntry--;
 	std::cout << "Now at Entry: " << currentEntry << std::endl;
 }
 
-bool SimplePresentation::hasPrev() const
+bool Slide::hasPrev() const
 {
 	return currentEntry > 0;
 }
 
-void SimplePresentation::compile()
+void Slide::compile()
 {
 	selectedFont = nullptr;
 	tokenizer->tokenize(text, getFont());
@@ -174,7 +224,7 @@ void SimplePresentation::compile()
 	dirty = false;
 }
 
-bbe::Font& SimplePresentation::getFont()
+bbe::Font& Slide::getFont()
 {
 	if (selectedFont == nullptr)
 	{
@@ -214,7 +264,7 @@ bbe::Font& SimplePresentation::getFont()
 	return *selectedFont;
 }
 
-void SimplePresentation::Token::submit(bbe::List<Token>& tokens)
+void Slide::Token::submit(bbe::List<Token>& tokens)
 {
 	if (chars.getLength() > 0)
 	{
@@ -223,7 +273,7 @@ void SimplePresentation::Token::submit(bbe::List<Token>& tokens)
 	}
 }
 
-void SimplePresentation::CppTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
+void Slide::CppTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 {
 	bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(bbe::Vector2(0, 0), text);
 	if (renderPositions.getLength() != text.getLength())
@@ -296,7 +346,7 @@ void SimplePresentation::CppTokenizer::tokenize(const bbe::String& text, const b
 	}
 }
 
-void SimplePresentation::CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes)
+void Slide::CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes)
 {
 	const bbe::List<bbe::String> keywords = { "constexpr", "class", "public", "private", "protected", "virtual", "override", "if", "else", "alignas", "alignof", "delete", "operator", "sizeof", "template", "typename", "struct", "return", "noexcept", "this", "void", "int", "float", "co_yield", "true", "false", "auto", "char", "const", "mutable", "while", "for", "do" };
 	const bbe::List<bbe::String> preprocessor = { "#include", "#define", "#ifdef", "#endif" };
@@ -390,7 +440,7 @@ void SimplePresentation::CppTokenizer::determineTokenTypes(const bbe::List<bbe::
 	}
 }
 
-void SimplePresentation::CppTokenizer::animateTokens()
+void Slide::CppTokenizer::animateTokens()
 {
 	int32_t currentShowIndex = -1;
 	for (size_t i = 0; i < tokens.getLength(); i++)
@@ -511,12 +561,12 @@ void SimplePresentation::CppTokenizer::animateTokens()
 	}
 }
 
-bool SimplePresentation::CppTokenizer::hasFinalBrightState()
+bool Slide::CppTokenizer::hasFinalBrightState()
 {
 	return true;
 }
 
-void SimplePresentation::LineTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
+void Slide::LineTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 {
 	bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(bbe::Vector2(0, 0), text);
 	if (renderPositions.getLength() != text.getLength())
@@ -528,12 +578,12 @@ void SimplePresentation::LineTokenizer::tokenize(const bbe::String& text, const 
 
 	for (size_t i = 0; i < renderPositions.getLength(); i++)
 	{
-		if (text[i] == '\n')
+		if (text[i] == '\n' && (i == 0 || text[i-1] != '\\'))
 		{
 			currentToken.submit(tokens);
 		}
 
-		if (text[i] != ' ' && text[i] != '\t' && text[i] != '\n' && text[i] != '\r')
+		if (text[i] != ' ' && text[i] != '\t' && text[i] != '\n' && text[i] != '\r' && !(i != renderPositions.getLength() - 1 && text[i] == '\\' && text[i + 1] == '\n'))
 		{
 			Char c;
 			c.c = text.getCodepoint(i);
@@ -546,7 +596,7 @@ void SimplePresentation::LineTokenizer::tokenize(const bbe::String& text, const 
 	currentToken.submit(tokens);
 }
 
-void SimplePresentation::LineTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes)
+void Slide::LineTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes)
 {
 	for (size_t i = 0; i < tokens.getLength(); i++)
 	{
@@ -554,7 +604,7 @@ void SimplePresentation::LineTokenizer::determineTokenTypes(const bbe::List<bbe:
 	}
 }
 
-void SimplePresentation::LineTokenizer::animateTokens()
+void Slide::LineTokenizer::animateTokens()
 {
 	for (size_t i = 0; i < tokens.getLength(); i++)
 	{
@@ -562,7 +612,65 @@ void SimplePresentation::LineTokenizer::animateTokens()
 	}
 }
 
-bool SimplePresentation::LineTokenizer::hasFinalBrightState()
+bool Slide::LineTokenizer::hasFinalBrightState()
 {
 	return false;
+}
+
+void SlideShow::update(PresentationControl pc, float scrollValue)
+{
+	if (pc == PresentationControl::none)
+	{
+		slides[currentSlide].update(pc, scrollValue);
+	}
+	else if (pc == PresentationControl::previous)
+	{
+		if (slides[currentSlide].isFirstEntry())
+		{
+			if (currentSlide > 0)
+			{
+				currentSlide--;
+			}
+		}
+		else
+		{
+			slides[currentSlide].update(pc, scrollValue);
+		}
+	}
+	else if (pc == PresentationControl::next)
+	{
+		if (slides[currentSlide].isLastEntry())
+		{
+			if (currentSlide < slides.getLength() - 1)
+			{
+				currentSlide++;
+			}
+		}
+		else
+		{
+			slides[currentSlide].update(pc, scrollValue);
+		}
+	}
+	else
+	{
+		throw bbe::IllegalArgumentException();
+	}
+}
+
+void SlideShow::draw(bbe::PrimitiveBrush2D& brush)
+{
+	slides[currentSlide].draw(brush);
+}
+
+void SlideShow::addType(const bbe::String& type)
+{
+	for (size_t i = 0; i < slides.getLength(); i++)
+	{
+		slides[i].addType(type);
+	}
+}
+
+void SlideShow::addSlide(const char* path)
+{
+	slides.add(Slide(path));
 }

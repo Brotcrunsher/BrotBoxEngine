@@ -3,29 +3,19 @@
 #include <array>
 #include <memory>
 
-class SimplePresentation
+enum class PresentationControl
 {
-public:
-	enum class PresentationControl
-	{
-		none,
-		next,
-		previous,
-	};
+	none,
+	next,
+	previous,
+};
 
-	enum class SimplePresentationType
-	{
-		cpp,
-		lines,
-	};
+class Slide
+{
 private:
-	uint32_t currentEntry = 0;
-	uint32_t amountOfEntries = 0;
-	bool dirty = true;
-	std::array<bbe::Font, 64> fonts;
-	bbe::Font* selectedFont = nullptr;
-	bbe::List<bbe::String> additionalTypes;
-	bbe::Rectangle textAabb;
+
+	static std::array<bbe::Font, 64> fonts;
+	static int32_t fontsLoaded;
 
 	struct Char
 	{
@@ -58,9 +48,6 @@ private:
 
 		void submit(bbe::List<Token>& tokens);
 	};
-
-	bbe::String text;
-
 	static bbe::Color tokenTypeToColor(TokenType type);
 
 	class Tokenizer
@@ -94,20 +81,32 @@ private:
 		virtual bool hasFinalBrightState() override;
 	};
 
+	uint32_t currentEntry = 0;
+	uint32_t amountOfEntries = 0;
+	bool dirty = true;
+	bbe::Font* selectedFont = nullptr;
+	bbe::List<bbe::String> additionalTypes;
+	bbe::Rectangle textAabb;
+	bbe::String text;
 	std::unique_ptr<Tokenizer> tokenizer;
 	float scrollValue = 0;
 	bool scrollingAllowed = false;
 
 public:
-	SimplePresentation(SimplePresentationType simplePresentationType);
+	Slide(const char* path);
+	~Slide();
+	Slide(Slide&& other);
+	Slide& operator=(Slide&&)      = delete;
 
-	void addText(const char* txt);
 
 	void update(PresentationControl pc, float scrollValue);
 	void draw(bbe::PrimitiveBrush2D& brush);
 	void addType(const bbe::String& type);
+	bool isFirstEntry() const;
+	bool isLastEntry() const;
 
 private:
+	void addText(const char* txt);
 	void next();
 	bool hasNext() const;
 	void prev();
@@ -117,8 +116,27 @@ private:
 	bbe::Font& getFont();
 
 
-	SimplePresentation(const SimplePresentation&)            = delete;
-	SimplePresentation(SimplePresentation&&)                 = delete;
-	SimplePresentation& operator=(const SimplePresentation&) = delete;
-	SimplePresentation& operator=(SimplePresentation&&)      = delete;
+	Slide(const Slide&)            = delete;
+	Slide& operator=(const Slide&) = delete;
+};
+
+class SlideShow
+{
+private:
+	bbe::List<Slide> slides;
+	uint32_t currentSlide = 0;
+
+public:
+	SlideShow() = default;
+
+	void update(PresentationControl pc, float scrollValue);
+	void draw(bbe::PrimitiveBrush2D& brush);
+	void addType(const bbe::String& type);
+	void addSlide(const char* path);
+
+private:
+	SlideShow(const SlideShow&)            = delete;
+	SlideShow(SlideShow&&)                 = delete;
+	SlideShow& operator=(const SlideShow&) = delete;
+	SlideShow& operator=(SlideShow&&)      = delete;
 };
