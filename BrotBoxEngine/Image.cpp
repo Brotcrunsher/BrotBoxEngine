@@ -312,14 +312,7 @@ void bbe::Image::load(int width, int height, const float * data, ImageFormat for
 	}
 	else if (format == ImageFormat::R32FLOAT || format == ImageFormat::R8G8B8A8)
 	{
-		for (int i = 0; i < getSizeInBytes(); i += 4)
-		{
-			byte *ptr = (byte*)(data + i / 4);
-			m_pdata[i + 0] = ptr[0];
-			m_pdata[i + 1] = ptr[1];
-			m_pdata[i + 2] = ptr[2];
-			m_pdata[i + 3] = ptr[3];
-		}
+		memcpy(m_pdata, data, getSizeInBytes());
 	}
 	else
 	{
