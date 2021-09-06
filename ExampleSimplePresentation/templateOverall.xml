@@ -1,0 +1,1142 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?mso-application progid="PowerPoint.Show"?>
+<pkg:package xmlns:pkg="http://schemas.microsoft.com/office/2006/xmlPackage">
+	<pkg:part pkg:name="/_rels/.rels" pkg:contentType="application/vnd.openxmlformats-package.relationships+xml" pkg:padding="512">
+		<pkg:xmlData>
+			<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+				<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
+			</Relationships>
+		</pkg:xmlData>
+	</pkg:part>
+	<pkg:part pkg:name="/ppt/presentation.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml">
+		<pkg:xmlData>
+			<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" saveSubsetFonts="1">
+				<p:sldMasterIdLst>
+					<p:sldMasterId id="2147483648" r:id="rId1"/>
+				</p:sldMasterIdLst>
+				<p:sldIdLst>
+					%%%SLIDE_ID_LIST%%%
+				</p:sldIdLst>
+				<p:sldSz cx="12192000" cy="6858000"/>
+				<p:notesSz cx="6858000" cy="9144000"/>
+				<p:defaultTextStyle>
+					<a:defPPr>
+						<a:defRPr lang="de-DE"/>
+					</a:defPPr>
+					<a:lvl1pPr marL="0" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+						<a:defRPr sz="1800" kern="1200">
+							<a:solidFill>
+								<a:schemeClr val="tx1"/>
+							</a:solidFill>
+							<a:latin typeface="+mn-lt"/>
+							<a:ea typeface="+mn-ea"/>
+							<a:cs typeface="+mn-cs"/>
+						</a:defRPr>
+					</a:lvl1pPr>
+					<a:lvl2pPr marL="457200" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+						<a:defRPr sz="1800" kern="1200">
+							<a:solidFill>
+								<a:schemeClr val="tx1"/>
+							</a:solidFill>
+							<a:latin typeface="+mn-lt"/>
+							<a:ea typeface="+mn-ea"/>
+							<a:cs typeface="+mn-cs"/>
+						</a:defRPr>
+					</a:lvl2pPr>
+					<a:lvl3pPr marL="914400" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+						<a:defRPr sz="1800" kern="1200">
+							<a:solidFill>
+								<a:schemeClr val="tx1"/>
+							</a:solidFill>
+							<a:latin typeface="+mn-lt"/>
+							<a:ea typeface="+mn-ea"/>
+							<a:cs typeface="+mn-cs"/>
+						</a:defRPr>
+					</a:lvl3pPr>
+					<a:lvl4pPr marL="1371600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+						<a:defRPr sz="1800" kern="1200">
+							<a:solidFill>
+								<a:schemeClr val="tx1"/>
+							</a:solidFill>
+							<a:latin typeface="+mn-lt"/>
+							<a:ea typeface="+mn-ea"/>
+							<a:cs typeface="+mn-cs"/>
+						</a:defRPr>
+					</a:lvl4pPr>
+					<a:lvl5pPr marL="1828800" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+						<a:defRPr sz="1800" kern="1200">
+							<a:solidFill>
+								<a:schemeClr val="tx1"/>
+							</a:solidFill>
+							<a:latin typeface="+mn-lt"/>
+							<a:ea typeface="+mn-ea"/>
+							<a:cs typeface="+mn-cs"/>
+						</a:defRPr>
+					</a:lvl5pPr>
+					<a:lvl6pPr marL="2286000" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+						<a:defRPr sz="1800" kern="1200">
+							<a:solidFill>
+								<a:schemeClr val="tx1"/>
+							</a:solidFill>
+							<a:latin typeface="+mn-lt"/>
+							<a:ea typeface="+mn-ea"/>
+							<a:cs typeface="+mn-cs"/>
+						</a:defRPr>
+					</a:lvl6pPr>
+					<a:lvl7pPr marL="2743200" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+						<a:defRPr sz="1800" kern="1200">
+							<a:solidFill>
+								<a:schemeClr val="tx1"/>
+							</a:solidFill>
+							<a:latin typeface="+mn-lt"/>
+							<a:ea typeface="+mn-ea"/>
+							<a:cs typeface="+mn-cs"/>
+						</a:defRPr>
+					</a:lvl7pPr>
+					<a:lvl8pPr marL="3200400" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+						<a:defRPr sz="1800" kern="1200">
+							<a:solidFill>
+								<a:schemeClr val="tx1"/>
+							</a:solidFill>
+							<a:latin typeface="+mn-lt"/>
+							<a:ea typeface="+mn-ea"/>
+							<a:cs typeface="+mn-cs"/>
+						</a:defRPr>
+					</a:lvl8pPr>
+					<a:lvl9pPr marL="3657600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+						<a:defRPr sz="1800" kern="1200">
+							<a:solidFill>
+								<a:schemeClr val="tx1"/>
+							</a:solidFill>
+							<a:latin typeface="+mn-lt"/>
+							<a:ea typeface="+mn-ea"/>
+							<a:cs typeface="+mn-cs"/>
+						</a:defRPr>
+					</a:lvl9pPr>
+				</p:defaultTextStyle>
+			</p:presentation>
+		</pkg:xmlData>
+	</pkg:part>
+%%%SLIDES_TEMPLATE%%%
+	<pkg:part pkg:name="/ppt/_rels/presentation.xml.rels" pkg:contentType="application/vnd.openxmlformats-package.relationships+xml" pkg:padding="256">
+		<pkg:xmlData>
+			<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+				<Relationship Id="rId7" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles" Target="tableStyles.xml"/>
+				<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>
+				<Relationship Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>
+				<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps" Target="viewProps.xml"/>
+				<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps" Target="presProps.xml"/>
+				%%%SLIDE_RELATIONSHIPS%%%
+			</Relationships>
+		</pkg:xmlData>
+	</pkg:part>
+	%%%SLIDE_REL_TEMPLATE%%%
+	<pkg:part pkg:name="/ppt/slideMasters/slideMaster1.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml">
+		<pkg:xmlData>
+			<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+				<p:cSld>
+					<p:bg>
+						<p:bgRef idx="1001">
+							<a:schemeClr val="bg1"/>
+						</p:bgRef>
+					</p:bg>
+					<p:spTree>
+						<p:nvGrpSpPr>
+							<p:cNvPr id="1" name=""/>
+							<p:cNvGrpSpPr/>
+							<p:nvPr/>
+						</p:nvGrpSpPr>
+						<p:grpSpPr>
+							<a:xfrm>
+								<a:off x="0" y="0"/>
+								<a:ext cx="0" cy="0"/>
+								<a:chOff x="0" y="0"/>
+								<a:chExt cx="0" cy="0"/>
+							</a:xfrm>
+						</p:grpSpPr>
+						<p:sp>
+							<p:nvSpPr>
+								<p:cNvPr id="2" name="Titelplatzhalter 1">
+									<a:extLst>
+										<a:ext uri="{FF2B5EF4-FFF2-40B4-BE49-F238E27FC236}">
+											<a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="{3FB1E00B-B0D3-4A96-9CC9-8A68E509A7B5}"/>
+										</a:ext>
+									</a:extLst>
+								</p:cNvPr>
+								<p:cNvSpPr>
+									<a:spLocks noGrp="1"/>
+								</p:cNvSpPr>
+								<p:nvPr>
+									<p:ph type="title"/>
+								</p:nvPr>
+							</p:nvSpPr>
+							<p:spPr>
+								<a:xfrm>
+									<a:off x="838200" y="365125"/>
+									<a:ext cx="10515600" cy="1325563"/>
+								</a:xfrm>
+								<a:prstGeom prst="rect">
+									<a:avLst/>
+								</a:prstGeom>
+							</p:spPr>
+							<p:txBody>
+								<a:bodyPr vert="horz" lIns="91440" tIns="45720" rIns="91440" bIns="45720" rtlCol="0" anchor="ctr">
+									<a:normAutofit/>
+								</a:bodyPr>
+								<a:lstStyle/>
+								<a:p>
+									<a:r>
+										<a:rPr lang="de-DE"/>
+										<a:t>Mastertitelformat bearbeiten</a:t>
+									</a:r>
+								</a:p>
+							</p:txBody>
+						</p:sp>
+						<p:sp>
+							<p:nvSpPr>
+								<p:cNvPr id="3" name="Textplatzhalter 2">
+									<a:extLst>
+										<a:ext uri="{FF2B5EF4-FFF2-40B4-BE49-F238E27FC236}">
+											<a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="{751F6494-A0C5-4D8B-A3EB-8E70BE6AEF0A}"/>
+										</a:ext>
+									</a:extLst>
+								</p:cNvPr>
+								<p:cNvSpPr>
+									<a:spLocks noGrp="1"/>
+								</p:cNvSpPr>
+								<p:nvPr>
+									<p:ph type="body" idx="1"/>
+								</p:nvPr>
+							</p:nvSpPr>
+							<p:spPr>
+								<a:xfrm>
+									<a:off x="838200" y="1825625"/>
+									<a:ext cx="10515600" cy="4351338"/>
+								</a:xfrm>
+								<a:prstGeom prst="rect">
+									<a:avLst/>
+								</a:prstGeom>
+							</p:spPr>
+							<p:txBody>
+								<a:bodyPr vert="horz" lIns="91440" tIns="45720" rIns="91440" bIns="45720" rtlCol="0">
+									<a:normAutofit/>
+								</a:bodyPr>
+								<a:lstStyle/>
+								<a:p>
+									<a:pPr lvl="0"/>
+									<a:r>
+										<a:rPr lang="de-DE"/>
+										<a:t>Mastertextformat bearbeiten</a:t>
+									</a:r>
+								</a:p>
+								<a:p>
+									<a:pPr lvl="1"/>
+									<a:r>
+										<a:rPr lang="de-DE"/>
+										<a:t>Zweite Ebene</a:t>
+									</a:r>
+								</a:p>
+								<a:p>
+									<a:pPr lvl="2"/>
+									<a:r>
+										<a:rPr lang="de-DE"/>
+										<a:t>Dritte Ebene</a:t>
+									</a:r>
+								</a:p>
+								<a:p>
+									<a:pPr lvl="3"/>
+									<a:r>
+										<a:rPr lang="de-DE"/>
+										<a:t>Vierte Ebene</a:t>
+									</a:r>
+								</a:p>
+								<a:p>
+									<a:pPr lvl="4"/>
+									<a:r>
+										<a:rPr lang="de-DE"/>
+										<a:t>Fünfte Ebene</a:t>
+									</a:r>
+								</a:p>
+							</p:txBody>
+						</p:sp>
+						<p:sp>
+							<p:nvSpPr>
+								<p:cNvPr id="4" name="Datumsplatzhalter 3">
+									<a:extLst>
+										<a:ext uri="{FF2B5EF4-FFF2-40B4-BE49-F238E27FC236}">
+											<a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="{C3AD82E3-4730-4CBB-9805-DA67BDA73C04}"/>
+										</a:ext>
+									</a:extLst>
+								</p:cNvPr>
+								<p:cNvSpPr>
+									<a:spLocks noGrp="1"/>
+								</p:cNvSpPr>
+								<p:nvPr>
+									<p:ph type="dt" sz="half" idx="2"/>
+								</p:nvPr>
+							</p:nvSpPr>
+							<p:spPr>
+								<a:xfrm>
+									<a:off x="838200" y="6356350"/>
+									<a:ext cx="2743200" cy="365125"/>
+								</a:xfrm>
+								<a:prstGeom prst="rect">
+									<a:avLst/>
+								</a:prstGeom>
+							</p:spPr>
+							<p:txBody>
+								<a:bodyPr vert="horz" lIns="91440" tIns="45720" rIns="91440" bIns="45720" rtlCol="0" anchor="ctr"/>
+								<a:lstStyle>
+									<a:lvl1pPr algn="l">
+										<a:defRPr sz="1200">
+											<a:solidFill>
+												<a:schemeClr val="tx1">
+													<a:tint val="75000"/>
+												</a:schemeClr>
+											</a:solidFill>
+										</a:defRPr>
+									</a:lvl1pPr>
+								</a:lstStyle>
+								<a:p>
+									<a:fld id="{409B55EA-3966-4A68-B2D2-AB773319B20C}" type="datetimeFigureOut">
+										<a:rPr lang="de-DE" smtClean="0"/>
+										<a:t>31.08.2021</a:t>
+									</a:fld>
+									<a:endParaRPr lang="de-DE"/>
+								</a:p>
+							</p:txBody>
+						</p:sp>
+						<p:sp>
+							<p:nvSpPr>
+								<p:cNvPr id="5" name="Fußzeilenplatzhalter 4">
+									<a:extLst>
+										<a:ext uri="{FF2B5EF4-FFF2-40B4-BE49-F238E27FC236}">
+											<a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="{7ED0866C-ECFC-4F9D-87AD-277CC20F0520}"/>
+										</a:ext>
+									</a:extLst>
+								</p:cNvPr>
+								<p:cNvSpPr>
+									<a:spLocks noGrp="1"/>
+								</p:cNvSpPr>
+								<p:nvPr>
+									<p:ph type="ftr" sz="quarter" idx="3"/>
+								</p:nvPr>
+							</p:nvSpPr>
+							<p:spPr>
+								<a:xfrm>
+									<a:off x="4038600" y="6356350"/>
+									<a:ext cx="4114800" cy="365125"/>
+								</a:xfrm>
+								<a:prstGeom prst="rect">
+									<a:avLst/>
+								</a:prstGeom>
+							</p:spPr>
+							<p:txBody>
+								<a:bodyPr vert="horz" lIns="91440" tIns="45720" rIns="91440" bIns="45720" rtlCol="0" anchor="ctr"/>
+								<a:lstStyle>
+									<a:lvl1pPr algn="ctr">
+										<a:defRPr sz="1200">
+											<a:solidFill>
+												<a:schemeClr val="tx1">
+													<a:tint val="75000"/>
+												</a:schemeClr>
+											</a:solidFill>
+										</a:defRPr>
+									</a:lvl1pPr>
+								</a:lstStyle>
+								<a:p>
+									<a:endParaRPr lang="de-DE"/>
+								</a:p>
+							</p:txBody>
+						</p:sp>
+						<p:sp>
+							<p:nvSpPr>
+								<p:cNvPr id="6" name="Foliennummernplatzhalter 5">
+									<a:extLst>
+										<a:ext uri="{FF2B5EF4-FFF2-40B4-BE49-F238E27FC236}">
+											<a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="{EB3EBD3F-691D-4861-83CB-B7BF597B94DF}"/>
+										</a:ext>
+									</a:extLst>
+								</p:cNvPr>
+								<p:cNvSpPr>
+									<a:spLocks noGrp="1"/>
+								</p:cNvSpPr>
+								<p:nvPr>
+									<p:ph type="sldNum" sz="quarter" idx="4"/>
+								</p:nvPr>
+							</p:nvSpPr>
+							<p:spPr>
+								<a:xfrm>
+									<a:off x="8610600" y="6356350"/>
+									<a:ext cx="2743200" cy="365125"/>
+								</a:xfrm>
+								<a:prstGeom prst="rect">
+									<a:avLst/>
+								</a:prstGeom>
+							</p:spPr>
+							<p:txBody>
+								<a:bodyPr vert="horz" lIns="91440" tIns="45720" rIns="91440" bIns="45720" rtlCol="0" anchor="ctr"/>
+								<a:lstStyle>
+									<a:lvl1pPr algn="r">
+										<a:defRPr sz="1200">
+											<a:solidFill>
+												<a:schemeClr val="tx1">
+													<a:tint val="75000"/>
+												</a:schemeClr>
+											</a:solidFill>
+										</a:defRPr>
+									</a:lvl1pPr>
+								</a:lstStyle>
+								<a:p>
+									<a:fld id="{0FDA6680-FAF4-4FFB-B11D-0F4FA806F5AA}" type="slidenum">
+										<a:rPr lang="de-DE" smtClean="0"/>
+										<a:t>‹Nr.›</a:t>
+									</a:fld>
+									<a:endParaRPr lang="de-DE"/>
+								</a:p>
+							</p:txBody>
+						</p:sp>
+					</p:spTree>
+				</p:cSld>
+				<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
+				<p:sldLayoutIdLst>
+					<p:sldLayoutId id="2147483649" r:id="rId1"/>
+				</p:sldLayoutIdLst>
+				<p:txStyles>
+					<p:titleStyle>
+						<a:lvl1pPr algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:lnSpc>
+								<a:spcPct val="90000"/>
+							</a:lnSpc>
+							<a:spcBef>
+								<a:spcPct val="0"/>
+							</a:spcBef>
+							<a:buNone/>
+							<a:defRPr sz="4400" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mj-lt"/>
+								<a:ea typeface="+mj-ea"/>
+								<a:cs typeface="+mj-cs"/>
+							</a:defRPr>
+						</a:lvl1pPr>
+					</p:titleStyle>
+					<p:bodyStyle>
+						<a:lvl1pPr marL="228600" indent="-228600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:lnSpc>
+								<a:spcPct val="90000"/>
+							</a:lnSpc>
+							<a:spcBef>
+								<a:spcPts val="1000"/>
+							</a:spcBef>
+							<a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/>
+							<a:buChar char="•"/>
+							<a:defRPr sz="2800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl1pPr>
+						<a:lvl2pPr marL="685800" indent="-228600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:lnSpc>
+								<a:spcPct val="90000"/>
+							</a:lnSpc>
+							<a:spcBef>
+								<a:spcPts val="500"/>
+							</a:spcBef>
+							<a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/>
+							<a:buChar char="•"/>
+							<a:defRPr sz="2400" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl2pPr>
+						<a:lvl3pPr marL="1143000" indent="-228600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:lnSpc>
+								<a:spcPct val="90000"/>
+							</a:lnSpc>
+							<a:spcBef>
+								<a:spcPts val="500"/>
+							</a:spcBef>
+							<a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/>
+							<a:buChar char="•"/>
+							<a:defRPr sz="2000" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl3pPr>
+						<a:lvl4pPr marL="1600200" indent="-228600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:lnSpc>
+								<a:spcPct val="90000"/>
+							</a:lnSpc>
+							<a:spcBef>
+								<a:spcPts val="500"/>
+							</a:spcBef>
+							<a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/>
+							<a:buChar char="•"/>
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl4pPr>
+						<a:lvl5pPr marL="2057400" indent="-228600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:lnSpc>
+								<a:spcPct val="90000"/>
+							</a:lnSpc>
+							<a:spcBef>
+								<a:spcPts val="500"/>
+							</a:spcBef>
+							<a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/>
+							<a:buChar char="•"/>
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl5pPr>
+						<a:lvl6pPr marL="2514600" indent="-228600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:lnSpc>
+								<a:spcPct val="90000"/>
+							</a:lnSpc>
+							<a:spcBef>
+								<a:spcPts val="500"/>
+							</a:spcBef>
+							<a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/>
+							<a:buChar char="•"/>
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl6pPr>
+						<a:lvl7pPr marL="2971800" indent="-228600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:lnSpc>
+								<a:spcPct val="90000"/>
+							</a:lnSpc>
+							<a:spcBef>
+								<a:spcPts val="500"/>
+							</a:spcBef>
+							<a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/>
+							<a:buChar char="•"/>
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl7pPr>
+						<a:lvl8pPr marL="3429000" indent="-228600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:lnSpc>
+								<a:spcPct val="90000"/>
+							</a:lnSpc>
+							<a:spcBef>
+								<a:spcPts val="500"/>
+							</a:spcBef>
+							<a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/>
+							<a:buChar char="•"/>
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl8pPr>
+						<a:lvl9pPr marL="3886200" indent="-228600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:lnSpc>
+								<a:spcPct val="90000"/>
+							</a:lnSpc>
+							<a:spcBef>
+								<a:spcPts val="500"/>
+							</a:spcBef>
+							<a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/>
+							<a:buChar char="•"/>
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl9pPr>
+					</p:bodyStyle>
+					<p:otherStyle>
+						<a:defPPr>
+							<a:defRPr lang="de-DE"/>
+						</a:defPPr>
+						<a:lvl1pPr marL="0" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl1pPr>
+						<a:lvl2pPr marL="457200" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl2pPr>
+						<a:lvl3pPr marL="914400" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl3pPr>
+						<a:lvl4pPr marL="1371600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl4pPr>
+						<a:lvl5pPr marL="1828800" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl5pPr>
+						<a:lvl6pPr marL="2286000" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl6pPr>
+						<a:lvl7pPr marL="2743200" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl7pPr>
+						<a:lvl8pPr marL="3200400" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl8pPr>
+						<a:lvl9pPr marL="3657600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+							<a:defRPr sz="1800" kern="1200">
+								<a:solidFill>
+									<a:schemeClr val="tx1"/>
+								</a:solidFill>
+								<a:latin typeface="+mn-lt"/>
+								<a:ea typeface="+mn-ea"/>
+								<a:cs typeface="+mn-cs"/>
+							</a:defRPr>
+						</a:lvl9pPr>
+					</p:otherStyle>
+				</p:txStyles>
+			</p:sldMaster>
+		</pkg:xmlData>
+	</pkg:part>
+	<pkg:part pkg:name="/ppt/slideLayouts/slideLayout1.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml">
+		<pkg:xmlData>
+			<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="tx">
+				<p:cSld>
+					<p:spTree>
+						<p:nvGrpSpPr>
+							<p:cNvPr id="1" name=""/>
+							<p:cNvGrpSpPr/>
+							<p:nvPr/>
+						</p:nvGrpSpPr>
+						<p:grpSpPr>
+							<a:xfrm>
+								<a:off x="0" y="0"/>
+								<a:ext cx="0" cy="0"/>
+								<a:chOff x="0" y="0"/>
+								<a:chExt cx="0" cy="0"/>
+							</a:xfrm>
+						</p:grpSpPr>
+					</p:spTree>
+				</p:cSld>
+				<p:clrMapOvr>
+					<a:masterClrMapping/>
+				</p:clrMapOvr>
+			</p:sldLayout>
+		</pkg:xmlData>
+	</pkg:part>
+	<pkg:part pkg:name="/ppt/slideMasters/_rels/slideMaster1.xml.rels" pkg:contentType="application/vnd.openxmlformats-package.relationships+xml">
+		<pkg:xmlData>
+			<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+				<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/>
+				<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
+			</Relationships>
+		</pkg:xmlData>
+	</pkg:part>
+	<pkg:part pkg:name="/ppt/slideLayouts/_rels/slideLayout1.xml.rels" pkg:contentType="application/vnd.openxmlformats-package.relationships+xml">
+		<pkg:xmlData>
+			<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+				<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>
+			</Relationships>
+		</pkg:xmlData>
+	</pkg:part>
+	<pkg:part pkg:name="/ppt/theme/theme1.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.theme+xml">
+		<pkg:xmlData>
+			<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office">
+				<a:themeElements>
+					<a:clrScheme name="Office">
+						<a:dk1>
+							<a:sysClr val="windowText" lastClr="000000"/>
+						</a:dk1>
+						<a:lt1>
+							<a:sysClr val="window" lastClr="FFFFFF"/>
+						</a:lt1>
+						<a:dk2>
+							<a:srgbClr val="44546A"/>
+						</a:dk2>
+						<a:lt2>
+							<a:srgbClr val="E7E6E6"/>
+						</a:lt2>
+						<a:accent1>
+							<a:srgbClr val="4472C4"/>
+						</a:accent1>
+						<a:accent2>
+							<a:srgbClr val="ED7D31"/>
+						</a:accent2>
+						<a:accent3>
+							<a:srgbClr val="A5A5A5"/>
+						</a:accent3>
+						<a:accent4>
+							<a:srgbClr val="FFC000"/>
+						</a:accent4>
+						<a:accent5>
+							<a:srgbClr val="5B9BD5"/>
+						</a:accent5>
+						<a:accent6>
+							<a:srgbClr val="70AD47"/>
+						</a:accent6>
+						<a:hlink>
+							<a:srgbClr val="0563C1"/>
+						</a:hlink>
+						<a:folHlink>
+							<a:srgbClr val="954F72"/>
+						</a:folHlink>
+					</a:clrScheme>
+					<a:fontScheme name="Office">
+						<a:majorFont>
+							<a:latin typeface="Calibri Light" panose="020F0302020204030204"/>
+							<a:ea typeface=""/>
+							<a:cs typeface=""/>
+							<a:font script="Jpan" typeface="游ゴシック Light"/>
+							<a:font script="Hang" typeface="맑은 고딕"/>
+							<a:font script="Hans" typeface="等线 Light"/>
+							<a:font script="Hant" typeface="新細明體"/>
+							<a:font script="Arab" typeface="Times New Roman"/>
+							<a:font script="Hebr" typeface="Times New Roman"/>
+							<a:font script="Thai" typeface="Angsana New"/>
+							<a:font script="Ethi" typeface="Nyala"/>
+							<a:font script="Beng" typeface="Vrinda"/>
+							<a:font script="Gujr" typeface="Shruti"/>
+							<a:font script="Khmr" typeface="MoolBoran"/>
+							<a:font script="Knda" typeface="Tunga"/>
+							<a:font script="Guru" typeface="Raavi"/>
+							<a:font script="Cans" typeface="Euphemia"/>
+							<a:font script="Cher" typeface="Plantagenet Cherokee"/>
+							<a:font script="Yiii" typeface="Microsoft Yi Baiti"/>
+							<a:font script="Tibt" typeface="Microsoft Himalaya"/>
+							<a:font script="Thaa" typeface="MV Boli"/>
+							<a:font script="Deva" typeface="Mangal"/>
+							<a:font script="Telu" typeface="Gautami"/>
+							<a:font script="Taml" typeface="Latha"/>
+							<a:font script="Syrc" typeface="Estrangelo Edessa"/>
+							<a:font script="Orya" typeface="Kalinga"/>
+							<a:font script="Mlym" typeface="Kartika"/>
+							<a:font script="Laoo" typeface="DokChampa"/>
+							<a:font script="Sinh" typeface="Iskoola Pota"/>
+							<a:font script="Mong" typeface="Mongolian Baiti"/>
+							<a:font script="Viet" typeface="Times New Roman"/>
+							<a:font script="Uigh" typeface="Microsoft Uighur"/>
+							<a:font script="Geor" typeface="Sylfaen"/>
+							<a:font script="Armn" typeface="Arial"/>
+							<a:font script="Bugi" typeface="Leelawadee UI"/>
+							<a:font script="Bopo" typeface="Microsoft JhengHei"/>
+							<a:font script="Java" typeface="Javanese Text"/>
+							<a:font script="Lisu" typeface="Segoe UI"/>
+							<a:font script="Mymr" typeface="Myanmar Text"/>
+							<a:font script="Nkoo" typeface="Ebrima"/>
+							<a:font script="Olck" typeface="Nirmala UI"/>
+							<a:font script="Osma" typeface="Ebrima"/>
+							<a:font script="Phag" typeface="Phagspa"/>
+							<a:font script="Syrn" typeface="Estrangelo Edessa"/>
+							<a:font script="Syrj" typeface="Estrangelo Edessa"/>
+							<a:font script="Syre" typeface="Estrangelo Edessa"/>
+							<a:font script="Sora" typeface="Nirmala UI"/>
+							<a:font script="Tale" typeface="Microsoft Tai Le"/>
+							<a:font script="Talu" typeface="Microsoft New Tai Lue"/>
+							<a:font script="Tfng" typeface="Ebrima"/>
+						</a:majorFont>
+						<a:minorFont>
+							<a:latin typeface="Calibri" panose="020F0502020204030204"/>
+							<a:ea typeface=""/>
+							<a:cs typeface=""/>
+							<a:font script="Jpan" typeface="游ゴシック"/>
+							<a:font script="Hang" typeface="맑은 고딕"/>
+							<a:font script="Hans" typeface="等线"/>
+							<a:font script="Hant" typeface="新細明體"/>
+							<a:font script="Arab" typeface="Arial"/>
+							<a:font script="Hebr" typeface="Arial"/>
+							<a:font script="Thai" typeface="Cordia New"/>
+							<a:font script="Ethi" typeface="Nyala"/>
+							<a:font script="Beng" typeface="Vrinda"/>
+							<a:font script="Gujr" typeface="Shruti"/>
+							<a:font script="Khmr" typeface="DaunPenh"/>
+							<a:font script="Knda" typeface="Tunga"/>
+							<a:font script="Guru" typeface="Raavi"/>
+							<a:font script="Cans" typeface="Euphemia"/>
+							<a:font script="Cher" typeface="Plantagenet Cherokee"/>
+							<a:font script="Yiii" typeface="Microsoft Yi Baiti"/>
+							<a:font script="Tibt" typeface="Microsoft Himalaya"/>
+							<a:font script="Thaa" typeface="MV Boli"/>
+							<a:font script="Deva" typeface="Mangal"/>
+							<a:font script="Telu" typeface="Gautami"/>
+							<a:font script="Taml" typeface="Latha"/>
+							<a:font script="Syrc" typeface="Estrangelo Edessa"/>
+							<a:font script="Orya" typeface="Kalinga"/>
+							<a:font script="Mlym" typeface="Kartika"/>
+							<a:font script="Laoo" typeface="DokChampa"/>
+							<a:font script="Sinh" typeface="Iskoola Pota"/>
+							<a:font script="Mong" typeface="Mongolian Baiti"/>
+							<a:font script="Viet" typeface="Arial"/>
+							<a:font script="Uigh" typeface="Microsoft Uighur"/>
+							<a:font script="Geor" typeface="Sylfaen"/>
+							<a:font script="Armn" typeface="Arial"/>
+							<a:font script="Bugi" typeface="Leelawadee UI"/>
+							<a:font script="Bopo" typeface="Microsoft JhengHei"/>
+							<a:font script="Java" typeface="Javanese Text"/>
+							<a:font script="Lisu" typeface="Segoe UI"/>
+							<a:font script="Mymr" typeface="Myanmar Text"/>
+							<a:font script="Nkoo" typeface="Ebrima"/>
+							<a:font script="Olck" typeface="Nirmala UI"/>
+							<a:font script="Osma" typeface="Ebrima"/>
+							<a:font script="Phag" typeface="Phagspa"/>
+							<a:font script="Syrn" typeface="Estrangelo Edessa"/>
+							<a:font script="Syrj" typeface="Estrangelo Edessa"/>
+							<a:font script="Syre" typeface="Estrangelo Edessa"/>
+							<a:font script="Sora" typeface="Nirmala UI"/>
+							<a:font script="Tale" typeface="Microsoft Tai Le"/>
+							<a:font script="Talu" typeface="Microsoft New Tai Lue"/>
+							<a:font script="Tfng" typeface="Ebrima"/>
+						</a:minorFont>
+					</a:fontScheme>
+					<a:fmtScheme name="Office">
+						<a:fillStyleLst>
+							<a:solidFill>
+								<a:schemeClr val="phClr"/>
+							</a:solidFill>
+							<a:gradFill rotWithShape="1">
+								<a:gsLst>
+									<a:gs pos="0">
+										<a:schemeClr val="phClr">
+											<a:lumMod val="110000"/>
+											<a:satMod val="105000"/>
+											<a:tint val="67000"/>
+										</a:schemeClr>
+									</a:gs>
+									<a:gs pos="50000">
+										<a:schemeClr val="phClr">
+											<a:lumMod val="105000"/>
+											<a:satMod val="103000"/>
+											<a:tint val="73000"/>
+										</a:schemeClr>
+									</a:gs>
+									<a:gs pos="100000">
+										<a:schemeClr val="phClr">
+											<a:lumMod val="105000"/>
+											<a:satMod val="109000"/>
+											<a:tint val="81000"/>
+										</a:schemeClr>
+									</a:gs>
+								</a:gsLst>
+								<a:lin ang="5400000" scaled="0"/>
+							</a:gradFill>
+							<a:gradFill rotWithShape="1">
+								<a:gsLst>
+									<a:gs pos="0">
+										<a:schemeClr val="phClr">
+											<a:satMod val="103000"/>
+											<a:lumMod val="102000"/>
+											<a:tint val="94000"/>
+										</a:schemeClr>
+									</a:gs>
+									<a:gs pos="50000">
+										<a:schemeClr val="phClr">
+											<a:satMod val="110000"/>
+											<a:lumMod val="100000"/>
+											<a:shade val="100000"/>
+										</a:schemeClr>
+									</a:gs>
+									<a:gs pos="100000">
+										<a:schemeClr val="phClr">
+											<a:lumMod val="99000"/>
+											<a:satMod val="120000"/>
+											<a:shade val="78000"/>
+										</a:schemeClr>
+									</a:gs>
+								</a:gsLst>
+								<a:lin ang="5400000" scaled="0"/>
+							</a:gradFill>
+						</a:fillStyleLst>
+						<a:lnStyleLst>
+							<a:ln w="6350" cap="flat" cmpd="sng" algn="ctr">
+								<a:solidFill>
+									<a:schemeClr val="phClr"/>
+								</a:solidFill>
+								<a:prstDash val="solid"/>
+								<a:miter lim="800000"/>
+							</a:ln>
+							<a:ln w="12700" cap="flat" cmpd="sng" algn="ctr">
+								<a:solidFill>
+									<a:schemeClr val="phClr"/>
+								</a:solidFill>
+								<a:prstDash val="solid"/>
+								<a:miter lim="800000"/>
+							</a:ln>
+							<a:ln w="19050" cap="flat" cmpd="sng" algn="ctr">
+								<a:solidFill>
+									<a:schemeClr val="phClr"/>
+								</a:solidFill>
+								<a:prstDash val="solid"/>
+								<a:miter lim="800000"/>
+							</a:ln>
+						</a:lnStyleLst>
+						<a:effectStyleLst>
+							<a:effectStyle>
+								<a:effectLst/>
+							</a:effectStyle>
+							<a:effectStyle>
+								<a:effectLst/>
+							</a:effectStyle>
+							<a:effectStyle>
+								<a:effectLst>
+									<a:outerShdw blurRad="57150" dist="19050" dir="5400000" algn="ctr" rotWithShape="0">
+										<a:srgbClr val="000000">
+											<a:alpha val="63000"/>
+										</a:srgbClr>
+									</a:outerShdw>
+								</a:effectLst>
+							</a:effectStyle>
+						</a:effectStyleLst>
+						<a:bgFillStyleLst>
+							<a:solidFill>
+								<a:schemeClr val="phClr"/>
+							</a:solidFill>
+							<a:solidFill>
+								<a:schemeClr val="phClr">
+									<a:tint val="95000"/>
+									<a:satMod val="170000"/>
+								</a:schemeClr>
+							</a:solidFill>
+							<a:gradFill rotWithShape="1">
+								<a:gsLst>
+									<a:gs pos="0">
+										<a:schemeClr val="phClr">
+											<a:tint val="93000"/>
+											<a:satMod val="150000"/>
+											<a:shade val="98000"/>
+											<a:lumMod val="102000"/>
+										</a:schemeClr>
+									</a:gs>
+									<a:gs pos="50000">
+										<a:schemeClr val="phClr">
+											<a:tint val="98000"/>
+											<a:satMod val="130000"/>
+											<a:shade val="90000"/>
+											<a:lumMod val="103000"/>
+										</a:schemeClr>
+									</a:gs>
+									<a:gs pos="100000">
+										<a:schemeClr val="phClr">
+											<a:shade val="63000"/>
+											<a:satMod val="120000"/>
+										</a:schemeClr>
+									</a:gs>
+								</a:gsLst>
+								<a:lin ang="5400000" scaled="0"/>
+							</a:gradFill>
+						</a:bgFillStyleLst>
+					</a:fmtScheme>
+				</a:themeElements>
+				<a:objectDefaults/>
+				<a:extraClrSchemeLst/>
+				<a:extLst>
+					<a:ext uri="{05A4C25C-085E-4340-85A3-A5531E510DB2}">
+						<thm15:themeFamily xmlns:thm15="http://schemas.microsoft.com/office/thememl/2012/main" name="Office Theme" id="{62F939B6-93AF-4DB8-9C6B-D6C7DFDC589F}" vid="{4A3C46E8-61CC-4603-A589-7422A47A8E4A}"/>
+					</a:ext>
+				</a:extLst>
+			</a:theme>
+		</pkg:xmlData>
+	</pkg:part>
+	<pkg:part pkg:name="/ppt/presProps.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.presentationml.presProps+xml">
+		<pkg:xmlData>
+			<p:presentationPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+				<p:extLst>
+					<p:ext uri="{E76CE94A-603C-4142-B9EB-6D1370010A27}">
+						<p14:discardImageEditData xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" val="0"/>
+					</p:ext>
+					<p:ext uri="{D31A062A-798A-4329-ABDD-BBA856620510}">
+						<p14:defaultImageDpi xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" val="32767"/>
+					</p:ext>
+					<p:ext uri="{FD5EFAAD-0ECE-453E-9831-46B23BE46B34}">
+						<p15:chartTrackingRefBased xmlns:p15="http://schemas.microsoft.com/office/powerpoint/2012/main" val="1"/>
+					</p:ext>
+				</p:extLst>
+			</p:presentationPr>
+		</pkg:xmlData>
+	</pkg:part>
+	<pkg:part pkg:name="/ppt/viewProps.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml">
+		<pkg:xmlData>
+			<p:viewPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+				<p:normalViewPr horzBarState="maximized">
+					<p:restoredLeft sz="15989" autoAdjust="0"/>
+					<p:restoredTop sz="94660"/>
+				</p:normalViewPr>
+				<p:slideViewPr>
+					<p:cSldViewPr snapToGrid="0">
+						<p:cViewPr varScale="1">
+							<p:scale>
+								<a:sx n="75" d="100"/>
+								<a:sy n="75" d="100"/>
+							</p:scale>
+							<p:origin x="687" y="-153"/>
+						</p:cViewPr>
+						<p:guideLst/>
+					</p:cSldViewPr>
+				</p:slideViewPr>
+				<p:notesTextViewPr>
+					<p:cViewPr>
+						<p:scale>
+							<a:sx n="1" d="1"/>
+							<a:sy n="1" d="1"/>
+						</p:scale>
+						<p:origin x="0" y="0"/>
+					</p:cViewPr>
+				</p:notesTextViewPr>
+				<p:gridSpacing cx="72008" cy="72008"/>
+			</p:viewPr>
+		</pkg:xmlData>
+	</pkg:part>
+	<pkg:part pkg:name="/ppt/tableStyles.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml">
+		<pkg:xmlData>
+			<a:tblStyleLst xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>
+		</pkg:xmlData>
+	</pkg:part>
+	<pkg:part pkg:name="/docProps/core.xml" pkg:contentType="application/vnd.openxmlformats-package.core-properties+xml" pkg:padding="256">
+		<pkg:xmlData>
+			<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+				<dc:title>PowerPoint-Präsentation</dc:title>
+				<dc:creator>BrotcrunsherPC11</dc:creator>
+				<cp:lastModifiedBy>Jakob Brotcrunsher</cp:lastModifiedBy>
+				<cp:revision>1</cp:revision>
+				<dcterms:modified xsi:type="dcterms:W3CDTF">2021-08-31T20:27:56Z</dcterms:modified>
+			</cp:coreProperties>
+		</pkg:xmlData>
+	</pkg:part>
+	<pkg:part pkg:name="/docProps/app.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" pkg:padding="256">
+		<pkg:xmlData>
+			<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+				<TotalTime>0</TotalTime>
+				<Words>2</Words>
+				<Application>Microsoft Office PowerPoint</Application>
+				<PresentationFormat>Breitbild</PresentationFormat>
+				<Paragraphs>2</Paragraphs>
+				<Slides>2</Slides>
+				<Notes>0</Notes>
+				<HiddenSlides>0</HiddenSlides>
+				<MMClips>0</MMClips>
+				<ScaleCrop>false</ScaleCrop>
+				<HeadingPairs>
+					<vt:vector size="6" baseType="variant">
+						<vt:variant>
+							<vt:lpstr>Verwendete Schriftarten</vt:lpstr>
+						</vt:variant>
+						<vt:variant>
+							<vt:i4>4</vt:i4>
+						</vt:variant>
+						<vt:variant>
+							<vt:lpstr>Design</vt:lpstr>
+						</vt:variant>
+						<vt:variant>
+							<vt:i4>1</vt:i4>
+						</vt:variant>
+						<vt:variant>
+							<vt:lpstr>Folientitel</vt:lpstr>
+						</vt:variant>
+						<vt:variant>
+							<vt:i4>1</vt:i4>
+						</vt:variant>
+					</vt:vector>
+				</HeadingPairs>
+				<TitlesOfParts>
+					<vt:vector size="6" baseType="lpstr">
+						<vt:lpstr>Arial</vt:lpstr>
+						<vt:lpstr>Calibri</vt:lpstr>
+						<vt:lpstr>Calibri Light</vt:lpstr>
+						<vt:lpstr>Consolas</vt:lpstr>
+						<vt:lpstr>Office</vt:lpstr>
+						<vt:lpstr>PowerPoint-Präsentation</vt:lpstr>
+					</vt:vector>
+				</TitlesOfParts>
+				<LinksUpToDate>false</LinksUpToDate>
+				<SharedDoc>false</SharedDoc>
+				<HyperlinksChanged>false</HyperlinksChanged>
+				<AppVersion>16.0000</AppVersion>
+			</Properties>
+		</pkg:xmlData>
+	</pkg:part>
+</pkg:package>

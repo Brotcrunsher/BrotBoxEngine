@@ -1,0 +1,32 @@
+	<pkg:part pkg:name="/ppt/slides/slide%%%ID%%%.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml">
+		<pkg:xmlData>
+			<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+				<p:cSld>
+					<p:spTree>
+						<p:nvGrpSpPr>
+							<p:cNvPr id="1" name=""/>
+							<p:cNvGrpSpPr/>
+							<p:nvPr/>
+						</p:nvGrpSpPr>
+						<p:grpSpPr>
+							<a:xfrm>
+								<a:off x="0" y="0"/>
+								<a:ext cx="0" cy="0"/>
+								<a:chOff x="0" y="0"/>
+								<a:chExt cx="0" cy="0"/>
+							</a:xfrm>
+						</p:grpSpPr>
+						%%%CONTENT%%%
+					</p:spTree>
+					<p:extLst>
+						<p:ext uri="{BB962C8B-B14F-4D97-AF65-F5344CB8AC3E}">
+							<p14:creationId xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" val="4105993506"/>
+						</p:ext>
+					</p:extLst>
+				</p:cSld>
+				<p:clrMapOvr>
+					<a:masterClrMapping/>
+				</p:clrMapOvr>
+			</p:sld>
+		</pkg:xmlData>
+	</pkg:part>

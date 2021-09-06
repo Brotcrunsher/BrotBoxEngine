@@ -1,0 +1,40 @@
+						<p:sp>
+							<p:nvSpPr>
+								<p:cNvPr id="%%%ID%%%" name="Textfeld 1">
+									<a:extLst>
+										<a:ext uri="{FF2B5EF4-FFF2-40B4-BE49-F238E27FC236}">
+											<a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="{C746C824-6AD4-44E5-A5A2-902249B43085}"/>
+										</a:ext>
+									</a:extLst>
+								</p:cNvPr>
+								<p:cNvSpPr txBox="1"/>
+								<p:nvPr/>
+							</p:nvSpPr>
+							<p:spPr>
+								<a:xfrm>
+									<a:off x="%%%XPOS%%%" y="%%%YPOS%%%"/>
+									<a:ext cx="691215" cy="369332"/>
+								</a:xfrm>
+								<a:prstGeom prst="rect">
+									<a:avLst/>
+								</a:prstGeom>
+								<a:noFill/>
+							</p:spPr>
+							<p:txBody>
+								<a:bodyPr wrap="none" rtlCol="0">
+									<a:spAutoFit/>
+								</a:bodyPr>
+								<a:lstStyle/>
+								<a:p>
+									<a:r>
+										<a:rPr lang="de-DE" dirty="0" err="1">
+											<a:latin typeface="Consolas" panose="020B0609020204030204" pitchFamily="49" charset="0"/>
+										</a:rPr>
+										<a:t>%%%TEXT%%%</a:t>
+									</a:r>
+									<a:endParaRPr lang="de-DE" dirty="0">
+										<a:latin typeface="Consolas" panose="020B0609020204030204" pitchFamily="49" charset="0"/>
+									</a:endParaRPr>
+								</a:p>
+							</p:txBody>
+						</p:sp>

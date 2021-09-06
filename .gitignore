@@ -251,3 +251,4 @@ ModelManifest.xml
 .fake/
 /BrotBoxEngine/EmbedOutput.cpp
 /BrotBoxEngine/EmbedOutput.h
+/ExampleSimplePresentation/out.xml

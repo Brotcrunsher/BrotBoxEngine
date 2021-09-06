@@ -224,6 +224,38 @@ void Slide::compile()
 	dirty = false;
 }
 
+bbe::String Slide::getPowerPointContent()
+{
+	const bbe::String templateContent = bbe::simpleFile::readFile("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/templateContent.xml");
+	const int32_t slideWidth = 12192000;
+	const int32_t slideHeight = 6858000;
+
+	bbe::String retVal = "";
+
+	int32_t id = 1;
+
+	for (size_t i = 0; i < tokenizer->tokens.getLength(); i++)
+	{
+		for (size_t k = 0; k < tokenizer->tokens[i].chars.getLength(); k++)
+		{
+			id++;
+			const Char& c = tokenizer->tokens[i].chars[k];
+			const bbe::Vector2 offset = -textAabb.getPos() - textAabb.getDim() * 0.5f + bbe::Vector2(1280, 720) * 0.5f;
+			const bbe::Vector2 screenSpace = c.pos + offset;
+			const bbe::Vector2 normSpace = screenSpace / bbe::Vector2(1280, 720);
+			const bbe::Vector2 powerPointSpace = bbe::Vector2(normSpace.x * slideWidth, normSpace.y * slideHeight);
+
+			retVal += templateContent
+				.replace("%%%XPOS%%%", bbe::String((int32_t)(powerPointSpace.x)))
+				.replace("%%%YPOS%%%", bbe::String((int32_t)(powerPointSpace.y)))
+				.replace("%%%TEXT%%%", bbe::String::fromCodePoint(c.c))
+				.replace("%%%ID%%%", bbe::String(id));
+		}
+	}
+
+	return retVal;
+}
+
 bbe::Font& Slide::getFont()
 {
 	if (selectedFont == nullptr)
@@ -493,6 +525,10 @@ void Slide::CppTokenizer::animateTokens()
 						if (depth == 0)
 						{
 							tokens[k].showIndex = currentShowIndex;
+							if (k < tokens.getLength() - 1 && tokens[k + 1].text == ";")
+							{
+								tokens[k + 1].showIndex = currentShowIndex;
+							}
 							break;
 						}
 					}
@@ -651,6 +687,20 @@ void SlideShow::update(PresentationControl pc, float scrollValue)
 			slides[currentSlide].update(pc, scrollValue);
 		}
 	}
+	else if (pc == PresentationControl::previous_slide)
+	{
+		if (currentSlide > 0)
+		{
+			currentSlide--;
+		}
+	}
+	else if (pc == PresentationControl::next_slide)
+	{
+		if (currentSlide < slides.getLength() - 1)
+		{
+			currentSlide++;
+		}
+	}
 	else
 	{
 		throw bbe::IllegalArgumentException();
@@ -673,4 +723,46 @@ void SlideShow::addType(const bbe::String& type)
 void SlideShow::addSlide(const char* path)
 {
 	slides.add(Slide(path));
+}
+
+void SlideShow::writeAsPowerPoint(const bbe::String& path)
+{
+	for (size_t i = 0; i < slides.getLength(); i++)
+	{
+		slides[i].compile();
+	}
+
+	const bbe::String templateOverall = bbe::simpleFile::readFile("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/templateOverall.xml");
+	const bbe::String templateSlides = bbe::simpleFile::readFile("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/templateSlides.xml");
+	const bbe::String templateSlideRel = bbe::simpleFile::readFile("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/templateSlideRel.xml");
+	const bbe::String templateSlideIdList = "<p:sldId id=\"%%%ID%%%\" r:id=\"rId%%%ID%%%\"/>";
+	const bbe::String templateRelationships = "<Relationship Id=\"rId%%%ID%%%\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide\" Target=\"slides/slide%%%ID%%%.xml\"/>";
+
+	bbe::String slides = "";
+	bbe::String slideRels = "";
+	bbe::String slideIdList = "";
+	bbe::String relationships = "";
+
+	for (int i = 0; i < this->slides.getLength(); i++)
+	{
+		const bbe::String id = bbe::String(i + 256);
+
+		const bbe::String powerPointContent = this->slides[i].getPowerPointContent();
+
+		slides        += templateSlides       .replace("%%%ID%%%", id).replace("%%%CONTENT%%%", powerPointContent);
+		slideRels     += templateSlideRel     .replace("%%%ID%%%", id);
+		slideIdList   += templateSlideIdList  .replace("%%%ID%%%", id);
+		relationships += templateRelationships.replace("%%%ID%%%", id);
+		break;
+	}
+
+
+	const bbe::String output = templateOverall
+		.replace("%%%SLIDES_TEMPLATE%%%", slides)
+		.replace("%%%SLIDE_ID_LIST%%%", slideIdList)
+		.replace("%%%SLIDE_RELATIONSHIPS%%%", relationships)
+		.replace("%%%SLIDE_REL_TEMPLATE%%%", slideRels);
+
+	bbe::simpleFile::writeStringToFile(path, output);
+	int i = 0;
 }

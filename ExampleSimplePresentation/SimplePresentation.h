@@ -8,6 +8,8 @@ enum class PresentationControl
 	none,
 	next,
 	previous,
+	next_slide,
+	previous_slide,
 };
 
 class Slide
@@ -105,14 +107,16 @@ public:
 	bool isFirstEntry() const;
 	bool isLastEntry() const;
 
+	void compile();
+
+	bbe::String getPowerPointContent();
+
 private:
 	void addText(const char* txt);
 	void next();
 	bool hasNext() const;
 	void prev();
 	bool hasPrev() const;
-
-	void compile();
 	bbe::Font& getFont();
 
 
@@ -133,6 +137,8 @@ public:
 	void draw(bbe::PrimitiveBrush2D& brush);
 	void addType(const bbe::String& type);
 	void addSlide(const char* path);
+
+	void writeAsPowerPoint(const bbe::String& path);
 
 private:
 	SlideShow(const SlideShow&)            = delete;

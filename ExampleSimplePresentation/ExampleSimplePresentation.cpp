@@ -1,6 +1,7 @@
 #include "BBE/BrotBoxEngine.h"
 #include "SimplePresentation.h"
 #include <iostream>
+#include <Windows.h>
 
 constexpr int WINDOW_WIDTH = 1280 + 50;
 constexpr int WINDOW_HEIGHT = 720 + 50;
@@ -15,15 +16,22 @@ public:
 	{
 		slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 038 - Coroutinen - Generatoren/intro.txt");
 		slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 038 - Coroutinen - Generatoren/usage.txt");
+		slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 038 - Coroutinen - Generatoren/coroutineType.txt");
 		slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 038 - Coroutinen - Generatoren/generator.txt");
 		slideShow.addType("Generator");
+		slideShow.addType("Awaiter");
+		slideShow.addType("T");
+
+		slideShow.writeAsPowerPoint("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/out.xml");
 	}
 
 	virtual void update(float timeSinceLastFrame) override
 	{
 		PresentationControl pc = PresentationControl::none;
-		     if (isKeyPressed(bbe::Key::LEFT))  pc = PresentationControl::previous;
-		else if (isKeyPressed(bbe::Key::RIGHT)) pc = PresentationControl::next;
+		const bool bigJump = isKeyDown(bbe::Key::LEFT_CONTROL) || isKeyDown(bbe::Key::RIGHT_CONTROL);
+
+		     if (isKeyPressed(bbe::Key::LEFT))  pc = bigJump ? PresentationControl::previous_slide : PresentationControl::previous;
+		else if (isKeyPressed(bbe::Key::RIGHT)) pc = bigJump ? PresentationControl::next_slide : PresentationControl::next;
 			 slideShow.update(pc, getMouseScrollY() * 10);
 	}
 
