@@ -484,6 +484,67 @@ namespace bbe {
 			assertEquals  ("I will be move-assigned!", stringMoveAssignmentTo);
 			assertUnequals(stringMoveAssignmentTo, "I will be moveassigned!");
 			assertUnequals("I will be move-asigned!", stringMoveAssignmentTo);
+			
+			{
+				bbe::String s1 = "aaba";
+				assertEquals(s1.replace(u8"b", u8""),     u8"aaa");
+				assertEquals(s1.replace(u8"b", u8"b"),    u8"aaba");
+				assertEquals(s1.replace(u8"b", u8"bb"),   u8"aabba");
+				assertEquals(s1.replace(u8"b", u8" "),    u8"aa a");
+				assertEquals(s1.replace(u8"b", u8"  "),   u8"aa  a");
+				assertEquals(s1.replace(u8"b", u8"\t"),   u8"aa\ta");
+				assertEquals(s1.replace(u8"b", u8"\t\t"), u8"aa\t\ta");
+				assertEquals(s1.replace(u8"b", u8"ö"),    u8"aaöa");
+				assertEquals(s1.replace(u8"b", u8"öö"),   u8"aaööa");
+			}
+			{
+				bbe::String s1 = "aaöa";
+				assertEquals(s1.replace(u8"ö", u8""),     u8"aaa");
+				assertEquals(s1.replace(u8"ö", u8"b"),    u8"aaba");
+				assertEquals(s1.replace(u8"ö", u8"bb"),   u8"aabba");
+				assertEquals(s1.replace(u8"ö", u8" "),    u8"aa a");
+				assertEquals(s1.replace(u8"ö", u8"  "),   u8"aa  a");
+				assertEquals(s1.replace(u8"ö", u8"\t"),   u8"aa\ta");
+				assertEquals(s1.replace(u8"ö", u8"\t\t"), u8"aa\t\ta");
+				assertEquals(s1.replace(u8"ö", u8"ö"),    u8"aaöa");
+				assertEquals(s1.replace(u8"ö", u8"öö"),   u8"aaööa");
+			}
+			{
+				bbe::String s1 = "aöba";
+				assertEquals(s1.replace(u8"b", u8""),     u8"aöa");
+				assertEquals(s1.replace(u8"b", u8"b"),    u8"aöba");
+				assertEquals(s1.replace(u8"b", u8"bb"),   u8"aöbba");
+				assertEquals(s1.replace(u8"b", u8" "),    u8"aö a");
+				assertEquals(s1.replace(u8"b", u8"  "),   u8"aö  a");
+				assertEquals(s1.replace(u8"b", u8"\t"),   u8"aö\ta");
+				assertEquals(s1.replace(u8"b", u8"\t\t"), u8"aö\t\ta");
+				assertEquals(s1.replace(u8"b", u8"ö"),    u8"aööa");
+				assertEquals(s1.replace(u8"b", u8"öö"),   u8"aöööa");
+			}
+			{
+				bbe::String s1 = "aabö";
+				assertEquals(s1.replace(u8"b", u8""),     u8"aaö");
+				assertEquals(s1.replace(u8"b", u8"b"),    u8"aabö");
+				assertEquals(s1.replace(u8"b", u8"bb"),   u8"aabbö");
+				assertEquals(s1.replace(u8"b", u8" "),    u8"aa ö");
+				assertEquals(s1.replace(u8"b", u8"  "),   u8"aa  ö");
+				assertEquals(s1.replace(u8"b", u8"\t"),   u8"aa\tö");
+				assertEquals(s1.replace(u8"b", u8"\t\t"), u8"aa\t\tö");
+				assertEquals(s1.replace(u8"b", u8"ö"),    u8"aaöö");
+				assertEquals(s1.replace(u8"b", u8"öö"),   u8"aaööö");
+			}
+			{
+				bbe::String s1 = "aabaö";
+				assertEquals(s1.replace(u8"b", u8""), u8"aaaö");
+				assertEquals(s1.replace(u8"b", u8"b"), u8"aabaö");
+				assertEquals(s1.replace(u8"b", u8"bb"), u8"aabbaö");
+				assertEquals(s1.replace(u8"b", u8" "), u8"aa aö");
+				assertEquals(s1.replace(u8"b", u8"  "), u8"aa  aö");
+				assertEquals(s1.replace(u8"b", u8"\t"), u8"aa\taö");
+				assertEquals(s1.replace(u8"b", u8"\t\t"), u8"aa\t\taö");
+				assertEquals(s1.replace(u8"b", u8"ö"), u8"aaöaö");
+				assertEquals(s1.replace(u8"b", u8"öö"), u8"aaööaö");
+			}
 		}
 	}
 }

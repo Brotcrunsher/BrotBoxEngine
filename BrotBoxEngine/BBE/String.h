@@ -17,6 +17,7 @@ namespace bbe
 	std::size_t utf8len(const char* ptr);		//Length of a utf8 encoded string.
 	std::size_t utf8len(const char* ptr, const char* end);
 	std::size_t utf8charlen(const char* ptr);	//Length in byte of a single utf8 char.
+	std::size_t utf8codePointLen(int32_t codePoint);
 	int32_t utf8CharToCodePoint(const char* ptr);
 	bool utf8IsStartOfChar(const char* ptr);
 	const char* utf8GetStartAddrOfCodePoint(const char* ptr);
@@ -43,6 +44,8 @@ namespace bbe
 		Utf8StringView(const Utf8String& string, std::size_t m_start, std::size_t m_end);
 
 		std::size_t getEnd() const;
+		std::size_t getLength() const;
+		std::size_t getLengthBytes() const;
 	};
 
 	class Utf8String
@@ -82,6 +85,7 @@ namespace bbe
 		Utf8String& operator=(const Utf8String&  other); //Copy Assignment
 		Utf8String& operator=(Utf8String&& other);       //Move Assignment
 
+		static Utf8String fromCodePoint(int32_t codePoint);
 
 		~Utf8String();
 

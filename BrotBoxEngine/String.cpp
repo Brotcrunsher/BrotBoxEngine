@@ -180,6 +180,43 @@ bbe::Utf8String& bbe::Utf8String::operator=(Utf8String &&other)//Move Assignment
 	return *this;
 }
 
+int32_t bbe::utf8CharToCodePoint(const char* ptr)
+{
+	const std::size_t length = utf8charlen(ptr);
+	const byte* bptr = reinterpret_cast<const byte*>(ptr);
+
+	// TODO it's probably possible to do this a bit more clever.
+	switch (length)
+	{
+	case 1: return *ptr;
+	case 2: return ((bptr[0] & 0b00011111) << 6) | ((bptr[1] & 0b00111111));
+	case 3: return ((bptr[0] & 0b00001111) << 12) | ((bptr[1] & 0b00111111) << 6) | ((bptr[2] & 0b00111111));
+	case 4: return ((bptr[0] & 0b00000111) << 18) | ((bptr[1] & 0b00111111) << 12) | ((bptr[2] & 0b00111111) << 6) | ((bptr[3] & 0b00111111));
+	}
+
+	throw IllegalArgumentException();
+}
+
+bbe::Utf8String bbe::Utf8String::fromCodePoint(int32_t codePoint)
+{
+	const std::size_t length = utf8codePointLen(codePoint);
+
+	char c[5] = {};
+
+	switch (length)
+	{
+	case 0:
+		return "";
+	case 1:
+		return bbe::Utf8String((char)codePoint);
+	case 2:
+		c[0] = ((codePoint >> 6) & 0b00011111) | 0b11000000;
+		c[1] =  (codePoint       & 0b00111111) | 0b10000000;
+	}
+
+	return bbe::Utf8String(c);
+}
+
 bbe::Utf8String::~Utf8String()
 {
 	//UNTESTED
@@ -220,6 +257,26 @@ std::size_t bbe::Utf8StringView::getEnd() const
 		return m_pstring->getLength();
 	}
 	return m_end;
+}
+
+std::size_t bbe::Utf8StringView::getLength() const
+{
+	return getEnd() - m_start;
+}
+
+std::size_t bbe::Utf8StringView::getLengthBytes() const
+{
+	const std::size_t end = getEnd();
+	std::size_t retVal = 0;
+	const char* cPtr = &(*m_pstring)[m_start];
+	for (size_t i = m_start; i < end; i++)
+	{
+		// TODO: Use iterator.
+		const size_t charLen = utf8charlen(cPtr);
+		retVal += charLen;
+		cPtr += charLen;
+	}
+	return retVal;
 }
 
 bool bbe::Utf8String::operator!=(const Utf8String& other) const
@@ -390,12 +447,13 @@ bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8String& other)
 bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8StringView& other)
 {
 	//UNTESTED
-	const size_t totalLength = getLengthBytes() + other.getEnd() - other.m_start;
 	const size_t oldLength = getLengthBytes();
+	const size_t otherLength = other.getLengthBytes();
+	const size_t totalLength = oldLength + otherLength;
 	const char* otherRaw = other.m_pstring->getRaw();
-	m_length = getLength() + utf8len(otherRaw + other.m_start, otherRaw + other.getEnd());
+	m_length = getLength() + utf8len(&((*other.m_pstring)[other.m_start]), &((*other.m_pstring)[other.getEnd()]));
 	growIfNeeded(totalLength + 1);
-	memcpy(getRaw() + oldLength, other.m_pstring->getRaw() + other.m_start, other.getEnd() - other.m_start);
+	memcpy(getRaw() + oldLength, &((*other.m_pstring)[other.m_start]), otherLength);
 	getRaw()[totalLength] = 0;
 
 	return *this;
@@ -641,7 +699,7 @@ bool bbe::Utf8String::startsWith(const char* string) const
 int64_t bbe::Utf8String::search(const char* string, int64_t startIndex) const
 {
 	//UNTESTED
-	const char* firstOcc = strstr(getRaw() + startIndex, string);
+	const char* firstOcc = strstr(&this->operator[](startIndex), string);
 	if(firstOcc == nullptr)
 	{
 		return -1;
@@ -736,8 +794,12 @@ const char* bbe::Utf8String::getRaw() const
 
 bbe::Utf8String bbe::Utf8String::replace(const Utf8String& searchString, const Utf8String& replaceString) const
 {
+	if (searchString == u8"") return *this;
+	if (searchString == replaceString) return *this;
+
 	bbe::Utf8String retVal = "";
-	retVal.growIfNeeded(getLengthBytes());
+	const size_t searchStringOccurences = count(searchString);
+	retVal.growIfNeeded(getLengthBytes() + (replaceString.getLengthBytes() - searchString.getLengthBytes()) * searchStringOccurences );
 	uint64_t currentFoundIndex = 0;
 	uint64_t lastFoundIndex = 0;
 	while ((currentFoundIndex = search(searchString, currentFoundIndex)) != (uint64_t)-1)
@@ -745,10 +807,10 @@ bbe::Utf8String bbe::Utf8String::replace(const Utf8String& searchString, const U
 		retVal += substringView(lastFoundIndex, currentFoundIndex);
 		retVal += replaceString;
 		
-		currentFoundIndex += searchString.getLengthBytes();
+		currentFoundIndex += searchString.getLength();
 		lastFoundIndex = currentFoundIndex;
 	}
-	retVal += substringView(lastFoundIndex, getLengthBytes());
+	retVal += substringView(lastFoundIndex, getLength());
 	return retVal;
 }
 
@@ -898,21 +960,13 @@ std::size_t bbe::utf8charlen(const char* ptr)
 	throw NotStartOfUtf8Exception();
 }
 
-int32_t bbe::utf8CharToCodePoint(const char* ptr)
+std::size_t bbe::utf8codePointLen(int32_t codePoint)
 {
-	const std::size_t length = utf8charlen(ptr);
-	const byte* bptr = reinterpret_cast<const byte*>(ptr);
-
-	// TODO it's probably possible to do this a bit more clever.
-	switch (length)
-	{
-	case 1: return *ptr;
-	case 2: return ((bptr[0] & 0b00011111) <<  6) | ((bptr[1] & 0b00111111));
-	case 3: return ((bptr[0] & 0b00001111) << 12) | ((bptr[1] & 0b00111111) <<  6) | ((bptr[2] & 0b00111111));
-	case 4: return ((bptr[0] & 0b00000111) << 18) | ((bptr[1] & 0b00111111) << 12) | ((bptr[2] & 0b00111111) << 6) | ((bptr[3] & 0b00111111));
-	}
-
-	throw IllegalArgumentException();
+	if (codePoint <= 0) return 0;
+	if (codePoint < (1 << 7)) return 1;
+	if (codePoint < (1 << 11)) return 2;
+	if (codePoint < (1 << 16)) return 3;
+	else return 4;
 }
 
 bool bbe::utf8IsStartOfChar(const char* ptr)
