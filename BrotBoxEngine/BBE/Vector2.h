@@ -93,6 +93,11 @@ namespace bbe
 			return x * other.x + y * other.y;
 		}
 
+		Vector2_t operator/(const Vector2_t<T>& other) const
+		{
+			return Vector2_t<T>(x / other.x, y / other.y);
+		}
+
 		Vector2_t operator+(const Vector2_t<T> &other) const
 		{
 			return Vector2_t<T>(x + other.x, y + other.y);
