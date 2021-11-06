@@ -74,6 +74,9 @@ bool bbe::simpleFile::doesFileExist(const bbe::String& filePath)
 bbe::String bbe::simpleFile::readFile(const bbe::String& filePath)
 {
 	std::ifstream f(filePath.getRaw());
+	if (!f.is_open()) {
+		throw std::runtime_error("Could not open file!");
+	}
 	std::string str((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
 	return bbe::String(str.data());
 }
