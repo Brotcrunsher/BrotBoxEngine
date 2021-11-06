@@ -86,6 +86,7 @@ namespace bbe
 		Utf8String& operator=(Utf8String&& other);       //Move Assignment
 
 		static Utf8String fromCodePoint(int32_t codePoint);
+		static Utf8String toHex(uint32_t value);
 
 		~Utf8String();
 

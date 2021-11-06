@@ -217,6 +217,24 @@ bbe::Utf8String bbe::Utf8String::fromCodePoint(int32_t codePoint)
 	return bbe::Utf8String(c);
 }
 
+bbe::Utf8String bbe::Utf8String::toHex(uint32_t value)
+{
+	// TODO Test
+	// TODO this implementation is probably quite wasteful.
+	bbe::Utf8String retVal = "";
+
+	constexpr const char* hexDigits = "0123456789ABCDEF";
+
+	while (value > 0)
+	{
+		const uint32_t lowValue = value & 0x0F;
+		retVal = fromCodePoint(hexDigits[lowValue]) + retVal;
+		value >>= 4;
+	}
+
+	return retVal;
+}
+
 bbe::Utf8String::~Utf8String()
 {
 	//UNTESTED
@@ -752,6 +770,10 @@ const char& bbe::Utf8String::operator[](std::size_t index) const
 	if(index > m_length)
 	{
 		throw IllegalIndexException();
+	}
+	else if (index == m_length)
+	{
+		return *""; // Woah...
 	}
 	const char* ptr = getRaw();
 	for(size_t i = 0; i<index; i++)
