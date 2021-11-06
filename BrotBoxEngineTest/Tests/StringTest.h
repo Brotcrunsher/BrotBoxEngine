@@ -545,6 +545,19 @@ namespace bbe {
 				assertEquals(s1.replace(u8"b", u8"ö"), u8"aaöaö");
 				assertEquals(s1.replace(u8"b", u8"öö"), u8"aaööaö");
 			}
+			{
+				bbe::String s1 = "äöü";
+				assertEquals(s1.replace(u8"b", u8""), u8"äöü");
+				assertEquals(s1.replace(u8"ä", u8""), u8"öü");
+				assertEquals(s1.replace(u8"ö", u8""), u8"äü");
+				assertEquals(s1.replace(u8"ü", u8""), u8"äö");
+				assertEquals(s1.replace(u8"ä", u8"b"), u8"böü");
+				assertEquals(s1.replace(u8"ö", u8"b"), u8"äbü");
+				assertEquals(s1.replace(u8"ü", u8"b"), u8"äöb");
+				assertEquals(s1.replace(u8"ä", u8"ä"), u8"äöü");
+				assertEquals(s1.replace(u8"ö", u8"ä"), u8"ääü");
+				assertEquals(s1.replace(u8"ü", u8"ä"), u8"äöä");
+			}
 		}
 	}
 }
