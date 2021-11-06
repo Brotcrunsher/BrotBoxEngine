@@ -12,7 +12,7 @@ namespace bbe
 	private:
 		static constexpr unsigned    DEFAULT_FONT_SIZE  = 20;
 		// constexpr const is necessary for some compilers to avoid false warnings
-		static constexpr const char* DEFAULT_CHARSET    = u8"1234567890!\"/()=\\abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+#-.,_:;<>|^{}[]*~&?äöüÄÖÜß";
+		static constexpr const char* DEFAULT_CHARSET    = u8"1234567890!\"/()=\\abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+#-.,_:;<>|^{}[]*~&?%$äöüÄÖÜß";
 
 		bool isInit              = false;
 		bbe::String fontPath     = "";
@@ -59,7 +59,7 @@ namespace bbe
 
 		uint32_t getSharpnessFactor() const;
 
-		bbe::List<Vector2> getRenderPositions(const Vector2& p, const char* text, float rotation = 0) const;
-		bbe::List<Vector2> getRenderPositions(const Vector2& p, const bbe::String &text, float rotation = 0) const;
+		bbe::List<Vector2> getRenderPositions(const Vector2& p, const char* text, float rotation = 0, bool verticalCorrection = true) const;
+		bbe::List<Vector2> getRenderPositions(const Vector2& p, const bbe::String &text, float rotation = 0, bool verticalCorrection = true) const;
 	};
 }

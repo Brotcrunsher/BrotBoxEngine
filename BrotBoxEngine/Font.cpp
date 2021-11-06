@@ -135,7 +135,7 @@ const bbe::String& bbe::Font::getFontPath() const
 uint32_t bbe::Font::getFontSize() const
 {
 	if (!isInit) throw NotInitializedException();
-	return fontSize / sharpnessFactor;
+	return fontSize;
 }
 
 int32_t bbe::Font::getPixelsFromLineToLine() const
@@ -213,7 +213,7 @@ uint32_t bbe::Font::getSharpnessFactor() const
 	return sharpnessFactor;
 }
 
-bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const char* text, float rotation) const
+bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const char* text, float rotation, bool verticalCorrection) const
 {
 	bbe::List<bbe::Vector2> retVal;
 
@@ -241,7 +241,14 @@ bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const ch
 		{
 			currentPosition.x += getLeftSideBearing(codePoint);
 			const bbe::Image& charImage = getImage(codePoint);
-			retVal.add((bbe::Vector2(currentPosition.x, currentPosition.y + getVerticalOffset(codePoint)) + charImage.getDimensions() / 2).rotate(rotation, p) - charImage.getDimensions() / 2);
+			if (verticalCorrection)
+			{
+				retVal.add((bbe::Vector2(currentPosition.x, currentPosition.y + getVerticalOffset(codePoint)) + charImage.getDimensions() / 2).rotate(rotation, p) - charImage.getDimensions() / 2);
+			}
+			else
+			{
+				retVal.add(currentPosition.rotate(rotation, p));
+			}
 			currentPosition.x += getAdvanceWidth(codePoint);
 		}
 	}
@@ -249,7 +256,7 @@ bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const ch
 	return retVal;
 }
 
-bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const bbe::String& text, float rotation) const
+bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const bbe::String& text, float rotation, bool verticalCorrection) const
 {
-	return getRenderPositions(p, text.getRaw(), rotation);
+	return getRenderPositions(p, text.getRaw(), rotation, verticalCorrection);
 }
