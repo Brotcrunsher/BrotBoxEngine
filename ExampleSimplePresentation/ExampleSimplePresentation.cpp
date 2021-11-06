@@ -14,15 +14,26 @@ public:
 
 	virtual void onStart() override
 	{
-		slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 038 - Coroutinen - Generatoren/intro.txt");
-		slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 038 - Coroutinen - Generatoren/usage.txt");
-		slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 038 - Coroutinen - Generatoren/coroutineType.txt");
-		slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 038 - Coroutinen - Generatoren/generator.txt");
-		slideShow.addType("Generator");
-		slideShow.addType("Awaiter");
-		slideShow.addType("T");
+		// TODO Remove absolute paths
+		//slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 039 - unique_ptr ist teurer als C Pointer/unique_ptr.txt");
+		//slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 039 - unique_ptr ist teurer als C Pointer/c_ptr.txt");
+		//slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 039 - unique_ptr ist teurer als C Pointer/unique_ptr.txt");
+		//slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 039 - unique_ptr ist teurer als C Pointer/noexcept.txt");
 
-		slideShow.writeAsPowerPoint("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/out.xml");
+		//slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 039 - unique_ptr ist teurer als C Pointer/rvalue_asm.txt");
+
+
+		//slideShow.forceFontSize(15);
+		//for (size_t i = 0; i < slideShow.slides.getLength(); i++)
+		//{
+		//	slideShow.slides[i].compile();
+		//}
+		//slideShow.writeAsPowerPoint("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/out.xml");
+
+		slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 040 - Coroutinen - Lazy/usage.txt");
+		slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 040 - Coroutinen - Lazy/lazy.txt");
+		slideShow.forceFontSize(15, 1);
+		slideShow.addType("Lazy");
 	}
 
 	virtual void update(float timeSinceLastFrame) override
@@ -32,7 +43,8 @@ public:
 
 		     if (isKeyPressed(bbe::Key::LEFT))  pc = bigJump ? PresentationControl::previous_slide : PresentationControl::previous;
 		else if (isKeyPressed(bbe::Key::RIGHT)) pc = bigJump ? PresentationControl::next_slide : PresentationControl::next;
-			 slideShow.update(pc, getMouseScrollY() * 10);
+		
+		slideShow.update(pc, getMouseScrollY() * 10);
 	}
 
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override

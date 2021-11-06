@@ -27,12 +27,18 @@
 								<a:lstStyle/>
 								<a:p>
 									<a:r>
-										<a:rPr lang="de-DE" dirty="0" err="1">
+										<a:rPr lang="de-DE" sz="%%%SIZE%%%" dirty="0" err="1">
+											<a:solidFill>
+												<a:srgbClr val="%%%COLOR%%%"/>
+											</a:solidFill>
 											<a:latin typeface="Consolas" panose="020B0609020204030204" pitchFamily="49" charset="0"/>
 										</a:rPr>
 										<a:t>%%%TEXT%%%</a:t>
 									</a:r>
-									<a:endParaRPr lang="de-DE" dirty="0">
+									<a:endParaRPr lang="de-DE" sz="%%%SIZE%%%" dirty="0">
+										<a:solidFill>
+											<a:srgbClr val="%%%COLOR%%%"/>
+										</a:solidFill>
 										<a:latin typeface="Consolas" panose="020B0609020204030204" pitchFamily="49" charset="0"/>
 									</a:endParaRPr>
 								</a:p>

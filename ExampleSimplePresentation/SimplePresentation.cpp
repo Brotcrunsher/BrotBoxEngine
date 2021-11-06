@@ -30,13 +30,17 @@ Slide::Slide(const char* path)
 {
 	bbe::String fileContent = bbe::simpleFile::readFile(path);
 
-	if (fileContent.startsWith("//c++"))
+	if (fileContent.startsWith("//c++") || fileContent.startsWith("//cpp"))
 	{
 		tokenizer.reset(new CppTokenizer());
 	}
 	else if (fileContent.startsWith("//lines"))
 	{
 		tokenizer.reset(new LineTokenizer());
+	}
+	else if (fileContent.startsWith("//asm"))
+	{
+		tokenizer.reset(new AsmTokenizer());
 	}
 	else
 	{
@@ -49,7 +53,7 @@ Slide::Slide(const char* path)
 	{
 		for (size_t i = 0; i < fonts.size(); i++)
 		{
-			fonts[i].load("consola.ttf", i + 20);
+			fonts[i].load("consola.ttf", i + 1);
 		}
 	}
 	fontsLoaded++;
@@ -125,14 +129,32 @@ bool Slide::isLastEntry() const
 	return currentEntry == amountOfEntries;
 }
 
-void Slide::draw(bbe::PrimitiveBrush2D& brush)
+uint32_t Slide::getAmountOfEntries() const
+{
+	return amountOfEntries + (tokenizer->hasFinalBrightState() ? 1 : 0);
+}
+
+void Slide::forceFontSize(uint32_t size)
+{
+	for (size_t i = 0; i < fonts.size(); i++)
+	{
+		if (fonts[i].getFontSize() == size)
+		{
+			forcedFontSize = size;
+			return;
+		}
+	}
+	throw bbe::IllegalArgumentException();
+}
+
+void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 {
 	if (dirty)
 	{
 		compile();
 	}
 
-	brush.setColorRGB(0.1, 0.1, 0.1);
+	brush.setColorRGB(bgColor);
 	brush.fillRect(0, 0, 10000, 10000);
 
 	brush.setColorRGB(1, 1, 1);
@@ -192,7 +214,7 @@ bool Slide::hasPrev() const
 
 void Slide::compile()
 {
-	selectedFont = nullptr;
+	if(!forcedFontSize) selectedFont = nullptr;
 	tokenizer->tokenize(text, getFont());
 
 	for (size_t i = 0; i < tokenizer->tokens.getLength(); i++)
@@ -224,7 +246,7 @@ void Slide::compile()
 	dirty = false;
 }
 
-bbe::String Slide::getPowerPointContent()
+bbe::String Slide::getPowerPointContent(int32_t index)
 {
 	const bbe::String templateContent = bbe::simpleFile::readFile("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/templateContent.xml");
 	const int32_t slideWidth = 12192000;
@@ -236,20 +258,38 @@ bbe::String Slide::getPowerPointContent()
 
 	for (size_t i = 0; i < tokenizer->tokens.getLength(); i++)
 	{
-		for (size_t k = 0; k < tokenizer->tokens[i].chars.getLength(); k++)
+		if (tokenizer->tokens[i].showIndex > index) continue;
+		for(size_t k = 0; k<tokenizer->tokens[i].chars.getLength(); k++)
 		{
 			id++;
-			const Char& c = tokenizer->tokens[i].chars[k];
-			const bbe::Vector2 offset = -textAabb.getPos() - textAabb.getDim() * 0.5f + bbe::Vector2(1280, 720) * 0.5f;
-			const bbe::Vector2 screenSpace = c.pos + offset;
+			const bbe::Vector2 offset = -textAabb.getPos() - textAabb.getDim() * 0.5f + bbe::Vector2(1280, 720) * 0.5f - bbe::Vector2(0, getFont().getPixelsFromLineToLine());
+			const bbe::Vector2 screenSpace = tokenizer->tokens[i].chars[k].powerPointPos + offset;
 			const bbe::Vector2 normSpace = screenSpace / bbe::Vector2(1280, 720);
 			const bbe::Vector2 powerPointSpace = bbe::Vector2(normSpace.x * slideWidth, normSpace.y * slideHeight);
+
+			// The multiplication of the font size of stb to power point format.
+			// I don't really have a clue why it is exactly this number, but I
+			// did some pixel measurements and it seems to be correct.
+			constexpr uint32_t stbToPowerPointFontSize = 79;
+
+			const bbe::String text = bbe::String::fromCodePoint(tokenizer->tokens[i].chars[k].c)
+				.replace("&", "&amp;")
+				.replace("<", "&lt;")
+				.replace(">", "&gt;");
+
+			bbe::Color color = tokenTypeToColor(tokenizer->tokens[i].type);
+			if (!(tokenizer->tokens[i].showIndex == index || (index == amountOfEntries && tokenizer->hasFinalBrightState())))
+			{
+				color *= 0.8;
+			}
 
 			retVal += templateContent
 				.replace("%%%XPOS%%%", bbe::String((int32_t)(powerPointSpace.x)))
 				.replace("%%%YPOS%%%", bbe::String((int32_t)(powerPointSpace.y)))
-				.replace("%%%TEXT%%%", bbe::String::fromCodePoint(c.c))
-				.replace("%%%ID%%%", bbe::String(id));
+				.replace("%%%TEXT%%%", text)
+				.replace("%%%ID%%%", bbe::String(id))
+				.replace("%%%SIZE%%%", bbe::String(getFont().getFontSize() * stbToPowerPointFontSize))
+				.replace("%%%COLOR%%%", color.toHex());
 		}
 	}
 
@@ -264,6 +304,13 @@ bbe::Font& Slide::getFont()
 		scrollingAllowed = true;
 		for (size_t i = 0; i < fonts.size(); i++)
 		{
+			if (forcedFontSize != 0)
+			{
+				if (fonts[i].getFontSize() != forcedFontSize)
+				{
+					continue;
+				}
+			}
 			bbe::List<bbe::Vector2> renderPositions = fonts[i].getRenderPositions(bbe::Vector2(0, 0), text);
 			bbe::Rectangle textAabb = bbe::Rectangle(renderPositions[0], getFont().getDimensions(text.getCodepoint(0)));
 			for (size_t k = 1; k < renderPositions.getLength(); k++)
@@ -281,7 +328,7 @@ bbe::Font& Slide::getFont()
 				scrollingAllowed = false;
 			}
 
-			if (textAabb.getHeight() < 720 - 10 && textAabb.getWidth() < 1280 - 10)
+			if ((textAabb.getHeight() < 720 - 10 && textAabb.getWidth() < 1280 - 10) || forcedFontSize != 0)
 			{
 				selectedFont = &fonts[i];
 				this->textAabb = textAabb;
@@ -301,13 +348,15 @@ void Slide::Token::submit(bbe::List<Token>& tokens)
 	if (chars.getLength() > 0)
 	{
 		tokens.add(*this);
-		*this = Token();
 	}
+	*this = Token();
 }
 
 void Slide::CppTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 {
 	bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(bbe::Vector2(0, 0), text);
+	const bbe::List<bbe::Vector2> powerPointPositions = font.getRenderPositions(bbe::Vector2(0, 0), text, 0, false);
+
 	if (renderPositions.getLength() != text.getLength())
 	{
 		throw bbe::IllegalStateException();
@@ -358,6 +407,7 @@ void Slide::CppTokenizer::tokenize(const bbe::String& text, const bbe::Font& fon
 			Char c;
 			c.c = text.getCodepoint(i);
 			c.pos = renderPositions[i];
+			c.powerPointPos = powerPointPositions[i];
 
 			currentToken.chars.add(c);
 			currentToken.text += text[i];
@@ -380,10 +430,12 @@ void Slide::CppTokenizer::tokenize(const bbe::String& text, const bbe::Font& fon
 
 void Slide::CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes)
 {
-	const bbe::List<bbe::String> keywords = { "constexpr", "class", "public", "private", "protected", "virtual", "override", "if", "else", "alignas", "alignof", "delete", "operator", "sizeof", "template", "typename", "struct", "return", "noexcept", "this", "void", "int", "float", "co_yield", "true", "false", "auto", "char", "const", "mutable", "while", "for", "do" };
+	const bbe::List<bbe::String> keywords = { "constexpr", "class", "public", "private", "protected", "virtual", "override", "if", "else", "alignas", "alignof", "delete", "operator", "sizeof", "template", "typename", "struct", "return", "noexcept", "this", "void", "int", "float", "co_yield", "co_return", "co_await", "true", "false", "auto", "char", "const", "mutable", "while", "for", "do", "noexcept"};
 	const bbe::List<bbe::String> preprocessor = { "#include", "#define", "#ifdef", "#endif" };
 	bbe::List<bbe::String> types = { "int", "char", "float" };
 	types.addList(additionalTypes);
+	types.add("uint32_t");
+	types.add("int32_t");
 	bbe::List<bbe::String> values = {};
 
 	bool change = true;
@@ -604,7 +656,8 @@ bool Slide::CppTokenizer::hasFinalBrightState()
 
 void Slide::LineTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 {
-	bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(bbe::Vector2(0, 0), text);
+	const bbe::List<bbe::Vector2> renderPositions     = font.getRenderPositions(bbe::Vector2(0, 0), text);
+	const bbe::List<bbe::Vector2> powerPointPositions = font.getRenderPositions(bbe::Vector2(0, 0), text, 0, false);
 	if (renderPositions.getLength() != text.getLength())
 	{
 		throw bbe::IllegalStateException();
@@ -624,9 +677,10 @@ void Slide::LineTokenizer::tokenize(const bbe::String& text, const bbe::Font& fo
 			Char c;
 			c.c = text.getCodepoint(i);
 			c.pos = renderPositions[i];
+			c.powerPointPos = powerPointPositions[i];
 
 			currentToken.chars.add(c);
-			currentToken.text += text[i];
+			currentToken.text += bbe::String::fromCodePoint(c.c);
 		}
 	}
 	currentToken.submit(tokens);
@@ -651,6 +705,92 @@ void Slide::LineTokenizer::animateTokens()
 bool Slide::LineTokenizer::hasFinalBrightState()
 {
 	return false;
+}
+
+void Slide::AsmTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
+{
+	const bbe::List<bbe::Vector2> renderPositions     = font.getRenderPositions(bbe::Vector2(0, 0), text);
+	const bbe::List<bbe::Vector2> powerPointPositions = font.getRenderPositions(bbe::Vector2(0, 0), text, 0, false);
+	if (renderPositions.getLength() != text.getLength())
+	{
+		throw bbe::IllegalStateException();
+	}
+
+	Token currentToken;
+	bool beginningOfLine = true;
+	bool fullLineMode = true;
+	bool firstTokenOfLine = true;
+
+	for (size_t i = 0; i < renderPositions.getLength(); i++)
+	{
+		if (text[i] == '\n')
+		{
+			if (fullLineMode) currentToken.type = TokenType::comment;
+			else if (firstTokenOfLine) currentToken.type = TokenType::function;
+			else if(currentToken.type == TokenType::unknown) currentToken.type = TokenType::value;
+			currentToken.submit(tokens);
+		}
+		if (i == 0 || text[i - 1] == '\n')
+		{
+			beginningOfLine = true;
+			fullLineMode = true;
+			firstTokenOfLine = true;
+		}
+		else
+		{
+			beginningOfLine = false;
+		}
+
+		if (text[i] != ' ' && text[i] != '\t' && text[i] != '\n' && text[i] != '\r')
+		{
+			Char c;
+			c.c = text.getCodepoint(i);
+			c.pos = renderPositions[i];
+			c.powerPointPos = powerPointPositions[i];
+
+			currentToken.chars.add(c);
+			currentToken.text += bbe::String::fromCodePoint(c.c);
+		}
+		else if (beginningOfLine)
+		{
+			fullLineMode = false;
+		}
+		else if(!fullLineMode)
+		{
+			if (currentToken.chars.getLength() > 0)
+			{
+				if (firstTokenOfLine)
+				{
+					currentToken.type = TokenType::function;
+					firstTokenOfLine = false;
+				}
+				else if (currentToken.type == TokenType::unknown)
+				{
+					currentToken.type = TokenType::value;
+				}
+			}
+			currentToken.submit(tokens);
+		}
+	}
+	currentToken.type = TokenType::value;
+	currentToken.submit(tokens);
+}
+
+void Slide::AsmTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes)
+{
+}
+
+void Slide::AsmTokenizer::animateTokens()
+{
+	for (size_t i = 0; i < tokens.getLength(); i++)
+	{
+		tokens[i].showIndex = 0;
+	}
+}
+
+bool Slide::AsmTokenizer::hasFinalBrightState()
+{
+	return true;
 }
 
 void SlideShow::update(PresentationControl pc, float scrollValue)
@@ -709,7 +849,7 @@ void SlideShow::update(PresentationControl pc, float scrollValue)
 
 void SlideShow::draw(bbe::PrimitiveBrush2D& brush)
 {
-	slides[currentSlide].draw(brush);
+	slides[currentSlide].draw(brush, bgColor);
 }
 
 void SlideShow::addType(const bbe::String& type)
@@ -725,13 +865,30 @@ void SlideShow::addSlide(const char* path)
 	slides.add(Slide(path));
 }
 
+void SlideShow::forceFontSize(uint32_t fontSize)
+{
+	for (size_t i = 0; i < slides.getLength(); i++)
+	{
+		forceFontSize(fontSize, i);
+	}
+}
+
+void SlideShow::forceFontSize(uint32_t fontSize, uint32_t slide)
+{
+	slides[slide].forceFontSize(fontSize);
+}
+
 void SlideShow::writeAsPowerPoint(const bbe::String& path)
 {
 	for (size_t i = 0; i < slides.getLength(); i++)
 	{
-		slides[i].compile();
+		if (slides[i].dirty)
+		{
+			slides[i].compile();
+		}
 	}
 
+	// TODO Remove absolute paths
 	const bbe::String templateOverall = bbe::simpleFile::readFile("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/templateOverall.xml");
 	const bbe::String templateSlides = bbe::simpleFile::readFile("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/templateSlides.xml");
 	const bbe::String templateSlideRel = bbe::simpleFile::readFile("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/templateSlideRel.xml");
@@ -743,26 +900,43 @@ void SlideShow::writeAsPowerPoint(const bbe::String& path)
 	bbe::String slideIdList = "";
 	bbe::String relationships = "";
 
+	uint32_t id = 256;
+
 	for (int i = 0; i < this->slides.getLength(); i++)
 	{
-		const bbe::String id = bbe::String(i + 256);
+		uint32_t amountOfEntries = this->slides[i].getAmountOfEntries();
+		for (uint32_t entry = 0; entry < amountOfEntries; entry++)
+		{
+			id++;
+			const bbe::String stringId = bbe::String(id);
 
-		const bbe::String powerPointContent = this->slides[i].getPowerPointContent();
+			const bbe::String powerPointContent = this->slides[i].getPowerPointContent(entry);
 
-		slides        += templateSlides       .replace("%%%ID%%%", id).replace("%%%CONTENT%%%", powerPointContent);
-		slideRels     += templateSlideRel     .replace("%%%ID%%%", id);
-		slideIdList   += templateSlideIdList  .replace("%%%ID%%%", id);
-		relationships += templateRelationships.replace("%%%ID%%%", id);
-		break;
+			slides += templateSlides.replace("%%%ID%%%", stringId)
+				.replace("%%%BG_COLOR%%%", bgColor.toHex())
+				.replace("%%%CONTENT%%%", powerPointContent);
+			slideRels     += templateSlideRel     .replace("%%%ID%%%", stringId);
+			slideIdList   += templateSlideIdList  .replace("%%%ID%%%", stringId);
+			relationships += templateRelationships.replace("%%%ID%%%", stringId);
+		}
 	}
 
 
-	const bbe::String output = templateOverall
+	bbe::String output = templateOverall
 		.replace("%%%SLIDES_TEMPLATE%%%", slides)
 		.replace("%%%SLIDE_ID_LIST%%%", slideIdList)
 		.replace("%%%SLIDE_RELATIONSHIPS%%%", relationships)
 		.replace("%%%SLIDE_REL_TEMPLATE%%%", slideRels);
 
 	bbe::simpleFile::writeStringToFile(path, output);
-	int i = 0;
+}
+
+bbe::Rectangle SlideShow::getTextAabb(uint32_t slide) const
+{
+	return slides[slide].textAabb;
+}
+
+void SlideShow::setTextAabb(uint32_t slide, const bbe::Rectangle& value)
+{
+	slides[slide].textAabb = value;
 }
