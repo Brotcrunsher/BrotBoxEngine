@@ -1,22 +1,15 @@
 #include "BBE/Color.h"
 #include "BBE/Math.h"
 
-bbe::Color::Color()
-	: r(0), g(0), b(0), a(1)
+bbe::String bbe::Color::toHex() const
 {
-	//UNTESTED
-}
+	const uint32_t r = bbe::Math::clamp01(this->r) * 255;
+	const uint32_t g = bbe::Math::clamp01(this->g) * 255;
+	const uint32_t b = bbe::Math::clamp01(this->b) * 255;
 
-bbe::Color::Color(float r, float g, float b)
-	: r(r), g(g), b(b), a(1)
-{
-	//UNTESTED
-}
+	const uint32_t rgb = (r << 16) | (g << 8) | (b);
 
-bbe::Color::Color(float r, float g, float b, float a)
-	: r(r), g(g), b(b), a(a)
-{
-	//UNTESTED
+	return bbe::String::toHex(rgb);
 }
 
 bbe::Vector3 bbe::Color::HSVtoRGB(float h, float s, float v)
@@ -64,4 +57,22 @@ bbe::Color bbe::Color::operator*(float scalar) const
 bbe::Color bbe::Color::operator/(float scalar) const
 {
 	return bbe::Color(r / scalar, g / scalar, b / scalar, a / scalar);
+}
+
+bbe::Color& bbe::Color::operator*=(float scalar)
+{
+	r *= scalar;
+	g *= scalar;
+	b *= scalar;
+	a *= scalar;
+	return *this;
+}
+
+bbe::Color& bbe::Color::operator/=(float scalar)
+{
+	r /= scalar;
+	g /= scalar;
+	b /= scalar;
+	a /= scalar;
+	return *this;
 }
