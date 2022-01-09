@@ -714,6 +714,16 @@ bool bbe::Utf8String::startsWith(const char* string) const
 	return isTextAtLocation(string, 0);
 }
 
+bool bbe::Utf8String::endsWith(const char* string) const
+{
+	const size_t sLen = strlen(string);
+	if (sLen > m_length)
+	{
+		return false;
+	}
+	return isTextAtLocation(string, m_length - sLen);
+}
+
 int64_t bbe::Utf8String::search(const char* string, int64_t startIndex) const
 {
 	//UNTESTED
@@ -729,6 +739,27 @@ int64_t bbe::Utf8String::search(const char* string, int64_t startIndex) const
 int64_t bbe::Utf8String::search(const Utf8String &string, int64_t startIndex) const
 {
 	return bbe::Utf8String::search(string.getRaw(), startIndex);
+}
+
+int64_t bbe::Utf8String::searchLast(const char* string) const
+{
+	// TODO quite inefficient, use Knuth-Morris-Pratt!
+
+	const size_t sLen = strlen(string);
+
+	if (sLen > m_length || sLen == 0) return -1;
+
+	for (size_t i = m_length - sLen; i != (size_t)-1; i--)
+	{
+		// TODO Urghs ... also inefficient, use iterators once we have them...
+		const bbe::String temp = bbe::String(&operator[](i));
+		if (temp.startsWith(string))
+		{
+			return i;
+		}
+	}
+
+	return -1;
 }
 
 bool bbe::Utf8String::isNumber() const

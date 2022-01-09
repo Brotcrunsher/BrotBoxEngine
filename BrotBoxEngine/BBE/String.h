@@ -153,9 +153,12 @@ namespace bbe
 
 		bool isTextAtLocation(const char* string, int64_t index) const;
 		bool startsWith(const char* string) const;
+		bool endsWith(const char* string) const;
 
 		int64_t search(const char*       string, int64_t startIndex = 0) const;		//TODO
 		int64_t search(const Utf8String& string, int64_t startIndex = 0) const;		//TODO
+		
+		int64_t searchLast(const char* string) const;
 
 		bool isNumber() const;
 
