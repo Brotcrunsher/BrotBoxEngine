@@ -152,6 +152,8 @@ public:
 	void draw(bbe::PrimitiveBrush2D& brush);
 	void addType(const bbe::String& type);
 	void addSlide(const char* path);
+	void addSlide(const bbe::String& path);
+	void addManifest(const char* path);
 
 	void forceFontSize(uint32_t fontSize);
 	void forceFontSize(uint32_t fontSize, uint32_t slide);

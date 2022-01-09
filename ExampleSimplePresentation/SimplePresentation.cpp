@@ -28,7 +28,9 @@ bbe::Color Slide::tokenTypeToColor(TokenType type)
 
 Slide::Slide(const char* path)
 {
-	bbe::String fileContent = bbe::simpleFile::readFile(path);
+	bbe::String ppath = path;
+	bbe::String fileContent = bbe::simpleFile::readFile(ppath);
+	bool typeInFile = true;
 
 	if (fileContent.startsWith("//c++") || fileContent.startsWith("//cpp"))
 	{
@@ -44,10 +46,22 @@ Slide::Slide(const char* path)
 	}
 	else
 	{
-		throw bbe::IllegalArgumentException();
+		typeInFile = false;
+		if (ppath.endsWith(".cpp"))
+		{
+			tokenizer.reset(new CppTokenizer());
+		}
+		else if (ppath.endsWith(".txt"))
+		{
+			tokenizer.reset(new LineTokenizer());
+		}
+		else
+		{
+			throw bbe::IllegalArgumentException();
+		}
 	}
 
-	addText(fileContent.getRaw() + fileContent.search("\n"));
+	addText(fileContent.getRaw() + (typeInFile ? fileContent.search("\n") : 0));
 
 	if (!fontsLoaded)
 	{
@@ -863,6 +877,31 @@ void SlideShow::addType(const bbe::String& type)
 void SlideShow::addSlide(const char* path)
 {
 	slides.add(Slide(path));
+}
+
+void SlideShow::addSlide(const bbe::String& path)
+{
+	addSlide(path.getRaw());
+}
+
+void SlideShow::addManifest(const char* inPath)
+{
+	const bbe::String path = inPath;
+	const bbe::String parentPath = path.substring(0, path.searchLast("/"));
+	const bbe::String fileContent = bbe::simpleFile::readFile(path);
+	const bbe::DynamicArray<bbe::String> lines = fileContent.split("\n");
+
+	for (size_t i = 0; i < lines.getLength(); i++)
+	{
+		const bbe::String line = lines[i].trim();
+		const bbe::DynamicArray<bbe::String> tokens = line.split(" ");
+		if (tokens.getLength() == 0) continue;
+
+		if (tokens[0] == "SLIDE:")
+		{
+			addSlide(parentPath + tokens[1]);
+		}
+	}
 }
 
 void SlideShow::forceFontSize(uint32_t fontSize)
