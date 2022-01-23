@@ -105,7 +105,8 @@ private:
 	bool scrollingAllowed = false;
 	uint32_t forcedFontSize = 0;
 	bool complete = false;
-	bbe::Rectangle screenPosition = bbe::Rectangle(0, 0, 1280, 720);
+	static constexpr int BORDERWIDTH = 10;
+	bbe::Rectangle screenPosition = bbe::Rectangle(BORDERWIDTH, BORDERWIDTH, 1280 - 2 * BORDERWIDTH, 720 - 2 * BORDERWIDTH);
 	bbe::List<Slide> childSlides;
 
 public:

@@ -440,7 +440,7 @@ bbe::Font& Slide::getFont()
 				scrollingAllowed = false;
 			}
 
-			if ((textAabb.getHeight() < screenPosition.getHeight() - 10 && textAabb.getWidth() < screenPosition.getWidth() - 10) || forcedFontSize != 0)
+			if ((textAabb.getHeight() < screenPosition.getHeight() && textAabb.getWidth() < screenPosition.getWidth()) || forcedFontSize != 0)
 			{
 				selectedFont = &fonts[i];
 				this->textAabb = textAabb;
@@ -1057,11 +1057,11 @@ void SlideShow::addManifest(const char* inPath)
 
 			if (horizontalCount == 0)
 			{
-				slide.setScreenPosition(bbe::Rectangle(0, 0, 1280 / 2, 720));
+				slide.setScreenPosition(bbe::Rectangle(Slide::BORDERWIDTH, Slide::BORDERWIDTH, 1280 / 2 - 1.5 * Slide::BORDERWIDTH, 720 - 2 * Slide::BORDERWIDTH));
 			}
 			else if (horizontalCount == 1)
 			{
-				slide.setScreenPosition(bbe::Rectangle(1280 / 2, 0, 1280 / 2, 720));
+				slide.setScreenPosition(bbe::Rectangle(1280 / 2 + 1.5 * Slide::BORDERWIDTH, Slide::BORDERWIDTH, 1280 / 2 - 1.5 * Slide::BORDERWIDTH, 720 - 2 * Slide::BORDERWIDTH));
 				slide.currentEntry = -1;
 				slides.last().childSlides.add(slide);
 			}
@@ -1078,7 +1078,7 @@ void SlideShow::addManifest(const char* inPath)
 		}
 		else if (tokens[0].toLowerCase() == "complete")
 		{
-			slides.last().setComplete(true);
+			getLastSlide().setComplete(true);
 		}
 		else if (tokens[0].toLowerCase() == "samedimensions")
 		{
