@@ -30,10 +30,7 @@ public:
 		//}
 		//slideShow.writeAsPowerPoint("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/out.xml");
 
-		slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 040 - Coroutinen - Lazy/usage.txt");
-		slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 040 - Coroutinen - Lazy/lazy.txt");
-		slideShow.forceFontSize(15, 1);
-		slideShow.addType("Lazy");
+		slideShow.addManifest("D:/Videos/C++ Tutorial/Episode Bonus 043 - Copy Elision/Manifest.txt");
 	}
 
 	virtual void update(float timeSinceLastFrame) override
