@@ -93,25 +93,29 @@ class Slide
 private:
 	static bbe::Color tokenTypeToColor(TokenType type);
 
-	uint32_t currentEntry = 0;
-	uint32_t amountOfEntries = 0;
+	int32_t currentEntry = 0;
+	int32_t amountOfEntries = 0;
 	bool dirty = true;
 	bbe::Font* selectedFont = nullptr;
 	bbe::List<bbe::String> additionalTypes;
 	bbe::Rectangle textAabb;
 	bbe::String text;
-	std::unique_ptr<Tokenizer> tokenizer;
+	std::shared_ptr<Tokenizer> tokenizer;
 	float scrollValue = 0;
 	bool scrollingAllowed = false;
 	uint32_t forcedFontSize = 0;
 	bool complete = false;
+	bbe::Rectangle screenPosition = bbe::Rectangle(0, 0, 1280, 720);
+	bbe::List<Slide> childSlides;
 
 public:
+	Slide();
 	Slide(Tokenizer* tokenizer);
 	Slide(const char* path);
 	~Slide();
 	Slide(Slide&& other);
-	Slide& operator=(Slide&&)      = delete;
+	Slide(const Slide&);
+	Slide& operator=(Slide&&);
 
 
 	void update(PresentationControl pc, float scrollValue);
@@ -119,7 +123,7 @@ public:
 	void addType(const bbe::String& type);
 	bool isFirstEntry() const;
 	bool isLastEntry() const;
-	uint32_t getAmountOfEntries() const;
+	int32_t getAmountOfEntries() const;
 
 	void forceFontSize(uint32_t size);
 	void setComplete(bool complete);
@@ -129,6 +133,7 @@ public:
 	bbe::String getPowerPointContent(int32_t index);
 
 	void addText(const char* txt);
+	void setScreenPosition(const bbe::Rectangle& rect);
 
 private:
 	void loadFonts();
@@ -137,9 +142,10 @@ private:
 	void prev();
 	bool hasPrev() const;
 	bbe::Font& getFont();
+	void moveFrom(Slide&& other);
+	void copyFrom(const Slide& other);
 
 
-	Slide(const Slide&)            = delete;
 	Slide& operator=(const Slide&) = delete;
 };
 
@@ -169,9 +175,17 @@ public:
 	bbe::Rectangle getTextAabb(uint32_t slide) const;
 	void setTextAabb(uint32_t slide, const bbe::Rectangle& value);
 
+	Slide& getLastSlide();
+	Slide& getSecondToLastSlide();
+
 private:
 	SlideShow(const SlideShow&)            = delete;
 	SlideShow(SlideShow&&)                 = delete;
 	SlideShow& operator=(const SlideShow&) = delete;
 	SlideShow& operator=(SlideShow&&)      = delete;
+
+
+	//TODO ugly helper.
+	void addSlidesToList(Slide* slide, bbe::List<Slide*>& list);
+
 };

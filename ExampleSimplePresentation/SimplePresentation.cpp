@@ -26,6 +26,10 @@ bbe::Color Slide::tokenTypeToColor(TokenType type)
 	throw bbe::IllegalArgumentException();
 }
 
+Slide::Slide()
+{
+}
+
 Slide::Slide(Tokenizer* tokenizer)
 {
 	this->tokenizer.reset(tokenizer);
@@ -87,19 +91,24 @@ Slide::~Slide()
 
 Slide::Slide(Slide&& other)
 {
-	currentEntry     = std::move(other.currentEntry);
-	amountOfEntries  = std::move(other.amountOfEntries);
-	dirty            = std::move(other.dirty);
-	selectedFont     = std::move(other.selectedFont);
-	additionalTypes  = std::move(other.additionalTypes);
-	textAabb         = std::move(other.textAabb);
-	text             = std::move(other.text);
-	tokenizer        = std::move(other.tokenizer);
-	scrollValue      = std::move(other.scrollValue);
-	scrollingAllowed = std::move(other.scrollingAllowed);
-	complete         = std::move(other.complete);
+	moveFrom(std::move(other));
 
 	fontsLoaded++;
+}
+
+Slide::Slide(const Slide& other)
+{
+	copyFrom(other);
+
+	fontsLoaded++;
+}
+
+Slide& Slide::operator=(Slide&& other)
+{
+	moveFrom(std::move(other));
+	fontsLoaded++;
+
+	return *this;
 }
 
 void Slide::loadFonts()
@@ -121,9 +130,21 @@ void Slide::addText(const char* txt)
 	text += bbe::String(txt).replace("\t", "    ");
 }
 
+void Slide::setScreenPosition(const bbe::Rectangle& rect)
+{
+	screenPosition = rect;
+}
+
 bool Slide::isFirstEntry() const
 {
-	return currentEntry == 0;
+	if (currentEntry != 0) return false;
+
+	for (size_t i = 0; i < childSlides.getLength(); i++)
+	{
+		if (childSlides[i].currentEntry != -1) return false;
+	}
+
+	return true;
 }
 
 void Slide::update(PresentationControl pc, float scrollValue)
@@ -153,10 +174,19 @@ void Slide::update(PresentationControl pc, float scrollValue)
 
 bool Slide::isLastEntry() const
 {
-	return currentEntry == getAmountOfEntries();
+	if (currentEntry != getAmountOfEntries())
+	{
+		return false;
+	}
+	for (size_t i = 0; i < childSlides.getLength(); i++)
+	{
+		if (!childSlides[i].isLastEntry()) return false;
+	}
+
+	return true;
 }
 
-uint32_t Slide::getAmountOfEntries() const
+int32_t Slide::getAmountOfEntries() const
 {
 	if (complete) return 0;
 
@@ -193,7 +223,7 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 
 	brush.setColorRGB(1, 1, 1);
 
-	bbe::Vector2 offset = -textAabb.getPos() - textAabb.getDim() * 0.5f + bbe::Vector2(1280, 720) * 0.5f;
+	bbe::Vector2 offset = -textAabb.getPos() - textAabb.getDim() * 0.5f + screenPosition.getDim() * 0.5f + screenPosition.getPos();
 	if (offset.y < 20) offset.y = 20;
 	offset.y += scrollValue;
 
@@ -217,6 +247,12 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 			brush.fillChar(token.chars[k].pos + offset, token.chars[k].c, getFont());
 		}
 	}
+
+
+	for (size_t i = 0; i < childSlides.getLength(); i++)
+	{
+		childSlides[i].draw(brush, bbe::Color(0, 0, 0, 0));
+	}
 }
 
 void Slide::addType(const bbe::String& type)
@@ -226,24 +262,60 @@ void Slide::addType(const bbe::String& type)
 
 void Slide::next()
 {
-	if (hasNext()) currentEntry++;
+	if (currentEntry < getAmountOfEntries()) currentEntry++;
+	else
+	{
+		for (size_t i = 0; i < childSlides.getLength(); i++)
+		{
+			if (childSlides[i].hasNext())
+			{
+				childSlides[i].next();
+				break;
+			}
+		}
+	}
 	std::cout << "Now at Entry: " << currentEntry << std::endl;
 }
 
 bool Slide::hasNext() const
 {
-	return currentEntry < getAmountOfEntries();
+	if (currentEntry < getAmountOfEntries()) return true;
+
+	for (size_t i = 0; i < childSlides.getLength(); i++)
+	{
+		if (childSlides[i].hasNext()) return true;
+	}
+
+	return false;
 }
 
 void Slide::prev()
 {
-	if (hasPrev()) currentEntry--;
+	if (currentEntry > 0) currentEntry--;
+	else
+	{
+		for (size_t i = 0; i < childSlides.getLength(); i++)
+		{
+			if (childSlides[i].currentEntry > -1)
+			{
+				childSlides[i].currentEntry--;
+				break;
+			}
+		}
+	}
 	std::cout << "Now at Entry: " << currentEntry << std::endl;
 }
 
 bool Slide::hasPrev() const
 {
-	return currentEntry > 0;
+	if (currentEntry > 0) return true;
+
+	for (size_t i = 0; i < childSlides.getLength(); i++)
+	{
+		if (childSlides[i].currentEntry > -1) return true;
+	}
+
+	return false;
 }
 
 void Slide::compile()
@@ -368,19 +440,53 @@ bbe::Font& Slide::getFont()
 				scrollingAllowed = false;
 			}
 
-			if ((textAabb.getHeight() < 720 - 10 && textAabb.getWidth() < 1280 - 10) || forcedFontSize != 0)
+			if ((textAabb.getHeight() < screenPosition.getHeight() - 10 && textAabb.getWidth() < screenPosition.getWidth() - 10) || forcedFontSize != 0)
 			{
 				selectedFont = &fonts[i];
 				this->textAabb = textAabb;
 			}
 
-			if (textAabb.getHeight() > 720 - 50 || textAabb.getWidth() > 1280 - 50) break;
+			if (textAabb.getHeight() > screenPosition.getHeight() - 50 || textAabb.getWidth() > screenPosition.getWidth() - 50) break;
 		}
 
 		selectedFont->setFixedWidth(selectedFont->getAdvanceWidth(' '));
 	}
 
 	return *selectedFont;
+}
+
+void Slide::moveFrom(Slide&& other)
+{
+	currentEntry     = std::move(other.currentEntry);
+	amountOfEntries  = std::move(other.amountOfEntries);
+	dirty            = std::move(other.dirty);
+	selectedFont     = std::move(other.selectedFont);
+	additionalTypes  = std::move(other.additionalTypes);
+	textAabb         = std::move(other.textAabb);
+	text             = std::move(other.text);
+	tokenizer        = std::move(other.tokenizer);
+	scrollValue      = std::move(other.scrollValue);
+	scrollingAllowed = std::move(other.scrollingAllowed);
+	complete         = std::move(other.complete);
+	screenPosition   = std::move(other.screenPosition);
+	childSlides      = std::move(other.childSlides);
+}
+
+void Slide::copyFrom(const Slide& other)
+{
+	currentEntry     = other.currentEntry;
+	amountOfEntries  = other.amountOfEntries;
+	dirty            = other.dirty;
+	selectedFont     = other.selectedFont;
+	additionalTypes  = other.additionalTypes;
+	textAabb         = other.textAabb;
+	text             = other.text;
+	tokenizer        = other.tokenizer;
+	scrollValue      = other.scrollValue;
+	scrollingAllowed = other.scrollingAllowed;
+	complete         = other.complete;
+	screenPosition   = other.screenPosition;
+	childSlides      = other.childSlides;
 }
 
 void Token::submit(bbe::List<Token>& tokens)
@@ -922,21 +1028,53 @@ void SlideShow::addManifest(const char* inPath)
 	const bbe::String fileContent = bbe::simpleFile::readFile(path);
 	const bbe::DynamicArray<bbe::String> lines = fileContent.split("\n");
 
+	uint32_t horizontalCount = 10;
+
 	for (size_t i = 0; i < lines.getLength(); i++)
 	{
 		const bbe::String line = lines[i].trim();
 		const bbe::DynamicArray<bbe::String> tokens = line.split(" ");
 		if (tokens.getLength() == 0) continue;
 
-		if (tokens[0] == "SLIDE:")
+		if (   tokens[0] == "SLIDE:" 
+			|| tokens[0] == "SLIDETEXT:")
 		{
-			addSlide(parentPath + tokens[1]);
+			Slide slide;
+
+			if (tokens[0] == "SLIDE:")
+			{
+				slide = Slide((parentPath + tokens[1]).getRaw());
+			}
+			else if (tokens[0] == "SLIDETEXT:")
+			{
+				slide = Slide(new LineTokenizer());
+				slide.addText(line.getRaw() + strlen("SLIDETEXT: "));
+			}
+			else
+			{
+				throw bbe::UnknownException();
+			}
+
+			if (horizontalCount == 0)
+			{
+				slide.setScreenPosition(bbe::Rectangle(0, 0, 1280 / 2, 720));
+			}
+			else if (horizontalCount == 1)
+			{
+				slide.setScreenPosition(bbe::Rectangle(1280 / 2, 0, 1280 / 2, 720));
+				slide.currentEntry = -1;
+				slides.last().childSlides.add(slide);
+			}
+
+			if (horizontalCount != 1)
+			{
+				addSlide(slide);
+			}
+			horizontalCount++;
 		}
-		else if (tokens[0] == "SLIDETEXT:")
+		else if (tokens[0] == "HORIZONTALSPLIT")
 		{
-			Slide slide(new LineTokenizer());
-			slide.addText(line.getRaw() + strlen("SLIDETEXT:"));
-			addSlide(slide);
+			horizontalCount = 0;
 		}
 		else if (tokens[0].toLowerCase() == "complete")
 		{
@@ -945,14 +1083,14 @@ void SlideShow::addManifest(const char* inPath)
 		else if (tokens[0].toLowerCase() == "samedimensions")
 		{
 			//slides[slides.getLength() - 2].compile();
-			const uint32_t fontSize = slides[slides.getLength() - 2].getFont().getFontSize();
-			slides.last().forceFontSize(fontSize);
-			slides.last().getFont();
-			slides.last().textAabb = slides[slides.getLength() - 2].textAabb;
+			const uint32_t fontSize = getSecondToLastSlide().getFont().getFontSize();
+			getLastSlide().forceFontSize(fontSize);
+			getLastSlide().getFont();
+			getLastSlide().textAabb = getSecondToLastSlide().textAabb;
 		}
 		else if (tokens[0] == "type:")
 		{
-			slides.last().addType(tokens[1]);
+			getLastSlide().addType(tokens[1]);
 		}
 		else
 		{
@@ -1000,8 +1138,8 @@ void SlideShow::writeAsPowerPoint(const bbe::String& path)
 
 	for (int i = 0; i < this->slides.getLength(); i++)
 	{
-		uint32_t amountOfEntries = this->slides[i].getAmountOfEntries();
-		for (uint32_t entry = 0; entry < amountOfEntries; entry++)
+		int32_t amountOfEntries = this->slides[i].getAmountOfEntries();
+		for (int32_t entry = 0; entry < amountOfEntries; entry++)
 		{
 			id++;
 			const bbe::String stringId = bbe::String(id);
@@ -1035,4 +1173,35 @@ bbe::Rectangle SlideShow::getTextAabb(uint32_t slide) const
 void SlideShow::setTextAabb(uint32_t slide, const bbe::Rectangle& value)
 {
 	slides[slide].textAabb = value;
+}
+
+Slide& SlideShow::getLastSlide()
+{
+	Slide* candidate = &slides.last();
+	while (candidate->childSlides.getLength() > 0)
+	{
+		candidate = &candidate->childSlides.last();
+	}
+	return *candidate;
+}
+
+void SlideShow::addSlidesToList(Slide* slide, bbe::List<Slide*> &list)
+{
+	list.add(slide);
+	for (size_t i = 0; i < slide->childSlides.getLength(); i++)
+	{
+		addSlidesToList(&slide->childSlides[i], list);
+	}
+}
+
+Slide& SlideShow::getSecondToLastSlide()
+{
+	//TODO this implementation is dumb and slow and dumb, fix plz
+
+	bbe::List<Slide*> slides;
+	for (size_t i = 0; i < this->slides.getLength(); i++)
+	{
+		addSlidesToList(&(this->slides[i]), slides);
+	}
+	return *slides[slides.getLength() - 2];
 }
