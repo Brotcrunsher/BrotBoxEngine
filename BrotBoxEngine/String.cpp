@@ -666,7 +666,7 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String&
 	}
 
 	Utf8String currentString;
-	size_t currentStringLength = m_UNION.m_pdata + m_length - previousFinding;
+	size_t currentStringLength = getRaw() + m_length - previousFinding;
 	currentString.m_usesSSO = false; //TODO make this better! current string could use SSO!
 	currentString.m_UNION.m_pdata = new char[currentStringLength + 1];
 	memcpy(currentString.m_UNION.m_pdata, previousFinding, currentStringLength);
