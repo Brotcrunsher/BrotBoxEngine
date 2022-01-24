@@ -30,7 +30,7 @@ public:
 		//}
 		//slideShow.writeAsPowerPoint("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/out.xml");
 
-		slideShow.addManifest("D:/Videos/C++ Tutorial/Episode Bonus 043 - Copy Elision/Manifest.txt");
+		slideShow.addManifest("D:/Videos/C++ Tutorial/Episode Bonus 044 - decltype/Manifest.txt");
 	}
 
 	virtual void update(float timeSinceLastFrame) override

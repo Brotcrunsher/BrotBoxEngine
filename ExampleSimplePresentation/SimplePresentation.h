@@ -39,6 +39,7 @@ struct Char
 struct Token
 {
 	bbe::List<Char> chars;
+	bbe::List<bbe::Line2> lines; // Additional lines to be drawn, e.g. for cross out text.
 	bbe::Rectangle aabb;
 	bbe::String text;
 	TokenType type = TokenType::unknown;
@@ -78,6 +79,15 @@ public:
 	virtual bool hasFinalBrightState() override;
 };
 
+class BrotDownTokenizer : public Tokenizer
+{
+public:
+	virtual void tokenize(const bbe::String& text, const bbe::Font& font) override;
+	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes) override;
+	virtual void animateTokens() override;
+	virtual bool hasFinalBrightState() override;
+};
+
 class AsmTokenizer : public Tokenizer
 {
 public:
@@ -85,6 +95,13 @@ public:
 	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes) override;
 	virtual void animateTokens() override;
 	virtual bool hasFinalBrightState() override;
+};
+
+enum class BrightStateOverride
+{
+	NO_OVERRIDE,
+	OVERRIDE_ON,
+	OVERRIDE_OFF,
 };
 
 class Slide
@@ -108,6 +125,7 @@ private:
 	static constexpr int BORDERWIDTH = 10;
 	bbe::Rectangle screenPosition = bbe::Rectangle(BORDERWIDTH, BORDERWIDTH, 1280 - 2 * BORDERWIDTH, 720 - 2 * BORDERWIDTH);
 	bbe::List<Slide> childSlides;
+	BrightStateOverride brightStateOverride = BrightStateOverride::NO_OVERRIDE;
 
 public:
 	Slide();
@@ -135,6 +153,8 @@ public:
 
 	void addText(const char* txt);
 	void setScreenPosition(const bbe::Rectangle& rect);
+
+	bool hasFinalBrightState() const;
 
 private:
 	void loadFonts();
