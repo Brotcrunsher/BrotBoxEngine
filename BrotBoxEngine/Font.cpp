@@ -153,14 +153,8 @@ const bbe::Image& bbe::Font::getImage(int32_t c) const
 int32_t bbe::Font::getLeftSideBearing(int32_t c) const
 {
 	if (!isInit) throw NotInitializedException();
-	if (getFixedWidth() > 0)
-	{
-		return 0;
-	}
-	else
-	{
-		return charDatas.at(c).leftSideBearing;
-	}
+
+	return charDatas.at(c).leftSideBearing;
 }
 
 int32_t bbe::Font::getAdvanceWidth(int32_t c) const
@@ -168,7 +162,7 @@ int32_t bbe::Font::getAdvanceWidth(int32_t c) const
 	if (!isInit) throw NotInitializedException();
 	if (getFixedWidth() > 0)
 	{
-		return getFixedWidth();
+		return getFixedWidth() - getLeftSideBearing(c);
 	}
 	else
 	{
@@ -189,6 +183,12 @@ bbe::Vector2 bbe::Font::getDimensions(int32_t c) const
 
 void bbe::Font::setFixedWidth(int32_t val)
 {
+	for (auto& x : charDatas)
+	{
+		const bbe::Vector2 dim = getDimensions(x.first);
+		x.second.leftSideBearing = (val - dim.x) * 0.5f;
+	}
+
 	fixedWidth = val;
 }
 
