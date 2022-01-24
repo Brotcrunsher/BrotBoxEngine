@@ -31,5 +31,6 @@ namespace bbe
 		float getAngle() const;
 		bbe::Vector2 getDirection() const;
 
+		bbe::Line2 operator+(const bbe::Vector2& translation) const;
 	};
 }

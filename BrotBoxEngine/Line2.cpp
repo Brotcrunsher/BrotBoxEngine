@@ -53,6 +53,11 @@ bbe::Vector2 bbe::Line2::getDirection() const
 	return m_stop - m_start;
 }
 
+bbe::Line2 bbe::Line2::operator+(const bbe::Vector2& translation) const
+{
+	return bbe::Line2(m_start + translation, m_stop + translation);
+}
+
 bbe::Line2::Line2()
 {
 }
