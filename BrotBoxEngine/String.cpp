@@ -554,6 +554,8 @@ bbe::Utf8String bbe::Utf8String::trim() const
 void bbe::Utf8String::trimInPlace()
 {
 	//UNTESTED
+	if (m_length == 0) return;
+
 	size_t start = 0;
 	size_t end = m_length - 1;
 
