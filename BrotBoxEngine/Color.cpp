@@ -12,7 +12,7 @@ bbe::String bbe::Color::toHex() const
 	return bbe::String::toHex(rgb);
 }
 
-bbe::Vector3 bbe::Color::HSVtoRGB(float h, float s, float v)
+bbe::Color bbe::Color::HSVtoRGB(float h, float s, float v)
 {
 	//UNTESTED
 	h = bbe::Math::mod(h, 360.0f);
@@ -26,17 +26,17 @@ bbe::Vector3 bbe::Color::HSVtoRGB(float h, float s, float v)
 	switch (hi)
 	{
 	case 1:
-		return Vector3(q, v, p);
+		return Color(q, v, p);
 	case 2:
-		return Vector3(p, v, t);
+		return Color(p, v, t);
 	case 3:
-		return Vector3(p, q, v);
+		return Color(p, q, v);
 	case 4:
-		return Vector3(t, p, v);
+		return Color(t, p, v);
 	case 5:
-		return Vector3(v, p, q);
+		return Color(v, p, q);
 	default:
-		return Vector3(v, t, p);
+		return Color(v, t, p);
 	}
 }
 

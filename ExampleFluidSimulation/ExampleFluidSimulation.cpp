@@ -299,7 +299,7 @@ public:
 		{
 			if (isMouseDown(bbe::MouseButton::LEFT))
 			{
-				bbe::Vector3 color = bbe::Color::HSVtoRGB(timeSinceStart * 90, 1, 1);
+				bbe::Color color = bbe::Color::HSVtoRGB(timeSinceStart * 90, 1, 1);
 				timeSinceStep -= stepTime;
 				constexpr int amountOfSteps = 10;
 				for (int step = 0; step < amountOfSteps; step++)
@@ -319,9 +319,9 @@ public:
 								const float t = distance / brushSize;
 								brushLocation = brushLocation.normalize({ 0, 0 });
 								square.addVelocity(mouseX + i, mouseY + k, (getMouseDelta().x + brushLocation.x) * 10.f, (getMouseDelta().y + brushLocation.y) * 10.f);
-								square.addDensityR(mouseX + i, mouseY + k, bbe::Math::interpolateLinear(color.x * 1.f / amountOfSteps, 0, t));
-								square.addDensityG(mouseX + i, mouseY + k, bbe::Math::interpolateLinear(color.y * 1.f / amountOfSteps, 0, t));
-								square.addDensityB(mouseX + i, mouseY + k, bbe::Math::interpolateLinear(color.z * 1.f / amountOfSteps, 0, t));
+								square.addDensityR(mouseX + i, mouseY + k, bbe::Math::interpolateLinear(color.r * 1.f / amountOfSteps, 0, t));
+								square.addDensityG(mouseX + i, mouseY + k, bbe::Math::interpolateLinear(color.g * 1.f / amountOfSteps, 0, t));
+								square.addDensityB(mouseX + i, mouseY + k, bbe::Math::interpolateLinear(color.b * 1.f / amountOfSteps, 0, t));
 							}
 						}
 					}

@@ -599,7 +599,7 @@ void bbe::PrimitiveBrush2D::setOutlineRGB(const Color& c)
 void bbe::PrimitiveBrush2D::setColorHSV(float h, float s, float v, float a)
 {
 	auto rgb = bbe::Color::HSVtoRGB(h, s, v);
-	setColorRGB(rgb.x, rgb.y, rgb.z, a);
+	setColorRGB(rgb.r, rgb.g, rgb.b, a);
 }
 
 void bbe::PrimitiveBrush2D::setColorHSV(float h, float s, float v)
@@ -610,7 +610,8 @@ void bbe::PrimitiveBrush2D::setColorHSV(float h, float s, float v)
 void bbe::PrimitiveBrush2D::setOutlineHSV(float h, float s, float v, float a)
 {
 	auto rgb = bbe::Color::HSVtoRGB(h, s, v);
-	setOutlineRGB(rgb, a);
+	rgb.a = a;
+	setOutlineRGB(rgb);
 }
 
 void bbe::PrimitiveBrush2D::setOutlineHSV(float h, float s, float v)

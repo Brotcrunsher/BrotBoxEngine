@@ -33,6 +33,6 @@ namespace bbe
 
 		bbe::String toHex() const;
 
-		static Vector3 HSVtoRGB(float h, float s, float v);
+		static Color HSVtoRGB(float h, float s, float v);
 	};
 }
