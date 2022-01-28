@@ -128,15 +128,27 @@ public:
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
-		for (int x = 0; x < WINDOW_WIDTH; x++)
-		{
-			for (int y = 0; y < WINDOW_HEIGHT; y++)
-			{
-				brush.setColorHSV(-picData[x][y] * 360 + 240, 1, 1 - picData[x][y]);
+		bbe::List<float> floats;
+		floats.resizeCapacityAndLength(WINDOW_WIDTH * WINDOW_HEIGHT);
+		float* dataArr = floats.getRaw();
 
-				brush.fillRect(x, y, 1, 1);
+		for (int32_t k = 0; k < WINDOW_HEIGHT; k++)
+		{
+			for (int32_t i = 0; i < WINDOW_WIDTH; i++)
+			{
+				const bbe::Color color = bbe::Color::HSVtoRGB(-picData[i][k] * 360 + 240, 1, 1 - picData[i][k]);
+				float* p = dataArr + k * WINDOW_WIDTH + i;
+				unsigned char* pc = (unsigned char*)p;
+				pc[0] = bbe::Math::clamp(color.r * 255, 0.f, 255.f);
+				pc[1] = bbe::Math::clamp(color.g * 255, 0.f, 255.f);
+				pc[2] = bbe::Math::clamp(color.b * 255, 0.f, 255.f);
+				pc[3] = 255;
 			}
 		}
+
+		bbe::Image image;
+		image.load(WINDOW_WIDTH, WINDOW_HEIGHT, dataArr, bbe::ImageFormat::R8G8B8A8);
+		brush.drawImage(0, 0, image);
 	}
 	virtual void onEnd() override
 	{
