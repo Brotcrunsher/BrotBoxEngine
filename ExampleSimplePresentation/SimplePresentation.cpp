@@ -603,7 +603,7 @@ void CppTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 
 void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes)
 {
-	const bbe::List<bbe::String> keywords = { "constexpr", "class", "public", "private", "public:", "private:", "protected", "virtual", "override", "if", "else", "alignas", "alignof", "delete", "operator", "sizeof", "template", "typename", "struct", "return", "noexcept", "this", "void", "int", "float", "co_yield", "co_return", "co_await", "true", "false", "auto", "char", "const", "mutable", "while", "for", "do", "noexcept", "static", "volatile", "throw", "decltype", "typeof"};
+	const bbe::List<bbe::String> keywords = { "constexpr", "class", "public", "private", "protected", "public:", "private:", "protected:", "virtual", "override", "if", "else", "alignas", "alignof", "delete", "operator", "sizeof", "template", "typename", "struct", "return", "noexcept", "this", "void", "int", "float", "co_yield", "co_return", "co_await", "true", "false", "auto", "char", "const", "mutable", "while", "for", "do", "noexcept", "static", "volatile", "throw", "decltype", "typeof"};
 	const bbe::List<bbe::String> preprocessor = { "#include", "#define", "#ifdef", "#endif" };
 	bbe::List<bbe::String> types = { "int", "char", "float", "bool" };
 	types.addList(additionalTypes);
@@ -678,9 +678,11 @@ void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalT
 			else if ((i > 0 && tokens[i - 1].type == TokenType::type)
 				|| (i > 0 && types.contains(tokens[i - 1].text))
 				|| (i > 0 && tokens[i - 1].text == "=")
+				|| (i > 0 && tokens[i - 1].text == "return")
 				|| (i < tokens.getLength() - 1 && tokens[i + 1].text == "=")
 				|| (i < tokens.getLength() - 1 && tokens[i + 1].text == ")")
-				|| (values.contains(tokens[i].text)))
+				|| (values.contains(tokens[i].text))
+				|| (i > 1 && tokens[i - 2].type == TokenType::type && (tokens[i-1].text == "*" || tokens[i-1].text == "&")))
 			{
 				tokens[i].type = TokenType::value;
 				if (!values.contains(tokens[i].text)) values.add(tokens[i].text);
