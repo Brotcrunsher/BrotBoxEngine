@@ -18,45 +18,110 @@ public:
 
 	double picData[WINDOW_WIDTH][WINDOW_HEIGHT];
 
-	constexpr static int numThreads = 16;
+	constexpr static int numThreads = 8;
+
+	std::condition_variable workerConditional;
+	std::condition_variable managerConditional;
+	std::mutex workerMutex;
+
+	bbe::List<std::thread> threads;
+	int startSignals = 0;
+	int stopSignals = numThreads;
+
+	bool shutdown = false;
+	std::mutex shutdownMutex;
+	void doShutdown()
+	{
+		std::unique_lock lock(shutdownMutex);
+		shutdown = true;
+	}
+	bool isShutdown()
+	{
+		std::unique_lock lock(shutdownMutex);
+		return shutdown;
+	}
+
+	void startWorkers()
+	{
+		{
+			std::unique_lock<std::mutex> lock(workerMutex);
+			startSignals = numThreads;
+			stopSignals = 0;
+		}
+		workerConditional.notify_all();
+	}
+
+	void finishedWork()
+	{
+		{
+			std::unique_lock<std::mutex> lock(workerMutex);
+			stopSignals++;
+		}
+		managerConditional.notify_one();
+	}
+
+	void waitForWork()
+	{
+		std::unique_lock<std::mutex> lock(workerMutex);
+		workerConditional.wait(lock, [this] { return startSignals > 0; });
+		startSignals--;
+	}
+
+	void waitForWorkers()
+	{
+		std::unique_lock<std::mutex> lock(workerMutex);
+		managerConditional.wait(lock, [this] { return stopSignals == numThreads; });
+	}
 
 	void work(int id)
 	{
-		for (int x = id; x < WINDOW_WIDTH; x += numThreads)
+		while (!isShutdown())
 		{
-			for (int y = 0; y < WINDOW_HEIGHT; y++)
+			waitForWork();
+			for (int x = id; x < WINDOW_WIDTH; x += numThreads)
 			{
-				double x0 = (double)x / (double)WINDOW_WIDTH;
-				double y0 = (double)y / (double)WINDOW_HEIGHT;
-
-				x0 = x0 * rangeX + middleX - rangeX / 2;
-				y0 = y0 * rangeY + middleY - rangeY / 2;
-
-				double real = 0;
-				double imaginary = 0;
-
-				int iteration = 0;
-				while (real * real + imaginary * imaginary <= 4 && iteration < max_iteration)
+				for (int y = 0; y < WINDOW_HEIGHT; y++)
 				{
-					double temp = real * real - imaginary * imaginary + x0;
-					imaginary = 2 * real * imaginary + y0;
-					real = temp;
-					iteration++;
+					double x0 = (double)x / (double)WINDOW_WIDTH;
+					double y0 = (double)y / (double)WINDOW_HEIGHT;
+
+					x0 = x0 * rangeX + middleX - rangeX / 2;
+					y0 = y0 * rangeY + middleY - rangeY / 2;
+
+					double real = 0;
+					double imaginary = 0;
+
+					int iteration = 0;
+					while (real * real + imaginary * imaginary <= 4 && iteration < max_iteration)
+					{
+						double temp = real * real - imaginary * imaginary + x0;
+						imaginary = 2 * real * imaginary + y0;
+						real = temp;
+						iteration++;
+					}
+
+					double colorVal = (double)iteration / max_iteration;
+
+					picData[x][y] = colorVal;
 				}
-
-				double colorVal = (double)iteration / max_iteration;
-
-				picData[x][y] = colorVal;
 			}
+			finishedWork();
 		}
 	}
 
 	virtual void onStart() override
 	{
+		for (int i = 0; i < numThreads; i++)
+		{
+			threads.add(std::thread(&MyGame::work, this, i));
+		}
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
-		std::cout << "FPS: " << (1 / timeSinceLastFrame) << std::endl;
+		static float runningAverage = (1 / timeSinceLastFrame);
+		const float currentFps = (1 / timeSinceLastFrame);
+		runningAverage = 0.99f * runningAverage + 0.01f * currentFps;
+		std::cout << "AVG FPS: " << runningAverage << std::endl;
 
 		if (isKeyDown(bbe::Key::DOWN))
 		{
@@ -109,19 +174,8 @@ public:
 			rangeY /= 0.8;
 		}
 
-
-		bbe::List<std::thread> threads;
-
-		for (int i = 0; i < numThreads; i++)
-		{
-			threads.add(std::thread(&MyGame::work, this, i));
-		}
-
-		for (int i = 0; i < numThreads; i++)
-		{
-			threads[i].join();
-		}
-
+		startWorkers();
+		waitForWorkers();
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
@@ -152,6 +206,12 @@ public:
 	}
 	virtual void onEnd() override
 	{
+		doShutdown();
+		startWorkers();
+		for (size_t i = 0; i < threads.getLength(); i++)
+		{
+			threads[i].join();
+		}
 	}
 };
 
