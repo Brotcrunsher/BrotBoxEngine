@@ -40,6 +40,7 @@ struct Token
 {
 	bbe::List<Char> chars;
 	bbe::List<bbe::Line2> lines; // Additional lines to be drawn, e.g. for cross out text.
+	bbe::List<bbe::Image> images;
 	bbe::Rectangle aabb;
 	bbe::String text;
 	TokenType type = TokenType::unknown;
@@ -54,9 +55,10 @@ public:
 	bbe::List<Token> tokens;
 
 	virtual void tokenize(const bbe::String& text, const bbe::Font& font) = 0;
-	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes) = 0;
+	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues) = 0;
 	virtual void animateTokens() = 0;
 	virtual bool hasFinalBrightState() = 0;
+	virtual bool isTextBased() { return true; }
 };
 
 class CppTokenizer : public Tokenizer
@@ -65,7 +67,7 @@ public:
 	const bbe::List<char> singleSignTokens = { '{', '}', '(', ')', '[', ']', ';', '*', '<', '>', '=', '.', '&', '+' };
 
 	virtual void tokenize(const bbe::String& text, const bbe::Font& font) override;
-	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes) override;
+	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues) override;
 	virtual void animateTokens() override;
 	virtual bool hasFinalBrightState() override;
 };
@@ -74,7 +76,7 @@ class LineTokenizer : public Tokenizer
 {
 public:
 	virtual void tokenize(const bbe::String& text, const bbe::Font& font) override;
-	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes) override;
+	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues) override;
 	virtual void animateTokens() override;
 	virtual bool hasFinalBrightState() override;
 };
@@ -83,7 +85,7 @@ class BrotDownTokenizer : public Tokenizer
 {
 public:
 	virtual void tokenize(const bbe::String& text, const bbe::Font& font) override;
-	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes) override;
+	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues) override;
 	virtual void animateTokens() override;
 	virtual bool hasFinalBrightState() override;
 };
@@ -92,9 +94,21 @@ class AsmTokenizer : public Tokenizer
 {
 public:
 	virtual void tokenize(const bbe::String& text, const bbe::Font& font) override;
-	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes) override;
+	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues) override;
 	virtual void animateTokens() override;
 	virtual bool hasFinalBrightState() override;
+};
+
+class PngTokenizer : public Tokenizer
+{
+public:
+	virtual void tokenize(const bbe::String& text, const bbe::Font& font) override { };
+	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues) override { };
+	virtual void animateTokens() override {} ;
+	virtual bool hasFinalBrightState() override { return false; };
+	virtual bool isTextBased() override { return false; }
+	
+	void loadImage(const bbe::String& path);
 };
 
 enum class BrightStateOverride
@@ -115,6 +129,7 @@ private:
 	bool dirty = true;
 	bbe::Font* selectedFont = nullptr;
 	bbe::List<bbe::String> additionalTypes;
+	bbe::List<bbe::String> additionalValues;
 	bbe::Rectangle textAabb;
 	bbe::String text;
 	std::shared_ptr<Tokenizer> tokenizer;
@@ -122,8 +137,8 @@ private:
 	bool scrollingAllowed = false;
 	uint32_t forcedFontSize = 0;
 	bool complete = false;
-	static constexpr int BORDERWIDTH = 10;
-	bbe::Rectangle screenPosition = bbe::Rectangle(BORDERWIDTH, BORDERWIDTH, 1280 - 2 * BORDERWIDTH, 720 - 2 * BORDERWIDTH);
+	static constexpr int DEFAULT_BORDERWIDTH = 10;
+	bbe::Rectangle screenPosition = bbe::Rectangle(DEFAULT_BORDERWIDTH, DEFAULT_BORDERWIDTH, 1280 - 2 * DEFAULT_BORDERWIDTH, 720 - 2 * DEFAULT_BORDERWIDTH);
 	bbe::List<Slide> childSlides;
 	BrightStateOverride brightStateOverride = BrightStateOverride::NO_OVERRIDE;
 
@@ -140,6 +155,7 @@ public:
 	void update(PresentationControl pc, float scrollValue);
 	void draw(bbe::PrimitiveBrush2D& brush, const bbe::Color &bgColor);
 	void addType(const bbe::String& type);
+	void addValue(const bbe::String& value);
 	bool isFirstEntry() const;
 	bool isLastEntry() const;
 	int32_t getAmountOfEntries() const;
@@ -176,6 +192,7 @@ public:
 	bbe::List<Slide> slides;
 	uint32_t currentSlide = 0;
 	static constexpr bbe::Color bgColor = bbe::Color(0.1f, 0.1f, 0.1f);
+	int borderWidth = Slide::DEFAULT_BORDERWIDTH;
 
 public:
 	SlideShow() = default;

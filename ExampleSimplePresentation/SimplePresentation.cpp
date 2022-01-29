@@ -40,43 +40,35 @@ Slide::Slide(Tokenizer* tokenizer)
 Slide::Slide(const char* path)
 {
 	bbe::String ppath = path;
-	bbe::String fileContent = bbe::simpleFile::readFile(ppath);
-	bool typeInFile = true;
 
-	if (fileContent.startsWith("//c++") || fileContent.startsWith("//cpp"))
+	if (ppath.endsWith(".cpp"))
 	{
 		tokenizer.reset(new CppTokenizer());
 	}
-	else if (fileContent.startsWith("//lines"))
+	else if (ppath.endsWith(".txt"))
 	{
 		tokenizer.reset(new LineTokenizer());
 	}
-	else if (fileContent.startsWith("//asm"))
+	else if (ppath.endsWith(".bd"))
+	{
+		tokenizer.reset(new BrotDownTokenizer());
+	}
+	else if (ppath.endsWith(".asm"))
 	{
 		tokenizer.reset(new AsmTokenizer());
 	}
+	else if (ppath.endsWith(".png"))
+	{
+		PngTokenizer* t = new PngTokenizer();
+		t->loadImage(ppath);
+		tokenizer.reset(t);
+	}
 	else
 	{
-		typeInFile = false;
-		if (ppath.endsWith(".cpp"))
-		{
-			tokenizer.reset(new CppTokenizer());
-		}
-		else if (ppath.endsWith(".txt"))
-		{
-			tokenizer.reset(new LineTokenizer());
-		}
-		else if (ppath.endsWith(".bd"))
-		{
-			tokenizer.reset(new BrotDownTokenizer());
-		}
-		else
-		{
-			throw bbe::IllegalArgumentException();
-		}
+		throw bbe::IllegalArgumentException();
 	}
 
-	addText(fileContent.getRaw() + (typeInFile ? fileContent.search("\n") : 0));
+	if(tokenizer->isTextBased()) addText(bbe::simpleFile::readFile(ppath).getRaw());
 
 	loadFonts();
 }
@@ -213,6 +205,7 @@ void Slide::forceFontSize(uint32_t size)
 		if (fonts[i].getFontSize() == size)
 		{
 			forcedFontSize = size;
+			selectedFont = nullptr;
 			return;
 		}
 	}
@@ -236,6 +229,13 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 	brush.fillRect(0, 0, 10000, 10000);
 
 	brush.setColorRGB(1, 1, 1);
+	for (size_t i = 0; i < tokenizer->tokens.getLength(); i++)
+	{
+		for (bbe::Image& img : tokenizer->tokens[i].images)
+		{
+			brush.drawImage(0, 0, img);
+		}
+	}
 
 	bbe::Vector2 offset = -textAabb.getPos() - textAabb.getDim() * 0.5f + screenPosition.getDim() * 0.5f + screenPosition.getPos();
 	if (offset.y < 20) offset.y = 20;
@@ -284,6 +284,11 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 void Slide::addType(const bbe::String& type)
 {
 	additionalTypes.add(type);
+}
+
+void Slide::addValue(const bbe::String& value)
+{
+	additionalValues.add(value);
 }
 
 void Slide::next()
@@ -345,6 +350,8 @@ bool Slide::hasPrev() const
 
 void Slide::compile()
 {
+	if (!tokenizer->isTextBased()) return;
+
 	tokenizer->tokenize(text, getFont());
 
 	for (size_t i = 0; i < tokenizer->tokens.getLength(); i++)
@@ -362,7 +369,7 @@ void Slide::compile()
 			}
 		}
 	}
-	tokenizer->determineTokenTypes(additionalTypes);
+	tokenizer->determineTokenTypes(additionalTypes, additionalValues);
 	tokenizer->animateTokens();
 	if (complete)
 	{
@@ -486,7 +493,9 @@ void Slide::moveFrom(Slide&& other)
 	amountOfEntries     = std::move(other.amountOfEntries);
 	dirty               = std::move(other.dirty);
 	selectedFont        = std::move(other.selectedFont);
+	forcedFontSize      = std::move(other.forcedFontSize);
 	additionalTypes     = std::move(other.additionalTypes);
+	additionalValues    = std::move(other.additionalValues);
 	textAabb            = std::move(other.textAabb);
 	text                = std::move(other.text);
 	tokenizer           = std::move(other.tokenizer);
@@ -504,7 +513,9 @@ void Slide::copyFrom(const Slide& other)
 	amountOfEntries     = other.amountOfEntries;
 	dirty               = other.dirty;
 	selectedFont        = other.selectedFont;
+	forcedFontSize      = other.forcedFontSize;
 	additionalTypes     = other.additionalTypes;
+	additionalValues    = other.additionalValues;
 	textAabb            = other.textAabb;
 	text                = other.text;
 	tokenizer           = other.tokenizer;
@@ -575,6 +586,10 @@ void CppTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 		{
 			currentToken.submit(tokens);
 		}
+		if (text.isTextAtLocation(",", i))
+		{
+			currentToken.submit(tokens);
+		}
 		if (text[i] != ' ' && text[i] != '\t' && text[i] != '\n' && text[i] != '\r')
 		{
 			Char c;
@@ -601,16 +616,17 @@ void CppTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 	}
 }
 
-void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes)
+void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String> &additionalValues)
 {
-	const bbe::List<bbe::String> keywords = { "constexpr", "class", "public", "private", "protected", "public:", "private:", "protected:", "virtual", "override", "if", "else", "alignas", "alignof", "delete", "operator", "sizeof", "template", "typename", "struct", "return", "noexcept", "this", "void", "int", "float", "co_yield", "co_return", "co_await", "true", "false", "auto", "char", "const", "mutable", "while", "for", "do", "noexcept", "static", "volatile", "throw", "decltype", "typeof"};
+	const bbe::List<bbe::String> keywords = { "constexpr", "class", "public", "private", "protected", "public:", "private:", "protected:", "virtual", "override", "if", "else", "alignas", "alignof", "delete", "operator", "sizeof", "template", "typename", "struct", "return", "noexcept", "this", "void", "int", "float", "double", "co_yield", "co_return", "co_await", "true", "false", "auto", "char", "int64_t", "const", "mutable", "while", "for", "do", "noexcept", "static", "volatile", "throw", "decltype", "typeof"};
 	const bbe::List<bbe::String> preprocessor = { "#include", "#define", "#ifdef", "#endif" };
-	bbe::List<bbe::String> types = { "int", "char", "float", "bool" };
+	bbe::List<bbe::String> types = { "int", "char", "float", "bool", "__m256i", "__m256d"};
 	types.addList(additionalTypes);
 	types.add("uint32_t");
 	types.add("int32_t");
 	types.add("T");
 	bbe::List<bbe::String> values = {};
+	values.addList(additionalValues);
 
 	bool change = true;
 	while (change)
@@ -646,7 +662,7 @@ void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalT
 			{
 				tokens[i].type = TokenType::number;
 			}
-			else if ((tokens[i].text == "::") || (tokens[i].text == "->") || (tokens[i].text == "%") || (tokens[i].text.getLength() == 1 && singleSignTokens.contains(tokens[i].text[0])))
+			else if ((tokens[i].text == "::") || (tokens[i].text == "->") || (tokens[i].text == "%") || (tokens[i].text == "-") || (tokens[i].text == "/") || (tokens[i].text == ",") || (tokens[i].text.getLength() == 1 && singleSignTokens.contains(tokens[i].text[0])))
 			{
 				tokens[i].type = TokenType::punctuation;
 			}
@@ -866,7 +882,7 @@ void LineTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 	currentToken.submit(tokens);
 }
 
-void LineTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes)
+void LineTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues)
 {
 	for (size_t i = 0; i < tokens.getLength(); i++)
 	{
@@ -942,7 +958,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 	currentToken.submit(tokens);
 }
 
-void BrotDownTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes)
+void BrotDownTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues)
 {
 	for (size_t i = 0; i < tokens.getLength(); i++)
 	{
@@ -1032,7 +1048,7 @@ void AsmTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 	currentToken.submit(tokens);
 }
 
-void AsmTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes)
+void AsmTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues)
 {
 }
 
@@ -1047,6 +1063,14 @@ void AsmTokenizer::animateTokens()
 bool AsmTokenizer::hasFinalBrightState()
 {
 	return true;
+}
+
+void PngTokenizer::loadImage(const bbe::String& path)
+{
+	Token t;
+	t.images.add(bbe::Image(path));
+
+	tokens.add(t);
 }
 
 void SlideShow::update(PresentationControl pc, float scrollValue)
@@ -1169,13 +1193,13 @@ void SlideShow::addManifest(const char* inPath)
 
 			if (horizontalCount == 0)
 			{
-				slide.setScreenPosition(bbe::Rectangle(Slide::BORDERWIDTH, Slide::BORDERWIDTH, 1280 / 2 - 1.5 * Slide::BORDERWIDTH, 720 - 2 * Slide::BORDERWIDTH));
+				slide.setScreenPosition(bbe::Rectangle(borderWidth, borderWidth, 1280 / 2 - 1.5 * borderWidth, 720 - 2 * borderWidth));
 			}
 			else if (horizontalCount == 1)
 			{
-				slide.setScreenPosition(bbe::Rectangle(1280 / 2 + 1.5 * Slide::BORDERWIDTH, Slide::BORDERWIDTH, 1280 / 2 - 1.5 * Slide::BORDERWIDTH, 720 - 2 * Slide::BORDERWIDTH));
+				slide.setScreenPosition(bbe::Rectangle(1280 / 2 + 1.5 * borderWidth, borderWidth, 1280 / 2 - 1.5 * borderWidth, 720 - 2 * borderWidth));
 				slide.currentEntry = -1;
-				slides.last().childSlides.add(slide);
+				getLastSlide().childSlides.add(slide);
 			}
 
 			if (horizontalCount != 1)
@@ -1187,6 +1211,21 @@ void SlideShow::addManifest(const char* inPath)
 		else if (tokens[0] == "HORIZONTALSPLIT")
 		{
 			horizontalCount = 0;
+		}
+		else if (tokens[0] == "BORDERWIDTH:")
+		{
+			if (tokens[1] == "default")
+			{
+				borderWidth = Slide::DEFAULT_BORDERWIDTH;
+			}
+			else
+			{
+				borderWidth = tokens[1].toLong();
+			}
+		}
+		else if (tokens[0] == "FORCEFONTSIZE:")
+		{
+			getLastSlide().forceFontSize(tokens[1].toLong());
 		}
 		else if (tokens[0].toLowerCase() == "complete")
 		{
@@ -1205,11 +1244,11 @@ void SlideShow::addManifest(const char* inPath)
 			Slide dimSlide = Slide((parentPath + tokens[1]).getRaw());
 			if (horizontalCount == 0)
 			{
-				dimSlide.setScreenPosition(bbe::Rectangle(Slide::BORDERWIDTH, Slide::BORDERWIDTH, 1280 / 2 - 1.5 * Slide::BORDERWIDTH, 720 - 2 * Slide::BORDERWIDTH));
+				dimSlide.setScreenPosition(bbe::Rectangle(borderWidth, borderWidth, 1280 / 2 - 1.5 * borderWidth, 720 - 2 * borderWidth));
 			}
 			else if (horizontalCount == 1)
 			{
-				dimSlide.setScreenPosition(bbe::Rectangle(1280 / 2 + 1.5 * Slide::BORDERWIDTH, Slide::BORDERWIDTH, 1280 / 2 - 1.5 * Slide::BORDERWIDTH, 720 - 2 * Slide::BORDERWIDTH));
+				dimSlide.setScreenPosition(bbe::Rectangle(1280 / 2 + 1.5 * borderWidth, borderWidth, 1280 / 2 - 1.5 * borderWidth, 720 - 2 * borderWidth));
 			}
 			const uint32_t fontSize = dimSlide.getFont().getFontSize();
 			getLastSlide().forceFontSize(fontSize);
@@ -1227,6 +1266,10 @@ void SlideShow::addManifest(const char* inPath)
 		else if (tokens[0] == "type:")
 		{
 			getLastSlide().addType(tokens[1]);
+		}
+		else if (tokens[0] == "value:")
+		{
+			getLastSlide().addValue(tokens[1]);
 		}
 		else
 		{

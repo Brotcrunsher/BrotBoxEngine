@@ -15,22 +15,8 @@ public:
 	virtual void onStart() override
 	{
 		// TODO Remove absolute paths
-		//slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 039 - unique_ptr ist teurer als C Pointer/unique_ptr.txt");
-		//slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 039 - unique_ptr ist teurer als C Pointer/c_ptr.txt");
-		//slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 039 - unique_ptr ist teurer als C Pointer/unique_ptr.txt");
-		//slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 039 - unique_ptr ist teurer als C Pointer/noexcept.txt");
-
-		//slideShow.addSlide("D:/Videos/C++ Tutorial/Episode Bonus 039 - unique_ptr ist teurer als C Pointer/rvalue_asm.txt");
-
-
-		//slideShow.forceFontSize(15);
-		//for (size_t i = 0; i < slideShow.slides.getLength(); i++)
-		//{
-		//	slideShow.slides[i].compile();
-		//}
-		//slideShow.writeAsPowerPoint("D:/__Projekte/C++/Visual Studio Projekte/BrotboxEngine/ExampleSimplePresentation/out.xml");
-
-		slideShow.addManifest("D:/Videos/C++ Tutorial/Episode Bonus 044 - decltype/Manifest.txt");
+		
+		slideShow.addManifest("D:/Videos/C++ Tutorial/Episode Bonus 045 - SIMD mit Intel Intrinsics/Manifest.txt");
 	}
 
 	virtual void update(float timeSinceLastFrame) override
