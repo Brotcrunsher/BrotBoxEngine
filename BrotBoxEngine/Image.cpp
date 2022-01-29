@@ -195,6 +195,11 @@ bbe::Image::Image(const char * path)
 	load(path);
 }
 
+bbe::Image::Image(const bbe::String& path)
+{
+	load(path);
+}
+
 bbe::Image::Image(int width, int height)
 {
 	load(width, height);
@@ -288,6 +293,11 @@ void bbe::Image::load(const char * path)
 	memcpy(m_pdata, pixels, getSizeInBytes());
 
 	stbi_image_free(pixels);
+}
+
+void bbe::Image::load(const bbe::String& path)
+{
+	load(path.getRaw());
 }
 
 void bbe::Image::load(int width, int height)

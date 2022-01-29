@@ -105,6 +105,7 @@ namespace bbe
 	public:
 		Image();
 		explicit Image(const char* path);
+		explicit Image(const bbe::String& path);
 		Image(int width, int height);
 		Image(int width, int height, const Color &c);
 		Image(int width, int height, const byte* data, ImageFormat format);
@@ -117,6 +118,7 @@ namespace bbe
 		~Image();
 		
 		void load(const char* path);
+		void load(const bbe::String& path);
 		void load(int width, int height);
 		void load(int width, int height, const Color &c);
 		void load(int width, int height, const byte* data, ImageFormat format);
