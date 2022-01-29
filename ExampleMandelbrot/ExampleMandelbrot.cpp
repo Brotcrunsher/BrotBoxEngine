@@ -80,12 +80,11 @@ public:
 			waitForWork();
 			for (int x = id; x < WINDOW_WIDTH; x += numThreads)
 			{
+				double x0 = (double)x / (double)WINDOW_WIDTH;
+				x0 = x0 * rangeX + middleX - rangeX / 2;
 				for (int y = 0; y < WINDOW_HEIGHT; y++)
 				{
-					double x0 = (double)x / (double)WINDOW_WIDTH;
 					double y0 = (double)y / (double)WINDOW_HEIGHT;
-
-					x0 = x0 * rangeX + middleX - rangeX / 2;
 					y0 = y0 * rangeY + middleY - rangeY / 2;
 
 					double real = 0;
