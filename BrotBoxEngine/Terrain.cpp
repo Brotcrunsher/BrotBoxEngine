@@ -149,7 +149,7 @@ void bbe::Terrain::construct(int width, int height, const char * baseTexturePath
 	setTransform(Matrix4());
 
 	m_heightMap.setRepeatMode(bbe::ImageRepeatMode::MIRROR_CLAMP_TO_EDGE);
-	m_heightMap.load(width, height, m_valueNoise.getRaw(), bbe::ImageFormat::R32FLOAT);
+	m_heightMap.load(width, height, (byte*)m_valueNoise.getRaw(), bbe::ImageFormat::R32FLOAT);
 
 	m_baseTexture.load(baseTexturePath);
 
@@ -227,7 +227,7 @@ float bbe::Terrain::getMaxHeight() const
 void bbe::Terrain::addTexture(const char * texturePath, const float * weights)
 {
 	m_additionalTextures[m_currentAdditionalTexture].load(texturePath);
-	m_additionalTextureWeights[m_currentAdditionalTexture].load(m_width, m_height, weights, bbe::ImageFormat::R8);
+	m_additionalTextureWeights[m_currentAdditionalTexture].load(m_width, m_height, (byte*)weights, bbe::ImageFormat::R8);
 
 	m_currentAdditionalTexture++;
 }

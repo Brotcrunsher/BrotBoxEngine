@@ -205,9 +205,26 @@ bbe::Image::Image(int width, int height, const Color & c)
 	load(width, height, c);
 }
 
-bbe::Image::Image(int width, int height, const float * data, ImageFormat format)
+bbe::Image::Image(int width, int height, const byte * data, ImageFormat format)
 {
 	load(width, height, data, format);
+}
+
+bbe::Image::Image(const Image& other)
+{
+	load(other.m_width, other.m_height, other.m_pdata, other.m_format);
+
+	m_repeatMode = other.m_repeatMode;
+	m_filterMode = other.m_filterMode;
+	m_pVulkanData = other.m_pVulkanData;
+	if (m_pVulkanData)
+	{
+		m_pVulkanData->incRef();
+	}
+
+	m_parentImage = other.m_parentImage;
+
+	wasUploadedToVulkan = other.wasUploadedToVulkan;
 }
 
 bbe::Image::Image(Image&& other)
@@ -294,7 +311,7 @@ void bbe::Image::load(int width, int height, const Color & c)
 	}
 }
 
-void bbe::Image::load(int width, int height, const float * data, ImageFormat format)
+void bbe::Image::load(int width, int height, const byte * data, ImageFormat format)
 {
 	destroy();
 
@@ -303,22 +320,7 @@ void bbe::Image::load(int width, int height, const float * data, ImageFormat for
 	m_format = format;
 
 	m_pdata = new byte[getSizeInBytes()];
-	if (format == ImageFormat::R8)
-	{
-		for (int i = 0; i < getSizeInBytes(); i++)
-		{
-			m_pdata[i] = (byte)(data[i] * 255);
-		}
-	}
-	else if (format == ImageFormat::R32FLOAT || format == ImageFormat::R8G8B8A8)
-	{
-		memcpy(m_pdata, data, getSizeInBytes());
-	}
-	else
-	{
-		throw FormatNotSupportedException();
-	}
-	
+	memcpy(m_pdata, data, getSizeInBytes());
 }
 
 void bbe::Image::destroy()

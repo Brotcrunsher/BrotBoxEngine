@@ -107,9 +107,9 @@ namespace bbe
 		explicit Image(const char* path);
 		Image(int width, int height);
 		Image(int width, int height, const Color &c);
-		Image(int width, int height, const float* data, ImageFormat format);
+		Image(int width, int height, const byte* data, ImageFormat format);
 		
-		Image(const Image& other) = delete; //Copy Constructor
+		Image(const Image& other); //Copy Constructor
 		Image(Image&& other); //Move Constructor
 		Image& operator=(const Image& other) = delete; //Copy Assignment
 		Image& operator=(Image&& other); //Move Assignment
@@ -119,7 +119,7 @@ namespace bbe
 		void load(const char* path);
 		void load(int width, int height);
 		void load(int width, int height, const Color &c);
-		void load(int width, int height, const float* data, ImageFormat format);
+		void load(int width, int height, const byte* data, ImageFormat format);
 
 		void destroy();
 

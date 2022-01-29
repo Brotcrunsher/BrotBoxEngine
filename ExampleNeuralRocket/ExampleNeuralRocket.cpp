@@ -565,7 +565,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		mapImage.load(WINDOW_WIDTH, WINDOW_HEIGHT, dataArr, bbe::ImageFormat::R8G8B8A8);
+		mapImage.load(WINDOW_WIDTH, WINDOW_HEIGHT, (bbe::byte*)dataArr, bbe::ImageFormat::R8G8B8A8);
 	}
 
 	void clearMap()

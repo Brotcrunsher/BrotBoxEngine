@@ -355,7 +355,7 @@ public:
 				c[3] = 255;
 			}
 		}
-		bbe::Image image = bbe::Image(square.getWidth(), square.getHeight(), data.getRaw(), bbe::ImageFormat::R8G8B8A8);
+		bbe::Image image = bbe::Image(square.getWidth(), square.getHeight(), (bbe::byte*)data.getRaw(), bbe::ImageFormat::R8G8B8A8);
 		brush.drawImage(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, image, 0);
 	}
 

@@ -80,12 +80,10 @@ public:
 			waitForWork();
 			for (int x = id; x < WINDOW_WIDTH; x += numThreads)
 			{
-				double x0 = (double)x / (double)WINDOW_WIDTH;
-				x0 = x0 * rangeX + middleX - rangeX / 2;
+				const double x0 = (double)x / (double)WINDOW_WIDTH * rangeX + middleX - rangeX / 2;
 				for (int y = 0; y < WINDOW_HEIGHT; y++)
 				{
-					double y0 = (double)y / (double)WINDOW_HEIGHT;
-					y0 = y0 * rangeY + middleY - rangeY / 2;
+					const double y0 = (double)y / (double)WINDOW_HEIGHT * rangeY + middleY - rangeY / 2;
 
 					double real = 0;
 					double imaginary = 0;
@@ -117,9 +115,9 @@ public:
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
-		static float runningAverage = (1 / timeSinceLastFrame);
+		static float runningAverage = 29;
 		const float currentFps = (1 / timeSinceLastFrame);
-		runningAverage = 0.99f * runningAverage + 0.01f * currentFps;
+		runningAverage = 0.9999f * runningAverage + 0.0001f * currentFps;
 		std::cout << "AVG FPS: " << runningAverage << std::endl;
 
 		if (isKeyDown(bbe::Key::DOWN))
@@ -200,7 +198,7 @@ public:
 		}
 
 		bbe::Image image;
-		image.load(WINDOW_WIDTH, WINDOW_HEIGHT, dataArr, bbe::ImageFormat::R8G8B8A8);
+		image.load(WINDOW_WIDTH, WINDOW_HEIGHT, (bbe::byte*)dataArr, bbe::ImageFormat::R8G8B8A8);
 		brush.drawImage(0, 0, image);
 	}
 	virtual void onEnd() override
