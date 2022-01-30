@@ -643,13 +643,12 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String&
 	//UNTESTED
 	//TODO this method is a little mess. Clean it up!
 	size_t counted = count(splitAt);
+	DynamicArray<Utf8String> retVal(counted + 1);
 	if (counted == 0)
 	{
-		DynamicArray<Utf8String> retVal(1);
 		retVal[0] = getRaw();
 		return retVal;
 	}
-	DynamicArray<Utf8String> retVal(counted + 1);
 	auto previousFinding = getRaw();
 	for (size_t i = 0; i < retVal.getLength() - 1; i++)
 	{
@@ -668,7 +667,7 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String&
 	}
 
 	Utf8String currentString;
-	size_t currentStringLength = getRaw() + m_length - previousFinding;
+	size_t currentStringLength = getRaw() + getLengthBytes() - previousFinding;
 	currentString.m_usesSSO = false; //TODO make this better! current string could use SSO!
 	currentString.m_UNION.m_pdata = new char[currentStringLength + 1];
 	memcpy(currentString.m_UNION.m_pdata, previousFinding, currentStringLength);
