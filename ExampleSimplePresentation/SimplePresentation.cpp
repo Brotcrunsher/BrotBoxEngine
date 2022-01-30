@@ -620,7 +620,7 @@ void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalT
 {
 	const bbe::List<bbe::String> keywords = { "constexpr", "class", "public", "private", "protected", "public:", "private:", "protected:", "virtual", "override", "if", "else", "alignas", "alignof", "delete", "operator", "sizeof", "template", "typename", "struct", "return", "noexcept", "this", "void", "int", "float", "double", "co_yield", "co_return", "co_await", "true", "false", "auto", "char", "int64_t", "const", "mutable", "while", "for", "do", "noexcept", "static", "volatile", "throw", "decltype", "typeof"};
 	const bbe::List<bbe::String> preprocessor = { "#include", "#define", "#ifdef", "#endif" };
-	bbe::List<bbe::String> types = { "int", "char", "float", "bool", "__m256i", "__m256d"};
+	bbe::List<bbe::String> types = { "int", "char", "float", "bool", "__m128", "__m256i", "__m256d"};
 	types.addList(additionalTypes);
 	types.add("uint32_t");
 	types.add("int32_t");
@@ -629,12 +629,18 @@ void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalT
 	values.addList(additionalValues);
 
 	bool change = true;
+	bool withinInclude = false;
 	while (change)
 	{
 		change = false;
 		for (size_t i = 0; i < tokens.getLength(); i++)
 		{
 			if (tokens[i].type != TokenType::unknown) continue;
+
+			if (tokens[i].text.endsWith(">") || tokens[i].text.trim().endsWith("\""))
+			{
+				withinInclude = false;
+			}
 
 			bool didChangeThisToken = true;
 			if (tokens[i].text.startsWith("//")
@@ -646,8 +652,9 @@ void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalT
 			{
 				tokens[i].type = TokenType::preprocessor;
 			}
-			else if (i >= 2 && (tokens[i - 1].text == "<" || tokens[i - 1].text == "\"") && tokens[i - 2].text == "#include")
+			else if (withinInclude || (i >= 2 && (tokens[i - 1].text == "<" || tokens[i - 1].text == "\"") && tokens[i - 2].text == "#include"))
 			{
+				withinInclude = true;
 				tokens[i].type = TokenType::include_path;
 			}
 			else if (tokens[i].text.startsWith("\""))
@@ -658,7 +665,9 @@ void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalT
 			{
 				tokens[i].type = TokenType::keyword;
 			}
-			else if (tokens[i].text.isNumber())
+			else if (tokens[i].text.isNumber()
+				|| (tokens[i].text == "." && i > 0 && tokens[i - 1].type == TokenType::number)
+				|| (tokens[i].text.endsWith("f") && i > 0 && tokens[i - 1].type == TokenType::number))
 			{
 				tokens[i].type = TokenType::number;
 			}
@@ -834,6 +843,10 @@ void CppTokenizer::animateTokens()
 			}
 		}
 		else if (tokens[i].type == TokenType::include_path)
+		{
+			tokens[i].showIndex = currentShowIndex;
+		}
+		else if (tokens[i].type == TokenType::number && i > 0 && tokens[i - 1].type == TokenType::number)
 		{
 			tokens[i].showIndex = currentShowIndex;
 		}
