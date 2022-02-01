@@ -542,7 +542,7 @@ void bbe::PrimitiveBrush2D::fillText(float x, float y, const bbe::String& text, 
 
 void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const bbe::String& text, const bbe::Font& font, float rotation)
 {
-	fillText(p, text, font, rotation);
+	fillText(p.x, p.y, text, font, rotation);
 }
 
 void bbe::PrimitiveBrush2D::setColorRGB(float r, float g, float b, float a)
