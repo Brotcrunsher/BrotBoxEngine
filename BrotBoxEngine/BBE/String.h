@@ -145,8 +145,8 @@ namespace bbe
 		size_t count(const Utf8String& countand) const;
 		size_t count(const char*       countand) const;
 
-		DynamicArray<Utf8String> split(const Utf8String& splitAt) const;
-		DynamicArray<Utf8String> split(const char*       splitAt) const;
+		DynamicArray<Utf8String> split(const Utf8String& splitAt, bool addEmpty = true) const;
+		DynamicArray<Utf8String> split(const char*       splitAt, bool addEmpty = true) const;
 
 		bool contains(const char*       string) const;
 		bool contains(const Utf8String& string) const;
@@ -168,6 +168,8 @@ namespace bbe
 
 		//      char& operator[](size_t index);		THIS METHOD IS ILLEGAL ON PURPOSE! A single char can be multiple bytes long. Giving direct access to member variables could lead to problems when the programer tries to manipulate the string directly. TODO: Add a "Change char" method.
 		const char& operator[](size_t index) const;
+		
+		bool operator<(const bbe::Utf8String& other) const;
 
 		int32_t getCodepoint(size_t index) const;
 

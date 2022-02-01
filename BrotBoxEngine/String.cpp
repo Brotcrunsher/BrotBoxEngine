@@ -1,6 +1,7 @@
 #include "BBE/String.h"
 #include "BBE/DataType.h"
 #include "BBE/Exceptions.h"
+#include "BBE/Math.h"
 #include <string>
 
 void bbe::Utf8String::growIfNeeded(std::size_t newSize)
@@ -638,10 +639,33 @@ size_t bbe::Utf8String::count(const char* countand) const
 	return count(bbe::Utf8String(countand));
 }
 
-bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String& splitAt) const
+bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String& splitAt, bool addEmpty) const
 {
 	//UNTESTED
 	//TODO this method is a little mess. Clean it up!
+	if (!addEmpty)
+	{
+		auto splitWith = split(splitAt, true);
+		size_t empties = 0;
+		for (const bbe::String& s : splitWith)
+		{
+			if (s == "") empties++;
+		}
+		if (empties == 0) return splitWith;
+
+		DynamicArray<Utf8String> retVal(splitWith.getLength() - empties);
+		size_t accessIndex = 0;
+		for (const bbe::String& s : splitWith)
+		{
+			if (s != "")
+			{
+				retVal[accessIndex] = s;
+				accessIndex++;
+			}
+		}
+		return retVal;
+	}
+
 	size_t counted = count(splitAt);
 	DynamicArray<Utf8String> retVal(counted + 1);
 	if (counted == 0)
@@ -678,10 +702,10 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String&
 	return retVal;
 }
 
-bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const char* splitAt) const
+bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const char* splitAt, bool addEmpty) const
 {
 	//UNTESTED
-	return split(bbe::Utf8String(splitAt));
+	return split(bbe::Utf8String(splitAt), addEmpty);
 }
 
 bool bbe::Utf8String::contains(const char* string) const
@@ -813,6 +837,23 @@ const char& bbe::Utf8String::operator[](std::size_t index) const
 		ptr = bbe::utf8GetNextChar(ptr);
 	}
 	return *ptr;
+}
+
+bool bbe::Utf8String::operator<(const bbe::Utf8String& other) const
+{
+	// TODO slow! Use iterators instead!
+
+	size_t minLenght = bbe::Math::min(this->getLength(), other.getLength());
+
+	for (size_t i = 0; i < minLenght; i++)
+	{
+		const int32_t thisCodePoint = getCodepoint(i);
+		const int32_t otherCodePoint = other.getCodepoint(i);
+		if (thisCodePoint < otherCodePoint) return true;
+		if (thisCodePoint > otherCodePoint) return false;
+	}
+
+	return this->getLength() < other.getLength();
 }
 
 int32_t bbe::Utf8String::getCodepoint(size_t index) const
