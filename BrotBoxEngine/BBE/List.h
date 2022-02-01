@@ -114,7 +114,7 @@ namespace bbe
 			m_length = other.m_length;
 			m_capacity = other.m_capacity;
 			m_pdata = new INTERNAL::Unconstructed<T>[m_capacity];
-			for (size_t i = 0; i < m_capacity; i++)
+			for (size_t i = 0; i < m_length; i++)
 			{
 				new (bbe::addressOf(m_pdata[i])) T(other.m_pdata[i].m_value);
 			}
@@ -816,7 +816,29 @@ namespace bbe
 			return (m_pdata[0].m_value);
 		}
 
+		const T& first() const
+		{
+			//UNTESTED
+			if (m_pdata == nullptr)
+			{
+				throw ContainerEmptyException();
+			}
+
+			return (m_pdata[0].m_value);
+		}
+
 		T& last()
+		{
+			//UNTESTED
+			if (m_pdata == nullptr || m_length == 0)
+			{
+				throw ContainerEmptyException();
+			}
+
+			return (m_pdata[m_length - 1].m_value);
+		}
+
+		const T& last() const
 		{
 			//UNTESTED
 			if (m_pdata == nullptr || m_length == 0)
