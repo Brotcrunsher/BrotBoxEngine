@@ -36,17 +36,65 @@ struct Char
 	bbe::Vector2 powerPointPos;
 };
 
+enum class RenderType
+{
+	UNKNOWN,
+	BOX,
+	CIRCLE,
+};
+
+enum class StartAnimation
+{
+	NONE,
+	ZOOM_IN,
+};
+
+struct MoveAnimation
+{
+	MoveAnimation(float targetX, float targetY);
+
+	float targetX;
+	float targetY;
+
+	bbe::Vector2 animate(float startX, float startY, float t) const;
+};
+
+struct RenderObject
+{
+	RenderObject(const bbe::String& name, RenderType rt, StartAnimation startAnim, float x, float y, float width, float height, float outlineWidth, const bbe::String &text, const bbe::Font* font);
+
+	bbe::String name;
+	RenderType rt;
+	float x;
+	float y;
+	float width;
+	float height;
+	float outlineWidth;
+	bbe::String text;
+	const bbe::Font* font;
+
+	StartAnimation startAnim;
+	bbe::List<MoveAnimation> animations;
+
+	bbe::Vector2 getPos(float t) const;
+	bbe::Vector2 getDim(float t) const;
+	void exhaustAnimations();
+};
+
 struct Token
 {
 	bbe::List<Char> chars;
 	bbe::List<bbe::Line2> lines; // Additional lines to be drawn, e.g. for cross out text.
+	bbe::List<RenderObject> renderObjects;
 	bbe::List<bbe::Image> images;
 	bbe::Rectangle aabb;
 	bbe::String text;
 	TokenType type = TokenType::unknown;
 	int32_t showIndex = -1;
+	bool autoNext = false;
 
 	void submit(bbe::List<Token>& tokens);
+	bbe::List<size_t> getRenderObjectIndices(const bbe::List<bbe::String>& names) const;
 };
 
 class Tokenizer
@@ -141,6 +189,7 @@ private:
 	bbe::Rectangle screenPosition = bbe::Rectangle(DEFAULT_BORDERWIDTH, DEFAULT_BORDERWIDTH, 1280 - 2 * DEFAULT_BORDERWIDTH, 720 - 2 * DEFAULT_BORDERWIDTH);
 	bbe::List<Slide> childSlides;
 	BrightStateOverride brightStateOverride = BrightStateOverride::NO_OVERRIDE;
+	float animationTime = 0;
 
 public:
 	Slide();
@@ -152,7 +201,7 @@ public:
 	Slide& operator=(Slide&&);
 
 
-	void update(PresentationControl pc, float scrollValue);
+	void update(PresentationControl pc, float scrollValue, float timeSinceLastFrame);
 	void draw(bbe::PrimitiveBrush2D& brush, const bbe::Color &bgColor);
 	void addType(const bbe::String& type);
 	void addValue(const bbe::String& value);
@@ -181,6 +230,7 @@ private:
 	bbe::Font& getFont();
 	void moveFrom(Slide&& other);
 	void copyFrom(const Slide& other);
+	bool isEntryAutoNext(int32_t entry) const;
 
 
 	Slide& operator=(const Slide&) = delete;
@@ -197,7 +247,7 @@ public:
 public:
 	SlideShow() = default;
 
-	void update(PresentationControl pc, float scrollValue);
+	void update(PresentationControl pc, float scrollValue, float timeSinceLastFrame);
 	void draw(bbe::PrimitiveBrush2D& brush);
 	void addType(const bbe::String& type);
 	void addSlide(const char* path);

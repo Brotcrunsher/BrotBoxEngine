@@ -16,7 +16,7 @@ public:
 	{
 		// TODO Remove absolute paths
 		
-		slideShow.addManifest("D:/Videos/C++ Tutorial/Episode Bonus 045 - SIMD mit Intel Intrinsics/Manifest.txt");
+		slideShow.addManifest("D:/Videos/C++ Tutorial/Episode Bonus 046 - algorithm/Manifest.txt");
 	}
 
 	virtual void update(float timeSinceLastFrame) override
@@ -27,7 +27,7 @@ public:
 		     if (isKeyPressed(bbe::Key::LEFT))  pc = bigJump ? PresentationControl::previous_slide : PresentationControl::previous;
 		else if (isKeyPressed(bbe::Key::RIGHT)) pc = bigJump ? PresentationControl::next_slide : PresentationControl::next;
 		
-		slideShow.update(pc, getMouseScrollY() * 10);
+		slideShow.update(pc, getMouseScrollY() * 10, timeSinceLastFrame);
 	}
 
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
