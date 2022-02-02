@@ -558,7 +558,7 @@ void bbe::Utf8String::trimInPlace()
 	if (m_length == 0) return;
 
 	size_t start = 0;
-	size_t end = m_length - 1;
+	size_t end = m_length;
 
 	while (utf8IsWhitespace(&(*this)[start]) && start != m_length - 1)
 	{
@@ -583,9 +583,9 @@ bbe::Utf8String bbe::Utf8String::substring(std::size_t start, std::size_t end) c
 void bbe::Utf8String::substringInPlace(size_t start, size_t end)
 {
 	//UNTESTED
-	if(end > m_length - 1)
+	if(end > m_length)
 	{
-		end = m_length - 1;
+		end = m_length;
 	}
 	auto raw = getRaw();
 	if (start != 0 || end != m_length)
@@ -598,13 +598,13 @@ void bbe::Utf8String::substringInPlace(size_t start, size_t end)
 		else
 		{
 			std::size_t sizeOfSubstringInByte = 0;
-			for(std::size_t i = start; i<=end; i++)
+			for(std::size_t i = start; i<end; i++)
 			{
 				sizeOfSubstringInByte += utf8charlen(&(*this)[i]);
 			}
 			memmove(raw, &raw[start], sizeOfSubstringInByte);
 			raw[sizeOfSubstringInByte] = 0;
-			m_length = end - start + 1;
+			m_length = end - start;
 		}
 	}
 }
