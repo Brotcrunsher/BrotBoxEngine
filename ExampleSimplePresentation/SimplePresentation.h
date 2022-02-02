@@ -49,12 +49,29 @@ enum class StartAnimation
 	ZOOM_IN,
 };
 
+enum class MoveAnimationType
+{
+	LINEAR,
+	BEZIER,
+	BEZIER2C,
+};
+
 struct MoveAnimation
 {
 	MoveAnimation(float targetX, float targetY);
+	MoveAnimation(float targetX, float targetY, float controlX, float controlY);
+	MoveAnimation(float targetX, float targetY, float controlX, float controlY, float controlX2, float controlY2);
+
+	MoveAnimationType mat;
 
 	float targetX;
 	float targetY;
+
+	float controlX;
+	float controlY;
+
+	float controlX2;
+	float controlY2;
 
 	bbe::Vector2 animate(float startX, float startY, float t) const;
 };
@@ -72,9 +89,14 @@ struct RenderObject
 	float outlineWidth;
 	bbe::String text;
 	const bbe::Font* font;
+	bbe::Rectangle textBoundingBox;
 
 	StartAnimation startAnim;
 	bbe::List<MoveAnimation> animations;
+
+	bool showText = true;
+	bbe::Color fillColor    = bbe::Color(0, 0, 0, 1);
+	bbe::Color outlineColor = bbe::Color(200.f / 255.f, 200.f / 255.f, 200.f / 255.f);
 
 	bbe::Vector2 getPos(float t) const;
 	bbe::Vector2 getDim(float t) const;
