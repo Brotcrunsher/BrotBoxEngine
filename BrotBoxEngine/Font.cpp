@@ -260,3 +260,93 @@ bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const bb
 {
 	return getRenderPositions(p, text.getRaw(), rotation, verticalCorrection);
 }
+
+bbe::Rectangle bbe::Font::getBoundingBox(const bbe::String& text) const
+{
+	if (text.getLength() == 0) return bbe::Rectangle();
+
+	bbe::List<bbe::Vector2> renderPositions = getRenderPositions(bbe::Vector2(0, 0), text);
+
+	bbe::Rectangle retVal = bbe::Rectangle(renderPositions[0], getDimensions(text.getCodepoint(0)));
+
+	// TODO use iterators instead
+	for (size_t i = 1; i < text.getLength(); i++)
+	{
+		bbe::Rectangle curr = bbe::Rectangle(renderPositions[i], getDimensions(text.getCodepoint(i)));
+		retVal = retVal.combine(curr);
+	}
+
+	return retVal;
+}
+
+bbe::Vector2 bbe::Font::getSize(const bbe::String& text) const
+{
+	const bbe::Rectangle size = getBoundingBox(text);
+	return size.getDim() - size.getPos();
+}
+
+bbe::FittedFont bbe::Font::getBestFittingFont(const bbe::List<Font>& fonts, const bbe::String& string, bbe::Vector2 maxSize)
+{
+	auto splits = string.split(" ");
+	size_t spaces = 0;
+	for (size_t i = 0; i < splits.getLength(); i++)
+	{
+		if (splits.getLength() == 0) spaces++;
+		else
+		{
+			for (size_t k = 0; k < spaces; k++)
+			{
+				splits[i] = " " + splits[i];
+			}
+			spaces = 1;
+		}
+	}
+
+	// TODO add the spaces to the start of the splits
+
+	for (size_t i = fonts.getLength() - 1; i != (size_t)-1; i--)
+	{
+		bbe::String combination = "";
+		bool newLine = true;
+		bool foundMatch = true;
+		bbe::Vector2 candidateSize = bbe::Vector2(0, 0);
+		for (size_t k = 0; k < splits.getLength(); k++)
+		{
+			bbe::String candidate = combination + (k == 0 ? splits[k].trim() : splits[k]);
+			candidateSize = fonts[i].getSize(candidate);
+			if (candidateSize.x > maxSize.x)
+			{
+				if (k == 0)
+				{
+					// If not even a single word fits, then this font wont fit for sure
+					foundMatch = false;
+					break;
+				}
+				candidate = combination + "\n" + splits[k].trim();
+				candidateSize = fonts[i].getSize(candidate);
+				if (candidateSize.y > maxSize.y || candidateSize.x > maxSize.x)
+				{
+					foundMatch = false;
+					break;
+				}
+				else
+				{
+					newLine = true;
+				}
+			}
+			else
+			{
+				newLine = false;
+			}
+
+			combination = candidate;
+		}
+
+		if (foundMatch)
+		{
+			return { &fonts[i], combination };
+		}
+	}
+
+	return {};
+}

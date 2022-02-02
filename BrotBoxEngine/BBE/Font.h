@@ -4,9 +4,17 @@
 
 #include "../BBE/String.h"
 #include "../BBE/Image.h"
+#include "../BBE/Rectangle.h"
 
 namespace bbe
 {
+	class Font;
+	struct FittedFont
+	{
+		const Font* font = nullptr;
+		bbe::String string = "";
+	};
+
 	class Font
 	{
 	private:
@@ -61,5 +69,10 @@ namespace bbe
 
 		bbe::List<Vector2> getRenderPositions(const Vector2& p, const char* text, float rotation = 0, bool verticalCorrection = true) const;
 		bbe::List<Vector2> getRenderPositions(const Vector2& p, const bbe::String &text, float rotation = 0, bool verticalCorrection = true) const;
+
+		bbe::Rectangle getBoundingBox(const bbe::String& text) const;
+		bbe::Vector2 getSize(const bbe::String& text) const;
+
+		static FittedFont getBestFittingFont(const bbe::List<Font>& fonts, const bbe::String& string, bbe::Vector2 maxSize);
 	};
 }
