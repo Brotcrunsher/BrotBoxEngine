@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <ctime>
+#include <limits>
 
 namespace bbe
 {
@@ -42,10 +43,17 @@ namespace bbe
 		}
 
 	public:
+		using result_type = FieldType;
+
 		MersenneTwisterBase()
 		{
 			std::time_t timeStamp = std::time(nullptr);
 			setSeed((FieldType)timeStamp);
+		}
+
+		MersenneTwisterBase(FieldType seed)
+		{
+			setSeed(seed);
 		}
 
 		void setSeed(FieldType seed)
@@ -84,6 +92,20 @@ namespace bbe
 			x ^= (x >> L);
 
 			return x;
+		}
+
+		FieldType operator()() {
+			return next();
+		}
+
+		static FieldType min()
+		{
+			return std::numeric_limits<FieldType>::min();
+		}
+
+		static FieldType max()
+		{
+			return std::numeric_limits<FieldType>::max();
 		}
 	};
 
