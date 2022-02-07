@@ -41,6 +41,10 @@ enum class RenderType
 	UNKNOWN,
 	BOX,
 	CIRCLE,
+	TEXT,
+	LINE,
+	ARROW,
+	IMAGE,
 };
 
 enum class StartAnimation
@@ -58,6 +62,7 @@ enum class MoveAnimationType
 
 struct MoveAnimation
 {
+	MoveAnimation() = default;
 	MoveAnimation(float targetX, float targetY);
 	MoveAnimation(float targetX, float targetY, float controlX, float controlY);
 	MoveAnimation(float targetX, float targetY, float controlX, float controlY, float controlX2, float controlY2);
@@ -84,23 +89,34 @@ struct RenderObject
 	RenderType rt;
 	float x;
 	float y;
-	float width;
-	float height;
+	union {
+		float width;
+		float x2;
+	};
+	union {
+		float height;
+		float y2;
+	};
 	float outlineWidth;
 	bbe::String text;
 	const bbe::Font* font;
 	bbe::Rectangle textBoundingBox;
+	std::shared_ptr<bbe::Image> image;
 
 	StartAnimation startAnim;
 	bbe::List<MoveAnimation> animations;
 
 	bool showText = true;
+	static constexpr bbe::Color defaultTextColor = bbe::Color(200.f / 255.f, 200.f / 255.f, 200.f / 255.f);
 	bbe::Color fillColor    = bbe::Color(0, 0, 0, 1);
 	bbe::Color outlineColor = bbe::Color(200.f / 255.f, 200.f / 255.f, 200.f / 255.f);
+	bbe::Color textColor    = defaultTextColor;
 
 	bbe::Vector2 getPos(float t) const;
 	bbe::Vector2 getDim(float t) const;
 	void exhaustAnimations();
+
+	bool hasAnyAnimation() const;
 };
 
 struct Token
@@ -114,6 +130,7 @@ struct Token
 	TokenType type = TokenType::unknown;
 	int32_t showIndex = -1;
 	bool autoNext = false;
+	float animationMultiplier = 1.f;
 
 	void submit(bbe::List<Token>& tokens);
 	bbe::List<size_t> getRenderObjectIndices(const bbe::List<bbe::String>& names) const;
@@ -153,7 +170,10 @@ public:
 
 class BrotDownTokenizer : public Tokenizer
 {
+private:
+	bbe::String parentPath;
 public:
+	BrotDownTokenizer(const bbe::String& parentPath);
 	virtual void tokenize(const bbe::String& text, const bbe::Font& font) override;
 	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues) override;
 	virtual void animateTokens() override;

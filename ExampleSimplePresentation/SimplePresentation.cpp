@@ -76,6 +76,14 @@ bbe::Vector2 RenderObject::getPos(float t) const
 	{
 		startAnimOffsetX += width  * 0.5 * (1.f - t);
 		startAnimOffsetY += height * 0.5 * (1.f - t);
+		if (rt == RenderType::LINE || rt == RenderType::ARROW)
+		{
+			// TODO Currently does not support StartAnim + moveAnim
+			const bbe::Vector2 mid((x + x2) / 2, (y + y2) / 2);
+			const bbe::Vector2 target(x, y);
+			const bbe::Vector2 toVec = target - mid;
+			return mid + toVec * t;
+		}
 	}
 	else
 	{
@@ -108,13 +116,29 @@ bbe::Vector2 RenderObject::getPos(float t) const
 bbe::Vector2 RenderObject::getDim(float t) const
 {
 	t = bbe::Math::clamp01(t);
+	bbe::Vector2 offset;
+	if (rt == RenderType::LINE || rt == RenderType::ARROW)
+	{
+		offset = getPos(t) - getPos(0);
+	}
+
 	if (startAnim == StartAnimation::NONE)
 	{
-		return bbe::Vector2(width, height);
+		return bbe::Vector2(width, height) + offset;
 	}
 	else if (startAnim == StartAnimation::ZOOM_IN)
 	{
-		return bbe::Vector2(width * t, height * t);
+		if (rt == RenderType::LINE || rt == RenderType::ARROW)
+		{
+			const bbe::Vector2 mid((x + x2) / 2, (y + y2) / 2);
+			const bbe::Vector2 target(x2, y2);
+			const bbe::Vector2 toVec = target - mid;
+			return mid + toVec * t;
+		}
+		else
+		{
+			return bbe::Vector2(width * t, height * t) + offset;
+		}
 	}
 	throw bbe::IllegalStateException();
 }
@@ -123,11 +147,23 @@ void RenderObject::exhaustAnimations()
 {
 	if (animations.getLength() > 0)
 	{
-		x = animations.last().targetX;
-		y = animations.last().targetY;
+		const bbe::Vector2 pos = getPos(1);
+		const bbe::Vector2 dim = getDim(1);
+		x = pos.x;
+		y = pos.y;
+
+		width = dim.x;
+		height = dim.y;
+
+
 
 		animations.clear();
 	}
+}
+
+bool RenderObject::hasAnyAnimation() const
+{
+	return animations.getLength() > 0 || startAnim != StartAnimation::NONE;
 }
 
 Slide::Slide()
@@ -155,7 +191,8 @@ Slide::Slide(const char* path)
 	}
 	else if (ppath.endsWith(".bd"))
 	{
-		tokenizer.reset(new BrotDownTokenizer());
+		const bbe::String parentPath = ppath.substring(0, ppath.searchLast("/")) + "/";
+		tokenizer.reset(new BrotDownTokenizer(parentPath));
 	}
 	else if (ppath.endsWith(".asm"))
 	{
@@ -281,9 +318,33 @@ void Slide::update(PresentationControl pc, float scrollValue, float timeSinceLas
 		this->scrollValue += scrollValue;
 	}
 
-	animationTime += timeSinceLastFrame;
+	float animMult = 1.0f;
+	for (const Token& t : tokenizer->tokens)
+	{
+		if (t.animationMultiplier != 1.0f)
+		{
+			animMult = t.animationMultiplier;
+		}
+	}
 
-	if (animationTime > 1.0f)
+	animationTime += timeSinceLastFrame * animMult;
+
+	bool hasAnyAnimation = false;
+	for (const Token& t : tokenizer->tokens)
+	{
+		if (t.showIndex == currentEntry)
+		{
+			for (const RenderObject& to : t.renderObjects)
+			{
+				if (to.hasAnyAnimation())
+				{
+					hasAnyAnimation = true;
+				}
+			}
+		}
+	}
+
+	if (animationTime > 1.0f || !hasAnyAnimation)
 	{
 		for (const Token& t : tokenizer->tokens)
 		{
@@ -396,6 +457,21 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 					brush.fillRect  (pos.x, pos.y, dim.x, dim.y);
 				else if (ro.rt == RenderType::CIRCLE)
 					brush.fillCircle(pos.x, pos.y, dim.x, dim.y);
+				else if (ro.rt == RenderType::TEXT)
+					{ /*Do nothing*/ }
+				else if (ro.rt == RenderType::LINE || ro.rt == RenderType::ARROW)
+				{
+					brush.setColorRGB(ro.outlineColor);
+					if(ro.rt == RenderType::LINE)
+						brush.fillLine(pos.x, pos.y, dim.x, dim.y, ro.outlineWidth);
+					else if(ro.rt == RenderType::ARROW)
+						brush.fillArrow(pos.x, pos.y, dim.x, dim.y, ro.outlineWidth);
+				}
+				else if (ro.rt == RenderType::IMAGE)
+				{
+					brush.setColorRGB(1, 1, 1);
+					brush.drawImage(pos, dim, *ro.image);
+				}
 				else
 					throw bbe::IllegalArgumentException();
 				if (ro.outlineWidth > 0)
@@ -405,12 +481,20 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 						brush.fillRect  (pos.x + ro.outlineWidth, pos.y + ro.outlineWidth, dim.x - ro.outlineWidth * 2, dim.y - ro.outlineWidth * 2);
 					else if (ro.rt == RenderType::CIRCLE)
 						brush.fillCircle(pos.x + ro.outlineWidth, pos.y + ro.outlineWidth, dim.x - ro.outlineWidth * 2, dim.y - ro.outlineWidth * 2);
+					else if (ro.rt == RenderType::TEXT)
+						{ /*Do nothing*/ }
+					else if (ro.rt == RenderType::LINE)
+						{ /*Do nothing*/ }
+					else if (ro.rt == RenderType::ARROW)
+						{ /*Do nothing*/ }
+					else if (ro.rt == RenderType::IMAGE)
+						{ /*Do nothing*/ }
 					else
 						throw bbe::IllegalArgumentException();
 				}
-				if (ro.text.getLength() > 0 && ro.font && ro.showText)
+				if (ro.text.getLength() > 0 && ro.font && ro.showText && ro.rt != RenderType::IMAGE)
 				{
-					brush.setColorRGB(0, 1, 0, 1);
+					brush.setColorRGB(ro.textColor);
 					brush.fillText(pos.x + textMargin + ro.outlineWidth - ro.textBoundingBox.getX() - ro.textBoundingBox.getWidth () / 2 + (dim.x - textMargin * 2 - ro.outlineWidth * 2) / 2
 						         , pos.y + textMargin + ro.outlineWidth - ro.textBoundingBox.getY() - ro.textBoundingBox.getHeight() / 2 + (dim.y - textMargin * 2 - ro.outlineWidth * 2) / 2
 						         , ro.text, *ro.font);
@@ -709,6 +793,7 @@ bool Slide::isEntryAutoNext(int32_t entry) const
 void Token::submit(bbe::List<Token>& tokens)
 {
 	decltype(this->renderObjects) ros;
+	const float animationMult = animationMultiplier;
 	if (chars.getLength() > 0 || renderObjects.getLength() > 0 || lines.getLength() > 0)
 	{
 		ros = this->renderObjects;
@@ -724,6 +809,7 @@ void Token::submit(bbe::List<Token>& tokens)
 	{
 		ro.startAnim = StartAnimation::NONE;
 	}
+	animationMultiplier = animationMult;
 }
 
 bbe::List<size_t> Token::getRenderObjectIndices(const bbe::List<bbe::String>& names) const
@@ -1148,6 +1234,12 @@ bbe::List<size_t> getValidIndices(const bbe::List<Array>& arrays, const Token& t
 	return retVal;
 }
 
+BrotDownTokenizer::BrotDownTokenizer(const bbe::String& parentPath)
+	: parentPath(parentPath)
+{
+
+}
+
 #define ForEachValidIdentifiers(identifier) \
 for(size_t index : getValidIndices(arrays, currentToken, (identifier)))
 
@@ -1190,6 +1282,9 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 			const int64_t textStart = command.search("\"");
 			const int64_t textEnd = command.searchLast("\"");
 			bbe::String text;
+
+			if (command.startsWith("//")) continue;
+
 			if (textStart != -1 && textEnd != -1)
 			{
 				if (textStart != textEnd)
@@ -1239,9 +1334,11 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 				}
 				else if (commandTokens[0] == "Destroy")
 				{
-					ForEachValidIdentifiers(commandTokens[1])
+					auto indices = getValidIndices(arrays, currentToken, commandTokens[1]);
+					indices.sort();
+					for (size_t i = indices.getLength() - 1; i != (size_t)-1; i--)
 					{
-						currentToken.renderObjects.removeIndex(index);
+						currentToken.renderObjects.removeIndex(indices[i]);
 					}
 					commandRecognized = true;
 				}
@@ -1249,10 +1346,22 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 				{
 					ForEachValidIdentifiers(commandTokens[1])
 					{
-						currentToken.renderObjects[index].animations.add(MoveAnimation(
-							commandTokens[2].toFloat(),
-							commandTokens[3].toFloat()
-						));
+						MoveAnimation anim;
+
+						if (commandTokens[2] == "NextTo")
+						{
+							anim = MoveAnimation(x + width, y);
+						}
+						else
+						{
+							anim = MoveAnimation(commandTokens[2].toFloat(), commandTokens[3].toFloat());
+						}
+
+						currentToken.renderObjects[index].animations.add(anim);
+						x = anim.targetX;
+						y = anim.targetY;
+						width = currentToken.renderObjects[index].width;
+						height = currentToken.renderObjects[index].height;
 					}
 					commandRecognized = true;
 				}
@@ -1343,6 +1452,25 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 					}
 					commandRecognized = true;
 				}
+				else if (commandTokens[0] == "TextColor")
+				{
+					ForEachValidIdentifiers(commandTokens[1])
+					{
+						if (commandTokens[2] == "Default")
+						{
+							currentToken.renderObjects[index].textColor = RenderObject::defaultTextColor;
+						}
+						else
+						{
+							currentToken.renderObjects[index].textColor = bbe::Color(
+								commandTokens[2].toFloat(),
+								commandTokens[3].toFloat(),
+								commandTokens[4].toFloat()
+							);
+						}
+					}
+					commandRecognized = true;
+				}
 				else if (commandTokens[0] == "Gradient")
 				{
 					float min = 1000000000;
@@ -1402,16 +1530,36 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 					nextRepeats = commandTokens[1].toLong();
 					commandRecognized = true;
 				}
-				else if (commandTokens[0] == "Sort")
+				else if (commandTokens[0] == "AnimMult")
+				{
+					currentToken.animationMultiplier = commandTokens[1].toFloat();
+					commandRecognized = true;
+				}
+				else if (commandTokens[0] == "Sort"
+					  || commandTokens[0] == "Shuffle"
+					  || commandTokens[0] == "Partition")
 				{
 					bbe::List<size_t> indices = getValidIndices(arrays, currentToken, commandTokens[1]);
 					const bbe::List<size_t> unsortedIndices = indices;
-					const bbe::Vector2 startPos = currentToken.renderObjects.first().getPos(0);
-					const bbe::Vector2 endPos   = currentToken.renderObjects.last ().getPos(0);
+					const bbe::Vector2 startPos = currentToken.renderObjects[indices.first()].getPos(0);
+					const bbe::Vector2 endPos   = currentToken.renderObjects[indices.last ()].getPos(0);
 					const bbe::Vector2 diffPos  = endPos - startPos;
-					indices.sort([&](const size_t& a, const size_t& b) {
-						return currentToken.renderObjects[a].text.toFloat() < currentToken.renderObjects[b].text.toFloat();
-					});
+					if (commandTokens[0] == "Sort")
+					{
+						indices.sort([&](const size_t& a, const size_t& b) {
+							return currentToken.renderObjects[a].text.toFloat() < currentToken.renderObjects[b].text.toFloat();
+						});
+					}
+					else if (commandTokens[0] == "Shuffle")
+					{
+						indices.shuffle(17);
+					}
+					else if (commandTokens[0] == "Partition")
+					{
+						indices.partition([&](const size_t& i) {
+							return currentToken.renderObjects[i].text.toLong() % 2 == 0;
+						});
+					}
 
 					for (size_t index = 0; index < indices.getLength(); index++)
 					{
@@ -1437,11 +1585,19 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 					(
 						   commandTokens[accessIndex] == "Box"
 						|| commandTokens[accessIndex] == "Circle"
+						|| commandTokens[accessIndex] == "Text"
+						|| commandTokens[accessIndex] == "Line"
+						|| commandTokens[accessIndex] == "Arrow"
+						|| commandTokens[accessIndex] == "Image"
 					))
 				{
 					RenderType rt = RenderType::UNKNOWN;
 						 if (commandTokens[accessIndex] == "Box")    rt = RenderType::BOX;
 					else if (commandTokens[accessIndex] == "Circle") rt = RenderType::CIRCLE;
+					else if (commandTokens[accessIndex] == "Text")   rt = RenderType::TEXT;
+					else if (commandTokens[accessIndex] == "Line")   rt = RenderType::LINE;
+					else if (commandTokens[accessIndex] == "Arrow")  rt = RenderType::ARROW;
+					else if (commandTokens[accessIndex] == "Image")  rt = RenderType::IMAGE;
 					else throw bbe::IllegalArgumentException();
 
 					accessIndex++;
@@ -1512,6 +1668,17 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 					if (ff.font)
 					{
 						ro.textBoundingBox = ff.font->getBoundingBox(text);
+					}
+
+					if (rt == RenderType::TEXT)
+					{
+						ro.fillColor    = bbe::Color(0, 0, 0, 0);
+						ro.outlineColor = bbe::Color(0, 0, 0, 0);
+						ro.textColor    = bbe::Color(200.f / 255.f, 200.f / 255.f, 200.f / 255.f);
+					}
+					else if (rt == RenderType::IMAGE)
+					{
+						ro.image.reset(new bbe::Image((parentPath + ro.text).getRaw()));
 					}
 
 					currentToken.renderObjects.add(ro);
