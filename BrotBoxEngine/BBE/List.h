@@ -805,6 +805,23 @@ namespace bbe
 			sortSTL(reinterpret_cast<T*>(m_pdata), reinterpret_cast<T*>(m_pdata + m_length), predicate);
 		}
 
+		void partition(std::function<bool(const T&)> predicate)
+		{
+			std::partition(reinterpret_cast<T*>(m_pdata), reinterpret_cast<T*>(m_pdata + m_length), predicate);
+		}
+
+		void shuffle()
+		{
+			bbe::mt19937 twister;
+			std::shuffle(begin(), end(), twister);
+		}
+
+		void shuffle(uint32_t seed)
+		{
+			bbe::mt19937 twister(seed);
+			std::shuffle(begin(), end(), twister);
+		}
+
 		T& first()
 		{
 			//UNTESTED
