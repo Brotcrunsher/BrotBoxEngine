@@ -409,6 +409,11 @@ void bbe::PrimitiveBrush2D::fillBezierCurve(const Vector2& startPoint, const Vec
 	fillBezierCurve(BezierCurve2(startPoint, endPoint, control));
 }
 
+void bbe::PrimitiveBrush2D::fillArrow(float x1, float y1, float x2, float y2, float tailWidth, float spikeInnerLength, float spikeOuterLength, float spikeAngle, bool dynamicSpikeLength)
+{
+	fillArrow(bbe::Vector2{ x1, y1 }, bbe::Vector2{ x2, y2 }, tailWidth, spikeInnerLength, spikeOuterLength, spikeAngle, dynamicSpikeLength);
+}
+
 void bbe::PrimitiveBrush2D::fillArrow(const Vector2& p1, const Vector2& p2, float tailWidth, float spikeInnerLength, float spikeOuterLength, float spikeAngle, bool dynamicSpikeLength)
 {
 	const Vector2 dir = p2 - p1;
