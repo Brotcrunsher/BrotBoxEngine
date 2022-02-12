@@ -870,17 +870,20 @@ void CppTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 		}
 		if (text[i] == '"') isString = !isString;
 
-		if (singleSignTokens.contains(text[i]) && !lineComment && multiComment == 0 && forceAdd <= 0 && !isString)
+		if (!isString)
 		{
-			currentToken.submit(tokens);
-		}
-		if ((text.isTextAtLocation("::", i) || (i >= 2 && text.isTextAtLocation("::", i - 2))) && !lineComment && multiComment == 0)
-		{
-			currentToken.submit(tokens);
-		}
-		if (text.isTextAtLocation(",", i))
-		{
-			currentToken.submit(tokens);
+			if (singleSignTokens.contains(text[i]) && !lineComment && multiComment == 0 && forceAdd <= 0)
+			{
+				currentToken.submit(tokens);
+			}
+			if ((text.isTextAtLocation("::", i) || (i >= 2 && text.isTextAtLocation("::", i - 2))) && !lineComment && multiComment == 0)
+			{
+				currentToken.submit(tokens);
+			}
+			if (text.isTextAtLocation(",", i))
+			{
+				currentToken.submit(tokens);
+			}
 		}
 		if (text[i] != ' ' && text[i] != '\t' && text[i] != '\n' && text[i] != '\r')
 		{
@@ -917,6 +920,22 @@ void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalT
 	types.add("uint32_t");
 	types.add("int32_t");
 	types.add("T");
+	types.add("GLfloat");
+	types.add("GLint");
+	types.add("GLuint");
+	types.add("GL_FLOAT");
+	types.add("GL_FALSE");
+	types.add("GL_ARRAY_BUFFER");
+	types.add("GL_ELEMENT_ARRAY_BUFFER");
+	types.add("GL_COLOR_BUFFER_BIT");
+	types.add("GL_TRIANGLES");
+	types.add("GL_UNSIGNED_INT");
+	types.add("GL_DEPTH_BUFFER_BIT");
+	types.add("GL_STATIC_DRAW");
+	types.add("GL_VERTEX_SHADER");
+	types.add("GL_FRAGMENT_SHADER");
+	types.add("NULL");
+	types.add("GLEW_OK");
 	bbe::List<bbe::String> values = {};
 	values.addList(additionalValues);
 
