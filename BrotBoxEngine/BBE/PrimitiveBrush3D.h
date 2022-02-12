@@ -1,5 +1,7 @@
 #pragma once
 
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "GLFW/glfw3.h"
 #include "../BBE/Matrix4.h"
 #include "../BBE/Vulkan/VulkanBuffer.h"
@@ -119,3 +121,4 @@ namespace bbe
 		FillMode getFillMode();
 	};
 }
+#endif

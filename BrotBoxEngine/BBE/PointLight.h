@@ -1,5 +1,6 @@
 #pragma once
-
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "../BBE/Vulkan/VulkanBuffer.h"
 #include "../BBE/Vector3.h"
 #include "../BBE/DynamicArray.h"
@@ -102,3 +103,4 @@ namespace bbe
 		LightFalloffMode getFalloffMode();
 	};
 }
+#endif

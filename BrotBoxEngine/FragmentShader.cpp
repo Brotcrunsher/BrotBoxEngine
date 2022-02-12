@@ -1,3 +1,5 @@
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "BBE/FragmentShader.h"
 #include "BBE/Window.h"
 #include "BBE/Vulkan/VulkanManager.h"
@@ -65,3 +67,4 @@ void bbe::FragmentShader::setPushConstant(PrimitiveBrush2D& brush, uint32_t offs
 	}
 	vkCmdPushConstants(brush.INTERNAL_getCurrentCommandBuffer(), brush.INTERNAL_getLayoutPrimitive(), VK_SHADER_STAGE_FRAGMENT_BIT, offset, length, data);
 }
+#endif

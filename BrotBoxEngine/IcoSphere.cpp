@@ -1,3 +1,5 @@
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "BBE/IcoSphere.h"
 #include "BBE/VertexWithNormal.h"
 #include "BBE/Math.h"
@@ -214,3 +216,4 @@ bbe::Matrix4 bbe::IcoSphere::getTransform() const
 	return m_transform;
 }
 
+#endif

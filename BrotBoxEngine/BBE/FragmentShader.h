@@ -1,5 +1,6 @@
 #pragma once
-
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "../BBE/Vulkan/VulkanShader.h"
 #include "../BBE/Vulkan/VulkanPipeline.h"
 
@@ -32,3 +33,4 @@ namespace bbe
 		void setPushConstant(PrimitiveBrush2D& brush, uint32_t offset, uint32_t length, const void* data);
 	};
 }
+#endif

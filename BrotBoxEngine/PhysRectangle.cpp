@@ -1,3 +1,5 @@
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "BBE/PhysWorld.h"
 #include "BBE/Math.h"
 #include "BBE/Game.h"
@@ -91,3 +93,4 @@ bbe::Vector2 bbe::PhysRectangle::getDim() const
 {
 	return Vector2(getWidth(), getHeight());
 }
+#endif

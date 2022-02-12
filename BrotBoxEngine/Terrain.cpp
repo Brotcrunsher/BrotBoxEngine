@@ -1,3 +1,5 @@
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "BBE/Terrain.h"
 #include "BBE/VertexWithNormal.h"
 #include "BBE/Random.h"
@@ -263,3 +265,4 @@ int bbe::Terrain::getHeight() const
 {
 	return m_height;
 }
+#endif

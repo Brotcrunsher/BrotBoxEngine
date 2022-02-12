@@ -1,3 +1,5 @@
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "BBE/PrimitiveBrush2D.h"
 #include "BBE/Vulkan/VulkanBuffer.h"
 #include "BBE/Vulkan/VulkanDevice.h"
@@ -715,3 +717,4 @@ void bbe::PrimitiveBrush2D::fillVertexIndexList(const uint32_t* indices, uint32_
 	m_delayedBufferDeletes[m_imageIndex].add({ indexBuffer .getBuffer(), indexBuffer .getMemory() });
 	m_delayedBufferDeletes[m_imageIndex].add({ vertexBuffer.getBuffer(), vertexBuffer.getMemory() });
 }
+#endif

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "GLFW/glfw3.h"
+#ifdef BBE_RENDERER_VULKAN
 #include "../BBE/Vulkan/VulkanManager.h"
+#endif
 #include "../BBE/Keyboard.h"
 #include "../BBE/Mouse.h"
 #include "../BBE/Hash.h"
@@ -11,6 +13,7 @@
 namespace bbe
 {
 	class PrimitiveBrush2D;
+	class PrimitiveBrush3D;
 
 	class Window
 	{
@@ -20,6 +23,7 @@ namespace bbe
 		
 		GLFWwindow                     *m_pwindow;
 		INTERNAL::vulkan::VulkanManager m_vulkanManager;
+
 		int                             m_width;
 		int                             m_height;
 		

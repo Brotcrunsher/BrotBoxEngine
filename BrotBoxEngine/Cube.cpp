@@ -1,3 +1,5 @@
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "BBE/Cube.h"
 #include "BBE/VertexWithNormal.h"
 #include "BBE/List.h"
@@ -296,3 +298,4 @@ bbe::Vector3 bbe::Cube::approach(const bbe::Cube& other, const bbe::Vector3& app
 
 	return approachVector * lowerBound;
 }
+#endif

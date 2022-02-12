@@ -1,3 +1,5 @@
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "BBE/Image.h"
 #include "BBE/Exceptions.h"
 #include "BBE/Vulkan/VulkanDevice.h"
@@ -503,3 +505,5 @@ void bbe::Image::VulkanData::decRef()
 		delete this;
 	}
 }
+
+#endif

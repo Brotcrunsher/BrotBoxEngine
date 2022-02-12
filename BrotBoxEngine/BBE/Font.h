@@ -1,9 +1,13 @@
 ﻿#pragma once
 
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include <map>
 
 #include "../BBE/String.h"
 #include "../BBE/Image.h"
+#include "../BBE/Rectangle.h"
+#include "../BBE/Vector2.h"
 #include "../BBE/Rectangle.h"
 
 namespace bbe
@@ -76,3 +80,4 @@ namespace bbe
 		static FittedFont getBestFittingFont(const bbe::List<Font>& fonts, const bbe::String& string, bbe::Vector2 maxSize);
 	};
 }
+#endif

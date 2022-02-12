@@ -1,3 +1,5 @@
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "BBE/Circle.h"
 #include "BBE/Rectangle.h"
 #include "BBE/Vector2.h"
@@ -252,3 +254,4 @@ bool bbe::Circle::resolveIntersection(Circle& other, float massThis, float massO
 
 	return true;
 }
+#endif

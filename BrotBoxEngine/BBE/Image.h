@@ -1,5 +1,7 @@
 #pragma once
 
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "GLFW/glfw3.h"
 #include "../BBE/Vulkan/VulkanDescriptorSet.h"
 #include "../BBE/Vulkan/VulkanHelper.h"
@@ -142,3 +144,4 @@ namespace bbe
 		bool isLoaded() const;
 	};
 }
+#endif

@@ -1,3 +1,5 @@
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "BBE/PointLight.h"
 #include "BBE/Exceptions.h"
 #include "BBE/EngineSettings.h"
@@ -218,3 +220,4 @@ bbe::LightFalloffMode bbe::PointLight::getFalloffMode()
 	}
 	return s_dataFragment[m_index].m_lightFallOffMode;
 }
+#endif

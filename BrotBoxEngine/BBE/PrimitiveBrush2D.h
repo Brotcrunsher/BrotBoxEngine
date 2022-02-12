@@ -38,6 +38,8 @@ namespace bbe
 
 	class PrimitiveBrush2D
 	{
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 		friend class INTERNAL::vulkan::VulkanManager;
 	private:
 		struct BufferMemoryPair
@@ -181,5 +183,6 @@ namespace bbe
 
 		VkCommandBuffer INTERNAL_getCurrentCommandBuffer();
 		VkPipelineLayout INTERNAL_getLayoutPrimitive();
+#endif
 	};
 }

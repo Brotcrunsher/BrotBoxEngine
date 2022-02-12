@@ -29,6 +29,7 @@
 #include "../BBE/VertexWithNormal.h"
 #include "../BBE/Window.h"
 
+#ifdef BBE_RENDERER_VULKAN
 #include "../BBE/Vulkan/VWDepthImage.h"
 
 #include "../BBE/Vulkan/VulkanBuffer.h"
@@ -46,6 +47,7 @@
 #include "../BBE/Vulkan/VulkanShader.h"
 #include "../BBE/Vulkan/VulkanSurface.h"
 #include "../BBE/Vulkan/VulkanSwapchain.h"
+#endif
 
 #include "../BBE/CameraControlNoClip.h"
 #include "../BBE/Keyboard.h"

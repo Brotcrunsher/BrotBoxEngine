@@ -1,5 +1,6 @@
 #pragma once
-
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "../BBE/Vulkan/VulkanBuffer.h"
 #include "../BBE/Matrix4.h"
 #include "../BBE/Vector3.h"
@@ -66,3 +67,4 @@ namespace bbe
 		bbe::Vector3 approach(const bbe::Cube& other, const bbe::Vector3& approachVector) const;
 	};
 }
+#endif

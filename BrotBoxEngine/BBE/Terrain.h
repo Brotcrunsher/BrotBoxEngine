@@ -1,5 +1,7 @@
 #pragma once
 
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 //Like Terrain but with a single mesh which is then used as a list of Patches for tessellation
 
 #include "GLFW/glfw3.h"
@@ -113,3 +115,4 @@ namespace bbe
 		int getHeight() const;
 	};
 }
+#endif
