@@ -1,8 +1,8 @@
-#include "BBE/VulkanShader.h"
+#include "BBE/Vulkan/VulkanShader.h"
+#include "BBE/Vulkan/VulkanHelper.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VulkanManager.h"
 #include "BBE/SimpleFile.h"
-#include "BBE/VulkanHelper.h"
-#include "BBE/VulkanDevice.h"
-#include "BBE/VulkanManager.h"
 #include "BBE/List.h"
 #include <iostream>
 

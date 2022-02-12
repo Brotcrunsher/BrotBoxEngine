@@ -1,9 +1,9 @@
-#include "BBE/VulkanDescriptorSet.h"
-#include "BBE/VulkanDescriptorPool.h"
-#include "BBE/VulkanDescriptorSetLayout.h"
-#include "BBE/VulkanDevice.h"
-#include "BBE/VulkanDescriptorSet.h"
-#include "BBE/VulkanBuffer.h"
+#include "BBE/Vulkan/VulkanDescriptorSet.h"
+#include "BBE/Vulkan/VulkanDescriptorPool.h"
+#include "BBE/Vulkan/VulkanDescriptorSetLayout.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VulkanDescriptorSet.h"
+#include "BBE/Vulkan/VulkanBuffer.h"
 #include "BBE/Image.h"
 
 void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addUniformBuffer(const VulkanBuffer & buffer, VkDeviceSize offset, uint32_t binding)

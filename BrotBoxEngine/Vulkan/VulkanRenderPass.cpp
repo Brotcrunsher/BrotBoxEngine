@@ -1,6 +1,6 @@
-#include "BBE/VulkanRenderPass.h"
-#include "BBE/VulkanDevice.h"
-#include "BBE/VWDepthImage.h"
+#include "BBE/Vulkan/VulkanRenderPass.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VWDepthImage.h"
 
 bbe::INTERNAL::vulkan::VulkanRenderPass::VulkanRenderPass()
 {

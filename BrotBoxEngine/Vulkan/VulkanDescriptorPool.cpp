@@ -1,7 +1,7 @@
-#include "BBE/VulkanDescriptorPool.h"
-#include "BBE/VulkanDescriptorSetLayout.h"
-#include "BBE/VulkanDevice.h"
-#include "BBE/VulkanHelper.h"
+#include "BBE/Vulkan/VulkanDescriptorPool.h"
+#include "BBE/Vulkan/VulkanDescriptorSetLayout.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VulkanHelper.h"
 #include <stdint.h>
 
 void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addVulkanDescriptorSetLayout(const VulkanDescriptorSetLayout &dsl, uint32_t amountOfSets)

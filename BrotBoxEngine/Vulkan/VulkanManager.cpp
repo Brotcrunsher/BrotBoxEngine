@@ -1,6 +1,6 @@
 #include "BBE/Vector2.h"
 #include "BBE/Vector3.h"
-#include "BBE/VulkanManager.h"
+#include "BBE/Vulkan/VulkanManager.h"
 #include "BBE/Color.h"
 #include "BBE/Exceptions.h"
 #include "BBE/Rectangle.h"

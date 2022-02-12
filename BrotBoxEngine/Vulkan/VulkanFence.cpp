@@ -1,6 +1,6 @@
-#include "BBE/VulkanFence.h"
-#include "BBE/VulkanDevice.h"
-#include "BBE/VulkanHelper.h"
+#include "BBE/Vulkan/VulkanFence.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VulkanHelper.h"
 #include "BBE/Exceptions.h"
 
 bbe::INTERNAL::vulkan::VulkanFence::VulkanFence()

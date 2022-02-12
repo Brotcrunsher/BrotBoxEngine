@@ -1,6 +1,6 @@
-#include "BBE/VulkanQueryPool.h"
+#include "BBE/Vulkan/VulkanQueryPool.h"
+#include "BBE/Vulkan/VulkanHelper.h"
 #include "BBE/Exceptions.h"
-#include "BBE/VulkanHelper.h"
 
 bbe::INTERNAL::vulkan::VulkanQueryPool::VulkanQueryPool()
 {

@@ -1,9 +1,8 @@
 #pragma once
 
+#include <memory>
 #include "GLFW/glfw3.h"
-#ifdef BBE_RENDERER_VULKAN
-#include "../BBE/Vulkan/VulkanManager.h"
-#endif
+#include "../BBE/RenderManager.h"
 #include "../BBE/Keyboard.h"
 #include "../BBE/Mouse.h"
 #include "../BBE/Hash.h"
@@ -21,11 +20,11 @@ namespace bbe
 	private:
 		static size_t windowsAliveCounter;
 		
-		GLFWwindow                     *m_pwindow;
-		INTERNAL::vulkan::VulkanManager m_vulkanManager;
+		GLFWwindow                         *m_pwindow;
+		std::unique_ptr<bbe::RenderManager> m_renderManager;
 
-		int                             m_width;
-		int                             m_height;
+		int                                 m_width;
+		int                                 m_height;
 		
 	public:
 		Window(int width, int height, const char* title, uint32_t major = 0, uint32_t minor = 0, uint32_t patch = 0);

@@ -1,5 +1,5 @@
-#include "BBE/VulkanDevice.h"
-#include "BBE/VWDepthImage.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VWDepthImage.h"
 
 bbe::INTERNAL::vulkan::VWDepthImage::VWDepthImage()
 {

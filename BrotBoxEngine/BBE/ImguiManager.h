@@ -1,4 +1,6 @@
 #pragma once
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 
 #include "imgui_impl_vulkan.h"
 
@@ -45,4 +47,5 @@ namespace bbe
 		
 	}
 }
+#endif
 

@@ -1,13 +1,15 @@
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "BBE/ImguiManager.h"
-#include "BBE/VulkanSurface.h"
-#include "BBE/VulkanPhysicalDevices.h"
-#include "BBE/VulkanInstance.h"
-#include "BBE/VulkanDevice.h"
-#include "BBE/VulkanDescriptorPool.h"
-#include "BBE/VulkanSwapchain.h"
-#include "BBE/VulkanHelper.h"
-#include "BBE/VulkanRenderPass.h"
-#include "BBE/VulkanCommandPool.h"
+#include "BBE/Vulkan/VulkanSurface.h"
+#include "BBE/Vulkan/VulkanPhysicalDevices.h"
+#include "BBE/Vulkan/VulkanInstance.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VulkanDescriptorPool.h"
+#include "BBE/Vulkan/VulkanSwapchain.h"
+#include "BBE/Vulkan/VulkanHelper.h"
+#include "BBE/Vulkan/VulkanRenderPass.h"
+#include "BBE/Vulkan/VulkanCommandPool.h"
 #include "BBE/List.h"
 
 #include "imgui_impl_glfw.h"
@@ -83,3 +85,4 @@ void bbe::INTERNAL::vulkan::ImguiManager::start(const VulkanInstance& instance, 
 
     m_window = window;
 }
+#endif

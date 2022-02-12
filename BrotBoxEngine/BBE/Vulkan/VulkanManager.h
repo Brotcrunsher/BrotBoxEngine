@@ -24,6 +24,7 @@
 #include "../BBE/Image.h"
 #include "../Vulkan/VulkanStopWatch.h"
 #include "../BBE/ImguiManager.h"
+#include "../BBE/RenderManager.h"
 
 namespace bbe
 {
@@ -31,7 +32,8 @@ namespace bbe
 	{
 		namespace vulkan
 		{
-			class VulkanManager {
+			class VulkanManager 
+				: public RenderManager {
 			public:
 				struct ScreenshotFirstStage
 				{
@@ -120,30 +122,30 @@ namespace bbe
 				VulkanManager& operator=(const VulkanManager& other) = delete;
 				VulkanManager& operator=(VulkanManager&& other) = delete;
 
-				void init(const char *appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow *window, uint32_t initialWindowWidth, uint32_t initialWindowHeight);
+				void init(const char *appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow *window, uint32_t initialWindowWidth, uint32_t initialWindowHeight) override;
 
-				void destroy();
-				void preDraw2D();
-				void preDraw3D();
-				void preDraw();
-				void postDraw();
-				void waitEndDraw();
-				void waitTillIdle();
+				void destroy() override;
+				void preDraw2D() override;
+				void preDraw3D() override;
+				void preDraw() override;
+				void postDraw() override;
+				void waitEndDraw() override;
+				void waitTillIdle() override;
 
-				bbe::PrimitiveBrush2D &getBrush2D();
-				bbe::PrimitiveBrush3D &getBrush3D();
+				bbe::PrimitiveBrush2D &getBrush2D() override;
+				bbe::PrimitiveBrush3D &getBrush3D() override;
 
 				void createPipelines();
-				void resize(uint32_t width, uint32_t height);
+				void resize(uint32_t width, uint32_t height) override;
 				void recreateSwapchain(bool useIconifyRestoreWorkaround);
 
 				VulkanDevice& getVulkanDevice();
 				VulkanRenderPass& getVulkanRenderPass();
 				VulkanShader& getVertexShader2DPrimitive();
 
-				void screenshot(const bbe::String& path);
+				void screenshot(const bbe::String& path) override;
 				void saveVideoFrame();
-				void setVideoRenderingMode(const char* path);
+				void setVideoRenderingMode(const char* path) override;
 				void stopRecording();
 			};
 		}

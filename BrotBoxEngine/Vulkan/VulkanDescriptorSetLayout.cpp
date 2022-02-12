@@ -1,6 +1,6 @@
-#include "BBE/VulkanDescriptorSetLayout.h"
-#include "BBE/VulkanHelper.h"
-#include "BBE/VulkanDevice.h"
+#include "BBE/Vulkan/VulkanDescriptorSetLayout.h"
+#include "BBE/Vulkan/VulkanHelper.h"
+#include "BBE/Vulkan/VulkanDevice.h"
 #include "BBE/Exceptions.h"
 
 void bbe::INTERNAL::vulkan::VulkanDescriptorSetLayout::addBinding(const VkDescriptorSetLayoutBinding & dslb)

@@ -1,10 +1,10 @@
-#include "BBE/VulkanHelper.h"
+#include "BBE/Vulkan/VulkanHelper.h"
 #include "BBE/List.h"
-#include "BBE/VulkanRenderPass.h"
-#include "BBE/VulkanCommandPool.h"
-#include "BBE/VulkanDevice.h"
-#include "BBE/VulkanSwapchain.h"
-#include "BBE/VulkanPipeline.h"
+#include "BBE/Vulkan/VulkanRenderPass.h"
+#include "BBE/Vulkan/VulkanCommandPool.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VulkanSwapchain.h"
+#include "BBE/Vulkan/VulkanPipeline.h"
 
 bbe::INTERNAL::vulkan::VulkanCommandPool::VulkanCommandPool()
 {

@@ -1,8 +1,8 @@
-#include "BBE/VulkanPhysicalDevices.h"
-#include "BBE/VulkanInstance.h"
-#include "BBE/VulkanSurface.h"
+#include "BBE/Vulkan/VulkanPhysicalDevices.h"
+#include "BBE/Vulkan/VulkanInstance.h"
+#include "BBE/Vulkan/VulkanSurface.h"
+#include "BBE/Vulkan/VulkanHelper.h"
 #include "BBE/List.h"
-#include "BBE/VulkanHelper.h"
 
 bbe::INTERNAL::vulkan::VulkanPhysicalDevice::VulkanPhysicalDevice(const VkPhysicalDevice & device, const VulkanSurface & surface)
 	: m_device(device)

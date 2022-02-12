@@ -1,6 +1,6 @@
-#include "BBE/VulkanSurface.h"
-#include "BBE/VulkanHelper.h"
-#include "BBE/VulkanInstance.h"
+#include "BBE/Vulkan/VulkanSurface.h"
+#include "BBE/Vulkan/VulkanHelper.h"
+#include "BBE/Vulkan/VulkanInstance.h"
 
 bbe::INTERNAL::vulkan::VulkanSurface::VulkanSurface()
 {

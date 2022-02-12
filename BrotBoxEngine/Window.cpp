@@ -5,6 +5,9 @@
 #include "BBE/MouseButtons.h"
 #include "BBE/FatalErrors.h"
 #include "imgui_impl_glfw.h"
+#ifdef BBE_RENDERER_VULKAN
+#include "BBE/Vulkan/VulkanManager.h"
+#endif
 
 
 size_t bbe::Window::windowsAliveCounter = 0;
@@ -14,6 +17,10 @@ bbe::Window* bbe::Window::INTERNAL_firstInstance = nullptr;
 bbe::Window::Window(int width, int height, const char * title, uint32_t major, uint32_t minor, uint32_t patch)
 	: m_width(width), m_height(height)
 {
+#ifdef BBE_RENDERER_VULKAN
+	m_renderManager.reset(new bbe::INTERNAL::vulkan::VulkanManager());
+#endif
+
 	if(bbe::Window::INTERNAL_firstInstance == nullptr)
 	{
 		bbe::Window::INTERNAL_firstInstance = this;
@@ -44,7 +51,7 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	float windowXScale = 0;
 	float windowYScale = 0;
 	glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
-	m_vulkanManager.init(title, major, minor, patch, m_pwindow, static_cast<uint32_t>(width * windowXScale), static_cast<uint32_t>(height * windowYScale));
+	m_renderManager->init(title, major, minor, patch, m_pwindow, static_cast<uint32_t>(width * windowXScale), static_cast<uint32_t>(height * windowYScale));
 
 
 	std::cout << "Setting glwf callbacks" << std::endl;
@@ -65,17 +72,17 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 
 void bbe::Window::preDraw2D()
 {
-	m_vulkanManager.preDraw2D();
+	m_renderManager->preDraw2D();
 }
 
 void bbe::Window::preDraw3D()
 {
-	m_vulkanManager.preDraw3D();
+	m_renderManager->preDraw3D();
 }
 
 void bbe::Window::preDraw()
 {
-	m_vulkanManager.preDraw();
+	m_renderManager->preDraw();
 }
 
 bool bbe::Window::keepAlive()
@@ -91,17 +98,17 @@ bool bbe::Window::keepAlive()
 
 void bbe::Window::postDraw()
 {
-	m_vulkanManager.postDraw();
+	m_renderManager->postDraw();
 }
 
 void bbe::Window::waitEndDraw()
 {
-	m_vulkanManager.waitEndDraw();
+	m_renderManager->waitEndDraw();
 }
 
 void bbe::Window::waitTillIdle()
 {
-	m_vulkanManager.waitTillIdle();
+	m_renderManager->waitTillIdle();
 }
 
 void bbe::Window::setCursorMode(bbe::CursorMode cursorMode)
@@ -129,7 +136,7 @@ GLFWwindow * bbe::Window::getRaw()
 
 bbe::Window::~Window()
 {
-	m_vulkanManager.destroy();
+	m_renderManager->destroy();
 	glfwDestroyWindow(m_pwindow);
 	if (windowsAliveCounter == 1)
 	{
@@ -183,12 +190,12 @@ bbe::Vector2 bbe::Window::getGlobalMousePos() const
 
 bbe::PrimitiveBrush2D& bbe::Window::getBrush2D()
 {
-	return m_vulkanManager.getBrush2D();
+	return m_renderManager->getBrush2D();
 }
 
 bbe::PrimitiveBrush3D& bbe::Window::getBrush3D()
 {
-	return m_vulkanManager.getBrush3D();
+	return m_renderManager->getBrush3D();
 }
 
 void bbe::Window::INTERNAL_resize(int width, int height)
@@ -199,17 +206,17 @@ void bbe::Window::INTERNAL_resize(int width, int height)
 	m_width = width / windowXScale;
 	m_height = height / windowYScale;
 
-	m_vulkanManager.resize(width, height);
+	m_renderManager->resize(width, height);
 }
 
 void bbe::Window::screenshot(const bbe::String& path)
 {
-	m_vulkanManager.screenshot(path);
+	m_renderManager->screenshot(path);
 }
 
 void bbe::Window::setVideoRenderingMode(const char* path)
 {
-	m_vulkanManager.setVideoRenderingMode(path);
+	m_renderManager->setVideoRenderingMode(path);
 }
 
 void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, int action, int mods)

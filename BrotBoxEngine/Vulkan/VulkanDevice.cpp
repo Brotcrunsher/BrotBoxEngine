@@ -1,7 +1,7 @@
-#include "BBE/VulkanDevice.h"
-#include "BBE/VulkanSurface.h"
-#include "BBE/VulkanPhysicalDevices.h"
-#include "BBE/VulkanHelper.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VulkanSurface.h"
+#include "BBE/Vulkan/VulkanPhysicalDevices.h"
+#include "BBE/Vulkan/VulkanHelper.h"
 #include "BBE/Exceptions.h"
 
 void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & physicalDevices, const VulkanSurface & surface) {

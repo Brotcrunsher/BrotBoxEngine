@@ -1,6 +1,6 @@
-#include "BBE/VulkanSemaphore.h"
-#include "BBE/VulkanDevice.h"
-#include "BBE/VulkanHelper.h"
+#include "BBE/Vulkan/VulkanSemaphore.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VulkanHelper.h"
 #include "BBE/Exceptions.h"
 
 bbe::INTERNAL::vulkan::VulkanSemaphore::VulkanSemaphore()

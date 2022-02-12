@@ -1,6 +1,6 @@
-#include "BBE/VulkanInstance.h"
+#include "BBE/Vulkan/VulkanInstance.h"
+#include "BBE/Vulkan/VulkanHelper.h"
 #include "BBE/List.h"
-#include "BBE/VulkanHelper.h"
 #include "BBE/FatalErrors.h"
 
 bbe::INTERNAL::vulkan::VulkanInstance::VulkanInstance()

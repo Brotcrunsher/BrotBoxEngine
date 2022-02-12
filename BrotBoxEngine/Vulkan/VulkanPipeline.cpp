@@ -1,6 +1,6 @@
-#include "BBE/VulkanPipeline.h"
-#include "BBE/VWDepthImage.h"
-#include "BBE/VulkanShader.h"
+#include "BBE/Vulkan/VulkanPipeline.h"
+#include "BBE/Vulkan/VWDepthImage.h"
+#include "BBE/Vulkan/VulkanShader.h"
 #include "BBE/Exceptions.h"
 
 bbe::INTERNAL::vulkan::VulkanPipeline::VulkanPipeline()

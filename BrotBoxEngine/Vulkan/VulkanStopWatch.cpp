@@ -1,6 +1,5 @@
-#include "BBE/VulkanStopWatch.h"
-#include "BBE/VulkanStopWatch.h"
-#include "BBE/VulkanHelper.h"
+#include "BBE/Vulkan/VulkanStopWatch.h"
+#include "BBE/Vulkan/VulkanHelper.h"
 
 bbe::INTERNAL::vulkan::VulkanStopWatch::VulkanStopWatch()
 {

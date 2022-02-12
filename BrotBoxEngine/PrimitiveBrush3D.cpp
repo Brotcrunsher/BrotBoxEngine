@@ -1,3 +1,5 @@
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 #include "BBE/PrimitiveBrush3D.h"
 #include "BBE/Vulkan/VulkanDevice.h"
 #include "BBE/Vulkan/VulkanBuffer.h"
@@ -252,3 +254,4 @@ bbe::FillMode bbe::PrimitiveBrush3D::getFillMode()
 {
 	return m_fillMode;
 }
+#endif

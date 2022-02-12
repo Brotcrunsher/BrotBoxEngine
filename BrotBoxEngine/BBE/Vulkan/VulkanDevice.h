@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GLFW/glfw3.h"
-#include "../BBE/List.h"
+#include "../List.h"
 
 namespace bbe
 {

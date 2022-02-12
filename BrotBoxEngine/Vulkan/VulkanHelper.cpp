@@ -1,4 +1,4 @@
-#include "BBE/VulkanHelper.h"
+#include "BBE/Vulkan/VulkanHelper.h"
 #include "BBE/Math.h"
 
 uint32_t bbe::INTERNAL::vulkan::findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
