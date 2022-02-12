@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../BBE/VulkanBuffer.h"
-#include "../BBE/VulkanCommandPool.h"
+#include "../BBE/Vulkan/VulkanBuffer.h"
+#include "../BBE/Vulkan/VulkanCommandPool.h"
 #include "../BBE/Vector2.h"
 
 namespace bbe

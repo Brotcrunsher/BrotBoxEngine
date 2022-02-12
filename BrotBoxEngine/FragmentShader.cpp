@@ -1,8 +1,8 @@
 #include "BBE/FragmentShader.h"
 #include "BBE/Window.h"
-#include "BBE/VulkanManager.h"
-#include "BBE/VulkanDevice.h"
-#include "BBE/VulkanRenderPass.h"
+#include "BBE/Vulkan/VulkanManager.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VulkanRenderPass.h"
 #include "BBE/PrimitiveBrush2D.h"
 
 bbe::FragmentShader::FragmentShader()

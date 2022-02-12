@@ -1,12 +1,11 @@
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
-#include "../BBE/VulkanHelper.h"
+#include "../BBE/Vulkan/VulkanDescriptorSet.h"
+#include "../BBE/Vulkan/VulkanHelper.h"
 #include "../BBE/ColorByte.h"
 #include "../BBE/Color.h"
 #include "../BBE/String.h"
-#include "../BBE/VulkanDescriptorSet.h"
 #include "../BBE/Vector2.h"
 
 namespace bbe

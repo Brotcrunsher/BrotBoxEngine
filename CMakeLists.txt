@@ -8,6 +8,8 @@ set(BBE_ADD_TEST_PROJECTS    ON CACHE BOOL "If set to OFF, the test projects are
 set(BBE_ADD_EXAMPLE_PROJECTS ON CACHE BOOL "If set to OFF, the example projects are not added to the build.")
 set(BBE_ADD_AUDIO            ON CACHE BOOL "If set to OFF, all audio support is stripped from the engine.")
 
+set(BBE_RENDER_MODE "Vulkan" CACHE STRING "Sets the render mode. Possible values are Vulkan, Null")
+
 add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
@@ -64,11 +66,23 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   add_cxx_linker_flag("-ftest-coverage")
 endif()
 
-find_package(Vulkan REQUIRED)
-target_include_directories(BrotBoxEngine PUBLIC Vulkan::Vulkan)
-target_link_libraries(BrotBoxEngine Vulkan::Vulkan)
-
 add_subdirectory(BrotBoxEngine)
+
+if(BBE_RENDER_MODE STREQUAL "Vulkan")
+  find_package(Vulkan REQUIRED)
+  target_include_directories(BrotBoxEngine PUBLIC Vulkan::Vulkan)
+  target_link_libraries(BrotBoxEngine Vulkan::Vulkan)
+  target_compile_definitions(BrotBoxEngine PUBLIC GLFW_INCLUDE_VULKAN)
+  #For the future... maybe
+#elseif(BBE_RENDER_MODE STREQUAL "OpenGL")
+  #add_subdirectory(Third-Party/glew-2.1.0/build/cmake)
+  #include_directories(Third-Party/glew-2.1.0/include)
+  #target_link_libraries(BrotBoxEngine glew_s)
+elseif(BBE_RENDER_MODE STREQUAL "Null")
+  # Do nothing
+else()
+  message(FATAL_ERROR "Unknown BBE_RENDER_MODE: ${BBE_RENDER_MODE}")
+endif()
 
 add_subdirectory(Third-Party/glfw-3.3.2)
 include_directories(Third-Party/glfw-3.3.2/include)

@@ -1,9 +1,8 @@
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
-#include "../BBE/VulkanHelper.h"
-#include "../BBE/VulkanCommandPool.h"
+#include "../Vulkan/VulkanHelper.h"
+#include "../Vulkan/VulkanCommandPool.h"
 #include "../BBE/List.h"
 #include "../BBE/Exceptions.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../BBE/VulkanBuffer.h"
+#include "../BBE/Vulkan/VulkanBuffer.h"
 #include "../BBE/Matrix4.h"
 #include "../BBE/Vector3.h"
 

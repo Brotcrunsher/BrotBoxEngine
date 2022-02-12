@@ -2,7 +2,7 @@
 #include "BBE/VertexWithNormal.h"
 #include "BBE/Random.h"
 #include "BBE/Math.h"
-#include "BBE/VulkanBuffer.h"
+#include "BBE/Vulkan/VulkanBuffer.h"
 #include "BBE/TimeHelper.h"
 
 static const int PATCH_SIZE = 64;

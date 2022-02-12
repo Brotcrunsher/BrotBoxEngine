@@ -1,7 +1,7 @@
 #include "BBE/Rectangle.h"
 #include "BBE/Vector2.h"
-#include "BBE/VulkanDevice.h"
-#include "BBE/VulkanManager.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VulkanManager.h"
 
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::Rectangle::s_indexBuffer;
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::Rectangle::s_vertexBuffer;

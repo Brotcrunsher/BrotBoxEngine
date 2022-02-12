@@ -16,7 +16,7 @@ public:
 	{
 		// TODO Remove absolute paths
 		
-		slideShow.addManifest("D:/Videos/C++ Tutorial/Episode Bonus 046 - algorithm/Manifest.txt");
+		slideShow.addManifest("D:/Videos/C++ Tutorial/Episode Bonus 048 - OpenGL bis zum Dreieck/Manifest.txt");
 	}
 
 	virtual void update(float timeSinceLastFrame) override

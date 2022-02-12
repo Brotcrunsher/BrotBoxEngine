@@ -1,14 +1,14 @@
 #include "BBE/PrimitiveBrush3D.h"
-#include "BBE/VulkanDevice.h"
-#include "BBE/VulkanBuffer.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VulkanBuffer.h"
 #include "BBE/Color.h"
 #include "BBE/Math.h"
-#include "BBE/VulkanDescriptorPool.h"
-#include "BBE/VulkanPipeline.h"
+#include "BBE/Vulkan/VulkanDescriptorPool.h"
+#include "BBE/Vulkan/VulkanPipeline.h"
 #include "BBE/Vector2.h"
 #include "BBE/Matrix4.h"
 #include "BBE/Rectangle.h"
-#include "BBE/VulkanCommandPool.h"
+#include "BBE/Vulkan/VulkanCommandPool.h"
 
 void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a, bool force)
 {

@@ -19,6 +19,7 @@
 [Xx]86/
 [Bb]uild/
 [Bb]uildLinux/
+[Bb]uildNull/
 bld/
 [Bb]in/
 [Oo]bj/
@@ -249,6 +250,9 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
-/BrotBoxEngine/EmbedOutput.cpp
-/BrotBoxEngine/EmbedOutput.h
+/BrotBoxEngine/Vulkan/EmbedOutput.cpp
+/BrotBoxEngine/Vulkan/EmbedOutput.h
 /ExampleSimplePresentation/out.xml
+
+#Temporary
+/Third-Party/glew-2.1.0

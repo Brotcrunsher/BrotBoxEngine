@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../BBE/VulkanShader.h"
-#include "../BBE/VulkanPipeline.h"
+#include "../BBE/Vulkan/VulkanShader.h"
+#include "../BBE/Vulkan/VulkanPipeline.h"
 
 namespace bbe
 {

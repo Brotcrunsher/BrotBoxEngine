@@ -1,9 +1,8 @@
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 #include "../BBE/Matrix4.h"
-#include "../BBE/VulkanBuffer.h"
+#include "../BBE/Vulkan/VulkanBuffer.h"
 #include "../BBE/Cube.h"
 #include "../BBE/IcoSphere.h"
 #include "../BBE/Terrain.h"

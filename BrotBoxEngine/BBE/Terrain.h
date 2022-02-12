@@ -2,18 +2,17 @@
 
 //Like Terrain but with a single mesh which is then used as a list of Patches for tessellation
 
-#define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
-#include "../BBE/VulkanBuffer.h"
+#include "../BBE/Vulkan/VulkanBuffer.h"
+#include "../BBE/Vulkan/VulkanCommandPool.h"
+#include "../BBE/Vulkan/VulkanDevice.h"
 #include "../BBE/Matrix4.h"
-#include "../BBE/VulkanCommandPool.h"
 #include "../BBE/List.h"
 #include "../BBE/Image.h"
 #include "../BBE/Vector2.h"
 #include "../BBE/EngineSettings.h"
 #include "../BBE/ValueNoise2D.h"
 #include "../BBE/ViewFrustum.h"
-#include "../BBE/VulkanDevice.h"
 
 namespace bbe
 {

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../BBE/VulkanQueryPool.h"
-#include "../BBE/VulkanDevice.h"
-#include "../BBE/VulkanCommandPool.h"
+#include "../Vulkan/VulkanQueryPool.h"
+#include "../Vulkan/VulkanDevice.h"
+#include "../Vulkan/VulkanCommandPool.h"
 
 namespace bbe
 {

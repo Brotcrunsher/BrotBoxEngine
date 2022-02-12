@@ -1,10 +1,10 @@
 #include "BBE/Image.h"
 #include "BBE/Exceptions.h"
-#include "BBE/VulkanDevice.h"
-#include "BBE/VulkanCommandPool.h"
-#include "BBE/VulkanDescriptorPool.h"
-#include "BBE/VulkanDescriptorSetLayout.h"
-#include "BBE/VulkanBuffer.h"
+#include "BBE/Vulkan/VulkanDevice.h"
+#include "BBE/Vulkan/VulkanCommandPool.h"
+#include "BBE/Vulkan/VulkanDescriptorPool.h"
+#include "BBE/Vulkan/VulkanDescriptorSetLayout.h"
+#include "BBE/Vulkan/VulkanBuffer.h"
 #include "BBE/Math.h"
 
 #define STB_IMAGE_IMPLEMENTATION
