@@ -791,7 +791,10 @@ bool bbe::Utf8String::isNumber() const
 {
 	if (m_length == 0) return false;
 
-	for (size_t i = 0; i < m_length; i++)
+	size_t i = 0;
+	if (startsWith("+") || startsWith("-")) i++;
+
+	for (; i < m_length; i++)
 	{
 		const char& c = operator[](i);
 		if (c < '0' || c > '9')
