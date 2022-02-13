@@ -1,0 +1,2 @@
+add_subdirectory(BrotBoxEngineTest)
+add_subdirectory(BrotBoxEngineGTest)
