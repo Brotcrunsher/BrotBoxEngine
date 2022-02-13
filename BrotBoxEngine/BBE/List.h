@@ -7,6 +7,7 @@
 #include "../BBE/UtilDebug.h"
 #include "../BBE/Hash.h"
 #include "../BBE/Exceptions.h"
+#include "../BBE/MersenneTwister.h"
 #include <initializer_list>
 #include <iostream>
 #include <cstring>

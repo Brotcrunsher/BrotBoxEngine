@@ -70,6 +70,7 @@ namespace bbe
 
 			m_index = N;
 
+			// TODO Can't we just call twist directly?
 			for (uint32_t i = 0; i < 1000 * 1000 * 9; i++)
 			{
 				next();
