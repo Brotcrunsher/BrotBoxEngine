@@ -1,10 +1,10 @@
 #pragma once
 
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 #include "GLFW/glfw3.h"
-#include "../BBE/Matrix4.h"
+#ifdef BBE_RENDERER_VULKAN
 #include "../BBE/Vulkan/VulkanBuffer.h"
+#endif
+#include "../BBE/Matrix4.h"
 #include "../BBE/Cube.h"
 #include "../BBE/IcoSphere.h"
 #include "../BBE/Terrain.h"
@@ -41,6 +41,8 @@ namespace bbe
 
 	class PrimitiveBrush3D
 	{
+// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 		friend class INTERNAL::vulkan::VulkanManager;
 	private:
 		VkCommandBuffer                              m_currentCommandBuffer                               = VK_NULL_HANDLE;
@@ -119,6 +121,6 @@ namespace bbe
 
 		void setFillMode(FillMode fm);
 		FillMode getFillMode();
+#endif
 	};
 }
-#endif

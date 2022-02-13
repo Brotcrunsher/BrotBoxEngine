@@ -75,7 +75,6 @@ if(BBE_RENDER_MODE STREQUAL "Vulkan")
   target_link_libraries(BrotBoxEngine Vulkan::Vulkan)
   target_compile_definitions(BrotBoxEngine PUBLIC GLFW_INCLUDE_VULKAN)
   target_compile_definitions(BrotBoxEngine PUBLIC BBE_RENDERER_VULKAN)
-  target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-master/backends/imgui_impl_glfw.cpp)
   target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-master/backends/imgui_impl_vulkan.cpp)
   #For the future... maybe
 #elseif(BBE_RENDER_MODE STREQUAL "OpenGL")
@@ -87,6 +86,8 @@ elseif(BBE_RENDER_MODE STREQUAL "NullRenderer")
 else()
   message(FATAL_ERROR "Unknown BBE_RENDER_MODE: ${BBE_RENDER_MODE}")
 endif()
+
+target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-master/backends/imgui_impl_glfw.cpp)
 
 add_subdirectory(Third-Party/glfw-3.3.2)
 include_directories(Third-Party/glfw-3.3.2/include)

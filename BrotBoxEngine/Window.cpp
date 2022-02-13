@@ -8,6 +8,9 @@
 #ifdef BBE_RENDERER_VULKAN
 #include "BBE/Vulkan/VulkanManager.h"
 #endif
+#ifdef BBE_RENDERER_NULL
+#include "BBE/NullRenderer/NullRendererManager.h"
+#endif
 
 
 size_t bbe::Window::windowsAliveCounter = 0;
@@ -19,6 +22,9 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 {
 #ifdef BBE_RENDERER_VULKAN
 	m_renderManager.reset(new bbe::INTERNAL::vulkan::VulkanManager());
+#endif
+#ifdef BBE_RENDERER_NULL
+	m_renderManager.reset(new bbe::INTERNAL::nullRenderer::NullRendererManager());
 #endif
 
 	if(bbe::Window::INTERNAL_firstInstance == nullptr)
@@ -240,7 +246,9 @@ void bbe::INTERNAL_charCallback(GLFWwindow* window, unsigned int c)
 
 void bbe::INTERNAL_cursorPosCallback(GLFWwindow * window, double xpos, double ypos)
 {
+#ifdef BBE_RENDERER_VULKAN
 	if (ImGui::GetIO().WantCaptureMouse) return;
+#endif
 	float windowXScale = 0;
 	float windowYScale = 0;
 	glfwGetWindowContentScale(window, &windowXScale, &windowYScale);
@@ -255,7 +263,9 @@ void bbe::INTERNAL_windowResizeCallback(GLFWwindow * window, int width, int heig
 void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int action, int mods)
 {
 	ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+#ifdef BBE_RENDERER_VULKAN
 	if (ImGui::GetIO().WantCaptureMouse) return;
+#endif
 	if (action == GLFW_PRESS)
 	{
 		bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_press((bbe::MouseButton)button);
