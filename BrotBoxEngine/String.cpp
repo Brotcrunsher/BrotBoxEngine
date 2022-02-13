@@ -558,7 +558,7 @@ void bbe::Utf8String::trimInPlace()
 	if (m_length == 0) return;
 
 	size_t start = 0;
-	size_t end = m_length;
+	size_t end = m_length - 1;
 
 	while (utf8IsWhitespace(&(*this)[start]) && start != m_length - 1)
 	{
@@ -569,7 +569,7 @@ void bbe::Utf8String::trimInPlace()
 		end--;
 	}
 
-	substringInPlace(start, end);
+	substringInPlace(start, end + 1);
 }
 
 bbe::Utf8String bbe::Utf8String::substring(std::size_t start, std::size_t end) const
