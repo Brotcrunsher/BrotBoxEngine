@@ -5,7 +5,6 @@
 #include "StackAllocatorTest.h"
 #include "GeneralPurposeAllocatorTest.h"
 #include "DefragmentationAllocatorTest.h"
-#include "StringTest.h"
 #include "DataStructures/ListTest.h"
 #include "DataStructures/HashMapTest.h"
 #include "DataStructures/StackTest.h"
@@ -41,10 +40,6 @@ namespace bbe {
 
 			std::cout << "Testing DefragmentationAllocaotr" << std::endl;
 			bbe::test::testDefragmentationAllocator();
-			Person::checkIfAllPersonsWereDestroyed();
-
-			std::cout << "Testing String" << std::endl;
-			bbe::test::testString();
 			Person::checkIfAllPersonsWereDestroyed();
 
 			std::cout << "Testing List" << std::endl;
