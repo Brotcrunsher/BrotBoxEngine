@@ -16,6 +16,8 @@
 
 #include "../BBE/EngineSettings.h"
 #include "../BBE/Profiler.h"
+#include "../BBE/Utf8Helpers.h"
+#include "../BBE/Utf8Iterator.h"
 #include "../BBE/String.h"
 
 #include "../BBE/Color.h"
