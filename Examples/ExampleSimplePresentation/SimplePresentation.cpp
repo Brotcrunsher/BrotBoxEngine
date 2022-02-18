@@ -920,7 +920,7 @@ void SlideShow::addSlide(Slide& slide)
 
 void SlideShow::addManifest(const char* inPath)
 {
-	const bbe::String path = inPath;
+	const bbe::String path = bbe::String(inPath).replace("\\", "/");
 	const bbe::String parentPath = path.substring(0, path.searchLast("/")) + "/";
 	const bbe::String fileContent = bbe::simpleFile::readFile(path);
 	const bbe::DynamicArray<bbe::String> lines = fileContent.split("\n");

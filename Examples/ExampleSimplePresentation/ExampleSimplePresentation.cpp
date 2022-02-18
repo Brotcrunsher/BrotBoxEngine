@@ -12,13 +12,22 @@ public:
 	SlideShow slideShow;
 	PresentationControl previousPc = PresentationControl::none;
 	float timeInThisPc = 0;
+	const char* path;
 
+	MyGame(const char* path)
+		: path(path)
+	{
+	}
 
 	virtual void onStart() override
 	{
 		// TODO Remove absolute paths
 		
-		slideShow.addManifest("D:/Videos/C++ Tutorial/Episode Bonus 048 - OpenGL bis zum Dreieck/Manifest.txt");
+		if (path)
+		{
+			std::cout << "Loading Manifest: " << path << std::endl;
+		}
+		slideShow.addManifest(path ? path : "D:/Videos/C++ Tutorial/Episode Bonus 048 - OpenGL bis zum Dreieck/Manifest.txt");
 	}
 
 	virtual void update(float timeSinceLastFrame) override
@@ -65,9 +74,9 @@ public:
 };
 
 
-int main()
+int main(int argc, const char** argv)
 {
-	MyGame* mg = new MyGame();
+	MyGame* mg = new MyGame(argc >= 2 ? argv[1] : nullptr);
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "Signed Distance Field Renderer");
 	delete mg;
 }
