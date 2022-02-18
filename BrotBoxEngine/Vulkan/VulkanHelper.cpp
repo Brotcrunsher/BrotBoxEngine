@@ -201,7 +201,7 @@ void bbe::INTERNAL::vulkan::createImage(VkDevice device, VkPhysicalDevice physic
 	vkBindImageMemory(device, image, imageMemory, 0);
 }
 
-void bbe::INTERNAL::vulkan::createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView & imageView, uint32_t mipLevels)
+void bbe::INTERNAL::vulkan::createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView & imageView, uint32_t mipLevels, VkComponentSwizzle swizR, VkComponentSwizzle swizG, VkComponentSwizzle swizB, VkComponentSwizzle swizA)
 {
 	VkImageViewCreateInfo imageViewCreateInfo;
 	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -210,10 +210,10 @@ void bbe::INTERNAL::vulkan::createImageView(VkDevice device, VkImage image, VkFo
 	imageViewCreateInfo.image = image;
 	imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	imageViewCreateInfo.format = format;
-	imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-	imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-	imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-	imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+	imageViewCreateInfo.components.r = swizR;
+	imageViewCreateInfo.components.g = swizG;
+	imageViewCreateInfo.components.b = swizB;
+	imageViewCreateInfo.components.a = swizA;
 	imageViewCreateInfo.subresourceRange.aspectMask = aspectFlags;
 	imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
 	imageViewCreateInfo.subresourceRange.levelCount = mipLevels;

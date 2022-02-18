@@ -97,7 +97,19 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 
 	stagingBuffer.destroy();
 
-	INTERNAL::vulkan::createImageView(m_pVulkanData->m_device, m_pVulkanData->m_image, (VkFormat)m_format, VK_IMAGE_ASPECT_COLOR_BIT, m_pVulkanData->m_imageView, amountOfMips);
+	VkComponentSwizzle swizR = VK_COMPONENT_SWIZZLE_IDENTITY;
+	VkComponentSwizzle swizG = VK_COMPONENT_SWIZZLE_IDENTITY;
+	VkComponentSwizzle swizB = VK_COMPONENT_SWIZZLE_IDENTITY;
+	VkComponentSwizzle swizA = VK_COMPONENT_SWIZZLE_IDENTITY;
+	if (m_format == ImageFormat::R8)
+	{
+		swizR = VK_COMPONENT_SWIZZLE_R;
+		swizG = VK_COMPONENT_SWIZZLE_R;
+		swizB = VK_COMPONENT_SWIZZLE_R;
+		swizA = VK_COMPONENT_SWIZZLE_R;
+	}
+
+	INTERNAL::vulkan::createImageView(m_pVulkanData->m_device, m_pVulkanData->m_image, (VkFormat)m_format, VK_IMAGE_ASPECT_COLOR_BIT, m_pVulkanData->m_imageView, amountOfMips, swizR, swizG, swizB, swizA);
 
 	VkSamplerCreateInfo samplerCreateInfo = {};
 	samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

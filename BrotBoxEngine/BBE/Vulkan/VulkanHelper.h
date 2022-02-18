@@ -58,7 +58,11 @@ namespace bbe
 
 			void createImage(VkDevice device, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags, VkImage &image, VkDeviceMemory &imageMemory, int amountOfMipLevels = 1);
 
-			void createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView &imageView, uint32_t mipLevels = 1);
+			void createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView &imageView, uint32_t mipLevels = 1, 
+				VkComponentSwizzle swizR = VK_COMPONENT_SWIZZLE_IDENTITY, 
+				VkComponentSwizzle swizG = VK_COMPONENT_SWIZZLE_IDENTITY, 
+				VkComponentSwizzle swizB = VK_COMPONENT_SWIZZLE_IDENTITY, 
+				VkComponentSwizzle swizA = VK_COMPONENT_SWIZZLE_IDENTITY);
 
 			void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuffer src, VkBuffer dest, VkDeviceSize size);
 

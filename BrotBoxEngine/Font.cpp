@@ -82,11 +82,9 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 		charDatas['\n'] = std::move(empty);
 	}
 
-	const bbe::String string = chars;
-	//TODO Wasteful! This could really use an iterator.
-	for (size_t i = 0; i < string.getLength(); i++)
+	for (auto iter = chars.getIterator(); *iter != '\0'; iter++)
 	{
-		const int32_t codePoint = string.getCodepoint(i);
+		const int32_t codePoint = iter.getCodepoint();
 		if (codePoint == ' ') throw IllegalArgumentException(); // It is not required to have a space as it will just advance the caret position and is always supported.
 		
 		if (charDatas.find(codePoint) != charDatas.end()) throw IllegalArgumentException(); // A char was passed twice.
@@ -107,20 +105,11 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize, const bbe::
 		int yoff = 0;
 		unsigned char* bitmap = stbtt_GetCodepointBitmap(&fontInfo, 0, scale, codePoint, &width, &height, &xoff, &yoff);
 		if (bitmap == nullptr) throw NullPointerException();
-		
-		bbe::List<byte> convertedList = bbe::List<byte>((size_t)width * (size_t)height * sizeof(float));
-		for (size_t i = 0; i < (size_t)width * (size_t)height; i++)
-		{
-			convertedList.add(bitmap[i]);
-			convertedList.add(bitmap[i]);
-			convertedList.add(bitmap[i]);
-			convertedList.add(bitmap[i]);
-		}
-		stbtt_FreeBitmap(bitmap, nullptr);
 
 		//TODO: Currently this is a very wasteful approach to rendering text as we create a separate image for every distinct
 		//      char. It would be much more efficient to implement some form of texture atlas and use that here instead.
-		cd.charImage = bbe::Image(width, height, convertedList.getRaw(), bbe::ImageFormat::R8G8B8A8);
+		cd.charImage = bbe::Image(width, height, bitmap, bbe::ImageFormat::R8);
+		stbtt_FreeBitmap(bitmap, nullptr);
 		cd.charImage.setRepeatMode(bbe::ImageRepeatMode::CLAMP_TO_EDGE);
 		charDatas[codePoint] = std::move(cd);
 	}
