@@ -10,6 +10,8 @@ class MyGame : public bbe::Game
 {
 public:
 	SlideShow slideShow;
+	PresentationControl previousPc = PresentationControl::none;
+	float timeInThisPc = 0;
 
 
 	virtual void onStart() override
@@ -24,8 +26,26 @@ public:
 		PresentationControl pc = PresentationControl::none;
 		const bool bigJump = isKeyDown(bbe::Key::LEFT_CONTROL) || isKeyDown(bbe::Key::RIGHT_CONTROL);
 
-		     if (isKeyPressed(bbe::Key::LEFT))  pc = bigJump ? PresentationControl::previous_slide : PresentationControl::previous;
-		else if (isKeyPressed(bbe::Key::RIGHT)) pc = bigJump ? PresentationControl::next_slide : PresentationControl::next;
+		     if (isKeyDown(bbe::Key::LEFT))  pc = bigJump ? PresentationControl::previous_slide : PresentationControl::previous;
+		else if (isKeyDown(bbe::Key::RIGHT)) pc = bigJump ? PresentationControl::next_slide : PresentationControl::next;
+		
+		if(pc == previousPc && timeInThisPc < 0.5f)
+		{
+			pc = PresentationControl::none;
+			timeInThisPc += timeSinceLastFrame;
+		}
+		else
+		{
+			if (pc == previousPc)
+			{
+				timeInThisPc = 0.5f - 0.05f;
+			}
+			else
+			{
+				timeInThisPc = 0;
+			}
+			previousPc = pc;
+		}
 		
 		slideShow.update(pc, getMouseScrollY() * 10, timeSinceLastFrame);
 	}
