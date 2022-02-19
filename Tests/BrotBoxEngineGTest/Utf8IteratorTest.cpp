@@ -143,6 +143,6 @@ TEST(StringIteratorTest, distance)
 {
 	bbe::Utf8Iterator iter(u8"💣1🍣💃");
 	bbe::Utf8Iterator iter2 = iter + 2;
-	ASSERT_TRUE(iter - iter2, -2);
-	ASSERT_TRUE(iter2 - iter,  2);
+	ASSERT_EQ(iter - iter2, -2);
+	ASSERT_EQ(iter2 - iter,  2);
 }
