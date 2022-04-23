@@ -83,10 +83,10 @@ namespace bbe {
 				List<GeneralPurposeAllocator::GeneralPurposeAllocatorPointer<float>> list;
 				Random rand;
 				bool deallocated[1024 * 128];
-				memset(deallocated, 0, sizeof(bool) * 1024 * 128);
+				memset(deallocated, 0, sizeof(deallocated));
 				bbe::String history;
 
-				for (int i = 0; i < 1024 * 128; i++)
+				for (int i = 0; i < 1024 * 1; i++)
 				{
 					if (rand.randomBool())
 					{
