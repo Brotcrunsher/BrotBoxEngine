@@ -12,8 +12,8 @@ int32_t bbe::utf8CharToCodePoint(const char* ptr)
 	switch (length)
 	{
 	case 1: return *ptr;
-	case 2: return ((bptr[0] & 0b00011111) << 6) | ((bptr[1] & 0b00111111));
-	case 3: return ((bptr[0] & 0b00001111) << 12) | ((bptr[1] & 0b00111111) << 6) | ((bptr[2] & 0b00111111));
+	case 2: return ((bptr[0] & 0b00011111) <<  6) | ((bptr[1] & 0b00111111));
+	case 3: return ((bptr[0] & 0b00001111) << 12) | ((bptr[1] & 0b00111111) <<  6) | ((bptr[2] & 0b00111111));
 	case 4: return ((bptr[0] & 0b00000111) << 18) | ((bptr[1] & 0b00111111) << 12) | ((bptr[2] & 0b00111111) << 6) | ((bptr[3] & 0b00111111));
 	}
 
