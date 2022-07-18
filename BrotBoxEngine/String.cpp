@@ -692,6 +692,20 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const char* splitAt, b
 	return split(bbe::Utf8String(splitAt), addEmpty);
 }
 
+bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::lines(bool addEmpty) const
+{
+	auto lines = split("\n", addEmpty);
+	for (size_t i = 0; i < lines.getLength(); i++)
+	{
+		if (lines[i].endsWith("\r"))
+		{
+			lines[i].substringInPlace(0, lines[i].getLength() - 1);
+		}
+	}
+
+	return lines;
+}
+
 bool bbe::Utf8String::contains(const char* string) const
 {
 	//UNTESTED

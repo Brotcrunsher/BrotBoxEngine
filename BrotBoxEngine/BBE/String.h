@@ -132,6 +132,8 @@ namespace bbe
 		DynamicArray<Utf8String> split(const Utf8String& splitAt, bool addEmpty = true) const;
 		DynamicArray<Utf8String> split(const char*       splitAt, bool addEmpty = true) const;
 
+		DynamicArray<Utf8String> lines(bool addEmpty = true) const;
+
 		bool contains(const char*       string) const;
 		bool contains(const Utf8String& string) const;
 
