@@ -1,0 +1,21 @@
+Spirit      | EMF  | BOOK    | BOX     |        Smudge -> no hunting for 180 sec
+Wraith      | EMF  | BOX     | DOTS    |        No footprints under UV
+Phantom     | BOX  | FINGIES | DOTS    |        Disappear on photo, less visible (1sec visible, 1 sec invisible)
+Poltergeist | BOOK | BOX     | FINGIES |        Multithrow, more active (like Oni)
+Banshee     | ORBS | FINGIES | DOTS    |        More singing and humming events and interactions. Unique noise on para mic. Targets one person at a time.
+Jinn        | EMF  | COLD    | FINGIES |        Can't turn off lights and breaker (can still overload breaker)
+Mare        | ORBS | BOOK    | BOX     |        Doesn't turn light on. Sometimes instantly turn off a light when turned on and close to light switch.
+Revenant    | ORBS | BOOK    | COLD    |        Fast when line of sight, else slow (listen to footsteps!)
+Shade       | EMF  | BOOK    | COLD    |        Only interact when no player there, starts hunting at 35% (lowest ingame)
+Demon       | BOOK | COLD    | FINGIES |        Hunt at any sanity level, very active, favor door interactions than other objects
+Yurei       | ORBS | BOX     | DOTS    |        Special ghost events that do -25% sanity (all doors close, lights flicker, no ghost appears). More roaming
+Oni         | EMF  | COLD    | DOTS    |        Angry when close to it, highly active (like Poltergeist). Unique object throw - twice as far
+Yokai       | ORBS | BOX     | DOTS    |        Hunt at 80% sanity, when talking next to it.
+Hantu       | ORBS | COLD    | FINGIES |        Fast in freezing. Only ghost that doesn't make other rooms freezing while hunting (other than ghost room)
+Goryo       | EMF  | FINGIES | DOTS    |        Rarely leaves ghost room. Always DOTS. Can't see DOTS while there, only on cams.
+Myling      | EMF  | BOOK    | FINGIES |        Quite footsteps. Drop flashlight in front of you, when no hear footstep but flahlight flicker -> Myling
+Onryo       | ORBS | BOX     | COLD    |        Candle = Cucifix. Prioritizes Candle. Throw Candle + Crucifix on same spot. When Candle goes out -> sign for Onryo
+Twins       | EMF  | BOX     | COLD    |        2 Ghost. One in Ghost room, other roams a lot. Easy giveaway when in two rooms something happens.
+Raiju       | EMF  | ORBS    | DOTS    |        Fast around electrical equipment. Early hunter.
+Obake       | EMF  | ORBS    | FINGIES |        6 finger evidence. 50% no fingies. Fingies disappear in 60 sec instead of 120 sec
+Mimic       | BOX  | COLD    | FINGIES | DOTS | Switches between behaviours. 
