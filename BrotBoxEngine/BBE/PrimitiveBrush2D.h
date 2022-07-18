@@ -95,6 +95,9 @@ namespace bbe
 		FillMode m_fillMode = FillMode::SOLID;
 
 	public:
+		static constexpr const char* DEFAULT_FONT_NAME = "arial.ttf";
+		static constexpr unsigned DEFAULT_FONT_SIZE = 20;
+
 		PrimitiveBrush2D();
 
 		void fillRect(const Rectangle& rect, float rotation = 0, FragmentShader* shader = nullptr);
@@ -148,11 +151,19 @@ namespace bbe
 		void fillChar(float x, float y, int32_t c, const bbe::Font& font, float rotation = 0);
 		void fillChar(const Vector2& p, int32_t c, const bbe::Font& font, float rotation = 0);
 
+		void fillChar(float x, float y, int32_t c, unsigned fontSize = DEFAULT_FONT_SIZE, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
+		void fillChar(const Vector2& p, int32_t c, unsigned fontSize = DEFAULT_FONT_SIZE, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
+
 		void fillText(float x, float y, const char* text, const bbe::Font& font, float rotation = 0);
 		void fillText(const Vector2& p, const char* text, const bbe::Font& font, float rotation = 0);
 		void fillText(float x, float y, const bbe::String &text, const bbe::Font& font, float rotation = 0);
 		void fillText(const Vector2& p, const bbe::String& text, const bbe::Font& font, float rotation = 0);
 		
+		void fillText(float x, float y, const char* text, unsigned fontSize = DEFAULT_FONT_SIZE, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
+		void fillText(const Vector2& p, const char* text, unsigned fontSize = DEFAULT_FONT_SIZE, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
+		void fillText(float x, float y, const bbe::String& text, unsigned fontSize = DEFAULT_FONT_SIZE, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
+		void fillText(const Vector2& p, const bbe::String& text, unsigned fontSize = DEFAULT_FONT_SIZE, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
+
 		void setColorRGB(float r, float g, float b, float a);
 		void setColorRGB(float r, float g, float b);
 		void setColorRGB(const Vector3& c);

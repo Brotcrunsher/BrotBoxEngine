@@ -1,5 +1,6 @@
 // TODO: Make independent of RenderMode
 #ifdef BBE_RENDERER_VULKAN
+#include <map>
 #include "BBE/PrimitiveBrush2D.h"
 #include "BBE/Vulkan/VulkanBuffer.h"
 #include "BBE/Vulkan/VulkanDevice.h"
@@ -190,8 +191,43 @@ void bbe::PrimitiveBrush2D::INTERNAL_setColor(float r, float g, float b, float a
 	}
 }
 
+struct Hasher
+{
+	std::size_t operator() (const std::pair<bbe::String, unsigned>& pair) const
+	{
+		return bbe::hash(pair.first) + pair.second * 107;
+	}
+};
+
+static std::unordered_map<std::pair<bbe::String, unsigned>, bbe::Font, Hasher> dynamicFonts;
+static const bbe::Font& getFont(const bbe::String& fontName, unsigned fontSize)
+{
+	std::pair<bbe::String, unsigned> key = { fontName, fontSize };
+
+	auto it = dynamicFonts.find(key);
+	if (it != dynamicFonts.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		dynamicFonts[key] = bbe::Font(fontName, fontSize);
+		return dynamicFonts[key];
+	}
+}
+
+static void destroyFonts()
+{
+	for (std::pair<const std::pair<bbe::String, unsigned>, bbe::Font>& val : dynamicFonts)
+	{
+		val.second.destroy();
+	}
+}
+
 void bbe::PrimitiveBrush2D::INTERNAL_destroy()
 {
+	destroyFonts();
+
 	for (size_t i = 0; i < m_delayedBufferDeletes.getLength(); i++)
 	{
 		for (size_t k = 0; k < m_delayedBufferDeletes[i].getLength(); k++)
@@ -478,6 +514,16 @@ void bbe::PrimitiveBrush2D::fillChar(const Vector2& p, int32_t c, const bbe::Fon
 	drawImage(p, font.getDimensions(c), charImage, rotation);
 }
 
+void bbe::PrimitiveBrush2D::fillChar(float x, float y, int32_t c, unsigned fontSize, const bbe::String& fontName, float rotation)
+{
+	fillChar(x, y, c, getFont(fontName, fontSize), rotation);
+}
+
+void bbe::PrimitiveBrush2D::fillChar(const Vector2& p, int32_t c, unsigned fontSize, const bbe::String& fontName, float rotation)
+{
+	fillChar(p, c, getFont(fontName, fontSize), rotation);
+}
+
 void bbe::PrimitiveBrush2D::fillLine(const Vector2& p1, const Vector2& p2, float lineWidth)
 {
 	const Vector2 dir = p2 - p1;
@@ -550,6 +596,26 @@ void bbe::PrimitiveBrush2D::fillText(float x, float y, const bbe::String& text, 
 void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const bbe::String& text, const bbe::Font& font, float rotation)
 {
 	fillText(p.x, p.y, text, font, rotation);
+}
+
+void bbe::PrimitiveBrush2D::fillText(float x, float y, const char* text, unsigned fontSize, const bbe::String& fontName, float rotation)
+{
+	fillText(x, y, text, getFont(fontName, fontSize), rotation);
+}
+
+void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, unsigned fontSize, const bbe::String& fontName, float rotation)
+{
+	fillText(p, text, getFont(fontName, fontSize), rotation);
+}
+
+void bbe::PrimitiveBrush2D::fillText(float x, float y, const bbe::String& text, unsigned fontSize, const bbe::String& fontName, float rotation)
+{
+	fillText(x, y, text, getFont(fontName, fontSize), rotation);
+}
+
+void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const bbe::String& text, unsigned fontSize, const bbe::String& fontName, float rotation)
+{
+	fillText(p, text, getFont(fontName, fontSize), rotation);
 }
 
 void bbe::PrimitiveBrush2D::setColorRGB(float r, float g, float b, float a)
