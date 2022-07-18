@@ -8,7 +8,7 @@ Mare        | ORBS | BOOK    | BOX     |        Doesn't turn light on. Sometimes
 Revenant    | ORBS | BOOK    | COLD    |        Fast when line of sight, else slow (listen to footsteps!)
 Shade       | EMF  | BOOK    | COLD    |        Only interact when no player there, starts hunting at 35% (lowest ingame)
 Demon       | BOOK | COLD    | FINGIES |        Hunt at any sanity level, very active, favor door interactions than other objects
-Yurei       | ORBS | BOX     | DOTS    |        Special ghost events that do -25% sanity (all doors close, lights flicker, no ghost appears). More roaming
+Yurei       | ORBS | COLD    | DOTS    |        Special ghost events that do -25% sanity (all doors close, lights flicker, no ghost appears). More roaming
 Oni         | EMF  | COLD    | DOTS    |        Angry when close to it, highly active (like Poltergeist). Unique object throw - twice as far
 Yokai       | ORBS | BOX     | DOTS    |        Hunt at 80% sanity, when talking next to it.
 Hantu       | ORBS | COLD    | FINGIES |        Fast in freezing. Only ghost that doesn't make other rooms freezing while hunting (other than ghost room)
@@ -19,3 +19,6 @@ Twins       | EMF  | BOX     | COLD    |        2 Ghost. One in Ghost room, othe
 Raiju       | EMF  | ORBS    | DOTS    |        Fast around electrical equipment. Early hunter.
 Obake       | EMF  | ORBS    | FINGIES |        6 finger evidence. 50% no fingies. Fingies disappear in 60 sec instead of 120 sec
 Mimic       | BOX  | COLD    | FINGIES | DOTS | Switches between behaviours. 
+Moroi       | BOX  | BOOK    | COLD    |        None
+Deagen      | BOX  | BOOK    | DOTS    |        None
+Thaye       | ORBS | BOOK    | DOTS    |        None

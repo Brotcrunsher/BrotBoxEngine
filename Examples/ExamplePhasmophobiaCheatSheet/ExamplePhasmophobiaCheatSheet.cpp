@@ -138,9 +138,9 @@ public:
 		{
 			const Ghost& g = filteredGhosts[i];
 
-			brush.fillText(100, 50 + i * 30, g.name);
+			brush.fillText(100, 20 + i * 30, g.name);
 
-			brush.fillText(300, 50 + i * 30, g.desc);
+			brush.fillText(300, 20 + i * 30, g.desc);
 		}
 	}
 	virtual void onEnd() override
