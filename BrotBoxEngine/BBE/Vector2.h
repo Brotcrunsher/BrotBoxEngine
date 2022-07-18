@@ -12,17 +12,17 @@ namespace bbe
 		T x;
 		T y;
 
-		Vector2_t()
+		constexpr Vector2_t()
 			: x(0), y(0)
 		{
 		}
 
-		Vector2_t(T x, T y)
+		constexpr Vector2_t(T x, T y)
 			: x(x), y(y)
 		{
 		}
 
-		explicit Vector2_t(T xy)
+		explicit constexpr Vector2_t(T xy)
 			: x(xy), y(xy)
 		{
 		}
@@ -360,5 +360,6 @@ namespace bbe
 		}
 	};
 
-	using Vector2 = Vector2_t<float>;
+	using Vector2  = Vector2_t<float>;
+	using Vector2i = Vector2_t<int32_t>;
 }
