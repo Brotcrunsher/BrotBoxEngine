@@ -37,4 +37,6 @@ add_subdirectory(ExampleTerrain)
 add_subdirectory(ExampleTesseract)
 add_subdirectory(ExampleTextRendering)
 add_subdirectory(ExampleWaveDrawer)
-
+if(BBE_ADD_EXPERIMENTAL)
+  add_subdirectory(ExampleWaveFunctionCollapse)
+endif()
