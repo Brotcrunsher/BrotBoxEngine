@@ -188,6 +188,28 @@ namespace bbe
 		const T* begin() const { return m_pdata; };
 		T* end() { return &m_pdata[m_length]; };
 		const T* end() const { return &m_pdata[m_length]; };
+
+
+
+		T& first()
+		{
+			return (m_pdata[0]);
+		}
+
+		const T& first() const
+		{
+			return (m_pdata[0]);
+		}
+
+		T& last()
+		{
+			return (m_pdata[m_length - 1]);
+		}
+
+		const T& last() const
+		{
+			return (m_pdata[m_length - 1]);
+		}
 	};
 
 	template<typename T>
