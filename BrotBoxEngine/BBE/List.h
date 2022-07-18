@@ -516,17 +516,16 @@ namespace bbe
 			addArray(arr.getRaw(), size);
 		}
 
-		void popBack(size_t amount = 1)
+		T popBack()
 		{
-			if (amount > m_length)
+			if (m_length < 1)
 			{
 				debugBreak();
 			}
-			for (size_t i = 0; i < amount; i++)
-			{
-				m_pdata[m_length - 1 - i].m_value.~T();
-			}
-			m_length -= amount;
+			T retVal = std::move(last());
+			m_pdata[m_length - 1].m_value.~T();
+			m_length--;
+			return retVal;
 		}
 
 		void clear()

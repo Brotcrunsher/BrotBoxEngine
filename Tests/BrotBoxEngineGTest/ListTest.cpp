@@ -406,17 +406,22 @@ TEST(List, addArray)
 TEST(List, popBack)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4) };
-	list.popBack();
+	ASSERT_EQ(list.popBack(), 4);
 	ASSERT_EQ(list.getLength(), 3);
 	ASSERT_EQ(list[0].getLength(), 1);
 	ASSERT_EQ(list[1].getLength(), 2);
 	ASSERT_EQ(list[2].getLength(), 3);
 
-	list.add(SomeClass<int>(1337));
-	list.popBack(2);
+	ASSERT_EQ(list.popBack(), 3);
 	ASSERT_EQ(list.getLength(), 2);
 	ASSERT_EQ(list[0].getLength(), 1);
 	ASSERT_EQ(list[1].getLength(), 2);
+
+	list.add(SomeClass<int>(1337));
+	ASSERT_EQ(list.getLength(), 3);
+	ASSERT_EQ(list[0].getLength(), 1);
+	ASSERT_EQ(list[1].getLength(), 2);
+	ASSERT_EQ(list[2].getLength(), 1337);
 }
 
 TEST(List, clear)
@@ -432,7 +437,7 @@ TEST(List, shrink)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4) };
 	const size_t oldCapacity = list.getCapacity();
-	list.popBack(1);
+	list.popBack();
 	ASSERT_EQ(list.getCapacity(), oldCapacity);
 	ASSERT_NE(list.getCapacity(), 3);
 
