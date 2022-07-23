@@ -99,5 +99,8 @@ namespace bbe
 		void setScreenshotRecordingMode(const char* path = "images/img");
 		void setMaxFrame(uint64_t maxFrame);
 		void setFixedFrametime(float time);
+
+		bbe::String getClipboard() const;
+		void setClipboard(const bbe::String& string);
 	};
 }
