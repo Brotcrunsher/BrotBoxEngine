@@ -33,7 +33,7 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 
 	m_pVulkanData->m_device = device.getDevice();
 	// TODO: uff @static_cast madness...
-	int amountOfMips = static_cast<int>(Math::log2Floor(static_cast<int>(Math::max(static_cast<float>(getWidth()), static_cast<float>(getHeight()))))) + 1;
+	int amountOfMips = static_cast<int>(Math::log2Floor(static_cast<int>(Math::max(static_cast<float>(getWidth()), static_cast<float>(getHeight())))));
 	m_pVulkanData->m_imageLayout = std::make_unique<VkImageLayout[]>(amountOfMips); //TODO use allocator
 	for (int i = 0; i < amountOfMips; i++)
 	{
