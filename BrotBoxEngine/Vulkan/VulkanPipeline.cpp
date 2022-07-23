@@ -255,6 +255,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::destroy()
 		m_vertexBindingDescription.clear();
 		m_vertexAttributeDescriptions.clear();
 		m_descriptorSetLayouts.clear();
+		m_specializationEntries.clear();
 
 		m_wasCreated = false;
 	}
