@@ -33,6 +33,8 @@ namespace bbe
 				void waitEndDraw() override;
 				void waitTillIdle() override;
 
+				bool isReadyToDraw() const override;
+
 				bbe::PrimitiveBrush2D &getBrush2D() override;
 				bbe::PrimitiveBrush3D &getBrush3D() override;
 

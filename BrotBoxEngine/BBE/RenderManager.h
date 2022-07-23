@@ -23,6 +23,8 @@ namespace bbe
 		virtual void waitEndDraw() = 0;
 		virtual void waitTillIdle() = 0;
 
+		virtual bool isReadyToDraw() const = 0;
+
 		virtual bbe::PrimitiveBrush2D& getBrush2D() = 0;
 		virtual bbe::PrimitiveBrush3D& getBrush3D() = 0;
 		virtual void resize(uint32_t width, uint32_t height) = 0;

@@ -45,6 +45,8 @@ namespace bbe
 
 				VkImage getImage(size_t index) const;
 
+				bool isInit() const;
+
 			private:
 				void createImageViews(VkFormat deviceFormat);
 

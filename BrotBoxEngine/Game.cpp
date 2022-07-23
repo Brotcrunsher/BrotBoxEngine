@@ -85,6 +85,11 @@ void bbe::Game::frame()
 	m_physWorld.update(timeSinceLastFrame);
 	update(timeSinceLastFrame);
 
+	if (!m_pwindow->isReadyToDraw())
+	{
+		return;
+	}
+
 	m_pwindow->preDraw();
 	m_pwindow->preDraw3D();
 	draw3D(m_pwindow->getBrush3D());

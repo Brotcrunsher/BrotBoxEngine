@@ -57,3 +57,8 @@ void bbe::INTERNAL::nullRenderer::NullRendererManager::screenshot(const bbe::Str
 void bbe::INTERNAL::nullRenderer::NullRendererManager::setVideoRenderingMode(const char* path)
 {
 }
+
+bool bbe::INTERNAL::nullRenderer::NullRendererManager::isReadyToDraw() const
+{
+	return true;
+}

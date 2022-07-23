@@ -42,6 +42,8 @@ namespace bbe
 		void waitEndDraw();
 		void waitTillIdle();
 
+		bool isReadyToDraw();
+
 		void setCursorMode(bbe::CursorMode cursorMode);
 
 		GLFWwindow *getRaw();

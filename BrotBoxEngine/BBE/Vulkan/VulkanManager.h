@@ -132,12 +132,14 @@ namespace bbe
 				void waitEndDraw() override;
 				void waitTillIdle() override;
 
+				bool isReadyToDraw() const override;
+
 				bbe::PrimitiveBrush2D &getBrush2D() override;
 				bbe::PrimitiveBrush3D &getBrush3D() override;
 
 				void createPipelines();
 				void resize(uint32_t width, uint32_t height) override;
-				void recreateSwapchain(bool useIconifyRestoreWorkaround);
+				void recreateSwapchain();
 
 				VulkanDevice& getVulkanDevice();
 				VulkanRenderPass& getVulkanRenderPass();

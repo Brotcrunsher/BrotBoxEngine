@@ -117,6 +117,11 @@ void bbe::Window::waitTillIdle()
 	m_renderManager->waitTillIdle();
 }
 
+bool bbe::Window::isReadyToDraw()
+{
+	return m_renderManager->isReadyToDraw();
+}
+
 void bbe::Window::setCursorMode(bbe::CursorMode cursorMode)
 {
 	switch (cursorMode)

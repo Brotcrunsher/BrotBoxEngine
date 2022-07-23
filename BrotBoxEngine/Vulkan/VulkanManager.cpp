@@ -373,7 +373,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::postDraw()
 	result = vkQueuePresentKHR(m_device.getQueue(), &pi);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		recreateSwapchain(true);
+		recreateSwapchain();
 	}
 	else
 	{
@@ -408,6 +408,11 @@ void bbe::INTERNAL::vulkan::VulkanManager::waitEndDraw()
 void bbe::INTERNAL::vulkan::VulkanManager::waitTillIdle()
 {
 	m_device.waitIdle();
+}
+
+bool bbe::INTERNAL::vulkan::VulkanManager::isReadyToDraw() const
+{
+	return m_swapchain.isInit();
 }
 
 bbe::PrimitiveBrush2D& bbe::INTERNAL::vulkan::VulkanManager::getBrush2D()
@@ -490,24 +495,24 @@ void bbe::INTERNAL::vulkan::VulkanManager::resize(uint32_t width, uint32_t heigh
 	m_screenWidth = width;
 	m_screenHeight = height;
 
-	recreateSwapchain(false);
+	recreateSwapchain();
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::recreateSwapchain(bool useIconifyRestoreWorkaround)
+void bbe::INTERNAL::vulkan::VulkanManager::recreateSwapchain()
 {
 	m_device.waitIdle();
-	if (useIconifyRestoreWorkaround)
-	{
-		//This is very hacky. It can happen sometimes that some commands like vkQueuePresentKHR return
-		//VK_ERROR_OUT_OF_DATE_KHR. Such behavior was observed when the window that is created is bigger
-		//than the resolution of the monitor on which the window is displayed. In such a case it is not
-		//sufficient to just recreate the swap chain but we also have to quickly iconify and restore the
-		//window or else it is just completely white. It would be much better if another solution were
-		//found to avoid this issue. Unfortunately, I don't know if this is a bug in GLFW or BBE (probably
-		//the later).
-		glfwIconifyWindow(m_pwindow);
-		glfwRestoreWindow(m_pwindow);
-	}
+//	if (useIconifyRestoreWorkaround)
+//	{
+//		//This is very hacky. It can happen sometimes that some commands like vkQueuePresentKHR return
+//		//VK_ERROR_OUT_OF_DATE_KHR. Such behavior was observed when the window that is created is bigger
+//		//than the resolution of the monitor on which the window is displayed. In such a case it is not
+//		//sufficient to just recreate the swap chain but we also have to quickly iconify and restore the
+//		//window or else it is just completely white. It would be much better if another solution were
+//		//found to avoid this issue. Unfortunately, I don't know if this is a bug in GLFW or BBE (probably
+//		//the later).
+//		glfwIconifyWindow(m_pwindow);
+//		glfwRestoreWindow(m_pwindow);
+//	}
 
 	m_pipeline2DPrimitive.destroy();
 	m_pipeline2DImage.destroy();
