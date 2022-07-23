@@ -155,7 +155,8 @@ int32_t bbe::Font::getLeftSideBearing(int32_t c) const
 {
 	if (getFixedWidth() > 0)
 	{
-		return getFixedWidth();
+		const bbe::Vector2 dim = getDimensions(c);
+		return (getFixedWidth() - dim.x) * 0.5f;
 	}
 	else
 	{
