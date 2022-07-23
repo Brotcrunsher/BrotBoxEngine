@@ -3,6 +3,8 @@
 // TODO: Make independent of RenderMode
 #ifdef BBE_RENDERER_VULKAN
 #include <map>
+#define STBTT_RASTERIZER_VERSION 1
+#include <stb_truetype.h>
 
 #include "../BBE/String.h"
 #include "../BBE/Image.h"
@@ -23,13 +25,13 @@ namespace bbe
 	{
 	private:
 		static constexpr unsigned    DEFAULT_FONT_SIZE  = 20;
-		// constexpr const is necessary for some compilers to avoid false warnings
-		static constexpr const char* DEFAULT_CHARSET    = u8"1234567890!\"'/()=\\abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+#-.,_:;<>|^{}[]*~&?%$äöüÄÖÜß";
 
 		bool isInit              = false;
 		bbe::String fontPath     = "";
 		uint32_t fontSize        = 0;
 		int32_t pixelsFromLineToLine = 0;
+		stbtt_fontinfo fontInfo = {};
+		bbe::List<unsigned char> font;
 
 		int32_t fixedWidth = 0;
 		
@@ -41,17 +43,19 @@ namespace bbe
 			int32_t verticalOffset = 0;
 		};
 
-		std::map<int32_t, CharData> charDatas;
+		mutable std::map<int32_t, CharData> charDatas;
+
+		const CharData& loadCharData(int32_t c) const;
+
+		const CharData& getCharData(int32_t c) const;
 
 	public:
 		Font();
 		Font(const bbe::String& fontPath, 
-		     unsigned fontSize        = DEFAULT_FONT_SIZE,
-		     const bbe::String& chars = DEFAULT_CHARSET);
+		     unsigned fontSize        = DEFAULT_FONT_SIZE);
 
 		void load(const bbe::String& fontPath,
-		          unsigned fontSize        = DEFAULT_FONT_SIZE,
-		          const bbe::String& chars = DEFAULT_CHARSET);
+		          unsigned fontSize        = DEFAULT_FONT_SIZE);
 
 		const    bbe::String& getFontPath() const;
 		uint32_t getFontSize()              const;
