@@ -7,25 +7,23 @@
 #include <filesystem>
 #include "BBE/SimpleFile.h"
 
-constexpr uint32_t sharpnessFactor = 2;
-
-const bbe::Font::CharData& bbe::Font::loadCharData(const int32_t codePoint) const
+const bbe::Font::CharData& bbe::Font::loadCharData(const int32_t codePoint, float scale_) const
 {
 	if (!isInit) throw NotInitializedException();
 
-	if (charDatas.find(codePoint) != charDatas.end()) throw IllegalArgumentException(); // A char was passed twice.
+	if (charDatas.find({ codePoint, scale_ }) != charDatas.end()) throw IllegalArgumentException(); // A char was passed twice.
 
 	CharData cd;
 
-	const float scale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(fontSize * sharpnessFactor));
+	const float scale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(fontSize * scale_));
 
 	stbtt_GetCodepointHMetrics(&fontInfo, codePoint, &cd.advanceWidth, &cd.leftSideBearing);
-	cd.advanceWidth = static_cast<int>(cd.advanceWidth * scale / sharpnessFactor);
-	cd.leftSideBearing = static_cast<int>(cd.leftSideBearing * scale / sharpnessFactor);
+	cd.advanceWidth = static_cast<int>(cd.advanceWidth * scale / scale_);
+	cd.leftSideBearing = static_cast<int>(cd.leftSideBearing * scale / scale_);
 
 	int32_t y1 = 0;
 	stbtt_GetCodepointBox(&fontInfo, codePoint, nullptr, nullptr, nullptr, &y1);
-	cd.verticalOffset = static_cast<int>((-y1) * scale / sharpnessFactor);
+	cd.verticalOffset = static_cast<int>((-y1) * scale / scale_);
 
 	int width = 0;
 	int height = 0;
@@ -39,16 +37,17 @@ const bbe::Font::CharData& bbe::Font::loadCharData(const int32_t codePoint) cons
 	cd.charImage = bbe::Image(width, height, bitmap, bbe::ImageFormat::R8);
 	stbtt_FreeBitmap(bitmap, nullptr);
 	cd.charImage.setRepeatMode(bbe::ImageRepeatMode::CLAMP_TO_EDGE);
-	charDatas[codePoint] = std::move(cd);
-	return charDatas[codePoint];
+	charDatas[{codePoint, scale_}] = std::move(cd);
+	return charDatas[{codePoint, scale_}];
 }
 
-const bbe::Font::CharData& bbe::Font::getCharData(int32_t c) const
+const bbe::Font::CharData& bbe::Font::getCharData(int32_t c, float scale) const
 {
-	auto keyVal = charDatas.find(c);
+	if (c == ' ' || c == '\n') scale = 1.0f;
+	auto keyVal = charDatas.find({ c, scale });
 	if (keyVal == charDatas.end())
 	{
-		return loadCharData(c);
+		return loadCharData(c, scale);
 	}
 
 	return keyVal->second;
@@ -102,13 +101,13 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 
 	font = bbe::simpleFile::readBinaryFile(this->fontPath);
 	stbtt_InitFont(&fontInfo, font.getRaw(), stbtt_GetFontOffsetForIndex(font.getRaw(), 0));
-	const float scale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(fontSize * sharpnessFactor));
+	const float scale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(fontSize));
 
 	int32_t ascent = 0;
 	int32_t descent = 0;
 	int32_t lineGap = 0;
 	stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
-	pixelsFromLineToLine = static_cast<int>((ascent - descent + lineGap) * scale / sharpnessFactor);
+	pixelsFromLineToLine = static_cast<int>((ascent - descent + lineGap) * scale);
 
 	int32_t spaceAdvance = 0;
 	int32_t spaceLeftSideBearing = 0;
@@ -116,14 +115,14 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 
 	{
 		CharData space;
-		space.advanceWidth = static_cast<int>(spaceAdvance * scale / sharpnessFactor);
-		space.leftSideBearing = static_cast<int>(spaceLeftSideBearing * scale / sharpnessFactor);
-		charDatas[' '] = std::move(space);
+		space.advanceWidth = static_cast<int>(spaceAdvance * scale);
+		space.leftSideBearing = static_cast<int>(spaceLeftSideBearing * scale);
+		charDatas[{' ', 1.0f}] = std::move(space);
 	}
 
 	{
 		CharData empty;
-		charDatas['\n'] = std::move(empty);
+		charDatas[{'\n', 1.0f}] = std::move(empty);
 	}
 
 	isInit = true;
@@ -147,9 +146,9 @@ int32_t bbe::Font::getPixelsFromLineToLine() const
 	return pixelsFromLineToLine;
 }
 
-const bbe::Image& bbe::Font::getImage(int32_t c) const
+const bbe::Image& bbe::Font::getImage(int32_t c, float scale) const
 {
-	return getCharData(c).charImage;
+	return getCharData(c, scale).charImage;
 }
 
 int32_t bbe::Font::getLeftSideBearing(int32_t c) const
@@ -160,7 +159,7 @@ int32_t bbe::Font::getLeftSideBearing(int32_t c) const
 	}
 	else
 	{
-		return getCharData(c).leftSideBearing;
+		return getCharData(c, 1.0f).leftSideBearing;
 	}
 }
 
@@ -173,19 +172,19 @@ int32_t bbe::Font::getAdvanceWidth(int32_t c) const
 	}
 	else
 	{
-		return getCharData(c).advanceWidth;
+		return getCharData(c, 1.0f).advanceWidth;
 	}
 }
 
 int32_t bbe::Font::getVerticalOffset(int32_t c) const
 {
 	if (!isInit) throw NotInitializedException();
-	return getCharData(c).verticalOffset;
+	return getCharData(c, 1.0f).verticalOffset;
 }
 
 bbe::Vector2 bbe::Font::getDimensions(int32_t c) const
 {
-	return getImage(c).getDimensions() / getSharpnessFactor();
+	return getImage(c, 1.f).getDimensions();
 }
 
 void bbe::Font::setFixedWidth(int32_t val)
@@ -207,11 +206,6 @@ void bbe::Font::destroy()
 			cd.second.charImage.destroy();
 		}
 	}
-}
-
-uint32_t bbe::Font::getSharpnessFactor() const
-{
-	return sharpnessFactor;
 }
 
 bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const char* text, float rotation, bool verticalCorrection) const
@@ -241,7 +235,7 @@ bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const ch
 		else
 		{
 			currentPosition.x += getLeftSideBearing(codePoint);
-			const bbe::Image& charImage = getImage(codePoint);
+			const bbe::Image& charImage = getImage(codePoint, 1.0f);
 			if (verticalCorrection)
 			{
 				retVal.add((bbe::Vector2(currentPosition.x, currentPosition.y + getVerticalOffset(codePoint)) + charImage.getDimensions() / 2).rotate(rotation, p) - charImage.getDimensions() / 2);

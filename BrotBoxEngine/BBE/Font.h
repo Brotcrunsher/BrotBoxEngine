@@ -43,11 +43,11 @@ namespace bbe
 			int32_t verticalOffset = 0;
 		};
 
-		mutable std::map<int32_t, CharData> charDatas;
+		mutable std::map<std::pair<int32_t, float>, CharData> charDatas;
 
-		const CharData& loadCharData(int32_t c) const;
+		const CharData& loadCharData(int32_t c, float scale) const;
 
-		const CharData& getCharData(int32_t c) const;
+		const CharData& getCharData(int32_t c, float scale) const;
 
 	public:
 		Font();
@@ -61,7 +61,7 @@ namespace bbe
 		uint32_t getFontSize()              const;
 		int32_t  getPixelsFromLineToLine()  const;
 
-		const bbe::Image& getImage(int32_t c) const;
+		const bbe::Image& getImage(int32_t c, float scale) const;
 		int32_t getLeftSideBearing(int32_t c) const;
 		int32_t getAdvanceWidth(int32_t c) const;
 		int32_t getVerticalOffset(int32_t c) const;
@@ -72,8 +72,6 @@ namespace bbe
 		int32_t getFixedWidth() const;
 
 		void destroy();
-
-		uint32_t getSharpnessFactor() const;
 
 		bbe::List<Vector2> getRenderPositions(const Vector2& p, const char* text, float rotation = 0, bool verticalCorrection = true) const;
 		bbe::List<Vector2> getRenderPositions(const Vector2& p, const bbe::String &text, float rotation = 0, bool verticalCorrection = true) const;

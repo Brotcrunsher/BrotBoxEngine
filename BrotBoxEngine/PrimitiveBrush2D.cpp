@@ -510,7 +510,7 @@ void bbe::PrimitiveBrush2D::fillChar(float x, float y, int32_t c, const bbe::Fon
 void bbe::PrimitiveBrush2D::fillChar(const Vector2& p, int32_t c, const bbe::Font& font, float rotation)
 {
 	if (c == ' ' || c == '\n' || c == '\r' || c == '\t') return;
-	const bbe::Image& charImage = font.getImage(c);
+	const bbe::Image& charImage = font.getImage(c, m_windowXScale);
 	drawImage(p, font.getDimensions(c), charImage, rotation);
 }
 
@@ -579,7 +579,7 @@ void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, const b
 		else
 		{
 			currentPosition.x += font.getLeftSideBearing(*text);
-			const bbe::Image& charImage = font.getImage(*text);
+			const bbe::Image& charImage = font.getImage(*text, m_windowXScale);
 			fillChar((bbe::Vector2(currentPosition.x, currentPosition.y + font.getVerticalOffset(*text)) + charImage.getDimensions() / 2).rotate(rotation, p) - charImage.getDimensions() / 2, *text, font, rotation);
 			currentPosition.x += font.getAdvanceWidth(*text);
 		}
