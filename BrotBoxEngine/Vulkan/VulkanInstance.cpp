@@ -10,10 +10,41 @@ bbe::INTERNAL::vulkan::VulkanInstance::VulkanInstance()
 
 void bbe::INTERNAL::vulkan::VulkanInstance::destroy()
 {
+#ifdef _DEBUG
+	{
+		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
+		if (func != nullptr)
+		{
+			func(m_instance, m_debugUtilsMessenger, nullptr);
+		}
+		else
+		{
+			debugBreak();
+		}
+	}
+#endif
+
 	if (m_instance != VK_NULL_HANDLE)
 	{
 		vkDestroyInstance(m_instance, nullptr);
 	}
+}
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL validationCallback(
+	VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+	VkDebugUtilsMessageTypeFlagsEXT messageType,
+	const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
+	void* userData)
+{
+	if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+	{
+		std::cout << callbackData->pMessage << std::endl << std::endl;
+		if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+		{
+			bbe::debugBreak();
+		}
+	}
+	return VK_FALSE;
 }
 
 void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t major, uint32_t minor, uint32_t patch)
@@ -35,13 +66,34 @@ void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t 
 	uint32_t amountOfGlfwExtensions = 0;
 	auto glfwExtensions = glfwGetRequiredInstanceExtensions(&amountOfGlfwExtensions);
 
+	bbe::List<const char*> extensions;
+	for (uint32_t i = 0; i < amountOfGlfwExtensions; i++)
+	{
+		extensions.add(glfwExtensions[i]);
+	}
+#ifdef _DEBUG
+	{
+		extensions.add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	}
+#endif
+#ifdef _DEBUG
+	VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerInfo{};
+	debugUtilsMessengerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	debugUtilsMessengerInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	debugUtilsMessengerInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+	debugUtilsMessengerInfo.pfnUserCallback = validationCallback;
+#endif
+
 	VkInstanceCreateInfo instanceInfo = {};
 	instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	instanceInfo.pApplicationInfo = &appInfo;
 	instanceInfo.enabledLayerCount = (uint32_t)validationLayers.getLength();
 	instanceInfo.ppEnabledLayerNames = validationLayers.getRaw();;
-	instanceInfo.enabledExtensionCount = amountOfGlfwExtensions;
-	instanceInfo.ppEnabledExtensionNames = glfwExtensions;
+	instanceInfo.enabledExtensionCount = extensions.getLength();
+	instanceInfo.ppEnabledExtensionNames = extensions.getRaw();
+#ifdef _DEBUG
+	instanceInfo.pNext = &debugUtilsMessengerInfo;
+#endif
 
 	VkResult result = vkCreateInstance(&instanceInfo, nullptr, &m_instance);
 
@@ -70,6 +122,21 @@ void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t 
 		bbe::INTERNAL::triggerFatalError("Your driver does not support vulkan.");
 	}
 	ASSERT_VULKAN(result);
+
+#ifdef _DEBUG
+	{
+		auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugUtilsMessengerEXT");
+		if (func != nullptr)
+		{
+			result = func(m_instance, &debugUtilsMessengerInfo, nullptr, &m_debugUtilsMessenger);
+			ASSERT_VULKAN(result);
+		}
+		else
+		{
+			debugBreak();
+		}
+	}
+#endif
 }
 
 VkInstance bbe::INTERNAL::vulkan::VulkanInstance::getInstance() const

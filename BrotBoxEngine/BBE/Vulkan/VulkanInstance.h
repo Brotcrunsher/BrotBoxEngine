@@ -12,6 +12,9 @@ namespace bbe
 			{
 			private:
 				VkInstance m_instance = VK_NULL_HANDLE;
+#ifdef _DEBUG
+				VkDebugUtilsMessengerEXT m_debugUtilsMessenger = VK_NULL_HANDLE;
+#endif
 
 			public:
 				VulkanInstance();
