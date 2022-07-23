@@ -56,6 +56,13 @@ namespace bbe
 		}
 
 	public:
+		DynamicArray() :
+			m_pdata(nullptr),
+			m_length(0)
+		{
+
+		}
+
 		DynamicArray(std::size_t size, Allocator* parentAllocator = nullptr)
 			: m_length(size)
 		{
