@@ -32,7 +32,7 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	m_pVulkanData = new VulkanData();
 
 	m_pVulkanData->m_device = device.getDevice();
-	int amountOfMips = Math::log2Floor(Math::min(getWidth(), getHeight()));
+	const int amountOfMips = Math::max(1, Math::log2Floor(Math::min(getWidth(), getHeight())));
 	m_pVulkanData->m_imageLayout = std::make_unique<VkImageLayout[]>(amountOfMips); //TODO use allocator
 	for (int i = 0; i < amountOfMips; i++)
 	{
