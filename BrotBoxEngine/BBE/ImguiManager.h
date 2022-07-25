@@ -28,6 +28,9 @@ namespace bbe
 				bool m_initSuccessful = false;
 				GLFWwindow* m_window = nullptr;
 
+				ImFont* fontSmall = nullptr;
+				ImFont* fontBig = nullptr;
+
 			public:
 				ImguiManager();
 

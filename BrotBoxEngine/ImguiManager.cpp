@@ -29,15 +29,22 @@ void bbe::INTERNAL::vulkan::ImguiManager::destroy()
 
 void bbe::INTERNAL::vulkan::ImguiManager::startFrame()
 {
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    // TODO: This is not the best approach! Dear ImGUI recommends not using FontGlobalScale but to recreate the font.
+    // TODO: Still not ideal - what if the scale is anything else than 1 or 2 (e.g. on 8k)
     float scale = 0;
     glfwGetWindowContentScale(m_window, &scale, nullptr);
     ImGuiIO& io = ImGui::GetIO();
-    io.FontGlobalScale = scale;
+    if (scale < 1.5f)
+    {
+        io.FontDefault = fontSmall;
+    }
+    else
+    {
+        io.FontDefault = fontBig;
+    }
+
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 }
 
 void bbe::INTERNAL::vulkan::ImguiManager::endFrame(VkCommandBuffer commandBuffer)
@@ -78,6 +85,12 @@ void bbe::INTERNAL::vulkan::ImguiManager::start(const VulkanInstance& instance, 
     {
         throw IllegalStateException();
     }
+
+    ImGuiIO& io = ImGui::GetIO();
+    ImFontConfig fontConfig;
+    fontSmall = io.Fonts->AddFontDefault(&fontConfig);
+    fontConfig.SizePixels = 26;
+    fontBig   = io.Fonts->AddFontDefault(&fontConfig);
 
     VkCommandBuffer commandBuffer = INTERNAL::vulkan::startSingleTimeCommandBuffer(device.getDevice(), commandPool.getCommandPool());
     ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
