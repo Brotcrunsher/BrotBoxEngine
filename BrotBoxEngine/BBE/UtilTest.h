@@ -24,12 +24,7 @@ namespace bbe {
 			static int     s_nextPersonIndex;
 			static int64_t s_amountOfPersons;
 			static int64_t s_amountOfDefaulConstructorCalls;
-			static int64_t s_amountOfCopyConstructorCalls;
-			static int64_t s_amountOfMoveConstructorCalls;
-			static int64_t s_amountOfCopyAssignmentCalls;
-			static int64_t s_amountOfMoveAssignmentCalls;
 			static int64_t s_amountOfParameterConstructorCalls;
-			static int64_t s_amountOfDestructorCalls;
 			bbe::String name;
 			bbe::String address;
 			int age;
@@ -39,12 +34,7 @@ namespace bbe {
 			static inline void resetTestStatistics() {
 				s_amountOfPersons = 0;
 				s_amountOfDefaulConstructorCalls = 0;
-				s_amountOfCopyConstructorCalls = 0;
-				s_amountOfMoveConstructorCalls = 0;
-				s_amountOfCopyAssignmentCalls = 0;
-				s_amountOfMoveAssignmentCalls = 0;
 				s_amountOfParameterConstructorCalls = 0;
-				s_amountOfDestructorCalls = 0;
 			}
 
 			inline Person()
@@ -59,14 +49,12 @@ namespace bbe {
 				: name(other.name), address(other.address), age(other.age)
 			{
 				Person::s_amountOfPersons++;
-				Person::s_amountOfCopyConstructorCalls++;
 			}
 
 			inline Person(Person&& other)
 				: name(other.name), address(other.address), age(other.age)
 			{
 				Person::s_amountOfPersons++;
-				Person::s_amountOfMoveConstructorCalls++;
 			}
 
 			inline Person& operator=(const Person& other) {
@@ -77,7 +65,6 @@ namespace bbe {
 				name = other.name;
 				address = other.address;
 				age = other.age;
-				Person::s_amountOfCopyAssignmentCalls++;
 				return *this;
 			}
 
@@ -90,7 +77,6 @@ namespace bbe {
 				name = std::move(other.name);
 				address = std::move(other.address);
 				age = other.age;
-				Person::s_amountOfMoveAssignmentCalls++;
 				return *this;
 			}
 
@@ -117,7 +103,6 @@ namespace bbe {
 				}
 				destructed = true;
 				s_amountOfPersons--;
-				Person::s_amountOfDestructorCalls++;
 			}
 
 			void inline print() {
@@ -168,12 +153,7 @@ namespace bbe {
 		int     inline Person::s_nextPersonIndex = 0;
 		int64_t inline Person::s_amountOfPersons = 0;
 		int64_t inline Person::s_amountOfDefaulConstructorCalls = 0;
-		int64_t inline Person::s_amountOfCopyConstructorCalls = 0;
-		int64_t inline Person::s_amountOfMoveConstructorCalls = 0;
-		int64_t inline Person::s_amountOfCopyAssignmentCalls = 0;
-		int64_t inline Person::s_amountOfMoveAssignmentCalls = 0;
 		int64_t inline Person::s_amountOfParameterConstructorCalls = 0;
-		int64_t inline Person::s_amountOfDestructorCalls = 0;
 
 		template <typename T, typename U>
 		void assertEqualsImpl(const char* file, int32_t line, const T &a, const U &b) {
