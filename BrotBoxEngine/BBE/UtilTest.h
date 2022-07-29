@@ -165,76 +165,83 @@ namespace bbe {
 		int64_t inline Person::s_amountOfDestructorCalls = 0;
 
 		template <typename T, typename U>
-		void assertEquals(const T &a, const U &b) {
+		void assertEqualsImpl(const char* file, int32_t line, const T &a, const U &b) {
 			if (a == b) {
 				//Do nothing, test passed
 			}
 			else {
-				debugBreak();
+				debugBreakImpl(file, line);
 			}
 		}
+#define assertEquals(a, b) assertEqualsImpl(__FILE__, __LINE__, (a), (b))
 
 		template <typename T, typename U>
-		void assertEqualsFloat(T a, U b, T epsilon = 0.01f) {
+		void assertEqualsFloatImpl(const char* file, int32_t line, T a, U b, T epsilon = 0.01f) {
 			T diff = a - b;
 
 			if (diff > -epsilon && diff < epsilon) {
 				//Do nothing, test passed
 			}
 			else {
-				debugBreak();
+				debugBreakImpl(file, line);
 			}
 		}
+#define assertEqualsFloat(a, b) assertEqualsFloatImpl(__FILE__, __LINE__, (a), (b))
 
 		template <typename T, typename U>
-		void assertUnequals(T a, U b) {
+		void assertUnequalsImpl(const char* file, int32_t line, T a, U b) {
 			if (a != b) {
 				//Do nothing, test passed
 			}
 			else {
-				debugBreak();
+				debugBreakImpl(file, line);
 			}
 		}
+#define assertUnequals(a, b) assertUnequalsImpl(__FILE__, __LINE__, (a), (b))
 
 		template <typename T, typename U>
-		void assertGreaterThan(T a, U b) {
+		void assertGreaterThanImpl(const char* file, int32_t line, T a, U b) {
 			if (a > b) {
 				//Do nothing, test passed
 			}
 			else {
-				debugBreak();
+				debugBreakImpl(file, line);
 			}
 		}
+#define assertGreaterThan(a, b) assertGreaterThanImpl(__FILE__, __LINE__, (a), (b))
 
 		template <typename T, typename U>
-		void assertGreaterEquals(T a, U b) {
+		void assertGreaterEqualsImpl(const char* file, int32_t line, T a, U b) {
 			if (a >= b) {
 				//Do nothing, test passed
 			}
 			else {
-				debugBreak();
+				debugBreakImpl(file, line);
 			}
 		}
+#define assertGreaterEquals(a, b) assertGreaterEqualsImpl(__FILE__, __LINE__, (a), (b))
 
 		template <typename T, typename U>
-		void assertLessThan(T a, U b) {
+		void assertLessThanImpl(const char* file, int32_t line, T a, U b) {
 			if (a < b) {
 				//Do nothing, test passed
 			}
 			else {
-				debugBreak();
+				debugBreakImpl(file, line);
 			}
 		}
+#define assertLessThan(a, b) assertLessThanImpl(__FILE__, __LINE__, (a), (b))
 
 		template <typename T, typename U>
-		void assertLessEquals(T a, U b) {
+		void assertLessEqualsImpl(const char* file, int32_t line, T a, U b) {
 			if (a <= b) {
 				//Do nothing, test passed
 			}
 			else {
-				debugBreak();
+				debugBreakImpl(file, line);
 			}
 		}
+#define assertLessEquals(a, b) assertLessEqualsImpl(__FILE__, __LINE__, (a), (b))
 	}
 
 	template<>

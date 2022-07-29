@@ -6,9 +6,9 @@
 	#include <unistd.h>
 #endif
 
-void bbe::debugBreak()
+void bbe::debugBreakImpl(const char* file, int32_t line)
 {
-	std::cout << "debugBreak() was triggered!" << std::endl;
+	std::cout << "debugBreak() was triggered! " << file << "(" << line << ")" << std::endl;
 	#if defined(_MSC_VER) && defined(_WIN32)
 		__debugbreak();
 	#elif defined(__linux__)
