@@ -91,8 +91,19 @@ TEST(List, ConstructorInitializer)
 	ASSERT_EQ(list[4], 15);
 }
 
+namespace bbe
+{
+	void aaa(const bbe::test::Person& a) {
+		std::cout << a;
+	}
+}
+
 TEST(List, OperatorAssignment)
 {
+	bbe::test::Person a;
+	bbe::aaa(a);
+	//bbe::test::assertEqualsImpl(__FILE__, __LINE__, a, b);
+
 	bbe::List<SomeClass<int>> list1(17, 100);
 	bbe::List<SomeClass<int>> list2(32, 1000);
 

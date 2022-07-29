@@ -23,11 +23,11 @@ namespace bbe {
 			pArr[3].name = "Aha?";
 			pArr[4].name = "Okay";
 
-			pArr[0].adress = "AStr";
-			pArr[1].adress = "BStr";
-			pArr[2].adress = "CStr";
-			pArr[3].adress = "DStr";
-			pArr[4].adress = "EStr";
+			pArr[0].address = "AStr";
+			pArr[1].address = "BStr";
+			pArr[2].address = "CStr";
+			pArr[3].address = "DStr";
+			pArr[4].address = "EStr";
 
 			pArr[0].age = 1;
 			pArr[1].age = 2;
@@ -41,11 +41,11 @@ namespace bbe {
 			assertEquals(pArr[3].name, "Aha?");
 			assertEquals(pArr[4].name, "Okay");
 
-			assertEquals(pArr[0].adress, "AStr");
-			assertEquals(pArr[1].adress, "BStr");
-			assertEquals(pArr[2].adress, "CStr");
-			assertEquals(pArr[3].adress, "DStr");
-			assertEquals(pArr[4].adress, "EStr");
+			assertEquals(pArr[0].address, "AStr");
+			assertEquals(pArr[1].address, "BStr");
+			assertEquals(pArr[2].address, "CStr");
+			assertEquals(pArr[3].address, "DStr");
+			assertEquals(pArr[4].address, "EStr");
 
 			assertEquals(pArr[0].age, 1);
 			assertEquals(pArr[1].age, 2);
@@ -63,11 +63,11 @@ namespace bbe {
 			Person* pOut4 = sa.allocateObject<Person>();
 			Person* pOut5 = sa.allocateObject<Person>();
 
-			pOut1->name="Outer1"; pOut1->adress="Addr1"; pOut1->age=1;
-			pOut2->name="Outer2"; pOut2->adress="Addr2"; pOut2->age=2;
-			pOut3->name="Outer3"; pOut3->adress="Addr3"; pOut3->age=3;
-			pOut4->name="Outer4"; pOut4->adress="Addr4"; pOut4->age=4;
-			pOut5->name="Outer5"; pOut5->adress="Addr5"; pOut5->age=5;
+			pOut1->name="Outer1"; pOut1->address="Addr1"; pOut1->age=1;
+			pOut2->name="Outer2"; pOut2->address="Addr2"; pOut2->age=2;
+			pOut3->name="Outer3"; pOut3->address="Addr3"; pOut3->age=3;
+			pOut4->name="Outer4"; pOut4->address="Addr4"; pOut4->age=4;
+			pOut5->name="Outer5"; pOut5->address="Addr5"; pOut5->age=5;
 
 			for (int i = 0; i < 512; i++) {
 				auto marker = sa.getMarker();
@@ -91,11 +91,11 @@ namespace bbe {
 				person4->name = "Aha?";
 				person5->name = "Okay";
 
-				person1->adress = "AStr";
-				person2->adress = "BStr";
-				person3->adress = "CStr";
-				person4->adress = "DStr";
-				person5->adress = "EStr";
+				person1->address = "AStr";
+				person2->address = "BStr";
+				person3->address = "CStr";
+				person4->address = "DStr";
+				person5->address = "EStr";
 
 				person1->age = 1;
 				person2->age = 2;
@@ -109,11 +109,11 @@ namespace bbe {
 				assertEquals(person4->name, "Aha?");
 				assertEquals(person5->name, "Okay");
 
-				assertEquals(person1->adress, "AStr");
-				assertEquals(person2->adress, "BStr");
-				assertEquals(person3->adress, "CStr");
-				assertEquals(person4->adress, "DStr");
-				assertEquals(person5->adress, "EStr");
+				assertEquals(person1->address, "AStr");
+				assertEquals(person2->address, "BStr");
+				assertEquals(person3->address, "CStr");
+				assertEquals(person4->address, "DStr");
+				assertEquals(person5->address, "EStr");
 
 				assertEquals(person1->age, 1);
 				assertEquals(person2->age, 2);
@@ -124,11 +124,11 @@ namespace bbe {
 				sa.deallocateToMarker(marker);
 			}
 
-			assertEquals(pOut1->name, "Outer1"); assertEquals(pOut1->adress, "Addr1"); assertEquals(pOut1->age, 1);
-			assertEquals(pOut2->name, "Outer2"); assertEquals(pOut2->adress, "Addr2"); assertEquals(pOut2->age, 2);
-			assertEquals(pOut3->name, "Outer3"); assertEquals(pOut3->adress, "Addr3"); assertEquals(pOut3->age, 3);
-			assertEquals(pOut4->name, "Outer4"); assertEquals(pOut4->adress, "Addr4"); assertEquals(pOut4->age, 4);
-			assertEquals(pOut5->name, "Outer5"); assertEquals(pOut5->adress, "Addr5"); assertEquals(pOut5->age, 5);
+			assertEquals(pOut1->name, "Outer1"); assertEquals(pOut1->address, "Addr1"); assertEquals(pOut1->age, 1);
+			assertEquals(pOut2->name, "Outer2"); assertEquals(pOut2->address, "Addr2"); assertEquals(pOut2->age, 2);
+			assertEquals(pOut3->name, "Outer3"); assertEquals(pOut3->address, "Addr3"); assertEquals(pOut3->age, 3);
+			assertEquals(pOut4->name, "Outer4"); assertEquals(pOut4->address, "Addr4"); assertEquals(pOut4->age, 4);
+			assertEquals(pOut5->name, "Outer5"); assertEquals(pOut5->address, "Addr5"); assertEquals(pOut5->age, 5);
 
 			
 

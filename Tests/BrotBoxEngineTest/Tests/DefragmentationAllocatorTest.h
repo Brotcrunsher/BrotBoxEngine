@@ -118,116 +118,116 @@ namespace bbe {
 				DefragmentationAllocator da;
 				auto p1 = da.allocateObject<Person>("AName", "AStr", 18);
 				assertEquals(p1->name, "AName");
-				assertEquals(p1->adress, "AStr");
+				assertEquals(p1->address, "AStr");
 				assertEquals(p1->age, 18);
 
 				assertEquals(da.needsDefragmentation(), false);
 				assertEquals(p1->name, "AName");
-				assertEquals(p1->adress, "AStr");
+				assertEquals(p1->address, "AStr");
 				assertEquals(p1->age, 18);
 
 				assertEquals(da.defragment(), false);
 				assertEquals(p1->name, "AName");
-				assertEquals(p1->adress, "AStr");
+				assertEquals(p1->address, "AStr");
 				assertEquals(p1->age, 18);
 
 				auto p2 = da.allocateObject<Person>("BName", "BStr", 29);
 				assertEquals(p1->name, "AName");
-				assertEquals(p1->adress, "AStr");
+				assertEquals(p1->address, "AStr");
 				assertEquals(p1->age, 18);
 				assertEquals(p2->name, "BName");
-				assertEquals(p2->adress, "BStr");
+				assertEquals(p2->address, "BStr");
 				assertEquals(p2->age, 29);
 
 				assertEquals(da.needsDefragmentation(), false);
 				assertEquals(p1->name, "AName");
-				assertEquals(p1->adress, "AStr");
+				assertEquals(p1->address, "AStr");
 				assertEquals(p1->age, 18);
 				assertEquals(p2->name, "BName");
-				assertEquals(p2->adress, "BStr");
+				assertEquals(p2->address, "BStr");
 				assertEquals(p2->age, 29);
 
 				assertEquals(da.defragment(), false);
 				assertEquals(p1->name, "AName");
-				assertEquals(p1->adress, "AStr");
+				assertEquals(p1->address, "AStr");
 				assertEquals(p1->age, 18);
 				assertEquals(p2->name, "BName");
-				assertEquals(p2->adress, "BStr");
+				assertEquals(p2->address, "BStr");
 				assertEquals(p2->age, 29);
 
 				auto p3 = da.allocateObject<Person>("CName", "CStr", 89);
 				void* orgAddrP3 = p3.getRaw();
 				assertEquals(p1->name, "AName");
-				assertEquals(p1->adress, "AStr");
+				assertEquals(p1->address, "AStr");
 				assertEquals(p1->age, 18);
 				assertEquals(p2->name, "BName");
-				assertEquals(p2->adress, "BStr");
+				assertEquals(p2->address, "BStr");
 				assertEquals(p2->age, 29);
 				assertEquals(p3->name, "CName");
-				assertEquals(p3->adress, "CStr");
+				assertEquals(p3->address, "CStr");
 				assertEquals(p3->age, 89);
 				assertUnequals(orgAddrP3, nullptr);
 
 				assertEquals(da.needsDefragmentation(), false);
 				assertEquals(p1->name, "AName");
-				assertEquals(p1->adress, "AStr");
+				assertEquals(p1->address, "AStr");
 				assertEquals(p1->age, 18);
 				assertEquals(p2->name, "BName");
-				assertEquals(p2->adress, "BStr");
+				assertEquals(p2->address, "BStr");
 				assertEquals(p2->age, 29);
 				assertEquals(p3->name, "CName");
-				assertEquals(p3->adress, "CStr");
+				assertEquals(p3->address, "CStr");
 				assertEquals(p3->age, 89);
 
 				assertEquals(da.defragment(), false);
 				assertEquals(p1->name, "AName");
-				assertEquals(p1->adress, "AStr");
+				assertEquals(p1->address, "AStr");
 				assertEquals(p1->age, 18);
 				assertEquals(p2->name, "BName");
-				assertEquals(p2->adress, "BStr");
+				assertEquals(p2->address, "BStr");
 				assertEquals(p2->age, 29);
 				assertEquals(p3->name, "CName");
-				assertEquals(p3->adress, "CStr");
+				assertEquals(p3->address, "CStr");
 				assertEquals(p3->age, 89);
 
 				da.deallocate(p2);
 				assertEquals(p1->name, "AName");
-				assertEquals(p1->adress, "AStr");
+				assertEquals(p1->address, "AStr");
 				assertEquals(p1->age, 18);
 				assertEquals(p3->name, "CName");
-				assertEquals(p3->adress, "CStr");
+				assertEquals(p3->address, "CStr");
 				assertEquals(p3->age, 89);
 
 				assertEquals(da.needsDefragmentation(), true);
 				assertEquals(p1->name, "AName");
-				assertEquals(p1->adress, "AStr");
+				assertEquals(p1->address, "AStr");
 				assertEquals(p1->age, 18);
 				assertEquals(p3->name, "CName");
-				assertEquals(p3->adress, "CStr");
+				assertEquals(p3->address, "CStr");
 				assertEquals(p3->age, 89);
 
 				assertEquals(da.defragment(), true);
 				assertEquals(p1->name, "AName");
-				assertEquals(p1->adress, "AStr");
+				assertEquals(p1->address, "AStr");
 				assertEquals(p1->age, 18);
 				assertEquals(p3->name, "CName");
-				assertEquals(p3->adress, "CStr");
+				assertEquals(p3->address, "CStr");
 				assertEquals(p3->age, 89);
 				assertUnequals(p3.getRaw(), orgAddrP3);
 
 				da.deallocate(p1);
 				assertEquals(p3->name, "CName");
-				assertEquals(p3->adress, "CStr");
+				assertEquals(p3->address, "CStr");
 				assertEquals(p3->age, 89);
 
 				assertEquals(da.needsDefragmentation(), true);
 				assertEquals(p3->name, "CName");
-				assertEquals(p3->adress, "CStr");
+				assertEquals(p3->address, "CStr");
 				assertEquals(p3->age, 89);
 
 				assertEquals(da.defragment(), true);
 				assertEquals(p3->name, "CName");
-				assertEquals(p3->adress, "CStr");
+				assertEquals(p3->address, "CStr");
 				assertEquals(p3->age, 89);
 
 				da.deallocate(p3);

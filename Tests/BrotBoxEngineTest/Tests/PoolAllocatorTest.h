@@ -30,11 +30,11 @@ namespace bbe {
 			person4->name = "Aha?";
 			person5->name = "Okay";
 
-			person1->adress = "AStr";
-			person2->adress = "BStr";
-			person3->adress = "CStr";
-			person4->adress = "DStr";
-			person5->adress = "EStr";
+			person1->address = "AStr";
+			person2->address = "BStr";
+			person3->address = "CStr";
+			person4->address = "DStr";
+			person5->address = "EStr";
 
 			person1->age = 1;
 			person2->age = 2;
@@ -48,11 +48,11 @@ namespace bbe {
 			assertEquals(person4->name, "Aha?");
 			assertEquals(person5->name, "Okay");
 
-			assertEquals(person1->adress, "AStr");
-			assertEquals(person2->adress, "BStr");
-			assertEquals(person3->adress, "CStr");
-			assertEquals(person4->adress, "DStr");
-			assertEquals(person5->adress, "EStr");
+			assertEquals(person1->address, "AStr");
+			assertEquals(person2->address, "BStr");
+			assertEquals(person3->address, "CStr");
+			assertEquals(person4->address, "DStr");
+			assertEquals(person5->address, "EStr");
 
 			assertEquals(person1->age, 1);
 			assertEquals(person2->age, 2);
@@ -78,11 +78,11 @@ namespace bbe {
 			person4->name = "Aha?";
 			person5->name = "Okay";
 
-			person1->adress = "AStr";
-			person2->adress = "BStr";
-			person3->adress = "CStr";
-			person4->adress = "DStr";
-			person5->adress = "EStr";
+			person1->address = "AStr";
+			person2->address = "BStr";
+			person3->address = "CStr";
+			person4->address = "DStr";
+			person5->address = "EStr";
 
 			person1->age = 1;
 			person2->age = 2;
@@ -96,11 +96,11 @@ namespace bbe {
 			assertEquals(person4->name, "Aha?");
 			assertEquals(person5->name, "Okay");
 
-			assertEquals(person1->adress, "AStr");
-			assertEquals(person2->adress, "BStr");
-			assertEquals(person3->adress, "CStr");
-			assertEquals(person4->adress, "DStr");
-			assertEquals(person5->adress, "EStr");
+			assertEquals(person1->address, "AStr");
+			assertEquals(person2->address, "BStr");
+			assertEquals(person3->address, "CStr");
+			assertEquals(person4->address, "DStr");
+			assertEquals(person5->address, "EStr");
 
 			assertEquals(person1->age, 1);
 			assertEquals(person2->age, 2);
@@ -126,11 +126,11 @@ namespace bbe {
 			assertEquals(person4->name, "Aha?");
 			assertEquals(person5->name, "Okay");
 
-			assertEquals(person1->adress, "AStr");
-			assertEquals(person2->adress, "BStr");
-			assertEquals(person3->adress, "CStr");
-			assertEquals(person4->adress, "DStr");
-			assertEquals(person5->adress, "EStr");
+			assertEquals(person1->address, "AStr");
+			assertEquals(person2->address, "BStr");
+			assertEquals(person3->address, "CStr");
+			assertEquals(person4->address, "DStr");
+			assertEquals(person5->address, "EStr");
 
 			assertEquals(person1->age, 1);
 			assertEquals(person2->age, 2);

@@ -5,6 +5,14 @@
 #include "../BBE/Hash.h"
 #include <iostream>
 
+namespace bbe
+{
+	namespace test
+	{
+		class Person;
+	}
+}
+
 namespace bbe {
 	namespace test {
 
@@ -23,7 +31,7 @@ namespace bbe {
 			static int64_t s_amountOfParameterConstructorCalls;
 			static int64_t s_amountOfDestructorCalls;
 			bbe::String name;
-			bbe::String adress;
+			bbe::String address;
 			int age;
 			bool destructed = false;
 			int personIndex = s_nextPersonIndex++;
@@ -48,14 +56,14 @@ namespace bbe {
 			}
 
 			inline Person(const Person& other)
-				: name(other.name), adress(other.adress), age(other.age)
+				: name(other.name), address(other.address), age(other.age)
 			{
 				Person::s_amountOfPersons++;
 				Person::s_amountOfCopyConstructorCalls++;
 			}
 
 			inline Person(Person&& other)
-				: name(other.name), adress(other.adress), age(other.age)
+				: name(other.name), address(other.address), age(other.age)
 			{
 				Person::s_amountOfPersons++;
 				Person::s_amountOfMoveConstructorCalls++;
@@ -67,7 +75,7 @@ namespace bbe {
 					debugBreak(); //Destructed Object got equal to other object
 				}
 				name = other.name;
-				adress = other.adress;
+				address = other.address;
 				age = other.age;
 				Person::s_amountOfCopyAssignmentCalls++;
 				return *this;
@@ -80,14 +88,14 @@ namespace bbe {
 				}
 
 				name = std::move(other.name);
-				adress = std::move(other.adress);
+				address = std::move(other.address);
 				age = other.age;
 				Person::s_amountOfMoveAssignmentCalls++;
 				return *this;
 			}
 
-			explicit inline Person(const bbe::String &name, const bbe::String &adress, int age)
-				: name(name), adress(adress), age(age) 
+			explicit inline Person(const bbe::String &name, const bbe::String &address, int age)
+				: name(name), address(address), age(age)
 			{
 				//std::cout << "Constructor with parameters called!" << std::endl;
 				s_amountOfPersons++;
@@ -95,7 +103,7 @@ namespace bbe {
 			}
 
 			explicit inline Person(ForceException fe)
-				:name("Will throw Name"), adress("Will throw street"), age(-1)
+				:name("Will throw Name"), address("Will throw street"), age(-1)
 			{
 				s_amountOfPersons++;
 				s_amountOfPersons--;
@@ -113,16 +121,16 @@ namespace bbe {
 			}
 
 			void inline print() {
-				std::cout << "name: " << name << " adress: " << adress << " age: " << age << std::endl;
+				std::cout << "name: " << name << " address: " << address << " age: " << age << std::endl;
 			}
 
 			bool inline operator==(const Person& other) const {
 				//std::cout << "Comparing---" << std::endl;
-				//std::wcout << this->name   << " " << other.name   << (this->name   == other.name)   << std::endl;
-				//std::wcout << this->adress << " " << other.adress << (this->adress == other.adress) << std::endl;
-				//std::wcout << this->age    << " " << other.age    << (this->age    == other.age)    << std::endl;
+				//std::wcout << this->name    << " " << other.name    << (this->name    == other.name)    << std::endl;
+				//std::wcout << this->address << " " << other.address << (this->address == other.address) << std::endl;
+				//std::wcout << this->age     << " " << other.age     << (this->age     == other.age)     << std::endl;
 				bool same = name == other.name
-					&& adress == other.adress
+					&& address == other.address
 					&& age == other.age;
 				//std::cout << "Comparison: " << same << std::endl;
 				return same;
@@ -154,6 +162,9 @@ namespace bbe {
 				}
 			}
 		};
+
+		std::ostream& operator<<(std::ostream& ostrm, const bbe::test::Person& p);
+
 		int     inline Person::s_nextPersonIndex = 0;
 		int64_t inline Person::s_amountOfPersons = 0;
 		int64_t inline Person::s_amountOfDefaulConstructorCalls = 0;
@@ -170,10 +181,11 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
+				std::cout << "a=" << a << " b=" << b << std::endl;
 				debugBreakImpl(file, line);
 			}
 		}
-#define assertEquals(a, b) assertEqualsImpl(__FILE__, __LINE__, (a), (b))
+#define assertEquals(a, b) bbe::test::assertEqualsImpl(__FILE__, __LINE__, (a), (b))
 
 		template <typename T, typename U>
 		void assertEqualsFloatImpl(const char* file, int32_t line, T a, U b, T epsilon = 0.01f) {
@@ -183,10 +195,11 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
+				std::cout << "a=" << a << " b=" << b << std::endl;
 				debugBreakImpl(file, line);
 			}
 		}
-#define assertEqualsFloat(a, b) assertEqualsFloatImpl(__FILE__, __LINE__, (a), (b))
+#define assertEqualsFloat(a, b) bbe::test::assertEqualsFloatImpl(__FILE__, __LINE__, (a), (b))
 
 		template <typename T, typename U>
 		void assertUnequalsImpl(const char* file, int32_t line, T a, U b) {
@@ -194,10 +207,11 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
+				std::cout << "a=" << a << " b=" << b << std::endl;
 				debugBreakImpl(file, line);
 			}
 		}
-#define assertUnequals(a, b) assertUnequalsImpl(__FILE__, __LINE__, (a), (b))
+#define assertUnequals(a, b) bbe::test::assertUnequalsImpl(__FILE__, __LINE__, (a), (b))
 
 		template <typename T, typename U>
 		void assertGreaterThanImpl(const char* file, int32_t line, T a, U b) {
@@ -205,10 +219,11 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
+				std::cout << "a=" << a << " b=" << b << std::endl;
 				debugBreakImpl(file, line);
 			}
 		}
-#define assertGreaterThan(a, b) assertGreaterThanImpl(__FILE__, __LINE__, (a), (b))
+#define assertGreaterThan(a, b) bbe::test::assertGreaterThanImpl(__FILE__, __LINE__, (a), (b))
 
 		template <typename T, typename U>
 		void assertGreaterEqualsImpl(const char* file, int32_t line, T a, U b) {
@@ -216,10 +231,11 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
+				std::cout << "a=" << a << " b=" << b << std::endl;
 				debugBreakImpl(file, line);
 			}
 		}
-#define assertGreaterEquals(a, b) assertGreaterEqualsImpl(__FILE__, __LINE__, (a), (b))
+#define assertGreaterEquals(a, b) bbe::test::assertGreaterEqualsImpl(__FILE__, __LINE__, (a), (b))
 
 		template <typename T, typename U>
 		void assertLessThanImpl(const char* file, int32_t line, T a, U b) {
@@ -227,10 +243,11 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
+				std::cout << "a=" << a << " b=" << b << std::endl;
 				debugBreakImpl(file, line);
 			}
 		}
-#define assertLessThan(a, b) assertLessThanImpl(__FILE__, __LINE__, (a), (b))
+#define assertLessThan(a, b) bbe::test::assertLessThanImpl(__FILE__, __LINE__, (a), (b))
 
 		template <typename T, typename U>
 		void assertLessEqualsImpl(const char* file, int32_t line, T a, U b) {
@@ -238,17 +255,18 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
+				std::cout << "a=" << a << " b=" << b << std::endl;
 				debugBreakImpl(file, line);
 			}
 		}
-#define assertLessEquals(a, b) assertLessEqualsImpl(__FILE__, __LINE__, (a), (b))
+#define assertLessEquals(a, b) bbe::test::assertLessEqualsImpl(__FILE__, __LINE__, (a), (b))
 	}
 
 	template<>
 	uint32_t inline hash(const test::Person &person)
 	{
 		uint32_t hashValue = hash(person.age);
-		hashValue += hash(person.adress);
+		hashValue += hash(person.address);
 		hashValue += hash(person.name);
 
 		return hashValue;

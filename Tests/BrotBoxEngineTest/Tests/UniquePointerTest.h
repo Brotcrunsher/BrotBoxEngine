@@ -12,15 +12,15 @@ namespace bbe {
 
 			{
 				UniquePointer<Person> up(new Person("My Name", "My Address", -182));
-				assertEquals(up->adress, "My Address");
+				assertEquals(up->address, "My Address");
 				assertEquals(up->name, "My Name");
 				assertEquals(up->age, -182);
 
-				up->adress = "New Address";
+				up->address = "New Address";
 				up->name = "New Name";
 				up->age = 2910;
 
-				assertEquals(up->adress, "New Address");
+				assertEquals(up->address, "New Address");
 				assertEquals(up->name, "New Name");
 				assertEquals(up->age, 2910);
 
@@ -28,7 +28,7 @@ namespace bbe {
 
 				UniquePointer<Person> up2(std::move(up));
 				assertEquals(up.getRaw(), nullptr);
-				assertEquals(up2->adress, "New Address");
+				assertEquals(up2->address, "New Address");
 				assertEquals(up2->name, "New Name");
 				assertEquals(up2->age, 2910);
 			}
@@ -43,11 +43,11 @@ namespace bbe {
 					auto p2 = personenAllocator.allocateObjectUniquePointer("Name 2", "Addr 2", 2);
 
 					assertEquals(p1->name, "Name 1");
-					assertEquals(p1->adress, "Addr 1");
+					assertEquals(p1->address, "Addr 1");
 					assertEquals(p1->age, 1);
 
 					assertEquals(p2->name, "Name 2");
-					assertEquals(p2->adress, "Addr 2");
+					assertEquals(p2->address, "Addr 2");
 					assertEquals(p2->age, 2);
 				}
 
@@ -63,11 +63,11 @@ namespace bbe {
 					auto p2 = gpa.allocateObjectsUniquePointer<Person>(1, "Name 4", "Addr 4", 4);
 
 					assertEquals(p1->name, "Name 3");
-					assertEquals(p1->adress, "Addr 3");
+					assertEquals(p1->address, "Addr 3");
 					assertEquals(p1->age, 3);
 
 					assertEquals(p2->name, "Name 4");
-					assertEquals(p2->adress, "Addr 4");
+					assertEquals(p2->address, "Addr 4");
 					assertEquals(p2->age, 4);
 				}
 				Person::checkIfAllPersonsWereDestroyed();
@@ -82,11 +82,11 @@ namespace bbe {
 					auto p2 = gpa.allocateObjectUniquePointer<Person>("Name 6", "Addr 6", 6);
 
 					assertEquals(p1->name, "Name 5");
-					assertEquals(p1->adress, "Addr 5");
+					assertEquals(p1->address, "Addr 5");
 					assertEquals(p1->age, 5);
 
 					assertEquals(p2->name, "Name 6");
-					assertEquals(p2->adress, "Addr 6");
+					assertEquals(p2->address, "Addr 6");
 					assertEquals(p2->age, 6);
 				}
 				Person::checkIfAllPersonsWereDestroyed();
