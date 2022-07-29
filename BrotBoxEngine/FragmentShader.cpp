@@ -46,6 +46,8 @@ void bbe::FragmentShader::load(const char* path)
 	m_pipeline.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 64, 64);
 	m_pipeline.create(bbe::INTERNAL::vulkan::VulkanManager::s_pinstance->getVulkanDevice().getDevice(), bbe::INTERNAL::vulkan::VulkanManager::s_pinstance->getVulkanRenderPass().getRenderPass());
 
+	memset(pushConstants.getRaw(), 0, pushConstants.getLength());
+
 	isLoaded = true;
 }
 
@@ -58,13 +60,22 @@ bbe::INTERNAL::vulkan::VulkanPipeline& bbe::FragmentShader::INTERNAL_getPipeline
 	return m_pipeline;
 }
 
-void bbe::FragmentShader::setPushConstant(PrimitiveBrush2D& brush, uint32_t offset, uint32_t length, const void* data)
+const char* bbe::FragmentShader::getPushConstants() const
 {
-	if (offset < 80 || offset + length > 128)
+	if (!isLoaded)
+	{
+		throw NotInitializedException();
+	}
+	return pushConstants.getRaw();
+}
+
+void bbe::FragmentShader::setPushConstant(uint32_t offset, uint32_t length, const void* data)
+{
+	if (offset < PUSHCONST_START_ADDR || offset + length > PUSHCONST_START_ADDR + pushConstants.getLength())
 	{
 		//Only in the range of [80..128) the push constants are guaranteed to be present.
 		throw IllegalArgumentException();
 	}
-	vkCmdPushConstants(brush.INTERNAL_getCurrentCommandBuffer(), brush.INTERNAL_getLayoutPrimitive(), VK_SHADER_STAGE_FRAGMENT_BIT, offset, length, data);
+	memcpy(pushConstants.getRaw() + offset - PUSHCONST_START_ADDR, data, length);
 }
 #endif

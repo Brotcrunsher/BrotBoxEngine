@@ -95,6 +95,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotat
 	if (shader != nullptr)
 	{
 		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->INTERNAL_getPipeline().getPipeline(m_fillMode));
+		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 80, 48, shader->getPushConstants());
 	}
 	else if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
 	{
@@ -720,16 +721,6 @@ void bbe::PrimitiveBrush2D::setFillMode(FillMode fm)
 bbe::FillMode bbe::PrimitiveBrush2D::getFillMode()
 {
 	return m_fillMode;
-}
-
-VkCommandBuffer bbe::PrimitiveBrush2D::INTERNAL_getCurrentCommandBuffer()
-{
-	return m_currentCommandBuffer;
-}
-
-VkPipelineLayout bbe::PrimitiveBrush2D::INTERNAL_getLayoutPrimitive()
-{
-	return m_layoutPrimitive;
 }
 
 void bbe::PrimitiveBrush2D::fillVertexIndexList(const bbe::List<uint32_t>& indices, const bbe::List<bbe::Vector2>& vertices)

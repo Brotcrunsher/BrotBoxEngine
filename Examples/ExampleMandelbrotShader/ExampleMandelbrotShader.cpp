@@ -82,11 +82,11 @@ public:
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
-		mandelbrotShader.setPushConstant(brush,  80, 8, &middleX);
-		mandelbrotShader.setPushConstant(brush,  88, 8, &middleY);
-		mandelbrotShader.setPushConstant(brush,  96, 8, &rangeX);
-		mandelbrotShader.setPushConstant(brush, 104, 8, &rangeY);
-		mandelbrotShader.setPushConstant(brush, 112, 4, &max_iteration);
+		mandelbrotShader.setPushConstant( 80, 8, &middleX);
+		mandelbrotShader.setPushConstant( 88, 8, &middleY);
+		mandelbrotShader.setPushConstant( 96, 8, &rangeX);
+		mandelbrotShader.setPushConstant(104, 8, &rangeY);
+		mandelbrotShader.setPushConstant(112, 4, &max_iteration);
 		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, &mandelbrotShader);
 	}
 	virtual void onEnd() override

@@ -191,9 +191,6 @@ namespace bbe
 
 		void fillVertexIndexList(const bbe::List<uint32_t>& indices, const bbe::List<bbe::Vector2>& vertices);
 		void fillVertexIndexList(const uint32_t *indices, uint32_t amountOfIndices, const bbe::Vector2 *vertices, size_t amountOfVertices);
-
-		VkCommandBuffer INTERNAL_getCurrentCommandBuffer();
-		VkPipelineLayout INTERNAL_getLayoutPrimitive();
 #endif
 	};
 }

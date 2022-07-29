@@ -11,6 +11,9 @@ namespace bbe
 	class FragmentShader
 	{
 	private:
+		constexpr static size_t PUSHCONST_START_ADDR = 80;
+		bbe::Array<char, 48> pushConstants;
+
 		INTERNAL::vulkan::VulkanShader   m_shader;
 		INTERNAL::vulkan::VulkanPipeline m_pipeline;
 
@@ -30,7 +33,9 @@ namespace bbe
 
 		INTERNAL::vulkan::VulkanPipeline& INTERNAL_getPipeline();
 
-		void setPushConstant(PrimitiveBrush2D& brush, uint32_t offset, uint32_t length, const void* data);
+		const char* getPushConstants() const;
+
+		void setPushConstant(uint32_t offset, uint32_t length, const void* data);
 	};
 }
 #endif

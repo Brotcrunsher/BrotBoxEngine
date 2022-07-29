@@ -45,12 +45,12 @@ public:
 		ImGui::DragFloat("Tick Time: ", &tickTime, 0.0001f);
 		ImGui::DragFloat("Power: ", &power, 0.0001f);
 		ImGui::DragFloat("MagnetStrength: ", &magnetStrength, 100);
-		shader.setPushConstant(brush,  80, sizeof(bbe::Vector2) * magnets.getLength(), magnets.getRaw());
-		shader.setPushConstant(brush, 104, sizeof(float), &magnetDistance);
-		shader.setPushConstant(brush, 108, sizeof(int32_t), &maxIter);
-		shader.setPushConstant(brush, 112, sizeof(float), &tickTime);
-		shader.setPushConstant(brush, 116, sizeof(float), &power);
-		shader.setPushConstant(brush, 120, sizeof(float), &magnetStrength);
+		shader.setPushConstant( 80, sizeof(bbe::Vector2) * magnets.getLength(), magnets.getRaw());
+		shader.setPushConstant(104, sizeof(float), &magnetDistance);
+		shader.setPushConstant(108, sizeof(int32_t), &maxIter);
+		shader.setPushConstant(112, sizeof(float), &tickTime);
+		shader.setPushConstant(116, sizeof(float), &power);
+		shader.setPushConstant(120, sizeof(float), &magnetStrength);
 		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, &shader);
 	}
 	virtual void onEnd() override
