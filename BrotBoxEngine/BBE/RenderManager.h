@@ -13,6 +13,7 @@ namespace bbe
 	class FragmentShader;
 	class Color;
 	class Rectangle;
+	class Image;
 
 	class RenderManager
 	{
@@ -39,5 +40,6 @@ namespace bbe
 		virtual void fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader) = 0;
 		virtual void setFillMode2D(bbe::FillMode fm) = 0;
 		virtual bbe::FillMode getFillMode2D() = 0;
+		virtual void drawImage2D(const Rectangle& rect, const Image& image, float rotation) = 0;
 	};
 }

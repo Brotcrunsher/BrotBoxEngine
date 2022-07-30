@@ -151,6 +151,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_imguiManager.start(m_instance, m_commandPool, m_device, m_surface, m_physicalDeviceContainer.findBestDevice(m_surface), m_descriptorPool, m_renderPass, m_pwindow);
 
 	m_primitiveBrush2D.INTERNAL_init(m_swapchain.getAmountOfImages());
+	if (imageDatas.getLength() < m_swapchain.getAmountOfImages())
+	{
+		imageDatas.resizeCapacityAndLength(m_swapchain.getAmountOfImages());
+	}
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::destroy()
@@ -165,6 +169,13 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	s_pinstance = nullptr;
 	
 	m_primitiveBrush2D.INTERNAL_destroy();
+	for (size_t i = 0; i < imageDatas.getLength(); i++)
+	{
+		for (size_t k = 0; k < imageDatas[i].getLength(); k++)
+		{
+			imageDatas[i][k]->decRef();
+		}
+	}
 
 	m_imguiManager.destroy();
 
@@ -234,6 +245,12 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 		m_screenWidth, m_screenHeight,
 		m_imageIndex,
 		this);
+
+	for (size_t i = 0; i < imageDatas[m_imageIndex].getLength(); i++)
+	{
+		imageDatas[m_imageIndex][i]->decRef();
+	}
+	imageDatas[m_imageIndex].clear();
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
@@ -536,6 +553,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::recreateSwapchain()
 	m_swapchain = newChain;
 
 	m_primitiveBrush2D.INTERNAL_init(m_swapchain.getAmountOfImages());
+	if (imageDatas.getLength() < m_swapchain.getAmountOfImages())
+	{
+		imageDatas.resizeCapacityAndLength(m_swapchain.getAmountOfImages());
+	}
 }
 
 bbe::INTERNAL::vulkan::VulkanDevice& bbe::INTERNAL::vulkan::VulkanManager::getVulkanDevice()
@@ -870,6 +891,36 @@ void bbe::INTERNAL::vulkan::VulkanManager::setFillMode2D(bbe::FillMode fm)
 bbe::FillMode bbe::INTERNAL::vulkan::VulkanManager::getFillMode2D()
 {
 	return m_fillMode;
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, const Image& image, float rotation)
+{
+	if (m_pipelineRecord != PipelineRecord2D::IMAGE)
+	{
+		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DImage.getPipeline(getFillMode2D()));
+		m_pipelineRecord = PipelineRecord2D::IMAGE;
+	}
+
+	image.createAndUpload(m_device, m_commandPool, m_descriptorPool, m_setLayoutSampler);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DImage.getLayout(), 0, 1, image.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+
+	auto vulkanData = image.m_pVulkanData;
+	imageDatas[m_imageIndex].add(vulkanData);
+	vulkanData->incRef();
+
+	float pushConstants[] = {
+		rect.getX(),
+		rect.getY(),
+		rect.getWidth(),
+		rect.getHeight()
+	};
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 4, pushConstants);
+
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 16, sizeof(float), &rotation);
+
+	bindRectBuffers();
+
+	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, 6, 1, 0, 0, 0);
 }
 
 unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData(bool* outRequiresSwizzle)

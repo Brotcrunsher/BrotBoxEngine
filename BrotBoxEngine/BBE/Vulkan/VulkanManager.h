@@ -116,6 +116,8 @@ namespace bbe
 				ImguiManager m_imguiManager;
 				FILE* videoFile = nullptr;
 
+				bbe::List<bbe::List<bbe::Image::VulkanData*>> imageDatas;
+
 				PipelineRecord2D m_pipelineRecord = PipelineRecord2D::NONE;
 				FillMode m_fillMode = FillMode::SOLID;
 
@@ -164,6 +166,9 @@ namespace bbe
 				virtual void fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader) override;
 				virtual void setFillMode2D(bbe::FillMode fm) override;
 				virtual bbe::FillMode getFillMode2D() override;
+
+				// Geerbt über RenderManager
+				virtual void drawImage2D(const Rectangle& rect, const Image& image, float rotation) override;
 };
 		}
 	}

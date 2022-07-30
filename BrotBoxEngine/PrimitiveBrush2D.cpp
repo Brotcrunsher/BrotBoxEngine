@@ -55,12 +55,6 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	}
 	m_delayedBufferDeletes[imageIndex].clear();
 	m_imageIndex = imageIndex;
-
-	for (size_t i = 0; i < imageDatas[m_imageIndex].getLength(); i++)
-	{
-		imageDatas[m_imageIndex][i]->decRef();
-	}
-	imageDatas[m_imageIndex].clear();
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_init(const uint32_t amountOfFrames)
@@ -68,10 +62,6 @@ void bbe::PrimitiveBrush2D::INTERNAL_init(const uint32_t amountOfFrames)
 	if (m_delayedBufferDeletes.getLength() < amountOfFrames)
 	{
 		m_delayedBufferDeletes.resizeCapacityAndLength(amountOfFrames);
-	}
-	if (imageDatas.getLength() < amountOfFrames)
-	{
-		imageDatas.resizeCapacityAndLength(amountOfFrames);
 	}
 }
 
@@ -105,32 +95,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotat
 
 void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Image & image, float rotation)
 {
-	if (m_pipelineRecord != PipelineRecord2D::IMAGE)
-	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelineImage->getPipeline(getFillMode()));
-		m_pipelineRecord = PipelineRecord2D::IMAGE;
-	}
-
-	image.createAndUpload(*m_pdevice, *m_pcommandPool, *m_pdescriptorPool, *m_pdescriptorSetLayout);
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutImage, 0, 1, image.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
-
-	auto vulkanData = image.m_pVulkanData;
-	imageDatas[m_imageIndex].add(vulkanData);
-	vulkanData->incRef();
-
-	float pushConstants[] = {
-		(rect.getX() + m_offset.x) * m_windowXScale,
-		(rect.getY() + m_offset.y) * m_windowYScale,
-		rect.getWidth() * m_windowXScale,
-		rect.getHeight() * m_windowYScale
-	};
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 4, pushConstants);
-
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 16, sizeof(float), &rotation);
-
-	INTERNAL_bindRectBuffers();
-
-	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
+	m_prenderManager->drawImage2D(rect.offset(m_offset).stretchedSpace(m_windowXScale, m_windowYScale), image, rotation);
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle, float outlineWidth)
@@ -221,14 +186,6 @@ void bbe::PrimitiveBrush2D::INTERNAL_destroy()
 		{
 			vkDestroyBuffer(m_pdevice->getDevice(), m_delayedBufferDeletes[i][k].m_buffer, nullptr);
 			vkFreeMemory   (m_pdevice->getDevice(), m_delayedBufferDeletes[i][k].m_memory, nullptr);
-		}
-	}
-
-	for (size_t i = 0; i < imageDatas.getLength(); i++)
-	{
-		for (size_t k = 0; k < imageDatas[i].getLength(); k++)
-		{
-			imageDatas[i][k]->decRef();
 		}
 	}
 }
