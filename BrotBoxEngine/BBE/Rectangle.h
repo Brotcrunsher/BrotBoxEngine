@@ -70,6 +70,10 @@ namespace bbe
 		void setDim(float width, float height);
 		void setDim(const Vector2 &vec);
 		void set(float x, float y, float width, float height);
+		void shrinkInPlace(float val);
+		Rectangle shrinked(float val) const;
+		Rectangle stretchedSpace(float x, float y) const;
+
 
 		void translate(float x, float y);
 		virtual void translate(const bbe::Vector2 &vec) override;

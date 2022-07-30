@@ -32,6 +32,11 @@ namespace bbe
 	{
 		namespace vulkan
 		{
+			enum class PipelineRecord2D
+			{
+				NONE, PRIMITIVE, IMAGE
+			};
+
 			class VulkanManager 
 				: public RenderManager {
 			public:
@@ -111,6 +116,9 @@ namespace bbe
 				ImguiManager m_imguiManager;
 				FILE* videoFile = nullptr;
 
+				PipelineRecord2D m_pipelineRecord = PipelineRecord2D::NONE;
+				FillMode m_fillMode = FillMode::SOLID;
+
 			private:
 				ScreenshotFirstStage getRawScreenshot();
 
@@ -149,7 +157,14 @@ namespace bbe
 				void saveVideoFrame();
 				void setVideoRenderingMode(const char* path) override;
 				void stopRecording();
-			};
+
+				void bindRectBuffers();
+
+				virtual void setColor2D(const bbe::Color& color) override;
+				virtual void fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader) override;
+				virtual void setFillMode2D(bbe::FillMode fm) override;
+				virtual bbe::FillMode getFillMode2D() override;
+};
 		}
 	}
 }

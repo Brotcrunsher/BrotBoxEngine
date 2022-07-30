@@ -215,6 +215,34 @@ void bbe::Rectangle::set(float x, float y, float width, float height)
 	setHeight(height);
 }
 
+void bbe::Rectangle::shrinkInPlace(float val)
+{
+	m_x += val;
+	m_y += val;
+	m_width -= val * 2;
+	m_height -= val * 2;
+}
+
+bbe::Rectangle bbe::Rectangle::shrinked(float val) const
+{
+	return Rectangle(
+		m_x + val,
+		m_y + val,
+		m_width  - val * 2,
+		m_height - val * 2
+	);
+}
+
+bbe::Rectangle bbe::Rectangle::stretchedSpace(float x, float y) const
+{
+	return Rectangle(
+		m_x * x,
+		m_y * y,
+		m_width * x,
+		m_height * y
+	);
+}
+
 void bbe::Rectangle::translate(float x, float y)
 {
 	m_x += x;

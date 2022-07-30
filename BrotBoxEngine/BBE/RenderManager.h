@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include "../BBE/String.h"
+#include "../BBE/FillMode.h"
 
 struct GLFWwindow;
 
@@ -9,6 +10,9 @@ namespace bbe
 {
 	class PrimitiveBrush2D;
 	class PrimitiveBrush3D;
+	class FragmentShader;
+	class Color;
+	class Rectangle;
 
 	class RenderManager
 	{
@@ -30,5 +34,10 @@ namespace bbe
 		virtual void resize(uint32_t width, uint32_t height) = 0;
 		virtual void screenshot(const bbe::String& path) = 0;
 		virtual void setVideoRenderingMode(const char* path) = 0;
+
+		virtual void setColor2D(const bbe::Color& color) = 0;
+		virtual void fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader) = 0;
+		virtual void setFillMode2D(bbe::FillMode fm) = 0;
+		virtual bbe::FillMode getFillMode2D() = 0;
 	};
 }

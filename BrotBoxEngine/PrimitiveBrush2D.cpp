@@ -21,7 +21,8 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	INTERNAL::vulkan::VulkanPipeline &pipelineImage,
 	GLFWwindow* window,
 	int width, int height,
-	uint32_t imageIndex)
+	uint32_t imageIndex,
+	bbe::RenderManager* renderManager)
 {
 	m_layoutPrimitive = pipelinePrimitive.getLayout();
 	m_ppipelinePrimitive = &pipelinePrimitive;
@@ -34,6 +35,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	m_pdescriptorSetLayout = &descriptorSetLayout;
 	m_screenWidth = width;
 	m_screenHeight = height;
+	m_prenderManager = renderManager;
 
 	m_pipelineRecord = PipelineRecord2D::NONE;
 
@@ -85,43 +87,27 @@ void bbe::PrimitiveBrush2D::INTERNAL_bindRectBuffers()
 
 void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotation, float outlineWidth, FragmentShader* shader)
 {
+	const Rectangle localRect = rect.offset(m_offset).stretchedSpace(m_windowXScale, m_windowYScale);
+
 	if (outlineWidth > 0)
 	{
 		Color oldColor = m_color;
 		setColorRGB(m_outlineColor);
-		INTERNAL_fillRect(rect, rotation, 0, shader);
+		m_prenderManager->fillRect2D(localRect, rotation, shader);
 		setColorRGB(oldColor);
+		m_prenderManager->fillRect2D(localRect.shrinked(outlineWidth), rotation, shader);
 	}
-	if (shader != nullptr)
+	else
 	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->INTERNAL_getPipeline().getPipeline(m_fillMode));
-		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 80, 48, shader->getPushConstants());
+		m_prenderManager->fillRect2D(localRect, rotation, shader);
 	}
-	else if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
-	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(m_fillMode));
-		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
-	}
-
-	float pushConstants[] = {
-		(rect.getX() + outlineWidth + m_offset.x) * m_windowXScale, 
-		(rect.getY() + outlineWidth + m_offset.y) * m_windowYScale, 
-		(rect.getWidth()  - outlineWidth * 2) * m_windowXScale,
-		(rect.getHeight() - outlineWidth * 2) * m_windowYScale,
-		rotation
-	};
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
-
-	INTERNAL_bindRectBuffers();
-
-	vkCmdDrawIndexed(m_currentCommandBuffer, 6, 1, 0, 0, 0);
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Image & image, float rotation)
 {
 	if (m_pipelineRecord != PipelineRecord2D::IMAGE)
 	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelineImage->getPipeline(m_fillMode));
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelineImage->getPipeline(getFillMode()));
 		m_pipelineRecord = PipelineRecord2D::IMAGE;
 	}
 
@@ -158,7 +144,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle, float out
 	}
 	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
 	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(m_fillMode));
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(getFillMode()));
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 	float pushConstants[] = {
@@ -187,8 +173,8 @@ void bbe::PrimitiveBrush2D::INTERNAL_setColor(float r, float g, float b, float a
 	Color newColor(r, g, b, a);
 	if (newColor.r != m_color.r || newColor.g != m_color.g || newColor.b != m_color.b || newColor.a != m_color.a)
 	{
-		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(Color), &newColor);
 		m_color = newColor;
+		m_prenderManager->setColor2D(newColor);
 	}
 }
 
@@ -715,12 +701,12 @@ void bbe::PrimitiveBrush2D::setOutlineWidth(float outlineWidht)
 
 void bbe::PrimitiveBrush2D::setFillMode(FillMode fm)
 {
-	m_fillMode = fm;
+	m_prenderManager->setFillMode2D(fm);
 }
 
 bbe::FillMode bbe::PrimitiveBrush2D::getFillMode()
 {
-	return m_fillMode;
+	return m_prenderManager->getFillMode2D();
 }
 
 void bbe::PrimitiveBrush2D::fillVertexIndexList(const bbe::List<uint32_t>& indices, const bbe::List<bbe::Vector2>& vertices)
@@ -749,7 +735,7 @@ void bbe::PrimitiveBrush2D::fillVertexIndexList(const uint32_t* indices, uint32_
 
 	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
 	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(m_fillMode));
+		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(getFillMode()));
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 

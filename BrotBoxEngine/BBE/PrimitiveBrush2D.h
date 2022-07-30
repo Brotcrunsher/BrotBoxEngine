@@ -11,6 +11,7 @@
 #include "../BBE/BezierCurve2.h"
 #include "../BBE/Font.h"
 #include "../BBE/Line2.h"
+#include "../BBE/RenderManager.h"
 
 namespace bbe
 {
@@ -70,6 +71,8 @@ namespace bbe
 		uint32_t m_imageIndex = 0xFFFFFFFF;
 		bbe::Vector2 m_offset = {0, 0};
 
+		bbe::RenderManager* m_prenderManager = nullptr;
+
 		PipelineRecord2D   m_pipelineRecord = PipelineRecord2D::NONE;
 
 		void INTERNAL_bindRectBuffers();
@@ -87,12 +90,12 @@ namespace bbe
 			INTERNAL::vulkan::VulkanPipeline &pipelineImage,
 			GLFWwindow* window,
 			int screenWidth, int screenHeight,
-			uint32_t imageIndex);
+			uint32_t imageIndex,
+			bbe::RenderManager *renderManager
+		);
 
 		void INTERNAL_init(const uint32_t amountOfFrames);
 		void INTERNAL_destroy();
-
-		FillMode m_fillMode = FillMode::SOLID;
 
 	public:
 		static constexpr const char* DEFAULT_FONT_NAME = "arial.ttf";

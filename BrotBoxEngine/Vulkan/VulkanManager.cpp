@@ -8,6 +8,7 @@
 #include "BBE/VertexWithNormal.h"
 #include "BBE/PointLight.h"
 #include "BBE/Profiler.h"
+#include "BBE/FragmentShader.h"
 #include "EmbedOutput.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -220,6 +221,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 {
+	m_pipelineRecord = PipelineRecord2D::NONE;
 	m_primitiveBrush2D.INTERNAL_beginDraw(
 		m_device,
 		m_commandPool,
@@ -230,7 +232,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 		m_pipeline2DImage,
 		m_pwindow,
 		m_screenWidth, m_screenHeight,
-		m_imageIndex);
+		m_imageIndex,
+		this);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
@@ -815,6 +818,58 @@ void bbe::INTERNAL::vulkan::VulkanManager::stopRecording()
 		}
 		fclose(videoFile);
 	}
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::bindRectBuffers()
+{
+	VkDeviceSize offsets[] = { 0 };
+	VkBuffer buffer = bbe::Rectangle::s_vertexBuffer.getBuffer();
+	vkCmdBindVertexBuffers(*m_currentFrameDrawCommandBuffer, 0, 1, &buffer, offsets);
+
+	buffer = Rectangle::s_indexBuffer.getBuffer();
+	vkCmdBindIndexBuffer(*m_currentFrameDrawCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::setColor2D(const bbe::Color& color)
+{
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(Color), &color);
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader)
+{
+	if (shader != nullptr)
+	{
+		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->INTERNAL_getPipeline().getPipeline(m_fillMode));
+		vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 80, 48, shader->getPushConstants());
+	}
+	else if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
+	{
+		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DPrimitive.getPipeline(m_fillMode));
+		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
+	}
+
+	float pushConstants[] = {
+		rect.getX(),
+		rect.getY(),
+		rect.getWidth(),
+		rect.getHeight(),
+		rotation
+	};
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
+
+	bindRectBuffers();
+
+	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, 6, 1, 0, 0, 0);
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::setFillMode2D(bbe::FillMode fm)
+{
+	m_fillMode = fm;
+}
+
+bbe::FillMode bbe::INTERNAL::vulkan::VulkanManager::getFillMode2D()
+{
+	return m_fillMode;
 }
 
 unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData(bool* outRequiresSwizzle)
