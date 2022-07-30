@@ -12,6 +12,7 @@
 #include "BBE/Circle.h"
 #include "BBE/Rectangle.h"
 #include "BBE/Vulkan/VulkanRectangle.h"
+#include "BBE/Vulkan/VulkanCircle.h"
 #include "EmbedOutput.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -80,7 +81,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	}
 	bbe::PointLight::s_init(m_device.getDevice(), m_device.getPhysicalDevice());
 	bbe::INTERNAL::vulkan::VulkanRectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
-	bbe::Circle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
+	bbe::INTERNAL::vulkan::VulkanCircle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::Cube::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::IcoSphere::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 
@@ -197,7 +198,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	//m_renderPassStopWatch.destroy();
 	
 	bbe::Cube::s_destroy();
-	bbe::Circle::s_destroy();
+	bbe::INTERNAL::vulkan::VulkanCircle::s_destroy();
 	bbe::INTERNAL::vulkan::VulkanRectangle::s_destroy();
 	bbe::PointLight::s_destroy();
 	bbe::IcoSphere::s_destroy();
@@ -917,13 +918,13 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillCircle2D(const Circle& circle)
 	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
 
 	VkDeviceSize offsets[] = { 0 };
-	VkBuffer buffer = Circle::s_vertexBuffer.getBuffer();
+	VkBuffer buffer = INTERNAL::vulkan::VulkanCircle::s_vertexBuffer.getBuffer();
 	vkCmdBindVertexBuffers(*m_currentFrameDrawCommandBuffer, 0, 1, &buffer, offsets);
 
-	buffer = Circle::s_indexBuffer.getBuffer();
+	buffer = INTERNAL::vulkan::VulkanCircle::s_indexBuffer.getBuffer();
 	vkCmdBindIndexBuffer(*m_currentFrameDrawCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 
-	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, (Circle::AMOUNTOFVERTICES - 2) * 3, 1, 0, 0, 0);
+	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, (INTERNAL::vulkan::VulkanCircle::AMOUNTOFVERTICES - 2) * 3, 1, 0, 0, 0);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, const Image& image, float rotation)
