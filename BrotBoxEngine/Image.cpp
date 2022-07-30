@@ -467,7 +467,6 @@ bool bbe::Image::isLoaded() const
 
 bbe::Image::VulkanData::VulkanData()
 {
-	incRef();
 }
 
 bbe::Image::VulkanData::~VulkanData()
@@ -488,23 +487,6 @@ bbe::Image::VulkanData::~VulkanData()
 		m_imageLayout = nullptr;
 		m_device      = VK_NULL_HANDLE;
 		m_sampler     = VK_NULL_HANDLE;
-	}
-}
-
-void bbe::Image::VulkanData::incRef()
-{
-	m_refCount++;
-}
-
-void bbe::Image::VulkanData::decRef()
-{
-	m_refCount--;
-	if (m_refCount <= 0)
-	{
-		// TODO: Yeah, well... This is standard comform as long as this actually was allocated with new.
-		//       So this is perfectly fine! Except that it's BS of course and I really should write some
-		//       shared Pointer class.
-		delete this;
 	}
 }
 

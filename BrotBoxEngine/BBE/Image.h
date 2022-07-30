@@ -9,6 +9,7 @@
 #include "../BBE/Color.h"
 #include "../BBE/String.h"
 #include "../BBE/Vector2.h"
+#include "../BBE/ManuallyRefCountable.h"
 
 namespace bbe
 {
@@ -65,7 +66,7 @@ namespace bbe
 		ImageRepeatMode m_repeatMode = ImageRepeatMode::REPEAT;
 		ImageFilterMode m_filterMode = ImageFilterMode::LINEAR;
 
-		struct VulkanData
+		struct VulkanData : bbe::ManuallyRefCountable
 		{
 			int32_t        m_refCount    = 0;
 			VkImage        m_image       = VK_NULL_HANDLE;
@@ -83,9 +84,6 @@ namespace bbe
 			VulkanData(VulkanData&&) = delete;
 			VulkanData& operator =(const VulkanData&) = delete;
 			VulkanData&& operator ==(const VulkanData&&) = delete;
-
-			void incRef();
-			void decRef();
 		};
 		mutable VulkanData* m_pVulkanData = nullptr;
 
