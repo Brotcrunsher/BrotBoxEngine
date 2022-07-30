@@ -150,7 +150,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	std::cout << "Vulkan Manager: Starting Dear ImGui" << std::endl;
 	m_imguiManager.start(m_instance, m_commandPool, m_device, m_surface, m_physicalDeviceContainer.findBestDevice(m_surface), m_descriptorPool, m_renderPass, m_pwindow);
 
-	m_primitiveBrush2D.INTERNAL_init(m_swapchain.getAmountOfImages());
 	if (imageDatas.getLength() < m_swapchain.getAmountOfImages())
 	{
 		imageDatas.resizeCapacityAndLength(m_swapchain.getAmountOfImages());
@@ -247,17 +246,12 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 {
 	m_pipelineRecord = PipelineRecord2D::NONE;
 	m_primitiveBrush2D.INTERNAL_beginDraw(
-		m_device,
-		m_commandPool,
-		m_descriptorPool,
-		m_setLayoutSampler,
-		*m_currentFrameDrawCommandBuffer,
-		m_pipeline2DPrimitive,
-		m_pipeline2DImage,
 		m_pwindow,
 		m_screenWidth, m_screenHeight,
-		m_imageIndex,
 		this);
+
+	float pushConstants[] = { static_cast<float>(m_screenWidth), static_cast<float>(m_screenHeight) };
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 24, sizeof(float) * 2, pushConstants);
 
 	for (size_t i = 0; i < imageDatas[m_imageIndex].getLength(); i++)
 	{
@@ -572,7 +566,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::recreateSwapchain()
 	m_swapchain.destroy();
 	m_swapchain = newChain;
 
-	m_primitiveBrush2D.INTERNAL_init(m_swapchain.getAmountOfImages());
 	if (imageDatas.getLength() < m_swapchain.getAmountOfImages())
 	{
 		imageDatas.resizeCapacityAndLength(m_swapchain.getAmountOfImages());

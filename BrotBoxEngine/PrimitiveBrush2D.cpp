@@ -12,47 +12,19 @@
 #include "BBE/RectangleRotated.h"
 
 void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
-	INTERNAL::vulkan::VulkanDevice &device,
-	INTERNAL::vulkan::VulkanCommandPool &commandPool,
-	INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool,
-	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayout, 
-	VkCommandBuffer commandBuffer,
-	INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive,
-	INTERNAL::vulkan::VulkanPipeline &pipelineImage,
 	GLFWwindow* window,
 	int width, int height,
-	uint32_t imageIndex,
 	bbe::RenderManager* renderManager)
 {
-	m_layoutPrimitive = pipelinePrimitive.getLayout();
-	m_ppipelinePrimitive = &pipelinePrimitive;
-	m_layoutImage = pipelineImage.getLayout();
-	m_ppipelineImage = &pipelineImage;
-	m_currentCommandBuffer = commandBuffer;
-	m_pdevice = &device;
-	m_pcommandPool = &commandPool;
-	m_pdescriptorPool = &descriptorPool;
-	m_pdescriptorSetLayout = &descriptorSetLayout;
 	m_screenWidth = width;
 	m_screenHeight = height;
 	m_prenderManager = renderManager;
-
-	m_pipelineRecord = PipelineRecord2D::NONE;
 
 	setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
 	setOutlineRGB(1.0f, 1.0f, 1.0f, 1.0f);
 	setOutlineWidth(0.f);
 
-	float pushConstants[] = { static_cast<float>(m_screenWidth), static_cast<float>(m_screenHeight) };
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 24, sizeof(float) * 2, pushConstants);
-
 	glfwGetWindowContentScale(window, &m_windowXScale, &m_windowYScale);
-
-	m_imageIndex = imageIndex;
-}
-
-void bbe::PrimitiveBrush2D::INTERNAL_init(const uint32_t amountOfFrames)
-{
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotation, float outlineWidth, FragmentShader* shader)

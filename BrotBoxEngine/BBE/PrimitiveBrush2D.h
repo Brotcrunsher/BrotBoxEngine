@@ -19,19 +19,6 @@ namespace bbe
 	class FragmentShader;
 	class RectangleRotated;
 
-	namespace INTERNAL
-	{
-		namespace vulkan
-		{
-			class VulkanDevice;
-			class VulkanManager;
-			class VulkanCommandPool;
-			class VulkanDescriptorPool;
-			class VulkanDescriptorSetLayout;
-			class VulkanPipeline;
-		}
-	}
-
 	enum class PipelineRecord2D
 	{
 		NONE, PRIMITIVE, IMAGE
@@ -44,16 +31,6 @@ namespace bbe
 		friend class INTERNAL::vulkan::VulkanManager;
 	private:
 
-		INTERNAL::vulkan::VulkanDevice              *m_pdevice              = nullptr;
-		INTERNAL::vulkan::VulkanCommandPool         *m_pcommandPool         = nullptr;
-		INTERNAL::vulkan::VulkanDescriptorPool      *m_pdescriptorPool      = nullptr;
-		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayout = nullptr;
-		VkCommandBuffer                              m_currentCommandBuffer = VK_NULL_HANDLE;
-		VkPipelineLayout                             m_layoutPrimitive      = VK_NULL_HANDLE;
-		INTERNAL::vulkan::VulkanPipeline            *m_ppipelinePrimitive   = nullptr;
-		VkPipelineLayout                             m_layoutImage          = VK_NULL_HANDLE;
-		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineImage       = nullptr;
-		VkDescriptorSet                              m_descriptorSet        = VK_NULL_HANDLE;
 		float                                        m_windowXScale = 0;
 		float                                        m_windowYScale = 0;
 		int                                          m_screenWidth  = 0;
@@ -61,32 +38,20 @@ namespace bbe
 		float                                        m_outlineWidth = 0;
 		Color m_color = Color(-1000, -1000, -1000);
 		Color m_outlineColor = Color(-1000, -1000, -1000);
-		uint32_t m_imageIndex = 0xFFFFFFFF;
 		bbe::Vector2 m_offset = {0, 0};
 
 		bbe::RenderManager* m_prenderManager = nullptr;
-
-		PipelineRecord2D   m_pipelineRecord = PipelineRecord2D::NONE;
 
 		void INTERNAL_fillRect(const Rectangle &rect, float rotation, float outlineWidth, FragmentShader* shader);
 		void INTERNAL_drawImage(const Rectangle &rect, const Image &image, float rotation);
 		void INTERNAL_fillCircle(const Circle &circle, float outlineWidth);
 		void INTERNAL_setColor(float r, float g, float b, float a);
 		void INTERNAL_beginDraw(
-			INTERNAL::vulkan::VulkanDevice &device,
-			INTERNAL::vulkan::VulkanCommandPool &commandPool,
-			INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool,
-			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayout,
-			VkCommandBuffer commandBuffer,
-			INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive,
-			INTERNAL::vulkan::VulkanPipeline &pipelineImage,
 			GLFWwindow* window,
 			int screenWidth, int screenHeight,
-			uint32_t imageIndex,
 			bbe::RenderManager *renderManager
 		);
 
-		void INTERNAL_init(const uint32_t amountOfFrames);
 		void INTERNAL_destroy();
 
 	public:
