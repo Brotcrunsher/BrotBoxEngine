@@ -11,6 +11,7 @@
 #include "BBE/FragmentShader.h"
 #include "BBE/Circle.h"
 #include "BBE/Rectangle.h"
+#include "BBE/Vulkan/VulkanRectangle.h"
 #include "EmbedOutput.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -78,7 +79,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 		m_primitiveBrushes3D[i].create(m_device);
 	}
 	bbe::PointLight::s_init(m_device.getDevice(), m_device.getPhysicalDevice());
-	bbe::Rectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
+	bbe::INTERNAL::vulkan::VulkanRectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::Circle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::Cube::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::IcoSphere::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
@@ -197,7 +198,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	
 	bbe::Cube::s_destroy();
 	bbe::Circle::s_destroy();
-	bbe::Rectangle::s_destroy();
+	bbe::INTERNAL::vulkan::VulkanRectangle::s_destroy();
 	bbe::PointLight::s_destroy();
 	bbe::IcoSphere::s_destroy();
 
@@ -859,10 +860,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::stopRecording()
 void bbe::INTERNAL::vulkan::VulkanManager::bindRectBuffers()
 {
 	VkDeviceSize offsets[] = { 0 };
-	VkBuffer buffer = bbe::Rectangle::s_vertexBuffer.getBuffer();
+	VkBuffer buffer = bbe::INTERNAL::vulkan::VulkanRectangle::s_vertexBuffer.getBuffer();
 	vkCmdBindVertexBuffers(*m_currentFrameDrawCommandBuffer, 0, 1, &buffer, offsets);
 
-	buffer = Rectangle::s_indexBuffer.getBuffer();
+	buffer = INTERNAL::vulkan::VulkanRectangle::s_indexBuffer.getBuffer();
 	vkCmdBindIndexBuffer(*m_currentFrameDrawCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 }
 

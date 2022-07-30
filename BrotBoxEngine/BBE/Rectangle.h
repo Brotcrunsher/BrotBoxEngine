@@ -1,8 +1,4 @@
 #pragma once
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
-#include "../BBE/Vulkan/VulkanBuffer.h"
-#include "../BBE/Vulkan/VulkanCommandPool.h"
 #include "../BBE/Vector2.h"
 #include "../BBE/Shape2.h"
 
@@ -28,13 +24,6 @@ namespace bbe
 		float m_y;
 		float m_width;
 		float m_height;
-
-		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
-		static void s_initIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
-		static void s_initVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
-		static void s_destroy();
-		static bbe::INTERNAL::vulkan::VulkanBuffer s_indexBuffer;
-		static bbe::INTERNAL::vulkan::VulkanBuffer s_vertexBuffer;
 
 	public:
 		Rectangle();
@@ -86,4 +75,3 @@ namespace bbe
 		bool intersects(const Circle& circle) const;
 	};
 }
-#endif
