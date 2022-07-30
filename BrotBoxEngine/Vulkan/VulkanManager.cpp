@@ -883,6 +883,33 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillRect2D(const Rectangle& rect, flo
 	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, 6, 1, 0, 0, 0);
 }
 
+void bbe::INTERNAL::vulkan::VulkanManager::fillCircle2D(const Circle& circle)
+{
+	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
+	{
+		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DPrimitive.getPipeline(m_fillMode));
+		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
+	}
+	float pushConstants[] = {
+		circle.getX(),
+		circle.getY(),
+		circle.getWidth(),
+		circle.getHeight(),
+		0
+	};
+
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
+
+	VkDeviceSize offsets[] = { 0 };
+	VkBuffer buffer = Circle::s_vertexBuffer.getBuffer();
+	vkCmdBindVertexBuffers(*m_currentFrameDrawCommandBuffer, 0, 1, &buffer, offsets);
+
+	buffer = Circle::s_indexBuffer.getBuffer();
+	vkCmdBindIndexBuffer(*m_currentFrameDrawCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+
+	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, (Circle::AMOUNTOFVERTICES - 2) * 3, 1, 0, 0, 0);
+}
+
 void bbe::INTERNAL::vulkan::VulkanManager::setFillMode2D(bbe::FillMode fm)
 {
 	m_fillMode = fm;

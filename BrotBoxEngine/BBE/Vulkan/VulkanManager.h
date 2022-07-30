@@ -164,10 +164,9 @@ namespace bbe
 
 				virtual void setColor2D(const bbe::Color& color) override;
 				virtual void fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader) override;
+				virtual void fillCircle2D(const Circle& circle) override;
 				virtual void setFillMode2D(bbe::FillMode fm) override;
 				virtual bbe::FillMode getFillMode2D() override;
-
-				// Geerbt über RenderManager
 				virtual void drawImage2D(const Rectangle& rect, const Image& image, float rotation) override;
 };
 		}

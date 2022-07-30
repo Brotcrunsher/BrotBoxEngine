@@ -90,37 +90,20 @@ void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Ima
 
 void bbe::PrimitiveBrush2D::INTERNAL_fillCircle(const Circle & circle, float outlineWidth)
 {
+	const Circle localCircle = circle.offset(m_offset).stretchedSpace(m_windowXScale, m_windowYScale);
+
 	if (outlineWidth > 0)
 	{
 		Color oldColor = m_color;
 		setColorRGB(m_outlineColor);
-		INTERNAL_fillCircle(circle, 0);
+		m_prenderManager->fillCircle2D(localCircle);
 		setColorRGB(oldColor);
+		m_prenderManager->fillCircle2D(localCircle.shrinked(outlineWidth));
 	}
-	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
+	else
 	{
-		vkCmdBindPipeline(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_ppipelinePrimitive->getPipeline(getFillMode()));
-		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
+		m_prenderManager->fillCircle2D(localCircle);
 	}
-	float pushConstants[] = {
-		(circle.getX() + outlineWidth + m_offset.x) * m_windowXScale, 
-		(circle.getY() + outlineWidth + m_offset.y) * m_windowYScale, 
-		(circle.getWidth() - outlineWidth * 2) * m_windowXScale, 
-		(circle.getHeight() - outlineWidth * 2) * m_windowYScale,
-		0
-	};
-
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
-
-
-	VkDeviceSize offsets[] = { 0 };
-	VkBuffer buffer = Circle::s_vertexBuffer.getBuffer();
-	vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
-
-	buffer = Circle::s_indexBuffer.getBuffer();
-	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
-
-	vkCmdDrawIndexed(m_currentCommandBuffer, (Circle::AMOUNTOFVERTICES - 2) * 3, 1, 0, 0, 0);
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_setColor(float r, float g, float b, float a)

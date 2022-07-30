@@ -130,6 +130,16 @@ bbe::Vector2 bbe::Circle::getDim() const
 	return bbe::Vector2(m_width, m_height);
 }
 
+bbe::Circle bbe::Circle::offset(const Vector2& off) const
+{
+	return Circle(
+		m_x + off.x,
+		m_y + off.y,
+		m_width,
+		m_height
+	);
+}
+
 void bbe::Circle::setX(float x)
 {
 	//UNTESTED
@@ -189,6 +199,34 @@ void bbe::Circle::set(float x, float y, float width, float height)
 	m_y = y;
 	m_width = width;
 	m_height = height;
+}
+
+void bbe::Circle::shrinkInPlace(float val)
+{
+	m_x += val;
+	m_y += val;
+	m_width -= val * 2;
+	m_height -= val * 2;
+}
+
+bbe::Circle bbe::Circle::shrinked(float val) const
+{
+	return Circle(
+		m_x + val,
+		m_y + val,
+		m_width - val * 2,
+		m_height - val * 2
+	);
+}
+
+bbe::Circle bbe::Circle::stretchedSpace(float x, float y) const
+{
+	return Circle(
+		m_x * x,
+		m_y * y,
+		m_width * x,
+		m_height * y
+	);
 }
 
 void bbe::Circle::translate(float x, float y)

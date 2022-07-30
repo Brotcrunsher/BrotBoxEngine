@@ -53,6 +53,7 @@ namespace bbe
 		float getWidth() const;
 		float getHeight() const;
 		Vector2 getDim() const;
+		Circle offset(const Vector2& off) const;
 
 		void setX(float x);
 		void setY(float y);
@@ -63,6 +64,9 @@ namespace bbe
 		void setDim(float width, float height);
 		void setDim(const Vector2 &vec);
 		void set(float x, float y, float width, float height);
+		void shrinkInPlace(float val);
+		Circle shrinked(float val) const;
+		Circle stretchedSpace(float x, float y) const;
 
 		void translate(float x, float y);
 		void translate(const Vector2 &vec);

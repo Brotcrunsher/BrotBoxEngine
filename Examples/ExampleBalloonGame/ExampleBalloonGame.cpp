@@ -94,7 +94,7 @@ public:
 
 		for (Balloon& b : balloons) {
 			brush.setColorHSV(b.hue, 1, 1);
-			brush.fillCircle(bbe::Circle(b.x, b.y, Balloon::WIDTH, Balloon::HEIGHT));
+			brush.fillCircle(b.x, b.y, Balloon::WIDTH, Balloon::HEIGHT);
 		}
 		
 		if (gameover){
