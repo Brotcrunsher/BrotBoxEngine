@@ -2,27 +2,36 @@
 
 #include "GLFW/glfw3.h"
 
-#include "../BBE/Rectangle.h"
-#include "../BBE/PhysRectangle.h"
-#include "../BBE/PhysCircle.h"
-#include "../BBE/Circle.h"
 #include "../BBE/Color.h"
 #include "../BBE/FillMode.h"
-#include "../BBE/BezierCurve2.h"
-#include "../BBE/Font.h"
-#include "../BBE/Line2.h"
-#include "../BBE/RenderManager.h"
+#include "../BBE/Vector2.h"
 
 namespace bbe
 {
 	class Image;
 	class FragmentShader;
 	class RectangleRotated;
+	class RenderManager;
+	class Line2;
+	class Font;
+	class BezierCurve2;
+	class Circle;
+	class PhysCircle;
+	class Rectangle;
+	class PhysRectangle;
 
 	enum class PipelineRecord2D
 	{
 		NONE, PRIMITIVE, IMAGE
 	};
+
+	namespace INTERNAL
+	{
+		namespace vulkan
+		{
+			class VulkanManager;
+		}
+	}
 
 	class PrimitiveBrush2D
 	{

@@ -9,6 +9,8 @@
 #include "BBE/PointLight.h"
 #include "BBE/Profiler.h"
 #include "BBE/FragmentShader.h"
+#include "BBE/Circle.h"
+#include "BBE/Rectangle.h"
 #include "EmbedOutput.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION

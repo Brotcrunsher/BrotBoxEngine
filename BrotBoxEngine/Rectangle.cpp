@@ -4,6 +4,7 @@
 #include "BBE/Vector2.h"
 #include "BBE/Vulkan/VulkanDevice.h"
 #include "BBE/Vulkan/VulkanManager.h"
+#include "BBE/Circle.h"
 
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::Rectangle::s_indexBuffer;
 bbe::INTERNAL::vulkan::VulkanBuffer bbe::Rectangle::s_vertexBuffer;

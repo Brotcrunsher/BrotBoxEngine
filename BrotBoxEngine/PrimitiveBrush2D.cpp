@@ -10,6 +10,13 @@
 #include "BBE/Math.h"
 #include "BBE/FragmentShader.h"
 #include "BBE/RectangleRotated.h"
+#include "BBE/Rectangle.h"
+#include "BBE/PhysRectangle.h"
+#include "BBE/PhysCircle.h"
+#include "BBE/Circle.h"
+#include "BBE/Font.h"
+#include "BBE/Line2.h"
+#include "BBE/BezierCurve2.h"
 
 void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	GLFWwindow* window,
