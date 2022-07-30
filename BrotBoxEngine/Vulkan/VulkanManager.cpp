@@ -912,11 +912,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, co
 		rect.getX(),
 		rect.getY(),
 		rect.getWidth(),
-		rect.getHeight()
+		rect.getHeight(),
+		rotation
 	};
-	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 4, pushConstants);
-
-	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 16, sizeof(float), &rotation);
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
 
 	bindRectBuffers();
 
