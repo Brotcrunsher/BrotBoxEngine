@@ -74,7 +74,6 @@ namespace bbe
 
 		PipelineRecord2D   m_pipelineRecord = PipelineRecord2D::NONE;
 
-		void INTERNAL_bindRectBuffers();
 		void INTERNAL_fillRect(const Rectangle &rect, float rotation, float outlineWidth, FragmentShader* shader);
 		void INTERNAL_drawImage(const Rectangle &rect, const Image &image, float rotation);
 		void INTERNAL_fillCircle(const Circle &circle, float outlineWidth);

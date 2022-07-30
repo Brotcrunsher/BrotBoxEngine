@@ -65,16 +65,6 @@ void bbe::PrimitiveBrush2D::INTERNAL_init(const uint32_t amountOfFrames)
 	}
 }
 
-void bbe::PrimitiveBrush2D::INTERNAL_bindRectBuffers()
-{
-	VkDeviceSize offsets[] = { 0 };
-	VkBuffer buffer = bbe::Rectangle::s_vertexBuffer.getBuffer();
-	vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
-
-	buffer = Rectangle::s_indexBuffer.getBuffer();
-	vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
-}
-
 void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotation, float outlineWidth, FragmentShader* shader)
 {
 	const Rectangle localRect = rect.offset(m_offset).stretchedSpace(m_windowXScale, m_windowYScale);
