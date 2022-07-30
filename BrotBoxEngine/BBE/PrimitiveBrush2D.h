@@ -43,11 +43,6 @@ namespace bbe
 #ifdef BBE_RENDERER_VULKAN
 		friend class INTERNAL::vulkan::VulkanManager;
 	private:
-		struct BufferMemoryPair
-		{
-			VkBuffer       m_buffer;
-			VkDeviceMemory m_memory;
-		};
 
 		INTERNAL::vulkan::VulkanDevice              *m_pdevice              = nullptr;
 		INTERNAL::vulkan::VulkanCommandPool         *m_pcommandPool         = nullptr;
@@ -66,7 +61,6 @@ namespace bbe
 		float                                        m_outlineWidth = 0;
 		Color m_color = Color(-1000, -1000, -1000);
 		Color m_outlineColor = Color(-1000, -1000, -1000);
-		bbe::List<bbe::List<BufferMemoryPair>> m_delayedBufferDeletes;
 		uint32_t m_imageIndex = 0xFFFFFFFF;
 		bbe::Vector2 m_offset = {0, 0};
 

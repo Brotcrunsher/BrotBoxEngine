@@ -121,6 +121,13 @@ namespace bbe
 				PipelineRecord2D m_pipelineRecord = PipelineRecord2D::NONE;
 				FillMode m_fillMode = FillMode::SOLID;
 
+				struct BufferMemoryPair
+				{
+					VkBuffer       m_buffer;
+					VkDeviceMemory m_memory;
+				};
+				bbe::List<bbe::List<BufferMemoryPair>> m_delayedBufferDeletes;
+
 			private:
 				ScreenshotFirstStage getRawScreenshot();
 
@@ -168,7 +175,8 @@ namespace bbe
 				virtual void setFillMode2D(bbe::FillMode fm) override;
 				virtual bbe::FillMode getFillMode2D() override;
 				virtual void drawImage2D(const Rectangle& rect, const Image& image, float rotation) override;
-};
+				virtual void fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale) override;
+			};
 		}
 	}
 }

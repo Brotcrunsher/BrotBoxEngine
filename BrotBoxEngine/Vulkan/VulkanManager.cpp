@@ -155,6 +155,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	{
 		imageDatas.resizeCapacityAndLength(m_swapchain.getAmountOfImages());
 	}
+	if (m_delayedBufferDeletes.getLength() < m_swapchain.getAmountOfImages())
+	{
+		m_delayedBufferDeletes.resizeCapacityAndLength(m_swapchain.getAmountOfImages());
+	}
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::destroy()
@@ -169,6 +173,15 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	s_pinstance = nullptr;
 	
 	m_primitiveBrush2D.INTERNAL_destroy();
+
+	for (size_t i = 0; i < m_delayedBufferDeletes.getLength(); i++)
+	{
+		for (size_t k = 0; k < m_delayedBufferDeletes[i].getLength(); k++)
+		{
+			vkDestroyBuffer(m_device.getDevice(), m_delayedBufferDeletes[i][k].m_buffer, nullptr);
+			vkFreeMemory(m_device.getDevice(), m_delayedBufferDeletes[i][k].m_memory, nullptr);
+		}
+	}
 	for (size_t i = 0; i < imageDatas.getLength(); i++)
 	{
 		for (size_t k = 0; k < imageDatas[i].getLength(); k++)
@@ -251,6 +264,13 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 		imageDatas[m_imageIndex][i]->decRef();
 	}
 	imageDatas[m_imageIndex].clear();
+
+	for (size_t i = 0; i < m_delayedBufferDeletes[m_imageIndex].getLength(); i++)
+	{
+		vkDestroyBuffer(m_device.getDevice(), m_delayedBufferDeletes[m_imageIndex][i].m_buffer, nullptr);
+		vkFreeMemory(m_device.getDevice(), m_delayedBufferDeletes[m_imageIndex][i].m_memory, nullptr);
+	}
+	m_delayedBufferDeletes[m_imageIndex].clear();
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
@@ -947,6 +967,53 @@ void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, co
 	bindRectBuffers();
 
 	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, 6, 1, 0, 0, 0);
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale)
+{
+	// These two asserts make sure that we can cast the vertices array to a float array.
+	static_assert(alignof(bbe::Vector2) == alignof(float));
+	static_assert(sizeof(bbe::Vector2) == 2 * sizeof(float));
+
+	bbe::INTERNAL::vulkan::VulkanBuffer indexBuffer;
+	bbe::INTERNAL::vulkan::VulkanBuffer vertexBuffer;
+	indexBuffer.create(m_device.getDevice(), m_device.getPhysicalDevice(), sizeof(uint32_t) * amountOfIndices, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+	void* indexDataBuf = indexBuffer.map();
+	memcpy(indexDataBuf, indices, sizeof(uint32_t) * amountOfIndices);
+	indexBuffer.unmap();
+
+	vertexBuffer.create(m_device.getDevice(), m_device.getPhysicalDevice(), sizeof(Vector2) * amountOfVertices, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	void* vertexDataBuf = vertexBuffer.map();
+	memcpy(vertexDataBuf, (float*)vertices, sizeof(Vector2) * amountOfVertices);
+	vertexBuffer.unmap();
+
+	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
+	{
+		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DPrimitive.getPipeline(getFillMode2D()));
+		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
+	}
+
+	float pushConstants[] = {
+		pos.x * scale.x,
+		pos.y * scale.y,
+		scale.x,
+		scale.y,
+		0
+	};
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
+
+	VkDeviceSize offsets[] = { 0 };
+	VkBuffer buffer = vertexBuffer.getBuffer();
+	vkCmdBindVertexBuffers(*m_currentFrameDrawCommandBuffer, 0, 1, &buffer, offsets);
+
+	buffer = indexBuffer.getBuffer();
+	vkCmdBindIndexBuffer(*m_currentFrameDrawCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+
+	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, amountOfIndices, 1, 0, 0, 0);
+
+	m_delayedBufferDeletes[m_imageIndex].add({ indexBuffer.getBuffer(), indexBuffer.getMemory() });
+	m_delayedBufferDeletes[m_imageIndex].add({ vertexBuffer.getBuffer(), vertexBuffer.getMemory() });
 }
 
 unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData(bool* outRequiresSwizzle)
