@@ -11,6 +11,7 @@
 #include "BBE/Matrix4.h"
 #include "BBE/Rectangle.h"
 #include "BBE/Vulkan/VulkanCommandPool.h"
+#include "BBE/Vulkan/VulkanImage.h"
 
 void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a, bool force)
 {
@@ -168,11 +169,11 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain& terrain)
 	);
 
 	bindPipelineTerrain();
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 3, 1, terrain.m_heightMap.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 4, 1, terrain.m_baseTexture.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 3, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_heightMap.m_prendererData)->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 4, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_baseTexture.m_prendererData)->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 	//vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 5, 1, terrain.m_viewFrustrumDescriptor.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 5, 1, terrain.m_additionalTextures[0].getDescriptorSet().getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 6, 1, terrain.m_additionalTextureWeights[0].getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 5, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_additionalTextures[0].m_prendererData)->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(m_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layoutTerrain, 6, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_additionalTextureWeights[0].m_prendererData)->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 
 
 	class PushConts

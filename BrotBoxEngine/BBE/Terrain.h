@@ -8,6 +8,7 @@
 #include "../BBE/Vulkan/VulkanBuffer.h"
 #include "../BBE/Vulkan/VulkanCommandPool.h"
 #include "../BBE/Vulkan/VulkanDevice.h"
+#include "../BBE/Vulkan/VulkanDescriptorSet.h"
 #include "../BBE/Matrix4.h"
 #include "../BBE/List.h"
 #include "../BBE/Image.h"

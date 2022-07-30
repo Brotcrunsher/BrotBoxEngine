@@ -25,6 +25,7 @@
 #include "../Vulkan/VulkanStopWatch.h"
 #include "../BBE/ImguiManager.h"
 #include "../BBE/RenderManager.h"
+#include "../Vulkan/VulkanImage.h"
 
 namespace bbe
 {
@@ -116,7 +117,7 @@ namespace bbe
 				ImguiManager m_imguiManager;
 				FILE* videoFile = nullptr;
 
-				bbe::List<bbe::List<bbe::Image::VulkanData*>> imageDatas;
+				bbe::List<bbe::List<bbe::INTERNAL::vulkan::VulkanImage*>> imageDatas;
 
 				PipelineRecord2D m_pipelineRecord = PipelineRecord2D::NONE;
 

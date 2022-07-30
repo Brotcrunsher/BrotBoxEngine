@@ -935,12 +935,21 @@ void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, co
 		m_pipelineRecord = PipelineRecord2D::IMAGE;
 	}
 
-	image.createAndUpload(m_device, m_commandPool, m_descriptorPool, m_setLayoutSampler);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DImage.getLayout(), 0, 1, image.getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	bbe::INTERNAL::vulkan::VulkanImage* vi = nullptr;
+	if (image.m_prendererData == nullptr)
+	{
+		// The image is cleaning up this VulkanImage
+		vi = new bbe::INTERNAL::vulkan::VulkanImage(image, m_device, m_commandPool, m_descriptorPool, m_setLayoutSampler);
+	}
+	else
+	{
+		vi = (bbe::INTERNAL::vulkan::VulkanImage*)image.m_prendererData;
+	}
 
-	auto vulkanData = image.m_pVulkanData;
-	imageDatas[m_imageIndex].add(vulkanData);
-	vulkanData->incRef();
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DImage.getLayout(), 0, 1, vi->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+
+	imageDatas[m_imageIndex].add(vi);
+	vi->incRef();
 
 	float pushConstants[] = {
 		rect.getX(),

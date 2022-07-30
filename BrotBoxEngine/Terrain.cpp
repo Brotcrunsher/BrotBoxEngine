@@ -5,6 +5,7 @@
 #include "BBE/Random.h"
 #include "BBE/Math.h"
 #include "BBE/Vulkan/VulkanBuffer.h"
+#include "BBE/Vulkan/VulkanImage.h"
 #include "BBE/TimeHelper.h"
 
 static const int PATCH_SIZE = 64;
@@ -22,10 +23,11 @@ void bbe::Terrain::init(
 {
 	if (!m_wasInit)
 	{
-		m_heightMap.createAndUpload(device, commandPool, descriptorPool, setLayoutHeightMap);
+		// The bbe::Image is cleaning up these new calls.
+		new bbe::INTERNAL::vulkan::VulkanImage(m_heightMap, device, commandPool, descriptorPool, setLayoutHeightMap);
 		m_wasInit = true;
 
-		m_baseTexture.createAndUpload(device, commandPool, descriptorPool, setLayoutTexture);
+		new bbe::INTERNAL::vulkan::VulkanImage(m_baseTexture, device, commandPool, descriptorPool, setLayoutTexture);
 
 		m_viewFrustrumBuffer.create(device, sizeof(bbe::Vector4) * 5, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 		m_viewFrustrumDescriptor.addUniformBuffer(m_viewFrustrumBuffer, 0, 0);
@@ -34,12 +36,11 @@ void bbe::Terrain::init(
 
 		for (int i = 1; i < m_currentAdditionalTexture; i++)
 		{
-			m_additionalTextures[i].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures, &(m_additionalTextures[0]));
-			m_additionalTextureWeights[i].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures, &(m_additionalTextureWeights[0]));
+			new bbe::INTERNAL::vulkan::VulkanImage(m_additionalTextures[i], device, commandPool, descriptorPool, setLayoutAdditionalTextures, &(m_additionalTextures[0]));
+			new bbe::INTERNAL::vulkan::VulkanImage(m_additionalTextureWeights[i], device, commandPool, descriptorPool, setLayoutAdditionalTextures, &(m_additionalTextureWeights[0]));
 		}
-
-		m_additionalTextures[0].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures);
-		m_additionalTextureWeights[0].createAndUpload(device, commandPool, descriptorPool, setLayoutAdditionalTextures);
+		new bbe::INTERNAL::vulkan::VulkanImage(m_additionalTextures[0], device, commandPool, descriptorPool, setLayoutAdditionalTextures);
+		new bbe::INTERNAL::vulkan::VulkanImage(m_additionalTextureWeights[0], device, commandPool, descriptorPool, setLayoutAdditionalTextures);
 
 		initIndexBuffer(device, commandPool, device.getQueue());
 		initVertexBuffer(device, commandPool, device.getQueue());

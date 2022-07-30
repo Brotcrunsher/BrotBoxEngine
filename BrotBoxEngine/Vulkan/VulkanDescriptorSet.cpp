@@ -4,6 +4,7 @@
 #include "BBE/Vulkan/VulkanDevice.h"
 #include "BBE/Vulkan/VulkanDescriptorSet.h"
 #include "BBE/Vulkan/VulkanBuffer.h"
+#include "BBE/Vulkan/VulkanImage.h"
 #include "BBE/Image.h"
 
 void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addUniformBuffer(const VulkanBuffer & buffer, VkDeviceSize offset, uint32_t binding)
@@ -24,9 +25,14 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addUniformBuffer(const VulkanBu
 void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addCombinedImageSampler(const Image& image, uint32_t binding)
 {
 	VkDescriptorImageInfo dii = {};
-	dii.sampler = image.getSampler();
-	dii.imageView = image.getImageView();
-	dii.imageLayout = image.getImageLayout();
+	VulkanImage* vi = (VulkanImage*)image.m_prendererData;
+	if (!vi)
+	{
+		throw NullPointerException();
+	}
+	dii.sampler = vi->getSampler();
+	dii.imageView = vi->getImageView();
+	dii.imageLayout = vi->getImageLayout();
 	
 
 	m_descriptorImageInfos.add(AdvancedDescriptorImageInfo(dii, binding));

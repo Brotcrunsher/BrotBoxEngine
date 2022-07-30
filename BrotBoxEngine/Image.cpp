@@ -2,200 +2,10 @@
 #ifdef BBE_RENDERER_VULKAN
 #include "BBE/Image.h"
 #include "BBE/Exceptions.h"
-#include "BBE/Vulkan/VulkanDevice.h"
-#include "BBE/Vulkan/VulkanCommandPool.h"
-#include "BBE/Vulkan/VulkanDescriptorPool.h"
-#include "BBE/Vulkan/VulkanDescriptorSetLayout.h"
-#include "BBE/Vulkan/VulkanBuffer.h"
 #include "BBE/Math.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-
-void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayout, const Image* parentImage) const
-{
-	if (m_pVulkanData != nullptr)
-	{
-		return;
-	}
-
-	if (m_pdata == nullptr)
-	{
-		throw NotInitializedException();
-	}
-
-	if (m_pVulkanData)
-	{
-		throw IllegalStateException();
-	}
-
-	m_pVulkanData = new VulkanData();
-
-	m_pVulkanData->m_device = device.getDevice();
-	const int amountOfMips = Math::max(1, Math::log2Floor(Math::min(getWidth(), getHeight())));
-	m_pVulkanData->m_imageLayout = std::make_unique<VkImageLayout[]>(amountOfMips); //TODO use allocator
-	for (int i = 0; i < amountOfMips; i++)
-	{
-		m_pVulkanData->m_imageLayout[i] = VK_IMAGE_LAYOUT_PREINITIALIZED;
-	}
-
-	VkDeviceSize imageSize = getSizeInBytes();
-
-	INTERNAL::vulkan::VulkanBuffer stagingBuffer;
-	stagingBuffer.create(device, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-	
-	void *data = stagingBuffer.map();
-	memcpy(data, m_pdata, imageSize);
-	stagingBuffer.unmap();
-
-
-	INTERNAL::vulkan::createImage(
-		m_pVulkanData->m_device,
-		device.getPhysicalDevice(), 
-		getWidth(), getHeight(), 
-		(VkFormat)m_format, 
-		VK_IMAGE_TILING_OPTIMAL, 
-		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-		m_pVulkanData->m_image, m_pVulkanData->m_imageMemory,
-		amountOfMips);
-
-	changeLayout(m_pVulkanData->m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	writeBufferToImage(m_pVulkanData->m_device, commandPool.getCommandPool(), device.getQueue(), stagingBuffer.getBuffer());
-	changeLayout(m_pVulkanData->m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
-	for (int i = 1; i < amountOfMips; i++)
-	{
-		VkImageBlit ib = {};
-		ib.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		ib.srcSubresource.mipLevel = i - 1;
-		ib.srcSubresource.baseArrayLayer = 0;
-		ib.srcSubresource.layerCount = 1;
-		ib.srcOffsets[1].x = getWidth() >> (i - 1);
-		ib.srcOffsets[1].y = getHeight() >> (i - 1);
-		ib.srcOffsets[1].z = 1;
-
-		ib.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		ib.dstSubresource.mipLevel = i;
-		ib.dstSubresource.baseArrayLayer = 0;
-		ib.dstSubresource.layerCount = 1;
-		ib.dstOffsets[1].x = getWidth() >> i;
-		ib.dstOffsets[1].y = getHeight() >> i;
-		ib.dstOffsets[1].z = 1;
-
-		changeLayout(m_pVulkanData->m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, i);
-
-		VkCommandBuffer commandBuffer = INTERNAL::vulkan::startSingleTimeCommandBuffer(device.getDevice(), commandPool.getCommandPool());
-		vkCmdBlitImage(commandBuffer, m_pVulkanData->m_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, m_pVulkanData->m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &ib, VK_FILTER_LINEAR);
-		INTERNAL::vulkan::endSingleTimeCommandBuffer(device.getDevice(), device.getQueue(), commandPool.getCommandPool(), commandBuffer);
-
-		changeLayout(m_pVulkanData->m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, i);
-	}
-	
-	changeLayout(m_pVulkanData->m_device, commandPool.getCommandPool(), device.getQueue(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, amountOfMips);
-
-	stagingBuffer.destroy();
-
-	VkComponentSwizzle swizR = VK_COMPONENT_SWIZZLE_IDENTITY;
-	VkComponentSwizzle swizG = VK_COMPONENT_SWIZZLE_IDENTITY;
-	VkComponentSwizzle swizB = VK_COMPONENT_SWIZZLE_IDENTITY;
-	VkComponentSwizzle swizA = VK_COMPONENT_SWIZZLE_IDENTITY;
-	if (m_format == ImageFormat::R8)
-	{
-		swizR = VK_COMPONENT_SWIZZLE_R;
-		swizG = VK_COMPONENT_SWIZZLE_R;
-		swizB = VK_COMPONENT_SWIZZLE_R;
-		swizA = VK_COMPONENT_SWIZZLE_R;
-	}
-
-	INTERNAL::vulkan::createImageView(m_pVulkanData->m_device, m_pVulkanData->m_image, (VkFormat)m_format, VK_IMAGE_ASPECT_COLOR_BIT, m_pVulkanData->m_imageView, amountOfMips, swizR, swizG, swizB, swizA);
-
-	VkSamplerCreateInfo samplerCreateInfo = {};
-	samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	samplerCreateInfo.pNext = nullptr;
-	samplerCreateInfo.flags = 0;
-	samplerCreateInfo.magFilter = (VkFilter)m_filterMode;
-	samplerCreateInfo.minFilter = (VkFilter)m_filterMode;
-	samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	samplerCreateInfo.addressModeU = (VkSamplerAddressMode)m_repeatMode;
-	samplerCreateInfo.addressModeV = (VkSamplerAddressMode)m_repeatMode;
-	samplerCreateInfo.addressModeW = (VkSamplerAddressMode)m_repeatMode;
-	samplerCreateInfo.mipLodBias = 0.0f;
-	//samplerCreateInfo.anisotropyEnable = VK_TRUE;
-	//samplerCreateInfo.maxAnisotropy = 16;
-	samplerCreateInfo.compareEnable = VK_FALSE;
-	samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
-	samplerCreateInfo.minLod = 0.0f;
-	samplerCreateInfo.maxLod = static_cast<float>(amountOfMips);
-	samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-	samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
-
-	VkResult result = vkCreateSampler(m_pVulkanData->m_device, &samplerCreateInfo, nullptr, &m_pVulkanData->m_sampler);
-	ASSERT_VULKAN(result);
-
-	m_parentImage = parentImage;
-
-	getDescriptorSet().addCombinedImageSampler(*this, 0);
-	if (m_parentImage == nullptr)
-	{
-		getDescriptorSet().create(device, descriptorPool, setLayout);
-	}
-}
-
-void bbe::Image::changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout, uint32_t baseMipLevel, uint32_t levelCount) const
-{
-	INTERNAL::vulkan::changeImageLayout(device, commandPool, queue, m_pVulkanData->m_image, (VkFormat)m_format, this->m_pVulkanData->m_imageLayout[baseMipLevel], layout, baseMipLevel, levelCount);
-
-	this->m_pVulkanData->m_imageLayout[baseMipLevel] = layout;
-}
-
-void bbe::Image::writeBufferToImage(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuffer buffer) const
-{
-	VkCommandBuffer commandBuffer = INTERNAL::vulkan::startSingleTimeCommandBuffer(device, commandPool);
-
-
-	VkBufferImageCopy bufferImageCopy = {};
-	bufferImageCopy.bufferOffset = 0;
-	bufferImageCopy.bufferRowLength = 0;
-	bufferImageCopy.bufferImageHeight = 0;
-	bufferImageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	bufferImageCopy.imageSubresource.mipLevel = 0;
-	bufferImageCopy.imageSubresource.baseArrayLayer = 0;
-	bufferImageCopy.imageSubresource.layerCount = 1;
-	bufferImageCopy.imageOffset = { 0, 0, 0 };
-	bufferImageCopy.imageExtent = { (uint32_t)getWidth(), (uint32_t)getHeight(), 1 };
-
-	vkCmdCopyBufferToImage(commandBuffer, buffer, m_pVulkanData->m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &bufferImageCopy);
-
-	INTERNAL::vulkan::endSingleTimeCommandBuffer(device, queue, commandPool, commandBuffer);
-}
-
-VkSampler bbe::Image::getSampler() const
-{
-	return m_pVulkanData->m_sampler;
-}
-
-VkImageView bbe::Image::getImageView() const
-{
-	return m_pVulkanData->m_imageView;
-}
-
-VkImageLayout bbe::Image::getImageLayout() const
-{
-	return m_pVulkanData->m_imageLayout[0];
-}
-
-bbe::INTERNAL::vulkan::VulkanDescriptorSet & bbe::Image::getDescriptorSet() const
-{
-	if (m_parentImage == nullptr)
-	{
-		return m_pVulkanData->m_descriptorrSet;
-	}
-	else
-	{
-		return m_parentImage->m_pVulkanData->m_descriptorrSet;
-	}
-}
 
 bbe::Image::Image()
 {
@@ -232,10 +42,10 @@ bbe::Image::Image(const Image& other)
 
 	m_repeatMode = other.m_repeatMode;
 	m_filterMode = other.m_filterMode;
-	m_pVulkanData = other.m_pVulkanData;
-	if (m_pVulkanData)
+	m_prendererData = other.m_prendererData;
+	if (m_prendererData)
 	{
-		m_pVulkanData->incRef();
+		m_prendererData->incRef();
 	}
 
 	m_parentImage = other.m_parentImage;
@@ -257,7 +67,7 @@ bbe::Image& bbe::Image::operator=(Image&& other)
 	this->m_repeatMode = other.m_repeatMode;
 	this->m_filterMode = other.m_filterMode;
 
-	this->m_pVulkanData = other.m_pVulkanData;
+	this->m_prendererData = other.m_prendererData;
 	this->m_parentImage = other.m_parentImage;
 
 	other.m_pdata = nullptr;
@@ -267,7 +77,7 @@ bbe::Image& bbe::Image::operator=(Image&& other)
 	other.m_repeatMode = (ImageRepeatMode)0;
 	other.m_filterMode = (ImageFilterMode)0;
 
-	other.m_pVulkanData = nullptr;
+	other.m_prendererData = nullptr;
 	other.m_parentImage = 0;
 
 	return *this;
@@ -348,10 +158,10 @@ void bbe::Image::destroy()
 		m_height = 0;
 	}
 
-	if(m_pVulkanData)
+	if(m_prendererData)
 	{
-		m_pVulkanData->decRef();
-		m_pVulkanData = nullptr;
+		m_prendererData->decRef();
+		m_prendererData = nullptr;
 	}
 }
 
@@ -437,7 +247,7 @@ bbe::ImageRepeatMode bbe::Image::getRepeatMode() const
 
 void bbe::Image::setRepeatMode(ImageRepeatMode irm)
 {
-	if (m_pVulkanData != nullptr)
+	if (m_prendererData != nullptr)
 	{
 		throw AlreadyUploadedException();
 	}
@@ -452,7 +262,7 @@ bbe::ImageFilterMode bbe::Image::getFilterMode() const
 
 void bbe::Image::setFilterMode(ImageFilterMode ifm)
 {
-	if (m_pVulkanData != nullptr)
+	if (m_prendererData != nullptr)
 	{
 		throw AlreadyUploadedException();
 	}
@@ -463,31 +273,6 @@ void bbe::Image::setFilterMode(ImageFilterMode ifm)
 bool bbe::Image::isLoaded() const
 {
 	return m_pdata != nullptr;
-}
-
-bbe::Image::VulkanData::VulkanData()
-{
-}
-
-bbe::Image::VulkanData::~VulkanData()
-{
-	if(m_sampler != VK_NULL_HANDLE)
-	{
-		vkDestroySampler(m_device, m_sampler, nullptr);
-		vkDestroyImageView(m_device, m_imageView, nullptr);
-
-		vkDestroyImage(m_device, m_image, nullptr);
-		vkFreeMemory(m_device, m_imageMemory, nullptr);
-
-		m_descriptorrSet.destroy();
-
-		m_image       = VK_NULL_HANDLE;
-		m_imageMemory = VK_NULL_HANDLE;
-		m_imageView   = VK_NULL_HANDLE;
-		m_imageLayout = nullptr;
-		m_device      = VK_NULL_HANDLE;
-		m_sampler     = VK_NULL_HANDLE;
-	}
 }
 
 #endif
