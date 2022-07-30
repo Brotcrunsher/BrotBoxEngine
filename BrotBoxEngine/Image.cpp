@@ -14,7 +14,7 @@
 
 void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, const INTERNAL::vulkan::VulkanCommandPool & commandPool, const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayout, const Image* parentImage) const
 {
-	if (wasUploadedToVulkan)
+	if (m_pVulkanData != nullptr)
 	{
 		return;
 	}
@@ -140,8 +140,6 @@ void bbe::Image::createAndUpload(const INTERNAL::vulkan::VulkanDevice & device, 
 	{
 		getDescriptorSet().create(device, descriptorPool, setLayout);
 	}
-
-	wasUploadedToVulkan = true;
 }
 
 void bbe::Image::changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout, uint32_t baseMipLevel, uint32_t levelCount) const
@@ -241,8 +239,6 @@ bbe::Image::Image(const Image& other)
 	}
 
 	m_parentImage = other.m_parentImage;
-
-	wasUploadedToVulkan = other.wasUploadedToVulkan;
 }
 
 bbe::Image::Image(Image&& other)
@@ -264,8 +260,6 @@ bbe::Image& bbe::Image::operator=(Image&& other)
 	this->m_pVulkanData = other.m_pVulkanData;
 	this->m_parentImage = other.m_parentImage;
 
-	this->wasUploadedToVulkan = other.wasUploadedToVulkan;
-
 	other.m_pdata = nullptr;
 	other.m_width = 0;
 	other.m_height = 0;
@@ -275,8 +269,6 @@ bbe::Image& bbe::Image::operator=(Image&& other)
 
 	other.m_pVulkanData = nullptr;
 	other.m_parentImage = 0;
-
-	other.wasUploadedToVulkan = false;
 
 	return *this;
 }
@@ -354,7 +346,6 @@ void bbe::Image::destroy()
 		m_pdata = nullptr;
 		m_width = 0;
 		m_height = 0;
-		wasUploadedToVulkan = false;
 	}
 
 	if(m_pVulkanData)
@@ -446,7 +437,7 @@ bbe::ImageRepeatMode bbe::Image::getRepeatMode() const
 
 void bbe::Image::setRepeatMode(ImageRepeatMode irm)
 {
-	if (wasUploadedToVulkan)
+	if (m_pVulkanData != nullptr)
 	{
 		throw AlreadyUploadedException();
 	}
@@ -461,7 +452,7 @@ bbe::ImageFilterMode bbe::Image::getFilterMode() const
 
 void bbe::Image::setFilterMode(ImageFilterMode ifm)
 {
-	if (wasUploadedToVulkan)
+	if (m_pVulkanData != nullptr)
 	{
 		throw AlreadyUploadedException();
 	}
