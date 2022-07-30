@@ -1,7 +1,5 @@
 #pragma once
 
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 #include "../BBE/ColorByte.h"
 #include "../BBE/Color.h"
 #include "../BBE/String.h"
@@ -107,4 +105,3 @@ namespace bbe
 		bool isLoaded() const;
 	};
 }
-#endif
