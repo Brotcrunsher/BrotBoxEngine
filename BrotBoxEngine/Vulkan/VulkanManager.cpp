@@ -875,12 +875,12 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillRect2D(const Rectangle& rect, flo
 {
 	if (shader != nullptr)
 	{
-		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->INTERNAL_getPipeline().getPipeline(m_fillMode));
+		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->INTERNAL_getPipeline().getPipeline(getFillMode2D()));
 		vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 80, 48, shader->getPushConstants());
 	}
 	else if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
 	{
-		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DPrimitive.getPipeline(m_fillMode));
+		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DPrimitive.getPipeline(getFillMode2D()));
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 
@@ -902,7 +902,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillCircle2D(const Circle& circle)
 {
 	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
 	{
-		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DPrimitive.getPipeline(m_fillMode));
+		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DPrimitive.getPipeline(getFillMode2D()));
 		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
 	}
 	float pushConstants[] = {
@@ -923,16 +923,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillCircle2D(const Circle& circle)
 	vkCmdBindIndexBuffer(*m_currentFrameDrawCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, (Circle::AMOUNTOFVERTICES - 2) * 3, 1, 0, 0, 0);
-}
-
-void bbe::INTERNAL::vulkan::VulkanManager::setFillMode2D(bbe::FillMode fm)
-{
-	m_fillMode = fm;
-}
-
-bbe::FillMode bbe::INTERNAL::vulkan::VulkanManager::getFillMode2D()
-{
-	return m_fillMode;
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, const Image& image, float rotation)

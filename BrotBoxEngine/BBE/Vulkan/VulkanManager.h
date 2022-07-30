@@ -119,7 +119,6 @@ namespace bbe
 				bbe::List<bbe::List<bbe::Image::VulkanData*>> imageDatas;
 
 				PipelineRecord2D m_pipelineRecord = PipelineRecord2D::NONE;
-				FillMode m_fillMode = FillMode::SOLID;
 
 				struct BufferMemoryPair
 				{
@@ -172,8 +171,6 @@ namespace bbe
 				virtual void setColor2D(const bbe::Color& color) override;
 				virtual void fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader) override;
 				virtual void fillCircle2D(const Circle& circle) override;
-				virtual void setFillMode2D(bbe::FillMode fm) override;
-				virtual bbe::FillMode getFillMode2D() override;
 				virtual void drawImage2D(const Rectangle& rect, const Image& image, float rotation) override;
 				virtual void fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale) override;
 			};

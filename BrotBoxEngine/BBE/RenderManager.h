@@ -21,6 +21,8 @@ namespace bbe
 
 	class RenderManager
 	{
+	private:
+		FillMode m_fillMode = FillMode::SOLID;
 	public:
 		virtual void init(const char* appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow* window, uint32_t initialWindowWidth, uint32_t initialWindowHeight) = 0;
 
@@ -40,11 +42,11 @@ namespace bbe
 		virtual void screenshot(const bbe::String& path) = 0;
 		virtual void setVideoRenderingMode(const char* path) = 0;
 
+		void setFillMode2D(bbe::FillMode fm);
+		bbe::FillMode getFillMode2D();
 		virtual void setColor2D(const bbe::Color& color) = 0;
 		virtual void fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader) = 0;
 		virtual void fillCircle2D(const Circle& circle) = 0;
-		virtual void setFillMode2D(bbe::FillMode fm) = 0;
-		virtual bbe::FillMode getFillMode2D() = 0;
 		virtual void drawImage2D(const Rectangle& rect, const Image& image, float rotation) = 0;
 		virtual void fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2 &scale) = 0;
 	};

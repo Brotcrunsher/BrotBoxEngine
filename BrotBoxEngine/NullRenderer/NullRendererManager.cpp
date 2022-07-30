@@ -58,6 +58,26 @@ void bbe::INTERNAL::nullRenderer::NullRendererManager::setVideoRenderingMode(con
 {
 }
 
+void bbe::INTERNAL::nullRenderer::NullRendererManager::setColor2D(const bbe::Color& color)
+{
+}
+
+void bbe::INTERNAL::nullRenderer::NullRendererManager::fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader)
+{
+}
+
+void bbe::INTERNAL::nullRenderer::NullRendererManager::fillCircle2D(const Circle& circle)
+{
+}
+
+void bbe::INTERNAL::nullRenderer::NullRendererManager::drawImage2D(const Rectangle& rect, const Image& image, float rotation)
+{
+}
+
+void bbe::INTERNAL::nullRenderer::NullRendererManager::fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale)
+{
+}
+
 bool bbe::INTERNAL::nullRenderer::NullRendererManager::isReadyToDraw() const
 {
 	return true;
