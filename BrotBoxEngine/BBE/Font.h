@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 #include <map>
 #define STBTT_RASTERIZER_VERSION 1
 #include <stb_truetype.h>
@@ -82,4 +80,3 @@ namespace bbe
 		static FittedFont getBestFittingFont(const bbe::List<Font>& fonts, const bbe::String& string, bbe::Vector2 maxSize);
 	};
 }
-#endif

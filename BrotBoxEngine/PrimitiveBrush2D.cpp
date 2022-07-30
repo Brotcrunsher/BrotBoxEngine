@@ -1,11 +1,6 @@
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 #include <map>
 #include "BBE/PrimitiveBrush2D.h"
-#include "BBE/Vulkan/VulkanBuffer.h"
-#include "BBE/Vulkan/VulkanDevice.h"
-#include "BBE/Vulkan/VulkanManager.h"
-#include "BBE/Vulkan/VulkanPipeline.h"
+#include "BBE/RenderManager.h"
 #include "BBE/Image.h"
 #include "BBE/Math.h"
 #include "BBE/FragmentShader.h"
@@ -608,4 +603,3 @@ void bbe::PrimitiveBrush2D::fillVertexIndexList(const uint32_t* indices, uint32_
 {
 	m_prenderManager->fillVertexIndexList2D(indices, amountOfIndices, vertices, amountOfVertices, m_offset, { m_windowXScale, m_windowYScale });
 }
-#endif

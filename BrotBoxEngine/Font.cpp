@@ -1,5 +1,3 @@
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 #include "BBE/Font.h"
 #define STBTT_RASTERIZER_VERSION 1
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -346,4 +344,3 @@ bbe::FittedFont bbe::Font::getBestFittingFont(const bbe::List<Font>& fonts, cons
 
 	return {};
 }
-#endif

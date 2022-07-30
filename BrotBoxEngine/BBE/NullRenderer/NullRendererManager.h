@@ -12,9 +12,11 @@ namespace bbe
 		{
 			class NullRendererManager 
 				: public RenderManager {
-
+			private:
 				PrimitiveBrush2D m_primitiveBrush2D;
 				PrimitiveBrush3D m_primitiveBrush3D;
+
+				GLFWwindow* m_pwindow = nullptr;
 			public:
 				NullRendererManager();
 

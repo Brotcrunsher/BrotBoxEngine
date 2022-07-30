@@ -1,5 +1,3 @@
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 #include "BBE/Image.h"
 #include "BBE/Exceptions.h"
 #include "BBE/Math.h"
@@ -274,5 +272,3 @@ bool bbe::Image::isLoaded() const
 {
 	return m_pdata != nullptr;
 }
-
-#endif

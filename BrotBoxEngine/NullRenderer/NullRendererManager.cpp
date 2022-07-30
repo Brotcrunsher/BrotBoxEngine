@@ -6,6 +6,7 @@ bbe::INTERNAL::nullRenderer::NullRendererManager::NullRendererManager()
 
 void bbe::INTERNAL::nullRenderer::NullRendererManager::init(const char* appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow* window, uint32_t initialWindowWidth, uint32_t initialWindowHeight)
 {
+	m_pwindow = window;
 }
 
 void bbe::INTERNAL::nullRenderer::NullRendererManager::destroy()
@@ -14,6 +15,7 @@ void bbe::INTERNAL::nullRenderer::NullRendererManager::destroy()
 
 void bbe::INTERNAL::nullRenderer::NullRendererManager::preDraw2D()
 {
+	m_primitiveBrush2D.INTERNAL_beginDraw(m_pwindow, 0, 0, this);
 }
 
 void bbe::INTERNAL::nullRenderer::NullRendererManager::preDraw3D()

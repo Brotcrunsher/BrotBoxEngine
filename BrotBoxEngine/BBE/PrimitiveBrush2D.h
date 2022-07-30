@@ -31,13 +31,16 @@ namespace bbe
 		{
 			class VulkanManager;
 		}
+		namespace nullRenderer
+		{
+			class NullRendererManager;
+		}
 	}
 
 	class PrimitiveBrush2D
 	{
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 		friend class INTERNAL::vulkan::VulkanManager;
+		friend class INTERNAL::nullRenderer::NullRendererManager;
 	private:
 
 		float                                        m_windowXScale = 0;
@@ -160,6 +163,5 @@ namespace bbe
 
 		void fillVertexIndexList(const bbe::List<uint32_t>& indices, const bbe::List<bbe::Vector2>& vertices);
 		void fillVertexIndexList(const uint32_t *indices, uint32_t amountOfIndices, const bbe::Vector2 *vertices, size_t amountOfVertices);
-#endif
 	};
 }

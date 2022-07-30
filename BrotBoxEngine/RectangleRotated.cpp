@@ -1,5 +1,3 @@
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 #include "BBE/RectangleRotated.h"
 #include "BBE/Rectangle.h"
 #include "BBE/Vector2.h"
@@ -134,4 +132,3 @@ void bbe::RectangleRotated::getVertices(bbe::List<bbe::Vector2>& outVertices) co
 	outVertices.add(p3.rotate(m_rotation, center));
 	outVertices.add(p4.rotate(m_rotation, center));
 }
-#endif

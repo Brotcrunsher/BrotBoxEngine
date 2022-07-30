@@ -1,5 +1,3 @@
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 #include "BBE/Rectangle.h"
 #include "BBE/Vector2.h"
 #include "BBE/Circle.h"
@@ -296,4 +294,3 @@ bool bbe::Rectangle::intersects(const Circle& circle) const
 
 	return false;
 }
-#endif

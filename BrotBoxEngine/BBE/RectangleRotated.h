@@ -1,8 +1,4 @@
 #pragma once
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
-#include "../BBE/Vulkan/VulkanBuffer.h"
-#include "../BBE/Vulkan/VulkanCommandPool.h"
 #include "../BBE/Vector2.h"
 #include "../BBE/Shape2.h"
 
@@ -52,4 +48,3 @@ namespace bbe
 		virtual void getVertices(bbe::List<bbe::Vector2>& outVertices) const override;
 	};
 }
-#endif
