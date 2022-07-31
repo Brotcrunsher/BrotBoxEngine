@@ -31,6 +31,8 @@
 #include "../BBE/VertexWithNormal.h"
 #include "../BBE/Window.h"
 
+#include "imgui.h"
+
 #ifdef BBE_RENDERER_VULKAN
 #include "../BBE/Vulkan/VWDepthImage.h"
 

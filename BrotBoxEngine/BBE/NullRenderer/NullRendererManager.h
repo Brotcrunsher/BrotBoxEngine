@@ -55,6 +55,11 @@ namespace bbe
 				virtual void setCamera3D(const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection) override;
 				virtual void fillCube3D(const Cube& cube) override;
 				virtual void fillSphere3D(const IcoSphere& sphere) override;
+
+				virtual void imguiStart() override;
+				virtual void imguiStop() override;
+				virtual void imguiStartFrame() override;
+				virtual void imguiEndFrame() override;
 			};
 		}
 	}

@@ -23,6 +23,10 @@
 
 #include "../Third-Party/jo/jo_mpeg.cpp"
 
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
+#include "imgui.h"
+
 #include <future>
 #include <mutex>
 #include <fstream>
@@ -163,7 +167,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_currentFrameDrawCommandBuffer = &m_currentFrameDrawCommandBuffer1;
 
 	std::cout << "Vulkan Manager: Starting Dear ImGui" << std::endl;
-	m_imguiManager.start(m_instance, m_commandPool, m_device, m_surface, m_physicalDeviceContainer.findBestDevice(m_surface), m_descriptorPool, m_renderPass, m_pwindow);
+	imguiStart();
 
 	if (imageDatas.getLength() < m_swapchain.getAmountOfImages())
 	{
@@ -204,7 +208,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 		}
 	}
 
-	m_imguiManager.destroy();
+	imguiStop();
 
 	//m_renderPassStopWatch.destroy();
 	
@@ -308,7 +312,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 		first = false;
 	}
 
-	m_imguiManager.startFrame();
+	imguiStartFrame();
 
 	vkAcquireNextImageKHR(m_device.getDevice(), m_swapchain.getSwapchain(), std::numeric_limits<uint64_t>::max(), m_semaphoreImageAvailable.getSemaphore(), VK_NULL_HANDLE, &m_imageIndex);
 
@@ -367,7 +371,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 
 void bbe::INTERNAL::vulkan::VulkanManager::postDraw()
 {
-	m_imguiManager.endFrame(*m_currentFrameDrawCommandBuffer);
+	imguiEndFrame();
 
 	vkCmdEndRenderPass(*m_currentFrameDrawCommandBuffer);
 
@@ -1151,6 +1155,85 @@ void bbe::INTERNAL::vulkan::VulkanManager::drawTerrain(const bbe::Terrain& terra
 	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, terrain.getAmountOfIndizes(), 1, 0, 0, 0);
 
 	m_lastDraw3D = DrawRecord::TERRAIN;
+}
+
+static void CheckVkResultFn(VkResult err)
+{
+	ASSERT_VULKAN(err);
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::imguiStart()
+{
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui::StyleColorsDark();
+
+	ImGui_ImplGlfw_InitForVulkan(m_pwindow, false);
+
+	ImGui_ImplVulkan_InitInfo implVulkanInitInfo = {};
+	implVulkanInitInfo.Instance = m_instance.getInstance();
+	implVulkanInitInfo.PhysicalDevice = m_device.getPhysicalDevice();
+	implVulkanInitInfo.Device = m_device.getDevice();
+	implVulkanInitInfo.QueueFamily = m_device.getQueueFamilyIndex();
+	implVulkanInitInfo.Queue = m_device.getQueue();
+	implVulkanInitInfo.PipelineCache = VK_NULL_HANDLE;
+	implVulkanInitInfo.DescriptorPool = m_descriptorPool.getDescriptorPool();
+	implVulkanInitInfo.Subpass = 0;
+	implVulkanInitInfo.MinImageCount = m_imguiMinImageCount;
+	implVulkanInitInfo.ImageCount = m_imguiMinImageCount;
+	implVulkanInitInfo.Allocator = nullptr;
+	implVulkanInitInfo.CheckVkResultFn = CheckVkResultFn;
+	m_imguiInitSuccessful = ImGui_ImplVulkan_Init(&implVulkanInitInfo, m_renderPass.getRenderPass());
+	if (!m_imguiInitSuccessful)
+	{
+		throw IllegalStateException();
+	}
+
+	ImGuiIO& io = ImGui::GetIO();
+	ImFontConfig fontConfig;
+	imguiFontSmall = io.Fonts->AddFontDefault(&fontConfig);
+	fontConfig.SizePixels = 26;
+	imguiFontBig = io.Fonts->AddFontDefault(&fontConfig);
+
+	VkCommandBuffer commandBuffer = INTERNAL::vulkan::startSingleTimeCommandBuffer(m_device.getDevice(), m_commandPool.getCommandPool());
+	ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+	INTERNAL::vulkan::endSingleTimeCommandBuffer(m_device.getDevice(), m_device.getQueue(), m_commandPool.getCommandPool(), commandBuffer);
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::imguiStop()
+{
+	if (m_imguiInitSuccessful)
+	{
+		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+	}
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::imguiStartFrame()
+{
+	// TODO: Still not ideal - what if the scale is anything else than 1 or 2 (e.g. on 8k)
+	float scale = 0;
+	glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
+	ImGuiIO& io = ImGui::GetIO();
+	if (scale < 1.5f)
+	{
+		io.FontDefault = imguiFontSmall;
+	}
+	else
+	{
+		io.FontDefault = imguiFontBig;
+	}
+
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::imguiEndFrame()
+{
+	ImGui::Render();
+	ImDrawData* drawData = ImGui::GetDrawData();
+	ImGui_ImplVulkan_RenderDrawData(drawData, *m_currentFrameDrawCommandBuffer);
 }
 
 unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData(bool* outRequiresSwizzle)

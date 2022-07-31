@@ -1,4 +1,6 @@
 #include "bbe/NullRenderer/NullRendererManager.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
 
 bbe::INTERNAL::nullRenderer::NullRendererManager::NullRendererManager()
 {
@@ -7,6 +9,7 @@ bbe::INTERNAL::nullRenderer::NullRendererManager::NullRendererManager()
 void bbe::INTERNAL::nullRenderer::NullRendererManager::init(const char* appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow* window, uint32_t initialWindowWidth, uint32_t initialWindowHeight)
 {
 	m_pwindow = window;
+	imguiStart();
 }
 
 void bbe::INTERNAL::nullRenderer::NullRendererManager::destroy()
@@ -24,10 +27,12 @@ void bbe::INTERNAL::nullRenderer::NullRendererManager::preDraw3D()
 
 void bbe::INTERNAL::nullRenderer::NullRendererManager::preDraw()
 {
+	imguiStartFrame();
 }
 
 void bbe::INTERNAL::nullRenderer::NullRendererManager::postDraw()
 {
+	imguiEndFrame();
 }
 
 void bbe::INTERNAL::nullRenderer::NullRendererManager::waitEndDraw()
@@ -94,6 +99,35 @@ void bbe::INTERNAL::nullRenderer::NullRendererManager::fillCube3D(const Cube& cu
 
 void bbe::INTERNAL::nullRenderer::NullRendererManager::fillSphere3D(const IcoSphere& sphere)
 {
+}
+
+void bbe::INTERNAL::nullRenderer::NullRendererManager::imguiStart()
+{
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	ImFontConfig fontConfig;
+	io.Fonts->AddFontDefault(&fontConfig);
+
+	unsigned char* pixels;
+	int width, height;
+	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+}
+
+void bbe::INTERNAL::nullRenderer::NullRendererManager::imguiStop()
+{
+}
+
+void bbe::INTERNAL::nullRenderer::NullRendererManager::imguiStartFrame()
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize = ImVec2((float)1280, (float)720);
+	ImGui::NewFrame();
+}
+
+void bbe::INTERNAL::nullRenderer::NullRendererManager::imguiEndFrame()
+{
+	ImGui::Render();
 }
 
 bool bbe::INTERNAL::nullRenderer::NullRendererManager::isReadyToDraw() const

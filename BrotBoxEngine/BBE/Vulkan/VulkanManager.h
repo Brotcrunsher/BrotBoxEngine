@@ -23,9 +23,10 @@
 #include "../BBE/Stack.h"
 #include "../BBE/Image.h"
 #include "../Vulkan/VulkanStopWatch.h"
-#include "../BBE/ImguiManager.h"
 #include "../BBE/RenderManager.h"
 #include "../Vulkan/VulkanImage.h"
+
+struct ImFont;
 
 namespace bbe
 {
@@ -125,7 +126,6 @@ namespace bbe
 
 				//VulkanStopWatch m_renderPassStopWatch;
 
-				ImguiManager m_imguiManager;
 				FILE* videoFile = nullptr;
 
 
@@ -135,6 +135,11 @@ namespace bbe
 				PipelineRecord3D m_pipelineRecord3D = PipelineRecord3D::NONE;
 
 				DrawRecord m_lastDraw3D = DrawRecord::NONE;
+
+				constexpr static uint32_t m_imguiMinImageCount = 2;
+				bool m_imguiInitSuccessful = false;
+				ImFont* imguiFontSmall = nullptr;
+				ImFont* imguiFontBig = nullptr;
 
 				struct BufferMemoryPair
 				{
@@ -198,6 +203,11 @@ namespace bbe
 				virtual void fillCube3D(const Cube& cube) override;
 				virtual void fillSphere3D(const bbe::IcoSphere& sphere) override;
 				void drawTerrain(const bbe::Terrain& terrain, const bbe::Color& color);
+
+				virtual void imguiStart() override;
+				virtual void imguiStop() override;
+				virtual void imguiStartFrame() override;
+				virtual void imguiEndFrame() override;
 			};
 		}
 	}
