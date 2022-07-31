@@ -894,6 +894,18 @@ void bbe::INTERNAL::vulkan::VulkanManager::bindPipelinePrimitive3D()
 	}
 }
 
+void bbe::INTERNAL::vulkan::VulkanManager::bindPipelineTerrain3D()
+{
+	if (m_pipelineRecord3D != PipelineRecord3D::TERRAIN)
+	{
+		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getPipeline(getFillMode3D()));
+		vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
+		vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 1, 1, m_setViewProjectionMatrixLights[m_imageIndex].getPDescriptorSet(), 0, nullptr);
+		vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
+		m_pipelineRecord3D = PipelineRecord3D::TERRAIN;
+	}
+}
+
 void bbe::INTERNAL::vulkan::VulkanManager::setColor2D(const bbe::Color& color)
 {
 	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(Color), &color);
@@ -1091,6 +1103,68 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillSphere3D(const bbe::IcoSphere& sp
 
 
 	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, VulkanSphere::amountOfIndices, 1, 0, 0, 0);
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::drawTerrain(const bbe::Terrain& terrain, const bbe::Color& color)
+{
+	terrain.init(
+		m_device,
+		m_commandPool,
+		m_descriptorPool,
+		m_setLayoutTerrainHeightMap,
+		m_setLayoutSampler,
+		m_setLayoutTerrainAdditionalTexture,
+		m_setLayoutTerrainAdditionalTextureWeight,
+		m_setLayoutTerrainViewFrustum
+	);
+
+	bindPipelineTerrain3D();
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 3, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_heightMap.m_prendererData)->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 4, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_baseTexture.m_prendererData)->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	//vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 5, 1, terrain.m_viewFrustrumDescriptor.getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 5, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_additionalTextures[0].m_prendererData)->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 6, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_additionalTextureWeights[0].m_prendererData)->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+
+
+	class PushConts
+	{
+	public:
+		Matrix4 mat;
+		float height;
+	}pushConts;
+
+	class PushContsFragmentShader
+	{
+	public:
+		Color c;
+		Vector4 bias;
+	} pushContsFragmenShader;
+
+	pushContsFragmenShader.c = color;
+	pushContsFragmenShader.bias.x = terrain.m_baseTextureBias.m_textureMult.x;
+	pushContsFragmenShader.bias.y = terrain.m_baseTextureBias.m_textureMult.y;
+	pushContsFragmenShader.bias.z = terrain.m_baseTextureBias.m_textureOffset.x;
+	pushContsFragmenShader.bias.w = terrain.m_baseTextureBias.m_textureOffset.y;
+
+	pushConts.height = terrain.getMaxHeight();
+	pushConts.mat = terrain.m_transform;
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DTerrain.getLayout(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(PushContsFragmentShader), sizeof(PushConts), &(pushConts));
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DTerrain.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 108, sizeof(float), &terrain.m_patchSize);
+
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DTerrain.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushContsFragmentShader), &(pushContsFragmenShader));
+
+	VkDeviceSize offsets[] = { 0 };
+	VkBuffer buffer = terrain.m_vertexBuffer.getBuffer();
+	vkCmdBindVertexBuffers(*m_currentFrameDrawCommandBuffer, 0, 1, &buffer, offsets);
+
+	buffer = terrain.m_indexBuffer.getBuffer();
+	vkCmdBindIndexBuffer(*m_currentFrameDrawCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DTerrain.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 112, sizeof(Vector2), &terrain.m_heightmapScale);
+	Vector2 emptyOffset(0, 0);
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DTerrain.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 100, sizeof(Vector2), &emptyOffset);
+	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, terrain.getAmountOfIndizes(), 1, 0, 0, 0);
+
+	m_lastDraw3D = DrawRecord::TERRAIN;
 }
 
 unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData(bool* outRequiresSwizzle)

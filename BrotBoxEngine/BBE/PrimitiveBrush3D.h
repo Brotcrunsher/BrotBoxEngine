@@ -100,17 +100,15 @@ namespace bbe
 		Color m_color = Color(-1000, -1000, -1000);
 
 		bbe::RenderManager* m_prenderManager = nullptr;
-
-		void bindPipelinePrimitive();
-		void bindPipelineTerrain();
-
 	public:
 		PrimitiveBrush3D();
 
 		void fillCube(const Cube &cube);
 		void fillIcoSphere(const IcoSphere &sphere);
 
+#ifdef BBE_RENDERER_VULKAN
 		void drawTerrain(const Terrain &terrain);
+#endif
 
 		void setColor(float r, float g, float b, float a);
 		void setColor(float r, float g, float b);

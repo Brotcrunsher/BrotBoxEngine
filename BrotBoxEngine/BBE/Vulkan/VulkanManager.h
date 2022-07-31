@@ -185,6 +185,7 @@ namespace bbe
 				void bindRectBuffers();
 
 				void bindPipelinePrimitive3D();
+				void bindPipelineTerrain3D();
 
 				virtual void setColor2D(const bbe::Color& color) override;
 				virtual void fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader) override;
@@ -196,6 +197,7 @@ namespace bbe
 				virtual void setCamera3D(const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection) override;
 				virtual void fillCube3D(const Cube& cube) override;
 				virtual void fillSphere3D(const bbe::IcoSphere& sphere) override;
+				void drawTerrain(const bbe::Terrain& terrain, const bbe::Color& color);
 			};
 		}
 	}
