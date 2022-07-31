@@ -1,9 +1,6 @@
 #pragma once
 
 #include "GLFW/glfw3.h"
-#ifdef BBE_RENDERER_VULKAN
-#include "../BBE/Vulkan/VulkanBuffer.h"
-#endif
 #include "../BBE/Matrix4.h"
 #include "../BBE/Cube.h"
 #include "../BBE/IcoSphere.h"
@@ -11,6 +8,7 @@
 #include "../BBE/FillMode.h"
 #include "../BBE/ViewFrustum.h"
 #include "../BBE/RenderManager.h"
+#include "../BBE/Color.h"
 
 namespace bbe
 {
@@ -19,54 +17,16 @@ namespace bbe
 	{
 		namespace vulkan
 		{
-			class VulkanDevice;
 			class VulkanManager;
-			class VulkanBuffer;
-			class VulkanDescriptorPool;
-			class VulkanPipeline;
-			class VulkanCommandPool;
-			class VulkanDescriptorSetLayout;
-			class VulkanDescriptorPool;
 		}
 	}
 
-	enum class DrawRecord
-	{
-		NONE, CUBE, ICOSPHERE, TERRAIN
-	};
-
-	enum class PipelineRecord3D
-	{
-		NONE, PRIMITIVE, TERRAIN
-	};
-
 	class PrimitiveBrush3D
 	{
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 		friend class INTERNAL::vulkan::VulkanManager;
 	private:
-		VkCommandBuffer                              m_currentCommandBuffer                               = VK_NULL_HANDLE;
-		INTERNAL::vulkan::VulkanDevice              *m_pdevice                                            = nullptr;
-		VkPipelineLayout                             m_layoutPrimitive                                    = VK_NULL_HANDLE;
-		INTERNAL::vulkan::VulkanPipeline            *m_ppipelinePrimitive                                 = nullptr;
-		VkPipelineLayout                             m_layoutTerrain                                      = VK_NULL_HANDLE;
-		INTERNAL::vulkan::VulkanPipeline            *m_ppipelineTerrain                                   = nullptr;
-		INTERNAL::vulkan::VulkanDescriptorPool      *m_pdescriptorPool                                    = nullptr;
-		INTERNAL::vulkan::VulkanCommandPool         *m_pcommandPool                                       = nullptr;
-		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainHeightMap               = nullptr;
-		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTexture                        = nullptr;
-		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainAdditionalTexture       = nullptr;
-		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutTerrainAdditionalTextureWeight = nullptr;
-		INTERNAL::vulkan::VulkanDescriptorSetLayout *m_pdescriptorSetLayoutViewFrustum                    = nullptr;
-		VkDescriptorSet                              m_setVertexLight                                     = VK_NULL_HANDLE;
-		VkDescriptorSet                              m_setViewProjectionMatrixLight                       = VK_NULL_HANDLE;
-		VkDescriptorSet                              m_setFragmentLight                                   = VK_NULL_HANDLE;
 		int                                          m_screenWidth = -1;
 		int                                          m_screenHeight = -1;
-
-		DrawRecord m_lastDraw = DrawRecord::NONE;
-		PipelineRecord3D m_pipelineRecord = PipelineRecord3D::NONE;
 
 		Matrix4 m_modelMatrix;
 		Matrix4 m_viewProjectionMatrix;
@@ -75,20 +35,6 @@ namespace bbe
 
 		void INTERNAL_setColor(float r, float g, float b, float a, bool force);
 		void INTERNAL_beginDraw(
-			bbe::INTERNAL::vulkan::VulkanDevice &device,
-			VkCommandBuffer commandBuffer,
-			INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive,
-			INTERNAL::vulkan::VulkanPipeline &pipelineTerrain,
-			INTERNAL::vulkan::VulkanCommandPool &commandPool,
-			INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool,
-			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainHeightMap,
-			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTexture,
-			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainAdditionalTexture,
-			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainAdditionalTextureWeight,
-			INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutViewFrustum,
-			VkDescriptorSet setVertexLight,
-			VkDescriptorSet setViewProjectionMatrixLight, 
-			VkDescriptorSet setFragmentLight,
 			int screenWidth, int screenHeight,
 			bbe::RenderManager* renderManager);
 
@@ -118,6 +64,5 @@ namespace bbe
 
 		void setFillMode(FillMode fm);
 		FillMode getFillMode();
-#endif
 	};
 }

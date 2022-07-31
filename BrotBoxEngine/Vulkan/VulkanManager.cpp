@@ -285,20 +285,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 {
 	m_primitiveBrushes3D[m_imageIndex].INTERNAL_beginDraw(
-		m_device,
-		*m_currentFrameDrawCommandBuffer,
-		m_pipeline3DPrimitive,
-		m_pipeline3DTerrain,
-		m_commandPool,
-		m_descriptorPool,
-		m_setLayoutTerrainHeightMap,
-		m_setLayoutSampler,
-		m_setLayoutTerrainAdditionalTexture,
-		m_setLayoutTerrainAdditionalTextureWeight,
-		m_setLayoutTerrainViewFrustum,
-		m_setVertexLight.getDescriptorSet(),
-		m_setViewProjectionMatrixLights[m_imageIndex].getDescriptorSet(),
-		m_setFragmentLight.getDescriptorSet(),
 		m_screenWidth, m_screenHeight,
 		this);
 

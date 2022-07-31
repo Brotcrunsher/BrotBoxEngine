@@ -1,17 +1,8 @@
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 #include "BBE/PrimitiveBrush3D.h"
-#include "BBE/Vulkan/VulkanDevice.h"
-#include "BBE/Vulkan/VulkanBuffer.h"
-#include "BBE/Color.h"
 #include "BBE/Math.h"
-#include "BBE/Vulkan/VulkanDescriptorPool.h"
-#include "BBE/Vulkan/VulkanPipeline.h"
 #include "BBE/Vector2.h"
 #include "BBE/Matrix4.h"
 #include "BBE/Rectangle.h"
-#include "BBE/Vulkan/VulkanCommandPool.h"
-#include "BBE/Vulkan/VulkanImage.h"
 #ifdef BBE_RENDERER_VULKAN
 #include "BBE/Vulkan/VulkanManager.h"
 #endif
@@ -27,43 +18,11 @@ void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a
 }
 
 void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
-	bbe::INTERNAL::vulkan::VulkanDevice & device, 
-	VkCommandBuffer commandBuffer, 
-	INTERNAL::vulkan::VulkanPipeline &pipelinePrimitive, 
-	INTERNAL::vulkan::VulkanPipeline &pipelineTerrain,
-	INTERNAL::vulkan::VulkanCommandPool &commandPool, 
-	INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, 
-	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainHeightMap, 
-	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTexture, 
-	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainAdditionalTexture,
-	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutTerrainAdditionalTextureWeight,
-	INTERNAL::vulkan::VulkanDescriptorSetLayout &descriptorSetLayoutViewFrustum,
-	VkDescriptorSet setVertexLight,
-	VkDescriptorSet setViewProjectionMatrixLight,
-	VkDescriptorSet setFragmentLight,
 	int width, int height,
 	bbe::RenderManager* renderManager)
 {
-	m_layoutPrimitive = pipelinePrimitive.getLayout();
-	m_ppipelinePrimitive = &pipelinePrimitive;
-	m_layoutTerrain = pipelineTerrain.getLayout();
-	m_ppipelineTerrain = &pipelineTerrain;
-	m_currentCommandBuffer = commandBuffer;
-	m_pdescriptorPool = &descriptorPool;
-	m_pdescriptorSetLayoutTerrainHeightMap = &descriptorSetLayoutTerrainHeightMap;
-	m_pdescriptorSetLayoutTexture = &descriptorSetLayoutTexture;
-	m_pdescriptorSetLayoutTerrainAdditionalTexture = &descriptorSetLayoutTerrainAdditionalTexture;
-	m_pdescriptorSetLayoutTerrainAdditionalTextureWeight = &descriptorSetLayoutTerrainAdditionalTextureWeight;
-	m_pdescriptorSetLayoutViewFrustum = &descriptorSetLayoutViewFrustum;
-	m_pdevice = &device;
-	m_pcommandPool = &commandPool;
-	m_setVertexLight = setVertexLight;
-	m_setViewProjectionMatrixLight = setViewProjectionMatrixLight;
-	m_setFragmentLight = setFragmentLight;
 	m_screenWidth = width;
 	m_screenHeight = height;
-	m_lastDraw = DrawRecord::NONE;
-	m_pipelineRecord = PipelineRecord3D::NONE;
 	m_prenderManager = renderManager;
 
 	INTERNAL_setColor(1.0f, 1.0f, 1.0f, 1.0f, true);
@@ -125,4 +84,3 @@ bbe::FillMode bbe::PrimitiveBrush3D::getFillMode()
 {
 	return m_fillMode;
 }
-#endif
