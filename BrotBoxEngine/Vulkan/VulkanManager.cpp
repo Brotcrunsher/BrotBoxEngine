@@ -1052,7 +1052,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::setCamera3D(const bbe::Matrix4& m_vie
 void bbe::INTERNAL::vulkan::VulkanManager::fillCube3D(const Cube& cube)
 {
 	bindPipelinePrimitive3D();
-	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &cube.m_transform);
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &cube.getTransform());
 
 	if (m_lastDraw3D != DrawRecord::CUBE)
 	{
