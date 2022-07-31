@@ -288,7 +288,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 		m_setVertexLight.getDescriptorSet(),
 		m_setViewProjectionMatrixLights[m_imageIndex].getDescriptorSet(),
 		m_setFragmentLight.getDescriptorSet(),
-		m_screenWidth, m_screenHeight);
+		m_screenWidth, m_screenHeight,
+		this);
 
 	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
 	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 1, 1, m_setViewProjectionMatrixLights[m_imageIndex].getPDescriptorSet(), 0, nullptr);
@@ -1010,6 +1011,11 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillVertexIndexList2D(const uint32_t*
 
 	m_delayedBufferDeletes[m_imageIndex].add({ indexBuffer.getBuffer(), indexBuffer.getMemory() });
 	m_delayedBufferDeletes[m_imageIndex].add({ vertexBuffer.getBuffer(), vertexBuffer.getMemory() });
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::setColor3D(const bbe::Color& color)
+{
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &color);
 }
 
 unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData(bool* outRequiresSwizzle)

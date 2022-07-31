@@ -10,6 +10,7 @@
 #include "../BBE/Terrain.h"
 #include "../BBE/FillMode.h"
 #include "../BBE/ViewFrustum.h"
+#include "../BBE/RenderManager.h"
 
 namespace bbe
 {
@@ -90,7 +91,8 @@ namespace bbe
 			VkDescriptorSet setVertexLight,
 			VkDescriptorSet setViewProjectionMatrixLight, 
 			VkDescriptorSet setFragmentLight,
-			int screenWidth, int screenHeight);
+			int screenWidth, int screenHeight,
+			bbe::RenderManager* renderManager);
 		
 		void create(const INTERNAL::vulkan::VulkanDevice &vulkanDevice);
 		void destroy();
@@ -101,6 +103,8 @@ namespace bbe
 		Matrix4 m_projection;
 
 		Color m_color;
+
+		bbe::RenderManager* m_prenderManager = nullptr;
 
 		void bindPipelinePrimitive();
 		void bindPipelineTerrain();

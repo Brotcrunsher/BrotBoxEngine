@@ -18,7 +18,7 @@ void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a
 	Color c(r, g, b, a);
 	if (c.r != m_color.r || c.g != m_color.g || c.b != m_color.b || c.a != m_color.a || force)
 	{
-		vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &c);
+		m_prenderManager->setColor3D(c);
 		m_color = c;
 	}
 }
@@ -38,7 +38,8 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 	VkDescriptorSet setVertexLight,
 	VkDescriptorSet setViewProjectionMatrixLight,
 	VkDescriptorSet setFragmentLight,
-	int width, int height)
+	int width, int height,
+	bbe::RenderManager* renderManager)
 {
 	m_layoutPrimitive = pipelinePrimitive.getLayout();
 	m_ppipelinePrimitive = &pipelinePrimitive;
@@ -60,6 +61,7 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 	m_screenHeight = height;
 	m_lastDraw = DrawRecord::NONE;
 	m_pipelineRecord = PipelineRecord3D::NONE;
+	m_prenderManager = renderManager;
 
 	INTERNAL_setColor(1.0f, 1.0f, 1.0f, 1.0f, true);
 	setCamera(Vector3(0, 0, 0), Vector3(1, 0, 0), Vector3(0, 0, 1));

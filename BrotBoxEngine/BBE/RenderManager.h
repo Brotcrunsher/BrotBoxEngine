@@ -49,5 +49,7 @@ namespace bbe
 		virtual void fillCircle2D(const Circle& circle) = 0;
 		virtual void drawImage2D(const Rectangle& rect, const Image& image, float rotation) = 0;
 		virtual void fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2 &scale) = 0;
+
+		virtual void setColor3D(const bbe::Color& color) = 0;
 	};
 }
