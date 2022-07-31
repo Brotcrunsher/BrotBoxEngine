@@ -38,6 +38,16 @@ namespace bbe
 				NONE, PRIMITIVE, IMAGE
 			};
 
+			enum class PipelineRecord3D
+			{
+				NONE, PRIMITIVE, TERRAIN
+			};
+
+			enum class DrawRecord
+			{
+				NONE, CUBE, ICOSPHERE, TERRAIN
+			};
+
 			class VulkanManager 
 				: public RenderManager {
 			public:
@@ -121,7 +131,10 @@ namespace bbe
 
 				bbe::List<bbe::List<bbe::INTERNAL::vulkan::VulkanImage*>> imageDatas;
 
-				PipelineRecord2D m_pipelineRecord = PipelineRecord2D::NONE;
+				PipelineRecord2D m_pipelineRecord2D = PipelineRecord2D::NONE;
+				PipelineRecord3D m_pipelineRecord3D = PipelineRecord3D::NONE;
+
+				DrawRecord m_lastDraw3D = DrawRecord::NONE;
 
 				struct BufferMemoryPair
 				{
@@ -171,6 +184,8 @@ namespace bbe
 
 				void bindRectBuffers();
 
+				void bindPipelinePrimitive3D();
+
 				virtual void setColor2D(const bbe::Color& color) override;
 				virtual void fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader) override;
 				virtual void fillCircle2D(const Circle& circle) override;
@@ -181,6 +196,9 @@ namespace bbe
 
 				// Geerbt über RenderManager
 				virtual void setCamera3D(const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection) override;
+
+				// Geerbt über RenderManager
+				virtual void fillCube3D(const Cube& cube) override;
 };
 		}
 	}

@@ -24,14 +24,6 @@ namespace bbe
 	private:
 		Matrix4 m_transform;
 
-		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
-		static void s_initIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
-		static void s_initVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
-		static void s_destroy();
-		static bbe::INTERNAL::vulkan::VulkanBuffer s_indexBuffer;
-		static bbe::INTERNAL::vulkan::VulkanBuffer s_vertexBuffer;
-		static uint32_t amountOfIndices;
-
 	public:
 		Cube();
 		Cube(const Vector3 &pos, const Vector3 &scale = Vector3(1, 1, 1), const Vector3 &rotationVector = Vector3(0, 0, 0), float radians = 0);

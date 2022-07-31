@@ -97,23 +97,7 @@ bbe::PrimitiveBrush3D::PrimitiveBrush3D()
 
 void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 {
-	bindPipelinePrimitive();
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &cube.m_transform);
-
-	if (m_lastDraw != DrawRecord::CUBE)
-	{
-		VkDeviceSize offsets[] = { 0 };
-		VkBuffer buffer = Cube::s_vertexBuffer.getBuffer();
-		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
-
-		buffer = Cube::s_indexBuffer.getBuffer();
-		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
-
-		m_lastDraw = DrawRecord::CUBE;
-	}
-	
-
-	vkCmdDrawIndexed(m_currentCommandBuffer, Cube::amountOfIndices, 1, 0, 0, 0);
+	m_prenderManager->fillCube3D(cube);
 }
 
 void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)

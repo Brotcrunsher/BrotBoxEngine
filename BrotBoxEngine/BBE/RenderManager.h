@@ -13,6 +13,7 @@ namespace bbe
 	class FragmentShader;
 	class Color;
 	class Rectangle;
+	class Cube;
 	class Circle;
 	class Image;
 	class Matrix4;
@@ -23,7 +24,8 @@ namespace bbe
 	class RenderManager
 	{
 	private:
-		FillMode m_fillMode = FillMode::SOLID;
+		FillMode m_fillMode2D = FillMode::SOLID;
+		FillMode m_fillMode3D = FillMode::SOLID;
 	public:
 		virtual void init(const char* appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow* window, uint32_t initialWindowWidth, uint32_t initialWindowHeight) = 0;
 
@@ -51,7 +53,10 @@ namespace bbe
 		virtual void drawImage2D(const Rectangle& rect, const Image& image, float rotation) = 0;
 		virtual void fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2 &scale) = 0;
 
+		void setFillMode3D(bbe::FillMode fm);
+		bbe::FillMode getFillMode3D();
 		virtual void setColor3D(const bbe::Color& color) = 0;
 		virtual void setCamera3D(const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection) = 0;
+		virtual void fillCube3D(const Cube& cube) = 0;
 	};
 }

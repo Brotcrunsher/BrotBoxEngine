@@ -13,6 +13,7 @@
 #include "BBE/Rectangle.h"
 #include "BBE/Vulkan/VulkanRectangle.h"
 #include "BBE/Vulkan/VulkanCircle.h"
+#include "BBE/Vulkan/VulkanCube.h"
 #include "EmbedOutput.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -89,8 +90,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	}
 	bbe::PointLight::s_init(m_device.getDevice(), m_device.getPhysicalDevice());
 	bbe::INTERNAL::vulkan::VulkanRectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
-	bbe::INTERNAL::vulkan::VulkanCircle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
-	bbe::Cube::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
+	bbe::INTERNAL::vulkan::VulkanCircle   ::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
+	bbe::INTERNAL::vulkan::VulkanCube     ::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::IcoSphere::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 
 
@@ -205,8 +206,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 
 	//m_renderPassStopWatch.destroy();
 	
-	bbe::Cube::s_destroy();
-	bbe::INTERNAL::vulkan::VulkanCircle::s_destroy();
+	bbe::INTERNAL::vulkan::VulkanCube     ::s_destroy();
+	bbe::INTERNAL::vulkan::VulkanCircle   ::s_destroy();
 	bbe::INTERNAL::vulkan::VulkanRectangle::s_destroy();
 	bbe::PointLight::s_destroy();
 	bbe::IcoSphere::s_destroy();
@@ -256,7 +257,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 {
-	m_pipelineRecord = PipelineRecord2D::NONE;
+	m_pipelineRecord2D = PipelineRecord2D::NONE;
 	m_primitiveBrush2D.INTERNAL_beginDraw(
 		m_pwindow,
 		m_screenWidth, m_screenHeight,
@@ -299,6 +300,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 		m_screenWidth, m_screenHeight,
 		this);
 
+	m_pipelineRecord3D = PipelineRecord3D::NONE;
+	m_lastDraw3D = DrawRecord::NONE;
 	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
 	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 1, 1, m_setViewProjectionMatrixLights[m_imageIndex].getPDescriptorSet(), 0, nullptr);
 	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
@@ -877,6 +880,18 @@ void bbe::INTERNAL::vulkan::VulkanManager::bindRectBuffers()
 	vkCmdBindIndexBuffer(*m_currentFrameDrawCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
+void bbe::INTERNAL::vulkan::VulkanManager::bindPipelinePrimitive3D()
+{
+	if (m_pipelineRecord3D != PipelineRecord3D::PRIMITIVE)
+	{
+		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getPipeline(getFillMode3D()));
+		vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
+		vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 1, 1, m_setViewProjectionMatrixLights[m_imageIndex].getPDescriptorSet(), 0, nullptr);
+		vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DPrimitive.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
+		m_pipelineRecord3D = PipelineRecord3D::PRIMITIVE;
+	}
+}
+
 void bbe::INTERNAL::vulkan::VulkanManager::setColor2D(const bbe::Color& color)
 {
 	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(Color), &color);
@@ -889,10 +904,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillRect2D(const Rectangle& rect, flo
 		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->INTERNAL_getPipeline().getPipeline(getFillMode2D()));
 		vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 80, 48, shader->getPushConstants());
 	}
-	else if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
+	else if (m_pipelineRecord2D != PipelineRecord2D::PRIMITIVE)
 	{
 		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DPrimitive.getPipeline(getFillMode2D()));
-		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
+		m_pipelineRecord2D = PipelineRecord2D::PRIMITIVE;
 	}
 
 	float pushConstants[] = {
@@ -911,10 +926,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillRect2D(const Rectangle& rect, flo
 
 void bbe::INTERNAL::vulkan::VulkanManager::fillCircle2D(const Circle& circle)
 {
-	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
+	if (m_pipelineRecord2D != PipelineRecord2D::PRIMITIVE)
 	{
 		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DPrimitive.getPipeline(getFillMode2D()));
-		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
+		m_pipelineRecord2D = PipelineRecord2D::PRIMITIVE;
 	}
 	float pushConstants[] = {
 		circle.getX(),
@@ -938,10 +953,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillCircle2D(const Circle& circle)
 
 void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, const Image& image, float rotation)
 {
-	if (m_pipelineRecord != PipelineRecord2D::IMAGE)
+	if (m_pipelineRecord2D != PipelineRecord2D::IMAGE)
 	{
 		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DImage.getPipeline(getFillMode2D()));
-		m_pipelineRecord = PipelineRecord2D::IMAGE;
+		m_pipelineRecord2D = PipelineRecord2D::IMAGE;
 	}
 
 	bbe::INTERNAL::vulkan::VulkanImage* vi = nullptr;
@@ -993,10 +1008,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillVertexIndexList2D(const uint32_t*
 	memcpy(vertexDataBuf, (float*)vertices, sizeof(Vector2) * amountOfVertices);
 	vertexBuffer.unmap();
 
-	if (m_pipelineRecord != PipelineRecord2D::PRIMITIVE)
+	if (m_pipelineRecord2D != PipelineRecord2D::PRIMITIVE)
 	{
 		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DPrimitive.getPipeline(getFillMode2D()));
-		m_pipelineRecord = PipelineRecord2D::PRIMITIVE;
+		m_pipelineRecord2D = PipelineRecord2D::PRIMITIVE;
 	}
 
 	float pushConstants[] = {
@@ -1032,6 +1047,27 @@ void bbe::INTERNAL::vulkan::VulkanManager::setCamera3D(const bbe::Matrix4& m_vie
 	memcpy((char*)data, &m_view, sizeof(Matrix4));
 	memcpy((char*)data + sizeof(Matrix4), &m_projection, sizeof(Matrix4));
 	m_uboMatrices[m_imageIndex].unmap();
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::fillCube3D(const Cube& cube)
+{
+	bindPipelinePrimitive3D();
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &cube.m_transform);
+
+	if (m_lastDraw3D != DrawRecord::CUBE)
+	{
+		VkDeviceSize offsets[] = { 0 };
+		VkBuffer buffer = VulkanCube::s_vertexBuffer.getBuffer();
+		vkCmdBindVertexBuffers(*m_currentFrameDrawCommandBuffer, 0, 1, &buffer, offsets);
+
+		buffer = VulkanCube::s_indexBuffer.getBuffer();
+		vkCmdBindIndexBuffer(*m_currentFrameDrawCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+
+		m_lastDraw3D = DrawRecord::CUBE;
+	}
+
+
+	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, VulkanCube::amountOfIndices, 1, 0, 0, 0);
 }
 
 unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData(bool* outRequiresSwizzle)
