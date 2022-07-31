@@ -11,9 +11,11 @@
 #include "BBE/FragmentShader.h"
 #include "BBE/Circle.h"
 #include "BBE/Rectangle.h"
+#include "BBE/IcoSphere.h"
 #include "BBE/Vulkan/VulkanRectangle.h"
 #include "BBE/Vulkan/VulkanCircle.h"
 #include "BBE/Vulkan/VulkanCube.h"
+#include "BBE/Vulkan/VulkanSphere.h"
 #include "EmbedOutput.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -92,7 +94,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	bbe::INTERNAL::vulkan::VulkanRectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::INTERNAL::vulkan::VulkanCircle   ::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::INTERNAL::vulkan::VulkanCube     ::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
-	bbe::IcoSphere::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
+	bbe::INTERNAL::vulkan::VulkanSphere   ::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 
 
 	std::cout << "Vulkan Manager: Setting Bindings" << std::endl;
@@ -210,7 +212,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	bbe::INTERNAL::vulkan::VulkanCircle   ::s_destroy();
 	bbe::INTERNAL::vulkan::VulkanRectangle::s_destroy();
 	bbe::PointLight::s_destroy();
-	bbe::IcoSphere::s_destroy();
+	bbe::INTERNAL::vulkan::VulkanSphere   ::s_destroy();
 
 	m_presentFence1.destroy();
 	m_presentFence2.destroy();
@@ -1068,6 +1070,27 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillCube3D(const Cube& cube)
 
 
 	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, VulkanCube::amountOfIndices, 1, 0, 0, 0);
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::fillSphere3D(const bbe::IcoSphere& sphere)
+{
+	bindPipelinePrimitive3D();
+	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &sphere.m_transform);
+
+	if (m_lastDraw3D != DrawRecord::ICOSPHERE)
+	{
+		VkDeviceSize offsets[] = { 0 };
+		VkBuffer buffer = VulkanSphere::s_vertexBuffer.getBuffer();
+		vkCmdBindVertexBuffers(*m_currentFrameDrawCommandBuffer, 0, 1, &buffer, offsets);
+
+		buffer = VulkanSphere::s_indexBuffer.getBuffer();
+		vkCmdBindIndexBuffer(*m_currentFrameDrawCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+
+		m_lastDraw3D = DrawRecord::ICOSPHERE;
+	}
+
+
+	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, VulkanSphere::amountOfIndices, 1, 0, 0, 0);
 }
 
 unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData(bool* outRequiresSwizzle)

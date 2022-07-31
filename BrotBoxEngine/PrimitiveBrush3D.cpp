@@ -102,23 +102,7 @@ void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 
 void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 {
-	bindPipelinePrimitive();
-	vkCmdPushConstants(m_currentCommandBuffer, m_layoutPrimitive, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &sphere.m_transform);
-
-	if (m_lastDraw != DrawRecord::ICOSPHERE)
-	{
-		VkDeviceSize offsets[] = { 0 };
-		VkBuffer buffer = IcoSphere::s_vertexBuffer.getBuffer();
-		vkCmdBindVertexBuffers(m_currentCommandBuffer, 0, 1, &buffer, offsets);
-
-		buffer = IcoSphere::s_indexBuffer.getBuffer();
-		vkCmdBindIndexBuffer(m_currentCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
-
-		m_lastDraw = DrawRecord::ICOSPHERE;
-	}
-
-
-	vkCmdDrawIndexed(m_currentCommandBuffer, IcoSphere::amountOfIndices, 1, 0, 0, 0);
+	m_prenderManager->fillSphere3D(sphere);
 }
 
 void bbe::PrimitiveBrush3D::drawTerrain(const Terrain& terrain)

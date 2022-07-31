@@ -54,6 +54,7 @@ namespace bbe
 				virtual void setColor3D(const bbe::Color& color) override;
 				virtual void setCamera3D(const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection) override;
 				virtual void fillCube3D(const Cube& cube) override;
+				virtual void fillSphere3D(const IcoSphere& sphere) override;
 			};
 		}
 	}

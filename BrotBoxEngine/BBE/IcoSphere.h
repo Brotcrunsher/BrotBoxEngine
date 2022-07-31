@@ -1,7 +1,4 @@
 #pragma once
-// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
-#include "../BBE/Vulkan/VulkanBuffer.h"
 #include "../BBE/Matrix4.h"
 #include "../BBE/Vector3.h"
 
@@ -26,13 +23,6 @@ namespace bbe
 		Matrix4 m_transform;
 
 
-		static uint32_t amountOfVertices;
-		static uint32_t amountOfIndices;
-
-		static void s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue);
-		static void s_destroy();
-		static bbe::INTERNAL::vulkan::VulkanBuffer s_indexBuffer;
-		static bbe::INTERNAL::vulkan::VulkanBuffer s_vertexBuffer;
 
 	public:
 		IcoSphere();
@@ -54,4 +44,3 @@ namespace bbe
 		Matrix4 getTransform() const;
 	};
 }
-#endif

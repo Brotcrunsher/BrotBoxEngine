@@ -92,6 +92,10 @@ void bbe::INTERNAL::nullRenderer::NullRendererManager::fillCube3D(const Cube& cu
 {
 }
 
+void bbe::INTERNAL::nullRenderer::NullRendererManager::fillSphere3D(const IcoSphere& sphere)
+{
+}
+
 bool bbe::INTERNAL::nullRenderer::NullRendererManager::isReadyToDraw() const
 {
 	return true;
