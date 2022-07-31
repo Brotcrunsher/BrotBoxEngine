@@ -75,9 +75,17 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 
 	std::cout << "Vulkan Manager: creating 3DBrush" << std::endl;
 	m_primitiveBrushes3D.resizeCapacityAndLength(m_swapchain.getAmountOfImages());
+	m_uboMatrices       .resizeCapacityAndLength(m_swapchain.getAmountOfImages());
 	for (uint32_t i = 0; i < m_swapchain.getAmountOfImages(); i++)
 	{
-		m_primitiveBrushes3D[i].create(m_device);
+		Matrix4 mat;
+		m_uboMatrices[i].create(m_device, sizeof(Matrix4) * 2, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+		{
+			void* data = m_uboMatrices[i].map();
+			memcpy(data, &mat, sizeof(Matrix4));
+			memcpy((char*)data + sizeof(Matrix4), &mat, sizeof(Matrix4));
+			m_uboMatrices[i].unmap();
+		}
 	}
 	bbe::PointLight::s_init(m_device.getDevice(), m_device.getPhysicalDevice());
 	bbe::INTERNAL::vulkan::VulkanRectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
@@ -124,7 +132,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_setViewProjectionMatrixLights.resizeCapacityAndLength(m_swapchain.getAmountOfImages());
 	for (uint32_t i = 0; i < m_setViewProjectionMatrixLights.getLength(); i++)
 	{
-		m_setViewProjectionMatrixLights[i].addUniformBuffer(m_primitiveBrushes3D[i].m_uboMatrices, 0, 0);
+		m_setViewProjectionMatrixLights[i].addUniformBuffer(m_uboMatrices[i], 0, 0);
 		m_setViewProjectionMatrixLights[i].create(m_device, m_descriptorPool, m_setLayoutViewProjectionMatrix);
 	}
 	m_setVertexLight              .addUniformBuffer(PointLight::s_bufferVertexData  , 0, 0);
@@ -235,9 +243,9 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_setLayoutTerrainViewFrustum.destroy();
 	m_setLayoutTerrainAdditionalTextureWeight.destroy();
 	m_descriptorPool.destroy();
-	for (uint32_t i = 0; i < m_primitiveBrushes3D.getLength(); i++)
+	for (uint32_t i = 0; i < m_uboMatrices.getLength(); i++)
 	{
-		m_primitiveBrushes3D[i].destroy();
+		m_uboMatrices[i].destroy();
 	}
 	m_renderPass.destroy();
 	m_swapchain.destroy();
@@ -1016,6 +1024,14 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillVertexIndexList2D(const uint32_t*
 void bbe::INTERNAL::vulkan::VulkanManager::setColor3D(const bbe::Color& color)
 {
 	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &color);
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::setCamera3D(const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection)
+{
+	void* data = m_uboMatrices[m_imageIndex].map();
+	memcpy((char*)data, &m_view, sizeof(Matrix4));
+	memcpy((char*)data + sizeof(Matrix4), &m_projection, sizeof(Matrix4));
+	m_uboMatrices[m_imageIndex].unmap();
 }
 
 unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData(bool* outRequiresSwizzle)

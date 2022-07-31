@@ -67,23 +67,6 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 	setCamera(Vector3(0, 0, 0), Vector3(1, 0, 0), Vector3(0, 0, 1));
 }
 
-void bbe::PrimitiveBrush3D::create(const INTERNAL::vulkan::VulkanDevice &vulkanDevice)
-{
-	Matrix4 mat;
-	m_uboMatrices.create(vulkanDevice, sizeof(Matrix4) * 2, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-	{
-		void* data = m_uboMatrices.map();
-		memcpy(data, &mat, sizeof(Matrix4));
-		memcpy((char*)data + sizeof(Matrix4), &mat, sizeof(Matrix4));
-		m_uboMatrices.unmap();
-	}
-}
-
-void bbe::PrimitiveBrush3D::destroy()
-{
-	m_uboMatrices.destroy();
-}
-
 void bbe::PrimitiveBrush3D::bindPipelinePrimitive()
 {
 	if (m_pipelineRecord != PipelineRecord3D::PRIMITIVE)
@@ -110,9 +93,6 @@ void bbe::PrimitiveBrush3D::bindPipelineTerrain()
 
 bbe::PrimitiveBrush3D::PrimitiveBrush3D()
 {
-	m_screenWidth = -1;
-	m_screenHeight = -1;
-	m_color = Color(-1000, -1000, -1000);
 }
 
 void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
@@ -240,10 +220,7 @@ void bbe::PrimitiveBrush3D::setCamera(const Vector3 & cameraPos, const Vector3 &
 	m_view = Matrix4::createViewMatrix(cameraPos, cameraTarget, cameraUpVector);
 	m_projection = Matrix4::createPerspectiveMatrix(Math::toRadians(60.0f), (float)m_screenWidth / (float)m_screenHeight, 0.01f, 20000.0f);
 
-	void *data = m_uboMatrices.map();
-	memcpy((char*)data, &m_view, sizeof(Matrix4));
-	memcpy((char*)data + sizeof(Matrix4), &m_projection, sizeof(Matrix4));
-	m_uboMatrices.unmap();
+	m_prenderManager->setCamera3D(m_view, m_projection);
 
 	m_cameraPos = cameraPos;
 }

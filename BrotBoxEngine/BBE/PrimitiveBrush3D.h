@@ -62,8 +62,8 @@ namespace bbe
 		VkDescriptorSet                              m_setVertexLight                                     = VK_NULL_HANDLE;
 		VkDescriptorSet                              m_setViewProjectionMatrixLight                       = VK_NULL_HANDLE;
 		VkDescriptorSet                              m_setFragmentLight                                   = VK_NULL_HANDLE;
-		int                                          m_screenWidth;
-		int                                          m_screenHeight;
+		int                                          m_screenWidth = -1;
+		int                                          m_screenHeight = -1;
 
 		DrawRecord m_lastDraw = DrawRecord::NONE;
 		PipelineRecord3D m_pipelineRecord = PipelineRecord3D::NONE;
@@ -72,8 +72,6 @@ namespace bbe
 		Matrix4 m_viewProjectionMatrix;
 
 		Vector3 m_cameraPos;
-
-		INTERNAL::vulkan::VulkanBuffer m_uboMatrices;
 
 		void INTERNAL_setColor(float r, float g, float b, float a, bool force);
 		void INTERNAL_beginDraw(
@@ -93,16 +91,13 @@ namespace bbe
 			VkDescriptorSet setFragmentLight,
 			int screenWidth, int screenHeight,
 			bbe::RenderManager* renderManager);
-		
-		void create(const INTERNAL::vulkan::VulkanDevice &vulkanDevice);
-		void destroy();
 
 		FillMode m_fillMode = FillMode::SOLID;
 
 		Matrix4 m_view;
 		Matrix4 m_projection;
 
-		Color m_color;
+		Color m_color = Color(-1000, -1000, -1000);
 
 		bbe::RenderManager* m_prenderManager = nullptr;
 
