@@ -39,7 +39,7 @@ namespace bbe
 		float getHeight() const;
 		float getDepth() const;
 
-		Matrix4 getTransform() const;
+		const Matrix4& getTransform() const;
 
 		virtual bbe::List<bbe::Vector3> getNormals() const override;
 		using Shape3::getVertices;

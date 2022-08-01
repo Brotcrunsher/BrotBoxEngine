@@ -128,7 +128,7 @@ float bbe::Cube::getDepth() const
 	return getScale().y;
 }
 
-bbe::Matrix4 bbe::Cube::getTransform() const
+const bbe::Matrix4& bbe::Cube::getTransform() const
 {
 	//UNTESTED
 	return m_transform;
