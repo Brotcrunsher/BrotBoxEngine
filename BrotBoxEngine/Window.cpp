@@ -232,6 +232,12 @@ void bbe::Window::setVideoRenderingMode(const char* path)
 
 void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, int action, int mods)
 {
+	if (keyCode == GLFW_KEY_UNKNOWN)
+	{
+		// This can happen for example when pressing the FN key on some platforms.
+		// As we don't care about that key, we just drop the event.
+		return;
+	}
 	ImGui_ImplGlfw_KeyCallback(window, keyCode, scanCode, action, mods);
 	if (ImGui::GetIO().WantCaptureKeyboard) return;
 	if (action == GLFW_PRESS)
