@@ -3,6 +3,7 @@
 #include "BBE/Vulkan/VulkanPhysicalDevices.h"
 #include "BBE/Vulkan/VulkanHelper.h"
 #include "BBE/Exceptions.h"
+#include "BBE/EngineSettings.h"
 
 void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & physicalDevices, const VulkanSurface & surface) {
 	VulkanPhysicalDevice pd = physicalDevices.findBestDevice(surface);
@@ -26,7 +27,8 @@ void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & p
 	usedFeatures.samplerAnisotropy = VK_TRUE;
 	usedFeatures.tessellationShader = VK_TRUE;
 	usedFeatures.fillModeNonSolid = VK_TRUE;
-	usedFeatures.shaderFloat64 = VK_TRUE;
+	// Surprisingly, even some brand new (2022) GPUs don't support this feature.
+	usedFeatures.shaderFloat64 = bbe::Settings::getShaderDoublesAllowed() ? VK_TRUE : VK_FALSE;
 
 	const List<const char*> deviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,

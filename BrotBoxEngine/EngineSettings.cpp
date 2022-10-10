@@ -3,6 +3,7 @@
 
 static bool started = false;
 static int amountOfLightSources = 4;
+static bool shaderDoublesAllowed = false;
 
 void bbe::Settings::INTERNAL_start()
 {
@@ -30,4 +31,19 @@ int bbe::Settings::getTerrainAdditionalTextures()
 {
 	//UNTESTED
 	return 2;
+}
+
+void bbe::Settings::setShaderDoublesAllowed(bool allowed)
+{
+	if (started)
+	{
+		throw AlreadyStartedException();
+	}
+
+	shaderDoublesAllowed = allowed;
+}
+
+bool bbe::Settings::getShaderDoublesAllowed()
+{
+	return shaderDoublesAllowed;
 }

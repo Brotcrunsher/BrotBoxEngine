@@ -11,6 +11,9 @@ namespace bbe
 		void setAmountOfLightSources(int amount);
 
 		int getTerrainAdditionalTextures();
+
+		void setShaderDoublesAllowed(bool allowed);
+		bool getShaderDoublesAllowed();
 	}
 
 }

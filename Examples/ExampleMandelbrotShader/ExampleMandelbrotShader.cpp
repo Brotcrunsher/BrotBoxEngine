@@ -96,6 +96,7 @@ public:
 
 int main()
 {
+	bbe::Settings::setShaderDoublesAllowed(true);
 	MyGame *mg = new MyGame();
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "MandelbrotShader");
 	delete mg;
