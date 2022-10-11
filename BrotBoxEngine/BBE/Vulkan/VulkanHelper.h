@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+#include <type_traits>
 #include "GLFW/glfw3.h"
 #include "../BBE/List.h"
 #include "../BBE/Exceptions.h"
@@ -14,6 +16,36 @@ namespace bbe
 			#define ASSERT_VULKAN(val)\
 			if(val != VK_SUCCESS){\
 				bbe::debugBreak();\
+			}
+
+			// I am pretty sure that RetVal can be somehow deducted from Func, but I am too potato to do that.
+			// RetVal is NOT the return value from Func (which is VkResult in most cases) but instead the last
+			// argument to Func without being a pointer.
+			template <typename RetVal, typename Func, typename... Args>
+			bbe::List<RetVal> get_from_function(Func f, Args&&... args)
+			{
+				uint32_t count = 0;
+				if constexpr (std::is_same<decltype(f(std::forward<Args>(args)..., &count, nullptr)), VkResult>::value)
+				{
+					VkResult result = f(std::forward<Args>(args)..., &count, nullptr);
+					ASSERT_VULKAN(result);
+				}
+				else
+				{
+					f(std::forward<Args>(args)..., &count, nullptr);
+				}
+				bbe::List<RetVal> list(count);
+				list.resizeCapacityAndLength(count);
+				if constexpr (std::is_same<decltype(f(std::forward<Args>(args)..., &count, list.getRaw())), VkResult>::value)
+				{
+					VkResult result = f(std::forward<Args>(args)..., &count, list.getRaw());
+					ASSERT_VULKAN(result);
+				}
+				else
+				{
+					f(std::forward<Args>(args)..., &count, list.getRaw());
+				}
+				return list;
 			}
 
 			uint32_t findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);

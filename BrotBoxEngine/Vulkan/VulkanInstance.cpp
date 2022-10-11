@@ -11,6 +11,7 @@ bbe::INTERNAL::vulkan::VulkanInstance::VulkanInstance()
 void bbe::INTERNAL::vulkan::VulkanInstance::destroy()
 {
 #ifdef _DEBUG
+	if (validationLayerPresent && debugUtilsExtensionPresent) 
 	{
 		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
 		if (func != nullptr)
@@ -57,11 +58,32 @@ void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t 
 	appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
 	appInfo.apiVersion = VK_API_VERSION_1_0;
 
-	const bbe::List<const char*> validationLayers = {
+	bbe::List<const char*> validationLayers;
 #ifdef _DEBUG
-		"VK_LAYER_KHRONOS_validation"
+	bbe::List<VkLayerProperties> layerProperties = get_from_function<VkLayerProperties>(vkEnumerateInstanceLayerProperties);
+#define BBE_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"
+	validationLayerPresent = layerProperties.contains([](const VkLayerProperties& p)
+		{
+			return p.layerName == bbe::String(BBE_VALIDATION_LAYER_NAME);
+		});
+
+	if (validationLayerPresent)
+	{
+		validationLayers.add(BBE_VALIDATION_LAYER_NAME);
+	}
+	else
+	{
+		std::cout << "WARNING: Could not find Validation Layer for Vulkan!" << std::endl;
+	}
+#undef BBE_VALIDATION_LAYER_NAME
 #endif
-	};
+#ifdef _DEBUG
+	bbe::List<VkExtensionProperties> extensionsProperties = get_from_function<VkExtensionProperties>(vkEnumerateInstanceExtensionProperties, nullptr);
+	debugUtilsExtensionPresent = extensionsProperties.contains([](const VkExtensionProperties& p)
+		{ 
+			return p.extensionName == bbe::String(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		});
+#endif
 
 	uint32_t amountOfGlfwExtensions = 0;
 	auto glfwExtensions = glfwGetRequiredInstanceExtensions(&amountOfGlfwExtensions);
@@ -72,8 +94,13 @@ void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t 
 		extensions.add(glfwExtensions[i]);
 	}
 #ifdef _DEBUG
+	if (debugUtilsExtensionPresent)
 	{
 		extensions.add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	}
+	else
+	{
+		std::cout << "WARNING: Could not find Debug Utils Extension for Vulkan!" << std::endl;
 	}
 #endif
 #ifdef _DEBUG
@@ -124,6 +151,7 @@ void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t 
 	ASSERT_VULKAN(result);
 
 #ifdef _DEBUG
+	if (validationLayerPresent && debugUtilsExtensionPresent)
 	{
 		auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugUtilsMessengerEXT");
 		if (func != nullptr)

@@ -12,25 +12,10 @@ bbe::INTERNAL::vulkan::VulkanPhysicalDevice::VulkanPhysicalDevice(const VkPhysic
 	vkGetPhysicalDeviceMemoryProperties(device, &m_memoryProperties);
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface.getSurface(), &m_surfaceCapabilities);
 
-	uint32_t amountOfQueueFamilyProperties = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &amountOfQueueFamilyProperties, nullptr);
-	m_queueFamilyProperties.resizeCapacityAndLength(amountOfQueueFamilyProperties);
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &amountOfQueueFamilyProperties, m_queueFamilyProperties.getRaw());
-
-	uint32_t amountOfSurfaceFormats = 0;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface.getSurface(), &amountOfSurfaceFormats, nullptr);
-	m_surfaceFormats.resizeCapacityAndLength(amountOfSurfaceFormats);
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface.getSurface(), &amountOfSurfaceFormats, m_surfaceFormats.getRaw());
-
-	uint32_t amountOfPresentModes = 0;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface.getSurface(), &amountOfPresentModes, nullptr);
-	m_presentModes.resizeCapacityAndLength(amountOfPresentModes);
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface.getSurface(), &amountOfPresentModes, m_presentModes.getRaw());
-
-	uint32_t amountOfExtensionProperties = 0;
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &amountOfExtensionProperties, nullptr);
-	m_extensionProperties.resizeCapacityAndLength(amountOfExtensionProperties);
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &amountOfExtensionProperties, m_extensionProperties.getRaw());
+	m_queueFamilyProperties = get_from_function<VkQueueFamilyProperties>(vkGetPhysicalDeviceQueueFamilyProperties, device);
+	m_surfaceFormats = get_from_function<VkSurfaceFormatKHR>(vkGetPhysicalDeviceSurfaceFormatsKHR, device, surface.getSurface());
+	m_presentModes = get_from_function<VkPresentModeKHR>(vkGetPhysicalDeviceSurfacePresentModesKHR, device, surface.getSurface());
+	m_extensionProperties = get_from_function<VkExtensionProperties>(vkEnumerateDeviceExtensionProperties, device, nullptr);
 }
 
 uint32_t bbe::INTERNAL::vulkan::VulkanPhysicalDevice::findBestCompleteQueueIndex() const
@@ -69,17 +54,12 @@ bbe::INTERNAL::vulkan::PhysicalDeviceContainer::PhysicalDeviceContainer()
 
 void bbe::INTERNAL::vulkan::PhysicalDeviceContainer::init(const VulkanInstance & instance, const VulkanSurface & surface)
 {
-	VkPhysicalDevice *physicalDevices = nullptr;
-	uint32_t length = 0;
-	ASSERT_VULKAN(vkEnumeratePhysicalDevices(instance.getInstance(), &length, nullptr));
-	physicalDevices = new VkPhysicalDevice[length];
-	ASSERT_VULKAN(vkEnumeratePhysicalDevices(instance.getInstance(), &length, physicalDevices));
-
-	for (size_t i = 0; i < length; i++)
+	bbe::List<VkPhysicalDevice> physicalDevices = get_from_function<VkPhysicalDevice>(vkEnumeratePhysicalDevices, instance.getInstance());
+	
+	for (size_t i = 0; i < physicalDevices.getLength(); i++)
 	{
 		m_devices.add(VulkanPhysicalDevice(physicalDevices[i], surface));
 	}
-	delete[] physicalDevices;
 }
 
 const bbe::INTERNAL::vulkan::VulkanPhysicalDevice & bbe::INTERNAL::vulkan::PhysicalDeviceContainer::findBestDevice(const VulkanSurface & surface) const
