@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef BBE_ADD_CURL
 #include <future>
 
 #include "../BBE/String.h"
@@ -19,3 +20,4 @@ namespace bbe
 		std::future<UrlRequestResult> urlRequestAsync(const bbe::String& url);
 	}
 }
+#endif

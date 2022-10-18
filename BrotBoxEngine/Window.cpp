@@ -15,6 +15,10 @@
 #include "BBE/OpenGL/OpenGLManager.h"
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 size_t bbe::Window::windowsAliveCounter = 0;
 bbe::Window* bbe::Window::INTERNAL_firstInstance = nullptr;
 
@@ -57,7 +61,9 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 #endif
 	//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+#ifndef __EMSCRIPTEN__
 	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
+#endif
 
 	m_pwindow = glfwCreateWindow(width, height, title, nullptr, nullptr);
 	if (m_pwindow == nullptr)
@@ -69,7 +75,7 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 
 	float windowXScale = 0;
 	float windowYScale = 0;
-	glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
+	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
 	m_renderManager->init(title, major, minor, patch, m_pwindow, static_cast<uint32_t>(width * windowXScale), static_cast<uint32_t>(height * windowYScale));
 
 
@@ -183,7 +189,7 @@ int bbe::Window::getWidth() const
 int bbe::Window::getScaledWidth() const
 {
 	float scale = 0;
-	glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
+	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
 	return static_cast<int>(getWidth() * scale);
 }
 
@@ -195,7 +201,7 @@ int bbe::Window::getHeight() const
 int bbe::Window::getScaledHeight() const
 {
 	float scale = 0;
-	glfwGetWindowContentScale(m_pwindow, nullptr, &scale);
+	glfwWrapper::glfwGetWindowContentScale(m_pwindow, nullptr, &scale);
 	return static_cast<int>(getHeight() * scale);
 }
 
@@ -226,7 +232,8 @@ void bbe::Window::INTERNAL_resize(int width, int height)
 {
 	float windowXScale = 0;
 	float windowYScale = 0;
-	glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
+	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
+
 	m_width = width / windowXScale;
 	m_height = height / windowYScale;
 
@@ -275,7 +282,7 @@ void bbe::INTERNAL_cursorPosCallback(GLFWwindow * window, double xpos, double yp
 #endif
 	float windowXScale = 0;
 	float windowYScale = 0;
-	glfwGetWindowContentScale(window, &windowXScale, &windowYScale);
+	glfwWrapper::glfwGetWindowContentScale(window, &windowXScale, &windowYScale);
 	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_moveMouse((float)(xpos / windowXScale), (float)(ypos / windowYScale));
 }
 

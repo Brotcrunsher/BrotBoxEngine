@@ -4,7 +4,7 @@
 #ifdef BBE_RENDERER_VULKAN
 //Like Terrain but with a single mesh which is then used as a list of Patches for tessellation
 
-#include "GLFW/glfw3.h"
+#include "../BBE/glfwWrapper.h"
 #include "../BBE/Vulkan/VulkanBuffer.h"
 #include "../BBE/Vulkan/VulkanCommandPool.h"
 #include "../BBE/Vulkan/VulkanDevice.h"

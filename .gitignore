@@ -21,6 +21,7 @@
 [Bb]uildLinux/
 [Bb]uildNull/
 [Bb]uildOpenGL/
+[Bb]uildEmscripten/
 bld/
 [Bb]in/
 [Oo]bj/

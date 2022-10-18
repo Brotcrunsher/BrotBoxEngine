@@ -8,6 +8,26 @@
 #include "BBE/Profiler.h"
 #include <iostream>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
+void bbe::Game::mainLoop()
+{
+	m_frameNumber++;
+	frame();
+
+	if (screenshotRenderingPath)
+	{
+		screenshot((bbe::String(screenshotRenderingPath) + m_frameNumber + ".png").getRaw());
+	}
+}
+
+static void staticMainLoop(void* gamePtr)
+{
+	((bbe::Game*)gamePtr)->mainLoop();
+}
+
 bbe::Game::Game()
 {
 	//do nothing
@@ -54,16 +74,14 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 
 	if (!isExternallyManaged())
 	{
+#ifdef __EMSCRIPTEN__
+		emscripten_set_main_loop_arg(staticMainLoop, this, 0, true);
+#else
 		while (keepAlive() && (m_maxFrameNumber == 0 || m_frameNumber < m_maxFrameNumber))
 		{
-			m_frameNumber++;
-			frame();
-			
-			if (screenshotRenderingPath)
-			{
-				screenshot((bbe::String(screenshotRenderingPath) + m_frameNumber + ".png").getRaw());
-			}
+			mainLoop();
 		}
+#endif
 
 		shutdown();
 	}

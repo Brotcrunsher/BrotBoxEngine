@@ -1,4 +1,5 @@
 #include <map>
+#include <unordered_map>
 #include "BBE/PrimitiveBrush2D.h"
 #include "BBE/RenderManager.h"
 #include "BBE/Image.h"
@@ -26,7 +27,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_beginDraw(
 	setOutlineRGB(1.0f, 1.0f, 1.0f, 1.0f);
 	setOutlineWidth(0.f);
 
-	glfwGetWindowContentScale(window, &m_windowXScale, &m_windowYScale);
+	glfwWrapper::glfwGetWindowContentScale(window, &m_windowXScale, &m_windowYScale);
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotation, float outlineWidth, FragmentShader* shader)

@@ -102,5 +102,7 @@ namespace bbe
 
 		bbe::String getClipboard() const;
 		void setClipboard(const bbe::String& string);
+
+		void mainLoop();
 	};
 }

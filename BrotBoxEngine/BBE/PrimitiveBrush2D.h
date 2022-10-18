@@ -1,10 +1,6 @@
 #pragma once
 
-#ifdef BBE_RENDERER_OPENGL
-#include <GL/glew.h>
-#endif
-#include "GLFW/glfw3.h"
-
+#include "../BBE/glfwWrapper.h"
 #include "../BBE/Color.h"
 #include "../BBE/FillMode.h"
 #include "../BBE/Vector2.h"

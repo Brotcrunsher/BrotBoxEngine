@@ -1,9 +1,6 @@
 #pragma once
 
-#ifdef BBE_RENDERER_OPENGL
-#include <GL/glew.h>
-#endif
-#include "GLFW/glfw3.h"
+#include "../BBE/glfwWrapper.h"
 #include "../BBE/Matrix4.h"
 #include "../BBE/Cube.h"
 #include "../BBE/IcoSphere.h"

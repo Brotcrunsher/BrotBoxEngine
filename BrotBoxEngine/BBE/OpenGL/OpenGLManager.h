@@ -1,7 +1,6 @@
 #pragma once
 
-#include <GL/glew.h>
-#include "GLFW/glfw3.h"
+#include "../BBE/glfwWrapper.h"
 #include "../BBE/PrimitiveBrush2D.h"
 #include "../BBE/PrimitiveBrush3D.h"
 #include "../BBE/RenderManager.h"

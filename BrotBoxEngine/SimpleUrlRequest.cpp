@@ -2,6 +2,7 @@
 #include "BBE/Exceptions.h"
 #include "BBE/List.h"
 
+#ifdef BBE_ADD_CURL
 #include "curl/curl.h"
 
 struct CurlRaii
@@ -68,3 +69,4 @@ std::future<bbe::simpleUrlRequest::UrlRequestResult> bbe::simpleUrlRequest::urlR
 {
 	return std::async(std::launch::async, &urlRequest, url);
 }
+#endif
