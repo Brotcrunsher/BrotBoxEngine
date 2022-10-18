@@ -1,6 +1,7 @@
 #include "BBE/OpenGL/OpenGLManager.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 #include "BBE/FatalErrors.h"
 #include "BBE/Rectangle.h"
 #include "BBE/Circle.h"
@@ -89,6 +90,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 
 void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 {
+	imguiStop();
 	glDeleteProgram(shaderProgram);
 	glDeleteShader(fragmentShader);
 	glDeleteShader(vertexShader);
@@ -106,10 +108,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	imguiStartFrame();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::postDraw()
 {
+	imguiEndFrame();
 	glfwSwapBuffers(m_pwindow);
 	glfwPollEvents();
 }
@@ -233,29 +237,59 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStart()
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+	ImGui::StyleColorsDark();
+
+	ImGui_ImplGlfw_InitForOpenGL(m_pwindow, false);
+
+	m_imguiInitSuccessful = ImGui_ImplOpenGL3_Init();
+	if (!m_imguiInitSuccessful)
+	{
+		throw IllegalStateException();
+	}
+
 	ImGuiIO& io = ImGui::GetIO();
 	ImFontConfig fontConfig;
-	io.Fonts->AddFontDefault(&fontConfig);
+	imguiFontSmall = io.Fonts->AddFontDefault(&fontConfig);
+	fontConfig.SizePixels = 26;
+	imguiFontBig = io.Fonts->AddFontDefault(&fontConfig);
 
-	unsigned char* pixels;
-	int width, height;
-	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+	ImGui_ImplOpenGL3_CreateFontsTexture();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::imguiStop()
 {
+	if (m_imguiInitSuccessful)
+	{
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+	}
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::imguiStartFrame()
 {
+	// TODO: Still not ideal - what if the scale is anything else than 1 or 2 (e.g. on 8k)
+	float scale = 0;
+	glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
 	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize = ImVec2((float)1280, (float)720);
+	if (scale < 1.5f)
+	{
+		io.FontDefault = imguiFontSmall;
+	}
+	else
+	{
+		io.FontDefault = imguiFontBig;
+	}
+
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::imguiEndFrame()
 {
 	ImGui::Render();
+	ImDrawData* drawData = ImGui::GetDrawData();
+	ImGui_ImplOpenGL3_RenderDrawData(drawData);
 }
 
 bool bbe::INTERNAL::openGl::OpenGLManager::isReadyToDraw() const

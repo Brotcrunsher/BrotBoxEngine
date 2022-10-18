@@ -5,6 +5,8 @@
 #include "../BBE/PrimitiveBrush3D.h"
 #include "../BBE/RenderManager.h"
 
+struct ImFont;
+
 namespace bbe
 {
 	namespace INTERNAL
@@ -22,6 +24,11 @@ namespace bbe
 				GLuint vertexShader = 0;
 				GLuint fragmentShader = 0;
 				GLuint shaderProgram = 0;
+
+				constexpr static uint32_t m_imguiMinImageCount = 2;
+				bool m_imguiInitSuccessful = false;
+				ImFont* imguiFontSmall = nullptr;
+				ImFont* imguiFontBig = nullptr;
 			public:
 				OpenGLManager();
 
