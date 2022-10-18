@@ -269,7 +269,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStartFrame()
 {
 	// TODO: Still not ideal - what if the scale is anything else than 1 or 2 (e.g. on 8k)
 	float scale = 0;
-	glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
+	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
 	ImGuiIO& io = ImGui::GetIO();
 	if (scale < 1.5f)
 	{
