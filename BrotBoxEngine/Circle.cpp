@@ -86,6 +86,28 @@ bbe::Circle bbe::Circle::offset(const Vector2& off) const
 	);
 }
 
+void bbe::Circle::getVertices(bbe::List<bbe::Vector2>& outVertices) const
+{
+	outVertices.clear();
+
+	const bbe::Vector2 dim = this->getDim();
+	const bbe::Vector2 pos = getPos();
+
+	for (int i = 0; i < 90; i++)
+	{
+		float percentage = (float)i / 90.f;
+		float radians = percentage * 2 * bbe::Math::PI;
+		bbe::Vector2 point = bbe::Vector2(1, 0).rotate(radians);
+		point.x *= m_width / 2;
+		point.y *= m_height / 2;
+
+		point += dim / 2;
+		point += pos;
+
+		outVertices.add(point);
+	}
+}
+
 void bbe::Circle::setX(float x)
 {
 	//UNTESTED

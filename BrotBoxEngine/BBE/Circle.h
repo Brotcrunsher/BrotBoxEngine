@@ -42,6 +42,8 @@ namespace bbe
 		Vector2 getDim() const;
 		Circle offset(const Vector2& off) const;
 
+		void getVertices(bbe::List<bbe::Vector2>& outVertices) const;
+
 		void setX(float x);
 		void setY(float y);
 		void setPos(float x, float y);

@@ -3,6 +3,7 @@
 #include "imgui_impl_glfw.h"
 #include "BBE/FatalErrors.h"
 #include "BBE/Rectangle.h"
+#include "BBE/Circle.h"
 
 bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
 {
@@ -166,6 +167,17 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle& circle)
 {
+	// TODO make proper implementation
+	bbe::List<bbe::Vector2> vertices;
+	circle.getVertices(vertices);
+	bbe::List<uint32_t> indices;
+	for (size_t i = 2; i<vertices.getLength(); i++)
+	{
+		indices.add(0);
+		indices.add(i - 1);
+		indices.add(i);
+	}
+	fillVertexIndexList2D(indices.getRaw(), indices.getLength(), vertices.getRaw(), vertices.getLength(), {0, 0}, {1, 1});
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, const Image& image, float rotation)
