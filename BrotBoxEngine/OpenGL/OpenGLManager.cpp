@@ -163,7 +163,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 	rect.getVertices(vertices);
 	for (bbe::Vector2& v : vertices)
 	{
-		v.rotate(rotation, rect.getCenter());
+		v = v.rotate(rotation, rect.getCenter());
 	}
 	uint32_t a[] = {0, 1, 3, 1, 2, 3};
 	fillVertexIndexList2D(a, 6, vertices.getRaw(), vertices.getLength(), { 0, 0 }, { 1, 1 });
