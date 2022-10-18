@@ -49,9 +49,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 			"#version 300 es\n"
 			"precision mediump float;\n"
 			"out vec4 outColor;\n"
+			"uniform vec4 inColor;\n"
 			"void main()\n"
 			"{\n"
-			"	outColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
+			"	outColor = inColor;\n"
 			"}";
 
 		fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -75,7 +76,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 
 		GLint scalePos = glGetUniformLocation(shaderProgram, "scale");
 		glUniform2f(scalePos, (float)1, (float)1);
+
+		GLint inColorPos = glGetUniformLocation(shaderProgram, "inColor");
+		glUniform4f(inColorPos, (float)1, (float)1, (float)1, (float)1);
 	}
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	imguiStart();
 }
@@ -141,6 +147,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::setVideoRenderingMode(const char* pat
 
 void bbe::INTERNAL::openGl::OpenGLManager::setColor2D(const bbe::Color& color)
 {
+	GLint inColorPos = glGetUniformLocation(shaderProgram, "inColor");
+	glUniform4f(inColorPos, color.r, color.g, color.b, color.a);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader)
