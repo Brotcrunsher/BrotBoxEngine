@@ -60,7 +60,6 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 #ifdef BBE_RENDERER_OPENGL
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWindowHint(GLFW_SAMPLES, 4);
-	glEnable(GL_MULTISAMPLE);
 #endif
 	//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 #ifndef __EMSCRIPTEN__

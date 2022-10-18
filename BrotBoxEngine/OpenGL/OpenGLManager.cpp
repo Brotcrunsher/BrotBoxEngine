@@ -83,6 +83,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 		glUniform4f(inColorPos, (float)1, (float)1, (float)1, (float)1);
 	}
 	glEnable(GL_BLEND);
+	glEnable(GL_MULTISAMPLE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	imguiStart();
