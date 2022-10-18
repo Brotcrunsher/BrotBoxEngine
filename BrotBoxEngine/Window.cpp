@@ -11,7 +11,9 @@
 #ifdef BBE_RENDERER_NULL
 #include "BBE/NullRenderer/NullRendererManager.h"
 #endif
-
+#ifdef BBE_RENDERER_OPENGL
+#include "BBE/OpenGL/OpenGLManager.h"
+#endif
 
 size_t bbe::Window::windowsAliveCounter = 0;
 bbe::Window* bbe::Window::INTERNAL_firstInstance = nullptr;
@@ -26,6 +28,9 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 #ifdef BBE_RENDERER_NULL
 	m_renderManager.reset(new bbe::INTERNAL::nullRenderer::NullRendererManager());
 #endif
+#ifdef BBE_RENDERER_OPENGL
+	m_renderManager.reset(new bbe::INTERNAL::openGl::OpenGLManager());
+#endif
 
 	if(bbe::Window::INTERNAL_firstInstance == nullptr)
 	{
@@ -37,12 +42,20 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 		{
 			bbe::INTERNAL::triggerFatalError("An error occurred while initializing GLFW.");
 		}
+#ifdef BBE_RENDERER_VULKAN
 		if (glfwVulkanSupported() == GLFW_FALSE)
 		{
 			bbe::INTERNAL::triggerFatalError("Your GPU and/or driver does not support vulkan!");
 		}
+#endif
 	}
+
+#ifdef BBE_RENDERER_VULKAN
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+#endif
+#ifdef BBE_RENDERER_OPENGL
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+#endif
 	//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 

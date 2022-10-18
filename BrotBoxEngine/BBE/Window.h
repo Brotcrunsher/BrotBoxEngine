@@ -1,6 +1,9 @@
 #pragma once
 
 #include <memory>
+#ifdef BBE_RENDERER_OPENGL
+#include <GL/glew.h>
+#endif
 #include "GLFW/glfw3.h"
 #include "../BBE/RenderManager.h"
 #include "../BBE/Keyboard.h"

@@ -1,5 +1,8 @@
 #pragma once
 
+#ifdef BBE_RENDERER_OPENGL
+#include <GL/glew.h>
+#endif
 #include "GLFW/glfw3.h"
 
 #include "../BBE/Color.h"
@@ -35,12 +38,17 @@ namespace bbe
 		{
 			class NullRendererManager;
 		}
+		namespace openGl
+		{
+			class OpenGLManager;
+		}
 	}
 
 	class PrimitiveBrush2D
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
 		friend class INTERNAL::nullRenderer::NullRendererManager;
+		friend class INTERNAL::openGl::OpenGLManager;
 	private:
 
 		float                                        m_windowXScale = 0;
