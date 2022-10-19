@@ -255,6 +255,3 @@ ModelManifest.xml
 /BrotBoxEngine/Vulkan/EmbedOutput.cpp
 /BrotBoxEngine/Vulkan/EmbedOutput.h
 /ExampleSimplePresentation/out.xml
-
-#Temporary
-/Third-Party/glew-2.1.0
