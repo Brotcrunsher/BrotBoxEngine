@@ -8,6 +8,7 @@ A C++ prototyping engine that is striving for an easy to use API, hiding all the
 * [C++](https://isocpp.org/)
 * [CMake](https://cmake.org/)
 * [Vulkan](https://vulkan.lunarg.com/)
+* [OpenGL](https://www.opengl.org/)
 * [GLFW](https://www.glfw.org/)
 * [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h)
 * [stb_truetype](https://github.com/nothings/stb/blob/master/stb_truetype.h)
