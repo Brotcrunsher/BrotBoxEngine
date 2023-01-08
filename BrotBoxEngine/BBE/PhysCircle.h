@@ -10,7 +10,8 @@ namespace bbe
 	class Game;
 	template<typename T> class Vector2_t;
 	using Vector2 = Vector2_t<float>;
-	class Rectangle;
+	template<typename Vec> class Rectangle_t;
+	using Rectangle = Rectangle_t<bbe::Vector2>;
 
 	class PhysCircle : public PhysShape
 	{

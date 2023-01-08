@@ -4,9 +4,10 @@
 
 namespace bbe
 {
-	class Rectangle;
+	template<typename Vec> class Rectangle_t;
+	using Rectangle = Rectangle_t<bbe::Vector2>;
 
-	class RectangleRotated : public bbe::Shape2
+	class RectangleRotated : public bbe::Shape2<bbe::Vector2>
 	{
 		friend class PrimitiveBrush2D;
 

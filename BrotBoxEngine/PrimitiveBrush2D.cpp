@@ -126,11 +126,6 @@ bbe::PrimitiveBrush2D::PrimitiveBrush2D()
 	//do nothing
 }
 
-void bbe::PrimitiveBrush2D::fillRect(const Rectangle & rect, float rotation, FragmentShader* shader)
-{
-	INTERNAL_fillRect(rect, rotation, m_outlineWidth, shader);
-}
-
 void bbe::PrimitiveBrush2D::fillRect(float x, float y, float width, float height, float rotation, FragmentShader* shader)
 {
 	if (width < 0)

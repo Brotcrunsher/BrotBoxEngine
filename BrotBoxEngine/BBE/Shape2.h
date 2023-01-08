@@ -96,13 +96,14 @@ namespace bbe
 		}
 	};
 
-	class Shape2 : public Shape<bbe::Vector2>
+	template<typename Vec>
+	class Shape2 : public Shape<Vec>
 	{
 	public:
-		virtual bbe::List<Vector2> getNormals() const override
+		virtual bbe::List<Vec> getNormals() const override
 		{
 			auto vertices = getVertices();
-			bbe::List<Vector2> retVal;
+			bbe::List<Vec> retVal;
 			retVal.resizeCapacityAndLength(vertices.getLength());
 
 			for (size_t i = 0; i < vertices.getLength() - 1; i++)
@@ -121,15 +122,15 @@ namespace bbe
 			return retVal;
 		}
 
-		virtual bool resolveIntersection(const Shape<Vector2>& other)
+		virtual bool resolveIntersection(const Shape<Vec>& other)
 		{
 			auto normalsThis = getNormals();
 			auto normalsOther = other.getNormals();
 
 			float minPenetration = bbe::Math::INFINITY_POSITIVE;
-			Vector2 resolveAxis;
+			Vec resolveAxis;
 
-			for (const Vector2& normal : normalsThis)
+			for (const Vec& normal : normalsThis)
 			{
 				auto p1 = project(normal);
 				auto p2 = other.project(normal);
@@ -142,7 +143,7 @@ namespace bbe
 				}
 			}
 
-			for (const Vector2& normal : normalsOther)
+			for (const Vec& normal : normalsOther)
 			{
 				auto p1 = project(normal);
 				auto p2 = other.project(normal);

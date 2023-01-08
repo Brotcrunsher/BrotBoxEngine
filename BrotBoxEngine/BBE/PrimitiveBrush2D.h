@@ -11,12 +11,14 @@ namespace bbe
 	class FragmentShader;
 	class RectangleRotated;
 	class RenderManager;
-	class Line2;
+	template<typename Vec> class Line2_t;
+	using Line2 = Line2_t<bbe::Vector2>;
 	class Font;
 	class BezierCurve2;
 	class Circle;
 	class PhysCircle;
-	class Rectangle;
+	template<typename Vec> class Rectangle_t;
+	using Rectangle = Rectangle_t<bbe::Vector2>;
 	class PhysRectangle;
 
 	enum class PipelineRecord2D
@@ -76,7 +78,11 @@ namespace bbe
 
 		PrimitiveBrush2D();
 
-		void fillRect(const Rectangle& rect, float rotation = 0, FragmentShader* shader = nullptr);
+		template<typename T>
+		void fillRect(const Rectangle_t<T>& rect, float rotation = 0, FragmentShader* shader = nullptr)
+		{
+			fillRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight(), rotation, shader);
+		}
 		void fillRect(float x, float y,   float width, float height, float rotation = 0, FragmentShader* shader = nullptr);
 		void fillRect(const Vector2& pos, float width, float height, float rotation = 0, FragmentShader* shader = nullptr);
 		void fillRect(float x, float y,   const Vector2& dimensions, float rotation = 0, FragmentShader* shader = nullptr);

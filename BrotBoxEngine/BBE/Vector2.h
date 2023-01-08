@@ -9,6 +9,8 @@ namespace bbe
 	class Vector2_t
 	{
 	public:
+		using SubType = T;
+
 		T x;
 		T y;
 

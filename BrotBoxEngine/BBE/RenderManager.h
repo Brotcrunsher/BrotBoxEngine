@@ -8,19 +8,20 @@ struct GLFWwindow;
 
 namespace bbe
 {
+	template<typename T> class Vector2_t;
+	using Vector2 = Vector2_t<float>;
+
 	class PrimitiveBrush2D;
 	class PrimitiveBrush3D;
 	class FragmentShader;
 	class Color;
-	class Rectangle;
+	template<typename Vec> class Rectangle_t;
+	using Rectangle = Rectangle_t<bbe::Vector2>;
 	class Cube;
 	class IcoSphere;
 	class Circle;
 	class Image;
 	class Matrix4;
-
-	template<typename T> class Vector2_t;
-	using Vector2 = Vector2_t<float>;
 
 	class RenderManager
 	{
