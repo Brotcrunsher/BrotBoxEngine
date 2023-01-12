@@ -364,4 +364,9 @@ namespace bbe
 
 	using Vector2  = Vector2_t<float>;
 	using Vector2i = Vector2_t<int32_t>;
+
+	template<>
+	uint32_t hash(const Vector2i& t);
+	template<>
+	uint32_t hash(const Vector2& t);
 }

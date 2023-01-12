@@ -109,12 +109,23 @@ namespace bbe
 
 		~HashMap()
 		{
+			del();
+		}
+
+		void del()
+		{
 			if (m_pcontainers != nullptr)
 			{
 				delete[] m_pcontainers;
 			}
-			m_pcontainers = nullptr;
-			m_amountOfContainers = 0;
+
+			m_amountOfContainers = 1 << 4;
+			m_pcontainers = new List<HashMapNode>[m_amountOfContainers];
+		}
+
+		void clear()
+		{
+			del();
 		}
 
 		void add(const Key &key, const Value &value)
@@ -152,12 +163,12 @@ namespace bbe
 			m_pcontainers[index].add(HashMapNode(key, value, _hash));
 		}
 
-		bool contains(const Key &key)
+		bool contains(const Key &key) const
 		{
 			return get(key) != nullptr;
 		}
 
-		Value* get(const Key &key)
+		Value* get(const Key &key) const
 		{
 			uint32_t _hash = hash(key);
 			uint32_t index = _hash & (m_amountOfContainers - 1);
