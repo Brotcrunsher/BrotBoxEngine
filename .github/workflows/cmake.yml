@@ -22,7 +22,7 @@ jobs:
     
     - name: Install libxinerama
       # Needed for GLFW
-      run: sudo apt-get install -y libxinerama 
+      run: sudo apt-get install -y libxinerama-dev 
     
     - name: Setup Vulkan SDK
       uses: humbletim/setup-vulkan-sdk@v1.2.0
