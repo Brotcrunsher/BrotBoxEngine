@@ -351,6 +351,19 @@ namespace bbe
 			m_length += 1;
 		}
 
+		bool addUnique(const T& val)
+		{
+			if (!contains(val))
+			{
+				add(val);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
 		template <bool dummyKeepSorted = keepSorted>
 		typename std::enable_if<!dummyKeepSorted, size_t>::type getIndexOnAdd(const T& val)
 		{
