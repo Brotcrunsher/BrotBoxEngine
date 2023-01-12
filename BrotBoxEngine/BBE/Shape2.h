@@ -102,7 +102,7 @@ namespace bbe
 	public:
 		virtual bbe::List<Vec> getNormals() const override
 		{
-			auto vertices = getVertices();
+			auto vertices = Shape<Vec>::getVertices();
 			bbe::List<Vec> retVal;
 			retVal.resizeCapacityAndLength(vertices.getLength());
 
