@@ -261,11 +261,12 @@ namespace bbe
 		{
 			if (includeBoundary)
 			{
-				return point.x >= this->getX() && point.x <= this->getX() + this->getWidth()
-					&& point.y >= this->getY() && point.y <= this->getY() + this->getHeight();
+				return point.x >= this->getX() && point.x < this->getX() + this->getWidth()
+					&& point.y >= this->getY() && point.y < this->getY() + this->getHeight();
 			}
 			else
 			{
+				// TODO: This is wrong - right?
 				return point.x > this->getX() && point.x < this->getX() + this->getWidth()
 					&& point.y > this->getY() && point.y < this->getY() + this->getHeight();
 			}
