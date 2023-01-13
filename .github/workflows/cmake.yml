@@ -81,13 +81,14 @@ jobs:
               cmake
     
     - name: Install Emscripten
-      run: git clone https://github.com/emscripten-core/emsdk.git
-           && cd emsdk
-           && git pull
-           && ./emsdk install latest
-           && ./emsdk activate latest
-           && source ./emsdk_env.sh
-           && cd ..
-           && emcmake cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-           && emcmake cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      run: |
+           git clone https://github.com/emscripten-core/emsdk.git
+           cd emsdk
+           git pull
+           ./emsdk install latest
+           ./emsdk activate latest
+           source ./emsdk_env.sh
+           cd ..
+           emcmake cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+           emcmake cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
