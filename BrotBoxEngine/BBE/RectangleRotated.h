@@ -45,7 +45,7 @@ namespace bbe
 
 		virtual bbe::Vector2 getCenter() const override;
 
-		using Shape2::getVertices;
+		using Shape2<Vector2>::getVertices;
 		virtual void getVertices(bbe::List<bbe::Vector2>& outVertices) const override;
 	};
 }

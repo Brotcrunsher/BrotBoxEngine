@@ -271,7 +271,7 @@ namespace bbe
 					&& point.y > this->getY() && point.y < this->getY() + this->getHeight();
 			}
 		}
-		using Shape2::intersects;
+		using Shape2<Vec>::intersects;
 		bool intersects(const Rectangle_t<Vec>& rectangle) const
 		{
 			const Rectangle_t<Vec> hitZone(
