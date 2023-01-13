@@ -1,4 +1,4 @@
-#include "bbe/NullRenderer/NullRendererManager.h"
+#include "BBE/NullRenderer/NullRendererManager.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 
