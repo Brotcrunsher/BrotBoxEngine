@@ -90,5 +90,5 @@ jobs:
            source ./emsdk_env.sh
            cd ..
            emcmake cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-           emcmake cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
