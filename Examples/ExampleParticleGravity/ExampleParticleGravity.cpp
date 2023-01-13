@@ -67,7 +67,10 @@ class MyGame : public bbe::Game
 {
 
 	bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
+	// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 	bbe::PointLight light;
+#endif
 
 	float maxSpeed = 0;
 	float minSpeed = 0;
@@ -77,9 +80,12 @@ class MyGame : public bbe::Game
 	virtual void onStart() override
 	{
 		std::cout << "hai onStart" << std::endl;
+		// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 		light.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_NONE);
 		light.setLightStrength(1);
 		light.setPosition(bbe::Vector3(100, 100, 100));
+#endif
 		for (int i = 0; i < 200; i++)
 		{
 			particles.add(Particle());

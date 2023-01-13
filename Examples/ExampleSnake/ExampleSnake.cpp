@@ -26,7 +26,10 @@ public:
 	constexpr static float TICKTIME = 0.25f;
 
 	bbe::Cube cube;
+	// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 	bbe::PointLight light;
+#endif
 
 	Direction dir     = Direction::LEFT;
 	Direction nextDir = Direction::LEFT;
@@ -44,8 +47,11 @@ public:
 
 	virtual void onStart() override
 	{
+		// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 		light.setPosition(bbe::Vector3(-1, -1, 1));
 		light.setLightStrength(5);
+#endif
 
 		bodyParts.add({ GRIDWIDTH / 2, GRIDHEIGHT / 2 });
 		bodyParts.add({ -1, -1 });

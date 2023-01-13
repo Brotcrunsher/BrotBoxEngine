@@ -24,7 +24,10 @@ public:
 	constexpr static int GRIDDIMENSIONSIZE = 10;
 	const float TICKTIME = 0.25f;
 
+	// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 	bbe::PointLight light;
+#endif
 
 	Direction dir = Direction::LEFT;
 	Direction nextDir = Direction::LEFT;
@@ -42,8 +45,11 @@ public:
 
 	virtual void onStart() override
 	{
+		// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 		light.setPosition(camPos);
 		light.setLightStrength(10);
+#endif
 
 		bodyParts.add({ GRIDDIMENSIONSIZE / 2, GRIDDIMENSIONSIZE / 2, GRIDDIMENSIONSIZE / 2 });
 		bodyParts.add({ -1, -1, -1 });

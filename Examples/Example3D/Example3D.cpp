@@ -14,12 +14,18 @@ class MyGame : public bbe::Game
 	};
 	CubeEntity cubeEntities[AMOUNT_OF_CUBES];
 	bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
+	// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 	bbe::PointLight light;
+#endif
 
 	virtual void onStart() override
 	{
+		// TODO: Make independent of RenderMode
+#ifdef BBE_RENDERER_VULKAN
 		light.setPosition(bbe::Vector3(-1, -1, 1));
 		light.setLightStrength(10);
+#endif
 		bbe::Random rand;
 		for (int i = 0; i < AMOUNT_OF_CUBES; i++)
 		{
