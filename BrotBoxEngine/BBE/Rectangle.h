@@ -1,11 +1,11 @@
 #pragma once
 #include "../BBE/Vector2.h"
 #include "../BBE/Shape2.h"
+#include "../BBE/Circle.h"
 
 namespace bbe
 {
 	class VulkanDevice;
-	class Circle;
 
 	namespace INTERNAL
 	{
