@@ -1,6 +1,4 @@
 # Brot Box Engine
-![Build Status](https://www.travis-ci.com/Brotcrunsher/BrotBoxEngine.svg?branch=master)
-
 A C++ prototyping engine that is striving for an easy to use API, hiding all the dirty details so that you don't have to care.
 
 #### Used technology
@@ -14,7 +12,7 @@ A C++ prototyping engine that is striving for an easy to use API, hiding all the
 * [stb_truetype](https://github.com/nothings/stb/blob/master/stb_truetype.h)
 * [Dear ImGui](https://github.com/ocornut/imgui)
 * [Google Test](https://github.com/google/googletest)
-* [Travis CI](https://travis-ci.com/)
+* [Github Actions](https://github.com/features/actions)
 * [Box2D](https://box2d.org/)
 * [PortAudio](http://www.portaudio.com/)
 * [minimp3](https://github.com/lieff/minimp3)
