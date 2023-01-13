@@ -30,11 +30,11 @@ jobs:
    
     - name: Build Port Audio
       run: cd Third-Party/portaudio
-           mkdir _Build
-           cd _Build
-           cmake .. -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/opt
-           make
-           make install
+           && mkdir _Build
+           && cd _Build
+           && cmake .. -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/opt
+           && make
+           && make install
 
     - name: Build
       # Build your program with the given configuration
