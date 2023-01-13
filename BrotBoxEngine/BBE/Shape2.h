@@ -145,9 +145,9 @@ namespace bbe
 
 			for (const Vec& normal : normalsOther)
 			{
-				auto p1 = project(normal);
+				auto p1 = Shape<Vec>::project(normal);
 				auto p2 = other.project(normal);
-				float penetration = projectionsPenetration(p1, p2);
+				float penetration = Shape<Vec>::projectionsPenetration(p1, p2);
 				if (penetration == 0) return false;
 				if (bbe::Math::abs(penetration) < bbe::Math::abs(minPenetration))
 				{
