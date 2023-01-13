@@ -119,13 +119,16 @@ namespace bbe
 				delete[] m_pcontainers;
 			}
 
-			m_amountOfContainers = 1 << 4;
-			m_pcontainers = new List<HashMapNode>[m_amountOfContainers];
+			m_amountOfContainers = 0;
+			m_pcontainers = nullptr;
 		}
 
 		void clear()
 		{
 			del();
+
+			m_amountOfContainers = 1 << 4;
+			m_pcontainers = new List<HashMapNode>[m_amountOfContainers];
 		}
 
 		void add(const Key &key, const Value &value)
