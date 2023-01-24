@@ -19,11 +19,16 @@ namespace bbe
 		{
 			class VulkanManager;
 		}
+		namespace openGl
+		{
+			class OpenGLManager;
+		}
 	}
 
 	class PrimitiveBrush3D
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
+		friend class INTERNAL::openGl::OpenGLManager;
 	private:
 		int                                          m_screenWidth = -1;
 		int                                          m_screenHeight = -1;

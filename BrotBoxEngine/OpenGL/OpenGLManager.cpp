@@ -5,6 +5,134 @@
 #include "BBE/FatalErrors.h"
 #include "BBE/Rectangle.h"
 #include "BBE/Circle.h"
+#include "BBE/Matrix4.h"
+
+// TODO: Fix switching between fullHD and 4k Screen
+
+void bbe::INTERNAL::openGl::OpenGLManager::init2dShaders()
+{
+	char const* vertexShaderSrc =
+		"#version 300 es\n"
+		"precision mediump float;\n"
+		"in vec2 position;\n"
+		"uniform vec2 screenSize;"
+		"uniform vec2 scale;"
+		"void main()\n"
+		"{\n"
+		"	vec2 pos = (position / screenSize * vec2(2, -2) * scale) + vec2(-1, +1);\n"
+		"	gl_Position = vec4(pos, 0.0, 1.0);\n"
+		"}";
+
+	m_vertexShader2d = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(m_vertexShader2d, 1, &vertexShaderSrc, NULL);
+	glCompileShader(m_vertexShader2d);
+	GLint success = 0;
+	glGetShaderiv(m_vertexShader2d, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		bbe::INTERNAL::triggerFatalError("Failed to compile shader");
+	}
+
+	char const* fragmentShaderSource =
+		"#version 300 es\n"
+		"precision mediump float;\n"
+		"out vec4 outColor;\n"
+		"uniform vec4 inColor;\n"
+		"void main()\n"
+		"{\n"
+		"	outColor = inColor;\n"
+		"}";
+
+	m_fragmentShader2d = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(m_fragmentShader2d, 1, &fragmentShaderSource, NULL);
+	glCompileShader(m_fragmentShader2d);
+	success = 0;
+	glGetShaderiv(m_fragmentShader2d, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		bbe::INTERNAL::triggerFatalError("Failed to compile shader");
+	}
+
+	m_shaderProgram2d = glCreateProgram();
+	glAttachShader(m_shaderProgram2d, m_vertexShader2d);
+	glAttachShader(m_shaderProgram2d, m_fragmentShader2d);
+	glLinkProgram(m_shaderProgram2d);
+	glUseProgram(m_shaderProgram2d);
+
+	GLint screenSizePos = glGetUniformLocation(m_shaderProgram2d, "screenSize");
+	glUniform2f(screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
+
+	GLint scalePos = glGetUniformLocation(m_shaderProgram2d, "scale");
+	glUniform2f(scalePos, (float)1, (float)1);
+
+	GLint inColorPos = glGetUniformLocation(m_shaderProgram2d, "inColor");
+	glUniform4f(inColorPos, (float)1, (float)1, (float)1, (float)1);
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::init3dShaders()
+{
+	char const* vertexShaderSrc =
+		"#version 300 es\n"
+		"precision highp float;"
+		"in vec3 inPos;"
+		"in vec3 inNormal;"
+		"out vec3 outNormal;"
+		"out vec3 outViewVec;"
+		"uniform mat4 view;"
+		"uniform mat4 projection;"
+		"uniform mat4 model;"
+		"void main()"
+		"{"
+		"   vec4 worldPos = model * vec4(inPos, 1.0);"
+		"   gl_Position = projection * view * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
+		"   outNormal = mat3(view) * mat3(model) * inNormal;"
+		"   outViewVec = -(view * worldPos).xyz;"
+		"}";
+
+	m_vertexShader3d = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(m_vertexShader3d, 1, &vertexShaderSrc, NULL);
+	glCompileShader(m_vertexShader3d);
+	GLint success = 0;
+	glGetShaderiv(m_vertexShader3d, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		bbe::INTERNAL::triggerFatalError("Failed to compile shader");
+	}
+
+	char const* fragmentShaderSource =
+		"#version 300 es\n"
+		"precision highp float;"
+		"out vec4 outColor;"
+		"in vec3 outNormal;"
+		"in vec3 outViewVec;"
+		"uniform vec4 inColor;"
+		"void main()"
+		"{"
+		"   vec3 texColor = inColor.xyz;"
+		"   vec3 N = normalize(outNormal);"
+		"   vec3 V = normalize(outViewVec);"
+		"   vec3 ambient = texColor * 0.1;"
+		"   vec3 diffuse = outNormal;"
+		"   vec3 specular = vec3(0);"
+		"	outColor = vec4(ambient + diffuse + specular, 1.0);"
+		"}";
+	
+	m_fragmentShader3d = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(m_fragmentShader3d, 1, &fragmentShaderSource, NULL);
+	glCompileShader(m_fragmentShader3d);
+	success = 0;
+	glGetShaderiv(m_fragmentShader3d, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		bbe::INTERNAL::triggerFatalError("Failed to compile shader");
+	}
+	
+	m_shaderProgram3d = glCreateProgram();
+	glAttachShader(m_shaderProgram3d, m_vertexShader3d);
+	glAttachShader(m_shaderProgram3d, m_fragmentShader3d);
+	glLinkProgram(m_shaderProgram3d);
+	glUseProgram(m_shaderProgram3d);
+}
 
 bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
 {
@@ -13,6 +141,9 @@ bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
 void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow* window, uint32_t initialWindowWidth, uint32_t initialWindowHeight)
 {
 	m_pwindow = window;
+
+	m_windowWidth = initialWindowWidth;
+	m_windowHeight = initialWindowHeight;
 
 	glfwMakeContextCurrent(window);
 
@@ -24,64 +155,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 		bbe::INTERNAL::triggerFatalError(errorMessage);
 	}
 
-	{
-		char const* vertexShaderSrc =
-			"#version 300 es\n"
-			"precision mediump float;\n"
-			"in vec2 position;\n"
-			"uniform vec2 screenSize;"
-			"uniform vec2 scale;"
-			"void main()\n"
-			"{\n"
-			"	vec2 pos = (position / screenSize * vec2(2, -2) * scale) + vec2(-1, +1);\n"
-			"	gl_Position = vec4(pos, 0.0, 1.0);\n"
-			"}";
+	init2dShaders();
+	init3dShaders();
 
-		vertexShader = glCreateShader(GL_VERTEX_SHADER);
-		glShaderSource(vertexShader, 1, &vertexShaderSrc, NULL);
-		glCompileShader(vertexShader);
-		GLint success = 0;
-		glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-		if (!success)
-		{
-			bbe::INTERNAL::triggerFatalError("Failed to compile shader");
-		}
-
-		char const* fragmentShaderSource =
-			"#version 300 es\n"
-			"precision mediump float;\n"
-			"out vec4 outColor;\n"
-			"uniform vec4 inColor;\n"
-			"void main()\n"
-			"{\n"
-			"	outColor = inColor;\n"
-			"}";
-
-		fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-		glCompileShader(fragmentShader);
-		success = 0;
-		glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-		if (!success)
-		{
-			bbe::INTERNAL::triggerFatalError("Failed to compile shader");
-		}
-
-		shaderProgram = glCreateProgram();
-		glAttachShader(shaderProgram, vertexShader);
-		glAttachShader(shaderProgram, fragmentShader);
-		glLinkProgram(shaderProgram);
-		glUseProgram(shaderProgram);
-
-		GLint screenSizePos = glGetUniformLocation(shaderProgram, "screenSize");
-		glUniform2f(screenSizePos, (float)initialWindowWidth, (float)initialWindowHeight);
-
-		GLint scalePos = glGetUniformLocation(shaderProgram, "scale");
-		glUniform2f(scalePos, (float)1, (float)1);
-
-		GLint inColorPos = glGetUniformLocation(shaderProgram, "inColor");
-		glUniform4f(inColorPos, (float)1, (float)1, (float)1, (float)1);
-	}
 	glEnable(GL_BLEND);
 	glEnable(GL_MULTISAMPLE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -92,18 +168,22 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 {
 	imguiStop();
-	glDeleteProgram(shaderProgram);
-	glDeleteShader(fragmentShader);
-	glDeleteShader(vertexShader);
+	glDeleteProgram(m_shaderProgram2d);
+	glDeleteShader(m_fragmentShader2d);
+	glDeleteShader(m_vertexShader2d);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 {
-	m_primitiveBrush2D.INTERNAL_beginDraw(m_pwindow, 0, 0, this);
+	glUseProgram(m_shaderProgram2d);
+	m_primitiveBrush2D.INTERNAL_beginDraw(m_pwindow, m_windowWidth, m_windowHeight, this);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
 {
+	glUseProgram(m_shaderProgram3d);
+	glEnable(GL_DEPTH_TEST);
+	m_primitiveBrush3D.INTERNAL_beginDraw(m_windowWidth, m_windowHeight, this);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
@@ -139,8 +219,11 @@ bbe::PrimitiveBrush3D& bbe::INTERNAL::openGl::OpenGLManager::getBrush3D()
 
 void bbe::INTERNAL::openGl::OpenGLManager::resize(uint32_t width, uint32_t height)
 {
-	GLint screenSizePos = glGetUniformLocation(shaderProgram, "screenSize");
+	GLint screenSizePos = glGetUniformLocation(m_shaderProgram2d, "screenSize");
 	glUniform2f(screenSizePos, (float)width, (float)height);
+
+	m_windowWidth = width;
+	m_windowHeight = height;
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::screenshot(const bbe::String& path)
@@ -153,7 +236,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::setVideoRenderingMode(const char* pat
 
 void bbe::INTERNAL::openGl::OpenGLManager::setColor2D(const bbe::Color& color)
 {
-	GLint inColorPos = glGetUniformLocation(shaderProgram, "inColor");
+	GLint inColorPos = glGetUniformLocation(m_shaderProgram2d, "inColor");
 	glUniform4f(inColorPos, color.r, color.g, color.b, color.a);
 }
 
@@ -202,10 +285,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * amountOfIndices, indices, GL_STATIC_DRAW);
 
-	GLint scalePos = glGetUniformLocation(shaderProgram, "scale");
+	GLint scalePos = glGetUniformLocation(m_shaderProgram2d, "scale");
 	glUniform2f(scalePos, (float)scale.x, (float)scale.y);
 
-	GLint positionAttribute = glGetAttribLocation(shaderProgram, "position");
+	GLint positionAttribute = glGetAttribLocation(m_shaderProgram2d, "position");
 	glEnableVertexAttribArray(positionAttribute);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -220,14 +303,138 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 
 void bbe::INTERNAL::openGl::OpenGLManager::setColor3D(const bbe::Color& color)
 {
+	GLint inColorPos = glGetUniformLocation(m_shaderProgram3d, "inColor");
+	glUniform4f(inColorPos, color.r, color.g, color.b, color.a);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection)
 {
+	GLint viewPos = glGetUniformLocation(m_shaderProgram3d, "view");
+	glUniformMatrix4fv(viewPos, 1, GL_FALSE, &m_view[0]);
+
+	GLint projectionPos = glGetUniformLocation(m_shaderProgram3d, "projection");
+	glUniformMatrix4fv(projectionPos, 1, GL_FALSE, &m_projection[0]);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)
 {
+	// TODO put this cube initialization somewhere else
+	static const bbe::List<uint32_t> indices = {
+		 0,  1,  3,	//Bottom
+		 1,  2,  3,
+		 5,  4,  7,	//Top
+		 6,  5,  7,
+		 9,  8, 11,	//Left
+		10,  9, 11,
+		12, 13, 15,	//Right
+		13, 14, 15,
+		16, 17, 19,	//Front
+		17, 18, 19,
+		21, 20, 23,	//Back
+		22, 21, 23,
+	};
+
+	static const bbe::List<Vector3> positions = {
+		Vector3(0.5, -0.5, -0.5),
+		Vector3(0.5,  0.5, -0.5),
+		Vector3(-0.5,  0.5, -0.5),
+		Vector3(-0.5, -0.5, -0.5),
+
+		Vector3(0.5, -0.5,  0.5),
+		Vector3(0.5,  0.5,  0.5),
+		Vector3(-0.5,  0.5,  0.5),
+		Vector3(-0.5, -0.5,  0.5),
+
+		Vector3(0.5, -0.5, -0.5),
+		Vector3(0.5, -0.5,  0.5),
+		Vector3(-0.5, -0.5,  0.5),
+		Vector3(-0.5, -0.5, -0.5),
+
+		Vector3(0.5,  0.5, -0.5),
+		Vector3(0.5,  0.5,  0.5),
+		Vector3(-0.5,  0.5,  0.5),
+		Vector3(-0.5,  0.5, -0.5),
+
+		Vector3(-0.5,  0.5, -0.5),
+		Vector3(-0.5,  0.5,  0.5),
+		Vector3(-0.5, -0.5,  0.5),
+		Vector3(-0.5, -0.5, -0.5),
+
+		Vector3(0.5,  0.5, -0.5),
+		Vector3(0.5,  0.5,  0.5),
+		Vector3(0.5, -0.5,  0.5),
+		Vector3(0.5, -0.5, -0.5),
+	};
+
+	static const bbe::List<Vector3> normals = {
+		Vector3(0, 0, -1),
+		Vector3(0, 0, -1),
+		Vector3(0, 0, -1),
+		Vector3(0, 0, -1),
+	
+		Vector3(0, 0,  1),
+		Vector3(0, 0,  1),
+		Vector3(0, 0,  1),
+		Vector3(0, 0,  1),
+	
+		Vector3(0, -1, 0),
+		Vector3(0, -1, 0),
+		Vector3(0, -1, 0),
+		Vector3(0, -1, 0),
+	
+		Vector3(0,  1, 0),
+		Vector3(0,  1, 0),
+		Vector3(0,  1, 0),
+		Vector3(0,  1, 0),
+	
+		Vector3(-1, 0, 0),
+		Vector3(-1, 0, 0),
+		Vector3(-1, 0, 0),
+		Vector3(-1, 0, 0),
+	
+		Vector3(1, 0, 0),
+		Vector3(1, 0, 0),
+		Vector3(1, 0, 0),
+		Vector3(1, 0, 0),
+	};
+
+	GLint modelPos = glGetUniformLocation(m_shaderProgram3d, "model");
+	glUniformMatrix4fv(modelPos, 1, GL_FALSE, &cube.getTransform()[0]);
+
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(bbe::Vector3) * positions.getLength(), positions.getRaw(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	GLuint nbo;
+	glGenBuffers(1, &nbo);
+	glBindBuffer(GL_ARRAY_BUFFER, nbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(bbe::Vector3) * normals.getLength(), normals.getRaw(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	GLuint ibo;
+	glGenBuffers(1, &ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * indices.getLength(), indices.getRaw(), GL_STATIC_DRAW);
+
+	GLint positionAttribute = glGetAttribLocation(m_shaderProgram3d, "inPos");
+	glEnableVertexAttribArray(positionAttribute);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	GLint normalPosition = glGetAttribLocation(m_shaderProgram3d, "inNormal");
+	glEnableVertexAttribArray(normalPosition);
+	glBindBuffer(GL_ARRAY_BUFFER, nbo);
+	glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glDrawElements(GL_TRIANGLES, indices.getLength(), GL_UNSIGNED_INT, 0);
+
+	glDeleteBuffers(1, &ibo);
+	glDeleteBuffers(1, &nbo);
+	glDeleteBuffers(1, &vbo);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
@@ -250,9 +457,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStart()
 
 	ImGuiIO& io = ImGui::GetIO();
 	ImFontConfig fontConfig;
-	imguiFontSmall = io.Fonts->AddFontDefault(&fontConfig);
+	m_pimguiFontSmall = io.Fonts->AddFontDefault(&fontConfig);
 	fontConfig.SizePixels = 26;
-	imguiFontBig = io.Fonts->AddFontDefault(&fontConfig);
+	m_pimguiFontBig = io.Fonts->AddFontDefault(&fontConfig);
 
 	ImGui_ImplOpenGL3_CreateFontsTexture();
 }
@@ -274,11 +481,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStartFrame()
 	ImGuiIO& io = ImGui::GetIO();
 	if (scale < 1.5f)
 	{
-		io.FontDefault = imguiFontSmall;
+		io.FontDefault = m_pimguiFontSmall;
 	}
 	else
 	{
-		io.FontDefault = imguiFontBig;
+		io.FontDefault = m_pimguiFontBig;
 	}
 
 	ImGui_ImplOpenGL3_NewFrame();

@@ -21,14 +21,25 @@ namespace bbe
 
 				GLFWwindow* m_pwindow = nullptr;
 
-				GLuint vertexShader = 0;
-				GLuint fragmentShader = 0;
-				GLuint shaderProgram = 0;
+				GLuint m_vertexShader2d = 0;
+				GLuint m_fragmentShader2d = 0;
+				GLuint m_shaderProgram2d = 0;
+
+				GLuint m_vertexShader3d = 0;
+				GLuint m_fragmentShader3d = 0;
+				GLuint m_shaderProgram3d = 0;
+
+				uint32_t m_windowWidth = 0;
+				uint32_t m_windowHeight = 0;
 
 				constexpr static uint32_t m_imguiMinImageCount = 2;
 				bool m_imguiInitSuccessful = false;
-				ImFont* imguiFontSmall = nullptr;
-				ImFont* imguiFontBig = nullptr;
+				ImFont* m_pimguiFontSmall = nullptr;
+				ImFont* m_pimguiFontBig = nullptr;
+
+				void init2dShaders();
+				void init3dShaders();
+
 			public:
 				OpenGLManager();
 
