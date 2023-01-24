@@ -24,10 +24,7 @@ public:
 	constexpr static int GRIDDIMENSIONSIZE = 10;
 	const float TICKTIME = 0.25f;
 
-	// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 	bbe::PointLight light;
-#endif
 
 	Direction dir = Direction::LEFT;
 	Direction nextDir = Direction::LEFT;
@@ -45,11 +42,8 @@ public:
 
 	virtual void onStart() override
 	{
-		// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
-		light.setPosition(camPos);
-		light.setLightStrength(10);
-#endif
+		light.pos = camPos;
+		light.lightStrengh = 10;
 
 		bodyParts.add({ GRIDDIMENSIONSIZE / 2, GRIDDIMENSIONSIZE / 2, GRIDDIMENSIONSIZE / 2 });
 		bodyParts.add({ -1, -1, -1 });
@@ -210,6 +204,7 @@ public:
 
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
+		brush.addLight(light);
 		brush.setCamera(camPos, bbe::Vector3(GRIDDIMENSIONSIZE / 2, GRIDDIMENSIONSIZE / 2, GRIDDIMENSIONSIZE / 2));
 		brush.setColor(1, 1, 1, 0.5f); //TODO: Alpha has no effect.
 		for (const BodyPart& bp : bodyParts)

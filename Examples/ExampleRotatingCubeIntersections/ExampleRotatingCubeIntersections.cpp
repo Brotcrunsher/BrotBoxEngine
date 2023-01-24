@@ -6,10 +6,7 @@ constexpr int WINDOW_HEIGHT = 720;
 
 class MyGame : public bbe::Game
 {
-	// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 	bbe::PointLight light;
-#endif
 	bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
 	bbe::Cube c1;
 	bbe::Cube c2;
@@ -40,11 +37,8 @@ class MyGame : public bbe::Game
 	virtual void onStart() override
 	{
 		placeCubes();
-		// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
-		light.setLightColor(1, 1, 1);
-		light.setLightStrength(1);
-#endif
+		light.lightColor = bbe::Color(1, 1, 1);
+		light.lightStrengh = 1;
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
@@ -56,10 +50,8 @@ class MyGame : public bbe::Game
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
-		// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
-		light.setPosition(ccnc.getCameraPos());
-#endif
+		light.pos = ccnc.getCameraPos();
+		brush.addLight(light);
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 
 		brush.fillCube(c1);

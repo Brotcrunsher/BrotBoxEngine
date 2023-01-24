@@ -26,10 +26,7 @@ public:
 	constexpr static float TICKTIME = 0.25f;
 
 	bbe::Cube cube;
-	// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
 	bbe::PointLight light;
-#endif
 
 	Direction dir     = Direction::LEFT;
 	Direction nextDir = Direction::LEFT;
@@ -47,11 +44,8 @@ public:
 
 	virtual void onStart() override
 	{
-		// TODO: Make independent of RenderMode
-#ifdef BBE_RENDERER_VULKAN
-		light.setPosition(bbe::Vector3(-1, -1, 1));
-		light.setLightStrength(5);
-#endif
+		light.pos = bbe::Vector3(-1, -1, 1);
+		light.lightStrengh = 5;
 
 		bodyParts.add({ GRIDWIDTH / 2, GRIDHEIGHT / 2 });
 		bodyParts.add({ -1, -1 });
@@ -203,6 +197,8 @@ public:
 
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
+		brush.addLight(light);
+
 		brush.setCamera(bbe::Vector3(0, 0, 1), bbe::Vector3(0, 2, 0));
 		brush.setColor(0.5f, 0.3f, 0.2f);
 		brush.fillCube(cube);

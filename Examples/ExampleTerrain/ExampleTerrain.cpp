@@ -56,10 +56,10 @@ public:
 
 	virtual void onStart() override
 	{
-		sunLight.setPosition(bbe::Vector3(10000, 20000, 40000));
-		sunLight.setLightColor(bbe::Color(1, 1, 0.9f));
-		sunLight.setLightStrength(0.9f);
-		sunLight.setFalloffMode(bbe::LightFalloffMode::LIGHT_FALLOFF_NONE);
+		sunLight.pos = bbe::Vector3(10000, 20000, 40000);
+		sunLight.lightColor = bbe::Color(1, 1, 0.9f);
+		sunLight.lightStrengh = 0.9f;
+		sunLight.falloffMode = bbe::LightFalloffMode::LIGHT_FALLOFF_NONE;
 
 		terrain.setBaseTextureMult(bbe::Vector2(128, 128));
 	}
@@ -77,6 +77,8 @@ public:
 	int height = 2;
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
+		brush.addLight(sunLight);
+
 		brush.setFillMode(wireframe ? bbe::FillMode::WIREFRAME : bbe::FillMode::SOLID);
 
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
