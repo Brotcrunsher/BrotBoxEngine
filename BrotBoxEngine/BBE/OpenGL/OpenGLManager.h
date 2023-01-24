@@ -25,9 +25,15 @@ namespace bbe
 				GLuint m_fragmentShader2d = 0;
 				GLuint m_shaderProgram2d = 0;
 
+				GLuint m_vertexShader2dTex = 0;
+				GLuint m_fragmentShader2dTex = 0;
+				GLuint m_shaderProgram2dTex = 0;
+
 				GLuint m_vertexShader3d = 0;
 				GLuint m_fragmentShader3d = 0;
 				GLuint m_shaderProgram3d = 0;
+
+				GLuint m_imageUvBuffer = 0;
 
 				uint32_t m_windowWidth = 0;
 				uint32_t m_windowHeight = 0;
@@ -38,6 +44,7 @@ namespace bbe
 				ImFont* m_pimguiFontBig = nullptr;
 
 				void init2dShaders();
+				void init2dTexShaders();
 				void init3dShaders();
 
 			public:

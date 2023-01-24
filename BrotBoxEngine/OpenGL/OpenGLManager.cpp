@@ -1,4 +1,5 @@
 #include "BBE/OpenGL/OpenGLManager.h"
+#include "BBE/OpenGL/OpenGLImage.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -67,6 +68,82 @@ void bbe::INTERNAL::openGl::OpenGLManager::init2dShaders()
 
 	GLint inColorPos = glGetUniformLocation(m_shaderProgram2d, "inColor");
 	glUniform4f(inColorPos, (float)1, (float)1, (float)1, (float)1);
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::init2dTexShaders()
+{
+	char const* vertexShaderSrc =
+		"#version 300 es\n"
+		"precision mediump float;\n"
+		"in vec2 position;\n"
+		"in vec2 uv;"
+		"out vec2 uvPassOn;"
+		"uniform vec2 screenSize;"
+		"uniform vec2 scale;"
+		"void main()\n"
+		"{\n"
+		"   uvPassOn = uv;"
+		"	vec2 pos = (position / screenSize * vec2(2, -2) * scale) + vec2(-1, +1);\n"
+		"	gl_Position = vec4(pos, 0.0, 1.0);\n"
+		"}";
+
+	m_vertexShader2dTex = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(m_vertexShader2dTex, 1, &vertexShaderSrc, NULL);
+	glCompileShader(m_vertexShader2dTex);
+	GLint success = 0;
+	glGetShaderiv(m_vertexShader2dTex, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		bbe::INTERNAL::triggerFatalError("Failed to compile shader");
+	}
+
+	char const* fragmentShaderSource =
+		"#version 300 es\n"
+		"precision mediump float;\n"
+		"in vec2 uvPassOn;"
+		"out vec4 outColor;\n"
+		"uniform vec4 inColor;\n"
+		"uniform sampler2D tex;"
+		"void main()\n"
+		"{\n"
+		"	outColor = inColor * texture(tex, uvPassOn);\n"
+		"}";
+
+	m_fragmentShader2dTex = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(m_fragmentShader2dTex, 1, &fragmentShaderSource, NULL);
+	glCompileShader(m_fragmentShader2dTex);
+	success = 0;
+	glGetShaderiv(m_fragmentShader2dTex, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		bbe::INTERNAL::triggerFatalError("Failed to compile shader");
+	}
+
+	m_shaderProgram2dTex = glCreateProgram();
+	glAttachShader(m_shaderProgram2dTex, m_vertexShader2dTex);
+	glAttachShader(m_shaderProgram2dTex, m_fragmentShader2dTex);
+	glLinkProgram(m_shaderProgram2dTex);
+	glUseProgram(m_shaderProgram2dTex);
+
+	GLint screenSizePos = glGetUniformLocation(m_shaderProgram2dTex, "screenSize");
+	glUniform2f(screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
+
+	GLint scalePos = glGetUniformLocation(m_shaderProgram2dTex, "scale");
+	glUniform2f(scalePos, (float)1, (float)1);
+
+	GLint inColorPos = glGetUniformLocation(m_shaderProgram2dTex, "inColor");
+	glUniform4f(inColorPos, (float)1, (float)1, (float)1, (float)1);
+
+	bbe::List<float> uvCoordinates = {
+		0.0f, 0.0f,
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+	};
+	glGenBuffers(1, &m_imageUvBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, m_imageUvBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * uvCoordinates.getLength(), uvCoordinates.getRaw(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::init3dShaders()
@@ -208,6 +285,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	}
 
 	init2dShaders();
+	init2dTexShaders();
 	init3dShaders();
 
 	glEnable(GL_BLEND);
@@ -223,18 +301,25 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 	glDeleteProgram(m_shaderProgram2d);
 	glDeleteShader(m_fragmentShader2d);
 	glDeleteShader(m_vertexShader2d);
+
+	glDeleteBuffers(1, &m_imageUvBuffer);
+	glDeleteProgram(m_vertexShader2dTex);
+	glDeleteShader(m_fragmentShader2dTex);
+	glDeleteShader(m_shaderProgram2dTex);
+
+	glDeleteProgram(m_vertexShader3d);
+	glDeleteShader(m_fragmentShader3d);
+	glDeleteShader(m_shaderProgram3d);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 {
-	glUseProgram(m_shaderProgram2d);
 	glDisable(GL_DEPTH_TEST);
 	m_primitiveBrush2D.INTERNAL_beginDraw(m_pwindow, m_windowWidth, m_windowHeight, this);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
 {
-	glUseProgram(m_shaderProgram3d);
 	glEnable(GL_DEPTH_TEST);
 	m_primitiveBrush3D.INTERNAL_beginDraw(m_windowWidth, m_windowHeight, this);
 }
@@ -272,6 +357,7 @@ bbe::PrimitiveBrush3D& bbe::INTERNAL::openGl::OpenGLManager::getBrush3D()
 
 void bbe::INTERNAL::openGl::OpenGLManager::resize(uint32_t width, uint32_t height)
 {
+	glUseProgram(m_shaderProgram2d);
 	GLint screenSizePos = glGetUniformLocation(m_shaderProgram2d, "screenSize");
 	glUniform2f(screenSizePos, (float)width, (float)height);
 
@@ -281,34 +367,43 @@ void bbe::INTERNAL::openGl::OpenGLManager::resize(uint32_t width, uint32_t heigh
 
 void bbe::INTERNAL::openGl::OpenGLManager::screenshot(const bbe::String& path)
 {
+	// TODO
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::setVideoRenderingMode(const char* path)
 {
+	// TODO
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::setColor2D(const bbe::Color& color)
 {
+	glUseProgram(m_shaderProgram2d);
 	GLint inColorPos = glGetUniformLocation(m_shaderProgram2d, "inColor");
+	glUniform4f(inColorPos, color.r, color.g, color.b, color.a);
+
+	glUseProgram(m_shaderProgram2dTex);
+	inColorPos = glGetUniformLocation(m_shaderProgram2dTex, "inColor");
 	glUniform4f(inColorPos, color.r, color.g, color.b, color.a);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader)
 {
 	// TODO make proper implementation
+	glUseProgram(m_shaderProgram2d);
 	bbe::List<bbe::Vector2> vertices;
 	rect.getVertices(vertices);
 	for (bbe::Vector2& v : vertices)
 	{
 		v = v.rotate(rotation, rect.getCenter());
 	}
-	uint32_t a[] = {0, 1, 3, 1, 2, 3};
-	fillVertexIndexList2D(a, 6, vertices.getRaw(), vertices.getLength(), { 0, 0 }, { 1, 1 });
+	uint32_t indices[] = {0, 1, 3, 1, 2, 3};
+	fillVertexIndexList2D(indices, 6, vertices.getRaw(), vertices.getLength(), { 0, 0 }, { 1, 1 });
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle& circle)
 {
 	// TODO make proper implementation
+	glUseProgram(m_shaderProgram2d);
 	bbe::List<bbe::Vector2> vertices;
 	circle.getVertices(vertices);
 	bbe::List<uint32_t> indices;
@@ -323,6 +418,63 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle& circle)
 
 void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, const Image& image, float rotation)
 {
+	// TODO make proper implementation
+	glUseProgram(m_shaderProgram2dTex);
+	bbe::List<bbe::Vector2> vertices;
+	rect.getVertices(vertices);
+	for (bbe::Vector2& v : vertices)
+	{
+		v = v.rotate(rotation, rect.getCenter());
+	}
+	uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
+
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(bbe::Vector2) * vertices.getLength(), vertices.getRaw(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	GLuint ibo;
+	glGenBuffers(1, &ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices, GL_STATIC_DRAW);
+
+	GLint scalePos = glGetUniformLocation(m_shaderProgram2dTex, "scale");
+	glUniform2f(scalePos, 1.0f, 1.0f);
+
+	GLint positionAttribute = glGetAttribLocation(m_shaderProgram2dTex, "position");
+	glEnableVertexAttribArray(positionAttribute);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+	GLint uvPosition = glGetAttribLocation(m_shaderProgram2dTex, "uv");
+	glEnableVertexAttribArray(uvPosition);
+	glBindBuffer(GL_ARRAY_BUFFER, m_imageUvBuffer);
+	glVertexAttribPointer(uvPosition, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	GLint texPosition = glGetUniformLocation(m_shaderProgram2dTex, "tex");
+	glUniform1i(texPosition, 0);
+	glActiveTexture(GL_TEXTURE0);
+
+	bbe::INTERNAL::openGl::OpenGLImage* ogi = nullptr;
+	if (image.m_prendererData == nullptr)
+	{
+		ogi = new bbe::INTERNAL::openGl::OpenGLImage(image);
+	}
+	else
+	{
+		ogi = (bbe::INTERNAL::openGl::OpenGLImage*)image.m_prendererData;
+	}
+
+	glBindTexture(GL_TEXTURE_2D, ogi->tex);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	glDeleteBuffers(1, &ibo);
+	glDeleteBuffers(1, &vbo);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale)
@@ -356,12 +508,14 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 
 void bbe::INTERNAL::openGl::OpenGLManager::setColor3D(const bbe::Color& color)
 {
+	glUseProgram(m_shaderProgram3d);
 	GLint inColorPos = glGetUniformLocation(m_shaderProgram3d, "inColor");
 	glUniform4f(inColorPos, color.r, color.g, color.b, color.a);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection)
 {
+	glUseProgram(m_shaderProgram3d);
 	GLint viewPos = glGetUniformLocation(m_shaderProgram3d, "view");
 	glUniformMatrix4fv(viewPos, 1, GL_FALSE, &m_view[0]);
 
@@ -371,6 +525,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const bbe::Matrix4& m_vie
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)
 {
+	glUseProgram(m_shaderProgram3d);
 	// TODO put this cube initialization somewhere else
 	static const bbe::List<uint32_t> indices = {
 		 0,  1,  3,	//Bottom
@@ -492,10 +647,13 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
 {
+	glUseProgram(m_shaderProgram3d);
+	// TODO
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
 {
+	glUseProgram(m_shaderProgram3d);
 	GLint inColorPos = glGetUniformLocation(m_shaderProgram3d, "lightPos");
 	glUniform3f(inColorPos, pos.x, pos.y, pos.y);
 

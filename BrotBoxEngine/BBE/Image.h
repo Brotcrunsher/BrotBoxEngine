@@ -19,6 +19,11 @@ namespace bbe
 			class VulkanImage;
 			class VulkanDescriptorSet;
 		}
+		namespace openGl
+		{
+			class OpenGLManager;
+			class OpenGLImage;
+		}
 	}
 
 	enum class ImageFormat
@@ -26,7 +31,6 @@ namespace bbe
 		R8G8B8A8    =  37, //VK_FORMAT_R8G8B8A8_UNORM
 		R8          =   9, //VK_FORMAT_R8_UNORM
 		R32FLOAT    = 100, //VK_FORMAT_R32_SFLOAT
-		R32FLOATBC6 = 143, //VK_FORMAT_BC6H_UFLOAT_BLOCK
 	};
 
 	enum class ImageRepeatMode
@@ -49,6 +53,8 @@ namespace bbe
 		friend class INTERNAL::vulkan::VulkanManager;
 		friend class INTERNAL::vulkan::VulkanImage;
 		friend class INTERNAL::vulkan::VulkanDescriptorSet;
+		friend class INTERNAL::openGl::OpenGLImage;
+		friend class INTERNAL::openGl::OpenGLManager;
 		friend class PrimitiveBrush2D;
 		friend class PrimitiveBrush3D;
 		friend class Terrain;

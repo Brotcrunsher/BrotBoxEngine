@@ -95,7 +95,7 @@ void bbe::Image::load(const char * path)
 
 	int texChannels = 0;
 	stbi_uc *pixels = stbi_load(path, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
-	m_format = ImageFormat::R8G8B8A8;
+	m_format = ImageFormat::R8G8B8A8; // Is correct, even if texChannels == 3, because stbi is transforming the data for us on the fly.
 
 	if (pixels == nullptr)
 	{

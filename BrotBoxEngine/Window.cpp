@@ -72,7 +72,7 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 		bbe::INTERNAL::triggerFatalError("Could not create window!");
 	}
 
-	std::cout << "Init vulkan manager" << std::endl;
+	std::cout << "Init render manager" << std::endl;
 
 	float windowXScale = 0;
 	float windowYScale = 0;
