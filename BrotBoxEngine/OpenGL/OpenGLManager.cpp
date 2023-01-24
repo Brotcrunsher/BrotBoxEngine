@@ -78,15 +78,18 @@ void bbe::INTERNAL::openGl::OpenGLManager::init3dShaders()
 		"in vec3 inNormal;"
 		"out vec3 outNormal;"
 		"out vec3 outViewVec;"
+		"out vec3 outLightVec;"
 		"uniform mat4 view;"
 		"uniform mat4 projection;"
 		"uniform mat4 model;"
+		"uniform vec3 lightPos;"
 		"void main()"
 		"{"
 		"   vec4 worldPos = model * vec4(inPos, 1.0);"
 		"   gl_Position = projection * view * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
 		"   outNormal = mat3(view) * mat3(model) * inNormal;"
 		"   outViewVec = -(view * worldPos).xyz;"
+		"   outLightVec = mat3(view) * (lightPos - vec3(worldPos));"
 		"}";
 
 	m_vertexShader3d = glCreateShader(GL_VERTEX_SHADER);
@@ -101,19 +104,56 @@ void bbe::INTERNAL::openGl::OpenGLManager::init3dShaders()
 
 	char const* fragmentShaderSource =
 		"#version 300 es\n"
-		"precision highp float;"
+		"precision highp float;\n"
+		"#define FALLOFF_NONE    0\n"
+		"#define FALLOFF_LINEAR  1\n"
+		"#define FALLOFF_SQUARED 2\n"
+		"#define FALLOFF_CUBIC   3\n"
+		"#define FALLOFF_SQRT    4\n"
 		"out vec4 outColor;"
 		"in vec3 outNormal;"
 		"in vec3 outViewVec;"
+		"in vec3 outLightVec;"
 		"uniform vec4 inColor;"
+		"uniform float lightStrength;"
+		"uniform int falloffMode;"
+		"uniform vec4 lightColor;"
+		"uniform vec4 specularColor;"
 		"void main()"
 		"{"
 		"   vec3 texColor = inColor.xyz;"
 		"   vec3 N = normalize(outNormal);"
 		"   vec3 V = normalize(outViewVec);"
 		"   vec3 ambient = texColor * 0.1;"
-		"   vec3 diffuse = outNormal;"
+		"   vec3 diffuse = vec3(0);"
 		"   vec3 specular = vec3(0);"
+		"   float distToLight = length(outLightVec);"
+		"   float lightPower = lightStrength;"
+		"   if(distToLight > 0.f)"
+		"   {"
+		"       switch (falloffMode)														 "
+		"       {																							 "
+		"       case FALLOFF_NONE:																			 "
+		"       																				 "
+		"       	break;																					 "
+		"       case FALLOFF_LINEAR:																		 "
+		"       	lightPower = lightPower / distToLight;							 "
+		"       	break;																					 "
+		"       case FALLOFF_SQUARED:																		 "
+		"       	lightPower = lightPower / distToLight / distToLight;				 "
+		"       	break;																					 "
+		"       case FALLOFF_CUBIC:																			 "
+		"       	lightPower = lightPower / distToLight / distToLight / distToLight; "
+		"       	break;																					 "
+		"       case FALLOFF_SQRT:																			 "
+		"       	lightPower = lightPower / sqrt(distToLight);						 "
+		"       	break;																					 "
+		"       }																							 "
+		"   }"
+		"   vec3 L = normalize(outLightVec);"
+		"   vec3 R = reflect(-L, N);"
+		"   diffuse += max(dot(N, L), 0.0) * (texColor * lightColor.xyz) * lightPower;"
+		"   specular += pow(max(dot(R, V), 0.0), 4.0) * specularColor.xyz * lightPower;"
 		"	outColor = vec4(ambient + diffuse + specular, 1.0);"
 		"}";
 	
@@ -132,6 +172,18 @@ void bbe::INTERNAL::openGl::OpenGLManager::init3dShaders()
 	glAttachShader(m_shaderProgram3d, m_fragmentShader3d);
 	glLinkProgram(m_shaderProgram3d);
 	glUseProgram(m_shaderProgram3d);
+
+	GLint lightPos = glGetUniformLocation(m_shaderProgram3d, "lightPos");
+	glUniform3f(lightPos, 0.f, 0.f, 0.f);
+
+	GLint lightStrength = glGetUniformLocation(m_shaderProgram3d, "lightStrength");
+	glUniform1f(lightStrength, 0.f);
+	GLint falloffMode = glGetUniformLocation(m_shaderProgram3d, "falloffMode");
+	glUniform1i(falloffMode, 0);
+	GLint lightColor = glGetUniformLocation(m_shaderProgram3d, "lightColor");
+	glUniform4f(lightColor, 0.f, 0.f, 0.f, 0.f);
+	GLint specularColor = glGetUniformLocation(m_shaderProgram3d, "specularColor");
+	glUniform4f(specularColor, 0.f, 0.f, 0.f, 0.f);
 }
 
 bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
@@ -442,8 +494,19 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
 {
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrenght, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
+void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
 {
+	GLint inColorPos = glGetUniformLocation(m_shaderProgram3d, "lightPos");
+	glUniform3f(inColorPos, pos.x, pos.y, pos.y);
+
+	GLint lightStrengthPos = glGetUniformLocation(m_shaderProgram3d, "lightStrength");
+	glUniform1f(lightStrengthPos, lightStrength);
+	GLint falloffModePos = glGetUniformLocation(m_shaderProgram3d, "falloffMode");
+	glUniform1i(falloffModePos, (int)falloffMode);
+	GLint lightColorPos = glGetUniformLocation(m_shaderProgram3d, "lightColor");
+	glUniform4f(lightColorPos, lightColor.r, lightColor.g, lightColor.b, lightColor.a);
+	GLint specularColorPos = glGetUniformLocation(m_shaderProgram3d, "specularColor");
+	glUniform4f(specularColorPos, specularColor.r, specularColor.g, specularColor.b, specularColor.a);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::imguiStart()

@@ -64,7 +64,7 @@ namespace bbe
 		virtual void setCamera3D(const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection) = 0;
 		virtual void fillCube3D(const Cube& cube) = 0;
 		virtual void fillSphere3D(const IcoSphere& sphere) = 0;
-		virtual void addLight(const bbe::Vector3& pos, float lightStrenght, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode) = 0;
+		virtual void addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode) = 0;
 
 		virtual void imguiStart() = 0;
 		virtual void imguiStop() = 0;

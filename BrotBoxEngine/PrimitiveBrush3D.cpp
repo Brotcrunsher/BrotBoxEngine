@@ -43,9 +43,9 @@ void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 	m_prenderManager->fillSphere3D(sphere);
 }
 
-void bbe::PrimitiveBrush3D::addLight(const bbe::Vector3& pos, float lightStrenght, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
+void bbe::PrimitiveBrush3D::addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
 {
-	m_prenderManager->addLight(pos, lightStrenght, lightColor, specularColor, falloffMode);
+	m_prenderManager->addLight(pos, lightStrength, lightColor, specularColor, falloffMode);
 }
 
 void bbe::PrimitiveBrush3D::addLight(const bbe::PointLight& light)
