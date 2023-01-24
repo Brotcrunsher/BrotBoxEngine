@@ -57,6 +57,9 @@ namespace bbe
 		void fillCube(const Cube &cube);
 		void fillIcoSphere(const IcoSphere &sphere);
 
+		void addLight(const bbe::Vector3& pos, float lightStrenght, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode);
+		void addLight(const bbe::PointLight& light);
+
 #ifdef BBE_RENDERER_VULKAN
 		void drawTerrain(const Terrain &terrain);
 #endif
@@ -66,6 +69,7 @@ namespace bbe
 		void setColor(const Color &c);
 
 		void setCamera(const Vector3 &cameraPos, const Vector3 &cameraTarget, const Vector3 &cameraUpVector = Vector3(0, 0, 1.0f));
+
 
 		void setFillMode(FillMode fm);
 		FillMode getFillMode();

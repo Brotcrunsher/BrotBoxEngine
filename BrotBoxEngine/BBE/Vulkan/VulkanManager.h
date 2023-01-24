@@ -147,7 +147,6 @@ namespace bbe
 					VkDeviceMemory m_memory;
 				};
 				bbe::List<bbe::List<BufferMemoryPair>> m_delayedBufferDeletes;
-
 			private:
 				ScreenshotFirstStage getRawScreenshot();
 
@@ -203,11 +202,13 @@ namespace bbe
 				virtual void fillCube3D(const Cube& cube) override;
 				virtual void fillSphere3D(const bbe::IcoSphere& sphere) override;
 				void drawTerrain(const bbe::Terrain& terrain, const bbe::Color& color);
+				virtual void addLight(const bbe::Vector3& pos, float lightStrenght, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode) override;
 
 				virtual void imguiStart() override;
 				virtual void imguiStop() override;
 				virtual void imguiStartFrame() override;
 				virtual void imguiEndFrame() override;
+
 			};
 		}
 	}

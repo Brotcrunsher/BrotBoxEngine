@@ -16,6 +16,7 @@
 #include "BBE/Vulkan/VulkanCircle.h"
 #include "BBE/Vulkan/VulkanCube.h"
 #include "BBE/Vulkan/VulkanSphere.h"
+#include "BBE/Vulkan/VulkanLight.h"
 #include "EmbedOutput.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -94,7 +95,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 			m_uboMatrices[i].unmap();
 		}
 	}
-	bbe::PointLight::s_init(m_device.getDevice(), m_device.getPhysicalDevice());
+	bbe::INTERNAL::vulkan::VulkanLight::s_init(m_device.getDevice(), m_device.getPhysicalDevice());
 	bbe::INTERNAL::vulkan::VulkanRectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::INTERNAL::vulkan::VulkanCircle   ::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 	bbe::INTERNAL::vulkan::VulkanCube     ::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
@@ -142,8 +143,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 		m_setViewProjectionMatrixLights[i].addUniformBuffer(m_uboMatrices[i], 0, 0);
 		m_setViewProjectionMatrixLights[i].create(m_device, m_descriptorPool, m_setLayoutViewProjectionMatrix);
 	}
-	m_setVertexLight              .addUniformBuffer(PointLight::s_bufferVertexData  , 0, 0);
-	m_setFragmentLight            .addUniformBuffer(PointLight::s_bufferFragmentData, 0, 0);
+	m_setVertexLight              .addUniformBuffer(bbe::INTERNAL::vulkan::VulkanLight::getVertexBuffer()  , 0, 0);
+	m_setFragmentLight            .addUniformBuffer(bbe::INTERNAL::vulkan::VulkanLight::getFragmentBuffer(), 0, 0);
 	m_setVertexLight              .create(m_device, m_descriptorPool, m_setLayoutVertexLight);
 	m_setFragmentLight            .create(m_device, m_descriptorPool, m_setLayoutFragmentLight);
 
@@ -215,7 +216,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	bbe::INTERNAL::vulkan::VulkanCube     ::s_destroy();
 	bbe::INTERNAL::vulkan::VulkanCircle   ::s_destroy();
 	bbe::INTERNAL::vulkan::VulkanRectangle::s_destroy();
-	bbe::PointLight::s_destroy();
+	bbe::INTERNAL::vulkan::VulkanLight    ::s_destroy();
 	bbe::INTERNAL::vulkan::VulkanSphere   ::s_destroy();
 
 	m_presentFence1.destroy();
@@ -291,6 +292,8 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 	m_primitiveBrushes3D[m_imageIndex].INTERNAL_beginDraw(
 		m_screenWidth, m_screenHeight,
 		this);
+
+	bbe::INTERNAL::vulkan::VulkanLight::beginDraw();
 
 	m_pipelineRecord3D = PipelineRecord3D::NONE;
 	m_lastDraw3D = DrawRecord::NONE;
@@ -1234,6 +1237,11 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiEndFrame()
 	ImGui::Render();
 	ImDrawData* drawData = ImGui::GetDrawData();
 	ImGui_ImplVulkan_RenderDrawData(drawData, *m_currentFrameDrawCommandBuffer);
+}
+
+void bbe::INTERNAL::vulkan::VulkanManager::addLight(const bbe::Vector3& pos, float lightStrenght, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
+{
+	bbe::INTERNAL::vulkan::VulkanLight::addLight(pos, lightStrenght, lightColor, specularColor, falloffMode);
 }
 
 unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData(bool* outRequiresSwizzle)

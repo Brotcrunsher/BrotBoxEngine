@@ -43,6 +43,16 @@ void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 	m_prenderManager->fillSphere3D(sphere);
 }
 
+void bbe::PrimitiveBrush3D::addLight(const bbe::Vector3& pos, float lightStrenght, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
+{
+	m_prenderManager->addLight(pos, lightStrenght, lightColor, specularColor, falloffMode);
+}
+
+void bbe::PrimitiveBrush3D::addLight(const bbe::PointLight& light)
+{
+	addLight(light.pos, light.lightStrengh, light.lightColor, light.specularColor, light.falloffMode);
+}
+
 #ifdef BBE_RENDERER_VULKAN
 void bbe::PrimitiveBrush3D::drawTerrain(const Terrain& terrain)
 {

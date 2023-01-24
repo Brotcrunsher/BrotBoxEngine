@@ -176,6 +176,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 {
 	glUseProgram(m_shaderProgram2d);
+	glDisable(GL_DEPTH_TEST);
 	m_primitiveBrush2D.INTERNAL_beginDraw(m_pwindow, m_windowWidth, m_windowHeight, this);
 }
 
@@ -438,6 +439,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
+{
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrenght, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
 {
 }
 

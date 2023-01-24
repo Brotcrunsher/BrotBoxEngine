@@ -295,9 +295,8 @@ void bbe::INTERNAL_windowResizeCallback(GLFWwindow * window, int width, int heig
 void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int action, int mods)
 {
 	ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
-#ifdef BBE_RENDERER_VULKAN
 	if (ImGui::GetIO().WantCaptureMouse) return;
-#endif
+
 	if (action == GLFW_PRESS)
 	{
 		bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_press((bbe::MouseButton)button);
