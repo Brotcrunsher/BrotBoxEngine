@@ -1,0 +1,24 @@
+#pragma once
+
+#include "BBE/glfwWrapper.h"
+
+namespace bbe
+{
+	namespace INTERNAL
+	{
+		namespace openGl
+		{
+			namespace OpenGLSphere
+			{
+				void init();
+				void destroy();
+
+				GLuint getVbo();
+				GLuint getNbo();
+				GLuint getIbo();
+
+				size_t getAmountOfIndices();
+			}
+		}
+	}
+}

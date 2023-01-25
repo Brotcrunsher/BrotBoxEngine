@@ -7,6 +7,8 @@
 #include "BBE/Rectangle.h"
 #include "BBE/Circle.h"
 #include "BBE/Matrix4.h"
+#include "BBE/OpenGL/OpenGLCube.h"
+#include "BBE/OpenGL/OpenGLSphere.h"
 
 // TODO: Fix switching between fullHD and 4k Screen
 
@@ -263,6 +265,30 @@ void bbe::INTERNAL::openGl::OpenGLManager::init3dShaders()
 	glUniform4f(specularColor, 0.f, 0.f, 0.f, 0.f);
 }
 
+void bbe::INTERNAL::openGl::OpenGLManager::fillMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, GLuint nbo, size_t amountOfIndices)
+{
+	glUseProgram(m_shaderProgram3d);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+
+	GLint modelPos = glGetUniformLocation(m_shaderProgram3d, "model");
+	glUniformMatrix4fv(modelPos, 1, GL_FALSE, modelMatrix);
+
+	GLint positionAttribute = glGetAttribLocation(m_shaderProgram3d, "inPos");
+	glEnableVertexAttribArray(positionAttribute);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	GLint normalPosition = glGetAttribLocation(m_shaderProgram3d, "inNormal");
+	glEnableVertexAttribArray(normalPosition);
+	glBindBuffer(GL_ARRAY_BUFFER, nbo);
+	glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glDrawElements(GL_TRIANGLES, amountOfIndices, GL_UNSIGNED_INT, 0);
+}
+
 bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
 {
 }
@@ -288,6 +314,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	init2dTexShaders();
 	init3dShaders();
 
+	OpenGLCube::init();
+	OpenGLSphere::init();
+
 	glEnable(GL_BLEND);
 	glEnable(GL_MULTISAMPLE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -298,6 +327,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 {
 	imguiStop();
+
+	OpenGLSphere::destroy();
+	OpenGLCube::destroy();
+
 	glDeleteProgram(m_shaderProgram2d);
 	glDeleteShader(m_fragmentShader2d);
 	glDeleteShader(m_vertexShader2d);
@@ -525,130 +558,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const bbe::Matrix4& m_vie
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)
 {
-	glUseProgram(m_shaderProgram3d);
-	// TODO put this cube initialization somewhere else
-	static const bbe::List<uint32_t> indices = {
-		 0,  1,  3,	//Bottom
-		 1,  2,  3,
-		 5,  4,  7,	//Top
-		 6,  5,  7,
-		 9,  8, 11,	//Left
-		10,  9, 11,
-		12, 13, 15,	//Right
-		13, 14, 15,
-		16, 17, 19,	//Front
-		17, 18, 19,
-		21, 20, 23,	//Back
-		22, 21, 23,
-	};
-
-	static const bbe::List<Vector3> positions = {
-		Vector3(0.5, -0.5, -0.5),
-		Vector3(0.5,  0.5, -0.5),
-		Vector3(-0.5,  0.5, -0.5),
-		Vector3(-0.5, -0.5, -0.5),
-
-		Vector3(0.5, -0.5,  0.5),
-		Vector3(0.5,  0.5,  0.5),
-		Vector3(-0.5,  0.5,  0.5),
-		Vector3(-0.5, -0.5,  0.5),
-
-		Vector3(0.5, -0.5, -0.5),
-		Vector3(0.5, -0.5,  0.5),
-		Vector3(-0.5, -0.5,  0.5),
-		Vector3(-0.5, -0.5, -0.5),
-
-		Vector3(0.5,  0.5, -0.5),
-		Vector3(0.5,  0.5,  0.5),
-		Vector3(-0.5,  0.5,  0.5),
-		Vector3(-0.5,  0.5, -0.5),
-
-		Vector3(-0.5,  0.5, -0.5),
-		Vector3(-0.5,  0.5,  0.5),
-		Vector3(-0.5, -0.5,  0.5),
-		Vector3(-0.5, -0.5, -0.5),
-
-		Vector3(0.5,  0.5, -0.5),
-		Vector3(0.5,  0.5,  0.5),
-		Vector3(0.5, -0.5,  0.5),
-		Vector3(0.5, -0.5, -0.5),
-	};
-
-	static const bbe::List<Vector3> normals = {
-		Vector3(0, 0, -1),
-		Vector3(0, 0, -1),
-		Vector3(0, 0, -1),
-		Vector3(0, 0, -1),
-	
-		Vector3(0, 0,  1),
-		Vector3(0, 0,  1),
-		Vector3(0, 0,  1),
-		Vector3(0, 0,  1),
-	
-		Vector3(0, -1, 0),
-		Vector3(0, -1, 0),
-		Vector3(0, -1, 0),
-		Vector3(0, -1, 0),
-	
-		Vector3(0,  1, 0),
-		Vector3(0,  1, 0),
-		Vector3(0,  1, 0),
-		Vector3(0,  1, 0),
-	
-		Vector3(-1, 0, 0),
-		Vector3(-1, 0, 0),
-		Vector3(-1, 0, 0),
-		Vector3(-1, 0, 0),
-	
-		Vector3(1, 0, 0),
-		Vector3(1, 0, 0),
-		Vector3(1, 0, 0),
-		Vector3(1, 0, 0),
-	};
-
-	GLint modelPos = glGetUniformLocation(m_shaderProgram3d, "model");
-	glUniformMatrix4fv(modelPos, 1, GL_FALSE, &cube.getTransform()[0]);
-
-	GLuint vbo;
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(bbe::Vector3) * positions.getLength(), positions.getRaw(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	GLuint nbo;
-	glGenBuffers(1, &nbo);
-	glBindBuffer(GL_ARRAY_BUFFER, nbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(bbe::Vector3) * normals.getLength(), normals.getRaw(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	GLuint ibo;
-	glGenBuffers(1, &ibo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * indices.getLength(), indices.getRaw(), GL_STATIC_DRAW);
-
-	GLint positionAttribute = glGetAttribLocation(m_shaderProgram3d, "inPos");
-	glEnableVertexAttribArray(positionAttribute);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-	GLint normalPosition = glGetAttribLocation(m_shaderProgram3d, "inNormal");
-	glEnableVertexAttribArray(normalPosition);
-	glBindBuffer(GL_ARRAY_BUFFER, nbo);
-	glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glDrawElements(GL_TRIANGLES, indices.getLength(), GL_UNSIGNED_INT, 0);
-
-	glDeleteBuffers(1, &ibo);
-	glDeleteBuffers(1, &nbo);
-	glDeleteBuffers(1, &vbo);
+	fillMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getNbo(), OpenGLCube::getAmountOfIndices());
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
 {
-	glUseProgram(m_shaderProgram3d);
-	// TODO
+	fillMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getNbo(), OpenGLSphere::getAmountOfIndices());
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)

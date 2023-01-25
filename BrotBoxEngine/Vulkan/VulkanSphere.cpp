@@ -110,7 +110,6 @@ static void createIcoSphereMesh(bbe::List<uint32_t>& indices, bbe::List<bbe::INT
 	{
 		vertices.add(bbe::INTERNAL::VertexWithNormal(simpleVertices[i], simpleVertices[i]));
 	}
-
 }
 
 void bbe::INTERNAL::vulkan::VulkanSphere::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool& commandPool, VkQueue queue)

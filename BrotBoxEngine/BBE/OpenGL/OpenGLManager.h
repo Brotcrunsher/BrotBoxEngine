@@ -47,6 +47,8 @@ namespace bbe
 				void init2dTexShaders();
 				void init3dShaders();
 
+				void fillMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, GLuint nbo, size_t amountOfIndices);
+
 			public:
 				OpenGLManager();
 
