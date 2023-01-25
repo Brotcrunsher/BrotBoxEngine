@@ -16,7 +16,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init2dShaders()
 {
 	char const* vertexShaderSrc =
 		"#version 300 es\n"
-		"precision mediump float;\n"
+		"precision highp float;\n"
 		"in vec2 position;\n"
 		"uniform vec2 screenSize;"
 		"uniform vec2 scale;"
@@ -38,7 +38,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init2dShaders()
 
 	char const* fragmentShaderSource =
 		"#version 300 es\n"
-		"precision mediump float;\n"
+		"precision highp float;\n"
 		"out vec4 outColor;\n"
 		"uniform vec4 inColor;\n"
 		"void main()\n"
@@ -76,7 +76,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init2dTexShaders()
 {
 	char const* vertexShaderSrc =
 		"#version 300 es\n"
-		"precision mediump float;\n"
+		"precision highp float;\n"
 		"in vec2 position;\n"
 		"in vec2 uv;"
 		"out vec2 uvPassOn;"
@@ -101,7 +101,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init2dTexShaders()
 
 	char const* fragmentShaderSource =
 		"#version 300 es\n"
-		"precision mediump float;\n"
+		"precision highp float;\n"
 		"in vec2 uvPassOn;"
 		"out vec4 outColor;\n"
 		"uniform vec4 inColor;\n"
