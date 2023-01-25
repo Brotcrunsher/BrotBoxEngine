@@ -13,6 +13,33 @@ namespace bbe
 	{
 		namespace openGl
 		{
+			struct Program
+			{
+			private:
+				void compile();
+				void addVertexShader(const char* src);
+				void addFragmentShader(const char* src);
+			public:
+				GLuint vertex = 0;
+				GLuint fragment = 0;
+				GLuint program = 0;
+
+				void addShaders(const char* vertexSrc, const char* fragmentSrc);
+				void destroy();
+
+				void use();
+
+				void uniform1f(const char* name, GLfloat a);
+				void uniform2f(const char* name, GLfloat a, GLfloat b);
+				void uniform3f(const char* name, GLfloat a, GLfloat b, GLfloat c);
+				void uniform3f(const char* name, const bbe::Vector3& vec);
+				void uniform4f(const char* name, GLfloat a, GLfloat b, GLfloat c, GLfloat d);
+				void uniform4f(const char* name, const bbe::Color& color);
+				void uniform1i(const char* name, GLint a);
+
+				void uniformMatrix4fv(const char* name, GLboolean transpose, const bbe::Matrix4& val);
+			};
+
 			class OpenGLManager 
 				: public RenderManager {
 			private:
@@ -21,17 +48,9 @@ namespace bbe
 
 				GLFWwindow* m_pwindow = nullptr;
 
-				GLuint m_vertexShader2d = 0;
-				GLuint m_fragmentShader2d = 0;
-				GLuint m_shaderProgram2d = 0;
-
-				GLuint m_vertexShader2dTex = 0;
-				GLuint m_fragmentShader2dTex = 0;
-				GLuint m_shaderProgram2dTex = 0;
-
-				GLuint m_vertexShader3d = 0;
-				GLuint m_fragmentShader3d = 0;
-				GLuint m_shaderProgram3d = 0;
+				Program m_program2d;
+				Program m_program2dTex;
+				Program m_program3d;
 
 				GLuint m_imageUvBuffer = 0;
 
@@ -43,9 +62,9 @@ namespace bbe
 				ImFont* m_pimguiFontSmall = nullptr;
 				ImFont* m_pimguiFontBig = nullptr;
 
-				void init2dShaders();
-				void init2dTexShaders();
-				void init3dShaders();
+				Program init2dShaders();
+				Program init2dTexShaders();
+				Program init3dShaders();
 
 				void fillMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, GLuint nbo, size_t amountOfIndices);
 
@@ -84,7 +103,7 @@ namespace bbe
 				virtual void fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale) override;
 
 				virtual void setColor3D(const bbe::Color& color) override;
-				virtual void setCamera3D(const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection) override;
+				virtual void setCamera3D(const bbe::Matrix4& view, const bbe::Matrix4& projection) override;
 				virtual void fillCube3D(const Cube& cube) override;
 				virtual void fillSphere3D(const IcoSphere& sphere) override;
 				virtual void addLight(const bbe::Vector3& pos, float lightStrengh, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode) override;
