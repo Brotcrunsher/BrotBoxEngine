@@ -18,6 +18,12 @@ void bbe::INTERNAL::openGl::Program::compile()
 	glAttachShader(program, vertex);
 	glAttachShader(program, fragment);
 	glLinkProgram(program);
+	GLint success = 0;
+	glGetProgramiv(program, GL_LINK_STATUS, &success);
+	if (!success)
+	{
+		bbe::INTERNAL::triggerFatalError("Failed to link program");
+	}
 	glUseProgram(program);
 }
 
