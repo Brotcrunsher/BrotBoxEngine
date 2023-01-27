@@ -194,10 +194,6 @@ void bbe::INTERNAL::openGl::Framebuffer::addDepthBuffer()
 
 void bbe::INTERNAL::openGl::Framebuffer::clearTextures()
 {
-	for (GLuint texture : textures)
-	{
-		glClearTexImage(texture, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	}
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -412,8 +408,9 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"uniform vec3 cameraPos;"
 		"void main()"
 		"{"
-		"   vec3 pos = texture(gPosition, uvCoord).xyz;"
 		"   vec3 normal = texture(gNormal, uvCoord).xyz;"
+		"   if(length(normal) == 0.0) { discard; }"
+		"   vec3 pos = texture(gPosition, uvCoord).xyz;"
 		"   vec3 albedo = texture(gAlbedoSpec, uvCoord).xyz;"
 		"   vec3 toLight = lightPos - pos;"
 		"   vec3 toCamera = cameraPos - pos;"
