@@ -1,9 +1,9 @@
 #include "BBE/OpenGL/OpenGLCube.h"
+#include "BBE/OpenGL/OpenGLManager.h"
 #include "BBE/List.h"
 #include "BBE/Vector3.h"
 
 static GLuint vbo = 0;
-static GLuint nbo = 0;
 static GLuint ibo = 0;
 
 static const bbe::List<uint32_t> indices = {
@@ -23,78 +23,40 @@ static const bbe::List<uint32_t> indices = {
 
 void bbe::INTERNAL::openGl::OpenGLCube::init()
 {
-	const bbe::List<Vector3> positions = {
-		Vector3(0.5, -0.5, -0.5),
-		Vector3(0.5,  0.5, -0.5),
-		Vector3(-0.5,  0.5, -0.5),
-		Vector3(-0.5, -0.5, -0.5),
+	const bbe::List<PosNormalPair> vertices = {
+		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, 0, -1)},
+		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0, 0, -1)},
+		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0, 0, -1)},
+		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, 0, -1)},
 
-		Vector3(0.5, -0.5,  0.5),
-		Vector3(0.5,  0.5,  0.5),
-		Vector3(-0.5,  0.5,  0.5),
-		Vector3(-0.5, -0.5,  0.5),
+		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, 0,  1)},
+		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0, 0,  1)},
+		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0, 0,  1)},
+		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, 0,  1)},
 
-		Vector3(0.5, -0.5, -0.5),
-		Vector3(0.5, -0.5,  0.5),
-		Vector3(-0.5, -0.5,  0.5),
-		Vector3(-0.5, -0.5, -0.5),
+		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, -1, 0)},
+		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, -1, 0)},
+		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, -1, 0)},
+		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, -1, 0)},
 
-		Vector3(0.5,  0.5, -0.5),
-		Vector3(0.5,  0.5,  0.5),
-		Vector3(-0.5,  0.5,  0.5),
-		Vector3(-0.5,  0.5, -0.5),
+		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0,  1, 0)},
+		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0,  1, 0)},
+		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0,  1, 0)},
+		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0,  1, 0)},
 
-		Vector3(-0.5,  0.5, -0.5),
-		Vector3(-0.5,  0.5,  0.5),
-		Vector3(-0.5, -0.5,  0.5),
-		Vector3(-0.5, -0.5, -0.5),
+		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(-1, 0, 0)},
+		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(-1, 0, 0)},
+		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(-1, 0, 0)},
+		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(-1, 0, 0)},
 
-		Vector3(0.5,  0.5, -0.5),
-		Vector3(0.5,  0.5,  0.5),
-		Vector3(0.5, -0.5,  0.5),
-		Vector3(0.5, -0.5, -0.5),
+		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3( 1, 0, 0)},
+		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3( 1, 0, 0)},
+		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3( 1, 0, 0)},
+		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3( 1, 0, 0)},
 	};
-
-	const bbe::List<Vector3> normals = {
-		Vector3(0, 0, -1),
-		Vector3(0, 0, -1),
-		Vector3(0, 0, -1),
-		Vector3(0, 0, -1),
-
-		Vector3(0, 0,  1),
-		Vector3(0, 0,  1),
-		Vector3(0, 0,  1),
-		Vector3(0, 0,  1),
-
-		Vector3(0, -1, 0),
-		Vector3(0, -1, 0),
-		Vector3(0, -1, 0),
-		Vector3(0, -1, 0),
-
-		Vector3(0,  1, 0),
-		Vector3(0,  1, 0),
-		Vector3(0,  1, 0),
-		Vector3(0,  1, 0),
-
-		Vector3(-1, 0, 0),
-		Vector3(-1, 0, 0),
-		Vector3(-1, 0, 0),
-		Vector3(-1, 0, 0),
-
-		Vector3(1, 0, 0),
-		Vector3(1, 0, 0),
-		Vector3(1, 0, 0),
-		Vector3(1, 0, 0),
-	};
-
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(bbe::Vector3) * positions.getLength(), positions.getRaw(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glGenBuffers(1, &nbo);
-	glBindBuffer(GL_ARRAY_BUFFER, nbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(bbe::Vector3) * normals.getLength(), normals.getRaw(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(PosNormalPair) * vertices.getLength(), vertices.getRaw(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glGenBuffers(1, &ibo);
@@ -106,18 +68,12 @@ void bbe::INTERNAL::openGl::OpenGLCube::init()
 void bbe::INTERNAL::openGl::OpenGLCube::destroy()
 {
 	glDeleteBuffers(1, &ibo);
-	glDeleteBuffers(1, &nbo);
 	glDeleteBuffers(1, &vbo);
 }
 
 GLuint bbe::INTERNAL::openGl::OpenGLCube::getVbo()
 {
 	return vbo;
-}
-
-GLuint bbe::INTERNAL::openGl::OpenGLCube::getNbo()
-{
-	return nbo;
 }
 
 GLuint bbe::INTERNAL::openGl::OpenGLCube::getIbo()

@@ -1048,7 +1048,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::setColor3D(const bbe::Color& color)
 	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &color);
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::setCamera3D(const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection)
+void bbe::INTERNAL::vulkan::VulkanManager::setCamera3D(const bbe::Vector3& cameraPos, const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection)
 {
 	void* data = m_uboMatrices[m_imageIndex].map();
 	memcpy((char*)data, &m_view, sizeof(Matrix4));

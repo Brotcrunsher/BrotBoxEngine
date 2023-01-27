@@ -14,7 +14,6 @@ namespace bbe
 				void destroy();
 
 				GLuint getVbo();
-				GLuint getNbo();
 				GLuint getIbo();
 
 				size_t getAmountOfIndices();

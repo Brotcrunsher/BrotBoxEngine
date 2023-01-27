@@ -9,8 +9,15 @@
 #include "BBE/Matrix4.h"
 #include "BBE/OpenGL/OpenGLCube.h"
 #include "BBE/OpenGL/OpenGLSphere.h"
+#include <iostream>
 
 // TODO: Fix switching between fullHD and 4k Screen
+// TODO: Fix Resizing
+// TODO: "ExampleRotatingCubeIntersections" has visual artifacts
+// TODO: "ExampleSandGame" performs much worse than on Vulkan - Why?
+// TODO: "ExampleSnake3D" has visual artifacts
+// TODO: Unlimited Lights
+// TODO: Is every OpenGL Resource properly freed? How can we find that out?
 
 void bbe::INTERNAL::openGl::Program::compile()
 {
@@ -22,9 +29,39 @@ void bbe::INTERNAL::openGl::Program::compile()
 	glGetProgramiv(program, GL_LINK_STATUS, &success);
 	if (!success)
 	{
+		GLint length = 0;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+
+		bbe::List<char> log;
+		log.resizeCapacityAndLength(length);
+		glGetProgramInfoLog(program, length, &length, log.getRaw());
+		std::cout << log.getRaw() << std::endl;
+
 		bbe::INTERNAL::triggerFatalError("Failed to link program");
 	}
 	glUseProgram(program);
+}
+
+GLuint bbe::INTERNAL::openGl::Program::getShader(GLenum shaderType, const char* src)
+{
+	GLuint shader = glCreateShader(shaderType);
+	glShaderSource(shader, 1, &src, NULL);
+	glCompileShader(shader);
+	GLint success = 0;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		GLint length = 0;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+
+		bbe::List<char> log;
+		log.resizeCapacityAndLength(length);
+		glGetShaderInfoLog(shader, length, &length, log.getRaw());
+		std::cout << log.getRaw() << std::endl;
+
+		bbe::INTERNAL::triggerFatalError("Failed to compile shader");
+	}
+	return shader;
 }
 
 void bbe::INTERNAL::openGl::Program::addShaders(const char* vertexSrc, const char* fragmentSrc)
@@ -48,28 +85,12 @@ void bbe::INTERNAL::openGl::Program::use()
 
 void bbe::INTERNAL::openGl::Program::addVertexShader(const char* src)
 {
-	vertex = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertex, 1, &src, NULL);
-	glCompileShader(vertex);
-	GLint success = 0;
-	glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		bbe::INTERNAL::triggerFatalError("Failed to compile shader");
-	}
+	vertex = getShader(GL_VERTEX_SHADER, src);
 }
 
 void bbe::INTERNAL::openGl::Program::addFragmentShader(const char* src)
 {
-	fragment = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragment, 1, &src, NULL);
-	glCompileShader(fragment);
-	GLint success = 0;
-	glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		bbe::INTERNAL::triggerFatalError("Failed to compile shader");
-	}
+	fragment = getShader(GL_FRAGMENT_SHADER, src);
 }
 
 void bbe::INTERNAL::openGl::Program::uniform1f(const char* name, GLfloat a)
@@ -122,6 +143,94 @@ void bbe::INTERNAL::openGl::Program::uniformMatrix4fv(const char* name, GLboolea
 	use();
 	const GLint pos = glGetUniformLocation(program, name);
 	glUniformMatrix4fv(pos, 1, transpose, &val[0]);
+}
+
+bbe::INTERNAL::openGl::Framebuffer::Framebuffer()
+{
+}
+
+bbe::INTERNAL::openGl::Framebuffer::Framebuffer(GLsizei width, GLsizei height)
+	: width(width), height(height)
+{
+	glGenFramebuffers(1, &framebuffer);
+}
+
+void bbe::INTERNAL::openGl::Framebuffer::destroy()
+{
+	if (!framebuffer) return;
+
+	glDeleteFramebuffers(1, &framebuffer);
+	glDeleteTextures(textures.getLength(), textures.getRaw());
+	glDeleteTextures(1, &depthBuffer);
+
+	framebuffer = 0;
+	textures.clear();
+	depthBuffer = 0;
+	width = 0;
+	height = 0;
+}
+
+GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture()
+{
+	GLuint texture = 0;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	textures.add(texture);
+	return texture;
+}
+
+void bbe::INTERNAL::openGl::Framebuffer::addDepthBuffer()
+{
+	glGenTextures(1, &depthBuffer);
+	glBindTexture(GL_TEXTURE_2D, depthBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthBuffer, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void bbe::INTERNAL::openGl::Framebuffer::clearTextures()
+{
+	for (GLuint texture : textures)
+	{
+		glClearTexImage(texture, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	}
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void bbe::INTERNAL::openGl::Framebuffer::bind()
+{
+	for (size_t i = 0 ; i<textures.getLength(); i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, textures[i]);
+	}
+}
+
+void bbe::INTERNAL::openGl::Framebuffer::finalize()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+	for (size_t i = 0; i<textures.getLength(); i++)
+	{
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, textures[i], 0);
+	}
+
+	bbe::List<GLenum> attachements;
+	for (size_t i = 0; i < textures.getLength(); i++)
+	{
+		attachements.add(GL_COLOR_ATTACHMENT0 + i);
+	}
+	glDrawBuffers(attachements.getLength(), attachements.getRaw());
+
+	GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (Status != GL_FRAMEBUFFER_COMPLETE) {
+		triggerFatalError("Frame Buffer was not complete");
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShaders()
@@ -206,7 +315,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexSh
 	return program;
 }
 
-bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShaders()
+bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersMrt()
 {
 	Program program;
 	char const* vertexShaderSrc =
@@ -214,20 +323,72 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"precision highp float;"
 		"in vec3 inPos;"
 		"in vec3 inNormal;"
-		"out vec3 outNormal;"
-		"out vec3 outViewVec;"
-		"out vec3 outLightVec;"
+		"out vec4 passPos;"
+		"out vec4 passNormal;"
+		"out vec4 passAlbedo;"
+		"uniform vec4 inColor;"
 		"uniform mat4 view;"
 		"uniform mat4 projection;"
 		"uniform mat4 model;"
-		"uniform vec3 lightPos;"
 		"void main()"
 		"{"
 		"   vec4 worldPos = model * vec4(inPos, 1.0);"
 		"   gl_Position = projection * view * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
-		"   outNormal = mat3(view) * mat3(model) * inNormal;"
-		"   outViewVec = -(view * worldPos).xyz;"
-		"   outLightVec = mat3(view) * (lightPos - vec3(worldPos));"
+		"   passPos = worldPos;"
+		"   passNormal = model * vec4(inNormal, 0.0);"
+		"   passAlbedo = inColor;"
+		"}";
+
+	char const* fragmentShaderSource =
+		"#version 300 es\n"
+		"precision highp float;\n"
+		"in vec4 passPos;"
+		"in vec4 passNormal;"
+		"in vec4 passAlbedo;"
+		"layout (location = 0) out vec4 outPos;"
+		"layout (location = 1) out vec4 outNormal;"
+		"layout (location = 2) out vec4 outAlbedo;"
+		"void main()"
+		"{"
+		"   outPos    = passPos;"
+		"   outNormal = vec4(normalize(passNormal.xyz), 1.0);" // TODO HACK: Setting the alpha component to 1 to avoid it being discarded from the Texture. Can we do better?
+		"   outAlbedo = passAlbedo;"
+		"}";
+
+	program.addShaders(vertexShaderSrc, fragmentShaderSource);
+
+	return program;
+}
+
+bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersLight()
+{
+	Program program;
+	char const* vertexShaderSrc =
+		"#version 300 es\n"
+		"precision highp float;"
+		"out vec2 uvCoord;"
+		"void main()"
+		"{"
+		"   if(gl_VertexID == 0)"
+		"   {"
+		"       gl_Position = vec4(-1.0, -1.0, 0.0, 1.0);"
+		"       uvCoord = vec2(0.0, 0.0);"
+		"   }"
+		"   if(gl_VertexID == 1)"
+		"   {"
+		"       gl_Position = vec4(-1.0, 1.0, 0.0, 1.0);"
+		"       uvCoord = vec2(0.0, 1.0);"
+		"   }"
+		"   if(gl_VertexID == 2)"
+		"   {"
+		"       gl_Position = vec4(1.0, 1.0, 0.0, 1.0);"
+		"       uvCoord = vec2(1.0, 1.0);"
+		"   }"
+		"   if(gl_VertexID == 3)"
+		"   {"
+		"       gl_Position = vec4(1.0, -1.0, 0.0, 1.0);"
+		"       uvCoord = vec2(1.0, 0.0);"
+		"   }"
 		"}";
 
 	char const* fragmentShaderSource =
@@ -238,24 +399,25 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"#define FALLOFF_SQUARED 2\n"
 		"#define FALLOFF_CUBIC   3\n"
 		"#define FALLOFF_SQRT    4\n"
+		"in vec2 uvCoord;"
 		"out vec4 outColor;"
-		"in vec3 outNormal;"
-		"in vec3 outViewVec;"
-		"in vec3 outLightVec;"
-		"uniform vec4 inColor;"
+		"uniform sampler2D gPosition;"
+		"uniform sampler2D gNormal;"
+		"uniform sampler2D gAlbedoSpec;"
 		"uniform float lightStrength;"
 		"uniform int falloffMode;"
 		"uniform vec4 lightColor;"
 		"uniform vec4 specularColor;"
+		"uniform vec3 lightPos;"
+		"uniform vec3 cameraPos;"
 		"void main()"
 		"{"
-		"   vec3 texColor = inColor.xyz;"
-		"   vec3 N = normalize(outNormal);"
-		"   vec3 V = normalize(outViewVec);"
-		"   vec3 ambient = texColor * 0.1;"
-		"   vec3 diffuse = vec3(0);"
-		"   vec3 specular = vec3(0);"
-		"   float distToLight = length(outLightVec);"
+		"   vec3 pos = texture(gPosition, uvCoord).xyz;"
+		"   vec3 normal = texture(gNormal, uvCoord).xyz;"
+		"   vec3 albedo = texture(gAlbedoSpec, uvCoord).xyz;"
+		"   vec3 toLight = lightPos - pos;"
+		"   vec3 toCamera = cameraPos - pos;"
+		"   float distToLight = length(toLight);"
 		"   float lightPower = lightStrength;"
 		"   if(distToLight > 0.f)"
 		"   {"
@@ -278,42 +440,59 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"       	break;																					 "
 		"       }																							 "
 		"   }"
-		"   vec3 L = normalize(outLightVec);"
-		"   vec3 R = reflect(-L, N);"
-		"   diffuse += max(dot(N, L), 0.0) * (texColor * lightColor.xyz) * lightPower;"
-		"   specular += pow(max(dot(R, V), 0.0), 4.0) * specularColor.xyz * lightPower;"
-		"	outColor = vec4(ambient + diffuse + specular, 1.0);"
+		"   vec3 L = normalize(toLight);"
+		"   vec3 ambient = albedo * 0.1;"
+		"   vec3 diffuse = max(dot(normal, L), 0.0) * (albedo * lightColor.xyz) * lightPower;"
+		"   vec3 R = reflect(-L, normal);"
+		"   vec3 V = normalize(toCamera);"
+		"   vec3 specular = pow(max(dot(R, V), 0.0), 4.0) * specularColor.xyz * lightPower;"
+		"   outColor = vec4(ambient + diffuse + specular, 1.0);"
 		"}";
 	program.addShaders(vertexShaderSrc, fragmentShaderSource);
 
+	program.uniform1i("gPosition", 0);
+	program.uniform1i("gNormal", 1);
+	program.uniform1i("gAlbedoSpec", 2);
+
+	program.uniform3f("cameraPos", 0.f, 0.f, 0.f);
 	program.uniform3f("lightPos", 0.f, 0.f, 0.f);
 	program.uniform1f("lightStrength", 0.f);
 	program.uniform1i("falloffMode", 0);
 	program.uniform4f("lightColor", 0.f, 0.f, 0.f, 0.f);
 	program.uniform4f("specularColor", 0.f, 0.f, 0.f, 0.f);
-
 	return program;
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, GLuint nbo, size_t amountOfIndices)
+void bbe::INTERNAL::openGl::OpenGLManager::initGeometryBuffer()
 {
-	m_program3d.use();
+	mrtFb.destroy(); // For resizing
+	mrtFb = Framebuffer(m_windowWidth, m_windowHeight);
+	mrtFb.addTexture();
+	mrtFb.addTexture();
+	mrtFb.addTexture();
+	mrtFb.addDepthBuffer();
+	mrtFb.finalize();
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::fillMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices)
+{
+	m_program3dMrt.use();
+	glBindFramebuffer(GL_FRAMEBUFFER, mrtFb.framebuffer);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
-	GLint modelPos = glGetUniformLocation(m_program3d.program, "model");
+	GLint modelPos = glGetUniformLocation(m_program3dMrt.program, "model");
 	glUniformMatrix4fv(modelPos, 1, GL_FALSE, modelMatrix);
 
-	GLint positionAttribute = glGetAttribLocation(m_program3d.program, "inPos");
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	GLint positionAttribute = glGetAttribLocation(m_program3dMrt.program, "inPos");
+	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
 	glEnableVertexAttribArray(positionAttribute);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-	GLint normalPosition = glGetAttribLocation(m_program3d.program, "inNormal");
+	GLint normalPosition = glGetAttribLocation(m_program3dMrt.program, "inNormal");
+	glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (const void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(normalPosition);
-	glBindBuffer(GL_ARRAY_BUFFER, nbo);
-	glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glDrawElements(GL_TRIANGLES, amountOfIndices, GL_UNSIGNED_INT, 0);
@@ -342,7 +521,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 
 	m_program2d = init2dShaders();
 	m_program2dTex = init2dTexShaders();
-	m_program3d = init3dShaders();
+	m_program3dMrt = init3dShadersMrt();
+	m_program3dLight = init3dShadersLight();
+	initGeometryBuffer();
 
 	OpenGLCube::init();
 	OpenGLSphere::init();
@@ -361,7 +542,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 	OpenGLSphere::destroy();
 	OpenGLCube::destroy();
 
-	m_program3d.destroy();
+	mrtFb.destroy();
+	m_program3dMrt.destroy();
 	glDeleteBuffers(1, &m_imageUvBuffer);
 	m_program2dTex.destroy();
 	m_program2d.destroy();
@@ -369,6 +551,22 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 {
+	// Draw the stuff of 3D
+	uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
+	GLuint ibo;
+	m_program3dLight.use();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	mrtFb.bind();
+
+	glGenBuffers(1, &ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices, GL_STATIC_DRAW);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glDeleteBuffers(1, &ibo);
+
+	// Switch to 2D
 	glDisable(GL_DEPTH_TEST);
 	m_primitiveBrush2D.INTERNAL_beginDraw(m_pwindow, m_windowWidth, m_windowHeight, this);
 }
@@ -377,6 +575,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
 {
 	glEnable(GL_DEPTH_TEST);
 	m_primitiveBrush3D.INTERNAL_beginDraw(m_windowWidth, m_windowHeight, this);
+	m_program3dMrt.use();
+	glBindFramebuffer(GL_FRAMEBUFFER, mrtFb.framebuffer);
+	mrtFb.clearTextures();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
@@ -416,6 +617,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::resize(uint32_t width, uint32_t heigh
 
 	m_windowWidth = width;
 	m_windowHeight = height;
+
+	initGeometryBuffer();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::screenshot(const bbe::String& path)
@@ -558,32 +761,33 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 
 void bbe::INTERNAL::openGl::OpenGLManager::setColor3D(const bbe::Color& color)
 {
-	m_program3d.uniform4f("inColor", color);
+	m_program3dMrt.uniform4f("inColor", color);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const bbe::Matrix4& view, const bbe::Matrix4& projection)
+void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos, const bbe::Matrix4& view, const bbe::Matrix4& projection)
 {
-	m_program3d.uniformMatrix4fv("view", GL_FALSE, view);
-	m_program3d.uniformMatrix4fv("projection", GL_FALSE, projection);
+	m_program3dMrt.uniformMatrix4fv("view", GL_FALSE, view);
+	m_program3dMrt.uniformMatrix4fv("projection", GL_FALSE, projection);
+	m_program3dLight.uniform3f("cameraPos", cameraPos);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)
 {
-	fillMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getNbo(), OpenGLCube::getAmountOfIndices());
+	fillMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getAmountOfIndices());
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
 {
-	fillMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getNbo(), OpenGLSphere::getAmountOfIndices());
+	fillMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getAmountOfIndices());
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
 {
-	m_program3d.uniform3f("lightPos", pos);
-	m_program3d.uniform1f("lightStrength", lightStrength);
-	m_program3d.uniform1i("falloffMode", (int)falloffMode);
-	m_program3d.uniform4f("lightColor", lightColor);
-	m_program3d.uniform4f("specularColor", specularColor);
+	m_program3dLight.uniform3f("lightPos", pos);
+	m_program3dLight.uniform1f("lightStrength", lightStrength);
+	m_program3dLight.uniform1i("falloffMode", (int)falloffMode);
+	m_program3dLight.uniform4f("lightColor", lightColor);
+	m_program3dLight.uniform4f("specularColor", specularColor);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::imguiStart()

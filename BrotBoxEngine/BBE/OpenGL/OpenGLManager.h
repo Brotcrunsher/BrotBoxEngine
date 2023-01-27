@@ -13,10 +13,19 @@ namespace bbe
 	{
 		namespace openGl
 		{
+			struct PosNormalPair
+			{
+				bbe::Vector3 pos;
+				bbe::Vector3 normal;
+			};
+			static_assert(alignof(PosNormalPair) == alignof(float));
+			static_assert(sizeof(PosNormalPair) == (2 * 3 * sizeof(float)));
+
 			struct Program
 			{
 			private:
 				void compile();
+				GLuint getShader(GLenum shaderType, const char* src);
 				void addVertexShader(const char* src);
 				void addFragmentShader(const char* src);
 			public:
@@ -40,6 +49,25 @@ namespace bbe
 				void uniformMatrix4fv(const char* name, GLboolean transpose, const bbe::Matrix4& val);
 			};
 
+			struct Framebuffer
+			{
+				GLuint framebuffer = 0;
+				bbe::List<GLuint> textures;
+				GLsizei width = 0;
+				GLsizei height = 0;
+				GLuint depthBuffer = 0;
+
+				Framebuffer();
+				Framebuffer(GLsizei width, GLsizei height);
+
+				void destroy();
+				GLuint addTexture();
+				void addDepthBuffer();
+				void clearTextures();
+				void bind();
+				void finalize();
+			};
+
 			class OpenGLManager 
 				: public RenderManager {
 			private:
@@ -50,7 +78,10 @@ namespace bbe
 
 				Program m_program2d;
 				Program m_program2dTex;
-				Program m_program3d;
+				Program m_program3dMrt;
+				Program m_program3dLight;
+
+				Framebuffer mrtFb;
 
 				GLuint m_imageUvBuffer = 0;
 
@@ -64,9 +95,11 @@ namespace bbe
 
 				Program init2dShaders();
 				Program init2dTexShaders();
-				Program init3dShaders();
+				Program init3dShadersMrt();
+				Program init3dShadersLight();
+				void initGeometryBuffer();
 
-				void fillMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, GLuint nbo, size_t amountOfIndices);
+				void fillMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices);
 
 			public:
 				OpenGLManager();
@@ -103,7 +136,7 @@ namespace bbe
 				virtual void fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale) override;
 
 				virtual void setColor3D(const bbe::Color& color) override;
-				virtual void setCamera3D(const bbe::Matrix4& view, const bbe::Matrix4& projection) override;
+				virtual void setCamera3D(const Vector3& cameraPos, const bbe::Matrix4& view, const bbe::Matrix4& projection) override;
 				virtual void fillCube3D(const Cube& cube) override;
 				virtual void fillSphere3D(const IcoSphere& sphere) override;
 				virtual void addLight(const bbe::Vector3& pos, float lightStrengh, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode) override;

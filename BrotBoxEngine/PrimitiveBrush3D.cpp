@@ -80,7 +80,7 @@ void bbe::PrimitiveBrush3D::setCamera(const Vector3 & cameraPos, const Vector3 &
 	m_view = Matrix4::createViewMatrix(cameraPos, cameraTarget, cameraUpVector);
 	m_projection = Matrix4::createPerspectiveMatrix(Math::toRadians(60.0f), (float)m_screenWidth / (float)m_screenHeight, 0.01f, 20000.0f);
 
-	m_prenderManager->setCamera3D(m_view, m_projection);
+	m_prenderManager->setCamera3D(cameraPos, m_view, m_projection);
 
 	m_cameraPos = cameraPos;
 }

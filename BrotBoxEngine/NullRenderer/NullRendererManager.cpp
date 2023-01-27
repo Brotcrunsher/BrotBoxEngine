@@ -89,7 +89,7 @@ void bbe::INTERNAL::nullRenderer::NullRendererManager::setColor3D(const bbe::Col
 {
 }
 
-void bbe::INTERNAL::nullRenderer::NullRendererManager::setCamera3D(const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection)
+void bbe::INTERNAL::nullRenderer::NullRendererManager::setCamera3D(const bbe::Vector3& pos, const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection)
 {
 }
 

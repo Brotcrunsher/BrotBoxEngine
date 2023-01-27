@@ -1,4 +1,5 @@
 #include "BBE/OpenGL/OpenGLSphere.h"
+#include "BBE/OpenGL/OpenGLManager.h"
 #include "BBE/List.h"
 #include "BBE/Vector3.h"
 #include "BBE/Math.h"
@@ -6,7 +7,8 @@
 static GLuint vbo = 0;
 static GLuint ibo = 0;
 
-// TODO this is basically a copy of the Vulkan implementation. Generalize it somehow and remove the redundant code.
+// TODO This is basically a copy of the Vulkan implementation. Generalize it somehow
+//      and remove the redundant code. Same applies to the OpenGLCube implementation.
 
 static bbe::List<uint32_t> indices = {
 	5,  11, 0,
@@ -103,9 +105,15 @@ void bbe::INTERNAL::openGl::OpenGLSphere::init()
 		indices = std::move(newIndices);
 	}
 
+	bbe::List<PosNormalPair> vertexData;
+	for (const bbe::Vector3& pos : positions)
+	{
+		vertexData.add(PosNormalPair{pos, pos});
+	}
+
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(bbe::Vector3) * positions.getLength(), positions.getRaw(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(PosNormalPair) * vertexData.getLength(), vertexData.getRaw(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glGenBuffers(1, &ibo);
@@ -121,11 +129,6 @@ void bbe::INTERNAL::openGl::OpenGLSphere::destroy()
 }
 
 GLuint bbe::INTERNAL::openGl::OpenGLSphere::getVbo()
-{
-	return vbo;
-}
-
-GLuint bbe::INTERNAL::openGl::OpenGLSphere::getNbo()
 {
 	return vbo;
 }
