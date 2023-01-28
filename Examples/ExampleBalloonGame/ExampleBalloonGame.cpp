@@ -82,7 +82,7 @@ public:
 		brush.setColorRGB(0, 0, 0);
 		bbe::String currentScore = "Your Score: ";
 		currentScore += score;
-		brush.fillText(10, 120, currentScore.getRaw());
+		brush.fillText(10, 120, currentScore.getRaw(), 100);
 
 		brush.setColorRGB(0, 0, 0);
 		brush.fillLine(0, 140, WINDOW_WIDTH, 140, 5);
@@ -97,7 +97,7 @@ public:
 		
 		if (gameover){
 			brush.setColorRGB(1, 0, 0);
-			brush.fillText(10, WINDOW_HEIGHT/2, "Game Over!");
+			brush.fillText(10, WINDOW_HEIGHT/2, "Game Over!", 100);
 
 		}
 	}
