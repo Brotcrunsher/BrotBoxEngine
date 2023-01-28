@@ -7,6 +7,7 @@
 #include "BBE/Rectangle.h"
 #include "BBE/Circle.h"
 #include "BBE/Matrix4.h"
+#include "BBE/OpenGL/OpenGLRectangle.h"
 #include "BBE/OpenGL/OpenGLCube.h"
 #include "BBE/OpenGL/OpenGLSphere.h"
 #include <iostream>
@@ -83,6 +84,16 @@ void bbe::INTERNAL::openGl::Program::use()
 	glUseProgram(program);
 }
 
+GLuint bbe::INTERNAL::openGl::Program::getUniformLocation(const char* name)
+{
+	const GLint pos = glGetUniformLocation(program, name);
+	if (pos == -1)
+	{
+		bbe::INTERNAL::triggerFatalError("Could not find uniform!");
+	}
+	return pos;
+}
+
 void bbe::INTERNAL::openGl::Program::addVertexShader(const char* src)
 {
 	vertex = getShader(GL_VERTEX_SHADER, src);
@@ -93,55 +104,49 @@ void bbe::INTERNAL::openGl::Program::addFragmentShader(const char* src)
 	fragment = getShader(GL_FRAGMENT_SHADER, src);
 }
 
-void bbe::INTERNAL::openGl::Program::uniform1f(const char* name, GLfloat a)
+void bbe::INTERNAL::openGl::Program::uniform1f(GLint pos, GLfloat a)
 {
 	use();
-	const GLint pos = glGetUniformLocation(program, name);
 	glUniform1f(pos, a);
 }
 
-void bbe::INTERNAL::openGl::Program::uniform2f(const char* name, GLfloat a, GLfloat b)
+void bbe::INTERNAL::openGl::Program::uniform2f(GLint pos, GLfloat a, GLfloat b)
 {
 	use();
-	const GLint pos = glGetUniformLocation(program, name);
 	glUniform2f(pos, a, b);
 }
 
-void bbe::INTERNAL::openGl::Program::uniform3f(const char* name, GLfloat a, GLfloat b, GLfloat c)
+void bbe::INTERNAL::openGl::Program::uniform3f(GLint pos, GLfloat a, GLfloat b, GLfloat c)
 {
 	use();
-	const GLint pos = glGetUniformLocation(program, name);
 	glUniform3f(pos, a, b, c);
 }
 
-void bbe::INTERNAL::openGl::Program::uniform3f(const char* name, const bbe::Vector3& vec)
+void bbe::INTERNAL::openGl::Program::uniform3f(GLint pos, const bbe::Vector3& vec)
 {
-	uniform3f(name, vec.x, vec.y, vec.z);
+	uniform3f(pos, vec.x, vec.y, vec.z);
 }
 
-void bbe::INTERNAL::openGl::Program::uniform4f(const char* name, GLfloat a, GLfloat b, GLfloat c, GLfloat d)
+void bbe::INTERNAL::openGl::Program::uniform4f(GLint pos, GLfloat a, GLfloat b, GLfloat c, GLfloat d)
 {
 	use();
-	const GLint pos = glGetUniformLocation(program, name);
 	glUniform4f(pos, a, b, c, d);
 }
 
-void bbe::INTERNAL::openGl::Program::uniform4f(const char* name, const bbe::Color& color)
+void bbe::INTERNAL::openGl::Program::uniform4f(GLint pos, const bbe::Color& color)
 {
-	uniform4f(name, color.r, color.g, color.b, color.a);
+	uniform4f(pos, color.r, color.g, color.b, color.a);
 }
 
-void bbe::INTERNAL::openGl::Program::uniform1i(const char* name, GLint a)
+void bbe::INTERNAL::openGl::Program::uniform1i(GLint pos, GLint a)
 {
 	use();
-	const GLint pos = glGetUniformLocation(program, name);
 	glUniform1i(pos, a);
 }
 
-void bbe::INTERNAL::openGl::Program::uniformMatrix4fv(const char* name, GLboolean transpose, const bbe::Matrix4& val)
+void bbe::INTERNAL::openGl::Program::uniformMatrix4fv(GLint pos, GLboolean transpose, const bbe::Matrix4& val)
 {
 	use();
-	const GLint pos = glGetUniformLocation(program, name);
 	glUniformMatrix4fv(pos, 1, transpose, &val[0]);
 }
 
@@ -229,6 +234,11 @@ void bbe::INTERNAL::openGl::Framebuffer::finalize()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+static GLint screenSizePos2d = 0;
+static GLint scalePos2d = 0;
+static GLint posOffsetPos2d = 0;
+static GLint rotationPos2d = 0;
+static GLint inColorPos2d = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShaders()
 {
 	Program program;
@@ -238,9 +248,17 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShade
 		"in vec2 position;\n"
 		"uniform vec2 screenSize;"
 		"uniform vec2 scale;"
+		"uniform vec2 posOffset;"
+		"uniform float rotation;"
 		"void main()\n"
 		"{\n"
-		"	vec2 pos = (position / screenSize * vec2(2, -2) * scale) + vec2(-1, +1);\n"
+		"   float s = sin(rotation);"
+		"   float c = cos(rotation);"
+		"   vec2 scaledPos = position * scale;"
+		"   vec2 firstTranslatedPos = scaledPos - scale * 0.5;"
+		"   vec2 rotatedPos = vec2(c * firstTranslatedPos.x - s * firstTranslatedPos.y, s * firstTranslatedPos.x + c * firstTranslatedPos.y);"
+		"   vec2 secondTranslatedPos = rotatedPos + scale * 0.5;"
+		"	vec2 pos = (((secondTranslatedPos + posOffset) / screenSize * vec2(2, -2)) + vec2(-1, +1));\n"
 		"	gl_Position = vec4(pos, 0.0, 1.0);\n"
 		"}";
 	
@@ -255,13 +273,23 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShade
 		"}";
 	program.addShaders(vertexShaderSrc, fragmentShaderSource);
 
-	program.uniform2f("screenSize", (float)m_windowWidth, (float)m_windowHeight);
-	program.uniform2f("scale", 1.f, 1.f);
-	program.uniform4f("inColor", 1.f, 1.f, 1.f, 1.f);
+	screenSizePos2d = program.getUniformLocation("screenSize");
+	scalePos2d = program.getUniformLocation("scale");
+	posOffsetPos2d = program.getUniformLocation("posOffset");
+	rotationPos2d = program.getUniformLocation("rotation");
+	inColorPos2d = program.getUniformLocation("inColor");
+
+	program.uniform2f(screenSizePos2d, (float)m_windowWidth, (float)m_windowHeight);
+	program.uniform2f(scalePos2d, 1.f, 1.f);
+	program.uniform2f(posOffsetPos2d, 0.f, 0.f);
+	program.uniform4f(inColorPos2d, 1.f, 1.f, 1.f, 1.f);
 
 	return program;
 }
 
+static GLint screenSizePos2dTex = 0;
+static GLint scalePos2dTex = 0;
+static GLint inColorPos2dTex = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexShaders()
 {
 	Program program;
@@ -293,9 +321,13 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexSh
 		"}";
 	program.addShaders(vertexShaderSrc, fragmentShaderSource);
 
-	program.uniform2f("screenSize", (float)m_windowWidth, (float)m_windowHeight);
-	program.uniform2f("scale", 1.f, 1.f);
-	program.uniform4f("inColor", 1.f, 1.f, 1.f, 1.f);
+	screenSizePos2dTex = program.getUniformLocation("screenSize");
+	scalePos2dTex = program.getUniformLocation("scale");
+	inColorPos2dTex = program.getUniformLocation("inColor");
+
+	program.uniform2f(screenSizePos2dTex, (float)m_windowWidth, (float)m_windowHeight);
+	program.uniform2f(scalePos2dTex, 1.f, 1.f);
+	program.uniform4f(inColorPos2dTex, 1.f, 1.f, 1.f, 1.f);
 
 	bbe::List<float> uvCoordinates = {
 		0.0f, 0.0f,
@@ -311,6 +343,9 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexSh
 	return program;
 }
 
+static GLint inColorPos3dMrt = 0;
+static GLint viewPos3dMrt = 0;
+static GLint projectionPos3dMrt = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersMrt()
 {
 	Program program;
@@ -353,9 +388,22 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 
 	program.addShaders(vertexShaderSrc, fragmentShaderSource);
 
+	inColorPos3dMrt = program.getUniformLocation("inColor");
+	viewPos3dMrt = program.getUniformLocation("view");
+	projectionPos3dMrt = program.getUniformLocation("projection");
+
 	return program;
 }
 
+static GLint gPositionPos3dLight = 0;
+static GLint gNormalPos3dLight = 0;
+static GLint gAlbedoSpecPos3dLight = 0;
+static GLint cameraPosPos3dLight = 0;
+static GLint lightPosPos3dLight = 0;
+static GLint lightStrengthPos3dLight = 0;
+static GLint falloffModePos3dLight = 0;
+static GLint lightColorPos3dLight = 0;
+static GLint specularColorPos3dLight = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersLight()
 {
 	Program program;
@@ -447,16 +495,26 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"}";
 	program.addShaders(vertexShaderSrc, fragmentShaderSource);
 
-	program.uniform1i("gPosition", 0);
-	program.uniform1i("gNormal", 1);
-	program.uniform1i("gAlbedoSpec", 2);
+	gPositionPos3dLight     = program.getUniformLocation("gPosition");
+	gNormalPos3dLight       = program.getUniformLocation("gNormal");
+	gAlbedoSpecPos3dLight   = program.getUniformLocation("gAlbedoSpec");
+	cameraPosPos3dLight     = program.getUniformLocation("cameraPos");
+	lightPosPos3dLight      = program.getUniformLocation("lightPos");
+	lightStrengthPos3dLight = program.getUniformLocation("lightStrength");
+	falloffModePos3dLight   = program.getUniformLocation("falloffMode");
+	lightColorPos3dLight    = program.getUniformLocation("lightColor");
+	specularColorPos3dLight = program.getUniformLocation("specularColor");
 
-	program.uniform3f("cameraPos", 0.f, 0.f, 0.f);
-	program.uniform3f("lightPos", 0.f, 0.f, 0.f);
-	program.uniform1f("lightStrength", 0.f);
-	program.uniform1i("falloffMode", 0);
-	program.uniform4f("lightColor", 0.f, 0.f, 0.f, 0.f);
-	program.uniform4f("specularColor", 0.f, 0.f, 0.f, 0.f);
+	program.uniform1i(gPositionPos3dLight, 0);
+	program.uniform1i(gNormalPos3dLight, 1);
+	program.uniform1i(gAlbedoSpecPos3dLight, 2);
+
+	program.uniform3f(cameraPosPos3dLight, 0.f, 0.f, 0.f);
+	program.uniform3f(lightPosPos3dLight, 0.f, 0.f, 0.f);
+	program.uniform1f(lightStrengthPos3dLight, 0.f);
+	program.uniform1i(falloffModePos3dLight, 0);
+	program.uniform4f(lightColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
+	program.uniform4f(specularColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
 	return program;
 }
 
@@ -522,6 +580,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	m_program3dLight = init3dShadersLight();
 	initGeometryBuffer();
 
+	OpenGLRectangle::init();
 	OpenGLCube::init();
 	OpenGLSphere::init();
 
@@ -538,6 +597,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 
 	OpenGLSphere::destroy();
 	OpenGLCube::destroy();
+	OpenGLRectangle::destroy();
 
 	mrtFb.destroy();
 	m_program3dMrt.destroy();
@@ -610,7 +670,8 @@ bbe::PrimitiveBrush3D& bbe::INTERNAL::openGl::OpenGLManager::getBrush3D()
 
 void bbe::INTERNAL::openGl::OpenGLManager::resize(uint32_t width, uint32_t height)
 {
-	m_program2d.uniform2f("screenSize", (float)width, (float)height);
+	m_program2d.uniform2f(screenSizePos2d, (float)width, (float)height);
+	m_program2dTex.uniform2f(screenSizePos2dTex, (float)width, (float)height);
 
 	m_windowWidth = width;
 	m_windowHeight = height;
@@ -630,22 +691,29 @@ void bbe::INTERNAL::openGl::OpenGLManager::setVideoRenderingMode(const char* pat
 
 void bbe::INTERNAL::openGl::OpenGLManager::setColor2D(const bbe::Color& color)
 {
-	m_program2d   .uniform4f("inColor", color);
-	m_program2dTex.uniform4f("inColor", color);
+	m_program2d   .uniform4f(inColorPos2d, color);
+	m_program2dTex.uniform4f(inColorPos2dTex, color);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader)
 {
-	// TODO make proper implementation
 	m_program2d.use();
-	bbe::List<bbe::Vector2> vertices;
-	rect.getVertices(vertices);
-	for (bbe::Vector2& v : vertices)
-	{
-		v = v.rotate(rotation, rect.getCenter());
-	}
-	uint32_t indices[] = {0, 1, 3, 1, 2, 3};
-	fillVertexIndexList2D(indices, 6, vertices.getRaw(), vertices.getLength(), { 0, 0 }, { 1, 1 });
+	
+	glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLRectangle::getIbo());
+
+	m_program2d.uniform2f(scalePos2d, rect.getWidth(), rect.getHeight());
+	m_program2d.uniform2f(posOffsetPos2d, rect.getX(), rect.getY());
+	m_program2d.uniform1f(rotationPos2d, rotation);
+
+	GLint positionAttribute = glGetAttribLocation(m_program2d.program, "position");
+	glEnableVertexAttribArray(positionAttribute);
+
+	glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
+	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glDrawElements(GL_TRIANGLES, OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle& circle)
@@ -740,8 +808,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * amountOfIndices, indices, GL_STATIC_DRAW);
 
-	GLint scalePos = glGetUniformLocation(m_program2d.program, "scale");
-	glUniform2f(scalePos, (float)scale.x, (float)scale.y);
+	m_program2d.uniform2f(scalePos2d, scale.x, scale.y);
+	m_program2d.uniform2f(posOffsetPos2d, pos.x, pos.y);
+	m_program2d.uniform1f(rotationPos2d, 0.f);
 
 	GLint positionAttribute = glGetAttribLocation(m_program2d.program, "position");
 	glEnableVertexAttribArray(positionAttribute);
@@ -758,14 +827,14 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 
 void bbe::INTERNAL::openGl::OpenGLManager::setColor3D(const bbe::Color& color)
 {
-	m_program3dMrt.uniform4f("inColor", color);
+	m_program3dMrt.uniform4f(inColorPos3dMrt, color);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos, const bbe::Matrix4& view, const bbe::Matrix4& projection)
 {
-	m_program3dMrt.uniformMatrix4fv("view", GL_FALSE, view);
-	m_program3dMrt.uniformMatrix4fv("projection", GL_FALSE, projection);
-	m_program3dLight.uniform3f("cameraPos", cameraPos);
+	m_program3dMrt.uniformMatrix4fv(viewPos3dMrt, GL_FALSE, view);
+	m_program3dMrt.uniformMatrix4fv(projectionPos3dMrt, GL_FALSE, projection);
+	m_program3dLight.uniform3f(cameraPosPos3dLight, cameraPos);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)
@@ -780,11 +849,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
 
 void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
 {
-	m_program3dLight.uniform3f("lightPos", pos);
-	m_program3dLight.uniform1f("lightStrength", lightStrength);
-	m_program3dLight.uniform1i("falloffMode", (int)falloffMode);
-	m_program3dLight.uniform4f("lightColor", lightColor);
-	m_program3dLight.uniform4f("specularColor", specularColor);
+	m_program3dLight.uniform3f(lightPosPos3dLight, pos);
+	m_program3dLight.uniform1f(lightStrengthPos3dLight, lightStrength);
+	m_program3dLight.uniform1i(falloffModePos3dLight, (int)falloffMode);
+	m_program3dLight.uniform4f(lightColorPos3dLight, lightColor);
+	m_program3dLight.uniform4f(specularColorPos3dLight, specularColor);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::imguiStart()

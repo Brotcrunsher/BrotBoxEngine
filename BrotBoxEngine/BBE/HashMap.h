@@ -55,7 +55,7 @@ namespace bbe
 		{
 			//UNTESTED
 			m_pcontainers = hm.m_pcontainers;
-			m_amountOfContainers = hm.m_pcontainers;
+			m_amountOfContainers = hm.m_amountOfContainers;
 			
 			hm.m_pcontainers = nullptr;
 			hm.m_amountOfContainers = 0;
@@ -99,7 +99,7 @@ namespace bbe
 			}
 
 			m_pcontainers = hm.m_pcontainers;
-			m_amountOfContainers = hm.m_pcontainers;
+			m_amountOfContainers = hm.m_amountOfContainers;
 
 			hm.m_pcontainers = nullptr;
 			hm.m_amountOfContainers = 0;

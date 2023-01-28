@@ -38,15 +38,17 @@ namespace bbe
 
 				void use();
 
-				void uniform1f(const char* name, GLfloat a);
-				void uniform2f(const char* name, GLfloat a, GLfloat b);
-				void uniform3f(const char* name, GLfloat a, GLfloat b, GLfloat c);
-				void uniform3f(const char* name, const bbe::Vector3& vec);
-				void uniform4f(const char* name, GLfloat a, GLfloat b, GLfloat c, GLfloat d);
-				void uniform4f(const char* name, const bbe::Color& color);
-				void uniform1i(const char* name, GLint a);
+				GLuint getUniformLocation(const char* name);
 
-				void uniformMatrix4fv(const char* name, GLboolean transpose, const bbe::Matrix4& val);
+				void uniform1f(GLint pos, GLfloat a);
+				void uniform2f(GLint pos, GLfloat a, GLfloat b);
+				void uniform3f(GLint pos, GLfloat a, GLfloat b, GLfloat c);
+				void uniform3f(GLint pos, const bbe::Vector3& vec);
+				void uniform4f(GLint pos, GLfloat a, GLfloat b, GLfloat c, GLfloat d);
+				void uniform4f(GLint pos, const bbe::Color& color);
+				void uniform1i(GLint pos, GLint a);
+
+				void uniformMatrix4fv(GLint pos, GLboolean transpose, const bbe::Matrix4& val);
 			};
 
 			struct Framebuffer
