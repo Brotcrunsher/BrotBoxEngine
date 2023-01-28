@@ -4,7 +4,9 @@
 #include <iostream>
 #include "BBE/MouseButtons.h"
 #include "BBE/FatalErrors.h"
+#ifndef BBE_RENDERER_NULL
 #include "imgui_impl_glfw.h"
+#endif
 #ifdef BBE_RENDERER_VULKAN
 #include "BBE/Vulkan/VulkanManager.h"
 #endif
@@ -42,12 +44,12 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	}
 	if (windowsAliveCounter == 0)
 	{
-		if (glfwInit() == GLFW_FALSE)
+		if (glfwWrapper::glfwInit() == GLFW_FALSE)
 		{
 			bbe::INTERNAL::triggerFatalError("An error occurred while initializing GLFW.");
 		}
 #ifdef BBE_RENDERER_VULKAN
-		if (glfwVulkanSupported() == GLFW_FALSE)
+		if (glfwWrapper::glfwVulkanSupported() == GLFW_FALSE)
 		{
 			bbe::INTERNAL::triggerFatalError("Your GPU and/or driver does not support vulkan!");
 		}
@@ -55,18 +57,18 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	}
 
 #ifdef BBE_RENDERER_VULKAN
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWrapper::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #endif
 #ifdef BBE_RENDERER_OPENGL
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-	glfwWindowHint(GLFW_SAMPLES, 4);
+	glfwWrapper::glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+	glfwWrapper::glfwWindowHint(GLFW_SAMPLES, 4);
 #endif
 	//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 #ifndef __EMSCRIPTEN__
-	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
+	glfwWrapper::glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 #endif
 
-	m_pwindow = glfwCreateWindow(width, height, title, nullptr, nullptr);
+	m_pwindow = glfwWrapper::glfwCreateWindow(width, height, title, nullptr, nullptr);
 	if (m_pwindow == nullptr)
 	{
 		bbe::INTERNAL::triggerFatalError("Could not create window!");
@@ -81,15 +83,15 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 
 
 	std::cout << "Setting glwf callbacks" << std::endl;
-	glfwSetKeyCallback(m_pwindow, INTERNAL_keyCallback);
-	glfwSetCharCallback(m_pwindow, INTERNAL_charCallback);
-	glfwSetCursorPosCallback(m_pwindow, INTERNAL_cursorPosCallback);
-	glfwSetMouseButtonCallback(m_pwindow, INTERNAL_mouseButtonCallback);
-	glfwSetWindowSizeCallback(m_pwindow, INTERNAL_windowResizeCallback);
-	glfwSetScrollCallback(m_pwindow, INTERNAL_mouseScrollCallback);
+	glfwWrapper::glfwSetKeyCallback(m_pwindow, INTERNAL_keyCallback);
+	glfwWrapper::glfwSetCharCallback(m_pwindow, INTERNAL_charCallback);
+	glfwWrapper::glfwSetCursorPosCallback(m_pwindow, INTERNAL_cursorPosCallback);
+	glfwWrapper::glfwSetMouseButtonCallback(m_pwindow, INTERNAL_mouseButtonCallback);
+	glfwWrapper::glfwSetWindowSizeCallback(m_pwindow, INTERNAL_windowResizeCallback);
+	glfwWrapper::glfwSetScrollCallback(m_pwindow, INTERNAL_mouseScrollCallback);
 	double mX = 0;
 	double mY = 0;
-	glfwGetCursorPos(m_pwindow, &mX, &mY);
+	glfwWrapper::glfwGetCursorPos(m_pwindow, &mX, &mY);
 	
 	std::cout << "Init mouse" << std::endl;
 	INTERNAL_mouse.INTERNAL_moveMouse((float)mX, (float)mY);
@@ -113,12 +115,12 @@ void bbe::Window::preDraw()
 
 bool bbe::Window::keepAlive()
 {
-	if (glfwWindowShouldClose(m_pwindow))
+	if (glfwWrapper::glfwWindowShouldClose(m_pwindow))
 	{
 		return false;
 	}
 
-	glfwPollEvents();
+	glfwWrapper::glfwPollEvents();
 	return true;
 }
 
@@ -147,13 +149,13 @@ void bbe::Window::setCursorMode(bbe::CursorMode cursorMode)
 	switch (cursorMode)
 	{
 	case bbe::CursorMode::DISABLED:
-		glfwSetInputMode(m_pwindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		glfwWrapper::glfwSetInputMode(m_pwindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		break;
 	case bbe::CursorMode::NORMAL:
-		glfwSetInputMode(m_pwindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		glfwWrapper::glfwSetInputMode(m_pwindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		break;
 	case bbe::CursorMode::HIDDEN:
-		glfwSetInputMode(m_pwindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+		glfwWrapper::glfwSetInputMode(m_pwindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 		break;
 	default:
 		throw IllegalArgumentException();
@@ -168,10 +170,10 @@ GLFWwindow * bbe::Window::getRaw()
 bbe::Window::~Window()
 {
 	m_renderManager->destroy();
-	glfwDestroyWindow(m_pwindow);
+	glfwWrapper::glfwDestroyWindow(m_pwindow);
 	if (windowsAliveCounter == 1)
 	{
-		glfwTerminate();
+		glfwWrapper::glfwTerminate();
 	}
 
 	windowsAliveCounter--;
@@ -210,11 +212,11 @@ bbe::Vector2 bbe::Window::getGlobalMousePos() const
 {
 	int windowPosX;
 	int windowPosY;
-	glfwGetWindowPos(m_pwindow, &windowPosX, &windowPosY);
+	glfwWrapper::glfwGetWindowPos(m_pwindow, &windowPosX, &windowPosY);
 
 	double mousePosX;
 	double mousePosY;
-	glfwGetCursorPos(m_pwindow, &mousePosX, &mousePosY);
+	glfwWrapper::glfwGetCursorPos(m_pwindow, &mousePosX, &mousePosY);
 
 	return Vector2(static_cast<float>(mousePosX + windowPosX), static_cast<float>(mousePosY + windowPosY));
 }
@@ -253,6 +255,7 @@ void bbe::Window::setVideoRenderingMode(const char* path)
 
 void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, int action, int mods)
 {
+#ifndef BBE_RENDERER_NULL
 	if (keyCode == GLFW_KEY_UNKNOWN)
 	{
 		// This can happen for example when pressing the FN key on some platforms.
@@ -269,11 +272,14 @@ void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, i
 	{
 		bbe::Window::INTERNAL_firstInstance->INTERNAL_keyboard.INTERNAL_release((bbe::Key)keyCode);
 	}
+#endif
 }
 
 void bbe::INTERNAL_charCallback(GLFWwindow* window, unsigned int c)
 {
+#ifndef BBE_RENDERER_NULL
 	ImGui_ImplGlfw_CharCallback(window, c);
+#endif
 }
 
 void bbe::INTERNAL_cursorPosCallback(GLFWwindow * window, double xpos, double ypos)
@@ -294,8 +300,10 @@ void bbe::INTERNAL_windowResizeCallback(GLFWwindow * window, int width, int heig
 
 void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int action, int mods)
 {
+#ifndef BBE_RENDERER_NULL
 	ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
 	if (ImGui::GetIO().WantCaptureMouse) return;
+#endif
 
 	if (action == GLFW_PRESS)
 	{
@@ -309,8 +317,10 @@ void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int acti
 
 void bbe::INTERNAL_mouseScrollCallback(GLFWwindow * window, double xoffset, double yoffset)
 {
+#ifndef BBE_RENDERER_NULL
 	ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
 	if (ImGui::GetIO().WantCaptureMouse) return;
+#endif
 	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_scroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
 }
 

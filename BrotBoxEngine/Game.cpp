@@ -89,6 +89,15 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 
 bool bbe::Game::keepAlive()
 {
+#ifdef BBE_RENDERER_NULL
+	// The null renderer keeps games alive for 128 frames and then closes them.
+	static int callCount = 0;
+	if (callCount >= 128)
+	{
+		return false;
+	}
+	callCount++;
+#endif
 	return m_pwindow->keepAlive();
 }
 
