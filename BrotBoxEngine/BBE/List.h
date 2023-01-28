@@ -786,25 +786,25 @@ namespace bbe
 
 		T* begin()
 		{
-			//UNTESTED
+			if (!m_length) return nullptr;
 			return &(this->m_pdata[0].m_value);
 		}
 
 		const T* begin() const
 		{
-			//UNTESTED
+			if (!m_length) return nullptr;
 			return &(this->m_pdata[0].m_value);
 		}
 
 		T* end()
 		{
-			//UNTESTED
+			if (!m_length) return nullptr;
 			return &(this->m_pdata[getLength()].m_value);
 		}
 
 		const T* end() const
 		{
-			//UNTESTED
+			if (!m_length) return nullptr;
 			return &(this->m_pdata[getLength()].m_value);
 		}
 
