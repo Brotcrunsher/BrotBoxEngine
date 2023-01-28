@@ -20,7 +20,6 @@ private:
 	bool gameover = false;
 	int score = 0;
 
-	bbe::Font font;
 	bbe::Image background;
 	bbe::List<Balloon> balloons;
 
@@ -29,7 +28,7 @@ private:
 	}
 
 	bool checkGameOver(const Balloon& b) {
-		return (b.y <= font.getFontSize() + 40);
+		return (b.y <= 140);
 	}
 
 	bool checkMousePosition(const Balloon& b) {
@@ -40,7 +39,6 @@ private:
 public:
 	virtual void onStart() override
 	{
-		font.load("arial.ttf", 100);
 		background.load(BBE_APPLICATION_ASSET_PATH "/sky.jpg");
 		addBalloon();
 	}
@@ -79,18 +77,18 @@ public:
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
 		brush.setColorRGB(1, 1, 1);
-		brush.fillRect(bbe::Rectangle(0, 0, WINDOW_WIDTH, font.getFontSize() + 40));
+		brush.fillRect(bbe::Rectangle(0, 0, WINDOW_WIDTH, 140));
 
 		brush.setColorRGB(0, 0, 0);
 		bbe::String currentScore = "Your Score: ";
 		currentScore += score;
-		brush.fillText(10, font.getFontSize() + 20, currentScore.getRaw(), font);
+		brush.fillText(10, 120, currentScore.getRaw());
 
 		brush.setColorRGB(0, 0, 0);
-		brush.fillLine(0, font.getFontSize() + 40, WINDOW_WIDTH, font.getFontSize() + 40, 5);
+		brush.fillLine(0, 140, WINDOW_WIDTH, 140, 5);
 
 		brush.setColorRGB(1, 1, 1);
-		brush.drawImage(bbe::Rectangle(0, font.getFontSize() + 40, WINDOW_WIDTH, background.getHeight()), background);
+		brush.drawImage(bbe::Rectangle(0, 140, WINDOW_WIDTH, background.getHeight()), background);
 
 		for (Balloon& b : balloons) {
 			brush.setColorHSV(b.hue, 1, 1);
@@ -99,7 +97,7 @@ public:
 		
 		if (gameover){
 			brush.setColorRGB(1, 0, 0);
-			brush.fillText(10, WINDOW_HEIGHT/2, "Game Over!", font);
+			brush.fillText(10, WINDOW_HEIGHT/2, "Game Over!");
 
 		}
 	}
