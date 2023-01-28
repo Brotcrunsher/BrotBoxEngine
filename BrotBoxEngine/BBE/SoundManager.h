@@ -32,6 +32,7 @@ namespace bbe
 
 			std::mutex playingSoundsChangeMutex;
 			std::map<uint64_t, SoundInstanceData> playingSounds;
+			bool initSuccessful = false;
 
 		public:
 			static SoundManager* getInstance();

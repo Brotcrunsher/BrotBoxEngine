@@ -4,6 +4,7 @@
 #include "BBE/Exceptions.h"
 #include "portaudio.h"
 #include <algorithm>
+#include <iostream>
 
 bbe::INTERNAL::SoundManager* bbe::INTERNAL::SoundManager::m_pinstance = nullptr;
 
@@ -94,6 +95,7 @@ int bbe::INTERNAL::SoundManager::soundCallback(const void* inputBuffer, void* ou
 
 void bbe::INTERNAL::SoundManager::stopSoundWithIndex(uint64_t index)
 {
+	if (!initSuccessful) return;
 	std::lock_guard<std::mutex> lock(playingSoundsChangeMutex);
 	auto it = playingSounds.find(index);
 	if (it != playingSounds.end())
@@ -104,6 +106,7 @@ void bbe::INTERNAL::SoundManager::stopSoundWithIndex(uint64_t index)
 
 bool bbe::INTERNAL::SoundManager::isSoundWithIndexPlaying(uint64_t index)
 {
+	if (!initSuccessful) return false;
 	std::lock_guard<std::mutex> lock(playingSoundsChangeMutex);
 	auto it = playingSounds.find(index);
 	if (it != playingSounds.end())
@@ -124,11 +127,19 @@ void bbe::INTERNAL::SoundManager::init()
 	// inputParameters.sampleFormat = paFloat32;
 	// inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency / 2;
 	// inputParameters.hostApiSpecificStreamInfo = nullptr;
+	PaDeviceIndex outputDevice = Pa_GetDefaultOutputDevice();
+	const PaDeviceInfo* outputDeviceInfo = Pa_GetDeviceInfo(outputDevice);
+	if (outputDevice == paNoDevice || !outputDeviceInfo)
+	{
+		std::cout << "Could not init sound manager! (" << outputDevice << " | " << outputDeviceInfo << ")" << std::endl;
+		return;
+	}
+
 	PaStreamParameters outputParameters;
-	outputParameters.device = Pa_GetDefaultOutputDevice();
+	outputParameters.device = outputDevice;
 	outputParameters.channelCount = 2;
 	outputParameters.sampleFormat = paFloat32;
-	outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowInputLatency / 2;
+	outputParameters.suggestedLatency = outputDeviceInfo->defaultLowInputLatency / 2;
 	outputParameters.hostApiSpecificStreamInfo = nullptr;
 	PaStream* stream = nullptr;
 	PaError err = Pa_OpenStream(&stream,
@@ -140,6 +151,7 @@ void bbe::INTERNAL::SoundManager::init()
 		::soundCallback,
 		this);
 	Pa_StartStream(stream);
+	initSuccessful = true;
 }
 
 void bbe::INTERNAL::SoundManager::destroy()
@@ -156,6 +168,7 @@ bbe::SoundInstance bbe::INTERNAL::SoundManager::play(const SoundDataSource& soun
 	sid.m_volume = volume;
 	SoundInstance si(index);
 
+	if(initSuccessful)
 	{
 		std::lock_guard<std::mutex> lock(playingSoundsChangeMutex);
 		playingSounds.insert({ index, sid });
