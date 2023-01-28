@@ -3,6 +3,7 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <stb_truetype.h>
 #include <filesystem>
+#include <iostream>
 #include "BBE/SimpleFile.h"
 
 const bbe::Font::CharData& bbe::Font::loadCharData(const int32_t codePoint, float scale_) const
@@ -76,8 +77,10 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 	static const bbe::List<bbe::String> platformDependentFontDirectories = { };
 #endif
 
+	std::cout << "Looking for Font " << fontPath << std::endl;
 	if (std::filesystem::exists(fontPath.getRaw()))
 	{
+		std::cout << "Found font via direct fontPath" << std::endl;
 		this->fontPath = fontPath;
 	}
 	else
@@ -88,12 +91,17 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 			const bbe::String currCheckPath = platformDep + fontPath;
 			if (std::filesystem::exists(currCheckPath.getRaw()))
 			{
+				std::cout << "Found font via system path: " << currCheckPath << std::endl;
 				this->fontPath = currCheckPath;
 				found = true;
 				break;
 			}
 		}
-		if (!found) throw NullPointerException();
+		if (!found)
+		{
+			std::cout << "Could not find font!" << std::endl;
+			throw NullPointerException();
+		}
 	}
 	this->fontSize   = fontSize;
 
