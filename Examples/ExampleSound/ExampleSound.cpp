@@ -9,13 +9,11 @@ constexpr int WINDOW_HEIGHT = 720;
 class MyGame : public bbe::Game
 {
 	bbe::Sound mySound;
-	bbe::Font myFont;
 	bbe::SoundInstance latestSoundInstance;
 
 	virtual void onStart() override
 	{
 		mySound.load(BBE_APPLICATION_ASSET_PATH "/TestSound.mp3");
-		myFont.load("arial.ttf", 20);
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
@@ -29,10 +27,10 @@ class MyGame : public bbe::Game
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
-		brush.fillText(100, 100, "Click the mouse!", myFont);
+		brush.fillText(100, 100, "Click the mouse!", 20);
 		if (latestSoundInstance.isPlaying())
 		{
-			brush.fillText(100, 150, "Test! This will do.", myFont);
+			brush.fillText(100, 150, "Test! This will do.", 20);
 		}
 	}
 	virtual void onEnd() override

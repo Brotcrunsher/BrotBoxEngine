@@ -6,11 +6,8 @@ constexpr int WINDOW_HEIGHT = 720;
 
 class MyGame : public bbe::Game
 {
-	bbe::Font myFont;
-
 	virtual void onStart() override
 	{
-		myFont.load("arial.ttf", 20);
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
@@ -25,7 +22,7 @@ class MyGame : public bbe::Game
 		brush.setColorRGB(0, 0.5, 0, 0.5);
 		brush.fillRect(20, 40, 200, 50);
 		brush.setColorRGB(1, 1, 1);
-		brush.fillText(20, 20, "This is the first string that is\never fully drawn with BBE! ygpq", myFont);
+		brush.fillText(20, 20, "This is the first string that is\never fully drawn with BBE! ygpq", 20);
 	}
 	virtual void onEnd() override
 	{

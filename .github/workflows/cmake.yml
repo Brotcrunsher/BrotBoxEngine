@@ -84,7 +84,6 @@ jobs:
            ./ExampleSnake3D
            ./ExampleSound
            ./ExampleSoundDataSource
-           ./ExampleStreamCountdown
            ./ExampleTemplate
            ./ExampleTesseract
            ./ExampleTextRendering

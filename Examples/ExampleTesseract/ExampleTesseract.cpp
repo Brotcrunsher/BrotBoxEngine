@@ -6,7 +6,6 @@ constexpr int WINDOW_HEIGHT = 720;
 
 class MyGame : public bbe::Game
 {
-	bbe::Font font;
 	struct Barricade
 	{
 		bbe::Rectangle shape;
@@ -277,7 +276,6 @@ class MyGame : public bbe::Game
 	{
 		barricades.add({bbe::Rectangle(350, 300, 100, 200)});
 		tesseract.newRandomPosition(this);
-		font.load("Arial.ttf", 50);
 	}
 
 	virtual void update(float timeSinceLastFrame) override
@@ -304,7 +302,7 @@ class MyGame : public bbe::Game
 		brush.setColorRGB(1, 0, 0);
 		bbe::String scoreText = "Score: ";
 		scoreText += player.score;
-		brush.fillText(10, 40, scoreText.getRaw(), font);
+		brush.fillText(10, 40, scoreText.getRaw(), 50);
 
 		brush.setColorRGB(0, 0, 1);
 		for (const Barricade& b : barricades)
