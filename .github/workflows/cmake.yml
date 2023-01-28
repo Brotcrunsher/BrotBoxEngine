@@ -34,7 +34,9 @@ jobs:
               freeglut3-dev 
               libvulkan-dev 
               libdmx-dev 
-              xorg-dev openssl
+              xorg-dev
+              openssl
+              libssl-dev
      
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -108,6 +110,7 @@ jobs:
               libdmx-dev 
               xorg-dev
               openssl
+              libssl-dev
               python3
               git
               cmake
