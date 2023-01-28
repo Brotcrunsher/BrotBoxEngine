@@ -71,7 +71,7 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 	
 #ifdef _WIN32
 	static const bbe::List<bbe::String> platformDependentFontDirectories = { "C:/Windows/Fonts/" };
-#elif defined(unix)
+#elif defined(unix) || defined(linux)
 	static const bbe::List<bbe::String> platformDependentFontDirectories = { "/usr/share/fonts/truetype/", "~/.fonts" };
 #else
 	static const bbe::List<bbe::String> platformDependentFontDirectories = { };
