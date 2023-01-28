@@ -23,6 +23,7 @@ void bbe::INTERNAL::nullRenderer::NullRendererManager::preDraw2D()
 
 void bbe::INTERNAL::nullRenderer::NullRendererManager::preDraw3D()
 {
+	m_primitiveBrush3D.INTERNAL_beginDraw(0, 0, this);
 }
 
 void bbe::INTERNAL::nullRenderer::NullRendererManager::preDraw()

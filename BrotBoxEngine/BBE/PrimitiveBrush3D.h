@@ -19,6 +19,10 @@ namespace bbe
 		{
 			class VulkanManager;
 		}
+		namespace nullRenderer
+		{
+			class NullRendererManager;
+		}
 		namespace openGl
 		{
 			class OpenGLManager;
@@ -28,6 +32,7 @@ namespace bbe
 	class PrimitiveBrush3D
 	{
 		friend class INTERNAL::vulkan::VulkanManager;
+		friend class INTERNAL::nullRenderer::NullRendererManager;
 		friend class INTERNAL::openGl::OpenGLManager;
 	private:
 		int                                          m_screenWidth = -1;
