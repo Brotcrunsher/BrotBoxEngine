@@ -32,6 +32,8 @@ namespace bbe
 		FillMode m_fillMode2D = FillMode::SOLID;
 		FillMode m_fillMode3D = FillMode::SOLID;
 	public:
+		virtual ~RenderManager() = default;
+
 		virtual void init(const char* appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow* window, uint32_t initialWindowWidth, uint32_t initialWindowHeight) = 0;
 
 		virtual void destroy() = 0;

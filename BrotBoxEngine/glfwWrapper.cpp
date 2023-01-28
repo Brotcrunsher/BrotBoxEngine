@@ -132,6 +132,8 @@ void bbe::glfwWrapper::glfwDestroyWindow(GLFWwindow* handle)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwDestroyWindow(handle);
+#else
+	delete handle;
 #endif
 }
 

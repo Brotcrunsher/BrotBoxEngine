@@ -76,7 +76,7 @@ namespace bbe
 #ifdef _WIN32
 		static constexpr const char* DEFAULT_FONT_NAME = "arial.ttf";
 #elif defined(unix) || defined(linux)
-		static constexpr const char* DEFAULT_FONT_NAME = "dejavu";
+		static constexpr const char* DEFAULT_FONT_NAME = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
 #else
 		static constexpr const char* DEFAULT_FONT_NAME = "";
 #endif

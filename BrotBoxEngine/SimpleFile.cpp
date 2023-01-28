@@ -4,15 +4,24 @@
 #include <stdlib.h>
 #include <string>
 #include <sstream>
+#include <filesystem>
 
 bbe::List<unsigned char> bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 {
-	//UNTESTED
-	std::ifstream file(filepath.getRaw(), std::ios::binary | std::ios::ate);
+	if (std::filesystem::is_directory(filepath.getRaw()))
+	{
+		throw bbe::IllegalArgumentException();
+	}
 
+	std::ifstream file(filepath.getRaw(), std::ios::binary | std::ios::ate);
+	
 	if (file)
 	{
 		size_t fileSize = (size_t)file.tellg();
+		if (fileSize == (size_t)-1)
+		{
+			throw std::runtime_error("Couldn't determin file size.");
+		}
 		bbe::List<unsigned char> fileBuffer;
 		fileBuffer.resizeCapacityAndLength(fileSize);
 		file.seekg(0);
