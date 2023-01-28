@@ -81,7 +81,6 @@ public:
 
 class SandGame : public bbe::Game
 {
-	bbe::Font font;
 	Grid grid;
 	bbe::Vector2 prevMouse;
 	bbe::List<Button> buttons;
@@ -96,7 +95,6 @@ class SandGame : public bbe::Game
 
 	virtual void onStart() override
 	{
-		font.load("Arial.ttf");
 		for (int32_t i = 0; i < 3; i++)
 		{
 			CellBehaviour currentBehaviour = (CellBehaviour)i;
@@ -164,7 +162,7 @@ class SandGame : public bbe::Game
 					brush.setColorRGB(0, 0, 0, 1);
 					bbe::String s = "";
 					s += (i + 1);
-					brush.fillText(pos + bbe::Vector2(12, 22), s.getRaw(), font);
+					brush.fillText(pos + bbe::Vector2(12, 22), s.getRaw());
 				}
 				));
 		}
