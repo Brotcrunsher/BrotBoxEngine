@@ -10,6 +10,7 @@ void bbe::Settings::INTERNAL_start()
 	started = true;
 }
 
+#ifdef BBE_RENDERER_VULKAN
 int bbe::Settings::getAmountOfLightSources()
 {
 	//UNTESTED
@@ -26,6 +27,7 @@ void bbe::Settings::setAmountOfLightSources(int amount)
 
 	amountOfLightSources = amount;
 }
+#endif
 
 int bbe::Settings::getTerrainAdditionalTextures()
 {
