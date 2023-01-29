@@ -13,8 +13,6 @@
 #include "BBE/OpenGL/OpenGLSphere.h"
 #include <iostream>
 
-// TODO: Fix switching between fullHD and 4k Screen
-// TODO: Fix Resizing
 // TODO: "ExampleRotatingCubeIntersections" has visual artifacts
 // TODO: "ExampleSandGame" performs much worse than on Vulkan - Why?
 // TODO: Unlimited Lights
@@ -677,6 +675,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::resize(uint32_t width, uint32_t heigh
 	m_windowHeight = height;
 
 	initGeometryBuffer();
+	glViewport(0, 0, width, height);
+	glScissor(0, 0, width, height);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::screenshot(const bbe::String& path)
