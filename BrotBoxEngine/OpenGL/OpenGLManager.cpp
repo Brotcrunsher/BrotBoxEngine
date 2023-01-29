@@ -8,6 +8,7 @@
 #include "BBE/Circle.h"
 #include "BBE/Matrix4.h"
 #include "BBE/OpenGL/OpenGLRectangle.h"
+#include "BBE/OpenGL/OpenGLCircle.h"
 #include "BBE/OpenGL/OpenGLCube.h"
 #include "BBE/OpenGL/OpenGLSphere.h"
 #include <iostream>
@@ -577,6 +578,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	initGeometryBuffer();
 
 	OpenGLRectangle::init();
+	OpenGLCircle::init();
 	OpenGLCube::init();
 	OpenGLSphere::init();
 
@@ -593,6 +595,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 
 	OpenGLSphere::destroy();
 	OpenGLCube::destroy();
+	OpenGLCircle::destroy();
 	OpenGLRectangle::destroy();
 
 	mrtFb.destroy();
@@ -718,19 +721,24 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle& circle)
 {
-	// TODO make proper implementation
 	m_program2d.use();
-	previousDrawCall2d = PreviousDrawCall2D::CIRCLE;
-	bbe::List<bbe::Vector2> vertices;
-	circle.getVertices(vertices);
-	bbe::List<uint32_t> indices;
-	for (size_t i = 2; i<vertices.getLength(); i++)
+	
+	if (previousDrawCall2d != PreviousDrawCall2D::CIRCLE)
 	{
-		indices.add(0);
-		indices.add(i - 1);
-		indices.add(i);
+		previousDrawCall2d = PreviousDrawCall2D::CIRCLE;
+		glBindBuffer(GL_ARRAY_BUFFER, OpenGLCircle::getVbo());
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLCircle::getIbo());
+
+		GLint positionAttribute = glGetAttribLocation(m_program2d.program, "position");
+		glEnableVertexAttribArray(positionAttribute);
+
+		glBindBuffer(GL_ARRAY_BUFFER, OpenGLCircle::getVbo());
+		glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
-	fillVertexIndexList2D(indices.getRaw(), indices.getLength(), vertices.getRaw(), vertices.getLength(), {0, 0}, {1, 1});
+
+	m_program2d.uniform4f(scalePosOffsetPos2d, circle.getWidth(), circle.getHeight(), circle.getX(), circle.getY());
+	glDrawElements(GL_TRIANGLE_FAN, OpenGLCircle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, const Image& image, float rotation)
