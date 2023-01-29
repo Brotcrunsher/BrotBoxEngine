@@ -10,7 +10,7 @@ namespace bbe
 	struct PointLight
 	{
 		bbe::Vector3 pos;
-		float lightStrengh = 10.0f;
+		float lightStrength = 10.0f;
 		bbe::Color lightColor = bbe::Color(1, 1, 1, 1);
 		bbe::Color specularColor = bbe::Color(.35f, .35f, .35f, 1);
 		LightFalloffMode falloffMode = LightFalloffMode::LIGHT_FALLOFF_LINEAR;

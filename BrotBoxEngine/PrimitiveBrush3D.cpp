@@ -50,7 +50,7 @@ void bbe::PrimitiveBrush3D::addLight(const bbe::Vector3& pos, float lightStrengt
 
 void bbe::PrimitiveBrush3D::addLight(const bbe::PointLight& light)
 {
-	addLight(light.pos, light.lightStrengh, light.lightColor, light.specularColor, light.falloffMode);
+	addLight(light.pos, light.lightStrength, light.lightColor, light.specularColor, light.falloffMode);
 }
 
 #ifdef BBE_RENDERER_VULKAN

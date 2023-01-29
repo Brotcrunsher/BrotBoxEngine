@@ -45,7 +45,7 @@ public:
 	virtual void onStart() override
 	{
 		light.pos = bbe::Vector3(-1, -1, 1);
-		light.lightStrengh = 5;
+		light.lightStrength = 5;
 
 		bodyParts.add({ GRIDWIDTH / 2, GRIDHEIGHT / 2 });
 		bodyParts.add({ -1, -1 });

@@ -38,7 +38,7 @@ class MyGame : public bbe::Game
 	{
 		placeCubes();
 		light.lightColor = bbe::Color(1, 1, 1);
-		light.lightStrengh = 1;
+		light.lightStrength = 1;
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{

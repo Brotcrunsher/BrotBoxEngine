@@ -78,7 +78,7 @@ class MyGame : public bbe::Game
 	{
 		std::cout << "hai onStart" << std::endl;
 		light.falloffMode = bbe::LightFalloffMode::LIGHT_FALLOFF_NONE;
-		light.lightStrengh = 1;
+		light.lightStrength = 1;
 		light.pos = bbe::Vector3(100, 100, 100);
 
 		for (int i = 0; i < 200; i++)

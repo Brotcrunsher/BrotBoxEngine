@@ -15,7 +15,6 @@
 
 // TODO: "ExampleRotatingCubeIntersections" has visual artifacts
 // TODO: "ExampleSandGame" performs much worse than on Vulkan - Why?
-// TODO: Unlimited Lights
 // TODO: Is every OpenGL Resource properly freed? How can we find that out?
 
 void bbe::INTERNAL::openGl::Program::compile()
@@ -87,6 +86,7 @@ GLuint bbe::INTERNAL::openGl::Program::getUniformLocation(const char* name)
 	const GLint pos = glGetUniformLocation(program, name);
 	if (pos == -1)
 	{
+		// If this happens: Was the variable used? If not, the GLSL compiler could have optimized it away.
 		bbe::INTERNAL::triggerFatalError("Could not find uniform!");
 	}
 	return pos;
@@ -398,6 +398,7 @@ static GLint lightStrengthPos3dLight = 0;
 static GLint falloffModePos3dLight = 0;
 static GLint lightColorPos3dLight = 0;
 static GLint specularColorPos3dLight = 0;
+static GLint ambientFactorPos3dLight = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersLight()
 {
 	Program program;
@@ -448,6 +449,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"uniform vec4 specularColor;"
 		"uniform vec3 lightPos;"
 		"uniform vec3 cameraPos;"
+		"uniform float ambientFactor;"
 		"void main()"
 		"{"
 		"   vec3 normal = texture(gNormal, uvCoord).xyz;"
@@ -480,7 +482,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"       }																							 "
 		"   }"
 		"   vec3 L = normalize(toLight);"
-		"   vec3 ambient = albedo * 0.1;"
+		"   vec3 ambient = albedo * ambientFactor;"
 		"   vec3 diffuse = max(dot(normal, L), 0.0) * (albedo * lightColor.xyz) * lightPower;"
 		"   vec3 R = reflect(-L, normal);"
 		"   vec3 V = normalize(toCamera);"
@@ -498,6 +500,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 	falloffModePos3dLight   = program.getUniformLocation("falloffMode");
 	lightColorPos3dLight    = program.getUniformLocation("lightColor");
 	specularColorPos3dLight = program.getUniformLocation("specularColor");
+	ambientFactorPos3dLight = program.getUniformLocation("ambientFactor");
 
 	program.uniform1i(gPositionPos3dLight, 0);
 	program.uniform1i(gNormalPos3dLight, 1);
@@ -509,6 +512,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 	program.uniform1i(falloffModePos3dLight, 0);
 	program.uniform4f(lightColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
 	program.uniform4f(specularColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
+	program.uniform1f(ambientFactorPos3dLight, 0.f);
 	return program;
 }
 
@@ -605,22 +609,37 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 {
 	// Draw the stuff of 3D
+	m_program3dLight.use();
 	uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
 	GLuint ibo;
-	m_program3dLight.use();
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	mrtFb.bind();
-
 	glGenBuffers(1, &ibo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices, GL_STATIC_DRAW);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	mrtFb.bind();
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+	for (size_t i = 0; i < pointLights.getLength(); i++)
+	{
+		const bbe::PointLight& l = pointLights[i];
+		m_program3dLight.uniform3f(lightPosPos3dLight, l.pos);
+		m_program3dLight.uniform1f(lightStrengthPos3dLight, l.lightStrength);
+		m_program3dLight.uniform1i(falloffModePos3dLight, (int)l.falloffMode);
+		m_program3dLight.uniform4f(lightColorPos3dLight, l.lightColor);
+		m_program3dLight.uniform4f(specularColorPos3dLight, l.specularColor);
+		// TODO What if we have no light? Shouldn't we still render ambient?
+		//      Maybe put the ambient calculation in a seperate program, making it
+		//      completely independent of any Light?
+		m_program3dLight.uniform1f(ambientFactorPos3dLight, i == 0 ? 0.1f : 0.0f);
+
+
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	}
 	glDeleteBuffers(1, &ibo);
 
 	// Switch to 2D
-	glDisable(GL_DEPTH_TEST);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	m_primitiveBrush2D.INTERNAL_beginDraw(m_pwindow, m_windowWidth, m_windowHeight, this);
 
 	previousDrawCall2d = PreviousDrawCall2D::NONE;
@@ -639,6 +658,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	imguiStartFrame();
+	pointLights.clear();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::postDraw()
@@ -858,11 +878,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
 
 void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
 {
-	m_program3dLight.uniform3f(lightPosPos3dLight, pos);
-	m_program3dLight.uniform1f(lightStrengthPos3dLight, lightStrength);
-	m_program3dLight.uniform1i(falloffModePos3dLight, (int)falloffMode);
-	m_program3dLight.uniform4f(lightColorPos3dLight, lightColor);
-	m_program3dLight.uniform4f(specularColorPos3dLight, specularColor);
+	bbe::PointLight light(pos);
+	light.lightStrength = lightStrength;
+	light.lightColor = lightColor;
+	light.specularColor = specularColor;
+	light.falloffMode = falloffMode;
+	pointLights.add(light);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::imguiStart()

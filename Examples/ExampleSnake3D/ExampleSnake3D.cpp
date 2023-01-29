@@ -43,7 +43,7 @@ public:
 	virtual void onStart() override
 	{
 		light.pos = camPos;
-		light.lightStrengh = 10;
+		light.lightStrength = 10;
 
 		bodyParts.add({ GRIDDIMENSIONSIZE / 2, GRIDDIMENSIONSIZE / 2, GRIDDIMENSIONSIZE / 2 });
 		bodyParts.add({ -1, -1, -1 });

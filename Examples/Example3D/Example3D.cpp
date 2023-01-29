@@ -14,12 +14,13 @@ class MyGame : public bbe::Game
 	};
 	CubeEntity cubeEntities[AMOUNT_OF_CUBES];
 	bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
-	bbe::PointLight light;
+	bbe::List<bbe::PointLight> lights;
 
 	virtual void onStart() override
 	{
-		light.pos = bbe::Vector3(-1, -1, 1);
-		light.lightStrengh = 10;
+		bbe::PointLight l(bbe::Vector3(-1, -1, 1));
+		l.lightStrength = 10;
+		lights.add(l);
 
 		bbe::Random rand;
 		for (int i = 0; i < AMOUNT_OF_CUBES; i++)
@@ -40,7 +41,7 @@ class MyGame : public bbe::Game
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
-		if(getAmountOfFrames() % 1000 == 0) std::cout << "FPS: " << (1.f / timeSinceLastFrame) << std::endl;
+		std::cout << "Lights: " << lights.getLength() << " FPS: " << (1.f / timeSinceLastFrame) << std::endl;
 		ccnc.update(timeSinceLastFrame);
 		for (int i = 0; i < AMOUNT_OF_CUBES; i++)
 		{
@@ -51,10 +52,23 @@ class MyGame : public bbe::Game
 			}
 			cubeEntities[i].cube.setRotation(cubeEntities[i].rotationAxis, cubeEntities[i].rotation);
 		}
+
+#ifndef BBE_RENDERER_VULKAN
+		// The Vulkan Renderer currently only supports up to 5 lights, so we better not let the user add any.
+		if (isKeyPressed(bbe::Key::E))
+		{
+			bbe::PointLight l(ccnc.getCameraPos());
+			l.lightStrength = 10;
+			lights.add(l);
+		}
+#endif
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
-		brush.addLight(light);
+		for (const bbe::PointLight& light : lights)
+		{
+			brush.addLight(light);
+		}
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 		for (int i = 0; i < AMOUNT_OF_CUBES; i++)
 		{
