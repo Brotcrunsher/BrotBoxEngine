@@ -17,7 +17,6 @@
 // TODO: Fix Resizing
 // TODO: "ExampleRotatingCubeIntersections" has visual artifacts
 // TODO: "ExampleSandGame" performs much worse than on Vulkan - Why?
-// TODO: "ExampleSnake3D" has visual artifacts
 // TODO: Unlimited Lights
 // TODO: Is every OpenGL Resource properly freed? How can we find that out?
 
@@ -364,7 +363,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   gl_Position = projection * view * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
 		"   passPos = worldPos;"
 		"   passNormal = model * vec4(inNormal, 0.0);"
-		"   passAlbedo = inColor;"
+		"   passAlbedo = vec4(inColor.xyz, 1.0);"
 		"}";
 
 	char const* fragmentShaderSource =
