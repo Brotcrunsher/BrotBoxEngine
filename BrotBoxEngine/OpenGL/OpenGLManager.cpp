@@ -235,8 +235,7 @@ void bbe::INTERNAL::openGl::Framebuffer::finalize()
 }
 
 static GLint screenSizePos2d = 0;
-static GLint scalePos2d = 0;
-static GLint posOffsetPos2d = 0;
+static GLint scalePosOffsetPos2d = 0;
 static GLint rotationPos2d = 0;
 static GLint inColorPos2d = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShaders()
@@ -247,18 +246,17 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShade
 		"precision highp float;\n"
 		"in vec2 position;\n"
 		"uniform vec2 screenSize;"
-		"uniform vec2 scale;"
-		"uniform vec2 posOffset;"
+		"uniform vec4 scalePosOffset;"
 		"uniform float rotation;"
 		"void main()\n"
 		"{\n"
 		"   float s = sin(rotation);"
 		"   float c = cos(rotation);"
-		"   vec2 scaledPos = position * scale;"
-		"   vec2 firstTranslatedPos = scaledPos - scale * 0.5;"
+		"   vec2 scaledPos = position * scalePosOffset.xy;"
+		"   vec2 firstTranslatedPos = scaledPos - scalePosOffset.xy * 0.5;"
 		"   vec2 rotatedPos = vec2(c * firstTranslatedPos.x - s * firstTranslatedPos.y, s * firstTranslatedPos.x + c * firstTranslatedPos.y);"
-		"   vec2 secondTranslatedPos = rotatedPos + scale * 0.5;"
-		"	vec2 pos = (((secondTranslatedPos + posOffset) / screenSize * vec2(2, -2)) + vec2(-1, +1));\n"
+		"   vec2 secondTranslatedPos = rotatedPos + scalePosOffset.xy * 0.5;"
+		"	vec2 pos = (((secondTranslatedPos + scalePosOffset.zw) / screenSize * vec2(2, -2)) + vec2(-1, +1));\n"
 		"	gl_Position = vec4(pos, 0.0, 1.0);\n"
 		"}";
 	
@@ -274,14 +272,12 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShade
 	program.addShaders(vertexShaderSrc, fragmentShaderSource);
 
 	screenSizePos2d = program.getUniformLocation("screenSize");
-	scalePos2d = program.getUniformLocation("scale");
-	posOffsetPos2d = program.getUniformLocation("posOffset");
+	scalePosOffsetPos2d = program.getUniformLocation("scalePosOffset");
 	rotationPos2d = program.getUniformLocation("rotation");
 	inColorPos2d = program.getUniformLocation("inColor");
 
 	program.uniform2f(screenSizePos2d, (float)m_windowWidth, (float)m_windowHeight);
-	program.uniform2f(scalePos2d, 1.f, 1.f);
-	program.uniform2f(posOffsetPos2d, 0.f, 0.f);
+	program.uniform4f(scalePosOffsetPos2d, 1.f, 1.f, 0.f, 0.f);
 	program.uniform4f(inColorPos2d, 1.f, 1.f, 1.f, 1.f);
 
 	return program;
@@ -626,6 +622,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	// Switch to 2D
 	glDisable(GL_DEPTH_TEST);
 	m_primitiveBrush2D.INTERNAL_beginDraw(m_pwindow, m_windowWidth, m_windowHeight, this);
+
+	previousDrawCall2d = PreviousDrawCall2D::NONE;
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
@@ -699,20 +697,22 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 {
 	m_program2d.use();
 	
-	glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLRectangle::getIbo());
+	if (previousDrawCall2d != PreviousDrawCall2D::RECT)
+	{
+		previousDrawCall2d = PreviousDrawCall2D::RECT;
+		glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLRectangle::getIbo());
+	
+		GLint positionAttribute = glGetAttribLocation(m_program2d.program, "position");
+		glEnableVertexAttribArray(positionAttribute);
+	
+		glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
+		glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
 
-	m_program2d.uniform2f(scalePos2d, rect.getWidth(), rect.getHeight());
-	m_program2d.uniform2f(posOffsetPos2d, rect.getX(), rect.getY());
+	m_program2d.uniform4f(scalePosOffsetPos2d, rect.getWidth(), rect.getHeight(), rect.getX(), rect.getY());
 	m_program2d.uniform1f(rotationPos2d, rotation);
-
-	GLint positionAttribute = glGetAttribLocation(m_program2d.program, "position");
-	glEnableVertexAttribArray(positionAttribute);
-
-	glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
-	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 	glDrawElements(GL_TRIANGLES, OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
 }
 
@@ -720,6 +720,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle& circle)
 {
 	// TODO make proper implementation
 	m_program2d.use();
+	previousDrawCall2d = PreviousDrawCall2D::CIRCLE;
 	bbe::List<bbe::Vector2> vertices;
 	circle.getVertices(vertices);
 	bbe::List<uint32_t> indices;
@@ -736,6 +737,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 {
 	// TODO make proper implementation
 	m_program2dTex.use();
+	previousDrawCall2d = PreviousDrawCall2D::IMAGE;
 	bbe::List<bbe::Vector2> vertices;
 	rect.getVertices(vertices);
 	for (bbe::Vector2& v : vertices)
@@ -797,6 +799,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 {
 	m_program2d.use();
 
+	previousDrawCall2d = PreviousDrawCall2D::VERTEX_INDEX_LIST;
 	GLuint vbo;
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -808,8 +811,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * amountOfIndices, indices, GL_STATIC_DRAW);
 
-	m_program2d.uniform2f(scalePos2d, scale.x, scale.y);
-	m_program2d.uniform2f(posOffsetPos2d, pos.x, pos.y);
+	m_program2d.uniform4f(scalePosOffsetPos2d, scale.x, scale.y, pos.x, pos.y);
 	m_program2d.uniform1f(rotationPos2d, 0.f);
 
 	GLint positionAttribute = glGetAttribLocation(m_program2d.program, "position");

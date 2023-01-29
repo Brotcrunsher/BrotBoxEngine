@@ -103,6 +103,16 @@ namespace bbe
 
 				void fillMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices);
 
+				enum class PreviousDrawCall2D
+				{
+					NONE,
+					RECT,
+					CIRCLE,
+					IMAGE,
+					VERTEX_INDEX_LIST,
+				};
+				PreviousDrawCall2D previousDrawCall2d = PreviousDrawCall2D::NONE;
+
 			public:
 				OpenGLManager();
 
