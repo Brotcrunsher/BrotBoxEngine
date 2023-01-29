@@ -6,7 +6,7 @@
 static GLuint vbo = 0;
 static GLuint ibo = 0;
 
-static const bbe::List<uint32_t> indices = { 0, 1, 3, 1, 2, 3};
+static const bbe::List<uint32_t> indices = { 0, 1, 3, 2 };
 
 void bbe::INTERNAL::openGl::OpenGLRectangle::init()
 {

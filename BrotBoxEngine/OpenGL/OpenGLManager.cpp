@@ -713,7 +713,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 
 	m_program2d.uniform4f(scalePosOffsetPos2d, rect.getWidth(), rect.getHeight(), rect.getX(), rect.getY());
 	m_program2d.uniform1f(rotationPos2d, rotation);
-	glDrawElements(GL_TRIANGLES, OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLE_STRIP, OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle& circle)
