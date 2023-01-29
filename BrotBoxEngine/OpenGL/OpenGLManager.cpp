@@ -41,10 +41,11 @@ void bbe::INTERNAL::openGl::Program::compile()
 	glUseProgram(program);
 }
 
-GLuint bbe::INTERNAL::openGl::Program::getShader(GLenum shaderType, const char* src)
+GLuint bbe::INTERNAL::openGl::Program::getShader(GLenum shaderType, const bbe::String& src)
 {
 	GLuint shader = glCreateShader(shaderType);
-	glShaderSource(shader, 1, &src, NULL);
+	const char* csrc = src.getRaw();
+	glShaderSource(shader, 1, &csrc, NULL);
 	glCompileShader(shader);
 	GLint success = 0;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
@@ -63,11 +64,16 @@ GLuint bbe::INTERNAL::openGl::Program::getShader(GLenum shaderType, const char* 
 	return shader;
 }
 
-void bbe::INTERNAL::openGl::Program::addShaders(const char* vertexSrc, const char* fragmentSrc)
+void bbe::INTERNAL::openGl::Program::addShaders(const char* vertexSrc, const char* fragmentSrc, const bbe::List<UniformVariable>& uniformVariables)
 {
-	addVertexShader(vertexSrc);
-	addFragmentShader(fragmentSrc);
+	const bbe::String header = getHeader(uniformVariables);
+	addVertexShader(header + vertexSrc);
+	addFragmentShader(header + fragmentSrc);
 	compile();
+	for (const UniformVariable& uv : uniformVariables)
+	{
+		*(uv.cppHandle) = glGetUniformLocation(program, uv.name);
+	}
 }
 
 void bbe::INTERNAL::openGl::Program::destroy()
@@ -82,25 +88,27 @@ void bbe::INTERNAL::openGl::Program::use()
 	glUseProgram(program);
 }
 
-GLuint bbe::INTERNAL::openGl::Program::getUniformLocation(const char* name)
-{
-	const GLint pos = glGetUniformLocation(program, name);
-	if (pos == -1)
-	{
-		// If this happens: Was the variable used? If not, the GLSL compiler could have optimized it away.
-		bbe::INTERNAL::triggerFatalError("Could not find uniform!");
-	}
-	return pos;
-}
-
-void bbe::INTERNAL::openGl::Program::addVertexShader(const char* src)
+void bbe::INTERNAL::openGl::Program::addVertexShader(const bbe::String& src)
 {
 	vertex = getShader(GL_VERTEX_SHADER, src);
 }
 
-void bbe::INTERNAL::openGl::Program::addFragmentShader(const char* src)
+void bbe::INTERNAL::openGl::Program::addFragmentShader(const bbe::String& src)
 {
 	fragment = getShader(GL_FRAGMENT_SHADER, src);
+}
+
+bbe::String bbe::INTERNAL::openGl::Program::getHeader(const bbe::List<UniformVariable>& uniformVariables)
+{
+	bbe::String retVal =
+		"#version 300 es\n"
+		"precision highp float;\n";
+	for (const UniformVariable& uv : uniformVariables)
+	{
+		retVal += uv.toString();
+	}
+	retVal += "\n"; // This is necessary in case the shader code starts with a pre processor directive.
+	return retVal;
 }
 
 void bbe::INTERNAL::openGl::Program::uniform1f(GLint pos, GLfloat a)
@@ -241,14 +249,9 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShade
 {
 	Program program;
 	char const* vertexShaderSrc =
-		"#version 300 es\n"
-		"precision highp float;\n"
-		"in vec2 position;\n"
-		"uniform vec2 screenSize;"
-		"uniform vec4 scalePosOffset;"
-		"uniform float rotation;"
-		"void main()\n"
-		"{\n"
+		"in vec2 position;"
+		"void main()"
+		"{"
 		"   float s = sin(rotation);"
 		"   float c = cos(rotation);"
 		"   vec2 scaledPos = position * scalePosOffset.xy;"
@@ -256,24 +259,22 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShade
 		"   vec2 rotatedPos = vec2(c * firstTranslatedPos.x - s * firstTranslatedPos.y, s * firstTranslatedPos.x + c * firstTranslatedPos.y);"
 		"   vec2 secondTranslatedPos = rotatedPos + scalePosOffset.xy * 0.5;"
 		"	vec2 pos = (((secondTranslatedPos + scalePosOffset.zw) / screenSize * vec2(2, -2)) + vec2(-1, +1));\n"
-		"	gl_Position = vec4(pos, 0.0, 1.0);\n"
+		"	gl_Position = vec4(pos, 0.0, 1.0);"
 		"}";
 	
 	char const* fragmentShaderSource =
-		"#version 300 es\n"
-		"precision highp float;\n"
-		"out vec4 outColor;\n"
-		"uniform vec4 inColor;\n"
-		"void main()\n"
-		"{\n"
-		"	outColor = inColor;\n"
+		"out vec4 outColor;"
+		"void main()"
+		"{"
+		"	outColor = inColor;"
 		"}";
-	program.addShaders(vertexShaderSrc, fragmentShaderSource);
-
-	screenSizePos2d = program.getUniformLocation("screenSize");
-	scalePosOffsetPos2d = program.getUniformLocation("scalePosOffset");
-	rotationPos2d = program.getUniformLocation("rotation");
-	inColorPos2d = program.getUniformLocation("inColor");
+	program.addShaders(vertexShaderSrc, fragmentShaderSource,
+		{
+			{ UT::UT_vec2 , "screenSize"	, &screenSizePos2d},
+			{ UT::UT_vec4 , "scalePosOffset", &scalePosOffsetPos2d},
+			{ UT::UT_float, "rotation"		, &rotationPos2d},
+			{ UT::UT_vec4 , "inColor"		, &inColorPos2d},
+		});
 
 	program.uniform2f(screenSizePos2d, (float)m_windowWidth, (float)m_windowHeight);
 	program.uniform4f(scalePosOffsetPos2d, 1.f, 1.f, 0.f, 0.f);
@@ -285,17 +286,14 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShade
 static GLint screenSizePos2dTex = 0;
 static GLint scalePos2dTex = 0;
 static GLint inColorPos2dTex = 0;
+static GLint texPos2dTex = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexShaders()
 {
 	Program program;
 	char const* vertexShaderSrc =
-		"#version 300 es\n"
-		"precision highp float;\n"
 		"in vec2 position;\n"
 		"in vec2 uv;"
 		"out vec2 uvPassOn;"
-		"uniform vec2 screenSize;"
-		"uniform vec2 scale;"
 		"void main()\n"
 		"{\n"
 		"   uvPassOn = uv;"
@@ -304,21 +302,19 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexSh
 		"}";
 
 	char const* fragmentShaderSource =
-		"#version 300 es\n"
-		"precision highp float;\n"
 		"in vec2 uvPassOn;"
-		"out vec4 outColor;\n"
-		"uniform vec4 inColor;\n"
-		"uniform sampler2D tex;"
-		"void main()\n"
-		"{\n"
+		"out vec4 outColor;"
+		"void main()"
+		"{"
 		"	outColor = inColor * texture(tex, uvPassOn);\n"
 		"}";
-	program.addShaders(vertexShaderSrc, fragmentShaderSource);
-
-	screenSizePos2dTex = program.getUniformLocation("screenSize");
-	scalePos2dTex = program.getUniformLocation("scale");
-	inColorPos2dTex = program.getUniformLocation("inColor");
+	program.addShaders(vertexShaderSrc, fragmentShaderSource,
+		{
+			{UT::UT_vec2     , "screenSize", &screenSizePos2dTex},
+			{UT::UT_vec2     , "scale"     , &scalePos2dTex     },
+			{UT::UT_vec4     , "inColor"   , &inColorPos2dTex   },
+			{UT::UT_sampler2D, "tex"       , &texPos2dTex       }
+		});
 
 	program.uniform2f(screenSizePos2dTex, (float)m_windowWidth, (float)m_windowHeight);
 	program.uniform2f(scalePos2dTex, 1.f, 1.f);
@@ -341,21 +337,16 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexSh
 static GLint inColorPos3dMrt = 0;
 static GLint viewPos3dMrt = 0;
 static GLint projectionPos3dMrt = 0;
+static GLint modelPos3dMrt = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersMrt()
 {
 	Program program;
 	char const* vertexShaderSrc =
-		"#version 300 es\n"
-		"precision highp float;"
 		"in vec3 inPos;"
 		"in vec3 inNormal;"
 		"out vec4 passPos;"
 		"out vec4 passNormal;"
 		"out vec4 passAlbedo;"
-		"uniform vec4 inColor;"
-		"uniform mat4 view;"
-		"uniform mat4 projection;"
-		"uniform mat4 model;"
 		"void main()"
 		"{"
 		"   vec4 worldPos = model * vec4(inPos, 1.0);"
@@ -366,8 +357,6 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"}";
 
 	char const* fragmentShaderSource =
-		"#version 300 es\n"
-		"precision highp float;\n"
 		"in vec4 passPos;"
 		"in vec4 passNormal;"
 		"in vec4 passAlbedo;"
@@ -381,11 +370,13 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   outAlbedo = passAlbedo;"
 		"}";
 
-	program.addShaders(vertexShaderSrc, fragmentShaderSource);
-
-	inColorPos3dMrt = program.getUniformLocation("inColor");
-	viewPos3dMrt = program.getUniformLocation("view");
-	projectionPos3dMrt = program.getUniformLocation("projection");
+	program.addShaders(vertexShaderSrc, fragmentShaderSource,
+		{
+			{UT::UT_vec4, "inColor"	  , &inColorPos3dMrt   },
+			{UT::UT_mat4, "view"      , &viewPos3dMrt	   },
+			{UT::UT_mat4, "projection", &projectionPos3dMrt},
+			{UT::UT_mat4, "model"	  , &modelPos3dMrt	   },
+		});
 
 	return program;
 }
@@ -404,8 +395,6 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 {
 	Program program;
 	char const* vertexShaderSrc =
-		"#version 300 es\n"
-		"precision highp float;"
 		"out vec2 uvCoord;"
 		"void main()"
 		"{"
@@ -432,8 +421,6 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"}";
 
 	char const* fragmentShaderSource =
-		"#version 300 es\n"
-		"precision highp float;\n"
 		"#define FALLOFF_NONE    0\n"
 		"#define FALLOFF_LINEAR  1\n"
 		"#define FALLOFF_SQUARED 2\n"
@@ -441,16 +428,6 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"#define FALLOFF_SQRT    4\n"
 		"in vec2 uvCoord;"
 		"out vec4 outColor;"
-		"uniform sampler2D gPosition;"
-		"uniform sampler2D gNormal;"
-		"uniform sampler2D gAlbedoSpec;"
-		"uniform float lightStrength;"
-		"uniform int falloffMode;"
-		"uniform vec4 lightColor;"
-		"uniform vec4 specularColor;"
-		"uniform vec3 lightPos;"
-		"uniform vec3 cameraPos;"
-		"uniform float ambientFactor;"
 		"void main()"
 		"{"
 		"   vec3 normal = texture(gNormal, uvCoord).xyz;"
@@ -490,18 +467,19 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   vec3 specular = pow(max(dot(R, V), 0.0), 4.0) * specularColor.xyz * lightPower;"
 		"   outColor = vec4(ambient + diffuse + specular, 1.0);"
 		"}";
-	program.addShaders(vertexShaderSrc, fragmentShaderSource);
-
-	gPositionPos3dLight     = program.getUniformLocation("gPosition");
-	gNormalPos3dLight       = program.getUniformLocation("gNormal");
-	gAlbedoSpecPos3dLight   = program.getUniformLocation("gAlbedoSpec");
-	cameraPosPos3dLight     = program.getUniformLocation("cameraPos");
-	lightPosPos3dLight      = program.getUniformLocation("lightPos");
-	lightStrengthPos3dLight = program.getUniformLocation("lightStrength");
-	falloffModePos3dLight   = program.getUniformLocation("falloffMode");
-	lightColorPos3dLight    = program.getUniformLocation("lightColor");
-	specularColorPos3dLight = program.getUniformLocation("specularColor");
-	ambientFactorPos3dLight = program.getUniformLocation("ambientFactor");
+	program.addShaders(vertexShaderSrc, fragmentShaderSource,
+		{
+			{UT::UT_sampler2D, "gPosition"	  , &gPositionPos3dLight     },
+			{UT::UT_sampler2D, "gNormal"	  , &gNormalPos3dLight       },
+			{UT::UT_sampler2D, "gAlbedoSpec"  , &gAlbedoSpecPos3dLight   },
+			{UT::UT_float    , "lightStrength", &lightStrengthPos3dLight },
+			{UT::UT_int      , "falloffMode"  , &falloffModePos3dLight   },
+			{UT::UT_vec4     , "lightColor"	  , &lightColorPos3dLight    },
+			{UT::UT_vec4     , "specularColor", &specularColorPos3dLight },
+			{UT::UT_vec3     , "lightPos"	  , &lightPosPos3dLight      },
+			{UT::UT_vec3     , "cameraPos"	  , &cameraPosPos3dLight     },
+			{UT::UT_float    , "ambientFactor", &ambientFactorPos3dLight },
+		});
 
 	program.uniform1i(gPositionPos3dLight, 0);
 	program.uniform1i(gNormalPos3dLight, 1);
@@ -535,8 +513,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillMesh(const float* modelMatrix, GL
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
-	GLint modelPos = glGetUniformLocation(m_program3dMrt.program, "model");
-	glUniformMatrix4fv(modelPos, 1, GL_FALSE, modelMatrix);
+	glUniformMatrix4fv(modelPos3dMrt, 1, GL_FALSE, modelMatrix);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	GLint positionAttribute = glGetAttribLocation(m_program3dMrt.program, "inPos");
@@ -755,6 +732,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle& circle)
 		glBindBuffer(GL_ARRAY_BUFFER, OpenGLCircle::getVbo());
 		glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		m_program2d.uniform1f(rotationPos2d, 0);
 	}
 
 	m_program2d.uniform4f(scalePosOffsetPos2d, circle.getWidth(), circle.getHeight(), circle.getX(), circle.getY());
@@ -785,8 +763,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices, GL_STATIC_DRAW);
 
-	GLint scalePos = glGetUniformLocation(m_program2dTex.program, "scale");
-	glUniform2f(scalePos, 1.0f, 1.0f);
+	glUniform2f(scalePos2dTex, 1.0f, 1.0f);
 
 	GLint positionAttribute = glGetAttribLocation(m_program2dTex.program, "position");
 	glEnableVertexAttribArray(positionAttribute);
@@ -801,8 +778,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	GLint texPosition = glGetUniformLocation(m_program2dTex.program, "tex");
-	glUniform1i(texPosition, 0);
+	glUniform1i(texPos2dTex, 0);
 	glActiveTexture(GL_TEXTURE0);
 
 	bbe::INTERNAL::openGl::OpenGLImage* ogi = nullptr;
@@ -949,4 +925,40 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiEndFrame()
 bool bbe::INTERNAL::openGl::OpenGLManager::isReadyToDraw() const
 {
 	return true;
+}
+
+bbe::String bbe::INTERNAL::openGl::UniformVariable::toString() const
+{
+	bbe::String retVal = "uniform ";
+	switch (type)
+	{
+	case(UT::UT_int):
+		retVal += "int ";
+		break;
+	case(UT::UT_float):
+		retVal += "float ";
+		break;
+	case(UT::UT_vec2):
+		retVal += "vec2 ";
+		break;
+	case(UT::UT_vec3):
+		retVal += "vec3 ";
+		break;
+	case(UT::UT_vec4):
+		retVal += "vec4 ";
+		break;
+	case(UT::UT_mat4):
+		retVal += "mat4 ";
+		break;
+	case(UT::UT_sampler2D):
+		retVal += "sampler2D ";
+		break;
+	default:
+		throw bbe::IllegalStateException();
+	}
+
+	retVal += name;
+	retVal += ";";
+
+	return retVal;
 }

@@ -1,1 +1,1 @@
-add_trivial_project(ExampleFarCub)
+add_trivial_project(ExampleFarCube)

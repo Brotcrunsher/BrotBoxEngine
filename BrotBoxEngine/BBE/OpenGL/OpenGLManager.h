@@ -21,24 +21,44 @@ namespace bbe
 			static_assert(alignof(PosNormalPair) == alignof(float));
 			static_assert(sizeof(PosNormalPair) == (2 * 3 * sizeof(float)));
 
+			enum class UT // UniformType
+			{
+				UT_none, // Error Type
+				UT_int,
+				UT_float,
+				UT_vec2,
+				UT_vec3,
+				UT_vec4,
+				UT_mat4,
+				UT_sampler2D,
+			};
+
+			struct UniformVariable
+			{
+				UT type = UT::UT_none;
+				const char* name = nullptr;
+				GLint* cppHandle = nullptr;
+
+				bbe::String toString() const;
+			};
+
 			struct Program
 			{
 			private:
 				void compile();
-				GLuint getShader(GLenum shaderType, const char* src);
-				void addVertexShader(const char* src);
-				void addFragmentShader(const char* src);
+				GLuint getShader(GLenum shaderType, const bbe::String& src);
+				void addVertexShader(const bbe::String& src);
+				void addFragmentShader(const bbe::String& src);
+				bbe::String getHeader(const bbe::List<UniformVariable>& uniformVariables);
 			public:
 				GLuint vertex = 0;
 				GLuint fragment = 0;
 				GLuint program = 0;
 
-				void addShaders(const char* vertexSrc, const char* fragmentSrc);
+				void addShaders(const char* vertexSrc, const char* fragmentSrc, const bbe::List<UniformVariable> &uniformVariables);
 				void destroy();
 
 				void use();
-
-				GLuint getUniformLocation(const char* name);
 
 				void uniform1f(GLint pos, GLfloat a);
 				void uniform2f(GLint pos, GLfloat a, GLfloat b);
