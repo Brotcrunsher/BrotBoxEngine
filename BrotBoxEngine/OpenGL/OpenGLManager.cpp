@@ -14,6 +14,7 @@
 #include <iostream>
 
 // TODO: "ExampleRotatingCubeIntersections" has visual artifacts
+//       The effect gets worse with objects further away from (0/0/0). Floating Point Issue?
 // TODO: "ExampleSandGame" performs much worse than on Vulkan - Why?
 // TODO: Is every OpenGL Resource properly freed? How can we find that out?
 
