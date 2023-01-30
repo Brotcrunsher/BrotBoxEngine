@@ -8,11 +8,12 @@
 // NOTE: As the position offset is growing exponentially, it quickly gets impossible for the vertex shader to keep up. That is an
 //       acceptable limitation of the BBE. However, color flickering must not happen.
 // Current eye-measurements:
-// Renderer Breaks after...
-//   Vulkan Vertex: 19.000 Meter
+// Renderer Breaks* after...
+//   Vulkan Vertex: 3.000 Meter
 //   Vulkan Fragment: Never?
-//   OpenGL Vertex: 100.000 Meter? Hard to tell due to all the flickering. Probably earlier.
-//   OpenGL Fragment: 22 Meter (<- BAAAAD!)
+//   OpenGL Vertex: 3.000 Meter
+//   OpenGL Fragment: Never?
+// *Breaks as in "any pixel changed".
 class MyGame : public bbe::Game
 {
 	float timePassed = 0;

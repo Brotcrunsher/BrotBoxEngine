@@ -13,8 +13,6 @@
 #include "BBE/OpenGL/OpenGLSphere.h"
 #include <iostream>
 
-// TODO: "ExampleRotatingCubeIntersections" has visual artifacts
-//       The effect gets worse with objects further away from (0/0/0). Floating Point Issue?
 // TODO: "ExampleSandGame" performs much worse than on Vulkan - Why?
 // TODO: Is every OpenGL Resource properly freed? How can we find that out?
 
@@ -351,8 +349,8 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"{"
 		"   vec4 worldPos = model * vec4(inPos, 1.0);"
 		"   gl_Position = projection * view * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
-		"   passPos = worldPos;"
-		"   passNormal = model * vec4(inNormal, 0.0);"
+		"   passPos = view * worldPos;"
+		"   passNormal = view * model * vec4(inNormal, 0.0);"
 		"   passAlbedo = vec4(inColor.xyz, 1.0);"
 		"}";
 
@@ -384,7 +382,6 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 static GLint gPositionPos3dLight = 0;
 static GLint gNormalPos3dLight = 0;
 static GLint gAlbedoSpecPos3dLight = 0;
-static GLint cameraPosPos3dLight = 0;
 static GLint lightPosPos3dLight = 0;
 static GLint lightStrengthPos3dLight = 0;
 static GLint falloffModePos3dLight = 0;
@@ -435,7 +432,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   vec3 pos = texture(gPosition, uvCoord).xyz;"
 		"   vec3 albedo = texture(gAlbedoSpec, uvCoord).xyz;"
 		"   vec3 toLight = lightPos - pos;"
-		"   vec3 toCamera = cameraPos - pos;"
+		"   vec3 toCamera = -pos;"
 		"   float distToLight = length(toLight);"
 		"   float lightPower = lightStrength;"
 		"   if(distToLight > 0.f)"
@@ -477,7 +474,6 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 			{UT::UT_vec4     , "lightColor"	  , &lightColorPos3dLight    },
 			{UT::UT_vec4     , "specularColor", &specularColorPos3dLight },
 			{UT::UT_vec3     , "lightPos"	  , &lightPosPos3dLight      },
-			{UT::UT_vec3     , "cameraPos"	  , &cameraPosPos3dLight     },
 			{UT::UT_float    , "ambientFactor", &ambientFactorPos3dLight },
 		});
 
@@ -485,7 +481,6 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 	program.uniform1i(gNormalPos3dLight, 1);
 	program.uniform1i(gAlbedoSpecPos3dLight, 2);
 
-	program.uniform3f(cameraPosPos3dLight, 0.f, 0.f, 0.f);
 	program.uniform3f(lightPosPos3dLight, 0.f, 0.f, 0.f);
 	program.uniform1f(lightStrengthPos3dLight, 0.f);
 	program.uniform1i(falloffModePos3dLight, 0);
@@ -601,7 +596,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	for (size_t i = 0; i < pointLights.getLength(); i++)
 	{
 		const bbe::PointLight& l = pointLights[i];
-		m_program3dLight.uniform3f(lightPosPos3dLight, l.pos);
+		bbe::Vector4 p(l.pos, 1.0f);
+		p = m_view * p;
+		m_program3dLight.uniform3f(lightPosPos3dLight, p.xyz());
 		m_program3dLight.uniform1f(lightStrengthPos3dLight, l.lightStrength);
 		m_program3dLight.uniform1i(falloffModePos3dLight, (int)l.falloffMode);
 		m_program3dLight.uniform4f(lightColorPos3dLight, l.lightColor);
@@ -840,7 +837,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos,
 {
 	m_program3dMrt.uniformMatrix4fv(viewPos3dMrt, GL_FALSE, view);
 	m_program3dMrt.uniformMatrix4fv(projectionPos3dMrt, GL_FALSE, projection);
-	m_program3dLight.uniform3f(cameraPosPos3dLight, cameraPos);
+	m_view = view;
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)

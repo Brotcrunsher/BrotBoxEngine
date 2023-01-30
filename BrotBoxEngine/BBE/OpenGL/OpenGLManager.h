@@ -134,6 +134,7 @@ namespace bbe
 				PreviousDrawCall2D previousDrawCall2d = PreviousDrawCall2D::NONE;
 
 				bbe::List<bbe::PointLight> pointLights;
+				bbe::Matrix4 m_view;
 
 			public:
 				OpenGLManager();
