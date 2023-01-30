@@ -3,6 +3,9 @@
 #ifdef BBE_RENDERER_OPENGL
 #include <GL/glew.h>
 #endif
+#ifdef BBE_RENDERER_NULL
+#define GLFW_INCLUDE_NONE
+#endif
 #include "GLFW/glfw3.h"
 
 
