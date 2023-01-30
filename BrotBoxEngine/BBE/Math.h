@@ -102,19 +102,19 @@ namespace bbe
 			return val < 0 ? -val : val;
 		}
 		template <typename T>
-		T (max)(T val1, T val2)
+		T max(T val1, T val2)
 		{
 			return val1 > val2 ? val1 : val2;
 		}
-		float (max)(float val1, float val2, float val3);
-		float (max)(float val1, float val2, float val3, float val4);
+		float max(float val1, float val2, float val3);
+		float max(float val1, float val2, float val3, float val4);
 		template <typename T>
-		T (min)(T val1, T val2)
+		T min(T val1, T val2)
 		{
 			return val1 < val2 ? val1 : val2;
 		}
-		float (min)(float val1, float val2, float val3);
-		float (min)(float val1, float val2, float val3, float val4);
+		float min(float val1, float val2, float val3);
+		float min(float val1, float val2, float val3, float val4);
 		template <typename T>
 		T maxAbs(T val1, T val2)
 		{
