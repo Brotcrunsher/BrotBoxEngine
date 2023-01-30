@@ -1,5 +1,6 @@
 #include "BBE/NullRenderer/NullRendererManager.h"
 #include "imgui.h"
+#define GLFW_INCLUDE_NONE
 #include "imgui_impl_glfw.h"
 
 bbe::INTERNAL::nullRenderer::NullRendererManager::NullRendererManager()
