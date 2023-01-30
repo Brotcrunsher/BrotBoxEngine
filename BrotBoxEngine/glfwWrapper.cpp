@@ -150,3 +150,19 @@ void bbe::glfwWrapper::glfwGetWindowPos(GLFWwindow* handle, int* xpos, int* ypos
 	::glfwGetWindowPos(handle, xpos, ypos);
 #endif
 }
+
+const char* bbe::glfwWrapper::glfwGetClipboardString(GLFWwindow* handle)
+{
+#ifndef BBE_RENDERER_NULL
+	return ::glfwGetClipboardString(handle);
+#else
+	return "";
+#endif
+}
+
+void bbe::glfwWrapper::glfwSetClipboardString(GLFWwindow* handle, const char* string)
+{
+#ifndef BBE_RENDERER_NULL
+	::glfwSetClipboardString(handle, string);
+#endif
+}

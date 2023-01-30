@@ -351,11 +351,11 @@ void bbe::Game::setFixedFrametime(float time)
 
 bbe::String bbe::Game::getClipboard() const
 {
-	return bbe::String(glfwGetClipboardString(m_pwindow->m_pwindow));
+	return bbe::String(glfwWrapper::glfwGetClipboardString(m_pwindow->m_pwindow));
 }
 
 void bbe::Game::setClipboard(const bbe::String& string)
 {
-	glfwSetClipboardString(m_pwindow->m_pwindow, string.getRaw());
+	glfwWrapper::glfwSetClipboardString(m_pwindow->m_pwindow, string.getRaw());
 }
 

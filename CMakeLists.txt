@@ -107,9 +107,11 @@ target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/img
 
 if(EMSCRIPTEN)
 else()
-  add_subdirectory(Third-Party/glfw-3.3.2)
   include_directories(Third-Party/glfw-3.3.2/include)
-  target_link_libraries(BrotBoxEngine glfw ${GLFW_LIBRARIES})
+  if(NOT BBE_RENDER_MODE STREQUAL "NullRenderer")
+    add_subdirectory(Third-Party/glfw-3.3.2)
+    target_link_libraries(BrotBoxEngine glfw ${GLFW_LIBRARIES})
+  endif()
 endif()
 
 target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-master/imgui.cpp)
