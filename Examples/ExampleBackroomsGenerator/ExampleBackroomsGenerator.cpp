@@ -233,5 +233,7 @@ int main()
 {
 	br::BackroomsGenerator *mg = new br::BackroomsGenerator();
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "Backrooms Generator");
+#ifndef __EMSCRIPTEN__
 	delete mg;
+#endif
 }

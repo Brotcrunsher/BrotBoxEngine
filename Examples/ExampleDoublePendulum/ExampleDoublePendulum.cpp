@@ -236,5 +236,7 @@ int main()
 	//mg->setScreenshotRecordingMode();
 	//mg->setMaxFrame(10 * 60 * 60);
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "Double Pendulum!");
+#ifndef __EMSCRIPTEN__
 	delete mg;
+#endif
 }

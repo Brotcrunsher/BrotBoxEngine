@@ -166,9 +166,7 @@ class MyGame : public bbe::Game
 #include <iostream>
 int main()
 {
-	std::cout << "hai main" << std::endl;
 	MyGame game;
 	game.start(1280, 720, "Particle Gravity");
-    return 0;
 }
 

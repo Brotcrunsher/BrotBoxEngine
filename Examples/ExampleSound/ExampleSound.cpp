@@ -42,5 +42,7 @@ int main()
 {
 	MyGame* mg = new MyGame();
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "ExampleSound!");
+#ifndef __EMSCRIPTEN__
 	delete mg;
+#endif
 }

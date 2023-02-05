@@ -69,6 +69,7 @@ int main()
 {
 	MyGame* mg = new MyGame();
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "Rotating Cubes!");
-
-    return 0;
+#ifndef __EMSCRIPTEN__
+	delete mg;
+#endif
 }

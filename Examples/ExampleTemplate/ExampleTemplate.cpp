@@ -24,7 +24,8 @@ int main()
 {
 	MyGame *mg = new MyGame();
 	mg->start(1280, 720, "Template!");
-
-    return 0;
+#ifndef __EMSCRIPTEN__
+	delete mg;
+#endif
 }
 

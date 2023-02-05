@@ -75,7 +75,8 @@ int main()
 {
 	MyGame *mg = new MyGame();
 	mg->start(1280, 720, "Countdown!");
-
-    return 0;
+#ifndef __EMSCRIPTEN__
+	delete mg;
+#endif
 }
 

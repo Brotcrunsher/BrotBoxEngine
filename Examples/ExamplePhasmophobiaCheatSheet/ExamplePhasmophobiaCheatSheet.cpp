@@ -152,5 +152,7 @@ int main()
 {
 	MyGame *mg = new MyGame();
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "Phasmophobia Cheat Sheet");
+#ifndef __EMSCRIPTEN__
 	delete mg;
+#endif
 }

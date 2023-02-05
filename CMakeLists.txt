@@ -40,7 +40,7 @@ macro(add_trivial_project name)
   install_compiled_shaders(${name})
   target_include_directories(${name} PUBLIC .)
   if(EMSCRIPTEN)
-    set_target_properties(${name} PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s FULL_ES3=1")
+    set_target_properties(${name} PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s FULL_ES3=1 -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_DISABLE_EXCEPTION_CATCHING=1")
   endif()
 endmacro()
 

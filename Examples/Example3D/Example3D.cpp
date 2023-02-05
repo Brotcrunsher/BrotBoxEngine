@@ -88,7 +88,8 @@ int main()
 {
 	MyGame *mg = new MyGame();
 	mg->start(1280, 720, "3D Test");
-
-    return 0;
+#ifndef __EMSCRIPTEN__
+	delete mg;
+#endif
 }
 

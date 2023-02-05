@@ -87,7 +87,8 @@ int main()
 {
 	MyGame *mg = new MyGame();
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "2D Physics!");
-
-    return 0;
+#ifndef __EMSCRIPTEN__
+	delete mg;
+#endif
 }
 

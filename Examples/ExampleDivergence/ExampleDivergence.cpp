@@ -63,5 +63,7 @@ int main()
 {
 	MyGame *mg = new MyGame();
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "Divergence!");
+#ifndef __EMSCRIPTEN__
 	delete mg;
+#endif
 }

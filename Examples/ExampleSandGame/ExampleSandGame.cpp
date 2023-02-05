@@ -245,8 +245,9 @@ int main()
 {
 	SandGame *sg = new SandGame();
 	sg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "SandGame!");
-
-    return 0;
+#ifndef __EMSCRIPTEN__
+	delete sg;
+#endif
 }
 
 GridCell::GridCell()

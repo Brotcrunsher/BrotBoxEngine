@@ -191,6 +191,5 @@ int main()
 {
 	MyGame game;
 	game.start(1280, 720, "Example Wave Drawer");
-	return 0;
 }
 

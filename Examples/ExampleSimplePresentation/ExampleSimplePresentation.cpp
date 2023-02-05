@@ -78,6 +78,8 @@ int main(int argc, const char** argv)
 {
 	MyGame* mg = new MyGame(argc >= 2 ? argv[1] : nullptr);
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "Signed Distance Field Renderer");
+#ifndef __EMSCRIPTEN__
 	delete mg;
+#endif
 }
 

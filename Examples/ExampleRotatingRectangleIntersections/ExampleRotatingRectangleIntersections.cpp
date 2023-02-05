@@ -76,6 +76,7 @@ int main()
 {
 	MyGame* mg = new MyGame();
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "Rotating Rectangles!");
-
-    return 0;
+#ifndef __EMSCRIPTEN__
+	delete mg;
+#endif
 }
