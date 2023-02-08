@@ -4,7 +4,6 @@
 #include "BBE/PrimitiveBrush2D.h"
 #include "BBE/PrimitiveBrush3D.h"
 #include "BBE/Math.h"
-#include "BBE/StopWatch.h"
 #include "BBE/Profiler.h"
 #include <iostream>
 
@@ -104,6 +103,12 @@ bool bbe::Game::keepAlive()
 void bbe::Game::frame()
 {
 	StopWatch sw;
+	frameUpdate();
+	frameDraw(&sw);
+}
+
+void bbe::Game::frameUpdate()
+{
 	m_pwindow->INTERNAL_keyboard.update();
 	const bbe::Vector2 globalMousePos = m_pwindow->getGlobalMousePos();
 	m_pwindow->INTERNAL_mouse.update(globalMousePos.x, globalMousePos.y);
@@ -111,7 +116,10 @@ void bbe::Game::frame()
 	if (m_fixedFrameTime != 0.f) timeSinceLastFrame = m_fixedFrameTime;
 	m_physWorld.update(timeSinceLastFrame);
 	update(timeSinceLastFrame);
+}
 
+void bbe::Game::frameDraw(StopWatch* profilerStopWatch)
+{
 	if (!m_pwindow->isReadyToDraw())
 	{
 		return;
@@ -123,7 +131,10 @@ void bbe::Game::frame()
 	m_pwindow->preDraw2D();
 	draw2D(m_pwindow->getBrush2D());
 	m_pwindow->postDraw();
-	bbe::Profiler::INTERNAL::setCPUTime(sw.getTimeExpiredNanoseconds() / 1000.f / 1000.f / 1000.f);
+	if (profilerStopWatch)
+	{
+		bbe::Profiler::INTERNAL::setCPUTime(profilerStopWatch->getTimeExpiredNanoseconds() / 1000.f / 1000.f / 1000.f);
+	}
 	m_pwindow->waitEndDraw();
 }
 
