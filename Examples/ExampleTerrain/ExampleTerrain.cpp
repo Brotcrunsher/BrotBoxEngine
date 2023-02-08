@@ -58,7 +58,7 @@ public:
 	{
 		sunLight.pos = bbe::Vector3(10000, 20000, 40000);
 		sunLight.lightColor = bbe::Color(1, 1, 0.9f);
-		sunLight.lightStrengh = 0.9f;
+		sunLight.lightStrength = 0.9f;
 		sunLight.falloffMode = bbe::LightFalloffMode::LIGHT_FALLOFF_NONE;
 
 		terrain.setBaseTextureMult(bbe::Vector2(128, 128));
