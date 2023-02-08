@@ -121,6 +121,7 @@ target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/img
 target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-master/imgui_draw.cpp)
 target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-master/imgui_demo.cpp)
 target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-master/imgui_widgets.cpp)
+target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-master/imgui_tables.cpp)
 target_include_directories(BrotBoxEngine PUBLIC Third-Party/imgui-master)
 target_include_directories(BrotBoxEngine PUBLIC Third-Party/imgui-master/backends)
 

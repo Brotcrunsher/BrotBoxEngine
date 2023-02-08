@@ -3,20 +3,20 @@
 
 // Implemented features:
 //  [X] Renderer: User texture binding. Use 'D3D12_GPU_DESCRIPTOR_HANDLE' as ImTextureID. Read the FAQ about ImTextureID!
-//  [X] Renderer: Support for large meshes (64k+ vertices) with 16-bit indices.
+//  [X] Renderer: Large meshes support (64k+ vertices) with 16-bit indices.
 
 // Important: to compile on 32-bit systems, this backend requires code to be compiled with '#define ImTextureID ImU64'.
-// This is because we need ImTextureID to carry a 64-bit value and by default ImTextureID is defined as void*.
-// This define is done in the example .vcxproj file and need to be replicated in your app (by e.g. editing imconfig.h)
+// See imgui_impl_dx12.cpp file for details.
 
-// You can copy and use unmodified imgui_impl_* files in your project. See examples/ folder for examples of using this.
+// You can use unmodified imgui_impl_* files in your project. See examples/ folder for examples of using this.
+// Prefer including the entire imgui/ repository into your project (either as a copy or as a submodule), and only build the backends you need.
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
 #pragma once
 #include "imgui.h"      // IMGUI_IMPL_API
+#include <dxgiformat.h> // DXGI_FORMAT
 
-enum DXGI_FORMAT;
 struct ID3D12Device;
 struct ID3D12DescriptorHeap;
 struct ID3D12GraphicsCommandList;
