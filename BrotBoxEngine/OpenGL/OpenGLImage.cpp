@@ -27,11 +27,6 @@ bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image)
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat(image), image.getWidth(), image.getHeight(), 0, format(image), type(image), image.m_pdata);
 
-	if (image.m_format == ImageFormat::R8)
-	{
-		GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
-		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
-	}
 	glGenerateMipmap(GL_TEXTURE_2D);
 }
 

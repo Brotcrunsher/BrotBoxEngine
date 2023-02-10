@@ -73,13 +73,7 @@ namespace bbe
 		void INTERNAL_destroy();
 
 	public:
-#ifdef _WIN32
-		static constexpr const char* DEFAULT_FONT_NAME = "arial.ttf";
-#elif defined(unix) || defined(linux)
-		static constexpr const char* DEFAULT_FONT_NAME = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
-#else
-		static constexpr const char* DEFAULT_FONT_NAME = "";
-#endif
+		static constexpr const char* DEFAULT_FONT_NAME = "OpenSansRegular.ttf";
 		static constexpr unsigned DEFAULT_FONT_SIZE = 20;
 
 		PrimitiveBrush2D();

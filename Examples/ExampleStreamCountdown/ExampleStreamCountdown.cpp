@@ -6,7 +6,6 @@
 class MyGame : public bbe::Game
 {
 	std::chrono::system_clock::time_point targetTime;
-	bbe::Font font;
 	bbe::String milliseconds;
 	bbe::String seconds;
 	bbe::String minutes;
@@ -24,11 +23,8 @@ class MyGame : public bbe::Game
 		targetTimeVerbose.tm_mday = 12;  // day of the month - [1, 31]
 		targetTimeVerbose.tm_mon = 6;   // months since January - [0, 11]
 		targetTimeVerbose.tm_year = 120;  // years since 1900
-
+		
 		targetTime = std::chrono::system_clock::from_time_t(std::mktime(&targetTimeVerbose));
-
-		font.load("arial.ttf", 180);
-		font.setFixedWidth(widthOfChars);
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
@@ -58,13 +54,13 @@ class MyGame : public bbe::Game
 		}
 		float stringOffsetX = 120;
 		float stringOffsetY = 400;
-		brush.fillText(stringOffsetX,                      stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.1) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), hours       .getRaw(), font);
-		brush.fillText(stringOffsetX + widthOfChars * 2.4, stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.2) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), ":", font);
-		brush.fillText(stringOffsetX + widthOfChars * 3,   stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.3) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), minutes     .getRaw(), font);
-		brush.fillText(stringOffsetX + widthOfChars * 5.4, stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.4) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), ":", font);
-		brush.fillText(stringOffsetX + widthOfChars * 6,   stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.5) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), seconds     .getRaw(), font);
-		brush.fillText(stringOffsetX + widthOfChars * 8.4, stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.6) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), ":", font);
-		brush.fillText(stringOffsetX + widthOfChars * 9,   stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.7) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), milliseconds.getRaw(), font);
+		brush.fillText(stringOffsetX,                      stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.1) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), hours       .getRaw(), 180);
+		brush.fillText(stringOffsetX + widthOfChars * 2.4, stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.2) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), ":", 180);
+		brush.fillText(stringOffsetX + widthOfChars * 3,   stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.3) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), minutes     .getRaw(), 180);
+		brush.fillText(stringOffsetX + widthOfChars * 5.4, stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.4) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), ":", 180);
+		brush.fillText(stringOffsetX + widthOfChars * 6,   stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.5) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), seconds     .getRaw(), 180);
+		brush.fillText(stringOffsetX + widthOfChars * 8.4, stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.6) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), ":", 180);
+		brush.fillText(stringOffsetX + widthOfChars * 9,   stringOffsetY + bbe::Math::sin(timeSinceTimeUp + 0.7) * bbe::Math::min(timeSinceTimeUp * 10, 100.0f), milliseconds.getRaw(), 180);
 	}
 	virtual void onEnd() override
 	{

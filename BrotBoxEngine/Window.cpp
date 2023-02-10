@@ -111,6 +111,8 @@ void bbe::Window::preDraw3D()
 void bbe::Window::preDraw()
 {
 	m_renderManager->preDraw();
+	m_renderManager->setColor2D(bbe::Color(1.0f, 1.0f, 1.0f, 1.0f));
+	m_renderManager->setColor3D(bbe::Color(1.0f, 1.0f, 1.0f, 1.0f));
 }
 
 bool bbe::Window::keepAlive()

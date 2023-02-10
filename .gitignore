@@ -255,4 +255,6 @@ ModelManifest.xml
 .fake/
 /BrotBoxEngine/Vulkan/EmbedOutput.cpp
 /BrotBoxEngine/Vulkan/EmbedOutput.h
+/BrotBoxEngine/Assets/Fonts/EmbeddedFonts.cpp
+/BrotBoxEngine/Assets/Fonts/EmbeddedFonts.h
 /ExampleSimplePresentation/out.xml

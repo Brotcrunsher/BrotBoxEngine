@@ -285,6 +285,7 @@ static GLint screenSizePos2dTex = 0;
 static GLint scalePos2dTex = 0;
 static GLint inColorPos2dTex = 0;
 static GLint texPos2dTex = 0;
+static GLint swizzleModePos = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexShaders()
 {
 	Program program;
@@ -300,20 +301,31 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexSh
 		"}";
 
 	char const* fragmentShaderSource =
+		// WebGL does not support swizzles, so we
+		// have to implement them on our own.
+		"#define SWIZZL_MODE_RGBA 0\n"
+		"#define SWIZZL_MODE_RRRR 1\n"
 		"in vec2 uvPassOn;"
 		"out vec4 outColor;"
 		"void main()"
 		"{"
-		"	outColor = inColor * texture(tex, uvPassOn);\n"
+		"   vec4 texColor = texture(tex, uvPassOn);"
+		"   if(swizzleMode == SWIZZL_MODE_RRRR)"
+		"   {"
+		"      texColor = vec4(texColor[0], texColor[0], texColor[0], texColor[0]);"
+		"   }"
+		"	outColor = inColor * texColor;\n"
 		"}";
 	program.addShaders(vertexShaderSrc, fragmentShaderSource,
 		{
-			{UT::UT_vec2     , "screenSize", &screenSizePos2dTex},
-			{UT::UT_vec2     , "scale"     , &scalePos2dTex     },
-			{UT::UT_vec4     , "inColor"   , &inColorPos2dTex   },
-			{UT::UT_sampler2D, "tex"       , &texPos2dTex       }
+			{UT::UT_int      , "swizzleMode", &swizzleModePos    },
+			{UT::UT_vec2     , "screenSize" , &screenSizePos2dTex},
+			{UT::UT_vec2     , "scale"      , &scalePos2dTex     },
+			{UT::UT_vec4     , "inColor"    , &inColorPos2dTex   },
+			{UT::UT_sampler2D, "tex"        , &texPos2dTex       }
 		});
 
+	program.uniform1i(swizzleModePos, 0);
 	program.uniform2f(screenSizePos2dTex, (float)m_windowWidth, (float)m_windowHeight);
 	program.uniform2f(scalePos2dTex, 1.f, 1.f);
 	program.uniform4f(inColorPos2dTex, 1.f, 1.f, 1.f, 1.f);
@@ -748,6 +760,15 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 		v = v.rotate(rotation, rect.getCenter());
 	}
 	uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
+
+	if (image.m_format == ImageFormat::R8)
+	{
+		m_program2dTex.uniform1i(swizzleModePos, 1);
+	}
+	else
+	{
+		m_program2dTex.uniform1i(swizzleModePos, 0);
+	}
 
 	GLuint vbo;
 	glGenBuffers(1, &vbo);
