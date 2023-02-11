@@ -163,7 +163,7 @@ class MyGame : public bbe::Game
 				const size_t increment = pendulums.getLength() / 12;
 				for (size_t i = 0; i < pendulums.getLength(); i += increment)
 				{
-					futures.add(std::async(std::launch::async, &MyGame::tickPendulums, this, i, i + increment, ticks));
+					futures.add(bbe::async(&MyGame::tickPendulums, this, i, i + increment, ticks));
 				}
 				for (size_t i = 0; i < futures.getLength(); i++)
 				{

@@ -1,3 +1,4 @@
+#include "BBE/Async.h"
 #include "BBE/SimpleUrlRequest.h"
 #include "BBE/Exceptions.h"
 #include "BBE/List.h"
@@ -67,6 +68,6 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlRequest(const 
 
 std::future<bbe::simpleUrlRequest::UrlRequestResult> bbe::simpleUrlRequest::urlRequestAsync(const bbe::String& url)
 {
-	return std::async(std::launch::async, &urlRequest, url);
+	return bbe::async(&urlRequest, url);
 }
 #endif

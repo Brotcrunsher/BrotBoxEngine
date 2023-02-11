@@ -18,7 +18,12 @@ public:
 
 	double picData[WINDOW_WIDTH][WINDOW_HEIGHT];
 
-	constexpr static int numThreads = 8;
+	constexpr static int numThreads =
+#ifdef __EMSCRIPTEN__
+		1;
+#else
+		12;
+#endif
 
 	std::condition_variable workerConditional;
 	std::condition_variable managerConditional;

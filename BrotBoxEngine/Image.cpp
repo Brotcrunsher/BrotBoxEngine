@@ -99,7 +99,7 @@ void bbe::Image::load(const char * path)
 
 	if (pixels == nullptr)
 	{
-		throw LoadException();
+		throw LoadException(path);
 	}
 
 	m_pdata = new byte[getSizeInBytes()]; //TODO use allocator

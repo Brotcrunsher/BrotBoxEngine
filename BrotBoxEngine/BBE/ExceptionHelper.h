@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 
 namespace bbe
 {
@@ -11,10 +12,15 @@ namespace bbe
 	public:											\
 		explicit n(const char* msg)	                \
 			: m_msg(msg)							\
-		{}											\
+		{                                           \
+			std::cout << #n << std::endl;           \
+			std::cout << msg << std::endl;          \
+		}											\
 													\
 		n()					                        \
-		{}											\
+		{                                           \
+			std::cout << #n << std::endl;           \
+		}											\
 													\
 		const char* getMessage() const				\
 		{											\

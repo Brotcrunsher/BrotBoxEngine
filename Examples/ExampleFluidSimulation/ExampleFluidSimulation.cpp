@@ -157,7 +157,7 @@ public:
 			{
 				size_t start = 1 + (getWidth() * i / amountOfThreads);
 				size_t end  = 1 + (getWidth() * (i + 1) / amountOfThreads);
-				futures.add(std::async(std::launch::async, &FluidSquare::linearSolveThread, start, end, getWidth(), getHeight(), &x, &x0, a, cReciprocal));
+				futures.add(bbe::async(&FluidSquare::linearSolveThread, start, end, getWidth(), getHeight(), &x, &x0, a, cReciprocal));
 			}
 			for (size_t i = 0; i < amountOfThreads; i++)
 			{
@@ -255,9 +255,9 @@ public:
 
 		clearDivergence(Vx, Vy, Vx0, Vy0);
 
-		auto futureR = std::async(std::launch::async, &FluidSquare::densityStep, this, &densityR, dt);
-		auto futureG = std::async(std::launch::async, &FluidSquare::densityStep, this, &densityG, dt);
-		auto futureB = std::async(std::launch::async, &FluidSquare::densityStep, this, &densityB, dt);
+		auto futureR = bbe::async(&FluidSquare::densityStep, this, &densityR, dt);
+		auto futureG = bbe::async(&FluidSquare::densityStep, this, &densityG, dt);
+		auto futureB = bbe::async(&FluidSquare::densityStep, this, &densityB, dt);
 
 		futureR.wait();
 		futureG.wait();

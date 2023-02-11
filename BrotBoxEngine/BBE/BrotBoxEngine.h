@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../BBE/Array.h"
+#include "../BBE/Async.h"
 #include "../BBE/DynamicArray.h"
 #include "../BBE/Hash.h"
 #include "../BBE/HashMap.h"

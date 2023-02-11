@@ -178,7 +178,7 @@ class MyGame : public bbe::Game
 		const size_t increment = amountOfParticles / 12;
 		for (size_t i = 0; i < particles.getLength(); i += increment)
 		{
-			futures.add(std::async(std::launch::async, &MyGame::updateParticleSpeed, this, i, i + increment));
+			futures.add(bbe::async(&MyGame::updateParticleSpeed, this, i, i + increment));
 		}
 		for (size_t i = 0; i < futures.getLength(); i++)
 		{
