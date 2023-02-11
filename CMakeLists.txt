@@ -31,19 +31,6 @@ macro(install_compiled_shaders currProject)
   endforeach(shader_path)
 endmacro()
 
-macro(add_trivial_project name)
-  add_compile_definitions(BBE_APPLICATION_ASSET_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
-  add_executable(${name})
-  target_link_libraries(${name} BrotBoxEngine)
-  file(GLOB local_src CONFIGURE_DEPENDS "*.cpp")
-  target_sources(${name} PUBLIC "${local_src}")
-  install_compiled_shaders(${name})
-  target_include_directories(${name} PUBLIC .)
-  if(EMSCRIPTEN)
-    set_target_properties(${name} PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s FULL_ES3=1 -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_DISABLE_EXCEPTION_CATCHING=1")
-  endif()
-endmacro()
-
 macro(start_embed_file cpp_file_string h_file_string h_file_name)
   set(${cpp_file_string} "#include \"BBE/List.h\"\n#include \"${h_file_name}\"\n\n")
   set(${h_file_string} "#include \"BBE/List.h\"\n\n")
@@ -57,10 +44,14 @@ macro(start_embed_file cpp_file_string h_file_string h_file_name)
   string(APPEND ${h_file_string} ${warningMsg})
 endmacro()
 
-macro(embed_file_to_source filename cpp_file_string h_file_string)
-  message(STATUS "Embedding File: ${filename}")
+macro(contents_as_hex filename)
   file(READ ${filename} contents HEX)
   string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1," contents ${contents})
+endmacro()
+
+macro(embed_file_to_source filename cpp_file_string h_file_string)
+  message(STATUS "Embedding File: ${filename}")
+  contents_as_hex(${filename})
   get_filename_component(fn_wo_ext ${filename} NAME_WE)
   string(APPEND ${h_file_string} "extern const bbe::List<unsigned char> ${fn_wo_ext}\;\n")
   string(APPEND ${cpp_file_string} "const bbe::List<unsigned char> ${fn_wo_ext} = { ${contents} }\;\n")
@@ -69,6 +60,58 @@ endmacro()
 macro(end_embed_file cpp_file_string h_file_string cpp_file_name h_file_name)
   file(WRITE ${h_file_name} ${${h_file_string}})
   file(WRITE ${cpp_file_name} ${${cpp_file_string}})
+endmacro()
+
+macro(add_trivial_project name)
+  add_compile_definitions(BBE_APPLICATION_ASSET_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(${name})
+  target_link_libraries(${name} BrotBoxEngine)
+  file(GLOB local_src CONFIGURE_DEPENDS "*.cpp")
+  target_sources(${name} PUBLIC "${local_src}")
+  install_compiled_shaders(${name})
+  target_include_directories(${name} PUBLIC .)
+  if(EMSCRIPTEN)
+    set_target_properties(${name} PROPERTIES LINK_FLAGS "-s USE_GLFW=3 -s FULL_ES3=1 -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_DISABLE_EXCEPTION_CATCHING=1")
+  endif()
+  if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Assets")
+    file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/Assets/*")
+    start_embed_file(cpp_file_string h_file_string AssetStore.h)
+    string(APPEND h_file_string "#include \"BBE/Image.h\"\n")
+    string(APPEND h_file_string "#include \"BBE/String.h\"\n")
+    string(APPEND h_file_string "namespace assetStore {\n")
+    foreach(f ${files})
+      get_filename_component(ext ${f} EXT)
+      get_filename_component(name_we ${f} NAME_WE)
+      contents_as_hex(${f})
+      if(ext STREQUAL ".jpg")
+        string(APPEND h_file_string "extern const bbe::Image* ${name_we}()\;\n")
+        string(APPEND cpp_file_string 
+          "const bbe::Image* assetStore::${name_we}() 
+          {
+            static bbe::List<unsigned char> raw = { ${contents} }\;
+            static bbe::Image* image = nullptr\;
+            if(image) return image\;
+            image = new bbe::Image()\;
+            image->loadRaw(raw)\;
+            return image\;
+          }\n")
+      elseif(ext STREQUAL ".txt")
+        string(APPEND h_file_string "extern const bbe::String* ${name_we}()\;\n")
+        string(APPEND cpp_file_string 
+          "const bbe::String* assetStore::${name_we}() 
+          {
+            static bbe::String s = { ${contents} 0x00 }\;
+            return &s\;
+          }\n")
+      elseif(ext STREQUAL "")
+        # Do nothing. Useful for licenses etc.
+      else()
+        message(WARNING "Found unknown asset extension, ignoring. ${f}") 
+      endif()
+    endforeach()
+    string(APPEND h_file_string "}\n")
+    end_embed_file(cpp_file_string h_file_string AssetStore.cpp AssetStore.h)
+  endif()
 endmacro()
 
 add_library(BrotBoxEngine STATIC)

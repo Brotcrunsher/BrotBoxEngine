@@ -119,6 +119,22 @@ bbe::Utf8String::Utf8String(unsigned int number)
 	initializeFromCharArr(std::to_string(number).c_str());
 }
 
+bbe::Utf8String::Utf8String(const std::initializer_list<char>& il)
+{
+	if (il.size() == 0)
+	{
+		initializeFromCharArr(u8"");
+	}
+	else
+	{
+		if (*(il.end() - 1) != '\0')
+		{
+			throw IllegalArgumentException("End of il wasn't nul.");
+		}
+		initializeFromCharArr(il.begin());
+	}
+}
+
 bbe::Utf8String::Utf8String(const Utf8String& other)//Copy Constructor
 { 
 	//UNTESTED

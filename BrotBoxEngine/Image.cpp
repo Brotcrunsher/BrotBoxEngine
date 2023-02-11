@@ -5,6 +5,21 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+void bbe::Image::finishLoad(stbi_uc* pixels)
+{
+	m_format = ImageFormat::R8G8B8A8; // Is correct, even if texChannels == 3, because stbi is transforming the data for us on the fly.
+
+	if (pixels == nullptr)
+	{
+		throw LoadException();
+	}
+
+	m_pdata = new byte[getSizeInBytes()]; //TODO use allocator
+	memcpy(m_pdata, pixels, getSizeInBytes());
+
+	stbi_image_free(pixels);
+}
+
 bbe::Image::Image()
 {
 }
@@ -86,6 +101,23 @@ bbe::Image::~Image()
 	destroy();
 }
 
+void bbe::Image::loadRaw(const bbe::List<unsigned char>& rawData)
+{
+	loadRaw(rawData.getRaw(), rawData.getLength());
+}
+
+void bbe::Image::loadRaw(const unsigned char* rawData, size_t dataLength)
+{
+	if (isLoaded())
+	{
+		throw AlreadyCreatedException();
+	}
+
+	int texChannels = 0;
+	stbi_uc* pixels = stbi_load_from_memory(rawData, dataLength, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
+	finishLoad(pixels);
+}
+
 void bbe::Image::load(const char * path)
 {
 	if (isLoaded())
@@ -95,17 +127,7 @@ void bbe::Image::load(const char * path)
 
 	int texChannels = 0;
 	stbi_uc *pixels = stbi_load(path, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
-	m_format = ImageFormat::R8G8B8A8; // Is correct, even if texChannels == 3, because stbi is transforming the data for us on the fly.
-
-	if (pixels == nullptr)
-	{
-		throw LoadException(path);
-	}
-
-	m_pdata = new byte[getSizeInBytes()]; //TODO use allocator
-	memcpy(m_pdata, pixels, getSizeInBytes());
-
-	stbi_image_free(pixels);
+	finishLoad(pixels);
 }
 
 void bbe::Image::load(const bbe::String& path)

@@ -1,5 +1,6 @@
 #include "BBE/BrotBoxEngine.h"
 #include "imgui_internal.h"
+#include "AssetStore.h"
 #include <iostream>
 
 constexpr int WINDOW_WIDTH = 1280;
@@ -100,8 +101,7 @@ public:
 
 	virtual void onStart() override
 	{
-		bbe::String contents = bbe::simpleFile::readFile(BBE_APPLICATION_ASSET_PATH "/CheatSheet.txt");
-		auto lines = contents.lines();
+		auto lines = assetStore::CheatSheet()->lines();
 		for (const bbe::String& line : lines)
 		{
 			auto tokens = line.split("|");

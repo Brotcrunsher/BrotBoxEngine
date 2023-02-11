@@ -6,6 +6,8 @@
 #include "../BBE/Vector2.h"
 #include "../BBE/ManuallyRefCountable.h"
 
+typedef unsigned char stbi_uc;
+
 namespace bbe
 {
 	class PrimitiveBrush2D;
@@ -70,6 +72,8 @@ namespace bbe
 
 		mutable const Image*   m_parentImage = nullptr;
 
+		void finishLoad(stbi_uc* pixels);
+
 	public:
 		Image();
 		explicit Image(const char* path);
@@ -85,6 +89,8 @@ namespace bbe
 
 		~Image();
 		
+		void loadRaw(const bbe::List<unsigned char>& rawData);
+		void loadRaw(const unsigned char* rawData, size_t dataLength);
 		void load(const char* path);
 		void load(const bbe::String& path);
 		void load(int width, int height);

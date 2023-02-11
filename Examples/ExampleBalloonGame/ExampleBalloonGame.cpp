@@ -1,4 +1,5 @@
 #include "BBE/BrotBoxEngine.h"
+#include "AssetStore.h"
 #include <iostream>
 
 constexpr int WINDOW_WIDTH = 1280;
@@ -20,7 +21,6 @@ private:
 	bool gameover = false;
 	int score = 0;
 
-	bbe::Image background;
 	bbe::List<Balloon> balloons;
 
 	void addBalloon() {
@@ -39,7 +39,6 @@ private:
 public:
 	virtual void onStart() override
 	{
-		background.load(BBE_APPLICATION_ASSET_PATH "/sky.jpg");
 		addBalloon();
 	}
 
@@ -88,7 +87,7 @@ public:
 		brush.fillLine(0, 140, WINDOW_WIDTH, 140, 5);
 
 		brush.setColorRGB(1, 1, 1);
-		brush.drawImage(bbe::Rectangle(0, 140, WINDOW_WIDTH, background.getHeight()), background);
+		brush.drawImage(bbe::Rectangle(0, 140, WINDOW_WIDTH, assetStore::sky()->getHeight()), *assetStore::sky());
 
 		for (Balloon& b : balloons) {
 			brush.setColorHSV(b.hue, 1, 1);

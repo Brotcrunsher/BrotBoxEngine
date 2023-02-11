@@ -257,4 +257,6 @@ ModelManifest.xml
 /BrotBoxEngine/Vulkan/EmbedOutput.h
 /BrotBoxEngine/Assets/Fonts/EmbeddedFonts.cpp
 /BrotBoxEngine/Assets/Fonts/EmbeddedFonts.h
+**/AssetStore.cpp
+**/AssetStore.h
 /ExampleSimplePresentation/out.xml

@@ -63,6 +63,8 @@ namespace bbe
 		explicit Utf8String(long               number);
 		explicit Utf8String(unsigned int       number);
 
+		/*nonexplicit*/ Utf8String(const std::initializer_list<char>& il);
+
 		Utf8String(const Utf8String&  other);//Copy Constructor
 		Utf8String(Utf8String&& other);      //Move Constructor
 
