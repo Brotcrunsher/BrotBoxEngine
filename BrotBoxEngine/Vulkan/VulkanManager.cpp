@@ -17,6 +17,7 @@
 #include "BBE/Vulkan/VulkanCube.h"
 #include "BBE/Vulkan/VulkanSphere.h"
 #include "BBE/Vulkan/VulkanLight.h"
+#include "BBE/Vulkan/VulkanFragmentShader.h"
 #include "EmbedOutput.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -908,8 +909,19 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillRect2D(const Rectangle& rect, flo
 {
 	if (shader != nullptr)
 	{
-		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->INTERNAL_getPipeline().getPipeline(getFillMode2D()));
-		vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 80, 48, shader->getPushConstants());
+		bbe::INTERNAL::vulkan::VulkanFragmentShader* vfs = nullptr;
+		if (shader->m_prendererData == nullptr)
+		{
+			// The FragmentShader is cleaning up this VulkanFragmentShader
+			vfs = new bbe::INTERNAL::vulkan::VulkanFragmentShader(*shader);
+		}
+		else
+		{
+			vfs = (bbe::INTERNAL::vulkan::VulkanFragmentShader*)shader->m_prendererData;
+		}
+
+		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vfs->m_pipeline.getPipeline(getFillMode2D()));
+		vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 80, 48, shader->pushConstants.getRaw());
 	}
 	else if (m_pipelineRecord2D != PipelineRecord2D::PRIMITIVE)
 	{

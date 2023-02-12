@@ -25,5 +25,6 @@ namespace bbe
 		Vector3 getCameraTarget() const;
 
 		void setCameraPos(const Vector3 &pos);
+		void setCameraForward(const Vector3& forward);
 	};
 }

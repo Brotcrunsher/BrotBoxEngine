@@ -5,6 +5,7 @@
 #include "BrotDownTokenizer.h"
 #include "AsmTokenizer.h"
 #include "PngTokenizer.h"
+#include "Tokenizer.h"
 
 static int32_t fontsLoaded = 0;
 bbe::List<bbe::Font> fonts;
@@ -794,6 +795,11 @@ bool Slide::isEntryAutoNext(int32_t entry) const
 	return false;
 }
 
+Token::~Token()
+{
+	// Do nothing.
+}
+
 void Token::submit(bbe::List<Token>& tokens)
 {
 	decltype(this->renderObjects) ros;
@@ -913,7 +919,7 @@ void SlideShow::addSlide(const bbe::String& path)
 	addSlide(path.getRaw());
 }
 
-void SlideShow::addSlide(Slide& slide)
+void SlideShow::addSlide(Slide &&slide)
 {
 	slides.add(std::move(slide));
 }
@@ -967,7 +973,7 @@ void SlideShow::addManifest(const char* inPath)
 
 			if (horizontalCount != 1)
 			{
-				addSlide(slide);
+				addSlide(std::move(slide));
 			}
 			horizontalCount++;
 		}

@@ -1,1 +1,1 @@
-glslangvalidator -V Mandelbrot.frag -o fragMandelbrot.spv
+glslangvalidator -V Mandelbrot.frag -o Assets/Mandelbrot.spv

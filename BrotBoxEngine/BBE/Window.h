@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <functional>
 
 #include "../BBE/glfwWrapper.h"
 #include "../BBE/RenderManager.h"
@@ -23,6 +24,7 @@ namespace bbe
 		
 		GLFWwindow                         *m_pwindow;
 		std::unique_ptr<bbe::RenderManager> m_renderManager;
+		bbe::List<std::function<void()>>      m_closeListeners;
 
 		int                                 m_width;
 		int                                 m_height;
@@ -69,6 +71,9 @@ namespace bbe
 
 		void screenshot(const bbe::String& path);
 		void setVideoRenderingMode(const char* path);
+
+		void registerCloseListener(const std::function<void()>& listener);
+		void executeCloseListeners();
 	};
 
 

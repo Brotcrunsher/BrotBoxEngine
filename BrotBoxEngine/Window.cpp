@@ -255,6 +255,19 @@ void bbe::Window::setVideoRenderingMode(const char* path)
 	m_renderManager->setVideoRenderingMode(path);
 }
 
+void bbe::Window::registerCloseListener(const std::function<void()>& listener)
+{
+	m_closeListeners.add(listener);
+}
+
+void bbe::Window::executeCloseListeners()
+{
+	for (const std::function<void()> listener : m_closeListeners)
+	{
+		listener();
+	}
+}
+
 void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, int action, int mods)
 {
 #ifndef BBE_RENDERER_NULL

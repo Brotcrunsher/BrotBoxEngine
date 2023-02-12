@@ -1,7 +1,6 @@
 #include "BBE/BrotBoxEngine.h"
 #include "SimplePresentation.h"
 #include <iostream>
-#include <Windows.h>
 
 constexpr int WINDOW_WIDTH = 1280 + 50;
 constexpr int WINDOW_HEIGHT = 720 + 50;

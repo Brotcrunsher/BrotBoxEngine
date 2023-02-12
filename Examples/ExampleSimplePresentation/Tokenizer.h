@@ -127,6 +127,8 @@ struct Token
 	bool autoNext = false;
 	float animationMultiplier = 1.f;
 
+	virtual ~Token();
+
 	void submit(bbe::List<Token>& tokens);
 	bbe::List<size_t> getRenderObjectIndices(const bbe::List<bbe::String>& names) const;
 };

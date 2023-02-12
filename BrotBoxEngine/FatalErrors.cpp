@@ -14,7 +14,7 @@ void bbe::INTERNAL::triggerFatalError(const char * msg)
 {
 	std::cout << "FATAL ERROR: " << msg << std::endl;
 #ifdef _WIN32
-	MessageBox(nullptr, msg, "FATAL ERROR", MB_OK);
+	//MessageBox(nullptr, msg, "FATAL ERROR", MB_OK);
 #endif
 	throw FatalError(msg);
 }

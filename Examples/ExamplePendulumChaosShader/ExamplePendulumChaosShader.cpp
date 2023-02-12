@@ -1,4 +1,5 @@
 #include "BBE/BrotBoxEngine.h"
+#include "AssetStore.h"
 #include <iostream>
 
 constexpr int WINDOW_WIDTH = 1280;
@@ -8,12 +9,10 @@ const static bbe::Vector2 middle = bbe::Vector2{ WINDOW_WIDTH / 2, WINDOW_HEIGHT
 class MyGame : public bbe::Game
 {
 public:
-	bbe::FragmentShader shader;
 	bbe::List<bbe::Vector2> magnets;
 
 	virtual void onStart() override
 	{
-		shader.load(BBE_APPLICATION_ASSET_PATH "/fragPCS.spv");
 		magnets.add({ middle + bbe::Vector2(200, 0).rotate(bbe::Math::TAU / 3.f * 0.f) });
 		magnets.add({ middle + bbe::Vector2(200, 0).rotate(bbe::Math::TAU / 3.f * 1.f) });
 		magnets.add({ middle + bbe::Vector2(200, 0).rotate(bbe::Math::TAU / 3.f * 2.f) });
@@ -45,13 +44,22 @@ public:
 		ImGui::DragFloat("Tick Time: ", &tickTime, 0.0001f);
 		ImGui::DragFloat("Power: ", &power, 0.0001f);
 		ImGui::DragFloat("MagnetStrength: ", &magnetStrength, 100);
-		shader.setPushConstant( 80, sizeof(bbe::Vector2) * magnets.getLength(), magnets.getRaw());
-		shader.setPushConstant(104, sizeof(float), &magnetDistance);
-		shader.setPushConstant(108, sizeof(int32_t), &maxIter);
-		shader.setPushConstant(112, sizeof(float), &tickTime);
-		shader.setPushConstant(116, sizeof(float), &power);
-		shader.setPushConstant(120, sizeof(float), &magnetStrength);
-		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, &shader);
+#ifdef BBE_RENDERER_VULKAN
+		assetStore::PCS()->setPushConstant( 80, sizeof(bbe::Vector2) * magnets.getLength(), magnets.getRaw());
+		assetStore::PCS()->setPushConstant(104, sizeof(float), &magnetDistance);
+		assetStore::PCS()->setPushConstant(108, sizeof(int32_t), &maxIter);
+		assetStore::PCS()->setPushConstant(112, sizeof(float), &tickTime);
+		assetStore::PCS()->setPushConstant(116, sizeof(float), &power);
+		assetStore::PCS()->setPushConstant(120, sizeof(float), &magnetStrength);
+#elif defined(BBE_RENDERER_OPENGL)
+		assetStore::PCS()->setUniform2fv("magnetPos", magnets.getLength(), magnets.getRaw());
+		assetStore::PCS()->setUniform1f("magnetDistance", magnetDistance);
+		assetStore::PCS()->setUniform1i("maxIter", maxIter);
+		assetStore::PCS()->setUniform1f("tickTime", tickTime);
+		assetStore::PCS()->setUniform1f("power", power);
+		assetStore::PCS()->setUniform1f("magnetStrength", magnetStrength);
+#endif
+		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, assetStore::PCS());
 	}
 	virtual void onEnd() override
 	{

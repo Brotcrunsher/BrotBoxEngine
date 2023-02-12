@@ -144,6 +144,8 @@ void bbe::Game::shutdown()
 
 	onEnd();
 
+	m_pwindow->executeCloseListeners();
+
 #ifndef BBE_NO_AUDIO
 	m_soundManager.destroy();
 #endif

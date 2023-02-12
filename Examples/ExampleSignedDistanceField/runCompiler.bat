@@ -1,1 +1,1 @@
-glslangvalidator -V sdf.frag -o fragSdf.spv
+glslangvalidator -V sdf.frag -o Assets/sdf.spv

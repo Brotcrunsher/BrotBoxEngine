@@ -106,7 +106,7 @@ public:
 	void addType(const bbe::String& type);
 	void addSlide(const char* path);
 	void addSlide(const bbe::String& path);
-	void addSlide(Slide &slide);
+	void addSlide(Slide &&slide);
 	void addManifest(const char* path);
 
 	void forceFontSize(uint32_t fontSize);

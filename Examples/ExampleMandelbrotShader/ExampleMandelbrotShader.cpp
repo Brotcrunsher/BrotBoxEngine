@@ -1,4 +1,5 @@
 #include "BBE/BrotBoxEngine.h"
+#include "AssetStore.h"
 #include <iostream>
 
 constexpr int WINDOW_WIDTH = 1280;
@@ -7,8 +8,6 @@ constexpr int WINDOW_HEIGHT = 720;
 class MyGame : public bbe::Game
 {
 public:
-	bbe::FragmentShader mandelbrotShader;
-
 	int max_iteration = 100;
 
 	double middleX = -0.75;
@@ -19,7 +18,6 @@ public:
 
 	virtual void onStart() override
 	{
-		mandelbrotShader.load(BBE_APPLICATION_ASSET_PATH "/fragMandelbrot.spv");
 	}
 
 	virtual void update(float timeSinceLastFrame) override
@@ -82,12 +80,20 @@ public:
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
-		mandelbrotShader.setPushConstant( 80, 8, &middleX);
-		mandelbrotShader.setPushConstant( 88, 8, &middleY);
-		mandelbrotShader.setPushConstant( 96, 8, &rangeX);
-		mandelbrotShader.setPushConstant(104, 8, &rangeY);
-		mandelbrotShader.setPushConstant(112, 4, &max_iteration);
-		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, &mandelbrotShader);
+#ifdef BBE_RENDERER_VULKAN
+		assetStore::Mandelbrot()->setPushConstant( 80, 8, &middleX);
+		assetStore::Mandelbrot()->setPushConstant( 88, 8, &middleY);
+		assetStore::Mandelbrot()->setPushConstant( 96, 8, &rangeX);
+		assetStore::Mandelbrot()->setPushConstant(104, 8, &rangeY);
+		assetStore::Mandelbrot()->setPushConstant(112, 4, &max_iteration);
+#elif defined(BBE_RENDERER_OPENGL)
+		assetStore::Mandelbrot()->setUniform1d("middleX", middleX);
+		assetStore::Mandelbrot()->setUniform1d("middleY", middleY);
+		assetStore::Mandelbrot()->setUniform1d("rangeX", rangeX);
+		assetStore::Mandelbrot()->setUniform1d("rangeY", rangeY);
+		assetStore::Mandelbrot()->setUniform1i("max_iteration", max_iteration);
+#endif
+		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, assetStore::Mandelbrot());
 	}
 	virtual void onEnd() override
 	{

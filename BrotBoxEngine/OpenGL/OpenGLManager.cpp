@@ -11,6 +11,8 @@
 #include "BBE/OpenGL/OpenGLCircle.h"
 #include "BBE/OpenGL/OpenGLCube.h"
 #include "BBE/OpenGL/OpenGLSphere.h"
+#include "BBE/FragmentShader.h"
+#include "BBE/OpenGL/OpenGLFragmentShader.h"
 #include <iostream>
 
 // TODO: "ExampleSandGame" performs much worse than on Vulkan - Why?
@@ -704,7 +706,36 @@ void bbe::INTERNAL::openGl::OpenGLManager::setColor2D(const bbe::Color& color)
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader)
 {
-	m_program2d.use();
+	GLuint program = 0;
+	GLint scalePosOffsetPos = 0;
+	GLint rotationPos = 0;
+	GLint screenSizePos = 0;
+	if (shader)
+	{
+		bbe::INTERNAL::openGl::OpenGLFragmentShader* fs = nullptr;
+		if (shader->m_prendererData)
+		{
+			fs = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)shader->m_prendererData;
+		}
+		else
+		{
+			fs = new bbe::INTERNAL::openGl::OpenGLFragmentShader(*shader);
+		}
+		program = fs->program;
+
+		scalePosOffsetPos = fs->scalePosOffsetPos;
+		rotationPos = fs->rotationPos;
+		screenSizePos = fs->screenSizePos;
+	}
+	else
+	{
+		program = m_program2d.program;
+
+		scalePosOffsetPos = scalePosOffsetPos2d;
+		rotationPos = rotationPos2d;
+	}
+
+	glUseProgram(program);
 	
 	if (previousDrawCall2d != PreviousDrawCall2D::RECT)
 	{
@@ -712,7 +743,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 		glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLRectangle::getIbo());
 	
-		GLint positionAttribute = glGetAttribLocation(m_program2d.program, "position");
+		GLint positionAttribute = glGetAttribLocation(program, "position");
 		glEnableVertexAttribArray(positionAttribute);
 	
 		glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
@@ -720,8 +751,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	m_program2d.uniform4f(scalePosOffsetPos2d, rect.getWidth(), rect.getHeight(), rect.getX(), rect.getY());
-	m_program2d.uniform1f(rotationPos2d, rotation);
+	if(shader) glUniform2f(screenSizePos, m_windowWidth, m_windowHeight);
+	glUniform4f(scalePosOffsetPos, rect.getWidth(), rect.getHeight(), rect.getX(), rect.getY());
+	glUniform1f(rotationPos, rotation);
 	glDrawElements(GL_TRIANGLE_STRIP, OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
 }
 

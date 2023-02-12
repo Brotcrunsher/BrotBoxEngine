@@ -99,12 +99,12 @@ namespace bbe
 			return next();
 		}
 
-		static FieldType min()
+		static constexpr FieldType min()
 		{
 			return std::numeric_limits<FieldType>::min();
 		}
 
-		static FieldType max()
+		static constexpr FieldType max()
 		{
 			return std::numeric_limits<FieldType>::max();
 		}
