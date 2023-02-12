@@ -59,7 +59,10 @@ public:
 		assetStore::PCS()->setUniform1f("power", power);
 		assetStore::PCS()->setUniform1f("magnetStrength", magnetStrength);
 #endif
+
+#ifndef BBE_RENDERER_NULL
 		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, assetStore::PCS());
+#endif
 	}
 	virtual void onEnd() override
 	{

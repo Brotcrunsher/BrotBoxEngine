@@ -55,7 +55,9 @@ public:
 		assetStore::sdf()->setUniform1f("camForwardZ", forward.y);
 #endif
 
+#ifndef BBE_RENDERER_NULL
 		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, assetStore::sdf());
+#endif
 	}
 	virtual void onEnd() override
 	{

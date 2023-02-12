@@ -93,7 +93,10 @@ public:
 		assetStore::Mandelbrot()->setUniform1d("rangeY", rangeY);
 		assetStore::Mandelbrot()->setUniform1i("max_iteration", max_iteration);
 #endif
+
+#ifndef BBE_RENDERER_NULL
 		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, assetStore::Mandelbrot());
+#endif
 	}
 	virtual void onEnd() override
 	{
