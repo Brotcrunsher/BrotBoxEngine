@@ -64,12 +64,12 @@ bbe::Image::Image(const Image& other)
 	m_parentImage = other.m_parentImage;
 }
 
-bbe::Image::Image(Image&& other)
+bbe::Image::Image(Image&& other) noexcept
 {
 	this->operator=(std::move(other));
 }
 
-bbe::Image& bbe::Image::operator=(Image&& other)
+bbe::Image& bbe::Image::operator=(Image&& other) noexcept
 {
 	destroy();
 
@@ -114,7 +114,7 @@ void bbe::Image::loadRaw(const unsigned char* rawData, size_t dataLength)
 	}
 
 	int texChannels = 0;
-	stbi_uc* pixels = stbi_load_from_memory(rawData, dataLength, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
+	stbi_uc* pixels = stbi_load_from_memory(rawData, (int)dataLength, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
 	finishLoad(pixels);
 }
 
@@ -146,13 +146,23 @@ void bbe::Image::load(int width, int height, const Color & c)
 	m_height = height;
 	m_format = ImageFormat::R8G8B8A8;
 
-	m_pdata = new byte[getSizeInBytes()]; //TODO use allocator
-	for (int i = 0; i < getSizeInBytes(); i+=4)
+	const size_t size = getSizeInBytes();
+	m_pdata = new byte[size]; //TODO use allocator
+	for (int i = 0; i < size; i+=4)
 	{
+#ifdef _MSC_VER
+		// MSVC doesn't understand that getSizeInBytes() will always
+		// return a multiple of four, becuase m_format is R8G8B8A8.
+#pragma warning( push )
+#pragma warning( disable : 6386)
+#endif
 		m_pdata[i + 0] = (byte)(c.r * 255);
 		m_pdata[i + 1] = (byte)(c.g * 255);
 		m_pdata[i + 2] = (byte)(c.b * 255);
 		m_pdata[i + 3] = (byte)(c.a * 255);
+#ifdef _MSC_VER
+#pragma warning( pop ) 
+#endif
 	}
 }
 
@@ -200,9 +210,9 @@ bbe::Vector2 bbe::Image::getDimensions() const
 	return Vector2(static_cast<float>(getWidth()), static_cast<float>(getHeight()));
 }
 
-int bbe::Image::getSizeInBytes() const
+size_t bbe::Image::getSizeInBytes() const
 {
-	return static_cast<int>(getWidth() * getHeight() * getAmountOfChannels() * getBytesPerChannel());
+	return static_cast<size_t>(getWidth() * getHeight() * getAmountOfChannels() * getBytesPerChannel());
 }
 
 size_t bbe::Image::getAmountOfChannels() const
@@ -220,7 +230,7 @@ size_t bbe::Image::getAmountOfChannels() const
 	}
 }
 
-int bbe::Image::getBytesPerChannel() const
+size_t bbe::Image::getBytesPerChannel() const
 {
 	switch (m_format)
 	{

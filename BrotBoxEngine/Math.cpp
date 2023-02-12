@@ -631,7 +631,7 @@ bbe::Vector2 bbe::Math::average(const bbe::List<Vector2>& vectors)
 		retVal += v;
 	}
 
-	return retVal / vectors.getLength();;
+	return retVal / (float)vectors.getLength();;
 }
 
 bbe::Vector3 bbe::Math::average(const bbe::List<Vector3>& vectors)

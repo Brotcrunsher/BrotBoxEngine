@@ -172,7 +172,7 @@ void bbe::INTERNAL::openGl::Framebuffer::destroy()
 	if (!framebuffer) return;
 
 	glDeleteFramebuffers(1, &framebuffer);
-	glDeleteTextures(textures.getLength(), textures.getRaw());
+	glDeleteTextures((GLsizei)textures.getLength(), textures.getRaw());
 	glDeleteTextures(1, &depthBuffer);
 
 	framebuffer = 0;
@@ -211,7 +211,7 @@ void bbe::INTERNAL::openGl::Framebuffer::clearTextures()
 
 void bbe::INTERNAL::openGl::Framebuffer::bind()
 {
-	for (size_t i = 0 ; i<textures.getLength(); i++)
+	for (GLenum i = 0 ; i<(GLenum)textures.getLength(); i++)
 	{
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, textures[i]);
@@ -221,17 +221,17 @@ void bbe::INTERNAL::openGl::Framebuffer::bind()
 void bbe::INTERNAL::openGl::Framebuffer::finalize()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-	for (size_t i = 0; i<textures.getLength(); i++)
+	for (GLenum i = 0; i<(GLenum)textures.getLength(); i++)
 	{
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, textures[i], 0);
 	}
 
 	bbe::List<GLenum> attachements;
-	for (size_t i = 0; i < textures.getLength(); i++)
+	for (GLenum i = 0; i < (GLenum)textures.getLength(); i++)
 	{
 		attachements.add(GL_COLOR_ATTACHMENT0 + i);
 	}
-	glDrawBuffers(attachements.getLength(), attachements.getRaw());
+	glDrawBuffers((GLsizei)attachements.getLength(), attachements.getRaw());
 
 	GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (Status != GL_FRAMEBUFFER_COMPLETE) {
@@ -535,7 +535,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillMesh(const float* modelMatrix, GL
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glDrawElements(GL_TRIANGLES, amountOfIndices, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0);
 }
 
 bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
@@ -751,10 +751,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	if(shader) glUniform2f(screenSizePos, m_windowWidth, m_windowHeight);
+	if(shader) glUniform2f(screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
 	glUniform4f(scalePosOffsetPos, rect.getWidth(), rect.getHeight(), rect.getX(), rect.getY());
 	glUniform1f(rotationPos, rotation);
-	glDrawElements(GL_TRIANGLE_STRIP, OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle& circle)
@@ -777,7 +777,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle& circle)
 	}
 
 	m_program2d.uniform4f(scalePosOffsetPos2d, circle.getWidth(), circle.getHeight(), circle.getX(), circle.getY());
-	glDrawElements(GL_TRIANGLE_FAN, OpenGLCircle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLE_FAN, (GLsizei)OpenGLCircle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, const Image& image, float rotation)
@@ -849,7 +849,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	glDeleteBuffers(1, &vbo);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale)
+void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t* indices, size_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale)
 {
 	m_program2d.use();
 
@@ -875,7 +875,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glDrawElements(GL_TRIANGLES, amountOfIndices, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0);
 
 	glDeleteBuffers(1, &ibo);
 	glDeleteBuffers(1, &vbo);

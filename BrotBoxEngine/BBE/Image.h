@@ -24,7 +24,7 @@ namespace bbe
 		namespace openGl
 		{
 			class OpenGLManager;
-			class OpenGLImage;
+			struct OpenGLImage;
 		}
 	}
 
@@ -55,7 +55,7 @@ namespace bbe
 		friend class INTERNAL::vulkan::VulkanManager;
 		friend class INTERNAL::vulkan::VulkanImage;
 		friend class INTERNAL::vulkan::VulkanDescriptorSet;
-		friend class INTERNAL::openGl::OpenGLImage;
+		friend struct INTERNAL::openGl::OpenGLImage;
 		friend class INTERNAL::openGl::OpenGLManager;
 		friend class PrimitiveBrush2D;
 		friend class PrimitiveBrush3D;
@@ -83,9 +83,9 @@ namespace bbe
 		Image(int width, int height, const byte* data, ImageFormat format);
 		
 		Image(const Image& other); //Copy Constructor
-		Image(Image&& other); //Move Constructor
+		Image(Image&& other) noexcept; //Move Constructor
 		Image& operator=(const Image& other) = delete; //Copy Assignment
-		Image& operator=(Image&& other); //Move Assignment
+		Image& operator=(Image&& other) noexcept; //Move Assignment
 
 		~Image();
 		
@@ -102,9 +102,9 @@ namespace bbe
 		int getWidth() const;
 		int getHeight() const;
 		Vector2 getDimensions() const;
-		int getSizeInBytes() const;
+		size_t getSizeInBytes() const;
 		size_t getAmountOfChannels() const;
-		int getBytesPerChannel() const;
+		size_t getBytesPerChannel() const;
 		Color getPixel(size_t x, size_t y) const;
 		size_t getIndexForRawAccess(size_t x, size_t y) const;
 

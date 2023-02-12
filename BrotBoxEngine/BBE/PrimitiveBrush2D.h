@@ -172,6 +172,6 @@ namespace bbe
 		FillMode getFillMode();
 
 		void fillVertexIndexList(const bbe::List<uint32_t>& indices, const bbe::List<bbe::Vector2>& vertices);
-		void fillVertexIndexList(const uint32_t *indices, uint32_t amountOfIndices, const bbe::Vector2 *vertices, size_t amountOfVertices);
+		void fillVertexIndexList(const uint32_t *indices, size_t amountOfIndices, const bbe::Vector2 *vertices, size_t amountOfVertices);
 	};
 }

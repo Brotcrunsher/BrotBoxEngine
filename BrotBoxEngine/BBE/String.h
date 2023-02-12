@@ -65,11 +65,11 @@ namespace bbe
 
 		/*nonexplicit*/ Utf8String(const std::initializer_list<char>& il);
 
-		Utf8String(const Utf8String&  other);//Copy Constructor
-		Utf8String(Utf8String&& other);      //Move Constructor
+		Utf8String(const Utf8String&  other);    //Copy Constructor
+		Utf8String(Utf8String&& other) noexcept; //Move Constructor
 
-		Utf8String& operator=(const Utf8String&  other); //Copy Assignment
-		Utf8String& operator=(Utf8String&& other);       //Move Assignment
+		Utf8String& operator=(const Utf8String&  other);    //Copy Assignment
+		Utf8String& operator=(Utf8String&& other) noexcept; //Move Assignment
 
 		static Utf8String fromCodePoint(int32_t codePoint);
 		static Utf8String toHex(uint32_t value);
@@ -139,7 +139,7 @@ namespace bbe
 		bool contains(const char*       string) const;
 		bool contains(const Utf8String& string) const;
 
-		bool isTextAtLocation(const char* string, int64_t index) const;
+		bool isTextAtLocation(const char* string, size_t index) const;
 		bool startsWith(const char* string) const;
 		bool endsWith(const char* string) const;
 

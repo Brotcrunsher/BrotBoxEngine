@@ -86,7 +86,7 @@ namespace bbe
 			}
 		}
 
-		List(List<T, keepSorted>&& other)
+		List(List<T, keepSorted>&& other) noexcept
 			: m_length(other.m_length), m_capacity(other.m_capacity), m_pdata(other.m_pdata)
 		{
 			other.m_pdata = nullptr;
@@ -123,7 +123,7 @@ namespace bbe
 			return *this;
 		}
 
-		List& operator=(List<T, keepSorted>&& other)
+		List& operator=(List<T, keepSorted>&& other) noexcept
 		{
 			clear();
 

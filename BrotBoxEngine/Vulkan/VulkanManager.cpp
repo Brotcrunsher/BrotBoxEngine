@@ -1008,7 +1008,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, co
 	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, 6, 1, 0, 0, 0);
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale)
+void bbe::INTERNAL::vulkan::VulkanManager::fillVertexIndexList2D(const uint32_t* indices, size_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale)
 {
 	// These two asserts make sure that we can cast the vertices array to a float array.
 	static_assert(alignof(bbe::Vector2) == alignof(float));

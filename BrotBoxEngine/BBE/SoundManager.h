@@ -8,7 +8,7 @@
 #include "../BBE/Sound.h"
 #include "../BBE/SoundInstance.h"
 
-class PaStreamCallbackTimeInfo;
+struct PaStreamCallbackTimeInfo;
 typedef unsigned long PaStreamCallbackFlags;
 
 namespace bbe

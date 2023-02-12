@@ -3,9 +3,9 @@
 
 bbe::String bbe::Color::toHex() const
 {
-	const uint32_t r = bbe::Math::clamp01(this->r) * 255;
-	const uint32_t g = bbe::Math::clamp01(this->g) * 255;
-	const uint32_t b = bbe::Math::clamp01(this->b) * 255;
+	const uint32_t r = uint32_t(bbe::Math::clamp01(this->r) * 255.0f);
+	const uint32_t g = uint32_t(bbe::Math::clamp01(this->g) * 255.0f);
+	const uint32_t b = uint32_t(bbe::Math::clamp01(this->b) * 255.0f);
 
 	const uint32_t rgb = (r << 16) | (g << 8) | (b);
 

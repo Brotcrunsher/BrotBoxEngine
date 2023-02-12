@@ -75,7 +75,7 @@ void bbe::FragmentShader::setPushConstant(uint32_t offset, uint32_t length, cons
 #endif
 
 #ifdef BBE_RENDERER_OPENGL
-void bbe::FragmentShader::setUniform2fv(const char* name, size_t size, const bbe::Vector2* values)
+void bbe::FragmentShader::setUniform2fv(const char* name, GLsizei size, const bbe::Vector2* values)
 {
 	if (!m_prendererData) return; // TODO: This leads to the uniforms not having the correct value on the first frame!
 	bbe::INTERNAL::openGl::OpenGLFragmentShader* s = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)m_prendererData;

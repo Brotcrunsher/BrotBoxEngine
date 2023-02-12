@@ -82,7 +82,7 @@ void bbe::INTERNAL::nullRenderer::NullRendererManager::drawImage2D(const Rectang
 {
 }
 
-void bbe::INTERNAL::nullRenderer::NullRendererManager::fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale)
+void bbe::INTERNAL::nullRenderer::NullRendererManager::fillVertexIndexList2D(const uint32_t* indices, size_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale)
 {
 }
 

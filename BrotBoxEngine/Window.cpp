@@ -239,8 +239,8 @@ void bbe::Window::INTERNAL_resize(int width, int height)
 	float windowYScale = 0;
 	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
 
-	m_width = width / windowXScale;
-	m_height = height / windowYScale;
+	m_width = int(width / windowXScale);
+	m_height = int(height / windowYScale);
 
 	m_renderManager->resize(width, height);
 }

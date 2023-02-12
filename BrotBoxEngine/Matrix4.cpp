@@ -84,7 +84,7 @@ bbe::Matrix4 bbe::Matrix4::createScaleMatrix(const Vector3 & scale)
 
 bbe::Matrix4 bbe::Matrix4::createPerspectiveMatrix(float fieldOfView, float aspectRatio, float nearClipPlane, float farClipPlane)
 {
-	float tanFoV = Math::tan(fieldOfView / 2.0f);
+	float tanFoV = (float)Math::tan(fieldOfView / 2.0f);
 
 	Matrix4 retVal;
 	retVal.m_cols[0].x = 1.0f / tanFoV / aspectRatio;

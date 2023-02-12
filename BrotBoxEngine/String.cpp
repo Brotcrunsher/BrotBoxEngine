@@ -141,7 +141,7 @@ bbe::Utf8String::Utf8String(const Utf8String& other)//Copy Constructor
 	initializeFromCharArr(other.getRaw());
 }
 
-bbe::Utf8String::Utf8String(Utf8String&& other) //Move Constructor
+bbe::Utf8String::Utf8String(Utf8String&& other) noexcept //Move Constructor
 {
 	//UNTESTED
 	m_length = other.m_length;
@@ -173,7 +173,7 @@ bbe::Utf8String& bbe::Utf8String::operator=(const Utf8String &other)//Copy Assig
 	return *this;
 }
 
-bbe::Utf8String& bbe::Utf8String::operator=(Utf8String &&other)//Move Assignment
+bbe::Utf8String& bbe::Utf8String::operator=(Utf8String &&other) noexcept//Move Assignment
 {
 	//UNTESTED
 	if (!m_usesSSO && m_UNION.m_pdata != nullptr)
@@ -674,9 +674,17 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String&
 		return retVal;
 	}
 	auto previousFinding = getRaw();
+	if (!previousFinding)
+	{
+		throw IllegalStateException();
+	}
 	for (size_t i = 0; i < retVal.getLength() - 1; i++)
 	{
 		const char *currentFinding = strstr(previousFinding, splitAt.getRaw());
+		if (!currentFinding)
+		{
+			return retVal;
+		}
 		Utf8String currentString;
 		size_t currentStringLength = currentFinding - previousFinding;
 		currentString.m_usesSSO = false; //TODO make this better! current string could use SSO!
@@ -734,7 +742,7 @@ bool bbe::Utf8String::contains(const Utf8String &string) const
 	return contains(string.getRaw());
 }
 
-bool bbe::Utf8String::isTextAtLocation(const char* string, int64_t index) const
+bool bbe::Utf8String::isTextAtLocation(const char* string, size_t index) const
 {
 	while (*string)
 	{

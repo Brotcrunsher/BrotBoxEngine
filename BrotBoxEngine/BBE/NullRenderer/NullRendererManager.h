@@ -49,7 +49,7 @@ namespace bbe
 				virtual void fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader) override;
 				virtual void fillCircle2D(const Circle& circle) override;
 				virtual void drawImage2D(const Rectangle& rect, const Image& image, float rotation) override;
-				virtual void fillVertexIndexList2D(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale) override;
+				virtual void fillVertexIndexList2D(const uint32_t* indices, size_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale) override;
 
 				virtual void setColor3D(const bbe::Color& color) override;
 				virtual void setCamera3D(const bbe::Vector3& pos, const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection) override;

@@ -124,7 +124,7 @@ namespace bbe
 				m_pdata[i] = other[i];
 			}
 		}
-		DynamicArray(DynamicArray&& other) //Move Constructor
+		DynamicArray(DynamicArray&& other) noexcept //Move Constructor
 			: m_pdata(other.m_pdata)
 		{
 			m_length = other.m_length;
@@ -145,7 +145,7 @@ namespace bbe
 
 			return *this;
 		}
-		DynamicArray& operator=(DynamicArray&& other) //Move Assignment
+		DynamicArray& operator=(DynamicArray&& other) noexcept //Move Assignment
 		{
 			deleteArray();
 

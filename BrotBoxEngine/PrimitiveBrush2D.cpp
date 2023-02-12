@@ -277,12 +277,12 @@ void bbe::PrimitiveBrush2D::drawImage(const Vector2& pos, const Vector2& dimensi
 
 void bbe::PrimitiveBrush2D::drawImage(float x, float y, const Image& image, float rotation)
 {
-	drawImage(x, y, image.getWidth(), image.getHeight(), image, rotation);
+	drawImage(x, y, (float)image.getWidth(), (float)image.getHeight(), image, rotation);
 }
 
 void bbe::PrimitiveBrush2D::drawImage(const Vector2& pos, const Image& image, float rotation)
 {
-	drawImage(pos, image.getWidth(), image.getHeight(), image, rotation);
+	drawImage(pos, (float)image.getWidth(), (float)image.getHeight(), image, rotation);
 }
 
 void bbe::PrimitiveBrush2D::fillLine(float x1, float y1, float x2, float y2, float lineWidth)
@@ -595,7 +595,7 @@ void bbe::PrimitiveBrush2D::fillVertexIndexList(const bbe::List<uint32_t>& indic
 	fillVertexIndexList(indices.getRaw(), indices.getLength(), vertices.getRaw(), vertices.getLength());
 }
 
-void bbe::PrimitiveBrush2D::fillVertexIndexList(const uint32_t* indices, uint32_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices)
+void bbe::PrimitiveBrush2D::fillVertexIndexList(const uint32_t* indices, size_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices)
 {
 	m_prenderManager->fillVertexIndexList2D(indices, amountOfIndices, vertices, amountOfVertices, m_offset, { m_windowXScale, m_windowYScale });
 }
