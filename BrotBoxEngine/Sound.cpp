@@ -1,16 +1,17 @@
 #include "BBE/Sound.h"
 #include "BBE/SoundManager.h"
 #include "BBE/Exceptions.h"
+#include "BBE/SimpleFile.h"
 #define MINIMP3_IMPLEMENTATION
 #ifndef BBE_NO_AUDIO
 
 #include "minimp3_ex.h"
 
-void bbe::Sound::loadMp3(const bbe::String& path)
+void bbe::Sound::loadMp3(const bbe::List<unsigned char>& data)
 {
 	mp3dec_t mp3d = {};
 	mp3dec_file_info_t info = {};
-	const int err = mp3dec_load(&mp3d, path.getRaw(), &info, NULL, NULL);
+	const int err = mp3dec_load_buf(&mp3d, data.getRaw(), data.getLength(), &info, NULL, NULL);
 	if (err)
 	{
 		free(info.buffer);
@@ -65,6 +66,12 @@ bbe::Sound::Sound(const bbe::String& path, SoundLoadFormat soundLoadFormat)
 
 void bbe::Sound::load(const bbe::String& path, SoundLoadFormat soundLoadFormat)
 {
+	bbe::List<unsigned char> data = bbe::simpleFile::readBinaryFile(path);
+	load(data, soundLoadFormat);
+}
+
+void bbe::Sound::load(const bbe::List<unsigned char>& data, SoundLoadFormat soundLoadFormat)
+{
 	if (isLoaded())
 	{
 		throw AlreadyCreatedException();
@@ -79,7 +86,7 @@ void bbe::Sound::load(const bbe::String& path, SoundLoadFormat soundLoadFormat)
 	switch (soundLoadFormat)
 	{
 	case SoundLoadFormat::MP3:
-		loadMp3(path);
+		loadMp3(data);
 		break;
 	default:
 		throw IllegalArgumentException();
@@ -133,7 +140,7 @@ void bbe::SoundDataSource::setLooped(bool looped)
 	m_looped = looped;
 }
 
-bbe::SoundInstance bbe::SoundDataSource::play(float volume)
+bbe::SoundInstance bbe::SoundDataSource::play(float volume) const
 {
 	return bbe::INTERNAL::SoundManager::getInstance()->play(*this, volume);
 }

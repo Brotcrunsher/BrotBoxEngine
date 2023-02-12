@@ -76,23 +76,24 @@ macro(add_trivial_project name)
   if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Assets")
     file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/Assets/*")
     start_embed_file(cpp_file_string h_file_string AssetStore.h)
-	set(delete_calls "")
+    set(delete_calls "")
     string(APPEND h_file_string "#include \"BBE/Image.h\"\n")
+    string(APPEND h_file_string "#include \"BBE/Sound.h\"\n")
     string(APPEND h_file_string "#include \"BBE/String.h\"\n")
     string(APPEND h_file_string "#include \"BBE/FragmentShader.h\"\n")
     string(APPEND h_file_string "namespace assetStore {\n")
     string(APPEND cpp_file_string "#include \"BBE/Window.h\"\n")
     string(APPEND cpp_file_string "// NOTE: Indentation here looks \"special\", but I don't care as long as the indentation within the generator script looks okay :-)\n")
-	string(APPEND cpp_file_string 
-	"static void cleanUp()\;
-	static void registerCleanup()
-	{
-	  static bool registered = false\;
-	  if(registered) return\;
-	  registered = true\;
-	  bbe::Window::INTERNAL_firstInstance->registerCloseListener(std::function(cleanUp))\;
-	}
-	")
+    string(APPEND cpp_file_string 
+    "static void cleanUp()\;
+    static void registerCleanup()
+    {
+      static bool registered = false\;
+      if(registered) return\;
+      registered = true\;
+      bbe::Window::INTERNAL_firstInstance->registerCloseListener(std::function(cleanUp))\;
+    }
+    ")
     foreach(f ${files})
       get_filename_component(ext ${f} EXT)
       get_filename_component(name_we ${f} NAME_WE)
@@ -103,55 +104,69 @@ macro(add_trivial_project name)
           "static bbe::Image* ${name_we}_data = nullptr\;
           const bbe::Image* assetStore::${name_we}() 
           {
-		    registerCleanup()\;
+            registerCleanup()\;
             static bbe::List<unsigned char> raw = { ${contents} }\;
             if(${name_we}_data) return ${name_we}_data\;
             ${name_we}_data = new bbe::Image()\;
             ${name_we}_data->loadRaw(raw)\;
             return ${name_we}_data\;
           }\n")
-	      string(APPEND delete_calls "delete ${name_we}_data\; ${name_we}_data = nullptr\;")
+          string(APPEND delete_calls "delete ${name_we}_data\; ${name_we}_data = nullptr\;")
+      elseif(ext STREQUAL ".mp3")
+        string(APPEND h_file_string "extern const bbe::Sound* ${name_we}()\;\n")
+        string(APPEND cpp_file_string 
+          "static bbe::Sound* ${name_we}_data = nullptr\;
+          const bbe::Sound* assetStore::${name_we}() 
+          {
+            registerCleanup()\;
+            static bbe::List<unsigned char> raw = { ${contents} }\;
+            if(${name_we}_data) return ${name_we}_data\;
+            ${name_we}_data = new bbe::Sound()\;
+            ${name_we}_data->load(raw, bbe::SoundLoadFormat::MP3)\;
+            return ${name_we}_data\;
+          }\n")
+          string(APPEND delete_calls "delete ${name_we}_data\; ${name_we}_data = nullptr\;")
       elseif(ext STREQUAL ".txt")
         string(APPEND h_file_string "extern const bbe::String* ${name_we}()\;\n")
         string(APPEND cpp_file_string 
           "const bbe::String* assetStore::${name_we}() 
           {
-		    registerCleanup()\;
+            registerCleanup()\;
             static bbe::String s = { ${contents} 0x00 }\;
             return &s\;
           }\n")
       elseif(ext STREQUAL ".spv" OR ext STREQUAL ".frag")
-	    # .spv is ignored when we are not in vulkan
-	    if((BBE_RENDER_MODE STREQUAL "Vulkan" AND ext STREQUAL ".spv")
-		  OR ((BBE_RENDER_MODE STREQUAL "OpenGL" OR BBE_RENDER_MODE STREQUAL "Emscripten") AND ext STREQUAL ".frag"))
-		  if(ext STREQUAL ".frag")
-		    string(APPEND contents "0x00")
-		  endif()
+        # .spv is ignored when we are not in vulkan
+        if((BBE_RENDER_MODE STREQUAL "Vulkan" AND ext STREQUAL ".spv")
+          OR ((BBE_RENDER_MODE STREQUAL "OpenGL" OR BBE_RENDER_MODE STREQUAL "Emscripten") AND ext STREQUAL ".frag"))
+          if(ext STREQUAL ".frag")
+            string(APPEND contents "0x00")
+          endif()
           string(APPEND h_file_string "extern bbe::FragmentShader* ${name_we}()\;\n")
           string(APPEND cpp_file_string 
             "static bbe::FragmentShader* ${name_we}_data = nullptr\;
             bbe::FragmentShader* assetStore::${name_we}() 
             {
-		      registerCleanup()\;
+              registerCleanup()\;
               static bbe::List<unsigned char> raw = { ${contents} }\;
               if(${name_we}_data) return ${name_we}_data\;
               ${name_we}_data = new bbe::FragmentShader()\;
               ${name_we}_data->load(raw)\;
               return ${name_we}_data\;
             }\n")
-	      string(APPEND delete_calls "delete ${name_we}_data\; ${name_we}_data = nullptr\;")
-		endif()
+          string(APPEND delete_calls "delete ${name_we}_data\; ${name_we}_data = nullptr\;")
+        endif()
       elseif(ext STREQUAL "")
         # Do nothing. Useful for licenses etc.
       else()
         message(WARNING "Found unknown asset extension, ignoring. ${f}") 
       endif()
     endforeach()
-	string(APPEND cpp_file_string 
-	  "static void cleanUp()
-	  {
-	  ${delete_calls}
-	  }")
+    string(APPEND cpp_file_string 
+      "static void cleanUp()
+      {
+      ${delete_calls}
+      }")
     string(APPEND h_file_string "}\n")
     end_embed_file(cpp_file_string h_file_string AssetStore.cpp AssetStore.h)
   endif()

@@ -25,7 +25,7 @@ namespace bbe
 		bool isLooped() const;
 		void setLooped(bool looped);
 		
-		SoundInstance play(float volume = 1);
+		SoundInstance play(float volume = 1) const;
 	};
 
 	class Sound : 
@@ -36,13 +36,14 @@ namespace bbe
 		bbe::List<float> m_data     = {};
 		uint32_t         m_channels = 0;
 
-		void loadMp3(const bbe::String& path);
+		void loadMp3(const bbe::List<unsigned char>& data);
 
 	public:
 		Sound();
 		Sound(const bbe::String& path, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
 
 		void load(const bbe::String& path, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
+		void load(const bbe::List<unsigned char> &data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
 
 		bool isLoaded() const;
 		uint32_t getChannels() const;
