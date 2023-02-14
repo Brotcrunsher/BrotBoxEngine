@@ -61,6 +61,7 @@ namespace bbe
 
 		void fillCube(const Cube &cube);
 		void fillIcoSphere(const IcoSphere &sphere);
+		void fillLine(const bbe::Vector3& a, const bbe::Vector3& b, float lineWidth = 0.1f);
 
 		void addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode);
 		void addLight(const bbe::PointLight& light);
@@ -74,6 +75,7 @@ namespace bbe
 		void setColor(const Color &c);
 
 		void setCamera(const Vector3 &cameraPos, const Vector3 &cameraTarget, const Vector3 &cameraUpVector = Vector3(0, 0, 1.0f));
+
 
 
 		void setFillMode(FillMode fm);

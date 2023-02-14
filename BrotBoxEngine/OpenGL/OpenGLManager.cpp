@@ -233,11 +233,6 @@ void bbe::INTERNAL::openGl::Framebuffer::finalize()
 	}
 	glDrawBuffers((GLsizei)attachements.getLength(), attachements.getRaw());
 
-	GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if (Status != GL_FRAMEBUFFER_COMPLETE) {
-		triggerFatalError("Frame Buffer was not complete");
-	}
-
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

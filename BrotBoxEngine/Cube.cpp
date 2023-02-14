@@ -15,6 +15,11 @@ bbe::Cube::Cube(const Vector3 & pos, const Vector3 & scale, const Vector3 & rota
 	set(pos, scale, rotationVector, radians);
 }
 
+bbe::Cube::Cube(const Vector3& pos, const Vector3& scale, const Matrix4& matRotation)
+{
+	set(pos, scale, matRotation);
+}
+
 bbe::Cube::Cube(const Matrix4& matTranslation, const Matrix4& matScale, const Matrix4& matRotation)
 {
 	set(matTranslation, matScale, matRotation);
@@ -38,6 +43,13 @@ void bbe::Cube::set(const Vector3 & pos, const Vector3 & scale, const Vector3 & 
 	const Matrix4 matTranslation = Matrix4::createTranslationMatrix(pos);
 	const Matrix4 matScale = Matrix4::createScaleMatrix(scale);
 	const Matrix4 matRotation = Matrix4::createRotationMatrix(radians, rotationVector);
+	set(matTranslation, matScale, matRotation);
+}
+
+void bbe::Cube::set(const Vector3& pos, const Vector3& scale, const Matrix4& matRotation)
+{
+	const Matrix4 matTranslation = Matrix4::createTranslationMatrix(pos);
+	const Matrix4 matScale = Matrix4::createScaleMatrix(scale);
 	set(matTranslation, matScale, matRotation);
 }
 

@@ -16,6 +16,7 @@ namespace bbe
 		
 		static Matrix4 createTranslationMatrix(const Vector3 &translation);
 		static Matrix4 createRotationMatrix(float radians, const Vector3 &rotationAxis);
+		static Matrix4 createRotationMatrix(const Vector3& from, const Vector3& to);
 		static Matrix4 createScaleMatrix(const Vector3 &scale);
 		static Matrix4 createPerspectiveMatrix(float fieldOfView, float aspectRatio, float nearClipPlane, float farClipPlane);
 		static Matrix4 createViewMatrix(const Vector3 &cameraPos, const Vector3 &lookTarget, const Vector3 &upDirection);

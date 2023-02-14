@@ -43,6 +43,17 @@ void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
 	m_prenderManager->fillSphere3D(sphere);
 }
 
+void bbe::PrimitiveBrush3D::fillLine(const bbe::Vector3& a, const bbe::Vector3& b, float lineWidth)
+{
+	bbe::Vector3 aToB = b - a;
+	const bbe::Vector3 mid = (a + b) / 2;
+	const bbe::Vector3 scale = bbe::Vector3(lineWidth, lineWidth, aToB.getLength());
+	const bbe::Matrix4 rot = bbe::Matrix4::createRotationMatrix(bbe::Vector3(0, 0, 1), aToB);
+
+	bbe::Cube cube(mid, scale, rot);
+	fillCube(cube);
+}
+
 void bbe::PrimitiveBrush3D::addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
 {
 	m_prenderManager->addLight(pos, lightStrength, lightColor, specularColor, falloffMode);

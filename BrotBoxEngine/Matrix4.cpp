@@ -73,6 +73,55 @@ bbe::Matrix4 bbe::Matrix4::createRotationMatrix(float radians, const Vector3 & r
 	return retVal;
 }
 
+bbe::Matrix4 bbe::Matrix4::createRotationMatrix(const Vector3& from, const Vector3& to)
+{
+	const Vector3 a = from.normalize();
+	const Vector3 b = to.normalize();
+	if (a == b)
+	{
+		return bbe::Matrix4();
+	}
+	const Vector3 v = a.cross(b);
+	const float c = a * b;
+
+	bbe::Matrix4 retVal;
+	retVal.m_cols[0].x +=    0;
+	retVal.m_cols[0].y +=  v.z;
+	retVal.m_cols[0].z += -v.y;
+
+	retVal.m_cols[1].x += -v.z;
+	retVal.m_cols[1].y +=    0;
+	retVal.m_cols[1].z +=  v.x;
+
+	retVal.m_cols[2].x +=  v.y;
+	retVal.m_cols[2].y += -v.x;
+	retVal.m_cols[2].z +=    0;
+
+	if (c == -1.0f) return retVal;
+	const float mult = 1.0f / (1.0f + c);
+
+	const float x = v.x;
+	const float y = v.y;
+	const float z = v.z;
+	const float x2 = x * x;
+	const float y2 = y * y;
+	const float z2 = z * z;
+
+	retVal.m_cols[0].x += (-z2 + -y2) * mult;
+	retVal.m_cols[0].y += ( -x * -y ) * mult;
+	retVal.m_cols[0].z += (  x *  z ) * mult;
+
+	retVal.m_cols[1].x += (  x *   y) * mult;
+	retVal.m_cols[1].y += (-z2 + -x2) * mult;
+	retVal.m_cols[1].z += ( -y *  -z) * mult;
+
+	retVal.m_cols[2].x += ( -x *  -z) * mult;
+	retVal.m_cols[2].y += (  y *   z) * mult;
+	retVal.m_cols[2].z += (-y2 + -x2) * mult;
+
+	return retVal;
+}
+
 bbe::Matrix4 bbe::Matrix4::createScaleMatrix(const Vector3 & scale)
 {
 	Matrix4 retVal;

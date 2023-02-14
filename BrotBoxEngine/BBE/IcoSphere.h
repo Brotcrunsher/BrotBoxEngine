@@ -26,7 +26,7 @@ namespace bbe
 
 	public:
 		IcoSphere();
-		IcoSphere(const Vector3 &pos, const Vector3 &scale, const Vector3 &rotationVector, float radians);
+		IcoSphere(const Vector3& pos, const Vector3& scale = bbe::Vector3(1, 1, 1), const Vector3& rotationVector = bbe::Vector3(1, 0, 0), float radians = 0);
 		explicit IcoSphere(const Matrix4 &transform);
 
 		void set(const Vector3 &pos, const Vector3 &scale, const Vector3 &rotationVector, float radians);

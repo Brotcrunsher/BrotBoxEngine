@@ -15,12 +15,14 @@ namespace bbe
 
 	public:
 		Cube();
-		Cube(const Vector3 &pos, const Vector3 &scale = Vector3(1, 1, 1), const Vector3 &rotationVector = Vector3(0, 0, 0), float radians = 0);
+		Cube(const Vector3& pos, const Vector3& scale = Vector3(1, 1, 1), const Vector3& rotationVector = Vector3(0, 0, 0), float radians = 0);
+		Cube(const Vector3& pos, const Vector3& scale, const Matrix4& matRotation);
 		Cube(const Matrix4& matTranslation, const Matrix4& matScale, const Matrix4& matRotation);
 		Cube(const Vector3& pos, const Matrix4& matScale, const Matrix4& matRotation);
 		explicit Cube(const Matrix4 &transform);
 
-		void set(const Vector3 &pos, const Vector3 &scale = Vector3(1, 1, 1), const Vector3 &rotationVector = Vector3(0, 0, 0), float radians = 0);
+		void set(const Vector3& pos, const Vector3& scale = Vector3(1, 1, 1), const Vector3& rotationVector = Vector3(0, 0, 0), float radians = 0);
+		void set(const Vector3& pos, const Vector3& scale, const Matrix4 &matRotation);
 		void set(const Matrix4& matTranslation, const Matrix4& matScale, const Matrix4 &matRotation);
 		void set(const Vector3& pos, const Matrix4& matScale, const Matrix4& matRotation);
 		void setRotation(const Vector3 &rotationVector, float radians);

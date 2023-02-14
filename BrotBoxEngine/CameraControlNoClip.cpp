@@ -110,9 +110,19 @@ bbe::Vector3 bbe::CameraControlNoClip::getCameraTarget() const
 	return m_cameraPos + m_forward;
 }
 
+void bbe::CameraControlNoClip::setCameraPos(float x, float y, float z)
+{
+	setCameraPos({ x, y, z });
+}
+
 void bbe::CameraControlNoClip::setCameraPos(const Vector3 &pos)
 {
 	m_cameraPos = pos;
+}
+
+void bbe::CameraControlNoClip::setCameraForward(float x, float y, float z)
+{
+	setCameraForward({ x, y, z });
 }
 
 void bbe::CameraControlNoClip::setCameraForward(const Vector3& forward)
