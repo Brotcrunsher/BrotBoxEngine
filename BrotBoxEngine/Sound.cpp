@@ -37,12 +37,8 @@ void bbe::Sound::loadMp3(const bbe::List<unsigned char>& data)
 			free(info.buffer);
 			throw IllegalArgumentException();
 		}
-		if (info.hz != 44100)
-		{
-			// Currently only 44100 hz sounds are supported.
-			free(info.buffer);
-			throw IllegalArgumentException();
-		}
+
+		m_hz = info.hz;
 
 		m_data.resizeCapacityAndLength(info.samples);
 		for (size_t i = 0; i < info.samples; i++)
@@ -111,17 +107,17 @@ uint32_t bbe::Sound::getChannels() const
 	return m_channels;
 }
 
-std::pair<float, float> bbe::Sound::getSample(size_t i) const
+bbe::Vector2 bbe::Sound::getSample(size_t i) const
 {
 	if (!m_loaded) throw NotInitializedException();
 
 	if (m_channels == 1)
 	{
-		return std::pair<float, float>(m_data[i], m_data[i]);
+		return bbe::Vector2(m_data[i], m_data[i]);
 	}
 	else if (m_channels == 2)
 	{
-		return std::pair<float, float>(m_data[i * 2 + 0], m_data[i * 2 + 1]);
+		return bbe::Vector2(m_data[i * 2 + 0], m_data[i * 2 + 1]);
 	}
 	else
 	{
@@ -133,6 +129,11 @@ std::pair<float, float> bbe::Sound::getSample(size_t i) const
 size_t bbe::Sound::getAmountOfSamples() const
 {
 	return m_data.getLength() / m_channels;
+}
+
+uint32_t bbe::Sound::getHz() const
+{
+	return m_hz;
 }
 
 void bbe::SoundDataSource::setLooped(bool looped)

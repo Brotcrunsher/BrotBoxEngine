@@ -12,9 +12,10 @@ public:
 	bool autoAdjustMasterVolume = true;
 	bool muted = false;
 	mutable float masterVolume = 1;
+	static constexpr uint32_t hz = 44000;
 
 
-	virtual std::pair<float, float> getSample(size_t i) const override
+	virtual bbe::Vector2 getSample(size_t i) const override
 	{
 		if (muted)
 		{
@@ -23,7 +24,7 @@ public:
 		float fadeInMult = 1;
 		if (fadeIn)
 		{
-			fadeInMult = i / 44000.f;
+			fadeInMult = i / (float)hz;
 			if (fadeInMult > 1) fadeInMult = 1;
 		}
 		float val = 0;
@@ -53,6 +54,11 @@ public:
 	virtual size_t getAmountOfSamples() const override
 	{
 		return (size_t)-1;
+	}
+
+	virtual uint32_t getHz() const override
+	{
+		return hz;
 	}
 };
 
@@ -104,7 +110,7 @@ class MyGame : public bbe::Game
 			for (size_t i = 0; i < shownVals.getLength(); i++)
 			{
 				// Adjust master volume.
-				shownVals[i] = newSound.getSample(i).first;
+				shownVals[i] = newSound.getSample(i).x;
 			}
 			soundInstance.stop();
 			mySound = newSound;
@@ -155,7 +161,7 @@ class MyGame : public bbe::Game
 		static size_t currentCalc = 0;
 		for (size_t i = 0; i < 11000 && currentCalc < shownVals.getLength(); i++, currentCalc++)
 		{
-			shownVals[currentCalc] = mySound.getSample(currentCalc).first;
+			shownVals[currentCalc] = mySound.getSample(currentCalc).x;
 		}
 		if (currentCalc >= shownVals.getLength()) currentCalc = 0;
 		ImGui::PlotLines("##p", shownVals.getRaw(), shownVals.getLength(), 0, 0, FLT_MAX, FLT_MAX, ImVec2((float)getScaledWindowWidth() / 5.f, (float)getScaledWindowWidth() / 25.f));

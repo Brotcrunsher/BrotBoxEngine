@@ -14,7 +14,7 @@ A C++ prototyping engine that is striving for an easy to use API, hiding all the
 * [Google Test](https://github.com/google/googletest)
 * [Github Actions](https://github.com/features/actions)
 * [Box2D](https://box2d.org/)
-* [PortAudio](http://www.portaudio.com/)
+* [OpenAL Soft](https://openal-soft.org/)
 * [minimp3](https://github.com/lieff/minimp3)
 * [libcurl](https://curl.se/libcurl/)
 

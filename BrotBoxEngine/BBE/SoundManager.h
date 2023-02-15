@@ -7,6 +7,7 @@
 #include <mutex>
 #include "../BBE/Sound.h"
 #include "../BBE/SoundInstance.h"
+#include "AL/al.h"
 
 struct PaStreamCallbackTimeInfo;
 typedef unsigned long PaStreamCallbackFlags;
@@ -17,10 +18,18 @@ namespace bbe
 	{
 		struct SoundInstanceData
 		{
-			uint64_t m_sample = 0;
+			uint64_t m_samples_loaded = 0;
 			const SoundDataSource* m_psound = nullptr;
-			bool m_markedForDeletion = false;
 			float m_volume = 0;
+			ALuint source = 0;
+			bbe::List<ALuint> buffers;
+
+			bool areAllSamplesLoaded() const;
+			bool isBufferLoadingRequired() const;
+			void loadNewBuffer(ALuint buffer, SoundManager* sm);
+			void start(ALuint buffer, SoundManager* sm);
+			void freeUsedUpBuffers(SoundManager* sm);
+			void destroy(SoundManager* sm);
 		};
 
 		class SoundManager
@@ -34,6 +43,8 @@ namespace bbe
 			std::map<uint64_t, SoundInstanceData> playingSounds;
 			bool initSuccessful = false;
 
+			bbe::List<ALuint> unusedBuffers;
+
 		public:
 			static SoundManager* getInstance();
 
@@ -45,6 +56,7 @@ namespace bbe
 			SoundManager& operator=(const SoundManager& ) = delete;
 			SoundManager& operator=(      SoundManager&&) = delete;
 
+			void update();
 			void init();
 			void destroy();
 			SoundInstance play(const SoundDataSource& sound, float volume);
@@ -52,6 +64,9 @@ namespace bbe
 
 			void stopSoundWithIndex(uint64_t index);
 			bool isSoundWithIndexPlaying(uint64_t index);
+
+			ALuint getNewBuffer();
+			void freeBuffer(ALuint buffer);
 		};
 	}
 }

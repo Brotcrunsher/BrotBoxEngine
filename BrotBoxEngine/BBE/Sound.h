@@ -5,6 +5,7 @@
 #include "../BBE/String.h"
 #include "../BBE/List.h"
 #include "../BBE/SoundInstance.h"
+#include "../BBE/Vector2.h"
 
 namespace bbe
 {
@@ -19,8 +20,9 @@ namespace bbe
 	private:
 		bool             m_looped   = false;
 	public:
-		virtual std::pair<float, float> getSample(size_t i) const = 0;
+		virtual bbe::Vector2 getSample(size_t i) const = 0;
 		virtual size_t getAmountOfSamples() const = 0;
+		virtual uint32_t getHz() const = 0;
 
 		bool isLooped() const;
 		void setLooped(bool looped);
@@ -35,6 +37,7 @@ namespace bbe
 		bool             m_loaded   = false;
 		bbe::List<float> m_data     = {};
 		uint32_t         m_channels = 0;
+		uint32_t         m_hz       = 0;
 
 		void loadMp3(const bbe::List<unsigned char>& data);
 
@@ -47,8 +50,9 @@ namespace bbe
 
 		bool isLoaded() const;
 		uint32_t getChannels() const;
-		virtual std::pair<float, float> getSample(size_t i) const override;
+		virtual bbe::Vector2 getSample(size_t i) const override;
 		virtual size_t getAmountOfSamples() const override;
+		virtual uint32_t getHz() const override;
 	};
 }
 

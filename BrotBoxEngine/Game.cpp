@@ -115,6 +115,9 @@ void bbe::Game::frameUpdate()
 	float timeSinceLastFrame = m_gameTime.tick();
 	if (m_fixedFrameTime != 0.f) timeSinceLastFrame = m_fixedFrameTime;
 	m_physWorld.update(timeSinceLastFrame);
+#ifndef BBE_NO_AUDIO
+	m_soundManager.update();
+#endif
 	update(timeSinceLastFrame);
 }
 

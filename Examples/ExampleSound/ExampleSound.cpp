@@ -1,7 +1,6 @@
 #include "BBE/BrotBoxEngine.h"
 #include "AssetStore.h"
 #include <iostream>
-#include "portaudio.h"
 #include "minimp3_ex.h"
 
 constexpr int WINDOW_WIDTH = 1280;
@@ -19,6 +18,10 @@ class MyGame : public bbe::Game
 		if (isMousePressed(bbe::MouseButton::LEFT))
 		{
 			latestSoundInstance = assetStore::TestSound()->play();
+		}
+		if (isMousePressed(bbe::MouseButton::RIGHT))
+		{
+			latestSoundInstance.stop();
 		}
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
