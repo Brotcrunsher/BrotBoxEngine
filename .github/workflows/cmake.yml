@@ -42,14 +42,6 @@ jobs:
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBBE_RENDER_MODE=${{matrix.renderer}}
-   
-    - name: Build Port Audio
-      working-directory: ${{github.workspace}}/Third-Party/portaudio
-      run: mkdir _Build
-           && cd _Build
-           && cmake .. -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/opt
-           && make
-           && make install
 
     - name: Build
       # Build your program with the given configuration
