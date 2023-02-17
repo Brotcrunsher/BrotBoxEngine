@@ -11,6 +11,7 @@
 #include "BBE/OpenGL/OpenGLCircle.h"
 #include "BBE/OpenGL/OpenGLCube.h"
 #include "BBE/OpenGL/OpenGLSphere.h"
+#include "BBE/OpenGL/OpenGLModel.h"
 #include "BBE/FragmentShader.h"
 #include "BBE/OpenGL/OpenGLFragmentShader.h"
 #include <iostream>
@@ -345,44 +346,50 @@ static GLint inColorPos3dMrt = 0;
 static GLint viewPos3dMrt = 0;
 static GLint projectionPos3dMrt = 0;
 static GLint modelPos3dMrt = 0;
+static GLint albedoTexMrt = 0;
+static GLint normalsTexMrt = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersMrt()
 {
 	Program program;
 	char const* vertexShaderSrc =
 		"in vec3 inPos;"
 		"in vec3 inNormal;"
+		"in vec2 inUvCoord;"
 		"out vec4 passPos;"
 		"out vec4 passNormal;"
-		"out vec4 passAlbedo;"
+		"out vec2 passUvCoord;"
 		"void main()"
 		"{"
 		"   vec4 worldPos = model * vec4(inPos, 1.0);"
 		"   gl_Position = projection * view * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
 		"   passPos = view * worldPos;"
 		"   passNormal = view * model * vec4(inNormal, 0.0);"
-		"   passAlbedo = vec4(inColor.xyz, 1.0);"
+		"   passUvCoord = vec2(inUvCoord.x, 1.0 - inUvCoord.y);" //TODO: wtf? Where does that y flip come from?
 		"}";
 
 	char const* fragmentShaderSource =
 		"in vec4 passPos;"
 		"in vec4 passNormal;"
-		"in vec4 passAlbedo;"
+		"in vec2 passUvCoord;"
 		"layout (location = 0) out vec4 outPos;"
 		"layout (location = 1) out vec4 outNormal;"
 		"layout (location = 2) out vec4 outAlbedo;"
 		"void main()"
 		"{"
 		"   outPos    = passPos;"
-		"   outNormal = vec4(normalize(passNormal.xyz), 1.0);" // TODO HACK: Setting the alpha component to 1 to avoid it being discarded from the Texture. Can we do better?
-		"   outAlbedo = passAlbedo;"
+		"   outNormal = vec4(normalize(passNormal.xyz + (view * model * vec4(texture(normals, passUvCoord).xyz, 0.0)).xyz), 1.0);" // TODO HACK: Setting the alpha component to 1 to avoid it being discarded from the Texture. Can we do better?
+		"   outAlbedo = inColor * texture(albedo, passUvCoord);"
+		//"   outAlbedo = inColor * vec4(passUvCoord, 0.0, 1.0);"
 		"}";
 
 	program.addShaders(vertexShaderSrc, fragmentShaderSource,
 		{
-			{UT::UT_vec4, "inColor"	  , &inColorPos3dMrt   },
-			{UT::UT_mat4, "view"      , &viewPos3dMrt	   },
-			{UT::UT_mat4, "projection", &projectionPos3dMrt},
-			{UT::UT_mat4, "model"	  , &modelPos3dMrt	   },
+			{UT::UT_vec4,      "inColor"   , &inColorPos3dMrt   },
+			{UT::UT_mat4,      "view"      , &viewPos3dMrt	    },
+			{UT::UT_mat4,      "projection", &projectionPos3dMrt},
+			{UT::UT_mat4,      "model"	   , &modelPos3dMrt	    },
+			{UT::UT_sampler2D, "albedo"    , &albedoTexMrt      },
+			{UT::UT_sampler2D, "normals"   , &normalsTexMrt     }
 		});
 
 	return program;
@@ -470,7 +477,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   vec3 diffuse = max(dot(normal, L), 0.0) * (albedo * lightColor.xyz) * lightPower;"
 		"   vec3 R = reflect(-L, normal);"
 		"   vec3 V = normalize(toCamera);"
-		"   vec3 specular = pow(max(dot(R, V), 0.0), 4.0) * specularColor.xyz * lightPower;"
+		"   vec3 specular = pow(max(dot(R, V), 0.0), 10.0) * specularColor.xyz * lightPower;"
 		"   outColor = vec4(ambient + diffuse + specular, 1.0);"
 		"}";
 	program.addShaders(vertexShaderSrc, fragmentShaderSource,
@@ -510,7 +517,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::initGeometryBuffer()
 	mrtFb.finalize();
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices)
+void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals)
 {
 	m_program3dMrt.use();
 	glBindFramebuffer(GL_FRAMEBUFFER, mrtFb.framebuffer);
@@ -521,16 +528,42 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillMesh(const float* modelMatrix, GL
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	GLint positionAttribute = glGetAttribLocation(m_program3dMrt.program, "inPos");
-	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
+	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
 	glEnableVertexAttribArray(positionAttribute);
 
 	GLint normalPosition = glGetAttribLocation(m_program3dMrt.program, "inNormal");
-	glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (const void*)(3 * sizeof(float)));
+	glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(normalPosition);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	GLint uvPosition = glGetAttribLocation(m_program3dMrt.program, "inUvCoord");
+	glVertexAttribPointer(uvPosition, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(uvPosition);
 
+	if (!albedo) albedo = &white;
+	if (!normals) normals = &black;
+
+	glUniform1i(albedoTexMrt, 0);
+	glActiveTexture(GL_TEXTURE0 + 0);
+	glBindTexture(GL_TEXTURE_2D, toRendererData(*albedo)->tex);
+
+	glUniform1i(normalsTexMrt, 1);
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, toRendererData(*normals)->tex);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0);
+}
+
+bbe::INTERNAL::openGl::OpenGLImage* bbe::INTERNAL::openGl::OpenGLManager::toRendererData(const bbe::Image& image) const
+{
+	if (image.m_prendererData == nullptr)
+	{
+		return new bbe::INTERNAL::openGl::OpenGLImage(image);
+	}
+	else
+	{
+		return (bbe::INTERNAL::openGl::OpenGLImage*)image.m_prendererData;
+	}
 }
 
 bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
@@ -570,6 +603,15 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	imguiStart();
+
+	{
+		byte pixel[] = { 255, 255, 255, 255 };
+		white.load(1, 1, pixel, bbe::ImageFormat::R8G8B8A8);
+	}
+	{
+		byte pixel[] = { 0, 0, 0, 0 };
+		black.load(1, 1, pixel, bbe::ImageFormat::R8G8B8A8);
+	}
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::destroy()
@@ -825,17 +867,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 
 	glUniform1i(texPos2dTex, 0);
 	glActiveTexture(GL_TEXTURE0);
-
-	bbe::INTERNAL::openGl::OpenGLImage* ogi = nullptr;
-	if (image.m_prendererData == nullptr)
-	{
-		ogi = new bbe::INTERNAL::openGl::OpenGLImage(image);
-	}
-	else
-	{
-		ogi = (bbe::INTERNAL::openGl::OpenGLImage*)image.m_prendererData;
-	}
-
+	bbe::INTERNAL::openGl::OpenGLImage* ogi = toRendererData(image);
 	glBindTexture(GL_TEXTURE_2D, ogi->tex);
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -890,12 +922,26 @@ void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos,
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)
 {
-	fillMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getAmountOfIndices());
+	fillInternalMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getAmountOfIndices(), nullptr, nullptr);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
 {
-	fillMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getAmountOfIndices());
+	fillInternalMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getAmountOfIndices(), nullptr, nullptr);
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals)
+{
+	bbe::INTERNAL::openGl::OpenGLModel* ogm = nullptr;
+	if (model.m_prendererData == nullptr)
+	{
+		ogm = new bbe::INTERNAL::openGl::OpenGLModel(model);
+	}
+	else
+	{
+		ogm = (bbe::INTERNAL::openGl::OpenGLModel*)model.m_prendererData;
+	}
+	fillInternalMesh(&(transform[0]), ogm->getIbo(), ogm->getVbo(), ogm->getAmountOfIndices(), albedo, normals);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)

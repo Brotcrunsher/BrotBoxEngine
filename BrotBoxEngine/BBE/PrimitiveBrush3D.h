@@ -9,6 +9,7 @@
 #include "../BBE/ViewFrustum.h"
 #include "../BBE/RenderManager.h"
 #include "../BBE/Color.h"
+#include "../BBE/Model.h"
 
 namespace bbe
 {
@@ -68,6 +69,9 @@ namespace bbe
 
 #ifdef BBE_RENDERER_VULKAN
 		void drawTerrain(const Terrain &terrain);
+#endif
+#ifdef BBE_RENDERER_OPENGL
+		void fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo = nullptr, const Image* normals = nullptr);
 #endif
 
 		void setColor(float r, float g, float b, float a);

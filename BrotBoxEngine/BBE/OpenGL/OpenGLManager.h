@@ -4,6 +4,9 @@
 #include "../BBE/PrimitiveBrush2D.h"
 #include "../BBE/PrimitiveBrush3D.h"
 #include "../BBE/RenderManager.h"
+#include "../BBE/PosNormalPair.h"
+#include "../BBE/Model.h"
+#include "../BBE/Image.h"
 
 struct ImFont;
 
@@ -13,13 +16,7 @@ namespace bbe
 	{
 		namespace openGl
 		{
-			struct PosNormalPair
-			{
-				bbe::Vector3 pos;
-				bbe::Vector3 normal;
-			};
-			static_assert(alignof(PosNormalPair) == alignof(float));
-			static_assert(sizeof(PosNormalPair) == (2 * 3 * sizeof(float)));
+			struct OpenGLImage;
 
 			enum class UT // UniformType
 			{
@@ -121,7 +118,7 @@ namespace bbe
 				Program init3dShadersLight();
 				void initGeometryBuffer();
 
-				void fillMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices);
+				void fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals);
 
 				enum class PreviousDrawCall2D
 				{
@@ -135,6 +132,11 @@ namespace bbe
 
 				bbe::List<bbe::PointLight> pointLights;
 				bbe::Matrix4 m_view;
+
+				bbe::Image white;
+				bbe::Image black;
+
+				OpenGLImage* toRendererData(const bbe::Image& image) const;
 
 			public:
 				OpenGLManager();
@@ -174,6 +176,7 @@ namespace bbe
 				virtual void setCamera3D(const Vector3& cameraPos, const bbe::Matrix4& view, const bbe::Matrix4& projection) override;
 				virtual void fillCube3D(const Cube& cube) override;
 				virtual void fillSphere3D(const IcoSphere& sphere) override;
+				void fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals);
 				virtual void addLight(const bbe::Vector3& pos, float lightStrengh, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode) override;
 
 				virtual void imguiStart() override;

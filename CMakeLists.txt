@@ -86,9 +86,11 @@ macro(add_trivial_project name)
     string(APPEND h_file_string "#include \"BBE/Image.h\"\n")
     string(APPEND h_file_string "#include \"BBE/Sound.h\"\n")
     string(APPEND h_file_string "#include \"BBE/String.h\"\n")
+    string(APPEND h_file_string "#include \"BBE/Model.h\"\n")
     string(APPEND h_file_string "#include \"BBE/FragmentShader.h\"\n")
     string(APPEND h_file_string "namespace assetStore {\n")
     string(APPEND cpp_file_string "#include \"BBE/Window.h\"\n")
+    string(APPEND cpp_file_string "#include \"BBE/SimpleFile.h\"\n")
     string(APPEND cpp_file_string "// NOTE: Indentation here looks \"special\", but I don't care as long as the indentation within the generator script looks okay :-)\n")
     string(APPEND cpp_file_string 
     "static void cleanUp()\;
@@ -103,7 +105,7 @@ macro(add_trivial_project name)
     foreach(f ${files})
       get_filename_component(ext ${f} EXT)
       get_filename_component(name_we ${f} NAME_WE)
-      contents_as_hex(${f})
+      set(contents "")
       if(ext STREQUAL ".jpg")
         string(APPEND h_file_string "extern const bbe::Image* ${name_we}()\;\n")
         string(APPEND cpp_file_string 
@@ -111,14 +113,15 @@ macro(add_trivial_project name)
           const bbe::Image* assetStore::${name_we}() 
           {
             registerCleanup()\;
-            static bbe::List<unsigned char> raw = { ${contents} }\;
             if(${name_we}_data) return ${name_we}_data\;
+            bbe::List<unsigned char> raw = bbe::simpleFile::readBinaryFile(\"${f}\")\;
             ${name_we}_data = new bbe::Image()\;
             ${name_we}_data->loadRaw(raw)\;
             return ${name_we}_data\;
           }\n")
-          string(APPEND delete_calls "delete ${name_we}_data\; ${name_we}_data = nullptr\;")
+        string(APPEND delete_calls "delete ${name_we}_data\; ${name_we}_data = nullptr\;")
       elseif(ext STREQUAL ".mp3")
+        contents_as_hex(${f})
         string(APPEND h_file_string "extern const bbe::Sound* ${name_we}()\;\n")
         string(APPEND cpp_file_string 
           "static bbe::Sound* ${name_we}_data = nullptr\;
@@ -131,8 +134,9 @@ macro(add_trivial_project name)
             ${name_we}_data->load(raw, bbe::SoundLoadFormat::MP3)\;
             return ${name_we}_data\;
           }\n")
-          string(APPEND delete_calls "delete ${name_we}_data\; ${name_we}_data = nullptr\;")
+        string(APPEND delete_calls "delete ${name_we}_data\; ${name_we}_data = nullptr\;")
       elseif(ext STREQUAL ".txt")
+        contents_as_hex(${f})
         string(APPEND h_file_string "extern const bbe::String* ${name_we}()\;\n")
         string(APPEND cpp_file_string 
           "const bbe::String* assetStore::${name_we}() 
@@ -141,7 +145,33 @@ macro(add_trivial_project name)
             static bbe::String s = { ${contents} 0x00 }\;
             return &s\;
           }\n")
+      elseif(ext STREQUAL ".obj")
+        string(APPEND h_file_string "extern const bbe::Model* ${name_we}()\;\n")
+        #string(APPEND cpp_file_string 
+        #  "static bbe::Model* ${name_we}_data = nullptr\;
+        #  const bbe::Model* assetStore::${name_we}() 
+        #  {
+        #    registerCleanup()\;
+        #    static bbe::String s = { ${contents} 0x00 }\;
+        #    if(${name_we}_data) return ${name_we}_data\;
+        #    ${name_we}_data = new bbe::Model()\;
+        #    *${name_we}_data = bbe::Model::fromObj(s)\;
+        #    return ${name_we}_data\;
+        #  }\n")
+        string(APPEND cpp_file_string 
+          "static bbe::Model* ${name_we}_data = nullptr\;
+          const bbe::Model* assetStore::${name_we}() 
+          {
+            registerCleanup()\;
+            if(${name_we}_data) return ${name_we}_data\;
+            bbe::String s = bbe::simpleFile::readFile(\"${f}\")\;
+            ${name_we}_data = new bbe::Model()\;
+            *${name_we}_data = bbe::Model::fromObj(s)\;
+            return ${name_we}_data\;
+          }\n")
+        string(APPEND delete_calls "delete ${name_we}_data\; ${name_we}_data = nullptr\;")
       elseif(ext STREQUAL ".spv" OR ext STREQUAL ".frag")
+        contents_as_hex(${f})
         # .spv is ignored when we are not in vulkan
         if((BBE_RENDER_MODE STREQUAL "Vulkan" AND ext STREQUAL ".spv")
           OR ((BBE_RENDER_MODE STREQUAL "OpenGL" OR BBE_RENDER_MODE STREQUAL "Emscripten") AND ext STREQUAL ".frag"))

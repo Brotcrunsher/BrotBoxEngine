@@ -6,6 +6,9 @@
 #ifdef BBE_RENDERER_VULKAN
 #include "BBE/Vulkan/VulkanManager.h"
 #endif
+#ifdef BBE_RENDERER_OPENGL
+#include "BBE/OpenGL/OpenGLManager.h"
+#endif
 
 void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a, bool force)
 {
@@ -68,6 +71,13 @@ void bbe::PrimitiveBrush3D::addLight(const bbe::PointLight& light)
 void bbe::PrimitiveBrush3D::drawTerrain(const Terrain& terrain)
 {
 	((bbe::INTERNAL::vulkan::VulkanManager*)m_prenderManager)->drawTerrain(terrain, m_color);
+}
+#endif
+
+#ifdef BBE_RENDERER_OPENGL
+void bbe::PrimitiveBrush3D::fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo, const Image* normals)
+{
+	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->fillModel(transform, model, albedo, normals);
 }
 #endif
 
