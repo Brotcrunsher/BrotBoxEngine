@@ -61,6 +61,10 @@ class MyGame : public bbe::Game
 			l.lightStrength = 10;
 			lights.add(l);
 		}
+		if (isKeyPressed(bbe::Key::Q))
+		{
+			lights.clear();
+		}
 #endif
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
