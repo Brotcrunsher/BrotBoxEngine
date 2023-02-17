@@ -395,6 +395,57 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 	return program;
 }
 
+static GLint gAlbedoSpecPos3dAmbient = 0;
+static GLint ambientFactorPos3dAmbient = 0;
+bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersAmbient()
+{
+	Program program;
+	char const* vertexShaderSrc =
+		"out vec2 uvCoord;"
+		"void main()"
+		"{"
+		"   if(gl_VertexID == 0)"
+		"   {"
+		"       gl_Position = vec4(-1.0, -1.0, 0.0, 1.0);"
+		"       uvCoord = vec2(0.0, 0.0);"
+		"   }"
+		"   if(gl_VertexID == 1)"
+		"   {"
+		"       gl_Position = vec4(-1.0, 1.0, 0.0, 1.0);"
+		"       uvCoord = vec2(0.0, 1.0);"
+		"   }"
+		"   if(gl_VertexID == 2)"
+		"   {"
+		"       gl_Position = vec4(1.0, 1.0, 0.0, 1.0);"
+		"       uvCoord = vec2(1.0, 1.0);"
+		"   }"
+		"   if(gl_VertexID == 3)"
+		"   {"
+		"       gl_Position = vec4(1.0, -1.0, 0.0, 1.0);"
+		"       uvCoord = vec2(1.0, 0.0);"
+		"   }"
+		"}";
+
+	char const* fragmentShaderSource =
+		"in vec2 uvCoord;"
+		"out vec4 outColor;"
+		"void main()"
+		"{"
+		"   vec3 albedo = texture(gAlbedoSpec, uvCoord).xyz;"
+		"   vec3 ambient = albedo * ambientFactor;"
+		"   outColor = vec4(ambient, 1.0);"
+		"}";
+	program.addShaders(vertexShaderSrc, fragmentShaderSource,
+		{
+			{UT::UT_sampler2D, "gAlbedoSpec"  , &gAlbedoSpecPos3dAmbient  },
+			{UT::UT_float    , "ambientFactor", &ambientFactorPos3dAmbient},
+		});
+
+	program.uniform1i(gAlbedoSpecPos3dAmbient, 2);
+	program.uniform1f(ambientFactorPos3dAmbient, 0.1f);
+	return program;
+}
+
 static GLint gPositionPos3dLight = 0;
 static GLint gNormalPos3dLight = 0;
 static GLint gAlbedoSpecPos3dLight = 0;
@@ -403,7 +454,6 @@ static GLint lightStrengthPos3dLight = 0;
 static GLint falloffModePos3dLight = 0;
 static GLint lightColorPos3dLight = 0;
 static GLint specularColorPos3dLight = 0;
-static GLint ambientFactorPos3dLight = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersLight()
 {
 	Program program;
@@ -473,12 +523,11 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"       }																							 "
 		"   }"
 		"   vec3 L = normalize(toLight);"
-		"   vec3 ambient = albedo * ambientFactor;"
 		"   vec3 diffuse = max(dot(normal, L), 0.0) * (albedo * lightColor.xyz) * lightPower;"
 		"   vec3 R = reflect(-L, normal);"
 		"   vec3 V = normalize(toCamera);"
 		"   vec3 specular = pow(max(dot(R, V), 0.0), 10.0) * specularColor.xyz * lightPower;"
-		"   outColor = vec4(ambient + diffuse + specular, 1.0);"
+		"   outColor = vec4(diffuse + specular, 1.0);"
 		"}";
 	program.addShaders(vertexShaderSrc, fragmentShaderSource,
 		{
@@ -490,7 +539,6 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 			{UT::UT_vec4     , "lightColor"	  , &lightColorPos3dLight    },
 			{UT::UT_vec4     , "specularColor", &specularColorPos3dLight },
 			{UT::UT_vec3     , "lightPos"	  , &lightPosPos3dLight      },
-			{UT::UT_float    , "ambientFactor", &ambientFactorPos3dLight },
 		});
 
 	program.uniform1i(gPositionPos3dLight, 0);
@@ -502,7 +550,6 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 	program.uniform1i(falloffModePos3dLight, 0);
 	program.uniform4f(lightColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
 	program.uniform4f(specularColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
-	program.uniform1f(ambientFactorPos3dLight, 0.f);
 	return program;
 }
 
@@ -590,6 +637,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	m_program2d = init2dShaders();
 	m_program2dTex = init2dTexShaders();
 	m_program3dMrt = init3dShadersMrt();
+	m_program3dAmbient = init3dShadersAmbient();
 	m_program3dLight = init3dShadersLight();
 	initGeometryBuffer();
 
@@ -633,13 +681,21 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 {
 	// Draw the stuff of 3D
-	m_program3dLight.use();
 	uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
 	GLuint ibo;
 	glGenBuffers(1, &ibo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices, GL_STATIC_DRAW);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	m_program3dAmbient.use();
+	mrtFb.bind();
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	m_program3dLight.use();
 	mrtFb.bind();
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
@@ -654,10 +710,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 		m_program3dLight.uniform1i(falloffModePos3dLight, (int)l.falloffMode);
 		m_program3dLight.uniform4f(lightColorPos3dLight, l.lightColor);
 		m_program3dLight.uniform4f(specularColorPos3dLight, l.specularColor);
-		// TODO What if we have no light? Shouldn't we still render ambient?
-		//      Maybe put the ambient calculation in a seperate program, making it
-		//      completely independent of any Light?
-		m_program3dLight.uniform1f(ambientFactorPos3dLight, i == 0 ? 0.1f : 0.0f);
 
 
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

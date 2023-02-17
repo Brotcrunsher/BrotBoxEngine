@@ -98,6 +98,7 @@ namespace bbe
 				Program m_program2d;
 				Program m_program2dTex;
 				Program m_program3dMrt;
+				Program m_program3dAmbient;
 				Program m_program3dLight;
 
 				Framebuffer mrtFb;
@@ -115,6 +116,7 @@ namespace bbe
 				Program init2dShaders();
 				Program init2dTexShaders();
 				Program init3dShadersMrt();
+				Program init3dShadersAmbient();
 				Program init3dShadersLight();
 				void initGeometryBuffer();
 
