@@ -10,7 +10,7 @@
 class MySoundSource : public bbe::SoundDataSource
 {
 public:
-	virtual std::pair<float, float> getSample(const size_t i) const override
+	virtual bbe::Vector2 getSample(const size_t i) const override
 	{
 		const size_t access_i = i % 1000000;
 		constexpr size_t amountOfFrequencies = 30;
@@ -29,6 +29,11 @@ public:
 	virtual size_t getAmountOfSamples() const override
 	{
 		return (size_t)-1;
+	}
+
+	virtual uint32_t getHz() const override
+	{
+		return 44000;
 	}
 };
 

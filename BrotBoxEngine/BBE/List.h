@@ -15,7 +15,7 @@
 
 namespace bbe
 {
-	template <typename T, bool keepSorted = false>
+	template <typename T>
 	class List
 	{
 		//TODO use own allocators
@@ -75,7 +75,7 @@ namespace bbe
 			}
 		}
 
-		List(const List<T, keepSorted>& other)
+		List(const List<T>& other)
 			: m_length(other.m_length), m_capacity(other.m_capacity)
 		{
 			m_pdata = new INTERNAL::Unconstructed<T>[m_capacity];
@@ -85,7 +85,7 @@ namespace bbe
 			}
 		}
 
-		List(List<T, keepSorted>&& other) noexcept
+		List(List<T>&& other) noexcept
 			: m_length(other.m_length), m_capacity(other.m_capacity), m_pdata(other.m_pdata)
 		{
 			other.m_pdata = nullptr;
@@ -102,7 +102,7 @@ namespace bbe
 			}
 		}
 
-		List& operator=(const List<T, keepSorted>& other)
+		List& operator=(const List<T>& other)
 		{
 			clear();
 
@@ -122,7 +122,7 @@ namespace bbe
 			return *this;
 		}
 
-		List& operator=(List<T, keepSorted>&& other) noexcept
+		List& operator=(List<T>&& other) noexcept
 		{
 			clear();
 
@@ -200,7 +200,7 @@ namespace bbe
 			return m_pdata[index].m_value;
 		}
 
-		List<T, keepSorted>& operator+=(List<T, keepSorted> other)
+		List<T>& operator+=(List<T> other)
 		{
 			for (size_t i = 0; i < other.m_length; i++)
 			{
@@ -209,57 +209,8 @@ namespace bbe
 			return *this;
 		}
 
-		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<dummyKeepSorted, void>::type add(const T& val, const int amount = 1)
+		void add(const T& val, size_t amount = 1)
 		{
-			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
-			//TODO rewrite this method using size_t instead of int
-			if (amount <= 0)
-			{
-				debugBreak();
-			}
-			auto delVal = growIfNeeded(amount);
-			//UNTESTED
-			int i = 0;
-			for (i = (int)m_length + amount - 1; i >= 0; i--)
-			{
-				int lowerIndex = i - amount;
-				if (lowerIndex >= 0 && val < m_pdata[lowerIndex].m_value)
-				{
-					if (i >= (int)m_length)
-					{
-						new (bbe::addressOf(m_pdata[i])) T(std::move(m_pdata[lowerIndex].m_value));
-					}
-					else
-					{
-						m_pdata[i].m_value = std::move(m_pdata[lowerIndex].m_value);
-					}
-				}
-				else
-				{
-					break;
-				}
-			}
-			int insertionIndex = i;
-			for (; i >= insertionIndex - amount + 1 && i >= 0; i--)
-			{
-				if (i >= (int)m_length)
-				{
-					new (bbe::addressOf(m_pdata[i])) T(val);
-				}
-				else
-				{
-					m_pdata[i].m_value = val;
-				}
-			}
-			m_length += amount;
-			delete[] delVal;
-		}
-
-		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<!dummyKeepSorted, void>::type add(const T& val, size_t amount = 1)
-		{
-			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			auto delVal = growIfNeeded(amount);
 			for (size_t i = 0; i < amount; i++)
 			{
@@ -269,64 +220,8 @@ namespace bbe
 			delete[] delVal;
 		}
 
-		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<dummyKeepSorted, void>::type add(T&& val, const int amount = 1)
+		void add(T&& val, size_t amount)
 		{
-			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
-			//TODO rewrite this method using size_t instead of int
-			if (amount <= 0)
-			{
-				debugBreak();
-			}
-			auto delVal = growIfNeeded(amount);
-			//UNTESTED
-			int i = 0;
-			for (i = (int)m_length + amount - 1; i >= 0; i--)
-			{
-				int lowerIndex = i - amount;
-				if (lowerIndex >= 0 && val < m_pdata[lowerIndex].m_value)
-				{
-					if (i >= (int)m_length)
-					{
-						new (bbe::addressOf(m_pdata[i])) T(std::move(m_pdata[lowerIndex].m_value));
-					}
-					else
-					{
-						m_pdata[i].m_value = std::move(m_pdata[lowerIndex].m_value);
-					}
-				}
-				else
-				{
-					break;
-				}
-			}
-			int insertionIndex = i;
-			for (; i >= insertionIndex - amount + 1 && i >= 0; i--)
-			{
-				if (i >= (int)m_length)
-				{
-					if (amount == 1)
-					{
-						new (bbe::addressOf(m_pdata[m_length])) T(std::move(val));
-					}
-					else
-					{
-						new (bbe::addressOf(m_pdata[i])) T(val);
-					}
-				}
-				else
-				{
-					m_pdata[i].m_value = std::move(val);
-				}
-			}
-			m_length += amount;
-			delete[] delVal;
-		}
-
-		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<!dummyKeepSorted, void>::type add(T&& val, size_t amount)
-		{
-			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			auto delVal = growIfNeeded(amount);
 			if (amount == 1)
 			{
@@ -344,10 +239,8 @@ namespace bbe
 			delete[] delVal;
 		}
 
-		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<!dummyKeepSorted, void>::type add(T&& val)
+		void add(T&& val)
 		{
-			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
 			auto delVal = growIfNeeded(1);
 			new (bbe::addressOf(m_pdata[m_length])) T(std::move(val));
 
@@ -366,135 +259,6 @@ namespace bbe
 			{
 				return false;
 			}
-		}
-
-		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<!dummyKeepSorted, size_t>::type getIndexOnAdd(const T& val)
-		{
-			return m_length;
-		}
-
-		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<dummyKeepSorted, size_t>::type getIndexOnAdd(const T& val)
-		{
-			//UNTESTED
-			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
-
-			if (m_length == 0)
-			{
-				return 0;
-			}
-			else if (m_length == 1)
-			{
-				if (m_pdata[0].m_value > val)
-				{
-					return 0;
-				}
-				else
-				{
-					return 1;
-				}
-			}
-			if (val < m_pdata[0].m_value)
-			{
-				return 0;
-			}
-			if (val > m_pdata[m_length - 1].m_value)
-			{
-				return m_length;
-			}
-
-			size_t smallIndex = 0;
-			size_t bigIndex = m_length - 1;
-
-			while (smallIndex <= bigIndex)
-			{
-				size_t searchSpace = bigIndex - smallIndex;
-				size_t middleIndex = smallIndex + searchSpace / 2;
-				if (m_pdata[middleIndex].m_value == val)
-				{
-					return middleIndex;
-				}
-				else
-				{
-					if (m_pdata[middleIndex].m_value > val)
-					{
-						if (middleIndex == 0)
-						{
-							return 0;
-						}
-						bigIndex = middleIndex - 1;
-					}
-					else
-					{
-						if (middleIndex >= m_length)
-						{
-							return m_length;
-						}
-						smallIndex = middleIndex + 1;
-					}
-				}
-			}
-			return smallIndex;
-		}
-
-		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<!dummyKeepSorted, void>::type getNeighbors(const T& val, T*& leftNeighbor, T*& rightNeighbor)
-		{
-			assert(false && "Only sorted Lists can getIndexWhenPushedBack!");
-		}
-
-		template <bool dummyKeepSorted = keepSorted>
-		typename std::enable_if<dummyKeepSorted, void>::type getNeighbors(const T& val, T*& leftNeighbor, T*& rightNeighbor)
-		{
-			//UNTESTED
-			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
-
-			if (m_length == 0)
-			{
-				leftNeighbor = nullptr;
-				rightNeighbor = nullptr;
-				return;
-			}
-			else if (m_length == 1)
-			{
-				if (m_pdata[0].m_value > val)
-				{
-					leftNeighbor = nullptr;
-					rightNeighbor = reinterpret_cast<T*>(m_pdata);
-					return;
-				}
-				else
-				{
-					leftNeighbor = reinterpret_cast<T*>(m_pdata);
-					rightNeighbor = nullptr;
-					return;
-				}
-			}
-
-			size_t index = getIndexOnAdd(val);
-			while (index < m_length - 1 && m_pdata[index].m_value == val)
-			{
-				index++;
-			}
-
-			if (index == 0)
-			{
-				leftNeighbor = nullptr;
-				rightNeighbor = reinterpret_cast<T*>(m_pdata);
-				return;
-			}
-			if (index >= m_length)
-			{
-				leftNeighbor = reinterpret_cast<T*>(m_pdata + m_length - 1);
-				rightNeighbor = nullptr;
-				return;
-			}
-
-			leftNeighbor = reinterpret_cast<T*>(m_pdata + index - 1);
-			rightNeighbor = reinterpret_cast<T*>(m_pdata + index);
-
-			return;
 		}
 
 		template <typename U>

@@ -79,7 +79,6 @@ jobs:
            ./ExampleTemplate
            ./ExampleTesseract
            ./ExampleTextRendering
-           ./ExampleWaveDrawer
 
 
   build_emscripten:

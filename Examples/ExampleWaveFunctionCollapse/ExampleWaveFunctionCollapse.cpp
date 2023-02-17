@@ -17,8 +17,8 @@ class MyGame : public bbe::Game
 	bool bruteForce = false;
 	bbe::Random rand;
 
-	bbe::List<bbe::Vector2i, true> markedForCollapse;
-	bbe::List<bbe::Vector2i, true> markedForDeepClear;
+	bbe::List<bbe::Vector2i> markedForCollapse;
+	bbe::List<bbe::Vector2i> markedForDeepClear;
 
 	enum class mirroring
 	{

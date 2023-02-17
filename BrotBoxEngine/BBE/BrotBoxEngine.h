@@ -71,11 +71,7 @@
 #include "../BBE/Line2.h"
 
 #include "../BBE/DefaultDestroyer.h"
-#include "../BBE/DefragmentationAllocator.h"
-#include "../BBE/GeneralPurposeAllocator.h"
 #include "../BBE/NewDeleteAllocator.h"
-#include "../BBE/PoolAllocator.h"
-#include "../BBE/StackAllocator.h"
 #include "../BBE/STLAllocator.h"
 #include "../BBE/UniquePointer.h"
 

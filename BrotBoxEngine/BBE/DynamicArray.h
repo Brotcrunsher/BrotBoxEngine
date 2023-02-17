@@ -10,7 +10,7 @@
 
 namespace bbe
 {
-	template<typename T, bool keepSorted>
+	template<typename T>
 	class List;
 
 	template <typename T, typename Allocator = NewDeleteAllocator, typename PointerType = T*>
@@ -80,17 +80,7 @@ namespace bbe
 			}
 		}
 
-		DynamicArray(const List<T, true> &list, Allocator* parentAllocator = nullptr)
-			: m_length(list.getLength())
-		{
-			createArray(list.getLength(), parentAllocator);
-			for (std::size_t i = 0; i < m_length; i++)
-			{
-				m_pdata[i] = list[i];
-			}
-		}
-
-		DynamicArray(const List<T, false> &list, Allocator* parentAllocator = nullptr)
+		DynamicArray(const List<T> &list, Allocator* parentAllocator = nullptr)
 			: m_length(list.getLength())
 		{
 			createArray(list.getLength(), parentAllocator);

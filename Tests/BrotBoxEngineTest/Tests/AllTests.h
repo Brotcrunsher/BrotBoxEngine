@@ -1,10 +1,5 @@
 #pragma once
 
-
-#include "PoolAllocatorTest.h"
-#include "StackAllocatorTest.h"
-#include "GeneralPurposeAllocatorTest.h"
-#include "DefragmentationAllocatorTest.h"
 #include "DataStructures/ListTest.h"
 #include "DataStructures/HashMapTest.h"
 #include "DataStructures/StackTest.h"
@@ -24,22 +19,6 @@ namespace bbe {
 		void runAllTests() {
 			std::cout << "Starting Tests!" << std::endl;
 
-			Person::checkIfAllPersonsWereDestroyed();
-
-			std::cout << "Testing PoolAllocator" << std::endl;
-			bbe::test::testPoolAllocator();
-			Person::checkIfAllPersonsWereDestroyed();
-
-			std::cout << "Testing StackAllocator" << std::endl;
-			bbe::test::testStackAllocator();
-			Person::checkIfAllPersonsWereDestroyed();
-
-			std::cout << "Testing GeneralPurposeAllocator" << std::endl;
-			bbe::test::testGeneralPurposeAllocator();
-			Person::checkIfAllPersonsWereDestroyed();
-
-			std::cout << "Testing DefragmentationAllocaotr" << std::endl;
-			bbe::test::testDefragmentationAllocator();
 			Person::checkIfAllPersonsWereDestroyed();
 
 			std::cout << "Testing List" << std::endl;
