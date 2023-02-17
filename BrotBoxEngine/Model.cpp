@@ -45,8 +45,8 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 			if (tokens.getLength() < 4) throw IllegalStateException();
 			rawVertices.add(bbe::Vector3(
 				tokens[1].toFloat(),
-				tokens[2].toFloat(),
-				tokens[3].toFloat()
+				tokens[3].toFloat(),
+				tokens[2].toFloat()
 			));
 		}
 		else if (tokens[0] == "vn")
@@ -54,8 +54,8 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 			if (tokens.getLength() < 4) throw IllegalStateException();
 			rawNormals.add(bbe::Vector3(
 				tokens[1].toFloat(),
-				tokens[2].toFloat(),
-				tokens[3].toFloat()
+				tokens[3].toFloat(),
+				tokens[2].toFloat()
 			));
 		}
 		else if (tokens[0] == "vt")
