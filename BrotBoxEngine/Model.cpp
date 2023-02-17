@@ -100,14 +100,9 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 			const bbe::String& vertexInfo = face[i];
 			if (i >= 4)
 			{
-				// Prepare a triangle with the previous indices.
-				// TODO: We have to store this value extra, because the list might grow, while we add it, rendering
-				//       the returned reference of operator[] as dangling. This is really subtle and dangerous -
-				//       can we do something about it?
-				uint32_t valToAdd = indices.last();
-				indices.add(valToAdd);
-				valToAdd = indices[indices.getLength() - 4];
-				indices.add(valToAdd);
+				// Prepare a triangle with the previous indices
+				indices.add(indices.last());
+				indices.add(indices[indices.getLength() - 4]);
 			}
 			if (int32_t* index = seenFaceVertices.get(vertexInfo))
 			{

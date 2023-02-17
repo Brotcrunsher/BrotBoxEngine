@@ -24,8 +24,9 @@ namespace bbe
 		size_t m_capacity;
 		INTERNAL::Unconstructed<T>* m_pdata;
 
-		void growIfNeeded(size_t amountOfNewObjects)
+		INTERNAL::Unconstructed<T>* growIfNeeded(size_t amountOfNewObjects)
 		{
+			INTERNAL::Unconstructed<T>* retVal = nullptr;
 			if (m_capacity < m_length + amountOfNewObjects)
 			{
 				size_t newCapacity = m_length + amountOfNewObjects;
@@ -42,13 +43,11 @@ namespace bbe
 					m_pdata[i].m_value.~T();
 				}
 
-				if (m_pdata != nullptr)
-				{
-					delete[] m_pdata;
-				}
+				retVal = m_pdata;
 				m_pdata = newData;
 				m_capacity = newCapacity;
 			}
+			return retVal;
 		}
 
 	public:
@@ -219,7 +218,7 @@ namespace bbe
 			{
 				debugBreak();
 			}
-			growIfNeeded(amount);
+			auto delVal = growIfNeeded(amount);
 			//UNTESTED
 			int i = 0;
 			for (i = (int)m_length + amount - 1; i >= 0; i--)
@@ -254,18 +253,20 @@ namespace bbe
 				}
 			}
 			m_length += amount;
+			delete[] delVal;
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
 		typename std::enable_if<!dummyKeepSorted, void>::type add(const T& val, size_t amount = 1)
 		{
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
-			growIfNeeded(amount);
+			auto delVal = growIfNeeded(amount);
 			for (size_t i = 0; i < amount; i++)
 			{
 				new (bbe::addressOf(m_pdata[m_length + i])) T(val);
 			}
 			m_length += amount;
+			delete[] delVal;
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
@@ -277,7 +278,7 @@ namespace bbe
 			{
 				debugBreak();
 			}
-			growIfNeeded(amount);
+			auto delVal = growIfNeeded(amount);
 			//UNTESTED
 			int i = 0;
 			for (i = (int)m_length + amount - 1; i >= 0; i--)
@@ -319,13 +320,14 @@ namespace bbe
 				}
 			}
 			m_length += amount;
+			delete[] delVal;
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
 		typename std::enable_if<!dummyKeepSorted, void>::type add(T&& val, size_t amount)
 		{
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
-			growIfNeeded(amount);
+			auto delVal = growIfNeeded(amount);
 			if (amount == 1)
 			{
 				new (bbe::addressOf(m_pdata[m_length])) T(std::move(val));
@@ -339,16 +341,18 @@ namespace bbe
 			}
 
 			m_length += amount;
+			delete[] delVal;
 		}
 
 		template <bool dummyKeepSorted = keepSorted>
 		typename std::enable_if<!dummyKeepSorted, void>::type add(T&& val)
 		{
 			static_assert(dummyKeepSorted == keepSorted, "Do not specify dummyKeepSorted!");
-			growIfNeeded(1);
+			auto delVal = growIfNeeded(1);
 			new (bbe::addressOf(m_pdata[m_length])) T(std::move(val));
 
 			m_length += 1;
+			delete[] delVal;
 		}
 
 		bool addUnique(const T& val)

@@ -857,3 +857,11 @@ TEST(List, CombineOrderedLists)
 	ASSERT_EQ(list1[11].getLength(), 1337);
 	ASSERT_EQ(list1.getLength(), 12);
 }
+
+TEST(List, SelfAdd)
+{
+	bbe::List<int> l;
+	l.add(0);
+	// Just make sure the sanatizer doesn't find an illegal access here.
+	for(int i = 0; i < 1024; i++) l.add(l[0]);
+}
