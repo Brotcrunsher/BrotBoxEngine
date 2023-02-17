@@ -57,6 +57,8 @@ namespace bbe
 		Color m_color = Color(-1000, -1000, -1000);
 
 		bbe::RenderManager* m_prenderManager = nullptr;
+
+		bbe::Model m_rectangle;
 	public:
 		PrimitiveBrush3D();
 
@@ -71,6 +73,7 @@ namespace bbe
 		void drawTerrain(const Terrain &terrain);
 #endif
 #ifdef BBE_RENDERER_OPENGL
+		void fillRectangle(const bbe::Matrix4& transform, const Image* albedo = nullptr, const Image* normals = nullptr);
 		void fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo = nullptr, const Image* normals = nullptr);
 #endif
 

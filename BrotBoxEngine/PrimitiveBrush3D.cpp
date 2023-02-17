@@ -34,6 +34,15 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 
 bbe::PrimitiveBrush3D::PrimitiveBrush3D()
 {
+	m_rectangle = bbe::Model(
+		{ 
+			bbe::PosNormalPair{bbe::Vector3(-0.5, -0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(0, 0)},
+			bbe::PosNormalPair{bbe::Vector3(-0.5,  0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(0, 1)},
+			bbe::PosNormalPair{bbe::Vector3( 0.5, -0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(1, 0)},
+			bbe::PosNormalPair{bbe::Vector3( 0.5,  0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(1, 1)},
+		},
+		{0, 1, 2, 2, 1, 3}
+	);
 }
 
 void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
@@ -75,6 +84,11 @@ void bbe::PrimitiveBrush3D::drawTerrain(const Terrain& terrain)
 #endif
 
 #ifdef BBE_RENDERER_OPENGL
+void bbe::PrimitiveBrush3D::fillRectangle(const bbe::Matrix4& transform, const Image* albedo, const Image* normals)
+{
+	fillModel(transform, m_rectangle, albedo, normals);
+}
+
 void bbe::PrimitiveBrush3D::fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo, const Image* normals)
 {
 	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->fillModel(transform, model, albedo, normals);
