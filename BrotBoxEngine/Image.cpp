@@ -14,8 +14,8 @@ void bbe::Image::finishLoad(stbi_uc* pixels)
 		throw LoadException();
 	}
 
-	m_pdata = new byte[getSizeInBytes()]; //TODO use allocator
-	memcpy(m_pdata, pixels, getSizeInBytes());
+	m_pdata.resizeCapacityAndLengthUninit(getSizeInBytes());
+	memcpy(m_pdata.getRaw(), pixels, getSizeInBytes());
 
 	stbi_image_free(pixels);
 }
@@ -49,50 +49,6 @@ bbe::Image::Image(int width, int height, const byte * data, ImageFormat format)
 	load(width, height, data, format);
 }
 
-bbe::Image::Image(const Image& other)
-{
-	load(other.m_width, other.m_height, other.m_pdata, other.m_format);
-
-	m_repeatMode = other.m_repeatMode;
-	m_filterMode = other.m_filterMode;
-	m_prendererData = other.m_prendererData;
-}
-
-bbe::Image::Image(Image&& other) noexcept
-{
-	this->operator=(std::move(other));
-}
-
-bbe::Image& bbe::Image::operator=(Image&& other) noexcept
-{
-	destroy();
-
-	this->m_pdata = other.m_pdata;
-	this->m_width = other.m_width;
-	this->m_height = other.m_height;
-	this->m_format = other.m_format;
-	this->m_repeatMode = other.m_repeatMode;
-	this->m_filterMode = other.m_filterMode;
-
-	this->m_prendererData = other.m_prendererData;
-
-	other.m_pdata = nullptr;
-	other.m_width = 0;
-	other.m_height = 0;
-	other.m_format = (ImageFormat)0;
-	other.m_repeatMode = (ImageRepeatMode)0;
-	other.m_filterMode = (ImageFilterMode)0;
-
-	other.m_prendererData = nullptr;
-
-	return *this;
-}
-
-bbe::Image::~Image()
-{
-	destroy();
-}
-
 void bbe::Image::loadRaw(const bbe::List<unsigned char>& rawData)
 {
 	loadRaw(rawData.getRaw(), rawData.getLength());
@@ -100,11 +56,7 @@ void bbe::Image::loadRaw(const bbe::List<unsigned char>& rawData)
 
 void bbe::Image::loadRaw(const unsigned char* rawData, size_t dataLength)
 {
-	if (isLoaded())
-	{
-		throw AlreadyCreatedException();
-	}
-
+	m_prendererData = nullptr;
 	int texChannels = 0;
 	stbi_uc* pixels = stbi_load_from_memory(rawData, (int)dataLength, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
 	finishLoad(pixels);
@@ -112,11 +64,7 @@ void bbe::Image::loadRaw(const unsigned char* rawData, size_t dataLength)
 
 void bbe::Image::load(const char * path)
 {
-	if (isLoaded())
-	{
-		throw AlreadyCreatedException();
-	}
-
+	m_prendererData = nullptr;
 	int texChannels = 0;
 	stbi_uc *pixels = stbi_load(path, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
 	finishLoad(pixels);
@@ -137,9 +85,10 @@ void bbe::Image::load(int width, int height, const Color & c)
 	m_width = width;
 	m_height = height;
 	m_format = ImageFormat::R8G8B8A8;
+	m_prendererData = nullptr;
 
 	const size_t size = getSizeInBytes();
-	m_pdata = new byte[size]; //TODO use allocator
+	m_pdata.resizeCapacityAndLengthUninit(size); //TODO use allocator
 	for (int i = 0; i < size; i+=4)
 	{
 #ifdef _MSC_VER
@@ -160,30 +109,13 @@ void bbe::Image::load(int width, int height, const Color & c)
 
 void bbe::Image::load(int width, int height, const byte * data, ImageFormat format)
 {
-	destroy();
-
 	m_width = width;
 	m_height = height;
 	m_format = format;
+	m_prendererData = nullptr;
 
-	m_pdata = new byte[getSizeInBytes()];
-	memcpy(m_pdata, data, getSizeInBytes());
-}
-
-void bbe::Image::destroy()
-{
-	if (m_pdata != nullptr)
-	{
-		delete[] m_pdata;
-		m_pdata = nullptr;
-		m_width = 0;
-		m_height = 0;
-	}
-
-	if(m_prendererData != nullptr)
-	{
-		m_prendererData = nullptr;
-	}
+	m_pdata.resizeCapacityAndLengthUninit(getSizeInBytes());
+	memcpy(m_pdata.getRaw(), data, getSizeInBytes());
 }
 
 int bbe::Image::getWidth() const
@@ -196,9 +128,9 @@ int bbe::Image::getHeight() const
 	return m_height;
 }
 
-bbe::Vector2 bbe::Image::getDimensions() const
+bbe::Vector2i bbe::Image::getDimensions() const
 {
-	return Vector2(static_cast<float>(getWidth()), static_cast<float>(getHeight()));
+	return Vector2i(getWidth(), getHeight());
 }
 
 size_t bbe::Image::getSizeInBytes() const
@@ -238,7 +170,7 @@ size_t bbe::Image::getBytesPerChannel() const
 
 bbe::Color bbe::Image::getPixel(size_t x, size_t y) const
 {
-	if (m_pdata == nullptr)
+	if (!isLoaded())
 	{
 		throw NotInitializedException();
 	}
@@ -293,5 +225,5 @@ void bbe::Image::setFilterMode(ImageFilterMode ifm)
 
 bool bbe::Image::isLoaded() const
 {
-	return m_pdata != nullptr;
+	return m_pdata.getLength() > 0;
 }

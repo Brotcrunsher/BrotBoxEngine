@@ -108,10 +108,7 @@ static const bbe::Font& getFont(const bbe::String& fontName, unsigned fontSize)
 
 static void destroyFonts()
 {
-	for (std::pair<const std::pair<bbe::String, unsigned>, bbe::Font>& val : dynamicFonts)
-	{
-		val.second.destroy();
-	}
+	dynamicFonts.clear();
 }
 
 void bbe::PrimitiveBrush2D::INTERNAL_destroy()
@@ -379,7 +376,7 @@ void bbe::PrimitiveBrush2D::fillChar(const Vector2& p, int32_t c, const bbe::Fon
 {
 	if (c == ' ' || c == '\n' || c == '\r' || c == '\t') return;
 	const bbe::Image& charImage = font.getImage(c, m_windowXScale);
-	drawImage(p, font.getDimensions(c), charImage, rotation);
+	drawImage(p, font.getDimensions(c).as<float>(), charImage, rotation);
 }
 
 void bbe::PrimitiveBrush2D::fillChar(float x, float y, int32_t c, unsigned fontSize, const bbe::String& fontName, float rotation)
@@ -448,7 +445,7 @@ void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, const b
 		{
 			currentPosition.x += font.getLeftSideBearing(*text);
 			const bbe::Image& charImage = font.getImage(*text, m_windowXScale);
-			fillChar((bbe::Vector2(currentPosition.x, currentPosition.y + font.getVerticalOffset(*text)) + charImage.getDimensions() / 2).rotate(rotation, p) - charImage.getDimensions() / 2, *text, font, rotation);
+			fillChar((bbe::Vector2(currentPosition.x, currentPosition.y + font.getVerticalOffset(*text)) + charImage.getDimensions().as<float>() / 2).rotate(rotation, p) - charImage.getDimensions().as<float>() / 2, *text, font, rotation);
 			currentPosition.x += font.getAdvanceWidth(*text);
 		}
 

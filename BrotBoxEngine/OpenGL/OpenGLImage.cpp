@@ -2,7 +2,7 @@
 
 bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image)
 {
-	if (image.m_pdata == nullptr)
+	if (!image.isLoaded())
 	{
 		throw NotInitializedException();
 	}
@@ -25,7 +25,7 @@ bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image)
 	// TODO This might break if the image decoder has a different row alignment than 1.
 	//      Check if this could ever be the case with stb image.
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat(image), image.getWidth(), image.getHeight(), 0, format(image), type(image), image.m_pdata);
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat(image), image.getWidth(), image.getHeight(), 0, format(image), type(image), image.m_pdata.getRaw());
 
 	glGenerateMipmap(GL_TEXTURE_2D);
 }

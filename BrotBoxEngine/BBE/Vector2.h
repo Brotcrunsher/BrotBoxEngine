@@ -360,6 +360,12 @@ namespace bbe
 		{
 			return Vector2_t<T>(y, y);
 		}
+
+		template<typename U>
+		Vector2_t<U> as() const
+		{
+			return Vector2_t<U>((U)x, (U)y);
+		}
 	};
 
 	using Vector2  = Vector2_t<float>;

@@ -170,8 +170,8 @@ int32_t bbe::Font::getLeftSideBearing(int32_t c) const
 {
 	if (getFixedWidth() > 0)
 	{
-		const bbe::Vector2 dim = getDimensions(c);
-		return int32_t((getFixedWidth() - dim.x) * 0.5f);
+		const bbe::Vector2i dim = getDimensions(c);
+		return (getFixedWidth() - dim.x) / 2;
 	}
 	else
 	{
@@ -198,7 +198,7 @@ int32_t bbe::Font::getVerticalOffset(int32_t c) const
 	return getCharData(c, 1.0f).verticalOffset;
 }
 
-bbe::Vector2 bbe::Font::getDimensions(int32_t c) const
+bbe::Vector2i bbe::Font::getDimensions(int32_t c) const
 {
 	return getImage(c, 1.f).getDimensions();
 }
@@ -211,17 +211,6 @@ void bbe::Font::setFixedWidth(int32_t val)
 int32_t bbe::Font::getFixedWidth() const
 {
 	return fixedWidth;
-}
-
-void bbe::Font::destroy()
-{
-	for (auto& cd : charDatas)
-	{
-		if (cd.second.charImage.isLoaded())
-		{
-			cd.second.charImage.destroy();
-		}
-	}
 }
 
 bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const char* text, float rotation, bool verticalCorrection) const
@@ -254,7 +243,7 @@ bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const ch
 			const bbe::Image& charImage = getImage(codePoint, 1.0f);
 			if (verticalCorrection)
 			{
-				retVal.add((bbe::Vector2(currentPosition.x, currentPosition.y + getVerticalOffset(codePoint)) + charImage.getDimensions() / 2).rotate(rotation, p) - charImage.getDimensions() / 2);
+				retVal.add((bbe::Vector2(currentPosition.x, currentPosition.y + getVerticalOffset(codePoint)) + charImage.getDimensions().as<float>() / 2).rotate(rotation, p) - charImage.getDimensions().as<float>() / 2);
 			}
 			else
 			{
@@ -278,12 +267,12 @@ bbe::Rectangle bbe::Font::getBoundingBox(const bbe::String& text) const
 
 	bbe::List<bbe::Vector2> renderPositions = getRenderPositions(bbe::Vector2(0, 0), text);
 
-	bbe::Rectangle retVal = bbe::Rectangle(renderPositions[0], getDimensions(text.getCodepoint(0)));
+	bbe::Rectangle retVal = bbe::Rectangle(renderPositions[0], getDimensions(text.getCodepoint(0)).as<float>());
 
 	// TODO use iterators instead
 	for (size_t i = 1; i < text.getLength(); i++)
 	{
-		bbe::Rectangle curr = bbe::Rectangle(renderPositions[i], getDimensions(text.getCodepoint(i)));
+		bbe::Rectangle curr = bbe::Rectangle(renderPositions[i], getDimensions(text.getCodepoint(i)).as<float>());
 		retVal = retVal.combine(curr);
 	}
 

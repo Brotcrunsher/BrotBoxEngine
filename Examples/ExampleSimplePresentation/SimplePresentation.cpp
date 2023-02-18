@@ -222,13 +222,7 @@ Slide::Slide(const char* path)
 Slide::~Slide()
 {
 	fontsLoaded--;
-	if (fontsLoaded == 0)
-	{
-		for (size_t i = 0; i < fonts.getLength(); i++)
-		{
-			fonts[i].destroy();
-		}
-	}
+	fonts.clear();
 }
 
 Slide::Slide(Slide&& other)
@@ -617,7 +611,7 @@ void Slide::compile()
 	{
 		for (size_t k = 0; k < tokenizer->tokens[i].chars.getLength(); k++)
 		{
-			const bbe::Rectangle currentAabb = bbe::Rectangle(tokenizer->tokens[i].chars[k].pos, getFont().getDimensions(tokenizer->tokens[i].chars[k].c));
+			const bbe::Rectangle currentAabb = bbe::Rectangle(tokenizer->tokens[i].chars[k].pos, getFont().getDimensions(tokenizer->tokens[i].chars[k].c).as<float>());
 			if (k == 0)
 			{
 				tokenizer->tokens[i].aabb = currentAabb;
@@ -715,11 +709,11 @@ bbe::Font& Slide::getFont()
 				}
 			}
 			bbe::List<bbe::Vector2> renderPositions = fonts[i].getRenderPositions(bbe::Vector2(0, 0), text);
-			bbe::Rectangle textAabb = bbe::Rectangle(renderPositions[0], getFont().getDimensions(text.getCodepoint(0)));
+			bbe::Rectangle textAabb = bbe::Rectangle(renderPositions[0], getFont().getDimensions(text.getCodepoint(0)).as<float>());
 
 			for (size_t k = 1; k < renderPositions.getLength(); k++)
 			{
-				textAabb = textAabb.combine(bbe::Rectangle(renderPositions[k], getFont().getDimensions(text.getCodepoint(k))));
+				textAabb = textAabb.combine(bbe::Rectangle(renderPositions[k], getFont().getDimensions(text.getCodepoint(k)).as<float>()));
 			}
 			
 			if (i == 0)

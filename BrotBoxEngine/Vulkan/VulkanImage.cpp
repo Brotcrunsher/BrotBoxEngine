@@ -8,7 +8,7 @@
 
 bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image& image, const INTERNAL::vulkan::VulkanDevice& device, const INTERNAL::vulkan::VulkanCommandPool& commandPool, const INTERNAL::vulkan::VulkanDescriptorPool& descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout& setLayout)
 {
-	if (image.m_pdata == nullptr)
+	if (!image.isLoaded())
 	{
 		throw NotInitializedException();
 	}
@@ -40,7 +40,7 @@ bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image& image, const I
 	stagingBuffer.create(device, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
 	void* data = stagingBuffer.map();
-	memcpy(data, image.m_pdata, imageSize);
+	memcpy(data, image.m_pdata.getRaw(), imageSize);
 	stagingBuffer.unmap();
 
 

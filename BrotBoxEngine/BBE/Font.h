@@ -64,12 +64,10 @@ namespace bbe
 		int32_t getAdvanceWidth(int32_t c) const;
 		int32_t getVerticalOffset(int32_t c) const;
 
-		bbe::Vector2 getDimensions(int32_t c) const;
+		bbe::Vector2i getDimensions(int32_t c) const;
 
 		void setFixedWidth(int32_t val);
 		int32_t getFixedWidth() const;
-
-		void destroy();
 
 		bbe::List<Vector2> getRenderPositions(const Vector2& p, const char* text, float rotation = 0, bool verticalCorrection = true) const;
 		bbe::List<Vector2> getRenderPositions(const Vector2& p, const bbe::String &text, float rotation = 0, bool verticalCorrection = true) const;

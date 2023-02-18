@@ -516,7 +516,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 				{
 					posAccess--;
 					bbe::Vector2 stopLine = renderPositions[posAccess];
-					stopLine += font.getDimensions(noTilde[posAccess]);
+					stopLine += font.getDimensions(noTilde[posAccess]).as<float>();
 					stopLine.y -= font.getDimensions('A').y / 2;
 
 					currentToken.lines.add(bbe::Line2(startLine, stopLine));

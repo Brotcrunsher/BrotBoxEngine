@@ -59,7 +59,7 @@ namespace bbe
 		friend class PrimitiveBrush2D;
 		friend class PrimitiveBrush3D;
 	private:
-		byte           *m_pdata  = nullptr;
+		bbe::List<byte> m_pdata;
 		int             m_width  = 0;
 		int             m_height = 0;
 		ImageFormat     m_format = ImageFormat::R8G8B8A8;
@@ -78,12 +78,10 @@ namespace bbe
 		Image(int width, int height, const Color &c);
 		Image(int width, int height, const byte* data, ImageFormat format);
 		
-		Image(const Image& other); //Copy Constructor
-		Image(Image&& other) noexcept; //Move Constructor
-		Image& operator=(const Image& other) = delete; //Copy Assignment
-		Image& operator=(Image&& other) noexcept; //Move Assignment
-
-		~Image();
+		Image(const Image& other) = default; //Copy Constructor
+		Image(Image&& other) noexcept = default; //Move Constructor
+		Image& operator=(const Image& other) = default; //Copy Assignment
+		Image& operator=(Image&& other) noexcept = default; //Move Assignment
 		
 		void loadRaw(const bbe::List<unsigned char>& rawData);
 		void loadRaw(const unsigned char* rawData, size_t dataLength);
@@ -93,11 +91,9 @@ namespace bbe
 		void load(int width, int height, const Color &c);
 		void load(int width, int height, const byte* data, ImageFormat format);
 
-		void destroy();
-
 		int getWidth() const;
 		int getHeight() const;
-		Vector2 getDimensions() const;
+		Vector2i getDimensions() const;
 		size_t getSizeInBytes() const;
 		size_t getAmountOfChannels() const;
 		size_t getBytesPerChannel() const;

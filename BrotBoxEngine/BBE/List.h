@@ -355,6 +355,20 @@ namespace bbe
 		}
 
 		template <typename dummyT = T>
+		typename std::enable_if<std::is_fundamental<dummyT>::value, void>::type
+			resizeCapacityAndLengthUninit(size_t newCapacity)
+		{
+			//UNTESTED
+			static_assert(std::is_same<dummyT, T>::value, "Do not specify dummyT!");
+			if (newCapacity == m_length) return;
+
+			delete[] m_pdata;
+			m_pdata = new INTERNAL::Unconstructed<T>[newCapacity];
+			m_length = newCapacity;
+			m_capacity = newCapacity;
+		}
+
+		template <typename dummyT = T>
 		typename std::enable_if<std::is_default_constructible<dummyT>::value, void>::type
 			resizeCapacityAndLength(size_t newCapacity)
 		{
