@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../BBE/ManuallyRefCountable.h"
+#include "../BBE/AutoRefCountable.h"
 #include "../BBE/Image.h"
 #include "BBE/glfwWrapper.h"
 
@@ -10,7 +10,7 @@ namespace bbe
 	{
 		namespace openGl
 		{
-			struct OpenGLImage : public ManuallyRefCountable
+			struct OpenGLImage : public AutoRefCountable
 			{
 				GLuint tex = 0;
 

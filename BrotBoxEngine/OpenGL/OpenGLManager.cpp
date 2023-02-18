@@ -609,7 +609,7 @@ bbe::INTERNAL::openGl::OpenGLImage* bbe::INTERNAL::openGl::OpenGLManager::toRend
 	}
 	else
 	{
-		return (bbe::INTERNAL::openGl::OpenGLImage*)image.m_prendererData;
+		return (bbe::INTERNAL::openGl::OpenGLImage*)image.m_prendererData.get();
 	}
 }
 
@@ -802,9 +802,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 	if (shader)
 	{
 		bbe::INTERNAL::openGl::OpenGLFragmentShader* fs = nullptr;
-		if (shader->m_prendererData)
+		if (shader->m_prendererData != nullptr)
 		{
-			fs = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)shader->m_prendererData;
+			fs = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)shader->m_prendererData.get();
 		}
 		else
 		{

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../BBE/ManuallyRefCountable.h"
+#include "../BBE/AutoRefCountable.h"
 #include "../BBE/FragmentShader.h"
 #include "../BBE/glfwWrapper.h"
 #include "../BBE/String.h"
@@ -11,7 +11,7 @@ namespace bbe
 	{
 		namespace openGl
 		{
-			struct OpenGLFragmentShader : public ManuallyRefCountable
+			struct OpenGLFragmentShader : public AutoRefCountable
 			{
 				GLuint vertex = 0;
 				GLuint fragment = 0;
