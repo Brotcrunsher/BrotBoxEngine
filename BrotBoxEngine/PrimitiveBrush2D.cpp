@@ -199,7 +199,7 @@ void bbe::PrimitiveBrush2D::sketchRect(const Vector2& pos, const Vector2& dim)
 
 void bbe::PrimitiveBrush2D::sketchRect(const Rectangle& rect)
 {
-	sketchRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+	sketchRect(rect.x, rect.y, rect.width, rect.height);
 }
 
 void bbe::PrimitiveBrush2D::fillCircle(const Circle & circle)

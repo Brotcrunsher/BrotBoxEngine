@@ -36,33 +36,33 @@ class MyGame : public bbe::Game
 
 	void moveShape(bbe::Rectangle &shape, const bbe::Vector2 &speed, float timeSinceLastFrame)
 	{
-		shape.setX(bbe::Math::clamp(shape.getX() + speed.x * timeSinceLastFrame, 0.f, WINDOW_WIDTH - shape.getWidth()));
+		shape.x = bbe::Math::clamp(shape.x + speed.x * timeSinceLastFrame, 0.f, WINDOW_WIDTH - shape.width);
 		for (const Barricade& b : barricades)
 		{
 			if (b.shape.intersects(shape))
 			{
 				if (speed.x > 0)
 				{
-					shape.setX(b.shape.getX() - shape.getWidth());
+					shape.x = b.shape.x - shape.width;
 				}
 				else
 				{
-					shape.setX(b.shape.getX() + b.shape.getWidth());
+					shape.x = b.shape.x + b.shape.width;
 				}
 			}
 		}
-		shape.setY(bbe::Math::clamp(shape.getY() + speed.y * timeSinceLastFrame, 0.f, WINDOW_HEIGHT - shape.getHeight()));
+		shape.y = bbe::Math::clamp(shape.y + speed.y * timeSinceLastFrame, 0.f, WINDOW_HEIGHT - shape.height);
 		for (const Barricade& b : barricades)
 		{
 			if (b.shape.intersects(shape))
 			{
 				if (speed.y > 0)
 				{
-					shape.setY(b.shape.getY() - shape.getHeight());
+					shape.y = b.shape.y - shape.height;
 				}
 				else
 				{
-					shape.setY(b.shape.getY() + b.shape.getHeight());
+					shape.y = b.shape.y + b.shape.height;
 				}
 			}
 		}
@@ -237,8 +237,8 @@ class MyGame : public bbe::Game
 		{
 			while (true)
 			{
-				shape.setX(random.randomFloat(WINDOW_WIDTH - SIZE));
-				shape.setY(random.randomFloat(WINDOW_HEIGHT - SIZE));
+				shape.x = random.randomFloat(WINDOW_WIDTH - SIZE);
+				shape.y = random.randomFloat(WINDOW_HEIGHT - SIZE);
 				if (!context->collidesWithAnyBarricade(shape)) return;
 			}
 		}
@@ -255,8 +255,8 @@ class MyGame : public bbe::Game
 	{
 		for (Bullet& b : bullets)
 		{
-			b.shape.setX(b.shape.getX() + b.speed.x * timeSinceLastFrame);
-			b.shape.setY(b.shape.getY() + b.speed.y * timeSinceLastFrame);
+			b.shape.x = b.shape.x + b.speed.x * timeSinceLastFrame;
+			b.shape.y = b.shape.y + b.speed.y * timeSinceLastFrame;
 		}
 	}
 
@@ -312,8 +312,8 @@ class MyGame : public bbe::Game
 
 		brush.setColorRGB(1, 1, 1);
 		const bbe::Vector2 outerTopLeft     = tesseract.shape.getPos();
-		const bbe::Vector2 outerTopRight    = tesseract.shape.getPos() + bbe::Vector2(tesseract.shape.getWidth(), 0);
-		const bbe::Vector2 outerBottomLeft  = tesseract.shape.getPos() + bbe::Vector2(0, tesseract.shape.getHeight());
+		const bbe::Vector2 outerTopRight    = tesseract.shape.getPos() + bbe::Vector2(tesseract.shape.width, 0);
+		const bbe::Vector2 outerBottomLeft  = tesseract.shape.getPos() + bbe::Vector2(0, tesseract.shape.height);
 		const bbe::Vector2 outerBottomRight = tesseract.shape.getPos() + tesseract.shape.getDim();
 		brush.fillLine(outerTopLeft,     outerTopRight);
 		brush.fillLine(outerTopLeft,     outerBottomLeft);

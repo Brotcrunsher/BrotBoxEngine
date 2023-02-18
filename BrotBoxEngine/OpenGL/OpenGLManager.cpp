@@ -841,7 +841,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 	}
 
 	if(shader) glUniform2f(screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
-	glUniform4f(scalePosOffsetPos, rect.getWidth(), rect.getHeight(), rect.getX(), rect.getY());
+	glUniform4f(scalePosOffsetPos, rect.width, rect.height, rect.x, rect.y);
 	glUniform1f(rotationPos, rotation);
 	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
 }

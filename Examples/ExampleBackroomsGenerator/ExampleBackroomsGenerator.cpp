@@ -170,7 +170,7 @@ namespace br
 						{ 
 							brush.setColorHSV(r.hue, r.saturation, r.value, roomAlpha);
 						}
-						brush.fillRect(r.boundingBox.getX() - cameraPos.x, r.boundingBox.getY() - cameraPos.y, r.boundingBox.getWidth(), r.boundingBox.getHeight());
+						brush.fillRect(r.boundingBox.x - cameraPos.x, r.boundingBox.y - cameraPos.y, r.boundingBox.width, r.boundingBox.height);
 					}
 
 					if (gateAlpha > 0)
@@ -195,7 +195,7 @@ namespace br
 							{
 								if (r.walkable[x][y])
 								{
-									brush.fillRect(r.boundingBox.getX() + x - cameraPos.x, r.boundingBox.getY() + y - cameraPos.y, 1, 1);
+									brush.fillRect(r.boundingBox.x + x - cameraPos.x, r.boundingBox.y + y - cameraPos.y, 1, 1);
 								}
 							}
 						}
@@ -207,7 +207,7 @@ namespace br
 			{
 				const Room& room = rooms.rooms[hoveredRoom];
 				brush.setColorRGB(1, 1, 1, 0.2f);
-				brush.fillRect(room.boundingBox.getX() - cameraPos.x, room.boundingBox.getY() - cameraPos.y, room.boundingBox.getWidth(), room.boundingBox.getHeight());
+				brush.fillRect(room.boundingBox.x - cameraPos.x, room.boundingBox.y - cameraPos.y, room.boundingBox.width, room.boundingBox.height);
 
 				brush.setColorRGB(0, 0, 0, 0.5f);
 				for (const Neighbor& n : room.neighbors)

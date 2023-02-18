@@ -11,10 +11,10 @@ bbe::Rectanglei br::Rooms::shrinkBoundingBoxRec(const bbe::Rectanglei& bounding,
 	if (bounding.getBottom() > intersections[index].getTop())
 	{
 		int32_t sub = bounding.getBottom() - intersections[index].getTop();
-		if (sub < bounding.getHeight())
+		if (sub < bounding.height)
 		{
 			bbe::Rectanglei top = bounding;
-			top.setHeight(top.getHeight() - sub);
+			top.height = top.height - sub;
 			if(top.getArea() > currentBestArea)
 				candidates.add(shrinkBoundingBoxRec(top, intersections, index + 1, currentBestArea));
 		}
@@ -22,11 +22,11 @@ bbe::Rectanglei br::Rooms::shrinkBoundingBoxRec(const bbe::Rectanglei& bounding,
 	if (intersections[index].getBottom() > bounding.getTop())
 	{
 		int32_t sub = intersections[index].getBottom() - bounding.getTop();
-		if (sub < bounding.getHeight())
+		if (sub < bounding.height)
 		{
 			bbe::Rectanglei bottom = bounding;
-			bottom.setHeight(bottom.getHeight() - sub);
-			bottom.setY(bottom.getY() + sub);
+			bottom.height = bottom.height - sub;
+			bottom.y = bottom.y + sub;
 			if (bottom.getArea() > currentBestArea)
 				candidates.add(shrinkBoundingBoxRec(bottom, intersections, index + 1, currentBestArea));
 		}
@@ -34,10 +34,10 @@ bbe::Rectanglei br::Rooms::shrinkBoundingBoxRec(const bbe::Rectanglei& bounding,
 	if (bounding.getRight() > intersections[index].getLeft())
 	{
 		int32_t sub = bounding.getRight() - intersections[index].getLeft();
-		if (sub < bounding.getWidth())
+		if (sub < bounding.width)
 		{
 			bbe::Rectanglei left = bounding;
-			left.setWidth(left.getWidth() - sub);
+			left.width = left.width - sub;
 			if (left.getArea() > currentBestArea)
 				candidates.add(shrinkBoundingBoxRec(left, intersections, index + 1, currentBestArea));
 		}
@@ -45,11 +45,11 @@ bbe::Rectanglei br::Rooms::shrinkBoundingBoxRec(const bbe::Rectanglei& bounding,
 	if (intersections[index].getRight() > bounding.getLeft())
 	{
 		int32_t sub = intersections[index].getRight() - bounding.getLeft();
-		if (sub < bounding.getWidth())
+		if (sub < bounding.width)
 		{
 			bbe::Rectanglei right = bounding;
-			right.setWidth(right.getWidth() - sub);
-			right.setX(right.getX() + sub);
+			right.width = right.width - sub;
+			right.x = right.x + sub;
 			if (right.getArea() > currentBestArea)
 				candidates.add(shrinkBoundingBoxRec(right, intersections, index + 1, currentBestArea));
 		}
@@ -156,12 +156,12 @@ bbe::Rectanglei br::Rooms::shrinkBoundingBox(const bbe::Rectanglei& bounding) co
 		}
 		else
 		{
-			bbe::Grid<bool> intersectionGrid(bounding.getWidth(), bounding.getHeight());
-			for (int32_t i = 0; i < bounding.getWidth(); i++)
+			bbe::Grid<bool> intersectionGrid(bounding.width, bounding.height);
+			for (int32_t i = 0; i < bounding.width; i++)
 			{
-				for (int32_t k = 0; k < bounding.getHeight(); k++)
+				for (int32_t k = 0; k < bounding.height; k++)
 				{
-					bbe::Vector2i pos(i + bounding.getX(), k + bounding.getY());
+					bbe::Vector2i pos(i + bounding.x, k + bounding.y);
 					bool intersects = false;
 					for (const bbe::Rectanglei& rect : intersections)
 					{
@@ -176,7 +176,7 @@ bbe::Rectanglei br::Rooms::shrinkBoundingBox(const bbe::Rectanglei& bounding) co
 			}
 			bbe::Rectanglei biggestRect = intersectionGrid.getBiggestRect(false);
 
-			retVal = bbe::Rectanglei(biggestRect.getX() + bounding.getX(), biggestRect.getY() + bounding.getY(), biggestRect.getWidth(), biggestRect.getHeight());
+			retVal = bbe::Rectanglei(biggestRect.x + bounding.x, biggestRect.y + bounding.y, biggestRect.width, biggestRect.height);
 		}
 	}
 	
@@ -196,17 +196,17 @@ bool br::Rooms::expandRoom(size_t roomi)
 	const bbe::Rectanglei* b = &rooms[roomi].boundingBox;
 	
 	bbe::List<bbe::Vector2i> toFillPoints;
-	toFillPoints.resizeCapacity(b->getWidth() * 2 + b->getHeight() * 2);
+	toFillPoints.resizeCapacity(b->width * 2 + b->height * 2);
 
-	for (int32_t i = 0; i < b->getWidth(); i++)
+	for (int32_t i = 0; i < b->width; i++)
 	{
-		toFillPoints.add(bbe::Vector2i(b->getX() + i, b->getY()                  - 1));
-		toFillPoints.add(bbe::Vector2i(b->getX() + i, b->getY() + b->getHeight()    ));
+		toFillPoints.add(bbe::Vector2i(b->x + i, b->y             - 1));
+		toFillPoints.add(bbe::Vector2i(b->x + i, b->y + b->height    ));
 	}
-	for (int32_t i = 0; i < b->getHeight(); i++)
+	for (int32_t i = 0; i < b->height; i++)
 	{
-		toFillPoints.add(bbe::Vector2i(b->getX()                 - 1, b->getY() + i));
-		toFillPoints.add(bbe::Vector2i(b->getX() + b->getWidth()    , b->getY() + i));
+		toFillPoints.add(bbe::Vector2i(b->x            - 1, b->y + i));
+		toFillPoints.add(bbe::Vector2i(b->x + b->width    , b->y + i));
 	}
 
 	for (size_t i = 0; i < toFillPoints.getLength(); i++)
@@ -236,23 +236,23 @@ bool br::Rooms::expandRoom(size_t roomi)
 		const size_t randomIndex = rand.randomInt(toFillPoints.getLength());
 		const bbe::Vector2i& pos = toFillPoints[randomIndex];
 		bbe::Rectanglei newBounding = newBoundingAt(pos);
-		newBounding.setX(newBounding.getX() - rand.randomInt(newBounding.getWidth()));
-		newBounding.setY(newBounding.getY() - rand.randomInt(newBounding.getHeight()));
-		if (pos.x == b->getX() - 1) // Left Edge
+		newBounding.x = newBounding.x - rand.randomInt(newBounding.width);
+		newBounding.y = newBounding.y - rand.randomInt(newBounding.height);
+		if (pos.x == b->x - 1) // Left Edge
 		{
-			newBounding.setX(pos.x - newBounding.getWidth() + 1);
+			newBounding.x = pos.x - newBounding.width + 1;
 		}
-		else if (pos.x == b->getX() + b->getWidth()) // Right Edge
+		else if (pos.x == b->x + b->width) // Right Edge
 		{
-			newBounding.setX(b->getX() + b->getWidth());
+			newBounding.x = b->x + b->width;
 		}
-		else if (pos.y == b->getY() - 1) // Top Edge
+		else if (pos.y == b->y - 1) // Top Edge
 		{
-			newBounding.setY(pos.y - newBounding.getHeight() + 1);
+			newBounding.y = pos.y - newBounding.height + 1;
 		}
-		else if (pos.y == b->getY() + b->getHeight()) // Bottom Edge
+		else if (pos.y == b->y + b->height) // Bottom Edge
 		{
-			newBounding.setY(b->getY() + b->getHeight());
+			newBounding.y = b->y + b->height;
 		}
 		else // ???
 		{
@@ -332,8 +332,8 @@ void br::Rooms::determineNeighbors(size_t roomi)
 	}
 	for (int32_t i = rect.getLeft(); i < rect.getRight(); i++)
 	{
-		bbe::Vector2i roomGatePos(i, rect.getTop() + rect.getHeight() - 1);
-		bbe::Vector2i neighborGatePos(i, rect.getTop() + rect.getHeight());
+		bbe::Vector2i roomGatePos(i, rect.getTop() + rect.height - 1);
+		bbe::Vector2i neighborGatePos(i, rect.getTop() + rect.height);
 		determineNeighbors_(roomi, roomGatePos, neighborGatePos);
 	}
 
@@ -345,8 +345,8 @@ void br::Rooms::determineNeighbors(size_t roomi)
 	}
 	for (int32_t i = rect.getTop(); i < rect.getBottom(); i++)
 	{
-		bbe::Vector2i roomGatePos(rect.getLeft() + rect.getWidth() - 1, i);
-		bbe::Vector2i neighborGatePos(rect.getLeft() + rect.getWidth(), i);
+		bbe::Vector2i roomGatePos(rect.getLeft() + rect.width - 1, i);
+		bbe::Vector2i neighborGatePos(rect.getLeft() + rect.width, i);
 		determineNeighbors_(roomi, roomGatePos, neighborGatePos);
 	}
 }
@@ -495,9 +495,9 @@ void br::Rooms::connectGates(size_t roomi)
 	}
 
 	r.walkable = bbe::Grid<bool>(r.boundingBox.getDim());
-	for (int32_t x = 0; x < r.boundingBox.getWidth(); x++)
+	for (int32_t x = 0; x < r.boundingBox.width; x++)
 	{
-		for (int32_t y = 0; y < r.boundingBox.getHeight(); y++)
+		for (int32_t y = 0; y < r.boundingBox.height; y++)
 		{
 			r.walkable[x][y] = pathIdGrid[x][y] != -1;
 		}

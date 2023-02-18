@@ -18,30 +18,30 @@ bbe::List<bbe::Vector2i> br::Room::getHashGridPositions() const
 bbe::List<bbe::Vector2i> br::Room::getHashGridPositions(const bbe::Rectanglei& rect)
 {
 	bbe::List<bbe::Vector2i> retVal;
-	for (int32_t x = rect.getX(); x < (rect.getX() + rect.getWidth()); x += gridSize)
+	for (int32_t x = rect.x; x < (rect.x + rect.width); x += gridSize)
 	{
 		const int32_t gridX = x / gridSize;
-		for (int32_t y = rect.getY(); y < (rect.getY() + rect.getHeight()); y += gridSize)
+		for (int32_t y = rect.y; y < (rect.y + rect.height); y += gridSize)
 		{
 			const int32_t gridY = y / gridSize;
 			addToListIfNotAlreadyInIt(retVal, { gridX, gridY });
 		}
 	}
 
-	for (int32_t x = rect.getX(); x < (rect.getX() + rect.getWidth()); x += gridSize)
+	for (int32_t x = rect.x; x < (rect.x + rect.width); x += gridSize)
 	{
 		const int32_t gridX = x / gridSize;
-		const int32_t gridY = (rect.getY() + rect.getHeight() - 1) / gridSize;
+		const int32_t gridY = (rect.y + rect.height - 1) / gridSize;
 		addToListIfNotAlreadyInIt(retVal, { gridX, gridY });
 	}
-	for (int32_t y = rect.getY(); y < (rect.getY() + rect.getHeight()); y += gridSize)
+	for (int32_t y = rect.y; y < (rect.y + rect.height); y += gridSize)
 	{
-		const int32_t gridX = (rect.getX() + rect.getWidth() - 1) / gridSize;
+		const int32_t gridX = (rect.x + rect.width - 1) / gridSize;
 		const int32_t gridY = y / gridSize;
 		addToListIfNotAlreadyInIt(retVal, { gridX, gridY });
 	}
 
-	addToListIfNotAlreadyInIt(retVal, { (rect.getX() + rect.getWidth() - 1) / gridSize, (rect.getY() + rect.getHeight() - 1) / gridSize });
+	addToListIfNotAlreadyInIt(retVal, { (rect.x + rect.width - 1) / gridSize, (rect.y + rect.height - 1) / gridSize });
 	
 	return retVal;
 }

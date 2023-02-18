@@ -20,42 +20,41 @@ namespace bbe
 	{
 		friend class PrimitiveBrush2D;
 		friend class ::bbe::INTERNAL::vulkan::VulkanManager;
-	private:
-		using SubType = typename Vec::SubType;
-		SubType m_x;
-		SubType m_y;
-		SubType m_width;
-		SubType m_height;
-
 	public:
+		using SubType = typename Vec::SubType;
+		SubType x;
+		SubType y;
+		SubType width;
+		SubType height;
+		
 		Rectangle_t()
-			: m_x(0), m_y(0), m_width(0), m_height(0)
+			: x(0), y(0), width(0), height(0)
 		{
 		}
 		Rectangle_t(SubType x, SubType y, SubType width, SubType height)
-			: m_x(x), m_y(y), m_width(width), m_height(height)
+			: x(x), y(y), width(width), height(height)
 		{
 		}
 		Rectangle_t(const Vec &vec, SubType width, SubType height)
-			: m_x(vec.x), m_y(vec.y), m_width(width), m_height(height)
+			: x(vec.x), y(vec.y), width(width), height(height)
 		{
 		}
 		Rectangle_t(SubType x, SubType y, const Vec &dim)
-			: m_x(x), m_y(y), m_width(dim.x), m_height(dim.y)
+			: x(x), y(y), width(dim.x), height(dim.y)
 		{
 		}
 		Rectangle_t(const Vec &vec, const Vec &dim)
-			: m_x(vec.x), m_y(vec.y), m_width(dim.x), m_height(dim.y)
+			: x(vec.x), y(vec.y), width(dim.x), height(dim.y)
 		{
 		}
 
 		Vec getPos() const
 		{
-			return Vec(m_x, m_y);
+			return Vec(x, y);
 		}
 		Vec getDim() const
 		{
-			return Vec(m_width, m_height);
+			return Vec(width, height);
 		}
 
 		Rectangle_t<Vec> combine(const Rectangle_t<Vec>& other) const
@@ -73,137 +72,105 @@ namespace bbe
 		}
 		Rectangle_t<Vec> offset(const Vec& off) const
 		{
-			return Rectangle_t<Vec>(m_x + off.x, m_y + off.y, m_width, m_height);
+			return Rectangle_t<Vec>(x + off.x, y + off.y, width, height);
 		}
 
 		SubType getLeft() const
 		{
-			return bbe::Math::min(m_x, m_x + m_width);
+			return bbe::Math::min(x, x + width);
 		}
 		SubType getRight() const
 		{
-			return bbe::Math::max(m_x, m_x + m_width);
+			return bbe::Math::max(x, x + width);
 		}
 		SubType getTop() const
 		{
-			return bbe::Math::min(m_y, m_y + m_height);
+			return bbe::Math::min(y, y + height);
 		}
 		SubType getBottom() const
 		{
-			return bbe::Math::max(m_y, m_y + m_height);
+			return bbe::Math::max(y, y + height);
 		}
 
-		SubType getX() const
-		{
-			return m_x;
-		}
-		SubType getY() const
-		{
-			return m_y;
-		}
-		SubType getWidth() const
-		{
-			return m_width;
-		}
-		SubType getHeight() const
-		{
-			return m_height;
-		}
 		SubType getArea() const
 		{
-			return getWidth() * getHeight();
+			return width * height;
 		}
 		virtual Vec getCenter() const override
 		{
 			return Vec(
-				getX() + getWidth() / 2,
-				getY() + getHeight() / 2
+				x + width / 2,
+				y + height / 2
 			);
 		}
 		virtual void getVertices(bbe::List<Vec>& outVertices) const override
 		{
 			outVertices.clear();
 
-			outVertices.add({ m_x,           m_y });
-			outVertices.add({ m_x,           m_y + m_height });
-			outVertices.add({ m_x + m_width, m_y + m_height });
-			outVertices.add({ m_x + m_width, m_y });
+			outVertices.add({ x,         y });
+			outVertices.add({ x,         y + height });
+			outVertices.add({ x + width, y + height });
+			outVertices.add({ x + width, y });
 		}
 
-		void setX(SubType x)
-		{
-			m_x = x;
-		}
-		void setY(SubType y)
-		{
-			m_y = y;
-		}
 		void setPos(SubType x, SubType y)
 		{
-			m_x = x;
-			m_y = y;
+			this->x = x;
+			this->y = y;
 		}
 		void setPos(const Vec &vec)
 		{
-			m_x = vec.x;
-			m_y = vec.y;
-		}
-		void setWidth(SubType width)
-		{
-			m_width = width;
-		}
-		void setHeight(SubType height)
-		{
-			m_height = height;
+			x = vec.x;
+			y = vec.y;
 		}
 		void setDim(SubType width, SubType height)
 		{
-			m_width = width;
-			m_height = height;
+			this->width = width;
+			this->height = height;
 		}
 		void setDim(const Vec &vec)
 		{
-			m_width = vec.x;
-			m_height = vec.y;
+			width = vec.x;
+			height = vec.y;
 		}
 		void set(SubType x, SubType y, SubType width, SubType height)
 		{
-			setX(x);
-			setY(y);
-			setWidth(width);
-			setHeight(height);
+			this->x = x;
+			this->y = y;
+			this->width = width;
+			this->height = height;
 		}
 		void shrinkInPlace(SubType val)
 		{
-			m_x += val;
-			m_y += val;
-			m_width -= val * 2;
-			m_height -= val * 2;
+			x += val;
+			y += val;
+			width -= val * 2;
+			height -= val * 2;
 		}
 		Rectangle_t<Vec> shrinked(SubType val) const
 		{
 			return Rectangle_t<Vec>(
-				m_x + val,
-				m_y + val,
-				m_width - val * 2,
-				m_height - val * 2
+				x + val,
+				y + val,
+				width - val * 2,
+				height - val * 2
 			);
 		}
 		Rectangle_t<Vec> stretchedSpace(SubType x, SubType y) const
 		{
 			return Rectangle_t<Vec>(
-				m_x * x,
-				m_y * y,
-				m_width * x,
-				m_height * y
+				x * x,
+				y * y,
+				width * x,
+				height * y
 			);
 		}
 
 
 		void translate(SubType x, SubType y)
 		{
-			m_x += x;
-			m_y += y;
+			this->x += x;
+			this->y += y;
 		}
 		virtual void translate(const Vec &vec) override
 		{
@@ -213,43 +180,43 @@ namespace bbe
 		SubType getDistanceTo(const Vec &vec)
 		{
 			//UNTESTED
-			if (vec.x < m_x)
+			if (vec.x < x)
 			{
-				if (vec.y < m_y)
+				if (vec.y < y)
 				{
-					return vec.getDistanceTo(Vec(m_x, m_y));
+					return vec.getDistanceTo(Vec(x, y));
 				}
-				else if (vec.y > m_y + m_height)
+				else if (vec.y > y + height)
 				{
-					return vec.getDistanceTo(Vec(m_x, m_y + m_height));
+					return vec.getDistanceTo(Vec(x, y + height));
 				}
 				else
 				{
-					return m_x - vec.x;
+					return x - vec.x;
 				}
 			}
-			else if (vec.x > m_x + m_width)
+			else if (vec.x > x + width)
 			{
-				if (vec.y < m_y)
+				if (vec.y < y)
 				{
-					return vec.getDistanceTo(Vec(m_x + m_width, m_y));
+					return vec.getDistanceTo(Vec(x + width, y));
 				}
-				else if (vec.y > m_y + m_height)
+				else if (vec.y > y + height)
 				{
-					return vec.getDistanceTo(Vec(m_x + m_width, m_y + m_height));
+					return vec.getDistanceTo(Vec(x + width, y + height));
 				}
 				else
 				{
-					return vec.x - (m_x + m_width);
+					return vec.x - (x + width);
 				}
 			}
-			else if (vec.y < m_y)
+			else if (vec.y < y)
 			{
-				return m_y - vec.y;
+				return y - vec.y;
 			}
-			else if (vec.y > m_y + m_height)
+			else if (vec.y > y + height)
 			{
-				return vec.y - (m_y + m_height);
+				return vec.y - (y + height);
 			}
 			else
 			{
@@ -261,24 +228,24 @@ namespace bbe
 		{
 			if (includeBoundary)
 			{
-				return point.x >= this->getX() && point.x < this->getX() + this->getWidth()
-					&& point.y >= this->getY() && point.y < this->getY() + this->getHeight();
+				return point.x >= x && point.x < x + width
+					&& point.y >= y && point.y < y + height;
 			}
 			else
 			{
 				// TODO: This is wrong - right?
-				return point.x > this->getX() && point.x < this->getX() + this->getWidth()
-					&& point.y > this->getY() && point.y < this->getY() + this->getHeight();
+				return point.x > x && point.x < x + width
+					&& point.y > y && point.y < y + height;
 			}
 		}
 		using Shape2<Vec>::intersects;
 		bool intersects(const Rectangle_t<Vec>& rectangle) const
 		{
 			const Rectangle_t<Vec> hitZone(
-				rectangle.getX() - this->getWidth(),
-				rectangle.getY() - this->getHeight(),
-				this->getWidth() + rectangle.getWidth(),
-				this->getHeight() + rectangle.getHeight()
+				rectangle.x - this->width,
+				rectangle.y - this->height,
+				this->width + rectangle.width,
+				this->height + rectangle.height
 			);
 			return hitZone.isPointInRectangle(this->getPos());
 		}
@@ -288,22 +255,22 @@ namespace bbe
 
 			const Vec circleMidPoint = circle.getPos() - circle.getDim() / 2;
 
-			if (circleMidPoint.x >= m_x - circle.getWidth() / 2
-				&& circleMidPoint.x <= m_x + m_width + circle.getWidth() / 2
-				&& circleMidPoint.y >= m_y
-				&& circleMidPoint.y <= m_y + m_height)
+			if (circleMidPoint.x >= x - circle.getWidth() / 2
+				&& circleMidPoint.x <= x + width + circle.getWidth() / 2
+				&& circleMidPoint.y >= y
+				&& circleMidPoint.y <= y + height)
 				return true;
 
-			if (circleMidPoint.x >= m_x
-				&& circleMidPoint.x <= m_x + m_width
-				&& circleMidPoint.y >= m_y - circle.getHeight() / 2
-				&& circleMidPoint.y <= m_y + m_height + circle.getHeight() / 2)
+			if (circleMidPoint.x >= x
+				&& circleMidPoint.x <= x + width
+				&& circleMidPoint.y >= y - circle.getHeight() / 2
+				&& circleMidPoint.y <= y + height + circle.getHeight() / 2)
 				return true;
 
-			if (circleMidPoint.getDistanceTo(m_x, m_y) < circle.getWidth() / 2) return true;
-			if (circleMidPoint.getDistanceTo(m_x + m_width, m_y) < circle.getWidth() / 2) return true;
-			if (circleMidPoint.getDistanceTo(m_x, m_y + m_height) < circle.getWidth() / 2) return true;
-			if (circleMidPoint.getDistanceTo(m_x + m_width, m_y + m_height) < circle.getWidth() / 2) return true;
+			if (circleMidPoint.getDistanceTo(x, y) < circle.getWidth() / 2) return true;
+			if (circleMidPoint.getDistanceTo(x + width, y) < circle.getWidth() / 2) return true;
+			if (circleMidPoint.getDistanceTo(x, y + height) < circle.getWidth() / 2) return true;
+			if (circleMidPoint.getDistanceTo(x + width, y + height) < circle.getWidth() / 2) return true;
 
 			return false;
 		}

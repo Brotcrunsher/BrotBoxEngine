@@ -58,7 +58,7 @@ class MyGame : public bbe::Game
 		brush.setColorRGB(1, 1, 1);
 
 		bbe::Rectanglei biggestRect = booleanGrid.getBiggestRect(true);
-		brush.sketchRect(10 + biggestRect.getX() * 10, 10 + biggestRect.getY() * 10, biggestRect.getWidth() * 10, biggestRect.getHeight() * 10);
+		brush.sketchRect(10 + biggestRect.x * 10, 10 + biggestRect.y * 10, biggestRect.width * 10, biggestRect.height * 10);
 	}
 	virtual void onEnd() override
 	{

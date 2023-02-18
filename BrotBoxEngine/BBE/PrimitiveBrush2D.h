@@ -81,7 +81,7 @@ namespace bbe
 		template<typename T>
 		void fillRect(const Rectangle_t<T>& rect, float rotation = 0, FragmentShader* shader = nullptr)
 		{
-			fillRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight(), rotation, shader);
+			fillRect(rect.x, rect.y, rect.width, rect.height, rotation, shader);
 		}
 		void fillRect(float x, float y,   float width, float height, float rotation = 0, FragmentShader* shader = nullptr);
 		void fillRect(const Vector2& pos, float width, float height, float rotation = 0, FragmentShader* shader = nullptr);

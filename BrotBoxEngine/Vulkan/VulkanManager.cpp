@@ -852,10 +852,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillRect2D(const Rectangle& rect, flo
 	}
 
 	float pushConstants[] = {
-		rect.getX(),
-		rect.getY(),
-		rect.getWidth(),
-		rect.getHeight(),
+		rect.x,
+		rect.y,
+		rect.width,
+		rect.height,
 		rotation
 	};
 	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);
@@ -916,10 +916,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, co
 	imageDatas[m_imageIndex].add(bbe::AutoRef(vi));
 
 	float pushConstants[] = {
-		rect.getX(),
-		rect.getY(),
-		rect.getWidth(),
-		rect.getHeight(),
+		rect.x,
+		rect.y,
+		rect.width,
+		rect.height,
 		rotation
 	};
 	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 5, pushConstants);

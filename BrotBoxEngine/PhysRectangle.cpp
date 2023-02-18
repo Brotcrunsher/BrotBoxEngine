@@ -59,7 +59,7 @@ bbe::PhysRectangle::PhysRectangle(Game* context, const Vector2& vec, const Vecto
 bbe::PhysRectangle::PhysRectangle(Game* context, const Rectangle& rect, float angle)
 	: PhysShape(context)
 {
-	init(context, rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight(), angle);
+	init(context, rect.x, rect.y, rect.width, rect.height, angle);
 }
 
 float bbe::PhysRectangle::getX() const

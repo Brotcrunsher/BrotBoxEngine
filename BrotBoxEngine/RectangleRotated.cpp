@@ -28,7 +28,7 @@ bbe::RectangleRotated::RectangleRotated(const Vector2& vec, const Vector2& dim, 
 }
 
 bbe::RectangleRotated::RectangleRotated(const Rectangle& rect, float rotation)
-	: m_x(rect.getX()), m_y(rect.getY()), m_width(rect.getWidth()), m_height(rect.getHeight()), m_rotation(rotation)
+	: m_x(rect.x), m_y(rect.y), m_width(rect.width), m_height(rect.height), m_rotation(rotation)
 {
 }
 

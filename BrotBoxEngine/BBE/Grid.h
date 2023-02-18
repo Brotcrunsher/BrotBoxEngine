@@ -168,10 +168,10 @@ namespace bbe
 						size_t area = histogram[k] * width;
 						if (area > retVal.getArea())
 						{
-							retVal.setX(i - histogram[k] + 1);
-							retVal.setY(up);
-							retVal.setWidth(histogram[k]);
-							retVal.setHeight(width);
+							retVal.x = i - histogram[k] + 1;
+							retVal.y = up;
+							retVal.width  = histogram[k];
+							retVal.height = width;
 						}
 					}
 				}

@@ -500,8 +500,8 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 				if (ro.text.getLength() > 0 && ro.font && ro.showText && ro.rt != RenderType::IMAGE)
 				{
 					brush.setColorRGB(ro.textColor);
-					brush.fillText(pos.x + textMargin + ro.outlineWidth - ro.textBoundingBox.getX() - ro.textBoundingBox.getWidth () / 2 + (dim.x - textMargin * 2 - ro.outlineWidth * 2) / 2
-						         , pos.y + textMargin + ro.outlineWidth - ro.textBoundingBox.getY() - ro.textBoundingBox.getHeight() / 2 + (dim.y - textMargin * 2 - ro.outlineWidth * 2) / 2
+					brush.fillText(pos.x + textMargin + ro.outlineWidth - ro.textBoundingBox.x - ro.textBoundingBox.width  / 2 + (dim.x - textMargin * 2 - ro.outlineWidth * 2) / 2
+						         , pos.y + textMargin + ro.outlineWidth - ro.textBoundingBox.y - ro.textBoundingBox.height / 2 + (dim.y - textMargin * 2 - ro.outlineWidth * 2) / 2
 						         , ro.text, *ro.font);
 				}
 			}
@@ -732,13 +732,13 @@ bbe::Font& Slide::getFont()
 				scrollingAllowed = false;
 			}
 
-			if ((textAabb.getHeight() < screenPosition.getHeight() && textAabb.getWidth() < screenPosition.getWidth()) || forcedFontSize != 0)
+			if ((textAabb.height < screenPosition.height && textAabb.width < screenPosition.width) || forcedFontSize != 0)
 			{
 				selectedFont = &fonts[i];
 				this->textAabb = textAabb;
 			}
 
-			if (textAabb.getHeight() > screenPosition.getHeight() - 50 || textAabb.getWidth() > screenPosition.getWidth() - 50) break;
+			if (textAabb.height > screenPosition.height - 50 || textAabb.width > screenPosition.width - 50) break;
 		}
 		std::cout << "Picked font size: " << selectedFont->getFontSize() << std::endl;
 	}
