@@ -36,11 +36,6 @@ bbe::AutoRef::AutoRef(AutoRefCountable* countable) :
 	countable(countable)
 {
 	countable->refCount++;
-	if (countable->refCount != 1)
-	{
-		// Was this AutoRefCountable given to another AutoRef before?
-		throw IllegalArgumentException();
-	}
 }
 
 bbe::AutoRef::~AutoRef()

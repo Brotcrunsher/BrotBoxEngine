@@ -30,7 +30,7 @@ bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image& image, const I
 	}
 	else
 	{
-		m_pCorrectDescriptorSet = &(((VulkanImage*)image.m_parentImage->m_prendererData)->m_descriptorSet);
+		m_pCorrectDescriptorSet = &(((VulkanImage*)image.m_parentImage->m_prendererData.get())->m_descriptorSet);
 	}
 
 	m_device = device.getDevice();

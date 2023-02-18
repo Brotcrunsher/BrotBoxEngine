@@ -25,7 +25,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addUniformBuffer(const VulkanBu
 void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addCombinedImageSampler(const Image& image, uint32_t binding)
 {
 	VkDescriptorImageInfo dii = {};
-	VulkanImage* vi = (VulkanImage*)image.m_prendererData;
+	VulkanImage* vi = (VulkanImage*)image.m_prendererData.get();
 	if (!vi)
 	{
 		throw NullPointerException();

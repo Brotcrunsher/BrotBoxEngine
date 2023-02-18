@@ -56,10 +56,6 @@ bbe::Image::Image(const Image& other)
 	m_repeatMode = other.m_repeatMode;
 	m_filterMode = other.m_filterMode;
 	m_prendererData = other.m_prendererData;
-	if (m_prendererData)
-	{
-		m_prendererData->incRef();
-	}
 
 	m_parentImage = other.m_parentImage;
 }
@@ -188,9 +184,8 @@ void bbe::Image::destroy()
 		m_height = 0;
 	}
 
-	if(m_prendererData)
+	if(m_prendererData != nullptr)
 	{
-		m_prendererData->decRef();
 		m_prendererData = nullptr;
 	}
 }

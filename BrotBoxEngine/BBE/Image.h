@@ -4,7 +4,7 @@
 #include "../BBE/Color.h"
 #include "../BBE/String.h"
 #include "../BBE/Vector2.h"
-#include "../BBE/ManuallyRefCountable.h"
+#include "../BBE/AutoRefCountable.h"
 
 typedef unsigned char stbi_uc;
 
@@ -68,7 +68,7 @@ namespace bbe
 		ImageRepeatMode m_repeatMode = ImageRepeatMode::REPEAT;
 		ImageFilterMode m_filterMode = ImageFilterMode::LINEAR;
 
-		mutable bbe::ManuallyRefCountable* m_prendererData = nullptr;
+		mutable bbe::AutoRef m_prendererData;
 
 		mutable const Image*   m_parentImage = nullptr;
 

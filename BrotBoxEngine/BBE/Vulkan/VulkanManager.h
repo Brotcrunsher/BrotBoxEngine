@@ -129,7 +129,7 @@ namespace bbe
 				FILE* videoFile = nullptr;
 
 
-				bbe::List<bbe::List<bbe::INTERNAL::vulkan::VulkanImage*>> imageDatas;
+				bbe::List<bbe::List<bbe::AutoRef>> imageDatas;
 
 				PipelineRecord2D m_pipelineRecord2D = PipelineRecord2D::NONE;
 				PipelineRecord3D m_pipelineRecord3D = PipelineRecord3D::NONE;

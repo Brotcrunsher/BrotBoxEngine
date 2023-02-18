@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../BBE/ManuallyRefCountable.h"
+#include "../BBE/AutoRefCountable.h"
 #include "GLFW/glfw3.h"
 #include "../BBE/Vulkan/VulkanDescriptorSet.h"
 #include "../BBE/Vulkan/VulkanHelper.h"
@@ -16,7 +16,7 @@ namespace bbe
 			class VulkanManager;
 			class VulkanDescriptorSet;
 
-			struct VulkanImage : public ManuallyRefCountable
+			struct VulkanImage : public AutoRefCountable
 			{
 				int32_t        m_refCount = 0;
 				VkImage        m_image = VK_NULL_HANDLE;

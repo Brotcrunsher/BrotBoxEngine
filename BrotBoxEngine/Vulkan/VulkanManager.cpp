@@ -202,13 +202,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 			vkFreeMemory(m_device.getDevice(), m_delayedBufferDeletes[i][k].m_memory, nullptr);
 		}
 	}
-	for (size_t i = 0; i < imageDatas.getLength(); i++)
-	{
-		for (size_t k = 0; k < imageDatas[i].getLength(); k++)
-		{
-			imageDatas[i][k]->decRef();
-		}
-	}
+	imageDatas.clear();
 
 	imguiStop();
 
@@ -274,10 +268,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw2D()
 	float pushConstants[] = { static_cast<float>(m_screenWidth), static_cast<float>(m_screenHeight) };
 	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 24, sizeof(float) * 2, pushConstants);
 
-	for (size_t i = 0; i < imageDatas[m_imageIndex].getLength(); i++)
-	{
-		imageDatas[m_imageIndex][i]->decRef();
-	}
 	imageDatas[m_imageIndex].clear();
 
 	for (size_t i = 0; i < m_delayedBufferDeletes[m_imageIndex].getLength(); i++)
@@ -986,13 +976,12 @@ void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, co
 	}
 	else
 	{
-		vi = (bbe::INTERNAL::vulkan::VulkanImage*)image.m_prendererData;
+		vi = (bbe::INTERNAL::vulkan::VulkanImage*)image.m_prendererData.get();
 	}
 
 	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DImage.getLayout(), 0, 1, vi->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 
-	imageDatas[m_imageIndex].add(vi);
-	vi->incRef();
+	imageDatas[m_imageIndex].add(bbe::AutoRef(vi));
 
 	float pushConstants[] = {
 		rect.getX(),
@@ -1124,11 +1113,11 @@ void bbe::INTERNAL::vulkan::VulkanManager::drawTerrain(const bbe::Terrain& terra
 	);
 
 	bindPipelineTerrain3D();
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 3, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_heightMap.m_prendererData)->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 4, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_baseTexture.m_prendererData)->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 3, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_heightMap.m_prendererData.get())->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 4, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_baseTexture.m_prendererData.get())->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 	//vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 5, 1, terrain.m_viewFrustrumDescriptor.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 5, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_additionalTextures[0].m_prendererData)->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 6, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_additionalTextureWeights[0].m_prendererData)->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 5, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_additionalTextures[0].m_prendererData.get())->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 6, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_additionalTextureWeights[0].m_prendererData.get())->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
 
 
 	class PushConts
