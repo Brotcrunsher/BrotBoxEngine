@@ -6,9 +6,6 @@
 
 namespace bbe
 {
-
-
-	//TODO use own allocators
 	template<typename Key, typename Value>
 	class HashMap
 	{
@@ -27,143 +24,62 @@ namespace bbe
 				//do nothing
 			}
 		};
-		List<HashMapNode> *m_pcontainers = nullptr;
-		size_t             m_amountOfContainers = 0;
+		List<List<HashMapNode>> m_buckets;
 
 	public:
 		HashMap()
-			: m_amountOfContainers(1 << 4)
 		{
-			m_pcontainers = new List<HashMapNode>[m_amountOfContainers];
+			m_buckets.resizeCapacityAndLength(1 << 4);
 		}
 
-		HashMap(const HashMap& hm)
-		{
-			//UNTESTED
-			m_amountOfContainers = hm.m_amountOfContainers;
-			m_pcontainers = new List<Value>[m_amountOfContainers];
-			for (size_t i = 0; i < m_amountOfContainers; i++)
-			{
-				for (size_t k = 0; k < hm.m_pcontainers[i].getLength(); k++)
-				{
-					m_pcontainers[i].add(hm.m_pcontainers[i][k]);
-				}
-			}
-		}
-
-		HashMap(HashMap&& hm)
-		{
-			//UNTESTED
-			m_pcontainers = hm.m_pcontainers;
-			m_amountOfContainers = hm.m_amountOfContainers;
-			
-			hm.m_pcontainers = nullptr;
-			hm.m_amountOfContainers = 0;
-		}
-
-		HashMap& operator=(const HashMap& hm)
-		{
-			//UNTESTED
-			if (this == &hm)
-			{
-				return *this;
-			}
-			if (m_pcontainers != nullptr)
-			{
-				delete[] m_pcontainers;
-			}
-
-			m_amountOfContainers = hm.m_amountOfContainers;
-			m_pcontainers = new List<Value>[m_amountOfContainers];
-			for (size_t i = 0; i < m_amountOfContainers; i++)
-			{
-				for (size_t k = 0; k < hm.m_pcontainers[i].getLength(); k++)
-				{
-					m_pcontainers[i].add(hm.m_pcontainers[i][k]);
-				}
-			}
-
-			return *this;
-		}
-
-		HashMap& operator=(HashMap&& hm)
-		{
-			//UNTESTED
-			if (this == &hm)
-			{
-				return *this;
-			}
-			if (m_pcontainers != nullptr)
-			{
-				delete[] m_pcontainers;
-			}
-
-			m_pcontainers = hm.m_pcontainers;
-			m_amountOfContainers = hm.m_amountOfContainers;
-
-			hm.m_pcontainers = nullptr;
-			hm.m_amountOfContainers = 0;
-
-			return *this;
-		}
-
-		~HashMap()
-		{
-			del();
-		}
-
-		void del()
-		{
-			if (m_pcontainers != nullptr)
-			{
-				delete[] m_pcontainers;
-			}
-
-			m_amountOfContainers = 0;
-			m_pcontainers = nullptr;
-		}
+		HashMap(const HashMap&)                = default;
+		HashMap(HashMap&&) noexcept            = default;
+		HashMap& operator=(const HashMap&)     = default;
+		HashMap& operator=(HashMap&&) noexcept = default;
 
 		void clear()
 		{
-			del();
+			m_buckets.clear();
+			m_buckets.resizeCapacityAndLength(1 << 4);
+		}
 
-			m_amountOfContainers = 1 << 4;
-			m_pcontainers = new List<HashMapNode>[m_amountOfContainers];
+		size_t getAmountOfBuckets() const
+		{
+			return m_buckets.getLength();
 		}
 
 		void add(const Key &key, const Value &value)
 		{
 			uint32_t _hash = hash(key);
-			uint32_t index = _hash & (m_amountOfContainers - 1);
+			uint32_t index = _hash % getAmountOfBuckets();
 
-			if (m_pcontainers[index].getLength() > 4)
+			for (size_t i = 0; i < m_buckets[index].getLength(); i++)
+			{
+				if (key == m_buckets[index][i].m_key)
+				{
+					throw KeyAlreadyUsedException();
+				}
+			}
+
+			if (m_buckets[index].getLength() > 4)
 			{
 				uint32_t differentHashes = 0;
-				for (size_t i = 0; i < m_pcontainers[index].getLength(); i++)
+				for (size_t i = 0; i < m_buckets[index].getLength(); i++)
 				{
-					uint32_t otherHash = hash(m_pcontainers[index][i].m_key);
-					if (otherHash != _hash)
+					if (m_buckets[index][i].m_hash != _hash)
 					{
 						differentHashes++;
 						if (differentHashes >= 3)
 						{
 							resize();
-							index = _hash & (m_amountOfContainers - 1);
+							index = _hash % getAmountOfBuckets();
 							break;
 						}
 					}
 				}
 			}
 
-			for (size_t i = 0; i < m_pcontainers[index].getLength(); i++)
-			{
-				if (key == m_pcontainers[index][i].m_key)
-				{
-					throw KeyAlreadyUsedException();
-				}
-			}
-
-			m_pcontainers[index].add(HashMapNode(key, value, _hash));
+			m_buckets[index].add(HashMapNode(key, value, _hash));
 		}
 
 		bool contains(const Key &key) const
@@ -171,16 +87,31 @@ namespace bbe
 			return get(key) != nullptr;
 		}
 
-		Value* get(const Key &key) const
+		const Value* get(const Key &key) const
 		{
 			uint32_t _hash = hash(key);
-			uint32_t index = _hash & (m_amountOfContainers - 1);
+			uint32_t index = _hash % getAmountOfBuckets();
 
-			for (size_t i = 0; i < m_pcontainers[index].getLength(); i++)
+			for (size_t i = 0; i < m_buckets[index].getLength(); i++)
 			{
-				if (m_pcontainers[index][i].m_key == key)
+				if (m_buckets[index][i].m_key == key)
 				{
-					return &(m_pcontainers[index][i].m_value);
+					return &(m_buckets[index][i].m_value);
+				}
+			}
+			return nullptr;
+		}
+
+		Value* get(const Key& key)
+		{
+			uint32_t _hash = hash(key);
+			uint32_t index = _hash % getAmountOfBuckets();
+
+			for (size_t i = 0; i < m_buckets[index].getLength(); i++)
+			{
+				if (m_buckets[index][i].m_key == key)
+				{
+					return &(m_buckets[index][i].m_value);
 				}
 			}
 			return nullptr;
@@ -196,23 +127,22 @@ namespace bbe
 	private:
 		void resize()
 		{
-			size_t newAmountOfContainers = m_amountOfContainers << 1;
-			List<HashMapNode> *newContainers = new List<HashMapNode>[newAmountOfContainers];
+			const size_t newAmountOfContainers = getAmountOfBuckets() * 2;
+			List<List<HashMapNode>> newBuckets;
+			newBuckets.resizeCapacityAndLength(newAmountOfContainers);
 
-			for (size_t i = 0; i < m_amountOfContainers; i++)
+			for (size_t i = 0; i < m_buckets.getLength(); i++)
 			{
-				for (size_t k = 0; k < m_pcontainers[i].getLength(); k++)
+				for (size_t k = 0; k < m_buckets[i].getLength(); k++)
 				{
-					uint32_t _hash = m_pcontainers[i][k].m_hash;
-					uint32_t index = _hash & (newAmountOfContainers - 1);
+					uint32_t _hash = m_buckets[i][k].m_hash;
+					uint32_t index = _hash % newAmountOfContainers;
 
-					newContainers[index].add(std::move(m_pcontainers[i][k]));
+					newBuckets[index].add(std::move(m_buckets[i][k]));
 				}
 			}
 
-			delete[] m_pcontainers;
-			m_pcontainers = newContainers;
-			m_amountOfContainers = newAmountOfContainers;
+			m_buckets = newBuckets;
 		}
 	};
 }

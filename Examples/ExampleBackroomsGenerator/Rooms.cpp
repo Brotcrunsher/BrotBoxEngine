@@ -133,7 +133,7 @@ bbe::Rectanglei br::Rooms::shrinkBoundingBox(const bbe::Rectanglei& bounding) co
 	bbe::List<bbe::Vector2i> hashGridPositions = Room::getHashGridPositions(bounding);
 	for (const bbe::Vector2i& hgp : hashGridPositions)
 	{
-		bbe::List<size_t>* candidates = hashGrid.get(hgp);
+		const bbe::List<size_t>* candidates = hashGrid.get(hgp);
 		if (candidates)
 		{
 			for (size_t roomi : *candidates)
