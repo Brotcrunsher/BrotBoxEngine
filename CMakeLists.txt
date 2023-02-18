@@ -204,7 +204,9 @@ macro(add_trivial_project name)
       ${delete_calls}
       }")
     string(APPEND h_file_string "}\n")
-    end_embed_file(cpp_file_string h_file_string AssetStore.cpp AssetStore.h)
+    end_embed_file(cpp_file_string h_file_string ${CMAKE_CURRENT_BINARY_DIR}/Code/AssetStore.cpp ${CMAKE_CURRENT_BINARY_DIR}/Code/AssetStore.h)
+    target_sources(${name} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/Code/AssetStore.cpp")
+    target_include_directories(${name} PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/Code/")
   endif()
 endmacro()
 
