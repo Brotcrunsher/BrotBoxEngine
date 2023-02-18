@@ -34,6 +34,7 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 
 bbe::PrimitiveBrush3D::PrimitiveBrush3D()
 {
+#ifdef BBE_RENDERER_OPENGL
 	m_rectangle = bbe::Model(
 		{ 
 			bbe::PosNormalPair{bbe::Vector3(-0.5, -0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(0, 0)},
@@ -43,6 +44,7 @@ bbe::PrimitiveBrush3D::PrimitiveBrush3D()
 		},
 		{0, 1, 2, 2, 1, 3}
 	);
+#endif
 }
 
 void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
