@@ -30,7 +30,6 @@
 #include "../BBE/PointLight.h"
 #include "../BBE/PrimitiveBrush2D.h"
 #include "../BBE/PrimitiveBrush3D.h"
-#include "../BBE/VertexWithNormal.h"
 #include "../BBE/Window.h"
 
 #include "imgui.h"

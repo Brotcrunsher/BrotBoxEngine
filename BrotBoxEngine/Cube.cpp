@@ -1,5 +1,4 @@
 #include "BBE/Cube.h"
-#include "BBE/VertexWithNormal.h"
 #include "BBE/List.h"
 #include "BBE/Math.h"
 #include "string.h"
