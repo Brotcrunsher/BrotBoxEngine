@@ -58,9 +58,7 @@ namespace bbe
 
 		bbe::RenderManager* m_prenderManager = nullptr;
 
-#ifdef BBE_RENDERER_OPENGL
 		bbe::Model m_rectangle;
-#endif
 	public:
 		PrimitiveBrush3D();
 

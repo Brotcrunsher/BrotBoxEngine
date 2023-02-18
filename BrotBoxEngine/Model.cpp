@@ -14,15 +14,6 @@ bbe::Model::Model(const bbe::List<bbe::PosNormalPair>& vertices, const bbe::List
 {
 }
 
-bbe::Model::~Model()
-{
-	if (m_prendererData)
-	{
-		m_prendererData->decRef();
-		m_prendererData = nullptr;
-	}
-}
-
 bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 {
 	const bbe::DynamicArray<bbe::String> lines = obj.split("\n", false);

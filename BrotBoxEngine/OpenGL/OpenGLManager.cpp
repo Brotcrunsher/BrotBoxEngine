@@ -991,7 +991,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transfo
 	}
 	else
 	{
-		ogm = (bbe::INTERNAL::openGl::OpenGLModel*)model.m_prendererData;
+		ogm = (bbe::INTERNAL::openGl::OpenGLModel*)model.m_prendererData.get();
 	}
 	fillInternalMesh(&(transform[0]), ogm->getIbo(), ogm->getVbo(), ogm->getAmountOfIndices(), albedo, normals);
 }

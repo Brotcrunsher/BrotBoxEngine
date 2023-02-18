@@ -1,7 +1,7 @@
 #pragma once
 
 #include "BBE/glfwWrapper.h"
-#include "BBE/ManuallyRefCountable.h"
+#include "BBE/AutoRefCountable.h"
 #include "BBE/Model.h"
 
 namespace bbe
@@ -11,7 +11,7 @@ namespace bbe
 		namespace openGl
 		{
 			class OpenGLModel :
-				public ManuallyRefCountable
+				public AutoRefCountable
 			{
 			private:
 				GLuint m_vbo = 0;
