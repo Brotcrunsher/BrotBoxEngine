@@ -62,7 +62,6 @@
 
 #include "../BBE/Math.h"
 #include "../BBE/Matrix4.h"
-#include "../BBE/ValueNoise2D.h"
 #include "../BBE/Vector2.h"
 #include "../BBE/Vector3.h"
 #include "../BBE/Vector4.h"
