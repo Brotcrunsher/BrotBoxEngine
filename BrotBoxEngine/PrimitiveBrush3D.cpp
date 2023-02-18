@@ -76,13 +76,6 @@ void bbe::PrimitiveBrush3D::addLight(const bbe::PointLight& light)
 	addLight(light.pos, light.lightStrength, light.lightColor, light.specularColor, light.falloffMode);
 }
 
-#ifdef BBE_RENDERER_VULKAN
-void bbe::PrimitiveBrush3D::drawTerrain(const Terrain& terrain)
-{
-	((bbe::INTERNAL::vulkan::VulkanManager*)m_prenderManager)->drawTerrain(terrain, m_color);
-}
-#endif
-
 #ifdef BBE_RENDERER_OPENGL
 void bbe::PrimitiveBrush3D::fillRectangle(const bbe::Matrix4& transform, const Image* albedo, const Image* normals)
 {

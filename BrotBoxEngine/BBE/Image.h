@@ -12,7 +12,6 @@ namespace bbe
 {
 	class PrimitiveBrush2D;
 	class PrimitiveBrush3D;
-	class Terrain;
 	namespace INTERNAL
 	{
 		namespace vulkan
@@ -59,7 +58,6 @@ namespace bbe
 		friend class INTERNAL::openGl::OpenGLManager;
 		friend class PrimitiveBrush2D;
 		friend class PrimitiveBrush3D;
-		friend class Terrain;
 	private:
 		byte           *m_pdata  = nullptr;
 		int             m_width  = 0;

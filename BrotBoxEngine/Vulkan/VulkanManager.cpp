@@ -7,7 +7,6 @@
 #include "BBE/EngineSettings.h"
 #include "BBE/VertexWithNormal.h"
 #include "BBE/PointLight.h"
-#include "BBE/Profiler.h"
 #include "BBE/FragmentShader.h"
 #include "BBE/Circle.h"
 #include "BBE/Rectangle.h"
@@ -116,26 +115,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_setLayoutSampler.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
 	m_setLayoutSampler.create(m_device);
 
-	m_setLayoutTerrainHeightMap.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-	m_setLayoutTerrainHeightMap.create(m_device);
-
-	m_setLayoutTerrainAdditionalTexture.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, Settings::getTerrainAdditionalTextures(), VK_SHADER_STAGE_FRAGMENT_BIT);
-	m_setLayoutTerrainAdditionalTexture.create(m_device);
-
-	m_setLayoutTerrainAdditionalTextureWeight.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, Settings::getTerrainAdditionalTextures(), VK_SHADER_STAGE_FRAGMENT_BIT);
-	m_setLayoutTerrainAdditionalTextureWeight.create(m_device);
-
-	m_setLayoutTerrainViewFrustum.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 5, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-	m_setLayoutTerrainViewFrustum.create(m_device);
-
 	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutVertexLight                   , 1);
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutTerrainViewFrustum            , 16);
 	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutFragmentLight                 , 1);
 	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutViewProjectionMatrix          , 4);
 	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutSampler                       , 1024);
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutTerrainHeightMap              , 16);
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutTerrainAdditionalTexture      , 1);
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutTerrainAdditionalTextureWeight, 1);
 	m_descriptorPool.create(m_device);
 
 	m_setViewProjectionMatrixLights.resizeCapacityAndLength(m_swapchain.getAmountOfImages());
@@ -155,10 +138,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_fragmentShader2DImage             .init(m_device, frag2DImage);
 	m_vertexShader3DPrimitive           .init(m_device, vert3DPrimitive);
 	m_fragmentShader3DPrimitive         .init(m_device, frag3DPrimitive);
-	m_vertexShader3DTerrain             .init(m_device, vert3DTerrain);
-	m_fragmentShader3DTerrain           .init(m_device, frag3DTerrain);
-	m_teseShader3DTerrain               .init(m_device, tese3DTerrain);
-	m_tescShader3DTerrain               .init(m_device, tesc3DTerrain);
 
 	std::cout << "Vulkan Manager: creating pipeline" << std::endl;
 	createPipelines();
@@ -222,14 +201,9 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_commandPool.destroy();
 
 	m_pipeline3DPrimitive.destroy();
-	m_pipeline3DTerrain.destroy();
 
 	m_fragmentShader3DPrimitive.destroy();
 	m_vertexShader3DPrimitive.destroy();
-	m_vertexShader3DTerrain.destroy();
-	m_fragmentShader3DTerrain.destroy();
-	m_teseShader3DTerrain.destroy();
-	m_tescShader3DTerrain.destroy();
 
 	m_pipeline2DPrimitive.destroy();
 	m_pipeline2DImage.destroy();
@@ -241,10 +215,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	m_setLayoutFragmentLight.destroy();
 	m_setLayoutViewProjectionMatrix.destroy();
 	m_setLayoutSampler.destroy();
-	m_setLayoutTerrainHeightMap.destroy();
-	m_setLayoutTerrainAdditionalTexture.destroy();
-	m_setLayoutTerrainViewFrustum.destroy();
-	m_setLayoutTerrainAdditionalTextureWeight.destroy();
 	m_descriptorPool.destroy();
 	for (uint32_t i = 0; i < m_uboMatrices.getLength(); i++)
 	{
@@ -288,9 +258,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw3D()
 
 	m_pipelineRecord3D = PipelineRecord3D::NONE;
 	m_lastDraw3D = DrawRecord::NONE;
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 1, 1, m_setViewProjectionMatrixLights[m_imageIndex].getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
@@ -493,28 +460,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	int32_t spezAmountOfLights = Settings::getAmountOfLightSources();
 	m_pipeline3DPrimitive.setSpezializationData(sizeof(int32_t), &spezAmountOfLights);
 	m_pipeline3DPrimitive.create(m_device.getDevice(), m_renderPass.getRenderPass());
-
-	m_pipeline3DTerrain.init(m_vertexShader3DTerrain, m_fragmentShader3DTerrain, m_screenWidth, m_screenHeight);
-	m_pipeline3DTerrain.setTessellationShader(m_tescShader3DTerrain.getModule(), m_teseShader3DTerrain.getModule(), 4);
-	m_pipeline3DTerrain.addVertexBinding(0, sizeof(Vector2), VK_VERTEX_INPUT_RATE_VERTEX);
-	m_pipeline3DTerrain.addVertexDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
-	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color) + sizeof(Vector4));
-	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(Color) + sizeof(Vector4), sizeof(Matrix4) + sizeof(float));
-	m_pipeline3DTerrain.addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, 100, sizeof(float) * 5);
-	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutVertexLight.getDescriptorSetLayout());
-	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutViewProjectionMatrix.getDescriptorSetLayout());
-	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutFragmentLight.getDescriptorSetLayout());
-	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainHeightMap.getDescriptorSetLayout());
-	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutSampler.getDescriptorSetLayout());
-	//m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainViewFrustum.getDescriptorSetLayout());
-	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTexture.getDescriptorSetLayout());
-	m_pipeline3DTerrain.addDescriptorSetLayout(m_setLayoutTerrainAdditionalTextureWeight.getDescriptorSetLayout());
-	m_pipeline3DTerrain.enableDepthBuffer();
-	m_pipeline3DTerrain.addSpezializationConstant(0, 0, sizeof(int32_t));
-	m_pipeline3DTerrain.setSpezializationData(sizeof(int32_t), &spezAmountOfLights);
-	m_pipeline3DTerrain.enablePrimitiveRestart(false);
-	m_pipeline3DTerrain.setPrimitiveTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
-	m_pipeline3DTerrain.create(m_device.getDevice(), m_renderPass.getRenderPass());
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::resize(uint32_t width, uint32_t height)
@@ -553,7 +498,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::recreateSwapchain()
 	m_pipeline2DPrimitive.destroy();
 	m_pipeline2DImage.destroy();
 	m_pipeline3DPrimitive.destroy();
-	m_pipeline3DTerrain.destroy();
 	m_renderPass.destroy();
 	m_depthImage.destroy();
 	//m_swapchain.destroy();
@@ -878,18 +822,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::bindPipelinePrimitive3D()
 	}
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::bindPipelineTerrain3D()
-{
-	if (m_pipelineRecord3D != PipelineRecord3D::TERRAIN)
-	{
-		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getPipeline(getFillMode3D()));
-		vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 0, 1, m_setVertexLight.getPDescriptorSet(), 0, nullptr);
-		vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 1, 1, m_setViewProjectionMatrixLights[m_imageIndex].getPDescriptorSet(), 0, nullptr);
-		vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 2, 1, m_setFragmentLight.getPDescriptorSet(), 0, nullptr);
-		m_pipelineRecord3D = PipelineRecord3D::TERRAIN;
-	}
-}
-
 void bbe::INTERNAL::vulkan::VulkanManager::setColor2D(const bbe::Color& color)
 {
 	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(Color), &color);
@@ -1097,68 +1029,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillSphere3D(const bbe::IcoSphere& sp
 
 
 	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, VulkanSphere::amountOfIndices, 1, 0, 0, 0);
-}
-
-void bbe::INTERNAL::vulkan::VulkanManager::drawTerrain(const bbe::Terrain& terrain, const bbe::Color& color)
-{
-	terrain.init(
-		m_device,
-		m_commandPool,
-		m_descriptorPool,
-		m_setLayoutTerrainHeightMap,
-		m_setLayoutSampler,
-		m_setLayoutTerrainAdditionalTexture,
-		m_setLayoutTerrainAdditionalTextureWeight,
-		m_setLayoutTerrainViewFrustum
-	);
-
-	bindPipelineTerrain3D();
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 3, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_heightMap.m_prendererData.get())->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 4, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_baseTexture.m_prendererData.get())->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
-	//vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 5, 1, terrain.m_viewFrustrumDescriptor.getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 5, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_additionalTextures[0].m_prendererData.get())->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
-	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline3DTerrain.getLayout(), 6, 1, ((bbe::INTERNAL::vulkan::VulkanImage*)terrain.m_additionalTextureWeights[0].m_prendererData.get())->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
-
-
-	class PushConts
-	{
-	public:
-		Matrix4 mat;
-		float height;
-	}pushConts;
-
-	class PushContsFragmentShader
-	{
-	public:
-		Color c;
-		Vector4 bias;
-	} pushContsFragmenShader;
-
-	pushContsFragmenShader.c = color;
-	pushContsFragmenShader.bias.x = terrain.m_baseTextureBias.m_textureMult.x;
-	pushContsFragmenShader.bias.y = terrain.m_baseTextureBias.m_textureMult.y;
-	pushContsFragmenShader.bias.z = terrain.m_baseTextureBias.m_textureOffset.x;
-	pushContsFragmenShader.bias.w = terrain.m_baseTextureBias.m_textureOffset.y;
-
-	pushConts.height = terrain.getMaxHeight();
-	pushConts.mat = terrain.m_transform;
-	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DTerrain.getLayout(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(PushContsFragmentShader), sizeof(PushConts), &(pushConts));
-	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DTerrain.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 108, sizeof(float), &terrain.m_patchSize);
-
-	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DTerrain.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushContsFragmentShader), &(pushContsFragmenShader));
-
-	VkDeviceSize offsets[] = { 0 };
-	VkBuffer buffer = terrain.m_vertexBuffer.getBuffer();
-	vkCmdBindVertexBuffers(*m_currentFrameDrawCommandBuffer, 0, 1, &buffer, offsets);
-
-	buffer = terrain.m_indexBuffer.getBuffer();
-	vkCmdBindIndexBuffer(*m_currentFrameDrawCommandBuffer, buffer, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DTerrain.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 112, sizeof(Vector2), &terrain.m_heightmapScale);
-	Vector2 emptyOffset(0, 0);
-	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DTerrain.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 100, sizeof(Vector2), &emptyOffset);
-	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, terrain.getAmountOfIndizes(), 1, 0, 0, 0);
-
-	m_lastDraw3D = DrawRecord::TERRAIN;
 }
 
 static void CheckVkResultFn(VkResult err)

@@ -4,7 +4,6 @@
 #include "../BBE/Matrix4.h"
 #include "../BBE/Cube.h"
 #include "../BBE/IcoSphere.h"
-#include "../BBE/Terrain.h"
 #include "../BBE/FillMode.h"
 #include "../BBE/ViewFrustum.h"
 #include "../BBE/RenderManager.h"
@@ -69,9 +68,6 @@ namespace bbe
 		void addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode);
 		void addLight(const bbe::PointLight& light);
 
-#ifdef BBE_RENDERER_VULKAN
-		void drawTerrain(const Terrain &terrain);
-#endif
 #ifdef BBE_RENDERER_OPENGL
 		void fillRectangle(const bbe::Matrix4& transform, const Image* albedo = nullptr, const Image* normals = nullptr);
 		void fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo = nullptr, const Image* normals = nullptr);

@@ -29,12 +29,6 @@ void bbe::Settings::setAmountOfLightSources(int amount)
 }
 #endif
 
-int bbe::Settings::getTerrainAdditionalTextures()
-{
-	//UNTESTED
-	return 2;
-}
-
 void bbe::Settings::setShaderDoublesAllowed(bool allowed)
 {
 	if (started)

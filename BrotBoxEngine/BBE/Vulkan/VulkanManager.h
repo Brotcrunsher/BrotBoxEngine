@@ -41,12 +41,12 @@ namespace bbe
 
 			enum class PipelineRecord3D
 			{
-				NONE, PRIMITIVE, TERRAIN
+				NONE, PRIMITIVE
 			};
 
 			enum class DrawRecord
 			{
-				NONE, CUBE, ICOSPHERE, TERRAIN
+				NONE, CUBE, ICOSPHERE
 			};
 
 			class VulkanManager 
@@ -83,12 +83,7 @@ namespace bbe
 
 				VulkanShader   m_vertexShader3DPrimitive;
 				VulkanShader   m_fragmentShader3DPrimitive;
-				VulkanShader   m_vertexShader3DTerrain;
-				VulkanShader   m_fragmentShader3DTerrain;
-				VulkanShader   m_teseShader3DTerrain;
-				VulkanShader   m_tescShader3DTerrain;
 				VulkanPipeline m_pipeline3DPrimitive;
-				VulkanPipeline m_pipeline3DTerrain;
 
 				VulkanCommandPool         m_commandPool;
 				VulkanSemaphore           m_semaphoreImageAvailable;
@@ -104,10 +99,6 @@ namespace bbe
 				VulkanDescriptorSetLayout m_setLayoutFragmentLight;
 				VulkanDescriptorSetLayout m_setLayoutViewProjectionMatrix;
 				VulkanDescriptorSetLayout m_setLayoutSampler;
-				VulkanDescriptorSetLayout m_setLayoutTerrainHeightMap;
-				VulkanDescriptorSetLayout m_setLayoutTerrainAdditionalTexture;
-				VulkanDescriptorSetLayout m_setLayoutTerrainAdditionalTextureWeight;
-				VulkanDescriptorSetLayout m_setLayoutTerrainViewFrustum;
 				VulkanDescriptorPool      m_descriptorPool;
 				VulkanDescriptorSet       m_setVertexLight;
 				VulkanDescriptorSet       m_setFragmentLight;
@@ -189,7 +180,6 @@ namespace bbe
 				void bindRectBuffers();
 
 				void bindPipelinePrimitive3D();
-				void bindPipelineTerrain3D();
 
 				virtual void setColor2D(const bbe::Color& color) override;
 				virtual void fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader) override;
@@ -201,7 +191,6 @@ namespace bbe
 				virtual void setCamera3D(const bbe::Vector3& cameraPos, const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection) override;
 				virtual void fillCube3D(const Cube& cube) override;
 				virtual void fillSphere3D(const bbe::IcoSphere& sphere) override;
-				void drawTerrain(const bbe::Terrain& terrain, const bbe::Color& color);
 				virtual void addLight(const bbe::Vector3& pos, float lightStrenght, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode) override;
 
 				virtual void imguiStart() override;
