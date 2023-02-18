@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../BBE/FragmentShader.h"
-#include "../BBE/ManuallyRefCountable.h"
+#include "../BBE/AutoRefCountable.h"
 #include "../BBE/Vulkan/VulkanShader.h"
 #include "../BBE/Vulkan/VulkanPipeline.h"
 
@@ -16,7 +16,7 @@ namespace bbe
 			class VulkanManager;
 			class VulkanDescriptorSet;
 
-			struct VulkanFragmentShader : public ManuallyRefCountable
+			struct VulkanFragmentShader : public AutoRefCountable
 			{
 				INTERNAL::vulkan::VulkanShader   m_shader;
 				INTERNAL::vulkan::VulkanPipeline m_pipeline;

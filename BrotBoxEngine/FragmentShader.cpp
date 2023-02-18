@@ -23,15 +23,6 @@ bbe::FragmentShader::FragmentShader(const bbe::List<unsigned char>& rawData)
 	load(rawData);
 }
 
-bbe::FragmentShader::~FragmentShader()
-{
-	if (m_prendererData)
-	{
-		m_prendererData->decRef();
-		m_prendererData = nullptr;
-	}
-}
-
 void bbe::FragmentShader::load(const char* path)
 {
 	load(bbe::simpleFile::readBinaryFile(path));

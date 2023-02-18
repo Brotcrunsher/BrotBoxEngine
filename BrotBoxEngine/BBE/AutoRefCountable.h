@@ -24,7 +24,7 @@ namespace bbe
 
 	public:
 		AutoRef();
-		explicit AutoRef(AutoRefCountable* countable);
+		/*none explicit*/ AutoRef(AutoRefCountable* countable);
 		virtual ~AutoRef();
 
 		AutoRef(const AutoRef& other);

@@ -907,7 +907,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillRect2D(const Rectangle& rect, flo
 		}
 		else
 		{
-			vfs = (bbe::INTERNAL::vulkan::VulkanFragmentShader*)shader->m_prendererData;
+			vfs = (bbe::INTERNAL::vulkan::VulkanFragmentShader*)shader->m_prendererData.get();
 		}
 
 		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vfs->m_pipeline.getPipeline(getFillMode2D()));

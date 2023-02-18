@@ -35,7 +35,7 @@ bbe::AutoRef::AutoRef() :
 bbe::AutoRef::AutoRef(AutoRefCountable* countable) :
 	countable(countable)
 {
-	countable->refCount++;
+	if(countable) countable->refCount++;
 }
 
 bbe::AutoRef::~AutoRef()

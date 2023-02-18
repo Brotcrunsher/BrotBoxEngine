@@ -1,5 +1,5 @@
 #pragma once
-#include "../BBE/ManuallyRefCountable.h"
+#include "../BBE/AutoRefCountable.h"
 #include "../BBE/List.h"
 #include "../BBE/Vector2.h"
 
@@ -39,18 +39,12 @@ namespace bbe
 
 		bool isLoaded = false;
 
-		mutable bbe::ManuallyRefCountable* m_prendererData = nullptr;
+		mutable bbe::AutoRef m_prendererData = nullptr;
 		bbe::List<unsigned char> m_rawData;
 	public:
 		FragmentShader();
 		explicit FragmentShader(const char* path);
 		explicit FragmentShader(const bbe::List<unsigned char>& rawData);
-		~FragmentShader();
-
-		FragmentShader(const FragmentShader& other) = delete;
-		FragmentShader(FragmentShader&& other) = delete;
-		FragmentShader& operator=(const FragmentShader& other) = delete;
-		FragmentShader& operator=(FragmentShader&& other) = delete;
 
 		void load(const char* path);
 		void load(const bbe::List<unsigned char>& rawData);
