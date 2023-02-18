@@ -2,10 +2,9 @@
 
 #include "../BBE/Array.h"
 #include "../BBE/Hash.h"
-#include "../BBE/NewDeleteAllocator.h"
 #include "../BBE/Exceptions.h"
 #include <type_traits>
-#include <cassert>
+#include <stddef.h>
 #include <initializer_list>
 
 namespace bbe
@@ -13,46 +12,23 @@ namespace bbe
 	template<typename T>
 	class List;
 
-	template <typename T, typename Allocator = NewDeleteAllocator, typename PointerType = T*>
+	template <typename T>
 	class DynamicArray
 	{
 	private:
+		T*     m_pdata;
+		size_t m_length;
 
-		PointerType m_pdata;
-		std::size_t      m_length;
-		Allocator  *m_pparentAllocator = nullptr;
-
-		void createArray(std::size_t size, Allocator* parentAllocator)
+		void createArray(std::size_t size)
 		{
 			m_length = size;
-			if (std::is_same<Allocator, NewDeleteAllocator>::value)
-			{
-				m_pdata = new T[size];
-			}
-			else
-			{
-				assert(parentAllocator != nullptr);
-				m_pdata = parentAllocator->template allocateObjects<T>(size);
-				m_pparentAllocator = parentAllocator;
-			}
+			m_pdata = new T[size];
 		}
 
 		void deleteArray()
 		{
-			if (m_pdata != nullptr)
-			{
-				if (std::is_same<Allocator, NewDeleteAllocator>::value)
-				{
-					delete[] m_pdata;
-				}
-				else
-				{
-					m_pparentAllocator->deallocate(m_pdata);
-				}
-
-				m_length = 0;
-				m_pparentAllocator = nullptr;
-			}
+			delete[] m_pdata;
+			m_length = 0;
 		}
 
 	public:
@@ -63,27 +39,27 @@ namespace bbe
 
 		}
 
-		DynamicArray(std::size_t size, Allocator* parentAllocator = nullptr)
+		DynamicArray(std::size_t size)
 			: m_length(size)
 		{
-			createArray(size, parentAllocator);
+			createArray(size);
 		}
 
 		template <typename U, int size>
-		DynamicArray(const Array<U, size> &arr, Allocator* parentAllocator = nullptr)
+		DynamicArray(const Array<U, size> &arr)
 			: m_length(size)
 		{
-			createArray(arr.getLength(), parentAllocator);
+			createArray(arr.getLength());
 			for (int i = 0; i < size; i++)
 			{
 				m_pdata[i] = arr[i];
 			}
 		}
 
-		DynamicArray(const List<T> &list, Allocator* parentAllocator = nullptr)
+		DynamicArray(const List<T> &list)
 			: m_length(list.getLength())
 		{
-			createArray(list.getLength(), parentAllocator);
+			createArray(list.getLength());
 			for (std::size_t i = 0; i < m_length; i++)
 			{
 				m_pdata[i] = list[i];
@@ -92,7 +68,7 @@ namespace bbe
 
 		explicit DynamicArray(const std::initializer_list<T> &il)
 		{
-			createArray(il.end() - il.begin(), nullptr);
+			createArray(il.end() - il.begin());
 			std::size_t i = 0;
 			for (auto iter = il.begin(); iter != il.end(); iter++) {
 				m_pdata[i] = *iter;
@@ -106,9 +82,9 @@ namespace bbe
 		}
 
 		DynamicArray(const DynamicArray&  other) //Copy Constructor
-			: m_length(other.m_length), m_pparentAllocator(other.m_pparentAllocator)
+			: m_length(other.m_length)
 		{
-			createArray(other.m_length, other.m_pparentAllocator);
+			createArray(other.m_length);
 			for (std::size_t i = 0; i < m_length; i++)
 			{
 				m_pdata[i] = other[i];
@@ -118,16 +94,14 @@ namespace bbe
 			: m_pdata(other.m_pdata)
 		{
 			m_length = other.m_length;
-			m_pparentAllocator = other.m_pparentAllocator;
 			other.m_pdata = nullptr;
 			other.m_length = 0;
-			other.m_pparentAllocator = nullptr;
 		}
 		DynamicArray& operator=(const DynamicArray&  other)  //Copy Assignment
 		{
 			deleteArray();
 
-			createArray(other.m_length, other.m_pparentAllocator);
+			createArray(other.m_length);
 			for (std::size_t i = 0; i < m_length; i++)
 			{
 				m_pdata[i] = other[i];
@@ -141,7 +115,6 @@ namespace bbe
 
 			m_pdata = other.m_pdata;
 			m_length = other.m_length;
-			m_pparentAllocator = other.m_pparentAllocator;
 			other.m_pdata = nullptr;
 			other.m_length = 0;
 
@@ -212,15 +185,9 @@ namespace bbe
 	template<typename T>
 	uint32_t hash(const DynamicArray<T> &t)
 	{
-		std::size_t length = t.getLength();
-		if (length > 16)
-		{
-			length = 16;
-		}
-
 		uint32_t _hash = 0;
 
-		for (std::size_t i = 0; i < length; i++)
+		for (std::size_t i = 0; i < t.getLength(); i++)
 		{
 			_hash += hash(t[i]);
 		}
