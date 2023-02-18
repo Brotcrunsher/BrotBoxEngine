@@ -159,10 +159,10 @@ namespace bbe
 		Rectangle_t<Vec> stretchedSpace(SubType x, SubType y) const
 		{
 			return Rectangle_t<Vec>(
-				x * x,
-				y * y,
-				width * x,
-				height * y
+				this->x * x,
+				this->y * y,
+				this->width * x,
+				this->height * y
 			);
 		}
 
