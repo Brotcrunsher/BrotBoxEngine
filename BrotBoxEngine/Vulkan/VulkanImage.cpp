@@ -6,7 +6,7 @@
 #include "BBE/Vulkan/VulkanBuffer.h"
 #include "BBE/Image.h"
 
-bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image& image, const INTERNAL::vulkan::VulkanDevice& device, const INTERNAL::vulkan::VulkanCommandPool& commandPool, const INTERNAL::vulkan::VulkanDescriptorPool& descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout& setLayout, const Image* parentImage)
+bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image& image, const INTERNAL::vulkan::VulkanDevice& device, const INTERNAL::vulkan::VulkanCommandPool& commandPool, const INTERNAL::vulkan::VulkanDescriptorPool& descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout& setLayout)
 {
 	if (image.m_pdata == nullptr)
 	{
@@ -23,15 +23,8 @@ bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image& image, const I
 	m_format = (VkFormat)image.m_format;
 	m_width = image.getWidth();
 	m_height = image.getHeight();
+	m_pCorrectDescriptorSet = &m_descriptorSet;
 
-	if (image.m_parentImage == nullptr)
-	{
-		m_pCorrectDescriptorSet = &m_descriptorSet;
-	}
-	else
-	{
-		m_pCorrectDescriptorSet = &(((VulkanImage*)image.m_parentImage->m_prendererData.get())->m_descriptorSet);
-	}
 
 	m_device = device.getDevice();
 	const int amountOfMips = Math::max(1, Math::log2Floor(Math::min(image.getWidth(), image.getHeight())));
@@ -135,13 +128,8 @@ bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image& image, const I
 	VkResult result = vkCreateSampler(m_device, &samplerCreateInfo, nullptr, &m_sampler);
 	ASSERT_VULKAN(result);
 
-	image.m_parentImage = parentImage;
-
 	getDescriptorSet().addCombinedImageSampler(image, 0);
-	if (image.m_parentImage == nullptr)
-	{
-		getDescriptorSet().create(device, descriptorPool, setLayout);
-	}
+	getDescriptorSet().create(device, descriptorPool, setLayout);
 }
 
 bbe::INTERNAL::vulkan::VulkanImage::~VulkanImage()

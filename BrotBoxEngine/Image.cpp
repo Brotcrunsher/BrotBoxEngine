@@ -56,8 +56,6 @@ bbe::Image::Image(const Image& other)
 	m_repeatMode = other.m_repeatMode;
 	m_filterMode = other.m_filterMode;
 	m_prendererData = other.m_prendererData;
-
-	m_parentImage = other.m_parentImage;
 }
 
 bbe::Image::Image(Image&& other) noexcept
@@ -77,7 +75,6 @@ bbe::Image& bbe::Image::operator=(Image&& other) noexcept
 	this->m_filterMode = other.m_filterMode;
 
 	this->m_prendererData = other.m_prendererData;
-	this->m_parentImage = other.m_parentImage;
 
 	other.m_pdata = nullptr;
 	other.m_width = 0;
@@ -87,7 +84,6 @@ bbe::Image& bbe::Image::operator=(Image&& other) noexcept
 	other.m_filterMode = (ImageFilterMode)0;
 
 	other.m_prendererData = nullptr;
-	other.m_parentImage = 0;
 
 	return *this;
 }

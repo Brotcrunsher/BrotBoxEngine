@@ -31,7 +31,7 @@ namespace bbe
 				INTERNAL::vulkan::VulkanDescriptorSet m_descriptorSet;
 				INTERNAL::vulkan::VulkanDescriptorSet* m_pCorrectDescriptorSet;
 
-				VulkanImage(const bbe::Image& image, const INTERNAL::vulkan::VulkanDevice& device, const INTERNAL::vulkan::VulkanCommandPool& commandPool, const INTERNAL::vulkan::VulkanDescriptorPool& descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout& setLayout, const Image* parentImage = nullptr);
+				VulkanImage(const bbe::Image& image, const INTERNAL::vulkan::VulkanDevice& device, const INTERNAL::vulkan::VulkanCommandPool& commandPool, const INTERNAL::vulkan::VulkanDescriptorPool& descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout& setLayout);
 				~VulkanImage();
 
 				VulkanImage(const VulkanImage&) = delete;

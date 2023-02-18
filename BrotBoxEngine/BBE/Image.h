@@ -68,8 +68,6 @@ namespace bbe
 
 		mutable bbe::AutoRef m_prendererData;
 
-		mutable const Image*   m_parentImage = nullptr;
-
 		void finishLoad(stbi_uc* pixels);
 
 	public:
