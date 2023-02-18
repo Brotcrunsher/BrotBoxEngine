@@ -173,6 +173,7 @@ bool RenderObject::hasAnyAnimation() const
 
 Slide::Slide()
 {
+	loadFonts();
 }
 
 Slide::Slide(Tokenizer* tokenizer)
@@ -222,7 +223,7 @@ Slide::Slide(const char* path)
 Slide::~Slide()
 {
 	fontsLoaded--;
-	fonts.clear();
+	if(fontsLoaded == 0) fonts.clear();
 }
 
 Slide::Slide(Slide&& other)
