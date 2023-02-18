@@ -4,7 +4,6 @@
 #include "BBE/PrimitiveBrush2D.h"
 #include "BBE/PrimitiveBrush3D.h"
 #include "BBE/Math.h"
-#include "BBE/Profiler.h"
 #include <iostream>
 
 #ifdef __EMSCRIPTEN__
@@ -102,9 +101,8 @@ bool bbe::Game::keepAlive()
 
 void bbe::Game::frame()
 {
-	StopWatch sw;
 	frameUpdate();
-	frameDraw(&sw);
+	frameDraw();
 }
 
 void bbe::Game::frameUpdate()
@@ -121,7 +119,7 @@ void bbe::Game::frameUpdate()
 	update(timeSinceLastFrame);
 }
 
-void bbe::Game::frameDraw(StopWatch* profilerStopWatch)
+void bbe::Game::frameDraw()
 {
 	if (!m_pwindow->isReadyToDraw())
 	{
@@ -134,10 +132,6 @@ void bbe::Game::frameDraw(StopWatch* profilerStopWatch)
 	m_pwindow->preDraw2D();
 	draw2D(m_pwindow->getBrush2D());
 	m_pwindow->postDraw();
-	if (profilerStopWatch)
-	{
-		bbe::Profiler::INTERNAL::setCPUTime(profilerStopWatch->getTimeExpiredNanoseconds() / 1000.f / 1000.f / 1000.f);
-	}
 	m_pwindow->waitEndDraw();
 }
 

@@ -9,7 +9,6 @@
 #include "../BBE/Vector2.h"
 #include "../BBE/PhysWorld.h"
 #include "../BBE/SoundManager.h"
-#include "../BBE/StopWatch.h"
 
 namespace bbe
 {
@@ -47,7 +46,7 @@ namespace bbe
 		bool keepAlive();
 		void frame();
 		void frameUpdate();
-		void frameDraw(StopWatch *profilerStopWatch = nullptr);
+		void frameDraw();
 		void shutdown();
 
 		virtual void onStart()                            = 0;
