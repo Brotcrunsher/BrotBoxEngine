@@ -117,13 +117,6 @@ namespace bbe
 			return nullptr;
 		}
 
-		bool remove(const Key &key)
-		{
-			//TODO
-			//UNTESTED
-			return false;
-		}
-
 	private:
 		void resize()
 		{
