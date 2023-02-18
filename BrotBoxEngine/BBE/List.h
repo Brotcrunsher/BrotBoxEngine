@@ -18,7 +18,6 @@ namespace bbe
 	template <typename T>
 	class List
 	{
-		//TODO use own allocators
 	private:
 		size_t m_length;
 		size_t m_capacity;

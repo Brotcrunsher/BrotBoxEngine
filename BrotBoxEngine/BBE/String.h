@@ -143,8 +143,8 @@ namespace bbe
 		bool startsWith(const char* string) const;
 		bool endsWith(const char* string) const;
 
-		int64_t search(const char*       string, int64_t startIndex = 0) const;		//TODO
-		int64_t search(const Utf8String& string, int64_t startIndex = 0) const;		//TODO
+		int64_t search(const char*       string, int64_t startIndex = 0) const;
+		int64_t search(const Utf8String& string, int64_t startIndex = 0) const;
 		
 		int64_t searchLast(const char* string) const;
 
