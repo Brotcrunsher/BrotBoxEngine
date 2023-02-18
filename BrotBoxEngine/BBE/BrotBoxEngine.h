@@ -8,7 +8,6 @@
 #include "../BBE/List.h"
 #include "../BBE/Span.h"
 #include "../BBE/Grid.h"
-#include "../BBE/RingArray.h"
 #include "../BBE/Stack.h"
 
 #include "../BBE/ExceptionHelper.h"
