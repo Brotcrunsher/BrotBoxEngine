@@ -1,3 +1,7 @@
+===============================================================================
+Engine License:
+===============================================================================
+
 MIT License
 
 Copyright (c) 2016 Jakob "Brotcrunsher" Schaal
@@ -19,3 +23,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+===============================================================================
+Third Party Licenses:
+===============================================================================
+
+This Repository contains various Third Party projects which may contain other
+licenses. See in the subdirectories of "Third-Party" within this Repository.
