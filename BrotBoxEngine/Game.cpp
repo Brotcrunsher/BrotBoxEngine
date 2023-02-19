@@ -107,6 +107,7 @@ void bbe::Game::frame()
 
 void bbe::Game::frameUpdate()
 {
+	m_pwindow->executeFrameStartListeneres();
 	m_pwindow->INTERNAL_keyboard.update();
 	const bbe::Vector2 globalMousePos = m_pwindow->getGlobalMousePos();
 	m_pwindow->INTERNAL_mouse.update(globalMousePos.x, globalMousePos.y);

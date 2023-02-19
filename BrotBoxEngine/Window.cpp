@@ -268,6 +268,19 @@ void bbe::Window::executeCloseListeners()
 	}
 }
 
+void bbe::Window::registerFrameStartListener(const std::function<void()>& listener)
+{
+	m_frameStartListeners.add(listener);
+}
+
+void bbe::Window::executeFrameStartListeneres()
+{
+	for (const std::function<void()> listener : m_frameStartListeners)
+	{
+		listener();
+	}
+}
+
 void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, int action, int mods)
 {
 #ifndef BBE_RENDERER_NULL

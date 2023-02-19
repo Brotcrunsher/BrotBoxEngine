@@ -24,7 +24,8 @@ namespace bbe
 		
 		GLFWwindow                         *m_pwindow;
 		std::unique_ptr<bbe::RenderManager> m_renderManager;
-		bbe::List<std::function<void()>>      m_closeListeners;
+		bbe::List<std::function<void()>>    m_closeListeners;
+		bbe::List<std::function<void()>>    m_frameStartListeners;
 
 		int                                 m_width;
 		int                                 m_height;
@@ -74,6 +75,8 @@ namespace bbe
 
 		void registerCloseListener(const std::function<void()>& listener);
 		void executeCloseListeners();
+		void registerFrameStartListener(const std::function<void()>& listener);
+		void executeFrameStartListeneres();
 	};
 
 

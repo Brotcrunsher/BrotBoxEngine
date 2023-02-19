@@ -83,6 +83,7 @@ macro(add_trivial_project name)
     file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/Assets/*")
     start_embed_file(cpp_file_string h_file_string AssetStore.h)
     set(delete_calls "")
+    set(hot_reload_arms "")
     string(APPEND h_file_string "#include \"BBE/Image.h\"\n")
     string(APPEND h_file_string "#include \"BBE/Sound.h\"\n")
     string(APPEND h_file_string "#include \"BBE/String.h\"\n")
@@ -94,11 +95,13 @@ macro(add_trivial_project name)
     string(APPEND cpp_file_string "// NOTE: Indentation here looks \"special\", but I don't care as long as the indentation within the generator script looks okay :-)\n")
     string(APPEND cpp_file_string 
     "static void cleanUp()\;
+    static void frameStart()\;
     static void registerCleanup()
     {
       static bool registered = false\;
       if(registered) return\;
       registered = true\;
+      bbe::Window::INTERNAL_firstInstance->registerFrameStartListener(std::function(frameStart))\;
       bbe::Window::INTERNAL_firstInstance->registerCloseListener(std::function(cleanUp))\;
     }
     ")
@@ -110,16 +113,29 @@ macro(add_trivial_project name)
         string(APPEND h_file_string "extern const bbe::Image* ${name_we}()\;\n")
         string(APPEND cpp_file_string 
           "static bbe::Image* ${name_we}_data = nullptr\;
+          static std::filesystem::file_time_type ${name_we}_modify_time\;
+          bool ${name_we}_hot_reload_armed = true\;
           const bbe::Image* assetStore::${name_we}() 
           {
             registerCleanup()\;
-            if(${name_we}_data) return ${name_we}_data\;
-            bbe::List<unsigned char> raw = bbe::simpleFile::readBinaryFile(\"${f}\")\;
+            bbe::List<unsigned char> raw\;
+            if(!${name_we}_hot_reload_armed)
+            {
+              return ${name_we}_data\;
+            }
+            if(!bbe::simpleFile::readBinaryFileIfChanged(\"${f}\", raw, ${name_we}_modify_time)) 
+            {
+              ${name_we}_hot_reload_armed = false\;
+              return ${name_we}_data\;
+            }
+            ${name_we}_hot_reload_armed = false\;
+            delete ${name_we}_data\;
             ${name_we}_data = new bbe::Image()\;
             ${name_we}_data->loadRaw(raw)\;
             return ${name_we}_data\;
           }\n")
         string(APPEND delete_calls "delete ${name_we}_data\; ${name_we}_data = nullptr\;")
+        string(APPEND hot_reload_arms "${name_we}_hot_reload_armed = true\;")
       elseif(ext STREQUAL ".mp3")
         contents_as_hex(${f})
         string(APPEND h_file_string "extern const bbe::Sound* ${name_we}()\;\n")
@@ -202,6 +218,11 @@ macro(add_trivial_project name)
       "static void cleanUp()
       {
       ${delete_calls}
+      }")
+    string(APPEND cpp_file_string
+      "static void frameStart()
+      {
+      ${hot_reload_arms}
       }")
     string(APPEND h_file_string "}\n")
     end_embed_file(cpp_file_string h_file_string ${CMAKE_CURRENT_BINARY_DIR}/Code/AssetStore.cpp ${CMAKE_CURRENT_BINARY_DIR}/Code/AssetStore.h)

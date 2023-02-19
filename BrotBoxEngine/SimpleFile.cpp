@@ -35,6 +35,38 @@ bbe::List<unsigned char> bbe::simpleFile::readBinaryFile(const bbe::String & fil
 	}
 }
 
+bool bbe::simpleFile::readBinaryFileIfChanged(const bbe::String& filepath, bbe::List<unsigned char>& outContents, std::filesystem::file_time_type& inOutPreviousModify)
+{
+	if (std::filesystem::is_directory(filepath.getRaw()))
+	{
+		throw bbe::IllegalArgumentException();
+	}
+
+	std::filesystem::file_time_type currentModifyTime;
+	try
+	{
+		currentModifyTime = std::filesystem::last_write_time(filepath.getRaw());
+	}
+	catch (std::filesystem::filesystem_error&)
+	{
+		// Probably the file is still in the write process, so we just report that nothing changed.
+		return false;
+	}
+	if (currentModifyTime <= inOutPreviousModify) return false;
+
+	try {
+		outContents = readBinaryFile(filepath);
+	}
+	catch (std::runtime_error&)
+	{
+		// Probably the file is still in the write process, so we just report that nothing changed.
+		return false;
+	}
+	inOutPreviousModify = currentModifyTime;
+
+	return true;
+}
+
 bbe::List<float> bbe::simpleFile::readFloatArrFromFile(const bbe::String& filePath)
 {
 	std::ifstream file(filePath.getRaw());
