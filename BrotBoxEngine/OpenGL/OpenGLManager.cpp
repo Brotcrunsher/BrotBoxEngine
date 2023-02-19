@@ -564,25 +564,59 @@ void bbe::INTERNAL::openGl::OpenGLManager::initGeometryBuffer()
 	mrtFb.finalize();
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals)
+void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals, const FragmentShader* shader)
 {
-	m_program3dMrt.use();
+	GLuint program = 0;
+	GLint modelPos = 0;
+	bbe::INTERNAL::openGl::OpenGLFragmentShader* fs = nullptr;
+	if (shader)
+	{
+		if (shader->m_prendererData != nullptr)
+		{
+			fs = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)shader->m_prendererData.get();
+		}
+		else
+		{
+			fs = new bbe::INTERNAL::openGl::OpenGLFragmentShader(*shader);
+		}
+
+		program = fs->program3d;
+		modelPos = fs->modelPos;
+		if (fs->errorLog3d.getLength() > 0)
+		{
+			std::cout << fs->errorLog3d << std::endl;
+			fs->errorLog3d = "";
+		}
+	}
+	else
+	{
+		program = m_program3dMrt.program;
+		modelPos = modelPos3dMrt;
+	}
+
+	glUseProgram(program);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, mrtFb.framebuffer);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
-	glUniformMatrix4fv(modelPos3dMrt, 1, GL_FALSE, modelMatrix);
+	glUniformMatrix4fv(modelPos, 1, GL_FALSE, modelMatrix);
+	if (fs)
+	{
+		glUniformMatrix4fv(fs->projectionPos, 1, GL_FALSE, &m_projection[0]);
+		glUniformMatrix4fv(fs->viewPos      , 1, GL_FALSE, &m_view[0]);
+	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	GLint positionAttribute = glGetAttribLocation(m_program3dMrt.program, "inPos");
+	GLint positionAttribute = glGetAttribLocation(program, "inPos");
 	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
 	glEnableVertexAttribArray(positionAttribute);
 
-	GLint normalPosition = glGetAttribLocation(m_program3dMrt.program, "inNormal");
+	GLint normalPosition = glGetAttribLocation(program, "inNormal");
 	glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(normalPosition);
 
-	GLint uvPosition = glGetAttribLocation(m_program3dMrt.program, "inUvCoord");
+	GLint uvPosition = glGetAttribLocation(program, "inUvCoord");
 	glVertexAttribPointer(uvPosition, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(uvPosition);
 
@@ -798,10 +832,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 	GLuint program = 0;
 	GLint scalePosOffsetPos = 0;
 	GLint rotationPos = 0;
-	GLint screenSizePos = 0;
+	bbe::INTERNAL::openGl::OpenGLFragmentShader* fs = nullptr;
 	if (shader)
 	{
-		bbe::INTERNAL::openGl::OpenGLFragmentShader* fs = nullptr;
 		if (shader->m_prendererData != nullptr)
 		{
 			fs = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)shader->m_prendererData.get();
@@ -810,11 +843,16 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 		{
 			fs = new bbe::INTERNAL::openGl::OpenGLFragmentShader(*shader);
 		}
-		program = fs->program;
+		program = fs->program2d;
 
 		scalePosOffsetPos = fs->scalePosOffsetPos;
 		rotationPos = fs->rotationPos;
-		screenSizePos = fs->screenSizePos;
+
+		if (fs->errorLog2d.getLength() > 0)
+		{
+			std::cout << fs->errorLog2d << std::endl;
+			fs->errorLog2d = "";
+		}
 	}
 	else
 	{
@@ -840,7 +878,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	if(shader) glUniform2f(screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
+	if(fs) glUniform2f(fs->screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
 	glUniform4f(scalePosOffsetPos, rect.width, rect.height, rect.x, rect.y);
 	glUniform1f(rotationPos, rotation);
 	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
@@ -970,19 +1008,20 @@ void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos,
 	m_program3dMrt.uniformMatrix4fv(viewPos3dMrt, GL_FALSE, view);
 	m_program3dMrt.uniformMatrix4fv(projectionPos3dMrt, GL_FALSE, projection);
 	m_view = view;
+	m_projection = projection;
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)
 {
-	fillInternalMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getAmountOfIndices(), nullptr, nullptr);
+	fillInternalMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getAmountOfIndices(), nullptr, nullptr, nullptr);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
 {
-	fillInternalMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getAmountOfIndices(), nullptr, nullptr);
+	fillInternalMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getAmountOfIndices(), nullptr, nullptr, nullptr);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals)
+void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const FragmentShader* shader)
 {
 	bbe::INTERNAL::openGl::OpenGLModel* ogm = nullptr;
 	if (model.m_prendererData == nullptr)
@@ -993,7 +1032,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transfo
 	{
 		ogm = (bbe::INTERNAL::openGl::OpenGLModel*)model.m_prendererData.get();
 	}
-	fillInternalMesh(&(transform[0]), ogm->getIbo(), ogm->getVbo(), ogm->getAmountOfIndices(), albedo, normals);
+	fillInternalMesh(&(transform[0]), ogm->getIbo(), ogm->getVbo(), ogm->getAmountOfIndices(), albedo, normals, shader);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)

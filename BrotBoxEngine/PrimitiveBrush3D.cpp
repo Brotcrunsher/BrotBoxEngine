@@ -77,14 +77,14 @@ void bbe::PrimitiveBrush3D::addLight(const bbe::PointLight& light)
 }
 
 #ifdef BBE_RENDERER_OPENGL
-void bbe::PrimitiveBrush3D::fillRectangle(const bbe::Matrix4& transform, const Image* albedo, const Image* normals)
+void bbe::PrimitiveBrush3D::fillRectangle(const bbe::Matrix4& transform, const Image* albedo, const Image* normals, const bbe::FragmentShader* shader)
 {
-	fillModel(transform, m_rectangle, albedo, normals);
+	fillModel(transform, m_rectangle, albedo, normals, shader);
 }
 
-void bbe::PrimitiveBrush3D::fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo, const Image* normals)
+void bbe::PrimitiveBrush3D::fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo, const Image* normals, const bbe::FragmentShader* shader)
 {
-	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->fillModel(transform, model, albedo, normals);
+	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->fillModel(transform, model, albedo, normals, shader);
 }
 #endif
 
