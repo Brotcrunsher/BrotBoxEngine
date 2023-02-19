@@ -52,7 +52,7 @@ bool bbe::simpleFile::readBinaryFileIfChanged(const bbe::String& filepath, bbe::
 		// Probably the file is still in the write process, so we just report that nothing changed.
 		return false;
 	}
-	if (currentModifyTime <= inOutPreviousModify) return false;
+	if (currentModifyTime <= inOutPreviousModify && inOutPreviousModify != std::filesystem::file_time_type()) return false;
 
 	try {
 		outContents = readBinaryFile(filepath);
