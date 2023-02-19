@@ -31,7 +31,11 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::Fra
 		"	gl_Position = vec4(pos, 0.0, 1.0);"
 		"}";
 
-	char const* fragmentShaderSource = (char const*)shader.m_rawData.getRaw();
+	bbe::List<char> chars;
+	chars.resizeCapacityAndLengthUninit(shader.m_rawData.getLength() + 1);
+	memcpy(chars.getRaw(), shader.m_rawData.getRaw(), shader.m_rawData.getLength());
+	chars.last() = '\0';
+	char const* fragmentShaderSource = chars.getRaw();
 	vertex = getShader(GL_VERTEX_SHADER, vertexShaderSrc);
 	fragment = getShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
 
@@ -50,8 +54,6 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::Fra
 		log.resizeCapacityAndLength(length);
 		glGetProgramInfoLog(program, length, &length, log.getRaw());
 		std::cout << log.getRaw() << std::endl;
-
-		bbe::INTERNAL::triggerFatalError("Failed to link program");
 	}
 	glUseProgram(program);
 
@@ -77,8 +79,6 @@ GLuint bbe::INTERNAL::openGl::OpenGLFragmentShader::getShader(GLenum shaderType,
 		log.resizeCapacityAndLength(length);
 		glGetShaderInfoLog(shader, length, &length, log.getRaw());
 		std::cout << log.getRaw() << std::endl;
-
-		bbe::INTERNAL::triggerFatalError("Failed to compile shader");
 	}
 	return shader;
 }

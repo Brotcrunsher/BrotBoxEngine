@@ -197,16 +197,29 @@ macro(add_trivial_project name)
           string(APPEND h_file_string "extern bbe::FragmentShader* ${name_we}()\;\n")
           string(APPEND cpp_file_string 
             "static bbe::FragmentShader* ${name_we}_data = nullptr\;
+            static std::filesystem::file_time_type ${name_we}_modify_time\;
+            bool ${name_we}_hot_reload_armed = true\;
             bbe::FragmentShader* assetStore::${name_we}() 
             {
               registerCleanup()\;
-              static bbe::List<unsigned char> raw = { ${contents} }\;
-              if(${name_we}_data) return ${name_we}_data\;
+              bbe::List<unsigned char> raw\;
+              if(!${name_we}_hot_reload_armed)
+              {
+                return ${name_we}_data\;
+              }
+              if(!bbe::simpleFile::readBinaryFileIfChanged(\"${f}\", raw, ${name_we}_modify_time)) 
+              {
+                ${name_we}_hot_reload_armed = false\;
+                return ${name_we}_data\;
+              }
+              ${name_we}_hot_reload_armed = false\;
+              delete ${name_we}_data\;
               ${name_we}_data = new bbe::FragmentShader()\;
               ${name_we}_data->load(raw)\;
               return ${name_we}_data\;
             }\n")
           string(APPEND delete_calls "delete ${name_we}_data\; ${name_we}_data = nullptr\;")
+          string(APPEND hot_reload_arms "${name_we}_hot_reload_armed = true\;")
         endif()
       elseif(ext STREQUAL "")
         # Do nothing. Useful for licenses etc.
