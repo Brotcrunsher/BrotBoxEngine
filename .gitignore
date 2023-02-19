@@ -23,6 +23,7 @@
 [Bb]uildOpenGL/
 [Bb]uildEmscripten/
 [Bb]uildPortaudio/
+[Bb]uildLinuxNull/
 bld/
 [Bb]in/
 [Oo]bj/
