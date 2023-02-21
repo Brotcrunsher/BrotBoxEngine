@@ -85,7 +85,6 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::Fra
 	char const* vertexShader3dSource =
 		"#version 300 es\n"
 		"precision highp float;"
-		""
 		"uniform mat4 view;"
 		"uniform mat4 projection;"
 		"uniform mat4 model;"

@@ -374,12 +374,13 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"layout (location = 0) out vec4 outPos;"
 		"layout (location = 1) out vec4 outNormal;"
 		"layout (location = 2) out vec4 outAlbedo;"
+		"layout (location = 3) out vec4 outSpecular;"
 		"void main()"
 		"{"
 		"   outPos    = passPos;"
 		"   outNormal = vec4(normalize(passNormal.xyz + (view * model * vec4(texture(normals, passUvCoord).xyz, 0.0)).xyz), 1.0);" // TODO HACK: Setting the alpha component to 1 to avoid it being discarded from the Texture. Can we do better?
 		"   outAlbedo = inColor * texture(albedo, passUvCoord);"
-		//"   outAlbedo = inColor * vec4(passUvCoord, 0.0, 1.0);"
+		"   outSpecular = vec4(10.0, 1.0, 0.0, 1.0);"
 		"}";
 
 	program.addShaders(vertexShaderSrc, fragmentShaderSource,
@@ -389,7 +390,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 			{UT::UT_mat4,      "projection", &projectionPos3dMrt},
 			{UT::UT_mat4,      "model"	   , &modelPos3dMrt	    },
 			{UT::UT_sampler2D, "albedo"    , &albedoTexMrt      },
-			{UT::UT_sampler2D, "normals"   , &normalsTexMrt     }
+			{UT::UT_sampler2D, "normals"   , &normalsTexMrt     },
 		});
 
 	return program;
@@ -449,6 +450,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 static GLint gPositionPos3dLight = 0;
 static GLint gNormalPos3dLight = 0;
 static GLint gAlbedoSpecPos3dLight = 0;
+static GLint gSpecular3dLight = 0;
 static GLint lightPosPos3dLight = 0;
 static GLint lightStrengthPos3dLight = 0;
 static GLint falloffModePos3dLight = 0;
@@ -526,7 +528,8 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   vec3 diffuse = max(dot(normal, L), 0.0) * (albedo * lightColor.xyz) * lightPower;"
 		"   vec3 R = reflect(-L, normal);"
 		"   vec3 V = normalize(toCamera);"
-		"   vec3 specular = pow(max(dot(R, V), 0.0), 10.0) * specularColor.xyz * lightPower;"
+		"   vec3 specStats = texture(gSpecular, uvCoord).xyz;"
+		"   vec3 specular = pow(max(dot(R, V), 0.0), specStats.x) * specularColor.xyz * lightPower * specStats.y;"
 		"   outColor = vec4(diffuse + specular, 1.0);"
 		"}";
 	program.addShaders(vertexShaderSrc, fragmentShaderSource,
@@ -534,6 +537,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 			{UT::UT_sampler2D, "gPosition"	  , &gPositionPos3dLight     },
 			{UT::UT_sampler2D, "gNormal"	  , &gNormalPos3dLight       },
 			{UT::UT_sampler2D, "gAlbedoSpec"  , &gAlbedoSpecPos3dLight   },
+			{UT::UT_sampler2D, "gSpecular"    , &gSpecular3dLight        },
 			{UT::UT_float    , "lightStrength", &lightStrengthPos3dLight },
 			{UT::UT_int      , "falloffMode"  , &falloffModePos3dLight   },
 			{UT::UT_vec4     , "lightColor"	  , &lightColorPos3dLight    },
@@ -544,6 +548,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 	program.uniform1i(gPositionPos3dLight, 0);
 	program.uniform1i(gNormalPos3dLight, 1);
 	program.uniform1i(gAlbedoSpecPos3dLight, 2);
+	program.uniform1i(gSpecular3dLight, 3);
 
 	program.uniform3f(lightPosPos3dLight, 0.f, 0.f, 0.f);
 	program.uniform1f(lightStrengthPos3dLight, 0.f);
@@ -557,6 +562,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::initGeometryBuffer()
 {
 	mrtFb.destroy(); // For resizing
 	mrtFb = Framebuffer(m_windowWidth, m_windowHeight);
+	mrtFb.addTexture();
 	mrtFb.addTexture();
 	mrtFb.addTexture();
 	mrtFb.addTexture();
