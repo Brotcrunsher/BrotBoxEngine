@@ -106,9 +106,12 @@ namespace bbe
 				Program m_program2dTex;
 				Program m_program3dMrt;
 				Program m_program3dAmbient;
+				Program m_programPostProcessing;
 				Program m_program3dLight;
 
 				Framebuffer mrtFb;
+
+				Framebuffer postProcessingFb;
 
 				GLuint m_imageUvBuffer = 0;
 
@@ -124,6 +127,7 @@ namespace bbe
 				Program init2dTexShaders();
 				Program init3dShadersMrt();
 				Program init3dShadersAmbient();
+				Program init3dPostProcessing();
 				Program init3dShadersLight();
 				void initGeometryBuffer();
 

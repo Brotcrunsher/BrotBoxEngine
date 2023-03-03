@@ -437,8 +437,52 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		});
 	
 	program.uniform1i(gAlbedoSpecPos3dAmbient, 2);
-	program.uniform1f(ambientFactorPos3dAmbient, 0.1f);
-	program.uniform2f(screenSizePos2dTex, (float)m_windowWidth, (float)m_windowHeight);
+	program.uniform1f(ambientFactorPos3dAmbient, 0.01f);
+	program.uniform2f(screenSizeAmbient, (float)m_windowWidth, (float)m_windowHeight);
+	return program;
+}
+
+static GLint framePostProcessing = 0;
+static GLint screenSizePostProcessing = 0;
+bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dPostProcessing()
+{
+	Program program;
+	char const* vertexShaderSrc =
+		"void main()"
+		"{"
+		"   if(gl_VertexID == 0)"
+		"   {"
+		"       gl_Position = vec4(-1.0, -1.0, 0.0, 1.0);"
+		"   }"
+		"   if(gl_VertexID == 1)"
+		"   {"
+		"       gl_Position = vec4(-1.0, 1.0, 0.0, 1.0);"
+		"   }"
+		"   if(gl_VertexID == 2)"
+		"   {"
+		"       gl_Position = vec4(1.0, 1.0, 0.0, 1.0);"
+		"   }"
+		"   if(gl_VertexID == 3)"
+		"   {"
+		"       gl_Position = vec4(1.0, -1.0, 0.0, 1.0);"
+		"   }"
+		"}";
+
+	char const* fragmentShaderSource =
+		"out vec4 outColor;"
+		"void main()"
+		"{"
+		"   vec3 albedo = texture(frame, gl_FragCoord.xy / screenSize).xyz;"
+		"   outColor = pow(vec4(albedo, 1.0), vec4(1.0 / 2.2));"
+		"}";
+	program.addShaders(vertexShaderSrc, fragmentShaderSource,
+		{
+			{UT::UT_sampler2D, "frame"     , &framePostProcessing     },
+			{UT::UT_vec2     , "screenSize", &screenSizePostProcessing},
+		});
+
+	program.uniform1i(framePostProcessing, 0);
+	program.uniform2f(screenSizePostProcessing, (float)m_windowWidth, (float)m_windowHeight);
 	return program;
 }
 
@@ -555,6 +599,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::initGeometryBuffer()
 	mrtFb.addTexture();
 	mrtFb.addDepthBuffer();
 	mrtFb.finalize();
+
+	postProcessingFb.destroy();
+	postProcessingFb = Framebuffer(m_windowWidth, m_windowHeight);
+	postProcessingFb.addTexture();
+	postProcessingFb.finalize();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals, const FragmentShader* shader)
@@ -781,6 +830,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	m_program2dTex = init2dTexShaders();
 	m_program3dMrt = init3dShadersMrt();
 	m_program3dAmbient = init3dShadersAmbient();
+	m_programPostProcessing = init3dPostProcessing();
 	m_program3dLight = init3dShadersLight();
 	initGeometryBuffer();
 
@@ -818,7 +868,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 	OpenGLRectangle::destroy();
 
 	mrtFb.destroy();
+	postProcessingFb.destroy();
 	m_program3dMrt.destroy();
+	m_programPostProcessing.destroy();
 	glDeleteBuffers(1, &m_imageUvBuffer);
 	m_program2dTex.destroy();
 	m_program2d.destroy();
@@ -836,14 +888,14 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glGenBuffers(1, &ibo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices, GL_STATIC_DRAW);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFb.framebuffer);
+	postProcessingFb.clearTextures();
 
 	mrtFb.bind();
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	glDeleteBuffers(1, &ibo);
 
 	m_program3dLight.use();
 	mrtFb.bind();
@@ -855,6 +907,17 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 		const bbe::PointLight& l = pointLights[i];
 		drawLight(l);
 	}
+
+	m_programPostProcessing.use();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	postProcessingFb.bind();
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	glDeleteBuffers(1, &ibo);
 
 	// Switch to 2D
 	glDisable(GL_CULL_FACE);
@@ -918,6 +981,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::resize(uint32_t width, uint32_t heigh
 	m_program2dTex.uniform2f(screenSizePos2dTex, (float)width, (float)height);
 	m_program3dAmbient.uniform2f(screenSizeAmbient, (float)width, (float)height);
 	m_program3dLight.uniform2f(screenSize3dLight, (float)width, (float)height);
+	m_programPostProcessing.uniform2f(screenSizePostProcessing, (float)width, (float)height);
 
 	m_windowWidth = width;
 	m_windowHeight = height;

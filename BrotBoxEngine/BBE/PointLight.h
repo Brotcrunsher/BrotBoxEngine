@@ -14,7 +14,7 @@ namespace bbe
 		float lightStrength = 10.0f;
 		bbe::Color lightColor = bbe::Color(1, 1, 1, 1);
 		bbe::Color specularColor = bbe::Color(.35f, .35f, .35f, 1);
-		LightFalloffMode falloffMode = LightFalloffMode::LIGHT_FALLOFF_LINEAR;
+		LightFalloffMode falloffMode = LightFalloffMode::LIGHT_FALLOFF_SQUARED;
 
 		PointLight();
 		explicit PointLight(const Vector3 &pos);
