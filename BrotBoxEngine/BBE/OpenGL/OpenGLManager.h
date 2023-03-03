@@ -87,6 +87,13 @@ namespace bbe
 				void finalize();
 			};
 
+			struct InstanceData2D
+			{
+				bbe::Vector4 scalePosOffset;
+				float rotation;
+				bbe::Vector4 color;
+			};
+
 			class OpenGLManager 
 				: public RenderManager {
 			private:
@@ -126,6 +133,7 @@ namespace bbe
 				{
 					NONE,
 					RECT,
+					RECT_SHADER,
 					CIRCLE,
 					IMAGE,
 					VERTEX_INDEX_LIST,
@@ -139,6 +147,12 @@ namespace bbe
 
 				bbe::Image white;
 				bbe::Image black;
+
+				bbe::Color m_color2d;
+
+				bbe::List<InstanceData2D> instanceDatas;
+				void addInstancedData2D(PreviousDrawCall2D type, float x, float y, float width, float height, float rotation);
+				void flushInstanceData2D();
 
 				OpenGLImage* toRendererData(const bbe::Image& image) const;
 

@@ -36,5 +36,10 @@ bbe::IcoSphere bbe::PointLight::getLightVolume(const bbe::Vector3& cameraPos) co
 		throw IllegalStateException();
 	}
 
+	if (radius > 10000)
+	{
+		return bbe::IcoSphere(cameraPos);
+	}
+
 	return bbe::IcoSphere(pos, bbe::Vector3(radius));
 }

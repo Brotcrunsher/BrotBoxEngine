@@ -238,14 +238,15 @@ void bbe::INTERNAL::openGl::Framebuffer::finalize()
 }
 
 static GLint screenSizePos2d = 0;
-static GLint scalePosOffsetPos2d = 0;
-static GLint rotationPos2d = 0;
-static GLint inColorPos2d = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShaders()
 {
 	Program program;
 	char const* vertexShaderSrc =
-		"in vec2 position;"
+		"layout (location = 0) in vec2 position;"
+		"layout (location = 1) in vec4 scalePosOffset;"
+		"layout (location = 2) in float rotation;"
+		"layout (location = 3) in vec4 inColor;"
+		"out vec4 passColor;"
 		"void main()"
 		"{"
 		"   float s = sin(rotation);"
@@ -256,25 +257,22 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShade
 		"   vec2 secondTranslatedPos = rotatedPos + scalePosOffset.xy * 0.5;"
 		"	vec2 pos = (((secondTranslatedPos + scalePosOffset.zw) / screenSize * vec2(2, -2)) + vec2(-1, +1));\n"
 		"	gl_Position = vec4(pos, 0.0, 1.0);"
+		"   passColor = inColor;"
 		"}";
 	
 	char const* fragmentShaderSource =
+		"in vec4 passColor;"
 		"out vec4 outColor;"
 		"void main()"
 		"{"
-		"	outColor = inColor;"
+		"	outColor = passColor;"
 		"}";
 	program.addShaders(vertexShaderSrc, fragmentShaderSource,
 		{
 			{ UT::UT_vec2 , "screenSize"	, &screenSizePos2d},
-			{ UT::UT_vec4 , "scalePosOffset", &scalePosOffsetPos2d},
-			{ UT::UT_float, "rotation"		, &rotationPos2d},
-			{ UT::UT_vec4 , "inColor"		, &inColorPos2d},
 		});
 
 	program.uniform2f(screenSizePos2d, (float)m_windowWidth, (float)m_windowHeight);
-	program.uniform4f(scalePosOffsetPos2d, 1.f, 1.f, 0.f, 0.f);
-	program.uniform4f(inColorPos2d, 1.f, 1.f, 1.f, 1.f);
 
 	return program;
 }
@@ -437,7 +435,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 			{UT::UT_float    , "ambientFactor", &ambientFactorPos3dAmbient},
 			{UT::UT_vec2     , "screenSize",    &screenSizeAmbient        },
 		});
-
+	
 	program.uniform1i(gAlbedoSpecPos3dAmbient, 2);
 	program.uniform1f(ambientFactorPos3dAmbient, 0.1f);
 	program.uniform2f(screenSizePos2dTex, (float)m_windowWidth, (float)m_windowHeight);
@@ -606,14 +604,17 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 	GLint positionAttribute = glGetAttribLocation(program, "inPos");
 	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
 	glEnableVertexAttribArray(positionAttribute);
+	glVertexAttribDivisor(positionAttribute, 0);
 
 	GLint normalPosition = glGetAttribLocation(program, "inNormal");
 	glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(normalPosition);
+	glVertexAttribDivisor(normalPosition, 0);
 
 	GLint uvPosition = glGetAttribLocation(program, "inUvCoord");
 	glVertexAttribPointer(uvPosition, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(uvPosition);
+	glVertexAttribDivisor(uvPosition, 0);
 
 	if (!albedo) albedo = &white;
 	if (!normals) normals = &black;
@@ -628,6 +629,91 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0);
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::addInstancedData2D(PreviousDrawCall2D type, float x, float y, float width, float height, float rotation)
+{
+	if (type != previousDrawCall2d)
+	{
+		flushInstanceData2D();
+		previousDrawCall2d = type;
+	}
+	InstanceData2D instanceData;
+	instanceData.scalePosOffset.x = width;
+	instanceData.scalePosOffset.y = height;
+	instanceData.scalePosOffset.z = x;
+	instanceData.scalePosOffset.w = y;
+	instanceData.rotation = rotation;
+	instanceData.color.x = m_color2d.r;
+	instanceData.color.y = m_color2d.g;
+	instanceData.color.z = m_color2d.b;
+	instanceData.color.w = m_color2d.a;
+	instanceDatas.add(instanceData);
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::flushInstanceData2D()
+{
+	if (instanceDatas.getLength() == 0) return;
+
+	GLuint vbo = 0;
+	GLuint ibo = 0;
+	GLsizei size = 0;
+	GLenum mode = 0;
+	if (previousDrawCall2d == PreviousDrawCall2D::RECT)
+	{
+		vbo = OpenGLRectangle::getVbo();
+		ibo = OpenGLRectangle::getIbo();
+		size = (GLsizei)OpenGLRectangle::getAmountOfIndices();
+		mode = GL_TRIANGLE_STRIP;
+	}
+	else if (previousDrawCall2d == PreviousDrawCall2D::CIRCLE)
+	{
+		vbo = OpenGLCircle::getVbo();
+		ibo = OpenGLCircle::getIbo();
+		size = (GLsizei)OpenGLCircle::getAmountOfIndices();
+		mode = GL_TRIANGLE_FAN;
+	}
+	else
+	{
+		throw IllegalStateException();
+	}
+
+	GLuint program = m_program2d.program;
+	glUseProgram(program);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+
+	GLint positionAttribute = glGetAttribLocation(program, "position");
+	glEnableVertexAttribArray(positionAttribute);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	GLuint instanceVBO = 0;
+	glGenBuffers(1, &instanceVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(InstanceData2D) * instanceDatas.getLength(), instanceDatas.getRaw(), GL_STATIC_DRAW);
+
+	GLint pos = 1;
+	glEnableVertexAttribArray(pos);
+	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(0 * sizeof(float)));
+	glVertexAttribDivisor(pos, 1);
+	pos = 2;
+	glEnableVertexAttribArray(pos);
+	glVertexAttribPointer(pos, 1, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(4 * sizeof(float)));
+	glVertexAttribDivisor(pos, 1);
+	pos = 3;
+	glEnableVertexAttribArray(pos);
+	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(5 * sizeof(float)));
+	glVertexAttribDivisor(pos, 1);
+
+
+	glDrawElementsInstanced(mode, size, GL_UNSIGNED_INT, 0, instanceDatas.getLength());
+	instanceDatas.clear();
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glDeleteBuffers(1, &instanceVBO);
 }
 
 bbe::INTERNAL::openGl::OpenGLImage* bbe::INTERNAL::openGl::OpenGLManager::toRendererData(const bbe::Image& image) const
@@ -654,6 +740,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& ligh
 	GLint positionAttribute = glGetAttribLocation(m_program3dLight.program, "inPos");
 	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
 	glEnableVertexAttribArray(positionAttribute);
+	glVertexAttribDivisor(positionAttribute, 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -743,19 +830,20 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 	// Draw the stuff of 3D
-	uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
+	m_program3dAmbient.use();
+	uint32_t indices[] = { 0, 3, 1, 1, 3, 2 };
 	GLuint ibo;
 	glGenBuffers(1, &ibo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices, GL_STATIC_DRAW);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	m_program3dAmbient.use();
 	mrtFb.bind();
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glDeleteBuffers(1, &ibo);
 
 	m_program3dLight.use();
 	mrtFb.bind();
@@ -767,12 +855,13 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 		const bbe::PointLight& l = pointLights[i];
 		drawLight(l);
 	}
-	glDeleteBuffers(1, &ibo);
 
 	// Switch to 2D
 	glDisable(GL_CULL_FACE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	m_primitiveBrush2D.INTERNAL_beginDraw(m_pwindow, m_windowWidth, m_windowHeight, this);
+
+	instanceDatas.clear();
 
 	previousDrawCall2d = PreviousDrawCall2D::NONE;
 }
@@ -799,6 +888,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
 
 void bbe::INTERNAL::openGl::OpenGLManager::postDraw()
 {
+	flushInstanceData2D();
 	imguiEndFrame();
 	glfwSwapBuffers(m_pwindow);
 	glfwPollEvents();
@@ -849,50 +939,43 @@ void bbe::INTERNAL::openGl::OpenGLManager::setVideoRenderingMode(const char* pat
 
 void bbe::INTERNAL::openGl::OpenGLManager::setColor2D(const bbe::Color& color)
 {
-	m_program2d   .uniform4f(inColorPos2d, color);
-	m_program2dTex.uniform4f(inColorPos2dTex, color);
+	m_color2d = color;
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader)
 {
-	GLuint program = 0;
-	GLint scalePosOffsetPos = 0;
-	GLint rotationPos = 0;
-	bbe::INTERNAL::openGl::OpenGLFragmentShader* fs = nullptr;
-	if (shader)
+	if (!shader)
 	{
-		if (shader->m_prendererData != nullptr)
-		{
-			fs = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)shader->m_prendererData.get();
-		}
-		else
-		{
-			fs = new bbe::INTERNAL::openGl::OpenGLFragmentShader(*shader);
-		}
-		program = fs->program2d;
+		addInstancedData2D(PreviousDrawCall2D::RECT, rect.x, rect.y, rect.width, rect.height, rotation);
+		return;
+	}
 
-		scalePosOffsetPos = fs->scalePosOffsetPos;
-		rotationPos = fs->rotationPos;
-
-		if (fs->errorLog2d.getLength() > 0)
-		{
-			std::cout << fs->errorLog2d << std::endl;
-			fs->errorLog2d = "";
-		}
+	flushInstanceData2D();
+	bbe::INTERNAL::openGl::OpenGLFragmentShader* fs = nullptr;
+	if (shader->m_prendererData != nullptr)
+	{
+		fs = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)shader->m_prendererData.get();
 	}
 	else
 	{
-		program = m_program2d.program;
+		fs = new bbe::INTERNAL::openGl::OpenGLFragmentShader(*shader);
+	}
+	GLuint program = fs->program2d;
 
-		scalePosOffsetPos = scalePosOffsetPos2d;
-		rotationPos = rotationPos2d;
+	GLint scalePosOffsetPos = fs->scalePosOffsetPos;
+	GLint rotationPos = fs->rotationPos;
+
+	if (fs->errorLog2d.getLength() > 0)
+	{
+		std::cout << fs->errorLog2d << std::endl;
+		fs->errorLog2d = "";
 	}
 
 	glUseProgram(program);
 	
-	if (previousDrawCall2d != PreviousDrawCall2D::RECT)
+	if (previousDrawCall2d != PreviousDrawCall2D::RECT_SHADER)
 	{
-		previousDrawCall2d = PreviousDrawCall2D::RECT;
+		previousDrawCall2d = PreviousDrawCall2D::RECT_SHADER;
 		glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLRectangle::getIbo());
 	
@@ -901,10 +984,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 	
 		glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
 		glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		glVertexAttribDivisor(positionAttribute, 0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	if(fs) glUniform2f(fs->screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
+	glUniform2f(fs->screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
 	glUniform4f(scalePosOffsetPos, rect.width, rect.height, rect.x, rect.y);
 	glUniform1f(rotationPos, rotation);
 	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
@@ -912,31 +996,15 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle& circle)
 {
-	m_program2d.use();
-	
-	if (previousDrawCall2d != PreviousDrawCall2D::CIRCLE)
-	{
-		previousDrawCall2d = PreviousDrawCall2D::CIRCLE;
-		glBindBuffer(GL_ARRAY_BUFFER, OpenGLCircle::getVbo());
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLCircle::getIbo());
-
-		GLint positionAttribute = glGetAttribLocation(m_program2d.program, "position");
-		glEnableVertexAttribArray(positionAttribute);
-
-		glBindBuffer(GL_ARRAY_BUFFER, OpenGLCircle::getVbo());
-		glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		m_program2d.uniform1f(rotationPos2d, 0);
-	}
-
-	m_program2d.uniform4f(scalePosOffsetPos2d, circle.getWidth(), circle.getHeight(), circle.getX(), circle.getY());
-	glDrawElements(GL_TRIANGLE_FAN, (GLsizei)OpenGLCircle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+	addInstancedData2D(PreviousDrawCall2D::CIRCLE, circle.getX(), circle.getY(), circle.getWidth(), circle.getHeight(), 0);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, const Image& image, float rotation)
 {
 	// TODO make proper implementation
+	flushInstanceData2D();
 	m_program2dTex.use();
+	m_program2dTex.uniform4f(inColorPos2dTex, m_color2d);
 	previousDrawCall2d = PreviousDrawCall2D::IMAGE;
 	bbe::List<bbe::Vector2> vertices;
 	rect.getVertices(vertices);
@@ -977,9 +1045,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	GLint uvPosition = glGetAttribLocation(m_program2dTex.program, "uv");
 	glEnableVertexAttribArray(uvPosition);
 	glBindBuffer(GL_ARRAY_BUFFER, m_imageUvBuffer);
-	glVertexAttribPointer(uvPosition, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glVertexAttribPointer(uvPosition, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+	glVertexAttribDivisor(uvPosition, 0);
 
 	glUniform1i(texPos2dTex, 0);
 	glActiveTexture(GL_TEXTURE0);
@@ -988,12 +1055,14 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDeleteBuffers(1, &ibo);
 	glDeleteBuffers(1, &vbo);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t* indices, size_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale)
+void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t* indices, size_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& p, const bbe::Vector2& scale)
 {
+	flushInstanceData2D();
 	m_program2d.use();
 
 	previousDrawCall2d = PreviousDrawCall2D::VERTEX_INDEX_LIST;
@@ -1008,18 +1077,48 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * amountOfIndices, indices, GL_STATIC_DRAW);
 
-	m_program2d.uniform4f(scalePosOffsetPos2d, scale.x, scale.y, pos.x, pos.y);
-	m_program2d.uniform1f(rotationPos2d, 0.f);
+	InstanceData2D instanceData2D;
+	instanceData2D.scalePosOffset.x = scale.x;
+	instanceData2D.scalePosOffset.y = scale.y;
+	instanceData2D.scalePosOffset.z = p.x;
+	instanceData2D.scalePosOffset.w = p.y;
+	instanceData2D.rotation = 0.f;
+	instanceData2D.color.x = m_color2d.r;
+	instanceData2D.color.y = m_color2d.g;
+	instanceData2D.color.z = m_color2d.b;
+	instanceData2D.color.w = m_color2d.a;
+
+	GLuint instanceVBO = 0;
+	glGenBuffers(1, &instanceVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(InstanceData2D), &instanceData2D, GL_STATIC_DRAW);
+
+	GLint pos = 1;
+	glEnableVertexAttribArray(pos);
+	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(0 * sizeof(float)));
+	glVertexAttribDivisor(pos, 1);
+	pos = 2;
+	glEnableVertexAttribArray(pos);
+	glVertexAttribPointer(pos, 1, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(4 * sizeof(float)));
+	glVertexAttribDivisor(pos, 1);
+	pos = 3;
+	glEnableVertexAttribArray(pos);
+	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(5 * sizeof(float)));
+	glVertexAttribDivisor(pos, 1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	GLint positionAttribute = glGetAttribLocation(m_program2d.program, "position");
 	glEnableVertexAttribArray(positionAttribute);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribDivisor(positionAttribute, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0);
+	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0, 1);
 
+	glDeleteBuffers(1, &instanceVBO);
 	glDeleteBuffers(1, &ibo);
 	glDeleteBuffers(1, &vbo);
 }
