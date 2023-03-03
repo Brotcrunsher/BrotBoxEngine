@@ -398,41 +398,36 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 
 static GLint gAlbedoSpecPos3dAmbient = 0;
 static GLint ambientFactorPos3dAmbient = 0;
+static GLint screenSizeAmbient = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersAmbient()
 {
 	Program program;
 	char const* vertexShaderSrc =
-		"out vec2 uvCoord;"
 		"void main()"
 		"{"
 		"   if(gl_VertexID == 0)"
 		"   {"
 		"       gl_Position = vec4(-1.0, -1.0, 0.0, 1.0);"
-		"       uvCoord = vec2(0.0, 0.0);"
 		"   }"
 		"   if(gl_VertexID == 1)"
 		"   {"
 		"       gl_Position = vec4(-1.0, 1.0, 0.0, 1.0);"
-		"       uvCoord = vec2(0.0, 1.0);"
 		"   }"
 		"   if(gl_VertexID == 2)"
 		"   {"
 		"       gl_Position = vec4(1.0, 1.0, 0.0, 1.0);"
-		"       uvCoord = vec2(1.0, 1.0);"
 		"   }"
 		"   if(gl_VertexID == 3)"
 		"   {"
 		"       gl_Position = vec4(1.0, -1.0, 0.0, 1.0);"
-		"       uvCoord = vec2(1.0, 0.0);"
 		"   }"
 		"}";
 
 	char const* fragmentShaderSource =
-		"in vec2 uvCoord;"
 		"out vec4 outColor;"
 		"void main()"
 		"{"
-		"   vec3 albedo = texture(gAlbedoSpec, uvCoord).xyz;"
+		"   vec3 albedo = texture(gAlbedoSpec, gl_FragCoord.xy / screenSize).xyz;"
 		"   vec3 ambient = albedo * ambientFactor;"
 		"   outColor = vec4(ambient, 1.0);"
 		"}";
@@ -440,10 +435,12 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		{
 			{UT::UT_sampler2D, "gAlbedoSpec"  , &gAlbedoSpecPos3dAmbient  },
 			{UT::UT_float    , "ambientFactor", &ambientFactorPos3dAmbient},
+			{UT::UT_vec2     , "screenSize",    &screenSizeAmbient        },
 		});
 
 	program.uniform1i(gAlbedoSpecPos3dAmbient, 2);
 	program.uniform1f(ambientFactorPos3dAmbient, 0.1f);
+	program.uniform2f(screenSizePos2dTex, (float)m_windowWidth, (float)m_windowHeight);
 	return program;
 }
 
@@ -456,33 +453,19 @@ static GLint lightStrengthPos3dLight = 0;
 static GLint falloffModePos3dLight = 0;
 static GLint lightColorPos3dLight = 0;
 static GLint specularColorPos3dLight = 0;
+static GLint viewPos3dLight = 0;
+static GLint projectionPos3dLight = 0;
+static GLint modelPos3dLight = 0;
+static GLint screenSize3dLight = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersLight()
 {
 	Program program;
 	char const* vertexShaderSrc =
-		"out vec2 uvCoord;"
+		"in vec3 inPos;"
 		"void main()"
 		"{"
-		"   if(gl_VertexID == 0)"
-		"   {"
-		"       gl_Position = vec4(-1.0, -1.0, 0.0, 1.0);"
-		"       uvCoord = vec2(0.0, 0.0);"
-		"   }"
-		"   if(gl_VertexID == 1)"
-		"   {"
-		"       gl_Position = vec4(-1.0, 1.0, 0.0, 1.0);"
-		"       uvCoord = vec2(0.0, 1.0);"
-		"   }"
-		"   if(gl_VertexID == 2)"
-		"   {"
-		"       gl_Position = vec4(1.0, 1.0, 0.0, 1.0);"
-		"       uvCoord = vec2(1.0, 1.0);"
-		"   }"
-		"   if(gl_VertexID == 3)"
-		"   {"
-		"       gl_Position = vec4(1.0, -1.0, 0.0, 1.0);"
-		"       uvCoord = vec2(1.0, 0.0);"
-		"   }"
+		"   vec4 worldPos = model * vec4(inPos, 1.0);"
+		"   gl_Position = projection * view * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
 		"}";
 
 	char const* fragmentShaderSource =
@@ -491,16 +474,14 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"#define FALLOFF_SQUARED 2\n"
 		"#define FALLOFF_CUBIC   3\n"
 		"#define FALLOFF_SQRT    4\n"
-		"in vec2 uvCoord;"
 		"out vec4 outColor;"
 		"void main()"
 		"{"
+		"   vec2 uvCoord = gl_FragCoord.xy / screenSize;"
 		"   vec3 normal = texture(gNormal, uvCoord).xyz;"
 		"   if(length(normal) == 0.0) { discard; }"
 		"   vec3 pos = texture(gPosition, uvCoord).xyz;"
-		"   vec3 albedo = texture(gAlbedoSpec, uvCoord).xyz;"
 		"   vec3 toLight = lightPos - pos;"
-		"   vec3 toCamera = -pos;"
 		"   float distToLight = length(toLight);"
 		"   float lightPower = lightStrength;"
 		"   if(distToLight > 0.f)"
@@ -524,6 +505,9 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"       	break;																					 "
 		"       }																							 "
 		"   }"
+		"   if(lightPower < 1.0 / 255.0) { discard; }"
+		"   vec3 albedo = texture(gAlbedoSpec, uvCoord).xyz;"
+		"   vec3 toCamera = -pos;"
 		"   vec3 L = normalize(toLight);"
 		"   vec3 diffuse = max(dot(normal, L), 0.0) * (albedo * lightColor.xyz) * lightPower;"
 		"   vec3 R = reflect(-L, normal);"
@@ -543,6 +527,10 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 			{UT::UT_vec4     , "lightColor"	  , &lightColorPos3dLight    },
 			{UT::UT_vec4     , "specularColor", &specularColorPos3dLight },
 			{UT::UT_vec3     , "lightPos"	  , &lightPosPos3dLight      },
+			{UT::UT_mat4     , "view"         , &viewPos3dLight	         },
+			{UT::UT_mat4     , "projection"   , &projectionPos3dLight    },
+			{UT::UT_mat4     , "model"	      , &modelPos3dLight         },
+			{UT::UT_vec2     , "screenSize",    &screenSize3dLight       },
 		});
 
 	program.uniform1i(gPositionPos3dLight, 0);
@@ -555,6 +543,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 	program.uniform1i(falloffModePos3dLight, 0);
 	program.uniform4f(lightColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
 	program.uniform4f(specularColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
+	program.uniform2f(screenSize3dLight, (float)m_windowWidth, (float)m_windowHeight);
 	return program;
 }
 
@@ -653,6 +642,33 @@ bbe::INTERNAL::openGl::OpenGLImage* bbe::INTERNAL::openGl::OpenGLManager::toRend
 	}
 }
 
+void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& light)
+{
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, openGl::OpenGLSphere::getIbo());
+
+	IcoSphere lightVolume = light.getLightVolume(m_cameraPos);
+	Matrix4 mat = lightVolume.getTransform();
+	glUniformMatrix4fv(modelPos3dLight, 1, GL_FALSE, &mat[0]);
+
+	glBindBuffer(GL_ARRAY_BUFFER, openGl::OpenGLSphere::getVbo());
+	GLint positionAttribute = glGetAttribLocation(m_program3dLight.program, "inPos");
+	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+	glEnableVertexAttribArray(positionAttribute);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	bbe::Vector4 p(light.pos, 1.0f);
+	p = m_view * p;
+	m_program3dLight.uniform3f(lightPosPos3dLight, p.xyz());
+	m_program3dLight.uniform1f(lightStrengthPos3dLight, light.lightStrength);
+	m_program3dLight.uniform1i(falloffModePos3dLight, (int)light.falloffMode);
+	m_program3dLight.uniform4f(lightColorPos3dLight, light.lightColor);
+	m_program3dLight.uniform4f(specularColorPos3dLight, light.specularColor);
+
+
+	glDrawElements(GL_TRIANGLES, (GLsizei)openGl::OpenGLSphere::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+}
+
 bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
 {
 }
@@ -690,6 +706,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	glEnable(GL_MULTISAMPLE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+	glFrontFace(GL_CCW);
 	imguiStart();
 
 	{
@@ -720,6 +739,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 {
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
 	// Draw the stuff of 3D
 	uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
 	GLuint ibo;
@@ -743,20 +765,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	for (size_t i = 0; i < pointLights.getLength(); i++)
 	{
 		const bbe::PointLight& l = pointLights[i];
-		bbe::Vector4 p(l.pos, 1.0f);
-		p = m_view * p;
-		m_program3dLight.uniform3f(lightPosPos3dLight, p.xyz());
-		m_program3dLight.uniform1f(lightStrengthPos3dLight, l.lightStrength);
-		m_program3dLight.uniform1i(falloffModePos3dLight, (int)l.falloffMode);
-		m_program3dLight.uniform4f(lightColorPos3dLight, l.lightColor);
-		m_program3dLight.uniform4f(specularColorPos3dLight, l.specularColor);
-
-
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		drawLight(l);
 	}
 	glDeleteBuffers(1, &ibo);
 
 	// Switch to 2D
+	glDisable(GL_CULL_FACE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	m_primitiveBrush2D.INTERNAL_beginDraw(m_pwindow, m_windowWidth, m_windowHeight, this);
 
@@ -770,6 +784,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
 	m_program3dMrt.use();
 	glBindFramebuffer(GL_FRAMEBUFFER, mrtFb.framebuffer);
 	mrtFb.clearTextures();
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+	glFrontFace(GL_CCW);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
@@ -808,6 +826,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::resize(uint32_t width, uint32_t heigh
 {
 	m_program2d.uniform2f(screenSizePos2d, (float)width, (float)height);
 	m_program2dTex.uniform2f(screenSizePos2dTex, (float)width, (float)height);
+	m_program3dAmbient.uniform2f(screenSizeAmbient, (float)width, (float)height);
+	m_program3dLight.uniform2f(screenSize3dLight, (float)width, (float)height);
 
 	m_windowWidth = width;
 	m_windowHeight = height;
@@ -1013,8 +1033,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos,
 {
 	m_program3dMrt.uniformMatrix4fv(viewPos3dMrt, GL_FALSE, view);
 	m_program3dMrt.uniformMatrix4fv(projectionPos3dMrt, GL_FALSE, projection);
+	m_program3dLight.uniformMatrix4fv(viewPos3dLight, GL_FALSE, view);
+	m_program3dLight.uniformMatrix4fv(projectionPos3dLight, GL_FALSE, projection);
 	m_view = view;
 	m_projection = projection;
+	m_cameraPos = cameraPos;
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)

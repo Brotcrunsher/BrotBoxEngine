@@ -135,11 +135,14 @@ namespace bbe
 				bbe::List<bbe::PointLight> pointLights;
 				bbe::Matrix4 m_view;
 				bbe::Matrix4 m_projection;
+				bbe::Vector3 m_cameraPos;
 
 				bbe::Image white;
 				bbe::Image black;
 
 				OpenGLImage* toRendererData(const bbe::Image& image) const;
+
+				void drawLight(const bbe::PointLight& light);
 
 			public:
 				OpenGLManager();
