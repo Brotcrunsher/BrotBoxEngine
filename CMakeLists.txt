@@ -10,7 +10,7 @@ set(BBE_ADD_AUDIO            ON CACHE BOOL "If set to OFF, all audio support is 
 set(BBE_ADD_EXPERIMENTAL     OFF CACHE BOOL "If set to ON, Experimental projects are added.")
 set(BBE_ADD_CURL             ON CACHE BOOL "If set to OFF, curl is not included.")
 
-set(BBE_RENDER_MODE "Vulkan" CACHE STRING "Sets the render mode. Possible values are Vulkan, OpenGL, Emscripten, NullRenderer")
+set(BBE_RENDER_MODE "OpenGL" CACHE STRING "Sets the render mode. Possible values are Vulkan, OpenGL, Emscripten, NullRenderer")
 
 add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
