@@ -23,7 +23,7 @@ bbe::IcoSphere bbe::PointLight::getLightVolume(const bbe::Vector3& cameraPos) co
 		radius = /*(1 / x )^(1/2.2) < (1 / 255)*/ 196964.699f * lightStrength;
 		break;
 	case LightFalloffMode::LIGHT_FALLOFF_SQUARED:
-		radius = /*(1 / x²)^(1/2.2) < (1 / 255)*/ 443.807f * lightStrength;
+		radius = /*(1 / x²)^(1/2.2) < (2 / 255)*/ 207.043 * lightStrength;
 		break;
 	case LightFalloffMode::LIGHT_FALLOFF_CUBIC:
 		radius = /*(1 / x³)^(1/2.2) < (1 / 255)*/ 58.183f * lightStrength;

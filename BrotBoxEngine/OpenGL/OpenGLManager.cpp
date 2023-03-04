@@ -556,7 +556,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   vec3 V = normalize(toCamera);"
 		"   vec3 specStats = texture(gSpecular, uvCoord).xyz;"
 		"   vec3 specular = pow(max(dot(R, V), 0.0), specStats.x) * specularColor.xyz * lightPower * specStats.y;"
-		"   outColor = vec4(diffuse + specular, 1.0);"
+		"   outColor = vec4(diffuse + specular * 0.1, 1.0);"
 		"}";
 	program.addShaders(vertexShaderSrc, fragmentShaderSource,
 		{
