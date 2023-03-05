@@ -180,6 +180,32 @@ namespace bbe
 			return retVal;
 		}
 
+		bbe::List<bbe::Rectanglei> getAllBiggestRects(const T& value) const
+		{
+			Grid<T> copy = *this;
+			bbe::List<bbe::Rectanglei> retVal;
+			while (true)
+			{
+				bbe::Rectanglei rect = copy.getBiggestRect(value);
+				if (rect.getArea() > 0)
+				{
+					for (size_t i = 0; i < rect.width; i++)
+					{
+						for (size_t k = 0; k < rect.height; k++)
+						{
+							copy[i + rect.x][k + rect.y] = !value;
+						}
+					}
+					retVal.add(rect);
+				}
+				else
+				{
+					break;
+				}
+			}
+			return retVal;
+		}
+
 		void setAll(const T& t)
 		{
 			for (size_t i = 0; i < m_pdata.getLength(); i++)
