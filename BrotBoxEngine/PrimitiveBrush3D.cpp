@@ -43,6 +43,54 @@ bbe::PrimitiveBrush3D::PrimitiveBrush3D()
 		},
 		{0, 1, 2, 2, 1, 3}
 	);
+
+	m_cube = bbe::Model(
+		{
+			PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, 0, -1), bbe::Vector2(1, 0)},
+			PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0, 0, -1), bbe::Vector2(1, 1)},
+			PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0, 0, -1), bbe::Vector2(0, 1)},
+			PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, 0, -1), bbe::Vector2(0, 0)},
+
+			PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, 0,  1), bbe::Vector2(1, 0)},
+			PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0, 0,  1), bbe::Vector2(1, 1)},
+			PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0, 0,  1), bbe::Vector2(0, 1)},
+			PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, 0,  1), bbe::Vector2(0, 0)},
+
+			PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, -1, 0), bbe::Vector2(1, 0)},
+			PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, -1, 0), bbe::Vector2(1, 1)},
+			PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, -1, 0), bbe::Vector2(0, 1)},
+			PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, -1, 0), bbe::Vector2(0, 0)},
+
+			PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0,  1, 0), bbe::Vector2(1, 0)},
+			PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0,  1, 0), bbe::Vector2(1, 1)},
+			PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0,  1, 0), bbe::Vector2(0, 1)},
+			PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0,  1, 0), bbe::Vector2(0, 0)},
+
+			PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(-1, 0, 0), bbe::Vector2(1, 0)},
+			PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(-1, 0, 0), bbe::Vector2(1, 1)},
+			PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(-1, 0, 0), bbe::Vector2(0, 1)},
+			PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(-1, 0, 0), bbe::Vector2(0, 0)},
+
+			PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3( 1, 0, 0), bbe::Vector2(1, 0)},
+			PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3( 1, 0, 0), bbe::Vector2(1, 1)},
+			PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3( 1, 0, 0), bbe::Vector2(0, 1)},
+			PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3( 1, 0, 0), bbe::Vector2(0, 0)},
+		},
+		{
+		     0,  1,  3,	//Bottom
+			 1,  2,  3,
+			 5,  4,  7,	//Top
+			 6,  5,  7,
+			 9,  8, 11,	//Left
+			10,  9, 11,
+			12, 13, 15,	//Right
+			13, 14, 15,
+			16, 17, 19,	//Front
+			17, 18, 19,
+			21, 20, 23,	//Back
+			22, 21, 23,
+		}
+	);
 }
 
 void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
@@ -82,6 +130,11 @@ void bbe::PrimitiveBrush3D::fillRectangle(const bbe::Matrix4& transform, const I
 	fillModel(transform, m_rectangle, albedo, normals, shader);
 }
 
+void bbe::PrimitiveBrush3D::fillCube(const Cube& cube, const Image* albedo, const Image* normals, const bbe::FragmentShader* shader)
+{
+	fillModel(cube.getTransform(), m_cube, albedo, normals, shader);
+}
+
 void bbe::PrimitiveBrush3D::fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo, const Image* normals, const bbe::FragmentShader* shader)
 {
 	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->fillModel(transform, model, albedo, normals, shader);
@@ -101,6 +154,12 @@ void bbe::PrimitiveBrush3D::setColor(float r, float g, float b)
 void bbe::PrimitiveBrush3D::setColor(const Color & c)
 {
 	INTERNAL_setColor(c.r, c.g, c.b, c.a, false);
+}
+
+void bbe::PrimitiveBrush3D::setColorHSV(float h, float s, float v)
+{
+	auto rgb = bbe::Color::HSVtoRGB(h, s, v);
+	setColor(rgb.r, rgb.g, rgb.b, 1.0);
 }
 
 void bbe::PrimitiveBrush3D::setCamera(const Vector3 & cameraPos, const Vector3 & cameraTarget, const Vector3 & cameraUpVector)

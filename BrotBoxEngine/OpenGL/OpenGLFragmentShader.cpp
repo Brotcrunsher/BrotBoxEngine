@@ -114,6 +114,7 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::Fra
 	viewPos       = glGetUniformLocation(program3d, "view");
 	projectionPos = glGetUniformLocation(program3d, "projection");
 	modelPos      = glGetUniformLocation(program3d, "model");
+	color3DPos    = glGetUniformLocation(program3d, "inColor");
 }
 
 bbe::INTERNAL::openGl::OpenGLFragmentShader::~OpenGLFragmentShader()

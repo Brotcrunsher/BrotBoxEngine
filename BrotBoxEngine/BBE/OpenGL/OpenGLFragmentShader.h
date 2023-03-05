@@ -26,6 +26,7 @@ namespace bbe
 				GLint viewPos = 0;
 				GLint projectionPos = 0;
 				GLint modelPos = 0;
+				GLint color3DPos = 0;
 
 				bbe::String errorLog2d;
 				bbe::String errorLog3d;

@@ -59,6 +59,7 @@ namespace bbe
 		bbe::RenderManager* m_prenderManager = nullptr;
 
 		bbe::Model m_rectangle;
+		bbe::Model m_cube;
 	public:
 		PrimitiveBrush3D();
 
@@ -71,12 +72,15 @@ namespace bbe
 
 #ifdef BBE_RENDERER_OPENGL
 		void fillRectangle(const bbe::Matrix4& transform, const Image* albedo = nullptr, const Image* normals = nullptr, const bbe::FragmentShader* shader = nullptr);
+		void fillCube(const Cube& cube, const Image* albedo, const Image* normals = nullptr, const bbe::FragmentShader* shader = nullptr);
 		void fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo = nullptr, const Image* normals = nullptr, const bbe::FragmentShader* shader = nullptr);
 #endif
 
 		void setColor(float r, float g, float b, float a);
 		void setColor(float r, float g, float b);
 		void setColor(const Color &c);
+
+		void setColorHSV(float h, float s, float v);
 
 		void setCamera(const Vector3 &cameraPos, const Vector3 &cameraTarget, const Vector3 &cameraUpVector = Vector3(0, 0, 1.0f));
 

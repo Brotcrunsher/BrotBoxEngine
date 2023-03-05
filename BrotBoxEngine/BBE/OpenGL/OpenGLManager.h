@@ -153,6 +153,7 @@ namespace bbe
 				bbe::Image black;
 
 				bbe::Color m_color2d;
+				bbe::Color m_color3d;
 
 				bbe::List<InstanceData2D> instanceDatas;
 				void addInstancedData2D(PreviousDrawCall2D type, float x, float y, float width, float height, float rotation);

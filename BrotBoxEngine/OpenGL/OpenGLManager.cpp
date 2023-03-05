@@ -647,6 +647,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 	{
 		glUniformMatrix4fv(fs->projectionPos, 1, GL_FALSE, &m_projection[0]);
 		glUniformMatrix4fv(fs->viewPos      , 1, GL_FALSE, &m_view[0]);
+		glUniform4f(fs->color3DPos, m_color3d.r, m_color3d.g, m_color3d.b, m_color3d.a);
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -947,6 +948,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	imguiStartFrame();
 	pointLights.clear();
+	m_color2d = bbe::Color(1, 1, 1, 1);
+	m_color3d = bbe::Color(1, 1, 1, 1);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::postDraw()
@@ -1190,6 +1193,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 void bbe::INTERNAL::openGl::OpenGLManager::setColor3D(const bbe::Color& color)
 {
 	m_program3dMrt.uniform4f(inColorPos3dMrt, color);
+	m_color3d = color;
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos, const bbe::Matrix4& view, const bbe::Matrix4& projection)
