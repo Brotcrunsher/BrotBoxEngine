@@ -168,26 +168,38 @@ bool bbe::Vector3::operator!=(const Vector3 & other) const
 
 bool bbe::Vector3::operator>(const Vector3 & other) const
 {
-	//UNTESTED
-	return getLength() > other.getLength();
+	if (x > other.x) return true;
+	if (x < other.x) return false;
+	if (y > other.y) return true;
+	if (y < other.y) return false;
+	return z > other.z;
 }
 
 bool bbe::Vector3::operator>=(const Vector3 & other) const
 {
-	//UNTESTED
-	return getLength() >= other.getLength();
+	if (x > other.x) return true;
+	if (x < other.x) return false;
+	if (y > other.y) return true;
+	if (y < other.y) return false;
+	return z >= other.z;
 }
 
 bool bbe::Vector3::operator<(const Vector3 & other) const
 {
-	//UNTESTED
-	return getLength() < other.getLength();
+	if (x < other.x) return true;
+	if (x > other.x) return false;
+	if (y < other.y) return true;
+	if (y > other.y) return false;
+	return z < other.z;
 }
 
 bool bbe::Vector3::operator<=(const Vector3 & other) const
 {
-	//UNTESTED
-	return getLength() <= other.getLength();
+	if (x < other.x) return true;
+	if (x > other.x) return false;
+	if (y < other.y) return true;
+	if (y > other.y) return false;
+	return z <= other.z;
 }
 
 bool bbe::Vector3::equals(const Vector3 & other, float epsilon) const
