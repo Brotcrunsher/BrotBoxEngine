@@ -304,6 +304,16 @@ bbe::Matrix4 bbe::Matrix4::extractRotation() const
 	);
 }
 
+bbe::Matrix4 bbe::Matrix4::toNormalTransform() const
+{
+	bbe::Matrix4 rotation = extractRotation();
+	bbe::Vector3 scale = extractScale();
+	scale.x = 1.f / scale.x;
+	scale.y = 1.f / scale.y;
+	scale.z = 1.f / scale.z;
+	return rotation * createScaleMatrix(scale);
+}
+
 bbe::Matrix4 bbe::Matrix4::operator*(const Matrix4 &other) const
 {
 	Matrix4 retVal;

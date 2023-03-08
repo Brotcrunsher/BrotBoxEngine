@@ -37,5 +37,6 @@ namespace bbe
 		Vector3 extractTranslation() const;
 		Vector3 extractScale() const;
 		Matrix4 extractRotation() const;
+		Matrix4 toNormalTransform() const;
 	};
 }
