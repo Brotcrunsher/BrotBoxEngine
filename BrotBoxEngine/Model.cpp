@@ -14,6 +14,38 @@ bbe::Model::Model(const bbe::List<bbe::PosNormalPair>& vertices, const bbe::List
 {
 }
 
+void bbe::Model::add(const bbe::List<bbe::PosNormalPair>& vertices, const bbe::List<uint32_t>& indices)
+{
+	m_vertices.addList(vertices);
+	m_indices.addList(indices);
+}
+
+size_t bbe::Model::getAmountOfIndices() const
+{
+	return m_indices.getLength();
+}
+
+size_t bbe::Model::getAmountOfVertices() const
+{
+	return m_vertices.getLength();
+}
+
+bbe::Model bbe::Model::finalize() const
+{
+	bbe::Vector2 max(0, 0);
+	for (const bbe::PosNormalPair& vertex : m_vertices)
+	{
+		max = max.maxVector(vertex.uvCoord);
+	}
+	bbe::Model copy = *this;
+	for (bbe::PosNormalPair& vertex : copy.m_vertices)
+	{
+		vertex.uvCoord /= max;
+	}
+
+	return copy;
+}
+
 bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 {
 	const bbe::DynamicArray<bbe::String> lines = obj.split("\n", false);

@@ -30,6 +30,12 @@ namespace bbe
 		Model();
 		Model(const bbe::List<bbe::PosNormalPair>& vertices, const bbe::List<uint32_t>& indices);
 
+		void add(const bbe::List<bbe::PosNormalPair>& vertices, const bbe::List<uint32_t>& indices);
+		size_t getAmountOfIndices() const;
+		size_t getAmountOfVertices() const;
+
+		Model finalize() const;
+
 		static Model fromObj(const bbe::String& obj);
 	};
 }
