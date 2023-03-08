@@ -9,7 +9,7 @@ bbe::PointLight::PointLight(const Vector3& pos)
 {
 }
 
-bbe::IcoSphere bbe::PointLight::getLightVolume(const bbe::Vector3& cameraPos) const
+float bbe::PointLight::getLightRadius() const
 {
 	// Rationale for these numbers:
 	//    (1/2.2) is the inverse of gamma used for gamma correction.
@@ -18,28 +18,26 @@ bbe::IcoSphere bbe::PointLight::getLightVolume(const bbe::Vector3& cameraPos) co
 	switch (falloffMode)
 	{
 	case LightFalloffMode::LIGHT_FALLOFF_NONE:
-		return bbe::IcoSphere(cameraPos);
+		return 1000000.f;
 	case LightFalloffMode::LIGHT_FALLOFF_LINEAR:
 		radius = /*(1 / x )^(1/2.2) < (1 / 255)*/ 196964.699f * lightStrength;
 		break;
 	case LightFalloffMode::LIGHT_FALLOFF_SQUARED:
-		radius = /*(1 / x²)^(1/2.2) < (2 / 255)*/ 207.043 * lightStrength;
+		radius = /*(1 / x²)^(1/2.2) < (2 / 255)*/ 25 * lightStrength;
 		break;
 	case LightFalloffMode::LIGHT_FALLOFF_CUBIC:
 		radius = /*(1 / x³)^(1/2.2) < (1 / 255)*/ 58.183f * lightStrength;
 		break;
 	case LightFalloffMode::LIGHT_FALLOFF_SQRT:
-		// Would be (1 / sqrt(x))^(1/2.2) < (1 / 255)
-		// But that's 10^10, so we might as well...
-		return bbe::IcoSphere(cameraPos);
+		return 1000000.f;
 	default:
 		throw IllegalStateException();
 	}
 
 	if (radius > 10000)
 	{
-		return bbe::IcoSphere(cameraPos);
+		return 1000000.f;
 	}
 
-	return bbe::IcoSphere(pos, bbe::Vector3(radius));
+	return radius;
 }

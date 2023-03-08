@@ -19,6 +19,6 @@ namespace bbe
 		PointLight();
 		explicit PointLight(const Vector3 &pos);
 
-		bbe::IcoSphere getLightVolume(const bbe::Vector3& cameraPos) const;
+		float getLightRadius() const;
 	};
 }
