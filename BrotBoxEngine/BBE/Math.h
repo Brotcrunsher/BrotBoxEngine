@@ -8,6 +8,7 @@ namespace bbe
 {
 	template<typename T> class Vector2_t;
 	using Vector2 = Vector2_t<float>;
+	using Vector2i = Vector2_t<int32_t>;
 	class Vector3;
 	class Vector4;
 
@@ -216,6 +217,12 @@ namespace bbe
 		Vector2 maxAbsComponent(const bbe::List<Vector2>& vectors);
 		Vector2 average(const bbe::List<Vector2>& vectors);
 		Vector2 medianComponent(const bbe::List<Vector2>& vectors);
+
+		// An integer space filling curve that returns elements in this order:
+		// 0149
+		// 325
+		// 786
+		Vector2i squareCantor(uint32_t index);
 
 		Vector3 minComponent(const bbe::List<Vector3>& vectors);
 		Vector3 maxComponent(const bbe::List<Vector3>& vectors);

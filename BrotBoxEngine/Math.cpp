@@ -555,6 +555,23 @@ bbe::Vector2 bbe::Math::minComponent(const bbe::List<Vector2>& vectors)
 	return retVal;
 }
 
+bbe::Vector2i bbe::Math::squareCantor(uint32_t index)
+{
+	if (index == 0) return bbe::Vector2i(0, 0);
+	const uint32_t sqrt = (uint32_t)bbe::Math::sqrt(index); // 2
+	const uint32_t sq = sqrt * sqrt; // 1
+	const uint32_t distOnHull = index - sq; // 2
+
+	if (distOnHull <= sqrt) // 2 <= 3
+	{
+		return Vector2i(sqrt, distOnHull); //2 1
+	}
+	else
+	{
+		return Vector2i(distOnHull - sqrt - 1, sqrt); // 2, 1
+	}
+}
+
 bbe::Vector3 bbe::Math::minComponent(const bbe::List<Vector3>& vectors)
 {
 	bbe::Vector3 retVal(INFINITY_POSITIVE, INFINITY_POSITIVE, INFINITY_POSITIVE);
