@@ -151,19 +151,27 @@ namespace bbe
 		}
 		bool operator> (const Vector2_t<T> &other) const
 		{
-			return getLengthSq() > other.getLengthSq();
+			if (x > other.x) return true;
+			if (x < other.x) return false;
+			return y > other.y;
 		}
 		bool operator>=(const Vector2_t<T> &other) const
 		{
-			return getLengthSq() >= other.getLengthSq();
+			if (x > other.x) return true;
+			if (x < other.x) return false;
+			return y >= other.y;
 		}
 		bool operator< (const Vector2_t<T> &other) const
 		{
-			return getLengthSq() < other.getLengthSq();
+			if (x < other.x) return true;
+			if (x > other.x) return false;
+			return y < other.y;
 		}
 		bool operator<=(const Vector2_t<T> &other) const
 		{
-			return getLengthSq() <= other.getLengthSq();
+			if (x < other.x) return true;
+			if (x > other.x) return false;
+			return y <= other.y;
 		}
 
 		bool equals(const Vector2_t<T> &other, T epsilon = 0.001f) const
@@ -273,6 +281,14 @@ namespace bbe
 		{
 			Vector2_t<T> normalized = normal.normalize();
 			return operator-(normalized * 2 * (operator*(normalized)));
+		}
+
+		Vector2_t maxVector(const Vector2_t<T>& other) const
+		{
+			return Vector2_t<T>(
+				bbe::Math::max(x, other.x),
+				bbe::Math::max(y, other.y)
+				);
 		}
 
 		T getLength() const
