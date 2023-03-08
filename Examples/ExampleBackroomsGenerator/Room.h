@@ -37,6 +37,8 @@ namespace br
 		RoomGenerationState state = RoomGenerationState::outlines;
 		bbe::List<Neighbor> neighbors;
 		bbe::Grid<bool> walkable;
+		bbe::Model wallsModel;
+		bbe::List<bbe::PointLight> lights;
 
 		bbe::List<bbe::Vector2i> getHashGridPositions() const;
 		static bbe::List<bbe::Vector2i> getHashGridPositions(const bbe::Rectanglei& rect);

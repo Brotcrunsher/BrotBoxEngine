@@ -9,6 +9,7 @@ namespace br
 	private:
 		bbe::Rectanglei shrinkBoundingBoxRec(const bbe::Rectanglei& bounding, const bbe::List<bbe::Rectanglei>& intersections, int32_t index, int32_t &currentBestArea) const;
 		void determineNeighbors_(size_t roomi, const bbe::Vector2i& roomiGatePos, const bbe::Vector2i& neighborGatePos);
+		void generateAtPointMulti_(size_t roomi, bbe::List<size_t> &list, size_t depth);
 
 	public:
 		Rooms();
@@ -31,7 +32,8 @@ namespace br
 		void collapseGates(size_t roomi);
 		void connectGates(size_t roomi);
 
-		void generateAtPoint(const bbe::Vector2i& position);
+		size_t generateAtPoint(const bbe::Vector2i& position);
+		bbe::List<size_t> generateAtPointMulti(const bbe::Vector2i& position, size_t depth);
 		int32_t getRoomIndexAtPoint(const bbe::Vector2i& position, int32_t ignore_room = -1) const;
 
 		void addRoom(const bbe::Rectanglei& bounding);

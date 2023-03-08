@@ -1,5 +1,6 @@
 #include "Rooms.h"
 #include "BBE/Random.h"
+#include "BBE/MeshBuilder.h"
 
 bbe::Rectanglei br::Rooms::shrinkBoundingBoxRec(const bbe::Rectanglei& bounding, const bbe::List<bbe::Rectanglei>& intersections, int32_t index, int32_t& currentBestArea) const
 {
@@ -315,6 +316,21 @@ void br::Rooms::determineNeighbors_(size_t roomi, const bbe::Vector2i& roomiGate
 	rooms[neighborIndex].neighbors.find([&](const br::Neighbor& n) { return roomi         == n.neighborId; })->gates.addUnique(gate.flipped());
 }
 
+void br::Rooms::generateAtPointMulti_(size_t roomi, bbe::List<size_t>& list, size_t depth)
+{
+	if (!list.contains(roomi))
+	{
+		connectGates(roomi);
+		list.add(roomi);
+	}
+	if (depth == (size_t)-1) return;
+
+	for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
+	{
+		generateAtPointMulti_(rooms[roomi].neighbors[i].neighborId, list, depth - 1);
+	}
+}
+
 void br::Rooms::determineNeighbors(size_t roomi)
 {
 	if (rooms[roomi].state == RoomGenerationState::outlines) expandRoom(roomi);
@@ -389,125 +405,64 @@ void br::Rooms::connectGates(size_t roomi)
 		throw bbe::IllegalStateException();
 	}
 
-	
-	bbe::Grid<int32_t> pathIdGrid(r.boundingBox.getDim());
-	pathIdGrid.setAll(-1);
-
-	bbe::List<int32_t> gatesConnected;
-	gatesConnected.resizeCapacityAndLength(r.neighbors.getLength());
-	for (size_t i = 0; i < gatesConnected.getLength(); i++) gatesConnected[i] = 1;
-
-	bbe::List<bbe::Vector2i> walkableTiles;
-
-	bool skipLoop = false;
-	for (size_t i = 0; i < r.neighbors.getLength(); i++)
-	{
-		if (r.neighbors[i].gates.getLength() != 1)
-		{
-			// Gates should have collapsed by now.
-			throw bbe::IllegalStateException();
-		}
-		bbe::Vector2i gateWorldPos = r.neighbors[i].gates[0].ownGatePos;
-		bbe::Vector2i gateLocalPos = gateWorldPos - r.boundingBox.getPos();
-		if (pathIdGrid[gateLocalPos] != -1)
-		{
-			gatesConnected[pathIdGrid[gateLocalPos]]++;
-			if (gatesConnected[pathIdGrid[gateLocalPos]] == r.neighbors.getLength())
-			{
-				skipLoop = true;
-			}
-		}
-		else
-		{
-			pathIdGrid[gateLocalPos] = i;
-			walkableTiles.add(gateLocalPos);
-		}
-	}
-
-	while (!skipLoop)
-	{
-		const bbe::Vector2i p1 = walkableTiles[rand.randomInt(walkableTiles.getLength())];
-		const bbe::Vector2i p2 = walkableTiles[rand.randomInt(walkableTiles.getLength())];
-		if (pathIdGrid[p1] != pathIdGrid[p2])
-		{
-			bbe::Vector2i movingP1 = p1;
-			bbe::Vector2i dir = p2 - p1;
-			bbe::List<bbe::Vector2i> newPath;
-			bool validPath = true;
-			while (movingP1 != p2)
-			{
-				int32_t xOrY = rand.randomInt(bbe::Math::abs(dir.x) + bbe::Math::abs(dir.y));
-				bool isX = xOrY < bbe::Math::abs(dir.x);
-				if (isX)
-				{
-					if (dir.x < 0)
-					{
-						movingP1.x--;
-						dir.x++;
-					}
-					else
-					{
-						movingP1.x++;
-						dir.x--;
-					}
-				}
-				else
-				{
-					if (dir.y < 0)
-					{
-						movingP1.y--;
-						dir.y++;
-					}
-					else
-					{
-						movingP1.y++;
-						dir.y--;
-					}
-				}
-				if (pathIdGrid[p1] != pathIdGrid[movingP1] && pathIdGrid[movingP1] != -1)
-				{
-					validPath = true;
-					break;
-				}
-				if (pathIdGrid[p1] == pathIdGrid[movingP1])
-				{
-					validPath = false;
-					break;
-				}
-				newPath.add(movingP1);
-			}
-
-			if (validPath)
-			{
-				gatesConnected[pathIdGrid[p1]] += gatesConnected[pathIdGrid[movingP1]];
-				pathIdGrid.floodFill(movingP1, pathIdGrid[p1], false);
-				for (const bbe::Vector2i& step : newPath)
-				{
-					walkableTiles.add(step);
-					pathIdGrid[step] = pathIdGrid[p1];
-				}
-				if (gatesConnected[pathIdGrid[p1]] >= r.neighbors.getLength())
-				{
-					break;
-				}
-			}
-		}
-	}
-
 	r.walkable = bbe::Grid<bool>(r.boundingBox.getDim());
 	for (int32_t x = 0; x < r.boundingBox.width; x++)
 	{
 		for (int32_t y = 0; y < r.boundingBox.height; y++)
 		{
-			r.walkable[x][y] = pathIdGrid[x][y] != -1;
+			r.walkable[x][y] = x != 0 && y != 0 && x != r.boundingBox.width - 1 && y != r.boundingBox.height - 1;
+		}
+	}
+	for (const Neighbor& n : r.neighbors)
+	{
+		for (const Gate& g : n.gates)
+		{
+			r.walkable[g.ownGatePos - r.boundingBox.getPos()] = true;
+		}
+	}
+
+	bbe::List<bbe::Rectanglei> rects = r.walkable.getAllBiggestRects(false);
+	bbe::List<bbe::Cube> walls;
+	for (const bbe::Rectanglei& rect : rects)
+	{
+		bbe::Vector3 coord = bbe::Vector3(rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f, 1.25f);
+		coord.x += r.boundingBox.x;
+		coord.y += r.boundingBox.y;
+		walls.add(bbe::Cube(coord, bbe::Vector3(rect.width, rect.height, 2.5f)));
+	}
+	bbe::MeshBuilder mb;
+	mb.addCubes(walls);
+	r.wallsModel = mb.getModel();
+
+	for (int32_t i = 2; i < r.boundingBox.width - 2; i++)
+	{
+		for (int32_t k = 2; k < r.boundingBox.height - 2; k++)
+		{
+			if (rand.randomFloat() < 0.02f)
+			{
+				bbe::PointLight pl;
+				pl.pos = bbe::Vector3(i + r.boundingBox.x + 0.5f, k + r.boundingBox.y + 0.5f, 2.f);
+				pl.lightStrength = 1.5f;
+				r.lights.add(pl);
+			}
 		}
 	}
 }
 
-void br::Rooms::generateAtPoint(const bbe::Vector2i& position)
+size_t br::Rooms::generateAtPoint(const bbe::Vector2i& position)
 {
 	size_t roomi = lookupRoomIndex(position);
-	expandRoom(roomi);
+	connectGates(roomi);
+	return roomi;
+}
+
+bbe::List<size_t> br::Rooms::generateAtPointMulti(const bbe::Vector2i& position, size_t depth)
+{
+	bbe::List<size_t> retVal;
+	size_t roomi = lookupRoomIndex(position);
+	connectGates(roomi);
+	generateAtPointMulti_(roomi, retVal, depth);
+	return retVal;
 }
 
 int32_t br::Rooms::getRoomIndexAtPoint(const bbe::Vector2i& position, int32_t ignore_room) const
