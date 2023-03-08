@@ -1,5 +1,6 @@
 #pragma once
 #include "../BBE/Vector3.h"
+#include "../BBE/Vector4.h"
 #include "../BBE/String.h"
 
 namespace bbe
@@ -32,6 +33,8 @@ namespace bbe
 		bbe::Color& operator/= (float scalar);
 
 		bbe::String toHex() const;
+
+		bbe::Vector4 toVector() const;
 
 		static Color HSVtoRGB(float h, float s, float v);
 	};

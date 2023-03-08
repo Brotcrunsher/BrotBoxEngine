@@ -12,6 +12,11 @@ bbe::String bbe::Color::toHex() const
 	return bbe::String::toHex(rgb);
 }
 
+bbe::Vector4 bbe::Color::toVector() const
+{
+	return bbe::Vector4(r, g, b, a);
+}
+
 bbe::Color bbe::Color::HSVtoRGB(float h, float s, float v)
 {
 	//UNTESTED
