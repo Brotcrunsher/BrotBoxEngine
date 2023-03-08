@@ -218,26 +218,6 @@ TEST(Vector2, OperatorComparison)
 	ASSERT_FALSE(b != a); ASSERT_FALSE(b != b); ASSERT_TRUE (b != c); ASSERT_TRUE (b != d);
 	ASSERT_TRUE (c != a); ASSERT_TRUE (c != b); ASSERT_FALSE(c != c); ASSERT_TRUE (c != d);
 	ASSERT_TRUE (d != a); ASSERT_TRUE (d != b); ASSERT_TRUE (d != c); ASSERT_FALSE(d != d);
-
-	ASSERT_FALSE(a < a); ASSERT_FALSE(a < b); ASSERT_TRUE (a < c); ASSERT_TRUE (a < d);
-	ASSERT_FALSE(b < a); ASSERT_FALSE(b < b); ASSERT_TRUE (b < c); ASSERT_TRUE (b < d);
-	ASSERT_FALSE(c < a); ASSERT_FALSE(c < b); ASSERT_FALSE(c < c); ASSERT_TRUE (c < d);
-	ASSERT_FALSE(d < a); ASSERT_FALSE(d < b); ASSERT_FALSE(d < c); ASSERT_FALSE(d < d);
-
-	ASSERT_TRUE (a <= a); ASSERT_TRUE (a <= b); ASSERT_TRUE (a <= c); ASSERT_TRUE (a <= d);
-	ASSERT_TRUE (b <= a); ASSERT_TRUE (b <= b); ASSERT_TRUE (b <= c); ASSERT_TRUE (b <= d);
-	ASSERT_FALSE(c <= a); ASSERT_FALSE(c <= b); ASSERT_TRUE (c <= c); ASSERT_TRUE (c <= d);
-	ASSERT_FALSE(d <= a); ASSERT_FALSE(d <= b); ASSERT_FALSE(d <= c); ASSERT_TRUE (d <= d);
-
-	ASSERT_FALSE(a > a); ASSERT_FALSE(a > b); ASSERT_FALSE(a > c); ASSERT_FALSE(a > d);
-	ASSERT_FALSE(b > a); ASSERT_FALSE(b > b); ASSERT_FALSE(b > c); ASSERT_FALSE(b > d);
-	ASSERT_TRUE (c > a); ASSERT_TRUE (c > b); ASSERT_FALSE(c > c); ASSERT_FALSE(c > d);
-	ASSERT_TRUE (d > a); ASSERT_TRUE (d > b); ASSERT_TRUE (d > c); ASSERT_FALSE(d > d);
-
-	ASSERT_TRUE(a >= a); ASSERT_TRUE(a >= b); ASSERT_FALSE(a >= c); ASSERT_FALSE(a >= d);
-	ASSERT_TRUE(b >= a); ASSERT_TRUE(b >= b); ASSERT_FALSE(b >= c); ASSERT_FALSE(b >= d);
-	ASSERT_TRUE(c >= a); ASSERT_TRUE(c >= b); ASSERT_TRUE (c >= c); ASSERT_FALSE(c >= d);
-	ASSERT_TRUE(d >= a); ASSERT_TRUE(d >= b); ASSERT_TRUE (d >= c); ASSERT_TRUE (d >= d);
 }
 
 TEST(Vector2, TestEquals)
