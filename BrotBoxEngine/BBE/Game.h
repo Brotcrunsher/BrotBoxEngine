@@ -29,6 +29,7 @@ namespace bbe
 		GameTime    m_gameTime;
 		PhysWorld   m_physWorld = PhysWorld({ 0, -20 });
 		float       m_fixedFrameTime = 0;
+		float       m_frameTimeRunningAverage = 0;
 #ifndef BBE_NO_AUDIO
 		bbe::INTERNAL::SoundManager m_soundManager;
 #endif
@@ -91,6 +92,7 @@ namespace bbe
 		int getScaledWindowHeight();
 
 		uint64_t getAmountOfFrames();
+		float getAverageFrameTime();
 
 		void setCursorMode(bbe::CursorMode cm);
 
@@ -106,5 +108,6 @@ namespace bbe
 		void setClipboard(const bbe::String& string);
 
 		void mainLoop();
+
 	};
 }

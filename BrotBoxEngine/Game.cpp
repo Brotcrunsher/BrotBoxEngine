@@ -113,6 +113,10 @@ void bbe::Game::frameUpdate()
 	m_pwindow->INTERNAL_mouse.update(globalMousePos.x, globalMousePos.y);
 	float timeSinceLastFrame = m_gameTime.tick();
 	if (m_fixedFrameTime != 0.f) timeSinceLastFrame = m_fixedFrameTime;
+	
+	if (m_frameNumber < 100) m_frameTimeRunningAverage = timeSinceLastFrame;
+	else m_frameTimeRunningAverage = 0.99 * m_frameTimeRunningAverage + 0.01 * timeSinceLastFrame;
+
 	m_physWorld.update(timeSinceLastFrame);
 #ifndef BBE_NO_AUDIO
 	m_soundManager.update();
@@ -307,6 +311,11 @@ int bbe::Game::getScaledWindowHeight()
 uint64_t bbe::Game::getAmountOfFrames()
 {
 	return m_gameTime.getAmountOfTicks();
+}
+
+float bbe::Game::getAverageFrameTime()
+{
+	return m_frameTimeRunningAverage;
 }
 
 void bbe::Game::setCursorMode(bbe::CursorMode cm)
