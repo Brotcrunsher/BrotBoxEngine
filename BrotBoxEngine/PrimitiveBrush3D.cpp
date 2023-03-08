@@ -114,7 +114,7 @@ void bbe::PrimitiveBrush3D::fillLine(const bbe::Vector3& a, const bbe::Vector3& 
 	fillCube(cube);
 }
 
-void bbe::PrimitiveBrush3D::addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
+void bbe::PrimitiveBrush3D::addLight(const bbe::Vector3& pos, float lightStrength, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)
 {
 	m_prenderManager->addLight(pos, lightStrength, lightColor, specularColor, falloffMode);
 }
