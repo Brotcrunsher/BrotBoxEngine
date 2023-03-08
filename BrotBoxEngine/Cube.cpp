@@ -175,6 +175,72 @@ void bbe::Cube::getVertices(bbe::List<bbe::Vector3>& outVertices) const
 	outVertices.add(m_transform * bbe::Vector3(-0.5f, -0.5f, -0.5f));
 }
 
+bbe::List<bbe::PosNormalPair> bbe::Cube::getRenderVerticesDefault()
+{
+	return {
+		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, 0, -1), Vector2(1.f/3.f, 0.f/3.f)},
+		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0, 0, -1), Vector2(1.f/3.f, 1.f/3.f)},
+		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0, 0, -1), Vector2(0.f/3.f, 1.f/3.f)},
+		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, 0, -1), Vector2(0.f/3.f, 0.f/3.f)},
+
+		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, 0,  1), Vector2(2.f/3.f, 0.f/3.f)},
+		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0, 0,  1), Vector2(2.f/3.f, 1.f/3.f)},
+		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0, 0,  1), Vector2(1.f/3.f, 1.f/3.f)},
+		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, 0,  1), Vector2(1.f/3.f, 0.f/3.f)},
+
+		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, -1, 0), Vector2(1.f/3.f, 1.f/3.f)},
+		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, -1, 0), Vector2(1.f/3.f, 2.f/3.f)},
+		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, -1, 0), Vector2(0.f/3.f, 2.f/3.f)},
+		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, -1, 0), Vector2(0.f/3.f, 1.f/3.f)},
+
+		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0,  1, 0), Vector2(2.f/3.f, 0.f/3.f)},
+		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0,  1, 0), Vector2(2.f/3.f, 1.f/3.f)},
+		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0,  1, 0), Vector2(1.f/3.f, 1.f/3.f)},
+		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0,  1, 0), Vector2(1.f/3.f, 0.f/3.f)},
+
+		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(-1, 0, 0), Vector2(1.f/3.f, 0.f/3.f)},
+		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(-1, 0, 0), Vector2(1.f/3.f, 1.f/3.f)},
+		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(-1, 0, 0), Vector2(0.f/3.f, 1.f/3.f)},
+		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(-1, 0, 0), Vector2(0.f/3.f, 0.f/3.f)},
+
+		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3( 1, 0, 0), Vector2(2.f/3.f, 2.f/3.f)},
+		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3( 1, 0, 0), Vector2(2.f/3.f, 3.f/3.f)},
+		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3( 1, 0, 0), Vector2(1.f/3.f, 3.f/3.f)},
+		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3( 1, 0, 0), Vector2(1.f/3.f, 2.f/3.f)},
+	};
+}
+
+bbe::List<bbe::PosNormalPair> bbe::Cube::getRenderVertices() const
+{
+	bbe::List<bbe::PosNormalPair> retVal = getRenderVerticesDefault();
+	bbe::Matrix4 normalTransform = m_transform.toNormalTransform();
+	for (PosNormalPair& p : retVal)
+	{
+		p.pos = m_transform * p.pos;
+		p.normal = normalTransform * p.normal;
+		// TODO: Probably the UV-Coordinates should also be transformed somehow?
+	}
+	return retVal;
+}
+
+bbe::List<uint32_t> bbe::Cube::getRenderIndicesDefault()
+{
+	return {
+		0,  1,  3,	//Bottom
+		1,  2,  3,
+		5,  4,  7,	//Top
+		6,  5,  7,
+		9,  8, 11,	//Left
+	   10,  9, 11,
+	   12, 13, 15,	//Right
+	   13, 14, 15,
+	   16, 17, 19,	//Front
+	   17, 18, 19,
+	   21, 20, 23,	//Back
+	   22, 21, 23,
+	};
+}
+
 bbe::Vector3 bbe::Cube::approach(const bbe::Cube& other, const bbe::Vector3& approachVector) const
 {
 	//TODO This implementation is very, very naive. It can be implemented in a much faster

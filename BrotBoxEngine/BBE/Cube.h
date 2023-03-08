@@ -3,6 +3,7 @@
 #include "../BBE/Vector3.h"
 #include "../BBE/List.h"
 #include "../BBE/Shape2.h"
+#include "../BBE/PosNormalPair.h"
 
 namespace bbe
 {
@@ -46,6 +47,10 @@ namespace bbe
 		virtual bbe::List<bbe::Vector3> getNormals() const override;
 		using Shape3::getVertices;
 		virtual void getVertices(bbe::List<bbe::Vector3> &outVertices) const override;
+
+		static bbe::List<bbe::PosNormalPair> getRenderVerticesDefault();
+		bbe::List<bbe::PosNormalPair> getRenderVertices() const;
+		static bbe::List<uint32_t> getRenderIndicesDefault();
 
 		bbe::Vector3 approach(const bbe::Cube& other, const bbe::Vector3& approachVector) const;
 	};
