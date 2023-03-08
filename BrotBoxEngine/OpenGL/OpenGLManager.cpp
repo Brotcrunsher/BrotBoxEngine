@@ -246,7 +246,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShade
 		"layout (location = 1) in vec4 scalePosOffset;"
 		"layout (location = 2) in float rotation;"
 		"layout (location = 3) in vec4 inColor;"
-		"out vec4 passColor;"
+		"flat out vec4 passColor;"
 		"void main()"
 		"{"
 		"   float s = sin(rotation);"
@@ -261,7 +261,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShade
 		"}";
 	
 	char const* fragmentShaderSource =
-		"in vec4 passColor;"
+		"flat in vec4 passColor;"
 		"out vec4 outColor;"
 		"void main()"
 		"{"
@@ -437,7 +437,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		});
 	
 	program.uniform1i(gAlbedoSpecPos3dAmbient, 2);
-	program.uniform1f(ambientFactorPos3dAmbient, 0.01f);
+	program.uniform1f(ambientFactorPos3dAmbient, 0.0001f);
 	program.uniform2f(screenSizeAmbient, (float)m_windowWidth, (float)m_windowHeight);
 	return program;
 }
@@ -491,13 +491,11 @@ static GLint gNormalPos3dLight = 0;
 static GLint gAlbedoSpecPos3dLight = 0;
 static GLint gSpecular3dLight = 0;
 static GLint lightPosPos3dLight = 0;
-static GLint lightStrengthPos3dLight = 0;
 static GLint falloffModePos3dLight = 0;
 static GLint lightColorPos3dLight = 0;
 static GLint specularColorPos3dLight = 0;
-static GLint viewPos3dLight = 0;
 static GLint projectionPos3dLight = 0;
-static GLint modelPos3dLight = 0;
+static GLint lightRadiusPos = 0;
 static GLint screenSize3dLight = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersLight()
 {
@@ -506,8 +504,8 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"in vec3 inPos;"
 		"void main()"
 		"{"
-		"   vec4 worldPos = model * vec4(inPos, 1.0);"
-		"   gl_Position = projection * view * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
+		"   vec4 worldPos = vec4(lightPos.xyz, 1.0) + lightRadius * vec4(inPos, 0.0);"
+		"   gl_Position = projection * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
 		"}";
 
 	char const* fragmentShaderSource =
@@ -523,9 +521,9 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   vec3 normal = texture(gNormal, uvCoord).xyz;"
 		"   if(length(normal) == 0.0) { discard; }"
 		"   vec3 pos = texture(gPosition, uvCoord).xyz;"
-		"   vec3 toLight = lightPos - pos;"
+		"   vec3 toLight = lightPos.xyz - pos;"
 		"   float distToLight = length(toLight);"
-		"   float lightPower = lightStrength;"
+		"   float lightPower = lightPos.w;"
 		"   if(distToLight > 0.f)"
 		"   {"
 		"       switch (falloffMode)														 "
@@ -547,7 +545,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"       	break;																					 "
 		"       }																							 "
 		"   }"
-		"   if(lightPower < 1.0 / 255.0) { discard; }"
+		"   if(lightPower < 0.001) discard;"
 		"   vec3 albedo = texture(gAlbedoSpec, uvCoord).xyz;"
 		"   vec3 toCamera = -pos;"
 		"   vec3 L = normalize(toLight);"
@@ -556,7 +554,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   vec3 V = normalize(toCamera);"
 		"   vec3 specStats = texture(gSpecular, uvCoord).xyz;"
 		"   vec3 specular = pow(max(dot(R, V), 0.0), specStats.x) * specularColor.xyz * lightPower * specStats.y;"
-		"   outColor = vec4(diffuse + specular * 0.1, 1.0);"
+		"   outColor = vec4(diffuse + specular * 0.1 + vec3(0.00), 1.0);"
 		"}";
 	program.addShaders(vertexShaderSrc, fragmentShaderSource,
 		{
@@ -564,15 +562,14 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 			{UT::UT_sampler2D, "gNormal"	  , &gNormalPos3dLight       },
 			{UT::UT_sampler2D, "gAlbedoSpec"  , &gAlbedoSpecPos3dLight   },
 			{UT::UT_sampler2D, "gSpecular"    , &gSpecular3dLight        },
-			{UT::UT_float    , "lightStrength", &lightStrengthPos3dLight },
-			{UT::UT_int      , "falloffMode"  , &falloffModePos3dLight   },
+			{UT::UT_mat4     , "projection"   , &projectionPos3dLight    },
+			{UT::UT_vec2     , "screenSize",    &screenSize3dLight       },
+
 			{UT::UT_vec4     , "lightColor"	  , &lightColorPos3dLight    },
 			{UT::UT_vec4     , "specularColor", &specularColorPos3dLight },
-			{UT::UT_vec3     , "lightPos"	  , &lightPosPos3dLight      },
-			{UT::UT_mat4     , "view"         , &viewPos3dLight	         },
-			{UT::UT_mat4     , "projection"   , &projectionPos3dLight    },
-			{UT::UT_mat4     , "model"	      , &modelPos3dLight         },
-			{UT::UT_vec2     , "screenSize",    &screenSize3dLight       },
+			{UT::UT_vec4     , "lightPos"	  , &lightPosPos3dLight      },
+			{UT::UT_float    , "lightRadius"  , &lightRadiusPos          },
+			{UT::UT_int      , "falloffMode"  , &falloffModePos3dLight   },
 		});
 
 	program.uniform1i(gPositionPos3dLight, 0);
@@ -580,8 +577,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 	program.uniform1i(gAlbedoSpecPos3dLight, 2);
 	program.uniform1i(gSpecular3dLight, 3);
 
-	program.uniform3f(lightPosPos3dLight, 0.f, 0.f, 0.f);
-	program.uniform1f(lightStrengthPos3dLight, 0.f);
+	program.uniform4f(lightPosPos3dLight, 0.f, 0.f, 0.f, 0.f);
 	program.uniform1i(falloffModePos3dLight, 0);
 	program.uniform4f(lightColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
 	program.uniform4f(specularColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
@@ -782,10 +778,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& ligh
 {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, openGl::OpenGLSphere::getIbo());
 
-	IcoSphere lightVolume = light.getLightVolume(m_cameraPos);
-	Matrix4 mat = lightVolume.getTransform();
-	glUniformMatrix4fv(modelPos3dLight, 1, GL_FALSE, &mat[0]);
-
 	glBindBuffer(GL_ARRAY_BUFFER, openGl::OpenGLSphere::getVbo());
 	GLint positionAttribute = glGetAttribLocation(m_program3dLight.program, "inPos");
 	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
@@ -796,11 +788,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& ligh
 
 	bbe::Vector4 p(light.pos, 1.0f);
 	p = m_view * p;
-	m_program3dLight.uniform3f(lightPosPos3dLight, p.xyz());
-	m_program3dLight.uniform1f(lightStrengthPos3dLight, light.lightStrength);
+	m_program3dLight.uniform4f(lightPosPos3dLight, p.x, p.y, p.z, light.lightStrength);
 	m_program3dLight.uniform1i(falloffModePos3dLight, (int)light.falloffMode);
 	m_program3dLight.uniform4f(lightColorPos3dLight, light.lightColor);
 	m_program3dLight.uniform4f(specularColorPos3dLight, light.specularColor);
+	m_program3dLight.uniform1f(lightRadiusPos, light.getLightRadius());
 
 
 	glDrawElements(GL_TRIANGLES, (GLsizei)openGl::OpenGLSphere::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
@@ -1200,7 +1192,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos,
 {
 	m_program3dMrt.uniformMatrix4fv(viewPos3dMrt, GL_FALSE, view);
 	m_program3dMrt.uniformMatrix4fv(projectionPos3dMrt, GL_FALSE, projection);
-	m_program3dLight.uniformMatrix4fv(viewPos3dLight, GL_FALSE, view);
 	m_program3dLight.uniformMatrix4fv(projectionPos3dLight, GL_FALSE, projection);
 	m_view = view;
 	m_projection = projection;
@@ -1231,7 +1222,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transfo
 	fillInternalMesh(&(transform[0]), ogm->getIbo(), ogm->getVbo(), ogm->getAmountOfIndices(), albedo, normals, shader);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
+void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)
 {
 	bbe::PointLight light(pos);
 	light.lightStrength = lightStrength;

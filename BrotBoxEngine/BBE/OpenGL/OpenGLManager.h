@@ -202,7 +202,7 @@ namespace bbe
 				virtual void fillCube3D(const Cube& cube) override;
 				virtual void fillSphere3D(const IcoSphere& sphere) override;
 				void fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const FragmentShader* shader);
-				virtual void addLight(const bbe::Vector3& pos, float lightStrengh, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode) override;
+				virtual void addLight(const bbe::Vector3& pos, float lightStrengh, const bbe::Color& lightColor, const bbe::Color& specularColor, LightFalloffMode falloffMode) override;
 
 				virtual void imguiStart() override;
 				virtual void imguiStop() override;

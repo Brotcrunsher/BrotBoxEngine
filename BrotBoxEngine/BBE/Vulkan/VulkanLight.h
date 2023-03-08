@@ -36,7 +36,7 @@ namespace bbe
 
 				void s_init(VkDevice device, VkPhysicalDevice physicalDevice);
 				void beginDraw();
-				void addLight(const bbe::Vector3& pos, float lightStrenght, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode);
+				void addLight(const bbe::Vector3& pos, float lightStrenght, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode);
 				void s_destroy();
 
 				VulkanBuffer& getVertexBuffer();

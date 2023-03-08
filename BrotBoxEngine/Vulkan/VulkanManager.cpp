@@ -1110,7 +1110,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiEndFrame()
 	ImGui_ImplVulkan_RenderDrawData(drawData, *m_currentFrameDrawCommandBuffer);
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::addLight(const bbe::Vector3& pos, float lightStrenght, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
+void bbe::INTERNAL::vulkan::VulkanManager::addLight(const bbe::Vector3& pos, float lightStrenght, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)
 {
 	bbe::INTERNAL::vulkan::VulkanLight::addLight(pos, lightStrenght, lightColor, specularColor, falloffMode);
 }

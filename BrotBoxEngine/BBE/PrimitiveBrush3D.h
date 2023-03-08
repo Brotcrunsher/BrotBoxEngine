@@ -67,7 +67,7 @@ namespace bbe
 		void fillIcoSphere(const IcoSphere &sphere);
 		void fillLine(const bbe::Vector3& a, const bbe::Vector3& b, float lineWidth = 0.1f);
 
-		void addLight(const bbe::Vector3& pos, float lightStrength, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode);
+		void addLight(const bbe::Vector3& pos, float lightStrength, const bbe::Color& lightColor, const bbe::Color& specularColor, LightFalloffMode falloffMode);
 		void addLight(const bbe::PointLight& light);
 
 #ifdef BBE_RENDERER_OPENGL

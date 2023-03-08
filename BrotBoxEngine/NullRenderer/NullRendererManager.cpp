@@ -102,7 +102,7 @@ void bbe::INTERNAL::nullRenderer::NullRendererManager::fillSphere3D(const IcoSph
 {
 }
 
-void bbe::INTERNAL::nullRenderer::NullRendererManager::addLight(const bbe::Vector3& pos, float lightStrenght, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
+void bbe::INTERNAL::nullRenderer::NullRendererManager::addLight(const bbe::Vector3& pos, float lightStrenght, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)
 {
 }
 

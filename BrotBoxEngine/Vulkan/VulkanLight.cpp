@@ -36,7 +36,7 @@ void bbe::INTERNAL::vulkan::VulkanLight::beginDraw()
 	}
 }
 
-void bbe::INTERNAL::vulkan::VulkanLight::addLight(const bbe::Vector3& pos, float lightStrenght, bbe::Color lightColor, bbe::Color specularColor, LightFalloffMode falloffMode)
+void bbe::INTERNAL::vulkan::VulkanLight::addLight(const bbe::Vector3& pos, float lightStrenght, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)
 {
 	lightAmount++;
 	if (lightAmount >= Settings::getAmountOfLightSources())
