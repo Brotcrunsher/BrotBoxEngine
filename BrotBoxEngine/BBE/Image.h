@@ -71,6 +71,9 @@ namespace bbe
 		void finishLoad(stbi_uc* pixels);
 
 	public:
+		static const Image& white();
+		static const Image& black();
+		
 		Image();
 		explicit Image(const char* path);
 		explicit Image(const bbe::String& path);

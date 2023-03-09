@@ -9,6 +9,7 @@ layout (location = 0) out vec4 outPos;
 layout (location = 1) out vec4 outNormal;
 layout (location = 2) out vec4 outAlbedo;
 layout (location = 3) out vec4 outSpecular;
+layout (location = 4) out vec4 outEmissions;
 
 float hash(vec3 p) {
 	p = mod(p, 10000.0f);
@@ -34,4 +35,5 @@ void main()
    outNormal   = vec4(normalize(passNormal.xyz), 1.0);
    outAlbedo   = vec4(getColor(passWorldPos.xyz), 1.0) * inColor;
    outSpecular = vec4(1.0, 0.0, 0.0, 1.0);
+   outEmissions = vec4(0.0, 0.0, 0.0, 1.0);
 }

@@ -203,7 +203,7 @@ namespace br
 		{
 			if (renderMode != 1) return;
 			brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
-			brush.setCamera(bbe::Vector3(0, 0, 1.7f), bbe::Vector3(-1, 0, 1.7f));
+			//brush.setCamera(bbe::Vector3(0, 0, 1.7f), bbe::Vector3(-1, 0, 1.7f));
 
 			int lightCount = 0;
 			int wallCount = 0;
@@ -215,17 +215,18 @@ namespace br
 				bbe::Vector3 translationVec = bbe::Vector3(bounding.x + bounding.width / 2.f, bounding.y + bounding.height / 2.f, 0);
 				bbe::Matrix4 translation = bbe::Matrix4::createTranslationMatrix(translationVec);
 				bbe::Matrix4 scale = bbe::Matrix4::createScaleMatrix({ (float)bounding.width, (float)bounding.height, 1 });
-				brush.fillRectangle(translation * scale, nullptr, nullptr, assetStore::Floor());
+				brush.fillRectangle(translation * scale, nullptr, nullptr, nullptr, assetStore::Floor());
 
 				translationVec.z = 2.5f;
 				translation = bbe::Matrix4::createTranslationMatrix(translationVec);
 				bbe::Matrix4 rotationMat = bbe::Matrix4::createRotationMatrix(bbe::Math::PI, bbe::Vector3(1, 0, 0));
-				brush.fillRectangle(translation * rotationMat * scale, nullptr, nullptr, assetStore::Ceiling());
+				brush.fillRectangle(translation * rotationMat * scale, nullptr, nullptr, nullptr, assetStore::Ceiling());
 
 				brush.setColor(1, 1, 1, 1);
-				brush.fillModel(bbe::Matrix4(), r.wallsModel, nullptr, nullptr, assetStore::Wall());
+				brush.fillModel(bbe::Matrix4(), r.wallsModel, nullptr, nullptr, nullptr, assetStore::Wall());
 				for (const bbe::PointLight& light : r.lights)
 				{
+					brush.fillCube(bbe::Cube(light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)), nullptr, nullptr, &bbe::Image::white());
 					brush.addLight(light);
 					lightCount++;
 				}

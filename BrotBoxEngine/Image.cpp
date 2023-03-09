@@ -198,6 +198,28 @@ bbe::ImageRepeatMode bbe::Image::getRepeatMode() const
 	return m_repeatMode;
 }
 
+const bbe::Image& bbe::Image::white()
+{
+	static bbe::Image image;
+	if (!image.isLoaded())
+	{
+		byte pixel[] = { 255, 255, 255, 255 };
+		image.load(1, 1, pixel, bbe::ImageFormat::R8G8B8A8);
+	}
+	return image;
+}
+
+const bbe::Image& bbe::Image::black()
+{
+	static bbe::Image image;
+	if (!image.isLoaded())
+	{
+		byte pixel[] = { 0, 0, 0, 255 };
+		image.load(1, 1, pixel, bbe::ImageFormat::R8G8B8A8);
+	}
+	return image;
+}
+
 void bbe::Image::setRepeatMode(ImageRepeatMode irm)
 {
 	if (m_prendererData != nullptr)

@@ -346,6 +346,7 @@ static GLint projectionPos3dMrt = 0;
 static GLint modelPos3dMrt = 0;
 static GLint albedoTexMrt = 0;
 static GLint normalsTexMrt = 0;
+static GLint emissionsTexMrt = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersMrt()
 {
 	Program program;
@@ -373,12 +374,14 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"layout (location = 1) out vec4 outNormal;"
 		"layout (location = 2) out vec4 outAlbedo;"
 		"layout (location = 3) out vec4 outSpecular;"
+		"layout (location = 4) out vec4 outEmission;"
 		"void main()"
 		"{"
 		"   outPos    = passPos;"
 		"   outNormal = vec4(normalize(passNormal.xyz + (view * model * vec4(texture(normals, passUvCoord).xyz, 0.0)).xyz), 1.0);" // TODO HACK: Setting the alpha component to 1 to avoid it being discarded from the Texture. Can we do better?
 		"   outAlbedo = inColor * texture(albedo, passUvCoord);"
 		"   outSpecular = vec4(10.0, 1.0, 0.0, 1.0);"
+		"   outEmission = texture(emissions, passUvCoord);"
 		"}";
 
 	program.addShaders(vertexShaderSrc, fragmentShaderSource,
@@ -389,12 +392,14 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 			{UT::UT_mat4,      "model"	   , &modelPos3dMrt	    },
 			{UT::UT_sampler2D, "albedo"    , &albedoTexMrt      },
 			{UT::UT_sampler2D, "normals"   , &normalsTexMrt     },
+			{UT::UT_sampler2D, "emissions" , &emissionsTexMrt   },
 		});
 
 	return program;
 }
 
 static GLint gAlbedoSpecPos3dAmbient = 0;
+static GLint emissionsPos3dAmbient = 0;
 static GLint ambientFactorPos3dAmbient = 0;
 static GLint screenSizeAmbient = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersAmbient()
@@ -427,16 +432,19 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"{"
 		"   vec3 albedo = texture(gAlbedoSpec, gl_FragCoord.xy / screenSize).xyz;"
 		"   vec3 ambient = albedo * ambientFactor;"
-		"   outColor = vec4(ambient, 1.0);"
+		"   vec3 emissions = texture(emissions, gl_FragCoord.xy / screenSize).xyz;"
+		"   outColor = vec4(ambient + emissions, 1.0);"
 		"}";
 	program.addShaders(vertexShaderSrc, fragmentShaderSource,
 		{
 			{UT::UT_sampler2D, "gAlbedoSpec"  , &gAlbedoSpecPos3dAmbient  },
+			{UT::UT_sampler2D, "emissions"    , &emissionsPos3dAmbient},
 			{UT::UT_float    , "ambientFactor", &ambientFactorPos3dAmbient},
 			{UT::UT_vec2     , "screenSize",    &screenSizeAmbient        },
 		});
-	
+
 	program.uniform1i(gAlbedoSpecPos3dAmbient, 2);
+	program.uniform1i(emissionsPos3dAmbient, 4);
 	program.uniform1f(ambientFactorPos3dAmbient, 0.0001f);
 	program.uniform2f(screenSizeAmbient, (float)m_windowWidth, (float)m_windowHeight);
 	return program;
@@ -589,10 +597,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::initGeometryBuffer()
 {
 	mrtFb.destroy(); // For resizing
 	mrtFb = Framebuffer(m_windowWidth, m_windowHeight);
-	mrtFb.addTexture();
-	mrtFb.addTexture();
-	mrtFb.addTexture();
-	mrtFb.addTexture();
+	mrtFb.addTexture(); // Positions
+	mrtFb.addTexture(); // Normals
+	mrtFb.addTexture(); // Albedo
+	mrtFb.addTexture(); // Specular
+	mrtFb.addTexture(); // Emission
 	mrtFb.addDepthBuffer();
 	mrtFb.finalize();
 
@@ -602,7 +611,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::initGeometryBuffer()
 	postProcessingFb.finalize();
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals, const FragmentShader* shader)
+void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader)
 {
 	GLuint program = 0;
 	GLint modelPos = 0;
@@ -662,8 +671,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 	glEnableVertexAttribArray(uvPosition);
 	glVertexAttribDivisor(uvPosition, 0);
 
-	if (!albedo) albedo = &white;
-	if (!normals) normals = &black;
+	if (!albedo) albedo = &bbe::Image::white();
+	if (!normals) normals = &bbe::Image::black();
+	if (!emissions) emissions = &bbe::Image::white();
 
 	glUniform1i(albedoTexMrt, 0);
 	glActiveTexture(GL_TEXTURE0 + 0);
@@ -672,6 +682,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 	glUniform1i(normalsTexMrt, 1);
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, toRendererData(*normals)->tex);
+
+	glUniform1i(emissionsTexMrt, 2);
+	glActiveTexture(GL_TEXTURE0 + 2);
+	glBindTexture(GL_TEXTURE_2D, toRendererData(*emissions)->tex);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0);
@@ -840,15 +854,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	glCullFace(GL_FRONT);
 	glFrontFace(GL_CCW);
 	imguiStart();
-
-	{
-		byte pixel[] = { 255, 255, 255, 255 };
-		white.load(1, 1, pixel, bbe::ImageFormat::R8G8B8A8);
-	}
-	{
-		byte pixel[] = { 0, 0, 0, 0 };
-		black.load(1, 1, pixel, bbe::ImageFormat::R8G8B8A8);
-	}
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::destroy()
@@ -1200,15 +1205,15 @@ void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos,
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)
 {
-	fillInternalMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getAmountOfIndices(), nullptr, nullptr, nullptr);
+	fillInternalMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getAmountOfIndices(), nullptr, nullptr, nullptr, nullptr);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
 {
-	fillInternalMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getAmountOfIndices(), nullptr, nullptr, nullptr);
+	fillInternalMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getAmountOfIndices(), nullptr, nullptr, nullptr, nullptr);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const FragmentShader* shader)
+void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader)
 {
 	bbe::INTERNAL::openGl::OpenGLModel* ogm = nullptr;
 	if (model.m_prendererData == nullptr)
@@ -1219,7 +1224,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transfo
 	{
 		ogm = (bbe::INTERNAL::openGl::OpenGLModel*)model.m_prendererData.get();
 	}
-	fillInternalMesh(&(transform[0]), ogm->getIbo(), ogm->getVbo(), ogm->getAmountOfIndices(), albedo, normals, shader);
+	fillInternalMesh(&(transform[0]), ogm->getIbo(), ogm->getVbo(), ogm->getAmountOfIndices(), albedo, normals, emissions, shader);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)

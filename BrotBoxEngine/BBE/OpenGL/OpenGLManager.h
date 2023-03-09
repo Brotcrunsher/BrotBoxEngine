@@ -131,7 +131,7 @@ namespace bbe
 				Program init3dShadersLight();
 				void initGeometryBuffer();
 
-				void fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals, const FragmentShader* shader);
+				void fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader);
 
 				enum class PreviousDrawCall2D
 				{
@@ -148,9 +148,6 @@ namespace bbe
 				bbe::Matrix4 m_view;
 				bbe::Matrix4 m_projection;
 				bbe::Vector3 m_cameraPos;
-
-				bbe::Image white;
-				bbe::Image black;
 
 				bbe::Color m_color2d;
 				bbe::Color m_color3d;
@@ -201,7 +198,7 @@ namespace bbe
 				virtual void setCamera3D(const Vector3& cameraPos, const bbe::Matrix4& view, const bbe::Matrix4& projection) override;
 				virtual void fillCube3D(const Cube& cube) override;
 				virtual void fillSphere3D(const IcoSphere& sphere) override;
-				void fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const FragmentShader* shader);
+				void fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader);
 				virtual void addLight(const bbe::Vector3& pos, float lightStrengh, const bbe::Color& lightColor, const bbe::Color& specularColor, LightFalloffMode falloffMode) override;
 
 				virtual void imguiStart() override;

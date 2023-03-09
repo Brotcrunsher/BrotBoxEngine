@@ -71,9 +71,9 @@ namespace bbe
 		void addLight(const bbe::PointLight& light);
 
 #ifdef BBE_RENDERER_OPENGL
-		void fillRectangle(const bbe::Matrix4& transform, const Image* albedo = nullptr, const Image* normals = nullptr, const bbe::FragmentShader* shader = nullptr);
-		void fillCube(const Cube& cube, const Image* albedo, const Image* normals = nullptr, const bbe::FragmentShader* shader = nullptr);
-		void fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo = nullptr, const Image* normals = nullptr, const bbe::FragmentShader* shader = nullptr);
+		void fillRectangle(const bbe::Matrix4& transform, const Image* albedo = nullptr, const Image* normals = nullptr, const Image* emissions = nullptr, const bbe::FragmentShader* shader = nullptr);
+		void fillCube(const Cube& cube, const Image* albedo, const Image* normals = nullptr, const Image* emissions = nullptr, const bbe::FragmentShader* shader = nullptr);
+		void fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo = nullptr, const Image* normals = nullptr, const Image* emissions = nullptr, const bbe::FragmentShader* shader = nullptr);
 #endif
 
 		void setColor(float r, float g, float b, float a);

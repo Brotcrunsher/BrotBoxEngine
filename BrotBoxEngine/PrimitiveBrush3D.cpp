@@ -125,19 +125,19 @@ void bbe::PrimitiveBrush3D::addLight(const bbe::PointLight& light)
 }
 
 #ifdef BBE_RENDERER_OPENGL
-void bbe::PrimitiveBrush3D::fillRectangle(const bbe::Matrix4& transform, const Image* albedo, const Image* normals, const bbe::FragmentShader* shader)
+void bbe::PrimitiveBrush3D::fillRectangle(const bbe::Matrix4& transform, const Image* albedo, const Image* normals, const Image* emissions, const bbe::FragmentShader* shader)
 {
-	fillModel(transform, m_rectangle, albedo, normals, shader);
+	fillModel(transform, m_rectangle, albedo, normals, emissions, shader);
 }
 
-void bbe::PrimitiveBrush3D::fillCube(const Cube& cube, const Image* albedo, const Image* normals, const bbe::FragmentShader* shader)
+void bbe::PrimitiveBrush3D::fillCube(const Cube& cube, const Image* albedo, const Image* normals, const Image* emissions, const bbe::FragmentShader* shader)
 {
-	fillModel(cube.getTransform(), m_cube, albedo, normals, shader);
+	fillModel(cube.getTransform(), m_cube, albedo, normals, emissions, shader);
 }
 
-void bbe::PrimitiveBrush3D::fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo, const Image* normals, const bbe::FragmentShader* shader)
+void bbe::PrimitiveBrush3D::fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo, const Image* normals, const Image* emissions, const bbe::FragmentShader* shader)
 {
-	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->fillModel(transform, model, albedo, normals, shader);
+	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->fillModel(transform, model, albedo, normals, emissions, shader);
 }
 #endif
 
