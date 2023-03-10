@@ -673,7 +673,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 
 	if (!albedo) albedo = &bbe::Image::white();
 	if (!normals) normals = &bbe::Image::black();
-	if (!emissions) emissions = &bbe::Image::white();
+	if (!emissions) emissions = &bbe::Image::black();
 
 	glUniform1i(albedoTexMrt, 0);
 	glActiveTexture(GL_TEXTURE0 + 0);
