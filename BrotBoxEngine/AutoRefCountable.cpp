@@ -86,6 +86,7 @@ bbe::AutoRef& bbe::AutoRef::operator=(AutoRefCountable* countable)
 	decRef();
 	this->countable = countable;
 	incRef();
+	return *this;
 }
 
 bool bbe::AutoRef::operator==(const void* ptr) const
