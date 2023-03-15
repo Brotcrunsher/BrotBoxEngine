@@ -32,6 +32,8 @@ namespace br
 		bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
 
 		bbe::List<size_t> interestingRooms;
+
+		bbe::Image debugBake;
 	public:
 		void newRooms()
 		{
@@ -139,6 +141,12 @@ namespace br
 		{
 			if (renderMode != 1) return;
 
+			{
+				// Baking tests
+				const Room& r = rooms.rooms[0];
+				//debugBake = bakeLights(bbe::Matrix4(), r.wallsModel, nullptr, nullptr, nullptr, assetStore::Wall(), { 1, 1, 1, 1 }, { 256, 256 }, r.lights);
+			}
+
 			ccnc.update(timeSinceLastFrame * 0.2f);
 			bbe::Vector3 camPos = ccnc.getCameraPos();
 			//camPos.x = 0.0f;
@@ -154,7 +162,9 @@ namespace br
 				std::cout << fps << std::endl;
 			}
 			//std::cout << fps << std::endl;
-			interestingRooms = rooms.generateAtPointMulti(bbe::Vector2i((int32_t)camPos.x, (int32_t)camPos.y), depth);
+			bbe::Vector2i cami((int32_t)camPos.x, (int32_t)camPos.y);
+			interestingRooms = rooms.generateAtPointMulti(cami, depth);
+			rooms.propagateSingleBakeAtPoint(cami, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling());
 		}
 
 		virtual void update(float timeSinceLastFrame) override
@@ -209,26 +219,39 @@ namespace br
 			int wallCount = 0;
 			for (size_t roomi : interestingRooms)
 			{
+				//if (roomi != 2) continue;
 				const Room& r = rooms.rooms[roomi];
-				brush.setColorHSV(r.hue, r.saturation, r.value);
-				const bbe::Rectanglei &bounding = r.boundingBox;
-				bbe::Vector3 translationVec = bbe::Vector3(bounding.x + bounding.width / 2.f, bounding.y + bounding.height / 2.f, 0);
-				bbe::Matrix4 translation = bbe::Matrix4::createTranslationMatrix(translationVec);
-				bbe::Matrix4 scale = bbe::Matrix4::createScaleMatrix({ (float)bounding.width, (float)bounding.height, 1 });
-				brush.fillRectangle(translation * scale, nullptr, nullptr, nullptr, assetStore::Floor());
-
-				translationVec.z = 2.5f;
-				translation = bbe::Matrix4::createTranslationMatrix(translationVec);
-				bbe::Matrix4 rotationMat = bbe::Matrix4::createRotationMatrix(bbe::Math::PI, bbe::Vector3(1, 0, 0));
-				brush.fillRectangle(translation * rotationMat * scale, nullptr, nullptr, nullptr, assetStore::Ceiling());
-
+				
 				brush.setColor(1, 1, 1, 1);
-				brush.fillModel(bbe::Matrix4(), r.wallsModel, nullptr, nullptr, nullptr, assetStore::Wall());
 				for (const bbe::PointLight& light : r.lights)
 				{
 					brush.fillCube(bbe::Cube(light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)), nullptr, nullptr, &bbe::Image::white());
-					brush.addLight(light);
-					lightCount++;
+				}
+				if (r.state >= RoomGenerationState::lightsBaked)
+				{
+					if (r.wallsModels.getLength() != r.bakedLights.getLength()) throw bbe::IllegalStateException();
+					brush.fillModel(bbe::Matrix4(), r.floorModel  , nullptr, nullptr, &r.bakedFloor);
+					brush.fillModel(bbe::Matrix4(), r.ceilingModel, nullptr, nullptr, &r.bakedCeiling);
+					for (size_t i = 0; i < r.wallsModels.getLength(); i++)
+					{
+						brush.fillModel(bbe::Matrix4(), r.wallsModels[i], nullptr, nullptr, &r.bakedLights[i]);
+					}
+				}
+				else
+				{
+					brush.setColor(r.getColor());
+					brush.fillModel(bbe::Matrix4(), r.floorModel  , nullptr, nullptr, nullptr, assetStore::Floor());
+					brush.fillModel(bbe::Matrix4(), r.ceilingModel, nullptr, nullptr, nullptr, assetStore::Ceiling());
+					brush.setColor(1, 1, 1, 1);
+					for (size_t i = 0; i < r.wallsModels.getLength(); i++)
+					{
+						brush.fillModel(bbe::Matrix4(), r.wallsModels[i], nullptr, nullptr, nullptr, assetStore::Wall());
+					}
+					for (const bbe::PointLight& light : r.lights)
+					{
+						brush.addLight(light);
+						lightCount++;
+					}
 				}
 			}
 			//std::cout << "Lights: " << lightCount << " Walls: " << wallCount << std::endl;
@@ -237,6 +260,7 @@ namespace br
 		virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 		{
 			drawImgui();
+			//brush.drawImage(0, 0, debugBake);
 
 			if (renderMode != 0)
 			{

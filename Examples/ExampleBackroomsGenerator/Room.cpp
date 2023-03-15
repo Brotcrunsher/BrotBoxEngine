@@ -51,6 +51,32 @@ bbe::Vector2i br::Room::getHashGridPosition(const bbe::Vector2i& pos)
 	return pos / gridSize;
 }
 
+bbe::Matrix4 br::Room::floorMatrix() const
+{
+	const bbe::Rectanglei& bounding = boundingBox;
+	bbe::Vector3 translationVec = bbe::Vector3(bounding.x + bounding.width / 2.f, bounding.y + bounding.height / 2.f, 0);
+	bbe::Matrix4 translation = bbe::Matrix4::createTranslationMatrix(translationVec);
+	bbe::Matrix4 scale = bbe::Matrix4::createScaleMatrix({ (float)bounding.width, (float)bounding.height, 1 });
+	return translation * scale;
+}
+
+bbe::Matrix4 br::Room::ceilingMatrix() const
+{
+	const bbe::Rectanglei& bounding = boundingBox;
+	bbe::Vector3 translationVec = bbe::Vector3(bounding.x + bounding.width / 2.f, bounding.y + bounding.height / 2.f, 0);
+	translationVec.z = 2.5f;
+	bbe::Matrix4 translation = bbe::Matrix4::createTranslationMatrix(translationVec);
+	bbe::Matrix4 scale = bbe::Matrix4::createScaleMatrix({ (float)bounding.width, (float)bounding.height, 1 });
+	bbe::Matrix4 rotationMat = bbe::Matrix4::createRotationMatrix(bbe::Math::PI, bbe::Vector3(1, 0, 0));
+
+	return translation * rotationMat * scale;
+}
+
+bbe::Color br::Room::getColor() const
+{
+	return bbe::Color::HSVtoRGB(hue, saturation, value);
+}
+
 bool br::Gate::operator==(const Gate& other) const
 {
 	return this->ownGatePos      == other.ownGatePos 

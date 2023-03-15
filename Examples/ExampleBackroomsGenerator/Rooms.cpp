@@ -421,18 +421,27 @@ void br::Rooms::connectGates(size_t roomi)
 		}
 	}
 
+	{
+		bbe::MeshBuilder mb;
+		mb.addRectangle(r.floorMatrix());
+		r.floorModel = mb.getModel();
+	}
+	{
+		bbe::MeshBuilder mb;
+		mb.addRectangle(r.ceilingMatrix());
+		r.ceilingModel = mb.getModel();
+	}
+
 	bbe::List<bbe::Rectanglei> rects = r.walkable.getAllBiggestRects(false);
-	bbe::List<bbe::Cube> walls;
 	for (const bbe::Rectanglei& rect : rects)
 	{
 		bbe::Vector3 coord = bbe::Vector3(rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f, 1.25f);
 		coord.x += r.boundingBox.x;
 		coord.y += r.boundingBox.y;
-		walls.add(bbe::Cube(coord, bbe::Vector3(rect.width, rect.height, 2.5f)));
+		bbe::MeshBuilder mb;
+		mb.addCube(bbe::Cube(coord, bbe::Vector3(rect.width, rect.height, 2.5f)));
+		r.wallsModels.add(mb.getModel());
 	}
-	bbe::MeshBuilder mb;
-	mb.addCubes(walls);
-	r.wallsModel = mb.getModel();
 
 	for (int32_t i = 2; i < r.boundingBox.width - 2; i++)
 	{
@@ -446,6 +455,47 @@ void br::Rooms::connectGates(size_t roomi)
 				r.lights.add(pl);
 			}
 		}
+	}
+}
+
+void br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling)
+{
+	if (rooms[roomi].state < RoomGenerationState::gatesConnected) connectGates(roomi);
+	if (rooms[roomi].state != RoomGenerationState::gatesConnected && rooms[roomi].state != RoomGenerationState::baking) return;
+	rooms[roomi].state = RoomGenerationState::baking;
+
+	// Making sure all neighbors lights have been created.
+	for (size_t i = 0; i<rooms[roomi].neighbors.getLength(); i++)
+	{
+		const Neighbor& n = rooms[roomi].neighbors[i];
+		connectGates(n.neighborId);
+	}
+	Room& r = rooms[roomi];
+
+	bbe::List<bbe::PointLight> lights = r.lights;
+	for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
+	{
+		const Neighbor& n = rooms[roomi].neighbors[i];
+		lights.addList(rooms[n.neighborId].lights);
+	}
+	// TODO!
+	if (r.bakedCeiling.isLoaded() == false)
+	{
+		r.bakedCeiling = game->bakeLights(bbe::Matrix4(), r.ceilingModel, nullptr, nullptr, nullptr, shaderCeiling, r.getColor(), { 1024, 1024 }, lights);
+	}
+	else if (r.bakedFloor.isLoaded() == false)
+	{
+		r.bakedFloor = game->bakeLights(bbe::Matrix4(), r.floorModel, nullptr, nullptr, nullptr, shaderFloor, r.getColor(), { 1024, 1024 }, lights);
+	}
+	else if (rooms[roomi].wallsModels.getLength() == rooms[roomi].bakedLights.getLength())
+	{
+		// Must happen at the start rather than the end because we could have 0 walls.
+		rooms[roomi].state = RoomGenerationState::lightsBaked;
+		return;
+	}
+	else
+	{
+		r.bakedLights.add(game->bakeLights(bbe::Matrix4(), r.wallsModels[r.bakedLights.getLength()], nullptr, nullptr, nullptr, shaderWall, { 1, 1, 1, 1 }, { 1024, 1024 }, lights));
 	}
 }
 
@@ -484,6 +534,34 @@ int32_t br::Rooms::getRoomIndexAtPoint(const bbe::Vector2i& position, int32_t ig
 	}
 
 	return -1;
+}
+
+size_t br::Rooms::bakeAtPoint(const bbe::Vector2i& position, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling)
+{
+	size_t roomi = generateAtPoint(position);
+	bakeLights(roomi, game, shaderFloor, shaderWall, shaderCeiling);
+	return roomi;
+}
+
+void br::Rooms::propagateSingleBakeAtPoint(const bbe::Vector2i& position, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling)
+{
+	size_t roomi = generateAtPoint(position);
+	if (rooms[roomi].state < RoomGenerationState::lightsBaked)
+	{
+		bakeLights(roomi, game, shaderFloor, shaderWall, shaderCeiling);
+	}
+	else
+	{
+		for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
+		{
+			const Neighbor& n = rooms[roomi].neighbors[i];
+			if (rooms[n.neighborId].state < RoomGenerationState::lightsBaked)
+			{
+				bakeLights(n.neighborId, game, shaderFloor, shaderWall, shaderCeiling);
+				return;
+			}
+		}
+	}
 }
 
 void br::Rooms::addRoom(const bbe::Rectanglei& bounding)
