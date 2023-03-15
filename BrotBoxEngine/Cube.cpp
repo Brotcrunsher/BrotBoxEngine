@@ -178,49 +178,44 @@ void bbe::Cube::getVertices(bbe::List<bbe::Vector3>& outVertices) const
 bbe::List<bbe::PosNormalPair> bbe::Cube::getRenderVerticesDefault()
 {
 	return {
-		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, 0, -1), Vector2(1.f/3.f, 0.f/3.f)},
-		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0, 0, -1), Vector2(1.f/3.f, 1.f/3.f)},
-		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0, 0, -1), Vector2(0.f/3.f, 1.f/3.f)},
-		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, 0, -1), Vector2(0.f/3.f, 0.f/3.f)},
+		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, 0, -1), Vector2(0.30f, 0.00f)},
+		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0, 0, -1), Vector2(0.30f, 0.30f)},
+		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0, 0, -1), Vector2(0.00f, 0.30f)},
+		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, 0, -1), Vector2(0.00f, 0.00f)},
 
-		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, 0,  1), Vector2(2.f/3.f, 0.f/3.f)},
-		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0, 0,  1), Vector2(2.f/3.f, 1.f/3.f)},
-		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0, 0,  1), Vector2(1.f/3.f, 1.f/3.f)},
-		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, 0,  1), Vector2(1.f/3.f, 0.f/3.f)},
+		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, 0,  1), Vector2(0.65f, 0.00f)},
+		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0, 0,  1), Vector2(0.65f, 0.30f)},
+		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0, 0,  1), Vector2(0.35f, 0.30f)},
+		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, 0,  1), Vector2(0.35f, 0.00f)},
 
-		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, -1, 0), Vector2(1.f/3.f, 1.f/3.f)},
-		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, -1, 0), Vector2(1.f/3.f, 2.f/3.f)},
-		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, -1, 0), Vector2(0.f/3.f, 2.f/3.f)},
-		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, -1, 0), Vector2(0.f/3.f, 1.f/3.f)},
+		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, -1, 0), Vector2(0.30f, 0.35f)},
+		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, -1, 0), Vector2(0.30f, 0.65f)},
+		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, -1, 0), Vector2(0.00f, 0.65f)},
+		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, -1, 0), Vector2(0.00f, 0.35f)},
 
-		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0,  1, 0), Vector2(2.f/3.f, 0.f/3.f)},
-		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0,  1, 0), Vector2(2.f/3.f, 1.f/3.f)},
-		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0,  1, 0), Vector2(1.f/3.f, 1.f/3.f)},
-		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0,  1, 0), Vector2(1.f/3.f, 0.f/3.f)},
+		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0,  1, 0), Vector2(0.65f, 0.35f)},
+		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0,  1, 0), Vector2(0.65f, 0.65f)},
+		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0,  1, 0), Vector2(0.35f, 0.65f)},
+		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0,  1, 0), Vector2(0.35f, 0.35f)},
 
-		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(-1, 0, 0), Vector2(1.f/3.f, 0.f/3.f)},
-		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(-1, 0, 0), Vector2(1.f/3.f, 1.f/3.f)},
-		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(-1, 0, 0), Vector2(0.f/3.f, 1.f/3.f)},
-		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(-1, 0, 0), Vector2(0.f/3.f, 0.f/3.f)},
+		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(-1, 0, 0), Vector2(0.30f, 0.70f)},
+		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(-1, 0, 0), Vector2(0.30f, 1.00f)},
+		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(-1, 0, 0), Vector2(0.00f, 1.00f)},
+		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(-1, 0, 0), Vector2(0.00f, 0.70f)},
 
-		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3( 1, 0, 0), Vector2(2.f/3.f, 2.f/3.f)},
-		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3( 1, 0, 0), Vector2(2.f/3.f, 3.f/3.f)},
-		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3( 1, 0, 0), Vector2(1.f/3.f, 3.f/3.f)},
-		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3( 1, 0, 0), Vector2(1.f/3.f, 2.f/3.f)},
+		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3( 1, 0, 0), Vector2(0.65f, 0.70f)},
+		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3( 1, 0, 0), Vector2(0.65f, 1.00f)},
+		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3( 1, 0, 0), Vector2(0.35f, 1.00f)},
+		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3( 1, 0, 0), Vector2(0.35f, 0.70f)},
 	};
 }
 
 bbe::List<bbe::PosNormalPair> bbe::Cube::getRenderVertices() const
 {
-	bbe::List<bbe::PosNormalPair> retVal = getRenderVerticesDefault();
-	bbe::Matrix4 normalTransform = m_transform.toNormalTransform();
-	for (PosNormalPair& p : retVal)
-	{
-		p.pos = m_transform * p.pos;
-		p.normal = normalTransform * p.normal;
-		// TODO: Probably the UV-Coordinates should also be transformed somehow?
-	}
+	bbe::List<bbe::PosNormalPair> retVal =  getRenderVerticesDefault();
+	bbe::PosNormalPair::transform(retVal, m_transform);
 	return retVal;
+
 }
 
 bbe::List<uint32_t> bbe::Cube::getRenderIndicesDefault()
