@@ -23,6 +23,8 @@ namespace bbe
 			: r(r), g(g), b(b), a(a)
 		{}
 
+		static Color white();
+
 		bool operator== (const bbe::Color& other) const;
 		bool operator!= (const bbe::Color& other) const;
 

@@ -45,6 +45,11 @@ bbe::Color bbe::Color::HSVtoRGB(float h, float s, float v)
 	}
 }
 
+bbe::Color bbe::Color::white()
+{
+	return Color(1, 1, 1, 1);
+}
+
 bool bbe::Color::operator==(const Color& other) const
 {
 	return r == other.r && g == other.g && b == other.b && a == other.a;
