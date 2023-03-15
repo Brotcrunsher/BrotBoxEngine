@@ -2,6 +2,7 @@
 
 #include "../BBE/Model.h"
 #include "../BBE/Cube.h"
+#include "../BBE/Matrix4.h"
 
 namespace bbe
 {
@@ -11,11 +12,14 @@ namespace bbe
 		bbe::Model m_model;
 		uint32_t meshes = 0;
 
+		void addElement(bbe::List<PosNormalPair>& vertices, bbe::List<uint32_t>& indices);
+
 	public:
 		MeshBuilder();
 
 		void addCube(const bbe::Cube& cube);
 		void addCubes(const bbe::List<Cube>& cubes);
+		void addRectangle(const bbe::Matrix4& transform);
 
 		bbe::Model getModel();
 	};
