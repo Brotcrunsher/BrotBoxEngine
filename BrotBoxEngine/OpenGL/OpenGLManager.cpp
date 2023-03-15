@@ -210,9 +210,9 @@ void bbe::INTERNAL::openGl::Framebuffer::clearTextures()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void bbe::INTERNAL::openGl::Framebuffer::bind()
+void bbe::INTERNAL::openGl::Framebuffer::bind() // TODO Rename this - this doesn't "bind" the framebuffer, but the textures.
 {
-	for (GLenum i = 0 ; i<(GLenum)textures.getLength(); i++)
+	for (GLenum i = 0; i < (GLenum)textures.getLength(); i++)
 	{
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, textures[i]);
@@ -222,7 +222,7 @@ void bbe::INTERNAL::openGl::Framebuffer::bind()
 void bbe::INTERNAL::openGl::Framebuffer::finalize()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-	for (GLenum i = 0; i<(GLenum)textures.getLength(); i++)
+	for (GLenum i = 0; i < (GLenum)textures.getLength(); i++)
 	{
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, textures[i], 0);
 	}
@@ -259,7 +259,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShade
 		"	gl_Position = vec4(pos, 0.0, 1.0);"
 		"   passColor = inColor;"
 		"}";
-	
+
 	char const* fragmentShaderSource =
 		"flat in vec4 passColor;"
 		"out vec4 outColor;"
@@ -340,17 +340,10 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexSh
 	return program;
 }
 
-static GLint inColorPos3dMrt = 0;
-static GLint viewPos3dMrt = 0;
-static GLint projectionPos3dMrt = 0;
-static GLint modelPos3dMrt = 0;
-static GLint albedoTexMrt = 0;
-static GLint normalsTexMrt = 0;
-static GLint emissionsTexMrt = 0;
-bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersMrt()
+bbe::INTERNAL::openGl::MrtProgram bbe::INTERNAL::openGl::OpenGLManager::init3dShadersMrt(bool baking)
 {
-	Program program;
-	char const* vertexShaderSrc =
+	MrtProgram program;
+	bbe::String vertexShaderSrc =
 		"in vec3 inPos;"
 		"in vec3 inNormal;"
 		"in vec2 inUvCoord;"
@@ -359,14 +352,26 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"out vec2 passUvCoord;"
 		"void main()"
 		"{"
-		"   vec4 worldPos = model * vec4(inPos, 1.0);"
-		"   gl_Position = projection * view * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
-		"   passPos = view * worldPos;"
-		"   passNormal = view * model * vec4(inNormal, 0.0);"
-		"   passUvCoord = vec2(inUvCoord.x, 1.0 - inUvCoord.y);" //TODO: wtf? Where does that y flip come from?
-		"}";
+		"   vec4 worldPos = model * vec4(inPos, 1.0);";
+	if (!baking)
+	{
+		vertexShaderSrc +=
+			"   gl_Position = projection * view * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
+			"   passPos = view * worldPos;"
+			"   passNormal = view * model * vec4(inNormal, 0.0);"
+			"   passUvCoord = inUvCoord;";
+	}
+	else
+	{
+		vertexShaderSrc +=
+			"   gl_Position = vec4(inUvCoord * 2.0 - vec2(1, 1), 0.0, 1.0);"
+			"   passPos = worldPos;"
+			"   passNormal = model * vec4(inNormal, 0.0);"
+			"   passUvCoord = inUvCoord;";
+	}
+	vertexShaderSrc += "}";
 
-	char const* fragmentShaderSource =
+	bbe::String fragmentShaderSource =
 		"in vec4 passPos;"
 		"in vec4 passNormal;"
 		"in vec2 passUvCoord;"
@@ -377,22 +382,27 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"layout (location = 4) out vec4 outEmission;"
 		"void main()"
 		"{"
-		"   outPos    = passPos;"
-		"   outNormal = vec4(normalize(passNormal.xyz + (view * model * vec4(texture(normals, passUvCoord).xyz, 0.0)).xyz), 1.0);" // TODO HACK: Setting the alpha component to 1 to avoid it being discarded from the Texture. Can we do better?
+		"   outPos    = passPos;";
+	if (!baking)
+		fragmentShaderSource += "   outNormal = vec4(normalize(passNormal.xyz + (view * model * vec4(texture(normals, passUvCoord).xyz, 0.0)).xyz), 1.0);"; // TODO HACK: Setting the alpha component to 1 to avoid it being discarded from the Texture. Can we do better?
+	else
+		fragmentShaderSource += "   outNormal = vec4(normalize(passNormal.xyz + (       model * vec4(texture(normals, passUvCoord).xyz, 0.0)).xyz), 1.0);"; // TODO HACK: Setting the alpha component to 1 to avoid it being discarded from the Texture. Can we do better?
+
+	fragmentShaderSource +=
 		"   outAlbedo = inColor * texture(albedo, passUvCoord);"
 		"   outSpecular = vec4(10.0, 1.0, 0.0, 1.0);"
 		"   outEmission = texture(emissions, passUvCoord);"
 		"}";
 
-	program.addShaders(vertexShaderSrc, fragmentShaderSource,
+	program.addShaders(vertexShaderSrc.getRaw(), fragmentShaderSource.getRaw(),
 		{
-			{UT::UT_vec4,      "inColor"   , &inColorPos3dMrt   },
-			{UT::UT_mat4,      "view"      , &viewPos3dMrt	    },
-			{UT::UT_mat4,      "projection", &projectionPos3dMrt},
-			{UT::UT_mat4,      "model"	   , &modelPos3dMrt	    },
-			{UT::UT_sampler2D, "albedo"    , &albedoTexMrt      },
-			{UT::UT_sampler2D, "normals"   , &normalsTexMrt     },
-			{UT::UT_sampler2D, "emissions" , &emissionsTexMrt   },
+			{UT::UT_vec4,      "inColor"   , &program.inColorPos3dMrt   },
+			{UT::UT_mat4,      "view"      , &program.viewPos3dMrt	    },
+			{UT::UT_mat4,      "projection", &program.projectionPos3dMrt},
+			{UT::UT_mat4,      "model"	   , &program.modelPos3dMrt	    },
+			{UT::UT_sampler2D, "albedo"    , &program.albedoTexMrt      },
+			{UT::UT_sampler2D, "normals"   , &program.normalsTexMrt     },
+			{UT::UT_sampler2D, "emissions" , &program.emissionsTexMrt   },
 		});
 
 	return program;
@@ -494,29 +504,46 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dPostP
 	return program;
 }
 
-static GLint gPositionPos3dLight = 0;
-static GLint gNormalPos3dLight = 0;
-static GLint gAlbedoSpecPos3dLight = 0;
-static GLint gSpecular3dLight = 0;
-static GLint lightPosPos3dLight = 0;
-static GLint falloffModePos3dLight = 0;
-static GLint lightColorPos3dLight = 0;
-static GLint specularColorPos3dLight = 0;
-static GLint projectionPos3dLight = 0;
-static GLint lightRadiusPos = 0;
-static GLint screenSize3dLight = 0;
-bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersLight()
+bbe::INTERNAL::openGl::LightProgram bbe::INTERNAL::openGl::OpenGLManager::init3dShadersLight(bool baking)
 {
-	Program program;
-	char const* vertexShaderSrc =
-		"in vec3 inPos;"
-		"void main()"
-		"{"
-		"   vec4 worldPos = vec4(lightPos.xyz, 1.0) + lightRadius * vec4(inPos, 0.0);"
-		"   gl_Position = projection * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
-		"}";
+	LightProgram program;
+	char const* vertexShaderSrc;
 
-	char const* fragmentShaderSource =
+	if(!baking)
+	{
+		vertexShaderSrc =
+			"in vec3 inPos;"
+			"void main()"
+			"{"
+			"   vec4 worldPos = vec4(lightPos.xyz, 1.0) + lightRadius * vec4(inPos, 0.0);"
+			"   gl_Position = projection * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
+			"}";
+	}
+	else
+	{
+		vertexShaderSrc =
+			"void main()"
+			"{"
+			"   if(gl_VertexID == 0)"
+			"   {"
+			"       gl_Position = vec4(-1.0, -1.0, 0.0, 1.0);"
+			"   }"
+			"   if(gl_VertexID == 1)"
+			"   {"
+			"       gl_Position = vec4(-1.0, 1.0, 0.0, 1.0);"
+			"   }"
+			"   if(gl_VertexID == 2)"
+			"   {"
+			"       gl_Position = vec4(1.0, 1.0, 0.0, 1.0);"
+			"   }"
+			"   if(gl_VertexID == 3)"
+			"   {"
+			"       gl_Position = vec4(1.0, -1.0, 0.0, 1.0);"
+			"   }"
+			"}";
+	}
+
+	bbe::String fragmentShaderSource =
 		"#define FALLOFF_NONE    0\n"
 		"#define FALLOFF_LINEAR  1\n"
 		"#define FALLOFF_SQUARED 2\n"
@@ -555,55 +582,74 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   }"
 		"   if(lightPower < 0.001) discard;"
 		"   vec3 albedo = texture(gAlbedoSpec, uvCoord).xyz;"
-		"   vec3 toCamera = -pos;"
 		"   vec3 L = normalize(toLight);"
-		"   vec3 diffuse = max(dot(normal, L), 0.0) * (albedo * lightColor.xyz) * lightPower;"
-		"   vec3 R = reflect(-L, normal);"
-		"   vec3 V = normalize(toCamera);"
-		"   vec3 specStats = texture(gSpecular, uvCoord).xyz;"
-		"   vec3 specular = pow(max(dot(R, V), 0.0), specStats.x) * specularColor.xyz * lightPower * specStats.y;"
-		"   outColor = vec4(diffuse + specular * 0.1 + vec3(0.00), 1.0);"
-		"}";
-	program.addShaders(vertexShaderSrc, fragmentShaderSource,
+		"   vec3 diffuse = max(dot(normal, L), 0.0) * (albedo * lightColor.xyz) * lightPower;";
+		if(!baking)
 		{
-			{UT::UT_sampler2D, "gPosition"	  , &gPositionPos3dLight     },
-			{UT::UT_sampler2D, "gNormal"	  , &gNormalPos3dLight       },
-			{UT::UT_sampler2D, "gAlbedoSpec"  , &gAlbedoSpecPos3dLight   },
-			{UT::UT_sampler2D, "gSpecular"    , &gSpecular3dLight        },
-			{UT::UT_mat4     , "projection"   , &projectionPos3dLight    },
-			{UT::UT_vec2     , "screenSize",    &screenSize3dLight       },
+			fragmentShaderSource +=
+				"   vec3 R = reflect(-L, normal);"
+				"   vec3 toCamera = -pos;"
+				"   vec3 V = normalize(toCamera);"
+				"   vec3 specStats = texture(gSpecular, uvCoord).xyz;"
+				"   vec3 specular = pow(max(dot(R, V), 0.0), specStats.x) * specularColor.xyz * lightPower * specStats.y;"
+				"   outColor = vec4(diffuse + specular * 0.1, 1.0);"
+				"}";
+		}
+		else
+		{
+			fragmentShaderSource +=
+				"   outColor = vec4(diffuse, 1.0);"
+				"}";
+		}
+	program.addShaders(vertexShaderSrc, fragmentShaderSource.getRaw(),
+		{
+			{UT::UT_sampler2D, "gPosition"	  , &program.gPositionPos3dLight     },
+			{UT::UT_sampler2D, "gNormal"	  , &program.gNormalPos3dLight       },
+			{UT::UT_sampler2D, "gAlbedoSpec"  , &program.gAlbedoSpecPos3dLight   },
+			{UT::UT_sampler2D, "gSpecular"    , &program.gSpecular3dLight        },
+			{UT::UT_mat4     , "projection"   , &program.projectionPos3dLight    },
+			{UT::UT_vec2     , "screenSize"   , &program.screenSize3dLight       },
 
-			{UT::UT_vec4     , "lightColor"	  , &lightColorPos3dLight    },
-			{UT::UT_vec4     , "specularColor", &specularColorPos3dLight },
-			{UT::UT_vec4     , "lightPos"	  , &lightPosPos3dLight      },
-			{UT::UT_float    , "lightRadius"  , &lightRadiusPos          },
-			{UT::UT_int      , "falloffMode"  , &falloffModePos3dLight   },
+			{UT::UT_vec4     , "lightColor"	  , &program.lightColorPos3dLight    },
+			{UT::UT_vec4     , "specularColor", &program.specularColorPos3dLight },
+			{UT::UT_vec4     , "lightPos"	  , &program.lightPosPos3dLight      },
+			{UT::UT_float    , "lightRadius"  , &program.lightRadiusPos          },
+			{UT::UT_int      , "falloffMode"  , &program.falloffModePos3dLight   },
 		});
 
-	program.uniform1i(gPositionPos3dLight, 0);
-	program.uniform1i(gNormalPos3dLight, 1);
-	program.uniform1i(gAlbedoSpecPos3dLight, 2);
-	program.uniform1i(gSpecular3dLight, 3);
+	program.uniform1i(program.gPositionPos3dLight, 0);
+	program.uniform1i(program.gNormalPos3dLight, 1);
+	program.uniform1i(program.gAlbedoSpecPos3dLight, 2);
+	program.uniform1i(program.gSpecular3dLight, 3);
 
-	program.uniform4f(lightPosPos3dLight, 0.f, 0.f, 0.f, 0.f);
-	program.uniform1i(falloffModePos3dLight, 0);
-	program.uniform4f(lightColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
-	program.uniform4f(specularColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
-	program.uniform2f(screenSize3dLight, (float)m_windowWidth, (float)m_windowHeight);
+	program.uniform4f(program.lightPosPos3dLight, 0.f, 0.f, 0.f, 0.f);
+	program.uniform1i(program.falloffModePos3dLight, 0);
+	program.uniform4f(program.lightColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
+	program.uniform4f(program.specularColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
+	program.uniform2f(program.screenSize3dLight, (float)m_windowWidth, (float)m_windowHeight);
 	return program;
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::initGeometryBuffer()
+bbe::INTERNAL::openGl::Framebuffer bbe::INTERNAL::openGl::OpenGLManager::getGeometryBuffer(uint32_t width, uint32_t height, bool baking) const
+{
+	Framebuffer fb(width, height);
+	fb.addTexture(); // Positions
+	fb.addTexture(); // Normals
+	fb.addTexture(); // Albedo
+	fb.addTexture(); // Specular
+	fb.addTexture(); // Emission
+	if (!baking)
+	{
+		fb.addDepthBuffer();
+	}
+	fb.finalize();
+	return fb;
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::initFrameBuffers()
 {
 	mrtFb.destroy(); // For resizing
-	mrtFb = Framebuffer(m_windowWidth, m_windowHeight);
-	mrtFb.addTexture(); // Positions
-	mrtFb.addTexture(); // Normals
-	mrtFb.addTexture(); // Albedo
-	mrtFb.addTexture(); // Specular
-	mrtFb.addTexture(); // Emission
-	mrtFb.addDepthBuffer();
-	mrtFb.finalize();
+	mrtFb = getGeometryBuffer(m_windowWidth, m_windowHeight, false);
 
 	postProcessingFb.destroy();
 	postProcessingFb = Framebuffer(m_windowWidth, m_windowHeight);
@@ -611,10 +657,27 @@ void bbe::INTERNAL::openGl::OpenGLManager::initGeometryBuffer()
 	postProcessingFb.finalize();
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader)
+void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, GLuint framebuffer, bool baking, const bbe::Color& bakingColor)
+{
+	bbe::INTERNAL::openGl::OpenGLModel* ogm = nullptr;
+	if (model.m_prendererData == nullptr)
+	{
+		ogm = new bbe::INTERNAL::openGl::OpenGLModel(model);
+	}
+	else
+	{
+		ogm = (bbe::INTERNAL::openGl::OpenGLModel*)model.m_prendererData.get();
+	}
+	fillInternalMesh(&(transform[0]), ogm->getIbo(), ogm->getVbo(), ogm->getAmountOfIndices(), albedo, normals, emissions, shader, framebuffer, baking, bakingColor);
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, GLuint framebuffer, bool baking, const bbe::Color& bakingColor)
 {
 	GLuint program = 0;
 	GLint modelPos = 0;
+	GLint albedoTex = 0;
+	GLint normalsTex = 0;
+	GLint emissionsTex = 0;
 	bbe::INTERNAL::openGl::OpenGLFragmentShader* fs = nullptr;
 	if (shader)
 	{
@@ -627,32 +690,69 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 			fs = new bbe::INTERNAL::openGl::OpenGLFragmentShader(*shader);
 		}
 
-		program = fs->program3d;
-		modelPos = fs->modelPos;
-		if (fs->errorLog3d.getLength() > 0)
+		if (!baking)
 		{
-			std::cout << fs->errorLog3d << std::endl;
-			fs->errorLog3d = "";
+			program = fs->threeD.program;
+			modelPos = fs->threeD.modelPos;
+			if (fs->threeD.errorLog.getLength() > 0)
+			{
+				std::cout << fs->threeD.errorLog << std::endl;
+				fs->threeD.errorLog = "";
+			}
+		}
+		else
+		{
+			program = fs->threeDBake.program;
+			modelPos = fs->threeDBake.modelPos;
+			if (fs->threeDBake.errorLog.getLength() > 0)
+			{
+				std::cout << fs->threeDBake.errorLog << std::endl;
+				fs->threeDBake.errorLog = "";
+			}
 		}
 	}
 	else
 	{
-		program = m_program3dMrt.program;
-		modelPos = modelPos3dMrt;
+		if (!baking)
+		{
+			program = m_program3dMrt.program;
+			modelPos = m_program3dMrt.modelPos3dMrt;
+			albedoTex = m_program3dMrt.albedoTexMrt;
+			normalsTex = m_program3dMrt.normalsTexMrt;
+			emissionsTex = m_program3dMrt.emissionsTexMrt;
+		}
+		else
+		{
+			program = m_program3dMrtBaking.program;
+			modelPos = m_program3dMrtBaking.modelPos3dMrt;
+			albedoTex = m_program3dMrtBaking.albedoTexMrt;
+			normalsTex = m_program3dMrtBaking.normalsTexMrt;
+			emissionsTex = m_program3dMrtBaking.emissionsTexMrt;
+		}
 	}
 
 	glUseProgram(program);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, mrtFb.framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
 	glUniformMatrix4fv(modelPos, 1, GL_FALSE, modelMatrix);
 	if (fs)
 	{
-		glUniformMatrix4fv(fs->projectionPos, 1, GL_FALSE, &m_projection[0]);
-		glUniformMatrix4fv(fs->viewPos      , 1, GL_FALSE, &m_view[0]);
-		glUniform4f(fs->color3DPos, m_color3d.r, m_color3d.g, m_color3d.b, m_color3d.a);
+		if (baking)
+		{
+			bbe::Matrix4 identiy;
+			glUniformMatrix4fv(fs->threeDBake.projectionPos, 1, GL_FALSE, &identiy[0]);
+			glUniformMatrix4fv(fs->threeDBake.viewPos, 1, GL_FALSE, &identiy[0]);
+			glUniform4f(fs->threeDBake.color3DPos, bakingColor.r, bakingColor.g, bakingColor.b, bakingColor.a);
+		}
+		else
+		{
+			glUniformMatrix4fv(fs->threeD.projectionPos, 1, GL_FALSE, &m_projection[0]);
+			glUniformMatrix4fv(fs->threeD.viewPos, 1, GL_FALSE, &m_view[0]);
+			glUniform4f(fs->threeD.color3DPos, m_color3d.r, m_color3d.g, m_color3d.b, m_color3d.a);
+		}
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -667,7 +767,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 	glVertexAttribDivisor(normalPosition, 0);
 
 	GLint uvPosition = glGetAttribLocation(program, "inUvCoord");
-	glVertexAttribPointer(uvPosition, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(6 * sizeof(float)));
+	glVertexAttribPointer(uvPosition, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(uvPosition);
 	glVertexAttribDivisor(uvPosition, 0);
 
@@ -675,15 +775,15 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 	if (!normals) normals = &bbe::Image::black();
 	if (!emissions) emissions = &bbe::Image::black();
 
-	glUniform1i(albedoTexMrt, 0);
+	glUniform1i(albedoTex, 0);
 	glActiveTexture(GL_TEXTURE0 + 0);
 	glBindTexture(GL_TEXTURE_2D, toRendererData(*albedo)->tex);
 
-	glUniform1i(normalsTexMrt, 1);
+	glUniform1i(normalsTex, 1);
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, toRendererData(*normals)->tex);
 
-	glUniform1i(emissionsTexMrt, 2);
+	glUniform1i(emissionsTex, 2);
 	glActiveTexture(GL_TEXTURE0 + 2);
 	glBindTexture(GL_TEXTURE_2D, toRendererData(*emissions)->tex);
 
@@ -788,28 +888,40 @@ bbe::INTERNAL::openGl::OpenGLImage* bbe::INTERNAL::openGl::OpenGLManager::toRend
 	}
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& light)
+void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& light, bool baking, GLuint ibo)
 {
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, openGl::OpenGLSphere::getIbo());
+	if (!baking)
+	{
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, openGl::OpenGLSphere::getIbo());
+		glBindBuffer(GL_ARRAY_BUFFER, openGl::OpenGLSphere::getVbo());
+		GLint positionAttribute = glGetAttribLocation(m_program3dLight.program, "inPos");
+		glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+		glEnableVertexAttribArray(positionAttribute);
+		glVertexAttribDivisor(positionAttribute, 0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, openGl::OpenGLSphere::getVbo());
-	GLint positionAttribute = glGetAttribLocation(m_program3dLight.program, "inPos");
-	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
-	glEnableVertexAttribArray(positionAttribute);
-	glVertexAttribDivisor(positionAttribute, 0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+	else
+	{
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	LightProgram& program = baking ? m_program3dLightBaking : m_program3dLight;
+	program.setLightUniform(light, baking ? bbe::Matrix4() : m_view);
 
-	bbe::Vector4 p(light.pos, 1.0f);
-	p = m_view * p;
-	m_program3dLight.uniform4f(lightPosPos3dLight, p.x, p.y, p.z, light.lightStrength);
-	m_program3dLight.uniform1i(falloffModePos3dLight, (int)light.falloffMode);
-	m_program3dLight.uniform4f(lightColorPos3dLight, light.lightColor);
-	m_program3dLight.uniform4f(specularColorPos3dLight, light.specularColor);
-	m_program3dLight.uniform1f(lightRadiusPos, light.getLightRadius());
+	glDrawElements(GL_TRIANGLES, baking ? 6 : (GLsizei)openGl::OpenGLSphere::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+}
 
-
-	glDrawElements(GL_TRIANGLES, (GLsizei)openGl::OpenGLSphere::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t width, uint32_t height) const
+{
+	bbe::List<bbe::byte> colorFloatBuffer;
+	colorFloatBuffer.resizeCapacityAndLengthUninit(width * height * 4/*channels*/);
+	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, colorFloatBuffer.getRaw());
+	for (size_t i = 0; i < colorFloatBuffer.getLength(); i += 4)
+	{
+		colorFloatBuffer[i + 3] = 255;
+	}
+	return bbe::Image(width, height, colorFloatBuffer.getRaw(), bbe::ImageFormat::R8G8B8A8);
 }
 
 bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
@@ -835,11 +947,14 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 
 	m_program2d = init2dShaders();
 	m_program2dTex = init2dTexShaders();
-	m_program3dMrt = init3dShadersMrt();
+	m_program3dMrt = init3dShadersMrt(false);
 	m_program3dAmbient = init3dShadersAmbient();
 	m_programPostProcessing = init3dPostProcessing();
-	m_program3dLight = init3dShadersLight();
-	initGeometryBuffer();
+	m_program3dLight = init3dShadersLight(false);
+
+	m_program3dMrtBaking = init3dShadersMrt(true);
+	m_program3dLightBaking = init3dShadersLight(true);
+	initFrameBuffers();
 
 	OpenGLRectangle::init();
 	OpenGLCircle::init();
@@ -869,6 +984,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 	postProcessingFb.destroy();
 	m_program3dMrt.destroy();
 	m_programPostProcessing.destroy();
+	m_program3dLight.destroy();
+	m_program3dMrtBaking.destroy();
+	m_program3dLightBaking.destroy();
 	glDeleteBuffers(1, &m_imageUvBuffer);
 	m_program2dTex.destroy();
 	m_program2d.destroy();
@@ -903,7 +1021,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	for (size_t i = 0; i < pointLights.getLength(); i++)
 	{
 		const bbe::PointLight& l = pointLights[i];
-		drawLight(l);
+		drawLight(l, false);
 	}
 
 	m_programPostProcessing.use();
@@ -947,6 +1065,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
 	pointLights.clear();
 	m_color2d = bbe::Color(1, 1, 1, 1);
 	m_color3d = bbe::Color(1, 1, 1, 1);
+	glViewport(0, 0, m_windowWidth, m_windowHeight);
+	glScissor (0, 0, m_windowWidth, m_windowHeight);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::postDraw()
@@ -980,13 +1100,13 @@ void bbe::INTERNAL::openGl::OpenGLManager::resize(uint32_t width, uint32_t heigh
 	m_program2d.uniform2f(screenSizePos2d, (float)width, (float)height);
 	m_program2dTex.uniform2f(screenSizePos2dTex, (float)width, (float)height);
 	m_program3dAmbient.uniform2f(screenSizeAmbient, (float)width, (float)height);
-	m_program3dLight.uniform2f(screenSize3dLight, (float)width, (float)height);
+	m_program3dLight.uniform2f(m_program3dLight.screenSize3dLight, (float)width, (float)height);
 	m_programPostProcessing.uniform2f(screenSizePostProcessing, (float)width, (float)height);
 
 	m_windowWidth = width;
 	m_windowHeight = height;
 
-	initGeometryBuffer();
+	initFrameBuffers();
 	glViewport(0, 0, width, height);
 	glScissor(0, 0, width, height);
 }
@@ -1024,35 +1144,35 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 	{
 		fs = new bbe::INTERNAL::openGl::OpenGLFragmentShader(*shader);
 	}
-	GLuint program = fs->program2d;
+	GLuint program = fs->twoD.program;
 
-	GLint scalePosOffsetPos = fs->scalePosOffsetPos;
-	GLint rotationPos = fs->rotationPos;
+	GLint scalePosOffsetPos = fs->twoD.scalePosOffsetPos;
+	GLint rotationPos = fs->twoD.rotationPos;
 
-	if (fs->errorLog2d.getLength() > 0)
+	if (fs->twoD.errorLog.getLength() > 0)
 	{
-		std::cout << fs->errorLog2d << std::endl;
-		fs->errorLog2d = "";
+		std::cout << fs->twoD.errorLog << std::endl;
+		fs->twoD.errorLog = "";
 	}
 
 	glUseProgram(program);
-	
+
 	if (previousDrawCall2d != PreviousDrawCall2D::RECT_SHADER)
 	{
 		previousDrawCall2d = PreviousDrawCall2D::RECT_SHADER;
 		glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLRectangle::getIbo());
-	
+
 		GLint positionAttribute = glGetAttribLocation(program, "position");
 		glEnableVertexAttribArray(positionAttribute);
-	
+
 		glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
 		glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
 		glVertexAttribDivisor(positionAttribute, 0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	glUniform2f(fs->screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
+	glUniform2f(fs->twoD.screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
 	glUniform4f(scalePosOffsetPos, rect.width, rect.height, rect.x, rect.y);
 	glUniform1f(rotationPos, rotation);
 	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
@@ -1189,15 +1309,15 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 
 void bbe::INTERNAL::openGl::OpenGLManager::setColor3D(const bbe::Color& color)
 {
-	m_program3dMrt.uniform4f(inColorPos3dMrt, color);
+	m_program3dMrt.uniform4f(m_program3dMrt.inColorPos3dMrt, color);
 	m_color3d = color;
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos, const bbe::Matrix4& view, const bbe::Matrix4& projection)
 {
-	m_program3dMrt.uniformMatrix4fv(viewPos3dMrt, GL_FALSE, view);
-	m_program3dMrt.uniformMatrix4fv(projectionPos3dMrt, GL_FALSE, projection);
-	m_program3dLight.uniformMatrix4fv(projectionPos3dLight, GL_FALSE, projection);
+	m_program3dMrt.uniformMatrix4fv(m_program3dMrt.viewPos3dMrt, GL_FALSE, view);
+	m_program3dMrt.uniformMatrix4fv(m_program3dMrt.projectionPos3dMrt, GL_FALSE, projection);
+	m_program3dLight.uniformMatrix4fv(m_program3dLight.projectionPos3dLight, GL_FALSE, projection);
 	m_view = view;
 	m_projection = projection;
 	m_cameraPos = cameraPos;
@@ -1205,29 +1325,20 @@ void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos,
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)
 {
-	fillInternalMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getAmountOfIndices(), nullptr, nullptr, nullptr, nullptr);
+	fillInternalMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getAmountOfIndices(), nullptr, nullptr, nullptr, nullptr, mrtFb.framebuffer, false, bbe::Color::white());
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
 {
-	fillInternalMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getAmountOfIndices(), nullptr, nullptr, nullptr, nullptr);
+	fillInternalMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getAmountOfIndices(), nullptr, nullptr, nullptr, nullptr, mrtFb.framebuffer, false, bbe::Color::white());
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader)
 {
-	bbe::INTERNAL::openGl::OpenGLModel* ogm = nullptr;
-	if (model.m_prendererData == nullptr)
-	{
-		ogm = new bbe::INTERNAL::openGl::OpenGLModel(model);
-	}
-	else
-	{
-		ogm = (bbe::INTERNAL::openGl::OpenGLModel*)model.m_prendererData.get();
-	}
-	fillInternalMesh(&(transform[0]), ogm->getIbo(), ogm->getVbo(), ogm->getAmountOfIndices(), albedo, normals, emissions, shader);
+	fillModel(transform, model, albedo, normals, emissions, shader, mrtFb.framebuffer, false, bbe::Color::white());
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)
+void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, const bbe::Color& lightColor, const bbe::Color& specularColor, LightFalloffMode falloffMode)
 {
 	bbe::PointLight light(pos);
 	light.lightStrength = lightStrength;
@@ -1296,6 +1407,65 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiEndFrame()
 	ImGui_ImplOpenGL3_RenderDrawData(drawData);
 }
 
+bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, const bbe::Color& color, const bbe::Vector2i &resolution, const bbe::List<bbe::PointLight>& lights)
+{
+	Framebuffer geometryBuffer = getGeometryBuffer(resolution.x, resolution.y, true);
+	Framebuffer colorBuffer(resolution.x, resolution.y);
+	colorBuffer.addTexture();
+	colorBuffer.finalize();
+
+	glViewport(0, 0, resolution.x, resolution.y);
+	glScissor (0, 0, resolution.x, resolution.y);
+
+	// Pre draw
+	m_program3dMrtBaking.use();
+	glBindFramebuffer(GL_FRAMEBUFFER, geometryBuffer.framebuffer);
+	geometryBuffer.clearTextures();
+
+	// MRT Pass
+	m_program3dMrtBaking.use();
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	bbe::Matrix4 identity;
+	m_program3dMrtBaking.uniform4f(m_program3dMrtBaking.inColorPos3dMrt, color);
+	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.viewPos3dMrt, false, identity);
+	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.projectionPos3dMrt, false, identity);
+	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.modelPos3dMrt, false, transform);
+	fillModel(transform, model, albedo, normals, emissions, shader, geometryBuffer.framebuffer, true, color);
+
+	// Light Passes
+	m_program3dLightBaking.use();
+	m_program3dLightBaking.uniformMatrix4fv(m_program3dLightBaking.projectionPos3dLight, false, identity);
+	m_program3dLightBaking.uniform2f(m_program3dLightBaking.screenSize3dLight, resolution.x, resolution.y);
+	uint32_t indices[] = { 0, 3, 1, 1, 3, 2 };
+	GLuint ibo;
+	glGenBuffers(1, &ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices, GL_STATIC_DRAW);
+
+	geometryBuffer.bind();
+	glBindFramebuffer(GL_FRAMEBUFFER, colorBuffer.framebuffer);
+	colorBuffer.clearTextures();
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+	for (size_t i = 0; i < lights.getLength(); i++)
+	{
+		const bbe::PointLight& l = lights[i];
+		drawLight(l, true, ibo);
+	}
+	glDeleteBuffers(1, &ibo);
+
+	// Read the frambuffer to image
+	bbe::Image retVal = framebufferToImage(resolution.x, resolution.y);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	geometryBuffer.destroy();
+	colorBuffer.destroy();
+
+	return retVal;
+}
+
 bool bbe::INTERNAL::openGl::OpenGLManager::isReadyToDraw() const
 {
 	return true;
@@ -1335,4 +1505,15 @@ bbe::String bbe::INTERNAL::openGl::UniformVariable::toString() const
 	retVal += ";";
 
 	return retVal;
+}
+
+void bbe::INTERNAL::openGl::LightProgram::setLightUniform(const bbe::PointLight& light, const bbe::Matrix4& view)
+{
+	bbe::Vector4 p(light.pos, 1.0f);
+	p = view * p;
+	uniform4f(lightPosPos3dLight, p.x, p.y, p.z, light.lightStrength);
+	uniform1i(falloffModePos3dLight, (int)light.falloffMode);
+	uniform4f(lightColorPos3dLight, light.lightColor);
+	uniform4f(specularColorPos3dLight, light.specularColor);
+	uniform1f(lightRadiusPos, light.getLightRadius());
 }

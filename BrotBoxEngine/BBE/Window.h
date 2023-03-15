@@ -9,6 +9,7 @@
 #include "../BBE/Mouse.h"
 #include "../BBE/Hash.h"
 #include "../BBE/CursorMode.h"
+#include "../BBE/Model.h"
 
 
 namespace bbe
@@ -77,6 +78,10 @@ namespace bbe
 		void executeCloseListeners();
 		void registerFrameStartListener(const std::function<void()>& listener);
 		void executeFrameStartListeneres();
+
+#ifdef BBE_RENDERER_OPENGL
+		bbe::Image bakeLights(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, const bbe::Color& color, const bbe::Vector2i& resolution, const bbe::List<bbe::PointLight>& lights);
+#endif
 	};
 
 

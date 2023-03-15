@@ -13,23 +13,38 @@ namespace bbe
 		{
 			struct OpenGLFragmentShader : public AutoRefCountable
 			{
-				GLuint vertex2d = 0;
-				GLuint fragment2d = 0;
-				GLuint program2d = 0;
-				GLint screenSizePos = 0;
-				GLint scalePosOffsetPos = 0;
-				GLint rotationPos = 0;
+				struct ShaderProgramTripple
+				{
+					GLuint vertex = 0;
+					GLuint fragment = 0;
+					GLuint program = 0;
+					bbe::String errorLog;
 
-				GLuint vertex3d = 0;
-				GLuint fragment3d = 0;
-				GLuint program3d = 0;
-				GLint viewPos = 0;
-				GLint projectionPos = 0;
-				GLint modelPos = 0;
-				GLint color3DPos = 0;
+					void destroy();
+				};
 
-				bbe::String errorLog2d;
-				bbe::String errorLog3d;
+				struct TwoD : ShaderProgramTripple
+				{
+					GLint screenSizePos = 0;
+					GLint scalePosOffsetPos = 0;
+					GLint rotationPos = 0;
+
+					void determinePositions();
+				};
+
+				struct ThreeD : ShaderProgramTripple
+				{
+					GLint viewPos = 0;
+					GLint projectionPos = 0;
+					GLint modelPos = 0;
+					GLint color3DPos = 0;
+
+					void determinePositions();
+				};
+
+				TwoD twoD;
+				ThreeD threeD;
+				ThreeD threeDBake;
 
 				OpenGLFragmentShader(const bbe::FragmentShader& shader);
 				~OpenGLFragmentShader();

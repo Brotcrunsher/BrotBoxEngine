@@ -68,6 +68,34 @@ namespace bbe
 				void uniformMatrix4fv(GLint pos, GLboolean transpose, const bbe::Matrix4& val);
 			};
 
+			struct MrtProgram : public Program
+			{
+				GLint inColorPos3dMrt = 0;
+				GLint viewPos3dMrt = 0;
+				GLint projectionPos3dMrt = 0;
+				GLint modelPos3dMrt = 0;
+				GLint albedoTexMrt = 0;
+				GLint normalsTexMrt = 0;
+				GLint emissionsTexMrt = 0;
+			};
+
+			struct LightProgram : public Program
+			{
+				GLint gPositionPos3dLight = 0;
+				GLint gNormalPos3dLight = 0;
+				GLint gAlbedoSpecPos3dLight = 0;
+				GLint gSpecular3dLight = 0;
+				GLint lightPosPos3dLight = 0;
+				GLint falloffModePos3dLight = 0;
+				GLint lightColorPos3dLight = 0;
+				GLint specularColorPos3dLight = 0;
+				GLint projectionPos3dLight = 0;
+				GLint lightRadiusPos = 0;
+				GLint screenSize3dLight = 0;
+
+				void setLightUniform(const bbe::PointLight& light, const bbe::Matrix4& view);
+			};
+
 			struct Framebuffer
 			{
 				GLuint framebuffer = 0;
@@ -104,10 +132,13 @@ namespace bbe
 
 				Program m_program2d;
 				Program m_program2dTex;
-				Program m_program3dMrt;
+				MrtProgram m_program3dMrt;
 				Program m_program3dAmbient;
 				Program m_programPostProcessing;
-				Program m_program3dLight;
+				LightProgram m_program3dLight;
+
+				MrtProgram m_program3dMrtBaking;
+				LightProgram m_program3dLightBaking;
 
 				Framebuffer mrtFb;
 
@@ -125,13 +156,15 @@ namespace bbe
 
 				Program init2dShaders();
 				Program init2dTexShaders();
-				Program init3dShadersMrt();
+				MrtProgram init3dShadersMrt(bool baking);
 				Program init3dShadersAmbient();
 				Program init3dPostProcessing();
-				Program init3dShadersLight();
-				void initGeometryBuffer();
+				LightProgram init3dShadersLight(bool baking);
+				Framebuffer getGeometryBuffer(uint32_t width, uint32_t height, bool baking) const;
+				void initFrameBuffers();
 
-				void fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader);
+				void fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, GLuint framebuffer, bool baking, const bbe::Color& bakingColor);
+				void fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, GLuint framebuffer, bool baking, const bbe::Color& bakingColor);
 
 				enum class PreviousDrawCall2D
 				{
@@ -158,7 +191,7 @@ namespace bbe
 
 				OpenGLImage* toRendererData(const bbe::Image& image) const;
 
-				void drawLight(const bbe::PointLight& light);
+				void drawLight(const bbe::PointLight& light, bool baking, GLuint ibo = 0);
 
 			public:
 				OpenGLManager();
@@ -205,7 +238,9 @@ namespace bbe
 				virtual void imguiStop() override;
 				virtual void imguiStartFrame() override;
 				virtual void imguiEndFrame() override;
-
+				
+				bbe::Image bakeLights(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, const bbe::Color& color, const bbe::Vector2i& resolution, const bbe::List<bbe::PointLight>& lights);
+				bbe::Image framebufferToImage(uint32_t width, uint32_t height) const;
 			};
 		}
 	}

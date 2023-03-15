@@ -7,8 +7,15 @@
 #include "../BBE/KeyboardKeys.h"
 #include "../BBE/MouseButtons.h"
 #include "../BBE/Vector2.h"
+#include "../BBE/Matrix4.h"
 #include "../BBE/PhysWorld.h"
 #include "../BBE/SoundManager.h"
+#include "../BBE/Image.h"
+#include "../BBE/PointLight.h"
+#include "../BBE/Model.h"
+#include "../BBE/FragmentShader.h"
+#include "../BBE/Color.h"
+#include "../BBE/List.h"
 
 namespace bbe
 {
@@ -109,5 +116,8 @@ namespace bbe
 
 		void mainLoop();
 
+#ifdef BBE_RENDERER_OPENGL
+		bbe::Image bakeLights(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, const bbe::Color& color, const bbe::Vector2i& resolution, const bbe::List<bbe::PointLight>& lights);
+#endif
 	};
 }

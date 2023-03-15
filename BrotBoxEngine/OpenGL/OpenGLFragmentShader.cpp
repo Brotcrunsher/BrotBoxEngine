@@ -1,11 +1,10 @@
 #include "BBE/OpenGL/OpenGLFragmentShader.h"
 #include "BBE/FatalErrors.h"
 
-static GLuint getShader(GLenum shaderType, const bbe::String& src, bbe::String& errorLog)
+static GLuint getShader(GLenum shaderType, const char* src, bbe::String& errorLog)
 {
 	GLuint shader = glCreateShader(shaderType);
-	const char* csrc = src.getRaw();
-	glShaderSource(shader, 1, &csrc, NULL);
+	glShaderSource(shader, 1, &src, NULL);
 	glCompileShader(shader);
 	GLint success = 0;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
@@ -23,25 +22,25 @@ static GLuint getShader(GLenum shaderType, const bbe::String& src, bbe::String& 
 	return shader;
 }
 
-static void build(GLuint& vertex, GLuint& fragment, GLuint& program, const char* vertexShaderSource, const char* fragmentShaderSource, bbe::String& errorLog)
+static void build(bbe::INTERNAL::openGl::OpenGLFragmentShader::ShaderProgramTripple& prog, const char* vertexShaderSource, const char* fragmentShaderSource)
 {
-	vertex = getShader(GL_VERTEX_SHADER, vertexShaderSource, errorLog);
-	fragment = getShader(GL_FRAGMENT_SHADER, fragmentShaderSource, errorLog);
+	prog.vertex = getShader(GL_VERTEX_SHADER, vertexShaderSource, prog.errorLog);
+	prog.fragment = getShader(GL_FRAGMENT_SHADER, fragmentShaderSource, prog.errorLog);
 
-	program = glCreateProgram();
-	glAttachShader(program, vertex);
-	glAttachShader(program, fragment);
-	glLinkProgram(program);
+	prog.program = glCreateProgram();
+	glAttachShader(prog.program, prog.vertex);
+	glAttachShader(prog.program, prog.fragment);
+	glLinkProgram(prog.program);
 	GLint success = 0;
-	glGetProgramiv(program, GL_LINK_STATUS, &success);
+	glGetProgramiv(prog.program, GL_LINK_STATUS, &success);
 	if (!success)
 	{
 		GLint length = 0;
-		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+		glGetProgramiv(prog.program, GL_INFO_LOG_LENGTH, &length);
 
 		bbe::List<char> log;
 		log.resizeCapacityAndLength(length);
-		glGetProgramInfoLog(program, length, &length, log.getRaw());
+		glGetProgramInfoLog(prog.program, length, &length, log.getRaw());
 		std::cout << log.getRaw() << std::endl;
 	}
 }
@@ -101,28 +100,65 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::Fra
 		"   gl_Position = projection * view * passWorldPos * vec4(1.0, -1.0, 1.0, 1.0);"
 		"   passPos = view * passWorldPos;"
 		"   passNormal = view * model * vec4(inNormal, 0.0);"
-		"   passUvCoord = vec2(inUvCoord.x, 1.0 - inUvCoord.y);" //TODO: wtf? Where does that y flip come from?
+		"   passUvCoord = inUvCoord;"
 		"}";
 
-	build(vertex2d, fragment2d, program2d, vertexShader2dSource, fragmentShaderSource, errorLog2d);
-	build(vertex3d, fragment3d, program3d, vertexShader3dSource, fragmentShaderSource, errorLog3d);
+	char const* vertexShader3dBakeSource =
+		"#version 300 es\n"
+		"precision highp float;"
+		"uniform mat4 view;"
+		"uniform mat4 projection;"
+		"uniform mat4 model;"
+		"in vec3 inPos;"
+		"in vec3 inNormal;"
+		"in vec2 inUvCoord;"
+		"out vec4 passPos;"
+		"out vec4 passWorldPos;"
+		"out vec4 passNormal;"
+		"out vec2 passUvCoord;"
+		"void main()"
+		"{"
+		"   passWorldPos = model * vec4(inPos, 1.0);"
+		"   gl_Position = vec4(inUvCoord * 2.0 - vec2(1, 1), 0.0, 1.0);"
+		"   passPos = passWorldPos;"
+		"   passNormal = model * vec4(inNormal, 0.0);"
+		"   passUvCoord = inUvCoord;"
+		"}";
 
-	screenSizePos     = glGetUniformLocation(program2d, "screenSize");
-	scalePosOffsetPos = glGetUniformLocation(program2d, "scalePosOffset");
-	rotationPos       = glGetUniformLocation(program2d, "rotation");
+	build(twoD      , vertexShader2dSource    , fragmentShaderSource);
+	build(threeD    , vertexShader3dSource    , fragmentShaderSource);
+	build(threeDBake, vertexShader3dBakeSource, fragmentShaderSource);
 
-	viewPos       = glGetUniformLocation(program3d, "view");
-	projectionPos = glGetUniformLocation(program3d, "projection");
-	modelPos      = glGetUniformLocation(program3d, "model");
-	color3DPos    = glGetUniformLocation(program3d, "inColor");
+	twoD      .determinePositions();
+	threeD    .determinePositions();
+	threeDBake.determinePositions();
+}
+
+void bbe::INTERNAL::openGl::OpenGLFragmentShader::ShaderProgramTripple::destroy()
+{
+	glDeleteProgram(program);
+	glDeleteShader(fragment);
+	glDeleteShader(vertex);
+}
+
+void bbe::INTERNAL::openGl::OpenGLFragmentShader::TwoD::determinePositions()
+{
+	screenSizePos     = glGetUniformLocation(program, "screenSize");
+	scalePosOffsetPos = glGetUniformLocation(program, "scalePosOffset");
+	rotationPos       = glGetUniformLocation(program, "rotation");
+}
+
+void bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD::determinePositions()
+{
+	viewPos       = glGetUniformLocation(program, "view");
+	projectionPos = glGetUniformLocation(program, "projection");
+	modelPos      = glGetUniformLocation(program, "model");
+	color3DPos    = glGetUniformLocation(program, "inColor");
 }
 
 bbe::INTERNAL::openGl::OpenGLFragmentShader::~OpenGLFragmentShader()
 {
-	glDeleteProgram(program2d);
-	glDeleteShader(fragment2d);
-	glDeleteShader(vertex2d);
-	glDeleteProgram(program3d);
-	glDeleteShader(fragment3d);
-	glDeleteShader(vertex3d);
+	twoD      .destroy();
+	threeD    .destroy();
+	threeDBake.destroy();
 }
