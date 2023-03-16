@@ -914,14 +914,14 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& ligh
 
 bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t width, uint32_t height) const
 {
-	bbe::List<bbe::byte> colorFloatBuffer;
+	bbe::List<float> colorFloatBuffer;
 	colorFloatBuffer.resizeCapacityAndLengthUninit(width * height * 4/*channels*/);
-	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, colorFloatBuffer.getRaw());
+	glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, colorFloatBuffer.getRaw());
 	for (size_t i = 0; i < colorFloatBuffer.getLength(); i += 4)
 	{
-		colorFloatBuffer[i + 3] = 255;
+		colorFloatBuffer[i + 3] = 1.0f;
 	}
-	return bbe::Image(width, height, colorFloatBuffer.getRaw(), bbe::ImageFormat::R8G8B8A8);
+	return bbe::Image(width, height, colorFloatBuffer.getRaw(), bbe::ImageFormat::R32G32B32A32FLOAT);
 }
 
 bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()

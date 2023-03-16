@@ -217,11 +217,16 @@ namespace br
 
 			int lightCount = 0;
 			int wallCount = 0;
+			bool foundRoomToBake = false;
 			for (size_t roomi : interestingRooms)
 			{
 				//if (roomi != 2) continue;
+				if (!foundRoomToBake && rooms.bakeLights(roomi, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling()))
+				{
+					foundRoomToBake = true;
+				}
 				const Room& r = rooms.rooms[roomi];
-				
+
 				brush.setColor(1, 1, 1, 1);
 				for (const bbe::PointLight& light : r.lights)
 				{
@@ -249,7 +254,7 @@ namespace br
 					}
 					for (const bbe::PointLight& light : r.lights)
 					{
-						brush.addLight(light);
+						//brush.addLight(light);
 						lightCount++;
 					}
 				}

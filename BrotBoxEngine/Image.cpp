@@ -44,7 +44,7 @@ bbe::Image::Image(int width, int height, const Color & c)
 	load(width, height, c);
 }
 
-bbe::Image::Image(int width, int height, const byte * data, ImageFormat format)
+bbe::Image::Image(int width, int height, const void* data, ImageFormat format)
 {
 	load(width, height, data, format);
 }
@@ -107,7 +107,7 @@ void bbe::Image::load(int width, int height, const Color & c)
 	}
 }
 
-void bbe::Image::load(int width, int height, const byte * data, ImageFormat format)
+void bbe::Image::load(int width, int height, const void* data, ImageFormat format)
 {
 	m_width = width;
 	m_height = height;
@@ -148,6 +148,8 @@ size_t bbe::Image::getAmountOfChannels() const
 		return 4;
 	case ImageFormat::R32FLOAT:
 		return 1;
+	case ImageFormat::R32G32B32A32FLOAT:
+		return 4;
 	default:
 		throw FormatNotSupportedException();
 	}
@@ -162,6 +164,8 @@ size_t bbe::Image::getBytesPerChannel() const
 	case ImageFormat::R8G8B8A8:
 		return 1;
 	case ImageFormat::R32FLOAT:
+		return 4;
+	case ImageFormat::R32G32B32A32FLOAT:
 		return 4;
 	default:
 		throw FormatNotSupportedException();

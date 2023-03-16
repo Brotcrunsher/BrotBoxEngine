@@ -31,7 +31,7 @@ namespace br
 		void determineNeighbors(size_t roomi);
 		void collapseGates(size_t roomi);
 		void connectGates(size_t roomi);
-		void bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling);
+		bool bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling);
 
 		size_t generateAtPoint(const bbe::Vector2i& position);
 		bbe::List<size_t> generateAtPointMulti(const bbe::Vector2i& position, size_t depth);

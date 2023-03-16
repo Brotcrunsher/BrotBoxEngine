@@ -29,9 +29,10 @@ namespace bbe
 
 	enum class ImageFormat
 	{
-		R8G8B8A8    =  37, //VK_FORMAT_R8G8B8A8_UNORM
-		R8          =   9, //VK_FORMAT_R8_UNORM
-		R32FLOAT    = 100, //VK_FORMAT_R32_SFLOAT
+		R8G8B8A8          =  37, //VK_FORMAT_R8G8B8A8_UNORM
+		R8                =   9, //VK_FORMAT_R8_UNORM
+		R32FLOAT          = 100, //VK_FORMAT_R32_SFLOAT
+		R32G32B32A32FLOAT = 109, //VK_FORMAT_R32G32B32A32_SFLOAT
 	};
 
 	enum class ImageRepeatMode
@@ -79,7 +80,7 @@ namespace bbe
 		explicit Image(const bbe::String& path);
 		Image(int width, int height);
 		Image(int width, int height, const Color &c);
-		Image(int width, int height, const byte* data, ImageFormat format);
+		Image(int width, int height, const void* data, ImageFormat format);
 		
 		Image(const Image& other) = default; //Copy Constructor
 		Image(Image&& other) noexcept = default; //Move Constructor
@@ -92,7 +93,7 @@ namespace bbe
 		void load(const bbe::String& path);
 		void load(int width, int height);
 		void load(int width, int height, const Color &c);
-		void load(int width, int height, const byte* data, ImageFormat format);
+		void load(int width, int height, const void* data, ImageFormat format);
 
 		int getWidth() const;
 		int getHeight() const;

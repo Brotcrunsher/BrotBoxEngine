@@ -43,9 +43,10 @@ GLint bbe::INTERNAL::openGl::OpenGLImage::internalFormat(const bbe::Image& image
 {
 	switch (image.m_format)
 	{
-	case (ImageFormat::R8G8B8A8   ): return GL_RGBA8;
-	case (ImageFormat::R8         ): return GL_R8;
-	case (ImageFormat::R32FLOAT   ): return GL_R32F;
+	case (ImageFormat::R8G8B8A8         ): return GL_RGBA8;
+	case (ImageFormat::R8               ): return GL_R8;
+	case (ImageFormat::R32FLOAT         ): return GL_R32F;
+	case (ImageFormat::R32G32B32A32FLOAT): return GL_RGBA32F;
 	}
 
 	throw bbe::IllegalArgumentException();
@@ -55,9 +56,10 @@ GLenum bbe::INTERNAL::openGl::OpenGLImage::format(const bbe::Image& image)
 {
 	switch (image.m_format)
 	{
-	case (ImageFormat::R8G8B8A8   ): return GL_RGBA;
-	case (ImageFormat::R8         ): return GL_RED;
-	case (ImageFormat::R32FLOAT   ): return GL_RED;
+	case (ImageFormat::R8G8B8A8         ): return GL_RGBA;
+	case (ImageFormat::R8               ): return GL_RED;
+	case (ImageFormat::R32FLOAT         ): return GL_RED;
+	case (ImageFormat::R32G32B32A32FLOAT): return GL_RGBA;
 	}
 
 	throw bbe::IllegalArgumentException();
@@ -67,9 +69,10 @@ GLenum bbe::INTERNAL::openGl::OpenGLImage::type(const bbe::Image& image)
 {
 	switch (image.m_format)
 	{
-	case (ImageFormat::R8G8B8A8   ): return GL_UNSIGNED_BYTE;
-	case (ImageFormat::R8         ): return GL_UNSIGNED_BYTE;
-	case (ImageFormat::R32FLOAT   ): return GL_FLOAT;
+	case (ImageFormat::R8G8B8A8         ): return GL_UNSIGNED_BYTE;
+	case (ImageFormat::R8               ): return GL_UNSIGNED_BYTE;
+	case (ImageFormat::R32FLOAT         ): return GL_FLOAT;
+	case (ImageFormat::R32G32B32A32FLOAT): return GL_FLOAT;
 	}
 
 	throw bbe::IllegalArgumentException();

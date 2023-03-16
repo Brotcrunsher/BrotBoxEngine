@@ -458,10 +458,10 @@ void br::Rooms::connectGates(size_t roomi)
 	}
 }
 
-void br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling)
+bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling)
 {
 	if (rooms[roomi].state < RoomGenerationState::gatesConnected) connectGates(roomi);
-	if (rooms[roomi].state != RoomGenerationState::gatesConnected && rooms[roomi].state != RoomGenerationState::baking) return;
+	if (rooms[roomi].state != RoomGenerationState::gatesConnected && rooms[roomi].state != RoomGenerationState::baking) return false;
 	rooms[roomi].state = RoomGenerationState::baking;
 
 	// Making sure all neighbors lights have been created.
@@ -481,22 +481,23 @@ void br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	// TODO!
 	if (r.bakedCeiling.isLoaded() == false)
 	{
-		r.bakedCeiling = game->bakeLights(bbe::Matrix4(), r.ceilingModel, nullptr, nullptr, nullptr, shaderCeiling, r.getColor(), { 1024, 1024 }, lights);
+		r.bakedCeiling = game->bakeLights(bbe::Matrix4(), r.ceilingModel, nullptr, nullptr, nullptr, shaderCeiling, r.getColor(), { 256, 256 }, lights);
 	}
 	else if (r.bakedFloor.isLoaded() == false)
 	{
-		r.bakedFloor = game->bakeLights(bbe::Matrix4(), r.floorModel, nullptr, nullptr, nullptr, shaderFloor, r.getColor(), { 1024, 1024 }, lights);
+		r.bakedFloor = game->bakeLights(bbe::Matrix4(), r.floorModel, nullptr, nullptr, nullptr, shaderFloor, r.getColor(), { 256, 256 }, lights);
 	}
 	else if (rooms[roomi].wallsModels.getLength() == rooms[roomi].bakedLights.getLength())
 	{
 		// Must happen at the start rather than the end because we could have 0 walls.
 		rooms[roomi].state = RoomGenerationState::lightsBaked;
-		return;
+		return true;
 	}
 	else
 	{
-		r.bakedLights.add(game->bakeLights(bbe::Matrix4(), r.wallsModels[r.bakedLights.getLength()], nullptr, nullptr, nullptr, shaderWall, { 1, 1, 1, 1 }, { 1024, 1024 }, lights));
+		r.bakedLights.add(game->bakeLights(bbe::Matrix4(), r.wallsModels[r.bakedLights.getLength()], nullptr, nullptr, nullptr, shaderWall, { 1, 1, 1, 1 }, { 256, 256 }, lights));
 	}
+	return true;
 }
 
 size_t br::Rooms::generateAtPoint(const bbe::Vector2i& position)
