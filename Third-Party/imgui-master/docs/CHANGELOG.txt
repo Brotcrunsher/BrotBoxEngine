@@ -32,29 +32,125 @@ HOW TO UPDATE?
 
 
 -----------------------------------------------------------------------
- VERSION 1.89.3 (In Progress)
+ VERSION 1.89.5 WIP (In Progress)
 -----------------------------------------------------------------------
 
 Breaking Changes:
 
+Other changes:
+
+- Backends: OpenGL3: Fixed GL loader crash when GL_VERSION returns NULL. (#6154, #4445, #3530)
+- Examples: Windows: Added 'misc/debuggers/imgui.natstepfilter' file to all Visual Studio projects,
+  now that VS 2022 17.6 Preview 2 support adding Debug Step Filter spec files into projects.
+- Examples: SDL3: Updated for latest WIP SDL3 branch. (#6243)
+
+
+-----------------------------------------------------------------------
+ VERSION 1.89.4 (Released 2023-03-14)
+-----------------------------------------------------------------------
+
+Breaking Changes:
+
+- Renamed PushAllowKeyboardFocus()/PopAllowKeyboardFocus() to PushTabStop()/PopTabStop().
+  Kept inline redirection functions (will obsolete).
+- Moved the optional "courtesy maths operators" implementation from imgui_internal.h in imgui.h.
+  Even though we encourage using your own maths types and operators by setting up IM_VEC2_CLASS_EXTRA,
+  it has been frequently requested by people to use our own. We had an opt-in define which was
+  previously fulfilled by imgui_internal.h. It is now fulfilled by imgui.h. (#6164, #6137, #5966, #2832)
+   OK:     #define IMGUI_DEFINE_MATH_OPERATORS / #include "imgui.h" / #include "imgui_internal.h"
+   Error:  #include "imgui.h" / #define IMGUI_DEFINE_MATH_OPERATORS / #include "imgui_internal.h"
+  Added a dedicated compile-time check message to help diagnose this.
+- Tooltips: Added 'bool' return value to BeginTooltip() for API consistency.
+  Please only submit contents and call EndTooltip() if BeginTooltip() returns true.
+  In reality the function will _currently_ always return true, but further changes down the
+  line may change this, best to clarify API sooner. Updated demo code accordingly.
+- Commented out redirecting enums/functions names that were marked obsolete two years ago:
+  - ImGuiSliderFlags_ClampOnInput        -> use ImGuiSliderFlags_AlwaysClamp
+  - ImGuiInputTextFlags_AlwaysInsertMode -> use ImGuiInputTextFlags_AlwaysOverwrite
+  - ImDrawList::AddBezierCurve()         -> use ImDrawList::AddBezierCubic()
+  - ImDrawList::PathBezierCurveTo()      -> use ImDrawList::PathBezierCubicCurveTo()
+
+Other changes:
+
+- Nav: Tabbing now cycles through all items when ImGuiConfigFlags_NavEnableKeyboard is set.
+  (#3092, #5759, #787)
+  While this was generally desired and requested by many, note that its addition means
+  that some types of UI may become more fastidious to use TAB key with, if the navigation
+  cursor cycles through too many items. You can mark items items as not tab-spottable:
+   - Public API: PushTabStop(false) / PopTabStop()
+   - Internal: PushItemFlag(ImGuiItemFlags_NoTabStop, true);
+   - Internal: Directly pass ImGuiItemFlags_NoTabStop to ItemAdd() for custom widgets.
+- Nav: Tabbing/Shift-Tabbing can more reliably be used to step out of an item that is not
+  tab-stoppable. (#3092, #5759, #787)
+- Nav: Made Enter key submit the same type of Activation event as Space key,
+  allowing to press buttons with Enter. (#5606)
+  (Enter emulates a "prefer text input" activation vs.
+   Space emulates a "prefer tweak" activation which is to closer to gamepad controls).
+- Nav: Fixed an issue with Gamepad navigation when the movement lead to a scroll and
+  frame time > repeat rate. Triggering a new move request on the same frame as a move
+  result lead to an incorrect calculation and loss of navigation id. (#6171)
+- Nav: Fixed SetItemDefaultFocus() from not scrolling when item is partially visible.
+  (#2814, #2812) [@DomGries]
+- Tables: Fixed an issue where user's Y cursor movement within a hidden column would
+  have side-effects.
+- IO: Lifted constraint to call io.AddEventXXX functions from current context. (#4921, #5856, #6199)
+- InputText: Fixed not being able to use CTRL+Tab while an InputText() using Tab
+  for completion or text data is active (regression from 1.89).
+- Drag and Drop: Fixed handling of overlapping targets when smaller one is submitted
+  before and can accept the same data type. (#6183).
+- Drag and Drop: Clear drag and drop state as soon as delivery is accepted in order to
+  avoid interferences. (#5817, #6183) [@DimaKoltun]
+- Debug Tools: Added io.ConfigDebugBeginReturnValueOnce / io.ConfigDebugBeginReturnValueLoop
+  options to simulate Begin/BeginChild returning false to facilitate debugging user behavior.
+- Demo: Updated to test return value of BeginTooltip().
+- Backends: OpenGL3: Fixed restoration of a potentially deleted OpenGL program. If an active
+  program was pending deletion, attempting to restore it would error. (#6220, #6224) [@Cyphall]
+- Backends: Win32: Use WM_NCMOUSEMOVE / WM_NCMOUSELEAVE to track mouse positions over
+  non-client area (e.g. OS decorations) when app is not focused. (#6045, #6162)
+- Backends: SDL2, SDL3: Accept SDL_GetPerformanceCounter() not returning a monotonically
+  increasing value. (#6189, #6114, #3644) [@adamkewley]
+- Backends: GLFW: Avoid using glfwGetError() and glfwGetGamepadState() on Emscripten, which
+  recently updated its GLFW emulation layer to GLFW 3.3 without supporting those. (#6240)
+- Examples: Android: Fixed example build for Gradle 8. (#6229, #6227) [@duddel]
+- Examples: Updated all examples application to enable ImGuiConfigFlags_NavEnableKeyboard
+  and ImGuiConfigFlags_NavEnableGamepad by default. (#787)
+- Internals: Misc tweaks to facilitate applying an explicit-context patch. (#5856) [@Dragnalith]
+
+
+-----------------------------------------------------------------------
+ VERSION 1.89.3 (Released 2023-02-14)
+-----------------------------------------------------------------------
+
+Decorated log and release notes: https://github.com/ocornut/imgui/releases/tag/v1.89.3
+
+Breaking Changes:
+
 - Backends+Examples: SDL2: renamed all unnumbered references to "sdl" to "sdl2".
-  This is in prevision for the future release of SDL3 (#6146)
+  This is in prevision for the future release of SDL3 and its associated backend. (#6146)
   - imgui_impl_sdl.cpp -> imgui_impl_sdl2.cpp
   - imgui_impl_sdl.h   -> imgui_impl_sdl2.h
   - example_sdl_xxxx/  -> example_sdl2_xxxx/ (folders and projects)
 
-All changes:
+Other changes:
 
+- SeparatorText(): Added SeparatorText() widget. (#1643) [@phed, @ocornut]
+  - Added to style: float  SeparatorTextBorderSize.
+  - Added to style: ImVec2 SeparatorTextAlign, SeparatorTextPadding.
+- Tables: Raised max Columns count from 64 to 512. (#6094, #5305, #4876, #3572)
+  The previous limit was due to using 64-bit integers but we moved to bits-array
+  and tweaked the system enough to ensure no performance loss.
+- Tables: Solved an ID conflict issue with multiple-instances of a same table,
+  due to how unique table instance id was generated. (#6140) [@ocornut, @rodrigorc]
 - Inputs, Scrolling: Made horizontal scroll wheel and horizontal scroll direction consistent
-  accross backends/os. (#4019, #6096, #1463) [@PathogenDavid, @ocornut, @rokups]
+  across backends/os. (#4019, #6096, #1463) [@PathogenDavid, @ocornut, @rokups]
   - Clarified that 'wheel_y > 0.0f' scrolls Up, 'wheel_y > 0.0f' scrolls Down.
     Clarified that 'wheel_x > 0.0f' scrolls Left, 'wheel_x > 0.0f' scrolls Right.
   - Backends: Fixed horizontal scroll direction for Win32 and SDL backends. (#4019)
   - Shift+WheelY support on non-OSX machines was already correct. (#2424, #1463)
-    (whereaas on OSX machines Shift+WheelY turns into WheelX at the OS level).
-  - If you use a custom-backend, you should verify horizontal wheel direction.
-    - Axises are flipped by OSX for mouse & touchpad when 'Natural Scrolling' is on.
-    - Axises are flipped by Windows for touchpad when 'Settings->Touchpad->Down motion scrolls up' is on.
+    (whereas on OSX machines Shift+WheelY turns into WheelX at the OS level).
+  - If you use a custom backend, you should verify horizontal wheel direction.
+    - Axises are flipped by OSX for mouse & touch-pad when 'Natural Scrolling' is on.
+    - Axises are flipped by Windows for touch-pad when 'Settings->Touchpad->Down motion scrolls up' is on.
     - You can use 'Demo->Tools->Debug Log->IO" to visualize values submitted to Dear ImGui.
   - Known issues remaining with Emscripten:
     - The magnitude of wheeling values on Emscripten was improved but isn't perfect. (#6096)
@@ -64,11 +160,6 @@ All changes:
       to find a way to detect this and set io.ConfigMacOSXBehaviors manually (if you know a way
       let us know!), or offer the "OSX-style behavior" option to their user.
 - Window: Avoid rendering shapes for hidden resize grips.
-- Tables: Raised max Columns count from 64 to 512. (#6094, #5305, #4876, #3572)
-  The previous limit was due to using 64-bit integers but we moved to bits-array
-  and tweaked the system enough to ensure no performance loss.
-- Tables: Solved an ID conflict issue with multiple-instances of a same table,
-  due to how unique table instance id was generated. (#6140) [@ocornut, @rodrigorc]
 - Text: Fixed layouting of wrapped-text block skipping successive empty lines,
   regression from the fix in 1.89.2. (#5720, #5919)
 - Text: Fixed clipping of single-character "..." ellipsis (U+2026 or U+0085) when font
@@ -79,8 +170,11 @@ All changes:
   (Not adding Super+Delete to delete to up to end-of-line on OSX, as OSX doesn't have it)
 - InputText: On OSX, inhibit usage of Alt key to toggle menu when active (used for work skip).
 - Menus: Fixed layout of MenuItem()/BeginMenu() when label contains a '\n'. (#6116) [@imkcy9]
+- ColorEdit, ColorPicker: Fixed hue/saturation preservation logic from interfering with
+  the displayed value (but not stored value) of others widgets instances. (#6155)
 - PlotHistogram, PlotLines: Passing negative sizes honor alignment like other widgets.
 - Combo: Allow SetNextWindowSize() to alter combo popup size. (#6130)
+- Fonts: Assert that in each GlyphRanges[] pairs first is <= second.
 - ImDrawList: Added missing early-out in AddPolyline() and AddConvexPolyFilled() when
   color alpha is zero.
 - Misc: Most text functions treat "%s" as a shortcut to no-formatting. (#3466)
@@ -89,15 +183,15 @@ All changes:
   can exacerbate that. (#6114, #3644)
 - Backends: OSX: Fixed scroll/wheel scaling for devices emitting events with
   hasPreciseScrollingDeltas==false (e.g. non-Apple mices).
-- Backends: Win32: flipping WM_MOUSEHWHEEL value to match other backends and
+- Backends: Win32: flipping WM_MOUSEHWHEEL horizontal value to match other backends and
   offer consistent horizontal scrolling direction. (#4019)
-- Backends: SDL2: flipping SDL_MOUSEWHEEL 'wheel.x' value to match other backends and
+- Backends: SDL2: flipping SDL_MOUSEWHEEL horizontal value to match other backends and
   offer consistent horizontal scrolling direction. (#4019)
 - Backends: SDL2: Removed SDL_MOUSEWHEEL value clamping. (#4019, #6096, #6081)
 - Backends: SDL2: Added support for SDL 2.0.18+ preciseX/preciseY mouse wheel data
   for smooth scrolling as reported by SDL. (#4019, #6096)
 - Backends: SDL2: Avoid calling SDL_SetCursor() when cursor has not changed, as the function
-  is surprisingly costly on Mac with latest SDL (may be fixed in next SDL version). (#6113)
+  is surprisingly costly on Mac with latest SDL (already fixed in SDL latest trunk). (#6113)
 - Backends: SDL2: Implement IME handler to call SDL_SetTextInputRect()/SDL_StartTextInput().
   It will only works with SDL 2.0.18+ if your code calls 'SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1")'
   prior to calling SDL_CreateWindow(). Updated all examples accordingly. (#6071, #1953)
@@ -110,7 +204,8 @@ All changes:
 - Backends: GLFW: Added ImGui_ImplGlfw_SetCallbacksChainForAllWindows() to instruct backend
   to chain callbacks even for secondary viewports/windows. User callbacks may need to test
   the 'window' parameter. (#6142)
-- Backends: WebGPU: Fix building for latest WebGPU specs (remove implicit layout generation).
+- Backends: OpenGL3: Fixed GL loader compatibility with 2.x profiles. (#6154, #4445, #3530) [@grauw]
+- Backends: WebGPU: Fixed building for latest WebGPU specs (remove implicit layout generation).
   (#6117, #4116, #3632) [@tonygrue, @bfierz]
 - Examples: refactored SDL2+GL and GLFW+GL examples to compile with Emscripten.
   (#2492, #2494, #3699, #3705) [@ocornut, @nicolasnoble]
@@ -119,7 +214,7 @@ All changes:
 - Examples: Win32: Fixed examples using RegisterClassW() since 1.89 to also call
   DefWindowProcW() instead of DefWindowProc() so that title text are correctly converted
   when application is compiled without /DUNICODE. (#5725, #5961, #5975) [@markreidvfx]
-- Examples: SDL2+SDL_Renderer: Added call to SDL_RenderSetScale() to display is correct on a
+- Examples: SDL2+SDL_Renderer: Added call to SDL_RenderSetScale() to fix display on a
   Retina display (albeit lower-res as our other unmodified examples). (#6121, #6065, #5931).
 
 
@@ -351,6 +446,10 @@ Other Changes:
   asserts with 16-bits ImDrawVtx). (#5720)
 - Fonts: Added GetGlyphRangesGreek() helper for Greek & Coptic glyph range. (#5676, #5727) [@azonenberg]
 - ImDrawList: Not using alloca() anymore, lift single polygon size limits. (#5704, #1811)
+  - Note: now using a temporary buffer stored in ImDrawListSharedData.
+    This change made it more visible than you cannot append to multiple ImDrawList from multiple
+    threads if they share the same ImDrawListSharedData. Previously it was a little more likely
+    for this to "accidentally" work, but was already incorrect. (#6167)
 - Platform IME: [Windows] Removed call to ImmAssociateContextEx() leading to freeze on some setups.
   (#2589, #5535, #5264, #4972)
 - Misc: better error reporting for PopStyleColor()/PopStyleVar() + easier to recover. (#1651)
