@@ -42,17 +42,17 @@ namespace bbe
 			struct Program
 			{
 			private:
-				void compile();
-				GLuint getShader(GLenum shaderType, const bbe::String& src);
-				void addVertexShader(const bbe::String& src);
-				void addFragmentShader(const bbe::String& src);
+				void compile(const bbe::String& label);
+				GLuint getShader(const bbe::String& label, GLenum shaderType, const bbe::String& src);
+				void addVertexShader(const bbe::String& label, const bbe::String& src);
+				void addFragmentShader(const bbe::String& label, const bbe::String& src);
 				bbe::String getHeader(const bbe::List<UniformVariable>& uniformVariables);
 			public:
 				GLuint vertex = 0;
 				GLuint fragment = 0;
 				GLuint program = 0;
 
-				void addShaders(const char* vertexSrc, const char* fragmentSrc, const bbe::List<UniformVariable> &uniformVariables);
+				void addShaders(const bbe::String& label, const char* vertexSrc, const char* fragmentSrc, const bbe::List<UniformVariable> &uniformVariables);
 				void destroy();
 
 				void use();
@@ -105,11 +105,11 @@ namespace bbe
 				GLuint depthBuffer = 0;
 
 				Framebuffer();
-				Framebuffer(GLsizei width, GLsizei height);
+				Framebuffer(const char* label, GLsizei width, GLsizei height);
 
 				void destroy();
-				GLuint addTexture();
-				void addDepthBuffer();
+				GLuint addTexture(const char* label);
+				void addDepthBuffer(const char* label);
 				void clearTextures();
 				void bind();
 				void finalize();
@@ -160,7 +160,7 @@ namespace bbe
 				Program init3dShadersAmbient();
 				Program init3dPostProcessing();
 				LightProgram init3dShadersLight(bool baking);
-				Framebuffer getGeometryBuffer(uint32_t width, uint32_t height, bool baking) const;
+				Framebuffer getGeometryBuffer(const bbe::String& label, uint32_t width, uint32_t height, bool baking) const;
 				void initFrameBuffers();
 
 				void fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, GLuint framebuffer, bool baking, const bbe::Color& bakingColor);
