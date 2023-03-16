@@ -29,7 +29,7 @@ static GLuint genTexture(const char* label)
 {
 	GLuint texture = 0;
 	glGenTextures(1, &texture);
-	addLabel(GL_TEXTURE, texture, label);
+	//addLabel(GL_TEXTURE, texture, label); // TODO: Fix this. The Object wasn't really created yet. glGen... is only reserving a name.
 	return texture;
 }
 
@@ -37,7 +37,7 @@ static GLuint genBuffer(const char* label)
 {
 	GLuint buffer = 0;
 	glGenBuffers(1, &buffer);
-	addLabel(GL_BUFFER, buffer, label);
+	//addLabel(GL_BUFFER, buffer, label); // TODO: Fix this. The Object wasn't really created yet. glGen... is only reserving a name.
 	return buffer;
 }
 
@@ -59,7 +59,7 @@ static GLuint genFramebuffer(const char* label)
 {
 	GLuint framebuffer = 0;
 	glGenFramebuffers(1, &framebuffer);
-	addLabel(GL_FRAMEBUFFER, framebuffer, label);
+	//addLabel(GL_FRAMEBUFFER, framebuffer, label); // TODO: Fix this. The Object wasn't really created yet. glGen... is only reserving a name.
 	return framebuffer;
 }
 
@@ -819,25 +819,31 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 	glVertexAttribDivisor(normalPosition, 0);
 
 	GLint uvPosition = glGetAttribLocation(program, "inUvCoord");
-	glVertexAttribPointer(uvPosition, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(uvPosition);
-	glVertexAttribDivisor(uvPosition, 0);
+	if (uvPosition != -1)
+	{
+		glVertexAttribPointer(uvPosition, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(6 * sizeof(float)));
+		glEnableVertexAttribArray(uvPosition);
+		glVertexAttribDivisor(uvPosition, 0);
+	}
 
-	if (!albedo) albedo = &bbe::Image::white();
-	if (!normals) normals = &bbe::Image::black();
-	if (!emissions) emissions = &bbe::Image::black();
+	if (!shader) // TODO: Maybe want to make these available in custom shaders?
+	{
+		if (!albedo) albedo = &bbe::Image::white();
+		if (!normals) normals = &bbe::Image::black();
+		if (!emissions) emissions = &bbe::Image::black();
 
-	glUniform1i(albedoTex, 0);
-	glActiveTexture(GL_TEXTURE0 + 0);
-	glBindTexture(GL_TEXTURE_2D, toRendererData(*albedo)->tex);
+		glUniform1i(albedoTex, 0);
+		glActiveTexture(GL_TEXTURE0 + 0);
+		glBindTexture(GL_TEXTURE_2D, toRendererData(*albedo)->tex);
 
-	glUniform1i(normalsTex, 1);
-	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindTexture(GL_TEXTURE_2D, toRendererData(*normals)->tex);
+		glUniform1i(normalsTex, 1);
+		glActiveTexture(GL_TEXTURE0 + 1);
+		glBindTexture(GL_TEXTURE_2D, toRendererData(*normals)->tex);
 
-	glUniform1i(emissionsTex, 2);
-	glActiveTexture(GL_TEXTURE0 + 2);
-	glBindTexture(GL_TEXTURE_2D, toRendererData(*emissions)->tex);
+		glUniform1i(emissionsTex, 2);
+		glActiveTexture(GL_TEXTURE0 + 2);
+		glBindTexture(GL_TEXTURE_2D, toRendererData(*emissions)->tex);
+	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0);
@@ -979,6 +985,40 @@ bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
 {
 }
 
+void GLAPIENTRY
+MessageCallback(GLenum source,
+	GLenum type,
+	GLuint id,
+	GLenum severity,
+	GLsizei length,
+	const GLchar* message,
+	const void* userParam)
+{
+	// Filter too spammy types.
+	if (type == GL_DEBUG_TYPE_OTHER) return;
+	if (type == GL_DEBUG_TYPE_PERFORMANCE) return;
+
+	bbe::String typeString;
+	switch (type)
+	{
+	case GL_DEBUG_TYPE_ERROR:               typeString = "ERROR";               break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: typeString = "DEPRECATED_BEHAVIOR"; break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  typeString = "UNDEFINED_BEHAVIOR";  break;
+	case GL_DEBUG_TYPE_PORTABILITY:         typeString = "PORTABILITY";         break;
+	case GL_DEBUG_TYPE_PERFORMANCE:         typeString = "PERFORMANCE";         break;
+	case GL_DEBUG_TYPE_OTHER:               typeString = "OTHER";               break;
+	case GL_DEBUG_TYPE_MARKER:              typeString = "MARKER";              break;
+	case GL_DEBUG_TYPE_PUSH_GROUP:          typeString = "PUSH_GROUP";          break;
+	case GL_DEBUG_TYPE_POP_GROUP:           typeString = "POP_GROUP";           break;
+	default:                                typeString = "UNKNOWN";             break;
+	}
+
+	std::cout << "OpenGL " << typeString << " Callback: "
+		"\n   type     = " << type <<
+		"\n   severity = " << severity <<
+		"\n   message  = " << message << std::endl;
+}
+
 void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow* window, uint32_t initialWindowWidth, uint32_t initialWindowHeight)
 {
 	m_pwindow = window;
@@ -995,6 +1035,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 		errorMessage += (const char*)glewGetErrorString(resp);
 		bbe::INTERNAL::triggerFatalError(errorMessage);
 	}
+
+#ifdef _DEBUG
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(MessageCallback, nullptr);
+#endif
 
 	m_program2d = init2dShaders();
 	m_program2dTex = init2dTexShaders();
