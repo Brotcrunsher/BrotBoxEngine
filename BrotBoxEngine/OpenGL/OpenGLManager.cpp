@@ -29,7 +29,10 @@ static GLuint genTexture(const char* label)
 {
 	GLuint texture = 0;
 	glGenTextures(1, &texture);
-	//addLabel(GL_TEXTURE, texture, label); // TODO: Fix this. The Object wasn't really created yet. glGen... is only reserving a name.
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	addLabel(GL_TEXTURE, texture, label); // TODO: Fix this. The Object wasn't really created yet. glGen... is only reserving a name.
 	return texture;
 }
 
@@ -231,10 +234,7 @@ void bbe::INTERNAL::openGl::Framebuffer::destroy()
 GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label)
 {
 	GLuint texture = genTexture(label);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
 	textures.add(texture);
 	return texture;
 }
@@ -242,8 +242,7 @@ GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label)
 void bbe::INTERNAL::openGl::Framebuffer::addDepthBuffer(const char* label)
 {
 	depthBuffer = genTexture(label);
-	glBindTexture(GL_TEXTURE_2D, depthBuffer);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthBuffer, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
