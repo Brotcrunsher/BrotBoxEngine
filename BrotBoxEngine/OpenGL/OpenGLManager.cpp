@@ -32,15 +32,22 @@ static GLuint genTexture(const char* label)
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	addLabel(GL_TEXTURE, texture, label); // TODO: Fix this. The Object wasn't really created yet. glGen... is only reserving a name.
+	addLabel(GL_TEXTURE, texture, label);
 	return texture;
 }
 
-static GLuint genBuffer(const char* label)
+enum class BufferTarget
+{
+	ARRAY_BUFFER = GL_ARRAY_BUFFER,
+	ELEMENT_ARRAY_BUFFER = GL_ELEMENT_ARRAY_BUFFER,
+};
+static GLuint genBuffer(const char* label, BufferTarget target, size_t length, const void* data)
 {
 	GLuint buffer = 0;
 	glGenBuffers(1, &buffer);
-	//addLabel(GL_BUFFER, buffer, label); // TODO: Fix this. The Object wasn't really created yet. glGen... is only reserving a name.
+	glBindBuffer((GLenum)target, buffer);
+	glBufferData((GLenum)target, length, data, GL_STATIC_DRAW);
+	addLabel(GL_BUFFER, buffer, label);
 	return buffer;
 }
 
@@ -375,10 +382,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexSh
 		1.0f, 1.0f,
 		1.0f, 0.0f,
 	};
-	m_imageUvBuffer = genBuffer("TexShadersUvBuffer");
-	glBindBuffer(GL_ARRAY_BUFFER, m_imageUvBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * uvCoordinates.getLength(), uvCoordinates.getRaw(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	m_imageUvBuffer = genBuffer("TexShadersUvBuffer", BufferTarget::ARRAY_BUFFER, sizeof(float) * uvCoordinates.getLength(), uvCoordinates.getRaw());
 
 	return program;
 }
@@ -909,9 +913,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::flushInstanceData2D()
 	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	GLuint instanceVBO = genBuffer("FlushInstanceVBO");
-	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(InstanceData2D) * instanceDatas.getLength(), instanceDatas.getRaw(), GL_STATIC_DRAW);
+	GLuint instanceVBO = genBuffer("FlushInstanceVBO", BufferTarget::ARRAY_BUFFER, sizeof(InstanceData2D) * instanceDatas.getLength(), instanceDatas.getRaw());
 
 	GLint pos = 1;
 	glEnableVertexAttribArray(pos);
@@ -1096,9 +1098,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	// Draw the stuff of 3D
 	m_program3dAmbient.use();
 	uint32_t indices[] = { 0, 3, 1, 1, 3, 2 };
-	GLuint ibo = genBuffer("preDraw2DIBO");
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices, GL_STATIC_DRAW);
+	GLuint ibo = genBuffer("preDraw2DIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 	glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFb.framebuffer);
 	postProcessingFb.clearTextures();
 
@@ -1302,14 +1302,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 		m_program2dTex.uniform1i(swizzleModePos, 0);
 	}
 
-	GLuint vbo = genBuffer("drawImageVBO");
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(bbe::Vector2) * vertices.getLength(), vertices.getRaw(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	GLuint ibo = genBuffer("drawImageIBO");
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices, GL_STATIC_DRAW);
+	GLuint vbo = genBuffer("drawImageVBO", BufferTarget::ARRAY_BUFFER, sizeof(bbe::Vector2) * vertices.getLength(), vertices.getRaw());
+	GLuint ibo = genBuffer("drawImageIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 
 	glUniform2f(scalePos2dTex, 1.0f, 1.0f);
 
@@ -1343,14 +1337,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 	m_program2d.use();
 
 	previousDrawCall2d = PreviousDrawCall2D::VERTEX_INDEX_LIST;
-	GLuint vbo = genBuffer("fillVertexIndexList2DVBO");
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(bbe::Vector2) * amountOfVertices, vertices, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	GLuint ibo = genBuffer("fillVertexIndexList2DIBO");
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * amountOfIndices, indices, GL_STATIC_DRAW);
+	GLuint vbo = genBuffer("fillVertexIndexList2DVBO", BufferTarget::ARRAY_BUFFER, sizeof(bbe::Vector2) * amountOfVertices, vertices);
+	GLuint ibo = genBuffer("fillVertexIndexList2DIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * amountOfIndices, indices);
 
 	InstanceData2D instanceData2D;
 	instanceData2D.scalePosOffset.x = scale.x;
@@ -1363,9 +1351,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 	instanceData2D.color.z = m_color2d.b;
 	instanceData2D.color.w = m_color2d.a;
 
-	GLuint instanceVBO = genBuffer("fillVertexIndexList2DInstanceVBO");
-	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(InstanceData2D), &instanceData2D, GL_STATIC_DRAW);
+	GLuint instanceVBO = genBuffer("fillVertexIndexList2DInstanceVBO", BufferTarget::ARRAY_BUFFER, sizeof(InstanceData2D), &instanceData2D);
 
 	GLint pos = 1;
 	glEnableVertexAttribArray(pos);
@@ -1528,9 +1514,7 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(const bbe::Matrix4& 
 	m_program3dLightBaking.uniformMatrix4fv(m_program3dLightBaking.projectionPos3dLight, false, identity);
 	m_program3dLightBaking.uniform2f(m_program3dLightBaking.screenSize3dLight, resolution.x, resolution.y);
 	uint32_t indices[] = { 0, 3, 1, 1, 3, 2 };
-	GLuint ibo = genBuffer("bakeLightsIBO");;
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices, GL_STATIC_DRAW);
+	GLuint ibo = genBuffer("bakeLightsIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 
 	geometryBuffer.bind();
 	glBindFramebuffer(GL_FRAMEBUFFER, colorBuffer.framebuffer);
