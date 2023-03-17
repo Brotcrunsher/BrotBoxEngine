@@ -1385,8 +1385,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 
 void bbe::INTERNAL::openGl::OpenGLManager::setColor3D(const bbe::Color& color)
 {
-	m_program3dMrt.uniform4f(m_program3dMrt.inColorPos3dMrt, color);
-	m_color3d = color;
+	bbe::Color copy = color;
+	copy.a = 1.f;
+	m_program3dMrt.uniform4f(m_program3dMrt.inColorPos3dMrt, copy);
+	m_color3d = copy;
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos, const bbe::Matrix4& view, const bbe::Matrix4& projection)
@@ -1503,11 +1505,13 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(const bbe::Matrix4& 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	bbe::Matrix4 identity;
-	m_program3dMrtBaking.uniform4f(m_program3dMrtBaking.inColorPos3dMrt, color);
+	bbe::Color colorCopy = color;
+	colorCopy.a = 1.0f;
+	m_program3dMrtBaking.uniform4f(m_program3dMrtBaking.inColorPos3dMrt, colorCopy);
 	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.viewPos3dMrt, false, identity);
 	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.projectionPos3dMrt, false, identity);
 	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.modelPos3dMrt, false, transform);
-	fillModel(transform, model, albedo, normals, emissions, shader, geometryBuffer.framebuffer, true, color);
+	fillModel(transform, model, albedo, normals, emissions, shader, geometryBuffer.framebuffer, true, colorCopy);
 
 	// Light Passes
 	m_program3dLightBaking.use();
@@ -1536,6 +1540,10 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(const bbe::Matrix4& 
 	geometryBuffer.destroy();
 	colorBuffer.destroy();
 
+	glViewport(0, 0, m_windowWidth, m_windowHeight);
+	glScissor (0, 0, m_windowWidth, m_windowHeight);
+	glEnable(GL_DEPTH_TEST);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	return retVal;
 }
 

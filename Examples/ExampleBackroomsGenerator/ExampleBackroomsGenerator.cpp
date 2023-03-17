@@ -254,7 +254,7 @@ namespace br
 					}
 					for (const bbe::PointLight& light : r.lights)
 					{
-						//brush.addLight(light);
+						brush.addLight(light);
 						lightCount++;
 					}
 				}
