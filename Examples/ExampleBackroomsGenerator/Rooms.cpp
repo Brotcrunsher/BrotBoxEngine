@@ -479,11 +479,11 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 		const Neighbor& n = rooms[roomi].neighbors[i];
 		lights.addList(rooms[n.neighborId].lights);
 	}
-	if (r.bakedCeiling.isLoaded() == false)
+	if (r.bakedCeiling.isLoadedCpu() == false && r.bakedCeiling.isLoadedGpu() == false)
 	{
 		r.bakedCeiling = game->bakeLights(bbe::Matrix4(), r.ceilingModel, nullptr, nullptr, nullptr, shaderCeiling, r.getColor(), { 256, 256 }, lights);
 	}
-	else if (r.bakedFloor.isLoaded() == false)
+	else if (r.bakedFloor.isLoadedCpu() == false && r.bakedFloor.isLoadedGpu() == false)
 	{
 		r.bakedFloor = game->bakeLights(bbe::Matrix4(), r.floorModel, nullptr, nullptr, nullptr, shaderFloor, r.getColor(), { 256, 256 }, lights);
 	}

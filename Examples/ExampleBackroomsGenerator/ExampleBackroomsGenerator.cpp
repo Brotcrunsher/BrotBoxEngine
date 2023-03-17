@@ -227,35 +227,19 @@ namespace br
 				}
 				const Room& r = rooms.rooms[roomi];
 
-				brush.setColor(1, 1, 1, 1);
-				for (const bbe::PointLight& light : r.lights)
-				{
-					brush.fillCube(bbe::Cube(light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)), nullptr, nullptr, &bbe::Image::white());
-				}
 				if (r.state >= RoomGenerationState::lightsBaked)
 				{
+					brush.setColor(1, 1, 1, 1);
+					for (const bbe::PointLight& light : r.lights)
+					{
+						brush.fillCube(bbe::Cube(light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)), nullptr, nullptr, &bbe::Image::white());
+					}
 					if (r.wallsModels.getLength() != r.bakedLights.getLength()) throw bbe::IllegalStateException();
 					brush.fillModel(bbe::Matrix4(), r.floorModel  , nullptr, nullptr, &r.bakedFloor);
 					brush.fillModel(bbe::Matrix4(), r.ceilingModel, nullptr, nullptr, &r.bakedCeiling);
 					for (size_t i = 0; i < r.wallsModels.getLength(); i++)
 					{
 						brush.fillModel(bbe::Matrix4(), r.wallsModels[i], nullptr, nullptr, &r.bakedLights[i]);
-					}
-				}
-				else
-				{
-					brush.setColor(r.getColor());
-					brush.fillModel(bbe::Matrix4(), r.floorModel  , nullptr, nullptr, nullptr, assetStore::Floor());
-					brush.fillModel(bbe::Matrix4(), r.ceilingModel, nullptr, nullptr, nullptr, assetStore::Ceiling());
-					brush.setColor(1, 1, 1, 1);
-					for (size_t i = 0; i < r.wallsModels.getLength(); i++)
-					{
-						brush.fillModel(bbe::Matrix4(), r.wallsModels[i], nullptr, nullptr, nullptr, assetStore::Wall());
-					}
-					for (const bbe::PointLight& light : r.lights)
-					{
-						brush.addLight(light);
-						lightCount++;
 					}
 				}
 			}
