@@ -174,7 +174,7 @@ size_t bbe::Image::getBytesPerChannel() const
 
 bbe::Color bbe::Image::getPixel(size_t x, size_t y) const
 {
-	if (!isLoaded())
+	if (!isLoadedCpu())
 	{
 		throw NotInitializedException();
 	}
@@ -205,7 +205,7 @@ bbe::ImageRepeatMode bbe::Image::getRepeatMode() const
 const bbe::Image& bbe::Image::white()
 {
 	static bbe::Image image;
-	if (!image.isLoaded())
+	if (!image.isLoadedCpu() && !image.isLoadedGpu())
 	{
 		byte pixel[] = { 255, 255, 255, 255 };
 		image.load(1, 1, pixel, bbe::ImageFormat::R8G8B8A8);
@@ -216,7 +216,7 @@ const bbe::Image& bbe::Image::white()
 const bbe::Image& bbe::Image::black()
 {
 	static bbe::Image image;
-	if (!image.isLoaded())
+	if (!image.isLoadedCpu() && !image.isLoadedGpu())
 	{
 		byte pixel[] = { 0, 0, 0, 255 };
 		image.load(1, 1, pixel, bbe::ImageFormat::R8G8B8A8);
@@ -249,7 +249,17 @@ void bbe::Image::setFilterMode(ImageFilterMode ifm)
 	m_filterMode = ifm;
 }
 
-bool bbe::Image::isLoaded() const
+void bbe::Image::keepAfterUpload()
+{
+	keep = true;
+}
+
+bool bbe::Image::isLoadedCpu() const
 {
 	return m_pdata.getLength() > 0;
+}
+
+bool bbe::Image::isLoadedGpu() const
+{
+	return m_prendererData != nullptr;
 }

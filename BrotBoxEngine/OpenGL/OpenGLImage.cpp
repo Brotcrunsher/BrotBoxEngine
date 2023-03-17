@@ -2,7 +2,7 @@
 
 bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image)
 {
-	if (!image.isLoaded())
+	if (!image.isLoadedCpu())
 	{
 		throw NotInitializedException();
 	}
@@ -28,6 +28,12 @@ bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image)
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat(image), image.getWidth(), image.getHeight(), 0, format(image), type(image), image.m_pdata.getRaw());
 
 	glGenerateMipmap(GL_TEXTURE_2D);
+
+	if (!image.keep)
+	{
+		image.m_pdata.clear();
+		image.m_pdata.shrink();
+	}
 }
 
 bbe::INTERNAL::openGl::OpenGLImage::~OpenGLImage()

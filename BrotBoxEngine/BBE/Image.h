@@ -60,12 +60,13 @@ namespace bbe
 		friend class PrimitiveBrush2D;
 		friend class PrimitiveBrush3D;
 	private:
-		bbe::List<byte> m_pdata;
+		mutable bbe::List<byte> m_pdata;
 		int             m_width  = 0;
 		int             m_height = 0;
 		ImageFormat     m_format = ImageFormat::R8G8B8A8;
 		ImageRepeatMode m_repeatMode = ImageRepeatMode::REPEAT;
 		ImageFilterMode m_filterMode = ImageFilterMode::LINEAR;
+		bool keep = false;
 
 		mutable bbe::AutoRef m_prendererData;
 
@@ -110,6 +111,8 @@ namespace bbe
 		ImageFilterMode getFilterMode() const;
 		void setFilterMode(ImageFilterMode ifm);
 
-		bool isLoaded() const;
+		bool isLoadedCpu() const;
+		bool isLoadedGpu() const;
+		void keepAfterUpload();
 	};
 }
