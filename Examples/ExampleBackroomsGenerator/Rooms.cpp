@@ -443,11 +443,12 @@ void br::Rooms::connectGates(size_t roomi)
 		r.wallsModels.add(mb.getModel());
 	}
 
+	const float roomLightProbability = 0.0001f + rand.randomFloat() * 0.2f;
 	for (int32_t i = 2; i < r.boundingBox.width - 2; i++)
 	{
 		for (int32_t k = 2; k < r.boundingBox.height - 2; k++)
 		{
-			if (rand.randomFloat() < 0.02f)
+			if (rand.randomFloat() < roomLightProbability)
 			{
 				bbe::PointLight pl;
 				pl.pos = bbe::Vector3(i + r.boundingBox.x + 0.5f, k + r.boundingBox.y + 0.5f, 2.f);
@@ -478,7 +479,6 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 		const Neighbor& n = rooms[roomi].neighbors[i];
 		lights.addList(rooms[n.neighborId].lights);
 	}
-	// TODO!
 	if (r.bakedCeiling.isLoaded() == false)
 	{
 		r.bakedCeiling = game->bakeLights(bbe::Matrix4(), r.ceilingModel, nullptr, nullptr, nullptr, shaderCeiling, r.getColor(), { 256, 256 }, lights);
