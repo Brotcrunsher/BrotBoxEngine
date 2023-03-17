@@ -259,7 +259,7 @@ void bbe::INTERNAL::openGl::Framebuffer::clearTextures()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void bbe::INTERNAL::openGl::Framebuffer::bind() // TODO Rename this - this doesn't "bind" the framebuffer, but the textures.
+void bbe::INTERNAL::openGl::Framebuffer::useAsInput()
 {
 	for (GLenum i = 0; i < (GLenum)textures.getLength(); i++)
 	{
@@ -1102,14 +1102,14 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFb.framebuffer);
 	postProcessingFb.clearTextures();
 
-	mrtFb.bind();
+	mrtFb.useAsInput();
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	m_program3dLight.use();
-	mrtFb.bind();
+	mrtFb.useAsInput();
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
@@ -1121,7 +1121,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 
 	m_programPostProcessing.use();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	postProcessingFb.bind();
+	postProcessingFb.useAsInput();
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
@@ -1516,7 +1516,7 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(const bbe::Matrix4& 
 	uint32_t indices[] = { 0, 3, 1, 1, 3, 2 };
 	GLuint ibo = genBuffer("bakeLightsIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 
-	geometryBuffer.bind();
+	geometryBuffer.useAsInput();
 	glBindFramebuffer(GL_FRAMEBUFFER, colorBuffer.framebuffer);
 	colorBuffer.clearTextures();
 	glDisable(GL_DEPTH_TEST);

@@ -111,7 +111,7 @@ namespace bbe
 				GLuint addTexture(const char* label);
 				void addDepthBuffer(const char* label);
 				void clearTextures();
-				void bind();
+				void useAsInput();
 				void finalize(const char* label);
 			};
 
