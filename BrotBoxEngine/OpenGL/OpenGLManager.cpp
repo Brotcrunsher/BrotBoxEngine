@@ -975,7 +975,7 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t wid
 {
 	bbe::List<float> colorFloatBuffer;
 	colorFloatBuffer.resizeCapacityAndLengthUninit(width * height * 4/*channels*/);
-	glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, colorFloatBuffer.getRaw());
+	glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, colorFloatBuffer.getRaw()); // TODO: GL_FLOAT is expensive! The only reason why this is here is that we don't do inverse gamma correction in baking.
 	for (size_t i = 0; i < colorFloatBuffer.getLength(); i += 4)
 	{
 		colorFloatBuffer[i + 3] = 1.0f;
