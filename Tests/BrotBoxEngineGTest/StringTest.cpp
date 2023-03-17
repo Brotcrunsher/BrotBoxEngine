@@ -32,7 +32,7 @@ TEST(String, TotalStringTest)
 	try
 	{
 		bbe::utf8charlen(u8"💃" + 1); //This should create an exception.
-		bbe::debugBreak();
+		debugBreak();
 	}
 	catch (const bbe::NotStartOfUtf8Exception&)
 	{
