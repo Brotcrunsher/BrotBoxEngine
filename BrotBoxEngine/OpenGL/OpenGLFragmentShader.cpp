@@ -24,6 +24,9 @@ static GLuint getShader(GLenum shaderType, const char* src, bbe::String& errorLo
 
 static void build(bbe::INTERNAL::openGl::OpenGLFragmentShader::ShaderProgramTripple& prog, const char* vertexShaderSource, const char* fragmentShaderSource)
 {
+	if (prog.built) return;
+	prog.built = true;
+
 	prog.vertex = getShader(GL_VERTEX_SHADER, vertexShaderSource, prog.errorLog);
 	prog.fragment = getShader(GL_FRAGMENT_SHADER, fragmentShaderSource, prog.errorLog);
 
@@ -43,6 +46,7 @@ static void build(bbe::INTERNAL::openGl::OpenGLFragmentShader::ShaderProgramTrip
 		glGetProgramInfoLog(prog.program, length, &length, log.getRaw());
 		std::cout << log.getRaw() << std::endl;
 	}
+	prog.determinePositions();
 }
 
 bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::FragmentShader& shader)
@@ -53,12 +57,13 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::Fra
 	}
 	shader.m_prendererData = this;
 
-	bbe::List<char> chars;
-	chars.resizeCapacityAndLengthUninit(shader.m_rawData.getLength() + 1);
-	memcpy(chars.getRaw(), shader.m_rawData.getRaw(), shader.m_rawData.getLength());
-	chars.last() = '\0';
-	char const* fragmentShaderSource = chars.getRaw();
+	code.resizeCapacityAndLengthUninit(shader.m_rawData.getLength() + 1);
+	memcpy(code.getRaw(), shader.m_rawData.getRaw(), shader.m_rawData.getLength());
+	code.last() = '\0';
+}
 
+bbe::INTERNAL::openGl::OpenGLFragmentShader::TwoD& bbe::INTERNAL::openGl::OpenGLFragmentShader::getTwoD()
+{
 	char const* vertexShader2dSource =
 		"#version 300 es\n"
 		"precision highp float;"
@@ -80,7 +85,14 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::Fra
 		"   passPosition = position;"
 		"	gl_Position = vec4(pos, 0.0, 1.0);"
 		"}";
+	char const* fragmentShaderSource = code.getRaw();
+	build(twoD, vertexShader2dSource, fragmentShaderSource);
 
+	return twoD;
+}
+
+bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD& bbe::INTERNAL::openGl::OpenGLFragmentShader::getThreeD()
+{
 	char const* vertexShader3dSource =
 		"#version 300 es\n"
 		"precision highp float;"
@@ -102,7 +114,14 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::Fra
 		"   passNormal = view * model * vec4(inNormal, 0.0);"
 		"   passUvCoord = inUvCoord;"
 		"}";
+	char const* fragmentShaderSource = code.getRaw();
+	build(threeD, vertexShader3dSource, fragmentShaderSource);
 
+	return threeD;
+}
+
+bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD& bbe::INTERNAL::openGl::OpenGLFragmentShader::getThreeDBake()
+{
 	char const* vertexShader3dBakeSource =
 		"#version 300 es\n"
 		"precision highp float;"
@@ -125,13 +144,24 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::Fra
 		"   passUvCoord = inUvCoord;"
 		"}";
 
-	build(twoD      , vertexShader2dSource    , fragmentShaderSource);
-	build(threeD    , vertexShader3dSource    , fragmentShaderSource);
+	char const* fragmentShaderSource = code.getRaw();
 	build(threeDBake, vertexShader3dBakeSource, fragmentShaderSource);
+	return threeDBake;
+}
 
-	twoD      .determinePositions();
-	threeD    .determinePositions();
-	threeDBake.determinePositions();
+bool bbe::INTERNAL::openGl::OpenGLFragmentShader::hasTwoD() const
+{
+	return twoD.built;
+}
+
+bool bbe::INTERNAL::openGl::OpenGLFragmentShader::hasThreeD() const
+{
+	return threeD.built;
+}
+
+bool bbe::INTERNAL::openGl::OpenGLFragmentShader::hasThreeDBake() const
+{
+	return threeDBake.built;
 }
 
 void bbe::INTERNAL::openGl::OpenGLFragmentShader::ShaderProgramTripple::destroy()

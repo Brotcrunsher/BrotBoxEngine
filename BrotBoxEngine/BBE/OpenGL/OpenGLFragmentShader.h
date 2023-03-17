@@ -19,8 +19,10 @@ namespace bbe
 					GLuint fragment = 0;
 					GLuint program = 0;
 					bbe::String errorLog;
+					bool built = false;
 
 					void destroy();
+					virtual void determinePositions() = 0;
 				};
 
 				struct TwoD : ShaderProgramTripple
@@ -29,7 +31,7 @@ namespace bbe
 					GLint scalePosOffsetPos = 0;
 					GLint rotationPos = 0;
 
-					void determinePositions();
+					void determinePositions() override;
 				};
 
 				struct ThreeD : ShaderProgramTripple
@@ -39,12 +41,22 @@ namespace bbe
 					GLint modelPos = 0;
 					GLint color3DPos = 0;
 
-					void determinePositions();
+					void determinePositions() override;
 				};
 
+			private:
+				bbe::List<char> code;
 				TwoD twoD;
 				ThreeD threeD;
 				ThreeD threeDBake;
+			public:
+				TwoD& getTwoD();
+				ThreeD& getThreeD();
+				ThreeD& getThreeDBake();
+
+				bool hasTwoD() const;
+				bool hasThreeD() const;
+				bool hasThreeDBake() const;
 
 				OpenGLFragmentShader(const bbe::FragmentShader& shader);
 				~OpenGLFragmentShader();

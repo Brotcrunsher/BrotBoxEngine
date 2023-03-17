@@ -745,22 +745,22 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 
 		if (!baking)
 		{
-			program = fs->threeD.program;
-			modelPos = fs->threeD.modelPos;
-			if (fs->threeD.errorLog.getLength() > 0)
+			program = fs->getThreeD().program;
+			modelPos = fs->getThreeD().modelPos;
+			if (fs->getThreeD().errorLog.getLength() > 0)
 			{
-				std::cout << fs->threeD.errorLog << std::endl;
-				fs->threeD.errorLog = "";
+				std::cout << fs->getThreeD().errorLog << std::endl;
+				fs->getThreeD().errorLog = "";
 			}
 		}
 		else
 		{
-			program = fs->threeDBake.program;
-			modelPos = fs->threeDBake.modelPos;
-			if (fs->threeDBake.errorLog.getLength() > 0)
+			program = fs->getThreeDBake().program;
+			modelPos = fs->getThreeDBake().modelPos;
+			if (fs->getThreeDBake().errorLog.getLength() > 0)
 			{
-				std::cout << fs->threeDBake.errorLog << std::endl;
-				fs->threeDBake.errorLog = "";
+				std::cout << fs->getThreeDBake().errorLog << std::endl;
+				fs->getThreeDBake().errorLog = "";
 			}
 		}
 	}
@@ -796,15 +796,15 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 		if (baking)
 		{
 			bbe::Matrix4 identiy;
-			glUniformMatrix4fv(fs->threeDBake.projectionPos, 1, GL_FALSE, &identiy[0]);
-			glUniformMatrix4fv(fs->threeDBake.viewPos, 1, GL_FALSE, &identiy[0]);
-			glUniform4f(fs->threeDBake.color3DPos, bakingColor.r, bakingColor.g, bakingColor.b, bakingColor.a);
+			glUniformMatrix4fv(fs->getThreeDBake().projectionPos, 1, GL_FALSE, &identiy[0]);
+			glUniformMatrix4fv(fs->getThreeDBake().viewPos, 1, GL_FALSE, &identiy[0]);
+			glUniform4f(fs->getThreeDBake().color3DPos, bakingColor.r, bakingColor.g, bakingColor.b, bakingColor.a);
 		}
 		else
 		{
-			glUniformMatrix4fv(fs->threeD.projectionPos, 1, GL_FALSE, &m_projection[0]);
-			glUniformMatrix4fv(fs->threeD.viewPos, 1, GL_FALSE, &m_view[0]);
-			glUniform4f(fs->threeD.color3DPos, m_color3d.r, m_color3d.g, m_color3d.b, m_color3d.a);
+			glUniformMatrix4fv(fs->getThreeD().projectionPos, 1, GL_FALSE, &m_projection[0]);
+			glUniformMatrix4fv(fs->getThreeD().viewPos, 1, GL_FALSE, &m_view[0]);
+			glUniform4f(fs->getThreeD().color3DPos, m_color3d.r, m_color3d.g, m_color3d.b, m_color3d.a);
 		}
 	}
 
@@ -1240,15 +1240,15 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 	{
 		fs = new bbe::INTERNAL::openGl::OpenGLFragmentShader(*shader);
 	}
-	GLuint program = fs->twoD.program;
+	GLuint program = fs->getTwoD().program;
 
-	GLint scalePosOffsetPos = fs->twoD.scalePosOffsetPos;
-	GLint rotationPos = fs->twoD.rotationPos;
+	GLint scalePosOffsetPos = fs->getTwoD().scalePosOffsetPos;
+	GLint rotationPos = fs->getTwoD().rotationPos;
 
-	if (fs->twoD.errorLog.getLength() > 0)
+	if (fs->getTwoD().errorLog.getLength() > 0)
 	{
-		std::cout << fs->twoD.errorLog << std::endl;
-		fs->twoD.errorLog = "";
+		std::cout << fs->getTwoD().errorLog << std::endl;
+		fs->getTwoD().errorLog = "";
 	}
 
 	glUseProgram(program);
@@ -1268,7 +1268,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	glUniform2f(fs->twoD.screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
+	glUniform2f(fs->getTwoD().screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
 	glUniform4f(scalePosOffsetPos, rect.width, rect.height, rect.x, rect.y);
 	glUniform1f(rotationPos, rotation);
 	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);

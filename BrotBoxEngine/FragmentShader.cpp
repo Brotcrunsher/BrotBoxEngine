@@ -70,46 +70,82 @@ void bbe::FragmentShader::setUniform2fv(const char* name, GLsizei size, const bb
 {
 	if (m_prendererData == nullptr) return; // TODO: This leads to the uniforms not having the correct value on the first frame!
 	bbe::INTERNAL::openGl::OpenGLFragmentShader* s = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)m_prendererData.get();
-	glUseProgram(s->twoD.program);
-	glUniform2fv(glGetUniformLocation(s->twoD.program, name), size * 2, (float*)values);
-	glUseProgram(s->threeD.program);
-	glUniform2fv(glGetUniformLocation(s->threeD.program, name), size * 2, (float*)values);
-	glUseProgram(s->threeDBake.program);
-	glUniform2fv(glGetUniformLocation(s->threeDBake.program, name), size * 2, (float*)values);
+	if (s->hasTwoD())
+	{
+		glUseProgram(s->getTwoD().program);
+		glUniform2fv(glGetUniformLocation(s->getTwoD().program, name), size * 2, (float*)values);
+	}
+	if (s->hasThreeD())
+	{
+		glUseProgram(s->getThreeD().program);
+		glUniform2fv(glGetUniformLocation(s->getThreeD().program, name), size * 2, (float*)values);
+	}
+	if (s->hasThreeDBake())
+	{
+		glUseProgram(s->getThreeDBake().program);
+		glUniform2fv(glGetUniformLocation(s->getThreeDBake().program, name), size * 2, (float*)values);
+	}
 }
 void bbe::FragmentShader::setUniform1d(const char* name, double value)
 {
 	if (m_prendererData == nullptr) return; // TODO: This leads to the uniforms not having the correct value on the first frame!
 	bbe::INTERNAL::openGl::OpenGLFragmentShader* s = (bbe::INTERNAL::openGl::OpenGLFragmentShader *)m_prendererData.get();
-	glUseProgram(s->twoD.program);
-	glUniform1d(glGetUniformLocation(s->twoD.program, name), value);
-	glUseProgram(s->threeD.program);
-	glUniform1d(glGetUniformLocation(s->threeD.program, name), value);
-	glUseProgram(s->threeDBake.program);
-	glUniform1d(glGetUniformLocation(s->threeDBake.program, name), value);
+	if (s->hasTwoD())
+	{
+		glUseProgram(s->getTwoD().program);
+		glUniform1d(glGetUniformLocation(s->getTwoD().program, name), value);
+	}
+	if (s->hasThreeD())
+	{
+		glUseProgram(s->getThreeD().program);
+		glUniform1d(glGetUniformLocation(s->getThreeD().program, name), value);
+	}
+	if (s->hasThreeDBake())
+	{
+		glUseProgram(s->getThreeDBake().program);
+		glUniform1d(glGetUniformLocation(s->getThreeDBake().program, name), value);
+	}
 }
 
 void bbe::FragmentShader::setUniform1i(const char* name, GLint value)
 {
 	if (m_prendererData == nullptr) return; // TODO: This leads to the uniforms not having the correct value on the first frame!
 	bbe::INTERNAL::openGl::OpenGLFragmentShader* s = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)m_prendererData.get();
-	glUseProgram(s->twoD.program);
-	glUniform1i(glGetUniformLocation(s->twoD.program, name), value);
-	glUseProgram(s->threeD.program);
-	glUniform1i(glGetUniformLocation(s->threeD.program, name), value);
-	glUseProgram(s->threeDBake.program);
-	glUniform1i(glGetUniformLocation(s->threeDBake.program, name), value);
+	if (s->hasTwoD())
+	{
+		glUseProgram(s->getTwoD().program);
+		glUniform1i(glGetUniformLocation(s->getTwoD().program, name), value);
+	}
+	if (s->hasThreeD())
+	{
+		glUseProgram(s->getThreeD().program);
+		glUniform1i(glGetUniformLocation(s->getThreeD().program, name), value);
+	}
+	if (s->hasThreeDBake())
+	{
+		glUseProgram(s->getThreeDBake().program);
+		glUniform1i(glGetUniformLocation(s->getThreeDBake().program, name), value);
+	}
 }
 
 void bbe::FragmentShader::setUniform1f(const char* name, float value)
 {
 	if (m_prendererData == nullptr) return; // TODO: This leads to the uniforms not having the correct value on the first frame!
 	bbe::INTERNAL::openGl::OpenGLFragmentShader* s = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)m_prendererData.get();
-	glUseProgram(s->twoD.program);
-	glUniform1f(glGetUniformLocation(s->twoD.program, name), value);
-	glUseProgram(s->threeD.program);
-	glUniform1f(glGetUniformLocation(s->threeD.program, name), value);
-	glUseProgram(s->threeDBake.program);
-	glUniform1f(glGetUniformLocation(s->threeDBake.program, name), value);
+	if (s->hasTwoD())
+	{
+		glUseProgram(s->getTwoD().program);
+		glUniform1f(glGetUniformLocation(s->getTwoD().program, name), value);
+	}
+	if (s->hasThreeD())
+	{
+		glUseProgram(s->getThreeD().program);
+		glUniform1f(glGetUniformLocation(s->getThreeD().program, name), value);
+	}
+	if (s->hasThreeDBake())
+	{
+		glUseProgram(s->getThreeDBake().program);
+		glUniform1f(glGetUniformLocation(s->getThreeDBake().program, name), value);
+	}
 }
 #endif
