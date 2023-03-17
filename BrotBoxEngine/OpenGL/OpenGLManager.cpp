@@ -147,7 +147,8 @@ bbe::String bbe::INTERNAL::openGl::Program::getHeader(const bbe::List<UniformVar
 {
 	bbe::String retVal =
 		"#version 300 es\n"
-		"precision highp float;\n";
+		"precision highp float;\n"
+		"precision highp int;\n"; // Actually required! Intel Drivers seem to have different default precisions of int between vertex and frament shaders, leading to linker issues.
 	for (const UniformVariable& uv : uniformVariables)
 	{
 		retVal += uv.toString();
