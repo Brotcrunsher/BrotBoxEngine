@@ -65,11 +65,10 @@ static GLuint createProgram(const char* label)
 	return program;
 }
 
-static GLuint genFramebuffer(const char* label)
+static GLuint genFramebuffer()
 {
 	GLuint framebuffer = 0;
 	glGenFramebuffers(1, &framebuffer);
-	//addLabel(GL_FRAMEBUFFER, framebuffer, label); // TODO: Fix this. The Object wasn't really created yet. glGen... is only reserving a name.
 	return framebuffer;
 }
 
@@ -217,10 +216,10 @@ bbe::INTERNAL::openGl::Framebuffer::Framebuffer()
 {
 }
 
-bbe::INTERNAL::openGl::Framebuffer::Framebuffer(const char* label, GLsizei width, GLsizei height)
+bbe::INTERNAL::openGl::Framebuffer::Framebuffer(GLsizei width, GLsizei height)
 	: width(width), height(height)
 {
-	framebuffer = genFramebuffer(label);
+	framebuffer = genFramebuffer();
 }
 
 void bbe::INTERNAL::openGl::Framebuffer::destroy()
@@ -269,7 +268,7 @@ void bbe::INTERNAL::openGl::Framebuffer::bind() // TODO Rename this - this doesn
 	}
 }
 
-void bbe::INTERNAL::openGl::Framebuffer::finalize()
+void bbe::INTERNAL::openGl::Framebuffer::finalize(const char* label)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 	for (GLenum i = 0; i < (GLenum)textures.getLength(); i++)
@@ -284,6 +283,7 @@ void bbe::INTERNAL::openGl::Framebuffer::finalize()
 	}
 	glDrawBuffers((GLsizei)attachements.getLength(), attachements.getRaw());
 
+	addLabel(GL_FRAMEBUFFER, framebuffer, label);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -688,7 +688,7 @@ bbe::INTERNAL::openGl::LightProgram bbe::INTERNAL::openGl::OpenGLManager::init3d
 
 bbe::INTERNAL::openGl::Framebuffer bbe::INTERNAL::openGl::OpenGLManager::getGeometryBuffer(const bbe::String& label, uint32_t width, uint32_t height, bool baking) const
 {
-	Framebuffer fb(label.getRaw(), width, height);
+	Framebuffer fb(width, height);
 	fb.addTexture((label + "(Positions)").getRaw());
 	fb.addTexture((label + "(Normals)").getRaw());
 	fb.addTexture((label + "(Albedo)").getRaw());
@@ -698,7 +698,7 @@ bbe::INTERNAL::openGl::Framebuffer bbe::INTERNAL::openGl::OpenGLManager::getGeom
 	{
 		fb.addDepthBuffer((label + "(DepthBuffer)").getRaw());
 	}
-	fb.finalize();
+	fb.finalize(label.getRaw());
 	return fb;
 }
 
@@ -708,9 +708,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::initFrameBuffers()
 	mrtFb = getGeometryBuffer("GeometryBuffer", m_windowWidth, m_windowHeight, false);
 
 	postProcessingFb.destroy();
-	postProcessingFb = Framebuffer("PostProcessingBuffer", m_windowWidth, m_windowHeight);
+	postProcessingFb = Framebuffer(m_windowWidth, m_windowHeight);
 	postProcessingFb.addTexture("PostProcessing");
-	postProcessingFb.finalize();
+	postProcessingFb.finalize("PostProcessingBuffer");
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, GLuint framebuffer, bool baking, const bbe::Color& bakingColor)
@@ -1486,9 +1486,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiEndFrame()
 bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, const bbe::Color& color, const bbe::Vector2i &resolution, const bbe::List<bbe::PointLight>& lights)
 {
 	Framebuffer geometryBuffer = getGeometryBuffer("BakeLightsGeometryBuffer", resolution.x, resolution.y, true);
-	Framebuffer colorBuffer("BakeLightsColorBuffer", resolution.x, resolution.y);
+	Framebuffer colorBuffer(resolution.x, resolution.y);
 	colorBuffer.addTexture("BakeLights ColorBuffer");
-	colorBuffer.finalize();
+	colorBuffer.finalize("BakeLightsColorBuffer");
 
 	glViewport(0, 0, resolution.x, resolution.y);
 	glScissor (0, 0, resolution.x, resolution.y);

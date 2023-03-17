@@ -105,14 +105,14 @@ namespace bbe
 				GLuint depthBuffer = 0;
 
 				Framebuffer();
-				Framebuffer(const char* label, GLsizei width, GLsizei height);
+				Framebuffer(GLsizei width, GLsizei height);
 
 				void destroy();
 				GLuint addTexture(const char* label);
 				void addDepthBuffer(const char* label);
 				void clearTextures();
 				void bind();
-				void finalize();
+				void finalize(const char* label);
 			};
 
 			struct InstanceData2D
