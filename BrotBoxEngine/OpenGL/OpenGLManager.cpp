@@ -494,7 +494,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   vec3 albedo = texture(gAlbedoSpec, gl_FragCoord.xy / screenSize).xyz;"
 		"   vec3 ambient = albedo * ambientFactor;"
 		"   vec3 emissions = texture(emissions, gl_FragCoord.xy / screenSize).xyz;"
-		"   outColor = vec4(ambient + emissions, 1.0);"
+		"   outColor = vec4(ambient + pow(emissions, vec3(2.2)), 1.0);"
 		"}";
 	program.addShaders("3dAmbient", vertexShaderSrc, fragmentShaderSource,
 		{
@@ -973,14 +973,20 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& ligh
 
 bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t width, uint32_t height) const
 {
+	const size_t bufferSize = width * height * 4/*channels*/;
 	bbe::List<float> colorFloatBuffer;
-	colorFloatBuffer.resizeCapacityAndLengthUninit(width * height * 4/*channels*/);
+	bbe::List<byte> byteBuffer;
+	colorFloatBuffer.resizeCapacityAndLengthUninit(bufferSize);
+	byteBuffer      .resizeCapacityAndLengthUninit(bufferSize);
 	glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, colorFloatBuffer.getRaw()); // TODO: GL_FLOAT is expensive! The only reason why this is here is that we don't do inverse gamma correction in baking.
 	for (size_t i = 0; i < colorFloatBuffer.getLength(); i += 4)
 	{
-		colorFloatBuffer[i + 3] = 1.0f;
+		byteBuffer[i + 0] = bbe::Math::pow(bbe::Math::clamp01(colorFloatBuffer[i + 0]), 1.0 / 2.2) * 255;
+		byteBuffer[i + 1] = bbe::Math::pow(bbe::Math::clamp01(colorFloatBuffer[i + 1]), 1.0 / 2.2) * 255;
+		byteBuffer[i + 2] = bbe::Math::pow(bbe::Math::clamp01(colorFloatBuffer[i + 2]), 1.0 / 2.2) * 255;
+		byteBuffer[i + 3] = 255;
 	}
-	return bbe::Image(width, height, colorFloatBuffer.getRaw(), bbe::ImageFormat::R32G32B32A32FLOAT);
+	return bbe::Image(width, height, byteBuffer.getRaw(), bbe::ImageFormat::R8G8B8A8);
 }
 
 bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
