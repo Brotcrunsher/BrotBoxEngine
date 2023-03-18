@@ -40,5 +40,11 @@ namespace br
 		void propagateSingleBakeAtPoint(const bbe::Vector2i& position, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling);
 
 		void addRoom(const bbe::Rectanglei& bounding);
+
+		bool isRoomVisible(size_t roomi);
+		void updateOcclusionQueries(size_t roomi, bbe::PrimitiveBrush3D& brush);
+		void drawAt(const bbe::Vector3 pos, bool force, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights);
+		void drawRoom(size_t roomi, bool force, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights);
+		void drawRoomsRecursively(bbe::List<size_t>& alreadyDrawn, bbe::List<size_t>& neighborList, size_t roomi, bool force, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights);
 	};
 }

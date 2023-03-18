@@ -1429,10 +1429,11 @@ struct OcclusionQuery : public bbe::DataProvider<bool>
 	{
 		glGenQueries(1, &id);
 		glBeginQuery(GL_ANY_SAMPLES_PASSED, id);
-		// TODO depthbuffer and colorbuffer stuff
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 		glDepthMask(GL_FALSE);
+		glStencilMask(GL_FALSE);
 		manager->fillCube3D(cube);
+		glStencilMask(GL_TRUE);
 		glDepthMask(GL_TRUE);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glEndQuery(GL_ANY_SAMPLES_PASSED);

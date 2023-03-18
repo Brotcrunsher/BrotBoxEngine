@@ -51,6 +51,21 @@ bbe::Vector2i br::Room::getHashGridPosition(const bbe::Vector2i& pos)
 	return pos / gridSize;
 }
 
+bbe::Cube br::Room::getBoundingCube() const
+{
+	bbe::Vector3 pos = {
+		(float)boundingBox.x + (float)boundingBox.width * 0.5f,
+		(float)boundingBox.y + (float)boundingBox.height * 0.5f,
+		1.f
+	};
+	bbe::Vector3 scale = {
+		(float)boundingBox.width,
+		(float)boundingBox.height,
+		2.f
+	};
+	return bbe::Cube(pos, scale);
+}
+
 bbe::Matrix4 br::Room::floorMatrix() const
 {
 	const bbe::Rectanglei& bounding = boundingBox;

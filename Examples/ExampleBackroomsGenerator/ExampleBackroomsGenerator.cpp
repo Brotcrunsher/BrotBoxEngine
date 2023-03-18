@@ -27,13 +27,15 @@ namespace br
 		bool autoExpand = false;
 
 		int renderMode = 1;
-		int depth = 2;
 
 		bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
 
-		bbe::List<size_t> interestingRooms;
-
 		bbe::Image debugBake;
+
+		bool drawFloor = true;
+		bool drawWalls = true;
+		bool drawCeiling = true;
+		bool drawLights = true;
 	public:
 		void newRooms()
 		{
@@ -163,7 +165,6 @@ namespace br
 			}
 			//std::cout << fps << std::endl;
 			bbe::Vector2i cami((int32_t)camPos.x, (int32_t)camPos.y);
-			interestingRooms = rooms.generateAtPointMulti(cami, depth);
 			rooms.propagateSingleBakeAtPoint(cami, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling());
 		}
 
@@ -201,7 +202,10 @@ namespace br
 			}
 			else if (renderMode == 1)
 			{
-				ImGui::InputInt("depth", &depth);
+				ImGui::Checkbox("Draw Floor", &drawFloor);
+				ImGui::Checkbox("Draw Walls", &drawWalls);
+				ImGui::Checkbox("Draw Ceiling", &drawCeiling);
+				ImGui::Checkbox("Draw Lights", &drawLights);
 			}
 			else
 			{
@@ -215,35 +219,7 @@ namespace br
 			brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 			//brush.setCamera(bbe::Vector3(0, 0, 1.7f), bbe::Vector3(-1, 0, 1.7f));
 
-			int lightCount = 0;
-			int wallCount = 0;
-			bool foundRoomToBake = false;
-			for (size_t roomi : interestingRooms)
-			{
-				//if (roomi != 2) continue;
-				if (!foundRoomToBake && rooms.bakeLights(roomi, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling()))
-				{
-					foundRoomToBake = true;
-				}
-				const Room& r = rooms.rooms[roomi];
-
-				if (r.state >= RoomGenerationState::lightsBaked)
-				{
-					brush.setColor(1, 1, 1, 1);
-					for (const bbe::PointLight& light : r.lights)
-					{
-						brush.fillCube(bbe::Cube(light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)), nullptr, nullptr, &bbe::Image::white());
-					}
-					if (r.wallsModels.getLength() != r.bakedLights.getLength()) throw bbe::IllegalStateException();
-					brush.fillModel(bbe::Matrix4(), r.floorModel  , nullptr, nullptr, &r.bakedFloor);
-					brush.fillModel(bbe::Matrix4(), r.ceilingModel, nullptr, nullptr, &r.bakedCeiling);
-					for (size_t i = 0; i < r.wallsModels.getLength(); i++)
-					{
-						brush.fillModel(bbe::Matrix4(), r.wallsModels[i], nullptr, nullptr, &r.bakedLights[i]);
-					}
-				}
-			}
-			//std::cout << "Lights: " << lightCount << " Walls: " << wallCount << std::endl;
+			rooms.drawAt(ccnc.getCameraPos(), false, brush, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling(), drawFloor, drawWalls, drawCeiling, drawLights);
 		}
 
 		virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
