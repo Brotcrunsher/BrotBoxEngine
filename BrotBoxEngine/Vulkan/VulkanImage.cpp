@@ -8,7 +8,7 @@
 
 bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image& image, const INTERNAL::vulkan::VulkanDevice& device, const INTERNAL::vulkan::VulkanCommandPool& commandPool, const INTERNAL::vulkan::VulkanDescriptorPool& descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout& setLayout)
 {
-	if (!image.isLoaded())
+	if (!image.isLoadedCpu())
 	{
 		throw NotInitializedException();
 	}
