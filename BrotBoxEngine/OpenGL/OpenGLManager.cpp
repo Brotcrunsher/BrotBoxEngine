@@ -1491,8 +1491,25 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiEndFrame()
 	ImGui_ImplOpenGL3_RenderDrawData(drawData);
 }
 
-bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, const bbe::Color& color, const bbe::Vector2i &resolution, const bbe::List<bbe::PointLight>& lights)
+bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(bbe::Matrix4 /*copy*/ transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, const bbe::Color& color, const bbe::Vector2i& resolution, bbe::List<bbe::PointLight> /*copy*/ lights)
 {
+	// Calculate average position of the transform and the lights. This
+	// is then subtracted from the transform and the lights to keep
+	// coordinates closer to the origin, where they have a high precision.
+	// TODO: This messes up the world position passed to the shader. Fix it.
+	bbe::Vector3 avgPos = transform.extractTranslation();
+	for (const PointLight& p : lights)
+	{
+		avgPos += p.pos;
+	}
+	avgPos /= (lights.getLength() + 1);
+	transform = transform * bbe::Matrix4::createTranslationMatrix(-avgPos);
+	for (PointLight& p : lights)
+	{
+		p.pos -= avgPos;
+	}
+
+
 	Framebuffer geometryBuffer = getGeometryBuffer("BakeLightsGeometryBuffer", resolution.x, resolution.y, true);
 	Framebuffer colorBuffer(resolution.x, resolution.y);
 	colorBuffer.addTexture("BakeLights ColorBuffer");
