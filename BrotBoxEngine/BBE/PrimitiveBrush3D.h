@@ -10,6 +10,7 @@
 #include "../BBE/FragmentShader.h"
 #include "../BBE/Color.h"
 #include "../BBE/Model.h"
+#include "../BBE/Future.h"
 
 namespace bbe
 {
@@ -71,6 +72,7 @@ namespace bbe
 		void addLight(const bbe::PointLight& light);
 
 #ifdef BBE_RENDERER_OPENGL
+		bbe::Future<bool> isCubeVisible(const Cube& cube);
 		void fillRectangle(const bbe::Matrix4& transform, const Image* albedo = nullptr, const Image* normals = nullptr, const Image* emissions = nullptr, const bbe::FragmentShader* shader = nullptr);
 		void fillCube(const Cube& cube, const Image* albedo, const Image* normals = nullptr, const Image* emissions = nullptr, const bbe::FragmentShader* shader = nullptr);
 		void fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo = nullptr, const Image* normals = nullptr, const Image* emissions = nullptr, const bbe::FragmentShader* shader = nullptr);

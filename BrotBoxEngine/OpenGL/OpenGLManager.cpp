@@ -1422,6 +1422,41 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transfo
 	fillModel(transform, model, albedo, normals, emissions, shader, mrtFb.framebuffer, false, bbe::Color::white());
 }
 
+struct OcclusionQuery : public bbe::DataProvider<bool>
+{
+	GLuint id = 0;
+	OcclusionQuery(bbe::INTERNAL::openGl::OpenGLManager* manager, const bbe::Cube& cube)
+	{
+		glGenQueries(1, &id);
+		glBeginQuery(GL_ANY_SAMPLES_PASSED, id);
+		// TODO depthbuffer and colorbuffer stuff
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		glDepthMask(GL_FALSE);
+		manager->fillCube3D(cube);
+		glDepthMask(GL_TRUE);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glEndQuery(GL_ANY_SAMPLES_PASSED);
+	}
+
+	virtual bool isValueReady() const override
+	{
+		GLint val;
+		glGetQueryObjectiv(id, GL_QUERY_RESULT_AVAILABLE, &val);
+		return val;
+	}
+	virtual bool getValue() const
+	{
+		GLint val;
+		glGetQueryObjectiv(id, GL_QUERY_RESULT, &val);
+		return val;
+	}
+};
+
+bbe::Future<bool> bbe::INTERNAL::openGl::OpenGLManager::isCubeVisible(const Cube& cube)
+{
+	return bbe::Future<bool>(new OcclusionQuery(this, cube));
+}
+
 void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, const bbe::Color& lightColor, const bbe::Color& specularColor, LightFalloffMode falloffMode)
 {
 	bbe::PointLight light(pos);

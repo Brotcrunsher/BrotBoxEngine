@@ -125,6 +125,11 @@ void bbe::PrimitiveBrush3D::addLight(const bbe::PointLight& light)
 }
 
 #ifdef BBE_RENDERER_OPENGL
+bbe::Future<bool> bbe::PrimitiveBrush3D::isCubeVisible(const Cube& cube)
+{
+	return ((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->isCubeVisible(cube);
+}
+
 void bbe::PrimitiveBrush3D::fillRectangle(const bbe::Matrix4& transform, const Image* albedo, const Image* normals, const Image* emissions, const bbe::FragmentShader* shader)
 {
 	fillModel(transform, m_rectangle, albedo, normals, emissions, shader);
