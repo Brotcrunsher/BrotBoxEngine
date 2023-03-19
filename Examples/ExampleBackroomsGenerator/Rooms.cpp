@@ -491,7 +491,7 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	{
 		// Must happen at the start rather than the end because we could have 0 walls.
 		rooms[roomi].state = RoomGenerationState::lightsBaked;
-		return true;
+		return false;
 	}
 	else
 	{
@@ -535,34 +535,6 @@ int32_t br::Rooms::getRoomIndexAtPoint(const bbe::Vector2i& position, int32_t ig
 	}
 
 	return -1;
-}
-
-size_t br::Rooms::bakeAtPoint(const bbe::Vector2i& position, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling)
-{
-	size_t roomi = generateAtPoint(position);
-	bakeLights(roomi, game, shaderFloor, shaderWall, shaderCeiling);
-	return roomi;
-}
-
-void br::Rooms::propagateSingleBakeAtPoint(const bbe::Vector2i& position, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling)
-{
-	size_t roomi = generateAtPoint(position);
-	if (rooms[roomi].state < RoomGenerationState::lightsBaked)
-	{
-		bakeLights(roomi, game, shaderFloor, shaderWall, shaderCeiling);
-	}
-	else
-	{
-		for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
-		{
-			const Neighbor& n = rooms[roomi].neighbors[i];
-			if (rooms[n.neighborId].state < RoomGenerationState::lightsBaked)
-			{
-				bakeLights(n.neighborId, game, shaderFloor, shaderWall, shaderCeiling);
-				return;
-			}
-		}
-	}
 }
 
 void br::Rooms::addRoom(const bbe::Rectanglei& bounding)
@@ -628,6 +600,16 @@ void br::Rooms::drawAt(const bbe::Vector3 pos, bool force, bbe::PrimitiveBrush3D
 	for (size_t roomi : neighborList)
 	{
 		updateOcclusionQueries(roomi, brush);
+	}
+
+	// Also always draw available neighbors of the original Room. This prevents popups in case the user is spinning several times. Also prevents hiding a room for a frame on gate traversal.
+	for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
+	{
+		size_t neighborId = rooms[roomi].neighbors[i].neighborId;
+		if (rooms[neighborId].state >= RoomGenerationState::lightsBaked) // Only draw baked rooms to prevent unnecessary lag spikes on room traversal
+		{
+			drawRoom(neighborId, force, brush, game, shaderFloor, shaderWall, shaderCeiling, drawFloor, drawWalls, drawCeiling, drawLights);
+		}
 	}
 }
 

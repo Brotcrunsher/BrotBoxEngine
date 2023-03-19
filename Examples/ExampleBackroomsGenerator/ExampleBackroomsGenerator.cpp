@@ -163,9 +163,6 @@ namespace br
 				minFps = fps;
 				std::cout << fps << std::endl;
 			}
-			//std::cout << fps << std::endl;
-			bbe::Vector2i cami((int32_t)camPos.x, (int32_t)camPos.y);
-			rooms.propagateSingleBakeAtPoint(cami, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling());
 		}
 
 		virtual void update(float timeSinceLastFrame) override
