@@ -1440,6 +1440,11 @@ struct OcclusionQuery : public bbe::DataProvider<bool>
 		glEndQuery(GL_ANY_SAMPLES_PASSED);
 	}
 
+	~OcclusionQuery()
+	{
+		glDeleteQueries(1, &id);
+	}
+
 	virtual bool isValueReady() const override
 	{
 		GLint val;

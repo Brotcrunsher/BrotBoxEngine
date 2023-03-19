@@ -9,6 +9,7 @@ namespace bbe
 	class DataProvider : public bbe::AutoRefCountable
 	{
 	public:
+		~DataProvider() {}
 		virtual bool isValueReady() const = 0;
 		virtual T    getValue()     const = 0;
 	};
