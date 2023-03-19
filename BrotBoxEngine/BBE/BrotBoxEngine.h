@@ -6,6 +6,7 @@
 #include "../BBE/Hash.h"
 #include "../BBE/HashMap.h"
 #include "../BBE/List.h"
+#include "../BBE/Queue.h"
 #include "../BBE/Span.h"
 #include "../BBE/Grid.h"
 #include "../BBE/Stack.h"

@@ -20,6 +20,7 @@ namespace bbe
 		AutoRef ref;
 
 	public:
+		Future() {}
 		Future(DataProvider<T>* dataProvider)
 			: ref(dataProvider) // TODO: This is far from ideal. What if the dataProvider wasn't created with new?
 			                    //       Right now the alternative would be to take an AutoRef as parameter, but then

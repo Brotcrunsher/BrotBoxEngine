@@ -606,10 +606,10 @@ void br::Rooms::updateOcclusionQueries(size_t roomi, bbe::PrimitiveBrush3D& brus
 			brush.isCubeVisible(r.getBoundingCubeOuter())
 		}
 	);
-	while (r.occlusionQueries.getLength() > 0 && r.occlusionQueries[0].inner.isValueReady() && r.occlusionQueries[0].outer.isValueReady())
+	while (!r.occlusionQueries.isEmpty() && r.occlusionQueries.peek().inner.isValueReady() && r.occlusionQueries.peek().outer.isValueReady())
 	{
-		r.visible = r.occlusionQueries[0].inner.getValue() || r.occlusionQueries[0].outer.getValue();
-		r.occlusionQueries.removeIndex(0); // TODO use bbe::queue instead
+		Room::OcclusionQueryPair oqp = r.occlusionQueries.pop();
+		r.visible = oqp.inner.getValue() || oqp.outer.getValue();
 	}
 }
 

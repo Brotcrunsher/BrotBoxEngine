@@ -56,7 +56,7 @@ namespace br
 			bbe::Future<bool> inner;
 			bbe::Future<bool> outer;
 		};
-		bbe::List<OcclusionQueryPair> occlusionQueries;
+		bbe::Queue<OcclusionQueryPair> occlusionQueries;
 		bool visible = false;
 
 		bbe::List<bbe::Vector2i> getHashGridPositions() const;

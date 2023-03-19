@@ -661,3 +661,36 @@ TEST(List, SelfAdd)
 	// Just make sure the sanatizer doesn't find an illegal access here.
 	for(int i = 0; i < 1024; i++) l.add(l[0]);
 }
+
+TEST(Queue, TestQueue)
+{
+	for (size_t seed = 1; seed < 1000; seed++)
+	{
+		bbe::Queue<uint32_t> queue;
+		uint32_t expectedLength = 0;
+		uint32_t expectedNextPop = 0;
+		uint32_t nextAdd = 0;
+		bbe::Random rand;
+		rand.setSeed(seed);
+
+
+		for (size_t i = 0; i < 1000; i++)
+		{
+			ASSERT_EQ(queue.getLength(), expectedLength);
+			ASSERT_EQ(queue.isEmpty(), expectedLength == 0);
+			if (expectedLength == 0 || rand.randomBool())
+			{
+				queue.add(nextAdd);
+				nextAdd++;
+				expectedLength++;
+			}
+			else
+			{
+				uint32_t element = queue.pop();
+				ASSERT_EQ(element, expectedNextPop);
+				expectedNextPop++;
+				expectedLength--;
+			}
+		}
+	}
+}
