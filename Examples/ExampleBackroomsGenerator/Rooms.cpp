@@ -603,10 +603,15 @@ bool br::Rooms::isRoomVisible(size_t roomi)
 void br::Rooms::updateOcclusionQueries(size_t roomi, bbe::PrimitiveBrush3D& brush)
 {
 	Room& r = rooms[roomi];
-	r.occlusionQueries.add(brush.isCubeVisible(r.getBoundingCube()));
-	while (r.occlusionQueries.getLength() > 0 && r.occlusionQueries[0].isValueReady())
+	r.occlusionQueries.add(
+		{
+			brush.isCubeVisible(r.getBoundingCubeInner()),
+			brush.isCubeVisible(r.getBoundingCubeOuter())
+		}
+	);
+	while (r.occlusionQueries.getLength() > 0 && r.occlusionQueries[0].inner.isValueReady() && r.occlusionQueries[0].outer.isValueReady())
 	{
-		r.visible = r.occlusionQueries[0].getValue();
+		r.visible = r.occlusionQueries[0].inner.getValue() || r.occlusionQueries[0].outer.getValue();
 		r.occlusionQueries.removeIndex(0); // TODO use bbe::queue instead
 	}
 }
@@ -644,7 +649,7 @@ void br::Rooms::drawRoom(size_t roomi, bool force, bbe::PrimitiveBrush3D& brush,
 		else
 		{
 			// Draw the bounding box to stop other rooms to become worngly visible.
-			brush.fillCube(rooms[roomi].getBoundingCube());
+			brush.fillCube(rooms[roomi].getBoundingCubeInner());
 			return;
 		}
 	}

@@ -46,14 +46,22 @@ namespace br
 		bbe::Image bakedCeiling;
 		bbe::Image bakedFloor;
 		bbe::List<bbe::Image> bakedLights;
-		bbe::List<bbe::Future<bool>> occlusionQueries;
+		struct OcclusionQueryPair
+		{
+			bbe::Future<bool> inner;
+			bbe::Future<bool> outer;
+		};
+		bbe::List<OcclusionQueryPair> occlusionQueries;
 		bool visible = false;
 
 		bbe::List<bbe::Vector2i> getHashGridPositions() const;
 		static bbe::List<bbe::Vector2i> getHashGridPositions(const bbe::Rectanglei& rect);
 		static bbe::Vector2i getHashGridPosition(const bbe::Vector2i& pos);
 
-		bbe::Cube getBoundingCube() const;
+		bbe::Vector3 getBoundingCubePos() const;
+		bbe::Vector3 getBoundingCubeScale() const;
+		bbe::Cube getBoundingCubeOuter() const;
+		bbe::Cube getBoundingCubeInner() const;
 		bbe::Matrix4 floorMatrix() const;
 		bbe::Matrix4 ceilingMatrix() const;
 		bbe::Color getColor() const;

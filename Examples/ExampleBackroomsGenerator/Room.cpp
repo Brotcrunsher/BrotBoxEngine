@@ -51,19 +51,34 @@ bbe::Vector2i br::Room::getHashGridPosition(const bbe::Vector2i& pos)
 	return pos / gridSize;
 }
 
-bbe::Cube br::Room::getBoundingCube() const
+bbe::Vector3 br::Room::getBoundingCubePos() const
 {
-	bbe::Vector3 pos = {
+	return bbe::Vector3 {
 		(float)boundingBox.x + (float)boundingBox.width * 0.5f,
 		(float)boundingBox.y + (float)boundingBox.height * 0.5f,
-		1.f
+		1.25f
 	};
-	bbe::Vector3 scale = {
+}
+
+bbe::Vector3 br::Room::getBoundingCubeScale() const
+{
+	return bbe::Vector3 {
 		(float)boundingBox.width,
 		(float)boundingBox.height,
-		2.f
+		2.5f
 	};
-	return bbe::Cube(pos, scale);
+}
+
+// Why inner and outer Bounding Box? We need an outer Bounding box to make occlusion queries that hit rooms of which only a wall is visible. If it would
+// have the same size, then it would be Z-Fighting with the bounding box. However, this slightly smaller bounding box will then suddenly be no longer visible
+// for a short time when traversing a gate. For these times, the inner bounding box is necessary.
+bbe::Cube br::Room::getBoundingCubeOuter() const
+{
+	return bbe::Cube(getBoundingCubePos(), getBoundingCubeScale() + bbe::Vector3(0.0001f, 0.0001f, 0.f));
+}
+bbe::Cube br::Room::getBoundingCubeInner() const
+{
+	return bbe::Cube(getBoundingCubePos(), getBoundingCubeScale());
 }
 
 bbe::Matrix4 br::Room::floorMatrix() const
