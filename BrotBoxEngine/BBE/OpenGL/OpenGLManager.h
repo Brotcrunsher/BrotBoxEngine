@@ -241,7 +241,7 @@ namespace bbe
 				virtual void imguiStartFrame() override;
 				virtual void imguiEndFrame() override;
 				
-				bbe::Image bakeLights(bbe::Matrix4 /*copy*/ transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, const bbe::Color& color, const bbe::Vector2i& resolution, bbe::List<bbe::PointLight> /*copy*/ lights);
+				bbe::Image bakeLights(bbe::Matrix4 /*copy*/ transform, const Model& model, const Image* normals, const FragmentShader* shader, const bbe::Vector2i& resolution, bbe::List<bbe::PointLight> /*copy*/ lights);
 				bbe::Image framebufferToImage(uint32_t width, uint32_t height) const;
 			};
 		}

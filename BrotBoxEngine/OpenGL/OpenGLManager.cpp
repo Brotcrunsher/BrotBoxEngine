@@ -494,7 +494,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   vec3 albedo = texture(gAlbedoSpec, gl_FragCoord.xy / screenSize).xyz;"
 		"   vec3 ambient = albedo * ambientFactor;"
 		"   vec3 emissions = texture(emissions, gl_FragCoord.xy / screenSize).xyz;"
-		"   outColor = vec4(ambient + pow(emissions, vec3(2.2)), 1.0);"
+		"   outColor = vec4(ambient + albedo * pow(emissions, vec3(2.2)), 1.0);"
 		"}";
 	program.addShaders("3dAmbient", vertexShaderSrc, fragmentShaderSource,
 		{
@@ -632,12 +632,12 @@ bbe::INTERNAL::openGl::LightProgram bbe::INTERNAL::openGl::OpenGLManager::init3d
 		"       }																							 "
 		"   }"
 		"   if(lightPower < 0.001) discard;"
-		"   vec3 albedo = texture(gAlbedoSpec, uvCoord).xyz;"
-		"   vec3 L = normalize(toLight);"
-		"   vec3 diffuse = max(dot(normal, L), 0.0) * (albedo * lightColor.xyz) * lightPower;";
+		"   vec3 L = normalize(toLight);";
 	if(!baking)
 	{
 		fragmentShaderSource +=
+			"   vec3 albedo = texture(gAlbedoSpec, uvCoord).xyz;"
+			"   vec3 diffuse = max(dot(normal, L), 0.0) * (albedo * lightColor.xyz) * lightPower;"
 			"   vec3 R = reflect(-L, normal);"
 			"   vec3 toCamera = -pos;"
 			"   vec3 V = normalize(toCamera);"
@@ -649,6 +649,7 @@ bbe::INTERNAL::openGl::LightProgram bbe::INTERNAL::openGl::OpenGLManager::init3d
 	else
 	{
 		fragmentShaderSource +=
+			"   vec3 diffuse = max(dot(normal, L), 0.0) * (lightColor.xyz) * lightPower;"
 			"   outColor = vec4(diffuse, 1.0);"
 			"}";
 	}
@@ -830,7 +831,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 		glVertexAttribDivisor(uvPosition, 0);
 	}
 
-	if (!shader) // TODO: Maybe want to make these available in custom shaders?
+	//if (!shader) // TODO: Maybe want to make these available in custom shaders?
 	{
 		if (!albedo) albedo = &bbe::Image::white();
 		if (!normals) normals = &bbe::Image::black();
@@ -1527,12 +1528,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiEndFrame()
 	ImGui_ImplOpenGL3_RenderDrawData(drawData);
 }
 
-bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(bbe::Matrix4 /*copy*/ transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, const bbe::Color& color, const bbe::Vector2i& resolution, bbe::List<bbe::PointLight> /*copy*/ lights)
+bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(bbe::Matrix4 /*copy*/ transform, const Model& model, const Image* normals, const FragmentShader* shader, const bbe::Vector2i& resolution, bbe::List<bbe::PointLight> /*copy*/ lights)
 {
 	// Calculate average position of the transform and the lights. This
 	// is then subtracted from the transform and the lights to keep
 	// coordinates closer to the origin, where they have a high precision.
-	// TODO: This messes up the world position passed to the shader. Fix it.
 	bbe::Vector3 avgPos = transform.extractTranslation();
 	for (const PointLight& p : lights)
 	{
@@ -1564,13 +1564,10 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(bbe::Matrix4 /*copy*
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	bbe::Matrix4 identity;
-	bbe::Color colorCopy = color;
-	colorCopy.a = 1.0f;
-	m_program3dMrtBaking.uniform4f(m_program3dMrtBaking.inColorPos3dMrt, colorCopy);
 	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.viewPos3dMrt, false, identity);
 	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.projectionPos3dMrt, false, identity);
 	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.modelPos3dMrt, false, transform);
-	fillModel(transform, model, albedo, normals, emissions, shader, geometryBuffer.framebuffer, true, colorCopy);
+	fillModel(transform, model, nullptr, normals, nullptr, shader, geometryBuffer.framebuffer, true, bbe::Color::white());
 
 	// Light Passes
 	m_program3dLightBaking.use();

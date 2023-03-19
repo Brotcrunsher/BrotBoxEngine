@@ -1,6 +1,9 @@
 #version 300 es
 precision highp float;
 uniform vec4 inColor;
+uniform sampler2D albedo;
+uniform sampler2D normals;
+uniform sampler2D emissions;
 in vec4 passPos;
 in vec4 passWorldPos;
 in vec4 passNormal;
@@ -35,5 +38,5 @@ void main()
    outNormal   = vec4(normalize(passNormal.xyz), 1.0);
    outAlbedo   = vec4(getColor(passWorldPos.xyz), 1.0) * inColor;
    outSpecular = vec4(1.0, 0.0, 0.0, 1.0);
-   outEmissions = vec4(0.0, 0.0, 0.0, 1.0);
+   outEmissions = texture(emissions, passUvCoord);
 }

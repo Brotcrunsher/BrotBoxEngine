@@ -481,11 +481,11 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	}
 	if (r.bakedCeiling.isLoadedCpu() == false && r.bakedCeiling.isLoadedGpu() == false)
 	{
-		r.bakedCeiling = game->bakeLights(bbe::Matrix4(), r.ceilingModel, nullptr, nullptr, nullptr, shaderCeiling, r.getColor(), { 256, 256 }, lights);
+		r.bakedCeiling = game->bakeLights(bbe::Matrix4(), r.ceilingModel, nullptr, shaderCeiling, { 64, 64 }, lights);
 	}
 	else if (r.bakedFloor.isLoadedCpu() == false && r.bakedFloor.isLoadedGpu() == false)
 	{
-		r.bakedFloor = game->bakeLights(bbe::Matrix4(), r.floorModel, nullptr, nullptr, nullptr, shaderFloor, r.getColor(), { 256, 256 }, lights);
+		r.bakedFloor = game->bakeLights(bbe::Matrix4(), r.floorModel, nullptr, shaderFloor, { 64, 64 }, lights);
 	}
 	else if (rooms[roomi].wallsModels.getLength() == rooms[roomi].bakedLights.getLength())
 	{
@@ -495,7 +495,7 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	}
 	else
 	{
-		r.bakedLights.add(game->bakeLights(bbe::Matrix4(), r.wallsModels[r.bakedLights.getLength()], nullptr, nullptr, nullptr, shaderWall, { 1, 1, 1, 1 }, { 256, 256 }, lights));
+		r.bakedLights.add(game->bakeLights(bbe::Matrix4(), r.wallsModels[r.bakedLights.getLength()], nullptr, shaderWall, { 64, 64 }, lights));
 	}
 	return true;
 }
@@ -662,13 +662,13 @@ void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* 
 		}
 	}
 	if (r.wallsModels.getLength() != r.bakedLights.getLength()) throw bbe::IllegalStateException();
-	if(drawFloor) brush.fillModel(bbe::Matrix4(), r.floorModel, nullptr, nullptr, &r.bakedFloor);
-	if(drawCeiling) brush.fillModel(bbe::Matrix4(), r.ceilingModel, nullptr, nullptr, &r.bakedCeiling);
+	if(drawFloor) brush.fillModel(bbe::Matrix4(), r.floorModel, nullptr, nullptr, &r.bakedFloor, shaderFloor);
+	if(drawCeiling) brush.fillModel(bbe::Matrix4(), r.ceilingModel, nullptr, nullptr, &r.bakedCeiling, shaderCeiling);
 	if (drawWalls)
 	{
 		for (size_t i = 0; i < r.wallsModels.getLength(); i++)
 		{
-			brush.fillModel(bbe::Matrix4(), r.wallsModels[i], nullptr, nullptr, &r.bakedLights[i]);
+			brush.fillModel(bbe::Matrix4(), r.wallsModels[i], nullptr, nullptr, &r.bakedLights[i], shaderWall);
 		}
 	}
 }

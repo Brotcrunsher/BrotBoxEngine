@@ -7,14 +7,13 @@ constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 
 // TODO: Light baking is sometimes messed up because too few neighboring rooms are taken into account.
-// TODO: Ceiling Tiles are messed up because of baking todo in OpenGLManager
 // TODO: Cameracontrol isn't optimal. When looking at the floor one can't move forward for example.
 // TODO: Does Laptop hit 60 FPS?
 // TODO: Besides showing FPS it would also be interesting to see the lowest FPS in the last X timeframe
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
 // TODO: Room Debaking when it wasn't drawn for long
 // TODO: Texture edges are messed up after baking
-// TODO: Baking is currently only done on a very small texture. Can we do better?
+// TODO: When going far away from the origin, there appear visual artifacts on the emission textures - why? Light Baking already subtracts the average position of all positions and the model. So it SHOULD not be precision issues. But it probably is.
 
 namespace br
 {

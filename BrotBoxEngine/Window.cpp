@@ -282,9 +282,9 @@ void bbe::Window::executeFrameStartListeneres()
 }
 
 #ifdef BBE_RENDERER_OPENGL
-bbe::Image bbe::Window::bakeLights(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, const bbe::Color& color, const bbe::Vector2i& resolution, const bbe::List<bbe::PointLight>& lights)
+bbe::Image bbe::Window::bakeLights(const bbe::Matrix4& transform, const Model& model, const Image* normals, const FragmentShader* shader, const bbe::Vector2i& resolution, const bbe::List<bbe::PointLight>& lights)
 {
-	return ((bbe::INTERNAL::openGl::OpenGLManager*)m_renderManager.get())->bakeLights(transform, model, albedo, normals, emissions, shader, color, resolution, lights);
+	return ((bbe::INTERNAL::openGl::OpenGLManager*)m_renderManager.get())->bakeLights(transform, model, normals, shader, resolution, lights);
 }
 #endif
 

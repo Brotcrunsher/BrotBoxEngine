@@ -74,7 +74,7 @@ bbe::Vector3 br::Room::getBoundingCubeScale() const
 // for a short time when traversing a gate. For these times, the inner bounding box is necessary.
 bbe::Cube br::Room::getBoundingCubeOuter() const
 {
-	return bbe::Cube(getBoundingCubePos(), getBoundingCubeScale() + bbe::Vector3(0.0001f, 0.0001f, 0.f));
+	return bbe::Cube(getBoundingCubePos(), getBoundingCubeScale() + bbe::Vector3(0.01f, 0.01f, 0.f));
 }
 bbe::Cube br::Room::getBoundingCubeInner() const
 {
