@@ -500,6 +500,31 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	return true;
 }
 
+void br::Rooms::bakeLightsOfNeighborsBasedOnPriorityList(const bbe::List<size_t>& roomis, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling)
+{
+	for (size_t roomi : roomis)
+	{
+		if (rooms[roomi].state < RoomGenerationState::lightsBaked)
+		{
+			bakeLights(roomi, game, shaderFloor, shaderWall, shaderCeiling);
+			return;
+		}
+	}
+
+	for (size_t roomi : roomis)
+	{
+		for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
+		{
+			size_t neighborId = rooms[roomi].neighbors[i].neighborId;
+			if (rooms[neighborId].state < RoomGenerationState::lightsBaked)
+			{
+				bakeLights(neighborId, game, shaderFloor, shaderWall, shaderCeiling);
+				return;
+			}
+		}
+	}
+}
+
 size_t br::Rooms::generateAtPoint(const bbe::Vector2i& position)
 {
 	size_t roomi = lookupRoomIndex(position);
@@ -588,7 +613,7 @@ void br::Rooms::updateOcclusionQueries(size_t roomi, bbe::PrimitiveBrush3D& brus
 	}
 }
 
-void br::Rooms::drawAt(const bbe::Vector3 pos, bool force, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights)
+void br::Rooms::drawAt(const bbe::Vector3 pos, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights)
 {
 	bbe::Vector2i lookupPos((int32_t)pos.x, (int32_t)pos.y);
 	if (pos.x < 0) lookupPos.x--;
@@ -596,10 +621,15 @@ void br::Rooms::drawAt(const bbe::Vector3 pos, bool force, bbe::PrimitiveBrush3D
 	size_t roomi = lookupRoomIndex(lookupPos);
 	bbe::List<size_t> alreadyDrawn;
 	bbe::List<size_t> neighborList;
-	drawRoomsRecursively(alreadyDrawn, neighborList, roomi, force, brush, game, shaderFloor, shaderWall, shaderCeiling, drawFloor, drawWalls, drawCeiling, drawLights);
+	bool bakedRoom = false;
+	drawRoomsRecursively(alreadyDrawn, neighborList, bakedRoom, roomi, brush, game, shaderFloor, shaderWall, shaderCeiling, drawFloor, drawWalls, drawCeiling, drawLights);
 	for (size_t roomi : neighborList)
 	{
 		updateOcclusionQueries(roomi, brush);
+	}
+	if (!bakedRoom)
+	{
+		bakeLightsOfNeighborsBasedOnPriorityList(alreadyDrawn, game, shaderFloor, shaderWall, shaderCeiling);
 	}
 
 	// Also always draw available neighbors of the original Room. This prevents popups in case the user is spinning several times. Also prevents hiding a room for a frame on gate traversal.
@@ -608,34 +638,19 @@ void br::Rooms::drawAt(const bbe::Vector3 pos, bool force, bbe::PrimitiveBrush3D
 		size_t neighborId = rooms[roomi].neighbors[i].neighborId;
 		if (rooms[neighborId].state >= RoomGenerationState::lightsBaked) // Only draw baked rooms to prevent unnecessary lag spikes on room traversal
 		{
-			drawRoom(neighborId, force, brush, game, shaderFloor, shaderWall, shaderCeiling, drawFloor, drawWalls, drawCeiling, drawLights);
+			drawRoom(neighborId, brush, game, shaderFloor, shaderWall, shaderCeiling, drawFloor, drawWalls, drawCeiling, drawLights);
 		}
 	}
 }
 
-void br::Rooms::drawRoom(size_t roomi, bool force, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights)
+void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights)
 {
 	if (rooms[roomi].state < RoomGenerationState::lightsBaked)
 	{
-		bakeLights(roomi, game, shaderFloor, shaderWall, shaderCeiling);
+		// Draw the bounding box to stop other rooms to become worngly visible.
+		brush.fillCube(rooms[roomi].getBoundingCubeInner());
+		return;
 	}
-	if (rooms[roomi].state < RoomGenerationState::lightsBaked)
-	{
-		if (force)
-		{
-			while (rooms[roomi].state < RoomGenerationState::lightsBaked)
-			{
-				bakeLights(roomi, game, shaderFloor, shaderWall, shaderCeiling);
-			}
-		}
-		else
-		{
-			// Draw the bounding box to stop other rooms to become worngly visible.
-			brush.fillCube(rooms[roomi].getBoundingCubeInner());
-			return;
-		}
-	}
-
 
 	const Room& r = rooms[roomi];
 	brush.setColor(1, 1, 1, 1);
@@ -658,18 +673,30 @@ void br::Rooms::drawRoom(size_t roomi, bool force, bbe::PrimitiveBrush3D& brush,
 	}
 }
 
-void br::Rooms::drawRoomsRecursively(bbe::List<size_t>& alreadyDrawn, bbe::List<size_t>& neighborList, size_t roomi, bool force, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights)
+void br::Rooms::drawRoomsRecursively(bbe::List<size_t>& alreadyDrawn, bbe::List<size_t>& neighborList, bool& bakedRoom, size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights)
 {
 	if (alreadyDrawn.contains(roomi)) return;
 	alreadyDrawn.add(roomi);
-	drawRoom(roomi, force, brush, game, shaderFloor, shaderWall, shaderCeiling, drawFloor, drawWalls, drawCeiling, drawLights);
+	if (rooms[roomi].state < RoomGenerationState::lightsBaked)
+	{
+		if (!bakedRoom)
+		{
+			bakeLights(roomi, game, shaderFloor, shaderWall, shaderCeiling);
+			bakedRoom = true;
+		}
+	}
+	drawRoom(roomi, brush, game, shaderFloor, shaderWall, shaderCeiling, drawFloor, drawWalls, drawCeiling, drawLights);
+	if (rooms[roomi].state < RoomGenerationState::lightsBaked)
+	{
+		return;
+	}
 	for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
 	{
 		size_t neighborId = rooms[roomi].neighbors[i].neighborId;
 		if (!neighborList.contains(neighborId)) neighborList.add(neighborId);
 		if (isRoomVisible(neighborId))
 		{
-			drawRoomsRecursively(alreadyDrawn, neighborList, neighborId, force, brush, game, shaderFloor, shaderWall, shaderCeiling, drawFloor, drawWalls, drawCeiling, drawLights);
+			drawRoomsRecursively(alreadyDrawn, neighborList, bakedRoom, neighborId, brush, game, shaderFloor, shaderWall, shaderCeiling, drawFloor, drawWalls, drawCeiling, drawLights);
 		}
 	}
 }

@@ -6,6 +6,16 @@
 constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 
+// TODO: Light baking is sometimes messed up because too few neighboring rooms are taken into account.
+// TODO: Ceiling Tiles are messed up because of baking todo in OpenGLManager
+// TODO: Cameracontrol isn't optimal. When looking at the floor one can't move forward for example.
+// TODO: Does Laptop hit 60 FPS?
+// TODO: Besides showing FPS it would also be interesting to see the lowest FPS in the last X timeframe
+// TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
+// TODO: Room Debaking when it wasn't drawn for long
+// TODO: Texture edges are messed up after baking
+// TODO: Baking is currently only done on a very small texture. Can we do better?
+
 namespace br
 {
 	class BackroomsGenerator : public bbe::Game
@@ -216,7 +226,7 @@ namespace br
 			brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 			//brush.setCamera(bbe::Vector3(0, 0, 1.7f), bbe::Vector3(-1, 0, 1.7f));
 
-			rooms.drawAt(ccnc.getCameraPos(), false, brush, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling(), drawFloor, drawWalls, drawCeiling, drawLights);
+			rooms.drawAt(ccnc.getCameraPos(), brush, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling(), drawFloor, drawWalls, drawCeiling, drawLights);
 		}
 
 		virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
