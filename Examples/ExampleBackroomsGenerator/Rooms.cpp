@@ -661,6 +661,7 @@ void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* 
 			brush.fillCube(bbe::Cube(light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)), nullptr, nullptr, &bbe::Image::white());
 		}
 	}
+	brush.setColorHSV(r.hue, r.saturation, r.value);
 	if (r.wallsModels.getLength() != r.bakedLights.getLength()) throw bbe::IllegalStateException();
 	if(drawFloor) brush.fillModel(r.floorTranslation(), r.floorModel, nullptr, nullptr, &r.bakedFloor, shaderFloor);
 	if(drawCeiling) brush.fillModel(r.ceilingTranslation(), r.ceilingModel, nullptr, nullptr, &r.bakedCeiling, shaderCeiling);
