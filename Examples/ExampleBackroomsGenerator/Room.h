@@ -41,7 +41,12 @@ namespace br
 		bbe::Grid<bool> walkable;
 		bbe::Model ceilingModel;
 		bbe::Model floorModel;
-		bbe::List<bbe::Model> wallsModels;
+		struct ModelOffsetPair
+		{
+			bbe::Vector3 offset;
+			bbe::Model model;
+		};
+		bbe::List<ModelOffsetPair> wallsModels;
 		bbe::List<bbe::PointLight> lights;
 		bbe::Image bakedCeiling;
 		bbe::Image bakedFloor;
@@ -64,6 +69,8 @@ namespace br
 		bbe::Cube getBoundingCubeInner() const;
 		bbe::Matrix4 floorMatrix() const;
 		bbe::Matrix4 ceilingMatrix() const;
+		bbe::Matrix4 floorTranslation() const;
+		bbe::Matrix4 ceilingTranslation() const;
 		bbe::Color getColor() const;
 	};
 }

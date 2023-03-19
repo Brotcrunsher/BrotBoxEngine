@@ -13,7 +13,6 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
 // TODO: Room Debaking when it wasn't drawn for long
 // TODO: Texture edges are messed up after baking
-// TODO: When going far away from the origin, there appear visual artifacts on the emission textures - why? Light Baking already subtracts the average position of all positions and the model. So it SHOULD not be precision issues. But it probably is.
 
 namespace br
 {
