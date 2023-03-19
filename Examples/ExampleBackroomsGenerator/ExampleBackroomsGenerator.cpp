@@ -9,10 +9,11 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Light baking is sometimes messed up because too few neighboring rooms are taken into account.
 // TODO: Cameracontrol isn't optimal. When looking at the floor one can't move forward for example.
 // TODO: Does Laptop hit 60 FPS?
-// TODO: Besides showing FPS it would also be interesting to see the lowest FPS in the last X timeframe
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
 // TODO: Room Debaking when it wasn't drawn for long
 // TODO: Texture edges are messed up after baking
+// TODO: skirting board
+// TODO: power outlet
 
 namespace br
 {
@@ -237,6 +238,10 @@ namespace br
 				bbe::String fps = "FPS: ";
 				fps += 1.f / getAverageFrameTime();
 				brush.fillText(25, 25, fps);
+
+				bbe::String lowFps = "Low FPS: ";
+				lowFps += 1.f / getHighestFrameTime();
+				brush.fillText(25, 50, lowFps);
 				return;
 			}
 

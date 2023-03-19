@@ -37,6 +37,8 @@ namespace bbe
 		PhysWorld   m_physWorld = PhysWorld({ 0, -20 });
 		float       m_fixedFrameTime = 0;
 		float       m_frameTimeRunningAverage = 0;
+		size_t      m_frameTimeHistoryWritePointer = 0;
+		bbe::Array<float, 256> m_frameTimeHistory;
 #ifndef BBE_NO_AUDIO
 		bbe::INTERNAL::SoundManager m_soundManager;
 #endif
@@ -100,6 +102,7 @@ namespace bbe
 
 		uint64_t getAmountOfFrames();
 		float getAverageFrameTime();
+		float getHighestFrameTime();
 
 		void setCursorMode(bbe::CursorMode cm);
 

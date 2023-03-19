@@ -124,6 +124,13 @@ void bbe::Game::frameUpdate()
 	if (m_frameNumber < 100) m_frameTimeRunningAverage = timeSinceLastFrame;
 	else m_frameTimeRunningAverage = 0.99 * m_frameTimeRunningAverage + 0.01 * timeSinceLastFrame;
 
+	if (m_frameNumber > 100)
+	{
+		m_frameTimeHistory[m_frameTimeHistoryWritePointer] = timeSinceLastFrame;
+		m_frameTimeHistoryWritePointer++;
+		if (m_frameTimeHistoryWritePointer >= m_frameTimeHistory.getLength()) m_frameTimeHistoryWritePointer = 0;
+	}
+
 	m_physWorld.update(timeSinceLastFrame);
 #ifndef BBE_NO_AUDIO
 	m_soundManager.update();
@@ -323,6 +330,19 @@ uint64_t bbe::Game::getAmountOfFrames()
 float bbe::Game::getAverageFrameTime()
 {
 	return m_frameTimeRunningAverage;
+}
+
+float bbe::Game::getHighestFrameTime()
+{
+	float retVal = 0.f;
+
+	for (size_t i = 0; i < m_frameTimeHistory.getLength(); i++)
+	{
+		if (m_frameTimeHistory[i] > retVal) retVal = m_frameTimeHistory[i];
+	}
+
+	if (retVal == 0.f) retVal = m_frameTimeRunningAverage;
+	return retVal;
 }
 
 void bbe::Game::setCursorMode(bbe::CursorMode cm)
