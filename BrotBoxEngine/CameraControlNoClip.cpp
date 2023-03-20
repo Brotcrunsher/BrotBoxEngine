@@ -55,26 +55,33 @@ void bbe::CameraControlNoClip::update(float timeSinceLastFrame)
 	}
 
 
+	bbe::Vector3 movementForward = m_forward;
+	if (m_isZPosConstrained)
+	{
+		movementForward.z = 0;
+		movementForward = movementForward.normalize();
+	}
+
 	bool moving = false;
 	if (m_pgame->isKeyDown(bbe::Key::W))
 	{
-		m_cameraPos = m_cameraPos + m_forward * timeSinceLastFrame * 10 * speedFactor;
+		m_cameraPos = m_cameraPos + movementForward * timeSinceLastFrame * 10 * speedFactor;
 		moving = true;
 	}
 	if (m_pgame->isKeyDown(bbe::Key::S))
 	{
-		m_cameraPos = m_cameraPos - m_forward * timeSinceLastFrame * 10 * speedFactor;
+		m_cameraPos = m_cameraPos - movementForward * timeSinceLastFrame * 10 * speedFactor;
 		moving = true;
 	}
 	if (m_pgame->isKeyDown(bbe::Key::A))
 	{
-		const bbe::Vector3 rot = m_forward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1));
+		const bbe::Vector3 rot = movementForward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1));
 		m_cameraPos = m_cameraPos + bbe::Vector3(rot.x, rot.y, 0).normalize() * timeSinceLastFrame * 10 * speedFactor;
 		moving = true;
 	}
 	if (m_pgame->isKeyDown(bbe::Key::D))
 	{
-		const bbe::Vector3 rot = m_forward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1));
+		const bbe::Vector3 rot = movementForward.rotate(bbe::Math::PI / 2, bbe::Vector3(0, 0, 1));
 		m_cameraPos = m_cameraPos - bbe::Vector3(rot.x, rot.y, 0).normalize() * timeSinceLastFrame * 10 * speedFactor;
 		moving = true;
 	}
@@ -92,6 +99,11 @@ void bbe::CameraControlNoClip::update(float timeSinceLastFrame)
 	if (!moving)
 	{
 		m_timeSinceShiftPress = 1;
+	}
+
+	if (m_isZPosConstrained)
+	{
+		m_cameraPos.z = m_constraintZPos;
 	}
 }
 
@@ -128,4 +140,10 @@ void bbe::CameraControlNoClip::setCameraForward(float x, float y, float z)
 void bbe::CameraControlNoClip::setCameraForward(const Vector3& forward)
 {
 	m_forward = forward;
+}
+
+void bbe::CameraControlNoClip::constraintZPos(float z)
+{
+	m_isZPosConstrained = true;
+	m_constraintZPos = z;
 }

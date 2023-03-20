@@ -16,6 +16,9 @@ namespace bbe
 		float   m_verticalMouse   = 0;
 		float   m_timeSinceShiftPress = 0;
 
+		float   m_constraintZPos = 0.f;
+		bool    m_isZPosConstrained = false;
+
 	public:
 		explicit CameraControlNoClip(Game* game);
 
@@ -28,5 +31,7 @@ namespace bbe
 		void setCameraPos(const Vector3 &pos);
 		void setCameraForward(float x, float y, float z);
 		void setCameraForward(const Vector3& forward);
+
+		void constraintZPos(float z);
 	};
 }
