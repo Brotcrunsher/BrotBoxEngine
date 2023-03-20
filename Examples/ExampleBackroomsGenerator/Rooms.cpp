@@ -466,19 +466,14 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	rooms[roomi].state = RoomGenerationState::baking;
 
 	// Making sure all neighbors lights have been created.
-	for (size_t i = 0; i<rooms[roomi].neighbors.getLength(); i++)
-	{
-		const Neighbor& n = rooms[roomi].neighbors[i];
-		connectGates(n.neighborId);
-	}
+	bbe::List<size_t> roomLightSources = generateMulti(roomi, 2);
 	Room& r = rooms[roomi];
 
-	bbe::List<bbe::PointLight> lights = r.lights;
+	bbe::List<bbe::PointLight> lights;
 	const int32_t lightmapSize = 64;
-	for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
+	for (size_t i = 0; i < roomLightSources.getLength(); i++)
 	{
-		const Neighbor& n = rooms[roomi].neighbors[i];
-		lights.addList(rooms[n.neighborId].lights);
+		lights.addList(rooms[roomLightSources[i]].lights);
 	}
 	if (r.bakedCeiling.isLoadedCpu() == false && r.bakedCeiling.isLoadedGpu() == false)
 	{
@@ -535,8 +530,13 @@ size_t br::Rooms::generateAtPoint(const bbe::Vector2i& position)
 
 bbe::List<size_t> br::Rooms::generateAtPointMulti(const bbe::Vector2i& position, size_t depth)
 {
-	bbe::List<size_t> retVal;
 	size_t roomi = lookupRoomIndex(position);
+	return generateMulti(roomi, depth);
+}
+
+bbe::List<size_t> br::Rooms::generateMulti(size_t roomi, size_t depth)
+{
+	bbe::List<size_t> retVal;
 	connectGates(roomi);
 	generateAtPointMulti_(roomi, retVal, depth);
 	return retVal;

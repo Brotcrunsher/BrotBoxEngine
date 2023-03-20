@@ -36,6 +36,7 @@ namespace br
 
 		size_t generateAtPoint(const bbe::Vector2i& position);
 		bbe::List<size_t> generateAtPointMulti(const bbe::Vector2i& position, size_t depth);
+		bbe::List<size_t> generateMulti(size_t roomi, size_t depth);
 		int32_t getRoomIndexAtPoint(const bbe::Vector2i& position, int32_t ignore_room = -1) const;
 		
 		void addRoom(const bbe::Rectanglei& bounding);

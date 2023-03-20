@@ -6,13 +6,17 @@
 constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 
-// TODO: Light baking is sometimes messed up because too few neighboring rooms are taken into account.
-// TODO: Cameracontrol isn't optimal. When looking at the floor one can't move forward for example.
-// TODO: Does Laptop hit 60 FPS?
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
 // TODO: Room Debaking when it wasn't drawn for long
+// TODO: Proper Wall Shader(s)
 // TODO: skirting board
 // TODO: power outlet
+// TODO: Buzzing sounds for Lights
+// TODO: Footstep sounds?
+// TODO: Does Laptop hit 60 FPS?
+// TODO: Emscripten
+// TODO: Bloom for lights?
+// TODO: Wall Collision with player
 
 namespace br
 {
@@ -102,6 +106,7 @@ namespace br
 			//}
 
 			newRooms();
+			ccnc.constraintZPos(1.8f);
 		}
 
 		void update2D(float timeSinceLastFrame)
@@ -158,11 +163,6 @@ namespace br
 			}
 
 			ccnc.update(timeSinceLastFrame * 0.2f);
-			bbe::Vector3 camPos = ccnc.getCameraPos();
-			//camPos.x = 0.0f;
-			//camPos.y = 50.0f;
-			camPos.z = 1.8f;
-			ccnc.setCameraPos(camPos);
 			//ccnc.setCameraForward(bbe::Vector3(1, 0, 0));
 			float fps = (1 / timeSinceLastFrame);
 			static float minFps = 100000;
