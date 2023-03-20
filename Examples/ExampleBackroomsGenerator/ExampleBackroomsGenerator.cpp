@@ -11,7 +11,6 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Does Laptop hit 60 FPS?
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
 // TODO: Room Debaking when it wasn't drawn for long
-// TODO: Texture edges are messed up after baking
 // TODO: skirting board
 // TODO: power outlet
 

@@ -474,6 +474,7 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	Room& r = rooms[roomi];
 
 	bbe::List<bbe::PointLight> lights = r.lights;
+	const int32_t lightmapSize = 64;
 	for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
 	{
 		const Neighbor& n = rooms[roomi].neighbors[i];
@@ -481,11 +482,11 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	}
 	if (r.bakedCeiling.isLoadedCpu() == false && r.bakedCeiling.isLoadedGpu() == false)
 	{
-		r.bakedCeiling = game->bakeLights(r.ceilingTranslation(), r.ceilingModel, nullptr, shaderCeiling, {64, 64}, lights);
+		r.bakedCeiling = game->bakeLights(r.ceilingTranslation(), r.ceilingModel, nullptr, shaderCeiling, { lightmapSize, lightmapSize }, lights);
 	}
 	else if (r.bakedFloor.isLoadedCpu() == false && r.bakedFloor.isLoadedGpu() == false)
 	{
-		r.bakedFloor = game->bakeLights(r.floorTranslation(), r.floorModel, nullptr, shaderFloor, {64, 64}, lights);
+		r.bakedFloor = game->bakeLights(r.floorTranslation(), r.floorModel, nullptr, shaderFloor, { lightmapSize, lightmapSize }, lights);
 	}
 	else if (rooms[roomi].wallsModels.getLength() == rooms[roomi].bakedLights.getLength())
 	{
@@ -495,7 +496,7 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	}
 	else
 	{
-		r.bakedLights.add(game->bakeLights(bbe::Matrix4::createTranslationMatrix(r.wallsModels[r.bakedLights.getLength()].offset), r.wallsModels[r.bakedLights.getLength()].model, nullptr, shaderWall, {64, 64}, lights));
+		r.bakedLights.add(game->bakeLights(bbe::Matrix4::createTranslationMatrix(r.wallsModels[r.bakedLights.getLength()].offset), r.wallsModels[r.bakedLights.getLength()].model, nullptr, shaderWall, { lightmapSize, lightmapSize }, lights));
 	}
 	return true;
 }

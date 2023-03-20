@@ -972,6 +972,30 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& ligh
 	glDrawElements(GL_TRIANGLES, baking ? 6 : (GLsizei)openGl::OpenGLSphere::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
 }
 
+static bbe::Vector2i getPos(size_t i, uint32_t width)
+{
+	return bbe::Vector2i(i % width, i / width);
+}
+
+static size_t getIndex(const bbe::Vector2i& pos, uint32_t width)
+{
+	return pos.y * width + pos.x;
+}
+
+static void transferBorderPixels(bbe::List<bbe::byte>& byteBuffer, const bbe::List<float>& colorFloatBuffer, size_t i, const bbe::Vector2i& src, uint32_t width, uint32_t height)
+{
+	if (src.x < 0 || src.y < 0 || src.x >= width || src.y >= height) return;
+	const size_t srcIndex = getIndex(src, width) * 4;
+	if (   colorFloatBuffer[srcIndex + 0] != 0
+		|| colorFloatBuffer[srcIndex + 1] != 0
+		|| colorFloatBuffer[srcIndex + 2] != 0)
+	{
+		byteBuffer[i + 0] = byteBuffer[srcIndex + 0];
+		byteBuffer[i + 1] = byteBuffer[srcIndex + 1];
+		byteBuffer[i + 2] = byteBuffer[srcIndex + 2];
+	}
+}
+
 bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t width, uint32_t height) const
 {
 	const size_t bufferSize = width * height * 4/*channels*/;
@@ -979,13 +1003,29 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t wid
 	bbe::List<byte> byteBuffer;
 	colorFloatBuffer.resizeCapacityAndLengthUninit(bufferSize);
 	byteBuffer      .resizeCapacityAndLengthUninit(bufferSize);
-	glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, colorFloatBuffer.getRaw()); // TODO: GL_FLOAT is expensive! The only reason why this is here is that we don't do inverse gamma correction in baking.
+	glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, colorFloatBuffer.getRaw());
 	for (size_t i = 0; i < colorFloatBuffer.getLength(); i += 4)
 	{
 		byteBuffer[i + 0] = bbe::Math::pow(bbe::Math::clamp01(colorFloatBuffer[i + 0]), 1.0 / 2.2) * 255;
 		byteBuffer[i + 1] = bbe::Math::pow(bbe::Math::clamp01(colorFloatBuffer[i + 1]), 1.0 / 2.2) * 255;
 		byteBuffer[i + 2] = bbe::Math::pow(bbe::Math::clamp01(colorFloatBuffer[i + 2]), 1.0 / 2.2) * 255;
 		byteBuffer[i + 3] = 255;
+	}
+
+	// TODO this should be put elsewhere. It isn't really the job of this function.
+	for (size_t i = 0; i < byteBuffer.getLength(); i += 4)
+	{
+		if (   colorFloatBuffer[i + 0] == 0
+			&& colorFloatBuffer[i + 1] == 0
+			&& colorFloatBuffer[i + 2] == 0)
+		{
+			const bbe::Vector2i pos = getPos(i / 4, width);
+			byteBuffer[i + 0] = 255;
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 1,  0), width, height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(-1,  0), width, height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 0,  1), width, height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 0, -1), width, height);
+		}
 	}
 	return bbe::Image(width, height, byteBuffer.getRaw(), bbe::ImageFormat::R8G8B8A8);
 }
