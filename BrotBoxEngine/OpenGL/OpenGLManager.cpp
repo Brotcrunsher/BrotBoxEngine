@@ -1020,7 +1020,6 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t wid
 			&& colorFloatBuffer[i + 2] == 0)
 		{
 			const bbe::Vector2i pos = getPos(i / 4, width);
-			byteBuffer[i + 0] = 255;
 			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 1,  0), width, height);
 			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(-1,  0), width, height);
 			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 0,  1), width, height);
@@ -1575,19 +1574,14 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiEndFrame()
 
 bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(bbe::Matrix4 /*copy*/ transform, const Model& model, const Image* normals, const FragmentShader* shader, const bbe::Vector2i& resolution, bbe::List<bbe::PointLight> /*copy*/ lights)
 {
-	// Calculate average position of the transform and the lights. This
-	// is then subtracted from the transform and the lights to keep
-	// coordinates closer to the origin, where they have a high precision.
-	bbe::Vector3 avgPos = transform.extractTranslation();
-	for (const PointLight& p : lights)
-	{
-		avgPos += p.pos;
-	}
-	avgPos /= (lights.getLength() + 1);
-	transform = transform * bbe::Matrix4::createTranslationMatrix(-avgPos);
+	// Subtract the transforms position from itself and all the lights. This way
+	// all the coordinates stay closer to the origin where they have a higher
+	// precision and thus lead to less visual artifacts.
+	bbe::Vector3 transformPos = transform.extractTranslation();
+	transform = bbe::Matrix4::createTranslationMatrix(-transformPos) * transform;
 	for (PointLight& p : lights)
 	{
-		p.pos -= avgPos;
+		p.pos -= transformPos;
 	}
 
 
