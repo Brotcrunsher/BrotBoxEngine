@@ -92,6 +92,21 @@ void br::Rooms::clear()
 	hashGrid.clear();
 }
 
+void br::Rooms::update(float timeSinceLastFrame)
+{
+	for (size_t i = 0; i < bakedRoomIds.getLength(); i++)
+	{
+		size_t roomi = bakedRoomIds[i];
+		Room& r = rooms[roomi];
+		r.timeSinceLastTouch += timeSinceLastFrame;
+		if (r.timeSinceLastTouch > 10.0f)
+		{
+			unbakeLights(roomi);
+			i--;
+		}
+	}
+}
+
 void br::Rooms::setSeed(int seed)
 {
 	rand.setSeed(seed);
@@ -461,9 +476,12 @@ void br::Rooms::connectGates(size_t roomi)
 
 bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling)
 {
+	rooms[roomi].timeSinceLastTouch = 0.f;
 	if (rooms[roomi].state < RoomGenerationState::gatesConnected) connectGates(roomi);
 	if (rooms[roomi].state != RoomGenerationState::gatesConnected && rooms[roomi].state != RoomGenerationState::baking) return false;
 	rooms[roomi].state = RoomGenerationState::baking;
+
+	if (!bakedRoomIds.contains(roomi)) bakedRoomIds.add(roomi);
 
 	// Making sure all neighbors lights have been created.
 	bbe::List<size_t> roomLightSources = generateMulti(roomi, 2);
@@ -496,13 +514,30 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	return true;
 }
 
+void br::Rooms::unbakeLights(size_t roomi)
+{
+	if (rooms[roomi].state < RoomGenerationState::baking)
+	{
+		throw bbe::IllegalStateException();
+	}
+	if (!bakedRoomIds.removeSingle(roomi))
+	{
+		throw bbe::IllegalStateException();
+	}
+	Room& r = rooms[roomi];
+	r.bakedCeiling = bbe::Image();
+	r.bakedFloor = bbe::Image();
+	r.bakedLights.clear();
+	r.state = RoomGenerationState::gatesConnected;
+}
+
 void br::Rooms::bakeLightsOfNeighborsBasedOnPriorityList(const bbe::List<size_t>& roomis, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling)
 {
 	for (size_t roomi : roomis)
 	{
+		bakeLights(roomi, game, shaderFloor, shaderWall, shaderCeiling);
 		if (rooms[roomi].state < RoomGenerationState::lightsBaked)
 		{
-			bakeLights(roomi, game, shaderFloor, shaderWall, shaderCeiling);
 			return;
 		}
 	}
@@ -512,9 +547,9 @@ void br::Rooms::bakeLightsOfNeighborsBasedOnPriorityList(const bbe::List<size_t>
 		for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
 		{
 			size_t neighborId = rooms[roomi].neighbors[i].neighborId;
+			bakeLights(neighborId, game, shaderFloor, shaderWall, shaderCeiling);
 			if (rooms[neighborId].state < RoomGenerationState::lightsBaked)
 			{
-				bakeLights(neighborId, game, shaderFloor, shaderWall, shaderCeiling);
 				return;
 			}
 		}

@@ -16,10 +16,12 @@ namespace br
 
 
 		bbe::List<Room> rooms;
+		bbe::List<size_t> bakedRoomIds;
 		bbe::Random rand;
 		bbe::HashMap<bbe::Vector2i, bbe::List<size_t>> hashGrid;
 		
 		void clear();
+		void update(float timeSinceLastFrame);
 
 		// Debug
 		void setSeed(int seed);
@@ -32,6 +34,7 @@ namespace br
 		void collapseGates(size_t roomi);
 		void connectGates(size_t roomi);
 		bool bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling);
+		void unbakeLights(size_t roomi);
 		void bakeLightsOfNeighborsBasedOnPriorityList(const bbe::List<size_t>& roomis, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling);
 
 		size_t generateAtPoint(const bbe::Vector2i& position);

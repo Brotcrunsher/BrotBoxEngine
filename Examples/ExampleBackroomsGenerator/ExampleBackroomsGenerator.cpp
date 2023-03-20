@@ -7,7 +7,6 @@ constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
-// TODO: Room Debaking when it wasn't drawn for long
 // TODO: Proper Wall Shader(s)
 // TODO: skirting board
 // TODO: power outlet
@@ -17,6 +16,7 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Emscripten
 // TODO: Bloom for lights?
 // TODO: Wall Collision with player
+// TODO: Experiments with Shadow Maps
 
 namespace br
 {
@@ -163,6 +163,7 @@ namespace br
 			}
 
 			ccnc.update(timeSinceLastFrame * 0.2f);
+			rooms.update(timeSinceLastFrame);
 			//ccnc.setCameraForward(bbe::Vector3(1, 0, 0));
 			float fps = (1 / timeSinceLastFrame);
 			static float minFps = 100000;
