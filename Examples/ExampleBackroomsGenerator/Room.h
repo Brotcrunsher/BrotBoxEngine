@@ -48,10 +48,12 @@ namespace br
 			bbe::Model model;
 		};
 		bbe::List<ModelOffsetPair> wallsModels;
+		bbe::List<ModelOffsetPair> skirtingBoardModels;
 		bbe::List<bbe::PointLight> lights;
 		bbe::Image bakedCeiling;
 		bbe::Image bakedFloor;
-		bbe::List<bbe::Image> bakedLights;
+		bbe::List<bbe::Image> bakedWalls;
+		bbe::List<bbe::Image> bakedSkirtingBoard;
 		struct OcclusionQueryPair
 		{
 			bbe::Future<bool> inner;

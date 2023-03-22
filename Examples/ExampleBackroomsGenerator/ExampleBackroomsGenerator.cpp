@@ -8,7 +8,6 @@ constexpr int WINDOW_HEIGHT = 720;
 
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
 // TODO: Proper Wall Shader(s)
-// TODO: skirting board
 // TODO: power outlet
 // TODO: Buzzing sounds for Lights
 // TODO: Footstep sounds?
@@ -225,7 +224,7 @@ namespace br
 			brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 			//brush.setCamera(bbe::Vector3(0, 0, 1.7f), bbe::Vector3(-1, 0, 1.7f));
 
-			rooms.drawAt(ccnc.getCameraPos(), brush, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling(), drawFloor, drawWalls, drawCeiling, drawLights);
+			rooms.drawAt(ccnc.getCameraPos(), brush, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling(), assetStore::SkirtingBoard(), drawFloor, drawWalls, drawCeiling, drawLights);
 		}
 
 		virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
