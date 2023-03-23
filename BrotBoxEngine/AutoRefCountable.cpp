@@ -61,6 +61,7 @@ bbe::AutoRef& bbe::AutoRef::operator=(const AutoRef& other)
 	decRef();
 	countable = other.countable;
 	incRef();
+	return *this;
 }
 
 bbe::AutoRef& bbe::AutoRef::operator=(AutoRef&& other) noexcept

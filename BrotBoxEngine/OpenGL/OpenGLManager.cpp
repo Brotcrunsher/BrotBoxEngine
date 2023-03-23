@@ -1486,14 +1486,14 @@ struct OcclusionQuery : public bbe::DataProvider<bool>
 
 	virtual bool isValueReady() const override
 	{
-		GLint val;
-		glGetQueryObjectiv(id, GL_QUERY_RESULT_AVAILABLE, &val);
+		GLuint val;
+		glGetQueryObjectuiv(id, GL_QUERY_RESULT_AVAILABLE, &val);
 		return val;
 	}
 	virtual bool getValue() const
 	{
-		GLint val;
-		glGetQueryObjectiv(id, GL_QUERY_RESULT, &val);
+		GLuint val;
+		glGetQueryObjectuiv(id, GL_QUERY_RESULT, &val);
 		return val;
 	}
 };
