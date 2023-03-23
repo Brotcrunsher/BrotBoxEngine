@@ -254,5 +254,38 @@ namespace bbe {
 		{
 			m_mt.seed(seed);
 		}
+
+		template<typename Container>
+		auto sampleContainer(Container& container)
+		{
+			return container[randomInt(container.getLength())];
+		}
+
+		template<typename T>
+		struct SampleBallsInBagPair
+		{
+			T element;
+			uint32_t amountOfBallsInBag = 0;
+		};
+		template<typename Container>
+		auto sampleContainerWithBag(Container& container)
+		{
+			uint32_t totalBalls = 0;
+			for (size_t i = 0; i < container.getLength(); i++)
+			{
+				totalBalls += container[i].amountOfBallsInBag;
+			}
+			const uint32_t randomBall = randomInt(totalBalls);
+			uint32_t ballsPicked = 0;
+			for (size_t i = 0; i < container.getLength(); i++)
+			{
+				ballsPicked += container[i].amountOfBallsInBag;
+				if (ballsPicked >= randomBall)
+				{
+					return container[i].element;
+				}
+			}
+			throw bbe::IllegalStateException();
+		}
 	};
 }

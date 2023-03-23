@@ -436,17 +436,85 @@ void br::Rooms::connectGates(size_t roomi)
 		}
 	}
 
-	const float innerWallProbability = rand.randomFloat() * rand.randomFloat() * rand.randomFloat();
-	for (int32_t i = 1; i < r.boundingBox.width - 1; i++)
+	enum class InnerRoomType
 	{
-		for (int32_t k = 1; k < r.boundingBox.height - 1; k++)
+		EMPTY,
+		RANDOM,
+		COLUMNS,
+		REPEATING,
+	};
+
+	bbe::List<bbe::Random::SampleBallsInBagPair<InnerRoomType>> innerRoomTypes
+	{
+		{InnerRoomType::EMPTY  ,   1},
+		{InnerRoomType::RANDOM ,  10},
+		{InnerRoomType::COLUMNS,  10},
+	};
+	if (r.boundingBox.width >= 10 && r.boundingBox.height >= 10)
+	{
+		innerRoomTypes.add({InnerRoomType::REPEATING, 10});
+	}
+
+	const InnerRoomType irt = (InnerRoomType)rand.sampleContainerWithBag(innerRoomTypes);
+	if (irt == InnerRoomType::EMPTY)
+	{
+		// Do nothing
+	}
+	else if (irt == InnerRoomType::RANDOM)
+	{
+		const float innerWallProbability = rand.randomFloat() * rand.randomFloat() * rand.randomFloat();
+		for (int32_t i = 1; i < r.boundingBox.width - 1; i++)
 		{
-			if (rand.randomFloat() < innerWallProbability)
+			for (int32_t k = 1; k < r.boundingBox.height - 1; k++)
+			{
+				if (rand.randomFloat() < innerWallProbability)
+				{
+					r.walkable[i][k] = false;
+				}
+			}
+		}
+	}
+	else if (irt == InnerRoomType::COLUMNS)
+	{
+		for (int32_t i = 2; i < r.boundingBox.width - 2; i+=2)
+		{
+			for (int32_t k = 2; k < r.boundingBox.height - 2; k+=2)
 			{
 				r.walkable[i][k] = false;
 			}
 		}
 	}
+	else if (irt == InnerRoomType::REPEATING)
+	{
+		bbe::Grid<bool> pattern(5, 5);
+		const float innerWallProbability = rand.randomFloat();
+		for (int32_t i = 0; i < pattern.getWidth(); i++)
+		{
+			for (int32_t k = 0; k < pattern.getHeight(); k++)
+			{
+				if (rand.randomFloat() < innerWallProbability)
+				{
+					pattern[i][k] = rand.randomBool();
+				}
+			}
+		}
+
+		for (int32_t i = 2; i < r.boundingBox.width - 2; i++)
+		{
+			for (int32_t k = 2; k < r.boundingBox.height - 2; k++)
+			{
+				if (pattern[i % pattern.getWidth()][k % pattern.getHeight()])
+				{
+					r.walkable[i][k] = false;
+				}
+			}
+		}
+	}
+	else
+	{
+		throw bbe::IllegalStateException();
+	}
+
 
 	{
 		bbe::MeshBuilder mb;
