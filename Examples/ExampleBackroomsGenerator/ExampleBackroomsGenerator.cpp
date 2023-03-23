@@ -7,7 +7,6 @@ constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
-// TODO: Proper Wall Shader(s)
 // TODO: power outlet
 // TODO: Buzzing sounds for Lights
 // TODO: Footstep sounds?

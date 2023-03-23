@@ -106,13 +106,17 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD& bbe::INTERNAL::openGl::Open
 		"out vec4 passWorldPos;"
 		"out vec4 passNormal;"
 		"out vec2 passUvCoord;"
+		"out vec3 worldNormal;"
+		"out vec3 upViewSpace;"
 		"void main()"
 		"{"
 		"   passWorldPos = model * vec4(inPos, 1.0);"
 		"   gl_Position = projection * view * passWorldPos * vec4(1.0, -1.0, 1.0, 1.0);"
 		"   passPos = view * passWorldPos;"
 		"   passNormal = view * model * vec4(inNormal, 0.0);"
+		"   worldNormal = (model * vec4(inNormal, 0.0)).xyz;"
 		"   passUvCoord = inUvCoord;"
+		"   upViewSpace = (view * vec4(0.0, 0.0, 1.0, 0.0)).xyz;"
 		"}";
 	char const* fragmentShaderSource = code.getRaw();
 	build(threeD, vertexShader3dSource, fragmentShaderSource);
