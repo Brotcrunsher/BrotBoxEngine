@@ -436,6 +436,18 @@ void br::Rooms::connectGates(size_t roomi)
 		}
 	}
 
+	const float innerWallProbability = rand.randomFloat() * rand.randomFloat() * rand.randomFloat();
+	for (int32_t i = 1; i < r.boundingBox.width - 1; i++)
+	{
+		for (int32_t k = 1; k < r.boundingBox.height - 1; k++)
+		{
+			if (rand.randomFloat() < innerWallProbability)
+			{
+				r.walkable[i][k] = false;
+			}
+		}
+	}
+
 	{
 		bbe::MeshBuilder mb;
 		mb.addRectangle(r.floorMatrix());
@@ -471,7 +483,7 @@ void br::Rooms::connectGates(size_t roomi)
 	{
 		for (int32_t k = 2; k < r.boundingBox.height - 2; k++)
 		{
-			if (rand.randomFloat() < roomLightProbability)
+			if (r.walkable[i][k] && rand.randomFloat() < roomLightProbability)
 			{
 				bbe::PointLight pl;
 				pl.pos = bbe::Vector3(i + r.boundingBox.x + 0.5f, k + r.boundingBox.y + 0.5f, 2.f);
