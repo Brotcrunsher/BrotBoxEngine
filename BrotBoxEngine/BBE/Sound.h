@@ -20,8 +20,9 @@ namespace bbe
 	private:
 		bool             m_looped   = false;
 	public:
-		virtual bbe::Vector2 getSample(size_t i) const = 0;
+		virtual float getSample(size_t i, uint32_t channel) const = 0;
 		virtual size_t getAmountOfSamples() const = 0;
+		virtual uint32_t getAmountOfChannels() const = 0;
 		virtual uint32_t getHz() const = 0;
 
 		bool isLooped() const;
@@ -50,8 +51,9 @@ namespace bbe
 
 		bool isLoaded() const;
 		uint32_t getChannels() const;
-		virtual bbe::Vector2 getSample(size_t i) const override;
+		virtual float getSample(size_t i, uint32_t channel) const override;
 		virtual size_t getAmountOfSamples() const override;
+		virtual uint32_t getAmountOfChannels() const override;
 		virtual uint32_t getHz() const override;
 	};
 }

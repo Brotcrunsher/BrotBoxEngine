@@ -15,11 +15,11 @@ public:
 	static constexpr uint32_t hz = 44000;
 
 
-	virtual bbe::Vector2 getSample(size_t i) const override
+	virtual float getSample(size_t i, uint32_t channel) const override
 	{
 		if (muted)
 		{
-			return { 0, 0 };
+			return 0.f;
 		}
 		float fadeInMult = 1;
 		if (fadeIn)
@@ -49,7 +49,7 @@ public:
 			masterVolume /= absVal;
 		}
 
-		return { val, val };
+		return val;
 	}
 	virtual size_t getAmountOfSamples() const override
 	{
@@ -59,6 +59,11 @@ public:
 	virtual uint32_t getHz() const override
 	{
 		return hz;
+	}
+
+	virtual uint32_t getAmountOfChannels() const override
+	{
+		return 1;
 	}
 };
 
@@ -110,7 +115,7 @@ class MyGame : public bbe::Game
 			for (size_t i = 0; i < shownVals.getLength(); i++)
 			{
 				// Adjust master volume.
-				shownVals[i] = newSound.getSample(i).x;
+				shownVals[i] = newSound.getSample(i, 0);
 			}
 			soundInstance.stop();
 			mySound = newSound;
@@ -161,7 +166,7 @@ class MyGame : public bbe::Game
 		static size_t currentCalc = 0;
 		for (size_t i = 0; i < 11000 && currentCalc < shownVals.getLength(); i++, currentCalc++)
 		{
-			shownVals[currentCalc] = mySound.getSample(currentCalc).x;
+			shownVals[currentCalc] = mySound.getSample(currentCalc, 0);
 		}
 		if (currentCalc >= shownVals.getLength()) currentCalc = 0;
 		ImGui::PlotLines("##p", shownVals.getRaw(), shownVals.getLength(), 0, 0, FLT_MAX, FLT_MAX, ImVec2((float)getScaledWindowWidth() / 5.f, (float)getScaledWindowWidth() / 25.f));

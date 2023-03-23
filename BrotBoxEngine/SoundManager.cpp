@@ -184,18 +184,35 @@ bool bbe::INTERNAL::SoundInstanceData::isBufferLoadingRequired() const
 
 void bbe::INTERNAL::SoundInstanceData::loadNewBuffer(ALuint buffer, SoundManager* sm)
 {
-	List<bbe::Vector2> data;
 	constexpr size_t maxBufferSize = 5000;
+	const uint32_t channels = m_psound->getAmountOfChannels();
 	const size_t samplesLeft = m_psound->getAmountOfSamples() - m_samples_loaded;
-	const size_t bufferSize = bbe::Math::min(maxBufferSize, samplesLeft);
-	data.resizeCapacityAndLength(bufferSize);
-	for (size_t i = 0; i < bufferSize; i++)
+	const size_t floatsLeft = samplesLeft * channels;
+	const size_t bufferSize = bbe::Math::min(maxBufferSize, floatsLeft);
+	List<float> data;
+	data.resizeCapacityAndLengthUninit(bufferSize);
+	int openAlType = 0;
+	switch (channels)
 	{
-		data[i] = m_psound->getSample(i + m_samples_loaded);
+	case(1):
+		openAlType = AL_FORMAT_MONO_FLOAT32;
+		break;
+	case(2):
+		openAlType = AL_FORMAT_STEREO_FLOAT32;
+		break;
+	default:
+		throw bbe::IllegalArgumentException();
 	}
-	m_samples_loaded += bufferSize;
+	for (size_t i = 0; i < bufferSize; i += channels)
+	{
+		for (uint32_t channel = 0; channel < channels; channel++)
+		{
+			data[i + channel] = m_psound->getSample(m_samples_loaded, channel);
+		}
+		m_samples_loaded++;
+	}
 
-	alBufferData(buffer, AL_FORMAT_STEREO_FLOAT32, data.getRaw(), sizeof(bbe::Vector2) * data.getLength(), m_psound->getHz());
+	alBufferData(buffer, openAlType, data.getRaw(), sizeof(float) * data.getLength(), m_psound->getHz());
 	ALenum err = alGetError();
 	if (err != ALC_NO_ERROR)
 	{

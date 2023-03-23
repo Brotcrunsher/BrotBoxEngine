@@ -107,28 +107,22 @@ uint32_t bbe::Sound::getChannels() const
 	return m_channels;
 }
 
-bbe::Vector2 bbe::Sound::getSample(size_t i) const
+float bbe::Sound::getSample(size_t i, uint32_t channel) const
 {
 	if (!m_loaded) throw NotInitializedException();
+	if (channel >= m_channels) throw IllegalArgumentException();
 
-	if (m_channels == 1)
-	{
-		return bbe::Vector2(m_data[i], m_data[i]);
-	}
-	else if (m_channels == 2)
-	{
-		return bbe::Vector2(m_data[i * 2 + 0], m_data[i * 2 + 1]);
-	}
-	else
-	{
-		// Only 1 and 2 channels are supported
-		throw IllegalStateException();
-	}
+	return m_data[i * m_channels + channel];
 }
 
 size_t bbe::Sound::getAmountOfSamples() const
 {
 	return m_data.getLength() / m_channels;
+}
+
+uint32_t bbe::Sound::getAmountOfChannels() const
+{
+	return m_channels;
 }
 
 uint32_t bbe::Sound::getHz() const
