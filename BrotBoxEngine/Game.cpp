@@ -21,6 +21,13 @@ void bbe::Game::mainLoop()
 	}
 }
 
+#ifndef BBE_NO_AUDIO
+void bbe::Game::setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection)
+{
+	m_soundManager.setSoundListener(pos, lookDirection);
+}
+#endif
+
 #ifdef BBE_RENDERER_OPENGL
 bbe::Image bbe::Game::bakeLights(const bbe::Matrix4& transform, const Model& model, const Image* normals, const FragmentShader* shader, const bbe::Vector2i& resolution, const bbe::List<bbe::PointLight>& lights)
 {

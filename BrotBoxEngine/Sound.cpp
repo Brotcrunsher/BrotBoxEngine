@@ -137,7 +137,12 @@ void bbe::SoundDataSource::setLooped(bool looped)
 
 bbe::SoundInstance bbe::SoundDataSource::play(float volume) const
 {
-	return bbe::INTERNAL::SoundManager::getInstance()->play(*this, volume);
+	return bbe::INTERNAL::SoundManager::getInstance()->play(*this, nullptr, volume);
+}
+
+bbe::SoundInstance bbe::SoundDataSource::play(const bbe::Vector3& pos, float volume) const
+{
+	return bbe::INTERNAL::SoundManager::getInstance()->play(*this, &pos, volume);
 }
 
 #endif

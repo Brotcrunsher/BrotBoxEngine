@@ -27,8 +27,9 @@ namespace bbe
 
 		bool isLooped() const;
 		void setLooped(bool looped);
-		
+
 		SoundInstance play(float volume = 1) const;
+		SoundInstance play(const bbe::Vector3& pos, float volume = 1) const;
 	};
 
 	class Sound : 
