@@ -40,6 +40,7 @@ namespace bbe
 
 			void stopSoundWithIndex(uint64_t index);
 			bool isSoundWithIndexPlaying(uint64_t index);
+			void setPosition(uint64_t index, const bbe::Vector3& pos);
 
 			void setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection);
 		};

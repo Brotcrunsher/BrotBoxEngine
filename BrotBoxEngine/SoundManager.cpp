@@ -25,6 +25,14 @@ static std::mutex listenerMutex;
 static bbe::Vector3 listenerPos(0, 0, 0);
 static bbe::Vector3 listenerDirection(0, 0, 1);
 
+static std::mutex setPositionRequestMutex;
+struct SetPositionRequest
+{
+	uint64_t index = 0;
+	bbe::Vector3 pos;
+};
+static bbe::List<SetPositionRequest> setPositionRequests;
+
 static std::mutex playRequestsMutex;
 struct PlayRequest
 {
@@ -60,6 +68,8 @@ struct SoundInstanceData
 	ALuint source = 0;
 	bbe::List<ALuint> buffers;
 	bool playing = true;
+	bool posAvailable = false;
+	bbe::Vector3 pos;
 
 	bool areAllSamplesLoaded() const
 	{
@@ -217,16 +227,28 @@ static void updateSoundSystem()
 {
 	{
 		std::lock_guard<std::mutex> guard(listenerMutex);
-		// TODO: Mutex
 		alListener3f(AL_POSITION, listenerPos.x, listenerPos.y, listenerPos.z);
 
-		// Up direction, followed by the look direction
-		float arr[] = { 0, 0, 1, listenerDirection.x, listenerDirection.y, listenerDirection.z };
+		// Look direction followed by the Up direction
+		float arr[] = { listenerDirection.x, listenerDirection.y, listenerDirection.z, 0, 0, 1 };
 
 		alListenerfv(AL_ORIENTATION, arr);
 	}
 
 	std::lock_guard<std::mutex> playingSoundsGuard(playingSoundsMutex);
+	{
+		std::lock_guard<std::mutex> guard(setPositionRequestMutex);
+		for (const SetPositionRequest& spr : setPositionRequests)
+		{
+			auto it = playingSounds.find(spr.index);
+			if (it != playingSounds.end())
+			{
+				it->second.pos = spr.pos;
+			}
+		}
+		setPositionRequests.clear();
+	}
+
 	{
 		std::lock_guard<std::mutex> guard(playRequestsMutex);
 		for (const PlayRequest& pr : playRequests)
@@ -234,6 +256,8 @@ static void updateSoundSystem()
 			SoundInstanceData sid;
 			sid.m_psound = pr.sound;
 			sid.m_volume = pr.volume;
+			sid.pos = pr.pos;
+			sid.posAvailable = pr.posAvailable;
 
 			sid.start(getNewBuffer(), pr.posAvailable ? &pr.pos : nullptr);
 			playingSounds.insert({ pr.index, sid });
@@ -253,6 +277,11 @@ static void updateSoundSystem()
 		ALint state = 0;
 		alGetSourcei(it->second.source, AL_SOURCE_STATE, &state);
 		sid.playing = state == AL_PLAYING;
+
+		if (sid.playing && sid.posAvailable)
+		{
+			alSource3f(sid.source, AL_POSITION, sid.pos.x, sid.pos.y, sid.pos.z);
+		}
 	}
 
 	for (auto it = playingSounds.begin(); it != playingSounds.end(); /*no inc*/)
@@ -306,7 +335,7 @@ static void soundSystemMain()
 	while (!isEndRequested())
 	{
 		updateSoundSystem();
-		// TODO: Chill! We should really sleep here.
+		std::this_thread::sleep_for(std::chrono::milliseconds(1)); // A more relaxed version of yield...
 	}
 	destroySoundSystem();
 }
@@ -349,6 +378,7 @@ void bbe::INTERNAL::SoundManager::stopSoundWithIndex(uint64_t index)
 
 bool bbe::INTERNAL::SoundManager::isSoundWithIndexPlaying(uint64_t index)
 {
+	// TODO: Aquiring this lock is potentially quite expensive, because the sound thread is running constantly
 	std::lock_guard<std::mutex> guard(playingSoundsMutex);
 	auto it = playingSounds.find(index);
 	if (it != playingSounds.end())
@@ -359,12 +389,20 @@ bool bbe::INTERNAL::SoundManager::isSoundWithIndexPlaying(uint64_t index)
 	return false;
 }
 
+void bbe::INTERNAL::SoundManager::setPosition(uint64_t index, const bbe::Vector3& pos)
+{
+	std::lock_guard<std::mutex> guard(setPositionRequestMutex);
+	setPositionRequests.add(SetPositionRequest{
+		index,
+		pos
+		});
+}
+
 void bbe::INTERNAL::SoundManager::setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection)
 {
 	std::lock_guard<std::mutex> guard(listenerMutex);
 	listenerPos = pos;
-	// The lookDirection is flipped because... no clue, actually. Tests indicate tho' that it's needed for what ever reason.
-	listenerDirection = -lookDirection;
+	listenerDirection = lookDirection;
 }
 
 void bbe::INTERNAL::SoundManager::update()

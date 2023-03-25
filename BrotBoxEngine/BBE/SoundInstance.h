@@ -3,6 +3,7 @@
 #ifndef BBE_NO_AUDIO
 
 #include <cstdint>
+#include "../BBE/Vector3.h"
 
 namespace bbe
 {
@@ -29,6 +30,8 @@ namespace bbe
 		SoundInstance& operator=(      SoundInstance&&) = default;
 
 		void stop();
+
+		void setPosition(const bbe::Vector3& pos);
 
 		bool isPlaying();
 	};
