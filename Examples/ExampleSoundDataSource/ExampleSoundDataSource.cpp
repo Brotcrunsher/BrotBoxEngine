@@ -12,7 +12,7 @@ public:
 	bool autoAdjustMasterVolume = true;
 	bool muted = false;
 	mutable float masterVolume = 1;
-	static constexpr uint32_t hz = 44000;
+	static constexpr uint32_t hz = 44100;
 
 
 	virtual float getSample(size_t i, uint32_t channel) const override

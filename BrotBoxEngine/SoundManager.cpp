@@ -17,6 +17,7 @@ namespace bbe
 
 // No mutexes:
 static bbe::List<ALuint> unusedBuffers;
+static bbe::List<ALuint> buffers;
 
 static std::mutex stopRequestsMutex;
 static bbe::List<uint64_t> stopRequests;
@@ -24,6 +25,8 @@ static bbe::List<uint64_t> stopRequests;
 static std::mutex listenerMutex;
 static bbe::Vector3 listenerPos(0, 0, 0);
 static bbe::Vector3 listenerDirection(0, 0, 1);
+static bbe::Vector3 listenerPosPreviousBufferCalculation = listenerPos;
+static bbe::Vector3 listenerDirectionPreviousBufferCalculation = listenerDirection;
 
 static std::mutex setPositionRequestMutex;
 struct SetPositionRequest
@@ -43,6 +46,8 @@ struct PlayRequest
 	float volume = 0.0f;
 };
 static bbe::List<PlayRequest> playRequests;
+
+static ALuint mainSource = 0;
 
 static ALuint getNewBuffer()
 {
@@ -64,115 +69,76 @@ struct SoundInstanceData
 {
 	uint64_t m_samples_loaded = 0;
 	const bbe::SoundDataSource* m_psound = nullptr;
-	float m_volume = 0;
-	ALuint source = 0;
-	bbe::List<ALuint> buffers;
-	bool playing = true;
+	float m_volume = 1.0f;
 	bool posAvailable = false;
 	bbe::Vector3 pos;
+	bbe::Vector3 posPreviousLoad;
 
-	bool areAllSamplesLoaded() const
+	void loadBuffer(bbe::Vector2 *samples, size_t numSamples)
 	{
-		return m_samples_loaded >= m_psound->getAmountOfSamples();
-	}
-
-	bool isBufferLoadingRequired() const
-	{
-		return !areAllSamplesLoaded() && buffers.getLength() < 10;
-	}
-
-	void loadNewBuffer(ALuint buffer)
-	{
-		constexpr size_t maxBufferSize = 5000;
 		const uint32_t channels = m_psound->getAmountOfChannels();
-		const size_t samplesLeft = m_psound->getAmountOfSamples() - m_samples_loaded;
-		const size_t floatsLeft = samplesLeft * channels;
-		const size_t bufferSize = bbe::Math::min(maxBufferSize, floatsLeft);
-		bbe::List<float> data;
-		data.resizeCapacityAndLengthUninit(bufferSize);
-		int openAlType = 0;
-		switch (channels)
+		for (size_t i = 0; i < numSamples; i++)
 		{
-		case(1):
-			openAlType = AL_FORMAT_MONO_FLOAT32;
-			break;
-		case(2):
-			openAlType = AL_FORMAT_STEREO_FLOAT32;
-			break;
-		default:
-			throw bbe::IllegalArgumentException();
-		}
-		for (size_t i = 0; i < bufferSize; i += channels)
-		{
-			for (uint32_t channel = 0; channel < channels; channel++)
+			if (m_samples_loaded == m_psound->getAmountOfSamples()) break;
+
+			float percentage = (float)i / (float)numSamples;
+
+			if (channels == 1)
 			{
-				data[i + channel] = m_psound->getSample(m_samples_loaded, channel);
+				float leftMult = 1.0f;
+				float rightMult = 1.0f;
+
+				if (posAvailable)
+				{
+					bbe::Vector3 lerpedPos = bbe::Math::interpolateLinear(posPreviousLoad, pos, percentage);
+					bbe::Vector3 lerpedListenerPos = bbe::Math::interpolateLinear(listenerPosPreviousBufferCalculation, listenerPos, percentage);
+
+					bbe::Vector3 toListener = lerpedListenerPos - lerpedPos;
+					bbe::Vector2 toListener2d = bbe::Vector2(toListener.x, toListener.y);
+					bbe::Vector2 toListener2dNorm = toListener2d.normalize();
+
+					// TODO: Slerp instead?
+					bbe::Vector3 lerpedDirection = bbe::Math::interpolateLinear(listenerDirectionPreviousBufferCalculation, listenerDirection, percentage).normalize();
+
+					bbe::Vector2 listenerRight = bbe::Vector2(-lerpedDirection.y, lerpedDirection.x).normalize();
+
+					//TODO: This isn't quite right. When looking directly at a sound, it still is coming more from one side than the other
+					rightMult = toListener2dNorm * listenerRight;
+					leftMult = 1.0f - rightMult;
+
+					float distSq = toListener.getLengthSq();
+					rightMult /= distSq;
+					leftMult /= distSq;
+				}
+
+				float val = m_psound->getSample(m_samples_loaded, 0);
+				samples[i] += bbe::Vector2(leftMult * val, rightMult * val) * m_volume;
+			}
+			else if (channels == 2)
+			{
+				if (posAvailable)
+				{
+					// A position for a multi channel sound is currently unsupported.
+					throw bbe::IllegalStateException();
+				}
+				samples[i] += bbe::Vector2(
+					m_psound->getSample(m_samples_loaded, 0), 
+					m_psound->getSample(m_samples_loaded, 1))
+					* m_volume;
+			}
+			else
+			{
+				throw bbe::IllegalStateException();
 			}
 			m_samples_loaded++;
 		}
 
-		alBufferData(buffer, openAlType, data.getRaw(), sizeof(float) * data.getLength(), m_psound->getHz());
-		ALenum err = alGetError();
-		if (err != ALC_NO_ERROR)
-		{
-			std::cout << "Something went wrong when loading buffer contents! " << err << std::endl;
-			freeBuffer(buffer);
-			throw bbe::IllegalStateException();
-		}
-		buffers.add(buffer);
-
-		alSourceQueueBuffers(source, 1, &buffer);
+		posPreviousLoad = pos;
 	}
 
-	void start(ALuint buffer, const bbe::Vector3* pos)
+	bool isPlaying() const
 	{
-		alGenSources(1, &source);
-		loadNewBuffer(buffer);
-
-		ALenum err = alGetError();
-		if (err != ALC_NO_ERROR)
-		{
-			std::cout << "Something went wrong when creating a ALSource! " << err << std::endl;
-			return;
-		}
-		if (pos)
-		{
-			alSource3f(source, AL_POSITION, pos->x, pos->y, pos->z);
-		}
-		else
-		{
-			alSource3f(source, AL_POSITION, 0, 0, 0);
-			alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
-		}
-		alSourcePlay(source);
-	}
-
-	void freeUsedUpBuffers()
-	{
-		ALint usedUpBuffers = 0;
-		alGetSourcei(source, AL_BUFFERS_PROCESSED, &usedUpBuffers);
-
-		for (ALint i = 0; i < usedUpBuffers; i++)
-		{
-			ALuint buffer = buffers[0];
-			buffers.removeIndex(0);
-			alSourceUnqueueBuffers(source, 1, &buffer);
-			freeBuffer(buffer);
-		}
-	}
-
-	void destroy()
-	{
-		if (source)
-		{
-			alDeleteSources(1, &source);
-			source = 0;
-		}
-		for (ALuint buffer : buffers)
-		{
-			freeBuffer(buffer);
-		}
-		buffers.clear();
+		return m_samples_loaded < m_psound->getAmountOfSamples();
 	}
 };
 static std::mutex playingSoundsMutex;
@@ -180,10 +146,16 @@ static std::map<uint64_t, SoundInstanceData> playingSounds;
 
 static void destroySoundSystem()
 {
-	for (auto [index, data] : playingSounds)
+	if (mainSource)
 	{
-		data.destroy();
+		alDeleteSources(1, &mainSource);
+		mainSource = 0;
 	}
+	for (ALuint buffer : buffers)
+	{
+		freeBuffer(buffer);
+	}
+	buffers.clear();
 	playingSounds.clear();
 	alDeleteBuffers(unusedBuffers.getLength(), unusedBuffers.getRaw());
 	unusedBuffers.clear();
@@ -194,6 +166,64 @@ static void destroySoundSystem()
 	alcMakeContextCurrent(nullptr);
 	alcDestroyContext(context);
 	alcCloseDevice(device);
+}
+
+static ALint freeUsedUpBuffers()
+{
+	ALint usedUpBuffers = 0;
+	alGetSourcei(mainSource, AL_BUFFERS_PROCESSED, &usedUpBuffers);
+
+	for (ALint i = 0; i < usedUpBuffers; i++)
+	{
+		ALuint buffer = buffers[0];
+		buffers.removeIndex(0);
+		alSourceUnqueueBuffers(mainSource, 1, &buffer);
+		freeBuffer(buffer);
+	}
+	return usedUpBuffers;
+}
+
+static void loadAllBuffers()
+{
+	bbe::Array<bbe::Vector2, 1000> samples;
+
+	for (auto it = playingSounds.begin(); it != playingSounds.end(); ++it)
+	{
+		SoundInstanceData& sid = it->second;
+		sid.loadBuffer(samples.getRaw(), samples.getLength());
+		if (sid.m_psound->getHz() != 44100)
+		{
+			bbe::String errorMsg = "";
+			errorMsg += sid.m_psound->getHz();
+			errorMsg += " Hz not supported";
+			throw bbe::IllegalStateException(errorMsg.getRaw());
+		}
+	}
+
+	ALuint buffer = getNewBuffer();
+	alBufferData(buffer, AL_FORMAT_STEREO_FLOAT32, samples.getRaw(), sizeof(bbe::Vector2) * samples.getLength(), 44100); // TODO HZ
+	ALenum err = alGetError();
+	if (err != ALC_NO_ERROR)
+	{
+		std::cout << "Something went wrong when loading buffer contents! " << err << std::endl;
+		freeBuffer(buffer);
+		throw bbe::IllegalStateException();
+	}
+	buffers.add(buffer);
+
+	alSourceQueueBuffers(mainSource, 1, &buffer);
+
+	listenerPosPreviousBufferCalculation = listenerPos;
+	listenerDirectionPreviousBufferCalculation = listenerDirection;
+}
+
+static void refreshBuffers()
+{
+	ALint usedBuffers = freeUsedUpBuffers();
+	for (ALint i = 0; i < usedBuffers; i++)
+	{
+		loadAllBuffers();
+	}
 }
 
 static bool initSoundSystem()
@@ -219,22 +249,25 @@ static bool initSoundSystem()
 		destroySoundSystem();
 		return false;
 	}
-	
+
+	alGenSources(1, &mainSource);
+	{
+		std::lock_guard<std::mutex> playingSoundsGuard(playingSoundsMutex);
+		for(size_t i = 0; i<3; i++) loadAllBuffers();
+	}
+	alSourcePlay(mainSource);
+	ALenum err = alGetError();
+	if (err != ALC_NO_ERROR)
+	{
+		std::cout << "Something went wrong when creating a ALSource! " << err << std::endl;
+		return false;
+	}
+
 	return true;
 }
 
 static void updateSoundSystem()
 {
-	{
-		std::lock_guard<std::mutex> guard(listenerMutex);
-		alListener3f(AL_POSITION, listenerPos.x, listenerPos.y, listenerPos.z);
-
-		// Look direction followed by the Up direction
-		float arr[] = { listenerDirection.x, listenerDirection.y, listenerDirection.z, 0, 0, 1 };
-
-		alListenerfv(AL_ORIENTATION, arr);
-	}
-
 	std::lock_guard<std::mutex> playingSoundsGuard(playingSoundsMutex);
 	{
 		std::lock_guard<std::mutex> guard(setPositionRequestMutex);
@@ -259,36 +292,15 @@ static void updateSoundSystem()
 			sid.pos = pr.pos;
 			sid.posAvailable = pr.posAvailable;
 
-			sid.start(getNewBuffer(), pr.posAvailable ? &pr.pos : nullptr);
 			playingSounds.insert({ pr.index, sid });
 		}
 		playRequests.clear();
 	}
 
-	for (auto it = playingSounds.begin(); it != playingSounds.end(); ++it)
-	{
-		SoundInstanceData& sid = it->second;
-		sid.freeUsedUpBuffers();
-		if (sid.isBufferLoadingRequired())
-		{
-			sid.loadNewBuffer(getNewBuffer());
-		}
-
-		ALint state = 0;
-		alGetSourcei(it->second.source, AL_SOURCE_STATE, &state);
-		sid.playing = state == AL_PLAYING;
-
-		if (sid.playing && sid.posAvailable)
-		{
-			alSource3f(sid.source, AL_POSITION, sid.pos.x, sid.pos.y, sid.pos.z);
-		}
-	}
-
 	for (auto it = playingSounds.begin(); it != playingSounds.end(); /*no inc*/)
 	{
-		if (!it->second.playing)
+		if (!it->second.isPlaying())
 		{
-			it->second.destroy();
 			playingSounds.erase(it++);
 		}
 		else
@@ -304,12 +316,14 @@ static void updateSoundSystem()
 			auto it = playingSounds.find(index);
 			if (it != playingSounds.end())
 			{
-				it->second.destroy();
 				playingSounds.erase(index);
 			}
 		}
 		stopRequests.clear();
 	}
+
+	std::lock_guard<std::mutex> guard(listenerMutex);
+	refreshBuffers();
 }
 
 static std::mutex endRequestedMutex;
@@ -384,7 +398,7 @@ bool bbe::INTERNAL::SoundManager::isSoundWithIndexPlaying(uint64_t index)
 	if (it != playingSounds.end())
 	{
 		SoundInstanceData& sid = it->second;
-		return sid.playing;
+		return sid.isPlaying();
 	}
 	return false;
 }
