@@ -74,6 +74,9 @@ struct SoundInstanceData
 	bbe::Vector3 pos;
 	bbe::Vector3 posPreviousLoad;
 
+	bool stopRequested = false;
+	bool readyForDelete = false;
+
 	void loadBuffer(bbe::Vector2 *samples, size_t numSamples)
 	{
 		const uint32_t channels = m_psound->getAmountOfChannels();
@@ -81,6 +84,7 @@ struct SoundInstanceData
 		{
 			if (m_samples_loaded == m_psound->getAmountOfSamples()) break;
 
+			bbe::Vector2 sample;
 			float percentage = (float)i / (float)numSamples;
 
 			if (channels == 1)
@@ -107,12 +111,13 @@ struct SoundInstanceData
 					leftMult = 1.0f - rightMult;
 
 					float distSq = toListener.getLengthSq();
+					if (distSq < 1.0f) distSq = 1.0f;
 					rightMult /= distSq;
 					leftMult /= distSq;
 				}
 
 				float val = m_psound->getSample(m_samples_loaded, 0);
-				samples[i] += bbe::Vector2(leftMult * val, rightMult * val) * m_volume;
+				sample = bbe::Vector2(leftMult * val, rightMult * val);
 			}
 			else if (channels == 2)
 			{
@@ -121,18 +126,28 @@ struct SoundInstanceData
 					// A position for a multi channel sound is currently unsupported.
 					throw bbe::IllegalStateException();
 				}
-				samples[i] += bbe::Vector2(
+				sample = bbe::Vector2(
 					m_psound->getSample(m_samples_loaded, 0), 
-					m_psound->getSample(m_samples_loaded, 1))
-					* m_volume;
+					m_psound->getSample(m_samples_loaded, 1));
 			}
 			else
 			{
 				throw bbe::IllegalStateException();
 			}
+
+			if (stopRequested)
+			{
+				sample *= (1.0f - percentage);
+			}
+			samples[i] += sample * m_volume;
+
 			m_samples_loaded++;
 		}
 
+		if (stopRequested)
+		{
+			readyForDelete = true;
+		}
 		posPreviousLoad = pos;
 	}
 
@@ -224,6 +239,19 @@ static void refreshBuffers()
 	{
 		loadAllBuffers();
 	}
+	if (usedBuffers)
+	{
+		ALenum state;
+		alGetSourcei(mainSource, AL_SOURCE_STATE, &state);
+		if (state != AL_PLAYING)
+		{
+			// TODO: Is there a way to do this automatically?
+			static uint32_t totalRestarts = 0;
+			totalRestarts++;
+			std::cout << "Sound died. Restarting. Total Restarts: " << totalRestarts << " Total sounds: " << playingSounds.size() << std::endl;
+			alSourcePlay(mainSource);
+		}
+	}
 }
 
 static bool initSoundSystem()
@@ -253,7 +281,7 @@ static bool initSoundSystem()
 	alGenSources(1, &mainSource);
 	{
 		std::lock_guard<std::mutex> playingSoundsGuard(playingSoundsMutex);
-		for(size_t i = 0; i<3; i++) loadAllBuffers();
+		for(size_t i = 0; i<2; i++) loadAllBuffers();
 	}
 	alSourcePlay(mainSource);
 	ALenum err = alGetError();
@@ -299,7 +327,7 @@ static void updateSoundSystem()
 
 	for (auto it = playingSounds.begin(); it != playingSounds.end(); /*no inc*/)
 	{
-		if (!it->second.isPlaying())
+		if (!it->second.isPlaying() || it->second.readyForDelete)
 		{
 			playingSounds.erase(it++);
 		}
@@ -316,7 +344,7 @@ static void updateSoundSystem()
 			auto it = playingSounds.find(index);
 			if (it != playingSounds.end())
 			{
-				playingSounds.erase(index);
+				it->second.stopRequested = true;
 			}
 		}
 		stopRequests.clear();
@@ -392,13 +420,24 @@ void bbe::INTERNAL::SoundManager::stopSoundWithIndex(uint64_t index)
 
 bool bbe::INTERNAL::SoundManager::isSoundWithIndexPlaying(uint64_t index)
 {
+	{
+		std::lock_guard<std::mutex> guard(stopRequestsMutex);
+		if (stopRequests.contains(index)) return false;
+	}
+	{
+		std::lock_guard<std::mutex> guard(playRequestsMutex);
+		for (size_t i = 0; i < playRequests.getLength(); i++)
+		{
+			if (playRequests[i].index == index) return true;
+		}
+	}
 	// TODO: Aquiring this lock is potentially quite expensive, because the sound thread is running constantly
 	std::lock_guard<std::mutex> guard(playingSoundsMutex);
 	auto it = playingSounds.find(index);
 	if (it != playingSounds.end())
 	{
 		SoundInstanceData& sid = it->second;
-		return sid.isPlaying();
+		return sid.isPlaying() && !sid.stopRequested && !sid.readyForDelete;
 	}
 	return false;
 }
