@@ -159,10 +159,10 @@ namespace bbe
 		{
 			return (val1 - val2) > epsilon ? false : ((val1 - val2) < -epsilon ? false : true);
 		}
-		float isNaN(float val);
-		float isInfinity(float val);
-		float isPositiveInfinity(float val);
-		float isNegativeInfinity(float val);
+		bool isNaN(float val);
+		bool isInfinity(float val);
+		bool isPositiveInfinity(float val);
+		bool isNegativeInfinity(float val);
 		template<typename T>
 		constexpr T nextMultiple(const T &multipleOf, const T &value)
 		{
@@ -228,6 +228,7 @@ namespace bbe
 		Vector3 maxComponent(const bbe::List<Vector3>& vectors);
 		Vector3 average(const bbe::List<Vector3>& vectors);
 
+		// TODO: Why are these pass by value?
 		Vector3 interpolateLinear(Vector3 a, Vector3 b, float t);
 		Vector3 interpolateBool(Vector3 a, Vector3 b, float t);
 		Vector3 interpolateCosine(Vector3 a, Vector3 b, float t);

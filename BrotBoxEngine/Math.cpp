@@ -160,22 +160,22 @@ float bbe::Math::minAbsKeepSign(float val1, float val2, float val3)
 	return val1;
 }
 
-float bbe::Math::isNaN(float val)
+bool bbe::Math::isNaN(float val)
 {
 	return val != val;
 }
 
-float bbe::Math::isInfinity(float val)
+bool bbe::Math::isInfinity(float val)
 {
 	return std::isinf(val);
 }
 
-float bbe::Math::isPositiveInfinity(float val)
+bool bbe::Math::isPositiveInfinity(float val)
 {
 	return std::isinf(val) && val > 0;
 }
 
-float bbe::Math::isNegativeInfinity(float val)
+bool bbe::Math::isNegativeInfinity(float val)
 {
 	return std::isinf(val) && val < 0;
 }
