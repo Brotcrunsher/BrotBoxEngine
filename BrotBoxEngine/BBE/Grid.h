@@ -184,23 +184,43 @@ namespace bbe
 		{
 			Grid<T> copy = *this;
 			bbe::List<bbe::Rectanglei> retVal;
-			while (true)
+			for (size_t x = 0; x < getWidth(); x++)
 			{
-				bbe::Rectanglei rect = copy.getBiggestRect(value);
-				if (rect.getArea() > 0)
+				for (size_t y = 0; y < getHeight(); y++)
 				{
-					for (size_t i = 0; i < rect.width; i++)
+					if (copy[x][y] == value)
 					{
-						for (size_t k = 0; k < rect.height; k++)
+						bbe::Rectanglei newElement(x, y, 1, 1);
+						// Determine width of new Element
+						for (size_t wDet = x + 1; wDet < getWidth(); wDet++)
 						{
-							copy[i + rect.x][k + rect.y] = !value;
+							if (copy[wDet][y] == value) newElement.width++;
+							else break;
 						}
+						// Determine height of new Element
+						for (size_t hDet = y + 1; hDet < getHeight(); hDet++)
+						{
+							for (size_t check = x; check < x + newElement.width; check++)
+							{
+								if (copy[check][hDet] != value)
+								{
+									goto outer;
+								}
+							}
+							newElement.height++;
+						}
+					outer:
+						// Remove covered blocks from copy
+						for (int32_t x = newElement.x; x < newElement.x + newElement.width; x++)
+						{
+							for (int32_t y = newElement.y; y < newElement.y + newElement.height; y++)
+							{
+								copy[x][y] = !value;
+							}
+						}
+						// Add new Element to return
+						retVal.add(newElement);
 					}
-					retVal.add(rect);
-				}
-				else
-				{
-					break;
 				}
 			}
 			return retVal;
@@ -213,33 +233,36 @@ namespace bbe
 				m_pdata[i] = t;
 			}
 		}
-
-	private:
-		void floodFill_(const bbe::Vector2i& pos, const T& from, const T& to, bool fillDiagonal)
-		{
-			if (pos.x < 0 || pos.x >= getWidth() || pos.y < 0 || pos.y >= getHeight()) return;
-			T& found = operator[](pos);
-			if (found != from || found == to) return;
-
-			found = to;
-
-			floodFill_({ pos.x + 1, pos.y }, from, to, fillDiagonal);
-			floodFill_({ pos.x - 1, pos.y }, from, to, fillDiagonal);
-			floodFill_({ pos.x, pos.y + 1 }, from, to, fillDiagonal);
-			floodFill_({ pos.x, pos.y - 1 }, from, to, fillDiagonal);
-			if (fillDiagonal)
-			{
-				floodFill_({ pos.x + 1, pos.y + 1 }, from, to, fillDiagonal);
-				floodFill_({ pos.x - 1, pos.y + 1 }, from, to, fillDiagonal);
-				floodFill_({ pos.x + 1, pos.y - 1 }, from, to, fillDiagonal);
-				floodFill_({ pos.x - 1, pos.y - 1 }, from, to, fillDiagonal);
-			}
-		}
 	public:
 
-		void floodFill(const bbe::Vector2i& pos, const T& value, bool fillDiagonal)
+		void floodFill(const bbe::Vector2i& pos, const T& to, bool fillDiagonal)
 		{
-			floodFill_(pos, operator[](pos), value, fillDiagonal);
+			const T from = operator[](pos);
+			if (from == to) return;
+			bbe::List<bbe::Vector2i> posToCheck;
+			posToCheck.add(pos);
+
+			while (posToCheck.getLength() > 0)
+			{
+				const bbe::Vector2i pos = posToCheck.popBack();
+				if (pos.x < 0 || pos.x >= getWidth() || pos.y < 0 || pos.y >= getHeight()) continue;
+				if (operator[](pos) == from)
+				{
+					operator[](pos) = to;
+
+					posToCheck.add( bbe::Vector2i(pos.x + 1, pos.y ));
+					posToCheck.add( bbe::Vector2i(pos.x - 1, pos.y ));
+					posToCheck.add( bbe::Vector2i(pos.x, pos.y + 1 ));
+					posToCheck.add( bbe::Vector2i(pos.x, pos.y - 1 ));
+					if (fillDiagonal)
+					{
+						posToCheck.add( bbe::Vector2i(pos.x + 1, pos.y + 1 ));
+						posToCheck.add( bbe::Vector2i(pos.x - 1, pos.y + 1 ));
+						posToCheck.add( bbe::Vector2i(pos.x + 1, pos.y - 1 ));
+						posToCheck.add( bbe::Vector2i(pos.x - 1, pos.y - 1 ));
+					}
+				}
+			}
 		}
 	};
 }
