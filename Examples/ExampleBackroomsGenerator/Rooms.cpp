@@ -107,7 +107,7 @@ void br::Rooms::update(float timeSinceLastFrame, const bbe::Vector3& camPos, con
 	}
 
 	{
-		constexpr uint32_t maxSoundDistance = 20;
+		constexpr uint32_t maxSoundDistance = 10;
 		constexpr size_t maxSoundSources = 20;
 		bbe::List<BuzzingLight*> allDrawnLights;
 		getLights(allDrawnLights, bbe::Vector2i{ (int32_t)camPos.x, (int32_t)camPos.y }, maxSoundDistance);
