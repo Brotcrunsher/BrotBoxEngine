@@ -631,9 +631,9 @@ void br::Rooms::connectGates(size_t roomi)
 		bbe::Vector3 coord = bbe::Vector3(rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f, 1.25f);
 		coord.x /= float(wallSpaceScale);
 		coord.y /= float(wallSpaceScale);
-		wallsMb.addCube(bbe::Cube(coord, bbe::Vector3(rect.width / float(wallSpaceScale), rect.height / float(wallSpaceScale), 2.5f)));
+		wallsMb.addCube(bbe::Cube(coord, bbe::Vector3(rect.width / float(wallSpaceScale), rect.height / float(wallSpaceScale), 2.5f)), bbe::FaceFlag::CIRCUMFERENCE);
 		coord.z = 0.075f;
-		skirtingBoardMb.addCube(bbe::Cube(coord, bbe::Vector3(rect.width / float(wallSpaceScale) + 0.03f, rect.height / float(wallSpaceScale) + 0.03f, 0.15f)));
+		skirtingBoardMb.addCube(bbe::Cube(coord, bbe::Vector3(rect.width / float(wallSpaceScale) + 0.03f, rect.height / float(wallSpaceScale) + 0.03f, 0.15f)), bbe::FaceFlag::BOTTOMLESS);
 	}
 	bbe::Vector3 meshPos = bbe::Vector3(r.boundingBox.x, r.boundingBox.y, 0);
 	r.wallsModel = Room::ModelOffsetPair{ meshPos, wallsMb.getModel()};
@@ -675,7 +675,7 @@ void br::Rooms::connectGates(size_t roomi)
 	bbe::MeshBuilder lightMb;
 	for (const BuzzingLight& light : r.lights)
 	{
-		lightMb.addCube(bbe::Cube(light.light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)));
+		lightMb.addCube(bbe::Cube(light.light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)), bbe::FaceFlag::TOPLESS);
 	}
 	r.lightsModel = Room::ModelOffsetPair{ bbe::Vector3(), lightMb.getModel()}; // TODO: The 0 offset while backing the vertex poses in world coords is a bad idea for accuracy.
 }
@@ -694,7 +694,7 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	Room& r = rooms[roomi];
 
 	bbe::List<bbe::PointLight> lights;
-	const int32_t lightmapSize = 64;
+	const int32_t lightmapSize = 128;
 	for (size_t i = 0; i < roomLightSources.getLength(); i++)
 	{
 		for (size_t k = 0; k < rooms[roomLightSources[i]].lights.getLength(); k++)
