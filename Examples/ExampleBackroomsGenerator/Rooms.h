@@ -10,6 +10,14 @@ namespace br
 		bbe::Rectanglei shrinkBoundingBoxRec(const bbe::Rectanglei& bounding, const bbe::List<bbe::Rectanglei>& intersections, int32_t index, int32_t &currentBestArea) const;
 		void determineNeighbors_(size_t roomi, const bbe::Vector2i& roomiGatePos, const bbe::Vector2i& neighborGatePos);
 		void generateAtPointMulti_(size_t roomi, bbe::List<size_t> &list, size_t depth);
+		void getRooms(bbe::List<size_t>& roomis, size_t roomi, const bbe::Vector2i& position, int32_t maxDist); // TODO: Change roomis to set
+
+		struct BuzzingLightSound
+		{
+			bbe::SoundInstance instance;
+			bbe::Vector3 pos;
+		};
+		bbe::List<BuzzingLightSound> buzzingLightSounds;
 
 	public:
 		Rooms();
@@ -21,7 +29,7 @@ namespace br
 		bbe::HashMap<bbe::Vector2i, bbe::List<size_t>> hashGrid;
 		
 		void clear();
-		void update(float timeSinceLastFrame);
+		void update(float timeSinceLastFrame, const bbe::Vector3& camPos, const bbe::SoundDataSource& lightBuzz);
 
 		// Debug
 		void setSeed(int seed);
@@ -49,5 +57,8 @@ namespace br
 		void drawAt(const bbe::Vector3 pos, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights);
 		void drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights);
 		void drawRoomsRecursively(bbe::List<size_t>& alreadyDrawn, bbe::List<size_t>& neighborList, bool& bakedRoom, size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights);
+
+		void getLights(bbe::List<BuzzingLight*>& allDrawnLights, const bbe::Vector2i& position, int32_t maxDist);
+		void getRooms(bbe::List<size_t>& roomis, const bbe::Vector2i& position, int32_t maxDist);
 	};
 }

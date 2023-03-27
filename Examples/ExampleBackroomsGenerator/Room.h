@@ -29,6 +29,12 @@ namespace br
 		bbe::List<Gate> gates;
 	};
 
+	struct BuzzingLight
+	{
+		bbe::PointLight light;
+		bbe::SoundInstance buzz;
+	};
+
 	struct Room
 	{
 		bbe::Rectanglei boundingBox;
@@ -49,7 +55,7 @@ namespace br
 		};
 		bbe::List<ModelOffsetPair> wallsModels;
 		bbe::List<ModelOffsetPair> skirtingBoardModels;
-		bbe::List<bbe::PointLight> lights;
+		bbe::List<BuzzingLight> lights;
 		bbe::Image bakedCeiling;
 		bbe::Image bakedFloor;
 		bbe::List<bbe::Image> bakedWalls;

@@ -7,20 +7,131 @@ constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
+// TODO: Add getter for amount of draw calls
+// TODO: VAO buffers?
+// TODO: Thinner Walls
 // TODO: power outlet
-// TODO: Buzzing sounds for Lights
+// TODO: Floor Shader looks under developed
+// TODO: Ceiling Shader looks under developed
 // TODO: Footstep sounds?
 // TODO: Does Laptop hit 60 FPS?
 // TODO: Emscripten
 // TODO: Bloom for lights?
 // TODO: Wall Collision with player
-// TODO: Experiments with Shadow Maps
+// TODO: Experiments with Shadow Maps (first experiments indicate that they are waaaay too slow. Can we do better?)
+// TODO: Be a bit more clever which lights to consider during baking and which can be ignored.
+// TODO: Baked light textures always have the same size. This isn't ideal. Make it depend on the size of the actual models.
+// TODO: Walls have an unnecessary top and bottom side that can be removed, freeing up space for higher quality textures.
+// TODO: Having many lights reaaaally slows down the rendering. Maybe instance drawing? Maybe the same for the walls?
+// TODO: Batch walls into one mesh. CAREFUL: This does include the Fußbodenleiste
 
 namespace br
 {
+	class BackgroundHum : public bbe::SoundDataSource
+	{
+	public:
+		static constexpr uint32_t hz = 44100;
+
+		struct SimpleWave
+		{
+			float val = 0.0f;
+			float inc = 0.0f;
+
+			SimpleWave(float inc) : inc(inc) {}
+			float sample()
+			{
+				val += inc;
+				if (val > 1.0f && inc > 0)
+				{
+					inc *= -1.0f;
+					val = 1.0f;
+				}
+				else if (val < 0.0f && inc < 0)
+				{
+					inc *= -1.0f;
+					val = 0.0f;
+				}
+				return val;
+			}
+		};
+		mutable bbe::List<SimpleWave> waves;
+		bbe::Random rand;
+
+		BackgroundHum()
+		{
+			rand.setSeed(17);
+			newSound();
+		}
+
+		void newSound()
+		{
+			waves.clear();
+			for (size_t i = 0; i < 10; i++)
+			{
+				waves.add(SimpleWave(rand.randomFloat() / 1000.f));
+			}
+		}
+
+		virtual float getSample(size_t i, uint32_t channel) const override
+		{
+			float retVal = 0;
+			for (size_t i = 0; i < waves.getLength(); i++)
+			{
+				retVal += waves[i].sample();
+			}
+			retVal /= waves.getLength();
+
+			return retVal * 0.5f;
+		}
+		virtual size_t getAmountOfSamples() const override
+		{
+			return (size_t)-1;
+		}
+
+		virtual uint32_t getHz() const override
+		{
+			return hz;
+		}
+
+		virtual uint32_t getAmountOfChannels() const override
+		{
+			return 1;
+		}
+	};
+
+	class LightBuzz : public bbe::SoundDataSource
+	{
+	public:
+		virtual float getSample(size_t i, uint32_t channel) const override
+		{
+			float fadeIn = 1.0f;
+			size_t fadeInTime = 1000;
+			if (i < fadeInTime)
+			{
+				fadeIn = (float)i / (float)fadeInTime;
+			}
+			return (bbe::Math::cos(i * 0.01233f) + bbe::Math::cos(i * 0.016435f) + bbe::Math::cos(i * 0.01f)) * 0.03f * fadeIn;
+		}
+		virtual size_t getAmountOfSamples() const override
+		{
+			return (size_t)-1;
+		}
+
+		virtual uint32_t getHz() const override
+		{
+			return 44100;
+		}
+
+		virtual uint32_t getAmountOfChannels() const override
+		{
+			return 1;
+		}
+	};
+
 	class BackroomsGenerator : public bbe::Game
 	{
 	private:
+		bbe::Random rand;
 		Rooms rooms;
 		bbe::Vector2 cameraPos;
 
@@ -46,6 +157,9 @@ namespace br
 		bool drawWalls = true;
 		bool drawCeiling = true;
 		bool drawLights = true;
+
+		BackgroundHum backgroundHum;
+		LightBuzz lightBuzz;
 	public:
 		void newRooms()
 		{
@@ -68,40 +182,8 @@ namespace br
 
 		virtual void onStart() override
 		{
-			//int seed = 17126181 - 1;
-			//size_t fit = 1000000;
-			//while (true)
-			//{
-			//	seed++;
-			//	Rooms rooms;
-			//	rooms.setSeed(seed);
-			//	rooms.generateAtPoint(bbe::Vector2i(0, 0));
-			//
-			//	for (int iterations = 0; iterations < 100; iterations++)
-			//	{
-			//		bbe::Rectanglei overArchingBounding = rooms.rooms[0].boundingBox;
-			//		for (int i = 1; i < rooms.rooms.getLength(); i++)
-			//		{
-			//			overArchingBounding = overArchingBounding.combine(rooms.rooms[i].boundingBox);
-			//		}
-			//		size_t amountOfRooms = rooms.rooms.getLength() * overArchingBounding.getArea();
-			//		if (!rooms.expandRoom(iterations))
-			//		{
-			//			amountOfRooms = rooms.rooms.getLength() * overArchingBounding.getArea();
-			//			if (amountOfRooms < fit)
-			//			{
-			//
-			//				fit = amountOfRooms;
-			//				std::cout << "Seed: " << seed << " #Rooms: " << amountOfRooms << std::endl;
-			//			}
-			//			break;
-			//		}
-			//		if (amountOfRooms > fit)
-			//		{
-			//			break;
-			//		}
-			//	}
-			//}
+			backgroundHum.play();
+			rand.setSeed(17);
 
 			newRooms();
 			ccnc.constraintZPos(1.8f);
@@ -161,7 +243,7 @@ namespace br
 			}
 
 			ccnc.update(timeSinceLastFrame * 0.2f);
-			rooms.update(timeSinceLastFrame);
+			rooms.update(timeSinceLastFrame, ccnc.getCameraPos(), lightBuzz);
 			//ccnc.setCameraForward(bbe::Vector3(1, 0, 0));
 			float fps = (1 / timeSinceLastFrame);
 			static float minFps = 100000;
@@ -170,6 +252,8 @@ namespace br
 				minFps = fps;
 				std::cout << fps << std::endl;
 			}
+
+			setSoundListener(ccnc.getCameraPos(), ccnc.getCameraForward());
 		}
 
 		virtual void update(float timeSinceLastFrame) override
@@ -210,6 +294,9 @@ namespace br
 				ImGui::Checkbox("Draw Walls", &drawWalls);
 				ImGui::Checkbox("Draw Ceiling", &drawCeiling);
 				ImGui::Checkbox("Draw Lights", &drawLights);
+
+				auto pos = ccnc.getCameraPos();
+				ImGui::LabelText("Pos", "%f/%f/%f", pos.x, pos.y, pos.z);
 			}
 			else
 			{

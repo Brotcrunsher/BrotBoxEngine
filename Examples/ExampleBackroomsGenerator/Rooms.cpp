@@ -92,7 +92,7 @@ void br::Rooms::clear()
 	hashGrid.clear();
 }
 
-void br::Rooms::update(float timeSinceLastFrame)
+void br::Rooms::update(float timeSinceLastFrame, const bbe::Vector3& camPos, const bbe::SoundDataSource& lightBuzz)
 {
 	for (size_t i = 0; i < bakedRoomIds.getLength(); i++)
 	{
@@ -103,6 +103,42 @@ void br::Rooms::update(float timeSinceLastFrame)
 		{
 			unbakeLights(roomi);
 			i--;
+		}
+	}
+
+	{
+		constexpr uint32_t maxSoundDistance = 20;
+		constexpr size_t maxSoundSources = 20;
+		bbe::List<BuzzingLight*> allDrawnLights;
+		getLights(allDrawnLights, bbe::Vector2i{ (int32_t)camPos.x, (int32_t)camPos.y }, maxSoundDistance);
+		if (allDrawnLights.getLength() > maxSoundSources)
+		{
+			allDrawnLights.sort([&](BuzzingLight* const& a, BuzzingLight* const& b)
+				{
+					float aDist = a->light.pos.getDistanceTo(camPos);
+					float bDist = b->light.pos.getDistanceTo(camPos);
+					return aDist < bDist;
+				});
+		}
+
+		for (size_t i = 0; i < allDrawnLights.getLength() && i < maxSoundSources; i++)
+		{
+			if (allDrawnLights[i]->buzz.isPlaying() == false)
+			{
+				allDrawnLights[i]->buzz = lightBuzz.play(allDrawnLights[i]->light.pos + bbe::Vector3(0, 0, 1));
+				buzzingLightSounds.add(BuzzingLightSound{ allDrawnLights[i]->buzz, allDrawnLights[i]->light.pos });
+			}
+		}
+
+		for (size_t i = 0; i < buzzingLightSounds.getLength(); i++)
+		{
+			float dist = camPos.getDistanceTo(buzzingLightSounds[i].pos);
+			if (dist > maxSoundDistance + 5) // + 5 to make sure we don't flip a sound off and on all the time.
+			{
+				buzzingLightSounds[i].instance.stop();
+				buzzingLightSounds.removeIndex(i);
+				i--;
+			}
 		}
 	}
 }
@@ -448,11 +484,11 @@ void br::Rooms::connectGates(size_t roomi)
 	{
 		{InnerRoomType::EMPTY  ,   1},
 		{InnerRoomType::RANDOM ,  10},
-		{InnerRoomType::COLUMNS,  10},
+		{InnerRoomType::COLUMNS,   1},
 	};
 	if (r.boundingBox.width >= 10 && r.boundingBox.height >= 10)
 	{
-		innerRoomTypes.add({InnerRoomType::REPEATING, 10});
+		innerRoomTypes.add({InnerRoomType::REPEATING, 5});
 	}
 
 	const InnerRoomType irt = (InnerRoomType)rand.sampleContainerWithBag(innerRoomTypes);
@@ -556,7 +592,9 @@ void br::Rooms::connectGates(size_t roomi)
 				bbe::PointLight pl;
 				pl.pos = bbe::Vector3(i + r.boundingBox.x + 0.5f, k + r.boundingBox.y + 0.5f, 2.f);
 				pl.lightStrength = 1.5f;
-				r.lights.add(pl);
+				BuzzingLight bl;
+				bl.light = pl;
+				r.lights.add(bl);
 			}
 		}
 	}
@@ -579,7 +617,10 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	const int32_t lightmapSize = 64;
 	for (size_t i = 0; i < roomLightSources.getLength(); i++)
 	{
-		lights.addList(rooms[roomLightSources[i]].lights);
+		for (size_t k = 0; k < rooms[roomLightSources[i]].lights.getLength(); k++)
+		{
+			lights.add(rooms[roomLightSources[i]].lights[k].light);
+		}
 	}
 	if (r.bakedCeiling.isLoadedCpu() == false && r.bakedCeiling.isLoadedGpu() == false)
 	{
@@ -785,9 +826,9 @@ void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* 
 	brush.setColor(1, 1, 1, 1);
 	if (drawLights)
 	{
-		for (const bbe::PointLight& light : r.lights)
+		for (const BuzzingLight& light : r.lights)
 		{
-			brush.fillCube(bbe::Cube(light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)), nullptr, nullptr, &bbe::Image::white());
+			brush.fillCube(bbe::Cube(light.light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)), nullptr, nullptr, &bbe::Image::white());
 		}
 	}
 	brush.setColorHSV(r.hue, r.saturation, r.value);
@@ -833,5 +874,52 @@ void br::Rooms::drawRoomsRecursively(bbe::List<size_t>& alreadyDrawn, bbe::List<
 		{
 			drawRoomsRecursively(alreadyDrawn, neighborList, bakedRoom, neighborId, brush, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawCeiling, drawLights);
 		}
+	}
+}
+
+void br::Rooms::getLights(bbe::List<BuzzingLight*>& allDrawnLights, const bbe::Vector2i& position, int32_t maxDist)
+{
+	bbe::List<size_t> roomis;
+	getRooms(roomis, position, maxDist);
+
+	for (size_t roomi : roomis)
+	{
+		// Doing this in a separate loop to make 100% sure we don't change the rooms array anymore afterwards.
+		connectGates(roomi);
+	}
+
+	for (size_t roomi : roomis)
+	{
+		Room& r = rooms[roomi];
+		for (size_t i = 0; i < r.lights.getLength(); i++)
+		{
+			BuzzingLight& bz = r.lights[i];
+			bbe::Vector2i lightPos = bbe::Vector2i((int32_t)bz.light.pos.x, (int32_t)bz.light.pos.y);
+			const int32_t distance = lightPos.getDistanceTo(position);
+			if (distance <= maxDist)
+			{
+				allDrawnLights.add(&bz);
+			}
+		}
+	}
+}
+
+void br::Rooms::getRooms(bbe::List<size_t>& roomis, const bbe::Vector2i& position, int32_t maxDist)
+{
+	roomis.clear();
+	size_t roomi = getRoomIndexAtPoint(position);
+	getRooms(roomis, roomi, position, maxDist);
+}
+
+void br::Rooms::getRooms(bbe::List<size_t>& roomis, size_t roomi, const bbe::Vector2i& position, int32_t maxDist)
+{
+	if (roomis.contains(roomi)) return;
+	determineNeighbors(roomi);
+	const int32_t distance = rooms[roomi].boundingBox.getDistanceTo(position);
+	if (distance > maxDist) return;
+	roomis.add(roomi);
+	for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
+	{
+		getRooms(roomis, rooms[roomi].neighbors[i].neighborId, position, maxDist);
 	}
 }
