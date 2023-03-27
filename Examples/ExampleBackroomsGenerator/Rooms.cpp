@@ -624,25 +624,20 @@ void br::Rooms::connectGates(size_t roomi)
 	}
 
 	bbe::List<bbe::Rectanglei> rects = r.walkable.getAllBiggestRects(false); // TODO: This could be slightly improved. X formations currently generate 3 walls, where they could produce 2.
+	bbe::MeshBuilder wallsMb;
+	bbe::MeshBuilder skirtingBoardMb;
 	for (const bbe::Rectanglei& rect : rects)
 	{
 		bbe::Vector3 coord = bbe::Vector3(rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f, 1.25f);
 		coord.x /= float(wallSpaceScale);
 		coord.y /= float(wallSpaceScale);
-		coord.x += r.boundingBox.x;
-		coord.y += r.boundingBox.y;
-		{
-			bbe::MeshBuilder mb;
-			mb.addCube(bbe::Cube(bbe::Vector3(), bbe::Vector3(rect.width / float(wallSpaceScale), rect.height / float(wallSpaceScale), 2.5f)));
-			r.wallsModels.add(Room::ModelOffsetPair{ coord, mb.getModel() });
-		}
+		wallsMb.addCube(bbe::Cube(coord, bbe::Vector3(rect.width / float(wallSpaceScale), rect.height / float(wallSpaceScale), 2.5f)));
 		coord.z = 0.075f;
-		{
-			bbe::MeshBuilder mb;
-			mb.addCube(bbe::Cube(bbe::Vector3(), bbe::Vector3(rect.width / float(wallSpaceScale) + 0.03f, rect.height / float(wallSpaceScale) + 0.03f, 0.15f)));
-			r.skirtingBoardModels.add(Room::ModelOffsetPair{ coord, mb.getModel() });
-		}
+		skirtingBoardMb.addCube(bbe::Cube(coord, bbe::Vector3(rect.width / float(wallSpaceScale) + 0.03f, rect.height / float(wallSpaceScale) + 0.03f, 0.15f)));
 	}
+	bbe::Vector3 meshPos = bbe::Vector3(r.boundingBox.x, r.boundingBox.y, 0);
+	r.wallsModel = Room::ModelOffsetPair{ meshPos, wallsMb.getModel()};
+	r.skirtingBoardModel = Room::ModelOffsetPair{ meshPos, skirtingBoardMb.getModel() };
 
 	const float roomLightProbability = 0.0001f + rand.randomFloat() * 0.2f;
 	for (int32_t i = 2; i < r.boundingBox.width - 2; i++)
@@ -676,6 +671,13 @@ void br::Rooms::connectGates(size_t roomi)
 			}
 		}
 	}
+
+	bbe::MeshBuilder lightMb;
+	for (const BuzzingLight& light : r.lights)
+	{
+		lightMb.addCube(bbe::Cube(light.light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)));
+	}
+	r.lightsModel = Room::ModelOffsetPair{ bbe::Vector3(), lightMb.getModel()}; // TODO: The 0 offset while backing the vertex poses in world coords is a bad idea for accuracy.
 }
 
 bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard)
@@ -708,13 +710,13 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	{
 		r.bakedFloor = game->bakeLights(r.floorTranslation(), r.floorModel, nullptr, shaderFloor, { lightmapSize, lightmapSize }, lights);
 	}
-	else if (rooms[roomi].wallsModels.getLength() != rooms[roomi].bakedWalls.getLength())
+	else if (rooms[roomi].bakedWalls.getLength() != 1)
 	{
-		r.bakedWalls.add(game->bakeLights(bbe::Matrix4::createTranslationMatrix(r.wallsModels[r.bakedWalls.getLength()].offset), r.wallsModels[r.bakedWalls.getLength()].model, nullptr, shaderWall, { lightmapSize, lightmapSize }, lights));
+		r.bakedWalls.add(game->bakeLights(bbe::Matrix4::createTranslationMatrix(r.wallsModel.offset), r.wallsModel.model, nullptr, shaderWall, { lightmapSize, lightmapSize }, lights));
 	}
-	else if (rooms[roomi].skirtingBoardModels.getLength() != rooms[roomi].bakedSkirtingBoard.getLength())
+	else if (rooms[roomi].bakedSkirtingBoard.getLength() != 1)
 	{
-		r.bakedSkirtingBoard.add(game->bakeLights(bbe::Matrix4::createTranslationMatrix(r.skirtingBoardModels[r.bakedSkirtingBoard.getLength()].offset), r.skirtingBoardModels[r.bakedSkirtingBoard.getLength()].model, nullptr, shaderSkirtingBoard, { lightmapSize, lightmapSize }, lights));
+		r.bakedSkirtingBoard.add(game->bakeLights(bbe::Matrix4::createTranslationMatrix(r.skirtingBoardModel.offset), r.skirtingBoardModel.model, nullptr, shaderSkirtingBoard, { lightmapSize, lightmapSize }, lights));
 	}
 	else
 	{
@@ -904,26 +906,17 @@ void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* 
 	brush.setColor(1, 1, 1, 1);
 	if (drawLights)
 	{
-		for (const BuzzingLight& light : r.lights)
-		{
-			brush.fillCube(bbe::Cube(light.light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)), nullptr, nullptr, &bbe::Image::white());
-		}
+		brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.lightsModel.offset), r.lightsModel.model, nullptr, nullptr, &bbe::Image::white());
 	}
 	brush.setColorHSV(r.hue, r.saturation, r.value);
-	if (r.wallsModels.getLength() != r.bakedWalls.getLength()) throw bbe::IllegalStateException();
+	if (r.bakedWalls.getLength() != 1) throw bbe::IllegalStateException();
 	if(drawFloor) brush.fillModel(r.floorTranslation(), r.floorModel, nullptr, nullptr, &r.bakedFloor, shaderFloor);
 	if(drawCeiling) brush.fillModel(r.ceilingTranslation(), r.ceilingModel, nullptr, nullptr, &r.bakedCeiling, shaderCeiling);
 	if (drawWalls)
 	{
-		for (size_t i = 0; i < r.wallsModels.getLength(); i++)
-		{
-			brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.wallsModels[i].offset), r.wallsModels[i].model, nullptr, nullptr, &r.bakedWalls[i], shaderWall);
-		}
+		brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.wallsModel.offset), r.wallsModel.model, nullptr, nullptr, &r.bakedWalls[0], shaderWall);
 		brush.setColor(1, 1, 1, 1);
-		for (size_t i = 0; i < r.skirtingBoardModels.getLength(); i++)
-		{
-			brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.skirtingBoardModels[i].offset), r.skirtingBoardModels[i].model, nullptr, nullptr, &r.bakedSkirtingBoard[i], shaderSkirtingBoard);
-		}
+		brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.skirtingBoardModel.offset), r.skirtingBoardModel.model, nullptr, nullptr, &r.bakedSkirtingBoard[0], shaderSkirtingBoard);
 	}
 }
 

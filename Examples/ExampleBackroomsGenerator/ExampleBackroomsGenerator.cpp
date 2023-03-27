@@ -7,6 +7,10 @@ constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
+// TODO: Be a bit more clever which lights to consider during baking and which can be ignored.
+// TODO: Baked light textures always have the same size. This isn't ideal. Make it depend on the size of the actual models.
+// TODO: Baked light textures currently too low res
+// TODO: Walls have an unnecessary top and bottom side that can be removed, freeing up space for higher quality textures.
 // TODO: VAO buffers?
 // TODO: power outlet
 // TODO: Floor Shader looks under developed
@@ -17,11 +21,7 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Bloom for lights?
 // TODO: Wall Collision with player
 // TODO: Experiments with Shadow Maps (first experiments indicate that they are waaaay too slow. Can we do better?)
-// TODO: Be a bit more clever which lights to consider during baking and which can be ignored.
-// TODO: Baked light textures always have the same size. This isn't ideal. Make it depend on the size of the actual models.
-// TODO: Walls have an unnecessary top and bottom side that can be removed, freeing up space for higher quality textures.
 // TODO: Having many lights reaaaally slows down the rendering. Maybe instance drawing? Maybe the same for the walls?
-// TODO: Batch walls into one mesh. CAREFUL: This does include the Fuﬂbodenleiste
 
 namespace br
 {

@@ -53,8 +53,9 @@ namespace br
 			bbe::Vector3 offset;
 			bbe::Model model;
 		};
-		bbe::List<ModelOffsetPair> wallsModels;
-		bbe::List<ModelOffsetPair> skirtingBoardModels;
+		ModelOffsetPair wallsModel;
+		ModelOffsetPair skirtingBoardModel;
+		ModelOffsetPair lightsModel;
 		bbe::List<BuzzingLight> lights;
 		bbe::Image bakedCeiling;
 		bbe::Image bakedFloor;
