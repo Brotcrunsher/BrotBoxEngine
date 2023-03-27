@@ -48,6 +48,7 @@ struct PlayRequest
 static bbe::List<PlayRequest> playRequests;
 
 static ALuint mainSource = 0;
+static bool previouslyDied = false;
 
 static ALuint getNewBuffer()
 {
@@ -249,6 +250,7 @@ static void refreshBuffers()
 			static uint32_t totalRestarts = 0;
 			totalRestarts++;
 			std::cout << "Sound died. Restarting. Total Restarts: " << totalRestarts << " Total sounds: " << playingSounds.size() << std::endl;
+			previouslyDied = true;
 			alSourcePlay(mainSource);
 		}
 	}
@@ -377,7 +379,14 @@ static void soundSystemMain()
 	while (!isEndRequested())
 	{
 		updateSoundSystem();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1)); // A more relaxed version of yield...
+		if (!previouslyDied)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(1)); // A more relaxed version of yield...
+		}
+		else
+		{
+			std::this_thread::yield();
+		}
 	}
 	destroySoundSystem();
 }
