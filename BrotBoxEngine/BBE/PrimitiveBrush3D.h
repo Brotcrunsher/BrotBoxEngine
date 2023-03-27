@@ -64,6 +64,7 @@ namespace bbe
 	public:
 		PrimitiveBrush3D();
 
+		void fillCube(const bbe::Vector3& pos);
 		void fillCube(const Cube &cube);
 		void fillIcoSphere(const IcoSphere &sphere);
 		void fillLine(const bbe::Vector3& a, const bbe::Vector3& b, float lineWidth = 0.1f);

@@ -93,6 +93,11 @@ bbe::PrimitiveBrush3D::PrimitiveBrush3D()
 	);
 }
 
+void bbe::PrimitiveBrush3D::fillCube(const bbe::Vector3& pos)
+{
+	fillCube(bbe::Cube(pos));
+}
+
 void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
 {
 	m_prenderManager->fillCube3D(cube);
