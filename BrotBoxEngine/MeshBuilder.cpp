@@ -20,10 +20,10 @@ bbe::MeshBuilder::MeshBuilder()
 	// Do nothing.
 }
 
-void bbe::MeshBuilder::addCube(const bbe::Cube& cube)
+void bbe::MeshBuilder::addCube(const bbe::Cube& cube, FaceFlag ff)
 {
-	bbe::List<PosNormalPair> vertices = cube.getRenderVertices();
-	bbe::List<uint32_t> indices = Cube::getRenderIndicesDefault();
+	bbe::List<PosNormalPair> vertices = cube.getRenderVertices(ff);
+	bbe::List<uint32_t> indices = Cube::getRenderIndicesDefault(ff);
 	addElement(vertices, indices);
 }
 

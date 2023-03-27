@@ -175,65 +175,145 @@ void bbe::Cube::getVertices(bbe::List<bbe::Vector3>& outVertices) const
 	outVertices.add(m_transform * bbe::Vector3(-0.5f, -0.5f, -0.5f));
 }
 
-bbe::List<bbe::PosNormalPair> bbe::Cube::getRenderVerticesDefault()
+bbe::Vector2 normalPos(int32_t face, int32_t sub, bbe::Vector2& maxPos)
 {
-	return {
-		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, 0, -1), Vector2(0.30f, 0.00f)},
-		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0, 0, -1), Vector2(0.30f, 0.30f)},
-		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0, 0, -1), Vector2(0.00f, 0.30f)},
-		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, 0, -1), Vector2(0.00f, 0.00f)},
+	const bbe::Vector2i basePosi = bbe::Math::squareCantor(face);
+	const bbe::Vector2 basePos = bbe::Vector2(basePosi.x * 1.05f, basePosi.y * 1.05f);
 
-		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, 0,  1), Vector2(0.65f, 0.00f)},
-		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0, 0,  1), Vector2(0.65f, 0.30f)},
-		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0, 0,  1), Vector2(0.35f, 0.30f)},
-		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, 0,  1), Vector2(0.35f, 0.00f)},
+	bbe::Vector2 retVal;
+	switch (sub)
+	{
+	case(0): retVal = basePos + bbe::Vector2(1.0f, 0.0f); break;
+	case(1): retVal = basePos + bbe::Vector2(1.0f, 1.0f); break;
+	case(2): retVal = basePos + bbe::Vector2(0.0f, 1.0f); break;
+	case(3): retVal = basePos + bbe::Vector2(0.0f, 0.0f); break;
+	default: throw bbe::IllegalArgumentException();
+	}
 
-		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, -1, 0), Vector2(0.30f, 0.35f)},
-		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, -1, 0), Vector2(0.30f, 0.65f)},
-		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, -1, 0), Vector2(0.00f, 0.65f)},
-		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, -1, 0), Vector2(0.00f, 0.35f)},
-
-		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0,  1, 0), Vector2(0.65f, 0.35f)},
-		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0,  1, 0), Vector2(0.65f, 0.65f)},
-		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0,  1, 0), Vector2(0.35f, 0.65f)},
-		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0,  1, 0), Vector2(0.35f, 0.35f)},
-
-		PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(-1, 0, 0), Vector2(0.30f, 0.70f)},
-		PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(-1, 0, 0), Vector2(0.30f, 1.00f)},
-		PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(-1, 0, 0), Vector2(0.00f, 1.00f)},
-		PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(-1, 0, 0), Vector2(0.00f, 0.70f)},
-
-		PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3( 1, 0, 0), Vector2(0.65f, 0.70f)},
-		PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3( 1, 0, 0), Vector2(0.65f, 1.00f)},
-		PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3( 1, 0, 0), Vector2(0.35f, 1.00f)},
-		PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3( 1, 0, 0), Vector2(0.35f, 0.70f)},
-	};
+	maxPos.x = bbe::Math::max(maxPos.x, retVal.x);
+	maxPos.y = bbe::Math::max(maxPos.y, retVal.y);
+	
+	return retVal;
 }
 
-bbe::List<bbe::PosNormalPair> bbe::Cube::getRenderVertices() const
+bbe::List<bbe::PosNormalPair> bbe::Cube::getRenderVerticesDefault(FaceFlag ff)
 {
-	bbe::List<bbe::PosNormalPair> retVal =  getRenderVerticesDefault();
+	bbe::List<bbe::PosNormalPair> retVal;
+	int32_t face = 0;
+	bbe::Vector2 maxPos;
+	if ((int)ff & (int)FaceFlag::BOTTOM)
+	{
+		retVal.addAll(
+			PosNormalPair{ Vector3( 0.5, -0.5, -0.5), Vector3(0, 0, -1), normalPos(face, 0, maxPos) },
+			PosNormalPair{ Vector3( 0.5,  0.5, -0.5), Vector3(0, 0, -1), normalPos(face, 1, maxPos) },
+			PosNormalPair{ Vector3(-0.5,  0.5, -0.5), Vector3(0, 0, -1), normalPos(face, 2, maxPos) },
+			PosNormalPair{ Vector3(-0.5, -0.5, -0.5), Vector3(0, 0, -1), normalPos(face, 3, maxPos) });
+		face++;
+	}
+	if ((int)ff & (int)FaceFlag::TOP)
+	{
+		retVal.addAll(
+			PosNormalPair{ Vector3( 0.5, -0.5,  0.5), Vector3(0, 0,  1), normalPos(face, 0, maxPos) },
+			PosNormalPair{ Vector3( 0.5,  0.5,  0.5), Vector3(0, 0,  1), normalPos(face, 1, maxPos) },
+			PosNormalPair{ Vector3(-0.5,  0.5,  0.5), Vector3(0, 0,  1), normalPos(face, 2, maxPos) },
+			PosNormalPair{ Vector3(-0.5, -0.5,  0.5), Vector3(0, 0,  1), normalPos(face, 3, maxPos) });
+		face++;
+	}
+	if ((int)ff & (int)FaceFlag::LEFT)
+	{
+		retVal.addAll(
+			PosNormalPair{ Vector3( 0.5, -0.5, -0.5), Vector3(0, -1, 0), normalPos(face, 0, maxPos) },
+			PosNormalPair{ Vector3( 0.5, -0.5,  0.5), Vector3(0, -1, 0), normalPos(face, 1, maxPos) },
+			PosNormalPair{ Vector3(-0.5, -0.5,  0.5), Vector3(0, -1, 0), normalPos(face, 2, maxPos) },
+			PosNormalPair{ Vector3(-0.5, -0.5, -0.5), Vector3(0, -1, 0), normalPos(face, 3, maxPos) });
+		face++;
+	}
+	if ((int)ff & (int)FaceFlag::RIGHT)
+	{
+		retVal.addAll(
+			PosNormalPair{ Vector3( 0.5,  0.5, -0.5), Vector3(0,  1, 0), normalPos(face, 0, maxPos) },
+			PosNormalPair{ Vector3( 0.5,  0.5,  0.5), Vector3(0,  1, 0), normalPos(face, 1, maxPos) },
+			PosNormalPair{ Vector3(-0.5,  0.5,  0.5), Vector3(0,  1, 0), normalPos(face, 2, maxPos) },
+			PosNormalPair{ Vector3(-0.5,  0.5, -0.5), Vector3(0,  1, 0), normalPos(face, 3, maxPos) });
+		face++;
+	}
+	if ((int)ff & (int)FaceFlag::FRONT)
+	{
+		retVal.addAll(
+			PosNormalPair{ Vector3(-0.5,  0.5, -0.5), Vector3(-1, 0, 0), normalPos(face, 0, maxPos) },
+			PosNormalPair{ Vector3(-0.5,  0.5,  0.5), Vector3(-1, 0, 0), normalPos(face, 1, maxPos) },
+			PosNormalPair{ Vector3(-0.5, -0.5,  0.5), Vector3(-1, 0, 0), normalPos(face, 2, maxPos) },
+			PosNormalPair{ Vector3(-0.5, -0.5, -0.5), Vector3(-1, 0, 0), normalPos(face, 3, maxPos) });
+		face++;
+	}
+	if ((int)ff & (int)FaceFlag::BACK)
+	{
+		retVal.addAll(
+			PosNormalPair{ Vector3(0.5,  0.5, -0.5), Vector3(1, 0, 0), normalPos(face, 0, maxPos) },
+			PosNormalPair{ Vector3(0.5,  0.5,  0.5), Vector3(1, 0, 0), normalPos(face, 1, maxPos) },
+			PosNormalPair{ Vector3(0.5, -0.5,  0.5), Vector3(1, 0, 0), normalPos(face, 2, maxPos) },
+			PosNormalPair{ Vector3(0.5, -0.5, -0.5), Vector3(1, 0, 0), normalPos(face, 3, maxPos) });
+		face++;
+	}
+
+	for (PosNormalPair& pnp : retVal)
+	{
+		pnp.uvCoord = pnp.uvCoord / maxPos;
+	}
+
+	return retVal;
+}
+
+bbe::List<bbe::PosNormalPair> bbe::Cube::getRenderVertices(FaceFlag ff) const
+{
+	bbe::List<bbe::PosNormalPair> retVal = getRenderVerticesDefault(ff);
 	bbe::PosNormalPair::transform(retVal, m_transform);
 	return retVal;
 
 }
 
-bbe::List<uint32_t> bbe::Cube::getRenderIndicesDefault()
+bbe::List<uint32_t> bbe::Cube::getRenderIndicesDefault(FaceFlag ff)
 {
-	return {
-		0,  1,  3,	//Bottom
-		1,  2,  3,
-		5,  4,  7,	//Top
-		6,  5,  7,
-		9,  8, 11,	//Left
-	   10,  9, 11,
-	   12, 13, 15,	//Right
-	   13, 14, 15,
-	   16, 17, 19,	//Front
-	   17, 18, 19,
-	   21, 20, 23,	//Back
-	   22, 21, 23,
-	};
+	bbe::List<uint32_t> retVal;
+	int32_t offset = 0;
+	if ((int)ff & (int)FaceFlag::BOTTOM)
+	{
+		retVal.addAll(
+			0, 1, 3,	//Bottom
+			1, 2, 3);
+	} else offset += 4;
+	if ((int)ff & (int)FaceFlag::TOP)
+	{
+		retVal.addAll(
+			5 - offset, 4 - offset, 7 - offset,	//Top
+			6 - offset, 5 - offset, 7 - offset);
+	} else offset += 4;
+	if ((int)ff & (int)FaceFlag::LEFT)
+	{
+		retVal.addAll(
+			9 - offset, 8 - offset, 11 - offset,	//Left
+			10 - offset, 9 - offset, 11 - offset);
+	} else offset += 4;
+	if ((int)ff & (int)FaceFlag::RIGHT)
+	{
+		retVal.addAll(
+			12 - offset, 13 - offset, 15 - offset,	//Right
+			13 - offset, 14 - offset, 15 - offset);
+	} else offset += 4;
+	if ((int)ff & (int)FaceFlag::FRONT)
+	{
+		retVal.addAll(
+			16 - offset, 17 - offset, 19 - offset,	//Front
+			17 - offset, 18 - offset, 19 - offset);
+	} else offset += 4;
+	if ((int)ff & (int)FaceFlag::BACK)
+	{
+		retVal.addAll(
+			21 - offset, 20 - offset, 23 - offset,	//Back
+			22 - offset, 21 - offset, 23 - offset);
+	} else offset += 4;
+
+	return retVal;
 }
 
 bbe::Vector3 bbe::Cube::approach(const bbe::Cube& other, const bbe::Vector3& approachVector) const

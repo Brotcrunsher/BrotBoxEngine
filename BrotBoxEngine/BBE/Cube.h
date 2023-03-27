@@ -7,6 +7,21 @@
 
 namespace bbe
 {
+	enum class FaceFlag
+	{
+		NONE   = 0,
+		BOTTOM = 1 << 0,
+		TOP    = 1 << 1,
+		LEFT   = 1 << 2,
+		RIGHT  = 1 << 3,
+		FRONT  = 1 << 4,
+		BACK   = 1 << 5,
+
+		CIRCUMFERENCE =                LEFT | RIGHT | FRONT | BACK,
+		BOTTOMLESS    =          TOP | LEFT | RIGHT | FRONT | BACK,
+		TOPLESS       = BOTTOM |       LEFT | RIGHT | FRONT | BACK,
+		ALL           = BOTTOM | TOP | LEFT | RIGHT | FRONT | BACK,
+	};
 
 	class Cube : public bbe::Shape3
 	{
@@ -48,9 +63,9 @@ namespace bbe
 		using Shape3::getVertices;
 		virtual void getVertices(bbe::List<bbe::Vector3> &outVertices) const override;
 
-		static bbe::List<bbe::PosNormalPair> getRenderVerticesDefault();
-		bbe::List<bbe::PosNormalPair> getRenderVertices() const;
-		static bbe::List<uint32_t> getRenderIndicesDefault();
+		static bbe::List<bbe::PosNormalPair> getRenderVerticesDefault(FaceFlag ff = FaceFlag::ALL);
+		bbe::List<bbe::PosNormalPair> getRenderVertices(FaceFlag ff = FaceFlag::ALL) const;
+		static bbe::List<uint32_t> getRenderIndicesDefault(FaceFlag ff = FaceFlag::ALL);
 
 		bbe::Vector3 approach(const bbe::Cube& other, const bbe::Vector3& approachVector) const;
 	};
