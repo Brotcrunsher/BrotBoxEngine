@@ -7,7 +7,6 @@ constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
-// TODO: Add getter for amount of draw calls
 // TODO: VAO buffers?
 // TODO: Thinner Walls
 // TODO: power outlet
@@ -327,6 +326,19 @@ namespace br
 				bbe::String lowFps = "Low FPS: ";
 				lowFps += 1.f / getHighestFrameTime();
 				brush.fillText(25, 50, lowFps);
+
+				bbe::String drawCalls = "Drawcalls: ";
+				drawCalls += getAmountOfDrawcalls();
+				brush.fillText(25, 75, drawCalls);
+
+				static uint32_t maxDrawCalls = 0;
+				if (getAmountOfDrawcalls() > maxDrawCalls)
+				{
+					maxDrawCalls = getAmountOfDrawcalls();
+				}
+				bbe::String maxDrawCallsStr = "Max Drawcalls: ";
+				maxDrawCallsStr += maxDrawCalls;
+				brush.fillText(25, 100, maxDrawCallsStr);
 				return;
 			}
 

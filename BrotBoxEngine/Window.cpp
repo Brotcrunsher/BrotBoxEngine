@@ -286,6 +286,10 @@ bbe::Image bbe::Window::bakeLights(const bbe::Matrix4& transform, const Model& m
 {
 	return ((bbe::INTERNAL::openGl::OpenGLManager*)m_renderManager.get())->bakeLights(transform, model, normals, shader, resolution, lights);
 }
+uint32_t bbe::Window::getAmountOfDrawcalls() const
+{
+	return ((bbe::INTERNAL::openGl::OpenGLManager*)m_renderManager.get())->getAmountOfDrawcalls();
+}
 #endif
 
 void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, int action, int mods)

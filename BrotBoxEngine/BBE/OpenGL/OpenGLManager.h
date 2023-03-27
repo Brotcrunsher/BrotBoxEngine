@@ -194,6 +194,12 @@ namespace bbe
 
 				void drawLight(const bbe::PointLight& light, bool baking, GLuint ibo = 0);
 
+				uint32_t amountOfDrawcallsBuffer[2] = { 0, 0 };
+				uint32_t* amountOfDrawcallsRead = amountOfDrawcallsBuffer;
+				uint32_t* amountOfDrawcallsWrite = amountOfDrawcallsBuffer + 1;
+				void addDrawcallStat();
+				void flipDrawcallStats();
+
 			public:
 				OpenGLManager();
 
@@ -243,6 +249,9 @@ namespace bbe
 				
 				bbe::Image bakeLights(bbe::Matrix4 /*copy*/ transform, const Model& model, const Image* normals, const FragmentShader* shader, const bbe::Vector2i& resolution, bbe::List<bbe::PointLight> /*copy*/ lights);
 				bbe::Image framebufferToImage(uint32_t width, uint32_t height) const;
+
+				// Note: It's the drawcalls of the PREVIOUS frame!
+				uint32_t getAmountOfDrawcalls();
 			};
 		}
 	}

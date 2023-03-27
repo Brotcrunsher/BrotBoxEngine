@@ -81,6 +81,7 @@ namespace bbe
 
 #ifdef BBE_RENDERER_OPENGL
 		bbe::Image bakeLights(const bbe::Matrix4& transform, const Model& model, const Image* normals, const FragmentShader* shader, const bbe::Vector2i& resolution, const bbe::List<bbe::PointLight>& lights);
+		uint32_t getAmountOfDrawcalls() const;
 #endif
 	};
 

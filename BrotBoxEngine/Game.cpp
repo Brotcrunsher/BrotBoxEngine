@@ -33,6 +33,10 @@ bbe::Image bbe::Game::bakeLights(const bbe::Matrix4& transform, const Model& mod
 {
 	return m_pwindow->bakeLights(transform, model, normals, shader, resolution, lights);
 }
+uint32_t bbe::Game::getAmountOfDrawcalls() const
+{
+	return m_pwindow->getAmountOfDrawcalls();
+}
 #endif
 
 static void staticMainLoop(void* gamePtr)

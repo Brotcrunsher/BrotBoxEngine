@@ -851,7 +851,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0); addDrawcallStat();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::addInstancedData2D(PreviousDrawCall2D type, float x, float y, float width, float height, float rotation)
@@ -930,7 +930,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::flushInstanceData2D()
 	glVertexAttribDivisor(pos, 1);
 
 
-	glDrawElementsInstanced(mode, size, GL_UNSIGNED_INT, 0, instanceDatas.getLength());
+	glDrawElementsInstanced(mode, size, GL_UNSIGNED_INT, 0, instanceDatas.getLength()); addDrawcallStat();
 	instanceDatas.clear();
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDeleteBuffers(1, &instanceVBO);
@@ -969,7 +969,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& ligh
 	LightProgram& program = baking ? m_program3dLightBaking : m_program3dLight;
 	program.setLightUniform(light, baking ? bbe::Matrix4() : m_view);
 
-	glDrawElements(GL_TRIANGLES, baking ? 6 : (GLsizei)openGl::OpenGLSphere::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, baking ? 6 : (GLsizei)openGl::OpenGLSphere::getAmountOfIndices(), GL_UNSIGNED_INT, 0); addDrawcallStat();
 }
 
 static bbe::Vector2i getPos(size_t i, uint32_t width)
@@ -1027,6 +1027,24 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t wid
 		}
 	}
 	return bbe::Image(width, height, byteBuffer.getRaw(), bbe::ImageFormat::R8G8B8A8);
+}
+
+uint32_t bbe::INTERNAL::openGl::OpenGLManager::getAmountOfDrawcalls()
+{
+	return *amountOfDrawcallsRead;
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::addDrawcallStat()
+{
+	(*amountOfDrawcallsWrite)++;
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::flipDrawcallStats()
+{
+	uint32_t* temp = amountOfDrawcallsRead;
+	amountOfDrawcallsRead = amountOfDrawcallsWrite;
+	amountOfDrawcallsWrite = temp;
+	*amountOfDrawcallsWrite = 0;
 }
 
 bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
@@ -1152,7 +1170,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
 
 	m_program3dLight.use();
 	mrtFb.useAsInput();
@@ -1172,7 +1190,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
 
 	glDeleteBuffers(1, &ibo);
 
@@ -1201,6 +1219,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
 {
+	flipDrawcallStats();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	imguiStartFrame();
 	pointLights.clear();
@@ -1316,7 +1335,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 	glUniform2f(fs->getTwoD().screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
 	glUniform4f(scalePosOffsetPos, rect.width, rect.height, rect.x, rect.y);
 	glUniform1f(rotationPos, rotation);
-	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0); addDrawcallStat();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle& circle)
@@ -1370,7 +1389,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	bbe::INTERNAL::openGl::OpenGLImage* ogi = toRendererData(image);
 	glBindTexture(GL_TEXTURE_2D, ogi->tex);
 
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDeleteBuffers(1, &ibo);
@@ -1422,7 +1441,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 	glVertexAttribDivisor(positionAttribute, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0, 1);
+	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0, 1); addDrawcallStat();
 
 	glDeleteBuffers(1, &instanceVBO);
 	glDeleteBuffers(1, &ibo);
