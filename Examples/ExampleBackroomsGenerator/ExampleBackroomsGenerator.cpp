@@ -8,7 +8,6 @@ constexpr int WINDOW_HEIGHT = 720;
 
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
 // TODO: VAO buffers?
-// TODO: Thinner Walls
 // TODO: power outlet
 // TODO: Floor Shader looks under developed
 // TODO: Ceiling Shader looks under developed

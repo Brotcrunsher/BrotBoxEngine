@@ -456,19 +456,26 @@ void br::Rooms::connectGates(size_t roomi)
 		throw bbe::IllegalStateException();
 	}
 
-	r.walkable = bbe::Grid<bool>(r.boundingBox.getDim());
-	for (int32_t x = 0; x < r.boundingBox.width; x++)
+	constexpr uint32_t wallSpaceScale = 4;
+	r.walkable = bbe::Grid<bool>(r.boundingBox.getDim() * wallSpaceScale);
+	for (int32_t x = 0; x < r.walkable.getWidth(); x++)
 	{
-		for (int32_t y = 0; y < r.boundingBox.height; y++)
+		for (int32_t y = 0; y < r.walkable.getHeight(); y++)
 		{
-			r.walkable[x][y] = x != 0 && y != 0 && x != r.boundingBox.width - 1 && y != r.boundingBox.height - 1;
+			r.walkable[x][y] = x != 0 && y != 0 && x != r.walkable.getWidth() - 1 && y != r.walkable.getHeight() - 1;
 		}
 	}
 	for (const Neighbor& n : r.neighbors)
 	{
 		for (const Gate& g : n.gates)
 		{
-			r.walkable[g.ownGatePos - r.boundingBox.getPos()] = true;
+			for (int32_t i = 0; i < wallSpaceScale; i++)
+			{
+				for (int32_t k = 0; k < wallSpaceScale; k++)
+				{
+					r.walkable[(g.ownGatePos - r.boundingBox.getPos()) * wallSpaceScale + bbe::Vector2i(i, k)] = true;
+				}
+			}
 		}
 	}
 
@@ -498,57 +505,110 @@ void br::Rooms::connectGates(size_t roomi)
 	}
 	else if (irt == InnerRoomType::RANDOM)
 	{
-		const float innerWallProbability = rand.randomFloat() * rand.randomFloat() * rand.randomFloat();
-		for (int32_t i = 1; i < r.boundingBox.width - 1; i++)
+		const float innerWallProbability = rand.randomFloat() * rand.randomFloat() * rand.randomFloat() * rand.randomFloat() * rand.randomFloat() * rand.randomFloat();
+		for (int32_t i = 1; i < r.walkable.getWidth() - 1; i++)
 		{
-			for (int32_t k = 1; k < r.boundingBox.height - 1; k++)
+			for (int32_t k = 1; k < r.walkable.getHeight() - 1; k++)
 			{
 				if (rand.randomFloat() < innerWallProbability)
 				{
-					r.walkable[i][k] = false;
+					const int32_t width = rand.randomInt(10);
+					const int32_t height = rand.randomInt(10);
+					for (int32_t x = i; x < i + width && x < r.walkable.getWidth(); x++)
+					{
+						for (int32_t y = k; y < k + height && y < r.walkable.getHeight(); y++)
+						{
+							r.walkable[x][y] = false;
+						}
+					}
 				}
 			}
 		}
 	}
 	else if (irt == InnerRoomType::COLUMNS)
 	{
-		for (int32_t i = 2; i < r.boundingBox.width - 2; i+=2)
+		uint32_t columnSize = rand.randomInt(3) + 1;
+		uint32_t columnSpread = columnSize + 5 + rand.randomInt(10);
+		uint32_t columnOffset = rand.randomInt(columnSpread) / 2;
+		for (int32_t i = 2 + columnOffset; i < r.walkable.getWidth() - 2; i += columnSpread)
 		{
-			for (int32_t k = 2; k < r.boundingBox.height - 2; k+=2)
+			for (int32_t k = 2 + columnOffset; k < r.walkable.getHeight() - 2; k += columnSpread)
 			{
-				r.walkable[i][k] = false;
+				for (int32_t x = 0; x < columnSize && i + x < r.walkable.getWidth(); x++)
+				{
+					for (int32_t y = 0; y < columnSize && k + y < r.walkable.getHeight(); y++)
+					{
+						r.walkable[i + x][k + y] = false;
+					}
+				}
 			}
 		}
 	}
 	else if (irt == InnerRoomType::REPEATING)
 	{
-		bbe::Grid<bool> pattern(5, 5);
-		const float innerWallProbability = rand.randomFloat();
-		for (int32_t i = 0; i < pattern.getWidth(); i++)
+		const uint32_t patternSize = rand.randomInt(25) + 25;
+		bbe::Grid<bool> wallsPattern(patternSize, patternSize);
+		uint32_t amountOfWalls = rand.randomInt(5) + 3;
+		for (uint32_t i = 0; i < amountOfWalls; i++)
 		{
-			for (int32_t k = 0; k < pattern.getHeight(); k++)
+			const int32_t width = rand.randomInt(10);
+			const int32_t height = rand.randomInt(10);
+			const int32_t x = rand.randomInt(patternSize - width);
+			const int32_t y = rand.randomInt(patternSize - height);
+			for (int32_t xx = 0; xx < width; xx++)
 			{
-				if (rand.randomFloat() < innerWallProbability)
+				for (int32_t yy = 0; yy < height; yy++)
 				{
-					pattern[i][k] = rand.randomBool();
+					wallsPattern[xx + x][yy + y] = true;
 				}
 			}
 		}
 
-		for (int32_t i = 2; i < r.boundingBox.width - 2; i++)
+
+		for (int32_t i = 2; i < r.walkable.getWidth() - 2; i++)
 		{
-			for (int32_t k = 2; k < r.boundingBox.height - 2; k++)
+			for (int32_t k = 2; k < r.walkable.getHeight() - 2; k++)
 			{
-				if (pattern[i % pattern.getWidth()][k % pattern.getHeight()])
-				{
-					r.walkable[i][k] = false;
-				}
+				r.walkable[i][k] = !wallsPattern[i % wallsPattern.getWidth()][k % wallsPattern.getHeight()];
 			}
 		}
 	}
 	else
 	{
 		throw bbe::IllegalStateException();
+	}
+
+	{
+		// Fill spaces that can't be reached with walls. This way we reduce the total amount of meshes.
+		constexpr int8_t BLOCKED = 0;
+		constexpr int8_t UNBLOCKED = 1;
+		constexpr int8_t REACHABLE = 2;
+
+		bbe::Grid<int8_t> floodFillGrid(r.walkable.getWidth(), r.walkable.getHeight());
+		for (size_t i = 0; i < floodFillGrid.getWidth(); i++)
+		{
+			for (size_t k = 0; k < floodFillGrid.getHeight(); k++)
+			{
+				floodFillGrid[i][k] = r.walkable[i][k] ? UNBLOCKED : BLOCKED;
+			}
+		}
+
+		for (const Neighbor& n : r.neighbors)
+		{
+			for (const Gate& g : n.gates)
+			{
+				bbe::Vector2i pos = (g.ownGatePos - r.boundingBox.getPos()) * wallSpaceScale;
+				floodFillGrid.floodFill(pos, REACHABLE, false);
+			}
+		}
+
+		for (size_t i = 0; i < floodFillGrid.getWidth(); i++)
+		{
+			for (size_t k = 0; k < floodFillGrid.getHeight(); k++)
+			{
+				r.walkable[i][k] = floodFillGrid[i][k] == REACHABLE;
+			}
+		}
 	}
 
 
@@ -563,21 +623,23 @@ void br::Rooms::connectGates(size_t roomi)
 		r.ceilingModel = mb.getModel();
 	}
 
-	bbe::List<bbe::Rectanglei> rects = r.walkable.getAllBiggestRects(false);
+	bbe::List<bbe::Rectanglei> rects = r.walkable.getAllBiggestRects(false); // TODO: This could be slightly improved. X formations currently generate 3 walls, where they could produce 2.
 	for (const bbe::Rectanglei& rect : rects)
 	{
 		bbe::Vector3 coord = bbe::Vector3(rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f, 1.25f);
+		coord.x /= float(wallSpaceScale);
+		coord.y /= float(wallSpaceScale);
 		coord.x += r.boundingBox.x;
 		coord.y += r.boundingBox.y;
 		{
 			bbe::MeshBuilder mb;
-			mb.addCube(bbe::Cube(bbe::Vector3(), bbe::Vector3(rect.width, rect.height, 2.5f)));
+			mb.addCube(bbe::Cube(bbe::Vector3(), bbe::Vector3(rect.width / float(wallSpaceScale), rect.height / float(wallSpaceScale), 2.5f)));
 			r.wallsModels.add(Room::ModelOffsetPair{ coord, mb.getModel() });
 		}
 		coord.z = 0.075f;
 		{
 			bbe::MeshBuilder mb;
-			mb.addCube(bbe::Cube(bbe::Vector3(), bbe::Vector3(rect.width + 0.03f, rect.height + 0.03f, 0.15f)));
+			mb.addCube(bbe::Cube(bbe::Vector3(), bbe::Vector3(rect.width / float(wallSpaceScale) + 0.03f, rect.height / float(wallSpaceScale) + 0.03f, 0.15f)));
 			r.skirtingBoardModels.add(Room::ModelOffsetPair{ coord, mb.getModel() });
 		}
 	}
@@ -587,7 +649,23 @@ void br::Rooms::connectGates(size_t roomi)
 	{
 		for (int32_t k = 2; k < r.boundingBox.height - 2; k++)
 		{
-			if (r.walkable[i][k] && rand.randomFloat() < roomLightProbability)
+			if (rand.randomFloat() >= roomLightProbability) continue;
+			bool wallBlockingLight = false;
+
+			for (int32_t x = 0; x < wallSpaceScale; x++)
+			{
+				for (int32_t y = 0; y < wallSpaceScale; y++)
+				{
+					if (!r.walkable[i * wallSpaceScale + x][k * wallSpaceScale + y])
+					{
+						wallBlockingLight = true;
+						goto outer;
+					}
+				}
+			}
+		outer:
+
+			if (!wallBlockingLight)
 			{
 				bbe::PointLight pl;
 				pl.pos = bbe::Vector3(i + r.boundingBox.x + 0.5f, k + r.boundingBox.y + 0.5f, 2.f);
