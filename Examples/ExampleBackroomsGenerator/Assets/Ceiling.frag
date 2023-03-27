@@ -14,6 +14,7 @@ layout (location = 2) out vec4 outAlbedo;
 layout (location = 3) out vec4 outSpecular;
 layout (location = 4) out vec4 outEmissions;
 
+
 float hash(vec3 p) {
 	p = mod(p, 10000.0f);
     float x = dot(p, vec3(442.843, 657.486, 270.766));
@@ -22,14 +23,63 @@ float hash(vec3 p) {
     return fract(sin(x) * 704.745 + sin(y) * 981.705 + sin(z) * 271.722);
 }
 
+#define M_PI 3.1415926535897932384626433832795
+float cosMix(float a, float b, float t)
+{
+	return mix(a, b, (1.0-cos(t*M_PI))/2.0);
+}
+
+float octave(int oc, vec3 x) {
+	float mult = pow(2.0, float(oc));
+	x *= mult;
+	vec3 fl = floor(x);
+	vec3 fr = abs(x - fl);
+	
+	float a1 = hash(fl + vec3(0.0, 0.0, 0.0));
+	float a2 = hash(fl + vec3(0.0, 0.0, 1.0));
+	float a3 = hash(fl + vec3(0.0, 1.0, 0.0));
+	float a4 = hash(fl + vec3(0.0, 1.0, 1.0));
+	float a5 = hash(fl + vec3(1.0, 0.0, 0.0));
+	float a6 = hash(fl + vec3(1.0, 0.0, 1.0));
+	float a7 = hash(fl + vec3(1.0, 1.0, 0.0));
+	float a8 = hash(fl + vec3(1.0, 1.0, 1.0));
+	
+	float b1 = cosMix(a1, a2, fr.z);
+	float b2 = cosMix(a3, a4, fr.z);
+	float b3 = cosMix(a5, a6, fr.z);
+	float b4 = cosMix(a7, a8, fr.z);
+	
+	float c1 = cosMix(b1, b2, fr.y);
+	float c2 = cosMix(b3, b4, fr.y);
+	
+	return cosMix(c1, c2, fr.x) / mult;
+}
+
+float noise(vec3 x) {
+	float retVal = 0.0;
+	for(int i = 0; i<8; i++)
+	{
+		retVal += octave(i, x);
+	}
+	return retVal / 2.0;
+}
+
 vec3 getColor(vec3 x) {
 	vec3 fl = floor(x);
 	vec3 fr = fract(x);
 	
-	if(fr.x < 0.1 || fr.y < 0.1) return vec3(117.0 / 255.0, 109.0 / 255.0, 46.0 / 255.0);
-	//float h = hash(fl);
-	//if(h < 0.01) return vec3(10.0, 10.0, 10.0);
-	return vec3(125.0 / 255.0, 115.0 / 255.0, 54.0 / 255.0);
+	if(fr.x < 0.1 || fr.y < 0.1)
+	{
+		// Stripes
+		return vec3(57.0 / 255.0, 61.0 / 255.0, 22.0 / 255.0) + noise(x) * 0.5;
+	}
+	else 
+	{
+		// Plates
+		float n = noise(x + vec3(127.0, 199.0, 921.0));
+		float distFromCenter = length(vec2(fr.x, fr.y) - vec2(0.55)) * 2.0;
+		return vec3(125.0 / 255.0, 115.0 / 255.0, 54.0 / 255.0) + n * n * n * n * distFromCenter;
+	}
 }
 
 void main()

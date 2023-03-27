@@ -13,8 +13,6 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Walls have an unnecessary top and bottom side that can be removed, freeing up space for higher quality textures.
 // TODO: VAO buffers?
 // TODO: power outlet
-// TODO: Floor Shader looks under developed
-// TODO: Ceiling Shader looks under developed
 // TODO: Footstep sounds?
 // TODO: Does Laptop hit 60 FPS?
 // TODO: Emscripten
@@ -22,6 +20,8 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Wall Collision with player
 // TODO: Experiments with Shadow Maps (first experiments indicate that they are waaaay too slow. Can we do better?)
 // TODO: Having many lights reaaaally slows down the rendering. Maybe instance drawing? Maybe the same for the walls?
+// TODO: Rooms far away sometimes Z-Fight with Occlusion query. We need a bigger, outer bounding box I guess
+// TODO: Aliasing effects of doom
 
 namespace br
 {

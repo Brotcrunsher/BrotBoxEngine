@@ -67,7 +67,10 @@ void main()
 {
    outPos    = passPos;
    float mult = 100.0;
-   float noiseVal = noise(mult * (passWorldPos.xyz * 0.01));
+   float expNoiseVal = noise(50.0 * passWorldPos.xyz + vec3(17, 19, 199));
+   float noiseVal = 
+		noise(mult * (passWorldPos.xyz * 0.01))
+		+ expNoiseVal * expNoiseVal * expNoiseVal;
    outNormal = vec4(normalize(passNormal.xyz), 1.0);
    vec3 c1 = vec3(83.0 / 255.0, 67.0 / 255.0, 16.0 / 255.0);
    vec3 c2 = vec3(104.0 / 255.0, 85.0 / 255.0, 27.0 / 255.0);

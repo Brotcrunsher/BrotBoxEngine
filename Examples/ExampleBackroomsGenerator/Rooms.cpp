@@ -699,8 +699,19 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	{
 		for (size_t k = 0; k < rooms[roomLightSources[i]].lights.getLength(); k++)
 		{
-			lights.add(rooms[roomLightSources[i]].lights[k].light);
+			bbe::PointLight& light = rooms[roomLightSources[i]].lights[k].light;
+			bbe::Vector2i pos((int32_t)light.pos.x, (int32_t)light.pos.y);
+			int32_t dist = r.boundingBox.getDistanceTo(pos);
+			if(dist < 50) lights.add(light);
 		}
+	}
+
+	static size_t maxLights = 0;
+	if (lights.getLength() > maxLights)
+	{
+		maxLights = lights.getLength();
+
+		std::cout << "maxLights: " << maxLights << std::endl;
 	}
 	if (r.bakedCeiling.isLoadedCpu() == false && r.bakedCeiling.isLoadedGpu() == false)
 	{
@@ -914,6 +925,7 @@ void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* 
 		brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.lightsModel.offset), r.lightsModel.model, nullptr, nullptr, &bbe::Image::white());
 	}
 	brush.setColorHSV(r.hue, r.saturation, r.value);
+	brush.setColor(1, 1, 1, 1);
 	if (r.bakedWalls.getLength() != 1) throw bbe::IllegalStateException();
 	if(drawFloor) brush.fillModel(r.floorTranslation(), r.floorModel, nullptr, nullptr, &r.bakedFloor, shaderFloor);
 	if(drawCeiling) brush.fillModel(r.ceilingTranslation(), r.ceilingModel, nullptr, nullptr, &r.bakedCeiling, shaderCeiling);

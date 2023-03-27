@@ -69,7 +69,7 @@ void main()
 {
    outPos    = passPos;
    float mult = 1000.0;
-   float noiseVal = noise(mult * (passWorldPos.xyz * 0.01));
+   float noiseVal = fract(noise(mult * (passWorldPos.xyz * 0.008)) * 2.0);
    outNormal = vec4(normalize(passNormal.xyz), 1.0);
    float lowerColor = 50.0 / 255.0;
    float highColor  = 220.0 / 255.0;
