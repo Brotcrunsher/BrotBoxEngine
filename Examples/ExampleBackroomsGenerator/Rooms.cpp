@@ -99,7 +99,7 @@ void br::Rooms::update(float timeSinceLastFrame, const bbe::Vector3& camPos, con
 		size_t roomi = bakedRoomIds[i];
 		Room& r = rooms[roomi];
 		r.timeSinceLastTouch += timeSinceLastFrame;
-		if (r.timeSinceLastTouch > 10.0f)
+		if (r.timeSinceLastTouch > 180.0f)
 		{
 			unbakeLights(roomi);
 			i--;
@@ -881,6 +881,11 @@ void br::Rooms::drawAt(const bbe::Vector3 pos, bbe::PrimitiveBrush3D& brush, bbe
 	{
 		bakeLightsOfNeighborsBasedOnPriorityList(alreadyDrawn, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard);
 	}
+	RoomIterator ri(this, roomi);
+	for(size_t i = 0; i<32 && !bakedRoom; i++)
+	{
+		bakedRoom = bakeLights(ri.next(), game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard);
+	}
 
 	// Also always draw available neighbors of the original Room. This prevents popups in case the user is spinning several times. Also prevents hiding a room for a frame on gate traversal.
 	for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
@@ -993,4 +998,33 @@ void br::Rooms::getRooms(bbe::List<size_t>& roomis, size_t roomi, const bbe::Vec
 	{
 		getRooms(roomis, rooms[roomi].neighbors[i].neighborId, position, maxDist);
 	}
+}
+
+br::RoomIterator::RoomIterator(Rooms* rooms, size_t startIndex) :
+	rooms(rooms)
+{
+	currentWave.add(startIndex);
+}
+
+size_t br::RoomIterator::next()
+{
+	if (currentWave.isEmpty())
+	{
+		currentWave = nextWave;
+		nextWave.clear();
+	}
+	const size_t retVal = currentWave.popBack();
+	const Room& r = rooms->rooms[retVal];
+
+	for (const Neighbor& n : r.neighbors)
+	{
+		if (!visitedRooms.contains(n.neighborId)
+			&& !currentWave.contains(n.neighborId)
+			&& !nextWave.contains(n.neighborId))
+		{
+			nextWave.add(n.neighborId);
+		}
+	}
+
+	return retVal;
 }

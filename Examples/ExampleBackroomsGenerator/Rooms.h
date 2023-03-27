@@ -4,6 +4,21 @@
 
 namespace br
 {
+	struct Rooms;
+	struct RoomIterator
+	{
+	private:
+		Rooms* rooms = nullptr;
+		bbe::List<size_t> visitedRooms;
+		bbe::List<size_t> currentWave;
+		bbe::List<size_t> nextWave;
+
+	public:
+		RoomIterator(Rooms* rooms, size_t startIndex);
+
+		size_t next();
+	};
+
 	struct Rooms
 	{
 	private:
