@@ -391,4 +391,24 @@ namespace bbe
 	uint32_t hash(const Vector2i& t);
 	template<>
 	uint32_t hash(const Vector2& t);
+
+	class LineIterator
+	{
+	private:
+		bbe::Vector2i a;
+		bbe::Vector2i b;
+		bbe::Vector2i diff;
+		bbe::Vector2i step;
+		int32_t error = 0;
+		bool moreAvailable = true;
+
+		void init(const bbe::Vector2i& a, const bbe::Vector2i& b);
+
+	public:
+		LineIterator();
+		LineIterator(const bbe::Vector2i& a, const bbe::Vector2i& b);
+
+		bool hasNext() const;
+		bbe::Vector2i next();
+	};
 }

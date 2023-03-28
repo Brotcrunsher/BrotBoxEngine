@@ -75,5 +75,10 @@ namespace br
 
 		void getLights(bbe::List<BuzzingLight*>& allDrawnLights, const bbe::Vector2i& position, int32_t maxDist);
 		void getRooms(bbe::List<size_t>& roomis, const bbe::Vector2i& position, int32_t maxDist);
+
+		bool isPositionInWall(const bbe::Vector2i& pos);
+		bool isPositionInWall(const bbe::Vector3& pos);
+		bool isLineInWall(const bbe::Vector2i& start, const bbe::Vector2i& end);
+		bool doesPointSeeRoomInterior(const bbe::Vector3& pos, size_t roomi);
 	};
 }

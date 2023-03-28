@@ -10,7 +10,6 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Be a bit more clever which lights to consider during baking and which can be ignored.
 // TODO: Baked light textures always have the same size. This isn't ideal. Make it depend on the size of the actual models.
 // TODO: Baked light textures currently too low res
-// TODO: Walls have an unnecessary top and bottom side that can be removed, freeing up space for higher quality textures.
 // TODO: VAO buffers?
 // TODO: power outlet
 // TODO: Footstep sounds?
@@ -18,8 +17,7 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Emscripten
 // TODO: Bloom for lights?
 // TODO: Wall Collision with player
-// TODO: Experiments with Shadow Maps (first experiments indicate that they are waaaay too slow. Can we do better?)
-// TODO: Having many lights reaaaally slows down the rendering. Maybe instance drawing? Maybe the same for the walls?
+// TODO: Experiments with Shadow Maps (first experiments indicate that they are waaaay too slow. Can we do better? Heavily reduced the lights that need to be taken into account, maybe it's better now)
 // TODO: Rooms far away sometimes Z-Fight with Occlusion query. We need a bigger, outer bounding box I guess
 // TODO: Aliasing effects of doom
 

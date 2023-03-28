@@ -2,6 +2,7 @@
 #include "BBE/Random.h"
 #include "BBE/MeshBuilder.h"
 
+constexpr uint32_t wallSpaceScale = 4;
 bbe::Rectanglei br::Rooms::shrinkBoundingBoxRec(const bbe::Rectanglei& bounding, const bbe::List<bbe::Rectanglei>& intersections, int32_t index, int32_t& currentBestArea) const
 {
 	if (index == intersections.getLength()) return bounding;
@@ -456,7 +457,6 @@ void br::Rooms::connectGates(size_t roomi)
 		throw bbe::IllegalStateException();
 	}
 
-	constexpr uint32_t wallSpaceScale = 4;
 	r.walkable = bbe::Grid<bool>(r.boundingBox.getDim() * wallSpaceScale);
 	for (int32_t x = 0; x < r.walkable.getWidth(); x++)
 	{
@@ -702,7 +702,7 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 			bbe::PointLight& light = rooms[roomLightSources[i]].lights[k].light;
 			bbe::Vector2i pos((int32_t)light.pos.x, (int32_t)light.pos.y);
 			int32_t dist = r.boundingBox.getDistanceTo(pos);
-			if(dist < 50) lights.add(light);
+			if(dist < 50 && doesPointSeeRoomInterior(light.pos, roomi)) lights.add(light);
 		}
 	}
 
@@ -997,6 +997,49 @@ void br::Rooms::getRooms(bbe::List<size_t>& roomis, const bbe::Vector2i& positio
 	roomis.clear();
 	size_t roomi = getRoomIndexAtPoint(position);
 	getRooms(roomis, roomi, position, maxDist);
+}
+
+bool br::Rooms::isPositionInWall(const bbe::Vector2i& pos)
+{
+	return isPositionInWall(bbe::Vector3(pos.x, pos.y, 0.f));
+}
+
+bool br::Rooms::isPositionInWall(const bbe::Vector3& pos)
+{
+	bbe::Vector2i gridPos((int32_t)bbe::Math::floor(pos.x), (int32_t)bbe::Math::floor(pos.y));
+	size_t roomi = getRoomIndexAtPoint(gridPos);
+	connectGates(roomi);
+	const Room& r = rooms[roomi];
+	const bbe::Vector2 roomLocalPos(pos.x - r.boundingBox.x, pos.y - r.boundingBox.y);
+	const bbe::Vector2i wallLocation = (roomLocalPos * wallSpaceScale).as<int32_t>();
+	return !r.walkable[wallLocation];
+}
+
+bool br::Rooms::isLineInWall(const bbe::Vector2i& start, const bbe::Vector2i& end)
+{
+	bbe::LineIterator li(start, end);
+	while(li.hasNext())
+	{
+		if (isPositionInWall(li.next())) return true;
+	}
+	return false;
+}
+
+bool br::Rooms::doesPointSeeRoomInterior(const bbe::Vector3& pos, size_t roomi)
+{
+	bbe::Vector2i posi = bbe::Vector2i((int32_t)bbe::Math::floor(pos.x), (int32_t)bbe::Math::floor(pos.y));
+	if (getRoomIndexAtPoint(posi) == roomi) return true;
+	determineNeighbors(roomi);
+
+	for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
+	{
+		for (size_t k = 0; k < rooms[roomi].neighbors[i].gates.getLength(); k++)
+		{
+			if (!isLineInWall(posi, rooms[roomi].neighbors[i].gates[k].neighborGatePos)) return true;
+		}
+	}
+
+	return false;
 }
 
 void br::Rooms::getRooms(bbe::List<size_t>& roomis, size_t roomi, const bbe::Vector2i& position, int32_t maxDist)
