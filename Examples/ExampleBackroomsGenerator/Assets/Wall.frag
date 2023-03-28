@@ -91,7 +91,7 @@ void main()
    vec3 posNormalized = normalize(passPos.xyz);
    float viewAngle = acos(abs(dot(posNormalized, right)));
    float distanceToCamera = length(passPos);
-   float fragmentSpread = (distanceToCamera * sin(M_PI / 3.0 / 1280.0)) / sin(viewAngle); // TODO, "M_PI / 3.0 / 1280.0" must be replaces with pixel angel
+   float fragmentSpread = (distanceToCamera * sin(M_PI / 3.0 / 1280.0 * 2.0)) / sin(viewAngle); // TODO, "M_PI / 3.0 / 1280.0" must be replaces with pixel angel
    
    outNormal = vec4(normalNormalized, 1.0);
    outPos    = passPos;

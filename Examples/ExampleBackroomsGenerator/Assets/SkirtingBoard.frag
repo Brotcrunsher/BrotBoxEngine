@@ -8,6 +8,8 @@ in vec4 passPos;
 in vec4 passWorldPos;
 in vec4 passNormal;
 in vec2 passUvCoord;
+in vec3 worldNormal;
+in vec3 upViewSpace;
 layout (location = 0) out vec4 outPos;
 layout (location = 1) out vec4 outNormal;
 layout (location = 2) out vec4 outAlbedo;
@@ -65,17 +67,37 @@ float noise(vec3 x) {
 	return retVal / 2.0;
 }
 
+vec3 getAlbedo(vec3 x, vec3 normal, float fragmentSpread) {
+	vec3 right = cross(normal, vec3(0, 0, 1));
+	float mult = 1000.0;
+   	float retVal = 0.0;
+	int samples = 8;
+	for(int i = 0; i<samples; i++)
+	{
+		float percentage = float(i) / float(samples) - 0.5f;
+		vec3 v = x + right * percentage * fragmentSpread;
+		float noiseVal = fract(noise(mult * (v * 0.008)) * 2.0);
+		retVal += noiseVal;
+	}
+	retVal /= float(samples);
+	float lowerColor = 50.0 / 255.0;
+	float highColor  = 220.0 / 255.0;
+	vec3 c1 = vec3(lowerColor);
+	vec3 c2 = vec3(highColor);
+	return mix(c1, c2, retVal);
+}
+
 void main()
 {
-   outPos    = passPos;
-   float mult = 1000.0;
-   float noiseVal = fract(noise(mult * (passWorldPos.xyz * 0.008)) * 2.0);
-   outNormal = vec4(normalize(passNormal.xyz), 1.0);
-   float lowerColor = 50.0 / 255.0;
-   float highColor  = 220.0 / 255.0;
-   vec3 c1 = vec3(lowerColor);
-   vec3 c2 = vec3(highColor);
-   outAlbedo = vec4(mix(c1, c2, noiseVal), 1.0) * inColor;
-   outSpecular = vec4(1.0, 0.4, 0.0, 1.0);
-   outEmissions = texture(emissions, passUvCoord);
+	vec3 normalNormalized = normalize(passNormal.xyz);
+	vec3 right = normalize(cross(normalNormalized, upViewSpace));
+	vec3 posNormalized = normalize(passPos.xyz);
+	float viewAngle = acos(abs(dot(posNormalized, right)));
+	float distanceToCamera = length(passPos);
+	float fragmentSpread = (distanceToCamera * sin(M_PI / 3.0 / 1280.0 * 2.0)) / sin(viewAngle); // TODO, "M_PI / 3.0 / 1280.0" must be replaces with pixel angel
+	outPos    = passPos;
+	outNormal = vec4(normalize(passNormal.xyz), 1.0);
+	outAlbedo = vec4(getAlbedo(passWorldPos.xyz, normalize(worldNormal), fragmentSpread), 1.0) * inColor;
+	outSpecular = vec4(1.0, 0.4, 0.0, 1.0);
+	outEmissions = texture(emissions, passUvCoord);
 }

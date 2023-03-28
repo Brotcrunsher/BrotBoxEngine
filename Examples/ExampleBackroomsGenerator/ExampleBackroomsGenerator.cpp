@@ -7,7 +7,6 @@ constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
-// TODO: Be a bit more clever which lights to consider during baking and which can be ignored.
 // TODO: Baked light textures always have the same size. This isn't ideal. Make it depend on the size of the actual models.
 // TODO: Baked light textures currently too low res
 // TODO: VAO buffers?
@@ -19,7 +18,7 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Wall Collision with player
 // TODO: Experiments with Shadow Maps (first experiments indicate that they are waaaay too slow. Can we do better? Heavily reduced the lights that need to be taken into account, maybe it's better now)
 // TODO: Rooms far away sometimes Z-Fight with Occlusion query. We need a bigger, outer bounding box I guess
-// TODO: Aliasing effects of doom
+// TODO: Geometry is aliasing
 
 namespace br
 {
