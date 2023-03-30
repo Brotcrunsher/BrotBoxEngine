@@ -19,6 +19,7 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Experiments with Shadow Maps (first experiments indicate that they are waaaay too slow. Can we do better? Heavily reduced the lights that need to be taken into account, maybe it's better now)
 // TODO: Rooms far away sometimes Z-Fight with Occlusion query. We need a bigger, outer bounding box I guess
 // TODO: Geometry is aliasing
+// TODO: Variable room height?
 
 namespace br
 {

@@ -694,7 +694,7 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	Room& r = rooms[roomi];
 
 	bbe::List<bbe::PointLight> lights;
-	const int32_t lightmapSize = 128;
+	const int32_t lightmapSize = 256;
 	for (size_t i = 0; i < roomLightSources.getLength(); i++)
 	{
 		for (size_t k = 0; k < rooms[roomLightSources[i]].lights.getLength(); k++)
@@ -706,13 +706,6 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 		}
 	}
 
-	static size_t maxLights = 0;
-	if (lights.getLength() > maxLights)
-	{
-		maxLights = lights.getLength();
-
-		std::cout << "maxLights: " << maxLights << std::endl;
-	}
 	if (r.bakedCeiling.isLoadedCpu() == false && r.bakedCeiling.isLoadedGpu() == false)
 	{
 		r.bakedCeiling = game->bakeLights(r.ceilingTranslation(), r.ceilingModel, nullptr, shaderCeiling, { lightmapSize, lightmapSize }, lights);

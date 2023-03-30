@@ -237,10 +237,21 @@ void bbe::INTERNAL::openGl::Framebuffer::destroy()
 	height = 0;
 }
 
-GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label)
+GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label, uint32_t bytes)
 {
 	GLuint texture = genTexture(label);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+	if (bytes == 1)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	}
+	else if (bytes == 4)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+	}
+	else
+	{
+		throw bbe::IllegalArgumentException();
+	}
 	textures.add(texture);
 	return texture;
 }
@@ -552,6 +563,50 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dPostP
 
 	program.uniform1i(framePostProcessing, 0);
 	program.uniform2f(screenSizePostProcessing, (float)m_windowWidth, (float)m_windowHeight);
+	return program;
+}
+
+static GLint frameBakingGammaCorrection = 0;
+static GLint screenSizeBakingGammaCorrection = 0;
+bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::initBakingGammaCorrection()
+{
+	Program program;
+	char const* vertexShaderSrc =
+		"void main()"
+		"{"
+		"   if(gl_VertexID == 0)"
+		"   {"
+		"       gl_Position = vec4(-1.0, -1.0, 0.0, 1.0);"
+		"   }"
+		"   if(gl_VertexID == 1)"
+		"   {"
+		"       gl_Position = vec4(-1.0, 1.0, 0.0, 1.0);"
+		"   }"
+		"   if(gl_VertexID == 2)"
+		"   {"
+		"       gl_Position = vec4(1.0, 1.0, 0.0, 1.0);"
+		"   }"
+		"   if(gl_VertexID == 3)"
+		"   {"
+		"       gl_Position = vec4(1.0, -1.0, 0.0, 1.0);"
+		"   }"
+		"}";
+
+	char const* fragmentShaderSource =
+		"out vec4 outColor;"
+		"void main()"
+		"{"
+		"   vec3 albedo = texture(frame, gl_FragCoord.xy / screenSize).xyz;"
+		"   outColor = pow(vec4(albedo, 1.0), vec4(1.0 / 2.2));"
+		"}";
+	program.addShaders("3dPostProcessing", vertexShaderSrc, fragmentShaderSource,
+		{
+			{UT::UT_sampler2D, "frame"     , &frameBakingGammaCorrection     },
+			{UT::UT_vec2     , "screenSize", &screenSizeBakingGammaCorrection},
+		});
+
+	program.uniform1i(frameBakingGammaCorrection, 0);
+	program.uniform2f(screenSizeBakingGammaCorrection, (float)m_windowWidth, (float)m_windowHeight);
 	return program;
 }
 
@@ -1112,6 +1167,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	m_program3dMrt = init3dShadersMrt(false);
 	m_program3dAmbient = init3dShadersAmbient();
 	m_programPostProcessing = init3dPostProcessing();
+	m_programBakingGammaCorrection = initBakingGammaCorrection();
 	m_program3dLight = init3dShadersLight(false);
 
 	m_program3dMrtBaking = init3dShadersMrt(true);
@@ -1146,6 +1202,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 	postProcessingFb.destroy();
 	m_program3dMrt.destroy();
 	m_programPostProcessing.destroy();
+	m_programBakingGammaCorrection.destroy();
 	m_program3dLight.destroy();
 	m_program3dMrtBaking.destroy();
 	m_program3dLightBaking.destroy();
@@ -1165,7 +1222,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	GLuint ibo = genBuffer("preDraw2DIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 	glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFb.framebuffer);
 	postProcessingFb.clearTextures();
-
+	
 	mrtFb.useAsInput();
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
@@ -1608,6 +1665,9 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(bbe::Matrix4 /*copy*
 	Framebuffer colorBuffer(resolution.x, resolution.y);
 	colorBuffer.addTexture("BakeLights ColorBuffer");
 	colorBuffer.finalize("BakeLightsColorBuffer");
+	Framebuffer colorBufferGamma(resolution.x, resolution.y);
+	colorBufferGamma.addTexture("BakeLightsGamma ColorBuffer", 1);
+	colorBufferGamma.finalize("BakeLightsGammaColorBuffer");
 
 	glViewport(0, 0, resolution.x, resolution.y);
 	glScissor (0, 0, resolution.x, resolution.y);
@@ -1645,14 +1705,36 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(bbe::Matrix4 /*copy*
 		const bbe::PointLight& l = lights[i];
 		drawLight(l, true, ibo);
 	}
+
+	// Gamma Correction Step
+
+	glBindFramebuffer(GL_FRAMEBUFFER, colorBufferGamma.framebuffer);
+	m_programBakingGammaCorrection.use();
+	m_programBakingGammaCorrection.uniform2f(screenSizeBakingGammaCorrection, resolution.x, resolution.y);
+	colorBuffer.useAsInput();
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
 	glDeleteBuffers(1, &ibo);
 
 	// Read the frambuffer to image
-	bbe::Image retVal = framebufferToImage(resolution.x, resolution.y);
+	glBindTexture(GL_TEXTURE_2D, colorBufferGamma.textures[0]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	bbe::Image retVal;
+	new OpenGLImage(retVal, colorBufferGamma.textures[0]);
+	colorBufferGamma.textures.clear();
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	geometryBuffer.destroy();
 	colorBuffer.destroy();
+	colorBufferGamma.destroy();
 
 	glViewport(0, 0, m_windowWidth, m_windowHeight);
 	glScissor (0, 0, m_windowWidth, m_windowHeight);

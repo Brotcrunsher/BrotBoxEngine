@@ -178,7 +178,7 @@ void bbe::Cube::getVertices(bbe::List<bbe::Vector3>& outVertices) const
 bbe::Vector2 normalPos(int32_t face, int32_t sub, bbe::Vector2& maxPos)
 {
 	const bbe::Vector2i basePosi = bbe::Math::squareCantor(face);
-	const bbe::Vector2 basePos = bbe::Vector2(basePosi.x * 1.05f, basePosi.y * 1.05f);
+	const bbe::Vector2 basePos = bbe::Vector2(basePosi.x * 1.00f, basePosi.y * 1.00f);
 
 	bbe::Vector2 retVal;
 	switch (sub)

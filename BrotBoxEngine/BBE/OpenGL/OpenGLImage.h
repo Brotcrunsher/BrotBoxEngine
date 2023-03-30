@@ -15,6 +15,7 @@ namespace bbe
 				GLuint tex = 0;
 
 				OpenGLImage(const bbe::Image& image);
+				OpenGLImage(const bbe::Image& image, GLuint tex);
 				~OpenGLImage();
 
 				OpenGLImage(const OpenGLImage&) = delete;

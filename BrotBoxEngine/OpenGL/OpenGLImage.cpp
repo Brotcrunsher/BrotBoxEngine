@@ -37,6 +37,17 @@ bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image)
 	}
 }
 
+bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image, GLuint tex)
+{
+	if (image.m_prendererData != nullptr)
+	{
+		throw IllegalStateException();
+	}
+
+	image.m_prendererData = this;
+	this->tex = tex;
+}
+
 bbe::INTERNAL::openGl::OpenGLImage::~OpenGLImage()
 {
 	if (tex)

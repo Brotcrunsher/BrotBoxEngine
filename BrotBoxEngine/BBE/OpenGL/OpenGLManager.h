@@ -109,7 +109,7 @@ namespace bbe
 				Framebuffer(GLsizei width, GLsizei height);
 
 				void destroy();
-				GLuint addTexture(const char* label);
+				GLuint addTexture(const char* label, uint32_t bytes = 4);
 				void addDepthBuffer(const char* label);
 				void clearTextures();
 				void useAsInput();
@@ -136,6 +136,7 @@ namespace bbe
 				MrtProgram m_program3dMrt;
 				Program m_program3dAmbient;
 				Program m_programPostProcessing;
+				Program m_programBakingGammaCorrection;
 				LightProgram m_program3dLight;
 
 				MrtProgram m_program3dMrtBaking;
@@ -160,6 +161,7 @@ namespace bbe
 				MrtProgram init3dShadersMrt(bool baking);
 				Program init3dShadersAmbient();
 				Program init3dPostProcessing();
+				Program initBakingGammaCorrection();
 				LightProgram init3dShadersLight(bool baking);
 				Framebuffer getGeometryBuffer(const bbe::String& label, uint32_t width, uint32_t height, bool baking) const;
 				void initFrameBuffers();
