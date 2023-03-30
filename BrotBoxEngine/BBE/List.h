@@ -355,7 +355,7 @@ namespace bbe
 		}
 
 		template <typename dummyT = T>
-		typename std::enable_if<std::is_fundamental<dummyT>::value, void>::type
+		typename std::enable_if<std::is_fundamental<dummyT>::value || std::is_pointer<dummyT>::value, void>::type
 			resizeCapacityAndLengthUninit(size_t newCapacity)
 		{
 			//UNTESTED

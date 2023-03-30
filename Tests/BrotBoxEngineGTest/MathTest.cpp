@@ -27,3 +27,30 @@ TEST(Math, squareCantor)
 		vectors.insert(newVec);
 	}
 }
+
+TEST(Rectangle, packing)
+{
+	bbe::Random rand;
+	for (uint32_t repeats = 0; repeats < 1000; repeats++)
+	{
+		bbe::List<bbe::Rectanglei> rects;
+		for (uint32_t i = 0; i < 32; i++)
+		{
+			rects.add(bbe::Rectanglei(
+				rand.randomInt(100),
+				rand.randomInt(100),
+				rand.randomInt(100),
+				rand.randomInt(100)
+			));
+		}
+		bbe::Rectanglei::pack(rects);
+
+		for (uint32_t i = 0; i < rects.getLength(); i++)
+		{
+			for (uint32_t k = i + 1; k < rects.getLength(); k++)
+			{
+				ASSERT_FALSE(rects[i].intersects(rects[k]));
+			}
+		}
+	}
+}
