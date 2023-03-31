@@ -3,16 +3,14 @@
 #include "../BBE/Model.h"
 #include "../BBE/Cube.h"
 #include "../BBE/Matrix4.h"
+#include "../BBE/List.h"
 
 namespace bbe
 {
 	class MeshBuilder
 	{
 	private:
-		bbe::Model m_model;
-		uint32_t meshes = 0;
-
-		void addElement(bbe::List<PosNormalPair>& vertices, bbe::List<uint32_t>& indices);
+		bbe::List<bbe::Matrix4> quads;
 
 	public:
 		MeshBuilder();
