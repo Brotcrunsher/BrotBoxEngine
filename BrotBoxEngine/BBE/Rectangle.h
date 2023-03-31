@@ -276,19 +276,19 @@ namespace bbe
 			return false;
 		}
 
-		static Rectangle_t<Vec> pack(bbe::List<Rectangle_t<Vec>>& list)
+		static Vec pack(bbe::List<Rectangle_t<Vec>>& list)
 		{
 			// TODO super naive packing that only puts all the rectangles into one line. Improve!
-			if (list.getLength() == 0) return Rectangle_t<Vec>(0, 0, 0, 0);
+			if (list.getLength() == 0) return Vec(0, 0);
 			bbe::List<Rectangle_t<Vec>*> ptrs;
 			ptrs.resizeCapacityAndLengthUninit(list.getLength());
 			for (size_t i = 0; i < list.getLength(); i++)
 			{
 				ptrs[i] = &(list[i]);
 			}
-			ptrs.sort([](Rectangle_t<Vec>* const & a, const Rectangle_t<Vec>* const & b) {
+			ptrs.sort([](Rectangle_t<Vec>* const& a, const Rectangle_t<Vec>* const& b) {
 				return a->height > b->height;
-			});
+				});
 			SubType currentX = 0;
 			for (size_t i = 0; i < ptrs.getLength(); i++)
 			{
@@ -296,7 +296,7 @@ namespace bbe
 				ptrs[i]->y = 0;
 				currentX += ptrs[i]->width;
 			}
-			return Rectangle_t<Vec>(0, 0, currentX, ptrs[0]->height);
+			return Vec(currentX, ptrs[0]->height);
 		}
 	};
 
