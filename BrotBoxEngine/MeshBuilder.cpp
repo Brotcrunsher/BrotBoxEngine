@@ -22,9 +22,31 @@ bbe::MeshBuilder::MeshBuilder()
 
 void bbe::MeshBuilder::addCube(const bbe::Cube& cube, FaceFlag ff)
 {
-	bbe::List<PosNormalPair> vertices = cube.getRenderVertices(ff);
-	bbe::List<uint32_t> indices = Cube::getRenderIndicesDefault(ff);
-	addElement(vertices, indices);
+	const bbe::Matrix4 t = bbe::Matrix4::createTranslationMatrix(bbe::Vector3(0, 0, 0.5));
+	if ((int)ff & (int)FaceFlag::BOTTOM)
+	{
+		addRectangle(cube.getTransform() * bbe::Matrix4::createRotationMatrix(bbe::Math::PI, bbe::Vector3(1, 0, 0)) * t);
+	}
+	if ((int)ff & (int)FaceFlag::TOP)
+	{
+		addRectangle(cube.getTransform() * t);
+	}
+	if ((int)ff & (int)FaceFlag::LEFT)
+	{
+		addRectangle(cube.getTransform() * bbe::Matrix4::createRotationMatrix(bbe::Math::PI * 0.5f, bbe::Vector3(1, 0, 0)) * t);
+	}
+	if ((int)ff & (int)FaceFlag::RIGHT)
+	{
+		addRectangle(cube.getTransform() * bbe::Matrix4::createRotationMatrix(-bbe::Math::PI * 0.5f, bbe::Vector3(1, 0, 0)) * t);
+	}
+	if ((int)ff & (int)FaceFlag::FRONT)
+	{
+		addRectangle(cube.getTransform() * bbe::Matrix4::createRotationMatrix(bbe::Math::PI * 0.5f, bbe::Vector3(0, 1, 0)) * t);
+	}
+	if ((int)ff & (int)FaceFlag::BACK)
+	{
+		addRectangle(cube.getTransform() * bbe::Matrix4::createRotationMatrix(-bbe::Math::PI * 0.5f, bbe::Vector3(0, 1, 0)) * t);
+	}
 }
 
 void bbe::MeshBuilder::addCubes(const bbe::List<Cube>& cubes)
