@@ -629,10 +629,10 @@ void br::Rooms::connectGates(size_t roomi)
 	bbe::MeshBuilder skirtingBoardMb;
 	for (const bbe::Rectanglei& rect : rects)
 	{
-		bbe::Vector3 coord = bbe::Vector3(rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f, 1.25f);
+		bbe::Vector3 coord = bbe::Vector3(rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f, r.roomHeight * 0.5f);
 		coord.x /= float(wallSpaceScale);
 		coord.y /= float(wallSpaceScale);
-		wallsMb.addCube(bbe::Cube(coord, bbe::Vector3(rect.width / float(wallSpaceScale), rect.height / float(wallSpaceScale), 2.5f)), bbe::FaceFlag::CIRCUMFERENCE);
+		wallsMb.addCube(bbe::Cube(coord, bbe::Vector3(rect.width / float(wallSpaceScale), rect.height / float(wallSpaceScale), r.roomHeight)), bbe::FaceFlag::CIRCUMFERENCE);
 		coord.z = 0.075f;
 		skirtingBoardMb.addCube(bbe::Cube(coord, bbe::Vector3(rect.width / float(wallSpaceScale) + 0.03f, rect.height / float(wallSpaceScale) + 0.03f, 0.15f)), bbe::FaceFlag::BOTTOMLESS);
 	}
@@ -664,7 +664,7 @@ void br::Rooms::connectGates(size_t roomi)
 			if (!wallBlockingLight)
 			{
 				bbe::PointLight pl;
-				pl.pos = bbe::Vector3(i + r.boundingBox.x + 0.5f, k + r.boundingBox.y + 0.5f, 2.f);
+				pl.pos = bbe::Vector3(i + r.boundingBox.x + 0.5f, k + r.boundingBox.y + 0.5f, r.roomHeight - 0.5f);
 				pl.lightStrength = 1.5f;
 				BuzzingLight bl;
 				bl.light = pl;

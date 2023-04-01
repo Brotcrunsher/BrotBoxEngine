@@ -56,7 +56,7 @@ bbe::Vector3 br::Room::getBoundingCubePos() const
 	return bbe::Vector3 {
 		(float)boundingBox.x + (float)boundingBox.width * 0.5f,
 		(float)boundingBox.y + (float)boundingBox.height * 0.5f,
-		1.25f
+		roomHeight * 0.5f
 	};
 }
 
@@ -65,7 +65,7 @@ bbe::Vector3 br::Room::getBoundingCubeScale() const
 	return bbe::Vector3 {
 		(float)boundingBox.width,
 		(float)boundingBox.height,
-		2.5f
+		roomHeight
 	};
 }
 
@@ -92,7 +92,7 @@ bbe::Matrix4 br::Room::ceilingMatrix() const
 {
 	const bbe::Rectanglei& bounding = boundingBox;
 	bbe::Vector3 translationVec = bbe::Vector3(bounding.x + bounding.width / 2.f, bounding.y + bounding.height / 2.f, 0);
-	translationVec.z = 2.5f;
+	translationVec.z = roomHeight;
 	bbe::Matrix4 translation = bbe::Matrix4::createTranslationMatrix(translationVec);
 	bbe::Matrix4 scale = bbe::Matrix4::createScaleMatrix({ (float)bounding.width, (float)bounding.height, 1 });
 	bbe::Matrix4 rotationMat = bbe::Matrix4::createRotationMatrix(bbe::Math::PI, bbe::Vector3(1, 0, 0));
@@ -111,7 +111,7 @@ bbe::Matrix4 br::Room::ceilingTranslation() const
 {
 	const bbe::Rectanglei& bounding = boundingBox;
 	bbe::Vector3 translationVec = bbe::Vector3(bounding.x + bounding.width / 2.f, bounding.y + bounding.height / 2.f, 0);
-	translationVec.z = 2.5f;
+	translationVec.z = roomHeight;
 	bbe::Matrix4 translation = bbe::Matrix4::createTranslationMatrix(translationVec);
 	return translation;
 }

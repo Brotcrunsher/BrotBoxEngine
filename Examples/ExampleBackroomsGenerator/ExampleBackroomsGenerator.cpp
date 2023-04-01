@@ -7,8 +7,6 @@ constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 
 // TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
-// TODO: Baked light textures always have the same size. This isn't ideal. Make it depend on the size of the actual models.
-// TODO: Baked light textures currently too low res
 // TODO: VAO buffers?
 // TODO: power outlet
 // TODO: Footstep sounds?

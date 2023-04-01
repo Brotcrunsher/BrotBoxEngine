@@ -43,6 +43,7 @@ namespace br
 		float value = 0.f;
 		float saturation = 0.f;
 		float timeSinceLastTouch = 0.f; // "Touch" means "Marked as still an interesting room that shall not yet be removed/debaked/etc."
+		float roomHeight = 2.5f;
 		size_t id = 0;
 		RoomGenerationState state = RoomGenerationState::outlines;
 		bbe::List<Neighbor> neighbors;
