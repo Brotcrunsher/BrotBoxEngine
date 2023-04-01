@@ -19,6 +19,11 @@ namespace bbe
 		void addCubes(const bbe::List<Cube>& cubes);
 		void addRectangle(const bbe::Matrix4& transform);
 
-		bbe::Model getModel();
+		struct ModelUvDimensionsPair
+		{
+			bbe::Model model;
+			bbe::Vector2i uvDimensions;
+		};
+		ModelUvDimensionsPair getModel(uint32_t pixelsPerUnit);
 	};
 }

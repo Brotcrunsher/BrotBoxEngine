@@ -3,6 +3,7 @@
 #include "BBE/MeshBuilder.h"
 
 constexpr uint32_t wallSpaceScale = 4;
+constexpr uint32_t lightmapResolution = 16;
 bbe::Rectanglei br::Rooms::shrinkBoundingBoxRec(const bbe::Rectanglei& bounding, const bbe::List<bbe::Rectanglei>& intersections, int32_t index, int32_t& currentBestArea) const
 {
 	if (index == intersections.getLength()) return bounding;
@@ -615,12 +616,12 @@ void br::Rooms::connectGates(size_t roomi)
 	{
 		bbe::MeshBuilder mb;
 		mb.addRectangle(r.floorMatrix());
-		r.floorModel = mb.getModel();
+		r.floorModel = mb.getModel(lightmapResolution);
 	}
 	{
 		bbe::MeshBuilder mb;
 		mb.addRectangle(r.ceilingMatrix());
-		r.ceilingModel = mb.getModel();
+		r.ceilingModel = mb.getModel(lightmapResolution);
 	}
 
 	bbe::List<bbe::Rectanglei> rects = r.walkable.getAllBiggestRects(false); // TODO: This could be slightly improved. X formations currently generate 3 walls, where they could produce 2.
@@ -636,8 +637,8 @@ void br::Rooms::connectGates(size_t roomi)
 		skirtingBoardMb.addCube(bbe::Cube(coord, bbe::Vector3(rect.width / float(wallSpaceScale) + 0.03f, rect.height / float(wallSpaceScale) + 0.03f, 0.15f)), bbe::FaceFlag::BOTTOMLESS);
 	}
 	bbe::Vector3 meshPos = bbe::Vector3(r.boundingBox.x, r.boundingBox.y, 0);
-	r.wallsModel = Room::ModelOffsetPair{ meshPos, wallsMb.getModel()};
-	r.skirtingBoardModel = Room::ModelOffsetPair{ meshPos, skirtingBoardMb.getModel() };
+	r.wallsModel = Room::ModelOffsetPair{ meshPos, wallsMb.getModel(lightmapResolution)};
+	r.skirtingBoardModel = Room::ModelOffsetPair{ meshPos, skirtingBoardMb.getModel(lightmapResolution) };
 
 	const float roomLightProbability = 0.0001f + rand.randomFloat() * 0.2f;
 	for (int32_t i = 2; i < r.boundingBox.width - 2; i++)
@@ -677,7 +678,7 @@ void br::Rooms::connectGates(size_t roomi)
 	{
 		lightMb.addCube(bbe::Cube(light.light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)), bbe::FaceFlag::TOPLESS);
 	}
-	r.lightsModel = Room::ModelOffsetPair{ bbe::Vector3(), lightMb.getModel()}; // TODO: The 0 offset while backing the vertex poses in world coords is a bad idea for accuracy.
+	r.lightsModel = Room::ModelOffsetPair{ bbe::Vector3(), lightMb.getModel(lightmapResolution)}; // TODO: The 0 offset while backing the vertex poses in world coords is a bad idea for accuracy.
 }
 
 bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard)
@@ -694,7 +695,6 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	Room& r = rooms[roomi];
 
 	bbe::List<bbe::PointLight> lights;
-	const int32_t lightmapSize = 256;
 	for (size_t i = 0; i < roomLightSources.getLength(); i++)
 	{
 		for (size_t k = 0; k < rooms[roomLightSources[i]].lights.getLength(); k++)
@@ -708,19 +708,19 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 
 	if (r.bakedCeiling.isLoadedCpu() == false && r.bakedCeiling.isLoadedGpu() == false)
 	{
-		r.bakedCeiling = game->bakeLights(r.ceilingTranslation(), r.ceilingModel, nullptr, shaderCeiling, { lightmapSize, lightmapSize }, lights);
+		r.bakedCeiling = game->bakeLights(r.ceilingTranslation(), r.ceilingModel.model, nullptr, shaderCeiling, r.ceilingModel.uvDimensions, lights);
 	}
 	else if (r.bakedFloor.isLoadedCpu() == false && r.bakedFloor.isLoadedGpu() == false)
 	{
-		r.bakedFloor = game->bakeLights(r.floorTranslation(), r.floorModel, nullptr, shaderFloor, { lightmapSize, lightmapSize }, lights);
+		r.bakedFloor = game->bakeLights(r.floorTranslation(), r.floorModel.model, nullptr, shaderFloor, r.floorModel.uvDimensions, lights);
 	}
 	else if (rooms[roomi].bakedWalls.getLength() != 1)
 	{
-		r.bakedWalls.add(game->bakeLights(bbe::Matrix4::createTranslationMatrix(r.wallsModel.offset), r.wallsModel.model, nullptr, shaderWall, { lightmapSize, lightmapSize }, lights));
+		r.bakedWalls.add(game->bakeLights(bbe::Matrix4::createTranslationMatrix(r.wallsModel.offset), r.wallsModel.model.model, nullptr, shaderWall, r.wallsModel.model.uvDimensions, lights));
 	}
 	else if (rooms[roomi].bakedSkirtingBoard.getLength() != 1)
 	{
-		r.bakedSkirtingBoard.add(game->bakeLights(bbe::Matrix4::createTranslationMatrix(r.skirtingBoardModel.offset), r.skirtingBoardModel.model, nullptr, shaderSkirtingBoard, { lightmapSize, lightmapSize }, lights));
+		r.bakedSkirtingBoard.add(game->bakeLights(bbe::Matrix4::createTranslationMatrix(r.skirtingBoardModel.offset), r.skirtingBoardModel.model.model, nullptr, shaderSkirtingBoard, r.skirtingBoardModel.model.uvDimensions, lights));
 	}
 	else
 	{
@@ -867,7 +867,7 @@ void br::Rooms::updateOcclusionQueries(size_t roomi, bbe::PrimitiveBrush3D& brus
 	}
 }
 
-void br::Rooms::drawAt(const bbe::Vector3 pos, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights)
+void br::Rooms::drawAt(const bbe::Vector3 pos, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawSkirtingBoard, bool drawCeiling, bool drawLights)
 {
 	bbe::Vector2i lookupPos((int32_t)pos.x, (int32_t)pos.y);
 	if (pos.x < 0) lookupPos.x--;
@@ -876,7 +876,7 @@ void br::Rooms::drawAt(const bbe::Vector3 pos, bbe::PrimitiveBrush3D& brush, bbe
 	bbe::List<size_t> alreadyDrawn;
 	bbe::List<size_t> neighborList;
 	bool bakedRoom = false;
-	drawRoomsRecursively(alreadyDrawn, neighborList, bakedRoom, roomi, brush, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawCeiling, drawLights);
+	drawRoomsRecursively(alreadyDrawn, neighborList, bakedRoom, roomi, brush, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
 	for (size_t roomi : neighborList)
 	{
 		updateOcclusionQueries(roomi, brush);
@@ -897,12 +897,12 @@ void br::Rooms::drawAt(const bbe::Vector3 pos, bbe::PrimitiveBrush3D& brush, bbe
 		size_t neighborId = rooms[roomi].neighbors[i].neighborId;
 		if (rooms[neighborId].state >= RoomGenerationState::lightsBaked) // Only draw baked rooms to prevent unnecessary lag spikes on room traversal
 		{
-			drawRoom(neighborId, brush, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawCeiling, drawLights);
+			drawRoom(neighborId, brush, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
 		}
 	}
 }
 
-void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights)
+void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawSkirtingBoard, bool drawCeiling, bool drawLights)
 {
 	if (rooms[roomi].state < RoomGenerationState::lightsBaked)
 	{
@@ -915,22 +915,18 @@ void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* 
 	brush.setColor(1, 1, 1, 1);
 	if (drawLights)
 	{
-		brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.lightsModel.offset), r.lightsModel.model, nullptr, nullptr, &bbe::Image::white());
+		brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.lightsModel.offset), r.lightsModel.model.model, nullptr, nullptr, &bbe::Image::white());
 	}
 	brush.setColorHSV(r.hue, r.saturation, r.value);
 	brush.setColor(1, 1, 1, 1);
 	if (r.bakedWalls.getLength() != 1) throw bbe::IllegalStateException();
-	if(drawFloor) brush.fillModel(r.floorTranslation(), r.floorModel, nullptr, nullptr, &r.bakedFloor, shaderFloor);
-	if(drawCeiling) brush.fillModel(r.ceilingTranslation(), r.ceilingModel, nullptr, nullptr, &r.bakedCeiling, shaderCeiling);
-	if (drawWalls)
-	{
-		brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.wallsModel.offset), r.wallsModel.model, nullptr, nullptr, &r.bakedWalls[0], shaderWall);
-		brush.setColor(1, 1, 1, 1);
-		brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.skirtingBoardModel.offset), r.skirtingBoardModel.model, nullptr, nullptr, &r.bakedSkirtingBoard[0], shaderSkirtingBoard);
-	}
+	if(drawFloor) brush.fillModel(r.floorTranslation(), r.floorModel.model, nullptr, nullptr, &r.bakedFloor, shaderFloor);
+	if(drawCeiling) brush.fillModel(r.ceilingTranslation(), r.ceilingModel.model, nullptr, nullptr, &r.bakedCeiling, shaderCeiling);
+	if(drawWalls) brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.wallsModel.offset), r.wallsModel.model.model, nullptr, nullptr, &r.bakedWalls[0], shaderWall);
+	if(drawSkirtingBoard) brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.skirtingBoardModel.offset), r.skirtingBoardModel.model.model, nullptr, nullptr, &r.bakedSkirtingBoard[0], shaderSkirtingBoard);
 }
 
-void br::Rooms::drawRoomsRecursively(bbe::List<size_t>& alreadyDrawn, bbe::List<size_t>& neighborList, bool& bakedRoom, size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawCeiling, bool drawLights)
+void br::Rooms::drawRoomsRecursively(bbe::List<size_t>& alreadyDrawn, bbe::List<size_t>& neighborList, bool& bakedRoom, size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawSkirtingBoard, bool drawCeiling, bool drawLights)
 {
 	if (alreadyDrawn.contains(roomi)) return;
 	alreadyDrawn.add(roomi);
@@ -942,7 +938,7 @@ void br::Rooms::drawRoomsRecursively(bbe::List<size_t>& alreadyDrawn, bbe::List<
 			bakedRoom = true;
 		}
 	}
-	drawRoom(roomi, brush, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawCeiling, drawLights);
+	drawRoom(roomi, brush, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
 	if (rooms[roomi].state < RoomGenerationState::lightsBaked)
 	{
 		return;
@@ -953,7 +949,7 @@ void br::Rooms::drawRoomsRecursively(bbe::List<size_t>& alreadyDrawn, bbe::List<
 		if (!neighborList.contains(neighborId)) neighborList.add(neighborId);
 		if (isRoomVisible(neighborId))
 		{
-			drawRoomsRecursively(alreadyDrawn, neighborList, bakedRoom, neighborId, brush, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawCeiling, drawLights);
+			drawRoomsRecursively(alreadyDrawn, neighborList, bakedRoom, neighborId, brush, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
 		}
 	}
 }

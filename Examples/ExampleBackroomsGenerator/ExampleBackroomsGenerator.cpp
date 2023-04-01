@@ -151,6 +151,7 @@ namespace br
 
 		bool drawFloor = true;
 		bool drawWalls = true;
+		bool drawSkirtingBoard = true;
 		bool drawCeiling = true;
 		bool drawLights = true;
 
@@ -288,6 +289,7 @@ namespace br
 			{
 				ImGui::Checkbox("Draw Floor", &drawFloor);
 				ImGui::Checkbox("Draw Walls", &drawWalls);
+				ImGui::Checkbox("Draw Skirting Board", &drawSkirtingBoard);
 				ImGui::Checkbox("Draw Ceiling", &drawCeiling);
 				ImGui::Checkbox("Draw Lights", &drawLights);
 
@@ -306,7 +308,7 @@ namespace br
 			brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 			//brush.setCamera(bbe::Vector3(0, 0, 1.7f), bbe::Vector3(-1, 0, 1.7f));
 
-			rooms.drawAt(ccnc.getCameraPos(), brush, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling(), assetStore::SkirtingBoard(), drawFloor, drawWalls, drawCeiling, drawLights);
+			rooms.drawAt(ccnc.getCameraPos(), brush, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling(), assetStore::SkirtingBoard(), drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
 		}
 
 		virtual void draw2D(bbe::PrimitiveBrush2D& brush) override

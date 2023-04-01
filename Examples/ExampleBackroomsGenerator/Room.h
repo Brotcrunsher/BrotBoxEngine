@@ -1,5 +1,6 @@
 #pragma once
 #include "BBE/BrotBoxEngine.h"
+#include "BBE/MeshBuilder.h"
 
 namespace br
 {
@@ -46,12 +47,12 @@ namespace br
 		RoomGenerationState state = RoomGenerationState::outlines;
 		bbe::List<Neighbor> neighbors;
 		bbe::Grid<bool> walkable;
-		bbe::Model ceilingModel;
-		bbe::Model floorModel;
+		bbe::MeshBuilder::ModelUvDimensionsPair ceilingModel;
+		bbe::MeshBuilder::ModelUvDimensionsPair floorModel;
 		struct ModelOffsetPair
 		{
 			bbe::Vector3 offset;
-			bbe::Model model;
+			bbe::MeshBuilder::ModelUvDimensionsPair model;
 		};
 		ModelOffsetPair wallsModel;
 		ModelOffsetPair skirtingBoardModel;

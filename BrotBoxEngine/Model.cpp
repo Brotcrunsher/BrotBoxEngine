@@ -30,19 +30,36 @@ size_t bbe::Model::getAmountOfVertices() const
 	return m_vertices.getLength();
 }
 
-bbe::Model bbe::Model::finalize() const
+bbe::Model bbe::Model::finalize(const bbe::Vector2i& textureDimensions) const
 {
-	bbe::Vector2 max(0, 0);
-	for (const bbe::PosNormalPair& vertex : m_vertices)
-	{
-		max = max.maxVector(vertex.uvCoord);
-	}
 	bbe::Model copy = *this;
 	for (bbe::PosNormalPair& vertex : copy.m_vertices)
 	{
-		vertex.uvCoord /= max;
+		vertex.uvCoord.x /= textureDimensions.x;
+		vertex.uvCoord.y /= textureDimensions.y;
 	}
 
+	for (bbe::Vector2& bakingPos : copy.m_bakingUvs)
+	{
+		bakingPos.x /= textureDimensions.x;
+		bakingPos.y /= textureDimensions.y;
+	}
+
+	return copy;
+}
+
+bbe::Model bbe::Model::toBakingModel() const
+{
+	if (m_bakingUvs.getLength() != m_vertices.getLength())
+	{
+		// The Model wasn't properly prepared for baking.
+		throw bbe::IllegalStateException();
+	}
+	bbe::Model copy = *this;
+	for (size_t i = 0; i < m_bakingUvs.getLength(); i++)
+	{
+		copy.m_vertices[i].uvCoord = m_bakingUvs[i];
+	}
 	return copy;
 }
 

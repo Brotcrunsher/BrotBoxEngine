@@ -7,6 +7,5 @@ void bbe::PosNormalPair::transform(bbe::List<PosNormalPair>& vertices, const bbe
 	{
 		p.pos = matrix * p.pos;
 		p.normal = normalTransform * p.normal;
-		// TODO: Probably the UV-Coordinates should also be transformed somehow?
 	}
 }

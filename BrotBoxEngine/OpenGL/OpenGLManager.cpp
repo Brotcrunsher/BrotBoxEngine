@@ -1685,7 +1685,7 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(bbe::Matrix4 /*copy*
 	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.viewPos3dMrt, false, identity);
 	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.projectionPos3dMrt, false, identity);
 	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.modelPos3dMrt, false, transform);
-	fillModel(transform, model, nullptr, normals, nullptr, shader, geometryBuffer.framebuffer, true, bbe::Color::white());
+	fillModel(transform, model.toBakingModel(), nullptr, normals, nullptr, shader, geometryBuffer.framebuffer, true, bbe::Color::white());
 
 	// Light Passes
 	m_program3dLightBaking.use();
