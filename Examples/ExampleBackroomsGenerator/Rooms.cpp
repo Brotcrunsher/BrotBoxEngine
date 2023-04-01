@@ -636,7 +636,7 @@ void br::Rooms::connectGates(size_t roomi)
 		coord.z = 0.075f;
 		skirtingBoardMb.addCube(bbe::Cube(coord, bbe::Vector3(rect.width / float(wallSpaceScale) + 0.03f, rect.height / float(wallSpaceScale) + 0.03f, 0.15f)), bbe::FaceFlag::BOTTOMLESS);
 	}
-	bbe::Vector3 meshPos = bbe::Vector3(r.boundingBox.x, r.boundingBox.y, 0);
+	bbe::Matrix4 meshPos = bbe::Matrix4::createTranslationMatrix(bbe::Vector3(r.boundingBox.x, r.boundingBox.y, 0));
 	r.wallsModel = Room::ModelOffsetPair{ meshPos, wallsMb.getModel(lightmapResolution)};
 	r.skirtingBoardModel = Room::ModelOffsetPair{ meshPos, skirtingBoardMb.getModel(lightmapResolution) };
 
@@ -678,7 +678,7 @@ void br::Rooms::connectGates(size_t roomi)
 	{
 		lightMb.addCube(bbe::Cube(light.light.pos + bbe::Vector3(0.05f, 0.05f, 0.5f), bbe::Vector3(0.9f, 0.9f, 0.01f)), bbe::FaceFlag::TOPLESS);
 	}
-	r.lightsModel = Room::ModelOffsetPair{ bbe::Vector3(), lightMb.getModel(lightmapResolution)}; // TODO: The 0 offset while backing the vertex poses in world coords is a bad idea for accuracy.
+	r.lightsModel = Room::ModelOffsetPair{ bbe::Matrix4(), lightMb.getModel(lightmapResolution)}; // TODO: The 0 offset while backing the vertex poses in world coords is a bad idea for accuracy.
 }
 
 bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard)
@@ -716,11 +716,11 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 	}
 	else if (rooms[roomi].bakedWalls.getLength() != 1)
 	{
-		r.bakedWalls.add(game->bakeLights(bbe::Matrix4::createTranslationMatrix(r.wallsModel.offset), r.wallsModel.model.model, nullptr, shaderWall, r.wallsModel.model.uvDimensions, lights));
+		r.bakedWalls.add(game->bakeLights(r.wallsModel.offset, r.wallsModel.model.model, nullptr, shaderWall, r.wallsModel.model.uvDimensions, lights));
 	}
 	else if (rooms[roomi].bakedSkirtingBoard.getLength() != 1)
 	{
-		r.bakedSkirtingBoard.add(game->bakeLights(bbe::Matrix4::createTranslationMatrix(r.skirtingBoardModel.offset), r.skirtingBoardModel.model.model, nullptr, shaderSkirtingBoard, r.skirtingBoardModel.model.uvDimensions, lights));
+		r.bakedSkirtingBoard.add(game->bakeLights(r.skirtingBoardModel.offset, r.skirtingBoardModel.model.model, nullptr, shaderSkirtingBoard, r.skirtingBoardModel.model.uvDimensions, lights));
 	}
 	else
 	{
@@ -915,15 +915,15 @@ void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* 
 	brush.setColor(1, 1, 1, 1);
 	if (drawLights)
 	{
-		brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.lightsModel.offset), r.lightsModel.model.model, nullptr, nullptr, &bbe::Image::white());
+		brush.fillModel(r.lightsModel.offset, r.lightsModel.model.model, nullptr, nullptr, &bbe::Image::white());
 	}
 	brush.setColorHSV(r.hue, r.saturation, r.value);
 	brush.setColor(1, 1, 1, 1);
 	if (r.bakedWalls.getLength() != 1) throw bbe::IllegalStateException();
-	if(drawFloor) brush.fillModel(r.floorTranslation(), r.floorModel.model, nullptr, nullptr, &r.bakedFloor, shaderFloor);
-	if(drawCeiling) brush.fillModel(r.ceilingTranslation(), r.ceilingModel.model, nullptr, nullptr, &r.bakedCeiling, shaderCeiling);
-	if(drawWalls) brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.wallsModel.offset), r.wallsModel.model.model, nullptr, nullptr, &r.bakedWalls[0], shaderWall);
-	if(drawSkirtingBoard) brush.fillModel(bbe::Matrix4::createTranslationMatrix(r.skirtingBoardModel.offset), r.skirtingBoardModel.model.model, nullptr, nullptr, &r.bakedSkirtingBoard[0], shaderSkirtingBoard);
+	if(drawFloor)         brush.fillModel(r.floorTranslation(),        r.floorModel.model,               nullptr, nullptr, &r.bakedFloor,            shaderFloor);
+	if(drawCeiling)       brush.fillModel(r.ceilingTranslation(),      r.ceilingModel.model,             nullptr, nullptr, &r.bakedCeiling,          shaderCeiling);
+	if(drawWalls)         brush.fillModel(r.wallsModel.offset,         r.wallsModel.model.model,         nullptr, nullptr, &r.bakedWalls[0],         shaderWall);
+	if(drawSkirtingBoard) brush.fillModel(r.skirtingBoardModel.offset, r.skirtingBoardModel.model.model, nullptr, nullptr, &r.bakedSkirtingBoard[0], shaderSkirtingBoard);
 }
 
 void br::Rooms::drawRoomsRecursively(bbe::List<size_t>& alreadyDrawn, bbe::List<size_t>& neighborList, bool& bakedRoom, size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawSkirtingBoard, bool drawCeiling, bool drawLights)

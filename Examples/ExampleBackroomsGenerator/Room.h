@@ -51,7 +51,7 @@ namespace br
 		bbe::MeshBuilder::ModelUvDimensionsPair floorModel;
 		struct ModelOffsetPair
 		{
-			bbe::Vector3 offset;
+			bbe::Matrix4 offset;
 			bbe::MeshBuilder::ModelUvDimensionsPair model;
 		};
 		ModelOffsetPair wallsModel;

@@ -43,7 +43,7 @@ TEST(Rectangle, packing)
 				rand.randomInt(100)
 			));
 		}
-		bbe::Rectanglei::pack(rects);
+		bbe::Vector2i boundingBox = bbe::Rectanglei::pack(rects);
 
 		for (uint32_t i = 0; i < rects.getLength(); i++)
 		{
