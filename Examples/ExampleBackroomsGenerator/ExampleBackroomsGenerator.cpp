@@ -6,7 +6,6 @@
 constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 
-// TODO: Sometimes we still have lag spikes when loading big rooms. Probably the baking must be better divided accross frames.
 // TODO: VAO buffers?
 // TODO: power outlet
 // TODO: Footstep sounds?
@@ -15,9 +14,11 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Bloom for lights?
 // TODO: Wall Collision with player
 // TODO: Experiments with Shadow Maps (first experiments indicate that they are waaaay too slow. Can we do better? Heavily reduced the lights that need to be taken into account, maybe it's better now)
-// TODO: Rooms far away sometimes Z-Fight with Occlusion query. We need a bigger, outer bounding box I guess
 // TODO: Geometry is aliasing
-// TODO: Variable room height?
+// TODO: Variable room height (PROBLEM: If all lights in neighboring rooms are higher than the own ceiling, the ceiling will not be lit by any of them. If we don't have a light ourselves, the ceiling is completely black)?
+// TODO: Relaxed Baking mode for rooms that aren't directly visible but probably will be soon
+// TODO: Disable imgui and debug drawing in release mode
+// TODO: Proper Emscripten page
 
 namespace br
 {

@@ -857,13 +857,17 @@ void br::Rooms::updateOcclusionQueries(size_t roomi, bbe::PrimitiveBrush3D& brus
 	r.occlusionQueries.add(
 		{
 			brush.isCubeVisible(r.getBoundingCubeInner()),
-			brush.isCubeVisible(r.getBoundingCubeOuter())
+			brush.isCubeVisible(r.getBoundingCubeOuter()),
+			brush.isCubeVisible(r.getBoundingCubeOuterFar())
 		}
 	);
-	while (!r.occlusionQueries.isEmpty() && r.occlusionQueries.peek().inner.isValueReady() && r.occlusionQueries.peek().outer.isValueReady())
+	while (!r.occlusionQueries.isEmpty() 
+		&& r.occlusionQueries.peek().inner.   isValueReady() 
+		&& r.occlusionQueries.peek().outer.   isValueReady() 
+		&& r.occlusionQueries.peek().outerFar.isValueReady())
 	{
 		Room::OcclusionQueryPair oqp = r.occlusionQueries.pop();
-		r.visible = oqp.inner.getValue() || oqp.outer.getValue();
+		r.visible = oqp.inner.getValue() || oqp.outer.getValue() || oqp.outerFar.getValue();
 	}
 }
 

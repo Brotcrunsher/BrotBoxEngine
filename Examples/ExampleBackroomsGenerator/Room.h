@@ -67,6 +67,7 @@ namespace br
 		{
 			bbe::Future<bool> inner;
 			bbe::Future<bool> outer;
+			bbe::Future<bool> outerFar;
 		};
 		bbe::Queue<OcclusionQueryPair> occlusionQueries;
 		bool visible = false;
@@ -77,6 +78,7 @@ namespace br
 
 		bbe::Vector3 getBoundingCubePos() const;
 		bbe::Vector3 getBoundingCubeScale() const;
+		bbe::Cube getBoundingCubeOuterFar() const;
 		bbe::Cube getBoundingCubeOuter() const;
 		bbe::Cube getBoundingCubeInner() const;
 		bbe::Matrix4 floorMatrix() const;

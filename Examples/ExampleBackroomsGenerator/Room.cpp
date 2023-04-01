@@ -69,9 +69,14 @@ bbe::Vector3 br::Room::getBoundingCubeScale() const
 	};
 }
 
-// Why inner and outer Bounding Box? We need an outer Bounding box to make occlusion queries that hit rooms of which only a wall is visible. If it would
-// have the same size, then it would be Z-Fighting with the bounding box. However, this slightly smaller bounding box will then suddenly be no longer visible
-// for a short time when traversing a gate. For these times, the inner bounding box is necessary.
+// Why inner, outer, and outerFar Bounding Box? Each of them fulfills a different edge case.
+// Outer: Necessary to draw outer walls that are visible from the outside of the room. NOTE: The OuterFar is not enough becuase we might be close to the room itself.
+// Inner: Necessary to keep drawing a room on gate traversal. If we wouldn't have it, the room would disappear for a few frames right on the edge when we go into it.
+// OuterFar: Needed to avoid z-fighting between outer walls and the occlusion query when the camera is far away.
+bbe::Cube br::Room::getBoundingCubeOuterFar() const
+{
+	return bbe::Cube(getBoundingCubePos(), getBoundingCubeScale() + bbe::Vector3(0.5f, 0.5f, 0.f));
+}
 bbe::Cube br::Room::getBoundingCubeOuter() const
 {
 	return bbe::Cube(getBoundingCubePos(), getBoundingCubeScale() + bbe::Vector3(0.01f, 0.01f, 0.f));
