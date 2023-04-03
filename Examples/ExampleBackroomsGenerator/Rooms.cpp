@@ -342,15 +342,10 @@ bool br::Rooms::expandRoom(size_t roomi)
 
 void br::Rooms::determineNeighbors_(size_t roomi, const bbe::Vector2i& roomiGatePos, const bbe::Vector2i& neighborGatePos)
 {
-	int32_t neighborIndex = getRoomIndexAtPoint(neighborGatePos);
+	size_t neighborIndex = lookupRoomIndex(neighborGatePos);
 	if (neighborIndex == roomi)
 	{
 		// A room is its own neighbor? Can't happen.
-		throw bbe::IllegalStateException();
-	}
-	if (neighborIndex < 0)
-	{
-		// Hole in the rooms?
 		throw bbe::IllegalStateException();
 	}
 
@@ -990,19 +985,20 @@ void br::Rooms::getLights(bbe::List<BuzzingLight*>& allDrawnLights, const bbe::V
 void br::Rooms::getRooms(bbe::List<size_t>& roomis, const bbe::Vector2i& position, int32_t maxDist)
 {
 	roomis.clear();
-	size_t roomi = getRoomIndexAtPoint(position);
+	size_t roomi = lookupRoomIndex(position);
 	getRooms(roomis, roomi, position, maxDist);
 }
 
 bool br::Rooms::isPositionInWall(const bbe::Vector2i& pos)
 {
+	// TODO: We take a int vec that is turned into a float vec, which is then inside turned into an int vec only to then be used for a float calculation. Madness.
 	return isPositionInWall(bbe::Vector3(pos.x, pos.y, 0.f));
 }
 
 bool br::Rooms::isPositionInWall(const bbe::Vector3& pos)
 {
 	bbe::Vector2i gridPos((int32_t)bbe::Math::floor(pos.x), (int32_t)bbe::Math::floor(pos.y));
-	size_t roomi = getRoomIndexAtPoint(gridPos);
+	size_t roomi = lookupRoomIndex(gridPos);
 	connectGates(roomi);
 	const Room& r = rooms[roomi];
 	const bbe::Vector2 roomLocalPos(pos.x - r.boundingBox.x, pos.y - r.boundingBox.y);
@@ -1023,7 +1019,7 @@ bool br::Rooms::isLineInWall(const bbe::Vector2i& start, const bbe::Vector2i& en
 bool br::Rooms::doesPointSeeRoomInterior(const bbe::Vector3& pos, size_t roomi)
 {
 	bbe::Vector2i posi = bbe::Vector2i((int32_t)bbe::Math::floor(pos.x), (int32_t)bbe::Math::floor(pos.y));
-	if (getRoomIndexAtPoint(posi) == roomi) return true;
+	if (lookupRoomIndex(posi) == roomi) return true;
 	determineNeighbors(roomi);
 
 	for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)

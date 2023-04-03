@@ -7,14 +7,14 @@ constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 
 // Necessary before showcase:
+// TODO: Relaxed Baking mode for rooms that aren't directly visible but probably will be soon
+// TODO: Wall Collision with player
 // TODO: power outlet
 // TODO: Footstep sounds
 // TODO: Does Laptop hit 60 FPS?
-// TODO: Emscripten
 // TODO: Bloom for lights?
-// TODO: Wall Collision with player
-// TODO: Relaxed Baking mode for rooms that aren't directly visible but probably will be soon
 // TODO: Disable imgui and debug drawing in release mode
+// TODO: Emscripten
 // TODO: Proper Emscripten page
 // 
 // Nice to have (I guess?)
@@ -188,6 +188,7 @@ namespace br
 
 			newRooms();
 			ccnc.constraintZPos(1.8f);
+			ccnc.setSpeedBuildUp(bbe::CameraControlNoClip::SpeedBuildUp::EXPONENTIAL);
 		}
 
 		void update2D(float timeSinceLastFrame)
@@ -299,6 +300,8 @@ namespace br
 
 				auto pos = ccnc.getCameraPos();
 				ImGui::LabelText("Pos", "%f/%f/%f", pos.x, pos.y, pos.z);
+				bool inWall = rooms.isPositionInWall(pos);
+				ImGui::LabelText("In Wall", "%s", inWall ? "true" : "false");
 			}
 			else
 			{
