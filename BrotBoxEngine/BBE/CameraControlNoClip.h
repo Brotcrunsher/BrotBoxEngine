@@ -8,6 +8,12 @@ namespace bbe
 
 	class CameraControlNoClip
 	{
+	public:
+		enum class SpeedBuildUp
+		{
+			QUADRATIC,
+			EXPONENTIAL
+		};
 	private:
 		Game   *m_pgame         = nullptr;
 		Vector3 m_cameraPos     = bbe::Vector3(0.0f, 0.0f, 0.0f);
@@ -18,6 +24,8 @@ namespace bbe
 
 		float   m_constraintZPos = 0.f;
 		bool    m_isZPosConstrained = false;
+
+		SpeedBuildUp m_speedBuildUp = SpeedBuildUp::QUADRATIC;
 
 	public:
 		explicit CameraControlNoClip(Game* game);
@@ -33,5 +41,8 @@ namespace bbe
 		void setCameraForward(const Vector3& forward);
 
 		void constraintZPos(float z);
+
+		void setSpeedBuildUp(SpeedBuildUp speedBuildUp);
+		SpeedBuildUp getSpeedBuildUp() const;
 	};
 }

@@ -47,7 +47,13 @@ void bbe::CameraControlNoClip::update(float timeSinceLastFrame)
 	if (m_pgame->isKeyDown(bbe::Key::LEFT_SHIFT))
 	{
 		m_timeSinceShiftPress += timeSinceLastFrame;
-		speedFactor = 10 * m_timeSinceShiftPress * m_timeSinceShiftPress;
+		switch (m_speedBuildUp)
+		{
+		case(SpeedBuildUp::QUADRATIC): speedFactor = 10 * m_timeSinceShiftPress * m_timeSinceShiftPress; break;
+		case(SpeedBuildUp::EXPONENTIAL): speedFactor = 10 * bbe::Math::pow(2, m_timeSinceShiftPress - 1.0); break;
+		default: throw bbe::IllegalStateException();
+		}
+		
 	}
 	else
 	{
@@ -146,4 +152,14 @@ void bbe::CameraControlNoClip::constraintZPos(float z)
 {
 	m_isZPosConstrained = true;
 	m_constraintZPos = z;
+}
+
+void bbe::CameraControlNoClip::setSpeedBuildUp(SpeedBuildUp speedBuildUp)
+{
+	m_speedBuildUp = speedBuildUp;
+}
+
+bbe::CameraControlNoClip::SpeedBuildUp bbe::CameraControlNoClip::getSpeedBuildUp() const
+{
+	return m_speedBuildUp;
 }
