@@ -212,6 +212,7 @@ namespace bbe
 
 				GLuint getModeFramebuffer();
 
+				GLuint quadIbo = 0;
 			public:
 				OpenGLManager();
 

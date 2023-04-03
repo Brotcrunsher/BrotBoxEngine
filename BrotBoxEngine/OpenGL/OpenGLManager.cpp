@@ -525,6 +525,10 @@ bbe::INTERNAL::openGl::MrtProgram bbe::INTERNAL::openGl::OpenGLManager::init3dSh
 			{UT::UT_sampler2D, "emissions" , &program.emissionsTexMrt   },
 		});
 
+	bbe::Matrix4 identity;
+	program.uniformMatrix4fv(program.viewPos3dMrt, false, identity);
+	program.uniformMatrix4fv(program.projectionPos3dMrt, false, identity);
+
 	return program;
 }
 
@@ -840,6 +844,9 @@ bbe::INTERNAL::openGl::LightProgram bbe::INTERNAL::openGl::OpenGLManager::init3d
 	program.uniform4f(program.lightColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
 	program.uniform4f(program.specularColorPos3dLight, 0.f, 0.f, 0.f, 0.f);
 	program.uniform2f(program.screenSize3dLight, (float)m_windowWidth, (float)m_windowHeight);
+
+	bbe::Matrix4 identity;
+	program.uniformMatrix4fv(program.projectionPos3dLight, false, identity);
 	return program;
 }
 
@@ -895,6 +902,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transfo
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, GLuint framebuffer, bool baking, const bbe::Color& bakingColor)
 {
+	// TODO This function wants way too much. Refactor.
 	GLuint program = 0;
 	GLint modelPos = 0;
 	GLint albedoTex = 0;
@@ -1318,10 +1326,14 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	glCullFace(GL_FRONT);
 	glFrontFace(GL_CCW);
 	imguiStart();
+
+	uint32_t indices[] = { 0, 3, 1, 1, 3, 2 };
+	quadIbo = genBuffer("quadIbo", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 {
+	glDeleteBuffers(1, &quadIbo);
 	imguiStop();
 
 	OpenGLSphere   ::destroy();
@@ -1350,8 +1362,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glFrontFace(GL_CCW);
 	// Draw the stuff of 3D
 	m_program3dAmbient.use();
-	uint32_t indices[] = { 0, 3, 1, 1, 3, 2 };
-	GLuint ibo = genBuffer("preDraw2DIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 	glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFb.framebuffer);
 	postProcessingFb.clearTextures();
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, forwardNoLightFb.framebuffer);
@@ -1379,13 +1389,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	m_programPostProcessing.use();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	postProcessingFb.useAsInput();
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIbo);
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
-
-	glDeleteBuffers(1, &ibo);
 
 	// Switch to 2D
 	glDisable(GL_CULL_FACE);
@@ -1545,7 +1553,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	{
 		v = v.rotate(rotation, rect.getCenter());
 	}
-	uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
 
 	if (image.m_format == ImageFormat::R8)
 	{
@@ -1557,7 +1564,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	}
 
 	GLuint vbo = genBuffer("drawImageVBO", BufferTarget::ARRAY_BUFFER, sizeof(bbe::Vector2) * vertices.getLength(), vertices.getRaw());
-	GLuint ibo = genBuffer("drawImageIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 
 	glUniform2f(scalePos2dTex, 1.0f, 1.0f);
 
@@ -1581,7 +1587,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glDeleteBuffers(1, &ibo);
 	glDeleteBuffers(1, &vbo);
 }
 
@@ -1821,18 +1826,12 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(bbe::Matrix4 /*copy*
 	m_program3dMrtBaking.use();
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
-	bbe::Matrix4 identity;
-	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.viewPos3dMrt, false, identity);
-	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.projectionPos3dMrt, false, identity);
 	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.modelPos3dMrt, false, transform);
 	fillModel(transform, model.toBakingModel(), nullptr, normals, nullptr, shader, geometryBuffer.framebuffer, true, bbe::Color::white());
 
 	// Light Passes
 	m_program3dLightBaking.use();
-	m_program3dLightBaking.uniformMatrix4fv(m_program3dLightBaking.projectionPos3dLight, false, identity);
 	m_program3dLightBaking.uniform2f(m_program3dLightBaking.screenSize3dLight, resolution.x, resolution.y);
-	uint32_t indices[] = { 0, 3, 1, 1, 3, 2 };
-	GLuint ibo = genBuffer("bakeLightsIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 
 	geometryBuffer.useAsInput();
 	glBindFramebuffer(GL_FRAMEBUFFER, colorBuffer.framebuffer);
@@ -1843,7 +1842,7 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(bbe::Matrix4 /*copy*
 	for (size_t i = 0; i < lights.getLength(); i++)
 	{
 		const bbe::PointLight& l = lights[i];
-		drawLight(l, true, ibo);
+		drawLight(l, true, quadIbo);
 	}
 
 	// Gamma Correction Step
@@ -1852,12 +1851,11 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(bbe::Matrix4 /*copy*
 	m_programBakingGammaCorrection.use();
 	m_programBakingGammaCorrection.uniform2f(screenSizeBakingGammaCorrection, resolution.x, resolution.y);
 	colorBuffer.useAsInput();
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIbo);
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
-	glDeleteBuffers(1, &ibo);
 
 	// Read the frambuffer to image
 	glBindTexture(GL_TEXTURE_2D, colorBufferGamma.textures[0]);
