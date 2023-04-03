@@ -181,7 +181,9 @@ namespace br
 
 		virtual void onStart() override
 		{
+#ifndef __EMSCRIPTEN__ // The sound is currently pretty broken on Emscripten.
 			backgroundHum.play();
+#endif
 			rand.setSeed(17);
 
 			newRooms();

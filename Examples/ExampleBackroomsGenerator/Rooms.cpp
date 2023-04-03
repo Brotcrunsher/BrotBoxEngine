@@ -123,6 +123,7 @@ void br::Rooms::update(float timeSinceLastFrame, const bbe::Vector3& camPos, con
 				});
 		}
 
+#ifndef __EMSCRIPTEN__ // The sound is currently pretty broken on Emscripten.
 		for (size_t i = 0; i < allDrawnLights.getLength() && i < maxSoundSources; i++)
 		{
 			if (allDrawnLights[i]->buzz.isPlaying() == false)
@@ -131,6 +132,7 @@ void br::Rooms::update(float timeSinceLastFrame, const bbe::Vector3& camPos, con
 				buzzingLightSounds.add(BuzzingLightSound{ allDrawnLights[i]->buzz, allDrawnLights[i]->light.pos });
 			}
 		}
+#endif
 
 		for (size_t i = 0; i < buzzingLightSounds.getLength(); i++)
 		{

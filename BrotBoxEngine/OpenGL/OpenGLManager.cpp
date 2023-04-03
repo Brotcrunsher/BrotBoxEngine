@@ -253,7 +253,9 @@ GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label, uint32_
 {
 	GLuint texture = 0;
 	
+#ifndef __EMSCRIPTEN__
 	if (samples == 1)
+#endif
 	{
 		texture = genTexture(label);
 		if (bytes == 1)
@@ -269,6 +271,7 @@ GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label, uint32_
 			throw bbe::IllegalArgumentException();
 		}
 	}
+#ifndef __EMSCRIPTEN__
 	else
 	{
 		texture = genTextureMultisampled(label);
@@ -285,13 +288,16 @@ GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label, uint32_
 			throw bbe::IllegalArgumentException();
 		}
 	}
+#endif
 	textures.add(texture);
 	return texture;
 }
 
 void bbe::INTERNAL::openGl::Framebuffer::addDepthBuffer(const char* label)
 {
+#ifndef __EMSCRIPTEN__
 	if (samples == 1)
+#endif
 	{
 		depthBuffer = genTexture(label);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
@@ -299,6 +305,7 @@ void bbe::INTERNAL::openGl::Framebuffer::addDepthBuffer(const char* label)
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthBuffer, 0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+#ifndef __EMSCRIPTEN__
 	else
 	{
 		depthBuffer = genTextureMultisampled(label);
@@ -307,6 +314,7 @@ void bbe::INTERNAL::openGl::Framebuffer::addDepthBuffer(const char* label)
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depthBuffer, 0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+#endif
 }
 
 void bbe::INTERNAL::openGl::Framebuffer::clearTextures()
