@@ -6,19 +6,22 @@
 constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 
-// TODO: VAO buffers?
+// Necessary before showcase:
 // TODO: power outlet
-// TODO: Footstep sounds?
+// TODO: Footstep sounds
 // TODO: Does Laptop hit 60 FPS?
 // TODO: Emscripten
 // TODO: Bloom for lights?
 // TODO: Wall Collision with player
-// TODO: Experiments with Shadow Maps (first experiments indicate that they are waaaay too slow. Can we do better? Heavily reduced the lights that need to be taken into account, maybe it's better now)
-// TODO: Geometry is aliasing
-// TODO: Variable room height (PROBLEM: If all lights in neighboring rooms are higher than the own ceiling, the ceiling will not be lit by any of them. If we don't have a light ourselves, the ceiling is completely black)?
 // TODO: Relaxed Baking mode for rooms that aren't directly visible but probably will be soon
 // TODO: Disable imgui and debug drawing in release mode
 // TODO: Proper Emscripten page
+// 
+// Nice to have (I guess?)
+// TODO: VAO buffers?
+// TODO: Experiments with Shadow Maps (first experiments indicate that they are waaaay too slow. Can we do better? Heavily reduced the lights that need to be taken into account, maybe it's better now)
+// TODO: Variable room height (PROBLEM: If all lights in neighboring rooms are higher than the own ceiling, the ceiling will not be lit by any of them. If we don't have a light ourselves, the ceiling is completely black)?
+// TODO: Flickering lights (PROBLEM: We are currently rendering in forward mode with purely baked lights)
 
 namespace br
 {
@@ -307,6 +310,7 @@ namespace br
 			brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
 			//brush.setCamera(bbe::Vector3(0, 0, 1.7f), bbe::Vector3(-1, 0, 1.7f));
 
+			brush.setRenderMode(bbe::RenderMode::FORWARD_NO_LIGHTS);
 			rooms.drawAt(ccnc.getCameraPos(), brush, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling(), assetStore::SkirtingBoard(), drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
 		}
 

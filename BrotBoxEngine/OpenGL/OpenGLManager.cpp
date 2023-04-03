@@ -36,6 +36,18 @@ static GLuint genTexture(const char* label)
 	return texture;
 }
 
+
+static GLuint genTextureMultisampled(const char* label)
+{
+	GLuint texture = 0;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture);
+	//glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	addLabel(GL_TEXTURE, texture, label);
+	return texture;
+}
+
 enum class BufferTarget
 {
 	ARRAY_BUFFER = GL_ARRAY_BUFFER,
@@ -239,18 +251,39 @@ void bbe::INTERNAL::openGl::Framebuffer::destroy()
 
 GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label, uint32_t bytes)
 {
-	GLuint texture = genTexture(label);
-	if (bytes == 1)
+	GLuint texture = 0;
+	
+	if (samples == 1)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-	}
-	else if (bytes == 4)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+		texture = genTexture(label);
+		if (bytes == 1)
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		}
+		else if (bytes == 4)
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+		}
+		else
+		{
+			throw bbe::IllegalArgumentException();
+		}
 	}
 	else
 	{
-		throw bbe::IllegalArgumentException();
+		texture = genTextureMultisampled(label);
+		if (bytes == 1)
+		{
+			glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGBA8, width, height, GL_TRUE);
+		}
+		else if (bytes == 4)
+		{
+			glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGBA32F, width, height, GL_TRUE);
+		}
+		else
+		{
+			throw bbe::IllegalArgumentException();
+		}
 	}
 	textures.add(texture);
 	return texture;
@@ -258,11 +291,22 @@ GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label, uint32_
 
 void bbe::INTERNAL::openGl::Framebuffer::addDepthBuffer(const char* label)
 {
-	depthBuffer = genTexture(label);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthBuffer, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	if (samples == 1)
+	{
+		depthBuffer = genTexture(label);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthBuffer, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+	else
+	{
+		depthBuffer = genTextureMultisampled(label);
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_DEPTH24_STENCIL8, width, height, GL_TRUE);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depthBuffer, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 }
 
 void bbe::INTERNAL::openGl::Framebuffer::clearTextures()
@@ -284,7 +328,8 @@ void bbe::INTERNAL::openGl::Framebuffer::finalize(const char* label)
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 	for (GLenum i = 0; i < (GLenum)textures.getLength(); i++)
 	{
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, textures[i], 0);
+		if (samples == 1) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, textures[i], 0);
+		else              glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D_MULTISAMPLE, textures[i], 0);
 	}
 
 	bbe::List<GLenum> attachements;
@@ -296,6 +341,11 @@ void bbe::INTERNAL::openGl::Framebuffer::finalize(const char* label)
 
 	addLabel(GL_FRAMEBUFFER, framebuffer, label);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void bbe::INTERNAL::openGl::Framebuffer::setSamples(GLsizei samples)
+{
+	this->samples = samples;
 }
 
 static GLint screenSizePos2d = 0;
@@ -457,6 +507,49 @@ bbe::INTERNAL::openGl::MrtProgram bbe::INTERNAL::openGl::OpenGLManager::init3dSh
 	else label = "3dMrt";
 
 	program.addShaders(label, vertexShaderSrc.getRaw(), fragmentShaderSource.getRaw(),
+		{
+			{UT::UT_vec4,      "inColor"   , &program.inColorPos3dMrt   },
+			{UT::UT_mat4,      "view"      , &program.viewPos3dMrt	    },
+			{UT::UT_mat4,      "projection", &program.projectionPos3dMrt},
+			{UT::UT_mat4,      "model"	   , &program.modelPos3dMrt	    },
+			{UT::UT_sampler2D, "albedo"    , &program.albedoTexMrt      },
+			{UT::UT_sampler2D, "normals"   , &program.normalsTexMrt     },
+			{UT::UT_sampler2D, "emissions" , &program.emissionsTexMrt   },
+		});
+
+	return program;
+}
+
+bbe::INTERNAL::openGl::MrtProgram bbe::INTERNAL::openGl::OpenGLManager::init3dForwardNoLight()
+{
+	MrtProgram program;
+	bbe::String vertexShaderSrc =
+		"in vec3 inPos;"
+		"in vec3 inNormal;"
+		"in vec2 inUvCoord;"
+		"out vec4 passPos;"
+		"out vec4 passNormal;"
+		"out vec2 passUvCoord;"
+		"void main()"
+		"{"
+		"   vec4 worldPos = model * vec4(inPos, 1.0);"
+		"   gl_Position = projection * view * worldPos * vec4(1.0, -1.0, 1.0, 1.0);"
+		"   passPos = view * worldPos;"
+		"   passNormal = view * model * vec4(inNormal, 0.0);"
+		"   passUvCoord = inUvCoord;"
+		"}";
+
+	bbe::String fragmentShaderSource =
+		"in vec4 passPos;"
+		"in vec4 passNormal;"
+		"in vec2 passUvCoord;"
+		"layout (location = 0) out vec4 outAlbedo;"
+		"void main()"
+		"{"
+		"   outAlbedo = inColor * texture(albedo, passUvCoord) * texture(emissions, passUvCoord);"
+		"}";
+
+	program.addShaders("ForwardNoLight", vertexShaderSrc.getRaw(), fragmentShaderSource.getRaw(),
 		{
 			{UT::UT_vec4,      "inColor"   , &program.inColorPos3dMrt   },
 			{UT::UT_mat4,      "view"      , &program.viewPos3dMrt	    },
@@ -760,8 +853,17 @@ bbe::INTERNAL::openGl::Framebuffer bbe::INTERNAL::openGl::OpenGLManager::getGeom
 
 void bbe::INTERNAL::openGl::OpenGLManager::initFrameBuffers()
 {
+	// TODO Might not be necessary to create if we stay in FORWARD_NO_LIGHT mode
 	mrtFb.destroy(); // For resizing
 	mrtFb = getGeometryBuffer("GeometryBuffer", m_windowWidth, m_windowHeight, false);
+
+	// TODO Might not be necessary to create if we stay in DEFERRED_SHADING mode
+	forwardNoLightFb.destroy();
+	forwardNoLightFb = Framebuffer(m_windowWidth, m_windowHeight);
+	forwardNoLightFb.setSamples(8);
+	forwardNoLightFb.addTexture("ColorBuffer ForwardNoLight");
+	forwardNoLightFb.addDepthBuffer("DepthBuffer ForwardNoLight");
+	forwardNoLightFb.finalize("ForwardNoLightBuffer");
 
 	postProcessingFb.destroy();
 	postProcessingFb = Framebuffer(m_windowWidth, m_windowHeight);
@@ -791,6 +893,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 	GLint normalsTex = 0;
 	GLint emissionsTex = 0;
 	bbe::INTERNAL::openGl::OpenGLFragmentShader* fs = nullptr;
+	bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD* fs3d = nullptr;
 	if (shader)
 	{
 		if (shader->m_prendererData != nullptr)
@@ -804,34 +907,38 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 
 		if (!baking)
 		{
-			program = fs->getThreeD().program;
-			modelPos = fs->getThreeD().modelPos;
-			if (fs->getThreeD().errorLog.getLength() > 0)
-			{
-				std::cout << fs->getThreeD().errorLog << std::endl;
-				fs->getThreeD().errorLog = "";
-			}
+			     if (m_renderMode == bbe::RenderMode::DEFERRED)          fs3d = &fs->getThreeD();
+			else if (m_renderMode == bbe::RenderMode::FORWARD_NO_LIGHTS) fs3d = &fs->getThreeDForwardNoLight();
+			else throw bbe::IllegalStateException();
 		}
 		else
 		{
-			program = fs->getThreeDBake().program;
-			modelPos = fs->getThreeDBake().modelPos;
-			if (fs->getThreeDBake().errorLog.getLength() > 0)
-			{
-				std::cout << fs->getThreeDBake().errorLog << std::endl;
-				fs->getThreeDBake().errorLog = "";
-			}
+			fs3d = &fs->getThreeDBake();
 		}
+
+		program = fs3d->program;
+		modelPos = fs3d->modelPos;
 	}
 	else
 	{
 		if (!baking)
 		{
-			program = m_program3dMrt.program;
-			modelPos = m_program3dMrt.modelPos3dMrt;
-			albedoTex = m_program3dMrt.albedoTexMrt;
-			normalsTex = m_program3dMrt.normalsTexMrt;
-			emissionsTex = m_program3dMrt.emissionsTexMrt;
+			if (m_renderMode == bbe::RenderMode::DEFERRED)
+			{
+				program = m_program3dMrt.program;
+				modelPos = m_program3dMrt.modelPos3dMrt;
+				albedoTex = m_program3dMrt.albedoTexMrt;
+				normalsTex = m_program3dMrt.normalsTexMrt;
+				emissionsTex = m_program3dMrt.emissionsTexMrt;
+			}
+			else if (m_renderMode == bbe::RenderMode::FORWARD_NO_LIGHTS)
+			{
+				program      = m_program3dForwardNoLight.program;
+				modelPos     = m_program3dForwardNoLight.modelPos3dMrt;
+				albedoTex    = m_program3dForwardNoLight.albedoTexMrt;
+				normalsTex   = m_program3dForwardNoLight.normalsTexMrt;
+				emissionsTex = m_program3dForwardNoLight.emissionsTexMrt;
+			}
 		}
 		else
 		{
@@ -861,22 +968,28 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 		}
 		else
 		{
-			glUniformMatrix4fv(fs->getThreeD().projectionPos, 1, GL_FALSE, &m_projection[0]);
-			glUniformMatrix4fv(fs->getThreeD().viewPos, 1, GL_FALSE, &m_view[0]);
-			glUniform4f(fs->getThreeD().color3DPos, m_color3d.r, m_color3d.g, m_color3d.b, m_color3d.a);
+			glUniformMatrix4fv(fs3d->projectionPos, 1, GL_FALSE, &m_projection[0]);
+			glUniformMatrix4fv(fs3d->viewPos, 1, GL_FALSE, &m_view[0]);
+			glUniform4f(fs3d->color3DPos, m_color3d.r, m_color3d.g, m_color3d.b, m_color3d.a);
 		}
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	GLint positionAttribute = glGetAttribLocation(program, "inPos");
-	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
-	glEnableVertexAttribArray(positionAttribute);
-	glVertexAttribDivisor(positionAttribute, 0);
+	if (positionAttribute != -1)
+	{
+		glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+		glEnableVertexAttribArray(positionAttribute);
+		glVertexAttribDivisor(positionAttribute, 0);
+	}
 
 	GLint normalPosition = glGetAttribLocation(program, "inNormal");
-	glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(normalPosition);
-	glVertexAttribDivisor(normalPosition, 0);
+	if (normalPosition != -1)
+	{
+		glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(normalPosition);
+		glVertexAttribDivisor(normalPosition, 0);
+	}
 
 	GLint uvPosition = glGetAttribLocation(program, "inUvCoord");
 	if (uvPosition != -1)
@@ -886,7 +999,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 		glVertexAttribDivisor(uvPosition, 0);
 	}
 
-	//if (!shader) // TODO: Maybe want to make these available in custom shaders?
 	{
 		if (!albedo) albedo = &bbe::Image::white();
 		if (!normals) normals = &bbe::Image::black();
@@ -1102,6 +1214,16 @@ void bbe::INTERNAL::openGl::OpenGLManager::flipDrawcallStats()
 	*amountOfDrawcallsWrite = 0;
 }
 
+GLuint bbe::INTERNAL::openGl::OpenGLManager::getModeFramebuffer()
+{
+	switch (m_renderMode)
+	{
+	case(bbe::RenderMode::DEFERRED):          return mrtFb           .framebuffer;
+	case(bbe::RenderMode::FORWARD_NO_LIGHTS): return forwardNoLightFb.framebuffer;
+	default: throw bbe::IllegalStateException();
+	}
+}
+
 bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
 {
 }
@@ -1165,6 +1287,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	m_program2d = init2dShaders();
 	m_program2dTex = init2dTexShaders();
 	m_program3dMrt = init3dShadersMrt(false);
+	m_program3dForwardNoLight = init3dForwardNoLight();
 	m_program3dAmbient = init3dShadersAmbient();
 	m_programPostProcessing = init3dPostProcessing();
 	m_programBakingGammaCorrection = initBakingGammaCorrection();
@@ -1193,22 +1316,23 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 {
 	imguiStop();
 
-	OpenGLSphere::destroy();
-	OpenGLCube::destroy();
-	OpenGLCircle::destroy();
+	OpenGLSphere   ::destroy();
+	OpenGLCube     ::destroy();
+	OpenGLCircle   ::destroy();
 	OpenGLRectangle::destroy();
 
-	mrtFb.destroy();
-	postProcessingFb.destroy();
-	m_program3dMrt.destroy();
-	m_programPostProcessing.destroy();
+	mrtFb                         .destroy();
+	forwardNoLightFb              .destroy();
+	postProcessingFb              .destroy();
+	m_program3dMrt                .destroy();
+	m_programPostProcessing       .destroy();
 	m_programBakingGammaCorrection.destroy();
-	m_program3dLight.destroy();
-	m_program3dMrtBaking.destroy();
-	m_program3dLightBaking.destroy();
+	m_program3dLight              .destroy();
+	m_program3dMrtBaking          .destroy();
+	m_program3dLightBaking        .destroy();
 	glDeleteBuffers(1, &m_imageUvBuffer);
 	m_program2dTex.destroy();
-	m_program2d.destroy();
+	m_program2d   .destroy();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
@@ -1222,7 +1346,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	GLuint ibo = genBuffer("preDraw2DIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 	glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFb.framebuffer);
 	postProcessingFb.clearTextures();
-	
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, forwardNoLightFb.framebuffer);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFb.framebuffer);
+	glBlitFramebuffer(0, 0, m_windowWidth, m_windowHeight, 0, 0, m_windowWidth, m_windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFb.framebuffer);
+
 	mrtFb.useAsInput();
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
@@ -1265,6 +1393,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
 {
 	glEnable(GL_DEPTH_TEST);
 	m_primitiveBrush3D.INTERNAL_beginDraw(m_windowWidth, m_windowHeight, this);
+	glBindFramebuffer(GL_FRAMEBUFFER, forwardNoLightFb.framebuffer);
+	forwardNoLightFb.clearTextures();
 	m_program3dMrt.use();
 	glBindFramebuffer(GL_FRAMEBUFFER, mrtFb.framebuffer);
 	mrtFb.clearTextures();
@@ -1365,12 +1495,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 
 	GLint scalePosOffsetPos = fs->getTwoD().scalePosOffsetPos;
 	GLint rotationPos = fs->getTwoD().rotationPos;
-
-	if (fs->getTwoD().errorLog.getLength() > 0)
-	{
-		std::cout << fs->getTwoD().errorLog << std::endl;
-		fs->getTwoD().errorLog = "";
-	}
 
 	glUseProgram(program);
 
@@ -1510,6 +1634,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::setColor3D(const bbe::Color& color)
 	bbe::Color copy = color;
 	copy.a = 1.f;
 	m_program3dMrt.uniform4f(m_program3dMrt.inColorPos3dMrt, copy);
+	m_program3dForwardNoLight.uniform4f(m_program3dForwardNoLight.inColorPos3dMrt, copy);
 	m_color3d = copy;
 }
 
@@ -1517,6 +1642,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos,
 {
 	m_program3dMrt.uniformMatrix4fv(m_program3dMrt.viewPos3dMrt, GL_FALSE, view);
 	m_program3dMrt.uniformMatrix4fv(m_program3dMrt.projectionPos3dMrt, GL_FALSE, projection);
+	m_program3dForwardNoLight.uniformMatrix4fv(m_program3dForwardNoLight.viewPos3dMrt, GL_FALSE, view);
+	m_program3dForwardNoLight.uniformMatrix4fv(m_program3dForwardNoLight.projectionPos3dMrt, GL_FALSE, projection);
 	m_program3dLight.uniformMatrix4fv(m_program3dLight.projectionPos3dLight, GL_FALSE, projection);
 	m_view = view;
 	m_projection = projection;
@@ -1525,17 +1652,17 @@ void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos,
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)
 {
-	fillInternalMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getAmountOfIndices(), nullptr, nullptr, nullptr, nullptr, mrtFb.framebuffer, false, bbe::Color::white());
+	fillInternalMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getAmountOfIndices(), nullptr, nullptr, nullptr, nullptr, getModeFramebuffer(), false, bbe::Color::white());
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
 {
-	fillInternalMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getAmountOfIndices(), nullptr, nullptr, nullptr, nullptr, mrtFb.framebuffer, false, bbe::Color::white());
+	fillInternalMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getAmountOfIndices(), nullptr, nullptr, nullptr, nullptr, getModeFramebuffer(), false, bbe::Color::white());
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader)
 {
-	fillModel(transform, model, albedo, normals, emissions, shader, mrtFb.framebuffer, false, bbe::Color::white());
+	fillModel(transform, model, albedo, normals, emissions, shader, getModeFramebuffer(), false, bbe::Color::white());
 }
 
 struct OcclusionQuery : public bbe::DataProvider<bool>
@@ -1577,6 +1704,11 @@ struct OcclusionQuery : public bbe::DataProvider<bool>
 bbe::Future<bool> bbe::INTERNAL::openGl::OpenGLManager::isCubeVisible(const Cube& cube)
 {
 	return bbe::Future<bool>(new OcclusionQuery(this, cube));
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::setRenderMode(bbe::RenderMode renderMode)
+{
+	m_renderMode = renderMode;
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, const bbe::Color& lightColor, const bbe::Color& specularColor, LightFalloffMode falloffMode)

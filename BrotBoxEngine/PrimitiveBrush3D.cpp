@@ -149,6 +149,11 @@ void bbe::PrimitiveBrush3D::fillModel(const bbe::Matrix4& transform, const bbe::
 {
 	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->fillModel(transform, model, albedo, normals, emissions, shader);
 }
+
+void bbe::PrimitiveBrush3D::setRenderMode(bbe::RenderMode renderMode)
+{
+	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->setRenderMode(renderMode);
+}
 #endif
 
 void bbe::PrimitiveBrush3D::setColor(float r, float g, float b, float a)

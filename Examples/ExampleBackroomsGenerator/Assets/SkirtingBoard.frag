@@ -10,11 +10,15 @@ in vec4 passNormal;
 in vec2 passUvCoord;
 in vec3 worldNormal;
 in vec3 upViewSpace;
+#ifdef FORWARD_NO_LIGHT
+layout (location = 0) out vec4 outAlbedo;
+#else
 layout (location = 0) out vec4 outPos;
 layout (location = 1) out vec4 outNormal;
 layout (location = 2) out vec4 outAlbedo;
 layout (location = 3) out vec4 outSpecular;
 layout (location = 4) out vec4 outEmissions;
+#endif
 
 float hash(vec3 p) {
 	p = mod(p, 10000.0f);
@@ -95,9 +99,14 @@ void main()
 	float viewAngle = acos(abs(dot(posNormalized, right)));
 	float distanceToCamera = length(passPos);
 	float fragmentSpread = (distanceToCamera * sin(M_PI / 3.0 / 1280.0 * 2.0)) / sin(viewAngle); // TODO, "M_PI / 3.0 / 1280.0" must be replaces with pixel angel
+	vec4 albedo = vec4(getAlbedo(passWorldPos.xyz, normalize(worldNormal), fragmentSpread), 1.0) * inColor;
+#ifdef FORWARD_NO_LIGHT
+	outAlbedo = albedo * texture(emissions, passUvCoord);
+#else
 	outPos    = passPos;
 	outNormal = vec4(normalize(passNormal.xyz), 1.0);
-	outAlbedo = vec4(getAlbedo(passWorldPos.xyz, normalize(worldNormal), fragmentSpread), 1.0) * inColor;
+	outAlbedo = albedo;
 	outSpecular = vec4(1.0, 0.4, 0.0, 1.0);
 	outEmissions = texture(emissions, passUvCoord);
+#endif
 }

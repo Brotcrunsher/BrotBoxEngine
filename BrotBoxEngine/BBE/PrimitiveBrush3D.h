@@ -11,6 +11,7 @@
 #include "../BBE/Color.h"
 #include "../BBE/Model.h"
 #include "../BBE/Future.h"
+#include "../BBE/RenderMode.h"
 
 namespace bbe
 {
@@ -77,6 +78,7 @@ namespace bbe
 		void fillRectangle(const bbe::Matrix4& transform, const Image* albedo = nullptr, const Image* normals = nullptr, const Image* emissions = nullptr, const bbe::FragmentShader* shader = nullptr);
 		void fillCube(const Cube& cube, const Image* albedo, const Image* normals = nullptr, const Image* emissions = nullptr, const bbe::FragmentShader* shader = nullptr);
 		void fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo = nullptr, const Image* normals = nullptr, const Image* emissions = nullptr, const bbe::FragmentShader* shader = nullptr);
+		void setRenderMode(bbe::RenderMode renderMode);
 #endif
 
 		void setColor(float r, float g, float b, float a);
@@ -86,8 +88,6 @@ namespace bbe
 		void setColorHSV(float h, float s, float v);
 
 		void setCamera(const Vector3 &cameraPos, const Vector3 &cameraTarget, const Vector3 &cameraUpVector = Vector3(0, 0, 1.0f));
-
-
 
 		void setFillMode(FillMode fm);
 		FillMode getFillMode();

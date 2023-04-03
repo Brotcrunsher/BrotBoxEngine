@@ -1,7 +1,7 @@
 #include "BBE/OpenGL/OpenGLFragmentShader.h"
 #include "BBE/FatalErrors.h"
 
-static GLuint getShader(GLenum shaderType, const char* src, bbe::String& errorLog)
+static GLuint getShader(GLenum shaderType, const char* src)
 {
 	GLuint shader = glCreateShader(shaderType);
 	glShaderSource(shader, 1, &src, NULL);
@@ -16,8 +16,7 @@ static GLuint getShader(GLenum shaderType, const char* src, bbe::String& errorLo
 		bbe::List<char> log;
 		log.resizeCapacityAndLength(length);
 		glGetShaderInfoLog(shader, length, &length, log.getRaw());
-		errorLog += log.getRaw();
-		errorLog += "\n";
+		std::cout << log.getRaw() << std::endl;
 	}
 	return shader;
 }
@@ -27,8 +26,8 @@ static void build(bbe::INTERNAL::openGl::OpenGLFragmentShader::ShaderProgramTrip
 	if (prog.built) return;
 	prog.built = true;
 
-	prog.vertex = getShader(GL_VERTEX_SHADER, vertexShaderSource, prog.errorLog);
-	prog.fragment = getShader(GL_FRAGMENT_SHADER, fragmentShaderSource, prog.errorLog);
+	prog.vertex = getShader(GL_VERTEX_SHADER, vertexShaderSource);
+	prog.fragment = getShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
 
 	prog.program = glCreateProgram();
 	glAttachShader(prog.program, prog.vertex);
@@ -91,37 +90,59 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::TwoD& bbe::INTERNAL::openGl::OpenGL
 	return twoD;
 }
 
+static char const* vertexShader3dSource =
+	"#version 300 es\n"
+	"precision highp float;"
+	"uniform mat4 view;"
+	"uniform mat4 projection;"
+	"uniform mat4 model;"
+	"in vec3 inPos;"
+	"in vec3 inNormal;"
+	"in vec2 inUvCoord;"
+	"out vec4 passPos;"
+	"out vec4 passWorldPos;"
+	"out vec4 passNormal;"
+	"out vec2 passUvCoord;"
+	"out vec3 worldNormal;"
+	"out vec3 upViewSpace;"
+	"void main()"
+	"{"
+	"   passWorldPos = model * vec4(inPos, 1.0);"
+	"   gl_Position = projection * view * passWorldPos * vec4(1.0, -1.0, 1.0, 1.0);"
+	"   passPos = view * passWorldPos;"
+	"   passNormal = view * model * vec4(inNormal, 0.0);"
+	"   worldNormal = (model * vec4(inNormal, 0.0)).xyz;"
+	"   passUvCoord = inUvCoord;"
+	"   upViewSpace = (view * vec4(0.0, 0.0, 1.0, 0.0)).xyz;"
+	"}";
 bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD& bbe::INTERNAL::openGl::OpenGLFragmentShader::getThreeD()
 {
-	char const* vertexShader3dSource =
-		"#version 300 es\n"
-		"precision highp float;"
-		"uniform mat4 view;"
-		"uniform mat4 projection;"
-		"uniform mat4 model;"
-		"in vec3 inPos;"
-		"in vec3 inNormal;"
-		"in vec2 inUvCoord;"
-		"out vec4 passPos;"
-		"out vec4 passWorldPos;"
-		"out vec4 passNormal;"
-		"out vec2 passUvCoord;"
-		"out vec3 worldNormal;"
-		"out vec3 upViewSpace;"
-		"void main()"
-		"{"
-		"   passWorldPos = model * vec4(inPos, 1.0);"
-		"   gl_Position = projection * view * passWorldPos * vec4(1.0, -1.0, 1.0, 1.0);"
-		"   passPos = view * passWorldPos;"
-		"   passNormal = view * model * vec4(inNormal, 0.0);"
-		"   worldNormal = (model * vec4(inNormal, 0.0)).xyz;"
-		"   passUvCoord = inUvCoord;"
-		"   upViewSpace = (view * vec4(0.0, 0.0, 1.0, 0.0)).xyz;"
-		"}";
 	char const* fragmentShaderSource = code.getRaw();
 	build(threeD, vertexShader3dSource, fragmentShaderSource);
 
 	return threeD;
+}
+
+bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD& bbe::INTERNAL::openGl::OpenGLFragmentShader::getThreeDForwardNoLight()
+{
+	if (!threeDForwardNoLight.built)
+	{
+		// TODO This is a super naive approach to injecting "#define FORWARD_NO_LIGHT 1" as the second line into the fragment shader
+		//      code. It's slow and wasteful. Improve.
+		bbe::String s = code.getRaw();
+		bbe::DynamicArray<bbe::Utf8String> lines = s.split("\n");
+		bbe::String newString = lines[0];
+		newString += "\n#define FORWARD_NO_LIGHT 1\n";
+		for (size_t i = 1; i < lines.getLength(); i++)
+		{
+			newString += "\n";
+			newString += lines[i];
+		}
+		char const* fragmentShaderSource = newString.getRaw();
+		build(threeDForwardNoLight, vertexShader3dSource, fragmentShaderSource);
+	}
+
+	return threeDForwardNoLight;
 }
 
 bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD& bbe::INTERNAL::openGl::OpenGLFragmentShader::getThreeDBake()

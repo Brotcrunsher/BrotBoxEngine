@@ -4,6 +4,7 @@
 #include "../BBE/PrimitiveBrush2D.h"
 #include "../BBE/PrimitiveBrush3D.h"
 #include "../BBE/RenderManager.h"
+#include "../BBE/RenderMode.h"
 #include "../BBE/PosNormalPair.h"
 #include "../BBE/Model.h"
 #include "../BBE/Image.h"
@@ -104,6 +105,7 @@ namespace bbe
 				GLsizei width = 0;
 				GLsizei height = 0;
 				GLuint depthBuffer = 0;
+				GLsizei samples = 1;
 
 				Framebuffer();
 				Framebuffer(GLsizei width, GLsizei height);
@@ -114,6 +116,7 @@ namespace bbe
 				void clearTextures();
 				void useAsInput();
 				void finalize(const char* label);
+				void setSamples(GLsizei samples);
 			};
 
 			struct InstanceData2D
@@ -134,6 +137,7 @@ namespace bbe
 				Program m_program2d;
 				Program m_program2dTex;
 				MrtProgram m_program3dMrt;
+				MrtProgram m_program3dForwardNoLight;
 				Program m_program3dAmbient;
 				Program m_programPostProcessing;
 				Program m_programBakingGammaCorrection;
@@ -143,6 +147,7 @@ namespace bbe
 				LightProgram m_program3dLightBaking;
 
 				Framebuffer mrtFb;
+				Framebuffer forwardNoLightFb;
 
 				Framebuffer postProcessingFb;
 
@@ -159,6 +164,7 @@ namespace bbe
 				Program init2dShaders();
 				Program init2dTexShaders();
 				MrtProgram init3dShadersMrt(bool baking);
+				MrtProgram init3dForwardNoLight();
 				Program init3dShadersAmbient();
 				Program init3dPostProcessing();
 				Program initBakingGammaCorrection();
@@ -188,6 +194,8 @@ namespace bbe
 				bbe::Color m_color2d;
 				bbe::Color m_color3d;
 
+				bbe::RenderMode m_renderMode;
+
 				bbe::List<InstanceData2D> instanceDatas;
 				void addInstancedData2D(PreviousDrawCall2D type, float x, float y, float width, float height, float rotation);
 				void flushInstanceData2D();
@@ -201,6 +209,8 @@ namespace bbe
 				uint32_t* amountOfDrawcallsWrite = amountOfDrawcallsBuffer + 1;
 				void addDrawcallStat();
 				void flipDrawcallStats();
+
+				GLuint getModeFramebuffer();
 
 			public:
 				OpenGLManager();
@@ -242,6 +252,7 @@ namespace bbe
 				virtual void fillSphere3D(const IcoSphere& sphere) override;
 				void fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader);
 				bbe::Future<bool> isCubeVisible(const Cube& cube);
+				void setRenderMode(bbe::RenderMode renderMode);
 				virtual void addLight(const bbe::Vector3& pos, float lightStrengh, const bbe::Color& lightColor, const bbe::Color& specularColor, LightFalloffMode falloffMode) override;
 
 				virtual void imguiStart() override;

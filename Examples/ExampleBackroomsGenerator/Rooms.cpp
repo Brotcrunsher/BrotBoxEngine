@@ -692,7 +692,6 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 
 	// Making sure all neighbors lights have been created.
 	bbe::List<size_t> roomLightSources = generateMulti(roomi, 2);
-	Room& r = rooms[roomi];
 
 	bbe::List<bbe::PointLight> lights;
 	for (size_t i = 0; i < roomLightSources.getLength(); i++)
@@ -701,11 +700,12 @@ bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* s
 		{
 			bbe::PointLight& light = rooms[roomLightSources[i]].lights[k].light;
 			bbe::Vector2i pos((int32_t)light.pos.x, (int32_t)light.pos.y);
-			int32_t dist = r.boundingBox.getDistanceTo(pos);
+			int32_t dist = rooms[roomi].boundingBox.getDistanceTo(pos);
 			if(dist < 50 && doesPointSeeRoomInterior(light.pos, roomi)) lights.add(light);
 		}
 	}
 
+	Room& r = rooms[roomi];
 	if (r.bakedCeiling.isLoadedCpu() == false && r.bakedCeiling.isLoadedGpu() == false)
 	{
 		r.bakedCeiling = game->bakeLights(r.ceilingTranslation(), r.ceilingModel.model, nullptr, shaderCeiling, r.ceilingModel.uvDimensions, lights);

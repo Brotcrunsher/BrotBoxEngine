@@ -10,11 +10,15 @@ in vec4 passNormal;
 in vec2 passUvCoord;
 in vec3 worldNormal;
 in vec3 upViewSpace;
+#ifdef FORWARD_NO_LIGHT
+layout (location = 0) out vec4 outAlbedo;
+#else
 layout (location = 0) out vec4 outPos;
 layout (location = 1) out vec4 outNormal;
 layout (location = 2) out vec4 outAlbedo;
 layout (location = 3) out vec4 outSpecular;
 layout (location = 4) out vec4 outEmissions;
+#endif
 
 float hash(vec3 p) {
 	p = mod(p, 10000.0f);
@@ -86,21 +90,25 @@ vec3 wallMat(vec3 x, vec3 normal, float fragmentSpread) {
 
 void main()
 {
-   vec3 normalNormalized = normalize(passNormal.xyz);
-   vec3 right = normalize(cross(normalNormalized, upViewSpace));
-   vec3 posNormalized = normalize(passPos.xyz);
-   float viewAngle = acos(abs(dot(posNormalized, right)));
-   float distanceToCamera = length(passPos);
-   float fragmentSpread = (distanceToCamera * sin(M_PI / 3.0 / 1280.0 * 2.0)) / sin(viewAngle); // TODO, "M_PI / 3.0 / 1280.0" must be replaces with pixel angel
-   
-   outNormal = vec4(normalNormalized, 1.0);
-   outPos    = passPos;
-   
-   float mult = 100.0;
-   float noiseVal = noise(mult * (passWorldPos.xyz * 0.01));
-   vec3 c1 = vec3(83.0 / 255.0, 67.0 / 255.0, 16.0 / 255.0);
-   vec3 c2 = vec3(104.0 / 255.0, 85.0 / 255.0, 27.0 / 255.0);
-   outAlbedo = vec4((mix(c1, c2, noiseVal)) + wallMat(passWorldPos.xyz, normalize(worldNormal), fragmentSpread), 1.0) * inColor;
-   outSpecular = vec4(1.0, 0.4, 0.0, 1.0);
-   outEmissions = texture(emissions, passUvCoord);
+	vec3 normalNormalized = normalize(passNormal.xyz);
+	vec3 right = normalize(cross(normalNormalized, upViewSpace));
+	vec3 posNormalized = normalize(passPos.xyz);
+	float viewAngle = acos(abs(dot(posNormalized, right)));
+	float distanceToCamera = length(passPos);
+	float fragmentSpread = (distanceToCamera * sin(M_PI / 3.0 / 1280.0 * 2.0)) / sin(viewAngle); // TODO, "M_PI / 3.0 / 1280.0" must be replaces with pixel angel
+	
+	float mult = 100.0;
+	float noiseVal = noise(mult * (passWorldPos.xyz * 0.01));
+	vec3 c1 = vec3(83.0 / 255.0, 67.0 / 255.0, 16.0 / 255.0);
+	vec3 c2 = vec3(104.0 / 255.0, 85.0 / 255.0, 27.0 / 255.0);
+	vec4 albedo = vec4((mix(c1, c2, noiseVal)) + wallMat(passWorldPos.xyz, normalize(worldNormal), fragmentSpread), 1.0) * inColor;
+#ifdef FORWARD_NO_LIGHT
+	outAlbedo = albedo * texture(emissions, passUvCoord);
+#else
+	outAlbedo = albedo;
+	outNormal = vec4(normalNormalized, 1.0);
+	outPos    = passPos;
+	outSpecular = vec4(1.0, 0.4, 0.0, 1.0);
+	outEmissions = texture(emissions, passUvCoord);
+#endif
 }

@@ -8,12 +8,15 @@ in vec4 passPos;
 in vec4 passWorldPos;
 in vec4 passNormal;
 in vec2 passUvCoord;
+#ifdef FORWARD_NO_LIGHT
+layout (location = 0) out vec4 outAlbedo;
+#else
 layout (location = 0) out vec4 outPos;
 layout (location = 1) out vec4 outNormal;
 layout (location = 2) out vec4 outAlbedo;
 layout (location = 3) out vec4 outSpecular;
 layout (location = 4) out vec4 outEmissions;
-
+#endif
 
 float hash(vec3 p) {
 	p = mod(p, 10000.0f);
@@ -84,9 +87,14 @@ vec3 getColor(vec3 x) {
 
 void main()
 {
-   outPos      = passPos;
-   outNormal   = vec4(normalize(passNormal.xyz), 1.0);
-   outAlbedo   = vec4(getColor(passWorldPos.xyz), 1.0) * inColor;
-   outSpecular = vec4(1.0, 0.0, 0.0, 1.0);
-   outEmissions = texture(emissions, passUvCoord);
+	vec4 albedo = vec4(getColor(passWorldPos.xyz), 1.0) * inColor;
+#ifdef FORWARD_NO_LIGHT
+	outAlbedo = albedo * texture(emissions, passUvCoord);
+#else
+	outPos      = passPos;
+	outNormal   = vec4(normalize(passNormal.xyz), 1.0);
+	outAlbedo   = albedo;
+	outSpecular = vec4(1.0, 0.0, 0.0, 1.0);
+	outEmissions = texture(emissions, passUvCoord);
+#endif
 }

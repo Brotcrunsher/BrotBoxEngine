@@ -18,7 +18,6 @@ namespace bbe
 					GLuint vertex = 0;
 					GLuint fragment = 0;
 					GLuint program = 0;
-					bbe::String errorLog;
 					bool built = false;
 
 					void destroy();
@@ -48,10 +47,12 @@ namespace bbe
 				bbe::List<char> code;
 				TwoD twoD;
 				ThreeD threeD;
+				ThreeD threeDForwardNoLight;
 				ThreeD threeDBake;
 			public:
 				TwoD& getTwoD();
 				ThreeD& getThreeD();
+				ThreeD& getThreeDForwardNoLight();
 				ThreeD& getThreeDBake();
 
 				bool hasTwoD() const;

@@ -82,7 +82,7 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	m_renderManager->init(title, major, minor, patch, m_pwindow, static_cast<uint32_t>(width * windowXScale), static_cast<uint32_t>(height * windowYScale));
 
 
-	std::cout << "Setting glwf callbacks" << std::endl;
+	std::cout << "Setting glfw callbacks" << std::endl;
 	glfwWrapper::glfwSetKeyCallback(m_pwindow, INTERNAL_keyCallback);
 	glfwWrapper::glfwSetCharCallback(m_pwindow, INTERNAL_charCallback);
 	glfwWrapper::glfwSetCursorPosCallback(m_pwindow, INTERNAL_cursorPosCallback);
@@ -113,6 +113,9 @@ void bbe::Window::preDraw()
 	m_renderManager->preDraw();
 	m_renderManager->setColor2D(bbe::Color(1.0f, 1.0f, 1.0f, 1.0f));
 	m_renderManager->setColor3D(bbe::Color(1.0f, 1.0f, 1.0f, 1.0f));
+#ifdef BBE_RENDERER_OPENGL
+	((bbe::INTERNAL::openGl::OpenGLManager*)m_renderManager.get())->setRenderMode(bbe::RenderMode::DEFERRED);
+#endif
 }
 
 bool bbe::Window::keepAlive()
