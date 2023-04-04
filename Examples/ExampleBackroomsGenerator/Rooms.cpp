@@ -101,7 +101,8 @@ void br::Rooms::update(float timeSinceLastFrame, const bbe::Vector3& camPos, con
 		size_t roomi = bakedRoomIds[i];
 		Room& r = rooms[roomi];
 		r.timeSinceLastTouch += timeSinceLastFrame;
-		if (r.timeSinceLastTouch > 180.0f)
+		// Checking time in case the room is further away than the max dist, but still visible (e.g. through long corridors)
+		if (getDistanceToRoom(roomi, camPos) > 100 && r.timeSinceLastTouch > 10.0f)
 		{
 			unbakeLights(roomi);
 			i--;
@@ -1092,6 +1093,11 @@ bool br::Rooms::doesPointSeeRoomInterior(const bbe::Vector3& pos, size_t roomi)
 	}
 
 	return false;
+}
+
+float br::Rooms::getDistanceToRoom(size_t roomi, const bbe::Vector3 pos)
+{
+	return rooms[roomi].boundingBox.getDistanceTo(bbe::Vector2i((int32_t)pos.x, (int32_t)pos.y));
 }
 
 void br::Rooms::getRooms(bbe::List<size_t>& roomis, size_t roomi, const bbe::Vector2i& position, int32_t maxDist)

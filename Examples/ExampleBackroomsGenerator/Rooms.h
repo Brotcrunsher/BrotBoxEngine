@@ -81,5 +81,7 @@ namespace br
 		bool isPositionInWall(const bbe::Vector3& pos);
 		bool isLineInWall(const bbe::Vector2i& start, const bbe::Vector2i& end);
 		bool doesPointSeeRoomInterior(const bbe::Vector3& pos, size_t roomi);
+
+		float getDistanceToRoom(size_t roomi, const bbe::Vector3 pos);
 	};
 }
