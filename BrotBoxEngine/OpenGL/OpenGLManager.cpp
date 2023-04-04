@@ -1553,6 +1553,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	{
 		v = v.rotate(rotation, rect.getCenter());
 	}
+	uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
 
 	if (image.m_format == ImageFormat::R8)
 	{
@@ -1564,6 +1565,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	}
 
 	GLuint vbo = genBuffer("drawImageVBO", BufferTarget::ARRAY_BUFFER, sizeof(bbe::Vector2) * vertices.getLength(), vertices.getRaw());
+	GLuint ibo = genBuffer("drawImageIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 
 	glUniform2f(scalePos2dTex, 1.0f, 1.0f);
 
@@ -1587,6 +1589,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glDeleteBuffers(1, &ibo);
 	glDeleteBuffers(1, &vbo);
 }
 
