@@ -3,7 +3,7 @@
 #include "BBE/MeshBuilder.h"
 
 constexpr uint32_t wallSpaceScale = 4;
-constexpr uint32_t lightmapResolution = 16;
+constexpr uint32_t lightmapResolution = 4;
 bbe::Rectanglei br::Rooms::shrinkBoundingBoxRec(const bbe::Rectanglei& bounding, const bbe::List<bbe::Rectanglei>& intersections, int32_t index, int32_t& currentBestArea) const
 {
 	if (index == intersections.getLength()) return bounding;
@@ -678,54 +678,115 @@ void br::Rooms::connectGates(size_t roomi)
 	r.lightsModel = Room::ModelOffsetPair{ bbe::Matrix4(), lightMb.getModel(lightmapResolution)}; // TODO: The 0 offset while backing the vertex poses in world coords is a bad idea for accuracy.
 }
 
-bool br::Rooms::bakeLights(size_t roomi, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard)
+bool br::Rooms::bakeLightsStep(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard)
+{
+	if (!rooms[roomi].neighboringLightsDeterimined)
+	{
+		// Making sure all neighbors lights have been created.
+		bbe::List<size_t> roomLightSources = generateMulti(roomi, 2);
+
+		for (size_t i = 0; i < roomLightSources.getLength(); i++)
+		{
+			for (size_t k = 0; k < rooms[roomLightSources[i]].lights.getLength(); k++)
+			{
+				bbe::PointLight& light = rooms[roomLightSources[i]].lights[k].light;
+				bbe::Vector2i pos((int32_t)light.pos.x, (int32_t)light.pos.y);
+				int32_t dist = rooms[roomi].boundingBox.getDistanceTo(pos);
+				if (dist < 50 && doesPointSeeRoomInterior(light.pos, roomi)) rooms[roomi].neighboringLights.add(light);
+			}
+		}
+		rooms[roomi].neighboringLightsDeterimined = true;
+		return true;
+	}
+
+	Room& r = rooms[roomi];
+	bbe::LightBaker& lb = r.lightBaker;
+	bbe::LightBaker::State state = lb.getState();
+
+	if (state == bbe::LightBaker::State::UNINIT || state == bbe::LightBaker::State::DETACHED)
+	{
+		if (r.bakedCeiling.isLoadedCpu() == false && r.bakedCeiling.isLoadedGpu() == false)
+		{
+			lb = bbe::LightBaker(r.ceilingTranslation(), r.ceilingModel.model, nullptr, shaderCeiling, r.ceilingModel.uvDimensions);
+		}
+		else if (r.bakedFloor.isLoadedCpu() == false && r.bakedFloor.isLoadedGpu() == false)
+		{
+			lb = bbe::LightBaker(r.floorTranslation(), r.floorModel.model, nullptr, shaderFloor, r.floorModel.uvDimensions);
+		}
+		else if (rooms[roomi].bakedWalls.getLength() != 1)
+		{
+			lb = bbe::LightBaker(r.wallsModel.offset, r.wallsModel.model.model, nullptr, shaderWall, r.wallsModel.model.uvDimensions);
+		}
+		else if (rooms[roomi].bakedSkirtingBoard.getLength() != 1)
+		{
+			lb = bbe::LightBaker(r.skirtingBoardModel.offset, r.skirtingBoardModel.model.model, nullptr, shaderSkirtingBoard, r.skirtingBoardModel.model.uvDimensions);
+		}
+		else
+		{
+			rooms[roomi].state = RoomGenerationState::lightsBaked;
+			return false;
+		}
+	}
+	else if (state == bbe::LightBaker::State::INIT)
+	{
+		brush.bakeLightMrt(lb);
+	}
+	else if (state == bbe::LightBaker::State::MRT_DONE && lb.getAmountOfBakedLights() < r.neighboringLights.getLength())
+	{
+		brush.bakeLight(lb, r.neighboringLights[lb.getAmountOfBakedLights()]);
+	}
+	else if (state == bbe::LightBaker::State::MRT_DONE)
+	{
+		brush.bakeLightGammaCorrect(lb);
+	}
+	else if (state == bbe::LightBaker::State::GAMMA_CORRECTED)
+	{
+		if (r.bakedCeiling.isLoadedCpu() == false && r.bakedCeiling.isLoadedGpu() == false)
+		{
+			r.bakedCeiling = brush.bakeLightDetach(lb);
+		}
+		else if (r.bakedFloor.isLoadedCpu() == false && r.bakedFloor.isLoadedGpu() == false)
+		{
+			r.bakedFloor = brush.bakeLightDetach(lb);
+		}
+		else if (rooms[roomi].bakedWalls.getLength() != 1)
+		{
+			r.bakedWalls.add(brush.bakeLightDetach(lb));
+		}
+		else if (rooms[roomi].bakedSkirtingBoard.getLength() != 1)
+		{
+			r.bakedSkirtingBoard.add(brush.bakeLightDetach(lb));
+		}
+		else
+		{
+			// Shouldn't happen - right?
+			// Would mean we have finished baking, but reached the end of a new baking process.
+			throw bbe::IllegalStateException();
+		}
+	}
+
+	return true;
+}
+
+bool br::Rooms::bakeLights(size_t roomi, uint32_t& bakingBudget, bbe::PrimitiveBrush3D& brush, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard)
 {
 	rooms[roomi].timeSinceLastTouch = 0.f;
 	if (rooms[roomi].state < RoomGenerationState::gatesConnected) connectGates(roomi);
 	if (rooms[roomi].state != RoomGenerationState::gatesConnected && rooms[roomi].state != RoomGenerationState::baking) return false;
 	rooms[roomi].state = RoomGenerationState::baking;
+	if (bakingBudget == 0) return true;
 
 	if (!bakedRoomIds.contains(roomi)) bakedRoomIds.add(roomi);
 
-	// Making sure all neighbors lights have been created.
-	bbe::List<size_t> roomLightSources = generateMulti(roomi, 2);
+	bool retVal = true;
 
-	bbe::List<bbe::PointLight> lights;
-	for (size_t i = 0; i < roomLightSources.getLength(); i++)
+	while (bakingBudget > 0 && retVal)
 	{
-		for (size_t k = 0; k < rooms[roomLightSources[i]].lights.getLength(); k++)
-		{
-			bbe::PointLight& light = rooms[roomLightSources[i]].lights[k].light;
-			bbe::Vector2i pos((int32_t)light.pos.x, (int32_t)light.pos.y);
-			int32_t dist = rooms[roomi].boundingBox.getDistanceTo(pos);
-			if(dist < 50 && doesPointSeeRoomInterior(light.pos, roomi)) lights.add(light);
-		}
+		bakingBudget--;
+		retVal = bakeLightsStep(roomi, brush, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard);
 	}
 
-	Room& r = rooms[roomi];
-	if (r.bakedCeiling.isLoadedCpu() == false && r.bakedCeiling.isLoadedGpu() == false)
-	{
-		r.bakedCeiling = game->bakeLights(r.ceilingTranslation(), r.ceilingModel.model, nullptr, shaderCeiling, r.ceilingModel.uvDimensions, lights);
-	}
-	else if (r.bakedFloor.isLoadedCpu() == false && r.bakedFloor.isLoadedGpu() == false)
-	{
-		r.bakedFloor = game->bakeLights(r.floorTranslation(), r.floorModel.model, nullptr, shaderFloor, r.floorModel.uvDimensions, lights);
-	}
-	else if (rooms[roomi].bakedWalls.getLength() != 1)
-	{
-		r.bakedWalls.add(game->bakeLights(r.wallsModel.offset, r.wallsModel.model.model, nullptr, shaderWall, r.wallsModel.model.uvDimensions, lights));
-	}
-	else if (rooms[roomi].bakedSkirtingBoard.getLength() != 1)
-	{
-		r.bakedSkirtingBoard.add(game->bakeLights(r.skirtingBoardModel.offset, r.skirtingBoardModel.model.model, nullptr, shaderSkirtingBoard, r.skirtingBoardModel.model.uvDimensions, lights));
-	}
-	else
-	{
-		// Must happen at the start rather than the end because we could have 0 walls.
-		rooms[roomi].state = RoomGenerationState::lightsBaked;
-		return false;
-	}
-	return true;
+	return retVal;
 }
 
 void br::Rooms::unbakeLights(size_t roomi)
@@ -744,14 +805,15 @@ void br::Rooms::unbakeLights(size_t roomi)
 	r.bakedWalls.clear();
 	r.bakedSkirtingBoard.clear();
 	r.state = RoomGenerationState::gatesConnected;
+	r.lightBaker = bbe::LightBaker();
 }
 
-void br::Rooms::bakeLightsOfNeighborsBasedOnPriorityList(const bbe::List<size_t>& roomis, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard)
+void br::Rooms::bakeLightsOfNeighborsBasedOnPriorityList(const bbe::List<size_t>& roomis, uint32_t& bakingBudget, bbe::PrimitiveBrush3D& brush, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard)
 {
 	for (size_t roomi : roomis)
 	{
-		bakeLights(roomi, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard);
-		if (rooms[roomi].state < RoomGenerationState::lightsBaked)
+		bakeLights(roomi, bakingBudget, brush, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard);
+		if (bakingBudget == 0)
 		{
 			return;
 		}
@@ -762,8 +824,8 @@ void br::Rooms::bakeLightsOfNeighborsBasedOnPriorityList(const bbe::List<size_t>
 		for (size_t i = 0; i < rooms[roomi].neighbors.getLength(); i++)
 		{
 			size_t neighborId = rooms[roomi].neighbors[i].neighborId;
-			bakeLights(neighborId, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard);
-			if (rooms[neighborId].state < RoomGenerationState::lightsBaked)
+			bakeLights(neighborId, bakingBudget, brush, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard);
+			if (bakingBudget == 0)
 			{
 				return;
 			}
@@ -868,7 +930,7 @@ void br::Rooms::updateOcclusionQueries(size_t roomi, bbe::PrimitiveBrush3D& brus
 	}
 }
 
-void br::Rooms::drawAt(const bbe::Vector3 pos, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawSkirtingBoard, bool drawCeiling, bool drawLights)
+void br::Rooms::drawAt(const bbe::Vector3 pos, bbe::PrimitiveBrush3D& brush, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawSkirtingBoard, bool drawCeiling, bool drawLights)
 {
 	bbe::Vector2i lookupPos((int32_t)pos.x, (int32_t)pos.y);
 	if (pos.x < 0) lookupPos.x--;
@@ -876,20 +938,20 @@ void br::Rooms::drawAt(const bbe::Vector3 pos, bbe::PrimitiveBrush3D& brush, bbe
 	size_t roomi = lookupRoomIndex(lookupPos);
 	bbe::List<size_t> alreadyDrawn;
 	bbe::List<size_t> neighborList;
-	bool bakedRoom = false;
-	drawRoomsRecursively(alreadyDrawn, neighborList, bakedRoom, roomi, brush, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
+	uint32_t bakingBudget = 10; // TODO: Be more clever about how much budget we actually have on the current hardware
+	drawRoomsRecursively(alreadyDrawn, neighborList, bakingBudget, roomi, brush, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
 	for (size_t roomi : neighborList)
 	{
 		updateOcclusionQueries(roomi, brush);
 	}
-	if (!bakedRoom)
+	if (bakingBudget > 0)
 	{
-		bakeLightsOfNeighborsBasedOnPriorityList(alreadyDrawn, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard);
+		bakeLightsOfNeighborsBasedOnPriorityList(alreadyDrawn, bakingBudget, brush, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard);
 	}
 	RoomIterator ri(this, roomi);
-	for(size_t i = 0; i<32 && !bakedRoom; i++)
+	for(size_t i = 0; i<32 && bakingBudget > 0; i++)
 	{
-		bakedRoom = bakeLights(ri.next(), game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard);
+		bakeLights(ri.next(), bakingBudget, brush, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard);
 	}
 
 	// Also always draw available neighbors of the original Room. This prevents popups in case the user is spinning several times. Also prevents hiding a room for a frame on gate traversal.
@@ -898,12 +960,12 @@ void br::Rooms::drawAt(const bbe::Vector3 pos, bbe::PrimitiveBrush3D& brush, bbe
 		size_t neighborId = rooms[roomi].neighbors[i].neighborId;
 		if (rooms[neighborId].state >= RoomGenerationState::lightsBaked) // Only draw baked rooms to prevent unnecessary lag spikes on room traversal
 		{
-			drawRoom(neighborId, brush, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
+			drawRoom(neighborId, brush, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
 		}
 	}
 }
 
-void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawSkirtingBoard, bool drawCeiling, bool drawLights)
+void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawSkirtingBoard, bool drawCeiling, bool drawLights)
 {
 	if (rooms[roomi].state < RoomGenerationState::lightsBaked)
 	{
@@ -927,19 +989,18 @@ void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* 
 	if(drawSkirtingBoard) brush.fillModel(r.skirtingBoardModel.offset, r.skirtingBoardModel.model.model, nullptr, nullptr, &r.bakedSkirtingBoard[0], shaderSkirtingBoard);
 }
 
-void br::Rooms::drawRoomsRecursively(bbe::List<size_t>& alreadyDrawn, bbe::List<size_t>& neighborList, bool& bakedRoom, size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Game* game, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawSkirtingBoard, bool drawCeiling, bool drawLights)
+void br::Rooms::drawRoomsRecursively(bbe::List<size_t>& alreadyDrawn, bbe::List<size_t>& neighborList, uint32_t& bakingBudget, size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::FragmentShader* shaderFloor, bbe::FragmentShader* shaderWall, bbe::FragmentShader* shaderCeiling, bbe::FragmentShader* shaderSkirtingBoard, bool drawFloor, bool drawWalls, bool drawSkirtingBoard, bool drawCeiling, bool drawLights)
 {
 	if (alreadyDrawn.contains(roomi)) return;
 	alreadyDrawn.add(roomi);
 	if (rooms[roomi].state < RoomGenerationState::lightsBaked)
 	{
-		if (!bakedRoom)
+		if (bakingBudget > 0)
 		{
-			bakeLights(roomi, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard);
-			bakedRoom = true;
+			bakeLights(roomi, bakingBudget, brush, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard);
 		}
 	}
-	drawRoom(roomi, brush, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
+	drawRoom(roomi, brush, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
 	if (rooms[roomi].state < RoomGenerationState::lightsBaked)
 	{
 		return;
@@ -950,7 +1011,7 @@ void br::Rooms::drawRoomsRecursively(bbe::List<size_t>& alreadyDrawn, bbe::List<
 		if (!neighborList.contains(neighborId)) neighborList.add(neighborId);
 		if (isRoomVisible(neighborId))
 		{
-			drawRoomsRecursively(alreadyDrawn, neighborList, bakedRoom, neighborId, brush, game, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
+			drawRoomsRecursively(alreadyDrawn, neighborList, bakingBudget, neighborId, brush, shaderFloor, shaderWall, shaderCeiling, shaderSkirtingBoard, drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
 		}
 	}
 }

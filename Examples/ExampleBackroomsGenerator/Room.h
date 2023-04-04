@@ -1,6 +1,7 @@
 #pragma once
 #include "BBE/BrotBoxEngine.h"
 #include "BBE/MeshBuilder.h"
+#include "BBE/LightBaker.h"
 
 namespace br
 {
@@ -61,6 +62,7 @@ namespace br
 		bbe::List<BuzzingLight> lights;
 		bbe::Image bakedCeiling;
 		bbe::Image bakedFloor;
+		bbe::LightBaker lightBaker;
 		bbe::List<bbe::Image> bakedWalls;
 		bbe::List<bbe::Image> bakedSkirtingBoard;
 		struct OcclusionQueryPair
@@ -71,6 +73,9 @@ namespace br
 		};
 		bbe::Queue<OcclusionQueryPair> occlusionQueries;
 		bool visible = false;
+
+		bool neighboringLightsDeterimined = false;
+		bbe::List<bbe::PointLight> neighboringLights;
 
 		bbe::List<bbe::Vector2i> getHashGridPositions() const;
 		static bbe::List<bbe::Vector2i> getHashGridPositions(const bbe::Rectanglei& rect);

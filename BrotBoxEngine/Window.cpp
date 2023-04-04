@@ -285,10 +285,6 @@ void bbe::Window::executeFrameStartListeneres()
 }
 
 #ifdef BBE_RENDERER_OPENGL
-bbe::Image bbe::Window::bakeLights(const bbe::Matrix4& transform, const Model& model, const Image* normals, const FragmentShader* shader, const bbe::Vector2i& resolution, const bbe::List<bbe::PointLight>& lights)
-{
-	return ((bbe::INTERNAL::openGl::OpenGLManager*)m_renderManager.get())->bakeLights(transform, model, normals, shader, resolution, lights);
-}
 uint32_t bbe::Window::getAmountOfDrawcalls() const
 {
 	return ((bbe::INTERNAL::openGl::OpenGLManager*)m_renderManager.get())->getAmountOfDrawcalls();

@@ -154,6 +154,40 @@ void bbe::PrimitiveBrush3D::setRenderMode(bbe::RenderMode renderMode)
 {
 	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->setRenderMode(renderMode);
 }
+void bbe::PrimitiveBrush3D::bakeLightMrt(bbe::LightBaker& lightBaker)
+{
+	if (lightBaker.getState() != bbe::LightBaker::State::INIT) throw bbe::IllegalArgumentException();
+	lightBaker.m_state = bbe::LightBaker::State::MRT_DONE;
+	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->bakeLightMrt(lightBaker);
+}
+void bbe::PrimitiveBrush3D::bakeLight(bbe::LightBaker& lightBaker, const bbe::PointLight& light)
+{
+	if (lightBaker.getState() != bbe::LightBaker::State::MRT_DONE) throw bbe::IllegalArgumentException();
+	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->bakeLight(lightBaker, light);
+}
+void bbe::PrimitiveBrush3D::bakeLightGammaCorrect(bbe::LightBaker& lightBaker)
+{
+	if (lightBaker.getState() != bbe::LightBaker::State::MRT_DONE) throw bbe::IllegalArgumentException();
+	lightBaker.m_state = bbe::LightBaker::State::GAMMA_CORRECTED;
+	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->bakeLightGammaCorrect(lightBaker);
+}
+bbe::Image bbe::PrimitiveBrush3D::bakeLightDetach(bbe::LightBaker& lightBaker)
+{
+	if (lightBaker.getState() != bbe::LightBaker::State::GAMMA_CORRECTED) throw bbe::IllegalArgumentException();
+	lightBaker.m_state = bbe::LightBaker::State::DETACHED;
+	bbe::Image retVal = ((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->bakeLightDetach(lightBaker);
+
+	lightBaker.m_transform = bbe::Matrix4();
+	lightBaker.m_model = bbe::Model();
+	lightBaker.m_pnormals = nullptr;
+	lightBaker.m_pfragementShader = nullptr;
+	lightBaker.m_resolution = bbe::Vector2i();
+	lightBaker.m_state = bbe::LightBaker::State::DETACHED;
+	lightBaker.m_prendererData = nullptr;
+	lightBaker.m_lightOffset = bbe::Vector3();
+
+	return retVal;
+}
 #endif
 
 void bbe::PrimitiveBrush3D::setColor(float r, float g, float b, float a)

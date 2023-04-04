@@ -16,6 +16,7 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Disable imgui and debug drawing in release mode
 // TODO: Emscripten
 // TODO: Proper Emscripten page
+// TODO: Different humming frequencies for lights
 // 
 // Nice to have (I guess?)
 // TODO: VAO buffers?
@@ -316,7 +317,7 @@ namespace br
 			//brush.setCamera(bbe::Vector3(0, 0, 1.7f), bbe::Vector3(-1, 0, 1.7f));
 
 			brush.setRenderMode(bbe::RenderMode::FORWARD_NO_LIGHTS);
-			rooms.drawAt(ccnc.getCameraPos(), brush, this, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling(), assetStore::SkirtingBoard(), drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
+			rooms.drawAt(ccnc.getCameraPos(), brush, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling(), assetStore::SkirtingBoard(), drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
 		}
 
 		virtual void draw2D(bbe::PrimitiveBrush2D& brush) override

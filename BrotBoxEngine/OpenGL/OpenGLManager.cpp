@@ -14,6 +14,7 @@
 #include "BBE/OpenGL/OpenGLModel.h"
 #include "BBE/FragmentShader.h"
 #include "BBE/OpenGL/OpenGLFragmentShader.h"
+#include "BBE/OpenGL/OpenGLLightBaker.h"
 #include <iostream>
 
 // TODO: Is every OpenGL Resource properly freed? How can we find that out?
@@ -1796,92 +1797,125 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiEndFrame()
 	ImGui_ImplOpenGL3_RenderDrawData(drawData);
 }
 
-bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLights(bbe::Matrix4 /*copy*/ transform, const Model& model, const Image* normals, const FragmentShader* shader, const bbe::Vector2i& resolution, bbe::List<bbe::PointLight> /*copy*/ lights)
+void bbe::INTERNAL::openGl::OpenGLManager::bakeLightMrt(bbe::LightBaker& lightBaker)
 {
-	// Subtract the transforms position from itself and all the lights. This way
-	// all the coordinates stay closer to the origin where they have a higher
-	// precision and thus lead to less visual artifacts.
-	bbe::Vector3 transformPos = transform.extractTranslation();
-	transform = bbe::Matrix4::createTranslationMatrix(-transformPos) * transform;
-	for (PointLight& p : lights)
-	{
-		p.pos -= transformPos;
-	}
+	if (lightBaker.m_prendererData != nullptr) throw bbe::IllegalStateException();
 
+	OpenGLLightBaker* ogllb = new OpenGLLightBaker();
+	lightBaker.m_prendererData = ogllb;
 
-	Framebuffer geometryBuffer = getGeometryBuffer("BakeLightsGeometryBuffer", resolution.x, resolution.y, true);
-	Framebuffer colorBuffer(resolution.x, resolution.y);
-	colorBuffer.addTexture("BakeLights ColorBuffer");
-	colorBuffer.finalize("BakeLightsColorBuffer");
-	Framebuffer colorBufferGamma(resolution.x, resolution.y);
-	colorBufferGamma.addTexture("BakeLightsGamma ColorBuffer", 1);
-	colorBufferGamma.finalize("BakeLightsGammaColorBuffer");
+	ogllb->geometryBuffer = getGeometryBuffer("BakeLightsGeometryBuffer", lightBaker.m_resolution.x, lightBaker.m_resolution.y, true);
+	ogllb->colorBuffer = Framebuffer(lightBaker.m_resolution.x, lightBaker.m_resolution.y);
+	ogllb->colorBuffer.addTexture("BakeLights ColorBuffer");
+	ogllb->colorBuffer.finalize("BakeLightsColorBuffer");
+	ogllb->colorBufferGamma = Framebuffer(lightBaker.m_resolution.x, lightBaker.m_resolution.y);
+	ogllb->colorBufferGamma.addTexture("BakeLightsGamma ColorBuffer", 1);
+	ogllb->colorBufferGamma.finalize("BakeLightsGammaColorBuffer");
 
-	glViewport(0, 0, resolution.x, resolution.y);
-	glScissor (0, 0, resolution.x, resolution.y);
+	glViewport(0, 0, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
+	glScissor(0, 0, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
 
 	// Pre draw
 	m_program3dMrtBaking.use();
-	glBindFramebuffer(GL_FRAMEBUFFER, geometryBuffer.framebuffer);
-	geometryBuffer.clearTextures();
+	glBindFramebuffer(GL_FRAMEBUFFER, ogllb->geometryBuffer.framebuffer);
+	ogllb->geometryBuffer.clearTextures();
 
 	// MRT Pass
 	m_program3dMrtBaking.use();
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
-	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.modelPos3dMrt, false, transform);
-	fillModel(transform, model.toBakingModel(), nullptr, normals, nullptr, shader, geometryBuffer.framebuffer, true, bbe::Color::white());
+	m_program3dMrtBaking.uniformMatrix4fv(m_program3dMrtBaking.modelPos3dMrt, false, lightBaker.m_transform);
+	fillModel(lightBaker.m_transform, lightBaker.m_model.toBakingModel(), nullptr, lightBaker.m_pnormals, nullptr, lightBaker.m_pfragementShader, ogllb->geometryBuffer.framebuffer, true, bbe::Color::white());
+
+	glBindFramebuffer(GL_FRAMEBUFFER, ogllb->colorBuffer.framebuffer);
+	ogllb->colorBuffer.clearTextures();
+
+	glViewport(0, 0, m_windowWidth, m_windowHeight);
+	glScissor(0, 0, m_windowWidth, m_windowHeight);
+	glEnable(GL_DEPTH_TEST);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::bakeLight(bbe::LightBaker& lightBaker, const bbe::PointLight& light)
+{
+	if (lightBaker.m_prendererData == nullptr) throw bbe::IllegalStateException();
+
+	OpenGLLightBaker* ogllb = (OpenGLLightBaker*)lightBaker.m_prendererData.get();
+
+	glViewport(0, 0, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
+	glScissor(0, 0, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBindFramebuffer(GL_FRAMEBUFFER, ogllb->colorBuffer.framebuffer);
 
 	// Light Passes
 	m_program3dLightBaking.use();
-	m_program3dLightBaking.uniform2f(m_program3dLightBaking.screenSize3dLight, resolution.x, resolution.y);
+	m_program3dLightBaking.uniform2f(m_program3dLightBaking.screenSize3dLight, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
 
-	geometryBuffer.useAsInput();
-	glBindFramebuffer(GL_FRAMEBUFFER, colorBuffer.framebuffer);
-	colorBuffer.clearTextures();
+	ogllb->geometryBuffer.useAsInput();
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
-	for (size_t i = 0; i < lights.getLength(); i++)
-	{
-		const bbe::PointLight& l = lights[i];
-		drawLight(l, true, quadIbo);
-	}
+	PointLight copy = light;
+	copy.pos -= lightBaker.m_lightOffset;
+	drawLight(copy, true, quadIbo);
+	lightBaker.m_amountOfBakedLights++;
 
+	glViewport(0, 0, m_windowWidth, m_windowHeight);
+	glScissor(0, 0, m_windowWidth, m_windowHeight);
+	glEnable(GL_DEPTH_TEST);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::bakeLightGammaCorrect(bbe::LightBaker& lightBaker)
+{
+	if (lightBaker.m_prendererData == nullptr) throw bbe::IllegalStateException();
+
+	OpenGLLightBaker* ogllb = (OpenGLLightBaker*)lightBaker.m_prendererData.get();
+
+	glViewport(0, 0, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
+	glScissor(0, 0, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
 	// Gamma Correction Step
-
-	glBindFramebuffer(GL_FRAMEBUFFER, colorBufferGamma.framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, ogllb->colorBufferGamma.framebuffer);
 	m_programBakingGammaCorrection.use();
-	m_programBakingGammaCorrection.uniform2f(screenSizeBakingGammaCorrection, resolution.x, resolution.y);
-	colorBuffer.useAsInput();
+	m_programBakingGammaCorrection.uniform2f(screenSizeBakingGammaCorrection, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
+	ogllb->colorBuffer.useAsInput();
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIbo);
 	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
 
 	// Read the frambuffer to image
-	glBindTexture(GL_TEXTURE_2D, colorBufferGamma.textures[0]);
+	glBindTexture(GL_TEXTURE_2D, ogllb->colorBufferGamma.textures[0]);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glGenerateMipmap(GL_TEXTURE_2D);
-	bbe::Image retVal;
-	new OpenGLImage(retVal, colorBufferGamma.textures[0]);
-	colorBufferGamma.textures.clear();
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	geometryBuffer.destroy();
-	colorBuffer.destroy();
-	colorBufferGamma.destroy();
 
 	glViewport(0, 0, m_windowWidth, m_windowHeight);
-	glScissor (0, 0, m_windowWidth, m_windowHeight);
+	glScissor(0, 0, m_windowWidth, m_windowHeight);
 	glEnable(GL_DEPTH_TEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	return retVal;
+}
+
+bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLightDetach(bbe::LightBaker& lightBaker)
+{
+	if (lightBaker.m_prendererData == nullptr) throw bbe::IllegalStateException();
+
+	OpenGLLightBaker* ogllb = (OpenGLLightBaker*)lightBaker.m_prendererData.get();
+	bbe::Image image;
+	image.m_format = bbe::ImageFormat::R8G8B8A8;
+	new OpenGLImage(image, ogllb->colorBufferGamma.textures[0]);
+	ogllb->colorBufferGamma.textures.clear();
+
+	return image;
 }
 
 bool bbe::INTERNAL::openGl::OpenGLManager::isReadyToDraw() const

@@ -261,7 +261,11 @@ namespace bbe
 				virtual void imguiStartFrame() override;
 				virtual void imguiEndFrame() override;
 				
-				bbe::Image bakeLights(bbe::Matrix4 /*copy*/ transform, const Model& model, const Image* normals, const FragmentShader* shader, const bbe::Vector2i& resolution, bbe::List<bbe::PointLight> /*copy*/ lights);
+				void bakeLightMrt(bbe::LightBaker& lightBaker);
+				void bakeLight(bbe::LightBaker& lightBaker, const bbe::PointLight& light);
+				void bakeLightGammaCorrect(bbe::LightBaker& lightBaker);
+				bbe::Image bakeLightDetach(bbe::LightBaker& lightBaker);
+
 				bbe::Image framebufferToImage(uint32_t width, uint32_t height) const;
 
 				// Note: It's the drawcalls of the PREVIOUS frame!
