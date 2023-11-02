@@ -69,6 +69,9 @@ namespace bbe
 		void setWindowCloseMode(bbe::WindowCloseMode wcm);
 		bbe::WindowCloseMode getWindowCloseMode() const;
 
+		void showWindow();
+		void hideWindow();
+
 		PrimitiveBrush2D& getBrush2D();
 		PrimitiveBrush3D& getBrush3D();
 

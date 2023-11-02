@@ -423,3 +423,13 @@ void bbe::Game::setClipboard(const bbe::String& string)
 	glfwWrapper::glfwSetClipboardString(m_pwindow->m_pwindow, string.getRaw());
 }
 
+void bbe::Game::showWindow()
+{
+	m_pwindow->showWindow();
+}
+
+void bbe::Game::hideWindow()
+{
+	m_pwindow->hideWindow();
+}
+

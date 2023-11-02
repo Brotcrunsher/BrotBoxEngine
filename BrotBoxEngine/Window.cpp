@@ -237,6 +237,16 @@ bbe::WindowCloseMode bbe::Window::getWindowCloseMode() const
 	return m_windowCloseMode;
 }
 
+void bbe::Window::showWindow()
+{
+	glfwShowWindow(m_pwindow);
+}
+
+void bbe::Window::hideWindow()
+{
+	glfwHideWindow(m_pwindow);
+}
+
 bbe::PrimitiveBrush2D& bbe::Window::getBrush2D()
 {
 	return m_renderManager->getBrush2D();
