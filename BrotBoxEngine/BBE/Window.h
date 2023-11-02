@@ -5,6 +5,7 @@
 
 #include "../BBE/glfwWrapper.h"
 #include "../BBE/RenderManager.h"
+#include "../BBE/WindowCloseMode.h"
 #include "../BBE/Keyboard.h"
 #include "../BBE/Mouse.h"
 #include "../BBE/Hash.h"
@@ -30,6 +31,8 @@ namespace bbe
 
 		int                                 m_width;
 		int                                 m_height;
+
+		bbe::WindowCloseMode                m_windowCloseMode = bbe::WindowCloseMode::CLOSE;
 		
 	public:
 		Window(int width, int height, const char* title, uint32_t major = 0, uint32_t minor = 0, uint32_t patch = 0);
@@ -63,6 +66,9 @@ namespace bbe
 
 		Vector2 getGlobalMousePos() const;
 
+		void setWindowCloseMode(bbe::WindowCloseMode wcm);
+		bbe::WindowCloseMode getWindowCloseMode() const;
+
 		PrimitiveBrush2D& getBrush2D();
 		PrimitiveBrush3D& getBrush3D();
 
@@ -92,6 +98,7 @@ namespace bbe
 	void INTERNAL_windowResizeCallback(GLFWwindow *window, int width, int height);
 	void INTERNAL_mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 	void INTERNAL_mouseScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
+	void INTERNAL_windowCloseCallback(GLFWwindow* window);
 
 	template<>
 	uint32_t hash(const Window &t);

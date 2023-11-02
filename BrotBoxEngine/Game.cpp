@@ -357,6 +357,16 @@ void bbe::Game::setCursorMode(bbe::CursorMode cm)
 	m_pwindow->setCursorMode(cm);
 }
 
+void bbe::Game::setWindowCloseMode(bbe::WindowCloseMode wcm)
+{
+	m_pwindow->setWindowCloseMode(wcm);
+}
+
+bbe::WindowCloseMode bbe::Game::getWindowCloseMode() const
+{
+	return m_pwindow->getWindowCloseMode();
+}
+
 bbe::PhysWorld* bbe::Game::getPhysWorld()
 {
 	return &m_physWorld;

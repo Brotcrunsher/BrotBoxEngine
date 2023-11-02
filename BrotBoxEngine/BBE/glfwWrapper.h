@@ -22,6 +22,7 @@ namespace bbe
 		GLFWmousebuttonfun glfwSetMouseButtonCallback(GLFWwindow* handle, GLFWmousebuttonfun cbfun);
 		GLFWwindowsizefun glfwSetWindowSizeCallback(GLFWwindow* handle, GLFWwindowsizefun cbfun);
 		GLFWscrollfun glfwSetScrollCallback(GLFWwindow* handle, GLFWscrollfun cbfun);
+		GLFWwindowclosefun glfwSetWindowCloseCallback(GLFWwindow* handle, GLFWwindowclosefun cbfun);
 		void glfwGetCursorPos(GLFWwindow* handle, double* xpos, double* ypos);
 		int glfwWindowShouldClose(GLFWwindow* handle);
 		void glfwPollEvents(void);

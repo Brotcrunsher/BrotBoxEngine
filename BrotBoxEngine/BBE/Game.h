@@ -4,6 +4,7 @@
 
 #include "../BBE/GameTime.h"
 #include "../BBE/CursorMode.h"
+#include "../BBE/WindowCloseMode.h"
 #include "../BBE/KeyboardKeys.h"
 #include "../BBE/MouseButtons.h"
 #include "../BBE/Vector2.h"
@@ -105,6 +106,9 @@ namespace bbe
 		float getHighestFrameTime();
 
 		void setCursorMode(bbe::CursorMode cm);
+
+		void setWindowCloseMode(bbe::WindowCloseMode wcm);
+		bbe::WindowCloseMode getWindowCloseMode() const;
 
 		PhysWorld* getPhysWorld();
 

@@ -69,6 +69,7 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 #endif
 
 	m_pwindow = glfwWrapper::glfwCreateWindow(width, height, title, nullptr, nullptr);
+	glfwSetWindowUserPointer(m_pwindow, this);
 	if (m_pwindow == nullptr)
 	{
 		bbe::INTERNAL::triggerFatalError("Could not create window!");
@@ -89,13 +90,13 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	glfwWrapper::glfwSetMouseButtonCallback(m_pwindow, INTERNAL_mouseButtonCallback);
 	glfwWrapper::glfwSetWindowSizeCallback(m_pwindow, INTERNAL_windowResizeCallback);
 	glfwWrapper::glfwSetScrollCallback(m_pwindow, INTERNAL_mouseScrollCallback);
+	glfwWrapper::glfwSetWindowCloseCallback(m_pwindow, INTERNAL_windowCloseCallback);
 	double mX = 0;
 	double mY = 0;
 	glfwWrapper::glfwGetCursorPos(m_pwindow, &mX, &mY);
 	
 	std::cout << "Init mouse" << std::endl;
 	INTERNAL_mouse.INTERNAL_moveMouse((float)mX, (float)mY);
-	windowsAliveCounter++;
 }
 
 void bbe::Window::preDraw2D()
@@ -226,6 +227,16 @@ bbe::Vector2 bbe::Window::getGlobalMousePos() const
 	return Vector2(static_cast<float>(mousePosX + windowPosX), static_cast<float>(mousePosY + windowPosY));
 }
 
+void bbe::Window::setWindowCloseMode(bbe::WindowCloseMode wcm)
+{
+	m_windowCloseMode = wcm;
+}
+
+bbe::WindowCloseMode bbe::Window::getWindowCloseMode() const
+{
+	return m_windowCloseMode;
+}
+
 bbe::PrimitiveBrush2D& bbe::Window::getBrush2D()
 {
 	return m_renderManager->getBrush2D();
@@ -304,11 +315,11 @@ void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, i
 	if (ImGui::GetIO().WantCaptureKeyboard) return;
 	if (action == GLFW_PRESS)
 	{
-		bbe::Window::INTERNAL_firstInstance->INTERNAL_keyboard.INTERNAL_press((bbe::Key)keyCode);
+		((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_press((bbe::Key)keyCode);
 	}
 	else if (action == GLFW_RELEASE)
 	{
-		bbe::Window::INTERNAL_firstInstance->INTERNAL_keyboard.INTERNAL_release((bbe::Key)keyCode);
+		((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_release((bbe::Key)keyCode);
 	}
 #endif
 }
@@ -328,12 +339,12 @@ void bbe::INTERNAL_cursorPosCallback(GLFWwindow * window, double xpos, double yp
 	float windowXScale = 0;
 	float windowYScale = 0;
 	glfwWrapper::glfwGetWindowContentScale(window, &windowXScale, &windowYScale);
-	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_moveMouse((float)(xpos / windowXScale), (float)(ypos / windowYScale));
+	((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_moveMouse((float)(xpos / windowXScale), (float)(ypos / windowYScale));
 }
 
 void bbe::INTERNAL_windowResizeCallback(GLFWwindow * window, int width, int height)
 {
-	bbe::Window::INTERNAL_firstInstance->INTERNAL_resize(width, height);
+	((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_resize(width, height);
 }
 
 void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int action, int mods)
@@ -345,11 +356,11 @@ void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int acti
 
 	if (action == GLFW_PRESS)
 	{
-		bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_press((bbe::MouseButton)button);
+		((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_press((bbe::MouseButton)button);
 	}
 	else if (action == GLFW_RELEASE)
 	{
-		bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_release((bbe::MouseButton)button);
+		((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_release((bbe::MouseButton)button);
 	}
 }
 
@@ -359,7 +370,23 @@ void bbe::INTERNAL_mouseScrollCallback(GLFWwindow * window, double xoffset, doub
 	ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
 	if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
-	bbe::Window::INTERNAL_firstInstance->INTERNAL_mouse.INTERNAL_scroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
+	((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_scroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
+}
+
+void bbe::INTERNAL_windowCloseCallback(GLFWwindow* window)
+{
+	switch (((bbe::Window*)glfwGetWindowUserPointer(window))->getWindowCloseMode())
+	{
+	case bbe::WindowCloseMode::CLOSE:
+		// Do nothing
+		break;
+	case bbe::WindowCloseMode::HIDE:
+		glfwSetWindowShouldClose(window, GLFW_FALSE);
+		glfwHideWindow(window);
+		break;
+	default:
+		throw bbe::IllegalStateException();
+	}
 }
 
 template<>

@@ -98,6 +98,15 @@ GLFWscrollfun bbe::glfwWrapper::glfwSetScrollCallback(GLFWwindow* handle, GLFWsc
 #endif
 }
 
+GLFWwindowclosefun bbe::glfwWrapper::glfwSetWindowCloseCallback(GLFWwindow* handle, GLFWwindowclosefun cbfun)
+{
+#ifndef BBE_RENDERER_NULL
+	return ::glfwSetWindowCloseCallback(handle, cbfun);
+#else
+	return cbfun;
+#endif
+}
+
 void bbe::glfwWrapper::glfwGetCursorPos(GLFWwindow* handle, double* xpos, double* ypos)
 {
 #ifndef BBE_RENDERER_NULL
