@@ -35,8 +35,8 @@ macro(install_compiled_shaders currProject)
 endmacro()
 
 macro(start_embed_file cpp_file_string h_file_string h_file_name)
-  set(${cpp_file_string} "#include \"BBE/List.h\"\n#include \"${h_file_name}\"\n\n")
-  set(${h_file_string} "#include \"BBE/List.h\"\n\n")
+  set(${cpp_file_string} "#include \"BBE/ByteBuffer.h\"\n#include \"${h_file_name}\"\n\n")
+  set(${h_file_string} "#include \"BBE/ByteBuffer.h\"\n\n")
   set(warningMsg "")
   string(APPEND warningMsg "// **********************************************************************************************\n")
   string(APPEND warningMsg "// ***                                     !!!WARNING!!!                                      ***\n")
@@ -56,8 +56,8 @@ macro(embed_file_to_source filename cpp_file_string h_file_string)
   message(STATUS "Embedding File: ${filename}")
   contents_as_hex(${filename})
   get_filename_component(fn_wo_ext ${filename} NAME_WE)
-  string(APPEND ${h_file_string} "extern const bbe::List<unsigned char> ${fn_wo_ext}\;\n")
-  string(APPEND ${cpp_file_string} "const bbe::List<unsigned char> ${fn_wo_ext} = { ${contents} }\;\n")
+  string(APPEND ${h_file_string} "extern const bbe::ByteBuffer ${fn_wo_ext}\;\n")
+  string(APPEND ${cpp_file_string} "const bbe::ByteBuffer ${fn_wo_ext} = { ${contents} }\;\n")
 endmacro()
 
 macro(end_embed_file cpp_file_string h_file_string cpp_file_name h_file_name)
@@ -118,7 +118,7 @@ macro(add_trivial_project name)
           const bbe::Image* assetStore::${name_we}() 
           {
             registerCleanup()\;
-            bbe::List<unsigned char> raw\;
+            bbe::ByteBuffer raw\;
             if(!${name_we}_hot_reload_armed)
             {
               return ${name_we}_data\;
@@ -144,7 +144,7 @@ macro(add_trivial_project name)
           const bbe::Sound* assetStore::${name_we}() 
           {
             registerCleanup()\;
-            static bbe::List<unsigned char> raw = { ${contents} }\;
+            static bbe::ByteBuffer raw = { ${contents} }\;
             if(${name_we}_data) return ${name_we}_data\;
             ${name_we}_data = new bbe::Sound()\;
             ${name_we}_data->load(raw, bbe::SoundLoadFormat::MP3)\;
@@ -201,7 +201,7 @@ macro(add_trivial_project name)
               bbe::FragmentShader* assetStore::${name_we}() 
               {
                 registerCleanup()\;
-                static bbe::List<unsigned char> raw = { ${contents} }\;
+                static bbe::ByteBuffer raw = { ${contents} }\;
                 if(${name_we}_data) return ${name_we}_data\;
                 ${name_we}_data = new bbe::FragmentShader()\;
                 ${name_we}_data->load(raw)\;
@@ -215,7 +215,7 @@ macro(add_trivial_project name)
               bbe::FragmentShader* assetStore::${name_we}() 
               {
                 registerCleanup()\;
-                bbe::List<unsigned char> raw\;
+                bbe::ByteBuffer raw\;
                 if(!${name_we}_hot_reload_armed)
                 {
                   return ${name_we}_data\;

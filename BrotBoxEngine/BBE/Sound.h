@@ -41,14 +41,14 @@ namespace bbe
 		uint32_t         m_channels = 0;
 		uint32_t         m_hz       = 0;
 
-		void loadMp3(const bbe::List<unsigned char>& data);
+		void loadMp3(const bbe::ByteBuffer& data);
 
 	public:
 		Sound();
 		Sound(const bbe::String& path, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
 
 		void load(const bbe::String& path, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
-		void load(const bbe::List<unsigned char> &data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
+		void load(const bbe::ByteBuffer &data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
 
 		bool isLoaded() const;
 		uint32_t getChannels() const;

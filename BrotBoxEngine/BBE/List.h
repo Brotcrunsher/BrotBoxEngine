@@ -399,7 +399,7 @@ namespace bbe
 				throw IllegalArgumentException();
 			}
 
-			if (newCapacity == m_capacity)
+			if (newCapacity <= m_capacity)
 			{
 				return;
 			}

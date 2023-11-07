@@ -18,7 +18,7 @@ bbe::FragmentShader::FragmentShader(const char* path)
 	load(path);
 }
 
-bbe::FragmentShader::FragmentShader(const bbe::List<unsigned char>& rawData)
+bbe::FragmentShader::FragmentShader(const bbe::ByteBuffer& rawData)
 {
 	load(rawData);
 }
@@ -28,7 +28,7 @@ void bbe::FragmentShader::load(const char* path)
 	load(bbe::simpleFile::readBinaryFile(path));
 }
 
-void bbe::FragmentShader::load(const bbe::List<unsigned char>& rawData)
+void bbe::FragmentShader::load(const bbe::ByteBuffer& rawData)
 {
 	if (bbe::Window::INTERNAL_firstInstance == nullptr)
 	{

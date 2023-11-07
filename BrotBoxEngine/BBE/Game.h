@@ -36,6 +36,7 @@ namespace bbe
 		uint64_t    m_maxFrameNumber = 0;
 		GameTime    m_gameTime;
 		PhysWorld   m_physWorld = PhysWorld({ 0, -20 });
+		float       m_targetFrameTime = 0;
 		float       m_fixedFrameTime = 0;
 		float       m_frameTimeRunningAverage = 0;
 		size_t      m_frameTimeHistoryWritePointer = 0;
@@ -117,6 +118,7 @@ namespace bbe
 		void setScreenshotRecordingMode(const char* path = "images/img");
 		void setMaxFrame(uint64_t maxFrame);
 		void setFixedFrametime(float time);
+		void setTargetFrametime(float time);
 
 		bbe::String getClipboard() const;
 		void setClipboard(const bbe::String& string);

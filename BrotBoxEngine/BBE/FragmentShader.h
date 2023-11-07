@@ -2,6 +2,7 @@
 #include "../BBE/AutoRefCountable.h"
 #include "../BBE/List.h"
 #include "../BBE/Vector2.h"
+#include "../BBE/ByteBuffer.h"
 
 #ifdef BBE_RENDERER_OPENGL
 #include "../BBE/glfwWrapper.h"
@@ -40,14 +41,14 @@ namespace bbe
 		bool isLoaded = false;
 
 		mutable bbe::AutoRef m_prendererData = nullptr;
-		bbe::List<unsigned char> m_rawData;
+		bbe::ByteBuffer m_rawData;
 	public:
 		FragmentShader();
 		explicit FragmentShader(const char* path);
-		explicit FragmentShader(const bbe::List<unsigned char>& rawData);
+		explicit FragmentShader(const bbe::ByteBuffer& rawData);
 
 		void load(const char* path);
-		void load(const bbe::List<unsigned char>& rawData);
+		void load(const bbe::ByteBuffer& rawData);
 
 #ifdef BBE_RENDERER_VULKAN
 		void setPushConstant(uint32_t offset, uint32_t length, const void* data);

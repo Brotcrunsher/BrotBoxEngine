@@ -29,7 +29,7 @@ namespace bbe
 		uint32_t fontSize        = 0;
 		int32_t pixelsFromLineToLine = 0;
 		stbtt_fontinfo fontInfo = {};
-		bbe::List<unsigned char> font;
+		bbe::ByteBuffer font;
 
 		int32_t fixedWidth = 0;
 		

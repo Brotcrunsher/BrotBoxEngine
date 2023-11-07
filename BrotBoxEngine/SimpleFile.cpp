@@ -6,7 +6,7 @@
 #include <sstream>
 #include <filesystem>
 
-bbe::List<unsigned char> bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
+bbe::ByteBuffer bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 {
 	if (std::filesystem::is_directory(filepath.getRaw()))
 	{
@@ -27,7 +27,7 @@ bbe::List<unsigned char> bbe::simpleFile::readBinaryFile(const bbe::String & fil
 		file.seekg(0);
 		file.read((char*)fileBuffer.getRaw(), fileSize);
 		file.close();
-		return fileBuffer;
+		return bbe::ByteBuffer(std::move(fileBuffer));
 	}
 	else
 	{
@@ -35,7 +35,7 @@ bbe::List<unsigned char> bbe::simpleFile::readBinaryFile(const bbe::String & fil
 	}
 }
 
-bool bbe::simpleFile::readBinaryFileIfChanged(const bbe::String& filepath, bbe::List<unsigned char>& outContents, std::filesystem::file_time_type& inOutPreviousModify)
+bool bbe::simpleFile::readBinaryFileIfChanged(const bbe::String& filepath, bbe::ByteBuffer& outContents, std::filesystem::file_time_type& inOutPreviousModify)
 {
 	if (std::filesystem::is_directory(filepath.getRaw()))
 	{
@@ -106,6 +106,36 @@ void bbe::simpleFile::writeStringToFile(const bbe::String& filePath, const bbe::
 	file.close();
 }
 
+void bbe::simpleFile::writeBinaryToFile(const bbe::String& filePath, bbe::ByteBuffer& buffer)
+{
+	std::ofstream file(filePath.getRaw());
+	if (!file.is_open()) {
+		throw std::runtime_error("Could not open file!");
+	}
+	std::copy(buffer.getRaw(), buffer.getRaw() + buffer.getLength(), std::ostreambuf_iterator<char>(file));
+	file.close();
+}
+
+void bbe::simpleFile::appendStringToFile(const bbe::String& filePath, const bbe::String& stringToAppend)
+{
+	std::ofstream file(filePath.getRaw(), std::ofstream::app);
+	if (!file.is_open()) {
+		throw std::runtime_error("Could not open file!");
+	}
+	file << stringToAppend.getRaw();
+	file.close();
+}
+
+void bbe::simpleFile::appendBinaryToFile(const bbe::String& filePath, bbe::ByteBuffer& buffer)
+{
+	std::ofstream file(filePath.getRaw(), std::ios::binary | std::ofstream::app);
+	if (!file.is_open()) {
+		throw std::runtime_error("Could not open file!");
+	}
+	std::copy(buffer.getRaw(), buffer.getRaw() + buffer.getLength(), std::ostreambuf_iterator<char>(file));
+	file.close();
+}
+
 bool bbe::simpleFile::doesFileExist(const bbe::String& filePath)
 {
 	std::ifstream f(filePath.getRaw());
@@ -120,4 +150,17 @@ bbe::String bbe::simpleFile::readFile(const bbe::String& filePath)
 	}
 	std::string str((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
 	return bbe::String(str.data());
+}
+
+bbe::List<bbe::String> bbe::simpleFile::readLines(const bbe::String& filePath)
+{
+	std::ifstream file(filePath.getRaw());
+	std::string line;
+	bbe::List<bbe::String> retVal;
+	while (std::getline(file, line))
+	{
+		retVal.add(line.data());
+	}
+
+	return retVal;
 }

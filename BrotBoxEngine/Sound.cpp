@@ -7,7 +7,7 @@
 
 #include "minimp3_ex.h"
 
-void bbe::Sound::loadMp3(const bbe::List<unsigned char>& data)
+void bbe::Sound::loadMp3(const bbe::ByteBuffer& data)
 {
 	mp3dec_t mp3d = {};
 	mp3dec_file_info_t info = {};
@@ -62,11 +62,11 @@ bbe::Sound::Sound(const bbe::String& path, SoundLoadFormat soundLoadFormat)
 
 void bbe::Sound::load(const bbe::String& path, SoundLoadFormat soundLoadFormat)
 {
-	bbe::List<unsigned char> data = bbe::simpleFile::readBinaryFile(path);
+	bbe::ByteBuffer data = bbe::simpleFile::readBinaryFile(path);
 	load(data, soundLoadFormat);
 }
 
-void bbe::Sound::load(const bbe::List<unsigned char>& data, SoundLoadFormat soundLoadFormat)
+void bbe::Sound::load(const bbe::ByteBuffer& data, SoundLoadFormat soundLoadFormat)
 {
 	if (isLoaded())
 	{

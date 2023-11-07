@@ -135,6 +135,16 @@ bbe::Utf8String::Utf8String(const std::initializer_list<char>& il)
 	}
 }
 
+void bbe::Utf8String::serialize(bbe::ByteBuffer& buffer) const
+{
+	buffer.writeNullString(getRaw());
+}
+
+bbe::Utf8String bbe::Utf8String::deserialize(bbe::ByteBufferSpan& buffer)
+{
+	return bbe::Utf8String(buffer.readNullString());
+}
+
 bbe::Utf8String::Utf8String(const Utf8String& other)//Copy Constructor
 { 
 	//UNTESTED

@@ -4,6 +4,7 @@
 #include "BBE/PrimitiveBrush2D.h"
 #include "BBE/PrimitiveBrush3D.h"
 #include "BBE/Math.h"
+#include "BBE/StopWatch.h"
 #include <iostream>
 
 #ifdef __EMSCRIPTEN__
@@ -115,8 +116,13 @@ bool bbe::Game::keepAlive()
 
 void bbe::Game::frame()
 {
+	StopWatch sw;
 	frameUpdate();
 	frameDraw();
+	if (m_targetFrameTime > 0)
+	{
+		std::this_thread::sleep_for(std::chrono::microseconds((int32_t)(m_targetFrameTime * 1000000.f) - sw.getTimeExpiredMicroseconds()));
+	}
 }
 
 void bbe::Game::frameUpdate()
@@ -411,6 +417,11 @@ void bbe::Game::setMaxFrame(uint64_t maxFrame)
 void bbe::Game::setFixedFrametime(float time)
 {
 	m_fixedFrameTime = time;
+}
+
+void bbe::Game::setTargetFrametime(float time)
+{
+	m_targetFrameTime = time;
 }
 
 bbe::String bbe::Game::getClipboard() const

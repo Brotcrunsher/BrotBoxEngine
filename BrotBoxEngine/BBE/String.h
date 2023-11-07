@@ -10,6 +10,7 @@
 #include "../BBE/UtilDebug.h"
 #include "../BBE/Hash.h"
 #include "../BBE/Utf8Iterator.h"
+#include "../BBE/ByteBuffer.h"
 
 
 namespace bbe
@@ -64,6 +65,9 @@ namespace bbe
 		explicit Utf8String(unsigned int       number);
 
 		/*nonexplicit*/ Utf8String(const std::initializer_list<char>& il);
+
+		void serialize(bbe::ByteBuffer& buffer) const;
+		static bbe::Utf8String deserialize(bbe::ByteBufferSpan& buffer);
 
 		Utf8String(const Utf8String&  other);    //Copy Constructor
 		Utf8String(Utf8String&& other) noexcept; //Move Constructor
