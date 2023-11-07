@@ -88,6 +88,7 @@ namespace bbe
 		Image& operator=(const Image& other) = default; //Copy Assignment
 		Image& operator=(Image&& other) noexcept = default; //Move Assignment
 		
+		void loadRaw(const bbe::ByteBuffer& buffer);
 		void loadRaw(const bbe::List<unsigned char>& rawData);
 		void loadRaw(const unsigned char* rawData, size_t dataLength);
 		void load(const char* path);

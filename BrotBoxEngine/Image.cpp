@@ -49,6 +49,11 @@ bbe::Image::Image(int width, int height, const void* data, ImageFormat format)
 	load(width, height, data, format);
 }
 
+void bbe::Image::loadRaw(const bbe::ByteBuffer& buffer)
+{
+	loadRaw(buffer.getRaw(), buffer.getLength());
+}
+
 void bbe::Image::loadRaw(const bbe::List<unsigned char>& rawData)
 {
 	loadRaw(rawData.getRaw(), rawData.getLength());
