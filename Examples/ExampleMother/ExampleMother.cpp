@@ -24,9 +24,12 @@ struct Task
 	bbe::TimePoint nextExecution;
 	bool canBeSundays = true;
 	int32_t followUp = 0; // In minutes. When clicking follow up, the task will be rescheduled the same day.
+	int32_t internalValue = 0;
+	int32_t internalValueIncrease = 0;
 
 	void execDone()
 	{
+		internalValue += internalValueIncrease;
 		previousExecution = bbe::TimePoint();
 		nextExecution = previousExecution.nextMorning().plusDays(repeatDays - 1);
 		if (!canBeSundays && nextExecution.isSunday())
@@ -57,6 +60,8 @@ struct Task
 		nextExecution.serialize(buffer);
 		buffer.write(canBeSundays);
 		buffer.write(followUp);
+		buffer.write(internalValue);
+		buffer.write(internalValueIncrease);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -68,6 +73,8 @@ struct Task
 		retVal.nextExecution = bbe::TimePoint::deserialize(buffer);
 		buffer.read(retVal.canBeSundays, true);
 		buffer.read(retVal.followUp);
+		buffer.read(retVal.internalValue);
+		buffer.read(retVal.internalValueIncrease);
 
 		return retVal;
 	}
@@ -178,7 +185,7 @@ public:
 				ImGui::PushID(i);
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
-				ImGui::Text(t.title);
+				ImGui::Text(t.title, t.internalValue);
 				ImGui::TableSetColumnIndex(1);
 				if (ImGui::Button("Done"))
 				{
@@ -248,6 +255,8 @@ public:
 				ImGui::InputInt("Repeat Days", &tempTask.repeatDays);
 				ImGui::Checkbox("Can be Sundays", &tempTask.canBeSundays);
 				ImGui::InputInt("Follow Up (in Minutes)", &tempTask.followUp);
+				ImGui::InputInt("Internal Value", &tempTask.internalValue);
+				ImGui::InputInt("Internal Value Increase", &tempTask.internalValueIncrease);
 				tempTask.sanity();
 
 				if (ImGui::Button("New Task"))
@@ -276,6 +285,8 @@ public:
 				tasksChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
 				tasksChanged |= ImGui::Checkbox("Can be Sundays", &t.canBeSundays);
 				tasksChanged |= ImGui::InputInt("Follow Up (in Minutes)", &t.followUp);
+				tasksChanged |= ImGui::InputInt("Internal Value", &t.internalValue);
+				tasksChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
 				ImGui::Text(t.previousExecution.toString().getRaw());
 				ImGui::Text(t.nextExecution.toString().getRaw());
 				ImGui::NewLine();
