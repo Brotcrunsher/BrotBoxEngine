@@ -6,6 +6,18 @@
 
 namespace bbe
 {
+	class Duration
+	{
+	private:
+		std::chrono::system_clock::duration m_duration;
+
+	public:
+		Duration();
+		Duration(const std::chrono::system_clock::duration& duration);
+
+		bbe::String toString() const;
+	};
+
 	class TimePoint
 	{
 	private:
@@ -22,6 +34,8 @@ namespace bbe
 		TimePoint plusMinutes(int64_t minutes) const;
 		TimePoint plusSeconds(int64_t seconds) const;
 		TimePoint plusMilliseconds(int64_t ms) const;
+
+		Duration operator-(const TimePoint& other) const;
 
 		bool hasPassed() const;
 

@@ -64,6 +64,11 @@ bbe::TimePoint bbe::TimePoint::plusMilliseconds(int64_t ms) const
 	return m_time + 1ms * ms;
 }
 
+bbe::Duration bbe::TimePoint::operator-(const bbe::TimePoint& other) const
+{
+	return bbe::Duration(m_time - other.m_time);
+}
+
 bool bbe::TimePoint::hasPassed() const
 {
 	return std::chrono::system_clock::now() > m_time;
@@ -127,4 +132,28 @@ bbe::TimePoint bbe::TimePoint::deserialize(bbe::ByteBufferSpan& buffer)
 	int64_t val;
 	buffer.read(val);
 	return TimePoint((::time_t)val);
+}
+
+bbe::Duration::Duration()
+{
+}
+
+bbe::Duration::Duration(const std::chrono::system_clock::duration& duration) :
+	m_duration(duration)
+{
+}
+
+bbe::String bbe::Duration::toString() const
+{
+	int32_t seconds = std::chrono::duration_cast<std::chrono::seconds>(m_duration).count();
+	int32_t minutes = seconds / 60;
+	seconds %= 60;
+	int32_t hours = minutes / 60;
+	minutes %= 60;
+
+	// TODO: bbe::String::format would be nice.
+
+	char buffer[128] = {};
+	std::snprintf(buffer, sizeof(buffer), "%.2d:%.2d:%.2d", hours, minutes, seconds);
+	return bbe::String(buffer);
 }

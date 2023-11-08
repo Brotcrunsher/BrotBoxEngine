@@ -170,14 +170,15 @@ public:
 		if (isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E)) editMode = !editMode;
 	}
 
-	void drawTable(const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToToday)
+	void drawTable(const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToToday, bool showCountdown)
 	{
-		if (ImGui::BeginTable("table2", 4))
+		if (ImGui::BeginTable("table2", 5))
 		{
 			ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 400);
-			ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 100);
+			ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 400);
 			ImGui::TableSetupColumn("CCC", ImGuiTableColumnFlags_WidthFixed, 100);
-			ImGui::TableSetupColumn("DDD", ImGuiTableColumnFlags_WidthStretch);
+			ImGui::TableSetupColumn("DDD", ImGuiTableColumnFlags_WidthFixed, 100);
+			ImGui::TableSetupColumn("EEE", ImGuiTableColumnFlags_WidthStretch);
 			for (size_t i = 0; i < tasks.getLength(); i++)
 			{
 				Task& t = tasks[i];
@@ -187,12 +188,17 @@ public:
 				ImGui::TableSetColumnIndex(0);
 				ImGui::Text(t.title, t.internalValue);
 				ImGui::TableSetColumnIndex(1);
+				if (showCountdown)
+				{
+					ImGui::Text((t.nextExecution - bbe::TimePoint()).toString().getRaw());
+				}
+				ImGui::TableSetColumnIndex(2);
 				if (ImGui::Button("Done"))
 				{
 					t.execDone();
 					contentsChanged = true;
 				}
-				ImGui::TableSetColumnIndex(2);
+				ImGui::TableSetColumnIndex(3);
 				if (t.followUp > 0 && ImGui::Button("Follow Up"))
 				{
 					t.execFollowUp();
@@ -200,7 +206,7 @@ public:
 				}
 				if (showMoveToToday)
 				{
-					ImGui::TableSetColumnIndex(3);
+					ImGui::TableSetColumnIndex(4);
 					if (ImGui::Button("Move to Today"))
 					{
 						t.execMoveToToday();
@@ -222,15 +228,15 @@ public:
 			ImGui::SetNextWindowSize(viewport->WorkSize);
 			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 			bool contentsChanged = false;
-			drawTable([](Task& t) { return t.nextExecution.hasPassed(); }, contentsChanged, false);
+			drawTable([](Task& t) { return t.nextExecution.hasPassed(); }, contentsChanged, false, false);
 			ImGui::NewLine();
 			ImGui::Separator();
 			ImGui::NewLine();
-			drawTable([](Task& t) { return !t.nextExecution.hasPassed() && t.nextExecution.isToday(); }, contentsChanged, true);
+			drawTable([](Task& t) { return !t.nextExecution.hasPassed() && t.nextExecution.isToday(); }, contentsChanged, true, true);
 			ImGui::NewLine();
 			ImGui::Separator();
 			ImGui::NewLine();
-			drawTable([](Task& t) { return !t.nextExecution.hasPassed() && !t.nextExecution.isToday(); }, contentsChanged, true);
+			drawTable([](Task& t) { return !t.nextExecution.hasPassed() && !t.nextExecution.isToday(); }, contentsChanged, true, true);
 			ImGui::NewLine();
 			ImGui::Separator();
 			ImGui::NewLine();
