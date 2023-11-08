@@ -108,7 +108,7 @@ void bbe::simpleFile::writeStringToFile(const bbe::String& filePath, const bbe::
 
 void bbe::simpleFile::writeBinaryToFile(const bbe::String& filePath, bbe::ByteBuffer& buffer)
 {
-	std::ofstream file(filePath.getRaw());
+	std::ofstream file(filePath.getRaw(), std::ios_base::binary);
 	if (!file.is_open()) {
 		throw std::runtime_error("Could not open file!");
 	}
