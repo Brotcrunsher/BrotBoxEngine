@@ -83,6 +83,13 @@ namespace bbe
 			return false;
 		}
 
+		bool swap(size_t a, size_t b)
+		{
+			bool retVal = data.swap(a, b);
+			if(retVal) writeToFile();
+			return retVal;
+		}
+
 		size_t getLength() const
 		{
 			return data.getLength();

@@ -534,6 +534,19 @@ namespace bbe
 			return biggestIndex;
 		}
 
+		bool swap(size_t a, size_t b)
+		{
+			if (a == b) return false;
+			if (a >= m_length) return false;
+			if (b >= m_length) return false;
+
+			T temp = operator[](a);
+			operator[](a) = operator[](b);
+			operator[](b) = temp;
+
+			return true;
+		}
+
 		bool contains(const T& t) const
 		{
 			return contains(

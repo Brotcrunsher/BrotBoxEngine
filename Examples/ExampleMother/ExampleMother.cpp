@@ -175,7 +175,7 @@ public:
 		if (ImGui::BeginTable("table2", 5))
 		{
 			ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 400);
-			ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 400);
+			if(showCountdown) ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
 			ImGui::TableSetupColumn("CCC", ImGuiTableColumnFlags_WidthFixed, 100);
 			ImGui::TableSetupColumn("DDD", ImGuiTableColumnFlags_WidthFixed, 100);
 			ImGui::TableSetupColumn("EEE", ImGuiTableColumnFlags_WidthStretch);
@@ -185,20 +185,29 @@ public:
 				if (!predicate(t)) continue;
 				ImGui::PushID(i);
 				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0);
+				int32_t column = 0;
+				ImGui::TableSetColumnIndex(column++);
 				ImGui::Text(t.title, t.internalValue);
-				ImGui::TableSetColumnIndex(1);
 				if (showCountdown)
 				{
-					ImGui::Text((t.nextExecution - bbe::TimePoint()).toString().getRaw());
+					ImGui::TableSetColumnIndex(column++);
+					bbe::String s = (t.nextExecution - bbe::TimePoint()).toString();
+					const char* c = s.getRaw();
+					ImGui::SetCursorPosX(
+						+ ImGui::GetCursorPosX() 
+						+ ImGui::GetColumnWidth() 
+						- ImGui::CalcTextSize(c).x
+						- ImGui::GetScrollX() 
+						- 10 * ImGui::GetStyle().ItemSpacing.x);
+					ImGui::Text(c);
 				}
-				ImGui::TableSetColumnIndex(2);
+				ImGui::TableSetColumnIndex(column++);
 				if (ImGui::Button("Done"))
 				{
 					t.execDone();
 					contentsChanged = true;
 				}
-				ImGui::TableSetColumnIndex(3);
+				ImGui::TableSetColumnIndex(column++);
 				if (t.followUp > 0 && ImGui::Button("Follow Up"))
 				{
 					t.execFollowUp();
@@ -206,7 +215,7 @@ public:
 				}
 				if (showMoveToToday)
 				{
-					ImGui::TableSetColumnIndex(4);
+					ImGui::TableSetColumnIndex(column++);
 					if (ImGui::Button("Move to Today"))
 					{
 						t.execMoveToToday();
@@ -285,6 +294,22 @@ public:
 				if (ImGui::Button("Delete Task"))
 				{
 					deletionIndex = i;
+				}
+				if (i != 0)
+				{
+					ImGui::SameLine();
+					if (ImGui::Button("Up"))
+					{
+						tasks.swap(i, i - 1);
+					}
+				}
+				if (i != tasks.getLength() - 1)
+				{
+					ImGui::SameLine();
+					if (ImGui::Button("Down"))
+					{
+						tasks.swap(i, i + 1);
+					}
 				}
 				Task& t = tasks[i];
 				tasksChanged |= ImGui::InputText("Title", t.title, sizeof(t.title));
