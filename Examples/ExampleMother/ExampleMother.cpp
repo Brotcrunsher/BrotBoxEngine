@@ -26,6 +26,7 @@ struct Task
 	int32_t followUp = 0; // In minutes. When clicking follow up, the task will be rescheduled the same day.
 	int32_t internalValue = 0;
 	int32_t internalValueIncrease = 0;
+	int32_t followUp2 = 0;
 
 	void execDone()
 	{
@@ -41,6 +42,11 @@ struct Task
 	{
 		previousExecution = bbe::TimePoint();
 		nextExecution = previousExecution.plusMinutes(followUp);
+	}
+	void execFollowUp2()
+	{
+		previousExecution = bbe::TimePoint();
+		nextExecution = previousExecution.plusMinutes(followUp2);
 	}
 	void execMoveToToday()
 	{
@@ -62,6 +68,7 @@ struct Task
 		buffer.write(followUp);
 		buffer.write(internalValue);
 		buffer.write(internalValueIncrease);
+		buffer.write(followUp2);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -75,6 +82,7 @@ struct Task
 		buffer.read(retVal.followUp);
 		buffer.read(retVal.internalValue);
 		buffer.read(retVal.internalValueIncrease);
+		buffer.read(retVal.followUp2);
 
 		return retVal;
 	}
@@ -172,13 +180,14 @@ public:
 
 	void drawTable(const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToToday, bool showCountdown)
 	{
-		if (ImGui::BeginTable("table2", 5))
+		if (ImGui::BeginTable("table2", 6))
 		{
 			ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 400);
 			if(showCountdown) ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
 			ImGui::TableSetupColumn("CCC", ImGuiTableColumnFlags_WidthFixed, 100);
 			ImGui::TableSetupColumn("DDD", ImGuiTableColumnFlags_WidthFixed, 100);
-			ImGui::TableSetupColumn("EEE", ImGuiTableColumnFlags_WidthStretch);
+			ImGui::TableSetupColumn("EEE", ImGuiTableColumnFlags_WidthFixed, 100);
+			ImGui::TableSetupColumn("FFF", ImGuiTableColumnFlags_WidthStretch);
 			for (size_t i = 0; i < tasks.getLength(); i++)
 			{
 				Task& t = tasks[i];
@@ -208,9 +217,15 @@ public:
 					contentsChanged = true;
 				}
 				ImGui::TableSetColumnIndex(column++);
-				if (t.followUp > 0 && ImGui::Button("Follow Up"))
+				if (t.followUp > 0 && ImGui::Button((bbe::String("+")+t.followUp+"min").getRaw()))
 				{
 					t.execFollowUp();
+					contentsChanged = true;
+				}
+				ImGui::TableSetColumnIndex(column++);
+				if (t.followUp2 > 0 && ImGui::Button((bbe::String("+") + t.followUp2 + "min").getRaw()))
+				{
+					t.execFollowUp2();
 					contentsChanged = true;
 				}
 				if (showMoveToToday)
@@ -269,7 +284,8 @@ public:
 				ImGui::InputText("Title", tempTask.title, sizeof(tempTask.title));
 				ImGui::InputInt("Repeat Days", &tempTask.repeatDays);
 				ImGui::Checkbox("Can be Sundays", &tempTask.canBeSundays);
-				ImGui::InputInt("Follow Up (in Minutes)", &tempTask.followUp);
+				ImGui::InputInt("Follow Up  (in Minutes)", &tempTask.followUp);
+				ImGui::InputInt("Follow Up2 (in Minutes)", &tempTask.followUp2);
 				ImGui::InputInt("Internal Value", &tempTask.internalValue);
 				ImGui::InputInt("Internal Value Increase", &tempTask.internalValueIncrease);
 				tempTask.sanity();
@@ -315,7 +331,8 @@ public:
 				tasksChanged |= ImGui::InputText("Title", t.title, sizeof(t.title));
 				tasksChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
 				tasksChanged |= ImGui::Checkbox("Can be Sundays", &t.canBeSundays);
-				tasksChanged |= ImGui::InputInt("Follow Up (in Minutes)", &t.followUp);
+				tasksChanged |= ImGui::InputInt("Follow Up  (in Minutes)", &t.followUp);
+				tasksChanged |= ImGui::InputInt("Follow Up2 (in Minutes)", &t.followUp2);
 				tasksChanged |= ImGui::InputInt("Internal Value", &t.internalValue);
 				tasksChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
 				ImGui::Text(t.previousExecution.toString().getRaw());
