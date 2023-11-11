@@ -71,6 +71,7 @@ namespace bbe
 
 		void showWindow();
 		void hideWindow();
+		bool isShown() const;
 
 		PrimitiveBrush2D& getBrush2D();
 		PrimitiveBrush3D& getBrush3D();

@@ -157,6 +157,10 @@ void bbe::Game::frameDraw()
 	{
 		return;
 	}
+	if (!m_pwindow->isShown())
+	{
+		return;
+	}
 
 	m_pwindow->preDraw();
 	m_pwindow->preDraw3D();

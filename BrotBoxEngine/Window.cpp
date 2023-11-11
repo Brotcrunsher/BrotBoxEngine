@@ -247,6 +247,12 @@ void bbe::Window::hideWindow()
 	glfwHideWindow(m_pwindow);
 }
 
+bool bbe::Window::isShown() const
+{
+	int visible = glfwGetWindowAttrib(m_pwindow, GLFW_VISIBLE);
+	return visible;
+}
+
 bbe::PrimitiveBrush2D& bbe::Window::getBrush2D()
 {
 	return m_renderManager->getBrush2D();
