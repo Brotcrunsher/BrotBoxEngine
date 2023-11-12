@@ -21,7 +21,9 @@ struct Task
 	char title[1024] = {};
 	int32_t repeatDays = 0;
 	bbe::TimePoint previousExecution;
-	bbe::TimePoint nextExecution;
+private:
+	bbe::TimePoint nextExecution; // Call nextPossibleExecution from the outside! 
+public:
 	bool canBeSundays = true;
 	int32_t followUp = 0; // In minutes. When clicking follow up, the task will be rescheduled the same day.
 	int32_t internalValue = 0;
@@ -85,6 +87,14 @@ struct Task
 		buffer.read(retVal.followUp2);
 
 		return retVal;
+	}
+
+	bbe::TimePoint nextPossibleExecution() const
+	{
+		if (!nextExecution.hasPassed()) return nextExecution;
+		bbe::TimePoint execTime;
+		if (!canBeSundays && execTime.isSunday()) execTime = execTime.nextMorning();
+		return execTime;
 	}
 };
 
@@ -200,7 +210,7 @@ public:
 				if (showCountdown)
 				{
 					ImGui::TableSetColumnIndex(column++);
-					bbe::String s = (t.nextExecution - bbe::TimePoint()).toString();
+					bbe::String s = (t.nextPossibleExecution() - bbe::TimePoint()).toString();
 					const char* c = s.getRaw();
 					ImGui::SetCursorPosX(
 						+ ImGui::GetCursorPosX() 
@@ -252,15 +262,15 @@ public:
 			ImGui::SetNextWindowSize(viewport->WorkSize);
 			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 			bool contentsChanged = false;
-			drawTable([](Task& t) { return t.nextExecution.hasPassed(); }, contentsChanged, false, false);
+			drawTable([](Task& t) { return t.nextPossibleExecution().hasPassed(); }, contentsChanged, false, false);
 			ImGui::NewLine();
 			ImGui::Separator();
 			ImGui::NewLine();
-			drawTable([](Task& t) { return !t.nextExecution.hasPassed() && t.nextExecution.isToday(); }, contentsChanged, true, true);
+			drawTable([](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); }, contentsChanged, true, true);
 			ImGui::NewLine();
 			ImGui::Separator();
 			ImGui::NewLine();
-			drawTable([](Task& t) { return !t.nextExecution.hasPassed() && !t.nextExecution.isToday(); }, contentsChanged, true, true);
+			drawTable([](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday(); }, contentsChanged, true, true);
 			ImGui::NewLine();
 			ImGui::Separator();
 			ImGui::NewLine();
@@ -336,7 +346,7 @@ public:
 				tasksChanged |= ImGui::InputInt("Internal Value", &t.internalValue);
 				tasksChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
 				ImGui::Text(t.previousExecution.toString().getRaw());
-				ImGui::Text(t.nextExecution.toString().getRaw());
+				ImGui::Text(t.nextPossibleExecution().toString().getRaw());
 				ImGui::NewLine();
 				ImGui::Separator();
 				ImGui::NewLine();

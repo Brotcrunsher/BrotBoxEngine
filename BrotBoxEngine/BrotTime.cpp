@@ -71,7 +71,13 @@ bbe::Duration bbe::TimePoint::operator-(const bbe::TimePoint& other) const
 
 bool bbe::TimePoint::hasPassed() const
 {
-	return std::chrono::system_clock::now() > m_time;
+	// Rationale for >= instead of ==:
+	// Taking the current time does itself always take a tiny bit of time (maybe sub nano seconds but not 0).
+	// So when ever you take the current time, that meassurement must have already passed the moment we even
+	// look at it. It can only be == because the measurement isn't precise enough. Additionally, this
+	// assumption does simplify some code in ExampleMother, which may indicate that it's the right choice for
+	// other situations as well.
+	return std::chrono::system_clock::now() >= m_time;
 }
 
 bool bbe::TimePoint::isNight(int64_t fromHour, int64_t toHour) const
