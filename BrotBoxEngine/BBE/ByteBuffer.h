@@ -27,6 +27,8 @@ namespace bbe
 		void read( int64_t& val,  int64_t default_ = 0);
 		void read(uint64_t& val, uint64_t default_ = 0);
 		void read(bool& val, bool default_ = false);
+		void read(float& val, float default_ = 0.f);
+		void read(bbe::List<float>& val);
 		ByteBufferSpan readSpan(size_t size);
 		const char* readNullString();
 
@@ -55,6 +57,8 @@ namespace bbe
 		void write( int64_t val);
 		void write(uint64_t val);
 		void write(bool val);
+		void write(float val);
+		void write(const bbe::List<float>& vals);
 		void writeNullString(const char* string);
 
 		bbe::byte* getRaw();

@@ -34,6 +34,19 @@ void bbe::ByteBufferSpan::read( int32_t& val,  int32_t default_) { read((bbe::by
 void bbe::ByteBufferSpan::read(uint32_t& val, uint32_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
 void bbe::ByteBufferSpan::read( int64_t& val,  int64_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
 void bbe::ByteBufferSpan::read(uint64_t& val, uint64_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+void bbe::ByteBufferSpan::read(   float& val,    float default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+void bbe::ByteBufferSpan::read(bbe::List<float>& val)
+{
+	int64_t size;
+	read(size);
+	val.resizeCapacityAndLengthUninit(size);
+	for (int64_t i = 0; i < size; i++)
+	{
+		float f;
+		read(f);
+		val[i] = f;
+	}
+}
 void bbe::ByteBufferSpan::read(bool& val, bool default_)
 {
 	int32_t ival;
@@ -115,6 +128,16 @@ void bbe::ByteBuffer::write( int32_t val) { write((bbe::byte*) &val, sizeof(val)
 void bbe::ByteBuffer::write(uint32_t val) { write((bbe::byte*) &val, sizeof(val)); }
 void bbe::ByteBuffer::write( int64_t val) { write((bbe::byte*) &val, sizeof(val)); }
 void bbe::ByteBuffer::write(uint64_t val) { write((bbe::byte*) &val, sizeof(val)); }
+void bbe::ByteBuffer::write(float val)    { write((bbe::byte*) &val, sizeof(val)); }
+
+void bbe::ByteBuffer::write(const bbe::List<float>& vals)
+{
+	write((int64_t)vals.getLength());
+	for (int64_t i = 0; i < vals.getLength(); i++)
+	{
+		write(vals[i]);
+	}
+}
 
 void bbe::ByteBuffer::write(bool val)
 {

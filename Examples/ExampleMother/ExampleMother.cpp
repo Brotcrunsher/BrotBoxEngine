@@ -18,6 +18,28 @@ MyGame* myGame;
 
 struct Task
 {
+	enum class InputType
+	{
+		NONE,
+		INTEGER,
+		FLOAT,
+	};
+	static constexpr const char* inputTypeItems[] = { "None", "Integer", "Float" };
+	static InputType strToInputType(const char* str)
+	{
+		if (strcmp(str, inputTypeItems[0]) == 0) return InputType::NONE;
+		if (strcmp(str, inputTypeItems[1]) == 0) return InputType::INTEGER;
+		if (strcmp(str, inputTypeItems[2]) == 0) return InputType::FLOAT;
+		throw bbe::IllegalStateException();
+	}
+	static const char* inputTypeToStr(InputType it)
+	{
+		if (it == InputType::NONE)    return inputTypeItems[0];
+		if (it == InputType::INTEGER) return inputTypeItems[1];
+		if (it == InputType::FLOAT)   return inputTypeItems[2];
+		throw bbe::IllegalStateException();
+	}
+
 	char title[1024] = {};
 	int32_t repeatDays = 0;
 	bbe::TimePoint previousExecution;
@@ -29,6 +51,13 @@ public:
 	int32_t internalValue = 0;
 	int32_t internalValueIncrease = 0;
 	int32_t followUp2 = 0;
+	InputType inputType = InputType::NONE;
+	bbe::List<float> history;
+
+	// Non-Persisted Helper Data below.
+	const char* inputTypeStr = inputTypeItems[0];
+	int32_t inputInt = 0;
+	float inputFloat = 0;
 
 	void execDone()
 	{
@@ -71,6 +100,8 @@ public:
 		buffer.write(internalValue);
 		buffer.write(internalValueIncrease);
 		buffer.write(followUp2);
+		buffer.write((int32_t)inputType);
+		buffer.write(history);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -85,6 +116,11 @@ public:
 		buffer.read(retVal.internalValue);
 		buffer.read(retVal.internalValueIncrease);
 		buffer.read(retVal.followUp2);
+		int32_t inputType = 0;
+		buffer.read(inputType);
+		retVal.inputType = (InputType)inputType;
+		retVal.inputTypeStr = inputTypeToStr(retVal.inputType);
+		buffer.read(retVal.history);
 
 		return retVal;
 	}
@@ -221,10 +257,35 @@ public:
 					ImGui::Text(c);
 				}
 				ImGui::TableSetColumnIndex(column++);
-				if (ImGui::Button("Done"))
+				if (t.inputType == Task::InputType::NONE)
 				{
-					t.execDone();
-					contentsChanged = true;
+					if (ImGui::Button("Done"))
+					{
+						t.execDone();
+						contentsChanged = true;
+					}
+				}
+				else if (t.inputType == Task::InputType::INTEGER)
+				{
+					if (ImGui::InputInt("##input", &t.inputInt, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						t.history.add(t.inputInt);
+						t.execDone();
+						contentsChanged = true;
+					}
+				}
+				else if (t.inputType == Task::InputType::FLOAT)
+				{
+					if (ImGui::InputFloat("##input", &t.inputFloat, 0, 0, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						t.history.add(t.inputFloat);
+						t.execDone();
+						contentsChanged = true;
+					}
+				}
+				else
+				{
+					throw bbe::IllegalStateException();
 				}
 				ImGui::TableSetColumnIndex(column++);
 				if (t.followUp > 0 && ImGui::Button((bbe::String("+")+t.followUp+"min").getRaw()))
@@ -298,10 +359,22 @@ public:
 				ImGui::InputInt("Follow Up2 (in Minutes)", &tempTask.followUp2);
 				ImGui::InputInt("Internal Value", &tempTask.internalValue);
 				ImGui::InputInt("Internal Value Increase", &tempTask.internalValueIncrease);
+				if (ImGui::BeginCombo("Input Type", tempTask.inputTypeStr))
+				{
+					for (int i = 0; i < IM_ARRAYSIZE(Task::inputTypeItems); i++)
+					{
+						if (ImGui::Selectable(Task::inputTypeItems[i]))
+						{
+							tempTask.inputTypeStr = Task::inputTypeItems[i];
+						}
+					}
+					ImGui::EndCombo();
+				}
 				tempTask.sanity();
 
 				if (ImGui::Button("New Task"))
 				{
+					tempTask.inputType = Task::strToInputType(tempTask.inputTypeStr);
 					tasks.add(tempTask);
 					tempTask = Task();
 				}
@@ -345,6 +418,19 @@ public:
 				tasksChanged |= ImGui::InputInt("Follow Up2 (in Minutes)", &t.followUp2);
 				tasksChanged |= ImGui::InputInt("Internal Value", &t.internalValue);
 				tasksChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
+				if (ImGui::BeginCombo("Input Type", t.inputTypeStr))
+				{
+					for (int i = 0; i < IM_ARRAYSIZE(Task::inputTypeItems); i++)
+					{
+						if (ImGui::Selectable(Task::inputTypeItems[i]))
+						{
+							t.inputTypeStr = Task::inputTypeItems[i];
+							t.inputType = Task::strToInputType(t.inputTypeStr);
+							tasksChanged = true;
+						}
+					}
+					ImGui::EndCombo();
+				}
 				ImGui::Text(t.previousExecution.toString().getRaw());
 				ImGui::Text(t.nextPossibleExecution().toString().getRaw());
 				ImGui::NewLine();
