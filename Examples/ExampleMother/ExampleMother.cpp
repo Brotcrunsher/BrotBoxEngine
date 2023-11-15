@@ -139,7 +139,7 @@ class MyGame : public bbe::Game
 private:
 	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", bbe::SerializableList<Task>::ParanoiaMode::PARANOIA);
 	bool editMode = false;
-
+	bool shiftPressed = false;
 
 public:
 	MyGame()
@@ -222,6 +222,7 @@ public:
 	virtual void update(float timeSinceLastFrame) override
 	{
 		if (isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E)) editMode = !editMode;
+		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
 	}
 
 	void drawTable(const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToToday, bool showCountdown)
@@ -390,7 +391,7 @@ public:
 			for (size_t i = 0; i < tasks.getLength(); i++)
 			{
 				ImGui::PushID(i);
-				if (ImGui::Button("Delete Task"))
+				if (ImGui::Button(shiftPressed ? "Delete Task" : "[Shift]") && shiftPressed)
 				{
 					deletionIndex = i;
 				}
