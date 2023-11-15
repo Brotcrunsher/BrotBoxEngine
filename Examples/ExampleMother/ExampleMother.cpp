@@ -234,7 +234,7 @@ public:
 		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
 	}
 
-	void drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToToday, bool showCountdown, bool showDone, bool showFollowUp)
+	void drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToToday, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks)
 	{
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
 		if (ImGui::BeginTable("table2", 6))
@@ -253,6 +253,11 @@ public:
 				ImGui::TableNextRow();
 				int32_t column = 0;
 				ImGui::TableSetColumnIndex(column++);
+				if (highlightRareTasks && t.repeatDays > 1)
+				{
+					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(!)");
+					ImGui::SameLine();
+				}
 				ImGui::Text(t.title, t.internalValue);
 				if (showCountdown)
 				{
@@ -340,10 +345,10 @@ public:
 			ImGui::SetNextWindowSize(viewport->WorkSize);
 			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 			bool contentsChanged = false;
-			drawTable("Now", [](Task& t) { return t.nextPossibleExecution().hasPassed(); }, contentsChanged, false, false, true, true);
-			drawTable("Today", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); }, contentsChanged, true, true, true, true);
-			drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); }, contentsChanged, false, false, false, false);
-			drawTable("Later", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true, true, true, true);
+			drawTable("Now", [](Task& t) { return t.nextPossibleExecution().hasPassed(); }, contentsChanged, false, false, true, true, false);
+			drawTable("Today", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); }, contentsChanged, true, true, true, true, false);
+			drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); }, contentsChanged, false, false, false, false, true);
+			drawTable("Later", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true, true, true, true, false);
 			if (contentsChanged)
 			{
 				tasks.writeToFile();
@@ -456,7 +461,7 @@ public:
 			}
 		}
 
-		ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
