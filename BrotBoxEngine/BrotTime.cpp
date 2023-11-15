@@ -69,6 +69,11 @@ bbe::Duration bbe::TimePoint::operator-(const bbe::TimePoint& other) const
 	return bbe::Duration(m_time - other.m_time);
 }
 
+bool bbe::TimePoint::operator<(const bbe::TimePoint& other) const
+{
+	return m_time < other.m_time;
+}
+
 bool bbe::TimePoint::hasPassed() const
 {
 	// Rationale for >= instead of ==:

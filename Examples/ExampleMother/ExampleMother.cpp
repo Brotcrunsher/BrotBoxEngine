@@ -132,6 +132,15 @@ public:
 		if (!canBeSundays && execTime.isSunday()) execTime = execTime.nextMorning();
 		return execTime;
 	}
+
+	bool isImportantTomorrow() const
+	{
+		bbe::TimePoint tomorrow = bbe::TimePoint().plusDays(1);
+		if (nextExecution < tomorrow) return true;
+		if (repeatDays <= 1) return true;
+
+		return false;
+	}
 };
 
 class MyGame : public bbe::Game
@@ -225,8 +234,9 @@ public:
 		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
 	}
 
-	void drawTable(const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToToday, bool showCountdown)
+	void drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToToday, bool showCountdown, bool showDone, bool showFollowUp)
 	{
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
 		if (ImGui::BeginTable("table2", 6))
 		{
 			ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 400);
@@ -258,44 +268,47 @@ public:
 					ImGui::Text(c);
 				}
 				ImGui::TableSetColumnIndex(column++);
-				if (t.inputType == Task::InputType::NONE)
+				if (showDone)
 				{
-					if (ImGui::Button("Done"))
+					if (t.inputType == Task::InputType::NONE)
 					{
-						t.execDone();
-						contentsChanged = true;
+						if (ImGui::Button("Done"))
+						{
+							t.execDone();
+							contentsChanged = true;
+						}
 					}
-				}
-				else if (t.inputType == Task::InputType::INTEGER)
-				{
-					if (ImGui::InputInt("##input", &t.inputInt, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue))
+					else if (t.inputType == Task::InputType::INTEGER)
 					{
-						t.history.add(t.inputInt);
-						t.execDone();
-						contentsChanged = true;
+						if (ImGui::InputInt("##input", &t.inputInt, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue))
+						{
+							t.history.add(t.inputInt);
+							t.execDone();
+							contentsChanged = true;
+						}
 					}
-				}
-				else if (t.inputType == Task::InputType::FLOAT)
-				{
-					if (ImGui::InputFloat("##input", &t.inputFloat, 0, 0, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
+					else if (t.inputType == Task::InputType::FLOAT)
 					{
-						t.history.add(t.inputFloat);
-						t.execDone();
-						contentsChanged = true;
+						if (ImGui::InputFloat("##input", &t.inputFloat, 0, 0, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
+						{
+							t.history.add(t.inputFloat);
+							t.execDone();
+							contentsChanged = true;
+						}
 					}
-				}
-				else
-				{
-					throw bbe::IllegalStateException();
+					else
+					{
+						throw bbe::IllegalStateException();
+					}
 				}
 				ImGui::TableSetColumnIndex(column++);
-				if (t.followUp > 0 && ImGui::Button((bbe::String("+")+t.followUp+"min").getRaw()))
+				if (showFollowUp && t.followUp > 0 && ImGui::Button((bbe::String("+")+t.followUp+"min").getRaw()))
 				{
 					t.execFollowUp();
 					contentsChanged = true;
 				}
 				ImGui::TableSetColumnIndex(column++);
-				if (t.followUp2 > 0 && ImGui::Button((bbe::String("+") + t.followUp2 + "min").getRaw()))
+				if (showFollowUp && t.followUp2 > 0 && ImGui::Button((bbe::String("+") + t.followUp2 + "min").getRaw()))
 				{
 					t.execFollowUp2();
 					contentsChanged = true;
@@ -313,6 +326,9 @@ public:
 			}
 			ImGui::EndTable();
 		}
+		ImGui::NewLine();
+		ImGui::Separator();
+		ImGui::NewLine();
 	}
 
 	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
@@ -324,18 +340,10 @@ public:
 			ImGui::SetNextWindowSize(viewport->WorkSize);
 			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 			bool contentsChanged = false;
-			drawTable([](Task& t) { return t.nextPossibleExecution().hasPassed(); }, contentsChanged, false, false);
-			ImGui::NewLine();
-			ImGui::Separator();
-			ImGui::NewLine();
-			drawTable([](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); }, contentsChanged, true, true);
-			ImGui::NewLine();
-			ImGui::Separator();
-			ImGui::NewLine();
-			drawTable([](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday(); }, contentsChanged, true, true);
-			ImGui::NewLine();
-			ImGui::Separator();
-			ImGui::NewLine();
+			drawTable("Now", [](Task& t) { return t.nextPossibleExecution().hasPassed(); }, contentsChanged, false, false, true, true);
+			drawTable("Today", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); }, contentsChanged, true, true, true, true);
+			drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); }, contentsChanged, false, false, false, false);
+			drawTable("Later", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true, true, true, true);
 			if (contentsChanged)
 			{
 				tasks.writeToFile();
@@ -447,6 +455,8 @@ public:
 				tasks.writeToFile();
 			}
 		}
+
+		ImGui::ShowDemoWindow();
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{

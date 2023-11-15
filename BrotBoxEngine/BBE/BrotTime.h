@@ -37,6 +37,8 @@ namespace bbe
 
 		Duration operator-(const TimePoint& other) const;
 
+		bool operator<(const TimePoint& other) const;
+
 		bool hasPassed() const;
 
 		// Both hours are inclusive! So 23/4 is from 23:00 until 4:59.
