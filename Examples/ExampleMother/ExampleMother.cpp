@@ -336,6 +336,32 @@ public:
 		ImGui::NewLine();
 	}
 
+	bool drawEditableTask(Task& t)
+	{
+		bool taskChanged = false;
+		taskChanged |= ImGui::InputText("Title", t.title, sizeof(t.title));
+		taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
+		taskChanged |= ImGui::Checkbox("Can be Sundays", &t.canBeSundays);
+		taskChanged |= ImGui::InputInt("Follow Up  (in Minutes)", &t.followUp);
+		taskChanged |= ImGui::InputInt("Follow Up2 (in Minutes)", &t.followUp2);
+		taskChanged |= ImGui::InputInt("Internal Value", &t.internalValue);
+		taskChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
+		if (ImGui::BeginCombo("Input Type", t.inputTypeStr))
+		{
+			for (int i = 0; i < IM_ARRAYSIZE(Task::inputTypeItems); i++)
+			{
+				if (ImGui::Selectable(Task::inputTypeItems[i]))
+				{
+					t.inputTypeStr = Task::inputTypeItems[i];
+					t.inputType = Task::strToInputType(t.inputTypeStr);
+					taskChanged = true;
+				}
+			}
+			ImGui::EndCombo();
+		}
+		return taskChanged;
+	}
+
 	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
 	{
 		if (!editMode)
@@ -345,10 +371,10 @@ public:
 			ImGui::SetNextWindowSize(viewport->WorkSize);
 			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 			bool contentsChanged = false;
-			drawTable("Now", [](Task& t) { return t.nextPossibleExecution().hasPassed(); }, contentsChanged, false, false, true, true, false);
-			drawTable("Today", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); }, contentsChanged, true, true, true, true, false);
-			drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); }, contentsChanged, false, false, false, false, true);
-			drawTable("Later", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true, true, true, true, false);
+			drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                                      contentsChanged, false, false, true,  true, false);
+			drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false);
+			drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, false, false, false, true, true);
+			drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false);
 			if (contentsChanged)
 			{
 				tasks.writeToFile();
@@ -366,24 +392,7 @@ public:
 
 			{
 				static Task tempTask;
-				ImGui::InputText("Title", tempTask.title, sizeof(tempTask.title));
-				ImGui::InputInt("Repeat Days", &tempTask.repeatDays);
-				ImGui::Checkbox("Can be Sundays", &tempTask.canBeSundays);
-				ImGui::InputInt("Follow Up  (in Minutes)", &tempTask.followUp);
-				ImGui::InputInt("Follow Up2 (in Minutes)", &tempTask.followUp2);
-				ImGui::InputInt("Internal Value", &tempTask.internalValue);
-				ImGui::InputInt("Internal Value Increase", &tempTask.internalValueIncrease);
-				if (ImGui::BeginCombo("Input Type", tempTask.inputTypeStr))
-				{
-					for (int i = 0; i < IM_ARRAYSIZE(Task::inputTypeItems); i++)
-					{
-						if (ImGui::Selectable(Task::inputTypeItems[i]))
-						{
-							tempTask.inputTypeStr = Task::inputTypeItems[i];
-						}
-					}
-					ImGui::EndCombo();
-				}
+				drawEditableTask(tempTask);
 				tempTask.sanity();
 
 				if (ImGui::Button("New Task"))
@@ -425,26 +434,7 @@ public:
 					}
 				}
 				Task& t = tasks[i];
-				tasksChanged |= ImGui::InputText("Title", t.title, sizeof(t.title));
-				tasksChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
-				tasksChanged |= ImGui::Checkbox("Can be Sundays", &t.canBeSundays);
-				tasksChanged |= ImGui::InputInt("Follow Up  (in Minutes)", &t.followUp);
-				tasksChanged |= ImGui::InputInt("Follow Up2 (in Minutes)", &t.followUp2);
-				tasksChanged |= ImGui::InputInt("Internal Value", &t.internalValue);
-				tasksChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
-				if (ImGui::BeginCombo("Input Type", t.inputTypeStr))
-				{
-					for (int i = 0; i < IM_ARRAYSIZE(Task::inputTypeItems); i++)
-					{
-						if (ImGui::Selectable(Task::inputTypeItems[i]))
-						{
-							t.inputTypeStr = Task::inputTypeItems[i];
-							t.inputType = Task::strToInputType(t.inputTypeStr);
-							tasksChanged = true;
-						}
-					}
-					ImGui::EndCombo();
-				}
+				tasksChanged |= drawEditableTask(t);
 				ImGui::Text(t.previousExecution.toString().getRaw());
 				ImGui::Text(t.nextPossibleExecution().toString().getRaw());
 				ImGui::NewLine();
