@@ -259,6 +259,14 @@ public:
 					ImGui::SameLine();
 				}
 				ImGui::Text(t.title, t.internalValue);
+				if (t.history.getLength() > 1)
+				{
+					if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort) && ImGui::BeginTooltip())
+					{
+						ImGui::PlotLines("##History", t.history.getRaw(), t.history.getLength());
+						ImGui::EndTooltip();
+					}
+				}
 				if (showCountdown)
 				{
 					ImGui::TableSetColumnIndex(column++);
