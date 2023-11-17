@@ -1,6 +1,7 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 #include <Windows.h>
+#include "AssetStore.h"
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_SOME_ID        1002
@@ -58,7 +59,24 @@ public:
 	const char* inputTypeStr = inputTypeItems[0];
 	int32_t inputInt = 0;
 	float inputFloat = 0;
+	bool armedToPlaySound = false;
 
+	bool shouldPlaySound()
+	{
+		if (nextPossibleExecution().hasPassed())
+		{
+			if (armedToPlaySound)
+			{
+				armedToPlaySound = false;
+				return true;
+			}
+		}
+		else
+		{
+			armedToPlaySound = true;
+		}
+		return false;
+	}
 	void execDone()
 	{
 		internalValue += internalValueIncrease;
@@ -232,6 +250,16 @@ public:
 	{
 		if (isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E)) editMode = !editMode;
 		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
+
+		bool playSound = false;
+		for (size_t i = 0; i < tasks.getLength(); i++)
+		{
+			playSound |= tasks[i].shouldPlaySound();
+		}
+		if (playSound)
+		{
+			assetStore::NewTask()->play();
+		}
 	}
 
 	void drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToToday, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks)
