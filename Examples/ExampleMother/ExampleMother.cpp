@@ -3,6 +3,9 @@
 #include <Windows.h>
 #include "AssetStore.h"
 
+//TODO: Move "Go Away Time Wasters" functionality here
+//TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
+
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_SOME_ID        1002
 
@@ -97,7 +100,7 @@ public:
 		previousExecution = bbe::TimePoint();
 		nextExecution = previousExecution.plusMinutes(followUp2);
 	}
-	void execMoveToToday()
+	void execMoveToNow()
 	{
 		nextExecution = bbe::TimePoint();
 	}
@@ -262,7 +265,7 @@ public:
 		}
 	}
 
-	void drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToToday, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks)
+	void drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks)
 	{
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
 		if (ImGui::BeginTable("table2", 6))
@@ -354,12 +357,12 @@ public:
 					t.execFollowUp2();
 					contentsChanged = true;
 				}
-				if (showMoveToToday)
+				if (showMoveToNow)
 				{
 					ImGui::TableSetColumnIndex(column++);
-					if (ImGui::Button("Move to Today"))
+					if (ImGui::Button("Move to Now"))
 					{
-						t.execMoveToToday();
+						t.execMoveToNow();
 						contentsChanged = true;
 					}
 				}
@@ -409,7 +412,7 @@ public:
 			bool contentsChanged = false;
 			drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                                      contentsChanged, false, false, true,  true, false);
 			drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false);
-			drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, false, false, false, true, true);
+			drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true, false, false, true, true);
 			drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false);
 			if (contentsChanged)
 			{
