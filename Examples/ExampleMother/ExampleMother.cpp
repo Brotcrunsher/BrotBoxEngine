@@ -435,6 +435,9 @@ public:
 			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 
 			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Edit Mode (Hit CTRL+E to leave)");
+			ImGui::Separator();
+			ImGui::Text("Build: " __DATE__ ", " __TIME__);
+			ImGui::Separator();
 
 			{
 				static Task tempTask;
