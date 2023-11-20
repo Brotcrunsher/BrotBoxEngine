@@ -285,6 +285,11 @@ void bbe::Window::setVideoRenderingMode(const char* path)
 	m_renderManager->setVideoRenderingMode(path);
 }
 
+void bbe::Window::close()
+{
+	glfwSetWindowShouldClose(m_pwindow, GLFW_TRUE);
+}
+
 void bbe::Window::registerCloseListener(const std::function<void()>& listener)
 {
 	m_closeListeners.add(listener);

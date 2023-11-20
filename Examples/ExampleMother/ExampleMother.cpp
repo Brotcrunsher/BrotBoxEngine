@@ -5,9 +5,11 @@
 
 //TODO: Move "Go Away Time Wasters" functionality here
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
+//TODO: Make .dll unnecessary for OpenAL when deploying .exe
+//TODO: Exit button in tray icon menu
 
 #define WM_SYSICON        (WM_USER + 1)
-#define ID_SOME_ID        1002
+#define ID_EXIT           1002
 
 NOTIFYICONDATA notifyIconData;
 HWND Hwnd;
@@ -19,6 +21,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
 class MyGame;
 MyGame* myGame;
+bool exitRequested = false;
 
 struct Task
 {
@@ -246,8 +249,8 @@ public:
 
 
 		Shell_NotifyIcon(NIM_ADD, &notifyIconData);
-		//Hmenu = CreatePopupMenu();
-		//AppendMenu(Hmenu, MF_STRING, ID_SOME_ID, TEXT("Lunch Break!"));
+		Hmenu = CreatePopupMenu();
+		AppendMenu(Hmenu, MF_STRING, ID_EXIT, TEXT("Exit"));
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
@@ -262,6 +265,10 @@ public:
 		if (playSound)
 		{
 			assetStore::NewTask()->play();
+		}
+		if (exitRequested)
+		{
+			closeWindow();
 		}
 	}
 
@@ -519,11 +526,10 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
 
 			SendMessage(hwnd, WM_NULL, 0, 0); // send benign message to window to make sure the menu goes away.
-			//if (clicked == ID_SOME_ID)
-			//{
-			//	std::cout << "Hai!" << std::endl;
-			//	myGame->showWindow();
-			//}
+			if (clicked == ID_EXIT)
+			{
+				exitRequested = true;
+			}
 		}
 		else if (lParam == WM_LBUTTONDBLCLK)
 		{

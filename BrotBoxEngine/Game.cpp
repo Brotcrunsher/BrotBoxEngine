@@ -448,3 +448,8 @@ void bbe::Game::hideWindow()
 	m_pwindow->hideWindow();
 }
 
+void bbe::Game::closeWindow()
+{
+	m_pwindow->close();
+}
+

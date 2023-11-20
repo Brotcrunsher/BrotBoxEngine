@@ -83,6 +83,7 @@ namespace bbe
 
 		void screenshot(const bbe::String& path);
 		void setVideoRenderingMode(const char* path);
+		void close();
 
 		void registerCloseListener(const std::function<void()>& listener);
 		void executeCloseListeners();
