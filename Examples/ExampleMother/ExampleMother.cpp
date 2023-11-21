@@ -6,7 +6,6 @@
 //TODO: Move "Go Away Time Wasters" functionality here
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Make .dll unnecessary for OpenAL when deploying .exe
-//TODO: Exit button in tray icon menu
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -174,10 +173,99 @@ private:
 	bool editMode = false;
 	bool shiftPressed = false;
 
+	bbe::List<HICON> trayIcons;
+	size_t trayIconIndex = 0;
+
 public:
 	MyGame()
 	{
 		myGame = this;
+	}
+
+	HICON createTrayIcon(DWORD offset)
+	{
+		// See: https://learn.microsoft.com/en-us/windows/win32/menurc/using-cursors#creating-a-cursor
+		constexpr DWORD iconWidth = 32;
+		constexpr DWORD iconHeight = 32;
+
+		BITMAPV5HEADER bi = {};
+		bi.bV5Size = sizeof(BITMAPV5HEADER);
+		bi.bV5Width = iconWidth;
+		bi.bV5Height = iconHeight;
+		bi.bV5Planes = 1;
+		bi.bV5BitCount = 32;
+		bi.bV5Compression = BI_BITFIELDS;
+		// The following mask specification specifies a supported 32 BPP
+		// alpha format for Windows XP.
+		bi.bV5RedMask = 0x00FF0000;
+		bi.bV5GreenMask = 0x0000FF00;
+		bi.bV5BlueMask = 0x000000FF;
+		bi.bV5AlphaMask = 0xFF000000;
+
+		// Create the DIB section with an alpha channel.
+		HDC hdc = GetDC(NULL);
+		void* lpBits;
+		HBITMAP hBitmap = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS,
+			&lpBits, NULL, (DWORD)0);
+		ReleaseDC(NULL, hdc);
+
+		// Create an empty mask bitmap.
+		HBITMAP hMonoBitmap = CreateBitmap(iconWidth, iconHeight, 1, 1, NULL);
+
+		// Set the alpha values for each pixel in the cursor so that
+		// the complete cursor is semi-transparent.
+		DWORD* lpdwPixel = (DWORD*)lpBits;
+		constexpr DWORD centerX = iconWidth / 2;
+		constexpr DWORD centerY = iconHeight / 2;
+		for (DWORD x = 0; x < iconWidth; x++)
+			for (DWORD y = 0; y < iconHeight; y++)
+			{
+				const DWORD xDiff = x - centerX;
+				const DWORD yDiff = y - centerY;
+				const DWORD distSq = xDiff * xDiff + yDiff * yDiff;
+				const DWORD dist = bbe::Math::sqrt(distSq * 1000) + offset;
+				const DWORD cVal = dist % 512;
+
+				const DWORD blue = cVal > 255 ? 255 : cVal;
+				const DWORD white = cVal > 255 ? (cVal - 255) : 0;
+
+				*lpdwPixel = 0;
+				*lpdwPixel |= blue;
+				*lpdwPixel |= white << 8;
+				*lpdwPixel |= white << 16;
+				*lpdwPixel |= 0xFF << 24;
+
+				lpdwPixel++;
+			}
+
+		ICONINFO ii = {};
+		ii.fIcon = TRUE;
+		ii.hbmMask = hMonoBitmap;
+		ii.hbmColor = hBitmap;
+
+		// Create the alpha cursor with the alpha DIB section.
+		HICON hAlphaCursor = CreateIconIndirect(&ii);
+
+		DeleteObject(hBitmap);
+		DeleteObject(hMonoBitmap);
+
+		return hAlphaCursor;
+	}
+
+	void createTrayIcons()
+	{
+		for (DWORD offset = 0; offset < 512; offset += 8)
+		{
+			trayIcons.add(createTrayIcon(offset));
+		}
+	}
+
+	HICON getCurrentTrayIcon()
+	{
+		HICON retVal = trayIcons[trayIconIndex];
+		trayIconIndex++;
+		if (trayIconIndex >= trayIcons.getLength()) trayIconIndex = 0;
+		return retVal;
 	}
 
 	virtual void onStart() override
@@ -185,24 +273,7 @@ public:
 		setWindowCloseMode(bbe::WindowCloseMode::HIDE);
 		setTargetFrametime(1.f / 144.f);
 
-		BYTE ANDmaskIcon[32 * 4];
-		bbe::Random rand;
-		for (int i = 0; i < sizeof(ANDmaskIcon); i++)
-		{
-			ANDmaskIcon[i] = rand.randomInt(256);
-		}
-		BYTE XORmaskIcon[32 * 4];
-		memset(XORmaskIcon, 255, sizeof(XORmaskIcon));
-
-		hIcon = CreateIcon(0,    // application instance  
-			32,              // icon width 
-			32,              // icon height 
-			1,               // number of XOR planes 
-			1,               // number of bits per pixel 
-			ANDmaskIcon,     // AND bitmask  
-			XORmaskIcon);    // XOR bitmask 
-
-		WNDCLASSEX wincl;        /* Data structure for the windowclass */
+		WNDCLASSEX wincl = {};        /* Data structure for the windowclass */
 		wincl.hInstance = GetModuleHandle(0);
 		wincl.lpszClassName = szClassName;
 		wincl.lpfnWndProc = WindowProcedure;      /* This function is called by windows */
@@ -210,8 +281,8 @@ public:
 		wincl.cbSize = sizeof(WNDCLASSEX);
 
 		/* Use default icon and mouse-pointer */
-		wincl.hIcon = hIcon;
-		wincl.hIconSm = hIcon;
+		//wincl.hIcon = hIcon;
+		//wincl.hIconSm = hIcon;
 		wincl.hCursor = LoadCursor(NULL, IDC_ARROW);
 		wincl.lpszMenuName = NULL;                 /* No menu */
 		wincl.cbClsExtra = 0;                      /* No extra bytes after the window class */
@@ -236,7 +307,15 @@ public:
 			NULL                 /* No Window Creation data */
 		);
 
+		Hmenu = CreatePopupMenu();
+		AppendMenu(Hmenu, MF_STRING, ID_EXIT, TEXT("Exit"));
 
+		createTrayIcons();
+		setCurrentTrayIcon(true);
+	}
+
+	void setCurrentTrayIcon(bool firstCall)
+	{
 		memset(&notifyIconData, 0, sizeof(NOTIFYICONDATA));
 
 		notifyIconData.cbSize = sizeof(NOTIFYICONDATA);
@@ -244,14 +323,12 @@ public:
 		notifyIconData.uID = 0;
 		notifyIconData.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
 		notifyIconData.uCallbackMessage = WM_SYSICON; //Set up our invented Windows Message
-		notifyIconData.hIcon = hIcon;
+		notifyIconData.hIcon = getCurrentTrayIcon();
 		memcpy_s(notifyIconData.szTip, sizeof(notifyIconData.szTip), szTIP, sizeof(szTIP));
 
-
-		Shell_NotifyIcon(NIM_ADD, &notifyIconData);
-		Hmenu = CreatePopupMenu();
-		AppendMenu(Hmenu, MF_STRING, ID_EXIT, TEXT("Exit"));
+		Shell_NotifyIcon(firstCall ? NIM_ADD : NIM_MODIFY, &notifyIconData);
 	}
+
 	virtual void update(float timeSinceLastFrame) override
 	{
 		if (isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E)) editMode = !editMode;
@@ -270,6 +347,8 @@ public:
 		{
 			closeWindow();
 		}
+
+		setCurrentTrayIcon(false);
 	}
 
 	void drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks)
