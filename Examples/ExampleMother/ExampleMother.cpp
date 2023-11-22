@@ -6,7 +6,6 @@
 //TODO: GATW: play sound when night time
 //TODO: GATW: play sound 5 minutes before night time
 //TODO: GATW: kill (?) Time Wasters Processes during working hours and while still tasks are open.
-//TODO: Make tray icon red/green/blue depending on if there are tasks available or if something seriously is wrong (e.g. it's night time)
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Make .dll unnecessary for OpenAL when deploying .exe
 
@@ -176,8 +175,12 @@ private:
 	bool editMode = false;
 	bool shiftPressed = false;
 
-	bbe::List<HICON> trayIcons;
+	bbe::List<HICON> trayIconsRed;
+	bbe::List<HICON> trayIconsGreen;
+	bbe::List<HICON> trayIconsBlue;
 	size_t trayIconIndex = 0;
+
+	int32_t amountOfTasksNow = 0;
 
 public:
 	MyGame()
@@ -185,7 +188,7 @@ public:
 		myGame = this;
 	}
 
-	HICON createTrayIcon(DWORD offset)
+	HICON createTrayIcon(DWORD offset, int redGreenBlue)
 	{
 		// See: https://learn.microsoft.com/en-us/windows/win32/menurc/using-cursors#creating-a-cursor
 		constexpr DWORD iconWidth = 32;
@@ -229,13 +232,34 @@ public:
 				const DWORD dist = bbe::Math::sqrt(distSq * 1000) + offset;
 				const DWORD cVal = dist % 512;
 
-				const DWORD blue = cVal > 255 ? 255 : cVal;
+				const DWORD highlight = cVal > 255 ? 255 : cVal;
 				const DWORD white = cVal > 255 ? (cVal - 255) : 0;
 
 				*lpdwPixel = 0;
-				*lpdwPixel |= blue;
-				*lpdwPixel |= white << 8;
-				*lpdwPixel |= white << 16;
+
+				if (redGreenBlue == 0) /*Red*/
+				{
+					*lpdwPixel |= white;
+					*lpdwPixel |= white << 8;
+					*lpdwPixel |= highlight << 16;
+				}
+				else if (redGreenBlue == 1) /*Green*/
+				{
+					*lpdwPixel |= white;
+					*lpdwPixel |= highlight << 8;
+					*lpdwPixel |= white << 16;
+				}
+				else if (redGreenBlue == 2) /*Blue*/
+				{
+					*lpdwPixel |= highlight;
+					*lpdwPixel |= white << 8;
+					*lpdwPixel |= white << 16;
+				}
+				else
+				{
+					throw bbe::IllegalArgumentException();
+				}
+
 				*lpdwPixel |= 0xFF << 24;
 
 				lpdwPixel++;
@@ -257,16 +281,26 @@ public:
 
 	void createTrayIcons()
 	{
-		for (DWORD offset = 0; offset < 512; offset += 8)
+		for (DWORD offset = 0; offset < 512; offset ++)
 		{
-			trayIcons.add(createTrayIcon(offset));
+			trayIconsRed.add(createTrayIcon(offset, 0));
+			trayIconsGreen.add(createTrayIcon(offset, 1));
+			trayIconsBlue.add(createTrayIcon(offset, 2));
 		}
+	}
+
+	bbe::List<HICON>& getTrayIcons()
+	{
+		if (isNightTime()) return trayIconsRed;
+		if (amountOfTasksNow > 0) return trayIconsBlue;
+		return trayIconsGreen;
 	}
 
 	HICON getCurrentTrayIcon()
 	{
+		bbe::List<HICON>& trayIcons = getTrayIcons();
 		HICON retVal = trayIcons[trayIconIndex];
-		trayIconIndex++;
+		trayIconIndex += 7;
 		if (trayIconIndex >= trayIcons.getLength()) trayIconIndex = 0;
 		return retVal;
 	}
@@ -381,8 +415,9 @@ public:
 		}
 	}
 
-	void drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks)
+	int32_t drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks)
 	{
+		int32_t amountDrawn = 0;
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
 		if (ImGui::BeginTable("table2", 6))
 		{
@@ -396,6 +431,7 @@ public:
 			{
 				Task& t = tasks[i];
 				if (!predicate(t)) continue;
+				amountDrawn++;
 				ImGui::PushID(i);
 				ImGui::TableNextRow();
 				int32_t column = 0;
@@ -489,6 +525,7 @@ public:
 		ImGui::NewLine();
 		ImGui::Separator();
 		ImGui::NewLine();
+		return amountDrawn;
 	}
 
 	bool drawEditableTask(Task& t)
@@ -526,7 +563,7 @@ public:
 			ImGui::SetNextWindowSize(viewport->WorkSize);
 			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 			bool contentsChanged = false;
-			drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                                      contentsChanged, false, false, true,  true, false);
+			amountOfTasksNow = drawTable("Now", [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                                      contentsChanged, false, false, true,  true, false);
 			drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false);
 			drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true, false, false, true, true);
 			drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false);
