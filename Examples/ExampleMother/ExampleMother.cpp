@@ -3,8 +3,6 @@
 #include <Windows.h>
 #include "AssetStore.h"
 
-//TODO: GATW: play sound when night time
-//TODO: GATW: play sound 5 minutes before night time
 //TODO: GATW: kill (?) Time Wasters Processes during working hours and while still tasks are open.
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Make .dll unnecessary for OpenAL when deploying .exe
@@ -366,7 +364,7 @@ public:
 		Shell_NotifyIcon(firstCall ? NIM_ADD : NIM_MODIFY, &notifyIconData);
 	}
 
-	bool isNightTime()
+	bbe::TimePoint getNightStart()
 	{
 		// TODO: This is something highly personalized for my own current usage. It probably needs to be removed some day.
 		//       It takes away one minute for every passed day since 2023/11/22. Slowly approaching a more healthy sleep
@@ -376,8 +374,28 @@ public:
 		int32_t daysSinceQualifyingDate = timeSinceQualifyingDate.toDays();
 		if (daysSinceQualifyingDate > 60) daysSinceQualifyingDate = 60;
 
+		return bbe::TimePoint::todayAt(23, 59 - daysSinceQualifyingDate);
+	}
+
+	bool isNightTime()
+	{
 		bbe::TimePoint now;
-		return bbe::TimePoint::todayAt(5, 00) > now || now > bbe::TimePoint::todayAt(23, 59 - daysSinceQualifyingDate);
+		return bbe::TimePoint::todayAt(5, 00) > now || now > getNightStart();
+	}
+
+	bool shouldPlayAlmostNightWarning()
+	{
+		static bool playedBefore = false;
+		if (!playedBefore)
+		{
+			bbe::TimePoint now;
+			if (now > getNightStart().plusMinutes(-5))
+			{
+				playedBefore = true;
+				return true;
+			}
+		}
+		return false;
 	}
 
 	virtual void update(float timeSinceLastFrame) override
@@ -411,7 +429,12 @@ public:
 				HWND hwnd = FindWindow("Shell_TrayWnd", NULL);
 				LRESULT res = SendMessage(hwnd, WM_COMMAND, (WPARAM)419, 0);
 				showWindow();
+				assetStore::NightTime()->play();
 			}
+		}
+		if (shouldPlayAlmostNightWarning())
+		{
+			assetStore::AlmostNightTime()->play();
 		}
 	}
 
