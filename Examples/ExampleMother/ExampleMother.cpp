@@ -3,10 +3,10 @@
 #include <Windows.h>
 #include "AssetStore.h"
 
-//TODO: GATW: decrease time before night time
 //TODO: GATW: play sound when night time
 //TODO: GATW: play sound 5 minutes before night time
 //TODO: GATW: kill (?) Time Wasters Processes during working hours and while still tasks are open.
+//TODO: Make tray icon red/green/blue depending on if there are tasks available or if something seriously is wrong (e.g. it's night time)
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Make .dll unnecessary for OpenAL when deploying .exe
 
@@ -332,6 +332,20 @@ public:
 		Shell_NotifyIcon(firstCall ? NIM_ADD : NIM_MODIFY, &notifyIconData);
 	}
 
+	bool isNightTime()
+	{
+		// TODO: This is something highly personalized for my own current usage. It probably needs to be removed some day.
+		//       It takes away one minute for every passed day since 2023/11/22. Slowly approaching a more healthy sleep
+		//       schedule =)
+		const bbe::TimePoint qualifyingDate = bbe::TimePoint::fromDate(2023, bbe::Month::NOVEMBER, 22);
+		const bbe::Duration timeSinceQualifyingDate = bbe::TimePoint() - qualifyingDate;
+		int32_t daysSinceQualifyingDate = timeSinceQualifyingDate.toDays();
+		if (daysSinceQualifyingDate > 60) daysSinceQualifyingDate = 60;
+
+		bbe::TimePoint now;
+		return bbe::TimePoint::todayAt(5, 00) > now || now > bbe::TimePoint::todayAt(23, 59 - daysSinceQualifyingDate);
+	}
+
 	virtual void update(float timeSinceLastFrame) override
 	{
 		if (isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E)) editMode = !editMode;
@@ -353,8 +367,7 @@ public:
 
 		setCurrentTrayIcon(false);
 
-		bbe::TimePoint now;
-		if (bbe::TimePoint::todayAt(5, 00) > now || now > bbe::TimePoint::todayAt(23, 59))
+		if (isNightTime())
 		{
 			static float timeSinceLastMinimize = 100000.0f;
 			timeSinceLastMinimize += timeSinceLastFrame;

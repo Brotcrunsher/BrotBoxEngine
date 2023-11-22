@@ -25,8 +25,53 @@ bbe::TimePoint::TimePoint(std::time_t time) :
 
 bbe::TimePoint bbe::TimePoint::todayAt(int32_t hour, int32_t minute, int32_t second)
 {
+	while (second < 0)
+	{
+		second += 60;
+		minute -= 1;
+	}
+	while (second >= 60)
+	{
+		second -= 60;
+		minute += 1;
+	}
+	while (minute < 0)
+	{
+		minute += 60;
+		hour -= 1;
+	}
+	while (minute >= 60)
+	{
+		minute -= 60;
+		hour += 1;
+	}
+	int32_t daysOffset = 0;
+	while (hour < 0)
+	{
+		hour += 24;
+		daysOffset -= 1;
+	}
+	while (hour >= 24)
+	{
+		hour -= 24;
+		daysOffset += 1;
+	}
+
 	bbe::TimePoint now;
 	::tm t = now.toTm();
+	t.tm_hour = hour;
+	t.tm_min = minute;
+	t.tm_sec = second;
+
+	return TimePoint(::mktime(&t)).plusDays(daysOffset);
+}
+
+bbe::TimePoint bbe::TimePoint::fromDate(int32_t year, Month month, int32_t day, int32_t hour, int32_t minute, int32_t second)
+{
+	::tm t = {};
+	t.tm_year = year - 1900;
+	t.tm_mon = (int)month;
+	t.tm_mday = day;
 	t.tm_hour = hour;
 	t.tm_min = minute;
 	t.tm_sec = second;
@@ -184,4 +229,24 @@ bbe::String bbe::Duration::toString() const
 	char buffer[128] = {};
 	std::snprintf(buffer, sizeof(buffer), "%.2d:%.2d:%.2d", hours, minutes, seconds);
 	return bbe::String(buffer);
+}
+
+int32_t bbe::Duration::toSeconds() const
+{
+	return std::chrono::duration_cast<std::chrono::seconds>(m_duration).count();
+}
+
+int32_t bbe::Duration::toMinutes() const
+{
+	return std::chrono::duration_cast<std::chrono::minutes>(m_duration).count();
+}
+
+int32_t bbe::Duration::toHours() const
+{
+	return std::chrono::duration_cast<std::chrono::hours>(m_duration).count();
+}
+
+int32_t bbe::Duration::toDays() const
+{
+	return toHours() / 24;
 }
