@@ -23,10 +23,14 @@ namespace bbe
 	private:
 		std::chrono::system_clock::time_point m_time;
 
+		::tm toTm() const;
+
 	public:
 		TimePoint();
 		TimePoint(const std::chrono::system_clock::time_point &time);
 		TimePoint(std::time_t time);
+
+		static TimePoint todayAt(int32_t hour, int32_t minute, int32_t second = 0);
 
 		TimePoint nextMorning(int64_t morningHour = 5) const;
 		TimePoint plusDays(int64_t days) const;
@@ -38,6 +42,7 @@ namespace bbe
 		Duration operator-(const TimePoint& other) const;
 
 		bool operator<(const TimePoint& other) const;
+		bool operator>(const TimePoint& other) const;
 
 		bool hasPassed() const;
 

@@ -1,5 +1,13 @@
 #include "BBE/BrotTime.h"
 
+::tm bbe::TimePoint::toTm() const
+{
+	std::time_t nowT = std::chrono::system_clock::to_time_t(m_time);
+	::tm retVal;
+	::localtime_s(&retVal, &nowT);
+	return retVal;
+}
+
 bbe::TimePoint::TimePoint() :
 	m_time(std::chrono::system_clock::now())
 {
@@ -13,6 +21,17 @@ bbe::TimePoint::TimePoint(const std::chrono::system_clock::time_point &time) :
 bbe::TimePoint::TimePoint(std::time_t time) :
 	m_time(std::chrono::system_clock::from_time_t(time))
 {
+}
+
+bbe::TimePoint bbe::TimePoint::todayAt(int32_t hour, int32_t minute, int32_t second)
+{
+	bbe::TimePoint now;
+	::tm t = now.toTm();
+	t.tm_hour = hour;
+	t.tm_min = minute;
+	t.tm_sec = second;
+
+	return TimePoint(::mktime(&t));
 }
 
 bbe::TimePoint bbe::TimePoint::nextMorning(int64_t morningHour) const
@@ -74,6 +93,11 @@ bool bbe::TimePoint::operator<(const bbe::TimePoint& other) const
 	return m_time < other.m_time;
 }
 
+bool bbe::TimePoint::operator>(const bbe::TimePoint& other) const
+{
+	return m_time > other.m_time;
+}
+
 bool bbe::TimePoint::hasPassed() const
 {
 	// Rationale for >= instead of ==:
@@ -111,15 +135,8 @@ bool bbe::TimePoint::isSunday() const
 
 bool bbe::TimePoint::isToday() const
 {
-	TimePoint now;
-
-	std::time_t thisT = std::chrono::system_clock::to_time_t(m_time);
-	std::time_t nowT = std::chrono::system_clock::to_time_t(now.m_time);
-
-	::tm thisTimeinfo;
-	::tm nowTimeinfo;
-	::localtime_s(&thisTimeinfo, &thisT);
-	::localtime_s(&nowTimeinfo, &nowT);
+	::tm thisTimeinfo = toTm();
+	::tm nowTimeinfo = bbe::TimePoint().toTm();
 
 	return thisTimeinfo.tm_year == nowTimeinfo.tm_year && thisTimeinfo.tm_yday == nowTimeinfo.tm_yday;
 }

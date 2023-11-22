@@ -3,7 +3,10 @@
 #include <Windows.h>
 #include "AssetStore.h"
 
-//TODO: Move "Go Away Time Wasters" functionality here
+//TODO: GATW: decrease time before night time
+//TODO: GATW: play sound when night time
+//TODO: GATW: play sound 5 minutes before night time
+//TODO: GATW: kill (?) Time Wasters Processes during working hours and while still tasks are open.
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Make .dll unnecessary for OpenAL when deploying .exe
 
@@ -15,7 +18,7 @@ HWND Hwnd;
 HMENU Hmenu;
 HICON hIcon;
 char szClassName[] = "MyWindowClassName";
-char szTIP[64] = TEXT("M.O.THE.R");
+char szTIP[64] = "M.O.THE.R " __DATE__ ", " __TIME__;
 LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 class MyGame;
@@ -349,6 +352,20 @@ public:
 		}
 
 		setCurrentTrayIcon(false);
+
+		bbe::TimePoint now;
+		if (bbe::TimePoint::todayAt(5, 00) > now || now > bbe::TimePoint::todayAt(23, 59))
+		{
+			static float timeSinceLastMinimize = 100000.0f;
+			timeSinceLastMinimize += timeSinceLastFrame;
+			if (timeSinceLastMinimize > 60.0f)
+			{
+				timeSinceLastMinimize = 0.0f;
+				HWND hwnd = FindWindow("Shell_TrayWnd", NULL);
+				LRESULT res = SendMessage(hwnd, WM_COMMAND, (WPARAM)419, 0);
+				showWindow();
+			}
+		}
 	}
 
 	void drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks)
