@@ -6,6 +6,9 @@
 //TODO: GATW: kill (?) Time Wasters Processes during working hours and while still tasks are open.
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Make .dll unnecessary for OpenAL when deploying .exe
+//TODO: Serializer List: Move paranoia copies to its own directory.
+//TODO: Bracket Arguments for AssetStore https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#bracket-argument
+//TODO: Github Pipeline currently broken
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -104,6 +107,7 @@ public:
 	}
 	void execMoveToNow()
 	{
+		armedToPlaySound = false;
 		nextExecution = bbe::TimePoint();
 	}
 
@@ -297,9 +301,7 @@ public:
 	HICON getCurrentTrayIcon()
 	{
 		bbe::List<HICON>& trayIcons = getTrayIcons();
-		HICON retVal = trayIcons[trayIconIndex];
-		trayIconIndex += 7;
-		if (trayIconIndex >= trayIcons.getLength()) trayIconIndex = 0;
+		HICON retVal = trayIcons[((int)(getTimeSinceStartSeconds() * 400)) % trayIcons.getLength()];
 		return retVal;
 	}
 
