@@ -453,3 +453,7 @@ void bbe::Game::closeWindow()
 	m_pwindow->close();
 }
 
+bool bbe::Game::isWindowShow() const
+{
+	return m_pwindow->isShown();
+}

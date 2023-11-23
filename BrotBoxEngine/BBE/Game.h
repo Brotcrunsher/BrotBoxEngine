@@ -128,6 +128,7 @@ namespace bbe
 		void showWindow();
 		void hideWindow();
 		void closeWindow();
+		bool isWindowShow() const;
 
 #ifndef BBE_NO_AUDIO
 		void setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection);
