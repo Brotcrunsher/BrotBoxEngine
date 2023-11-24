@@ -4,8 +4,7 @@
 ::tm bbe::TimePoint::toTm() const
 {
 	std::time_t nowT = std::chrono::system_clock::to_time_t(m_time);
-	::tm retVal;
-	::localtime_s(&retVal, &nowT);
+	::tm retVal = *localtime(&nowT);
 	return retVal;
 }
 
@@ -83,14 +82,13 @@ bbe::TimePoint bbe::TimePoint::fromDate(int32_t year, Month month, int32_t day, 
 bbe::TimePoint bbe::TimePoint::nextMorning(int64_t morningHour) const
 {
 	std::time_t t = std::chrono::system_clock::to_time_t(m_time);
-	::tm timeinfo;
-	::localtime_s(&timeinfo, &t);
+	::tm timeinfo = *localtime(&t);
 	if (timeinfo.tm_hour >= morningHour)
 	{
 		bbe::TimePoint nextDay(m_time);
 		nextDay = nextDay.plusDays(1);
 		t = std::chrono::system_clock::to_time_t(nextDay.m_time);
-		::localtime_s(&timeinfo, &t);
+		timeinfo = *localtime(&t);
 	}
 	timeinfo.tm_sec = 0;
 	timeinfo.tm_min = 0;
@@ -158,8 +156,7 @@ bool bbe::TimePoint::hasPassed() const
 bool bbe::TimePoint::isNight(int64_t fromHour, int64_t toHour) const
 {
 	std::time_t t = std::chrono::system_clock::to_time_t(m_time);
-	::tm timeinfo;
-	::localtime_s(&timeinfo, &t);
+	::tm timeinfo = *localtime(&t);
 
 	if (fromHour < toHour)
 	{
@@ -174,8 +171,7 @@ bool bbe::TimePoint::isNight(int64_t fromHour, int64_t toHour) const
 bool bbe::TimePoint::isSunday() const
 {
 	std::time_t t = std::chrono::system_clock::to_time_t(m_time);
-	::tm timeinfo;
-	::localtime_s(&timeinfo, &t);
+	::tm timeinfo = *localtime(&t);
 	return timeinfo.tm_wday == 0;
 }
 
