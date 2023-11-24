@@ -1,4 +1,5 @@
 #include "BBE/BrotTime.h"
+#include <time.h>
 
 ::tm bbe::TimePoint::toTm() const
 {
