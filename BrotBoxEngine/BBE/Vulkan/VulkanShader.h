@@ -2,7 +2,7 @@
 
 #include "GLFW/glfw3.h"
 #include "../BBE/String.h"
-#include "../BBE/List.h"
+#include "../BBE/ByteBuffer.h"
 
 
 namespace bbe
@@ -24,7 +24,7 @@ namespace bbe
 
 				void init(const bbe::String& path);
 				void init(const VulkanDevice &device, const bbe::String &path);
-				void init(const VulkanDevice &device, const bbe::List<unsigned char> &code);
+				void init(const VulkanDevice &device, const bbe::ByteBuffer &code);
 
 				void destroy();
 
