@@ -32,5 +32,11 @@ namespace bbe
 		void glfwGetWindowPos(GLFWwindow* handle, int* xpos, int* ypos);
 		const char* glfwGetClipboardString(GLFWwindow* handle);
 		void glfwSetClipboardString(GLFWwindow* handle, const char* string);
+		void glfwSetWindowShouldClose(GLFWwindow* window, int value);
+		void glfwShowWindow(GLFWwindow* window);
+		void glfwHideWindow(GLFWwindow* window);
+		int glfwGetWindowAttrib(GLFWwindow* window, int attrib);
+		void glfwSetWindowUserPointer(GLFWwindow* window, void* pointer);
+		void* glfwGetWindowUserPointer(GLFWwindow* window);
 	}
 }

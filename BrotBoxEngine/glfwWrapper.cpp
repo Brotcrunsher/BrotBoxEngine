@@ -175,3 +175,49 @@ void bbe::glfwWrapper::glfwSetClipboardString(GLFWwindow* handle, const char* st
 	::glfwSetClipboardString(handle, string);
 #endif
 }
+
+void bbe::glfwWrapper::glfwSetWindowShouldClose(GLFWwindow* window, int value)
+{
+#ifndef BBE_RENDERER_NULL
+	::glfwSetWindowShouldClose(window, value);
+#endif
+}
+
+void bbe::glfwWrapper::glfwShowWindow(GLFWwindow* window)
+{
+#ifndef BBE_RENDERER_NULL
+	::glfwShowWindow(window);
+#endif
+}
+
+void bbe::glfwWrapper::glfwHideWindow(GLFWwindow* window)
+{
+#ifndef BBE_RENDERER_NULL
+	::glfwHideWindow(window);
+#endif
+}
+
+int bbe::glfwWrapper::glfwGetWindowAttrib(GLFWwindow* window, int attrib)
+{
+#ifndef BBE_RENDERER_NULL
+	return ::glfwGetWindowAttrib(window, attrib);
+#else
+	return 0;
+#endif
+}
+
+void bbe::glfwWrapper::glfwSetWindowUserPointer(GLFWwindow* window, void* pointer)
+{
+#ifndef BBE_RENDERER_NULL
+	return ::glfwSetWindowUserPointer(window, pointer);
+#endif
+}
+
+void* bbe::glfwWrapper::glfwGetWindowUserPointer(GLFWwindow* window)
+{
+#ifndef BBE_RENDERER_NULL
+	return ::glfwGetWindowUserPointer(window);
+#else
+	return nullptr;
+#endif
+}

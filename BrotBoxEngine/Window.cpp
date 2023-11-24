@@ -69,7 +69,7 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 #endif
 
 	m_pwindow = glfwWrapper::glfwCreateWindow(width, height, title, nullptr, nullptr);
-	glfwSetWindowUserPointer(m_pwindow, this);
+	glfwWrapper::glfwSetWindowUserPointer(m_pwindow, this);
 	if (m_pwindow == nullptr)
 	{
 		bbe::INTERNAL::triggerFatalError("Could not create window!");
@@ -239,17 +239,17 @@ bbe::WindowCloseMode bbe::Window::getWindowCloseMode() const
 
 void bbe::Window::showWindow()
 {
-	glfwShowWindow(m_pwindow);
+	glfwWrapper::glfwShowWindow(m_pwindow);
 }
 
 void bbe::Window::hideWindow()
 {
-	glfwHideWindow(m_pwindow);
+	glfwWrapper::glfwHideWindow(m_pwindow);
 }
 
 bool bbe::Window::isShown() const
 {
-	int visible = glfwGetWindowAttrib(m_pwindow, GLFW_VISIBLE);
+	int visible = glfwWrapper::glfwGetWindowAttrib(m_pwindow, GLFW_VISIBLE);
 	return visible;
 }
 
@@ -287,7 +287,7 @@ void bbe::Window::setVideoRenderingMode(const char* path)
 
 void bbe::Window::close()
 {
-	glfwSetWindowShouldClose(m_pwindow, GLFW_TRUE);
+	glfwWrapper::glfwSetWindowShouldClose(m_pwindow, GLFW_TRUE);
 }
 
 void bbe::Window::registerCloseListener(const std::function<void()>& listener)
@@ -336,11 +336,11 @@ void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, i
 	if (ImGui::GetIO().WantCaptureKeyboard) return;
 	if (action == GLFW_PRESS)
 	{
-		((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_press((bbe::Key)keyCode);
+		((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_press((bbe::Key)keyCode);
 	}
 	else if (action == GLFW_RELEASE)
 	{
-		((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_release((bbe::Key)keyCode);
+		((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_release((bbe::Key)keyCode);
 	}
 #endif
 }
@@ -360,12 +360,12 @@ void bbe::INTERNAL_cursorPosCallback(GLFWwindow * window, double xpos, double yp
 	float windowXScale = 0;
 	float windowYScale = 0;
 	glfwWrapper::glfwGetWindowContentScale(window, &windowXScale, &windowYScale);
-	((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_moveMouse((float)(xpos / windowXScale), (float)(ypos / windowYScale));
+	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_moveMouse((float)(xpos / windowXScale), (float)(ypos / windowYScale));
 }
 
 void bbe::INTERNAL_windowResizeCallback(GLFWwindow * window, int width, int height)
 {
-	((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_resize(width, height);
+	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_resize(width, height);
 }
 
 void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int action, int mods)
@@ -377,11 +377,11 @@ void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int acti
 
 	if (action == GLFW_PRESS)
 	{
-		((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_press((bbe::MouseButton)button);
+		((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_press((bbe::MouseButton)button);
 	}
 	else if (action == GLFW_RELEASE)
 	{
-		((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_release((bbe::MouseButton)button);
+		((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_release((bbe::MouseButton)button);
 	}
 }
 
@@ -391,19 +391,19 @@ void bbe::INTERNAL_mouseScrollCallback(GLFWwindow * window, double xoffset, doub
 	ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
 	if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
-	((bbe::Window*)glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_scroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
+	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_scroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
 }
 
 void bbe::INTERNAL_windowCloseCallback(GLFWwindow* window)
 {
-	switch (((bbe::Window*)glfwGetWindowUserPointer(window))->getWindowCloseMode())
+	switch (((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->getWindowCloseMode())
 	{
 	case bbe::WindowCloseMode::CLOSE:
 		// Do nothing
 		break;
 	case bbe::WindowCloseMode::HIDE:
-		glfwSetWindowShouldClose(window, GLFW_FALSE);
-		glfwHideWindow(window);
+		glfwWrapper::glfwSetWindowShouldClose(window, GLFW_FALSE);
+		glfwWrapper::glfwHideWindow(window);
 		break;
 	default:
 		throw bbe::IllegalStateException();

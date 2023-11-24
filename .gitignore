@@ -24,6 +24,7 @@
 [Bb]uildEmscripten/
 [Bb]uildPortaudio/
 [Bb]uildLinuxNull/
+[Bb]uildVulkan/
 bld/
 [Bb]in/
 [Oo]bj/
