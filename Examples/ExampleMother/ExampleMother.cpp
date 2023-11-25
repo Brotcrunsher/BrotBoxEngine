@@ -8,7 +8,7 @@
 //TODO: Make .dll unnecessary for OpenAL when deploying .exe
 //TODO: Serializer List: Move paranoia copies to its own directory.
 //TODO: Bracket Arguments for AssetStore https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#bracket-argument
-//TODO: Github Pipeline currently broken
+//TODO: It can be sometimes a bit tricky to see which button actually belongs to which task
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -466,7 +466,18 @@ public:
 					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(!)");
 					ImGui::SameLine();
 				}
-				ImGui::Text(t.title, t.internalValue);
+				bbe::String modifiedTitle = t.title;
+				if (modifiedTitle.contains("[MIN]"))
+				{
+					auto value = t.internalValue / 60;
+					modifiedTitle = modifiedTitle.replace("[MIN]", bbe::String(value));
+				}
+				if (modifiedTitle.contains("[SEC]"))
+				{
+					auto value = t.internalValue % 60;
+					modifiedTitle = modifiedTitle.replace("[SEC]", bbe::String(value));
+				}
+				ImGui::Text(modifiedTitle.getRaw(), t.internalValue);
 				if (t.history.getLength() > 1)
 				{
 					if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort) && ImGui::BeginTooltip())
