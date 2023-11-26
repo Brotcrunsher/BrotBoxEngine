@@ -8,7 +8,7 @@
 //TODO: Make .dll unnecessary for OpenAL when deploying .exe
 //TODO: Serializer List: Move paranoia copies to its own directory.
 //TODO: Bracket Arguments for AssetStore https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#bracket-argument
-//TODO: It can be sometimes a bit tricky to see which button actually belongs to which task
+//TODO: Butchered looks on non 4k
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -444,7 +444,7 @@ public:
 	{
 		int32_t amountDrawn = 0;
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
-		if (ImGui::BeginTable("table2", 6))
+		if (ImGui::BeginTable("table2", 6, ImGuiTableFlags_RowBg))
 		{
 			ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 400);
 			if(showCountdown) ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
@@ -594,9 +594,10 @@ public:
 	{
 		if (!editMode)
 		{
-			const ImGuiViewport* viewport = ImGui::GetMainViewport();
-			ImGui::SetNextWindowPos(viewport->WorkPos);
-			ImGui::SetNextWindowSize(viewport->WorkSize);
+			ImGuiViewport viewport = *ImGui::GetMainViewport();
+			viewport.WorkSize.x *= 0.6f;
+			ImGui::SetNextWindowPos(viewport.WorkPos);
+			ImGui::SetNextWindowSize(viewport.WorkSize);
 			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 			bool contentsChanged = false;
 			amountOfTasksNow = drawTable("Now", [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                                      contentsChanged, false, false, true,  true, false);
@@ -607,6 +608,16 @@ public:
 			{
 				tasks.writeToFile();
 			}
+			ImGui::End();
+
+			viewport.WorkPos.x += viewport.WorkSize.x;
+			viewport.WorkSize.x *= ImGui::GetMainViewport()->WorkSize.x * 0.4f;
+			ImGui::SetNextWindowPos(viewport.WorkPos);
+			ImGui::SetNextWindowSize(viewport.WorkSize);
+			ImGui::Begin("Info", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+			ImGui::Text("Build: " __DATE__ ", " __TIME__);
+			bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
+			ImGui::Text(s.getRaw());
 			ImGui::End();
 		}
 		else
