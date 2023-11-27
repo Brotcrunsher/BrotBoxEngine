@@ -368,6 +368,8 @@ endif()
 
 if(BBE_ADD_AUDIO)
   set(ALSOFT_EXAMPLES OFF CACHE BOOL "" FORCE)
+  set(AL_LIBTYPE_STATIC ON CACHE BOOL "" FORCE)
+  set(LIBTYPE STATIC CACHE STRING "" FORCE)
   add_subdirectory("Third-Party/openal-soft-1.23.0")
   target_include_directories(BrotBoxEngine PUBLIC "Third-Party/openal-soft-1.23.0/include")
   if(NOT EMSCRIPTEN)
