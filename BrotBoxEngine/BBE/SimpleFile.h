@@ -20,6 +20,7 @@ namespace bbe
 		void appendStringToFile(const bbe::String& filePath, const bbe::String& stringToAppend);
 		void appendBinaryToFile(const bbe::String& filePath, bbe::ByteBuffer& buffer);
 		bool doesFileExist(const bbe::String& filePath);
+		void createDirectory(const bbe::String& path);
 		bbe::String readFile(const bbe::String& filePath);
 		bbe::List<bbe::String> readLines(const bbe::String& filePath);
 	}

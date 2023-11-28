@@ -10,16 +10,10 @@ namespace bbe
 	template <typename T>
 	class SerializableList
 	{
-	public:
-		enum class ParanoiaMode
-		{
-			NORMAL,
-			PARANOIA
-		};
 	private:
 		bbe::String path;
+		bbe::String paranoiaPath;
 		bbe::List<T> data;
-		ParanoiaMode paranoia;
 
 		void load(const bbe::String& path, const bbe::List<T>& data)
 		{
@@ -49,16 +43,16 @@ namespace bbe
 		}
 
 	public:
-		SerializableList(const bbe::String& path, ParanoiaMode paranoia = ParanoiaMode::NORMAL) :
-			paranoia(paranoia)
+		SerializableList(const bbe::String& path, const bbe::String& paranoiaPath = "") :
+			paranoiaPath(paranoiaPath)
 		{
 			load(path, {});
 		}
 
-		static SerializableList withDefault(const bbe::String& path, const bbe::List<T>& data, ParanoiaMode paranoia = ParanoiaMode::NORMAL)
+		static SerializableList withDefault(const bbe::String& path, const bbe::List<T>& data, const bbe::String& paranoiaPath = "")
 		{
 			SerializableList sl;
-			sl.paranoia = paranoia;
+			sl.paranoiaPath = paranoiaPath;
 			sl.load(path, data);
 			return sl;
 		}
@@ -115,11 +109,12 @@ namespace bbe
 				buffer.fillSizeToken(token);
 			}
 			bbe::simpleFile::writeBinaryToFile(path, buffer);
-			if (paranoia == ParanoiaMode::PARANOIA)
+			if (paranoiaPath.getLength() != 0)
 			{
 				time_t t;
 				time(&t);
-				bbe::simpleFile::writeBinaryToFile(path + t + ".bak", buffer);
+				bbe::simpleFile::createDirectory(paranoiaPath);
+				bbe::simpleFile::writeBinaryToFile(paranoiaPath + "/" + path + t + ".bak", buffer);
 			}
 		}
 	};

@@ -142,6 +142,14 @@ bool bbe::simpleFile::doesFileExist(const bbe::String& filePath)
 	return (bool)f;
 }
 
+void bbe::simpleFile::createDirectory(const bbe::String& path)
+{
+	if (!std::filesystem::is_directory(path.getRaw()) || !std::filesystem::exists(path.getRaw()))
+	{
+		std::filesystem::create_directories(path.getRaw());
+	}
+}
+
 bbe::String bbe::simpleFile::readFile(const bbe::String& filePath)
 {
 	std::ifstream f(filePath.getRaw());

@@ -5,9 +5,8 @@
 
 //TODO: GATW: kill (?) Time Wasters Processes during working hours and while still tasks are open.
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
-//TODO: Serializer List: Move paranoia copies to its own directory.
-//TODO: Bracket Arguments for AssetStore https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#bracket-argument
 //TODO: Butchered looks on non 4k
+//TODO: [MIN]:[SEC] looks dumb when sec <= 9 cause sec then only has one digit.
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -172,7 +171,7 @@ public:
 class MyGame : public bbe::Game
 {
 private:
-	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", bbe::SerializableList<Task>::ParanoiaMode::PARANOIA);
+	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", "ParanoiaConfig");
 	bool editMode = false;
 	bool shiftPressed = false;
 
