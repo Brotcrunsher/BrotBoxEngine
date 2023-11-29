@@ -7,6 +7,7 @@
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Butchered looks on non 4k
 //TODO: [MIN]:[SEC] looks dumb when sec <= 9 cause sec then only has one digit.
+//TODO: Add "Advanceable?" to tasks. If yes, then on tomorrow list a new button appears pushing the tasks further down (intended to be able to do part of tomorrows work)
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -461,7 +462,9 @@ public:
 				ImGui::TableSetColumnIndex(column++);
 				if (highlightRareTasks && t.repeatDays > 1)
 				{
-					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(!)");
+					const bool poosibleTodoToday = (t.nextPossibleExecution().hasPassed() || t.nextPossibleExecution().isToday());
+					if(poosibleTodoToday) ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.8f, 1.0f), "(?)");
+					else                  ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(!)");
 					ImGui::SameLine();
 				}
 				bbe::String modifiedTitle = t.title;
