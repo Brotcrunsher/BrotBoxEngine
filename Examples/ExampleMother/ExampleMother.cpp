@@ -1,6 +1,7 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 #include <Windows.h>
+#include <tlhelp32.h>
 #include "AssetStore.h"
 
 //TODO: GATW: kill (?) Time Wasters Processes during working hours and while still tasks are open.
@@ -186,10 +187,59 @@ public:
 	}
 };
 
+struct Process
+{
+	static constexpr const char* typeStrings[] = { "Unknown", "System", "Other", "Game" };
+	static constexpr int32_t TYPE_UNKNOWN = 0;
+	static constexpr int32_t TYPE_SYSTEM = 1;
+	static constexpr int32_t TYPE_OTHER = 2;
+	static constexpr int32_t TYPE_GAME = 3;
+	static int32_t strToType(const char* str)
+	{
+		if (strcmp(str, typeStrings[0]) == 0) return TYPE_UNKNOWN;
+		if (strcmp(str, typeStrings[1]) == 0) return TYPE_SYSTEM;
+		if (strcmp(str, typeStrings[2]) == 0) return TYPE_OTHER;
+		if (strcmp(str, typeStrings[3]) == 0) return TYPE_GAME;
+		throw bbe::IllegalStateException();
+	}
+	static const char* typeToStr(int32_t it)
+	{
+		if (it == TYPE_UNKNOWN) return typeStrings[0];
+		if (it == TYPE_SYSTEM)  return typeStrings[1];
+		if (it == TYPE_OTHER)   return typeStrings[2];
+		if (it == TYPE_GAME)    return typeStrings[3];
+		throw bbe::IllegalStateException();
+	}
+
+	char title[1024] = {};
+	int32_t type = TYPE_UNKNOWN;
+
+
+	// Non-Persisted Helper Data below.
+	const char* inputTypeStr = typeStrings[0];
+
+	void serialize(bbe::ByteBuffer& buffer) const
+	{
+		buffer.writeNullString(title);
+		buffer.write(type);
+	}
+	static Process deserialize(bbe::ByteBufferSpan& buffer)
+	{
+		Process retVal;
+
+		strcpy(retVal.title, buffer.readNullString());
+		buffer.read(retVal.type);
+		retVal.inputTypeStr = typeToStr(retVal.type);
+
+		return retVal;
+	}
+};
+
 class MyGame : public bbe::Game
 {
 private:
 	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", "ParanoiaConfig");
+	bbe::SerializableList<Process> processes = bbe::SerializableList<Process>("processes.dat", "ParanoiaConfig");
 	bool editMode = false;
 	bool shiftPressed = false;
 
@@ -646,6 +696,79 @@ public:
 			ImGui::Text("Build: " __DATE__ ", " __TIME__);
 			bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
 			ImGui::Text(s.getRaw());
+			ImGui::NewLine();
+
+			HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
+			PROCESSENTRY32 entry;
+			entry.dwSize = sizeof(entry);
+			BOOL hasEntry = Process32First(snapshot, &entry);
+			while (hasEntry)
+			{
+				bool found = false;
+				for (size_t i = 0; i < processes.getLength(); i++)
+				{
+					if (strcmp(processes[i].title, entry.szExeFile) == 0)
+					{
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+				{
+					Process newProcess;
+					strcpy(newProcess.title, entry.szExeFile);
+					processes.add(newProcess);
+				}
+				hasEntry = Process32Next(snapshot, &entry);
+			}
+			CloseHandle(snapshot);
+			static bool showSystem = false;
+			ImGui::Checkbox("Show System", &showSystem);
+			static bool showOther = false;
+			ImGui::SameLine();
+			ImGui::Checkbox("Show Other", &showOther);
+			static bool showGames = false;
+			ImGui::SameLine();
+			ImGui::Checkbox("Show Games", &showGames);
+			if (ImGui::BeginTable("tableProcesses", 2, ImGuiTableFlags_RowBg))
+			{
+				ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 600);
+				ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
+				bool processChanged = false;
+				for (size_t i = 0; i < processes.getLength(); i++)
+				{
+					Process& p = processes[i];
+					if (p.type == Process::TYPE_SYSTEM && !showSystem) continue;
+					if (p.type == Process::TYPE_OTHER && !showOther) continue;
+					if (p.type == Process::TYPE_GAME && !showGames) continue;
+					ImGui::PushID(i);
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::Text(p.title);
+
+					ImGui::TableSetColumnIndex(1);
+					if (ImGui::BeginCombo("Type", p.inputTypeStr))
+					{
+						for (int i = 0; i < IM_ARRAYSIZE(Process::typeStrings); i++)
+						{
+							if (ImGui::Selectable(Process::typeStrings[i]))
+							{
+								p.inputTypeStr = Process::typeStrings[i];
+								p.type = i;
+								processChanged = true;
+							}
+						}
+						ImGui::EndCombo();
+					}
+					ImGui::PopID();
+				}
+				if (processChanged)
+				{
+					processes.writeToFile();
+				}
+				ImGui::EndTable();
+			}
+
 			ImGui::End();
 		}
 		else
