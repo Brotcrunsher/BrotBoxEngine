@@ -61,6 +61,7 @@ public:
 	int32_t followUp2 = 0;
 	InputType inputType = InputType::NONE;
 	bbe::List<float> history;
+	bool advanceable = false;
 
 	// Non-Persisted Helper Data below.
 	const char* inputTypeStr = inputTypeItems[0];
@@ -109,6 +110,10 @@ public:
 		armedToPlaySound = false;
 		nextExecution = bbe::TimePoint();
 	}
+	void execAdvance()
+	{
+		nextExecution = toPossibleTimePoint(nextExecution.plusDays(repeatDays));
+	}
 
 	void sanity()
 	{
@@ -128,6 +133,7 @@ public:
 		buffer.write(followUp2);
 		buffer.write((int32_t)inputType);
 		buffer.write(history);
+		buffer.write(advanceable);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -147,6 +153,7 @@ public:
 		retVal.inputType = (InputType)inputType;
 		retVal.inputTypeStr = inputTypeToStr(retVal.inputType);
 		buffer.read(retVal.history);
+		buffer.read(retVal.advanceable);
 
 		return retVal;
 	}
@@ -154,17 +161,29 @@ public:
 	bbe::TimePoint nextPossibleExecution() const
 	{
 		if (!nextExecution.hasPassed()) return nextExecution;
-		bbe::TimePoint execTime;
-		if (!canBeSundays && execTime.isSunday()) execTime = execTime.nextMorning();
-		return execTime;
+		return toPossibleTimePoint(bbe::TimePoint());
+	}
+
+	bbe::TimePoint toPossibleTimePoint(const bbe::TimePoint& tp) const
+	{
+		bbe::TimePoint retVal = tp;
+		if (!canBeSundays && retVal.isSunday()) retVal = retVal.nextMorning();
+		return retVal;
 	}
 
 	bool isImportantTomorrow() const
 	{
-		bbe::TimePoint tomorrow = bbe::TimePoint().plusDays(1);
+		bbe::TimePoint tomorrow = bbe::TimePoint().nextMorning().plusDays(1).plusSeconds(-1);
 		if (nextExecution < tomorrow) return true;
-		if (repeatDays <= 1) return true;
 
+		return false;
+	}
+
+	bool isImportantToday() const
+	{
+		auto tp = nextPossibleExecution();
+		if (tp.hasPassed()) return true;
+		if (tp.isToday()) return true;
 		return false;
 	}
 };
@@ -439,11 +458,11 @@ public:
 		}
 	}
 
-	int32_t drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks)
+	int32_t drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable)
 	{
 		int32_t amountDrawn = 0;
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
-		if (ImGui::BeginTable("table2", 6, ImGuiTableFlags_RowBg))
+		if (ImGui::BeginTable("table2", 7, ImGuiTableFlags_RowBg))
 		{
 			ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 400);
 			if(showCountdown) ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
@@ -546,6 +565,15 @@ public:
 					t.execFollowUp2();
 					contentsChanged = true;
 				}
+				if (showAdvancable)
+				{
+					ImGui::TableSetColumnIndex(column++);
+					if (t.advanceable && !t.isImportantToday() && ImGui::Button("Advance"))
+					{
+						t.execAdvance();
+						contentsChanged = true;
+					}
+				}
 				if (showMoveToNow)
 				{
 					ImGui::TableSetColumnIndex(column++);
@@ -571,6 +599,7 @@ public:
 		taskChanged |= ImGui::InputText("Title", t.title, sizeof(t.title));
 		taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
 		taskChanged |= ImGui::Checkbox("Can be Sundays", &t.canBeSundays);
+		taskChanged |= ImGui::Checkbox("Advanceable", &t.advanceable);
 		taskChanged |= ImGui::InputInt("Follow Up  (in Minutes)", &t.followUp);
 		taskChanged |= ImGui::InputInt("Follow Up2 (in Minutes)", &t.followUp2);
 		taskChanged |= ImGui::InputInt("Internal Value", &t.internalValue);
@@ -601,10 +630,10 @@ public:
 			ImGui::SetNextWindowSize(viewport.WorkSize);
 			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 			bool contentsChanged = false;
-			amountOfTasksNow = drawTable("Now", [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                                      contentsChanged, false, false, true,  true, false);
-			drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false);
-			drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true, false, false, true, true);
-			drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false);
+			amountOfTasksNow = drawTable("Now", [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                        contentsChanged, false, false, true,  true, false, false);
+			drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false, false);
+			drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true,  false, false, true, true , true );
+			drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false, false);
 			if (contentsChanged)
 			{
 				tasks.writeToFile();
