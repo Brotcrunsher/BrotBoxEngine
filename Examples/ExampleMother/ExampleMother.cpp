@@ -678,12 +678,19 @@ public:
 			ImGui::Separator();
 			ImGui::Separator();
 			ImGui::Separator();
+			char buffer[128] = {};
+			ImGui::InputText("Search", buffer, sizeof(buffer));
+			ImGui::Separator();
+			ImGui::Separator();
+			ImGui::Separator();
 			ImGui::NewLine();
 
 			bool tasksChanged = false;
 			size_t deletionIndex = (size_t)-1;
 			for (size_t i = 0; i < tasks.getLength(); i++)
 			{
+				Task& t = tasks[i];
+				if (buffer[0] != 0 && !bbe::String(t.title).contains(buffer)) continue;
 				ImGui::PushID(i);
 				if (ImGui::Button(shiftPressed ? "Delete Task" : "[Shift]") && shiftPressed)
 				{
@@ -705,7 +712,6 @@ public:
 						tasks.swap(i, i + 1);
 					}
 				}
-				Task& t = tasks[i];
 				tasksChanged |= drawEditableTask(t);
 				ImGui::Text(t.previousExecution.toString().getRaw());
 				ImGui::Text(t.nextPossibleExecution().toString().getRaw());
