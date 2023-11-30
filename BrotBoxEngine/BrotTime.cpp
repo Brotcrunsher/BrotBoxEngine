@@ -220,11 +220,16 @@ bbe::String bbe::Duration::toString() const
 	seconds %= 60;
 	int32_t hours = minutes / 60;
 	minutes %= 60;
+	int32_t days = hours / 24;
+	hours %= 24;
 
 	// TODO: bbe::String::format would be nice.
 
 	char buffer[128] = {};
-	std::snprintf(buffer, sizeof(buffer), "%.2d:%.2d:%.2d", hours, minutes, seconds);
+	if(days == 0)
+		std::snprintf(buffer, sizeof(buffer), "%.2d:%.2d:%.2d", hours, minutes, seconds);
+	else
+		std::snprintf(buffer, sizeof(buffer), "%d:%.2d:%.2d:%.2d", days, hours, minutes, seconds);
 	return bbe::String(buffer);
 }
 
