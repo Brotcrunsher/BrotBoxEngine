@@ -678,7 +678,7 @@ public:
 			ImGui::Separator();
 			ImGui::Separator();
 			ImGui::Separator();
-			char buffer[128] = {};
+			static char buffer[128] = {};
 			ImGui::InputText("Search", buffer, sizeof(buffer));
 			ImGui::Separator();
 			ImGui::Separator();
