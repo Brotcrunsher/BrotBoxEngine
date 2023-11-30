@@ -66,6 +66,8 @@ namespace bbe
 
 		/*nonexplicit*/ Utf8String(const std::initializer_list<char>& il);
 
+		static Utf8String format(const char* format, ...);
+
 		void serialize(bbe::ByteBuffer& buffer) const;
 		static bbe::Utf8String deserialize(bbe::ByteBufferSpan& buffer);
 

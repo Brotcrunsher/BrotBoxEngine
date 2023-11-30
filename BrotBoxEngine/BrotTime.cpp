@@ -223,14 +223,10 @@ bbe::String bbe::Duration::toString() const
 	int32_t days = hours / 24;
 	hours %= 24;
 
-	// TODO: bbe::String::format would be nice.
-
-	char buffer[128] = {};
 	if(days == 0)
-		std::snprintf(buffer, sizeof(buffer), "%.2d:%.2d:%.2d", hours, minutes, seconds);
+		return bbe::String::format("%.2d:%.2d:%.2d", hours, minutes, seconds);
 	else
-		std::snprintf(buffer, sizeof(buffer), "%d:%.2d:%.2d:%.2d", days, hours, minutes, seconds);
-	return bbe::String(buffer);
+		return bbe::String::format("%d:%.2d:%.2d:%.2d", days, hours, minutes, seconds);
 }
 
 int32_t bbe::Duration::toSeconds() const

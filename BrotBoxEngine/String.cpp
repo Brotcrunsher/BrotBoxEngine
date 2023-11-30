@@ -3,6 +3,7 @@
 #include "BBE/Exceptions.h"
 #include "BBE/Math.h"
 #include <string>
+#include "stdarg.h"
 #include "BBE/Utf8Helpers.h"
 
 void bbe::Utf8String::growIfNeeded(std::size_t newSize)
@@ -133,6 +134,37 @@ bbe::Utf8String::Utf8String(const std::initializer_list<char>& il)
 		}
 		initializeFromCharArr(il.begin());
 	}
+}
+
+bbe::Utf8String bbe::Utf8String::format(const char* format, ...)
+{
+	va_list args1;
+	va_list args2;
+
+	va_start(args1, format);
+	va_copy(args2, args1);
+
+	bbe::String retVal;
+
+	auto amountOfByte = vsnprintf(nullptr, 0, format, args1);
+
+	if (amountOfByte < BBE_UTF8STRING_SSOSIZE - 1)
+	{
+		vsnprintf(retVal.m_UNION.m_ssoData, sizeof(retVal.m_UNION.m_ssoData), format, args2);
+		retVal.m_usesSSO = true;
+		retVal.m_capacity = BBE_UTF8STRING_SSOSIZE;
+	}
+	else
+	{
+		retVal.m_UNION.m_pdata = new char[amountOfByte + 1];
+		vsnprintf(retVal.m_UNION.m_pdata, amountOfByte + 1, format, args2);
+		retVal.m_usesSSO = false;
+		retVal.m_capacity = amountOfByte + 1;
+	}
+
+
+	retVal.m_length = utf8len(retVal.getRaw());
+	return retVal;
 }
 
 void bbe::Utf8String::serialize(bbe::ByteBuffer& buffer) const
