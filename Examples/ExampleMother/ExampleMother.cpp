@@ -4,9 +4,10 @@
 #include <tlhelp32.h>
 #include "AssetStore.h"
 
-//TODO: GATW: kill (?) Time Wasters Processes during working hours and while still tasks are open.
+//TODO: GATW: Also play "Open Tasks" sound when opening time wasting URLs
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Butchered looks on non 4k
+//TODO: Make Search not case sensitive.
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -242,6 +243,8 @@ private:
 	bbe::SerializableList<Process> processes = bbe::SerializableList<Process>("processes.dat", "ParanoiaConfig");
 	bool editMode = false;
 	bool shiftPressed = false;
+	bool isGameOn = false;
+	bool openTasksNotificationSilenced = false;
 
 	bbe::List<HICON> trayIconsRed;
 	bbe::List<HICON> trayIconsGreen;
@@ -451,6 +454,12 @@ public:
 		return bbe::TimePoint::todayAt(5, 00) > now || now > getNightStart();
 	}
 
+	bool isWorkTime()
+	{
+		bbe::TimePoint now;
+		return now > bbe::TimePoint::todayAt(5, 00) && now < bbe::TimePoint::todayAt(17, 00);
+	}
+
 	bool shouldPlayAlmostNightWarning()
 	{
 		static bool playedBefore = false;
@@ -503,6 +512,54 @@ public:
 		if (shouldPlayAlmostNightWarning())
 		{
 			assetStore::AlmostNightTime()->play();
+		}
+
+		amountOfTasksNow = 0;
+		for (size_t i = 0; i < tasks.getLength(); i++)
+		{
+			Task& t = tasks[i];
+			if (t.nextPossibleExecution().hasPassed())
+			{
+				amountOfTasksNow++;
+			}
+		}
+
+		HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
+		PROCESSENTRY32 entry;
+		entry.dwSize = sizeof(entry);
+		BOOL hasEntry = Process32First(snapshot, &entry);
+		isGameOn = false;
+		while (hasEntry)
+		{
+			bool found = false;
+			for (size_t i = 0; i < processes.getLength(); i++)
+			{
+				if (strcmp(processes[i].title, entry.szExeFile) == 0)
+				{
+					if (processes[i].type == Process::TYPE_GAME) isGameOn = true;
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				Process newProcess;
+				strcpy(newProcess.title, entry.szExeFile);
+				processes.add(newProcess);
+			}
+			hasEntry = Process32Next(snapshot, &entry);
+		}
+		CloseHandle(snapshot);
+
+		if (!openTasksNotificationSilenced && isGameOn && amountOfTasksNow > 0 && isWorkTime())
+		{
+			static float timeSinceLastNotify = 10000.0f;
+			timeSinceLastNotify += timeSinceLastFrame;
+			if (timeSinceLastNotify >= 15 * 60)
+			{
+				timeSinceLastNotify = 0.0f;
+				assetStore::OpenTasks()->play();
+			}
 		}
 	}
 
@@ -678,7 +735,7 @@ public:
 			ImGui::SetNextWindowSize(viewport.WorkSize);
 			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 			bool contentsChanged = false;
-			amountOfTasksNow = drawTable("Now", [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                        contentsChanged, false, false, true,  true, false, false);
+			drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                                      contentsChanged, false, false, true,  true, false, false);
 			drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false, false);
 			drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true,  false, false, true, true , true );
 			drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false, false);
@@ -696,32 +753,9 @@ public:
 			ImGui::Text("Build: " __DATE__ ", " __TIME__);
 			bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
 			ImGui::Text(s.getRaw());
+			ImGui::Checkbox("Silence Open Task Notification Sound", &openTasksNotificationSilenced);
 			ImGui::NewLine();
 
-			HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
-			PROCESSENTRY32 entry;
-			entry.dwSize = sizeof(entry);
-			BOOL hasEntry = Process32First(snapshot, &entry);
-			while (hasEntry)
-			{
-				bool found = false;
-				for (size_t i = 0; i < processes.getLength(); i++)
-				{
-					if (strcmp(processes[i].title, entry.szExeFile) == 0)
-					{
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-				{
-					Process newProcess;
-					strcpy(newProcess.title, entry.szExeFile);
-					processes.add(newProcess);
-				}
-				hasEntry = Process32Next(snapshot, &entry);
-			}
-			CloseHandle(snapshot);
 			static bool showSystem = false;
 			ImGui::Checkbox("Show System", &showSystem);
 			static bool showOther = false;
