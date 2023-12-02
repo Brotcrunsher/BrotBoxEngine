@@ -784,6 +784,30 @@ bool bbe::Utf8String::contains(const Utf8String &string) const
 	return contains(string.getRaw());
 }
 
+#ifdef _MSC_VER
+#include <shlwapi.h>
+#else
+#endif
+
+static bool platformIndependentStrStrI(const char* haystack, const char* needle)
+{
+#ifdef _MSC_VER
+	return StrStrIA(haystack, needle) != nullptr;
+#else
+	return strcasestr(hackstack, needle) != nullptr;
+#endif
+}
+
+bool bbe::Utf8String::containsIgnoreCase(const char* string) const
+{
+	return platformIndependentStrStrI(getRaw(), string);
+}
+
+bool bbe::Utf8String::containsIgnoreCase(const Utf8String& string) const
+{
+	return containsIgnoreCase(string.getRaw());
+}
+
 bool bbe::Utf8String::isTextAtLocation(const char* string, size_t index) const
 {
 	while (*string)

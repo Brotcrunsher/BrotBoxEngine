@@ -141,9 +141,11 @@ namespace bbe
 		DynamicArray<Utf8String> split(const char*       splitAt, bool addEmpty = true) const;
 
 		DynamicArray<Utf8String> lines(bool addEmpty = true) const;
-
+		
 		bool contains(const char*       string) const;
 		bool contains(const Utf8String& string) const;
+		bool containsIgnoreCase(const char*       string) const;
+		bool containsIgnoreCase(const Utf8String& string) const;
 
 		bool isTextAtLocation(const char* string, size_t index) const;
 		bool startsWith(const char* string) const;

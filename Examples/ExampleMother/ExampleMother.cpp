@@ -2,12 +2,14 @@
 #include <iostream>
 #include <Windows.h>
 #include <tlhelp32.h>
+#include <AtlBase.h>
+#include <UIAutomation.h>
 #include "AssetStore.h"
 
 //TODO: GATW: Also play "Open Tasks" sound when opening time wasting URLs
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Butchered looks on non 4k
-//TODO: Make Search not case sensitive.
+//TODO: Single Shot Tasks - for things that happen on a specific date, once, and are automatically deleted on completion
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -725,6 +727,55 @@ public:
 		return taskChanged;
 	}
 
+#ifdef BrowserStuff
+	bbe::List<bbe::String> getDomains()
+	{
+		bbe::List<bbe::String> retVal;
+		//By: Barmak Shemirani see https://stackoverflow.com/a/48507146/7130273
+		//Modified to return a bbe::List<bbe::String>
+		//         and only the domain part
+		HWND hwnd = NULL;
+		while (true)
+		{
+			hwnd = FindWindowEx(NULL, hwnd, "Chrome_WidgetWin_1", NULL);
+			if (!hwnd)
+				break;
+			if (!IsWindowVisible(hwnd))
+				continue;
+
+			CComQIPtr<IUIAutomation> uia;
+			if (FAILED(uia.CoCreateInstance(CLSID_CUIAutomation)) || !uia)
+				continue;
+
+			CComPtr<IUIAutomationElement> root;
+			if (FAILED(uia->ElementFromHandle(hwnd, &root)) || !root)
+				continue;
+
+			CComPtr<IUIAutomationCondition> condition;
+			uia->CreatePropertyCondition(UIA_ControlTypePropertyId,
+				CComVariant(0xC354), &condition);
+
+			//or use edit control's name instead
+			//uia->CreatePropertyCondition(UIA_NamePropertyId, 
+			//      CComVariant(L"Address and search bar"), &condition);
+
+			CComPtr<IUIAutomationElement> edit;
+			if (FAILED(root->FindFirst(TreeScope_Descendants, condition, &edit))
+				|| !edit)
+				continue; //maybe we don't have the right tab, continue...
+
+			CComVariant url;
+			edit->GetCurrentPropertyValue(UIA_ValueValuePropertyId, &url);
+
+			char buffer[1024] = {};
+			wcstombs(buffer, url.bstrVal, sizeof(buffer) / sizeof(wchar_t));
+			//retVal.add(bbe::String(buffer).split("/")[0]);
+			retVal.add(bbe::String(buffer));
+		}
+		return retVal;
+	}
+#endif
+
 	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
 	{
 		if (!editMode)
@@ -734,75 +785,101 @@ public:
 			ImGui::SetNextWindowPos(viewport.WorkPos);
 			ImGui::SetNextWindowSize(viewport.WorkSize);
 			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
-			bool contentsChanged = false;
-			drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                                      contentsChanged, false, false, true,  true, false, false);
-			drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false, false);
-			drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true,  false, false, true, true , true );
-			drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false, false);
-			if (contentsChanged)
 			{
-				tasks.writeToFile();
+				bool contentsChanged = false;
+				drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                                      contentsChanged, false, false, true,  true, false, false);
+				drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false, false);
+				drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true,  false, false, true, true , true );
+				drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false, false);
+				if (contentsChanged)
+				{
+					tasks.writeToFile();
+				}
 			}
 			ImGui::End();
 
 			viewport.WorkPos.x += viewport.WorkSize.x;
 			viewport.WorkSize.x *= ImGui::GetMainViewport()->WorkSize.x * 0.4f;
+			viewport.WorkSize.y *= 1.f / 3.f;
 			ImGui::SetNextWindowPos(viewport.WorkPos);
 			ImGui::SetNextWindowSize(viewport.WorkSize);
 			ImGui::Begin("Info", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
-			ImGui::Text("Build: " __DATE__ ", " __TIME__);
-			bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
-			ImGui::Text(s.getRaw());
-			ImGui::Checkbox("Silence Open Task Notification Sound", &openTasksNotificationSilenced);
-			ImGui::NewLine();
-
-			static bool showSystem = false;
-			ImGui::Checkbox("Show System", &showSystem);
-			static bool showOther = false;
-			ImGui::SameLine();
-			ImGui::Checkbox("Show Other", &showOther);
-			static bool showGames = false;
-			ImGui::SameLine();
-			ImGui::Checkbox("Show Games", &showGames);
-			if (ImGui::BeginTable("tableProcesses", 2, ImGuiTableFlags_RowBg))
 			{
-				ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 600);
-				ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
-				bool processChanged = false;
-				for (size_t i = 0; i < processes.getLength(); i++)
-				{
-					Process& p = processes[i];
-					if (p.type == Process::TYPE_SYSTEM && !showSystem) continue;
-					if (p.type == Process::TYPE_OTHER && !showOther) continue;
-					if (p.type == Process::TYPE_GAME && !showGames) continue;
-					ImGui::PushID(i);
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0);
-					ImGui::Text(p.title);
-
-					ImGui::TableSetColumnIndex(1);
-					if (ImGui::BeginCombo("Type", p.inputTypeStr))
-					{
-						for (int i = 0; i < IM_ARRAYSIZE(Process::typeStrings); i++)
-						{
-							if (ImGui::Selectable(Process::typeStrings[i]))
-							{
-								p.inputTypeStr = Process::typeStrings[i];
-								p.type = i;
-								processChanged = true;
-							}
-						}
-						ImGui::EndCombo();
-					}
-					ImGui::PopID();
-				}
-				if (processChanged)
-				{
-					processes.writeToFile();
-				}
-				ImGui::EndTable();
+				ImGui::Text("Build: " __DATE__ ", " __TIME__);
+				bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
+				ImGui::Text(s.getRaw());
+				ImGui::Checkbox("Silence Open Task Notification Sound", &openTasksNotificationSilenced);
 			}
+			ImGui::End();
 
+			viewport.WorkPos.y = viewport.WorkSize.y;
+			ImGui::SetNextWindowPos(viewport.WorkPos);
+			ImGui::SetNextWindowSize(viewport.WorkSize);
+			ImGui::Begin("Processes", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+			{
+				static bool showSystem = false;
+				ImGui::Checkbox("Show System", &showSystem);
+				static bool showOther = false;
+				ImGui::SameLine();
+				ImGui::Checkbox("Show Other", &showOther);
+				static bool showGames = false;
+				ImGui::SameLine();
+				ImGui::Checkbox("Show Games", &showGames);
+				if (ImGui::BeginTable("tableProcesses", 2, ImGuiTableFlags_RowBg))
+				{
+					ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 600);
+					ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
+					bool processChanged = false;
+					for (size_t i = 0; i < processes.getLength(); i++)
+					{
+						Process& p = processes[i];
+						if (p.type == Process::TYPE_SYSTEM && !showSystem) continue;
+						if (p.type == Process::TYPE_OTHER && !showOther) continue;
+						if (p.type == Process::TYPE_GAME && !showGames) continue;
+						ImGui::PushID(i);
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						ImGui::Text(p.title);
+
+						ImGui::TableSetColumnIndex(1);
+						if (ImGui::BeginCombo("Type", p.inputTypeStr))
+						{
+							for (int i = 0; i < IM_ARRAYSIZE(Process::typeStrings); i++)
+							{
+								if (ImGui::Selectable(Process::typeStrings[i]))
+								{
+									p.inputTypeStr = Process::typeStrings[i];
+									p.type = i;
+									processChanged = true;
+								}
+							}
+							ImGui::EndCombo();
+						}
+						ImGui::PopID();
+					}
+					if (processChanged)
+					{
+						processes.writeToFile();
+					}
+					ImGui::EndTable();
+				}
+			}
+			ImGui::End();
+
+
+			viewport.WorkPos.y = viewport.WorkSize.y * 2;
+			ImGui::SetNextWindowPos(viewport.WorkPos);
+			ImGui::SetNextWindowSize(viewport.WorkSize);
+			ImGui::Begin("URLs", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+			{
+#ifdef BrowserStuff
+				auto tabNames = getDomains();
+				for (size_t i = 0; i < tabNames.getLength(); i++)
+				{
+					ImGui::Text(tabNames[i].getRaw());
+				}
+#endif
+			}
 			ImGui::End();
 		}
 		else
@@ -833,8 +910,8 @@ public:
 			ImGui::Separator();
 			ImGui::Separator();
 			ImGui::Separator();
-			static char buffer[128] = {};
-			ImGui::InputText("Search", buffer, sizeof(buffer));
+			static char searchBuffer[128] = {};
+			ImGui::InputText("Search", searchBuffer, sizeof(searchBuffer));
 			ImGui::Separator();
 			ImGui::Separator();
 			ImGui::Separator();
@@ -845,7 +922,7 @@ public:
 			for (size_t i = 0; i < tasks.getLength(); i++)
 			{
 				Task& t = tasks[i];
-				if (buffer[0] != 0 && !bbe::String(t.title).contains(buffer)) continue;
+				if (searchBuffer[0] != 0 && !bbe::String(t.title).containsIgnoreCase(searchBuffer)) continue;
 				ImGui::PushID(i);
 				if (ImGui::Button(shiftPressed ? "Delete Task" : "[Shift]") && shiftPressed)
 				{
