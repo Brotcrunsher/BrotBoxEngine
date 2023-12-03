@@ -672,17 +672,21 @@ public:
 				{
 					if (t.inputType == Task::InputType::NONE)
 					{
-						if (ImGui::Button("Done"))
+						if (!t.oneShot)
 						{
-							if (!t.oneShot)
+							if (ImGui::Button("Done"))
 							{
 								t.execDone();
+								contentsChanged = true;
 							}
-							else
+						}
+						else
+						{
+							if(securityButton("Done"))
 							{
 								tasks.removeIndex(i);
+								contentsChanged = true;
 							}
-							contentsChanged = true;
 						}
 					}
 					else if (t.inputType == Task::InputType::INTEGER)
@@ -828,6 +832,11 @@ public:
 		return retVal;
 	}
 #endif
+
+	bool securityButton(const char* text)
+	{
+		return ImGui::Button(shiftPressed ? text : "[Shift]") && shiftPressed;
+	}
 
 	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
 	{
@@ -1001,7 +1010,7 @@ public:
 				Task& t = tasks[i];
 				if (searchBuffer[0] != 0 && !bbe::String(t.title).containsIgnoreCase(searchBuffer)) continue;
 				ImGui::PushID(i);
-				if (ImGui::Button(shiftPressed ? "Delete Task" : "[Shift]") && shiftPressed)
+				if (securityButton("Delete Task"))
 				{
 					deletionIndex = i;
 				}
