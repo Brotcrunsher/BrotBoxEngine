@@ -65,6 +65,7 @@ public:
 	InputType inputType = InputType::NONE;
 	bbe::List<float> history;
 	bool advanceable = false;
+	bool oneShot = false;
 
 	// Non-Persisted Helper Data below.
 	const char* inputTypeStr = inputTypeItems[0];
@@ -137,6 +138,7 @@ public:
 		buffer.write((int32_t)inputType);
 		buffer.write(history);
 		buffer.write(advanceable);
+		buffer.write(oneShot);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -157,6 +159,7 @@ public:
 		retVal.inputTypeStr = inputTypeToStr(retVal.inputType);
 		buffer.read(retVal.history);
 		buffer.read(retVal.advanceable);
+		buffer.read(retVal.oneShot);
 
 		return retVal;
 	}
@@ -592,11 +595,12 @@ public:
 				ImGui::TableNextRow();
 				int32_t column = 0;
 				ImGui::TableSetColumnIndex(column++);
-				if (highlightRareTasks && t.repeatDays > 1)
+				if ((highlightRareTasks && t.repeatDays > 1) || t.oneShot)
 				{
 					const bool poosibleTodoToday = (t.nextPossibleExecution().hasPassed() || t.nextPossibleExecution().isToday());
-					if(poosibleTodoToday) ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.8f, 1.0f), "(?)");
-					else                  ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(!)");
+					if(t.oneShot)              ImGui::TextColored(ImVec4(0.5f, 0.5f, 1.0f, 1.0f), "(!)");
+					else if(poosibleTodoToday) ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.8f, 1.0f), "(?)");
+					else                       ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(!)");
 					ImGui::SameLine();
 				}
 				bbe::String modifiedTitle = t.title;
@@ -639,7 +643,14 @@ public:
 					{
 						if (ImGui::Button("Done"))
 						{
-							t.execDone();
+							if (!t.oneShot)
+							{
+								t.execDone();
+							}
+							else
+							{
+								tasks.removeIndex(i);
+							}
 							contentsChanged = true;
 						}
 					}
@@ -713,6 +724,7 @@ public:
 		taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
 		taskChanged |= ImGui::Checkbox("Can be Sundays", &t.canBeSundays);
 		taskChanged |= ImGui::Checkbox("Advanceable", &t.advanceable);
+		taskChanged |= ImGui::Checkbox("One Shot", &t.oneShot);
 		taskChanged |= ImGui::InputInt("Follow Up  (in Minutes)", &t.followUp);
 		taskChanged |= ImGui::InputInt("Follow Up2 (in Minutes)", &t.followUp2);
 		taskChanged |= ImGui::InputInt("Internal Value", &t.internalValue);
