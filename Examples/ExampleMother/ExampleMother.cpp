@@ -9,8 +9,8 @@
 //TODO: GATW: Also play "Open Tasks" sound when opening time wasting URLs
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Butchered looks on non 4k
-//TODO: "Only ever advancable" tasks - tasks that are never shown for today, always for tomorrow. Inteded for possible improvements one can do right now for tomorrow (pre Brewing coffee, etc.)
 //TODO: Implement proper date picker
+//TODO: Add tooltips to stuff that explains what everything is
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -66,6 +66,7 @@ public:
 	bbe::List<float> history;
 	bool advanceable = false;
 	bool oneShot = false;
+	bool preparation = false;
 
 	// Non-Persisted Helper Data below.
 	const char* inputTypeStr = inputTypeItems[0];
@@ -116,7 +117,14 @@ public:
 	}
 	void execAdvance()
 	{
-		nextExecution = toPossibleTimePoint(nextExecution.plusDays(repeatDays));
+		if (preparation)
+		{
+			nextExecution = toPossibleTimePoint(bbe::TimePoint().nextMorning().plusDays(repeatDays));
+		}
+		else
+		{
+			nextExecution = toPossibleTimePoint(nextExecution.plusDays(repeatDays));
+		}
 	}
 
 	void sanity()
@@ -139,6 +147,7 @@ public:
 		buffer.write(history);
 		buffer.write(advanceable);
 		buffer.write(oneShot);
+		buffer.write(preparation);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -160,6 +169,7 @@ public:
 		buffer.read(retVal.history);
 		buffer.read(retVal.advanceable);
 		buffer.read(retVal.oneShot);
+		buffer.read(retVal.preparation);
 
 		return retVal;
 	}
@@ -713,7 +723,7 @@ public:
 				if (showAdvancable)
 				{
 					ImGui::TableSetColumnIndex(column++);
-					if (t.advanceable && !t.isImportantToday() && ImGui::Button("Advance"))
+					if (t.advanceable && ImGui::Button("Advance"))
 					{
 						t.execAdvance();
 						contentsChanged = true;
@@ -745,6 +755,10 @@ public:
 		taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
 		taskChanged |= ImGui::Checkbox("Can be Sundays", &t.canBeSundays);
 		taskChanged |= ImGui::Checkbox("Advanceable", &t.advanceable);
+		if (t.advanceable)
+		{
+			taskChanged |= ImGui::Checkbox("Preparation", &t.preparation);
+		}
 		taskChanged |= ImGui::Checkbox("One Shot", &t.oneShot);
 		taskChanged |= ImGui::InputInt("Follow Up  (in Minutes)", &t.followUp);
 		taskChanged |= ImGui::InputInt("Follow Up2 (in Minutes)", &t.followUp2);
@@ -826,8 +840,8 @@ public:
 			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 			{
 				bool contentsChanged = false;
-				drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                                      contentsChanged, false, false, true,  true, false, false, false);
-				drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false, false, false);
+				drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    contentsChanged, false, false, true,  true, false, false, false);
+				drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },           contentsChanged, true,  true,  true,  true, false, false, false);
 				drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true,  false, false, true, true , true , false);
 				drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false, false, true);
 				if (contentsChanged)
