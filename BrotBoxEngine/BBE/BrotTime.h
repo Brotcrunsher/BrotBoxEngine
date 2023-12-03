@@ -24,19 +24,18 @@ namespace bbe
 
 	enum class Month
 	{
-		// 0 based for easy use of ::tm
-		JANUARY   = 0,
-		FEBRUARY  = 1,
-		MARCH     = 2,
-		APRIL     = 3,
-		MAY       = 4,
-		JUNE      = 5,
-		JULY      = 6,
-		AUGUST    = 7,
-		SEPTEMBER = 8,
-		OCTOBER   = 9,
-		NOVEMBER  = 10,
-		DECEMBER  = 11,
+		JANUARY   = 1,
+		FEBRUARY  = 2,
+		MARCH     = 3,
+		APRIL     = 4,
+		MAY       = 5,
+		JUNE      = 6,
+		JULY      = 7,
+		AUGUST    = 8,
+		SEPTEMBER = 9,
+		OCTOBER   = 10,
+		NOVEMBER  = 11,
+		DECEMBER  = 12,
 	};
 
 	class TimePoint
@@ -52,7 +51,8 @@ namespace bbe
 		TimePoint(std::time_t time);
 
 		static TimePoint todayAt(int32_t hour, int32_t minute, int32_t second = 0);
-		static TimePoint fromDate(int32_t year, Month month, int32_t day, int32_t hour = 0, int32_t minute = 0, int32_t second = 0);
+		static TimePoint fromDate(int32_t year, Month   month, int32_t day, int32_t hour = 0, int32_t minute = 0, int32_t second = 0);
+		static TimePoint fromDate(int32_t year, int32_t month, int32_t day, int32_t hour = 0, int32_t minute = 0, int32_t second = 0);
 
 		TimePoint nextMorning(int64_t morningHour = 5) const;
 		TimePoint plusDays(int64_t days) const;
@@ -77,5 +77,9 @@ namespace bbe
 
 		void serialize(bbe::ByteBuffer& buffer) const;
 		static TimePoint deserialize(bbe::ByteBufferSpan& buffer);
+
+		int32_t getYear() const;
+		Month getMonth() const;
+		int32_t getDay() const;
 	};
 }

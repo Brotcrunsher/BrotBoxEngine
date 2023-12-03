@@ -10,6 +10,7 @@
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Butchered looks on non 4k
 //TODO: Single Shot Tasks - for things that happen on a specific date, once, and are automatically deleted on completion
+//TODO: "Only ever advancable" tasks - tasks that are never shown for today, always for tomorrow. Inteded for possible improvements one can do right now for tomorrow (pre Brewing coffee, etc.)
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -187,6 +188,11 @@ public:
 		if (tp.hasPassed()) return true;
 		if (tp.isToday()) return true;
 		return false;
+	}
+
+	void setNextExecution(int32_t year, int32_t month, int32_t day)
+	{
+		nextExecution = toPossibleTimePoint(bbe::TimePoint::fromDate(year, month, day).nextMorning());
 	}
 };
 
@@ -899,9 +905,33 @@ public:
 				drawEditableTask(tempTask);
 				tempTask.sanity();
 
+				static int year = 0;
+				static int month = 0;
+				static int day = 0;
+
+				if (year == 0 && month == 0 && day == 0)
+				{
+					bbe::TimePoint now;
+					year = now.getYear();
+					month = (int)now.getMonth();
+					day = now.getDay();
+				}
+
+				ImGui::PushItemWidth(100);
+				ImGui::Text("First execution: ");
+				ImGui::SameLine(); ImGui::InputInt("##year",  &year,  0, 0);
+				ImGui::SameLine(); ImGui::InputInt("##month", &month, 0, 0);
+				ImGui::SameLine(); ImGui::InputInt("##day",   &day,   0, 0);
+				ImGui::PopItemWidth();
+
+				if (year < 2023) year = 2023;
+				month = bbe::Math::clamp(month, 1, 12);
+				day = bbe::Math::clamp(day, 1, 31); // TODO: Not all months have 31 days... Use Proper Date Picker?
+
 				if (ImGui::Button("New Task"))
 				{
 					tempTask.inputType = Task::strToInputType(tempTask.inputTypeStr);
+					tempTask.setNextExecution(year, month, day);
 					tasks.add(tempTask);
 					tempTask = Task();
 				}

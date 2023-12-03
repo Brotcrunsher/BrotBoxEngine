@@ -70,13 +70,18 @@ bbe::TimePoint bbe::TimePoint::fromDate(int32_t year, Month month, int32_t day, 
 {
 	::tm t = {};
 	t.tm_year = year - 1900;
-	t.tm_mon = (int)month;
+	t.tm_mon = (int)month - 1;
 	t.tm_mday = day;
 	t.tm_hour = hour;
 	t.tm_min = minute;
 	t.tm_sec = second;
 
 	return TimePoint(::mktime(&t));
+}
+
+bbe::TimePoint bbe::TimePoint::fromDate(int32_t year, int32_t month, int32_t day, int32_t hour, int32_t minute, int32_t second)
+{
+	return fromDate(year, (Month)month, day, hour, minute, second);
 }
 
 bbe::TimePoint bbe::TimePoint::nextMorning(int64_t morningHour) const
@@ -202,6 +207,21 @@ bbe::TimePoint bbe::TimePoint::deserialize(bbe::ByteBufferSpan& buffer)
 	int64_t val;
 	buffer.read(val);
 	return TimePoint((::time_t)val);
+}
+
+int32_t bbe::TimePoint::getYear() const
+{
+	return toTm().tm_year + 1900;
+}
+
+bbe::Month bbe::TimePoint::getMonth() const
+{
+	return bbe::Month(toTm().tm_mon + 1);
+}
+
+int32_t bbe::TimePoint::getDay() const
+{
+	return toTm().tm_mday;
 }
 
 bbe::Duration::Duration()
