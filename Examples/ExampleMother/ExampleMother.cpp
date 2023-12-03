@@ -11,6 +11,8 @@
 //TODO: Butchered looks on non 4k
 //TODO: Single Shot Tasks - for things that happen on a specific date, once, and are automatically deleted on completion
 //TODO: "Only ever advancable" tasks - tasks that are never shown for today, always for tomorrow. Inteded for possible improvements one can do right now for tomorrow (pre Brewing coffee, etc.)
+//TODO: Hover over countdown: Show date as tooltip to find out when task is intended to be done
+//TODO: Implement proper date picker
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -574,7 +576,7 @@ public:
 		}
 	}
 
-	int32_t drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable)
+	int32_t drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable, bool sorted)
 	{
 		int32_t amountDrawn = 0;
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
@@ -586,8 +588,24 @@ public:
 			ImGui::TableSetupColumn("DDD", ImGuiTableColumnFlags_WidthFixed, 100);
 			ImGui::TableSetupColumn("EEE", ImGuiTableColumnFlags_WidthFixed, 100);
 			ImGui::TableSetupColumn("FFF", ImGuiTableColumnFlags_WidthStretch);
+			static bbe::List<size_t> indices; // Avoid allocations
+			indices.clear();
 			for (size_t i = 0; i < tasks.getLength(); i++)
 			{
+				Task& t = tasks[i];
+				if (!predicate(t)) continue;
+				indices.add(i);
+			}
+			if (sorted)
+			{
+				indices.sort([&](const size_t& a, const size_t& b) 
+					{
+						return tasks[a].nextPossibleExecution() < tasks[b].nextPossibleExecution();
+					});
+			}
+			for (size_t indexindex = 0; indexindex < indices.getLength(); indexindex++)
+			{
+				const size_t i = indices[indexindex];
 				Task& t = tasks[i];
 				if (!predicate(t)) continue;
 				amountDrawn++;
@@ -805,10 +823,10 @@ public:
 			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 			{
 				bool contentsChanged = false;
-				drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                                      contentsChanged, false, false, true,  true, false, false);
-				drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false, false);
-				drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true,  false, false, true, true , true );
-				drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false, false);
+				drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed(); },                                                                      contentsChanged, false, false, true,  true, false, false, false);
+				drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false, false, false);
+				drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true,  false, false, true, true , true , false);
+				drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false, false, true);
 				if (contentsChanged)
 				{
 					tasks.writeToFile();
