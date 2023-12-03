@@ -9,9 +9,7 @@
 //TODO: GATW: Also play "Open Tasks" sound when opening time wasting URLs
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Butchered looks on non 4k
-//TODO: Single Shot Tasks - for things that happen on a specific date, once, and are automatically deleted on completion
 //TODO: "Only ever advancable" tasks - tasks that are never shown for today, always for tomorrow. Inteded for possible improvements one can do right now for tomorrow (pre Brewing coffee, etc.)
-//TODO: Hover over countdown: Show date as tooltip to find out when task is intended to be done
 //TODO: Implement proper date picker
 
 #define WM_SYSICON        (WM_USER + 1)
@@ -653,6 +651,11 @@ public:
 						- ImGui::GetScrollX() 
 						- 10 * ImGui::GetStyle().ItemSpacing.x);
 					ImGui::Text(c);
+					if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort) && ImGui::BeginTooltip())
+					{
+						ImGui::Text(t.nextPossibleExecution().toString().getRaw());
+						ImGui::EndTooltip();
+					}
 				}
 				ImGui::TableSetColumnIndex(column++);
 				if (showDone)
