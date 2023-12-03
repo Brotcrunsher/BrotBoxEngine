@@ -443,6 +443,14 @@ public:
 
 	void setCurrentTrayIcon(bool firstCall)
 	{
+		static HICON previousHIcon = nullptr;
+		const HICON currentHIcon = getCurrentTrayIcon();
+		if (previousHIcon == currentHIcon)
+		{
+			return;
+		}
+		previousHIcon = currentHIcon;
+
 		memset(&notifyIconData, 0, sizeof(NOTIFYICONDATA));
 
 		notifyIconData.cbSize = sizeof(NOTIFYICONDATA);
@@ -450,7 +458,7 @@ public:
 		notifyIconData.uID = 0;
 		notifyIconData.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
 		notifyIconData.uCallbackMessage = WM_SYSICON; //Set up our invented Windows Message
-		notifyIconData.hIcon = getCurrentTrayIcon();
+		notifyIconData.hIcon = currentHIcon;
 		memcpy_s(notifyIconData.szTip, sizeof(notifyIconData.szTip), szTIP, sizeof(szTIP));
 
 		Shell_NotifyIcon(firstCall ? NIM_ADD : NIM_MODIFY, &notifyIconData);
@@ -624,9 +632,9 @@ public:
 				if ((highlightRareTasks && t.repeatDays > 1) || t.oneShot)
 				{
 					const bool poosibleTodoToday = (t.nextPossibleExecution().hasPassed() || t.nextPossibleExecution().isToday());
-					if(t.oneShot)              ImGui::TextColored(ImVec4(0.5f, 0.5f, 1.0f, 1.0f), "(!)");
-					else if(poosibleTodoToday) ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.8f, 1.0f), "(?)");
-					else                       ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(!)");
+					if(t.oneShot)              { ImGui::TextColored(ImVec4(0.5f, 0.5f, 1.0f, 1.0f), "(!)"); tooltip("A one shot task."); }
+					else if(poosibleTodoToday) { ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.8f, 1.0f), "(?)"); tooltip("A rare task that could be done today."); }
+					else                       { ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(!)"); tooltip("A rare task."); }
 					ImGui::SameLine();
 				}
 				bbe::String modifiedTitle = t.title;
@@ -661,11 +669,7 @@ public:
 						- ImGui::GetScrollX() 
 						- 10 * ImGui::GetStyle().ItemSpacing.x);
 					ImGui::Text(c);
-					if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort) && ImGui::BeginTooltip())
-					{
-						ImGui::Text(t.nextPossibleExecution().toString().getRaw());
-						ImGui::EndTooltip();
-					}
+					tooltip(t.nextPossibleExecution().toString());
 				}
 				ImGui::TableSetColumnIndex(column++);
 				if (showDone)
@@ -759,15 +763,22 @@ public:
 		taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
 		taskChanged |= ImGui::Checkbox("Can be Sundays", &t.canBeSundays);
 		taskChanged |= ImGui::Checkbox("Advanceable", &t.advanceable);
+		tooltip("Can \"done\" even if it's not planned for today.");
 		if (t.advanceable)
 		{
 			taskChanged |= ImGui::Checkbox("Preparation", &t.preparation);
+			tooltip("Will never be shown for the current day. Inteded for Tasks that prepare stuff for tomorrow, e.g. pre brewing some coffee.");
 		}
 		taskChanged |= ImGui::Checkbox("One Shot", &t.oneShot);
+		tooltip("Delets the Task when Done.");
 		taskChanged |= ImGui::InputInt("Follow Up  (in Minutes)", &t.followUp);
+		tooltip("Pushes the Task by this many minutes into the future. Useful for Tasks that can be fulfilled multiple times per day.");
 		taskChanged |= ImGui::InputInt("Follow Up2 (in Minutes)", &t.followUp2);
+		tooltip("Pushes the Task by this many minutes into the future. Useful for Tasks that can be fulfilled multiple times per day.");
 		taskChanged |= ImGui::InputInt("Internal Value", &t.internalValue);
+		tooltip("An internal value that can be printed out in the title via %%d, [SEC], and [MIN].");
 		taskChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
+		tooltip("Increases the Internal Value on ever Done by this much.");
 		if (ImGui::BeginCombo("Input Type", t.inputTypeStr))
 		{
 			for (int i = 0; i < IM_ARRAYSIZE(Task::inputTypeItems); i++)
@@ -835,7 +846,22 @@ public:
 
 	bool securityButton(const char* text)
 	{
-		return ImGui::Button(shiftPressed ? text : "[Shift]") && shiftPressed;
+		bool retVal = ImGui::Button(shiftPressed ? text : "[Shift]") && shiftPressed;
+		tooltip("Hold shift to activate this button.");
+		return retVal;
+	}
+
+	void tooltip(const char* text)
+	{
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort) && ImGui::BeginTooltip())
+		{
+			ImGui::Text(text);
+			ImGui::EndTooltip();
+		}
+	}
+	void tooltip(const bbe::String& text)
+	{
+		tooltip(text.getRaw());
 	}
 
 	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
@@ -975,9 +1001,9 @@ public:
 
 				ImGui::PushItemWidth(100);
 				ImGui::Text("First execution: ");
-				ImGui::SameLine(); ImGui::InputInt("##year",  &year,  0, 0);
-				ImGui::SameLine(); ImGui::InputInt("##month", &month, 0, 0);
-				ImGui::SameLine(); ImGui::InputInt("##day",   &day,   0, 0);
+				ImGui::SameLine(); ImGui::InputInt("##year",  &year,  0, 0); tooltip("Year");
+				ImGui::SameLine(); ImGui::InputInt("##month", &month, 0, 0); tooltip("Month");
+				ImGui::SameLine(); ImGui::InputInt("##day",   &day,   0, 0); tooltip("Day");
 				ImGui::PopItemWidth();
 
 				if (year < 2023) year = 2023;
@@ -1031,8 +1057,8 @@ public:
 					}
 				}
 				tasksChanged |= drawEditableTask(t);
-				ImGui::Text(t.previousExecution.toString().getRaw());
-				ImGui::Text(t.nextPossibleExecution().toString().getRaw());
+				ImGui::Text(t.previousExecution.toString().getRaw()); tooltip("Previous Execution");
+				ImGui::Text(t.nextPossibleExecution().toString().getRaw()); tooltip("Next Execution");
 				ImGui::NewLine();
 				ImGui::Separator();
 				ImGui::NewLine();
