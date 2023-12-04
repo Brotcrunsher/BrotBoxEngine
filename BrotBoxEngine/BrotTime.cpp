@@ -173,11 +173,46 @@ bool bbe::TimePoint::isNight(int64_t fromHour, int64_t toHour) const
 	}
 }
 
+static int getWDay(const std::chrono::system_clock::time_point& tp)
+{
+	std::time_t t = std::chrono::system_clock::to_time_t(tp);
+	::tm timeinfo = *localtime(&t);
+	return timeinfo.tm_wday;
+}
+
+bool bbe::TimePoint::isMonday() const
+{
+	return getWDay(m_time) == 1;
+}
+
+bool bbe::TimePoint::isTuesday() const
+{
+	return getWDay(m_time) == 2;
+}
+
+bool bbe::TimePoint::isWednesday() const
+{
+	return getWDay(m_time) == 3;
+}
+
+bool bbe::TimePoint::isThursday() const
+{
+	return getWDay(m_time) == 4;
+}
+
+bool bbe::TimePoint::isFriday() const
+{
+	return getWDay(m_time) == 5;
+}
+
+bool bbe::TimePoint::isSaturday() const
+{
+	return getWDay(m_time) == 6;
+}
+
 bool bbe::TimePoint::isSunday() const
 {
-	std::time_t t = std::chrono::system_clock::to_time_t(m_time);
-	::tm timeinfo = *localtime(&t);
-	return timeinfo.tm_wday == 0;
+	return getWDay(m_time) == 0;
 }
 
 bool bbe::TimePoint::isToday() const

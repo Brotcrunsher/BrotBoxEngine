@@ -70,6 +70,12 @@ namespace bbe
 
 		// Both hours are inclusive! So 23/4 is from 23:00 until 4:59.
 		bool isNight(int64_t fromHour = 23, int64_t toHour = 4) const;
+		bool isMonday() const;
+		bool isTuesday() const;
+		bool isWednesday() const;
+		bool isThursday() const;
+		bool isFriday() const;
+		bool isSaturday() const;
 		bool isSunday() const;
 		bool isToday() const;
 

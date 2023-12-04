@@ -10,7 +10,7 @@
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Butchered looks on non 4k
 //TODO: Implement proper date picker
-//TODO: Add tooltips to stuff that explains what everything is
+//TODO: Somehow mark error if all weekdays are marked as impossible
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -57,7 +57,7 @@ struct Task
 private:
 	bbe::TimePoint nextExecution; // Call nextPossibleExecution from the outside! 
 public:
-	bool canBeSundays = true;
+	bool canBeSu = true;
 	int32_t followUp = 0; // In minutes. When clicking follow up, the task will be rescheduled the same day.
 	int32_t internalValue = 0;
 	int32_t internalValueIncrease = 0;
@@ -67,6 +67,12 @@ public:
 	bool advanceable = false;
 	bool oneShot = false;
 	bool preparation = false;
+	bool canBeMo = true;
+	bool canBeTu = true;
+	bool canBeWe = true;
+	bool canBeTh = true;
+	bool canBeFr = true;
+	bool canBeSa = true;
 
 	// Non-Persisted Helper Data below.
 	const char* inputTypeStr = inputTypeItems[0];
@@ -94,11 +100,7 @@ public:
 	{
 		internalValue += internalValueIncrease;
 		previousExecution = bbe::TimePoint();
-		nextExecution = previousExecution.nextMorning().plusDays(repeatDays - 1);
-		if (!canBeSundays && nextExecution.isSunday())
-		{
-			nextExecution = nextExecution.plusDays(1);
-		}
+		nextExecution = toPossibleTimePoint(previousExecution.nextMorning().plusDays(repeatDays - 1));
 	}
 	void execFollowUp()
 	{
@@ -138,7 +140,7 @@ public:
 		buffer.write(repeatDays);
 		previousExecution.serialize(buffer);
 		nextExecution.serialize(buffer);
-		buffer.write(canBeSundays);
+		buffer.write(canBeSu);
 		buffer.write(followUp);
 		buffer.write(internalValue);
 		buffer.write(internalValueIncrease);
@@ -148,6 +150,12 @@ public:
 		buffer.write(advanceable);
 		buffer.write(oneShot);
 		buffer.write(preparation);
+		buffer.write(canBeMo);
+		buffer.write(canBeTu);
+		buffer.write(canBeWe);
+		buffer.write(canBeTh);
+		buffer.write(canBeFr);
+		buffer.write(canBeSa);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -157,7 +165,7 @@ public:
 		buffer.read(retVal.repeatDays);
 		retVal.previousExecution = bbe::TimePoint::deserialize(buffer);
 		retVal.nextExecution = bbe::TimePoint::deserialize(buffer);
-		buffer.read(retVal.canBeSundays, true);
+		buffer.read(retVal.canBeSu, true);
 		buffer.read(retVal.followUp);
 		buffer.read(retVal.internalValue);
 		buffer.read(retVal.internalValueIncrease);
@@ -170,6 +178,12 @@ public:
 		buffer.read(retVal.advanceable);
 		buffer.read(retVal.oneShot);
 		buffer.read(retVal.preparation);
+		buffer.read(retVal.canBeMo, true);
+		buffer.read(retVal.canBeTu, true);
+		buffer.read(retVal.canBeWe, true);
+		buffer.read(retVal.canBeTh, true);
+		buffer.read(retVal.canBeFr, true);
+		buffer.read(retVal.canBeSa, true);
 
 		return retVal;
 	}
@@ -183,7 +197,16 @@ public:
 	bbe::TimePoint toPossibleTimePoint(const bbe::TimePoint& tp) const
 	{
 		bbe::TimePoint retVal = tp;
-		if (!canBeSundays && retVal.isSunday()) retVal = retVal.nextMorning();
+		for (int32_t i = 0; i < 2; i++)
+		{
+			if (!canBeMo && retVal.isMonday())    retVal = retVal.nextMorning();
+			if (!canBeTu && retVal.isTuesday())   retVal = retVal.nextMorning();
+			if (!canBeWe && retVal.isWednesday()) retVal = retVal.nextMorning();
+			if (!canBeTh && retVal.isThursday())  retVal = retVal.nextMorning();
+			if (!canBeFr && retVal.isFriday())    retVal = retVal.nextMorning();
+			if (!canBeSa && retVal.isSaturday())  retVal = retVal.nextMorning();
+			if (!canBeSu && retVal.isSunday())    retVal = retVal.nextMorning();
+		}
 		return retVal;
 	}
 
@@ -761,7 +784,14 @@ public:
 		bool taskChanged = false;
 		taskChanged |= ImGui::InputText("Title", t.title, sizeof(t.title));
 		taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
-		taskChanged |= ImGui::Checkbox("Can be Sundays", &t.canBeSundays);
+		taskChanged |= ImGui::Checkbox("Monday", &t.canBeMo);
+		ImGui::SameLine(); taskChanged |= ImGui::Checkbox("Tuesday", &t.canBeTu);
+		ImGui::SameLine(); taskChanged |= ImGui::Checkbox("Wednesday", &t.canBeWe);
+		ImGui::SameLine(); taskChanged |= ImGui::Checkbox("Thursday", &t.canBeTh);
+		ImGui::SameLine(); taskChanged |= ImGui::Checkbox("Friday", &t.canBeFr);
+		ImGui::SameLine(); taskChanged |= ImGui::Checkbox("Saturday", &t.canBeSa);
+		ImGui::SameLine(); taskChanged |= ImGui::Checkbox("Sunday", &t.canBeSu);
+		
 		taskChanged |= ImGui::Checkbox("Advanceable", &t.advanceable);
 		tooltip("Can \"done\" even if it's not planned for today.");
 		if (t.advanceable)
