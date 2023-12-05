@@ -35,6 +35,7 @@
 #include "../BBE/Window.h"
 
 #include "imgui.h"
+#include "implot.h"
 
 #ifdef BBE_RENDERER_VULKAN
 #include "../BBE/Vulkan/VWDepthImage.h"

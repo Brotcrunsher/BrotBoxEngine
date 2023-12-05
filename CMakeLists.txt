@@ -346,6 +346,11 @@ target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/img
 target_include_directories(BrotBoxEngine PUBLIC Third-Party/imgui-master)
 target_include_directories(BrotBoxEngine PUBLIC Third-Party/imgui-master/backends)
 
+target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/implot-master/implot.cpp)
+target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/implot-master/implot_items.cpp)
+target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/implot-master/implot_demo.cpp)
+target_include_directories(BrotBoxEngine PUBLIC Third-Party/implot-master)
+
 set(BOX2D_BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
 set(BOX2D_BUILD_TESTBED OFF CACHE BOOL "" FORCE)
 add_subdirectory(Third-Party/box2d-master)

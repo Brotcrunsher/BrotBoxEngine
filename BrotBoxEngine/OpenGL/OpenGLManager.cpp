@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "implot.h"
 #include "BBE/FatalErrors.h"
 #include "BBE/Rectangle.h"
 #include "BBE/Circle.h"
@@ -1742,6 +1743,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStart()
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+	ImPlot::CreateContext();
 	ImGui::StyleColorsDark();
 
 	ImGui_ImplGlfw_InitForOpenGL(m_pwindow, false);
@@ -1765,6 +1767,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStop()
 {
 	if (m_imguiInitSuccessful)
 	{
+		ImPlot::DestroyContext();
+		ImGui::DestroyContext();
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 	}
