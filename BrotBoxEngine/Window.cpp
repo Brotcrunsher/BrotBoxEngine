@@ -240,6 +240,7 @@ bbe::WindowCloseMode bbe::Window::getWindowCloseMode() const
 void bbe::Window::showWindow()
 {
 	glfwWrapper::glfwShowWindow(m_pwindow);
+	glfwWrapper::glfwFocusWindow(m_pwindow);
 }
 
 void bbe::Window::hideWindow()
