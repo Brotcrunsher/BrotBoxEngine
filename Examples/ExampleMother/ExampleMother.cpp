@@ -289,6 +289,7 @@ private:
 	bool shiftPressed = false;
 	bool isGameOn = false;
 	bool openTasksNotificationSilenced = false;
+	bool showDebugStuff = false;
 
 	bbe::List<HICON> trayIconsRed;
 	bbe::List<HICON> trayIconsGreen;
@@ -915,7 +916,7 @@ public:
 			viewport.WorkSize.x *= 0.6f;
 			ImGui::SetNextWindowPos(viewport.WorkPos);
 			ImGui::SetNextWindowSize(viewport.WorkSize);
-			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+			ImGui::Begin("Tasks", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 			{
 				bool contentsChanged = false;
 				drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    contentsChanged, false, false, true,  true, false, false, false);
@@ -940,6 +941,7 @@ public:
 				bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
 				ImGui::Text(s.getRaw());
 				ImGui::Checkbox("Silence Open Task Notification Sound", &openTasksNotificationSilenced);
+				ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
 			}
 			ImGui::End();
 
@@ -1116,9 +1118,12 @@ public:
 			}
 		}
 
-		//ImGui::ShowDemoWindow();
-		//ImPlot::ShowDemoWindow();
-		//drawMeasure(brush);
+		if (showDebugStuff)
+		{
+			ImGui::ShowDemoWindow();
+			ImPlot::ShowDemoWindow();
+			drawMeasure(brush);
+		}
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{

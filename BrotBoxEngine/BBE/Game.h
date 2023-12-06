@@ -45,9 +45,10 @@ namespace bbe
 #ifndef BBE_NO_AUDIO
 		bbe::INTERNAL::SoundManager m_soundManager;
 #endif
-		const char* currentPerformanceMeasurementTag = nullptr;
-		bbe::StopWatch performanceMeasurement;
+		const char* m_pcurrentPerformanceMeasurementTag = nullptr;
+		bbe::StopWatch m_performanceMeasurement;
 		std::map<const char*, bbe::List<double>> m_performanceMeasurements;
+		bool m_performanceMeasurementsRequired = false;
 
 	public:
 		Game();
@@ -135,7 +136,7 @@ namespace bbe
 		bool isWindowShow() const;
 
 		void endMeasure();
-		void beginMeasure(const char* tag); // CAREFUL: Static string assumed!
+		void beginMeasure(const char* tag, bool force = false); // CAREFUL: Static string assumed!
 		void drawMeasure(const bbe::PrimitiveBrush3D& brush);
 
 #ifndef BBE_NO_AUDIO

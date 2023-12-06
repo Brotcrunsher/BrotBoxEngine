@@ -464,19 +464,22 @@ bool bbe::Game::isWindowShow() const
 
 void bbe::Game::endMeasure()
 {
-	if (currentPerformanceMeasurementTag)
+	if (m_pcurrentPerformanceMeasurementTag)
 	{
-		auto passedTimeSeconds = performanceMeasurement.getTimeExpiredNanoseconds() / 1000.0 / 1000.0 / 1000.0;
-		m_performanceMeasurements[currentPerformanceMeasurementTag].add(passedTimeSeconds);
+		auto passedTimeSeconds = m_performanceMeasurement.getTimeExpiredNanoseconds() / 1000.0 / 1000.0 / 1000.0;
+		m_performanceMeasurements[m_pcurrentPerformanceMeasurementTag].add(passedTimeSeconds);
 	}
-	currentPerformanceMeasurementTag = nullptr;
+	m_pcurrentPerformanceMeasurementTag = nullptr;
 }
 
-void bbe::Game::beginMeasure(const char* tag)
+void bbe::Game::beginMeasure(const char* tag, bool force)
 {
-	endMeasure();
-	currentPerformanceMeasurementTag = tag;
-	performanceMeasurement.start();
+	if (m_performanceMeasurementsRequired || force)
+	{
+		endMeasure();
+		m_pcurrentPerformanceMeasurementTag = tag;
+		m_performanceMeasurement.start();
+	}
 }
 
 void bbe::Game::drawMeasure(const bbe::PrimitiveBrush3D& brush)
@@ -484,6 +487,7 @@ void bbe::Game::drawMeasure(const bbe::PrimitiveBrush3D& brush)
 	// Brush as parameter is mainly to make sure that this is called during the draw step.
 	// We do not actually use it.
 
+	m_performanceMeasurementsRequired = true;
 	if (ImPlot::BeginPlot("Line Plots")) {
 		ImPlot::SetupAxes("x", "y");
 		for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
