@@ -529,9 +529,11 @@ public:
 
 	virtual void update(float timeSinceLastFrame) override
 	{
+		beginMeasure("Basic Controls");
 		if (isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E)) editMode = !editMode;
 		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
 
+		beginMeasure("Play Task Sounds");
 		bool playSound = false;
 		for (size_t i = 0; i < tasks.getLength(); i++)
 		{
@@ -546,8 +548,10 @@ public:
 			closeWindow();
 		}
 
+		beginMeasure("Tray Icon");
 		setCurrentTrayIcon(false);
 
+		beginMeasure("Night Time");
 		if (isNightTime())
 		{
 			static float timeSinceLastMinimize = 100000.0f;
@@ -566,6 +570,7 @@ public:
 			assetStore::AlmostNightTime()->play();
 		}
 
+		beginMeasure("Task Amount Calculation");
 		amountOfTasksNow = 0;
 		for (size_t i = 0; i < tasks.getLength(); i++)
 		{
@@ -576,33 +581,41 @@ public:
 			}
 		}
 
-		HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
-		PROCESSENTRY32 entry;
-		entry.dwSize = sizeof(entry);
-		BOOL hasEntry = Process32First(snapshot, &entry);
-		isGameOn = false;
-		while (hasEntry)
+		beginMeasure("Process Stuff");
+		static float timeSinceLastProcessStuff = 0;
+		timeSinceLastProcessStuff += timeSinceLastFrame;
+		if(timeSinceLastProcessStuff > 10.f)
 		{
-			bool found = false;
-			for (size_t i = 0; i < processes.getLength(); i++)
+			timeSinceLastProcessStuff = 0.0f;
+			HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
+			PROCESSENTRY32 entry;
+			entry.dwSize = sizeof(entry);
+			BOOL hasEntry = Process32First(snapshot, &entry);
+			isGameOn = false;
+			while (hasEntry)
 			{
-				if (strcmp(processes[i].title, entry.szExeFile) == 0)
+				bool found = false;
+				for (size_t i = 0; i < processes.getLength(); i++)
 				{
-					if (processes[i].type == Process::TYPE_GAME) isGameOn = true;
-					found = true;
-					break;
+					if (strcmp(processes[i].title, entry.szExeFile) == 0)
+					{
+						if (processes[i].type == Process::TYPE_GAME) isGameOn = true;
+						found = true;
+						break;
+					}
 				}
+				if (!found)
+				{
+					Process newProcess;
+					strcpy(newProcess.title, entry.szExeFile);
+					processes.add(newProcess);
+				}
+				hasEntry = Process32Next(snapshot, &entry);
 			}
-			if (!found)
-			{
-				Process newProcess;
-				strcpy(newProcess.title, entry.szExeFile);
-				processes.add(newProcess);
-			}
-			hasEntry = Process32Next(snapshot, &entry);
+			CloseHandle(snapshot);
 		}
-		CloseHandle(snapshot);
 
+		beginMeasure("Working Hours");
 		if (!openTasksNotificationSilenced && isGameOn && amountOfTasksNow > 0 && isWorkTime())
 		{
 			static float timeSinceLastNotify = 10000.0f;
@@ -902,7 +915,7 @@ public:
 			viewport.WorkSize.x *= 0.6f;
 			ImGui::SetNextWindowPos(viewport.WorkPos);
 			ImGui::SetNextWindowSize(viewport.WorkSize);
-			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 			{
 				bool contentsChanged = false;
 				drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    contentsChanged, false, false, true,  true, false, false, false);
@@ -921,7 +934,7 @@ public:
 			viewport.WorkSize.y *= 1.f / 3.f;
 			ImGui::SetNextWindowPos(viewport.WorkPos);
 			ImGui::SetNextWindowSize(viewport.WorkSize);
-			ImGui::Begin("Info", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+			ImGui::Begin("Info", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 			{
 				ImGui::Text("Build: " __DATE__ ", " __TIME__);
 				bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
@@ -933,7 +946,7 @@ public:
 			viewport.WorkPos.y = viewport.WorkSize.y;
 			ImGui::SetNextWindowPos(viewport.WorkPos);
 			ImGui::SetNextWindowSize(viewport.WorkSize);
-			ImGui::Begin("Processes", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+			ImGui::Begin("Processes", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 			{
 				static bool showSystem = false;
 				ImGui::Checkbox("Show System", &showSystem);
@@ -988,7 +1001,7 @@ public:
 			viewport.WorkPos.y = viewport.WorkSize.y * 2;
 			ImGui::SetNextWindowPos(viewport.WorkPos);
 			ImGui::SetNextWindowSize(viewport.WorkSize);
-			ImGui::Begin("URLs", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+			ImGui::Begin("URLs", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 			{
 #ifdef BrowserStuff
 				auto tabNames = getDomains();
@@ -1005,7 +1018,7 @@ public:
 			const ImGuiViewport* viewport = ImGui::GetMainViewport();
 			ImGui::SetNextWindowPos(viewport->WorkPos);
 			ImGui::SetNextWindowSize(viewport->WorkSize);
-			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
 			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Edit Mode (Hit CTRL+E to leave)");
 			ImGui::Separator();
@@ -1104,6 +1117,8 @@ public:
 		}
 
 		//ImGui::ShowDemoWindow();
+		//ImPlot::ShowDemoWindow();
+		//drawMeasure(brush);
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
