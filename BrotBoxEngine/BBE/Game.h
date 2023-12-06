@@ -17,6 +17,7 @@
 #include "../BBE/FragmentShader.h"
 #include "../BBE/Color.h"
 #include "../BBE/List.h"
+#include "../BBE/StopWatch.h"
 
 namespace bbe
 {
@@ -44,6 +45,9 @@ namespace bbe
 #ifndef BBE_NO_AUDIO
 		bbe::INTERNAL::SoundManager m_soundManager;
 #endif
+		const char* currentPerformanceMeasurementTag = nullptr;
+		bbe::StopWatch performanceMeasurement;
+		std::map<const char*, bbe::List<double>> m_performanceMeasurements;
 
 	public:
 		Game();
@@ -129,6 +133,10 @@ namespace bbe
 		void hideWindow();
 		void closeWindow();
 		bool isWindowShow() const;
+
+		void endMeasure();
+		void beginMeasure(const char* tag); // CAREFUL: Static string assumed!
+		void drawMeasure(const bbe::PrimitiveBrush3D& brush);
 
 #ifndef BBE_NO_AUDIO
 		void setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection);

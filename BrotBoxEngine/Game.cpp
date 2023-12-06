@@ -6,6 +6,7 @@
 #include "BBE/Math.h"
 #include "BBE/StopWatch.h"
 #include <iostream>
+#include "implot.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -149,6 +150,7 @@ void bbe::Game::frameUpdate()
 	m_soundManager.update();
 #endif
 	update(timeSinceLastFrame);
+	endMeasure();
 }
 
 void bbe::Game::frameDraw()
@@ -165,8 +167,10 @@ void bbe::Game::frameDraw()
 	m_pwindow->preDraw();
 	m_pwindow->preDraw3D();
 	draw3D(m_pwindow->getBrush3D());
+	endMeasure();
 	m_pwindow->preDraw2D();
 	draw2D(m_pwindow->getBrush2D());
+	endMeasure();
 	m_pwindow->postDraw();
 	m_pwindow->waitEndDraw();
 }
@@ -456,4 +460,36 @@ void bbe::Game::closeWindow()
 bool bbe::Game::isWindowShow() const
 {
 	return m_pwindow->isShown();
+}
+
+void bbe::Game::endMeasure()
+{
+	if (currentPerformanceMeasurementTag)
+	{
+		auto passedTimeSeconds = performanceMeasurement.getTimeExpiredNanoseconds() / 1000.0 / 1000.0 / 1000.0;
+		m_performanceMeasurements[currentPerformanceMeasurementTag].add(passedTimeSeconds);
+	}
+	currentPerformanceMeasurementTag = nullptr;
+}
+
+void bbe::Game::beginMeasure(const char* tag)
+{
+	endMeasure();
+	currentPerformanceMeasurementTag = tag;
+	performanceMeasurement.start();
+}
+
+void bbe::Game::drawMeasure(const bbe::PrimitiveBrush3D& brush)
+{
+	// Brush as parameter is mainly to make sure that this is called during the draw step.
+	// We do not actually use it.
+
+	if (ImPlot::BeginPlot("Line Plots")) {
+		ImPlot::SetupAxes("x", "y");
+		for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
+		{
+			ImPlot::PlotLine(it->first, it->second.getRaw(), it->second.getLength());
+		}
+		ImPlot::EndPlot();
+	}
 }
