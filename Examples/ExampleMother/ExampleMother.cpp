@@ -297,6 +297,7 @@ private:
 	size_t trayIconIndex = 0;
 
 	int32_t amountOfTasksNow = 0;
+	int32_t amountOfTasksNowWithoutOneShot = 0;
 
 public:
 	MyGame()
@@ -573,12 +574,18 @@ public:
 
 		beginMeasure("Task Amount Calculation");
 		amountOfTasksNow = 0;
+		amountOfTasksNowWithoutOneShot = 0;
+
 		for (size_t i = 0; i < tasks.getLength(); i++)
 		{
 			Task& t = tasks[i];
 			if (t.nextPossibleExecution().hasPassed())
 			{
 				amountOfTasksNow++;
+				if (!t.oneShot)
+				{
+					amountOfTasksNowWithoutOneShot++;
+				}
 			}
 		}
 
@@ -617,7 +624,7 @@ public:
 		}
 
 		beginMeasure("Working Hours");
-		if (!openTasksNotificationSilenced && isGameOn && amountOfTasksNow > 0 && isWorkTime())
+		if (!openTasksNotificationSilenced && isGameOn && amountOfTasksNowWithoutOneShot > 0 && isWorkTime())
 		{
 			static float timeSinceLastNotify = 10000.0f;
 			timeSinceLastNotify += timeSinceLastFrame;
