@@ -11,6 +11,7 @@
 //TODO: Butchered looks on non 4k
 //TODO: Implement proper date picker
 //TODO: Somehow mark error if all weekdays are marked as impossible
+//TODO: Play sound ever hour if ignoreNight and nightActive to ask if I am sure that I wanna stay awake.
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -290,6 +291,7 @@ private:
 	bool isGameOn = false;
 	bool openTasksNotificationSilenced = false;
 	bool showDebugStuff = false;
+	bool ignoreNight = false;
 
 	bbe::List<HICON> trayIconsRed;
 	bbe::List<HICON> trayIconsGreen;
@@ -554,7 +556,7 @@ public:
 		setCurrentTrayIcon(false);
 
 		beginMeasure("Night Time");
-		if (isNightTime())
+		if (!ignoreNight && isNightTime())
 		{
 			static float timeSinceLastMinimize = 100000.0f;
 			timeSinceLastMinimize += timeSinceLastFrame;
@@ -948,6 +950,7 @@ public:
 				bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
 				ImGui::Text(s.getRaw());
 				ImGui::Checkbox("Silence Open Task Notification Sound", &openTasksNotificationSilenced);
+				ImGui::Checkbox("Ignore Night", &ignoreNight);
 				ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
 			}
 			ImGui::End();
