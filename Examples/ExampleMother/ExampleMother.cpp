@@ -211,6 +211,7 @@ public:
 			if (!canBeSa && retVal.isSaturday())  retVal = retVal.nextMorning();
 			if (!canBeSu && retVal.isSunday())    retVal = retVal.nextMorning();
 		}
+		if (preparation && retVal.isToday()) retVal = retVal.nextMorning();
 		return retVal;
 	}
 
