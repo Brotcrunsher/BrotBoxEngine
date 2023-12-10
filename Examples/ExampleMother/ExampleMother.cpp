@@ -74,6 +74,7 @@ public:
 	bool canBeTh = true;
 	bool canBeFr = true;
 	bool canBeSa = true;
+	bool earlyAdvanceable = true;
 
 	// Non-Persisted Helper Data below.
 	const char* inputTypeStr = inputTypeItems[0];
@@ -157,6 +158,7 @@ public:
 		buffer.write(canBeTh);
 		buffer.write(canBeFr);
 		buffer.write(canBeSa);
+		buffer.write(earlyAdvanceable);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -185,6 +187,7 @@ public:
 		buffer.read(retVal.canBeTh, true);
 		buffer.read(retVal.canBeFr, true);
 		buffer.read(retVal.canBeSa, true);
+		buffer.read(retVal.earlyAdvanceable, true);
 
 		return retVal;
 	}
@@ -510,6 +513,11 @@ public:
 		return bbe::TimePoint::todayAt(5, 00) > now || now > getNightStart();
 	}
 
+	bool isLateAdvanceableTime()
+	{
+		return bbe::TimePoint() > bbe::TimePoint::todayAt(18, 00);
+	}
+
 	bool isWorkTime()
 	{
 		bbe::TimePoint now;
@@ -777,7 +785,7 @@ public:
 				if (showAdvancable)
 				{
 					ImGui::TableSetColumnIndex(column++);
-					if (t.advanceable && ImGui::Button("Advance"))
+					if (t.advanceable && (t.earlyAdvanceable || isLateAdvanceableTime()) && ImGui::Button("Advance"))
 					{
 						t.execAdvance();
 						contentsChanged = true;
@@ -821,6 +829,9 @@ public:
 		{
 			taskChanged |= ImGui::Checkbox("Preparation", &t.preparation);
 			tooltip("Will never be shown for the current day. Inteded for Tasks that prepare stuff for tomorrow, e.g. pre brewing some coffee.");
+
+			taskChanged |= ImGui::Checkbox("Early Advanceable", &t.earlyAdvanceable);
+			tooltip("If unchecked, the task is only advanceable after 18:00.");
 		}
 		taskChanged |= ImGui::Checkbox("One Shot", &t.oneShot);
 		tooltip("Delets the Task when Done.");
