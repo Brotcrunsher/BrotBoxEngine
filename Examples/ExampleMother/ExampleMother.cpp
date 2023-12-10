@@ -925,16 +925,26 @@ public:
 			viewport.WorkSize.x *= 0.6f;
 			ImGui::SetNextWindowPos(viewport.WorkPos);
 			ImGui::SetNextWindowSize(viewport.WorkSize);
-			ImGui::Begin("Tasks", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+			ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 			{
-				bool contentsChanged = false;
-				drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    contentsChanged, false, false, true,  true, false, false, false);
-				drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },           contentsChanged, true,  true,  true,  true, false, false, false);
-				drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true,  false, false, true, true , true , false);
-				drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false, false, true);
-				if (contentsChanged)
-				{
-					tasks.writeToFile();
+				if (ImGui::BeginTabBar("MainWindowTabs")) {
+					if (ImGui::BeginTabItem("Tasks")) {
+						bool contentsChanged = false;
+						drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    contentsChanged, false, false, true,  true, false, false, false);
+						drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false, false, false);
+						drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true,  false, false, true, true , true , false);
+						drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false, false, true);
+						if (contentsChanged)
+						{
+							tasks.writeToFile();
+						}
+						ImGui::EndTabItem();
+					}
+					if (ImGui::BeginTabItem("Other Stuff")) {
+						ImGui::Text("For future Use");
+						ImGui::EndTabItem();
+					}
+					ImGui::EndTabBar();
 				}
 			}
 			ImGui::End();
