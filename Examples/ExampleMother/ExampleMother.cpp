@@ -674,9 +674,10 @@ public:
 						return tasks[a].nextPossibleExecution() < tasks[b].nextPossibleExecution();
 					});
 			}
+			size_t deletedTasks = 0;
 			for (size_t indexindex = 0; indexindex < indices.getLength(); indexindex++)
 			{
-				const size_t i = indices[indexindex];
+				const size_t i = indices[indexindex] - deletedTasks;
 				Task& t = tasks[i];
 				if (!predicate(t)) continue;
 				amountDrawn++;
@@ -745,6 +746,7 @@ public:
 							{
 								tasks.removeIndex(i);
 								contentsChanged = true;
+								deletedTasks++;
 							}
 						}
 					}
