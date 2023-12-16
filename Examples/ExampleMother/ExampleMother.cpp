@@ -36,21 +36,6 @@ struct Task
 		INTEGER,
 		FLOAT,
 	};
-	static constexpr const char* inputTypeItems[] = { "None", "Integer", "Float" };
-	static InputType strToInputType(const char* str)
-	{
-		if (strcmp(str, inputTypeItems[0]) == 0) return InputType::NONE;
-		if (strcmp(str, inputTypeItems[1]) == 0) return InputType::INTEGER;
-		if (strcmp(str, inputTypeItems[2]) == 0) return InputType::FLOAT;
-		throw bbe::IllegalStateException();
-	}
-	static const char* inputTypeToStr(InputType it)
-	{
-		if (it == InputType::NONE)    return inputTypeItems[0];
-		if (it == InputType::INTEGER) return inputTypeItems[1];
-		if (it == InputType::FLOAT)   return inputTypeItems[2];
-		throw bbe::IllegalStateException();
-	}
 
 	char title[1024] = {};
 	int32_t repeatDays = 0;
@@ -63,7 +48,7 @@ public:
 	int32_t internalValue = 0;
 	int32_t internalValueIncrease = 0;
 	int32_t followUp2 = 0;
-	InputType inputType = InputType::NONE;
+	int32_t inputType = 0;
 	bbe::List<float> history;
 	bool advanceable = false;
 	bool oneShot = false;
@@ -77,7 +62,6 @@ public:
 	bool earlyAdvanceable = true;
 
 	// Non-Persisted Helper Data below.
-	const char* inputTypeStr = inputTypeItems[0];
 	int32_t inputInt = 0;
 	float inputFloat = 0;
 	bool armedToPlaySound = false;
@@ -173,10 +157,7 @@ public:
 		buffer.read(retVal.internalValue);
 		buffer.read(retVal.internalValueIncrease);
 		buffer.read(retVal.followUp2);
-		int32_t inputType = 0;
-		buffer.read(inputType);
-		retVal.inputType = (InputType)inputType;
-		retVal.inputTypeStr = inputTypeToStr(retVal.inputType);
+		buffer.read(retVal.inputType);
 		buffer.read(retVal.history);
 		buffer.read(retVal.advanceable);
 		buffer.read(retVal.oneShot);
@@ -239,34 +220,16 @@ public:
 
 struct Process
 {
-	static constexpr const char* typeStrings[] = { "Unknown", "System", "Other", "Game" };
 	static constexpr int32_t TYPE_UNKNOWN = 0;
 	static constexpr int32_t TYPE_SYSTEM = 1;
 	static constexpr int32_t TYPE_OTHER = 2;
 	static constexpr int32_t TYPE_GAME = 3;
-	static int32_t strToType(const char* str)
-	{
-		if (strcmp(str, typeStrings[0]) == 0) return TYPE_UNKNOWN;
-		if (strcmp(str, typeStrings[1]) == 0) return TYPE_SYSTEM;
-		if (strcmp(str, typeStrings[2]) == 0) return TYPE_OTHER;
-		if (strcmp(str, typeStrings[3]) == 0) return TYPE_GAME;
-		throw bbe::IllegalStateException();
-	}
-	static const char* typeToStr(int32_t it)
-	{
-		if (it == TYPE_UNKNOWN) return typeStrings[0];
-		if (it == TYPE_SYSTEM)  return typeStrings[1];
-		if (it == TYPE_OTHER)   return typeStrings[2];
-		if (it == TYPE_GAME)    return typeStrings[3];
-		throw bbe::IllegalStateException();
-	}
 
 	char title[1024] = {};
 	int32_t type = TYPE_UNKNOWN;
 
 
 	// Non-Persisted Helper Data below.
-	const char* inputTypeStr = typeStrings[0];
 
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
@@ -279,7 +242,6 @@ struct Process
 
 		strcpy(retVal.title, buffer.readNullString());
 		buffer.read(retVal.type);
-		retVal.inputTypeStr = typeToStr(retVal.type);
 
 		return retVal;
 	}
@@ -730,7 +692,7 @@ public:
 				ImGui::TableSetColumnIndex(column++);
 				if (showDone)
 				{
-					if (t.inputType == Task::InputType::NONE)
+					if (t.inputType == 0 /*None*/)
 					{
 						if (!t.oneShot)
 						{
@@ -750,7 +712,7 @@ public:
 							}
 						}
 					}
-					else if (t.inputType == Task::InputType::INTEGER)
+					else if (t.inputType == 1 /*Integer*/)
 					{
 						if (ImGui::InputInt("##input", &t.inputInt, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue))
 						{
@@ -759,7 +721,7 @@ public:
 							contentsChanged = true;
 						}
 					}
-					else if (t.inputType == Task::InputType::FLOAT)
+					else if (t.inputType == 2 /*Float*/)
 					{
 						if (ImGui::InputFloat("##input", &t.inputFloat, 0, 0, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
 						{
@@ -846,19 +808,8 @@ public:
 		tooltip("An internal value that can be printed out in the title via %%d, [SEC], and [MIN].");
 		taskChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
 		tooltip("Increases the Internal Value on ever Done by this much.");
-		if (ImGui::BeginCombo("Input Type", t.inputTypeStr))
-		{
-			for (int i = 0; i < IM_ARRAYSIZE(Task::inputTypeItems); i++)
-			{
-				if (ImGui::Selectable(Task::inputTypeItems[i]))
-				{
-					t.inputTypeStr = Task::inputTypeItems[i];
-					t.inputType = Task::strToInputType(t.inputTypeStr);
-					taskChanged = true;
-				}
-			}
-			ImGui::EndCombo();
-		}
+		taskChanged |= combo("Input Type", { "None", "Integer", "Float" }, t.inputType);
+
 		return taskChanged;
 	}
 
@@ -929,6 +880,26 @@ public:
 	void tooltip(const bbe::String& text)
 	{
 		tooltip(text.getRaw());
+	}
+
+	bool combo(const char* label, const bbe::List<bbe::String>& selections, int32_t& selection)
+	{
+		bool retVal = false;
+
+		if (ImGui::BeginCombo(label, selections[selection].getRaw()))
+		{
+			for (int32_t i = 0; i < selections.getLength(); i++)
+			{
+				if (ImGui::Selectable(selections[i].getRaw()))
+				{
+					selection = i;
+					retVal = true;
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		return retVal;
 	}
 
 	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
@@ -1009,19 +980,7 @@ public:
 						ImGui::Text(p.title);
 
 						ImGui::TableSetColumnIndex(1);
-						if (ImGui::BeginCombo("Type", p.inputTypeStr))
-						{
-							for (int i = 0; i < IM_ARRAYSIZE(Process::typeStrings); i++)
-							{
-								if (ImGui::Selectable(Process::typeStrings[i]))
-								{
-									p.inputTypeStr = Process::typeStrings[i];
-									p.type = i;
-									processChanged = true;
-								}
-							}
-							ImGui::EndCombo();
-						}
+						processChanged |= combo("Type", { "Unknown", "System", "Other", "Game" }, p.type);
 						ImGui::PopID();
 					}
 					if (processChanged)
@@ -1091,7 +1050,6 @@ public:
 
 				if (ImGui::Button("New Task"))
 				{
-					tempTask.inputType = Task::strToInputType(tempTask.inputTypeStr);
 					tempTask.setNextExecution(year, month, day);
 					tasks.add(tempTask);
 					tempTask = Task();
