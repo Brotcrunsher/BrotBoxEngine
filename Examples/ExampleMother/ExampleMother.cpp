@@ -60,6 +60,7 @@ public:
 	bool canBeFr = true;
 	bool canBeSa = true;
 	bool earlyAdvanceable = true;
+	char clipboard[1024] = {};
 
 	// Non-Persisted Helper Data below.
 	int32_t inputInt = 0;
@@ -143,6 +144,7 @@ public:
 		buffer.write(canBeFr);
 		buffer.write(canBeSa);
 		buffer.write(earlyAdvanceable);
+		buffer.writeNullString(clipboard);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -169,6 +171,7 @@ public:
 		buffer.read(retVal.canBeFr, true);
 		buffer.read(retVal.canBeSa, true);
 		buffer.read(retVal.earlyAdvanceable, true);
+		strcpy(retVal.clipboard, buffer.readNullString());
 
 		return retVal;
 	}
@@ -215,6 +218,20 @@ public:
 	void setNextExecution(int32_t year, int32_t month, int32_t day)
 	{
 		nextExecution = toPossibleTimePoint(bbe::TimePoint::fromDate(year, month, day).nextMorning());
+	}
+
+	int32_t amountPossibleWeekdays() const
+	{
+		int32_t retVal = 0;
+		if (canBeMo) retVal++;
+		if (canBeTu) retVal++;
+		if (canBeWe) retVal++;
+		if (canBeTh) retVal++;
+		if (canBeFr) retVal++;
+		if (canBeSa) retVal++;
+		if (canBeSu) retVal++;
+
+		return retVal;
 	}
 };
 
@@ -666,7 +683,17 @@ public:
 					auto value = t.internalValue % 60;
 					modifiedTitle = modifiedTitle.replace("[SEC]", bbe::String::format("%.2d", value));
 				}
-				ImGui::Text(modifiedTitle.getRaw(), t.internalValue);
+				if (t.clipboard[0] == '\0')
+				{
+					ImGui::Text(modifiedTitle.getRaw(), t.internalValue);
+				}
+				else
+				{
+					if (ClickableText(modifiedTitle.getRaw(), t.internalValue))
+					{
+						ImGui::SetClipboardText(t.clipboard);
+					}
+				}
 				if (t.history.getLength() > 1)
 				{
 					if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort) && ImGui::BeginTooltip())
@@ -775,18 +802,34 @@ public:
 		return amountDrawn;
 	}
 
+	bool weekdayCheckbox(const char* label, bool* b, int32_t amountOfWeekdays)
+	{
+		const bool disabled = amountOfWeekdays <= 1 && *b;
+		if (disabled)
+		{
+			ImGui::BeginDisabled();
+		}
+		const bool retVal = ImGui::Checkbox(label, b);
+		if (disabled)
+		{
+			ImGui::EndDisabled();
+		}
+		return retVal;
+	}
+
 	bool drawEditableTask(Task& t)
 	{
 		bool taskChanged = false;
 		taskChanged |= ImGui::InputText("Title", t.title, sizeof(t.title));
 		taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
-		taskChanged |= ImGui::Checkbox("Monday", &t.canBeMo);
-		ImGui::SameLine(); taskChanged |= ImGui::Checkbox("Tuesday", &t.canBeTu);
-		ImGui::SameLine(); taskChanged |= ImGui::Checkbox("Wednesday", &t.canBeWe);
-		ImGui::SameLine(); taskChanged |= ImGui::Checkbox("Thursday", &t.canBeTh);
-		ImGui::SameLine(); taskChanged |= ImGui::Checkbox("Friday", &t.canBeFr);
-		ImGui::SameLine(); taskChanged |= ImGui::Checkbox("Saturday", &t.canBeSa);
-		ImGui::SameLine(); taskChanged |= ImGui::Checkbox("Sunday", &t.canBeSu);
+		const int32_t amountOfWeekdays = t.amountPossibleWeekdays();
+		taskChanged |= weekdayCheckbox("Monday", &t.canBeMo, amountOfWeekdays);
+		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Tuesday",   &t.canBeTu, amountOfWeekdays);
+		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Wednesday", &t.canBeWe, amountOfWeekdays);
+		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Thursday",  &t.canBeTh, amountOfWeekdays);
+		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Friday",    &t.canBeFr, amountOfWeekdays);
+		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Saturday",  &t.canBeSa, amountOfWeekdays);
+		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Sunday",    &t.canBeSu, amountOfWeekdays);
 		
 		taskChanged |= ImGui::Checkbox("Advanceable", &t.advanceable);
 		tooltip("Can \"done\" even if it's not planned for today.");
@@ -809,6 +852,9 @@ public:
 		taskChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
 		tooltip("Increases the Internal Value on ever Done by this much.");
 		taskChanged |= combo("Input Type", { "None", "Integer", "Float" }, t.inputType);
+
+		taskChanged |= ImGui::InputText("Clipboard", t.clipboard, sizeof(t.clipboard));
+		tooltip("When clicking the task, this will be sent to your clipboard.");
 
 		return taskChanged;
 	}
@@ -900,6 +946,20 @@ public:
 		}
 
 		return retVal;
+	}
+
+	bool ClickableText(const char* fmt, ...)
+	{
+		va_list args;
+		va_start(args, fmt);
+		int size = vsnprintf(nullptr, 0, fmt, args);
+		static bbe::List<char> buffer; // Avoid allocations
+		buffer.resizeCapacity(size + 1);
+		vsnprintf(buffer.getRaw(), size + 1, fmt, args);
+		va_end(args);
+
+		bool dummy = false;
+		return ImGui::Selectable(buffer.getRaw(), &dummy);
 	}
 
 	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override

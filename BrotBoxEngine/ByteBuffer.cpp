@@ -73,6 +73,7 @@ bbe::ByteBufferSpan bbe::ByteBufferSpan::readSpan(size_t size)
 
 const char* bbe::ByteBufferSpan::readNullString()
 {
+	if (m_start == m_end) return "";
 	const char* retVal = (const char*)m_bytes.getRaw() + m_start;
 	while (m_bytes[m_start])
 	{
