@@ -804,16 +804,9 @@ public:
 
 	bool weekdayCheckbox(const char* label, bool* b, int32_t amountOfWeekdays)
 	{
-		const bool disabled = amountOfWeekdays <= 1 && *b;
-		if (disabled)
-		{
-			ImGui::BeginDisabled();
-		}
+		ImGui::BeginDisabled(amountOfWeekdays <= 1 && *b);
 		const bool retVal = ImGui::Checkbox(label, b);
-		if (disabled)
-		{
-			ImGui::EndDisabled();
-		}
+		ImGui::EndDisabled();
 		return retVal;
 	}
 
