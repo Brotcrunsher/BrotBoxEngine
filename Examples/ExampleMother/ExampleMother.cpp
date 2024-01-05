@@ -10,7 +10,6 @@
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Butchered looks on non 4k
 //TODO: Implement proper date picker
-//TODO: Move Edit View to Tab instead of awkward CTRL+E
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -271,7 +270,6 @@ class MyGame : public bbe::Game
 private:
 	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", "ParanoiaConfig");
 	bbe::SerializableList<Process> processes = bbe::SerializableList<Process>("processes.dat", "ParanoiaConfig");
-	bool editMode = false;
 	bool shiftPressed = false;
 	bool isGameOn = false;
 	bool openTasksNotificationSilenced = false;
@@ -526,7 +524,6 @@ public:
 	virtual void update(float timeSinceLastFrame) override
 	{
 		beginMeasure("Basic Controls");
-		if (isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E)) editMode = !editMode;
 		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
 
 		beginMeasure("Play Task Sounds");
@@ -988,100 +985,184 @@ public:
 
 	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
 	{
-		if (!editMode)
+		ImGuiViewport viewport = *ImGui::GetMainViewport();
+		viewport.WorkSize.x *= 0.6f;
+		ImGui::SetNextWindowPos(viewport.WorkPos);
+		ImGui::SetNextWindowSize(viewport.WorkSize);
+		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 		{
-			ImGuiViewport viewport = *ImGui::GetMainViewport();
-			viewport.WorkSize.x *= 0.6f;
-			ImGui::SetNextWindowPos(viewport.WorkPos);
-			ImGui::SetNextWindowSize(viewport.WorkSize);
-			ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
-			{
-				if (ImGui::BeginTabBar("MainWindowTabs")) {
-					if (ImGui::BeginTabItem("Tasks")) {
-						bool contentsChanged = false;
-						drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    contentsChanged, false, false, true,  true, false, false, false);
-						drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false, false, false);
-						drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true,  false, false, true, true , true , false);
-						drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false, false, true);
-						if (contentsChanged)
+			if (ImGui::BeginTabBar("MainWindowTabs")) {
+				if (ImGui::BeginTabItem("View Tasks")) {
+					bool contentsChanged = false;
+					drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    contentsChanged, false, false, true,  true, false, false, false);
+					drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false, false, false);
+					drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true,  false, false, true, true , true , false);
+					drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false, false, true);
+					if (contentsChanged)
+					{
+						tasks.writeToFile();
+					}
+					ImGui::EndTabItem();
+				}
+				if (ImGui::BeginTabItem("Edit Tasks")) {
+					{
+						static Task tempTask;
+						drawEditableTask(tempTask);
+						tempTask.sanity();
+
+						static int year = 0;
+						static int month = 0;
+						static int day = 0;
+
+						if (year == 0 && month == 0 && day == 0)
 						{
-							tasks.writeToFile();
+							bbe::TimePoint now;
+							year = now.getYear();
+							month = (int)now.getMonth();
+							day = now.getDay();
 						}
-						ImGui::EndTabItem();
-					}
-					if (ImGui::BeginTabItem("Other Stuff")) {
-						ImGui::Text("For future Use");
-						ImGui::EndTabItem();
-					}
-					ImGui::EndTabBar();
-				}
-			}
-			ImGui::End();
 
-			viewport.WorkPos.x += viewport.WorkSize.x;
-			viewport.WorkSize.x *= ImGui::GetMainViewport()->WorkSize.x * 0.4f;
-			viewport.WorkSize.y *= 1.f / 3.f;
-			ImGui::SetNextWindowPos(viewport.WorkPos);
-			ImGui::SetNextWindowSize(viewport.WorkSize);
-			ImGui::Begin("Info", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
-			{
-				ImGui::Text("Build: " __DATE__ ", " __TIME__);
-				bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
-				ImGui::Text(s.getRaw());
-				ImGui::Checkbox("Silence Open Task Notification Sound", &openTasksNotificationSilenced);
-				ImGui::Checkbox("Ignore Night", &ignoreNight);
-				ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
-			}
-			ImGui::End();
+						ImGui::PushItemWidth(100);
+						ImGui::Text("First execution: ");
+						ImGui::SameLine(); ImGui::InputInt("##year", &year, 0, 0); tooltip("Year");
+						ImGui::SameLine(); ImGui::InputInt("##month", &month, 0, 0); tooltip("Month");
+						ImGui::SameLine(); ImGui::InputInt("##day", &day, 0, 0); tooltip("Day");
+						ImGui::PopItemWidth();
 
-			viewport.WorkPos.y = viewport.WorkSize.y;
-			ImGui::SetNextWindowPos(viewport.WorkPos);
-			ImGui::SetNextWindowSize(viewport.WorkSize);
-			ImGui::Begin("Processes", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
-			{
-				static bool showSystem = false;
-				ImGui::Checkbox("Show System", &showSystem);
-				static bool showOther = false;
-				ImGui::SameLine();
-				ImGui::Checkbox("Show Other", &showOther);
-				static bool showGames = false;
-				ImGui::SameLine();
-				ImGui::Checkbox("Show Games", &showGames);
-				if (ImGui::BeginTable("tableProcesses", 2, ImGuiTableFlags_RowBg))
-				{
-					ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 600);
-					ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
-					bool processChanged = false;
-					for (size_t i = 0; i < processes.getLength(); i++)
+						if (year < 2023) year = 2023;
+						month = bbe::Math::clamp(month, 1, 12);
+						day = bbe::Math::clamp(day, 1, 31); // TODO: Not all months have 31 days... Use Proper Date Picker?
+
+						if (ImGui::Button("New Task"))
+						{
+							tempTask.setNextExecution(year, month, day);
+							tasks.add(tempTask);
+							tempTask = Task();
+						}
+					}
+					ImGui::NewLine();
+					ImGui::Separator();
+					ImGui::Separator();
+					ImGui::Separator();
+					static char searchBuffer[128] = {};
+					ImGui::InputText("Search", searchBuffer, sizeof(searchBuffer));
+					ImGui::Separator();
+					ImGui::Separator();
+					ImGui::Separator();
+					ImGui::NewLine();
+
+					bool tasksChanged = false;
+					size_t deletionIndex = (size_t)-1;
+					for (size_t i = 0; i < tasks.getLength(); i++)
 					{
-						Process& p = processes[i];
-						if (p.type == Process::TYPE_SYSTEM && !showSystem) continue;
-						if (p.type == Process::TYPE_OTHER && !showOther) continue;
-						if (p.type == Process::TYPE_GAME && !showGames) continue;
+						Task& t = tasks[i];
+						if (searchBuffer[0] != 0 && !bbe::String(t.title).containsIgnoreCase(searchBuffer)) continue;
 						ImGui::PushID(i);
-						ImGui::TableNextRow();
-						ImGui::TableSetColumnIndex(0);
-						ImGui::Text(p.title);
-
-						ImGui::TableSetColumnIndex(1);
-						processChanged |= combo("Type", { "Unknown", "System", "Other", "Game" }, p.type);
+						if (securityButton("Delete Task"))
+						{
+							deletionIndex = i;
+						}
+						if (i != 0)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Up"))
+							{
+								tasks.swap(i, i - 1);
+							}
+						}
+						if (i != tasks.getLength() - 1)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Down"))
+							{
+								tasks.swap(i, i + 1);
+							}
+						}
+						tasksChanged |= drawEditableTask(t);
+						ImGui::Text(t.previousExecution.toString().getRaw()); tooltip("Previous Execution");
+						ImGui::Text(t.nextPossibleExecution().toString().getRaw()); tooltip("Next Execution");
+						ImGui::NewLine();
+						ImGui::Separator();
+						ImGui::NewLine();
 						ImGui::PopID();
+						t.sanity();
 					}
-					if (processChanged)
+					tasks.removeIndex(deletionIndex);
+					if (tasksChanged)
 					{
-						processes.writeToFile();
+						tasks.writeToFile();
 					}
-					ImGui::EndTable();
+					ImGui::EndTabItem();
 				}
+				ImGui::EndTabBar();
 			}
-			ImGui::End();
+		}
+		ImGui::End();
 
+		viewport.WorkPos.x += viewport.WorkSize.x;
+		viewport.WorkSize.x *= ImGui::GetMainViewport()->WorkSize.x * 0.4f;
+		viewport.WorkSize.y *= 1.f / 3.f;
+		ImGui::SetNextWindowPos(viewport.WorkPos);
+		ImGui::SetNextWindowSize(viewport.WorkSize);
+		ImGui::Begin("Info", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+		{
+			ImGui::Text("Build: " __DATE__ ", " __TIME__);
+			bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
+			ImGui::Text(s.getRaw());
+			ImGui::Checkbox("Silence Open Task Notification Sound", &openTasksNotificationSilenced);
+			ImGui::Checkbox("Ignore Night", &ignoreNight);
+			ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
+		}
+		ImGui::End();
 
-			viewport.WorkPos.y = viewport.WorkSize.y * 2;
-			ImGui::SetNextWindowPos(viewport.WorkPos);
-			ImGui::SetNextWindowSize(viewport.WorkSize);
-			ImGui::Begin("URLs", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+		viewport.WorkPos.y = viewport.WorkSize.y;
+		ImGui::SetNextWindowPos(viewport.WorkPos);
+		ImGui::SetNextWindowSize(viewport.WorkSize);
+		ImGui::Begin("Processes", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+		{
+			static bool showSystem = false;
+			ImGui::Checkbox("Show System", &showSystem);
+			static bool showOther = false;
+			ImGui::SameLine();
+			ImGui::Checkbox("Show Other", &showOther);
+			static bool showGames = false;
+			ImGui::SameLine();
+			ImGui::Checkbox("Show Games", &showGames);
+			if (ImGui::BeginTable("tableProcesses", 2, ImGuiTableFlags_RowBg))
 			{
+				ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 600);
+				ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
+				bool processChanged = false;
+				for (size_t i = 0; i < processes.getLength(); i++)
+				{
+					Process& p = processes[i];
+					if (p.type == Process::TYPE_SYSTEM && !showSystem) continue;
+					if (p.type == Process::TYPE_OTHER && !showOther) continue;
+					if (p.type == Process::TYPE_GAME && !showGames) continue;
+					ImGui::PushID(i);
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::Text(p.title);
+
+					ImGui::TableSetColumnIndex(1);
+					processChanged |= combo("Type", { "Unknown", "System", "Other", "Game" }, p.type);
+					ImGui::PopID();
+				}
+				if (processChanged)
+				{
+					processes.writeToFile();
+				}
+				ImGui::EndTable();
+			}
+		}
+		ImGui::End();
+
+
+		viewport.WorkPos.y = viewport.WorkSize.y * 2;
+		ImGui::SetNextWindowPos(viewport.WorkPos);
+		ImGui::SetNextWindowSize(viewport.WorkSize);
+		ImGui::Begin("URLs", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+		{
 #ifdef BrowserStuff
 				auto tabNames = getDomains();
 				for (size_t i = 0; i < tabNames.getLength(); i++)
@@ -1089,110 +1170,8 @@ public:
 					ImGui::Text(tabNames[i].getRaw());
 				}
 #endif
-			}
-			ImGui::End();
 		}
-		else
-		{
-			const ImGuiViewport* viewport = ImGui::GetMainViewport();
-			ImGui::SetNextWindowPos(viewport->WorkPos);
-			ImGui::SetNextWindowSize(viewport->WorkSize);
-			ImGui::Begin("Edit Mode", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
-
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Edit Mode (Hit CTRL+E to leave)");
-			ImGui::Separator();
-			ImGui::Text("Build: " __DATE__ ", " __TIME__);
-			ImGui::Separator();
-
-			{
-				static Task tempTask;
-				drawEditableTask(tempTask);
-				tempTask.sanity();
-
-				static int year = 0;
-				static int month = 0;
-				static int day = 0;
-
-				if (year == 0 && month == 0 && day == 0)
-				{
-					bbe::TimePoint now;
-					year = now.getYear();
-					month = (int)now.getMonth();
-					day = now.getDay();
-				}
-
-				ImGui::PushItemWidth(100);
-				ImGui::Text("First execution: ");
-				ImGui::SameLine(); ImGui::InputInt("##year",  &year,  0, 0); tooltip("Year");
-				ImGui::SameLine(); ImGui::InputInt("##month", &month, 0, 0); tooltip("Month");
-				ImGui::SameLine(); ImGui::InputInt("##day",   &day,   0, 0); tooltip("Day");
-				ImGui::PopItemWidth();
-
-				if (year < 2023) year = 2023;
-				month = bbe::Math::clamp(month, 1, 12);
-				day = bbe::Math::clamp(day, 1, 31); // TODO: Not all months have 31 days... Use Proper Date Picker?
-
-				if (ImGui::Button("New Task"))
-				{
-					tempTask.setNextExecution(year, month, day);
-					tasks.add(tempTask);
-					tempTask = Task();
-				}
-			}
-			ImGui::NewLine();
-			ImGui::Separator();
-			ImGui::Separator();
-			ImGui::Separator();
-			static char searchBuffer[128] = {};
-			ImGui::InputText("Search", searchBuffer, sizeof(searchBuffer));
-			ImGui::Separator();
-			ImGui::Separator();
-			ImGui::Separator();
-			ImGui::NewLine();
-
-			bool tasksChanged = false;
-			size_t deletionIndex = (size_t)-1;
-			for (size_t i = 0; i < tasks.getLength(); i++)
-			{
-				Task& t = tasks[i];
-				if (searchBuffer[0] != 0 && !bbe::String(t.title).containsIgnoreCase(searchBuffer)) continue;
-				ImGui::PushID(i);
-				if (securityButton("Delete Task"))
-				{
-					deletionIndex = i;
-				}
-				if (i != 0)
-				{
-					ImGui::SameLine();
-					if (ImGui::Button("Up"))
-					{
-						tasks.swap(i, i - 1);
-					}
-				}
-				if (i != tasks.getLength() - 1)
-				{
-					ImGui::SameLine();
-					if (ImGui::Button("Down"))
-					{
-						tasks.swap(i, i + 1);
-					}
-				}
-				tasksChanged |= drawEditableTask(t);
-				ImGui::Text(t.previousExecution.toString().getRaw()); tooltip("Previous Execution");
-				ImGui::Text(t.nextPossibleExecution().toString().getRaw()); tooltip("Next Execution");
-				ImGui::NewLine();
-				ImGui::Separator();
-				ImGui::NewLine();
-				ImGui::PopID();
-				t.sanity();
-			}
-			ImGui::End();
-			tasks.removeIndex(deletionIndex);
-			if (tasksChanged)
-			{
-				tasks.writeToFile();
-			}
-		}
+		ImGui::End();
 
 		if (showDebugStuff)
 		{
