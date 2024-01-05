@@ -10,8 +10,7 @@
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Butchered looks on non 4k
 //TODO: Implement proper date picker
-//TODO: Somehow mark error if all weekdays are marked as impossible
-//TODO: Play sound ever hour if ignoreNight and nightActive to ask if I am sure that I wanna stay awake.
+//TODO: Introduce Late Time Tasks - tasks that are not triggering "Open Tasks" sound unless they are still open during a late time.
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -544,17 +543,30 @@ public:
 		setCurrentTrayIcon(false);
 
 		beginMeasure("Night Time");
-		if (!ignoreNight && isNightTime())
+		if (isNightTime())
 		{
-			static float timeSinceLastMinimize = 100000.0f;
-			timeSinceLastMinimize += timeSinceLastFrame;
-			if (timeSinceLastMinimize > 60.0f)
+			if (ignoreNight)
 			{
-				timeSinceLastMinimize = 0.0f;
-				HWND hwnd = FindWindow("Shell_TrayWnd", NULL);
-				LRESULT res = SendMessage(hwnd, WM_COMMAND, (WPARAM)419, 0);
-				showWindow();
-				assetStore::NightTime()->play();
+				static float timeSinceLastSureSound = 0.0f;
+				timeSinceLastSureSound += timeSinceLastFrame;
+				if (timeSinceLastSureSound > 3600 /*1 hour*/)
+				{
+					timeSinceLastSureSound = 0;
+					assetStore::AreYouSure()->play();
+				}
+			}
+			else
+			{
+				static float timeSinceLastMinimize = 100000.0f;
+				timeSinceLastMinimize += timeSinceLastFrame;
+				if (timeSinceLastMinimize > 60.0f)
+				{
+					timeSinceLastMinimize = 0.0f;
+					HWND hwnd = FindWindow("Shell_TrayWnd", NULL);
+					LRESULT res = SendMessage(hwnd, WM_COMMAND, (WPARAM)419, 0);
+					showWindow();
+					assetStore::NightTime()->play();
+				}
 			}
 		}
 		if (shouldPlayAlmostNightWarning())
