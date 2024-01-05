@@ -10,7 +10,7 @@
 //TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Butchered looks on non 4k
 //TODO: Implement proper date picker
-//TODO: Introduce Late Time Tasks - tasks that are not triggering "Open Tasks" sound unless they are still open during a late time.
+//TODO: Move Edit View to Tab instead of awkward CTRL+E
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -60,6 +60,7 @@ public:
 	bool canBeSa = true;
 	bool earlyAdvanceable = true;
 	char clipboard[1024] = {};
+	bool lateTimeTask = false;
 
 	// Non-Persisted Helper Data below.
 	int32_t inputInt = 0;
@@ -144,6 +145,7 @@ public:
 		buffer.write(canBeSa);
 		buffer.write(earlyAdvanceable);
 		buffer.writeNullString(clipboard);
+		buffer.write(lateTimeTask);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -171,6 +173,7 @@ public:
 		buffer.read(retVal.canBeSa, true);
 		buffer.read(retVal.earlyAdvanceable, true);
 		strcpy(retVal.clipboard, buffer.readNullString());
+		buffer.read(retVal.lateTimeTask, false);
 
 		return retVal;
 	}
@@ -281,7 +284,9 @@ private:
 	size_t trayIconIndex = 0;
 
 	int32_t amountOfTasksNow = 0;
-	int32_t amountOfTasksNowWithoutOneShot = 0;
+	// Madness names
+	int32_t amountOfTasksNowWithoutOneShotWithoutLateTime = 0;
+	int32_t amountOfTasksNowWithoutOneShotWithLateTime = 0;
 
 public:
 	MyGame()
@@ -576,7 +581,8 @@ public:
 
 		beginMeasure("Task Amount Calculation");
 		amountOfTasksNow = 0;
-		amountOfTasksNowWithoutOneShot = 0;
+		amountOfTasksNowWithoutOneShotWithoutLateTime = 0;
+		amountOfTasksNowWithoutOneShotWithLateTime = 0;
 
 		for (size_t i = 0; i < tasks.getLength(); i++)
 		{
@@ -586,7 +592,14 @@ public:
 				amountOfTasksNow++;
 				if (!t.oneShot)
 				{
-					amountOfTasksNowWithoutOneShot++;
+					if (t.lateTimeTask)
+					{
+						amountOfTasksNowWithoutOneShotWithLateTime++;
+					}
+					else
+					{
+						amountOfTasksNowWithoutOneShotWithoutLateTime++;
+					}
 				}
 			}
 		}
@@ -626,7 +639,11 @@ public:
 		}
 
 		beginMeasure("Working Hours");
-		if (!openTasksNotificationSilenced && isGameOn && amountOfTasksNowWithoutOneShot > 0 && isWorkTime())
+		if (!openTasksNotificationSilenced && isGameOn && 
+			(
+				   (amountOfTasksNowWithoutOneShotWithoutLateTime > 0 &&  isWorkTime())
+				|| (amountOfTasksNowWithoutOneShotWithLateTime    > 0 && !isWorkTime())
+			))
 		{
 			static float timeSinceLastNotify = 10000.0f;
 			timeSinceLastNotify += timeSinceLastFrame;
@@ -848,6 +865,8 @@ public:
 		}
 		taskChanged |= ImGui::Checkbox("One Shot", &t.oneShot);
 		tooltip("Delets the Task when Done.");
+		taskChanged |= ImGui::Checkbox("Late Time Task", &t.lateTimeTask);
+		tooltip("A late time task triggers the \"Open Tasks\" sound outside of Working Hours instead of during Working Hours.");
 		taskChanged |= ImGui::InputInt("Follow Up  (in Minutes)", &t.followUp);
 		tooltip("Pushes the Task by this many minutes into the future. Useful for Tasks that can be fulfilled multiple times per day.");
 		taskChanged |= ImGui::InputInt("Follow Up2 (in Minutes)", &t.followUp2);
