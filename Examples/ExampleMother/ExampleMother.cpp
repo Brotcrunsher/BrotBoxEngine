@@ -7,7 +7,6 @@
 #include "AssetStore.h"
 
 //TODO: GATW: Also play "Open Tasks" sound when opening time wasting URLs
-//TODO: Add "fixed date" tasks. "Every month/year at this and that date". Useful e.g. for Taxes.
 //TODO: Butchered looks on non 4k
 //TODO: Implement proper date picker
 
@@ -61,6 +60,16 @@ public:
 	char clipboard[1024] = {};
 	bool lateTimeTask = false;
 
+	enum /*Non-Class*/ DateType
+	{
+		DT_DYNAMIC = 0,
+		DT_YEARLY  = 1,
+		// dt_monthly = 2, // Not implemented
+	};
+	int32_t dateType = DT_DYNAMIC;
+	int32_t dtYearlyMonth = 1;
+	int32_t dtYearlyDay = 1;
+
 	// Non-Persisted Helper Data below.
 	int32_t inputInt = 0;
 	float inputFloat = 0;
@@ -86,7 +95,14 @@ public:
 	{
 		internalValue += internalValueIncrease;
 		previousExecution = bbe::TimePoint();
-		nextExecution = toPossibleTimePoint(previousExecution.nextMorning().plusDays(repeatDays - 1));
+		if (dateType == DT_DYNAMIC)
+		{
+			nextExecution = toPossibleTimePoint(previousExecution.nextMorning().plusDays(repeatDays - 1));
+		}
+		else if (dateType == DT_YEARLY)
+		{
+			nextExecution = getNextYearlyExecution();
+		}
 	}
 	void execFollowUp()
 	{
@@ -105,13 +121,22 @@ public:
 	}
 	void execAdvance()
 	{
-		if (preparation)
+		internalValue += internalValueIncrease;
+		previousExecution = bbe::TimePoint();
+		if (dateType == DT_DYNAMIC)
 		{
-			nextExecution = toPossibleTimePoint(bbe::TimePoint().nextMorning().plusDays(repeatDays));
+			if (preparation)
+			{
+				nextExecution = toPossibleTimePoint(bbe::TimePoint().nextMorning().plusDays(repeatDays));
+			}
+			else
+			{
+				nextExecution = toPossibleTimePoint(nextExecution.plusDays(repeatDays));
+			}
 		}
-		else
+		else if (dateType == DT_YEARLY)
 		{
-			nextExecution = toPossibleTimePoint(nextExecution.plusDays(repeatDays));
+			nextExecution = getNextYearlyExecution();
 		}
 	}
 
@@ -145,6 +170,9 @@ public:
 		buffer.write(earlyAdvanceable);
 		buffer.writeNullString(clipboard);
 		buffer.write(lateTimeTask);
+		buffer.write(dateType);
+		buffer.write(dtYearlyMonth);
+		buffer.write(dtYearlyDay);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -173,6 +201,9 @@ public:
 		buffer.read(retVal.earlyAdvanceable, true);
 		strcpy(retVal.clipboard, buffer.readNullString());
 		buffer.read(retVal.lateTimeTask, false);
+		buffer.read(retVal.dateType);
+		buffer.read(retVal.dtYearlyMonth, 1);
+		buffer.read(retVal.dtYearlyDay, 1);
 
 		return retVal;
 	}
@@ -233,6 +264,12 @@ public:
 		if (canBeSu) retVal++;
 
 		return retVal;
+	}
+
+	bbe::TimePoint getNextYearlyExecution() const
+	{
+		bbe::TimePoint now;
+		return toPossibleTimePoint(bbe::TimePoint::fromDate(now.getYear() + 1, dtYearlyMonth, dtYearlyDay).nextMorning());
 	}
 };
 
@@ -840,7 +877,26 @@ public:
 	{
 		bool taskChanged = false;
 		taskChanged |= ImGui::InputText("Title", t.title, sizeof(t.title));
-		taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
+		taskChanged |= combo("Date Type", { "Dynamic", "Yearly" }, t.dateType);
+		if (t.dateType == Task::DT_DYNAMIC)
+		{
+			taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
+		}
+		else if(t.dateType == Task::DT_YEARLY)
+		{
+			ImGui::PushItemWidth(100);
+			ImGui::Text("Month/Day: ");
+			ImGui::SameLine();
+			ImGui::InputInt("##dt_yearly_month", &t.dtYearlyMonth, 0, 0);
+			tooltip("Month");
+			ImGui::SameLine();
+			ImGui::InputInt("##dt_yearly_day", &t.dtYearlyDay, 0, 0);
+			tooltip("Day");
+			ImGui::PopItemWidth();
+
+			t.dtYearlyMonth = bbe::Math::clamp(t.dtYearlyMonth, 1, 12);
+			t.dtYearlyDay = bbe::Math::clamp(t.dtYearlyDay, 1, 31); // TODO: Not all months have 31 days... Use Proper Date Picker?
+		}
 		const int32_t amountOfWeekdays = t.amountPossibleWeekdays();
 		taskChanged |= weekdayCheckbox("Monday", &t.canBeMo, amountOfWeekdays);
 		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Tuesday",   &t.canBeTu, amountOfWeekdays);
