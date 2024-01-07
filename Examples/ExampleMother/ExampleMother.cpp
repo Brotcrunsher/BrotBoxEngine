@@ -27,13 +27,6 @@ bool exitRequested = false;
 
 struct Task
 {
-	enum class InputType
-	{
-		NONE,
-		INTEGER,
-		FLOAT,
-	};
-
 	char title[1024] = {};
 	int32_t repeatDays = 0;
 	bbe::TimePoint previousExecution;
@@ -45,7 +38,13 @@ public:
 	int32_t internalValue = 0;
 	int32_t internalValueIncrease = 0;
 	int32_t followUp2 = 0;
-	int32_t inputType = 0;
+	enum /*Non-Class*/ InputType
+	{
+		IT_NONE,
+		IT_INTEGER,
+		IT_FLOAT,
+	};
+	int32_t inputType = IT_NONE;
 	bbe::List<float> history;
 	bool advanceable = false;
 	bool oneShot = false;
@@ -156,7 +155,7 @@ public:
 		buffer.write(internalValue);
 		buffer.write(internalValueIncrease);
 		buffer.write(followUp2);
-		buffer.write((int32_t)inputType);
+		buffer.write(inputType);
 		buffer.write(history);
 		buffer.write(advanceable);
 		buffer.write(oneShot);
@@ -275,12 +274,15 @@ public:
 
 struct Process
 {
-	static constexpr int32_t TYPE_UNKNOWN = 0;
-	static constexpr int32_t TYPE_SYSTEM = 1;
-	static constexpr int32_t TYPE_OTHER = 2;
-	static constexpr int32_t TYPE_GAME = 3;
-
 	char title[1024] = {};
+
+	enum /*Non-Class*/ Type
+	{
+		TYPE_UNKNOWN = 0,
+		TYPE_SYSTEM = 1,
+		TYPE_OTHER = 2,
+		TYPE_GAME = 3,
+	};
 	int32_t type = TYPE_UNKNOWN;
 
 
@@ -782,7 +784,7 @@ public:
 				ImGui::TableSetColumnIndex(column++);
 				if (showDone)
 				{
-					if (t.inputType == 0 /*None*/)
+					if (t.inputType == Task::IT_NONE)
 					{
 						if (!t.oneShot)
 						{
@@ -802,7 +804,7 @@ public:
 							}
 						}
 					}
-					else if (t.inputType == 1 /*Integer*/)
+					else if (t.inputType == Task::IT_INTEGER)
 					{
 						if (ImGui::InputInt("##input", &t.inputInt, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue))
 						{
@@ -811,7 +813,7 @@ public:
 							contentsChanged = true;
 						}
 					}
-					else if (t.inputType == 2 /*Float*/)
+					else if (t.inputType == Task::IT_FLOAT)
 					{
 						if (ImGui::InputFloat("##input", &t.inputFloat, 0, 0, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
 						{
