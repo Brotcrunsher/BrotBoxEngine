@@ -1203,7 +1203,26 @@ public:
 					ImGui::Text(p.title);
 
 					ImGui::TableSetColumnIndex(1);
-					processChanged |= combo("Type", { "Unknown", "System", "Other", "Game" }, p.type);
+					if (ImGui::Button("S"))
+					{
+						processChanged = true;
+						p.type = Process::TYPE_SYSTEM;
+					}
+					tooltip("System");
+					ImGui::SameLine();
+					if (ImGui::Button("O"))
+					{
+						processChanged = true;
+						p.type = Process::TYPE_OTHER;
+					}
+					tooltip("Other");
+					ImGui::SameLine();
+					if (ImGui::Button("G"))
+					{
+						processChanged = true;
+						p.type = Process::TYPE_GAME;
+					}
+					tooltip("Game");
 					ImGui::PopID();
 				}
 				if (processChanged)
