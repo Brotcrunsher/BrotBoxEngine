@@ -7,6 +7,12 @@
 
 namespace bbe
 {
+	enum class Undoable
+	{
+		NO,
+		YES,
+	};
+
 	template <typename T>
 	class SerializableList
 	{
@@ -14,6 +20,9 @@ namespace bbe
 		bbe::String path;
 		bbe::String paranoiaPath;
 		bbe::List<T> data;
+
+		bbe::List<bbe::List<T>> history;
+		Undoable undoable = Undoable::NO;
 
 		void load(const bbe::String& path, const bbe::List<T>& data)
 		{
@@ -35,6 +44,16 @@ namespace bbe
 				this->data = data;
 				writeToFile();
 			}
+
+			pushUndoable();
+		}
+
+		void pushUndoable()
+		{
+			if (undoable == Undoable::YES)
+			{
+				history.add(data);
+			}
 		}
 
 		SerializableList()
@@ -43,16 +62,18 @@ namespace bbe
 		}
 
 	public:
-		SerializableList(const bbe::String& path, const bbe::String& paranoiaPath = "") :
-			paranoiaPath(paranoiaPath)
+		SerializableList(const bbe::String& path, const bbe::String& paranoiaPath = "", Undoable undoable = Undoable::NO) :
+			paranoiaPath(paranoiaPath),
+			undoable(undoable)
 		{
 			load(path, {});
 		}
 
-		static SerializableList withDefault(const bbe::String& path, const bbe::List<T>& data, const bbe::String& paranoiaPath = "")
+		static SerializableList withDefault(const bbe::String& path, const bbe::List<T>& data, const bbe::String& paranoiaPath = "", Undoable undoable = Undoable::NO)
 		{
 			SerializableList sl;
 			sl.paranoiaPath = paranoiaPath;
+			sl.undoable = undoable;
 			sl.load(path, data);
 			return sl;
 		}
@@ -65,6 +86,7 @@ namespace bbe
 			t.serialize(buffer);
 			buffer.fillSizeToken(token);
 			bbe::simpleFile::appendBinaryToFile(path, buffer);
+			pushUndoable();
 		}
 
 		bool removeIndex(size_t index)
@@ -99,7 +121,7 @@ namespace bbe
 			return data[index];
 		}
 
-		void writeToFile()
+		void writeToFile(bool updateHistory = true)
 		{
 			bbe::ByteBuffer buffer;
 			for (size_t i = 0; i < data.getLength(); i++)
@@ -116,6 +138,23 @@ namespace bbe
 				bbe::simpleFile::createDirectory(paranoiaPath);
 				bbe::simpleFile::writeBinaryToFile(paranoiaPath + "/" + path + t + ".bak", buffer);
 			}
+			
+			if(updateHistory) pushUndoable();
+		}
+
+		bool canUndo() const
+		{
+			return history.getLength() > 1;
+		}
+
+		bool undo()
+		{
+			if (!canUndo()) return false;
+
+			history.popBack();
+			data = history.last();
+			writeToFile(false);
+			return true;
 		}
 	};
 }

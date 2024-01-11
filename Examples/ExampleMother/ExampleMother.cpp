@@ -9,6 +9,8 @@
 //TODO: GATW: Also play "Open Tasks" sound when opening time wasting URLs
 //TODO: Butchered looks on non 4k
 //TODO: Implement proper date picker
+//TODO: Redo
+//TODO: "Startable" tasks with a countdown
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -307,8 +309,8 @@ struct Process
 class MyGame : public bbe::Game
 {
 private:
-	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", "ParanoiaConfig");
-	bbe::SerializableList<Process> processes = bbe::SerializableList<Process>("processes.dat", "ParanoiaConfig");
+	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Process> processes = bbe::SerializableList<Process>("processes.dat", "ParanoiaConfig", bbe::Undoable::YES);
 	bool shiftPressed = false;
 	bool isGameOn = false;
 	bool openTasksNotificationSilenced = false;
@@ -691,7 +693,7 @@ public:
 		}
 	}
 
-	int32_t drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& contentsChanged, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable, bool sorted)
+	int32_t drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& requiresWrite, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable, bool sorted)
 	{
 		int32_t amountDrawn = 0;
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
@@ -791,7 +793,7 @@ public:
 							if (ImGui::Button("Done"))
 							{
 								t.execDone();
-								contentsChanged = true;
+								requiresWrite = true;
 							}
 						}
 						else
@@ -799,7 +801,7 @@ public:
 							if(securityButton("Done"))
 							{
 								tasks.removeIndex(i);
-								contentsChanged = true;
+								// Doesn't require write cause removeIndex already does that.
 								deletedTasks++;
 							}
 						}
@@ -810,7 +812,7 @@ public:
 						{
 							t.history.add(t.inputInt);
 							t.execDone();
-							contentsChanged = true;
+							requiresWrite = true;
 						}
 					}
 					else if (t.inputType == Task::IT_FLOAT)
@@ -819,7 +821,7 @@ public:
 						{
 							t.history.add(t.inputFloat);
 							t.execDone();
-							contentsChanged = true;
+							requiresWrite = true;
 						}
 					}
 					else
@@ -831,13 +833,13 @@ public:
 				if (showFollowUp && t.followUp > 0 && ImGui::Button((bbe::String("+")+t.followUp+"min").getRaw()))
 				{
 					t.execFollowUp();
-					contentsChanged = true;
+					requiresWrite = true;
 				}
 				ImGui::TableSetColumnIndex(column++);
 				if (showFollowUp && t.followUp2 > 0 && ImGui::Button((bbe::String("+") + t.followUp2 + "min").getRaw()))
 				{
 					t.execFollowUp2();
-					contentsChanged = true;
+					requiresWrite = true;
 				}
 				if (showAdvancable)
 				{
@@ -845,7 +847,7 @@ public:
 					if (t.advanceable && (t.earlyAdvanceable || isLateAdvanceableTime()) && ImGui::Button("Advance"))
 					{
 						t.execAdvance();
-						contentsChanged = true;
+						requiresWrite = true;
 					}
 				}
 				if (showMoveToNow)
@@ -854,7 +856,7 @@ public:
 					if (ImGui::Button("Move to Now"))
 					{
 						t.execMoveToNow();
-						contentsChanged = true;
+						requiresWrite = true;
 					}
 				}
 				ImGui::PopID();
@@ -1051,12 +1053,12 @@ public:
 		{
 			if (ImGui::BeginTabBar("MainWindowTabs")) {
 				if (ImGui::BeginTabItem("View Tasks")) {
-					bool contentsChanged = false;
-					drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    contentsChanged, false, false, true,  true, false, false, false);
-					drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              contentsChanged, true,  true,  true,  true, false, false, false);
-					drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    contentsChanged, true,  false, false, true, true , true , false);
-					drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, contentsChanged, true,  true,  true,  true, false, false, true);
-					if (contentsChanged)
+					bool requiresWrite = false;
+					drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    requiresWrite, false, false, true,  true, false, false, false);
+					drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              requiresWrite, true,  true,  true,  true, false, false, false);
+					drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    requiresWrite, true,  false, false, true, true , true , false);
+					drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, requiresWrite, true,  true,  true,  true, false, false, true);
+					if (requiresWrite)
 					{
 						tasks.writeToFile();
 					}
@@ -1167,6 +1169,14 @@ public:
 			ImGui::Text("Build: " __DATE__ ", " __TIME__);
 			bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
 			ImGui::Text(s.getRaw());
+
+			ImGui::BeginDisabled(!tasks.canUndo());
+			if (ImGui::Button("Undo"))
+			{
+				tasks.undo();
+			}
+			ImGui::EndDisabled();
+
 			ImGui::Checkbox("Silence Open Task Notification Sound", &openTasksNotificationSilenced);
 			ImGui::Checkbox("Ignore Night", &ignoreNight);
 			ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
