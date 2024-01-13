@@ -74,11 +74,11 @@ public:
 	// Non-Persisted Helper Data below.
 	int32_t inputInt = 0;
 	float inputFloat = 0;
-	bool armedToPlaySoundNewTask = false;
-	bool armedToPlaySoundDone = false;
+	mutable bool armedToPlaySoundNewTask = false;
+	mutable bool armedToPlaySoundDone = false;
 
 private:
-	bool timePointElapsed(const bbe::TimePoint& tp, bool& armed)
+	bool timePointElapsed(const bbe::TimePoint& tp, bool& armed) const
 	{
 		if (tp.hasPassed())
 		{
@@ -96,12 +96,12 @@ private:
 	}
 public:
 
-	bool shouldPlaySoundNewTask()
+	bool shouldPlaySoundNewTask() const
 	{
 		return timePointElapsed(nextPossibleExecution(), armedToPlaySoundNewTask);
 	}
 
-	bool shouldPlaySoundDone()
+	bool shouldPlaySoundDone() const
 	{
 		return timePointElapsed(endWorkTime, armedToPlaySoundDone);
 	}
@@ -606,25 +606,14 @@ public:
 		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
 
 		beginMeasure("Play Task Sounds");
-		bool playSoundNewTask = false; // TODO: This could use a bbe::List::any(blaaa) implementation
-		for (size_t i = 0; i < tasks.getLength(); i++)
-		{
-			playSoundNewTask |= tasks[i].shouldPlaySoundNewTask();
-		}
-		if (playSoundNewTask)
+		if (tasks.getList().any([](const Task& t) { return t.shouldPlaySoundNewTask(); }))
 		{
 			assetStore::NewTask()->play();
 		}
-		bool playSoundDone = false;
-		for (size_t i = 0; i < tasks.getLength(); i++)
-		{
-			playSoundDone |= tasks[i].shouldPlaySoundDone();
-		}
-		if (playSoundDone)
+		if (tasks.getList().any([](const Task& t) { return t.shouldPlaySoundDone(); }))
 		{
 			assetStore::Done()->play();
 		}
-
 
 		if (exitRequested)
 		{

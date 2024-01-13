@@ -156,5 +156,10 @@ namespace bbe
 			writeToFile(false);
 			return true;
 		}
+
+		const bbe::List<T>& getList() const
+		{
+			return data;
+		}
 	};
 }

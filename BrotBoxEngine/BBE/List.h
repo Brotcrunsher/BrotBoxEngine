@@ -578,6 +578,23 @@ namespace bbe
 			return containsAmount(predicate) == 1;
 		}
 
+		bool any(std::function<bool(const T&)> predicate) const
+		{
+			return contains(predicate);
+		}
+
+		bool all(std::function<bool(const T&)> predicate) const
+		{
+			for (size_t i = 0; i < m_length; i++)
+			{
+				if (!predicate(m_pdata[i].m_value))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+
 		T* begin()
 		{
 			if (!m_length) return nullptr;
