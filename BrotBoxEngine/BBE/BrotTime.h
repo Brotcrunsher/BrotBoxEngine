@@ -20,6 +20,7 @@ namespace bbe
 		int32_t toMinutes() const;
 		int32_t toHours() const;
 		int32_t toDays() const;
+		bool isNegative() const;
 	};
 
 	enum class Month
@@ -53,6 +54,7 @@ namespace bbe
 		static TimePoint todayAt(int32_t hour, int32_t minute, int32_t second = 0);
 		static TimePoint fromDate(int32_t year, Month   month, int32_t day, int32_t hour = 0, int32_t minute = 0, int32_t second = 0);
 		static TimePoint fromDate(int32_t year, int32_t month, int32_t day, int32_t hour = 0, int32_t minute = 0, int32_t second = 0);
+		static TimePoint epoch();
 
 		TimePoint nextMorning(int64_t morningHour = 5) const;
 		TimePoint plusDays(int64_t days) const;

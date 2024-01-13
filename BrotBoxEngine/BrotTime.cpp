@@ -84,6 +84,11 @@ bbe::TimePoint bbe::TimePoint::fromDate(int32_t year, int32_t month, int32_t day
 	return fromDate(year, (Month)month, day, hour, minute, second);
 }
 
+bbe::TimePoint bbe::TimePoint::epoch()
+{
+	return TimePoint(0);
+}
+
 bbe::TimePoint bbe::TimePoint::nextMorning(int64_t morningHour) const
 {
 	std::time_t t = std::chrono::system_clock::to_time_t(m_time);
@@ -270,7 +275,7 @@ bbe::Duration::Duration(const std::chrono::system_clock::duration& duration) :
 
 bbe::String bbe::Duration::toString() const
 {
-	int32_t seconds = std::chrono::duration_cast<std::chrono::seconds>(m_duration).count();
+	int32_t seconds = toSeconds();
 	int32_t minutes = seconds / 60;
 	seconds %= 60;
 	int32_t hours = minutes / 60;
@@ -279,7 +284,10 @@ bbe::String bbe::Duration::toString() const
 	hours %= 24;
 
 	if(days == 0)
-		return bbe::String::format("%.2d:%.2d:%.2d", hours, minutes, seconds);
+		if(hours == 0)
+			return bbe::String::format("%.2d:%.2d", minutes, seconds);
+		else
+			return bbe::String::format("%.2d:%.2d:%.2d", hours, minutes, seconds);
 	else
 		return bbe::String::format("%d:%.2d:%.2d:%.2d", days, hours, minutes, seconds);
 }
@@ -302,4 +310,9 @@ int32_t bbe::Duration::toHours() const
 int32_t bbe::Duration::toDays() const
 {
 	return toHours() / 24;
+}
+
+bool bbe::Duration::isNegative() const
+{
+	return toSeconds() < 0;
 }

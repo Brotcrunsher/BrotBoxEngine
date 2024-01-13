@@ -10,7 +10,6 @@
 //TODO: Butchered looks on non 4k
 //TODO: Implement proper date picker
 //TODO: Redo
-//TODO: "Startable" tasks with a countdown
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -31,7 +30,7 @@ struct Task
 {
 	char title[1024] = {};
 	int32_t repeatDays = 0;
-	bbe::TimePoint previousExecution;
+	bbe::TimePoint previousExecution = bbe::TimePoint::epoch();
 private:
 	bbe::TimePoint nextExecution; // Call nextPossibleExecution from the outside! 
 public:
@@ -60,7 +59,6 @@ public:
 	bool earlyAdvanceable = true;
 	char clipboard[1024] = {};
 	bool lateTimeTask = false;
-
 	enum /*Non-Class*/ DateType
 	{
 		DT_DYNAMIC = 0,
@@ -70,28 +68,44 @@ public:
 	int32_t dateType = DT_DYNAMIC;
 	int32_t dtYearlyMonth = 1;
 	int32_t dtYearlyDay = 1;
+	bool startable = false;
+	bbe::TimePoint endWorkTime = bbe::TimePoint::epoch();
 
 	// Non-Persisted Helper Data below.
 	int32_t inputInt = 0;
 	float inputFloat = 0;
-	bool armedToPlaySound = false;
+	bool armedToPlaySoundNewTask = false;
+	bool armedToPlaySoundDone = false;
 
-	bool shouldPlaySound()
+private:
+	bool timePointElapsed(const bbe::TimePoint& tp, bool& armed)
 	{
-		if (nextPossibleExecution().hasPassed())
+		if (tp.hasPassed())
 		{
-			if (armedToPlaySound)
+			if (armed)
 			{
-				armedToPlaySound = false;
+				armed = false;
 				return true;
 			}
 		}
 		else
 		{
-			armedToPlaySound = true;
+			armed = true;
 		}
 		return false;
 	}
+public:
+
+	bool shouldPlaySoundNewTask()
+	{
+		return timePointElapsed(nextPossibleExecution(), armedToPlaySoundNewTask);
+	}
+
+	bool shouldPlaySoundDone()
+	{
+		return timePointElapsed(endWorkTime, armedToPlaySoundDone);
+	}
+
 	void execDone()
 	{
 		internalValue += internalValueIncrease;
@@ -117,7 +131,7 @@ public:
 	}
 	void execMoveToNow()
 	{
-		armedToPlaySound = false;
+		armedToPlaySoundNewTask = false;
 		nextExecution = bbe::TimePoint();
 	}
 	void execAdvance()
@@ -174,6 +188,8 @@ public:
 		buffer.write(dateType);
 		buffer.write(dtYearlyMonth);
 		buffer.write(dtYearlyDay);
+		buffer.write(startable);
+		endWorkTime.serialize(buffer);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -205,6 +221,8 @@ public:
 		buffer.read(retVal.dateType);
 		buffer.read(retVal.dtYearlyMonth, 1);
 		buffer.read(retVal.dtYearlyDay, 1);
+		buffer.read(retVal.startable, false);
+		retVal.endWorkTime = bbe::TimePoint::deserialize(buffer);
 
 		return retVal;
 	}
@@ -271,6 +289,26 @@ public:
 	{
 		bbe::TimePoint now;
 		return toPossibleTimePoint(bbe::TimePoint::fromDate(now.getYear() + 1, dtYearlyMonth, dtYearlyDay).nextMorning());
+	}
+
+	bool wasDoneToday() const
+	{
+		return previousExecution.isToday();
+	}
+
+	bbe::Duration getWorkDurationLeft() const
+	{
+		return endWorkTime - bbe::TimePoint();
+	}
+
+	bool wasStartedToday() const
+	{
+		return endWorkTime.isToday();
+	}
+
+	void execStart()
+	{
+		endWorkTime = bbe::TimePoint().plusSeconds(internalValue);
 	}
 };
 
@@ -568,15 +606,26 @@ public:
 		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
 
 		beginMeasure("Play Task Sounds");
-		bool playSound = false;
+		bool playSoundNewTask = false; // TODO: This could use a bbe::List::any(blaaa) implementation
 		for (size_t i = 0; i < tasks.getLength(); i++)
 		{
-			playSound |= tasks[i].shouldPlaySound();
+			playSoundNewTask |= tasks[i].shouldPlaySoundNewTask();
 		}
-		if (playSound)
+		if (playSoundNewTask)
 		{
 			assetStore::NewTask()->play();
 		}
+		bool playSoundDone = false;
+		for (size_t i = 0; i < tasks.getLength(); i++)
+		{
+			playSoundDone |= tasks[i].shouldPlaySoundDone();
+		}
+		if (playSoundDone)
+		{
+			assetStore::Done()->play();
+		}
+
+
 		if (exitRequested)
 		{
 			closeWindow();
@@ -788,21 +837,47 @@ public:
 				{
 					if (t.inputType == Task::IT_NONE)
 					{
-						if (!t.oneShot)
+						bool showDoneButton = true;
+						if (t.startable)
 						{
-							if (ImGui::Button("Done"))
+							if (!t.wasDoneToday())
 							{
-								t.execDone();
-								requiresWrite = true;
+								bbe::Duration dur = t.getWorkDurationLeft();
+								if (!t.wasStartedToday())
+								{
+									showDoneButton = false;
+									if (ImGui::Button("Start"))
+									{
+										t.execStart();
+										requiresWrite = true;
+									}
+								}
+								else if (!dur.isNegative())
+								{
+									ImGui::Text(dur.toString().getRaw());
+									showDoneButton = false;
+								}
 							}
 						}
-						else
+
+						if (showDoneButton)
 						{
-							if(securityButton("Done"))
+							if (!t.oneShot)
 							{
-								tasks.removeIndex(i);
-								// Doesn't require write cause removeIndex already does that.
-								deletedTasks++;
+								if (ImGui::Button("Done"))
+								{
+									t.execDone();
+									requiresWrite = true;
+								}
+							}
+							else
+							{
+								if (securityButton("Done"))
+								{
+									tasks.removeIndex(i);
+									// Doesn't require write cause removeIndex already does that.
+									deletedTasks++;
+								}
 							}
 						}
 					}
@@ -924,6 +999,8 @@ public:
 		tooltip("Delets the Task when Done.");
 		taskChanged |= ImGui::Checkbox("Late Time Task", &t.lateTimeTask);
 		tooltip("A late time task triggers the \"Open Tasks\" sound outside of Working Hours instead of during Working Hours.");
+		taskChanged |= ImGui::Checkbox("Startable", &t.startable);
+		tooltip("Doesn't show \"Done\" immediately, but instead a start button that starts a count down of the length\nof the internal value in seconds. After that time a sound is played and the \"Done\" Button appears.");
 		taskChanged |= ImGui::InputInt("Follow Up  (in Minutes)", &t.followUp);
 		tooltip("Pushes the Task by this many minutes into the future. Useful for Tasks that can be fulfilled multiple times per day.");
 		taskChanged |= ImGui::InputInt("Follow Up2 (in Minutes)", &t.followUp2);
@@ -1141,6 +1218,7 @@ public:
 						tasksChanged |= drawEditableTask(t);
 						ImGui::Text(t.previousExecution.toString().getRaw()); tooltip("Previous Execution");
 						ImGui::Text(t.nextPossibleExecution().toString().getRaw()); tooltip("Next Execution");
+						ImGui::Text(t.endWorkTime.toString().getRaw()); tooltip("End Work Time");
 						ImGui::NewLine();
 						ImGui::Separator();
 						ImGui::NewLine();
