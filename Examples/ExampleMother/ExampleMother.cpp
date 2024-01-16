@@ -11,7 +11,6 @@
 //TODO: Implement proper date picker
 //TODO: Redo
 //TODO: Bug: A task that was not possible to do on a sunday was shown in the list of tomorrow, even though tomorrow was sunday. The next execution time was correctly shown as a monday.
-//TODO: CTRL+E switch tabs
 //TODO: Sometimes freezes. I suspect process stuff? track what the longest time of each section was and display somewhere.
 //TODO: Countdown beeps when starting and stopping startable tasks
 
@@ -358,6 +357,7 @@ private:
 	bool openTasksNotificationSilenced = false;
 	bool showDebugStuff = false;
 	bool ignoreNight = false;
+	bool tabSwitchRequested = false;
 
 	bbe::List<HICON> trayIconsRed;
 	bbe::List<HICON> trayIconsGreen;
@@ -608,6 +608,8 @@ public:
 	{
 		beginMeasure("Basic Controls");
 		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
+		tabSwitchRequested = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E);
+
 
 		beginMeasure("Play Task Sounds");
 		if (tasks.getList().any([](const Task& t) { return t.shouldPlaySoundNewTask(); }))
@@ -1124,7 +1126,10 @@ public:
 		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 		{
 			if (ImGui::BeginTabBar("MainWindowTabs")) {
-				if (ImGui::BeginTabItem("View Tasks")) {
+				static int32_t previouslyShownTab = 0;
+				int32_t nowShownTab = 0;
+				if (ImGui::BeginTabItem("View Tasks", nullptr, (tabSwitchRequested && previouslyShownTab != 0) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
+					nowShownTab = 0;
 					bool requiresWrite = false;
 					drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    requiresWrite, false, false, true,  true, false, false, false);
 					drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              requiresWrite, true,  true,  true,  true, false, false, false);
@@ -1136,7 +1141,8 @@ public:
 					}
 					ImGui::EndTabItem();
 				}
-				if (ImGui::BeginTabItem("Edit Tasks")) {
+				if (ImGui::BeginTabItem("Edit Tasks", nullptr, (tabSwitchRequested && previouslyShownTab != 1) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
+					nowShownTab = 1;
 					{
 						static Task tempTask;
 						drawEditableTask(tempTask);
@@ -1227,6 +1233,7 @@ public:
 					}
 					ImGui::EndTabItem();
 				}
+				previouslyShownTab = nowShownTab;
 				ImGui::EndTabBar();
 			}
 		}
