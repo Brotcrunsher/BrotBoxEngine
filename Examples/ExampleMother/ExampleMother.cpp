@@ -10,6 +10,10 @@
 //TODO: Butchered looks on non 4k
 //TODO: Implement proper date picker
 //TODO: Redo
+//TODO: Bug: A task that was not possible to do on a sunday was shown in the list of tomorrow, even though tomorrow was sunday. The next execution time was correctly shown as a monday.
+//TODO: CTRL+E switch tabs
+//TODO: Sometimes freezes. I suspect process stuff? track what the longest time of each section was and display somewhere.
+//TODO: Countdown beeps when starting and stopping startable tasks
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -978,11 +982,13 @@ public:
 		tooltip("Can \"done\" even if it's not planned for today.");
 		if (t.advanceable)
 		{
+			ImGui::Indent(15.0f);
 			taskChanged |= ImGui::Checkbox("Preparation", &t.preparation);
 			tooltip("Will never be shown for the current day. Inteded for Tasks that prepare stuff for tomorrow, e.g. pre brewing some coffee.");
 
 			taskChanged |= ImGui::Checkbox("Early Advanceable", &t.earlyAdvanceable);
 			tooltip("If unchecked, the task is only advanceable after 18:00.");
+			ImGui::Unindent(15.0f);
 		}
 		taskChanged |= ImGui::Checkbox("One Shot", &t.oneShot);
 		tooltip("Delets the Task when Done.");
