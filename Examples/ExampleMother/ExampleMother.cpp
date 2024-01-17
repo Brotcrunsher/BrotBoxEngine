@@ -13,7 +13,6 @@
 //TODO: Bug: A task that was not possible to do on a sunday was shown in the list of tomorrow, even though tomorrow was sunday. The next execution time was correctly shown as a monday.
 //TODO: Sometimes freezes. I suspect process stuff? track what the longest time of each section was and display somewhere.
 //TODO: Countdown beeps when starting and stopping startable tasks
-//TODO: "Let me prepare" checkbox that allows advancing tasks that are late time, even though it isn't late yet.
 //TODO: Indefinate advancable: advancable even in "Later" list
 //TODO: Tooltip for "Night Start in" that shows the actual time when it starts
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
@@ -368,6 +367,7 @@ private:
 	bool showDebugStuff = false;
 	bool ignoreNight = false;
 	bool tabSwitchRequested = false;
+	bool forcePrepare = false;
 
 	bbe::List<HICON> trayIconsRed;
 	bbe::List<HICON> trayIconsGreen;
@@ -924,7 +924,7 @@ public:
 				if (showAdvancable)
 				{
 					ImGui::TableSetColumnIndex(column++);
-					if (t.advanceable && (t.earlyAdvanceable || isLateAdvanceableTime()) && ImGui::Button("Advance"))
+					if (t.advanceable && (t.earlyAdvanceable || isLateAdvanceableTime() || forcePrepare) && ImGui::Button("Advance"))
 					{
 						t.execAdvance();
 						requiresWrite = true;
@@ -1281,6 +1281,7 @@ public:
 
 			ImGui::Checkbox("Silence Open Task Notification Sound", &openTasksNotificationSilenced);
 			ImGui::Checkbox("Ignore Night", &ignoreNight);
+			ImGui::Checkbox("Let me prepare", &forcePrepare); tooltip("Make tasks advancable, even before late time happens.");
 			ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
 		}
 		ImGui::End();
