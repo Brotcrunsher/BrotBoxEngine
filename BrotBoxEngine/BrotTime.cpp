@@ -107,6 +107,17 @@ bbe::TimePoint bbe::TimePoint::nextMorning(int64_t morningHour) const
 	return TimePoint(t);
 }
 
+bbe::TimePoint bbe::TimePoint::toMorning(int64_t morningHour) const
+{
+	std::time_t t = std::chrono::system_clock::to_time_t(m_time);
+	::tm timeinfo = *localtime(&t);
+	timeinfo.tm_sec = 0;
+	timeinfo.tm_min = 0;
+	timeinfo.tm_hour = morningHour;
+	t = ::mktime(&timeinfo);
+	return TimePoint(t);
+}
+
 bbe::TimePoint bbe::TimePoint::plusDays(int64_t days) const
 {
 	using namespace std::literals;

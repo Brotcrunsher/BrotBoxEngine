@@ -57,6 +57,7 @@ namespace bbe
 		static TimePoint epoch();
 
 		TimePoint nextMorning(int64_t morningHour = 5) const;
+		TimePoint toMorning(int64_t morningHour = 5) const;
 		TimePoint plusDays(int64_t days) const;
 		TimePoint plusHours(int64_t hours) const;
 		TimePoint plusMinutes(int64_t minutes) const;

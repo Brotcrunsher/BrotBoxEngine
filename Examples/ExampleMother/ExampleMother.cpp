@@ -13,6 +13,10 @@
 //TODO: Bug: A task that was not possible to do on a sunday was shown in the list of tomorrow, even though tomorrow was sunday. The next execution time was correctly shown as a monday.
 //TODO: Sometimes freezes. I suspect process stuff? track what the longest time of each section was and display somewhere.
 //TODO: Countdown beeps when starting and stopping startable tasks
+//TODO: "Let me prepare" checkbox that allows advancing tasks that are late time, even though it isn't late yet.
+//TODO: Indefinate advancable: advancable even in "Later" list
+//TODO: Tooltip for "Night Start in" that shows the actual time when it starts
+//TODO: Gamification, add a score how much time I needed to do all Now Tasks
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -228,6 +232,12 @@ public:
 		retVal.endWorkTime = bbe::TimePoint::deserialize(buffer);
 
 		return retVal;
+	}
+
+	void nextExecPlusDays(int32_t days)
+	{
+		// TODO: This will behave weird if we go negative and then reach a day that isn't possible.
+		nextExecution = toPossibleTimePoint(nextPossibleExecution().plusDays(days).toMorning());
 	}
 
 	bbe::TimePoint nextPossibleExecution() const
@@ -1219,6 +1229,18 @@ public:
 						tasksChanged |= drawEditableTask(t);
 						ImGui::Text(t.previousExecution.toString().getRaw()); tooltip("Previous Execution");
 						ImGui::Text(t.nextPossibleExecution().toString().getRaw()); tooltip("Next Execution");
+						ImGui::SameLine();
+						if (ImGui::Button("+1 Day"))
+						{
+							t.nextExecPlusDays(1);
+							tasksChanged = true;
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("-1 Day"))
+						{
+							t.nextExecPlusDays(-1);
+							tasksChanged = true;
+						}
 						ImGui::Text(t.endWorkTime.toString().getRaw()); tooltip("End Work Time");
 						ImGui::NewLine();
 						ImGui::Separator();
