@@ -14,7 +14,6 @@
 //TODO: Sometimes freezes. I suspect process stuff? track what the longest time of each section was and display somewhere.
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Indefinate advancable: advancable even in "Later" list
-//TODO: Tooltip for "Night Start in" that shows the actual time when it starts
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
 
 #define WM_SYSICON        (WM_USER + 1)
@@ -1271,6 +1270,7 @@ public:
 			ImGui::Text("Build: " __DATE__ ", " __TIME__);
 			bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
 			ImGui::Text(s.getRaw());
+			tooltip(getNightStart().toString().getRaw());
 
 			ImGui::BeginDisabled(!tasks.canUndo());
 			if (ImGui::Button("Undo"))
