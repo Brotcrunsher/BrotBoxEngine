@@ -13,7 +13,6 @@
 //TODO: Bug: A task that was not possible to do on a sunday was shown in the list of tomorrow, even though tomorrow was sunday. The next execution time was correctly shown as a monday.
 //TODO: Sometimes freezes. I suspect process stuff? track what the longest time of each section was and display somewhere.
 //TODO: Countdown beeps when starting and stopping startable tasks
-//TODO: Indefinate advancable: advancable even in "Later" list
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
 
 #define WM_SYSICON        (WM_USER + 1)
@@ -908,17 +907,20 @@ public:
 						throw bbe::IllegalStateException();
 					}
 				}
-				ImGui::TableSetColumnIndex(column++);
-				if (showFollowUp && t.followUp > 0 && ImGui::Button((bbe::String("+")+t.followUp+"min").getRaw()))
+				if (showFollowUp)
 				{
-					t.execFollowUp();
-					requiresWrite = true;
-				}
-				ImGui::TableSetColumnIndex(column++);
-				if (showFollowUp && t.followUp2 > 0 && ImGui::Button((bbe::String("+") + t.followUp2 + "min").getRaw()))
-				{
-					t.execFollowUp2();
-					requiresWrite = true;
+					ImGui::TableSetColumnIndex(column++);
+					if (t.followUp > 0 && ImGui::Button((bbe::String("+") + t.followUp + "min").getRaw()))
+					{
+						t.execFollowUp();
+						requiresWrite = true;
+					}
+					ImGui::TableSetColumnIndex(column++);
+					if (t.followUp2 > 0 && ImGui::Button((bbe::String("+") + t.followUp2 + "min").getRaw()))
+					{
+						t.execFollowUp2();
+						requiresWrite = true;
+					}
 				}
 				if (showAdvancable)
 				{
@@ -1140,10 +1142,10 @@ public:
 				if (ImGui::BeginTabItem("View Tasks", nullptr, (tabSwitchRequested && previouslyShownTab != 0) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
 					nowShownTab = 0;
 					bool requiresWrite = false;
-					drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    requiresWrite, false, false, true,  true, false, false, false);
-					drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              requiresWrite, true,  true,  true,  true, false, false, false);
-					drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    requiresWrite, true,  false, false, true, true , true , false);
-					drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, requiresWrite, true,  true,  true,  true, false, false, true);
+					drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    requiresWrite, false, false, true,  true,  false, false, false);
+					drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              requiresWrite, true,  true,  true,  true,  false, false, false);
+					drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    requiresWrite, true,  false, false, true,  true , true , false);
+					drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, requiresWrite, true,  true,  true,  false, false, true , true );
 					if (requiresWrite)
 					{
 						tasks.writeToFile();
