@@ -467,19 +467,21 @@ void bbe::Game::endMeasure()
 	if (m_pcurrentPerformanceMeasurementTag)
 	{
 		auto passedTimeSeconds = m_performanceMeasurement.getTimeExpiredNanoseconds() / 1000.0 / 1000.0 / 1000.0;
-		m_performanceMeasurements[m_pcurrentPerformanceMeasurementTag].add(passedTimeSeconds);
+		m_performanceMeasurementsMax[m_pcurrentPerformanceMeasurementTag] = bbe::Math::max(m_performanceMeasurementsMax[m_pcurrentPerformanceMeasurementTag], passedTimeSeconds);
+		if (m_performanceMeasurementsRequired || m_performanceMeasurementsForced)
+		{
+			m_performanceMeasurements[m_pcurrentPerformanceMeasurementTag].add(passedTimeSeconds);
+		}
 	}
 	m_pcurrentPerformanceMeasurementTag = nullptr;
 }
 
 void bbe::Game::beginMeasure(const char* tag, bool force)
 {
-	if (m_performanceMeasurementsRequired || force)
-	{
-		endMeasure();
-		m_pcurrentPerformanceMeasurementTag = tag;
-		m_performanceMeasurement.start();
-	}
+	endMeasure();
+	m_pcurrentPerformanceMeasurementTag = tag;
+	m_performanceMeasurement.start();
+	m_performanceMeasurementsForced = force;
 }
 
 void bbe::Game::drawMeasure(const bbe::PrimitiveBrush3D& brush)
@@ -496,4 +498,28 @@ void bbe::Game::drawMeasure(const bbe::PrimitiveBrush3D& brush)
 		}
 		ImPlot::EndPlot();
 	}
+}
+
+bbe::String bbe::Game::getMeasuresMaxString() const
+{
+	bbe::String retVal;
+
+	int32_t maxLen = 0;
+	for (auto it = m_performanceMeasurementsMax.begin(); it != m_performanceMeasurementsMax.end(); it++)
+	{
+		maxLen = bbe::Math::max(maxLen, (int32_t)strlen(it->first));
+	}
+
+	for (auto it = m_performanceMeasurementsMax.begin(); it != m_performanceMeasurementsMax.end(); it++)
+	{
+		if (it != m_performanceMeasurementsMax.begin()) retVal += "\n";
+
+		int32_t padding = maxLen - strlen(it->first);
+		retVal += it->first;
+		retVal += ": ";
+		retVal += bbe::String(" ") * padding;
+		retVal += it->second;
+	}
+
+	return retVal;
 }

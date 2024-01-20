@@ -492,6 +492,17 @@ namespace bbe{
 	}
 }
 
+bbe::Utf8String bbe::Utf8String::operator*(int32_t mult) const
+{
+	// TODO: This does a lot of unnecessary allocations. Calculate capacity ahead of time.
+	bbe::String retVal;
+	for (int32_t i = 0; i < mult; i++)
+	{
+		retVal += *this;
+	}
+	return retVal;
+}
+
 bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8String& other)
 {
 	//UNTESTED

@@ -113,6 +113,8 @@ namespace bbe
 		friend Utf8String operator+(long               number, const Utf8String& string);
 		friend Utf8String operator+(unsigned int       number, const Utf8String& string);
 
+		Utf8String operator*(int32_t mult) const;
+
 		Utf8String& operator+=(const Utf8String& other);
 		Utf8String& operator+=(const Utf8StringView& other);
 		Utf8String& operator+=(const char*       other);
