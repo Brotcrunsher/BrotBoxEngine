@@ -234,8 +234,7 @@ public:
 
 	void nextExecPlusDays(int32_t days)
 	{
-		// TODO: This will behave weird if we go negative and then reach a day that isn't possible.
-		nextExecution = toPossibleTimePoint(nextPossibleExecution().plusDays(days).toMorning());
+		nextExecution = toPossibleTimePoint(nextPossibleExecution().plusDays(days).toMorning(), days > 0);
 	}
 
 	bbe::TimePoint nextPossibleExecution() const
@@ -256,14 +255,15 @@ public:
 		return true;
 	}
 
-	bbe::TimePoint toPossibleTimePoint(const bbe::TimePoint& tp) const
+	bbe::TimePoint toPossibleTimePoint(const bbe::TimePoint& tp, bool forwardInTime = true) const
 	{
 		bbe::TimePoint retVal = tp;
 		for (int32_t i = 0; i < 14; i++)
 		{
 			if (!isPossibleWeekday(retVal))
 			{
-				retVal = retVal.nextMorning();
+				if (forwardInTime) retVal = retVal.nextMorning();
+				else               retVal = retVal.plusDays(-1);
 			}
 			else
 			{
