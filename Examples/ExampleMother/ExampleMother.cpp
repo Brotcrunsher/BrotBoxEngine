@@ -10,7 +10,6 @@
 //TODO: Butchered looks on non 4k
 //TODO: Implement proper date picker
 //TODO: Redo
-//TODO: Bug: A task that was not possible to do on a sunday was shown in the list of tomorrow, even though tomorrow was sunday. The next execution time was correctly shown as a monday.
 //TODO: Sometimes freezes. I suspect process stuff? track what the longest time of each section was and display somewhere.
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
@@ -245,18 +244,31 @@ public:
 		return toPossibleTimePoint(bbe::TimePoint());
 	}
 
+	bool isPossibleWeekday(const bbe::TimePoint& tp) const
+	{
+		if (!canBeMo && tp.isMonday())    return false;
+		if (!canBeTu && tp.isTuesday())   return false;
+		if (!canBeWe && tp.isWednesday()) return false;
+		if (!canBeTh && tp.isThursday())  return false;
+		if (!canBeFr && tp.isFriday())    return false;
+		if (!canBeSa && tp.isSaturday())  return false;
+		if (!canBeSu && tp.isSunday())    return false;
+		return true;
+	}
+
 	bbe::TimePoint toPossibleTimePoint(const bbe::TimePoint& tp) const
 	{
 		bbe::TimePoint retVal = tp;
-		for (int32_t i = 0; i < 2; i++)
+		for (int32_t i = 0; i < 14; i++)
 		{
-			if (!canBeMo && retVal.isMonday())    retVal = retVal.nextMorning();
-			if (!canBeTu && retVal.isTuesday())   retVal = retVal.nextMorning();
-			if (!canBeWe && retVal.isWednesday()) retVal = retVal.nextMorning();
-			if (!canBeTh && retVal.isThursday())  retVal = retVal.nextMorning();
-			if (!canBeFr && retVal.isFriday())    retVal = retVal.nextMorning();
-			if (!canBeSa && retVal.isSaturday())  retVal = retVal.nextMorning();
-			if (!canBeSu && retVal.isSunday())    retVal = retVal.nextMorning();
+			if (!isPossibleWeekday(retVal))
+			{
+				retVal = retVal.nextMorning();
+			}
+			else
+			{
+				break;
+			}
 		}
 		if (preparation && retVal.isToday()) retVal = retVal.nextMorning();
 		return retVal;
@@ -264,7 +276,9 @@ public:
 
 	bool isImportantTomorrow() const
 	{
-		bbe::TimePoint tomorrow = bbe::TimePoint().nextMorning().plusDays(1).plusSeconds(-1);
+		//TODO: "Interesting" calculation for "tomorrow"...
+		bbe::TimePoint tomorrow = bbe::TimePoint().nextMorning().plusDays(1).plusHours(-6);
+		if (!isPossibleWeekday(tomorrow)) return false;
 		if (nextExecution < tomorrow) return true;
 
 		return false;
