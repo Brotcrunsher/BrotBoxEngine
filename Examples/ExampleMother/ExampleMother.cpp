@@ -16,7 +16,6 @@
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
 //TODO: Bug: "Move to Now" is too short in "Later"
 //TODO: New feature: Stopwatch ("Pizza done")
-//TODO: Programatic tab switching (CTRL+Q/E) works, but is kinda weirdly implemented. Improve.
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -1155,6 +1154,152 @@ public:
 		return ImGui::Selectable(buffer.getRaw(), &dummy);
 	}
 
+	void drawTabViewTasks()
+	{
+		bool requiresWrite = false;
+		drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    requiresWrite, false, false, true,  true,  false, false, false);
+		drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              requiresWrite, true,  true,  true,  true,  false, false, false);
+		drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    requiresWrite, true,  false, false, true,  true , true , false);
+		drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, requiresWrite, true,  true,  true,  false, false, true , true );
+		if (requiresWrite)
+		{
+			tasks.writeToFile();
+		}
+	}
+
+	void drawTabEditTasks()
+	{
+		{
+			static Task tempTask;
+			drawEditableTask(tempTask);
+			tempTask.sanity();
+
+			static int year = 0;
+			static int month = 0;
+			static int day = 0;
+
+			if (year == 0 && month == 0 && day == 0)
+			{
+				bbe::TimePoint now;
+				year = now.getYear();
+				month = (int)now.getMonth();
+				day = now.getDay();
+			}
+
+			ImGui::PushItemWidth(100);
+			ImGui::Text("First execution: ");
+			ImGui::SameLine(); ImGui::InputInt("##year", &year, 0, 0); tooltip("Year");
+			ImGui::SameLine(); ImGui::InputInt("##month", &month, 0, 0); tooltip("Month");
+			ImGui::SameLine(); ImGui::InputInt("##day", &day, 0, 0); tooltip("Day");
+			ImGui::PopItemWidth();
+
+			if (year < 2023) year = 2023;
+			month = bbe::Math::clamp(month, 1, 12);
+			day = bbe::Math::clamp(day, 1, 31); // TODO: Not all months have 31 days... Use Proper Date Picker?
+
+			if (ImGui::Button("New Task"))
+			{
+				tempTask.setNextExecution(year, month, day);
+				tasks.add(tempTask);
+				tempTask = Task();
+			}
+		}
+		ImGui::NewLine();
+		ImGui::Separator();
+		ImGui::Separator();
+		ImGui::Separator();
+		static char searchBuffer[128] = {};
+		ImGui::InputText("Search", searchBuffer, sizeof(searchBuffer));
+		ImGui::Separator();
+		ImGui::Separator();
+		ImGui::Separator();
+		ImGui::NewLine();
+
+		bool tasksChanged = false;
+		size_t deletionIndex = (size_t)-1;
+		for (size_t i = 0; i < tasks.getLength(); i++)
+		{
+			Task& t = tasks[i];
+			if (searchBuffer[0] != 0 && !bbe::String(t.title).containsIgnoreCase(searchBuffer)) continue;
+			ImGui::PushID(i);
+			if (securityButton("Delete Task"))
+			{
+				deletionIndex = i;
+			}
+			if (i != 0)
+			{
+				ImGui::SameLine();
+				if (ImGui::Button("Up"))
+				{
+					tasks.swap(i, i - 1);
+				}
+			}
+			if (i != tasks.getLength() - 1)
+			{
+				ImGui::SameLine();
+				if (ImGui::Button("Down"))
+				{
+					tasks.swap(i, i + 1);
+				}
+			}
+			tasksChanged |= drawEditableTask(t);
+			ImGui::Text(t.previousExecution.toString().getRaw()); tooltip("Previous Execution");
+			ImGui::Text(t.nextPossibleExecution().toString().getRaw()); tooltip("Next Execution");
+			ImGui::SameLine();
+			if (ImGui::Button("+1 Day"))
+			{
+				t.nextExecPlusDays(1);
+				tasksChanged = true;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("-1 Day"))
+			{
+				t.nextExecPlusDays(-1);
+				tasksChanged = true;
+			}
+			ImGui::Text(t.endWorkTime.toString().getRaw()); tooltip("End Work Time");
+			ImGui::NewLine();
+			ImGui::Separator();
+			ImGui::NewLine();
+			ImGui::PopID();
+			t.sanity();
+		}
+		tasks.removeIndex(deletionIndex);
+		if (tasksChanged)
+		{
+			tasks.writeToFile();
+		}
+	}
+
+	void drawTabClipboard()
+	{
+		static ClipboardContent newContent;
+		if (ImGui::InputText("New Content", newContent.content, sizeof(newContent.content), ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			clipboardContent.add(newContent);
+			newContent = ClipboardContent();
+		}
+		size_t deleteIndex = (size_t)-1;
+		for (size_t i = 0; i < clipboardContent.getLength(); i++)
+		{
+			ImGui::PushID(i);
+			if (ImGui::Button("Delete"))
+			{
+				deleteIndex = i;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button(clipboardContent[i].content))
+			{
+				setClipboard(clipboardContent[i].content);
+			}
+			ImGui::PopID();
+		}
+		if (deleteIndex != (size_t)-1)
+		{
+			clipboardContent.removeIndex(deleteIndex);
+		}
+	}
+
 	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
 	{
 		ImGuiViewport viewport = *ImGui::GetMainViewport();
@@ -1163,156 +1308,38 @@ public:
 		ImGui::SetNextWindowSize(viewport.WorkSize);
 		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 		{
+			struct Tab
+			{
+				const char* title = "";
+				std::function<void()> run;
+			};
+			static bbe::List<Tab> tabs =
+			{
+				Tab{"View Tasks", [this]() { drawTabViewTasks(); }},
+				Tab{"Edit Tasks", [this]() { drawTabEditTasks(); }},
+				Tab{"Clipboard",  [this]() { drawTabClipboard(); }},
+			};
 			if (ImGui::BeginTabBar("MainWindowTabs")) {
-				static int32_t previouslyShownTab = 0;
-				int32_t nowShownTab = 0;
-				if (ImGui::BeginTabItem("View Tasks", nullptr, ((tabSwitchRequestedRight && previouslyShownTab == 2) || (tabSwitchRequestedLeft && previouslyShownTab == 1)) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
-					nowShownTab = 0;
-					bool requiresWrite = false;
-					drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    requiresWrite, false, false, true,  true,  false, false, false);
-					drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              requiresWrite, true,  true,  true,  true,  false, false, false);
-					drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    requiresWrite, true,  false, false, true,  true , true , false);
-					drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, requiresWrite, true,  true,  true,  false, false, true , true );
-					if (requiresWrite)
-					{
-						tasks.writeToFile();
-					}
-					ImGui::EndTabItem();
+				static size_t previousShownTab = 0;
+				size_t desiredShownTab = previousShownTab;
+				const bool programaticTabSwitch = tabSwitchRequestedLeft || tabSwitchRequestedRight;
+				if (programaticTabSwitch)
+				{
+					if (tabSwitchRequestedLeft) desiredShownTab--;
+					if (desiredShownTab == (size_t)-1) desiredShownTab = tabs.getLength() - 1;
+					if (tabSwitchRequestedRight) desiredShownTab++;
+					if (desiredShownTab == tabs.getLength()) desiredShownTab = 0;
 				}
-				if (ImGui::BeginTabItem("Edit Tasks", nullptr, ((tabSwitchRequestedRight && previouslyShownTab == 0) || (tabSwitchRequestedLeft && previouslyShownTab == 2)) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
-					nowShownTab = 1;
+				for (size_t i = 0; i < tabs.getLength(); i++)
+				{
+					Tab& t = tabs[i];
+					if (ImGui::BeginTabItem(t.title, nullptr, (programaticTabSwitch && i == desiredShownTab) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None))
 					{
-						static Task tempTask;
-						drawEditableTask(tempTask);
-						tempTask.sanity();
-
-						static int year = 0;
-						static int month = 0;
-						static int day = 0;
-
-						if (year == 0 && month == 0 && day == 0)
-						{
-							bbe::TimePoint now;
-							year = now.getYear();
-							month = (int)now.getMonth();
-							day = now.getDay();
-						}
-
-						ImGui::PushItemWidth(100);
-						ImGui::Text("First execution: ");
-						ImGui::SameLine(); ImGui::InputInt("##year", &year, 0, 0); tooltip("Year");
-						ImGui::SameLine(); ImGui::InputInt("##month", &month, 0, 0); tooltip("Month");
-						ImGui::SameLine(); ImGui::InputInt("##day", &day, 0, 0); tooltip("Day");
-						ImGui::PopItemWidth();
-
-						if (year < 2023) year = 2023;
-						month = bbe::Math::clamp(month, 1, 12);
-						day = bbe::Math::clamp(day, 1, 31); // TODO: Not all months have 31 days... Use Proper Date Picker?
-
-						if (ImGui::Button("New Task"))
-						{
-							tempTask.setNextExecution(year, month, day);
-							tasks.add(tempTask);
-							tempTask = Task();
-						}
-					}
-					ImGui::NewLine();
-					ImGui::Separator();
-					ImGui::Separator();
-					ImGui::Separator();
-					static char searchBuffer[128] = {};
-					ImGui::InputText("Search", searchBuffer, sizeof(searchBuffer));
-					ImGui::Separator();
-					ImGui::Separator();
-					ImGui::Separator();
-					ImGui::NewLine();
-
-					bool tasksChanged = false;
-					size_t deletionIndex = (size_t)-1;
-					for (size_t i = 0; i < tasks.getLength(); i++)
-					{
-						Task& t = tasks[i];
-						if (searchBuffer[0] != 0 && !bbe::String(t.title).containsIgnoreCase(searchBuffer)) continue;
-						ImGui::PushID(i);
-						if (securityButton("Delete Task"))
-						{
-							deletionIndex = i;
-						}
-						if (i != 0)
-						{
-							ImGui::SameLine();
-							if (ImGui::Button("Up"))
-							{
-								tasks.swap(i, i - 1);
-							}
-						}
-						if (i != tasks.getLength() - 1)
-						{
-							ImGui::SameLine();
-							if (ImGui::Button("Down"))
-							{
-								tasks.swap(i, i + 1);
-							}
-						}
-						tasksChanged |= drawEditableTask(t);
-						ImGui::Text(t.previousExecution.toString().getRaw()); tooltip("Previous Execution");
-						ImGui::Text(t.nextPossibleExecution().toString().getRaw()); tooltip("Next Execution");
-						ImGui::SameLine();
-						if (ImGui::Button("+1 Day"))
-						{
-							t.nextExecPlusDays(1);
-							tasksChanged = true;
-						}
-						ImGui::SameLine();
-						if (ImGui::Button("-1 Day"))
-						{
-							t.nextExecPlusDays(-1);
-							tasksChanged = true;
-						}
-						ImGui::Text(t.endWorkTime.toString().getRaw()); tooltip("End Work Time");
-						ImGui::NewLine();
-						ImGui::Separator();
-						ImGui::NewLine();
-						ImGui::PopID();
-						t.sanity();
-					}
-					tasks.removeIndex(deletionIndex);
-					if (tasksChanged)
-					{
-						tasks.writeToFile();
-					}
-					ImGui::EndTabItem();
-				}
-				if (ImGui::BeginTabItem("Clipboard", nullptr, ((tabSwitchRequestedRight && previouslyShownTab == 1) || (tabSwitchRequestedLeft && previouslyShownTab == 0)) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
-					nowShownTab = 2;
-
-					static ClipboardContent newContent;
-					if (ImGui::InputText("New Content", newContent.content, sizeof(newContent.content), ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue))
-					{
-						clipboardContent.add(newContent);
-						newContent = ClipboardContent();
-					}
-					size_t deleteIndex = (size_t)-1;
-					for (size_t i = 0; i < clipboardContent.getLength(); i++)
-					{
-						ImGui::PushID(i);
-						if (ImGui::Button("Delete"))
-						{
-							deleteIndex = i;
-						}
-						ImGui::SameLine();
-						if (ImGui::Button(clipboardContent[i].content))
-						{
-							setClipboard(clipboardContent[i].content);
-						}
-						ImGui::PopID();
-					}
-					if (deleteIndex != (size_t)-1)
-					{
-						clipboardContent.removeIndex(deleteIndex);
+						previousShownTab = i;
+						t.run();
+						ImGui::EndTabItem();
 					}
 				}
-				previouslyShownTab = nowShownTab;
 				ImGui::EndTabBar();
 			}
 		}
