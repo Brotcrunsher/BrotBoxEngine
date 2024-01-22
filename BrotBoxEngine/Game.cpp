@@ -170,7 +170,7 @@ void bbe::Game::frameDraw()
 	endMeasure();
 	m_pwindow->preDraw2D();
 	draw2D(m_pwindow->getBrush2D());
-	endMeasure();
+	beginMeasure("INTERNAL - Overhead");
 	m_pwindow->postDraw();
 	m_pwindow->waitEndDraw();
 }
