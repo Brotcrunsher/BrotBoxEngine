@@ -49,6 +49,8 @@ namespace bbe
 		bbe::StopWatch m_performanceMeasurement;
 		std::map<const char*, bbe::List<double>> m_performanceMeasurements;
 		std::map<const char*, double> m_performanceMeasurementsMax;
+		std::map<const char*, double> m_performanceMeasurementsAvg;
+		std::map<const char*, double> m_performanceMeasurementsNow;
 		bool m_performanceMeasurementsRequired = false;
 		bool m_performanceMeasurementsForced = false;
 
@@ -140,7 +142,7 @@ namespace bbe
 		void endMeasure();
 		void beginMeasure(const char* tag, bool force = false); // CAREFUL: Static string assumed!
 		void drawMeasure(const bbe::PrimitiveBrush3D& brush);
-		bbe::String getMeasuresMaxString() const;
+		bbe::String getMeasuresString();
 
 #ifndef BBE_NO_AUDIO
 		void setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection);

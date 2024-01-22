@@ -1383,7 +1383,7 @@ public:
 			ImGui::Checkbox("Let me prepare", &forcePrepare); tooltip("Make tasks advancable, even before late time happens.");
 			ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
 			ImGui::NewLine();
-			ImGui::Text(getMeasuresMaxString().getRaw());
+			ImGui::Text(getMeasuresString().getRaw());
 		}
 		ImGui::End();
 

@@ -467,7 +467,17 @@ void bbe::Game::endMeasure()
 	if (m_pcurrentPerformanceMeasurementTag)
 	{
 		auto passedTimeSeconds = m_performanceMeasurement.getTimeExpiredNanoseconds() / 1000.0 / 1000.0 / 1000.0;
+		m_performanceMeasurementsNow[m_pcurrentPerformanceMeasurementTag] = passedTimeSeconds;
 		m_performanceMeasurementsMax[m_pcurrentPerformanceMeasurementTag] = bbe::Math::max(m_performanceMeasurementsMax[m_pcurrentPerformanceMeasurementTag], passedTimeSeconds);
+		if (!m_performanceMeasurementsAvg.count(m_pcurrentPerformanceMeasurementTag))
+		{
+			m_performanceMeasurementsAvg[m_pcurrentPerformanceMeasurementTag] = passedTimeSeconds;
+		}
+		else
+		{
+
+			m_performanceMeasurementsAvg[m_pcurrentPerformanceMeasurementTag] = 0.999 * m_performanceMeasurementsAvg[m_pcurrentPerformanceMeasurementTag] + 0.001 * passedTimeSeconds;
+		}
 		if (m_performanceMeasurementsRequired || m_performanceMeasurementsForced)
 		{
 			m_performanceMeasurements[m_pcurrentPerformanceMeasurementTag].add(passedTimeSeconds);
@@ -500,15 +510,17 @@ void bbe::Game::drawMeasure(const bbe::PrimitiveBrush3D& brush)
 	}
 }
 
-bbe::String bbe::Game::getMeasuresMaxString() const
+bbe::String bbe::Game::getMeasuresString()
 {
-	bbe::String retVal;
 
 	int32_t maxLen = 0;
 	for (auto it = m_performanceMeasurementsMax.begin(); it != m_performanceMeasurementsMax.end(); it++)
 	{
 		maxLen = bbe::Math::max(maxLen, (int32_t)strlen(it->first));
 	}
+
+	bbe::String retVal = bbe::String(" ") * maxLen;
+	retVal += "  MAX      AVG      NOW\n";
 
 	for (auto it = m_performanceMeasurementsMax.begin(); it != m_performanceMeasurementsMax.end(); it++)
 	{
@@ -519,6 +531,10 @@ bbe::String bbe::Game::getMeasuresMaxString() const
 		retVal += ": ";
 		retVal += bbe::String(" ") * padding;
 		retVal += it->second;
+		retVal += " ";
+		retVal += m_performanceMeasurementsAvg[it->first]; // TODO: This is bad. Just store max, avg, and now in some struct...
+		retVal += " ";
+		retVal += m_performanceMeasurementsNow[it->first];
 	}
 
 	return retVal;
