@@ -14,6 +14,8 @@
 //TODO: Sometimes freezes. I suspect process stuff? track what the longest time of each section was and display somewhere.
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
+//TODO: Bug: "Move to Now" is too short in "Later"
+//TODO: New feature: Stopwatch ("Pizza done")
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -354,11 +356,33 @@ struct Process
 	}
 };
 
+struct ClipboardContent
+{
+	char content[1024] = {};
+
+
+	// Non-Persisted Helper Data below.
+
+	void serialize(bbe::ByteBuffer& buffer) const
+	{
+		buffer.writeNullString(content);
+	}
+	static ClipboardContent deserialize(bbe::ByteBufferSpan& buffer)
+	{
+		ClipboardContent retVal;
+
+		strcpy(retVal.content, buffer.readNullString());
+
+		return retVal;
+	}
+};
+
 class MyGame : public bbe::Game
 {
 private:
 	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", "ParanoiaConfig", bbe::Undoable::YES);
 	bbe::SerializableList<Process> processes = bbe::SerializableList<Process>("processes.dat", "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<ClipboardContent> clipboardContent = bbe::SerializableList<ClipboardContent>("Clipboard.dat", "ParanoiaConfig", bbe::Undoable::YES);
 	bool shiftPressed = false;
 	bool isGameOn = false;
 	bool openTasksNotificationSilenced = false;
@@ -1139,7 +1163,7 @@ public:
 			if (ImGui::BeginTabBar("MainWindowTabs")) {
 				static int32_t previouslyShownTab = 0;
 				int32_t nowShownTab = 0;
-				if (ImGui::BeginTabItem("View Tasks", nullptr, (tabSwitchRequested && previouslyShownTab != 0) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
+				if (ImGui::BeginTabItem("View Tasks", nullptr, (tabSwitchRequested && previouslyShownTab == 2) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
 					nowShownTab = 0;
 					bool requiresWrite = false;
 					drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    requiresWrite, false, false, true,  true,  false, false, false);
@@ -1152,7 +1176,7 @@ public:
 					}
 					ImGui::EndTabItem();
 				}
-				if (ImGui::BeginTabItem("Edit Tasks", nullptr, (tabSwitchRequested && previouslyShownTab != 1) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
+				if (ImGui::BeginTabItem("Edit Tasks", nullptr, (tabSwitchRequested && previouslyShownTab == 0) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
 					nowShownTab = 1;
 					{
 						static Task tempTask;
@@ -1255,6 +1279,35 @@ public:
 						tasks.writeToFile();
 					}
 					ImGui::EndTabItem();
+				}
+				if (ImGui::BeginTabItem("Clipboard", nullptr, (tabSwitchRequested && previouslyShownTab == 1) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
+					nowShownTab = 2;
+
+					static ClipboardContent newContent;
+					if (ImGui::InputText("New Content", newContent.content, sizeof(newContent.content), ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						clipboardContent.add(newContent);
+						newContent = ClipboardContent();
+					}
+					size_t deleteIndex = (size_t)-1;
+					for (size_t i = 0; i < clipboardContent.getLength(); i++)
+					{
+						ImGui::PushID(i);
+						if (ImGui::Button("Delete"))
+						{
+							deleteIndex = i;
+						}
+						ImGui::SameLine();
+						if (ImGui::Button(clipboardContent[i].content))
+						{
+							setClipboard(clipboardContent[i].content);
+						}
+						ImGui::PopID();
+					}
+					if (deleteIndex != (size_t)-1)
+					{
+						clipboardContent.removeIndex(deleteIndex);
+					}
 				}
 				previouslyShownTab = nowShownTab;
 				ImGui::EndTabBar();
