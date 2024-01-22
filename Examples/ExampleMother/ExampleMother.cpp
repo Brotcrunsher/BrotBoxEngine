@@ -16,6 +16,7 @@
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
 //TODO: Bug: "Move to Now" is too short in "Later"
 //TODO: New feature: Stopwatch ("Pizza done")
+//TODO: Programatic tab switching (CTRL+Q/E) works, but is kinda weirdly implemented. Improve.
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -388,7 +389,8 @@ private:
 	bool openTasksNotificationSilenced = false;
 	bool showDebugStuff = false;
 	bool ignoreNight = false;
-	bool tabSwitchRequested = false;
+	bool tabSwitchRequestedLeft = false;
+	bool tabSwitchRequestedRight = false;
 	bool forcePrepare = false;
 
 	bbe::List<HICON> trayIconsRed;
@@ -640,7 +642,8 @@ public:
 	{
 		beginMeasure("Basic Controls");
 		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
-		tabSwitchRequested = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E);
+		tabSwitchRequestedLeft  = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::Q);
+		tabSwitchRequestedRight = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E);
 
 
 		beginMeasure("Play Task Sounds");
@@ -1163,7 +1166,7 @@ public:
 			if (ImGui::BeginTabBar("MainWindowTabs")) {
 				static int32_t previouslyShownTab = 0;
 				int32_t nowShownTab = 0;
-				if (ImGui::BeginTabItem("View Tasks", nullptr, (tabSwitchRequested && previouslyShownTab == 2) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
+				if (ImGui::BeginTabItem("View Tasks", nullptr, ((tabSwitchRequestedRight && previouslyShownTab == 2) || (tabSwitchRequestedLeft && previouslyShownTab == 1)) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
 					nowShownTab = 0;
 					bool requiresWrite = false;
 					drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    requiresWrite, false, false, true,  true,  false, false, false);
@@ -1176,7 +1179,7 @@ public:
 					}
 					ImGui::EndTabItem();
 				}
-				if (ImGui::BeginTabItem("Edit Tasks", nullptr, (tabSwitchRequested && previouslyShownTab == 0) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
+				if (ImGui::BeginTabItem("Edit Tasks", nullptr, ((tabSwitchRequestedRight && previouslyShownTab == 0) || (tabSwitchRequestedLeft && previouslyShownTab == 2)) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
 					nowShownTab = 1;
 					{
 						static Task tempTask;
@@ -1280,7 +1283,7 @@ public:
 					}
 					ImGui::EndTabItem();
 				}
-				if (ImGui::BeginTabItem("Clipboard", nullptr, (tabSwitchRequested && previouslyShownTab == 1) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
+				if (ImGui::BeginTabItem("Clipboard", nullptr, ((tabSwitchRequestedRight && previouslyShownTab == 1) || (tabSwitchRequestedLeft && previouslyShownTab == 0)) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
 					nowShownTab = 2;
 
 					static ClipboardContent newContent;
