@@ -15,6 +15,9 @@
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
 //TODO: Bug: "Move to Now" is too short in "Later"
 //TODO: New feature: Stopwatch ("Pizza done")
+//TODO: Try https://stackoverflow.com/a/77732213/7130273
+//TODO: "Move to Now" in Edit Tasks would be useful.
+//TODO: Not all tasks make sense to be infinitly advancable...
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -583,8 +586,49 @@ public:
 		setCurrentTrayIcon(true);
 	}
 
+	bool trayIconVisible() const
+	{
+		// Quite Hacky! Let me explain...
+		// Switching a tray icon is an expensive operation, even when
+		// the tray icon isn't even visible. So this function tries to
+		// find out if the tray icon is visible or not. If not, we can
+		// early out of the tray switching function (see
+		// setCurrentTrayIcon). The only way to figure this out that I
+		// found was asking for the position of the tray icon. When it's
+		// not visible, the left attribute of the Rect returns something
+		// around 300.
+		// However! Getting the position of the tray icon is itself
+		// (maybe surprisingly) an expensive opteration. So this function
+		// only checks every second. If this second hasn't passed, then
+		// it simply returns false. In a worse case this leads to a very
+		// small (1 second) delay before the animation starts.
+		// Honestly - this is dumb! But oh well. It kinda works.
+		static bbe::TimePoint autoFalseUntil;
+
+		if (!autoFalseUntil.hasPassed())
+		{
+			return false;
+		}
+
+		NOTIFYICONIDENTIFIER identifier = {};
+		identifier.cbSize = sizeof(NOTIFYICONIDENTIFIER);
+		identifier.hWnd = Hwnd;
+		identifier.uID = 0;
+		memset(&identifier.guidItem, 0, sizeof(identifier.guidItem));
+		RECT rect;
+		Shell_NotifyIconGetRect(&identifier, &rect);
+
+		bool retVal = rect.left > 500;
+		if (!retVal) autoFalseUntil = bbe::TimePoint().plusSeconds(1);
+		return retVal;
+	}
+
 	void setCurrentTrayIcon(bool firstCall)
 	{
+		if (!firstCall && !trayIconVisible())
+		{
+			return;
+		}
 		static HICON previousHIcon = nullptr;
 		const HICON currentHIcon = getCurrentTrayIcon();
 		if (previousHIcon == currentHIcon)
