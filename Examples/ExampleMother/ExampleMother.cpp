@@ -16,7 +16,6 @@
 //TODO: Bug: "Move to Now" is too short in "Later"
 //TODO: New feature: Stopwatch ("Pizza done")
 //TODO: Try https://stackoverflow.com/a/77732213/7130273
-//TODO: "Move to Now" in Edit Tasks would be useful.
 //TODO: Not all tasks make sense to be infinitly advancable...
 
 #define WM_SYSICON        (WM_USER + 1)
@@ -1303,6 +1302,12 @@ public:
 			tasksChanged |= drawEditableTask(t);
 			ImGui::Text(t.previousExecution.toString().getRaw()); tooltip("Previous Execution");
 			ImGui::Text(t.nextPossibleExecution().toString().getRaw()); tooltip("Next Execution");
+			ImGui::SameLine();
+			if (ImGui::Button("Move to Now"))
+			{
+				t.execMoveToNow();
+				tasksChanged = true;
+			}
 			ImGui::SameLine();
 			if (ImGui::Button("+1 Day"))
 			{
