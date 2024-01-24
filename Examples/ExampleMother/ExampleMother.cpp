@@ -15,8 +15,6 @@
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
 //TODO: Bug: "Move to Now" is too short in "Later"
 //TODO: New feature: Stopwatch ("Pizza done")
-//TODO: Try https://stackoverflow.com/a/77732213/7130273
-//TODO: Not all tasks make sense to be infinitly advancable...
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -77,6 +75,7 @@ public:
 	int32_t dtYearlyDay = 1;
 	bool startable = false;
 	bbe::TimePoint endWorkTime = bbe::TimePoint::epoch();
+	bool indefinitelyAdvanceable = true;
 
 	// Non-Persisted Helper Data below.
 	int32_t inputInt = 0;
@@ -197,6 +196,7 @@ public:
 		buffer.write(dtYearlyDay);
 		buffer.write(startable);
 		endWorkTime.serialize(buffer);
+		buffer.write(indefinitelyAdvanceable);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -230,6 +230,7 @@ public:
 		buffer.read(retVal.dtYearlyDay, 1);
 		buffer.read(retVal.startable, false);
 		retVal.endWorkTime = bbe::TimePoint::deserialize(buffer);
+		buffer.read(retVal.indefinitelyAdvanceable, true);
 
 		return retVal;
 	}
@@ -828,7 +829,7 @@ public:
 		}
 	}
 
-	int32_t drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& requiresWrite, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable, bool sorted)
+	int32_t drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& requiresWrite, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable, bool respectIndefinitelyFlag, bool sorted)
 	{
 		int32_t amountDrawn = 0;
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
@@ -1008,7 +1009,7 @@ public:
 				if (showAdvancable)
 				{
 					ImGui::TableSetColumnIndex(column++);
-					if (t.advanceable && (t.earlyAdvanceable || isLateAdvanceableTime() || forcePrepare) && ImGui::Button("Advance"))
+					if (t.advanceable && (!respectIndefinitelyFlag || t.indefinitelyAdvanceable) && (t.earlyAdvanceable || isLateAdvanceableTime() || forcePrepare) && ImGui::Button("Advance"))
 					{
 						t.execAdvance();
 						requiresWrite = true;
@@ -1084,6 +1085,9 @@ public:
 
 			taskChanged |= ImGui::Checkbox("Early Advanceable", &t.earlyAdvanceable);
 			tooltip("If unchecked, the task is only advanceable after 18:00.");
+
+			taskChanged |= ImGui::Checkbox("Indefinitely Advanceable", &t.indefinitelyAdvanceable);
+			tooltip("Can be advanced in the \"Later\" table.");
 			ImGui::Unindent(15.0f);
 		}
 		taskChanged |= ImGui::Checkbox("One Shot", &t.oneShot);
@@ -1214,10 +1218,10 @@ public:
 	void drawTabViewTasks()
 	{
 		bool requiresWrite = false;
-		drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    requiresWrite, false, false, true,  true,  false, false, false);
-		drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              requiresWrite, true,  true,  true,  true,  false, false, false);
-		drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    requiresWrite, true,  false, false, true,  true , true , false);
-		drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, requiresWrite, true,  true,  true,  false, false, true , true );
+		drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    requiresWrite, false, false, true,  true,  false, false, false, false);
+		drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              requiresWrite, true,  true,  true,  true,  false, false, false, false);
+		drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    requiresWrite, true,  false, false, true,  true , true , false, false);
+		drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, requiresWrite, true,  true,  true,  false, false, true , true , true );
 		if (requiresWrite)
 		{
 			tasks.writeToFile();
