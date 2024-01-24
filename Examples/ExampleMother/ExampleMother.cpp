@@ -75,7 +75,7 @@ public:
 	int32_t dtYearlyDay = 1;
 	bool startable = false;
 	bbe::TimePoint endWorkTime = bbe::TimePoint::epoch();
-	bool indefinitelyAdvanceable = true;
+	bool indefinitelyAdvanceable = false;
 
 	// Non-Persisted Helper Data below.
 	int32_t inputInt = 0;
@@ -230,7 +230,7 @@ public:
 		buffer.read(retVal.dtYearlyDay, 1);
 		buffer.read(retVal.startable, false);
 		retVal.endWorkTime = bbe::TimePoint::deserialize(buffer);
-		buffer.read(retVal.indefinitelyAdvanceable, true);
+		buffer.read(retVal.indefinitelyAdvanceable, false);
 
 		return retVal;
 	}
