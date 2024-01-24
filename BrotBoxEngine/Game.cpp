@@ -91,8 +91,12 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 #ifdef __EMSCRIPTEN__
 		emscripten_set_main_loop_arg(staticMainLoop, this, 0, true);
 #else
-		while (keepAlive() && (m_maxFrameNumber == 0 || m_frameNumber < m_maxFrameNumber))
+		while((m_maxFrameNumber == 0 || m_frameNumber < m_maxFrameNumber))
 		{
+			beginMeasure("INTERNAL - Keep Alive");
+			bool kA = keepAlive();
+			endMeasure();
+			if (!kA) break;
 			mainLoop();
 		}
 #endif
@@ -124,10 +128,12 @@ void bbe::Game::frame()
 	{
 		std::this_thread::sleep_for(std::chrono::microseconds((int32_t)(m_targetFrameTime * 1000000.f) - sw.getTimeExpiredMicroseconds()));
 	}
+	beginMeasure("INTERNAL - Overhead (Between Frames)");
 }
 
 void bbe::Game::frameUpdate()
 {
+	beginMeasure("INTERNAL - Frame Start");
 	m_pwindow->executeFrameStartListeneres();
 	m_pwindow->INTERNAL_keyboard.update();
 	const bbe::Vector2 globalMousePos = m_pwindow->getGlobalMousePos();
@@ -170,9 +176,10 @@ void bbe::Game::frameDraw()
 	endMeasure();
 	m_pwindow->preDraw2D();
 	draw2D(m_pwindow->getBrush2D());
-	beginMeasure("INTERNAL - Overhead");
+	beginMeasure("INTERNAL - Overhead (wait)");
 	m_pwindow->postDraw();
 	m_pwindow->waitEndDraw();
+	endMeasure();
 }
 
 void bbe::Game::shutdown()
