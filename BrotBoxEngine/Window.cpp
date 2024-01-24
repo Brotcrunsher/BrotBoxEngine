@@ -21,12 +21,14 @@
 #include <emscripten.h>
 #endif
 
+#include "BBE/Game.h"
+
 size_t bbe::Window::windowsAliveCounter = 0;
 bbe::Window* bbe::Window::INTERNAL_firstInstance = nullptr;
 
 
-bbe::Window::Window(int width, int height, const char * title, uint32_t major, uint32_t minor, uint32_t patch)
-	: m_width(width), m_height(height)
+bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, uint32_t major, uint32_t minor, uint32_t patch)
+	: m_width(width), m_height(height), m_pgame(game)
 {
 #ifdef BBE_RENDERER_VULKAN
 	m_renderManager.reset(new bbe::INTERNAL::vulkan::VulkanManager());
@@ -91,10 +93,13 @@ bbe::Window::Window(int width, int height, const char * title, uint32_t major, u
 	glfwWrapper::glfwSetWindowSizeCallback(m_pwindow, INTERNAL_windowResizeCallback);
 	glfwWrapper::glfwSetScrollCallback(m_pwindow, INTERNAL_mouseScrollCallback);
 	glfwWrapper::glfwSetWindowCloseCallback(m_pwindow, INTERNAL_windowCloseCallback);
+	glfwSetWindowRefreshCallback(m_pwindow, INTERNAL_windowRefreshCallback);
+	glfwSetWindowPosCallback(m_pwindow, INTERNAL_windowPosCallback);
 	double mX = 0;
 	double mY = 0;
 	glfwWrapper::glfwGetCursorPos(m_pwindow, &mX, &mY);
-	
+	glfwSwapInterval(1);
+
 	std::cout << "Init mouse" << std::endl;
 	INTERNAL_mouse.INTERNAL_moveMouse((float)mX, (float)mY);
 }
@@ -135,9 +140,11 @@ void bbe::Window::postDraw()
 	m_renderManager->postDraw();
 }
 
-void bbe::Window::waitEndDraw()
+void bbe::Window::waitEndDraw(bool dragging)
 {
 	m_renderManager->waitEndDraw();
+	if (dragging) glFinish();
+	else glfwPollEvents();
 }
 
 void bbe::Window::waitTillIdle()
@@ -276,6 +283,11 @@ void bbe::Window::INTERNAL_resize(int width, int height)
 	m_renderManager->resize(width, height);
 }
 
+void bbe::Window::INTERNAL_onRefresh()
+{
+	m_pgame->frame(true);
+}
+
 void bbe::Window::screenshot(const bbe::String& path)
 {
 	m_renderManager->screenshot(path);
@@ -409,6 +421,16 @@ void bbe::INTERNAL_windowCloseCallback(GLFWwindow* window)
 	default:
 		throw bbe::IllegalStateException();
 	}
+}
+
+void bbe::INTERNAL_windowRefreshCallback(GLFWwindow* window)
+{
+	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_onRefresh();
+}
+
+void bbe::INTERNAL_windowPosCallback(GLFWwindow* window, int, int)
+{
+	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_onRefresh();
 }
 
 template<>

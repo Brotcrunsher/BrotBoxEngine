@@ -15,7 +15,7 @@
 void bbe::Game::mainLoop()
 {
 	m_frameNumber++;
-	frame();
+	frame(false);
 
 	if (screenshotRenderingPath)
 	{
@@ -68,7 +68,7 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 	bbe::Math::INTERNAL::startMath();
 
 	std::cout << "Creating window" << std::endl;
-	m_pwindow = new Window(windowWidth, windowHeight, title);
+	m_pwindow = new Window(windowWidth, windowHeight, title, this);
 
 	std::cout << "Reseting game time" << std::endl;
 	m_gameTime.reset();
@@ -119,11 +119,11 @@ bool bbe::Game::keepAlive()
 	return m_pwindow->keepAlive();
 }
 
-void bbe::Game::frame()
+void bbe::Game::frame(bool dragging)
 {
 	StopWatch sw;
 	frameUpdate();
-	frameDraw();
+	frameDraw(dragging);
 	if (m_targetFrameTime > 0)
 	{
 		std::this_thread::sleep_for(std::chrono::microseconds((int32_t)(m_targetFrameTime * 1000000.f) - sw.getTimeExpiredMicroseconds()));
@@ -159,7 +159,7 @@ void bbe::Game::frameUpdate()
 	endMeasure();
 }
 
-void bbe::Game::frameDraw()
+void bbe::Game::frameDraw(bool dragging)
 {
 	if (!m_pwindow->isReadyToDraw())
 	{
@@ -178,7 +178,7 @@ void bbe::Game::frameDraw()
 	draw2D(m_pwindow->getBrush2D());
 	beginMeasure("INTERNAL - Overhead (wait)");
 	m_pwindow->postDraw();
-	m_pwindow->waitEndDraw();
+	m_pwindow->waitEndDraw(dragging);
 	endMeasure();
 }
 

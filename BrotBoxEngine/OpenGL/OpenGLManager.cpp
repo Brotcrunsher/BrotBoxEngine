@@ -1439,7 +1439,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::postDraw()
 	flushInstanceData2D();
 	imguiEndFrame();
 	glfwSwapBuffers(m_pwindow);
-	glfwPollEvents();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::waitEndDraw()

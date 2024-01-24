@@ -27,6 +27,7 @@ namespace bbe
 
 	class Game
 	{
+		friend class Window;
 	private:
 		const char* videoRenderingPath      = nullptr;
 		const char* screenshotRenderingPath = nullptr;
@@ -65,9 +66,9 @@ namespace bbe
 
 		void start(int windowWidth, int windowHeight, const char* title);
 		bool keepAlive();
-		void frame();
+		void frame(bool dragging);
 		void frameUpdate();
-		void frameDraw();
+		void frameDraw(bool dragging);
 		void shutdown();
 
 		virtual void onStart()                            = 0;

@@ -24,6 +24,7 @@ namespace bbe
 	private:
 		static size_t windowsAliveCounter;
 		
+		bbe::Game                          *m_pgame;
 		GLFWwindow                         *m_pwindow;
 		std::unique_ptr<bbe::RenderManager> m_renderManager;
 		bbe::List<std::function<void()>>    m_closeListeners;
@@ -33,9 +34,9 @@ namespace bbe
 		int                                 m_height;
 
 		bbe::WindowCloseMode                m_windowCloseMode = bbe::WindowCloseMode::CLOSE;
-		
+
 	public:
-		Window(int width, int height, const char* title, uint32_t major = 0, uint32_t minor = 0, uint32_t patch = 0);
+		Window(int width, int height, const char* title, bbe::Game* game, uint32_t major = 0, uint32_t minor = 0, uint32_t patch = 0);
 
 		Window(const Window& other) = delete;
 		Window(Window&& other) = delete;
@@ -47,7 +48,7 @@ namespace bbe
 		void preDraw();
 		bool keepAlive();
 		void postDraw();
-		void waitEndDraw();
+		void waitEndDraw(bool dragging);
 		void waitTillIdle();
 
 		bool isReadyToDraw();
@@ -81,6 +82,8 @@ namespace bbe
 		Mouse INTERNAL_mouse;
 		void INTERNAL_resize(int width, int height);
 
+		void INTERNAL_onRefresh();
+
 		void screenshot(const bbe::String& path);
 		void setVideoRenderingMode(const char* path);
 		void close();
@@ -104,6 +107,8 @@ namespace bbe
 	void INTERNAL_mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 	void INTERNAL_mouseScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 	void INTERNAL_windowCloseCallback(GLFWwindow* window);
+	void INTERNAL_windowRefreshCallback(GLFWwindow* window);
+	void INTERNAL_windowPosCallback(GLFWwindow* window, int, int);
 
 	template<>
 	uint32_t hash(const Window &t);
