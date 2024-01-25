@@ -157,6 +157,17 @@ void bbe::Game::frameUpdate()
 #endif
 	update(timeSinceLastFrame);
 	endMeasure();
+
+	if (nextMinuteMaxMove.hasPassed())
+	{
+		nextMinuteMaxMove = bbe::TimePoint().plusMinutes(1);
+		for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
+		{
+			PerformanceMeasurement& pm = it->second;
+			pm.minuteMax2 = pm.minuteMax1;
+			pm.minuteMax1 = 0.0;
+		}
+	}
 }
 
 void bbe::Game::frameDraw(bool dragging)
@@ -478,6 +489,7 @@ void bbe::Game::endMeasure()
 		PerformanceMeasurement& pm = m_performanceMeasurements[m_pcurrentPerformanceMeasurementTag];
 		pm.now = passedTimeSeconds;
 		pm.max = bbe::Math::max(pm.max, passedTimeSeconds);
+		pm.minuteMax1 = bbe::Math::max(pm.minuteMax1, passedTimeSeconds);
 		if (firstMeasurement)
 		{
 			pm.avg = passedTimeSeconds;
@@ -513,7 +525,7 @@ bbe::String bbe::Game::getMeasuresString()
 	}
 
 	bbe::String retVal = bbe::String(" ") * maxLen;
-	retVal += "  MAX      AVG      NOW\n";
+	retVal += "  MAX      AVG      NOW      MINUTEMAX\n";
 
 	for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
 	{
@@ -529,6 +541,8 @@ bbe::String bbe::Game::getMeasuresString()
 		retVal += pm.avg;
 		retVal += " ";
 		retVal += pm.now;
+		retVal += " ";
+		retVal += bbe::Math::max(pm.minuteMax1, pm.minuteMax2);
 	}
 
 	return retVal;

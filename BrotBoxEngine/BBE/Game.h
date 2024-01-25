@@ -18,6 +18,7 @@
 #include "../BBE/Color.h"
 #include "../BBE/List.h"
 #include "../BBE/StopWatch.h"
+#include "../BBE/BrotTime.h"
 
 namespace bbe
 {
@@ -54,7 +55,11 @@ namespace bbe
 			double max = 0.0;
 			double avg = 0.0;
 			double now = 0.0;
+
+			double minuteMax1 = 0.0;
+			double minuteMax2 = 0.0;
 		};
+		bbe::TimePoint nextMinuteMaxMove;
 		std::map<const char*, PerformanceMeasurement> m_performanceMeasurements;
 		bool m_performanceMeasurementsRequired = false;
 		bool m_performanceMeasurementsForced = false;
