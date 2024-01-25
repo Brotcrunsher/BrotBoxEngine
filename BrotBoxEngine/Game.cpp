@@ -474,20 +474,22 @@ void bbe::Game::endMeasure()
 	if (m_pcurrentPerformanceMeasurementTag)
 	{
 		auto passedTimeSeconds = m_performanceMeasurement.getTimeExpiredNanoseconds() / 1000.0 / 1000.0 / 1000.0;
-		m_performanceMeasurementsNow[m_pcurrentPerformanceMeasurementTag] = passedTimeSeconds;
-		m_performanceMeasurementsMax[m_pcurrentPerformanceMeasurementTag] = bbe::Math::max(m_performanceMeasurementsMax[m_pcurrentPerformanceMeasurementTag], passedTimeSeconds);
-		if (!m_performanceMeasurementsAvg.count(m_pcurrentPerformanceMeasurementTag))
+		const bool firstMeasurement = !m_performanceMeasurements.count(m_pcurrentPerformanceMeasurementTag);
+		PerformanceMeasurement& pm = m_performanceMeasurements[m_pcurrentPerformanceMeasurementTag];
+		pm.now = passedTimeSeconds;
+		pm.max = bbe::Math::max(pm.max, passedTimeSeconds);
+		if (firstMeasurement)
 		{
-			m_performanceMeasurementsAvg[m_pcurrentPerformanceMeasurementTag] = passedTimeSeconds;
+			pm.avg = passedTimeSeconds;
 		}
 		else
 		{
 
-			m_performanceMeasurementsAvg[m_pcurrentPerformanceMeasurementTag] = 0.999 * m_performanceMeasurementsAvg[m_pcurrentPerformanceMeasurementTag] + 0.001 * passedTimeSeconds;
+			pm.avg = 0.999 * pm.avg + 0.001 * passedTimeSeconds;
 		}
 		if (m_performanceMeasurementsRequired || m_performanceMeasurementsForced)
 		{
-			m_performanceMeasurements[m_pcurrentPerformanceMeasurementTag].add(passedTimeSeconds);
+			pm.perFrame.add(passedTimeSeconds);
 		}
 	}
 	m_pcurrentPerformanceMeasurementTag = nullptr;
@@ -501,27 +503,11 @@ void bbe::Game::beginMeasure(const char* tag, bool force)
 	m_performanceMeasurementsForced = force;
 }
 
-void bbe::Game::drawMeasure(const bbe::PrimitiveBrush3D& brush)
-{
-	// Brush as parameter is mainly to make sure that this is called during the draw step.
-	// We do not actually use it.
-
-	m_performanceMeasurementsRequired = true;
-	if (ImPlot::BeginPlot("Line Plots")) {
-		ImPlot::SetupAxes("x", "y");
-		for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
-		{
-			ImPlot::PlotLine(it->first, it->second.getRaw(), it->second.getLength());
-		}
-		ImPlot::EndPlot();
-	}
-}
-
 bbe::String bbe::Game::getMeasuresString()
 {
 
 	int32_t maxLen = 0;
-	for (auto it = m_performanceMeasurementsMax.begin(); it != m_performanceMeasurementsMax.end(); it++)
+	for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
 	{
 		maxLen = bbe::Math::max(maxLen, (int32_t)strlen(it->first));
 	}
@@ -529,19 +515,20 @@ bbe::String bbe::Game::getMeasuresString()
 	bbe::String retVal = bbe::String(" ") * maxLen;
 	retVal += "  MAX      AVG      NOW\n";
 
-	for (auto it = m_performanceMeasurementsMax.begin(); it != m_performanceMeasurementsMax.end(); it++)
+	for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
 	{
-		if (it != m_performanceMeasurementsMax.begin()) retVal += "\n";
+		if (it != m_performanceMeasurements.begin()) retVal += "\n";
 
+		const PerformanceMeasurement& pm = it->second;
 		int32_t padding = maxLen - strlen(it->first);
 		retVal += it->first;
 		retVal += ": ";
 		retVal += bbe::String(" ") * padding;
-		retVal += it->second;
+		retVal += pm.max;
 		retVal += " ";
-		retVal += m_performanceMeasurementsAvg[it->first]; // TODO: This is bad. Just store max, avg, and now in some struct...
+		retVal += pm.avg;
 		retVal += " ";
-		retVal += m_performanceMeasurementsNow[it->first];
+		retVal += pm.now;
 	}
 
 	return retVal;

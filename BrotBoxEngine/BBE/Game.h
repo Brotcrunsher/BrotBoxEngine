@@ -48,10 +48,14 @@ namespace bbe
 #endif
 		const char* m_pcurrentPerformanceMeasurementTag = nullptr;
 		bbe::StopWatch m_performanceMeasurement;
-		std::map<const char*, bbe::List<double>> m_performanceMeasurements;
-		std::map<const char*, double> m_performanceMeasurementsMax;
-		std::map<const char*, double> m_performanceMeasurementsAvg;
-		std::map<const char*, double> m_performanceMeasurementsNow;
+		struct PerformanceMeasurement
+		{
+			bbe::List<double> perFrame;
+			double max = 0.0;
+			double avg = 0.0;
+			double now = 0.0;
+		};
+		std::map<const char*, PerformanceMeasurement> m_performanceMeasurements;
 		bool m_performanceMeasurementsRequired = false;
 		bool m_performanceMeasurementsForced = false;
 
@@ -142,7 +146,6 @@ namespace bbe
 
 		void endMeasure();
 		void beginMeasure(const char* tag, bool force = false); // CAREFUL: Static string assumed!
-		void drawMeasure(const bbe::PrimitiveBrush3D& brush);
 		bbe::String getMeasuresString();
 
 #ifndef BBE_NO_AUDIO

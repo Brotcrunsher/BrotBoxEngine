@@ -1523,7 +1523,6 @@ public:
 		{
 			ImGui::ShowDemoWindow();
 			ImPlot::ShowDemoWindow();
-			drawMeasure(brush);
 		}
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
