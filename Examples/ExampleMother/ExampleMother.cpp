@@ -13,8 +13,8 @@
 //TODO: Sometimes freezes. I suspect process stuff? track what the longest time of each section was and display somewhere.
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
-//TODO: Bug: "Move to Now" is too short in "Later"
 //TODO: New feature: Stopwatch ("Pizza done")
+//TODO: Highlight row on hover
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -835,12 +835,13 @@ public:
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
 		if (ImGui::BeginTable("table2", 7, ImGuiTableFlags_RowBg))
 		{
-			ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 400);
-			if(showCountdown) ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
-			ImGui::TableSetupColumn("CCC", ImGuiTableColumnFlags_WidthFixed, 100);
-			ImGui::TableSetupColumn("DDD", ImGuiTableColumnFlags_WidthFixed, 100);
-			ImGui::TableSetupColumn("EEE", ImGuiTableColumnFlags_WidthFixed, 100);
-			ImGui::TableSetupColumn("FFF", ImGuiTableColumnFlags_WidthStretch);
+			                    ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 400);
+			if (showCountdown)  ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
+			                    ImGui::TableSetupColumn("DDD", ImGuiTableColumnFlags_WidthFixed, 100);
+			if (showFollowUp)   ImGui::TableSetupColumn("EEE", ImGuiTableColumnFlags_WidthFixed, 100);
+			if (showFollowUp)   ImGui::TableSetupColumn("FFF", ImGuiTableColumnFlags_WidthFixed, 100);
+			if (showAdvancable) ImGui::TableSetupColumn("GGG", ImGuiTableColumnFlags_WidthFixed, 100);
+			if (showMoveToNow)  ImGui::TableSetupColumn("HHH", ImGuiTableColumnFlags_WidthFixed, 175);
 			static bbe::List<size_t> indices; // Avoid allocations
 			indices.clear();
 			for (size_t i = 0; i < tasks.getLength(); i++)
