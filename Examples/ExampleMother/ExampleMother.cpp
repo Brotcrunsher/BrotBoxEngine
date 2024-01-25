@@ -5,6 +5,7 @@
 #include <AtlBase.h>
 #include <UIAutomation.h>
 #include "AssetStore.h"
+#include "imgui_internal.h"
 
 //TODO: GATW: Also play "Open Tasks" sound when opening time wasting URLs
 //TODO: Butchered looks on non 4k
@@ -14,7 +15,6 @@
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
 //TODO: New feature: Stopwatch ("Pizza done")
-//TODO: Highlight row on hover
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -866,6 +866,7 @@ public:
 				amountDrawn++;
 				ImGui::PushID(i);
 				ImGui::TableNextRow();
+				if(ImGui::TableGetHoveredRow() == indexindex) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, 0xFF333333);
 				int32_t column = 0;
 				ImGui::TableSetColumnIndex(column++);
 				if ((highlightRareTasks && t.repeatDays > 1) || t.oneShot)
