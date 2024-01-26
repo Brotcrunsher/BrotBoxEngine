@@ -1069,9 +1069,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiStart()
 	fontConfig.SizePixels = 26;
 	imguiFontBig = io.Fonts->AddFontDefault(&fontConfig);
 
-	VkCommandBuffer commandBuffer = INTERNAL::vulkan::startSingleTimeCommandBuffer(m_device.getDevice(), m_commandPool.getCommandPool());
-	ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-	INTERNAL::vulkan::endSingleTimeCommandBuffer(m_device.getDevice(), m_device.getQueue(), m_commandPool.getCommandPool(), commandBuffer);
+	ImGui_ImplVulkan_CreateFontsTexture();
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::imguiStop()
