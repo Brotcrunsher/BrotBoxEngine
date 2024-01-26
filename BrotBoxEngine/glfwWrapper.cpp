@@ -155,6 +155,13 @@ void bbe::glfwWrapper::glfwPollEvents(void)
 #endif
 }
 
+void bbe::glfwWrapper::glFinish(void)
+{
+#ifdef BBE_RENDERER_OPENGL
+	::glFinish();
+#endif
+}
+
 void bbe::glfwWrapper::glfwSetInputMode(GLFWwindow* handle, int mode, int value)
 {
 #ifndef BBE_RENDERER_NULL

@@ -143,8 +143,8 @@ void bbe::Window::postDraw()
 void bbe::Window::waitEndDraw(bool dragging)
 {
 	m_renderManager->waitEndDraw();
-	if (dragging) glFinish();
-	else glfwPollEvents();
+	if (dragging) glfwWrapper::glFinish();
+	else glfwWrapper::glfwPollEvents();
 }
 
 void bbe::Window::waitTillIdle()
