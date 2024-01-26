@@ -29,6 +29,7 @@ namespace bbe
 		void glfwSwapInterval(int interval);
 		int glfwWindowShouldClose(GLFWwindow* handle);
 		void glfwPollEvents(void);
+		void glFinish(void);
 		void glfwSetInputMode(GLFWwindow* handle, int mode, int value);
 		void glfwDestroyWindow(GLFWwindow* handle);
 		void glfwTerminate(void);
