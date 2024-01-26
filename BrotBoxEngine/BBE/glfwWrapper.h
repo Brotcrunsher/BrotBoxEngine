@@ -23,7 +23,10 @@ namespace bbe
 		GLFWwindowsizefun glfwSetWindowSizeCallback(GLFWwindow* handle, GLFWwindowsizefun cbfun);
 		GLFWscrollfun glfwSetScrollCallback(GLFWwindow* handle, GLFWscrollfun cbfun);
 		GLFWwindowclosefun glfwSetWindowCloseCallback(GLFWwindow* handle, GLFWwindowclosefun cbfun);
+		GLFWwindowrefreshfun glfwSetWindowRefreshCallback(GLFWwindow* handle, GLFWwindowrefreshfun cbfun);
+		GLFWwindowposfun glfwSetWindowPosCallback(GLFWwindow* handle, GLFWwindowposfun cbfun);
 		void glfwGetCursorPos(GLFWwindow* handle, double* xpos, double* ypos);
+		void glfwSwapInterval(int interval);
 		int glfwWindowShouldClose(GLFWwindow* handle);
 		void glfwPollEvents(void);
 		void glfwSetInputMode(GLFWwindow* handle, int mode, int value);

@@ -107,10 +107,35 @@ GLFWwindowclosefun bbe::glfwWrapper::glfwSetWindowCloseCallback(GLFWwindow* hand
 #endif
 }
 
+GLFWwindowrefreshfun bbe::glfwWrapper::glfwSetWindowRefreshCallback(GLFWwindow* handle, GLFWwindowrefreshfun cbfun)
+{
+#ifndef BBE_RENDERER_NULL
+	return ::glfwSetWindowRefreshCallback(handle, cbfun);
+#else
+	return cbfun;
+#endif
+}
+
+GLFWwindowposfun bbe::glfwWrapper::glfwSetWindowPosCallback(GLFWwindow* handle, GLFWwindowposfun cbfun)
+{
+#ifndef BBE_RENDERER_NULL
+	return ::glfwSetWindowPosCallback(handle, cbfun);
+#else
+	return cbfun;
+#endif
+}
+
 void bbe::glfwWrapper::glfwGetCursorPos(GLFWwindow* handle, double* xpos, double* ypos)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwGetCursorPos(handle, xpos, ypos);
+#endif
+}
+
+void bbe::glfwWrapper::glfwSwapInterval(int interval)
+{
+#ifndef BBE_RENDERER_NULL
+	::glfwSwapInterval(interval);
 #endif
 }
 

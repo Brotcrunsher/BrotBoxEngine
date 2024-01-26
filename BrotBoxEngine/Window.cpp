@@ -93,12 +93,12 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 	glfwWrapper::glfwSetWindowSizeCallback(m_pwindow, INTERNAL_windowResizeCallback);
 	glfwWrapper::glfwSetScrollCallback(m_pwindow, INTERNAL_mouseScrollCallback);
 	glfwWrapper::glfwSetWindowCloseCallback(m_pwindow, INTERNAL_windowCloseCallback);
-	glfwSetWindowRefreshCallback(m_pwindow, INTERNAL_windowRefreshCallback);
-	glfwSetWindowPosCallback(m_pwindow, INTERNAL_windowPosCallback);
+	glfwWrapper::glfwSetWindowRefreshCallback(m_pwindow, INTERNAL_windowRefreshCallback);
+	glfwWrapper::glfwSetWindowPosCallback(m_pwindow, INTERNAL_windowPosCallback);
 	double mX = 0;
 	double mY = 0;
 	glfwWrapper::glfwGetCursorPos(m_pwindow, &mX, &mY);
-	glfwSwapInterval(1);
+	glfwWrapper::glfwSwapInterval(1);
 
 	std::cout << "Init mouse" << std::endl;
 	INTERNAL_mouse.INTERNAL_moveMouse((float)mX, (float)mY);
