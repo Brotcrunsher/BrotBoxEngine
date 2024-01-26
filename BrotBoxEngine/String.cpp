@@ -797,6 +797,7 @@ bool bbe::Utf8String::contains(const Utf8String &string) const
 
 #ifdef _MSC_VER
 #include <shlwapi.h>
+#include <AtlBase.h>
 #else
 #endif
 
