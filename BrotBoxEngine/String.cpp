@@ -805,7 +805,7 @@ static bool platformIndependentStrStrI(const char* haystack, const char* needle)
 #ifdef _MSC_VER
 	return StrStrIA(haystack, needle) != nullptr;
 #else
-	return strcasestr(hackstack, needle) != nullptr;
+	return strcasestr(haystack, needle) != nullptr;
 #endif
 }
 
