@@ -17,6 +17,7 @@ namespace bbe
 {
 	class PrimitiveBrush2D;
 	class PrimitiveBrush3D;
+	class Game;
 
 	class Window
 	{
