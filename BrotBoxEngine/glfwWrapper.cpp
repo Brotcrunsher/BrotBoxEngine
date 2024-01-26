@@ -158,7 +158,9 @@ void bbe::glfwWrapper::glfwPollEvents(void)
 void bbe::glfwWrapper::glFinish(void)
 {
 #ifdef BBE_RENDERER_OPENGL
+#ifndef __EMSCRIPTEN__
 	::glFinish();
+#endif
 #endif
 }
 
