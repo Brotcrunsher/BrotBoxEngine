@@ -15,6 +15,7 @@
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
 //TODO: New feature: Stopwatch ("Pizza done")
+//TODO: Bug: When switching headphones, the sound system seems to die.
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -658,7 +659,7 @@ public:
 		const bbe::TimePoint qualifyingDate = bbe::TimePoint::fromDate(2023, bbe::Month::NOVEMBER, 22);
 		const bbe::Duration timeSinceQualifyingDate = bbe::TimePoint() - qualifyingDate;
 		int32_t daysSinceQualifyingDate = timeSinceQualifyingDate.toDays();
-		if (daysSinceQualifyingDate > 60) daysSinceQualifyingDate = 60;
+		if (daysSinceQualifyingDate > 120) daysSinceQualifyingDate = 120;
 
 		return bbe::TimePoint::todayAt(23, 59 - daysSinceQualifyingDate);
 	}
