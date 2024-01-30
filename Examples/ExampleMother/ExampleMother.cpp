@@ -11,11 +11,10 @@
 //TODO: Butchered looks on non 4k
 //TODO: Implement proper date picker
 //TODO: Redo
-//TODO: Sometimes freezes. I suspect process stuff? track what the longest time of each section was and display somewhere.
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
 //TODO: New feature: Stopwatch ("Pizza done")
-//TODO: Bug: When switching headphones, the sound system seems to die.
+//TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -374,6 +373,27 @@ struct Process
 	}
 };
 
+struct Url
+{
+	char url[1024] = {};
+
+
+	// Non-Persisted Helper Data below.
+
+	void serialize(bbe::ByteBuffer& buffer) const
+	{
+		buffer.writeNullString(url);
+	}
+	static Url deserialize(bbe::ByteBufferSpan& buffer)
+	{
+		Url retVal;
+
+		strcpy(retVal.url, buffer.readNullString());
+
+		return retVal;
+	}
+};
+
 struct ClipboardContent
 {
 	char content[1024] = {};
@@ -398,8 +418,9 @@ struct ClipboardContent
 class MyGame : public bbe::Game
 {
 private:
-	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableList<Process> processes = bbe::SerializableList<Process>("processes.dat", "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Task> tasks                        = bbe::SerializableList<Task>            ("config.dat",    "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Process> processes                 = bbe::SerializableList<Process>         ("processes.dat", "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Url> urls                          = bbe::SerializableList<Url>             ("urls.dat",      "ParanoiaConfig", bbe::Undoable::YES);
 	bbe::SerializableList<ClipboardContent> clipboardContent = bbe::SerializableList<ClipboardContent>("Clipboard.dat", "ParanoiaConfig", bbe::Undoable::YES);
 	bool shiftPressed = false;
 	bool isGameOn = false;
@@ -780,11 +801,10 @@ public:
 		}
 
 		beginMeasure("Process Stuff");
-		static float timeSinceLastProcessStuff = 0;
-		timeSinceLastProcessStuff += timeSinceLastFrame;
-		if(timeSinceLastProcessStuff > 10.f)
+		static bbe::TimePoint nextProcessStuff;
+		if(nextProcessStuff.hasPassed())
 		{
-			timeSinceLastProcessStuff = 0.0f;
+			nextProcessStuff = bbe::TimePoint().plusSeconds(10);
 			HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
 			PROCESSENTRY32 entry;
 			entry.dwSize = sizeof(entry);
@@ -811,6 +831,33 @@ public:
 				hasEntry = Process32Next(snapshot, &entry);
 			}
 			CloseHandle(snapshot);
+		}
+
+		beginMeasure("URL Stuff");
+		static bbe::TimePoint nextUrlStuff;
+		if (nextUrlStuff.hasPassed())
+		{
+			// TODO: This can happen together with the Process stuff in one frame. Kinda bad... maybe?
+			nextUrlStuff = bbe::TimePoint().plusSeconds(1);
+			auto tabNames = getDomains();
+			for (size_t i = 0; i < tabNames.getLength(); i++)
+			{
+				bool found = false;
+				for (size_t k = 0; k < urls.getLength(); k++)
+				{
+					if (tabNames[i] == urls[k].url)
+					{
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+				{
+					Url newUrl;
+					strcpy(newUrl.url, tabNames[i].getRaw());
+					urls.add(newUrl);
+				}
+			}
 		}
 
 		beginMeasure("Working Hours");
@@ -1115,54 +1162,106 @@ public:
 		return taskChanged;
 	}
 
-#ifdef BrowserStuff
 	bbe::List<bbe::String> getDomains()
 	{
 		bbe::List<bbe::String> retVal;
-		//By: Barmak Shemirani see https://stackoverflow.com/a/48507146/7130273
+		//Inspired By: Barmak Shemirani see https://stackoverflow.com/a/48507146/7130273
 		//Modified to return a bbe::List<bbe::String>
-		//         and only the domain part
-		HWND hwnd = NULL;
-		while (true)
+		//         only the domain part
+		//         performance optimized (caching etc.)
+
+		static bool iniDone = false;
+		static CComQIPtr<IUIAutomation> uia;
+		static CComPtr<IUIAutomationCondition> condition;
+		if (!iniDone)
 		{
-			hwnd = FindWindowEx(NULL, hwnd, "Chrome_WidgetWin_1", NULL);
-			if (!hwnd)
-				break;
-			if (!IsWindowVisible(hwnd))
-				continue;
-
-			CComQIPtr<IUIAutomation> uia;
+			iniDone = true;
 			if (FAILED(uia.CoCreateInstance(CLSID_CUIAutomation)) || !uia)
-				continue;
+				return retVal;
 
-			CComPtr<IUIAutomationElement> root;
-			if (FAILED(uia->ElementFromHandle(hwnd, &root)) || !root)
-				continue;
+			//uia->CreatePropertyCondition(UIA_ControlTypePropertyId,
+			//	CComVariant(0xC354), &condition);
+			// TODO: Localization. We should have something like the above 2 lines, but unfortunately
+			//       the layout of chrome seems to have changed quite a bit and some random UI Elements
+			//       sometimes fulfill the condition.
+			uia->CreatePropertyCondition(UIA_NamePropertyId, 
+			      CComVariant(L"Adress- und Suchleiste"), &condition);
+		}
 
-			CComPtr<IUIAutomationCondition> condition;
-			uia->CreatePropertyCondition(UIA_ControlTypePropertyId,
-				CComVariant(0xC354), &condition);
-
-			//or use edit control's name instead
-			//uia->CreatePropertyCondition(UIA_NamePropertyId, 
-			//      CComVariant(L"Address and search bar"), &condition);
-
+		static bool redGreen = true;
+		redGreen = !redGreen;
+		struct Edit
+		{
 			CComPtr<IUIAutomationElement> edit;
-			if (FAILED(root->FindFirst(TreeScope_Descendants, condition, &edit))
-				|| !edit)
-				continue; //maybe we don't have the right tab, continue...
+			bool currentRedGreen = redGreen;
+		};
+		static std::map<HWND, Edit> editsCache;
+		{
+			HWND hwnd = NULL;
+			while (true)
+			{
+				hwnd = FindWindowEx(NULL, hwnd, "Chrome_WidgetWin_1", NULL);
+				if (!hwnd)
+					break;
+				if (!IsWindowVisible(hwnd))
+					continue;
+				if (GetWindowTextLength(hwnd) == 0)
+					continue;
+
+				if (editsCache.count(hwnd) != 0)
+				{
+					editsCache[hwnd].currentRedGreen = redGreen;
+					continue;
+				}
+
+				CComPtr<IUIAutomationElement> root;
+				if (FAILED(uia->ElementFromHandle(hwnd, &root)) || !root)
+					continue;
+
+				CComPtr<IUIAutomationElement> edit;
+				if (FAILED(root->FindFirst(TreeScope_Descendants, condition, &edit))
+					|| !edit)
+					continue;
+				// ^^^^--- This is the actual reason why we do this cache stuff!
+				//         Highly expensive operation to call FindFirst.
+				editsCache[hwnd] = { edit, redGreen };
+			}
+		}
+
+		// Remove cache entries that weren't "touched" in this call.
+		for (auto it = editsCache.cbegin(); it != editsCache.cend(); )
+		{
+			if (it->second.currentRedGreen != redGreen)
+			{
+				editsCache.erase(it++);
+			}
+			else
+			{
+				++it;
+			}
+		}
+
+		for(auto it = editsCache.begin(); it != editsCache.end(); it++)
+		{
+			CComPtr<IUIAutomationElement> edit = it->second.edit;
+			
+			CComVariant focus;
+			edit->GetCurrentPropertyValue(UIA_HasKeyboardFocusPropertyId, &focus);
+
+			if (focus.boolVal)
+				continue; // We do not want to get the tab url if it's currently getting modified
 
 			CComVariant url;
 			edit->GetCurrentPropertyValue(UIA_ValueValuePropertyId, &url);
+			
 
 			char buffer[1024] = {};
 			wcstombs(buffer, url.bstrVal, sizeof(buffer) / sizeof(wchar_t));
-			//retVal.add(bbe::String(buffer).split("/")[0]);
-			retVal.add(bbe::String(buffer));
+			bbe::String newElem = bbe::String(buffer).split("/")[0];
+			if(newElem.getLength() > 0) retVal.add(newElem);
 		}
 		return retVal;
 	}
-#endif
 
 	bool securityButton(const char* text)
 	{
@@ -1510,13 +1609,10 @@ public:
 		ImGui::SetNextWindowSize(viewport.WorkSize);
 		ImGui::Begin("URLs", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 		{
-#ifdef BrowserStuff
-				auto tabNames = getDomains();
-				for (size_t i = 0; i < tabNames.getLength(); i++)
-				{
-					ImGui::Text(tabNames[i].getRaw());
-				}
-#endif
+			for (size_t i = 0; i < urls.getLength(); i++)
+			{
+				ImGui::Text(urls[i].url);
+			}
 		}
 		ImGui::End();
 
@@ -1579,6 +1675,7 @@ int main()
 {
 	HWND hWnd = GetConsoleWindow(); 
 	FreeConsole();
+	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 	MyGame *mg = new MyGame();
 	mg->start(1280, 720, "M.O.THE.R - Memory of the repetitive");
 #ifndef __EMSCRIPTEN__
