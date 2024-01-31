@@ -415,13 +415,35 @@ struct ClipboardContent
 	}
 };
 
+struct GeneralConfig
+{
+	char updatePath[1024] = {};
+
+
+	// Non-Persisted Helper Data below.
+
+	void serialize(bbe::ByteBuffer& buffer) const
+	{
+		buffer.writeNullString(updatePath);
+	}
+	static GeneralConfig deserialize(bbe::ByteBufferSpan& buffer)
+	{
+		GeneralConfig retVal;
+
+		strcpy(retVal.updatePath, buffer.readNullString());
+
+		return retVal;
+	}
+};
+
 class MyGame : public bbe::Game
 {
 private:
-	bbe::SerializableList<Task> tasks                        = bbe::SerializableList<Task>            ("config.dat",    "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableList<Process> processes                 = bbe::SerializableList<Process>         ("processes.dat", "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableList<Url> urls                          = bbe::SerializableList<Url>             ("urls.dat",      "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableList<ClipboardContent> clipboardContent = bbe::SerializableList<ClipboardContent>("Clipboard.dat", "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Task> tasks                        = bbe::SerializableList<Task>            ("config.dat",        "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Process> processes                 = bbe::SerializableList<Process>         ("processes.dat",     "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Url> urls                          = bbe::SerializableList<Url>             ("urls.dat",          "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<ClipboardContent> clipboardContent = bbe::SerializableList<ClipboardContent>("Clipboard.dat",     "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableObject<GeneralConfig> generalConfig     = bbe::SerializableObject<GeneralConfig> ("generalConfig.dat", "ParanoiaConfig");
 	bool shiftPressed = false;
 	bool isGameOn = false;
 	bool openTasksNotificationSilenced = false;
@@ -1466,6 +1488,14 @@ public:
 		}
 	}
 
+	void drawTabConfig()
+	{
+		if (ImGui::InputText("Update Path", generalConfig->updatePath, sizeof(generalConfig->updatePath)))
+		{
+			generalConfig.writeToFile();
+		}
+	}
+
 	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
 	{
 		ImGuiViewport viewport = *ImGui::GetMainViewport();
@@ -1484,6 +1514,7 @@ public:
 				Tab{"View Tasks", [this]() { drawTabViewTasks(); }},
 				Tab{"Edit Tasks", [this]() { drawTabEditTasks(); }},
 				Tab{"Clipboard",  [this]() { drawTabClipboard(); }},
+				Tab{"Config",     [this]() { drawTabConfig(); }},
 			};
 			if (ImGui::BeginTabBar("MainWindowTabs")) {
 				static size_t previousShownTab = 0;
@@ -1538,26 +1569,34 @@ public:
 				exists = true;
 			}
 			ImGui::EndDisabled();
-			// TODO: Disable button if target file is older than this file.
-			if (ImGui::Button("Update"))
+
+			static bool updatePathExists = false;
+			bbe::TimePoint nextUpdatePathCheck;
+			if (!updatePathExists && nextUpdatePathCheck.hasPassed())
 			{
-				bbe::String batchFileName = "update.bat";
-				bbe::simpleFile::deleteFile(batchFileName);
-
+				// Avoiding multiple IO calls.
+				nextUpdatePathCheck = bbe::TimePoint().plusSeconds(10);
+				updatePathExists = bbe::simpleFile::doesFileExist(generalConfig->updatePath);
+			}
+			if (updatePathExists)
+			{
+				if (ImGui::Button("Update"))
 				{
-					std::ofstream file;
-					file.open(batchFileName.getRaw(), std::ios::out);
+					bbe::String batchFileName = "update.bat";
+					bbe::simpleFile::deleteFile(batchFileName);
 
-					file << "taskkill /f /im ExampleMother.exe\n";
-					// TODO: This path has to be put into some kind of config...
-					file << "xcopy /s /y \"D:\\__Projekte\\C++\\Visual Studio Projekte\\_BrotBoxEngine\\Build\\bin\\Release\\ExampleMother.exe\" " + bbe::simpleFile::getExecutablePath() + "\n";
-					file << "start ExampleMother.exe\n";
-					file << "del update.bat\n";
-					file.flush(); // TODO: Necessary? Doesn't close do that for us?
-					file.close();
+					{
+						std::ofstream file;
+						file.open(batchFileName.getRaw(), std::ios::out);
+
+						file << "taskkill /f /im ExampleMother.exe\n";
+						file << "xcopy /s /y \"" + bbe::String(generalConfig->updatePath) + "\" " + bbe::simpleFile::getExecutablePath() + "\n";
+						file << "start ExampleMother.exe\n";
+						file << "del update.bat\n";
+					}
+
+					bbe::simpleFile::executeBatchFile("update.bat");
 				}
-
-				bbe::simpleFile::executeBatchFile("update.bat");
 			}
 
 			ImGui::Checkbox("Silence Open Task Notification Sound", &openTasksNotificationSilenced);

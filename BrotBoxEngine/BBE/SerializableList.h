@@ -14,6 +14,56 @@ namespace bbe
 	};
 
 	template <typename T>
+	class SerializableObject
+	{
+	private:
+		bbe::String path;
+		bbe::String paranoiaPath;
+		T data;
+
+		void load()
+		{
+			if (bbe::simpleFile::doesFileExist(path))
+			{
+				bbe::ByteBuffer binary = bbe::simpleFile::readBinaryFile(path);
+				data = T::deserialize(binary.getSpan());
+			}
+			else
+			{
+				writeToFile();
+			}
+		}
+
+	public:
+		SerializableObject(const bbe::String& path, const bbe::String& paranoiaPath = "") :
+			path(path),
+			paranoiaPath(paranoiaPath)
+		{
+			load();
+		}
+
+		T* operator->()
+		{
+			return &data;
+		}
+
+		void writeToFile()
+		{
+			bbe::ByteBuffer buffer;
+			data.serialize(buffer);
+			
+			bbe::simpleFile::writeBinaryToFile(path, buffer);
+			if (paranoiaPath.getLength() != 0)
+			{
+				time_t t;
+				time(&t);
+				bbe::simpleFile::createDirectory(paranoiaPath);
+				bbe::simpleFile::writeBinaryToFile(paranoiaPath + "/" + path + t + ".bak", buffer);
+			}
+		}
+	};
+
+	template <typename T>
 	class SerializableList
 	{
 	private:
