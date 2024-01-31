@@ -7,7 +7,6 @@
 #include "AssetStore.h"
 #include "imgui_internal.h"
 
-//TODO: GATW: Also play "Open Tasks" sound when opening time wasting URLs
 //TODO: Butchered looks on non 4k
 //TODO: Implement proper date picker
 //TODO: Redo
@@ -376,6 +375,13 @@ struct Process
 struct Url
 {
 	char url[1024] = {};
+	enum /*Non-Class*/ Type
+	{
+		TYPE_UNKNOWN = 0,
+		TYPE_TIME_WASTER = 1,
+		TYPE_WORK = 2,
+	};
+	int32_t type = TYPE_UNKNOWN;
 
 
 	// Non-Persisted Helper Data below.
@@ -383,12 +389,14 @@ struct Url
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
 		buffer.writeNullString(url);
+		buffer.write(type);
 	}
 	static Url deserialize(bbe::ByteBufferSpan& buffer)
 	{
 		Url retVal;
 
 		strcpy(retVal.url, buffer.readNullString());
+		buffer.read(retVal.type);
 
 		return retVal;
 	}
@@ -418,7 +426,6 @@ struct ClipboardContent
 struct GeneralConfig
 {
 	char updatePath[1024] = {};
-
 
 	// Non-Persisted Helper Data below.
 
@@ -857,6 +864,7 @@ public:
 
 		beginMeasure("URL Stuff");
 		static bbe::TimePoint nextUrlStuff;
+		bool timeWasterUrlFound = false;
 		if (nextUrlStuff.hasPassed())
 		{
 			// TODO: This can happen together with the Process stuff in one frame. Kinda bad... maybe?
@@ -870,6 +878,10 @@ public:
 					if (tabNames[i] == urls[k].url)
 					{
 						found = true;
+						if (urls[k].type == Url::TYPE_TIME_WASTER)
+						{
+							timeWasterUrlFound = true;
+						}
 						break;
 					}
 				}
@@ -883,17 +895,21 @@ public:
 		}
 
 		beginMeasure("Working Hours");
-		if (!openTasksNotificationSilenced && isGameOn && 
+		// Because tasks...
+		bool shouldPlayOpenTasks = !openTasksNotificationSilenced && isGameOn &&
 			(
-				   (amountOfTasksNowWithoutOneShotWithoutLateTime > 0 &&  isWorkTime())
-				|| (amountOfTasksNowWithoutOneShotWithLateTime    > 0 && !isWorkTime())
-			))
+				(amountOfTasksNowWithoutOneShotWithoutLateTime > 0 && isWorkTime())
+				|| (amountOfTasksNowWithoutOneShotWithLateTime > 0 && !isWorkTime())
+			);
+
+		// ... because urls.
+		shouldPlayOpenTasks |= timeWasterUrlFound && isWorkTime();
+		if (shouldPlayOpenTasks)
 		{
-			static float timeSinceLastNotify = 10000.0f;
-			timeSinceLastNotify += timeSinceLastFrame;
-			if (timeSinceLastNotify >= 15 * 60)
+			static bbe::TimePoint nextPlay;
+			if (nextPlay.hasPassed())
 			{
-				timeSinceLastNotify = 0.0f;
+				nextPlay = bbe::TimePoint().plusMinutes(15);
 				assetStore::OpenTasks()->play();
 			}
 		}
@@ -1675,9 +1691,54 @@ public:
 		ImGui::SetNextWindowSize(viewport.WorkSize);
 		ImGui::Begin("URLs", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 		{
-			for (size_t i = 0; i < urls.getLength(); i++)
+			static bool showTimeWasters = false;
+			ImGui::Checkbox("Show Time Wasters", &showTimeWasters);
+			static bool showWork = false;
+			ImGui::SameLine();
+			ImGui::Checkbox("Show Work", &showWork);
+			if (ImGui::BeginTable("tableUrls", 2, ImGuiTableFlags_RowBg))
 			{
-				ImGui::Text(urls[i].url);
+				ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 600);
+				ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
+				bool urlChanged = false;
+				size_t deletionIndex = (size_t)-1;
+				for (size_t i = 0; i < urls.getLength(); i++)
+				{
+					Url& url = urls[i];
+					if (url.type == Url::TYPE_TIME_WASTER && !showTimeWasters) continue;
+					if (url.type == Url::TYPE_WORK        && !showWork) continue;
+					ImGui::PushID(i);
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::Text(url.url);
+
+					ImGui::TableSetColumnIndex(1);
+					if (ImGui::Button("Delete"))
+					{
+						deletionIndex = i;
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("T"))
+					{
+						urlChanged = true;
+						url.type = Url::TYPE_TIME_WASTER;
+					}
+					tooltip("Time Waster");
+					ImGui::SameLine();
+					if (ImGui::Button("W"))
+					{
+						urlChanged = true;
+						url.type = Url::TYPE_WORK;
+					}
+					tooltip("Work");
+					ImGui::PopID();
+				}
+				if (urlChanged)
+				{
+					urls.writeToFile();
+				}
+				urls.removeIndex(deletionIndex);
+				ImGui::EndTable();
 			}
 		}
 		ImGui::End();
