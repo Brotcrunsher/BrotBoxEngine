@@ -150,6 +150,11 @@ void bbe::simpleFile::createDirectory(const bbe::String& path)
 	}
 }
 
+bool bbe::simpleFile::deleteFile(const bbe::String& path)
+{
+	return std::filesystem::remove(path.getRaw());
+}
+
 bbe::String bbe::simpleFile::readFile(const bbe::String& filePath)
 {
 	std::ifstream f(filePath.getRaw());
@@ -241,5 +246,29 @@ void bbe::simpleFile::createLink(const bbe::String& from, const bbe::String& to,
 	{
 		throw std::runtime_error("Failed to create link.");
 	}
+}
+void bbe::simpleFile::executeBatchFile(const bbe::String& path)
+{
+	// TODO: This is dumb.
+	system(path.getRaw());
+
+	// TODO: Why doesn't this work?
+	//PROCESS_INFORMATION pi = {};
+	//STARTUPINFOA si = {};
+	//si.cb = sizeof(si);
+	//CreateProcess(
+	//	"cmd.exe",
+	//	("/c " + path).getRaw(),
+	//	NULL,
+	//	NULL,
+	//	FALSE,
+	//	0,
+	//	NULL,
+	//	NULL,
+	//	&si,
+	//	&pi
+	//);
+	//CloseHandle(pi.hProcess);
+	//CloseHandle(pi.hThread);
 }
 #endif

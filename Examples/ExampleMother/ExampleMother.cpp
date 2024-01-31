@@ -15,7 +15,6 @@
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
 //TODO: New feature: Stopwatch ("Pizza done")
 //TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
-//TODO: Add button "install update"
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -1539,6 +1538,27 @@ public:
 				exists = true;
 			}
 			ImGui::EndDisabled();
+			// TODO: Disable button if target file is older than this file.
+			if (ImGui::Button("Update"))
+			{
+				bbe::String batchFileName = "update.bat";
+				bbe::simpleFile::deleteFile(batchFileName);
+
+				{
+					std::ofstream file;
+					file.open(batchFileName.getRaw(), std::ios::out);
+
+					file << "taskkill /f /im ExampleMother.exe\n";
+					// TODO: This path has to be put into some kind of config...
+					file << "xcopy /s /y \"D:\\__Projekte\\C++\\Visual Studio Projekte\\_BrotBoxEngine\\Build\\bin\\Release\\ExampleMother.exe\" " + bbe::simpleFile::getExecutablePath() + "\n";
+					file << "start ExampleMother.exe\n";
+					file << "del update.bat\n";
+					file.flush(); // TODO: Necessary? Doesn't close do that for us?
+					file.close();
+				}
+
+				bbe::simpleFile::executeBatchFile("update.bat");
+			}
 
 			ImGui::Checkbox("Silence Open Task Notification Sound", &openTasksNotificationSilenced);
 			ImGui::Checkbox("Ignore Night", &ignoreNight);

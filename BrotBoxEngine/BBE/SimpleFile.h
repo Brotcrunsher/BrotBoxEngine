@@ -21,6 +21,7 @@ namespace bbe
 		void appendBinaryToFile(const bbe::String& filePath, bbe::ByteBuffer& buffer);
 		bool doesFileExist(const bbe::String& filePath);
 		void createDirectory(const bbe::String& path);
+		bool deleteFile(const bbe::String& path);
 		bbe::String readFile(const bbe::String& filePath);
 		bbe::List<bbe::String> readLines(const bbe::String& filePath);
 
@@ -30,6 +31,7 @@ namespace bbe
 		bbe::String getExecutablePath();
 		bbe::String getWorkingDirectory();
 		void createLink(const bbe::String& from, const bbe::String& to, const bbe::String& workDir = "");
+		void executeBatchFile(const bbe::String& path);
 #endif
 	}
 }
