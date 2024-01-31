@@ -172,3 +172,74 @@ bbe::List<bbe::String> bbe::simpleFile::readLines(const bbe::String& filePath)
 
 	return retVal;
 }
+
+#ifdef WIN32
+#include "windows.h"
+#include "winnls.h"
+#include "shobjidl.h"
+#include "objbase.h"
+#include "objidl.h"
+#include "shlguid.h"
+
+bbe::String bbe::simpleFile::getUserName()
+{
+	TCHAR buffer[256];
+	DWORD bufferSize = sizeof(buffer) / sizeof(TCHAR);
+	if (GetUserName(buffer, &bufferSize))
+	{
+		return bbe::String(buffer);
+	}
+	else
+	{
+		throw std::runtime_error("Error getting user name.");
+	}
+}
+
+bbe::String bbe::simpleFile::getAutoStartDirectory()
+{
+	return "C:/Users/" + getUserName() + "/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/";
+}
+
+bbe::String bbe::simpleFile::getExecutablePath()
+{
+	TCHAR buffer[1024] = {};
+	GetModuleFileName(NULL, buffer, sizeof(buffer) / sizeof(TCHAR));
+	return bbe::String(buffer);
+}
+
+bbe::String bbe::simpleFile::getWorkingDirectory()
+{
+	TCHAR buffer[1024] = {};
+	GetCurrentDirectory(sizeof(buffer) / sizeof(TCHAR), buffer);
+	return bbe::String(buffer);
+}
+
+void bbe::simpleFile::createLink(const bbe::String& from, const bbe::String& to, const bbe::String& workDir)
+{
+	// More or less from the microsoft examples, adjusted to use BBE Types and coding style.
+	// See: https://learn.microsoft.com/en-us/windows/win32/shell/links
+
+	IShellLink* psl;
+	HRESULT hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&psl);
+	if (SUCCEEDED(hres))
+	{
+		psl->SetPath(to.getRaw());
+		if(workDir.getLength() > 0) psl->SetWorkingDirectory(workDir.getRaw());
+
+		IPersistFile* ppf;
+		hres = psl->QueryInterface(IID_IPersistFile, (LPVOID*)&ppf);
+		if (SUCCEEDED(hres))
+		{
+			WCHAR wsz[1024];
+			MultiByteToWideChar(CP_ACP, 0, from.getRaw(), -1, wsz, sizeof(wsz) / sizeof(WCHAR));
+			hres = ppf->Save(wsz, TRUE);
+			ppf->Release();
+		}
+		psl->Release();
+	}
+	if (FAILED(hres))
+	{
+		throw std::runtime_error("Failed to create link.");
+	}
+}
+#endif

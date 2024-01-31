@@ -15,6 +15,7 @@
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
 //TODO: New feature: Stopwatch ("Pizza done")
 //TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
+//TODO: Add button "install update"
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -1530,6 +1531,15 @@ public:
 			if (ImGui::Button("Undo"))
 			{
 				tasks.undo();
+			}
+			ImGui::EndDisabled();
+			const static bbe::String desiredName = bbe::simpleFile::getAutoStartDirectory() + "ExampleMother.exe.lnk";
+			static bool exists = bbe::simpleFile::doesFileExist(desiredName); // Avoid doing IO every frame.
+			ImGui::BeginDisabled(exists);
+			if (ImGui::Button("Add to Autostart"))
+			{
+				bbe::simpleFile::createLink(desiredName, bbe::simpleFile::getExecutablePath(), bbe::simpleFile::getWorkingDirectory());
+				exists = true;
 			}
 			ImGui::EndDisabled();
 

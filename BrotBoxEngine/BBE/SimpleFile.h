@@ -23,5 +23,13 @@ namespace bbe
 		void createDirectory(const bbe::String& path);
 		bbe::String readFile(const bbe::String& filePath);
 		bbe::List<bbe::String> readLines(const bbe::String& filePath);
+
+#ifdef WIN32
+		bbe::String getUserName();
+		bbe::String getAutoStartDirectory();
+		bbe::String getExecutablePath();
+		bbe::String getWorkingDirectory();
+		void createLink(const bbe::String& from, const bbe::String& to, const bbe::String& workDir = "");
+#endif
 	}
 }

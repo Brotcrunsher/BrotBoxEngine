@@ -52,7 +52,8 @@ namespace bbe
 
 	public:
 		Utf8String();
-		/*nonexplicit*/ Utf8String(const char* data);		
+		/*nonexplicit*/ Utf8String(const char* data);
+		/*nonexplicit*/ Utf8String(const wchar_t* data);
 		explicit Utf8String(char               c);
 		explicit Utf8String(double             number);
 		explicit Utf8String(int                number);

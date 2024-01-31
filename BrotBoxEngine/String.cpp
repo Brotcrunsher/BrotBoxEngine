@@ -3,6 +3,7 @@
 #include "BBE/Exceptions.h"
 #include "BBE/Math.h"
 #include <string>
+#include <codecvt>
 #include "stdarg.h"
 #include "BBE/Utf8Helpers.h"
 
@@ -58,6 +59,12 @@ bbe::Utf8String::Utf8String(const char* data)
 {
 	//UNTESTED
 	initializeFromCharArr(data);
+}
+
+bbe::Utf8String::Utf8String(const wchar_t* data)
+{
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+	initializeFromCharArr(conv.to_bytes(data).c_str());
 }
 
 bbe::Utf8String::Utf8String(char c)
