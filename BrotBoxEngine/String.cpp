@@ -4,6 +4,7 @@
 #include "BBE/Math.h"
 #include <string>
 #include <codecvt>
+#include <locale>
 #include "stdarg.h"
 #include "BBE/Utf8Helpers.h"
 
