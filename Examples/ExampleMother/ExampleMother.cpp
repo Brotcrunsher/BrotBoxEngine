@@ -1255,10 +1255,7 @@ public:
 			CComVariant url;
 			edit->GetCurrentPropertyValue(UIA_ValueValuePropertyId, &url);
 			
-
-			char buffer[1024] = {};
-			wcstombs(buffer, url.bstrVal, sizeof(buffer) / sizeof(wchar_t));
-			bbe::String newElem = bbe::String(buffer).split("/")[0];
+			bbe::String newElem = bbe::String(url.bstrVal).split("/")[0];
 			if(newElem.getLength() > 0) retVal.add(newElem);
 		}
 		return retVal;
