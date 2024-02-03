@@ -453,7 +453,8 @@ private:
 	bbe::SerializableObject<GeneralConfig> generalConfig     = bbe::SerializableObject<GeneralConfig> ("generalConfig.dat", "ParanoiaConfig");
 	bool shiftPressed = false;
 	bool isGameOn = false;
-	bool openTasksNotificationSilenced = false;
+	bool openTasksNotificationSilencedProcess = false;
+	bool openTasksNotificationSilencedUrl     = false;
 	bool showDebugStuff = false;
 	bool ignoreNight = false;
 	bool tabSwitchRequestedLeft = false;
@@ -896,14 +897,14 @@ public:
 
 		beginMeasure("Working Hours");
 		// Because tasks...
-		bool shouldPlayOpenTasks = !openTasksNotificationSilenced && isGameOn &&
+		bool shouldPlayOpenTasks = !openTasksNotificationSilencedProcess && isGameOn &&
 			(
 				(amountOfTasksNowWithoutOneShotWithoutLateTime > 0 && isWorkTime())
 				|| (amountOfTasksNowWithoutOneShotWithLateTime > 0 && !isWorkTime())
 			);
 
 		// ... because urls.
-		shouldPlayOpenTasks |= timeWasterUrlFound && isWorkTime();
+		shouldPlayOpenTasks |= !openTasksNotificationSilencedUrl && timeWasterUrlFound && isWorkTime();
 		if (shouldPlayOpenTasks)
 		{
 			static bbe::TimePoint nextPlay;
@@ -1615,7 +1616,8 @@ public:
 				}
 			}
 
-			ImGui::Checkbox("Silence Open Task Notification Sound", &openTasksNotificationSilenced);
+			ImGui::Checkbox("Silence Open Task Notification Sound (Process)", &openTasksNotificationSilencedProcess);
+			ImGui::Checkbox("Silence Open Task Notification Sound (Url)",     &openTasksNotificationSilencedUrl);
 			ImGui::Checkbox("Ignore Night", &ignoreNight);
 			ImGui::Checkbox("Let me prepare", &forcePrepare); tooltip("Make tasks advancable, even before late time happens.");
 			ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
