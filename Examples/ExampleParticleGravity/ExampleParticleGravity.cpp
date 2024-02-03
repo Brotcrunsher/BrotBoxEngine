@@ -65,9 +65,7 @@ public:
 
 class MyGame : public bbe::Game
 {
-
 	bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
-	bbe::PointLight light;
 
 	float maxSpeed = 0;
 	float minSpeed = 0;
@@ -77,9 +75,6 @@ class MyGame : public bbe::Game
 	virtual void onStart() override
 	{
 		std::cout << "hai onStart" << std::endl;
-		light.falloffMode = bbe::LightFalloffMode::LIGHT_FALLOFF_NONE;
-		light.lightStrength = 1;
-		light.pos = bbe::Vector3(100, 100, 100);
 
 		for (int i = 0; i < 200; i++)
 		{
@@ -144,9 +139,11 @@ class MyGame : public bbe::Game
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
-		brush.addLight(light);
 		brush.setFillMode(wireframe ? bbe::FillMode::WIREFRAME : bbe::FillMode::SOLID);
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
+		auto light = bbe::PointLight(ccnc.getCameraPos());
+		light.lightStrength *= 100.0f;
+		brush.addLight(light);
 		for (Particle &p : particles)
 		{
 			float speed = p.speed.getLength();

@@ -59,21 +59,27 @@ class MyGame : public bbe::Game
 	{
 		std::cout << "FPS: " << (1.f / timeSinceLastFrame) << std::endl;
 
+		float force = 4000;
+		if (isKeyDown(bbe::Key::LEFT_SHIFT))
+		{
+			force *= 10;
+		}
+
 		if (isKeyDown(bbe::Key::W))
 		{
-			circles[0].circle.addSpeed(bbe::Vector2(0, -4000) * timeSinceLastFrame);
+			circles[0].circle.addSpeed(bbe::Vector2(0, -force) * timeSinceLastFrame);
 		}
 		if (isKeyDown(bbe::Key::S))
 		{
-			circles[0].circle.addSpeed(bbe::Vector2(0, 4000) * timeSinceLastFrame);
+			circles[0].circle.addSpeed(bbe::Vector2(0, force) * timeSinceLastFrame);
 		}
 		if (isKeyDown(bbe::Key::A))
 		{
-			circles[0].circle.addSpeed(bbe::Vector2(-4000, 0) * timeSinceLastFrame);
+			circles[0].circle.addSpeed(bbe::Vector2(-force, 0) * timeSinceLastFrame);
 		}
 		if (isKeyDown(bbe::Key::D))
 		{
-			circles[0].circle.addSpeed(bbe::Vector2(4000, 0) * timeSinceLastFrame);
+			circles[0].circle.addSpeed(bbe::Vector2(force, 0) * timeSinceLastFrame);
 		}
 
 		if (isKeyPressed(bbe::Key::SPACE))

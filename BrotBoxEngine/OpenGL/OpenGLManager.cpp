@@ -1375,7 +1375,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
+	glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLRectangle::getIbo());
+	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0); addDrawcallStat();
 
 	m_program3dLight.use();
 	mrtFb.useAsInput();
