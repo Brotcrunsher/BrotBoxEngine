@@ -89,6 +89,40 @@ bbe::TimePoint bbe::TimePoint::epoch()
 	return TimePoint(0);
 }
 
+int32_t bbe::TimePoint::isLeapYear(int32_t year)
+{
+	if (year % 400 == 0) return true;
+	if (year % 100 == 0) return false;
+	if (year %   4 == 0) return true;
+	return false;
+}
+
+int32_t bbe::TimePoint::getDaysInMonth(int32_t year, Month month)
+{
+	switch (month)
+	{
+	case Month::JANUARY  : return 31;
+	case Month::FEBRUARY : return isLeapYear(year) ? 29 : 28;
+	case Month::MARCH    : return 31;
+	case Month::APRIL    : return 30;
+	case Month::MAY      : return 31;
+	case Month::JUNE     : return 30;
+	case Month::JULY     : return 31;
+	case Month::AUGUST   : return 31;
+	case Month::SEPTEMBER: return 30;
+	case Month::OCTOBER  : return 31;
+	case Month::NOVEMBER : return 30;
+	case Month::DECEMBER : return 31;
+	default: throw std::runtime_error("Illegal Argument");
+	}
+	return 0;
+}
+
+bbe::Weekday bbe::TimePoint::getFirstWeekdayOfMonth(int32_t year, Month month)
+{
+	return bbe::TimePoint::fromDate(year, month, 1).getWeekday();
+}
+
 bbe::TimePoint bbe::TimePoint::nextMorning(int64_t morningHour) const
 {
 	std::time_t t = std::chrono::system_clock::to_time_t(m_time);
@@ -194,6 +228,22 @@ static int getWDay(const std::chrono::system_clock::time_point& tp)
 	std::time_t t = std::chrono::system_clock::to_time_t(tp);
 	::tm timeinfo = *localtime(&t);
 	return timeinfo.tm_wday;
+}
+
+bbe::Weekday bbe::TimePoint::getWeekday() const
+{
+	int wday = getWDay(m_time);
+	switch (wday)
+	{
+	case 0: return bbe::Weekday::SUNDAY;
+	case 1: return bbe::Weekday::MONDAY;
+	case 2: return bbe::Weekday::TUESDAY;
+	case 3: return bbe::Weekday::WEDNESDAY;
+	case 4: return bbe::Weekday::THURSDAY;
+	case 5: return bbe::Weekday::FRIDAY;
+	case 6: return bbe::Weekday::SATURDAY;
+	default: throw std::runtime_error("Illegal wday");
+	}
 }
 
 bool bbe::TimePoint::isMonday() const

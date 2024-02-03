@@ -39,6 +39,17 @@ namespace bbe
 		DECEMBER  = 12,
 	};
 
+	enum class Weekday
+	{
+		MONDAY    = 0,
+		TUESDAY   = 1,
+		WEDNESDAY = 2,
+		THURSDAY  = 3,
+		FRIDAY    = 4,
+		SATURDAY  = 5,
+		SUNDAY    = 6,
+	};
+
 	class TimePoint
 	{
 	private:
@@ -55,6 +66,10 @@ namespace bbe
 		static TimePoint fromDate(int32_t year, Month   month, int32_t day, int32_t hour = 0, int32_t minute = 0, int32_t second = 0);
 		static TimePoint fromDate(int32_t year, int32_t month, int32_t day, int32_t hour = 0, int32_t minute = 0, int32_t second = 0);
 		static TimePoint epoch();
+
+		static int32_t isLeapYear(int32_t year);
+		static int32_t getDaysInMonth(int32_t year, Month month);
+		static Weekday getFirstWeekdayOfMonth(int32_t year, Month month);
 
 		TimePoint nextMorning(int64_t morningHour = 5) const;
 		TimePoint toMorning(int64_t morningHour = 5) const;
@@ -73,6 +88,7 @@ namespace bbe
 
 		// Both hours are inclusive! So 23/4 is from 23:00 until 4:59.
 		bool isNight(int64_t fromHour = 23, int64_t toHour = 4) const;
+		Weekday getWeekday() const;
 		bool isMonday() const;
 		bool isTuesday() const;
 		bool isWednesday() const;

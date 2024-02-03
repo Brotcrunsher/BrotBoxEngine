@@ -7,8 +7,6 @@
 #include "AssetStore.h"
 #include "imgui_internal.h"
 
-//TODO: Butchered looks on non 4k
-//TODO: Implement proper date picker
 //TODO: Redo
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
@@ -81,6 +79,8 @@ public:
 	float inputFloat = 0;
 	mutable bool armedToPlaySoundNewTask = false;
 	mutable bool armedToPlaySoundDone = false;
+	bbe::TimePoint execPointBuffer;
+	bbe::TimePoint yearlyBuffer;
 
 private:
 	bool timePointElapsed(const bbe::TimePoint& tp, bool& armed) const
@@ -297,6 +297,11 @@ public:
 	void setNextExecution(int32_t year, int32_t month, int32_t day)
 	{
 		nextExecution = toPossibleTimePoint(bbe::TimePoint::fromDate(year, month, day).nextMorning());
+	}
+
+	void setNextExecution(const bbe::TimePoint& tp)
+	{
+		setNextExecution(tp.getYear(), (int32_t)tp.getMonth(), tp.getDay());
 	}
 
 	int32_t amountPossibleWeekdays() const
@@ -595,7 +600,7 @@ public:
 	virtual void onStart() override
 	{
 		setWindowCloseMode(bbe::WindowCloseMode::HIDE);
-		setTargetFrametime(1.f / 144.f);
+		setTargetFrametime(1.f / 30.f);
 
 		WNDCLASSEX wincl = {};        /* Data structure for the windowclass */
 		wincl.hInstance = GetModuleHandle(0);
@@ -896,22 +901,25 @@ public:
 		}
 
 		beginMeasure("Working Hours");
-		// Because tasks...
-		bool shouldPlayOpenTasks = !openTasksNotificationSilencedProcess && isGameOn &&
-			(
-				(amountOfTasksNowWithoutOneShotWithoutLateTime > 0 && isWorkTime())
-				|| (amountOfTasksNowWithoutOneShotWithLateTime > 0 && !isWorkTime())
-			);
+		bool workTodo =
+			   (amountOfTasksNowWithoutOneShotWithoutLateTime > 0 &&  isWorkTime())
+			|| (amountOfTasksNowWithoutOneShotWithLateTime    > 0 && !isWorkTime());
 
-		// ... because urls.
-		shouldPlayOpenTasks |= !openTasksNotificationSilencedUrl && timeWasterUrlFound && isWorkTime();
-		if (shouldPlayOpenTasks)
+		if (workTodo)
 		{
-			static bbe::TimePoint nextPlay;
-			if (nextPlay.hasPassed())
+			// Because Process...
+			bool shouldPlayOpenTasks = !openTasksNotificationSilencedProcess && isGameOn;
+
+			// ... because urls.
+			shouldPlayOpenTasks |= !openTasksNotificationSilencedUrl && timeWasterUrlFound;
+			if (shouldPlayOpenTasks)
 			{
-				nextPlay = bbe::TimePoint().plusMinutes(15);
-				assetStore::OpenTasks()->play();
+				static bbe::TimePoint nextPlay;
+				if (nextPlay.hasPassed())
+				{
+					nextPlay = bbe::TimePoint().plusMinutes(15);
+					assetStore::OpenTasks()->play();
+				}
 			}
 		}
 	}
@@ -1142,18 +1150,14 @@ public:
 		}
 		else if(t.dateType == Task::DT_YEARLY)
 		{
-			ImGui::PushItemWidth(100);
 			ImGui::Text("Month/Day: ");
 			ImGui::SameLine();
-			ImGui::InputInt("##dt_yearly_month", &t.dtYearlyMonth, 0, 0);
-			tooltip("Month");
-			ImGui::SameLine();
-			ImGui::InputInt("##dt_yearly_day", &t.dtYearlyDay, 0, 0);
-			tooltip("Day");
-			ImGui::PopItemWidth();
+			datePicker("Yearly Pick", &t.yearlyBuffer);
+			// TODO: It's possible to change the year in the date picker, which is kinda dumb
+			//       for a yearly task. The year is discarded, but the GUI could be nicer.
 
-			t.dtYearlyMonth = bbe::Math::clamp(t.dtYearlyMonth, 1, 12);
-			t.dtYearlyDay = bbe::Math::clamp(t.dtYearlyDay, 1, 31); // TODO: Not all months have 31 days... Use Proper Date Picker?
+			t.dtYearlyMonth = (int32_t)t.yearlyBuffer.getMonth();
+			t.dtYearlyDay = t.yearlyBuffer.getDay();
 		}
 		const int32_t amountOfWeekdays = t.amountPossibleWeekdays();
 		taskChanged |= weekdayCheckbox("Monday", &t.canBeMo, amountOfWeekdays);
@@ -1373,32 +1377,15 @@ public:
 			drawEditableTask(tempTask);
 			tempTask.sanity();
 
-			static int year = 0;
-			static int month = 0;
-			static int day = 0;
+			static bbe::TimePoint firstExec;
 
-			if (year == 0 && month == 0 && day == 0)
-			{
-				bbe::TimePoint now;
-				year = now.getYear();
-				month = (int)now.getMonth();
-				day = now.getDay();
-			}
-
-			ImGui::PushItemWidth(100);
 			ImGui::Text("First execution: ");
-			ImGui::SameLine(); ImGui::InputInt("##year", &year, 0, 0); tooltip("Year");
-			ImGui::SameLine(); ImGui::InputInt("##month", &month, 0, 0); tooltip("Month");
-			ImGui::SameLine(); ImGui::InputInt("##day", &day, 0, 0); tooltip("Day");
-			ImGui::PopItemWidth();
-
-			if (year < 2023) year = 2023;
-			month = bbe::Math::clamp(month, 1, 12);
-			day = bbe::Math::clamp(day, 1, 31); // TODO: Not all months have 31 days... Use Proper Date Picker?
+			ImGui::SameLine();
+			datePicker("First Exec", &firstExec);
 
 			if (ImGui::Button("New Task"))
 			{
-				tempTask.setNextExecution(year, month, day);
+				tempTask.setNextExecution(firstExec);
 				tasks.add(tempTask);
 				tempTask = Task();
 			}
@@ -1442,8 +1429,14 @@ public:
 				}
 			}
 			tasksChanged |= drawEditableTask(t);
-			ImGui::Text(t.previousExecution.toString().getRaw()); tooltip("Previous Execution");
-			ImGui::Text(t.nextPossibleExecution().toString().getRaw()); tooltip("Next Execution");
+			tasksChanged |= datePicker("previousExe", &t.previousExecution); tooltip("Previous Execution");
+			t.execPointBuffer = t.nextPossibleExecution();
+			const bool execPointChanged = datePicker("nextExe",     &t.execPointBuffer); tooltip("Next Execution");
+			if (execPointChanged)
+			{
+				t.setNextExecution(t.execPointBuffer);
+				tasksChanged = true;
+			}
 			ImGui::SameLine();
 			if (ImGui::Button("Move to Now"))
 			{
@@ -1462,7 +1455,7 @@ public:
 				t.nextExecPlusDays(-1);
 				tasksChanged = true;
 			}
-			ImGui::Text(t.endWorkTime.toString().getRaw()); tooltip("End Work Time");
+			tasksChanged |= datePicker("EndWork", &t.endWorkTime); tooltip("End Work Time");
 			ImGui::NewLine();
 			ImGui::Separator();
 			ImGui::NewLine();
@@ -1513,6 +1506,123 @@ public:
 		}
 	}
 
+	bool datePicker(const char* label, bbe::TimePoint* time)
+	{
+		bool changed = false;
+		static int orgYear = 0;
+		static int orgMonth = 0;
+		static int orgDay = 0;
+
+		static int startColumn = 0;
+		static int year = 0;
+		static int month = 0;
+		static int day = 0;
+		static int daysInMonth = 0;
+		if (ImGui::BeginPopup(label))
+		{
+			static constexpr int columnWidth = 30;
+			static constexpr ImVec2 bSize(columnWidth, 0.0f);
+
+			bool dataDirty = false;
+
+			if (ImGui::Button("<<", bSize)) { dataDirty = true; year--; }
+			ImGui::SameLine();
+			if (ImGui::Button("<", bSize)) { dataDirty = true; month--; }
+			ImGui::SameLine();
+			ImGui::Text((bbe::String(year) + "/" + month).getRaw());
+			ImGui::SameLine(6.5f * columnWidth); // TODO: Wtf? Why 6.5?!
+			if (ImGui::Button(">", bSize)) { dataDirty = true; month++; }
+			ImGui::SameLine();
+			if (ImGui::Button(">>", bSize)) { dataDirty = true; year++; }
+
+			if (dataDirty)
+			{
+				if (month == 0) {
+					month = 12;
+					year--;
+				}
+				if (month == 13)
+				{
+					month = 1;
+					year++;
+				}
+				// Technically we could go back until 1970, January. But this simplifies stuff. And really - who cares?
+				if (year < 1971) year = 1971;
+				startColumn = (int)bbe::TimePoint::getFirstWeekdayOfMonth(year, (bbe::Month)month);
+				daysInMonth = bbe::TimePoint::getDaysInMonth(year, (bbe::Month)month);
+			}
+
+			if (ImGui::BeginTable("table", 7, ImGuiTableFlags_RowBg))
+			{
+				ImGui::TableSetupColumn("1", ImGuiTableColumnFlags_WidthFixed, columnWidth);
+				ImGui::TableSetupColumn("2", ImGuiTableColumnFlags_WidthFixed, columnWidth);
+				ImGui::TableSetupColumn("3", ImGuiTableColumnFlags_WidthFixed, columnWidth);
+				ImGui::TableSetupColumn("4", ImGuiTableColumnFlags_WidthFixed, columnWidth);
+				ImGui::TableSetupColumn("5", ImGuiTableColumnFlags_WidthFixed, columnWidth);
+				ImGui::TableSetupColumn("6", ImGuiTableColumnFlags_WidthFixed, columnWidth);
+				ImGui::TableSetupColumn("7", ImGuiTableColumnFlags_WidthFixed, columnWidth);
+
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0); ImGui::Text("Mo");
+				ImGui::TableSetColumnIndex(1); ImGui::Text("Tu");
+				ImGui::TableSetColumnIndex(2); ImGui::Text("We");
+				ImGui::TableSetColumnIndex(3); ImGui::Text("Th");
+				ImGui::TableSetColumnIndex(4); ImGui::Text("Fr");
+				ImGui::TableSetColumnIndex(5); ImGui::Text("Sa");
+				ImGui::TableSetColumnIndex(6); ImGui::Text("So");
+
+				ImGui::TableNextRow();
+				int column = startColumn;
+				for (int i = 1; i <= daysInMonth; i++)
+				{
+					ImGui::TableSetColumnIndex(column);
+					bbe::String s(i);
+					const bool isSelected = orgYear == year && orgMonth == month && orgDay == i;
+
+					if (isSelected)
+					{
+						ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(7.0f, 0.6f, 0.6f));
+						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(7.0f, 0.9f, 0.9f));
+						ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(7.0f, 0.8f, 0.8f));
+					}
+					if (ImGui::Button(s.getRaw(), bSize))
+					{
+						*time = bbe::TimePoint::fromDate(year, month, i).nextMorning();
+						ImGui::CloseCurrentPopup();
+						changed = true;
+					}
+					if (isSelected)
+					{
+						ImGui::PopStyleColor(3);
+					}
+					column++;
+					if (column == 7)
+					{
+						column = 0;
+						ImGui::TableNextRow();
+					}
+				}
+				ImGui::EndTable();
+			}
+			ImGui::EndPopup();
+		}
+		if (ImGui::Button(time->toString().getRaw()))
+		{
+			year = time->getYear();
+			month = (int)time->getMonth();
+			day = time->getDay();
+			startColumn = (int)bbe::TimePoint::getFirstWeekdayOfMonth(year, (bbe::Month)month);
+			daysInMonth = bbe::TimePoint::getDaysInMonth(year, (bbe::Month)month);
+
+			orgYear = year;
+			orgMonth = month;
+			orgDay = day;
+
+			ImGui::OpenPopup(label);
+		}
+		return changed;
+	}
+
 	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
 	{
 		ImGuiViewport viewport = *ImGui::GetMainViewport();
@@ -1559,6 +1669,7 @@ public:
 		}
 		ImGui::End();
 
+		
 		viewport.WorkPos.x += viewport.WorkSize.x;
 		viewport.WorkSize.x *= ImGui::GetMainViewport()->WorkSize.x * 0.4f;
 		viewport.WorkSize.y *= 1.f / 3.f;
