@@ -1768,9 +1768,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStop()
 	if (m_imguiInitSuccessful)
 	{
 		ImPlot::DestroyContext();
-		ImGui::DestroyContext();
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
 	}
 }
 
