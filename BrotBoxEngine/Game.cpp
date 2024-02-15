@@ -246,6 +246,11 @@ bool bbe::Game::isKeyPressed(bbe::Key key)
 	return m_pwindow->INTERNAL_keyboard.isKeyPressed(key);
 }
 
+bool bbe::Game::isFocused() const
+{
+	return m_pwindow->isFocused();
+}
+
 bool bbe::Game::isMouseDown(bbe::MouseButton button)
 {
 	return m_pwindow->INTERNAL_mouse.isButtonDown(button);
@@ -448,6 +453,11 @@ void bbe::Game::setFixedFrametime(float time)
 void bbe::Game::setTargetFrametime(float time)
 {
 	m_targetFrameTime = time;
+}
+
+float bbe::Game::getTargetFrametime() const
+{
+	return m_targetFrameTime;
 }
 
 bbe::String bbe::Game::getClipboard() const

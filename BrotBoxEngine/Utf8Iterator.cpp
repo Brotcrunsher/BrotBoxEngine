@@ -102,6 +102,11 @@ int32_t bbe::Utf8Iterator::getCodepoint() const
 	return utf8CharToCodePoint(m_pdata);
 }
 
+bool bbe::Utf8Iterator::valid() const
+{
+	return getCodepoint() != 0;
+}
+
 bool bbe::Utf8Iterator::operator==(const bbe::Utf8Iterator& other) const
 {
 	return m_pdata == other.m_pdata;

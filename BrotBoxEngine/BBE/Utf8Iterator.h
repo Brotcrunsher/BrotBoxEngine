@@ -50,6 +50,8 @@ namespace bbe
 
 		int32_t getCodepoint() const;
 
+		bool valid() const;
+
 		const char& operator*() const;
 	};
 }

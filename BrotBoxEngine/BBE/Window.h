@@ -53,6 +53,7 @@ namespace bbe
 		void waitTillIdle();
 
 		bool isReadyToDraw();
+		bool isFocused() const;
 
 		void setCursorMode(bbe::CursorMode cursorMode);
 

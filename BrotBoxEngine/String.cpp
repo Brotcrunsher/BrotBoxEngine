@@ -828,6 +828,29 @@ bool bbe::Utf8String::containsIgnoreCase(const Utf8String& string) const
 	return containsIgnoreCase(string.getRaw());
 }
 
+bbe::Utf8String bbe::Utf8String::hardBreakEvery(int32_t x) const
+{
+	//TODO: This is a rather dumb implementation. We could easily determine the necessary amount of bytes ahead of time.
+	bbe::Utf8String retVal;
+
+	int32_t column = 0;
+	for (auto it = getIterator(); it.valid(); it++)
+	{
+		if (column == x)
+		{
+			retVal += "\n";
+			column = 0;
+		}
+		column++;
+		char buff[sizeof(int32_t) + 1] = {};
+		auto cp = it.getCodepoint();
+		memcpy(buff, &cp, sizeof(cp));
+		retVal += buff;
+	}
+
+	return retVal;
+}
+
 bool bbe::Utf8String::isTextAtLocation(const char* string, size_t index) const
 {
 	while (*string)

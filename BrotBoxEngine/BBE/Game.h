@@ -95,6 +95,8 @@ namespace bbe
 		bool wasKeyUpLastFrame(bbe::Key key);
 		bool isKeyPressed(bbe::Key key);
 
+		bool isFocused() const;
+
 		bool isMouseDown(bbe::MouseButton button);
 		bool isMouseUp(bbe::MouseButton button);
 		bool wasMouseDownLastFrame(bbe::MouseButton button);
@@ -138,6 +140,7 @@ namespace bbe
 		void setMaxFrame(uint64_t maxFrame);
 		void setFixedFrametime(float time);
 		void setTargetFrametime(float time);
+		float getTargetFrametime() const;
 
 		bbe::String getClipboard() const;
 		void setClipboard(const bbe::String& string);

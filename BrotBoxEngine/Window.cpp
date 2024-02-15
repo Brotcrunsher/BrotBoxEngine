@@ -157,6 +157,11 @@ bool bbe::Window::isReadyToDraw()
 	return m_renderManager->isReadyToDraw();
 }
 
+bool bbe::Window::isFocused() const
+{
+	return glfwWrapper::glfwGetWindowAttrib(m_pwindow, GLFW_FOCUSED);
+}
+
 void bbe::Window::setCursorMode(bbe::CursorMode cursorMode)
 {
 	switch (cursorMode)

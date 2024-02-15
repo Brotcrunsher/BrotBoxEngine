@@ -150,6 +150,8 @@ namespace bbe
 		bool containsIgnoreCase(const char*       string) const;
 		bool containsIgnoreCase(const Utf8String& string) const;
 
+		bbe::Utf8String hardBreakEvery(int32_t x) const;
+
 		bool isTextAtLocation(const char* string, size_t index) const;
 		bool startsWith(const char* string) const;
 		bool endsWith(const char* string) const;

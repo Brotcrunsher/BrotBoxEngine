@@ -14,14 +14,13 @@
 //TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
 //TODO: Bug: Crashed when closing Chrome? Only happened once, not easily reproducable.
 //TODO: Implement some kind of global crash handler that logs e.g. the stack trace
-//TODO: New feature: brain teasers minigames
-//TODO: Domains should contain a "."
-//TODO: Clipboard: Hover should show full text
+//TODO: New Brain teaser: Click the alphabetically lower characters as quickly as possible
+//TODO: New Brain teaser: Click vanishing squares as quickly as possible
+//TODO: Add error state to brain teaser where you have to remember the numbers that displays what the number was and what was input
 //TODO: Clipboard: It should be possible to add a title
 //TODO: Double click on the icon while window is open, but not in focus, should bring it to focus.
 //TODO: Mark tasks at "not playing sound when open during workhours and then slacking bla bla bla"
 //TODO: Track mouse to later statistically analyze where hotspots of the mouse are.
-//TODO: High FPS when focus, low if not.
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -461,14 +460,38 @@ struct GeneralConfig
 	}
 };
 
+struct BrainTeaserMemory
+{
+	int32_t score = 0;
+	bbe::TimePoint didItOn;
+
+	// Non-Persisted Helper Data below.
+
+	void serialize(bbe::ByteBuffer& buffer) const
+	{
+		buffer.write(score);
+		didItOn.serialize(buffer);
+	}
+	static BrainTeaserMemory deserialize(bbe::ByteBufferSpan& buffer)
+	{
+		BrainTeaserMemory retVal;
+
+		buffer.read(retVal.score);
+		retVal.didItOn.deserialize(buffer);
+
+		return retVal;
+	}
+};
+
 class MyGame : public bbe::Game
 {
 private:
-	bbe::SerializableList<Task> tasks                        = bbe::SerializableList<Task>            ("config.dat",        "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableList<Process> processes                 = bbe::SerializableList<Process>         ("processes.dat",     "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableList<Url> urls                          = bbe::SerializableList<Url>             ("urls.dat",          "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableList<ClipboardContent> clipboardContent = bbe::SerializableList<ClipboardContent>("Clipboard.dat",     "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableObject<GeneralConfig> generalConfig     = bbe::SerializableObject<GeneralConfig> ("generalConfig.dat", "ParanoiaConfig");
+	bbe::SerializableList<Task> tasks                          = bbe::SerializableList<Task>             ("config.dat",            "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Process> processes                   = bbe::SerializableList<Process>          ("processes.dat",         "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Url> urls                            = bbe::SerializableList<Url>              ("urls.dat",              "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<ClipboardContent> clipboardContent   = bbe::SerializableList<ClipboardContent> ("Clipboard.dat",         "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableObject<GeneralConfig> generalConfig       = bbe::SerializableObject<GeneralConfig>  ("generalConfig.dat",     "ParanoiaConfig");
+	bbe::SerializableList<BrainTeaserMemory> brainTeaserMemory = bbe::SerializableList<BrainTeaserMemory>("brainTeaserMemory.dat", "ParanoiaConfig");
 	bool shiftPressed = false;
 	bool isGameOn = false;
 	bool openTasksNotificationSilencedProcess = false;
@@ -488,6 +511,8 @@ private:
 	// Madness names
 	int32_t amountOfTasksNowWithoutOneShotWithoutLateTime = 0;
 	int32_t amountOfTasksNowWithoutOneShotWithLateTime = 0;
+
+	bbe::Random rand;
 
 public:
 	MyGame()
@@ -613,7 +638,6 @@ public:
 	virtual void onStart() override
 	{
 		setWindowCloseMode(bbe::WindowCloseMode::HIDE);
-		setTargetFrametime(1.f / 30.f);
 
 		WNDCLASSEX wincl = {};        /* Data structure for the windowclass */
 		wincl.hInstance = GetModuleHandle(0);
@@ -768,6 +792,7 @@ public:
 	virtual void update(float timeSinceLastFrame) override
 	{
 		beginMeasure("Basic Controls");
+		setTargetFrametime(isFocused() ? (1.f / 144.f) : (1.f / 10.f));
 		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
 		tabSwitchRequestedLeft  = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::Q);
 		tabSwitchRequestedRight = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E);
@@ -1322,7 +1347,11 @@ public:
 			edit->GetCurrentPropertyValue(UIA_ValueValuePropertyId, &url);
 			
 			bbe::String newElem = bbe::String(url.bstrVal).split("/")[0];
-			if(newElem.getLength() > 0) retVal.add(newElem);
+			if (   newElem.getLength() > 0
+				&& newElem.contains("."))
+			{
+				retVal.add(newElem);
+			}
 		}
 		return retVal;
 	}
@@ -1514,6 +1543,7 @@ public:
 			{
 				setClipboard(clipboardContent[i].content);
 			}
+			tooltip(bbe::String(clipboardContent[i].content).hardBreakEvery(100));
 			ImGui::PopID();
 		}
 		if (deleteIndex != (size_t)-1)
@@ -1531,6 +1561,107 @@ public:
 		if (generalConfigChanged)
 		{
 			generalConfig.writeToFile();
+		}
+	}
+
+	void drawTabBrainTeasers()
+	{
+		enum class BTState
+		{
+			startable,
+			showing,
+			waiting,
+			entering,
+			invalid,
+		};
+		static BTState state = BTState::startable;
+		static bbe::TimePoint nextStateAt;
+		constexpr int32_t startScore = 3;
+		static int32_t currentScore = startScore;
+		static char patternBuf[1024] = {};
+
+		BTState nextState = BTState::invalid;
+
+		if (state == BTState::startable)
+		{
+			if (ImGui::Button("Start"))
+			{
+				nextState = BTState::showing;
+			}
+		}
+		else if (state == BTState::showing)
+		{
+			ImGui::Text(patternBuf);
+			if (nextStateAt.hasPassed())
+			{
+				nextState = BTState::waiting;
+			}
+		}
+		else if (state == BTState::waiting)
+		{
+			ImGui::Text((nextStateAt - bbe::TimePoint()).toString().getRaw());
+			if (nextStateAt.hasPassed())
+			{
+				nextState = BTState::entering;
+			}
+		}
+		else if (state == BTState::entering)
+		{
+			static char inputBuf[sizeof(patternBuf)] = {};
+			if (ImGui::InputText("Your answer", inputBuf, sizeof(inputBuf), ImGuiInputTextFlags_EnterReturnsTrue))
+			{
+				if (bbe::String(inputBuf) == bbe::String(patternBuf))
+				{
+					// Woho!
+					nextState = BTState::showing;
+				}
+				else
+				{
+					// Oh noes! :(
+					nextState = BTState::startable;
+					BrainTeaserMemory btm;
+					btm.score = currentScore;
+					btm.didItOn = bbe::TimePoint();
+					brainTeaserMemory.add(btm);
+				}
+				memset(inputBuf, 0, sizeof(inputBuf));
+			}
+		}
+		else
+		{
+			throw std::runtime_error("Wrong state");
+		}
+
+		if (nextState != BTState::invalid)
+		{
+			state = nextState;
+			if (nextState == BTState::startable)
+			{
+				currentScore = startScore;
+			}
+			else if (nextState == BTState::showing)
+			{
+				nextStateAt = bbe::TimePoint().plusSeconds(10);
+				currentScore++;
+				for (int32_t i = 0; i < currentScore; i++)
+				{
+					int32_t r = rand.randomInt(10);
+					patternBuf[i] = '0' + r;
+				}
+				patternBuf[currentScore] = '\0';
+			}
+			else if (nextState == BTState::waiting)
+			{
+				nextStateAt = bbe::TimePoint().plusSeconds(10);
+			}
+			else if (nextState == BTState::entering)
+			{
+				// Nothing to do
+			}
+			else
+			{
+				throw std::runtime_error("Illegal State");
+			}
 		}
 	}
 
@@ -1666,10 +1797,11 @@ public:
 			};
 			static bbe::List<Tab> tabs =
 			{
-				Tab{"View Tasks", [this]() { drawTabViewTasks(); }},
-				Tab{"Edit Tasks", [this]() { drawTabEditTasks(); }},
-				Tab{"Clipboard",  [this]() { drawTabClipboard(); }},
-				Tab{"Config",     [this]() { drawTabConfig(); }},
+				Tab{"View Tasks", [this]() { drawTabViewTasks();    }},
+				Tab{"Edit Tasks", [this]() { drawTabEditTasks();    }},
+				Tab{"Clipboard",  [this]() { drawTabClipboard();    }},
+				Tab{"Config",     [this]() { drawTabConfig();       }},
+				Tab{"Brain-T",    [this]() { drawTabBrainTeasers(); }},
 			};
 			if (ImGui::BeginTabBar("MainWindowTabs")) {
 				static size_t previousShownTab = 0;
