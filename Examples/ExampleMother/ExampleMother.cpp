@@ -12,6 +12,16 @@
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
 //TODO: New feature: Stopwatch ("Pizza done")
 //TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
+//TODO: Bug: Crashed when closing Chrome? Only happened once, not easily reproducable.
+//TODO: Implement some kind of global crash handler that logs e.g. the stack trace
+//TODO: New feature: brain teasers minigames
+//TODO: Domains should contain a "."
+//TODO: Clipboard: Hover should show full text
+//TODO: Clipboard: It should be possible to add a title
+//TODO: Double click on the icon while window is open, but not in focus, should bring it to focus.
+//TODO: Mark tasks at "not playing sound when open during workhours and then slacking bla bla bla"
+//TODO: Track mouse to later statistically analyze where hotspots of the mouse are.
+//TODO: High FPS when focus, low if not.
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -431,18 +441,21 @@ struct ClipboardContent
 struct GeneralConfig
 {
 	char updatePath[1024] = {};
+	int32_t beepEvery = 0;
 
 	// Non-Persisted Helper Data below.
 
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
 		buffer.writeNullString(updatePath);
+		buffer.write(beepEvery);
 	}
 	static GeneralConfig deserialize(bbe::ByteBufferSpan& buffer)
 	{
 		GeneralConfig retVal;
 
 		strcpy(retVal.updatePath, buffer.readNullString());
+		buffer.read(retVal.beepEvery);
 
 		return retVal;
 	}
@@ -897,6 +910,17 @@ public:
 					strcpy(newUrl.url, tabNames[i].getRaw());
 					urls.add(newUrl);
 				}
+			}
+		}
+
+		beginMeasure("Beeper");
+		if (generalConfig->beepEvery > 0)
+		{
+			static bbe::TimePoint nextBeep;
+			if (nextBeep.hasPassed())
+			{
+				nextBeep = bbe::TimePoint().plusMinutes(generalConfig->beepEvery);
+				assetStore::Beep()->play();
 			}
 		}
 
@@ -1500,7 +1524,11 @@ public:
 
 	void drawTabConfig()
 	{
-		if (ImGui::InputText("Update Path", generalConfig->updatePath, sizeof(generalConfig->updatePath)))
+		bool generalConfigChanged = false;
+		generalConfigChanged |= ImGui::InputText("Update Path", generalConfig->updatePath, sizeof(generalConfig->updatePath));
+		generalConfigChanged |= ImGui::InputInt("Beep every (mins)", &generalConfig->beepEvery);
+
+		if (generalConfigChanged)
 		{
 			generalConfig.writeToFile();
 		}
