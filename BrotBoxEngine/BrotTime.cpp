@@ -199,7 +199,7 @@ bool bbe::TimePoint::operator>(const bbe::TimePoint& other) const
 
 bool bbe::TimePoint::hasPassed() const
 {
-	// Rationale for >= instead of ==:
+	// Rationale for >= instead of >:
 	// Taking the current time does itself always take a tiny bit of time (maybe sub nano seconds but not 0).
 	// So when ever you take the current time, that meassurement must have already passed the moment we even
 	// look at it. It can only be == because the measurement isn't precise enough. In other words,
@@ -292,7 +292,7 @@ bool bbe::TimePoint::isToday() const
 bbe::String bbe::TimePoint::toString() const
 {
 	::time_t t = std::chrono::system_clock::to_time_t(m_time);
-	char* c = ::ctime(&t);
+	const char* c = ::ctime(&t);
 	if (!c) c = "ERROR";
 	return bbe::String(c);
 }

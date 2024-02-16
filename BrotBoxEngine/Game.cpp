@@ -5,12 +5,16 @@
 #include "BBE/PrimitiveBrush3D.h"
 #include "BBE/Math.h"
 #include "BBE/StopWatch.h"
+#include "BBE/SimpleFile.h"
 #include <iostream>
 #include "implot.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
+
+#include <signal.h>
+#include <stacktrace>
 
 void bbe::Game::mainLoop()
 {
@@ -55,8 +59,32 @@ bbe::Game::~Game()
 	}
 }
 
+static void crashHandler(int sig)
+{
+	const bbe::String time = bbe::TimePoint().toString();
+
+	bbe::String string;
+	string += "###################\n";
+	string += "#                 #\n";
+	string += "#   !!!CRASH!!!   #\n";
+	string += "#                 #\n";
+	string += "###################\n";
+	string += "\n";
+	string += "Time:   " + time;
+	string += "Signal: " + bbe::String(sig);
+	string += "\n";
+	string += "Stacktrace:\n";
+	string += std::to_string(std::stacktrace::current());
+	std::cout << string << std::endl;
+
+	bbe::simpleFile::createDirectory("CrashLogs");
+	bbe::simpleFile::writeStringToFile("CrashLogs/" + bbe::String(std::time(nullptr)) + ".txt", string);
+}
+
 void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 {
+	signal(SIGSEGV, crashHandler);
+
 	std::cout << "Starting Game: " << title << std::endl;
 	if (m_started)
 	{

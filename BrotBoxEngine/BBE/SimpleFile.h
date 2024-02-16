@@ -14,7 +14,8 @@ namespace bbe
 		bool readBinaryFileIfChanged(const bbe::String& filepath, bbe::ByteBuffer& outContents, std::filesystem::file_time_type& inOutPreviousModify);
 
 		bbe::List<float> readFloatArrFromFile(const bbe::String& filePath);
-		void writeFloatArrToFile(const bbe::String &filePath, float *arr, size_t size);
+		void writeFloatArrToFile(const bbe::String &filePath, const float *arr, size_t size);
+		void writeFloatArrToFile(const bbe::String& filePath, const bbe::List<float>& data);
 		void writeStringToFile(const bbe::String& filePath, const bbe::String& stringToWrite);
 		void writeBinaryToFile(const bbe::String& filePath, bbe::ByteBuffer& buffer);
 		void appendStringToFile(const bbe::String& filePath, const bbe::String& stringToAppend);

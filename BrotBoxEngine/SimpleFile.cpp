@@ -69,7 +69,7 @@ bool bbe::simpleFile::readBinaryFileIfChanged(const bbe::String& filepath, bbe::
 
 bbe::List<float> bbe::simpleFile::readFloatArrFromFile(const bbe::String& filePath)
 {
-	std::ifstream file(filePath.getRaw());
+	std::ifstream file(filePath.getRaw(), std::ios_base::binary);
 	std::string line;
 	bbe::List<float> retVal;
 	while(std::getline(file, line))
@@ -83,17 +83,20 @@ bbe::List<float> bbe::simpleFile::readFloatArrFromFile(const bbe::String& filePa
 	return retVal;
 }
 
-void bbe::simpleFile::writeFloatArrToFile(const bbe::String & filePath, float * arr, size_t size)
+void bbe::simpleFile::writeFloatArrToFile(const bbe::String & filePath, const float * arr, size_t size)
 {	
-	std::ofstream file(filePath.getRaw());
+	std::ofstream file(filePath.getRaw(), std::ios_base::binary);
 	if (!file.is_open()) {
 		throw std::runtime_error("Could not open file!");
 	}
-	for (std::size_t i = 0; i < size; i++)
-	{
-		file << arr[i] << "\n";
-	}
+	const char* carr = (const char*)arr;
+	std::copy(carr, carr + (sizeof(float) * size), std::ostreambuf_iterator<char>(file));
 	file.close();
+}
+
+void bbe::simpleFile::writeFloatArrToFile(const bbe::String& filePath, const bbe::List<float>& data)
+{
+	writeFloatArrToFile(filePath, data.getRaw(), data.getLength());
 }
 
 void bbe::simpleFile::writeStringToFile(const bbe::String& filePath, const bbe::String& stringToWrite)

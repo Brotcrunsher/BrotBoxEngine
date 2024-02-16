@@ -26,7 +26,8 @@ namespace bbe
 			if (bbe::simpleFile::doesFileExist(path))
 			{
 				bbe::ByteBuffer binary = bbe::simpleFile::readBinaryFile(path);
-				data = T::deserialize(binary.getSpan());
+				auto span = binary.getSpan();
+				data = T::deserialize(span);
 			}
 			else
 			{
@@ -86,7 +87,8 @@ namespace bbe
 				{
 					int64_t size;
 					span.read(size);
-					this->data.add(T::deserialize(span.readSpan(size)));
+					auto subSpan = span.readSpan(size);
+					this->data.add(T::deserialize(subSpan));
 				}
 			}
 			else

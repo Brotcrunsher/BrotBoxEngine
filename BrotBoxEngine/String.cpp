@@ -53,7 +53,7 @@ void bbe::Utf8String::initializeFromCharArr(const char* data)
 bbe::Utf8String::Utf8String()
 {
 	//UNTESTED
-	initializeFromCharArr(u8"");
+	initializeFromCharArr("");
 }
 
 bbe::Utf8String::Utf8String(const char* data)
@@ -128,11 +128,16 @@ bbe::Utf8String::Utf8String(unsigned int number)
 	initializeFromCharArr(std::to_string(number).c_str());
 }
 
+bbe::Utf8String::Utf8String(const std::string& data)
+{
+	initializeFromCharArr(data.c_str());
+}
+
 bbe::Utf8String::Utf8String(const std::initializer_list<char>& il)
 {
 	if (il.size() == 0)
 	{
-		initializeFromCharArr(u8"");
+		initializeFromCharArr("");
 	}
 	else
 	{
@@ -537,6 +542,11 @@ bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8StringView& other)
 	getRaw()[totalLength] = 0;
 
 	return *this;
+}
+
+bbe::Utf8String& bbe::Utf8String::operator+=(const std::string& other)
+{
+	return operator+=(bbe::Utf8String(other));
 }
 
 bbe::Utf8String& bbe::Utf8String::operator+=(const char* other)
@@ -1027,7 +1037,7 @@ bbe::Utf8Iterator bbe::Utf8String::getIterator() const
 
 bbe::Utf8String bbe::Utf8String::replace(const Utf8String& searchString, const Utf8String& replaceString) const
 {
-	if (searchString == u8"") return *this;
+	if (searchString == "") return *this;
 	if (searchString == replaceString) return *this;
 
 	bbe::Utf8String retVal = "";

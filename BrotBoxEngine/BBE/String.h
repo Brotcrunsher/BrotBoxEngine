@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <cstring>
 #include <cwchar>
 #include <stdlib.h>
@@ -54,6 +55,7 @@ namespace bbe
 		Utf8String();
 		/*nonexplicit*/ Utf8String(const char* data);
 		/*nonexplicit*/ Utf8String(const wchar_t* data);
+		explicit Utf8String(const std::string& data);
 		explicit Utf8String(char               c);
 		explicit Utf8String(double             number);
 		explicit Utf8String(int                number);
@@ -118,6 +120,7 @@ namespace bbe
 
 		Utf8String& operator+=(const Utf8String& other);
 		Utf8String& operator+=(const Utf8StringView& other);
+		Utf8String& operator+=(const std::string& other);
 		Utf8String& operator+=(const char*       other);
 		Utf8String& operator+=(char              c);
 		Utf8String& operator+=(double             number);

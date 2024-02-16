@@ -23,6 +23,10 @@
 
 #include "BBE/Game.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 size_t bbe::Window::windowsAliveCounter = 0;
 bbe::Window* bbe::Window::INTERNAL_firstInstance = nullptr;
 
@@ -228,6 +232,11 @@ int bbe::Window::getScaledHeight() const
 
 bbe::Vector2 bbe::Window::getGlobalMousePos() const
 {
+#ifdef _WIN32
+	POINT pos;
+	if (!GetCursorPos(&pos)) return bbe::Vector2();
+	return bbe::Vector2(pos.x, pos.y);
+#else
 	int windowPosX;
 	int windowPosY;
 	glfwWrapper::glfwGetWindowPos(m_pwindow, &windowPosX, &windowPosY);
@@ -237,6 +246,7 @@ bbe::Vector2 bbe::Window::getGlobalMousePos() const
 	glfwWrapper::glfwGetCursorPos(m_pwindow, &mousePosX, &mousePosY);
 
 	return Vector2(static_cast<float>(mousePosX + windowPosX), static_cast<float>(mousePosY + windowPosY));
+#endif
 }
 
 void bbe::Window::setWindowCloseMode(bbe::WindowCloseMode wcm)

@@ -10,17 +10,10 @@
 //TODO: Redo
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
-//TODO: New feature: Stopwatch ("Pizza done")
-//TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
-//TODO: Bug: Crashed when closing Chrome? Only happened once, not easily reproducable.
-//TODO: Implement some kind of global crash handler that logs e.g. the stack trace
-//TODO: New Brain teaser: Click the alphabetically lower characters as quickly as possible
-//TODO: New Brain teaser: Click vanishing squares as quickly as possible
-//TODO: Add error state to brain teaser where you have to remember the numbers that displays what the number was and what was input
 //TODO: Clipboard: It should be possible to add a title
-//TODO: Double click on the icon while window is open, but not in focus, should bring it to focus.
-//TODO: Mark tasks at "not playing sound when open during workhours and then slacking bla bla bla"
-//TODO: Track mouse to later statistically analyze where hotspots of the mouse are.
+//TODO: Bug: Crashed when closing Chrome? Only happened once, not easily reproducable.
+//TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
+//TODO: This file is getting massive. Split?
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -82,6 +75,7 @@ public:
 	bool startable = false;
 	bbe::TimePoint endWorkTime = bbe::TimePoint::epoch();
 	bool indefinitelyAdvanceable = false;
+	bool shouldPlayNotificationSounds = true;
 
 	// Non-Persisted Helper Data below.
 	int32_t inputInt = 0;
@@ -205,6 +199,7 @@ public:
 		buffer.write(startable);
 		endWorkTime.serialize(buffer);
 		buffer.write(indefinitelyAdvanceable);
+		buffer.write(shouldPlayNotificationSounds);
 	}
 	static Task deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -239,6 +234,7 @@ public:
 		buffer.read(retVal.startable, false);
 		retVal.endWorkTime = bbe::TimePoint::deserialize(buffer);
 		buffer.read(retVal.indefinitelyAdvanceable, false);
+		buffer.read(retVal.shouldPlayNotificationSounds, true);
 
 		return retVal;
 	}
@@ -460,7 +456,7 @@ struct GeneralConfig
 	}
 };
 
-struct BrainTeaserMemory
+struct BrainTeaserScore
 {
 	int32_t score = 0;
 	bbe::TimePoint didItOn;
@@ -472,9 +468,9 @@ struct BrainTeaserMemory
 		buffer.write(score);
 		didItOn.serialize(buffer);
 	}
-	static BrainTeaserMemory deserialize(bbe::ByteBufferSpan& buffer)
+	static BrainTeaserScore deserialize(bbe::ByteBufferSpan& buffer)
 	{
-		BrainTeaserMemory retVal;
+		BrainTeaserScore retVal;
 
 		buffer.read(retVal.score);
 		retVal.didItOn.deserialize(buffer);
@@ -483,15 +479,63 @@ struct BrainTeaserMemory
 	}
 };
 
+struct Stopwatch
+{
+	char title[1024] = {};
+	int32_t seconds = 0;
+	bbe::TimePoint doneAt;
+
+	// Non-Persisted Helper Data below.
+	mutable bool soundArmed = false;
+
+	void serialize(bbe::ByteBuffer& buffer) const
+	{
+		buffer.writeNullString(title);
+		buffer.write(seconds);
+		doneAt.serialize(buffer);
+	}
+	static Stopwatch deserialize(bbe::ByteBufferSpan& buffer)
+	{
+		Stopwatch retVal;
+
+		strcpy(retVal.title, buffer.readNullString());
+		buffer.read(retVal.seconds);
+		retVal.doneAt.deserialize(buffer);
+
+		return retVal;
+	}
+
+	bool shouldPlaySound() const
+	{
+		if (doneAt.hasPassed())
+		{
+			if (soundArmed)
+			{
+				soundArmed = false;
+				return true;
+			}
+		}
+		else
+		{
+			soundArmed = true;
+		}
+		return false;
+	}
+};
+
 class MyGame : public bbe::Game
 {
 private:
-	bbe::SerializableList<Task> tasks                          = bbe::SerializableList<Task>             ("config.dat",            "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableList<Process> processes                   = bbe::SerializableList<Process>          ("processes.dat",         "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableList<Url> urls                            = bbe::SerializableList<Url>              ("urls.dat",              "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableList<ClipboardContent> clipboardContent   = bbe::SerializableList<ClipboardContent> ("Clipboard.dat",         "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableObject<GeneralConfig> generalConfig       = bbe::SerializableObject<GeneralConfig>  ("generalConfig.dat",     "ParanoiaConfig");
-	bbe::SerializableList<BrainTeaserMemory> brainTeaserMemory = bbe::SerializableList<BrainTeaserMemory>("brainTeaserMemory.dat", "ParanoiaConfig");
+	bbe::SerializableList<Task> tasks                           = bbe::SerializableList<Task>            ("config.dat",              "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Process> processes                    = bbe::SerializableList<Process>         ("processes.dat",           "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Url> urls                             = bbe::SerializableList<Url>             ("urls.dat",                "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<ClipboardContent> clipboardContent    = bbe::SerializableList<ClipboardContent>("Clipboard.dat",           "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableObject<GeneralConfig> generalConfig        = bbe::SerializableObject<GeneralConfig> ("generalConfig.dat",       "ParanoiaConfig");
+	bbe::SerializableList<BrainTeaserScore> brainTeaserMemory   = bbe::SerializableList<BrainTeaserScore>("brainTeaserMemory.dat",   "ParanoiaConfig");
+	bbe::SerializableList<BrainTeaserScore> brainTeaserAlphabet = bbe::SerializableList<BrainTeaserScore>("brainTeaserAlphabet.dat", "ParanoiaConfig");
+	bbe::SerializableList<BrainTeaserScore> brainTeaserAdd      = bbe::SerializableList<BrainTeaserScore>("brainTeaserAdd.dat",      "ParanoiaConfig");
+	bbe::SerializableList<Stopwatch> stopwatches                = bbe::SerializableList<Stopwatch>       ("stopwatches.dat",         "ParanoiaConfig");
+	
 	bool shiftPressed = false;
 	bool isGameOn = false;
 	bool openTasksNotificationSilencedProcess = false;
@@ -514,6 +558,7 @@ private:
 
 	bbe::Random rand;
 
+	bbe::List<float> mousePositions;
 public:
 	MyGame()
 	{
@@ -791,6 +836,26 @@ public:
 
 	virtual void update(float timeSinceLastFrame) override
 	{
+		beginMeasure("Mouse Tracking");
+		{
+			static bbe::TimePoint tp;
+			if (tp.hasPassed())
+			{
+				tp = bbe::TimePoint().plusMilliseconds(100);
+				bbe::Vector2 glob = getMouseGlobal();
+				mousePositions.add(glob.x);
+				mousePositions.add(glob.y);
+				if (mousePositions.getLength() >= 20000)
+				{
+					time_t t;
+					time(&t);
+					bbe::simpleFile::createDirectory("mousePositions");
+					bbe::simpleFile::writeFloatArrToFile(bbe::String("mousePositions/mouse") + t + ".dat", mousePositions);
+					mousePositions.clear();
+				}
+			}
+		}
+
 		beginMeasure("Basic Controls");
 		setTargetFrametime(isFocused() ? (1.f / 144.f) : (1.f / 10.f));
 		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
@@ -806,6 +871,10 @@ public:
 		if (tasks.getList().any([](const Task& t) { return t.shouldPlaySoundDone(); }))
 		{
 			assetStore::Done()->play();
+		}
+		if (stopwatches.getList().any([](const Stopwatch& sw) { return sw.shouldPlaySound(); }))
+		{
+			assetStore::Stopwatch()->play();
 		}
 
 		if (exitRequested)
@@ -859,7 +928,7 @@ public:
 			if (t.nextPossibleExecution().hasPassed())
 			{
 				amountOfTasksNow++;
-				if (!t.oneShot)
+				if (!t.oneShot && t.shouldPlayNotificationSounds)
 				{
 					if (t.lateTimeTask)
 					{
@@ -1238,6 +1307,8 @@ public:
 		tooltip("A late time task triggers the \"Open Tasks\" sound outside of Working Hours instead of during Working Hours.");
 		taskChanged |= ImGui::Checkbox("Startable", &t.startable);
 		tooltip("Doesn't show \"Done\" immediately, but instead a start button that starts a count down of the length\nof the internal value in seconds. After that time a sound is played and the \"Done\" Button appears.");
+		taskChanged |= ImGui::Checkbox("Play Notifications", &t.shouldPlayNotificationSounds);
+		tooltip("If set, playing a notification sound when time wasters are open and the task isn't done. Else, play no sound.");
 		taskChanged |= ImGui::InputInt("Follow Up  (in Minutes)", &t.followUp);
 		tooltip("Pushes the Task by this many minutes into the future. Useful for Tasks that can be fulfilled multiple times per day.");
 		taskChanged |= ImGui::InputInt("Follow Up2 (in Minutes)", &t.followUp2);
@@ -1410,7 +1481,7 @@ public:
 		return ImGui::Selectable(buffer.getRaw(), &dummy);
 	}
 
-	void drawTabViewTasks()
+	bbe::Vector2 drawTabViewTasks()
 	{
 		bool requiresWrite = false;
 		drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    requiresWrite, false, false, true,  true,  false, false, false, false);
@@ -1421,9 +1492,10 @@ public:
 		{
 			tasks.writeToFile();
 		}
+		return bbe::Vector2(1);
 	}
 
-	void drawTabEditTasks()
+	bbe::Vector2 drawTabEditTasks()
 	{
 		{
 			static Task tempTask;
@@ -1520,9 +1592,10 @@ public:
 		{
 			tasks.writeToFile();
 		}
+		return bbe::Vector2(1);
 	}
 
-	void drawTabClipboard()
+	bbe::Vector2 drawTabClipboard()
 	{
 		static ClipboardContent newContent;
 		if (ImGui::InputText("New Content", newContent.content, sizeof(newContent.content), ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue))
@@ -1550,9 +1623,10 @@ public:
 		{
 			clipboardContent.removeIndex(deleteIndex);
 		}
+		return bbe::Vector2(1);
 	}
 
-	void drawTabConfig()
+	bbe::Vector2 drawTabConfig()
 	{
 		bool generalConfigChanged = false;
 		generalConfigChanged |= ImGui::InputText("Update Path", generalConfig->updatePath, sizeof(generalConfig->updatePath));
@@ -1562,9 +1636,265 @@ public:
 		{
 			generalConfig.writeToFile();
 		}
+		return bbe::Vector2(1);
 	}
 
-	void drawTabBrainTeasers()
+	bbe::Vector2 drawTabBrainTeasers(bbe::PrimitiveBrush2D& brush)
+	{
+		static bbe::List<Tab> tabs =
+		{
+			Tab{"Digit Memory", [&]() { return drawTabBrainTeaserDigitMemory(brush); }},
+			Tab{"Alphabet"    , [&]() { return drawTabBrainTeaserAlphabet(brush);    }},
+			Tab{"Add"         , [&]() { return drawTabBrainTeaserAdd(brush);         }},
+		};
+		return drawTabs(tabs);
+	}
+
+	void newAddPair(int32_t& left, int32_t& right)
+	{
+		left = rand.randomInt(10000);
+		right = rand.randomInt(10000);
+	}
+
+	bbe::Vector2 drawTabBrainTeaserAdd(bbe::PrimitiveBrush2D& brush)
+	{
+		enum class BTState
+		{
+			startable,
+			playing,
+			endscreen,
+
+			invalid
+		};
+		static BTState state = BTState::startable;
+		static bbe::TimePoint nextStateAt;
+		static int32_t currentScore = 0;
+		static bool freshlyEnteredState = false;
+		static bbe::String reason;
+
+		static int32_t left = 0;
+		static int32_t right = 0;
+
+		BTState nextState = BTState::invalid;
+		static char inputBuf[1024] = {};
+		bbe::Vector2 size(1.0f);
+
+		if (state == BTState::startable)
+		{
+			if (ImGui::Button("Start") || isKeyPressed(bbe::Key::SPACE))
+			{
+				nextState = BTState::playing;
+			}
+		}
+		else if (state == BTState::playing)
+		{
+			size.y = 0.1f;
+			static auto font = bbe::Font("Arial.ttf", 50);
+			brush.fillText(50, 150, bbe::String(left) + " + " + right, font);
+			if (nextStateAt.hasPassed())
+			{
+				nextState = BTState::endscreen;
+				reason = "Timeup";
+			}
+
+
+			ImGui::SetKeyboardFocusHere();
+			if (ImGui::InputText("Your answer", inputBuf, sizeof(inputBuf), ImGuiInputTextFlags_EnterReturnsTrue))
+			{
+				const int32_t answer = bbe::String(inputBuf).toLong();
+				const int32_t correct = left + right;
+				if (answer == correct)
+				{
+					currentScore++;
+					newAddPair(left, right);
+					memset(inputBuf, 0, sizeof(inputBuf));
+				}
+				else
+				{
+					nextState = BTState::endscreen;
+					reason = "Wrong Answer ";
+					reason += left;
+					reason += " + ";
+					reason += right;
+					reason += " = ";
+					reason += correct;
+					reason += " But your answer was: ";
+					reason += answer;
+				}
+			}
+		}
+		else if (state == BTState::endscreen)
+		{
+			ImGui::Text("Score: %d", currentScore);
+			ImGui::Text("%s", reason.getRaw());
+			if (ImGui::Button("Start over") || isKeyPressed(bbe::Key::SPACE))
+			{
+				nextState = BTState::startable;
+			}
+		}
+		else
+		{
+			throw std::runtime_error("Wrong state");
+		}
+
+		if (nextState != BTState::invalid)
+		{
+			freshlyEnteredState = true;
+			state = nextState;
+			if (nextState == BTState::startable)
+			{
+				currentScore = 0;
+			}
+			else if (nextState == BTState::playing)
+			{
+				newAddPair(left, right);
+				nextStateAt = bbe::TimePoint().plusSeconds(60);
+			}
+			else if (nextState == BTState::endscreen)
+			{
+				BrainTeaserScore bts;
+				bts.score = currentScore;
+				bts.didItOn = bbe::TimePoint();
+				brainTeaserAdd.add(bts);
+			}
+			else
+			{
+				throw std::runtime_error("Illegal State");
+			}
+		}
+		else
+		{
+			freshlyEnteredState = false;
+		}
+		return size;
+	}
+
+	void newAlphabetPair(char& left, char& right)
+	{
+		left = 'A' + rand.randomInt(26);
+		do
+		{
+			right = 'A' + rand.randomInt(26);
+		} while (left == right);
+	}
+
+	bbe::Vector2 drawTabBrainTeaserAlphabet(bbe::PrimitiveBrush2D& brush)
+	{
+		enum class BTState
+		{
+			startable,
+			playing,
+			endscreen,
+
+			invalid
+		};
+		static BTState state = BTState::startable;
+		static bbe::TimePoint nextStateAt;
+		static int32_t currentScore = 0;
+		static bool freshlyEnteredState = false;
+		static bbe::String reason;
+
+		static char leftChar = 'A';
+		static char rightChar = 'A';
+
+		BTState nextState = BTState::invalid;
+		bbe::Vector2 size(1.0f);
+
+		if (state == BTState::startable)
+		{
+			if (ImGui::Button("Start") || isKeyPressed(bbe::Key::SPACE))
+			{
+				nextState = BTState::playing;
+			}
+		}
+		else if (state == BTState::playing)
+		{
+			static auto font = bbe::Font("Arial.ttf", 50);
+			brush.fillChar(50, 100, leftChar, font);
+			brush.fillChar(150, 100, rightChar, font);
+			size.y = 0.f;
+			if (nextStateAt.hasPassed())
+			{
+				nextState = BTState::endscreen;
+				reason = "Timeup";
+			}
+			enum class good
+			{
+				dunno,
+				yes,
+				no
+			};
+			good g = good::dunno;
+			if (isKeyPressed(bbe::Key::LEFT) || isKeyPressed(bbe::Key::A))
+			{
+				if (leftChar < rightChar) g = good::yes;
+				else g = good::no;
+			}
+			if (isKeyPressed(bbe::Key::RIGHT) || isKeyPressed(bbe::Key::D))
+			{
+				if (rightChar < leftChar) g = good::yes;
+				else g = good::no;
+			}
+			if (g == good::yes)
+			{
+				currentScore++;
+				newAlphabetPair(leftChar, rightChar);
+			}
+			else if (g == good::no)
+			{
+				nextState = BTState::endscreen;
+				reason = "Wrong selection";
+				reason += leftChar;
+				reason += rightChar;
+			}
+		}
+		else if (state == BTState::endscreen)
+		{
+			ImGui::Text("Score: %d", currentScore);
+			ImGui::Text("%s", reason.getRaw());
+			if (ImGui::Button("Start over") || isKeyPressed(bbe::Key::SPACE))
+			{
+				nextState = BTState::startable;
+			}
+		}
+		else
+		{
+			throw std::runtime_error("Wrong state");
+		}
+
+		if (nextState != BTState::invalid)
+		{
+			freshlyEnteredState = true;
+			state = nextState;
+			if (nextState == BTState::startable)
+			{
+				currentScore = 0;
+			}
+			else if (nextState == BTState::playing)
+			{
+				newAlphabetPair(leftChar, rightChar);
+				nextStateAt = bbe::TimePoint().plusSeconds(60);
+			}
+			else if (nextState == BTState::endscreen)
+			{
+				BrainTeaserScore bts;
+				bts.score = currentScore;
+				bts.didItOn = bbe::TimePoint();
+				brainTeaserAlphabet.add(bts);
+			}
+			else
+			{
+				throw std::runtime_error("Illegal State");
+			}
+		}
+		else
+		{
+			freshlyEnteredState = false;
+		}
+		return size;
+	}
+
+	bbe::Vector2 drawTabBrainTeaserDigitMemory(bbe::PrimitiveBrush2D& brush)
 	{
 		enum class BTState
 		{
@@ -1572,6 +1902,8 @@ public:
 			showing,
 			waiting,
 			entering,
+			endscreen,
+
 			invalid,
 		};
 		static BTState state = BTState::startable;
@@ -1579,8 +1911,11 @@ public:
 		constexpr int32_t startScore = 3;
 		static int32_t currentScore = startScore;
 		static char patternBuf[1024] = {};
+		static char inputBuf[sizeof(patternBuf)] = {};
+		static bool freshlyEnteredState = false;
 
 		BTState nextState = BTState::invalid;
+		bbe::Vector2 size(1.0f);
 
 		if (state == BTState::startable)
 		{
@@ -1591,7 +1926,9 @@ public:
 		}
 		else if (state == BTState::showing)
 		{
-			ImGui::Text(patternBuf);
+			static auto font = bbe::Font("Arial.ttf", 50);
+			brush.fillText(50, 100, patternBuf, font);
+			size.y = 0.f;
 			if (nextStateAt.hasPassed())
 			{
 				nextState = BTState::waiting;
@@ -1607,7 +1944,7 @@ public:
 		}
 		else if (state == BTState::entering)
 		{
-			static char inputBuf[sizeof(patternBuf)] = {};
+			if(freshlyEnteredState) ImGui::SetKeyboardFocusHere();
 			if (ImGui::InputText("Your answer", inputBuf, sizeof(inputBuf), ImGuiInputTextFlags_EnterReturnsTrue))
 			{
 				if (bbe::String(inputBuf) == bbe::String(patternBuf))
@@ -1618,13 +1955,17 @@ public:
 				else
 				{
 					// Oh noes! :(
-					nextState = BTState::startable;
-					BrainTeaserMemory btm;
-					btm.score = currentScore;
-					btm.didItOn = bbe::TimePoint();
-					brainTeaserMemory.add(btm);
+					nextState = BTState::endscreen;
 				}
-				memset(inputBuf, 0, sizeof(inputBuf));
+			}
+		}
+		else if (state == BTState::endscreen)
+		{
+			ImGui::Text("Input:  %s", inputBuf);
+			ImGui::Text("Actual: %s", patternBuf);
+			if (ImGui::Button("Start over"))
+			{
+				nextState = BTState::startable;
 			}
 		}
 		else
@@ -1634,6 +1975,7 @@ public:
 
 		if (nextState != BTState::invalid)
 		{
+			freshlyEnteredState = true;
 			state = nextState;
 			if (nextState == BTState::startable)
 			{
@@ -1649,6 +1991,7 @@ public:
 					patternBuf[i] = '0' + r;
 				}
 				patternBuf[currentScore] = '\0';
+				memset(inputBuf, 0, sizeof(inputBuf));
 			}
 			else if (nextState == BTState::waiting)
 			{
@@ -1658,11 +2001,23 @@ public:
 			{
 				// Nothing to do
 			}
+			else if (nextState == BTState::endscreen)
+			{
+				BrainTeaserScore bts;
+				bts.score = currentScore;
+				bts.didItOn = bbe::TimePoint();
+				brainTeaserMemory.add(bts);
+			}
 			else
 			{
 				throw std::runtime_error("Illegal State");
 			}
 		}
+		else
+		{
+			freshlyEnteredState = false;
+		}
+		return size;
 	}
 
 	bool datePicker(const char* label, bbe::TimePoint* time)
@@ -1782,54 +2137,136 @@ public:
 		return changed;
 	}
 
-	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
+	struct Tab
 	{
+		const char* title = "";
+		std::function<bbe::Vector2()> run;
+	};
+
+	bbe::Vector2 drawTabs(const bbe::List<Tab>& tabs, size_t* previousShownTab = nullptr, bool switchLeft = false, bool switchRight = false)
+	{
+		bbe::Vector2 sizeMult(1.0f, 1.0f);
+		if (ImGui::BeginTabBar("MainWindowTabs")) {
+			size_t desiredShownTab = 0;
+			bool programaticTabSwitch = false;
+			if (previousShownTab)
+			{
+				desiredShownTab = *previousShownTab;
+				programaticTabSwitch = switchLeft || switchRight;
+				if (programaticTabSwitch)
+				{
+					if (switchLeft) desiredShownTab--;
+					if (desiredShownTab == (size_t)-1) desiredShownTab = tabs.getLength() - 1;
+					if (switchRight) desiredShownTab++;
+					if (desiredShownTab == tabs.getLength()) desiredShownTab = 0;
+				}
+			}
+			for (size_t i = 0; i < tabs.getLength(); i++)
+			{
+				const Tab& t = tabs[i];
+				if (ImGui::BeginTabItem(t.title, nullptr, (programaticTabSwitch && i == desiredShownTab) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None))
+				{
+					if(previousShownTab) *previousShownTab = i;
+					sizeMult = t.run();
+					ImGui::EndTabItem();
+				}
+			}
+			ImGui::EndTabBar();
+		}
+		return sizeMult;
+	}
+
+	bbe::Vector2 drawTabStopwatch()
+	{
+		{
+			static Stopwatch newStopwatch;
+			ImGui::InputText("Title", newStopwatch.title, sizeof(newStopwatch.title));
+			ImGui::InputInt("Seconds", &newStopwatch.seconds);
+			if (ImGui::Button("Create"))
+			{
+				stopwatches.add(newStopwatch);
+				newStopwatch = Stopwatch();
+			}
+			ImGui::Separator();
+			ImGui::Separator();
+			ImGui::Separator();
+
+			bool swChanged = false;
+			size_t deleteIndex = -1;
+			if (ImGui::BeginTable("table", 7, ImGuiTableFlags_RowBg))
+			{
+				for (size_t i = 0; i < stopwatches.getLength(); i++)
+				{
+					ImGui::PushID(i);
+					Stopwatch& sw = stopwatches[i];
+					ImGui::TableSetupColumn("1", ImGuiTableColumnFlags_WidthFixed, 100);
+
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					if (!sw.doneAt.hasPassed())
+					{
+						bbe::String s = (sw.doneAt - bbe::TimePoint()).toString();
+						ImGui::Text("%s", s.getRaw());
+					}
+					ImGui::TableNextColumn();
+					if (ImGui::Button(sw.title))
+					{
+						swChanged = true;
+						sw.doneAt = bbe::TimePoint().plusSeconds(sw.seconds);
+					}
+					ImGui::TableNextColumn();
+					ImGui::Text("%d", sw.seconds);
+
+					ImGui::TableNextColumn();
+					if (ImGui::Button("Delete"))
+					{
+						deleteIndex = i;
+					}
+
+					ImGui::PopID();
+				}
+				ImGui::EndTable();
+			}
+
+			if (swChanged)
+			{
+				stopwatches.writeToFile();
+			}
+			if (deleteIndex != (size_t)-1)
+			{
+				stopwatches.removeIndex(deleteIndex);
+			}
+		}
+
+		return bbe::Vector2(1);
+	}
+
+	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
+	{
+		static bbe::Vector2 sizeMult(1.0f, 1.0f);
 		ImGuiViewport viewport = *ImGui::GetMainViewport();
-		viewport.WorkSize.x *= 0.6f;
+		viewport.WorkSize.x *= 0.6f * sizeMult.x;
+		viewport.WorkSize.y *= sizeMult.y;
 		ImGui::SetNextWindowPos(viewport.WorkPos);
 		ImGui::SetNextWindowSize(viewport.WorkSize);
 		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 		{
-			struct Tab
-			{
-				const char* title = "";
-				std::function<void()> run;
-			};
 			static bbe::List<Tab> tabs =
 			{
-				Tab{"View Tasks", [this]() { drawTabViewTasks();    }},
-				Tab{"Edit Tasks", [this]() { drawTabEditTasks();    }},
-				Tab{"Clipboard",  [this]() { drawTabClipboard();    }},
-				Tab{"Config",     [this]() { drawTabConfig();       }},
-				Tab{"Brain-T",    [this]() { drawTabBrainTeasers(); }},
+				Tab{"View Tasks", [&]() { return drawTabViewTasks();         }},
+				Tab{"Edit Tasks", [&]() { return drawTabEditTasks();         }},
+				Tab{"Clipboard",  [&]() { return drawTabClipboard();         }},
+				Tab{"Brain-T",    [&]() { return drawTabBrainTeasers(brush); }},
+				Tab{"Stopwatch",  [&]() { return drawTabStopwatch();         }},
+				Tab{"Config",     [&]() { return drawTabConfig();            }},
 			};
-			if (ImGui::BeginTabBar("MainWindowTabs")) {
-				static size_t previousShownTab = 0;
-				size_t desiredShownTab = previousShownTab;
-				const bool programaticTabSwitch = tabSwitchRequestedLeft || tabSwitchRequestedRight;
-				if (programaticTabSwitch)
-				{
-					if (tabSwitchRequestedLeft) desiredShownTab--;
-					if (desiredShownTab == (size_t)-1) desiredShownTab = tabs.getLength() - 1;
-					if (tabSwitchRequestedRight) desiredShownTab++;
-					if (desiredShownTab == tabs.getLength()) desiredShownTab = 0;
-				}
-				for (size_t i = 0; i < tabs.getLength(); i++)
-				{
-					Tab& t = tabs[i];
-					if (ImGui::BeginTabItem(t.title, nullptr, (programaticTabSwitch && i == desiredShownTab) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None))
-					{
-						previousShownTab = i;
-						t.run();
-						ImGui::EndTabItem();
-					}
-				}
-				ImGui::EndTabBar();
-			}
+			static size_t previousShownTab = 0;
+			sizeMult = drawTabs(tabs, &previousShownTab, tabSwitchRequestedLeft, tabSwitchRequestedRight);
 		}
 		ImGui::End();
 
-		
+		viewport = *ImGui::GetMainViewport();
+		viewport.WorkSize.x *= 0.6f;
 		viewport.WorkPos.x += viewport.WorkSize.x;
 		viewport.WorkSize.x *= ImGui::GetMainViewport()->WorkSize.x * 0.4f;
 		viewport.WorkSize.y *= 1.f / 3.f;
@@ -2022,7 +2459,7 @@ public:
 			ImPlot::ShowDemoWindow();
 		}
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
 	{
 	}
 	virtual void onEnd() override
