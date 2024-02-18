@@ -16,8 +16,6 @@
 //TODO: This file is getting massive. Split?
 //TODO: Make backup path configurable
 
-#define ID_EXIT           1002
-
 struct Task
 {
 	char title[1024] = {};
@@ -524,7 +522,6 @@ private:
 	bbe::SerializableList<BrainTeaserScore> brainTeaserAdd      = bbe::SerializableList<BrainTeaserScore>("brainTeaserAdd.dat",      "ParanoiaConfig");
 	bbe::SerializableList<Stopwatch> stopwatches                = bbe::SerializableList<Stopwatch>       ("stopwatches.dat",         "ParanoiaConfig");
 	
-	bool shiftPressed = false;
 	bool isGameOn = false;
 	bool openTasksNotificationSilencedProcess = false;
 	bool openTasksNotificationSilencedUrl     = false;
@@ -705,7 +702,6 @@ public:
 
 		beginMeasure("Basic Controls");
 		setTargetFrametime((isFocused() || isHovered()) ? (1.f / 144.f) : (1.f / 10.f));
-		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
 		tabSwitchRequestedLeft  = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::Q);
 		tabSwitchRequestedRight = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E);
 
@@ -912,9 +908,9 @@ public:
 				if ((highlightRareTasks && t.repeatDays > 1) || t.oneShot)
 				{
 					const bool poosibleTodoToday = (t.nextPossibleExecution().hasPassed() || t.nextPossibleExecution().isToday());
-					if(t.oneShot)              { ImGui::TextColored(ImVec4(0.5f, 0.5f, 1.0f, 1.0f), "(!)"); tooltip("A one shot task."); }
-					else if(poosibleTodoToday) { ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.8f, 1.0f), "(?)"); tooltip("A rare task that could be done today."); }
-					else                       { ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(!)"); tooltip("A rare task."); }
+					if(t.oneShot)              { ImGui::TextColored(ImVec4(0.5f, 0.5f, 1.0f, 1.0f), "(!)"); ImGui::bbe::tooltip("A one shot task."); }
+					else if(poosibleTodoToday) { ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.8f, 1.0f), "(?)"); ImGui::bbe::tooltip("A rare task that could be done today."); }
+					else                       { ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(!)"); ImGui::bbe::tooltip("A rare task."); }
 					ImGui::SameLine();
 				}
 				bbe::String modifiedTitle = t.title;
@@ -934,7 +930,7 @@ public:
 				}
 				else
 				{
-					if (ClickableText(modifiedTitle.getRaw(), t.internalValue))
+					if (ImGui::bbe::clickableText(modifiedTitle.getRaw(), t.internalValue))
 					{
 						ImGui::SetClipboardText(t.clipboard);
 					}
@@ -959,7 +955,7 @@ public:
 						- ImGui::GetScrollX() 
 						- 10 * ImGui::GetStyle().ItemSpacing.x);
 					ImGui::Text(c);
-					tooltip(t.nextPossibleExecution().toString());
+					ImGui::bbe::tooltip(t.nextPossibleExecution().toString());
 				}
 				ImGui::TableSetColumnIndex(column++);
 				if (showDone)
@@ -1001,7 +997,7 @@ public:
 							}
 							else
 							{
-								if (securityButton("Done"))
+								if (ImGui::bbe::securityButton("Done"))
 								{
 									tasks.removeIndex(i);
 									// Doesn't require write cause removeIndex already does that.
@@ -1088,7 +1084,7 @@ public:
 	{
 		bool taskChanged = false;
 		taskChanged |= ImGui::InputText("Title", t.title, sizeof(t.title));
-		taskChanged |= combo("Date Type", { "Dynamic", "Yearly" }, t.dateType);
+		taskChanged |= ImGui::bbe::combo("Date Type", { "Dynamic", "Yearly" }, t.dateType);
 		if (t.dateType == Task::DT_DYNAMIC)
 		{
 			taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
@@ -1097,7 +1093,7 @@ public:
 		{
 			ImGui::Text("Month/Day: ");
 			ImGui::SameLine();
-			datePicker("Yearly Pick", &t.yearlyBuffer);
+			ImGui::bbe::datePicker("Yearly Pick", &t.yearlyBuffer);
 			// TODO: It's possible to change the year in the date picker, which is kinda dumb
 			//       for a yearly task. The year is discarded, but the GUI could be nicer.
 
@@ -1114,40 +1110,40 @@ public:
 		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Sunday",    &t.canBeSu, amountOfWeekdays);
 		
 		taskChanged |= ImGui::Checkbox("Advanceable", &t.advanceable);
-		tooltip("Can \"done\" even if it's not planned for today.");
+		ImGui::bbe::tooltip("Can \"done\" even if it's not planned for today.");
 		if (t.advanceable)
 		{
 			ImGui::Indent(15.0f);
 			taskChanged |= ImGui::Checkbox("Preparation", &t.preparation);
-			tooltip("Will never be shown for the current day. Inteded for Tasks that prepare stuff for tomorrow, e.g. pre brewing some coffee.");
+			ImGui::bbe::tooltip("Will never be shown for the current day. Inteded for Tasks that prepare stuff for tomorrow, e.g. pre brewing some coffee.");
 
 			taskChanged |= ImGui::Checkbox("Early Advanceable", &t.earlyAdvanceable);
-			tooltip("If unchecked, the task is only advanceable after 18:00.");
+			ImGui::bbe::tooltip("If unchecked, the task is only advanceable after 18:00.");
 
 			taskChanged |= ImGui::Checkbox("Indefinitely Advanceable", &t.indefinitelyAdvanceable);
-			tooltip("Can be advanced in the \"Later\" table.");
+			ImGui::bbe::tooltip("Can be advanced in the \"Later\" table.");
 			ImGui::Unindent(15.0f);
 		}
 		taskChanged |= ImGui::Checkbox("One Shot", &t.oneShot);
-		tooltip("Delets the Task when Done.");
+		ImGui::bbe::tooltip("Delets the Task when Done.");
 		taskChanged |= ImGui::Checkbox("Late Time Task", &t.lateTimeTask);
-		tooltip("A late time task triggers the \"Open Tasks\" sound outside of Working Hours instead of during Working Hours.");
+		ImGui::bbe::tooltip("A late time task triggers the \"Open Tasks\" sound outside of Working Hours instead of during Working Hours.");
 		taskChanged |= ImGui::Checkbox("Startable", &t.startable);
-		tooltip("Doesn't show \"Done\" immediately, but instead a start button that starts a count down of the length\nof the internal value in seconds. After that time a sound is played and the \"Done\" Button appears.");
+		ImGui::bbe::tooltip("Doesn't show \"Done\" immediately, but instead a start button that starts a count down of the length\nof the internal value in seconds. After that time a sound is played and the \"Done\" Button appears.");
 		taskChanged |= ImGui::Checkbox("Play Notifications", &t.shouldPlayNotificationSounds);
-		tooltip("If set, playing a notification sound when time wasters are open and the task isn't done. Else, play no sound.");
+		ImGui::bbe::tooltip("If set, playing a notification sound when time wasters are open and the task isn't done. Else, play no sound.");
 		taskChanged |= ImGui::InputInt("Follow Up  (in Minutes)", &t.followUp);
-		tooltip("Pushes the Task by this many minutes into the future. Useful for Tasks that can be fulfilled multiple times per day.");
+		ImGui::bbe::tooltip("Pushes the Task by this many minutes into the future. Useful for Tasks that can be fulfilled multiple times per day.");
 		taskChanged |= ImGui::InputInt("Follow Up2 (in Minutes)", &t.followUp2);
-		tooltip("Pushes the Task by this many minutes into the future. Useful for Tasks that can be fulfilled multiple times per day.");
+		ImGui::bbe::tooltip("Pushes the Task by this many minutes into the future. Useful for Tasks that can be fulfilled multiple times per day.");
 		taskChanged |= ImGui::InputInt("Internal Value", &t.internalValue);
-		tooltip("An internal value that can be printed out in the title via %%d, [SEC], and [MIN].");
+		ImGui::bbe::tooltip("An internal value that can be printed out in the title via %%d, [SEC], and [MIN].");
 		taskChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
-		tooltip("Increases the Internal Value on ever Done by this much.");
-		taskChanged |= combo("Input Type", { "None", "Integer", "Float" }, t.inputType);
+		ImGui::bbe::tooltip("Increases the Internal Value on ever Done by this much.");
+		taskChanged |= ImGui::bbe::combo("Input Type", { "None", "Integer", "Float" }, t.inputType);
 
 		taskChanged |= ImGui::InputText("Clipboard", t.clipboard, sizeof(t.clipboard));
-		tooltip("When clicking the task, this will be sent to your clipboard.");
+		ImGui::bbe::tooltip("When clicking the task, this will be sent to your clipboard.");
 
 		return taskChanged;
 	}
@@ -1254,60 +1250,6 @@ public:
 		return retVal;
 	}
 
-	bool securityButton(const char* text)
-	{
-		bool retVal = ImGui::Button(shiftPressed ? text : "[Shift]") && shiftPressed;
-		tooltip("Hold shift to activate this button.");
-		return retVal;
-	}
-
-	void tooltip(const char* text)
-	{
-		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort) && ImGui::BeginTooltip())
-		{
-			ImGui::Text(text);
-			ImGui::EndTooltip();
-		}
-	}
-	void tooltip(const bbe::String& text)
-	{
-		tooltip(text.getRaw());
-	}
-
-	bool combo(const char* label, const bbe::List<bbe::String>& selections, int32_t& selection)
-	{
-		bool retVal = false;
-
-		if (ImGui::BeginCombo(label, selections[selection].getRaw()))
-		{
-			for (int32_t i = 0; i < selections.getLength(); i++)
-			{
-				if (ImGui::Selectable(selections[i].getRaw()))
-				{
-					selection = i;
-					retVal = true;
-				}
-			}
-			ImGui::EndCombo();
-		}
-
-		return retVal;
-	}
-
-	bool ClickableText(const char* fmt, ...)
-	{
-		va_list args;
-		va_start(args, fmt);
-		int size = vsnprintf(nullptr, 0, fmt, args);
-		static bbe::List<char> buffer; // Avoid allocations
-		buffer.resizeCapacity(size + 1);
-		vsnprintf(buffer.getRaw(), size + 1, fmt, args);
-		va_end(args);
-
-		bool dummy = false;
-		return ImGui::Selectable(buffer.getRaw(), &dummy);
-	}
-
 	bbe::Vector2 drawTabViewTasks()
 	{
 		bool requiresWrite = false;
@@ -1333,7 +1275,7 @@ public:
 
 			ImGui::Text("First execution: ");
 			ImGui::SameLine();
-			datePicker("First Exec", &firstExec);
+			ImGui::bbe::datePicker("First Exec", &firstExec);
 
 			if (ImGui::Button("New Task"))
 			{
@@ -1360,7 +1302,7 @@ public:
 			Task& t = tasks[i];
 			if (searchBuffer[0] != 0 && !bbe::String(t.title).containsIgnoreCase(searchBuffer)) continue;
 			ImGui::PushID(i);
-			if (securityButton("Delete Task"))
+			if (ImGui::bbe::securityButton("Delete Task"))
 			{
 				deletionIndex = i;
 			}
@@ -1381,9 +1323,9 @@ public:
 				}
 			}
 			tasksChanged |= drawEditableTask(t);
-			tasksChanged |= datePicker("previousExe", &t.previousExecution); tooltip("Previous Execution");
+			tasksChanged |= ImGui::bbe::datePicker("previousExe", &t.previousExecution); ImGui::bbe::tooltip("Previous Execution");
 			t.execPointBuffer = t.nextPossibleExecution();
-			const bool execPointChanged = datePicker("nextExe",     &t.execPointBuffer); tooltip("Next Execution");
+			const bool execPointChanged = ImGui::bbe::datePicker("nextExe",     &t.execPointBuffer); ImGui::bbe::tooltip("Next Execution");
 			if (execPointChanged)
 			{
 				t.setNextExecution(t.execPointBuffer);
@@ -1407,7 +1349,7 @@ public:
 				t.nextExecPlusDays(-1);
 				tasksChanged = true;
 			}
-			tasksChanged |= datePicker("EndWork", &t.endWorkTime); tooltip("End Work Time");
+			tasksChanged |= ImGui::bbe::datePicker("EndWork", &t.endWorkTime); ImGui::bbe::tooltip("End Work Time");
 			ImGui::NewLine();
 			ImGui::Separator();
 			ImGui::NewLine();
@@ -1443,7 +1385,7 @@ public:
 			{
 				setClipboard(clipboardContent[i].content);
 			}
-			tooltip(bbe::String(clipboardContent[i].content).hardBreakEvery(100));
+			ImGui::bbe::tooltip(bbe::String(clipboardContent[i].content).hardBreakEvery(100));
 			ImGui::PopID();
 		}
 		if (deleteIndex != (size_t)-1)
@@ -1847,123 +1789,6 @@ public:
 		return size;
 	}
 
-	bool datePicker(const char* label, bbe::TimePoint* time)
-	{
-		bool changed = false;
-		static int orgYear = 0;
-		static int orgMonth = 0;
-		static int orgDay = 0;
-
-		static int startColumn = 0;
-		static int year = 0;
-		static int month = 0;
-		static int day = 0;
-		static int daysInMonth = 0;
-		if (ImGui::BeginPopup(label))
-		{
-			static constexpr int columnWidth = 30;
-			static constexpr ImVec2 bSize(columnWidth, 0.0f);
-
-			bool dataDirty = false;
-
-			if (ImGui::Button("<<", bSize)) { dataDirty = true; year--; }
-			ImGui::SameLine();
-			if (ImGui::Button("<", bSize)) { dataDirty = true; month--; }
-			ImGui::SameLine();
-			ImGui::Text((bbe::String(year) + "/" + month).getRaw());
-			ImGui::SameLine(6.5f * columnWidth); // TODO: Wtf? Why 6.5?!
-			if (ImGui::Button(">", bSize)) { dataDirty = true; month++; }
-			ImGui::SameLine();
-			if (ImGui::Button(">>", bSize)) { dataDirty = true; year++; }
-
-			if (dataDirty)
-			{
-				if (month == 0) {
-					month = 12;
-					year--;
-				}
-				if (month == 13)
-				{
-					month = 1;
-					year++;
-				}
-				// Technically we could go back until 1970, January. But this simplifies stuff. And really - who cares?
-				if (year < 1971) year = 1971;
-				startColumn = (int)bbe::TimePoint::getFirstWeekdayOfMonth(year, (bbe::Month)month);
-				daysInMonth = bbe::TimePoint::getDaysInMonth(year, (bbe::Month)month);
-			}
-
-			if (ImGui::BeginTable("table", 7, ImGuiTableFlags_RowBg))
-			{
-				ImGui::TableSetupColumn("1", ImGuiTableColumnFlags_WidthFixed, columnWidth);
-				ImGui::TableSetupColumn("2", ImGuiTableColumnFlags_WidthFixed, columnWidth);
-				ImGui::TableSetupColumn("3", ImGuiTableColumnFlags_WidthFixed, columnWidth);
-				ImGui::TableSetupColumn("4", ImGuiTableColumnFlags_WidthFixed, columnWidth);
-				ImGui::TableSetupColumn("5", ImGuiTableColumnFlags_WidthFixed, columnWidth);
-				ImGui::TableSetupColumn("6", ImGuiTableColumnFlags_WidthFixed, columnWidth);
-				ImGui::TableSetupColumn("7", ImGuiTableColumnFlags_WidthFixed, columnWidth);
-
-				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0); ImGui::Text("Mo");
-				ImGui::TableSetColumnIndex(1); ImGui::Text("Tu");
-				ImGui::TableSetColumnIndex(2); ImGui::Text("We");
-				ImGui::TableSetColumnIndex(3); ImGui::Text("Th");
-				ImGui::TableSetColumnIndex(4); ImGui::Text("Fr");
-				ImGui::TableSetColumnIndex(5); ImGui::Text("Sa");
-				ImGui::TableSetColumnIndex(6); ImGui::Text("So");
-
-				ImGui::TableNextRow();
-				int column = startColumn;
-				for (int i = 1; i <= daysInMonth; i++)
-				{
-					ImGui::TableSetColumnIndex(column);
-					bbe::String s(i);
-					const bool isSelected = orgYear == year && orgMonth == month && orgDay == i;
-
-					if (isSelected)
-					{
-						ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(7.0f, 0.6f, 0.6f));
-						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(7.0f, 0.9f, 0.9f));
-						ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(7.0f, 0.8f, 0.8f));
-					}
-					if (ImGui::Button(s.getRaw(), bSize))
-					{
-						*time = bbe::TimePoint::fromDate(year, month, i).nextMorning();
-						ImGui::CloseCurrentPopup();
-						changed = true;
-					}
-					if (isSelected)
-					{
-						ImGui::PopStyleColor(3);
-					}
-					column++;
-					if (column == 7)
-					{
-						column = 0;
-						ImGui::TableNextRow();
-					}
-				}
-				ImGui::EndTable();
-			}
-			ImGui::EndPopup();
-		}
-		if (ImGui::Button(time->toString().getRaw()))
-		{
-			year = time->getYear();
-			month = (int)time->getMonth();
-			day = time->getDay();
-			startColumn = (int)bbe::TimePoint::getFirstWeekdayOfMonth(year, (bbe::Month)month);
-			daysInMonth = bbe::TimePoint::getDaysInMonth(year, (bbe::Month)month);
-
-			orgYear = year;
-			orgMonth = month;
-			orgDay = day;
-
-			ImGui::OpenPopup(label);
-		}
-		return changed;
-	}
-
 	struct Tab
 	{
 		const char* title = "";
@@ -2104,7 +1929,7 @@ public:
 			ImGui::Text("Build: " __DATE__ ", " __TIME__);
 			bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
 			ImGui::Text(s.getRaw());
-			tooltip(getNightStart().toString().getRaw());
+			ImGui::bbe::tooltip(getNightStart().toString().getRaw());
 
 			ImGui::BeginDisabled(!tasks.canUndo());
 			if (ImGui::Button("Undo"))
@@ -2155,7 +1980,7 @@ public:
 			ImGui::Checkbox("Silence Open Task Notification Sound (Process)", &openTasksNotificationSilencedProcess);
 			ImGui::Checkbox("Silence Open Task Notification Sound (Url)",     &openTasksNotificationSilencedUrl);
 			ImGui::Checkbox("Ignore Night", &ignoreNight);
-			ImGui::Checkbox("Let me prepare", &forcePrepare); tooltip("Make tasks advancable, even before late time happens.");
+			ImGui::Checkbox("Let me prepare", &forcePrepare); ImGui::bbe::tooltip("Make tasks advancable, even before late time happens.");
 			ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
 			ImGui::NewLine();
 			ImGui::Text(getMeasuresString().getRaw());
@@ -2197,21 +2022,21 @@ public:
 						processChanged = true;
 						p.type = Process::TYPE_SYSTEM;
 					}
-					tooltip("System");
+					ImGui::bbe::tooltip("System");
 					ImGui::SameLine();
 					if (ImGui::Button("O"))
 					{
 						processChanged = true;
 						p.type = Process::TYPE_OTHER;
 					}
-					tooltip("Other");
+					ImGui::bbe::tooltip("Other");
 					ImGui::SameLine();
 					if (ImGui::Button("G"))
 					{
 						processChanged = true;
 						p.type = Process::TYPE_GAME;
 					}
-					tooltip("Game");
+					ImGui::bbe::tooltip("Game");
 					ImGui::PopID();
 				}
 				if (processChanged)
@@ -2261,14 +2086,14 @@ public:
 						urlChanged = true;
 						url.type = Url::TYPE_TIME_WASTER;
 					}
-					tooltip("Time Waster");
+					ImGui::bbe::tooltip("Time Waster");
 					ImGui::SameLine();
 					if (ImGui::Button("W"))
 					{
 						urlChanged = true;
 						url.type = Url::TYPE_WORK;
 					}
-					tooltip("Work");
+					ImGui::bbe::tooltip("Work");
 					ImGui::PopID();
 				}
 				if (urlChanged)
