@@ -14,6 +14,7 @@
 //TODO: Bug: Crashed when closing Chrome? Only happened once, not easily reproducable.
 //TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
 //TODO: This file is getting massive. Split?
+//TODO: Make backup path configurable
 
 #define WM_SYSICON        (WM_USER + 1)
 #define ID_EXIT           1002
@@ -683,7 +684,7 @@ public:
 		AppendMenu(Hmenu, MF_STRING, ID_EXIT, TEXT("Exit"));
 
 		createTrayIcons();
-		setCurrentTrayIcon(true);
+		setCurrentTrayIcon();
 	}
 
 	bool trayIconVisible() const
@@ -723,8 +724,9 @@ public:
 		return retVal;
 	}
 
-	void setCurrentTrayIcon(bool firstCall)
+	void setCurrentTrayIcon()
 	{
+		static bool firstCall = true;
 		if (!firstCall && !trayIconVisible())
 		{
 			return;
@@ -742,12 +744,16 @@ public:
 		notifyIconData.cbSize = sizeof(NOTIFYICONDATA);
 		notifyIconData.hWnd = Hwnd;
 		notifyIconData.uID = 0;
-		notifyIconData.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
-		notifyIconData.uCallbackMessage = WM_SYSICON; //Set up our invented Windows Message
+		notifyIconData.uFlags = NIF_ICON | (firstCall ? (NIF_MESSAGE | NIF_TIP) : 0);
 		notifyIconData.hIcon = currentHIcon;
-		memcpy_s(notifyIconData.szTip, sizeof(notifyIconData.szTip), szTIP, sizeof(szTIP));
+		if (firstCall)
+		{
+			notifyIconData.uCallbackMessage = WM_SYSICON; //Set up our invented Windows Message
+			strcpy_s(notifyIconData.szTip, sizeof(notifyIconData.szTip), szTIP);
+		}
 
 		Shell_NotifyIcon(firstCall ? NIM_ADD : NIM_MODIFY, &notifyIconData);
+		firstCall = false;
 	}
 
 	bbe::TimePoint getNightStart()
@@ -842,7 +848,7 @@ public:
 		}
 
 		beginMeasure("Tray Icon");
-		setCurrentTrayIcon(false);
+		setCurrentTrayIcon();
 
 		beginMeasure("Night Time");
 		if (isNightTime())
@@ -958,10 +964,8 @@ public:
 		beginMeasure("Beeper");
 		if (generalConfig->beepEvery > 0)
 		{
-			static bbe::TimePoint nextBeep;
-			if (nextBeep.hasPassed())
+			EVERY_MINUTES(generalConfig->beepEvery)
 			{
-				nextBeep = bbe::TimePoint().plusMinutes(generalConfig->beepEvery);
 				assetStore::Beep()->play();
 			}
 		}
@@ -980,10 +984,8 @@ public:
 			shouldPlayOpenTasks |= !openTasksNotificationSilencedUrl && timeWasterUrlFound;
 			if (shouldPlayOpenTasks)
 			{
-				static bbe::TimePoint nextPlay;
-				if (nextPlay.hasPassed())
+				EVERY_MINUTES(15)
 				{
-					nextPlay = bbe::TimePoint().plusMinutes(15);
 					assetStore::OpenTasks()->play();
 				}
 			}
@@ -2244,12 +2246,13 @@ public:
 			ImGui::EndDisabled();
 
 			static bool updatePathExists = false;
-			bbe::TimePoint nextUpdatePathCheck;
-			if (!updatePathExists && nextUpdatePathCheck.hasPassed())
+			if (!updatePathExists)
 			{
 				// Avoiding multiple IO calls.
-				nextUpdatePathCheck = bbe::TimePoint().plusSeconds(10);
-				updatePathExists = bbe::simpleFile::doesFileExist(generalConfig->updatePath);
+				EVERY_SECONDS(10)
+				{
+					updatePathExists = bbe::simpleFile::doesFileExist(generalConfig->updatePath);
+				}
 			}
 			if (updatePathExists)
 			{
