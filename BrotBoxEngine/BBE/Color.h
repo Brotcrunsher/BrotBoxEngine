@@ -16,6 +16,9 @@ namespace bbe
 		constexpr Color()
 			: r(0), g(0), b(0), a(1)
 		{}
+		constexpr Color(float rgb)
+			: r(rgb), g(rgb), b(rgb), a(1)
+		{}
 		constexpr Color(float r, float g, float b)
 			: r(r), g(g), b(b), a(1)
 		{}

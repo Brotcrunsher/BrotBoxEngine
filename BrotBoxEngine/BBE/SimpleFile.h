@@ -26,6 +26,8 @@ namespace bbe
 		bbe::String readFile(const bbe::String& filePath);
 		bbe::List<bbe::String> readLines(const bbe::String& filePath);
 
+		void forEachFile(const bbe::String& filePath, const std::function<void(const bbe::String&)>& func);
+
 #ifdef WIN32
 		bbe::String getUserName();
 		bbe::String getAutoStartDirectory();

@@ -69,17 +69,15 @@ bool bbe::simpleFile::readBinaryFileIfChanged(const bbe::String& filepath, bbe::
 
 bbe::List<float> bbe::simpleFile::readFloatArrFromFile(const bbe::String& filePath)
 {
-	std::ifstream file(filePath.getRaw(), std::ios_base::binary);
-	std::string line;
+	bbe::ByteBuffer bb = readBinaryFile(filePath);
+	auto bbs = bb.getSpan();
 	bbe::List<float> retVal;
-	while(std::getline(file, line))
+	while (bbs.hasMore())
 	{
-		std::istringstream s(line);
-		float f;
-		if (!(s >> f)) throw IllegalArgumentException();
-		retVal.add(f);
+		float val = 0.f;
+		bbs.read(val);
+		retVal.add(val);
 	}
-
 	return retVal;
 }
 
@@ -179,6 +177,14 @@ bbe::List<bbe::String> bbe::simpleFile::readLines(const bbe::String& filePath)
 	}
 
 	return retVal;
+}
+
+void bbe::simpleFile::forEachFile(const bbe::String& filePath, const std::function<void(const bbe::String&)>& func)
+{
+	for (const auto& f : std::filesystem::directory_iterator(filePath.getRaw()))
+	{
+		func(f.path().c_str());
+	}
 }
 
 #ifdef WIN32

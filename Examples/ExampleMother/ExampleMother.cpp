@@ -1,5 +1,6 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
+#define NOMINMAX
 #include <Windows.h>
 #include <tlhelp32.h>
 #include <AtlBase.h>
@@ -1847,11 +1848,11 @@ public:
 			size_t deleteIndex = -1;
 			if (ImGui::BeginTable("table", 7, ImGuiTableFlags_RowBg))
 			{
+				ImGui::TableSetupColumn("1", ImGuiTableColumnFlags_WidthFixed, 100);
 				for (size_t i = 0; i < stopwatches.getLength(); i++)
 				{
 					ImGui::PushID(i);
 					Stopwatch& sw = stopwatches[i];
-					ImGui::TableSetupColumn("1", ImGuiTableColumnFlags_WidthFixed, 100);
 
 					ImGui::TableNextRow();
 					ImGui::TableNextColumn();
@@ -1893,6 +1894,56 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	bbe::Vector2 drawTabMouseTracking(bbe::PrimitiveBrush2D& brush)
+	{
+		static bbe::Image image;
+		static bool loaded = false;
+		if (ImGui::Button("Do it!"))
+		{
+			bbe::List<bbe::Vector2> positions;
+			float maxX = 0;
+			float maxY = 0;
+			float minX = 0;
+			float minY = 0;
+			bbe::simpleFile::forEachFile("mousePositions", [&](const bbe::String& path) {
+				bbe::List<float> contents = bbe::simpleFile::readFloatArrFromFile(path);
+				for (size_t i = 0; i < contents.getLength(); i += 2)
+				{
+					float& x = contents[i + 0];
+					float& y = contents[i + 1];
+					positions.add({ x, y });
+					maxX = bbe::Math::max(maxX, x);
+					maxY = bbe::Math::max(maxY, y);
+					minX = bbe::Math::min(minX, x);
+					minY = bbe::Math::min(minY, y);
+				}
+				});
+
+			bbe::Grid<float> grid(maxX - minX + 1, maxY - minY + 1);
+			float maxValue = 0;
+			for (size_t i = 0; i < positions.getLength(); i++)
+			{
+				bbe::Vector2& p = positions[i];
+				grid[p.x][p.y]++;
+				maxValue = bbe::Math::max(maxValue, grid[p.x][p.y]);
+			}
+
+			image = bbe::Image(maxX - minX + 1, maxY - minY + 1);
+			loaded = true;
+			for (size_t x = 0; x < grid.getWidth(); x++)
+			{
+				for (size_t y = 0; y < grid.getHeight(); y++)
+				{
+					//grid[x][y] /= maxValue;
+					image.setPixel(x, y, bbe::Color(grid[x][y] > 0 ? 1.f : 0.f));
+				}
+			}
+		}
+
+		if(loaded) brush.drawImage(0, 200, 800, 400, image);
+		return bbe::Vector2(1.0f, 0.1f);
+	}
+
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
 		static bbe::Vector2 sizeMult(1.0f, 1.0f);
@@ -1905,12 +1956,13 @@ public:
 		{
 			static bbe::List<Tab> tabs =
 			{
-				Tab{"View Tasks", [&]() { return drawTabViewTasks();         }},
-				Tab{"Edit Tasks", [&]() { return drawTabEditTasks();         }},
-				Tab{"Clipboard",  [&]() { return drawTabClipboard();         }},
-				Tab{"Brain-T",    [&]() { return drawTabBrainTeasers(brush); }},
-				Tab{"Stopwatch",  [&]() { return drawTabStopwatch();         }},
-				Tab{"Config",     [&]() { return drawTabConfig();            }},
+				Tab{"View Tasks", [&]() { return drawTabViewTasks();          }},
+				Tab{"Edit Tasks", [&]() { return drawTabEditTasks();          }},
+				Tab{"Clipboard",  [&]() { return drawTabClipboard();          }},
+				Tab{"Brain-T",    [&]() { return drawTabBrainTeasers(brush);  }},
+				Tab{"Stopwatch",  [&]() { return drawTabStopwatch();          }},
+				Tab{"MouseTrack", [&]() { return drawTabMouseTracking(brush); }},
+				Tab{"Config",     [&]() { return drawTabConfig();             }},
 			};
 			static size_t previousShownTab = 0;
 			sizeMult = drawTabs(tabs, &previousShownTab, tabSwitchRequestedLeft, tabSwitchRequestedRight);
