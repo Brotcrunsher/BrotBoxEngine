@@ -377,3 +377,43 @@ bool bbe::Duration::isNegative() const
 {
 	return toSeconds() < 0;
 }
+
+bool bbe::TimeGate::everyMilliseconds(int32_t ms)
+{
+	if (m_nextExec.hasPassed())
+	{
+		m_nextExec = bbe::TimePoint().plusMilliseconds(ms);
+		return true;
+	}
+	return false;
+}
+
+bool bbe::TimeGate::everySeconds(int32_t seconds)
+{
+	if (m_nextExec.hasPassed())
+	{
+		m_nextExec = bbe::TimePoint().plusSeconds(seconds);
+		return true;
+	}
+	return false;
+}
+
+bool bbe::TimeGate::everyMinutes(int32_t minutes)
+{
+	if (m_nextExec.hasPassed())
+	{
+		m_nextExec = bbe::TimePoint().plusMinutes(minutes);
+		return true;
+	}
+	return false;
+}
+
+bool bbe::TimeGate::everyHours(int32_t hours)
+{
+	if (m_nextExec.hasPassed())
+	{
+		m_nextExec = bbe::TimePoint().plusHours(hours);
+		return true;
+	}
+	return false;
+}

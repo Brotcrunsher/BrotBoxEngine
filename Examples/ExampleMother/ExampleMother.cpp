@@ -838,10 +838,8 @@ public:
 	{
 		beginMeasure("Mouse Tracking");
 		{
-			static bbe::TimePoint tp;
-			if (tp.hasPassed())
+			EVERY_MILLISECONDS(100)
 			{
-				tp = bbe::TimePoint().plusMilliseconds(100);
 				bbe::Vector2 glob = getMouseGlobal();
 				mousePositions.add(glob.x);
 				mousePositions.add(glob.y);
@@ -890,21 +888,15 @@ public:
 		{
 			if (ignoreNight)
 			{
-				static float timeSinceLastSureSound = 0.0f;
-				timeSinceLastSureSound += timeSinceLastFrame;
-				if (timeSinceLastSureSound > 3600 /*1 hour*/)
+				EVERY_HOURS(1)
 				{
-					timeSinceLastSureSound = 0;
 					assetStore::AreYouSure()->play();
 				}
 			}
 			else
 			{
-				static float timeSinceLastMinimize = 100000.0f;
-				timeSinceLastMinimize += timeSinceLastFrame;
-				if (timeSinceLastMinimize > 60.0f)
+				EVERY_MINUTES(1)
 				{
-					timeSinceLastMinimize = 0.0f;
 					HWND hwnd = FindWindow("Shell_TrayWnd", NULL);
 					LRESULT res = SendMessage(hwnd, WM_COMMAND, (WPARAM)419, 0);
 					showWindow();
@@ -943,10 +935,8 @@ public:
 		}
 
 		beginMeasure("Process Stuff");
-		static bbe::TimePoint nextProcessStuff;
-		if(nextProcessStuff.hasPassed())
+		EVERY_SECONDS(10)
 		{
-			nextProcessStuff = bbe::TimePoint().plusSeconds(10);
 			HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
 			PROCESSENTRY32 entry;
 			entry.dwSize = sizeof(entry);
@@ -976,12 +966,9 @@ public:
 		}
 
 		beginMeasure("URL Stuff");
-		static bbe::TimePoint nextUrlStuff;
 		bool timeWasterUrlFound = false;
-		if (nextUrlStuff.hasPassed())
+		EVERY_SECONDS(1)
 		{
-			// TODO: This can happen together with the Process stuff in one frame. Kinda bad... maybe?
-			nextUrlStuff = bbe::TimePoint().plusSeconds(1);
 			auto tabNames = getDomains();
 			for (size_t i = 0; i < tabNames.getLength(); i++)
 			{

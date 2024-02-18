@@ -107,4 +107,24 @@ namespace bbe
 		Month getMonth() const;
 		int32_t getDay() const;
 	};
+
+	class TimeGate
+	{
+	private:
+		TimePoint m_nextExec;
+
+	public:
+		TimeGate() = default;
+
+		bool everyMilliseconds(int32_t ms);
+		bool everySeconds(int32_t seconds);
+		bool everyMinutes(int32_t minutes);
+		bool everyHours(int32_t hours);
+
+		static inline thread_local TimeGate* INTERNAL_INSPECTED_TIMEGATE = nullptr;
+	};
+#define EVERY_MILLISECONDS(ms) { static bbe::TimeGate tg; bbe::TimeGate::INTERNAL_INSPECTED_TIMEGATE = &tg; } if(bbe::TimeGate::INTERNAL_INSPECTED_TIMEGATE->everyMilliseconds((ms)))
+#define EVERY_SECONDS(sec)     { static bbe::TimeGate tg; bbe::TimeGate::INTERNAL_INSPECTED_TIMEGATE = &tg; } if(bbe::TimeGate::INTERNAL_INSPECTED_TIMEGATE->everySeconds((sec)))
+#define EVERY_MINUTES(min)     { static bbe::TimeGate tg; bbe::TimeGate::INTERNAL_INSPECTED_TIMEGATE = &tg; } if(bbe::TimeGate::INTERNAL_INSPECTED_TIMEGATE->everyMinutes((min)))
+#define EVERY_HOURS(hrs)       { static bbe::TimeGate tg; bbe::TimeGate::INTERNAL_INSPECTED_TIMEGATE = &tg; } if(bbe::TimeGate::INTERNAL_INSPECTED_TIMEGATE->everyHours((hrs)))
 }
