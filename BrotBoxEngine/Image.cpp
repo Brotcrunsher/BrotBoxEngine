@@ -4,6 +4,9 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 void bbe::Image::finishLoad(stbi_uc* pixels)
 {
@@ -197,6 +200,32 @@ bbe::Color bbe::Image::getPixel(size_t x, size_t y) const
 	
 }
 
+void bbe::Image::setPixel(size_t x, size_t y, Color c)
+{
+	if (!isLoadedCpu())
+	{
+		throw NotInitializedException();
+	}
+
+	const size_t index = getIndexForRawAccess(x, y);
+	switch (m_format)
+	{
+	case ImageFormat::R8:
+		m_pdata[index + 0] = c.r * 255.f;
+		m_pdata[index + 1] = c.r * 255.f;
+		m_pdata[index + 2] = c.r * 255.f;
+		break;
+	case ImageFormat::R8G8B8A8:
+		m_pdata[index + 0] = c.r * 255.f;
+		m_pdata[index + 1] = c.g * 255.f;
+		m_pdata[index + 2] = c.b * 255.f;
+		m_pdata[index + 3] = c.a * 255.f;
+		break;
+	default:
+		throw FormatNotSupportedException();
+	}
+}
+
 size_t bbe::Image::getIndexForRawAccess(size_t x, size_t y) const
 {
 	return (y * m_width + x) * getAmountOfChannels();
@@ -257,6 +286,72 @@ void bbe::Image::setFilterMode(ImageFilterMode ifm)
 void bbe::Image::keepAfterUpload()
 {
 	keep = true;
+}
+
+HICON bbe::Image::toIcon() const
+{
+	// See: https://learn.microsoft.com/en-us/windows/win32/menurc/using-cursors#creating-a-cursor
+	const DWORD iconWidth = getWidth();
+	const DWORD iconHeight = getHeight();
+
+	BITMAPV5HEADER bi = {};
+	bi.bV5Size = sizeof(BITMAPV5HEADER);
+	bi.bV5Width = iconWidth;
+	bi.bV5Height = iconHeight;
+	bi.bV5Planes = 1;
+	bi.bV5BitCount = 32;
+	bi.bV5Compression = BI_BITFIELDS;
+	// The following mask specification specifies a supported 32 BPP
+	// alpha format for Windows XP.
+	bi.bV5RedMask = 0x00FF0000;
+	bi.bV5GreenMask = 0x0000FF00;
+	bi.bV5BlueMask = 0x000000FF;
+	bi.bV5AlphaMask = 0xFF000000;
+
+	// Create the DIB section with an alpha channel.
+	HDC hdc = GetDC(NULL);
+	void* lpBits;
+	HBITMAP hBitmap = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS,
+		&lpBits, NULL, (DWORD)0);
+	ReleaseDC(NULL, hdc);
+
+	// Create an empty mask bitmap.
+	HBITMAP hMonoBitmap = CreateBitmap(iconWidth, iconHeight, 1, 1, NULL);
+
+	// Set the alpha values for each pixel in the cursor so that
+	// the complete cursor is semi-transparent.
+	DWORD* lpdwPixel = (DWORD*)lpBits;
+	for (DWORD x = 0; x < iconWidth; x++)
+	{
+		for (DWORD y = 0; y < iconHeight; y++)
+		{
+			const Color c = getPixel(x, y);
+			const byte r = c.r * 255;
+			const byte g = c.g * 255;
+			const byte b = c.b * 255;
+			const byte a = c.a * 255;
+
+			*lpdwPixel  = b;
+			*lpdwPixel |= g << 8;
+			*lpdwPixel |= r << 16;
+			*lpdwPixel |= a << 24;
+
+			lpdwPixel++;
+		}
+		}
+
+	ICONINFO ii = {};
+	ii.fIcon = TRUE;
+	ii.hbmMask = hMonoBitmap;
+	ii.hbmColor = hBitmap;
+
+	// Create the alpha cursor with the alpha DIB section.
+	HICON hAlphaCursor = CreateIconIndirect(&ii);
+
+	DeleteObject(hBitmap);
+	DeleteObject(hMonoBitmap);
+
+	return hAlphaCursor;
 }
 
 bool bbe::Image::isLoadedCpu() const

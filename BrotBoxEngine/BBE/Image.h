@@ -6,6 +6,14 @@
 #include "../BBE/Vector2.h"
 #include "../BBE/AutoRefCountable.h"
 
+#ifdef _WIN32
+#ifndef _WINDEF_
+// Forward declare it to avoid including the whole windows header everywhere.
+class HICON__;
+typedef HICON__* HICON;
+#endif
+#endif
+
 typedef unsigned char stbi_uc;
 
 namespace bbe
@@ -104,6 +112,7 @@ namespace bbe
 		size_t getAmountOfChannels() const;
 		size_t getBytesPerChannel() const;
 		Color getPixel(size_t x, size_t y) const;
+		void setPixel(size_t x, size_t y, Color c);
 		size_t getIndexForRawAccess(size_t x, size_t y) const;
 
 		ImageRepeatMode getRepeatMode() const;
@@ -115,5 +124,9 @@ namespace bbe
 		bool isLoadedCpu() const;
 		bool isLoadedGpu() const;
 		void keepAfterUpload();
+
+#ifdef _WIN32
+		HICON toIcon() const;
+#endif
 	};
 }

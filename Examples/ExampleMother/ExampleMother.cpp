@@ -568,40 +568,15 @@ public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
 	{
 		// See: https://learn.microsoft.com/en-us/windows/win32/menurc/using-cursors#creating-a-cursor
-		constexpr DWORD iconWidth = 32;
-		constexpr DWORD iconHeight = 32;
+		constexpr size_t iconWidth = 32;
+		constexpr size_t iconHeight = 32;
+		constexpr size_t centerX = iconWidth / 2;
+		constexpr size_t centerY = iconHeight / 2;
 
-		BITMAPV5HEADER bi = {};
-		bi.bV5Size = sizeof(BITMAPV5HEADER);
-		bi.bV5Width = iconWidth;
-		bi.bV5Height = iconHeight;
-		bi.bV5Planes = 1;
-		bi.bV5BitCount = 32;
-		bi.bV5Compression = BI_BITFIELDS;
-		// The following mask specification specifies a supported 32 BPP
-		// alpha format for Windows XP.
-		bi.bV5RedMask = 0x00FF0000;
-		bi.bV5GreenMask = 0x0000FF00;
-		bi.bV5BlueMask = 0x000000FF;
-		bi.bV5AlphaMask = 0xFF000000;
-
-		// Create the DIB section with an alpha channel.
-		HDC hdc = GetDC(NULL);
-		void* lpBits;
-		HBITMAP hBitmap = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS,
-			&lpBits, NULL, (DWORD)0);
-		ReleaseDC(NULL, hdc);
-
-		// Create an empty mask bitmap.
-		HBITMAP hMonoBitmap = CreateBitmap(iconWidth, iconHeight, 1, 1, NULL);
-
-		// Set the alpha values for each pixel in the cursor so that
-		// the complete cursor is semi-transparent.
-		DWORD* lpdwPixel = (DWORD*)lpBits;
-		constexpr DWORD centerX = iconWidth / 2;
-		constexpr DWORD centerY = iconHeight / 2;
-		for (DWORD x = 0; x < iconWidth; x++)
-			for (DWORD y = 0; y < iconHeight; y++)
+		bbe::Image image(iconWidth, iconHeight);
+		for (size_t x = 0; x < iconWidth; x++)
+		{
+			for (size_t y = 0; y < iconHeight; y++)
 			{
 				const DWORD xDiff = x - centerX;
 				const DWORD yDiff = y - centerY;
@@ -609,51 +584,37 @@ public:
 				const DWORD dist = bbe::Math::sqrt(distSq * 1000) + offset;
 				const DWORD cVal = dist % 512;
 
-				const DWORD highlight = cVal > 255 ? 255 : cVal;
-				const DWORD white = cVal > 255 ? (cVal - 255) : 0;
+				const float highlight = (cVal > 255 ? 255 : cVal) / 255.f;
+				const float white =     (cVal > 255 ? (cVal - 255) : 0) / 255.f;
 
-				*lpdwPixel = 0;
+				bbe::Color c;
+				c.a = 1.0f;
+				c.r = white;
+				c.g = white;
+				c.b = white;
 
 				if (redGreenBlue == 0) /*Red*/
 				{
-					*lpdwPixel |= white;
-					*lpdwPixel |= white << 8;
-					*lpdwPixel |= highlight << 16;
+					c.r = highlight;
 				}
 				else if (redGreenBlue == 1) /*Green*/
 				{
-					*lpdwPixel |= white;
-					*lpdwPixel |= highlight << 8;
-					*lpdwPixel |= white << 16;
+					c.g = highlight;
 				}
 				else if (redGreenBlue == 2) /*Blue*/
 				{
-					*lpdwPixel |= highlight;
-					*lpdwPixel |= white << 8;
-					*lpdwPixel |= white << 16;
+					c.b = highlight;
 				}
 				else
 				{
 					throw bbe::IllegalArgumentException();
 				}
 
-				*lpdwPixel |= 0xFF << 24;
-
-				lpdwPixel++;
+				image.setPixel(x, y, c);
 			}
+		}
 
-		ICONINFO ii = {};
-		ii.fIcon = TRUE;
-		ii.hbmMask = hMonoBitmap;
-		ii.hbmColor = hBitmap;
-
-		// Create the alpha cursor with the alpha DIB section.
-		HICON hAlphaCursor = CreateIconIndirect(&ii);
-
-		DeleteObject(hBitmap);
-		DeleteObject(hMonoBitmap);
-
-		return hAlphaCursor;
+		return image.toIcon();
 	}
 
 	void createTrayIcons()
