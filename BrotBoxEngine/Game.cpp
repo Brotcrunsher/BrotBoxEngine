@@ -162,10 +162,7 @@ void bbe::Game::frame(bool dragging)
 void bbe::Game::frameUpdate()
 {
 	beginMeasure("INTERNAL - Frame Start");
-	m_pwindow->executeFrameStartListeneres();
-	m_pwindow->INTERNAL_keyboard.update();
-	const bbe::Vector2 globalMousePos = m_pwindow->getGlobalMousePos();
-	m_pwindow->INTERNAL_mouse.update(globalMousePos.x, globalMousePos.y);
+	m_pwindow->update();
 	float timeSinceLastFrame = m_gameTime.tick();
 	if (m_fixedFrameTime != 0.f) timeSinceLastFrame = m_fixedFrameTime;
 	
@@ -277,6 +274,11 @@ bool bbe::Game::isKeyPressed(bbe::Key key)
 bool bbe::Game::isFocused() const
 {
 	return m_pwindow->isFocused();
+}
+
+bool bbe::Game::isHovered() const
+{
+	return m_pwindow->isHovered();
 }
 
 bool bbe::Game::isMouseDown(bbe::MouseButton button)

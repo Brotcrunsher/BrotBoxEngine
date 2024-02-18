@@ -276,6 +276,12 @@ bool bbe::Window::isShown() const
 	return visible;
 }
 
+bool bbe::Window::isHovered() const
+{
+	int hovered = glfwWrapper::glfwGetWindowAttrib(m_pwindow, GLFW_HOVERED);
+	return hovered;
+}
+
 bbe::PrimitiveBrush2D& bbe::Window::getBrush2D()
 {
 	return m_renderManager->getBrush2D();
@@ -341,6 +347,23 @@ void bbe::Window::executeFrameStartListeneres()
 	for (const std::function<void()> listener : m_frameStartListeners)
 	{
 		listener();
+	}
+}
+
+void bbe::Window::update()
+{
+	executeFrameStartListeneres();
+	INTERNAL_keyboard.update();
+	const bbe::Vector2 globalMousePos = getGlobalMousePos();
+	INTERNAL_mouse.update(globalMousePos.x, globalMousePos.y);
+	if (isShown() && !isFocused() && isHovered())
+	{
+		// NOTE: mousePosX/Y are not globalMousePos! mousePosX/Y are relative
+		//       to the window, globalMousePos is actually global.
+		double mousePosX;
+		double mousePosY;
+		glfwWrapper::glfwGetCursorPos(m_pwindow, &mousePosX, &mousePosY);
+		ImGui_ImplGlfw_CursorPosCallback(m_pwindow, mousePosX, mousePosY);
 	}
 }
 

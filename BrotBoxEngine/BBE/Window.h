@@ -75,6 +75,7 @@ namespace bbe
 		void showWindow();
 		void hideWindow();
 		bool isShown() const;
+		bool isHovered() const;
 
 		PrimitiveBrush2D& getBrush2D();
 		PrimitiveBrush3D& getBrush3D();
@@ -94,6 +95,7 @@ namespace bbe
 		void executeCloseListeners();
 		void registerFrameStartListener(const std::function<void()>& listener);
 		void executeFrameStartListeneres();
+		void update();
 
 #ifdef BBE_RENDERER_OPENGL
 		uint32_t getAmountOfDrawcalls() const;

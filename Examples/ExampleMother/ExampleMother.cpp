@@ -857,7 +857,7 @@ public:
 		}
 
 		beginMeasure("Basic Controls");
-		setTargetFrametime(isFocused() ? (1.f / 144.f) : (1.f / 10.f));
+		setTargetFrametime((isFocused() || isHovered()) ? (1.f / 144.f) : (1.f / 10.f));
 		shiftPressed = isKeyDown(bbe::Key::LEFT_SHIFT);
 		tabSwitchRequestedLeft  = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::Q);
 		tabSwitchRequestedRight = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E);
