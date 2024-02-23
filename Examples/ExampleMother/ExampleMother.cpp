@@ -574,6 +574,9 @@ private:
 
 	bbe::GlobalKeyboard globalKeyboard;
 
+
+	bool terriActive = false;
+
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
 	{
@@ -731,7 +734,7 @@ public:
 		}
 
 		beginMeasure("Basic Controls");
-		setTargetFrametime((isFocused() || isHovered()) ? (1.f / 144.f) : (1.f / 10.f));
+		setTargetFrametime((isFocused() || isHovered() || terriActive) ? (1.f / 144.f) : (1.f / 10.f));
 		tabSwitchRequestedLeft  = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::Q);
 		tabSwitchRequestedRight = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E);
 
@@ -1992,6 +1995,77 @@ public:
 		return bbe::Vector2(1.0f, 0.1f);
 	}
 
+	bbe::Vector2 drawTabKeyboardTracking(bbe::PrimitiveBrush2D& brush)
+	{
+		using K = bbe::Key;
+		struct DrawnKey
+		{
+			K key;
+			bbe::Vector2 pos;
+			float value;
+		};
+		bbe::List<DrawnKey> keys = {
+			{K::Q, {0.0f, 0}},{K::W, {1.0f, 0}},{K::E, {2.0f, 0}},{K::R, {3.0f, 0}},{K::T, {4.0f, 0}},{K::Z, {5.0f, 0}},{K::U, {6.0f, 0}},{K::I, {7.0f, 0}},{K::O, {8.0f, 0}},{K::P, {9.0f, 0}},
+			{K::A, {0.3f, 1}},{K::S, {1.3f, 1}},{K::D, {2.3f, 1}},{K::F, {3.3f, 1}},{K::G, {4.3f, 1}},{K::H, {5.3f, 1}},{K::J, {6.3f, 1}},{K::K, {7.3f, 1}},{K::L, {8.3f, 1}},
+			{K::Y, {0.6f, 2}},{K::X, {1.6f, 2}},{K::C, {2.6f, 2}},{K::V, {3.6f, 2}},{K::B, {4.6f, 2}},{K::N, {5.6f, 2}},{K::M, {6.6f, 2}}
+		};
+
+		float min = 10000000000.f;
+		float max = 0.0f;
+		for (size_t i = 0; i < keys.getLength(); i++)
+		{
+			DrawnKey& k = keys[i];
+			k.value = keyboardTracker->keyPressed[(size_t)k.key];
+			min = bbe::Math::min(min, k.value);
+			max = bbe::Math::max(max, k.value);
+		}
+
+		for (size_t i = 0; i < keys.getLength(); i++)
+		{
+			DrawnKey& k = keys[i];
+			k.value = (k.value - min) / (max - min);
+			brush.setColorRGB(bbe::Color(k.value, k.value, k.value));
+			brush.fillText(30 + k.pos.x * 60, 200 + k.pos.y * 60, bbe::keyCodeToString(k.key), 40);
+		}
+
+		return bbe::Vector2(1.0f, 0.2f);
+	}
+
+	bbe::Vector2 drawTabTerri(bbe::PrimitiveBrush2D& brush)
+	{
+		ImGui::Checkbox("Active", &terriActive);
+		if (globalKeyboard.isKeyPressed(bbe::Key::Q))
+		{
+			terriActive = !terriActive;
+		}
+		if (terriActive)
+		{
+			bbe::Image screenshot = bbe::Image::screenshot(1832, 192, 1, 71);
+
+			int i;
+			for (i = 0; i < 8; i++)
+			{
+				bbe::Color c = screenshot.getPixel(0, 70 - 10 * i);
+				float val = (c.r + c.g + c.b) / 3.0f;
+				if (val < 0.5f) break;
+			}
+			static int previousI = 0;
+			if (previousI != i)
+			{
+				if (i == 0) assetStore::One()->play();
+				if (i == 1) assetStore::Two()->play();
+				if (i == 2) assetStore::Three()->play();
+				if (i == 3) assetStore::Four()->play();
+				if (i == 4) assetStore::Five()->play();
+				if (i == 5) assetStore::Six()->play();
+				if (i == 6) assetStore::Seven()->play();
+				if (i == 7) assetStore::Eight()->play();
+				previousI = i;
+			}
+		}
+		return bbe::Vector2(1.0f);
+	}
+
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
 		static bbe::Vector2 sizeMult(1.0f, 1.0f);
@@ -2010,6 +2084,8 @@ public:
 				Tab{"Brain-T",    [&]() { return drawTabBrainTeasers(brush);  }},
 				Tab{"Stopwatch",  [&]() { return drawTabStopwatch();          }},
 				Tab{"MouseTrack", [&]() { return drawTabMouseTracking(brush); }},
+				Tab{"KybrdTrack", [&]() { return drawTabKeyboardTracking(brush); }},
+				Tab{"Terri",      [&]() { return drawTabTerri(brush);         }},
 				Tab{"Config",     [&]() { return drawTabConfig();             }},
 			};
 			static size_t previousShownTab = 0;

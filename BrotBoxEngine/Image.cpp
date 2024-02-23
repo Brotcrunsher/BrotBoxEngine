@@ -354,6 +354,57 @@ HICON bbe::Image::toIcon() const
 	return hAlphaCursor;
 }
 
+#ifdef _WIN32
+bbe::Image bbe::Image::screenshot(int x, int y, int width, int height)
+{
+	HDC screenDC = GetDC(0);
+	HBITMAP bitmap = CreateCompatibleBitmap(screenDC, width, height);
+	HDC memDC = CreateCompatibleDC(screenDC);
+	HBITMAP memBitmap = static_cast<HBITMAP>(SelectObject(memDC, bitmap));
+	BitBlt(memDC, 0, 0, width, height, screenDC, x, y, SRCCOPY);
+	bitmap = static_cast<HBITMAP>(SelectObject(memDC, memBitmap));
+
+	BITMAPINFO info = {};
+	info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	info.bmiHeader.biWidth = width;
+	info.bmiHeader.biHeight = height;
+	info.bmiHeader.biPlanes = 1;
+	info.bmiHeader.biBitCount = 32;
+	info.bmiHeader.biCompression = BI_RGB;
+	info.bmiHeader.biSizeImage = width * height * 4;
+
+	bbe::List<unsigned char> p;
+	p.resizeCapacityAndLengthUninit(info.bmiHeader.biSizeImage);
+	GetDIBits(memDC, bitmap, 0, height, &p[0], &info, DIB_RGB_COLORS);
+	HBITMAP OldBitmap = (HBITMAP)SelectObject(memDC, bitmap);
+	SelectObject(memDC, OldBitmap);
+
+	for (size_t i = 0; i < p.getLength(); i += 4)
+	{
+		auto temp = p[i];
+		p[i] = p[i + 2];
+		p[i + 2] = temp;
+	}
+
+	bbe::Image image(width, height, p.getRaw(), bbe::ImageFormat::R8G8B8A8);
+	for (size_t i = 0; i < width; i++)
+	{
+		for (size_t k = 0; k < height / 2; k++)
+		{
+			auto temp = image.getPixel(i, k);
+			image.setPixel(i, k, image.getPixel(i, height - k - 1));
+			image.setPixel(i, height - k - 1, temp);
+		}
+	}
+
+	DeleteDC(memDC);
+	DeleteDC(screenDC);
+	DeleteObject(bitmap);
+	DeleteObject(memBitmap);
+	return image;
+}
+#endif
+
 bool bbe::Image::isLoadedCpu() const
 {
 	return m_pdata.getLength() > 0;

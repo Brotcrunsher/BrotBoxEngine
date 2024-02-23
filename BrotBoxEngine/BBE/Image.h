@@ -127,6 +127,7 @@ namespace bbe
 
 #ifdef _WIN32
 		HICON toIcon() const;
+		static Image screenshot(int x, int y, int width, int height);
 #endif
 	};
 }

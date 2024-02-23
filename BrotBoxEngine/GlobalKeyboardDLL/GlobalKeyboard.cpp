@@ -49,6 +49,7 @@ static bbe::Key vkToBbe(WPARAM vk)
 	case VK_DOWN     : return bbe::Key::DOWN;
 	case VK_INSERT   : return bbe::Key::INSERT;
 	case VK_DELETE   : return bbe::Key::DELETE;
+	case VK_OEM_PERIOD: return bbe::Key::PERIOD;
 	case 0x30        : return bbe::Key::_0;
 	case 0x31        : return bbe::Key::_1;
 	case 0x32        : return bbe::Key::_2;
