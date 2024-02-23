@@ -258,16 +258,6 @@ bool bbe::Game::isKeyUp(bbe::Key key)
 	return m_pwindow->INTERNAL_keyboard.isKeyUp(key);
 }
 
-bool bbe::Game::wasKeyDownLastFrame(bbe::Key key)
-{
-	return m_pwindow->INTERNAL_keyboard.wasKeyDownLastFrame(key);
-}
-
-bool bbe::Game::wasKeyUpLastFrame(bbe::Key key)
-{
-	return m_pwindow->INTERNAL_keyboard.wasKeyUpLastFrame(key);
-}
-
 bool bbe::Game::isKeyPressed(bbe::Key key)
 {
 	return m_pwindow->INTERNAL_keyboard.isKeyPressed(key);

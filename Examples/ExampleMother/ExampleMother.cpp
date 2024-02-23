@@ -444,6 +444,30 @@ struct GeneralConfig
 	}
 };
 
+struct KeyboardTracker
+{
+	uint32_t keyPressed[(size_t)bbe::Key::LAST + 1] = {};
+
+	// Non-Persisted Helper Data below.
+
+	void serialize(bbe::ByteBuffer& buffer) const
+	{
+		for (size_t i = 0; i < (size_t)bbe::Key::LAST + 1; i++)
+		{
+			buffer.write(keyPressed[i]);
+		}
+	}
+	static KeyboardTracker deserialize(bbe::ByteBufferSpan& buffer)
+	{
+		KeyboardTracker retVal;
+		for (size_t i = 0; i < (size_t)bbe::Key::LAST + 1; i++)
+		{
+			buffer.read(retVal.keyPressed[i]);
+		}
+		return retVal;
+	}
+};
+
 struct BrainTeaserScore
 {
 	int32_t score = 0;
@@ -514,16 +538,17 @@ struct Stopwatch
 class MyGame : public bbe::Game
 {
 private:
-	bbe::SerializableList<Task> tasks                           = bbe::SerializableList<Task>            ("config.dat",              "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableList<Process> processes                    = bbe::SerializableList<Process>         ("processes.dat",           "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableList<Url> urls                             = bbe::SerializableList<Url>             ("urls.dat",                "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableList<ClipboardContent> clipboardContent    = bbe::SerializableList<ClipboardContent>("Clipboard.dat",           "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableObject<GeneralConfig> generalConfig        = bbe::SerializableObject<GeneralConfig> ("generalConfig.dat",       "ParanoiaConfig");
-	bbe::SerializableList<BrainTeaserScore> brainTeaserMemory   = bbe::SerializableList<BrainTeaserScore>("brainTeaserMemory.dat",   "ParanoiaConfig");
-	bbe::SerializableList<BrainTeaserScore> brainTeaserAlphabet = bbe::SerializableList<BrainTeaserScore>("brainTeaserAlphabet.dat", "ParanoiaConfig");
-	bbe::SerializableList<BrainTeaserScore> brainTeaserAdd      = bbe::SerializableList<BrainTeaserScore>("brainTeaserAdd.dat",      "ParanoiaConfig");
-	bbe::SerializableList<Stopwatch> stopwatches                = bbe::SerializableList<Stopwatch>       ("stopwatches.dat",         "ParanoiaConfig");
-	
+	bbe::SerializableList<Task> tasks                           = bbe::SerializableList<Task>             ("config.dat",              "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Process> processes                    = bbe::SerializableList<Process>          ("processes.dat",           "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Url> urls                             = bbe::SerializableList<Url>              ("urls.dat",                "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<ClipboardContent> clipboardContent    = bbe::SerializableList<ClipboardContent> ("Clipboard.dat",           "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableObject<GeneralConfig> generalConfig        = bbe::SerializableObject<GeneralConfig>  ("generalConfig.dat",       "ParanoiaConfig");
+	bbe::SerializableList<BrainTeaserScore> brainTeaserMemory   = bbe::SerializableList<BrainTeaserScore> ("brainTeaserMemory.dat",   "ParanoiaConfig");
+	bbe::SerializableList<BrainTeaserScore> brainTeaserAlphabet = bbe::SerializableList<BrainTeaserScore> ("brainTeaserAlphabet.dat", "ParanoiaConfig");
+	bbe::SerializableList<BrainTeaserScore> brainTeaserAdd      = bbe::SerializableList<BrainTeaserScore> ("brainTeaserAdd.dat",      "ParanoiaConfig");
+	bbe::SerializableList<Stopwatch> stopwatches                = bbe::SerializableList<Stopwatch>        ("stopwatches.dat",         "ParanoiaConfig");
+	bbe::SerializableObject<KeyboardTracker> keyboardTracker    = bbe::SerializableObject<KeyboardTracker>("keyboardTracker.dat"); // No ParanoiaConfig to avoid accidentally logging passwords.
+
 	bool isGameOn = false;
 	bool openTasksNotificationSilencedProcess = false;
 	bool openTasksNotificationSilencedUrl     = false;
@@ -712,6 +737,23 @@ public:
 
 		beginMeasure("GlobalKeyboard");
 		globalKeyboard.update();
+		for (size_t i = 0; i < (size_t)bbe::Key::LAST + 1; i++)
+		{
+			if (globalKeyboard.isKeyPressed((bbe::Key)i, false))
+			{
+				keyboardTracker->keyPressed[i]++;
+				static int writes = 0;
+				writes++;
+				if (writes >= 1024)
+				{
+					// Only writing out every 1024 chars. This way we avoid accidentally
+					// writing out passwords to the file (or at least easily reconstructable
+					// passwords). Additionally it reduced the amount of IO.
+					keyboardTracker.writeToFile();
+					writes = 0;
+				}
+			}
+		}
 
 		beginMeasure("Play Task Sounds");
 		if (tasks.getList().any([](const Task& t) { return t.shouldPlaySoundNewTask(); }))
