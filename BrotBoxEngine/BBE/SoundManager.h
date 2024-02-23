@@ -43,6 +43,8 @@ namespace bbe
 			void setPosition(uint64_t index, const bbe::Vector3& pos);
 
 			void setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection);
+
+			size_t getAmountOfPlayingSounds() const;
 		};
 	}
 }

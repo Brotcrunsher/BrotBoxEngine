@@ -157,6 +157,8 @@ namespace bbe
 		void beginMeasure(const char* tag, bool force = false); // CAREFUL: Static string assumed!
 		bbe::String getMeasuresString();
 
+		size_t getAmountOfPlayingSounds() const;
+
 #ifndef BBE_NO_AUDIO
 		void setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection);
 #endif

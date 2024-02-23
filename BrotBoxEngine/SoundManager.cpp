@@ -467,6 +467,12 @@ void bbe::INTERNAL::SoundManager::setSoundListener(const bbe::Vector3& pos, cons
 	listenerDirection = lookDirection;
 }
 
+size_t bbe::INTERNAL::SoundManager::getAmountOfPlayingSounds() const
+{
+	std::lock_guard<std::mutex> playingSoundsGuard(playingSoundsMutex);
+	return playingSounds.size();
+}
+
 void bbe::INTERNAL::SoundManager::update()
 {
 #ifdef __EMSCRIPTEN__

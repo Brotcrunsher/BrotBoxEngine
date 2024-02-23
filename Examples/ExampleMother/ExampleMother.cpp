@@ -7,6 +7,7 @@
 #include <UIAutomation.h>
 #include "AssetStore.h"
 #include "imgui_internal.h"
+#include "GlobalKeyboard.h"
 
 //TODO: Redo
 //TODO: Countdown beeps when starting and stopping startable tasks
@@ -545,6 +546,9 @@ private:
 	bbe::Random rand;
 
 	bbe::List<float> mousePositions;
+
+	bbe::GlobalKeyboard globalKeyboard;
+
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
 	{
@@ -706,6 +710,8 @@ public:
 		tabSwitchRequestedLeft  = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::Q);
 		tabSwitchRequestedRight = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E);
 
+		beginMeasure("GlobalKeyboard");
+		globalKeyboard.update();
 
 		beginMeasure("Play Task Sounds");
 		if (tasks.getList().any([](const Task& t) { return t.shouldPlaySoundNewTask(); }))
@@ -2035,6 +2041,7 @@ public:
 			ImGui::Checkbox("Let me prepare", &forcePrepare); ImGui::bbe::tooltip("Make tasks advancable, even before late time happens.");
 			ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
 			ImGui::NewLine();
+			ImGui::Text("Playing sounds: %d", (int)getAmountOfPlayingSounds());
 			ImGui::Text(getMeasuresString().getRaw());
 		}
 		ImGui::End();

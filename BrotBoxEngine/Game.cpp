@@ -589,3 +589,8 @@ bbe::String bbe::Game::getMeasuresString()
 
 	return retVal;
 }
+
+size_t bbe::Game::getAmountOfPlayingSounds() const
+{
+	return m_soundManager.getAmountOfPlayingSounds();
+}
