@@ -17,9 +17,9 @@ namespace bbe
 		void writeFloatArrToFile(const bbe::String &filePath, const float *arr, size_t size);
 		void writeFloatArrToFile(const bbe::String& filePath, const bbe::List<float>& data);
 		void writeStringToFile(const bbe::String& filePath, const bbe::String& stringToWrite);
-		void writeBinaryToFile(const bbe::String& filePath, bbe::ByteBuffer& buffer);
+		void writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
 		void appendStringToFile(const bbe::String& filePath, const bbe::String& stringToAppend);
-		void appendBinaryToFile(const bbe::String& filePath, bbe::ByteBuffer& buffer);
+		void appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
 		bool doesFileExist(const bbe::String& filePath);
 		void createDirectory(const bbe::String& path);
 		bool deleteFile(const bbe::String& path);

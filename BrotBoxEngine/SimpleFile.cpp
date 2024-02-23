@@ -107,7 +107,7 @@ void bbe::simpleFile::writeStringToFile(const bbe::String& filePath, const bbe::
 	file.close();
 }
 
-void bbe::simpleFile::writeBinaryToFile(const bbe::String& filePath, bbe::ByteBuffer& buffer)
+void bbe::simpleFile::writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
 {
 	std::ofstream file(filePath.getRaw(), std::ios_base::binary);
 	if (!file.is_open()) {
@@ -127,7 +127,7 @@ void bbe::simpleFile::appendStringToFile(const bbe::String& filePath, const bbe:
 	file.close();
 }
 
-void bbe::simpleFile::appendBinaryToFile(const bbe::String& filePath, bbe::ByteBuffer& buffer)
+void bbe::simpleFile::appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
 {
 	std::ofstream file(filePath.getRaw(), std::ios::binary | std::ofstream::app);
 	if (!file.is_open()) {

@@ -259,7 +259,7 @@ macro(add_trivial_project name)
 endmacro()
 
 add_library(BrotBoxEngine STATIC)
-set_property(TARGET BrotBoxEngine PROPERTY CXX_STANDARD 17)
+set_property(TARGET BrotBoxEngine PROPERTY CXX_STANDARD ${CMAKE_CXX_STANDARD})
 set_property(TARGET BrotBoxEngine PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET BrotBoxEngine PROPERTY CXX_EXTENSIONS OFF)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

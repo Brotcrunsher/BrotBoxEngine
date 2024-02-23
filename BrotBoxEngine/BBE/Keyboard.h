@@ -8,7 +8,7 @@ namespace bbe
 	{
 		friend class Window;
 		friend class Game;
-	private:
+	protected:
 		bool m_pkeysNextFrame[(int)Key::LAST + 1];
 		bool m_pkeysThisFrame[(int)Key::LAST + 1];
 		bool m_pkeysLastFrame[(int)Key::LAST + 1];

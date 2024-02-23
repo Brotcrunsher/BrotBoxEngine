@@ -129,6 +129,8 @@ namespace bbe
 		RIGHT_ALT = GLFW_KEY_RIGHT_ALT,
 		RIGHT_SUPER = GLFW_KEY_RIGHT_SUPER,
 		MENU = GLFW_KEY_MENU,
+
+		INVALID = -1,
 	};
 	
 

@@ -262,3 +262,5 @@ ModelManifest.xml
 **/AssetStore.cpp
 **/AssetStore.h
 /ExampleSimplePresentation/out.xml
+/BrotBoxEngine/GlobalKeyboardDLL/EmbeddedDlls.cpp
+/BrotBoxEngine/GlobalKeyboardDLL/EmbeddedDlls.h
