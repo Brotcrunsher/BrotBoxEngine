@@ -119,7 +119,7 @@ class MyGame : public bbe::Game
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
-		std::cout << timeSinceLastFrame << std::endl;
+		BBELOGLN(timeSinceLastFrame);
 		renderConfigChanged = false;
 		if (getMouseScrollY() != 0)
 		{

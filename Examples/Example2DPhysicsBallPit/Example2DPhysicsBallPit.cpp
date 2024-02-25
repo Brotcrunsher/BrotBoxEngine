@@ -57,7 +57,7 @@ class MyGame : public bbe::Game
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
-		std::cout << "FPS: " << (1.f / timeSinceLastFrame) << std::endl;
+		BBELOGLN("FPS: " << (1.f / timeSinceLastFrame));
 
 		float force = 4000;
 		if (isKeyDown(bbe::Key::LEFT_SHIFT))

@@ -74,7 +74,7 @@ class MyGame : public bbe::Game
 	// Geerbt über Game
 	virtual void onStart() override
 	{
-		std::cout << "hai onStart" << std::endl;
+		BBELOGLN("hai onStart");
 
 		for (int i = 0; i < 200; i++)
 		{
@@ -84,7 +84,7 @@ class MyGame : public bbe::Game
 	virtual void update(float timeSinceLastFrame) override
 	{
 		ccnc.update(timeSinceLastFrame);
-		std::cout << (1 / timeSinceLastFrame) << std::endl;
+		BBELOGLN((1 / timeSinceLastFrame));
 
 		if (isMousePressed(bbe::MouseButton::LEFT))
 		{

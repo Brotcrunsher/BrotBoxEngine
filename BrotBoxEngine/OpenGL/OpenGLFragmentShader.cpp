@@ -1,5 +1,6 @@
 #include "BBE/OpenGL/OpenGLFragmentShader.h"
 #include "BBE/FatalErrors.h"
+#include "BBE/Logging.h"
 
 static GLuint getShader(GLenum shaderType, const char* src)
 {
@@ -16,7 +17,7 @@ static GLuint getShader(GLenum shaderType, const char* src)
 		bbe::List<char> log;
 		log.resizeCapacityAndLength(length);
 		glGetShaderInfoLog(shader, length, &length, log.getRaw());
-		std::cout << log.getRaw() << std::endl;
+		BBELOGLN(log.getRaw());
 	}
 	return shader;
 }
@@ -43,7 +44,7 @@ static void build(bbe::INTERNAL::openGl::OpenGLFragmentShader::ShaderProgramTrip
 		bbe::List<char> log;
 		log.resizeCapacityAndLength(length);
 		glGetProgramInfoLog(prog.program, length, &length, log.getRaw());
-		std::cout << log.getRaw() << std::endl;
+		BBELOGLN(log.getRaw());
 	}
 	prog.determinePositions();
 }

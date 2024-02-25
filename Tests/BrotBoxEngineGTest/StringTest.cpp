@@ -4,34 +4,34 @@
 
 TEST(String, TotalStringTest)
 {
-	ASSERT_EQ((int)bbe::utf8len(u8""), 0);					//Simple!
-	ASSERT_EQ((int)bbe::utf8len(u8"a"), 1);					//A bit harder!
-	ASSERT_EQ((int)bbe::utf8len(u8"BrotBoxEngine!"), 14);	//Still normal...
-	ASSERT_EQ((int)bbe::utf8len(u8"αβγδ"), 4);				//Okay...
-	ASSERT_EQ((int)bbe::utf8len(u8"Großmütterchäään"), 16);	//Get ready!
-	ASSERT_EQ((int)bbe::utf8len(u8"💣🍣💃"), 3);			//God damn, I bet this line will break a few compilers... or git! 🤣
+	ASSERT_EQ((int)bbe::utf8len(""), 0);					//Simple!
+	ASSERT_EQ((int)bbe::utf8len("a"), 1);					//A bit harder!
+	ASSERT_EQ((int)bbe::utf8len("BrotBoxEngine!"), 14);	//Still normal...
+	ASSERT_EQ((int)bbe::utf8len("αβγδ"), 4);				//Okay...
+	ASSERT_EQ((int)bbe::utf8len("Großmütterchäään"), 16);	//Get ready!
+	ASSERT_EQ((int)bbe::utf8len("💣🍣💃"), 3);			//God damn, I bet this line will break a few compilers... or git! 🤣
 
-	ASSERT_EQ((int)bbe::utf8charlen(u8""), 1);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"a"), 1);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"aaaa"), 1);
+	ASSERT_EQ((int)bbe::utf8charlen(""), 1);
+	ASSERT_EQ((int)bbe::utf8charlen("a"), 1);
+	ASSERT_EQ((int)bbe::utf8charlen("aaaa"), 1);
 
-	ASSERT_EQ((int)bbe::utf8charlen(u8""), 1);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"B"), 1);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"α"), 2);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"β"), 2);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"γ"), 2);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"δ"), 2);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"ß"), 2);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"ä"), 2);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"ö"), 2);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"ü"), 2);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"💣"), 4);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"🍣"), 4);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"💃"), 4);
-	ASSERT_EQ((int)bbe::utf8charlen(u8"\uFEFF"), 3);
+	ASSERT_EQ((int)bbe::utf8charlen(""), 1);
+	ASSERT_EQ((int)bbe::utf8charlen("B"), 1);
+	ASSERT_EQ((int)bbe::utf8charlen("α"), 2);
+	ASSERT_EQ((int)bbe::utf8charlen("β"), 2);
+	ASSERT_EQ((int)bbe::utf8charlen("γ"), 2);
+	ASSERT_EQ((int)bbe::utf8charlen("δ"), 2);
+	ASSERT_EQ((int)bbe::utf8charlen("ß"), 2);
+	ASSERT_EQ((int)bbe::utf8charlen("ä"), 2);
+	ASSERT_EQ((int)bbe::utf8charlen("ö"), 2);
+	ASSERT_EQ((int)bbe::utf8charlen("ü"), 2);
+	ASSERT_EQ((int)bbe::utf8charlen("💣"), 4);
+	ASSERT_EQ((int)bbe::utf8charlen("🍣"), 4);
+	ASSERT_EQ((int)bbe::utf8charlen("💃"), 4);
+	ASSERT_EQ((int)bbe::utf8charlen("\uFEFF"), 3);
 	try
 	{
-		bbe::utf8charlen(u8"💃" + 1); //This should create an exception.
+		bbe::utf8charlen("💃" + 1); //This should create an exception.
 		bbe::debugBreak();
 	}
 	catch (const bbe::NotStartOfUtf8Exception&)
@@ -40,25 +40,25 @@ TEST(String, TotalStringTest)
 	}
 
 	{
-		char data[] = u8"a";
-		ASSERT_EQ(true, bbe::utf8IsSameChar(u8"a", data));
-		ASSERT_EQ(true, bbe::utf8IsSameChar(data, u8"a"));
-		ASSERT_EQ(false, bbe::utf8IsSameChar(u8"b", data));
-		ASSERT_EQ(false, bbe::utf8IsSameChar(data, u8"b"));
+		char data[] = "a";
+		ASSERT_EQ(true, bbe::utf8IsSameChar("a", data));
+		ASSERT_EQ(true, bbe::utf8IsSameChar(data, "a"));
+		ASSERT_EQ(false, bbe::utf8IsSameChar("b", data));
+		ASSERT_EQ(false, bbe::utf8IsSameChar(data, "b"));
 	}
 	{
-		char data[] = u8"💣";
-		ASSERT_EQ(true, bbe::utf8IsSameChar(u8"💣", data));
-		ASSERT_EQ(true, bbe::utf8IsSameChar(data, u8"💣"));
-		ASSERT_EQ(false, bbe::utf8IsSameChar(u8"b", data));
-		ASSERT_EQ(false, bbe::utf8IsSameChar(data, u8"b"));
+		char data[] = "💣";
+		ASSERT_EQ(true, bbe::utf8IsSameChar("💣", data));
+		ASSERT_EQ(true, bbe::utf8IsSameChar(data, "💣"));
+		ASSERT_EQ(false, bbe::utf8IsSameChar("b", data));
+		ASSERT_EQ(false, bbe::utf8IsSameChar(data, "b"));
 	}
 
-	ASSERT_EQ(true, bbe::utf8IsWhitespace(u8" "));
-	ASSERT_EQ(true, bbe::utf8IsWhitespace(u8"\t"));
-	ASSERT_EQ(true, bbe::utf8IsWhitespace(u8"\n"));
-	ASSERT_EQ(true, bbe::utf8IsWhitespace(u8"\uFEFF"));
-	ASSERT_EQ(false, bbe::utf8IsWhitespace(u8"a"));
+	ASSERT_EQ(true, bbe::utf8IsWhitespace(" "));
+	ASSERT_EQ(true, bbe::utf8IsWhitespace("\t"));
+	ASSERT_EQ(true, bbe::utf8IsWhitespace("\n"));
+	ASSERT_EQ(true, bbe::utf8IsWhitespace("\uFEFF"));
+	ASSERT_EQ(false, bbe::utf8IsWhitespace("a"));
 
 
 	//TODO add non SSO Tests
@@ -101,7 +101,7 @@ TEST(String, TotalStringTest)
 		bbe::String stringAdd1WOSSO("Hallo Welt! Das ist ein langer Text! ");
 		bbe::String stringAddr = stringAdd0WOSSO + stringAdd1WOSSO;
 		ASSERT_EQ(stringAddr, "Kurz Hallo Welt! Das ist ein langer Text! ");
-		bbe::String stringAdd2WOSSO(u8"Und hierdurch wird er sogar noch länger!");
+		bbe::String stringAdd2WOSSO("Und hierdurch wird er sogar noch länger!");
 		bbe::String stringAdd3WOSSO = stringAdd1WOSSO + stringAdd2WOSSO;
 		ASSERT_EQ(stringAdd3WOSSO, "Hallo Welt! Das ist ein langer Text! Und hierdurch wird er sogar noch länger!");
 	}
@@ -483,76 +483,76 @@ TEST(String, TotalStringTest)
 
 	{
 		bbe::String s1 = "aaba";
-		ASSERT_EQ(s1.replace(u8"b", u8""), u8"aaa");
-		ASSERT_EQ(s1.replace(u8"b", u8"b"), u8"aaba");
-		ASSERT_EQ(s1.replace(u8"b", u8"bb"), u8"aabba");
-		ASSERT_EQ(s1.replace(u8"b", u8" "), u8"aa a");
-		ASSERT_EQ(s1.replace(u8"b", u8"  "), u8"aa  a");
-		ASSERT_EQ(s1.replace(u8"b", u8"\t"), u8"aa\ta");
-		ASSERT_EQ(s1.replace(u8"b", u8"\t\t"), u8"aa\t\ta");
-		ASSERT_EQ(s1.replace(u8"b", u8"ö"), u8"aaöa");
-		ASSERT_EQ(s1.replace(u8"b", u8"öö"), u8"aaööa");
+		ASSERT_EQ(s1.replace("b", ""), "aaa");
+		ASSERT_EQ(s1.replace("b", "b"), "aaba");
+		ASSERT_EQ(s1.replace("b", "bb"), "aabba");
+		ASSERT_EQ(s1.replace("b", " "), "aa a");
+		ASSERT_EQ(s1.replace("b", "  "), "aa  a");
+		ASSERT_EQ(s1.replace("b", "\t"), "aa\ta");
+		ASSERT_EQ(s1.replace("b", "\t\t"), "aa\t\ta");
+		ASSERT_EQ(s1.replace("b", "ö"), "aaöa");
+		ASSERT_EQ(s1.replace("b", "öö"), "aaööa");
 	}
 	{
 		bbe::String s1 = "aaöa";
-		ASSERT_EQ(s1.replace(u8"ö", u8""), u8"aaa");
-		ASSERT_EQ(s1.replace(u8"ö", u8"b"), u8"aaba");
-		ASSERT_EQ(s1.replace(u8"ö", u8"bb"), u8"aabba");
-		ASSERT_EQ(s1.replace(u8"ö", u8" "), u8"aa a");
-		ASSERT_EQ(s1.replace(u8"ö", u8"  "), u8"aa  a");
-		ASSERT_EQ(s1.replace(u8"ö", u8"\t"), u8"aa\ta");
-		ASSERT_EQ(s1.replace(u8"ö", u8"\t\t"), u8"aa\t\ta");
-		ASSERT_EQ(s1.replace(u8"ö", u8"ö"), u8"aaöa");
-		ASSERT_EQ(s1.replace(u8"ö", u8"öö"), u8"aaööa");
+		ASSERT_EQ(s1.replace("ö", ""), "aaa");
+		ASSERT_EQ(s1.replace("ö", "b"), "aaba");
+		ASSERT_EQ(s1.replace("ö", "bb"), "aabba");
+		ASSERT_EQ(s1.replace("ö", " "), "aa a");
+		ASSERT_EQ(s1.replace("ö", "  "), "aa  a");
+		ASSERT_EQ(s1.replace("ö", "\t"), "aa\ta");
+		ASSERT_EQ(s1.replace("ö", "\t\t"), "aa\t\ta");
+		ASSERT_EQ(s1.replace("ö", "ö"), "aaöa");
+		ASSERT_EQ(s1.replace("ö", "öö"), "aaööa");
 	}
 	{
 		bbe::String s1 = "aöba";
-		ASSERT_EQ(s1.replace(u8"b", u8""), u8"aöa");
-		ASSERT_EQ(s1.replace(u8"b", u8"b"), u8"aöba");
-		ASSERT_EQ(s1.replace(u8"b", u8"bb"), u8"aöbba");
-		ASSERT_EQ(s1.replace(u8"b", u8" "), u8"aö a");
-		ASSERT_EQ(s1.replace(u8"b", u8"  "), u8"aö  a");
-		ASSERT_EQ(s1.replace(u8"b", u8"\t"), u8"aö\ta");
-		ASSERT_EQ(s1.replace(u8"b", u8"\t\t"), u8"aö\t\ta");
-		ASSERT_EQ(s1.replace(u8"b", u8"ö"), u8"aööa");
-		ASSERT_EQ(s1.replace(u8"b", u8"öö"), u8"aöööa");
+		ASSERT_EQ(s1.replace("b", ""), "aöa");
+		ASSERT_EQ(s1.replace("b", "b"), "aöba");
+		ASSERT_EQ(s1.replace("b", "bb"), "aöbba");
+		ASSERT_EQ(s1.replace("b", " "), "aö a");
+		ASSERT_EQ(s1.replace("b", "  "), "aö  a");
+		ASSERT_EQ(s1.replace("b", "\t"), "aö\ta");
+		ASSERT_EQ(s1.replace("b", "\t\t"), "aö\t\ta");
+		ASSERT_EQ(s1.replace("b", "ö"), "aööa");
+		ASSERT_EQ(s1.replace("b", "öö"), "aöööa");
 	}
 	{
 		bbe::String s1 = "aabö";
-		ASSERT_EQ(s1.replace(u8"b", u8""), u8"aaö");
-		ASSERT_EQ(s1.replace(u8"b", u8"b"), u8"aabö");
-		ASSERT_EQ(s1.replace(u8"b", u8"bb"), u8"aabbö");
-		ASSERT_EQ(s1.replace(u8"b", u8" "), u8"aa ö");
-		ASSERT_EQ(s1.replace(u8"b", u8"  "), u8"aa  ö");
-		ASSERT_EQ(s1.replace(u8"b", u8"\t"), u8"aa\tö");
-		ASSERT_EQ(s1.replace(u8"b", u8"\t\t"), u8"aa\t\tö");
-		ASSERT_EQ(s1.replace(u8"b", u8"ö"), u8"aaöö");
-		ASSERT_EQ(s1.replace(u8"b", u8"öö"), u8"aaööö");
+		ASSERT_EQ(s1.replace("b", ""), "aaö");
+		ASSERT_EQ(s1.replace("b", "b"), "aabö");
+		ASSERT_EQ(s1.replace("b", "bb"), "aabbö");
+		ASSERT_EQ(s1.replace("b", " "), "aa ö");
+		ASSERT_EQ(s1.replace("b", "  "), "aa  ö");
+		ASSERT_EQ(s1.replace("b", "\t"), "aa\tö");
+		ASSERT_EQ(s1.replace("b", "\t\t"), "aa\t\tö");
+		ASSERT_EQ(s1.replace("b", "ö"), "aaöö");
+		ASSERT_EQ(s1.replace("b", "öö"), "aaööö");
 	}
 	{
 		bbe::String s1 = "aabaö";
-		ASSERT_EQ(s1.replace(u8"b", u8""), u8"aaaö");
-		ASSERT_EQ(s1.replace(u8"b", u8"b"), u8"aabaö");
-		ASSERT_EQ(s1.replace(u8"b", u8"bb"), u8"aabbaö");
-		ASSERT_EQ(s1.replace(u8"b", u8" "), u8"aa aö");
-		ASSERT_EQ(s1.replace(u8"b", u8"  "), u8"aa  aö");
-		ASSERT_EQ(s1.replace(u8"b", u8"\t"), u8"aa\taö");
-		ASSERT_EQ(s1.replace(u8"b", u8"\t\t"), u8"aa\t\taö");
-		ASSERT_EQ(s1.replace(u8"b", u8"ö"), u8"aaöaö");
-		ASSERT_EQ(s1.replace(u8"b", u8"öö"), u8"aaööaö");
+		ASSERT_EQ(s1.replace("b", ""), "aaaö");
+		ASSERT_EQ(s1.replace("b", "b"), "aabaö");
+		ASSERT_EQ(s1.replace("b", "bb"), "aabbaö");
+		ASSERT_EQ(s1.replace("b", " "), "aa aö");
+		ASSERT_EQ(s1.replace("b", "  "), "aa  aö");
+		ASSERT_EQ(s1.replace("b", "\t"), "aa\taö");
+		ASSERT_EQ(s1.replace("b", "\t\t"), "aa\t\taö");
+		ASSERT_EQ(s1.replace("b", "ö"), "aaöaö");
+		ASSERT_EQ(s1.replace("b", "öö"), "aaööaö");
 	}
 	{
 		bbe::String s1 = "äöü";
-		ASSERT_EQ(s1.replace(u8"b", u8""), u8"äöü");
-		ASSERT_EQ(s1.replace(u8"ä", u8""), u8"öü");
-		ASSERT_EQ(s1.replace(u8"ö", u8""), u8"äü");
-		ASSERT_EQ(s1.replace(u8"ü", u8""), u8"äö");
-		ASSERT_EQ(s1.replace(u8"ä", u8"b"), u8"böü");
-		ASSERT_EQ(s1.replace(u8"ö", u8"b"), u8"äbü");
-		ASSERT_EQ(s1.replace(u8"ü", u8"b"), u8"äöb");
-		ASSERT_EQ(s1.replace(u8"ä", u8"ä"), u8"äöü");
-		ASSERT_EQ(s1.replace(u8"ö", u8"ä"), u8"ääü");
-		ASSERT_EQ(s1.replace(u8"ü", u8"ä"), u8"äöä");
+		ASSERT_EQ(s1.replace("b", ""), "äöü");
+		ASSERT_EQ(s1.replace("ä", ""), "öü");
+		ASSERT_EQ(s1.replace("ö", ""), "äü");
+		ASSERT_EQ(s1.replace("ü", ""), "äö");
+		ASSERT_EQ(s1.replace("ä", "b"), "böü");
+		ASSERT_EQ(s1.replace("ö", "b"), "äbü");
+		ASSERT_EQ(s1.replace("ü", "b"), "äöb");
+		ASSERT_EQ(s1.replace("ä", "ä"), "äöü");
+		ASSERT_EQ(s1.replace("ö", "ä"), "ääü");
+		ASSERT_EQ(s1.replace("ü", "ä"), "äöä");
 	}
 
 	{

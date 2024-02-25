@@ -352,14 +352,14 @@ class MyGame : public bbe::Game
 	{
 		for (size_t i = 0; i < kernelSize; i++)
 		{
-			std::cout << "[";
+			BBELOG("[");
 			for (size_t k = 0; k < kernelSize; k++)
 			{
-				std::cout << tg[i][k] << ", ";
+				BBELOG(tg[i][k]);
 			}
-			std::cout << "]" << std::endl;
+			BBELOGLN("]");
 		}
-		std::cout << std::endl;
+		BBELOGLN("");
 	}
 
 	//void deepClear(const bbe::Vector2i& pos)

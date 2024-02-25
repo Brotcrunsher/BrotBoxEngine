@@ -6,6 +6,7 @@
 #include <iostream>
 #include "BBE/SimpleFile.h"
 #include "EmbeddedFonts.h"
+#include "BBE/Logging.h"
 
 const bbe::Font::CharData& bbe::Font::loadCharData(const int32_t codePoint, float scale_) const
 {
@@ -83,10 +84,10 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 #else
 		static const bbe::List<bbe::String> platformDependentFontDirectories = { };
 #endif
-		std::cout << "Looking for Font " << fontPath << std::endl;
+		BBELOGLN("Looking for Font " << fontPath);
 		if (std::filesystem::exists(fontPath.getRaw()))
 		{
-			std::cout << "Found font via direct fontPath" << std::endl;
+			BBELOGLN("Found font via direct fontPath");
 			this->fontPath = fontPath;
 		}
 		else
@@ -97,7 +98,7 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 				const bbe::String currCheckPath = platformDep + fontPath;
 				if (std::filesystem::exists(currCheckPath.getRaw()))
 				{
-					std::cout << "Found font via system path: " << currCheckPath << std::endl;
+					BBELOGLN("Found font via system path: " << currCheckPath);
 					this->fontPath = currCheckPath;
 					found = true;
 					break;
@@ -105,7 +106,7 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 			}
 			if (!found)
 			{
-				std::cout << "Could not find font!" << std::endl;
+				BBELOGLN("Could not find font!");
 				throw NullPointerException();
 			}
 		}

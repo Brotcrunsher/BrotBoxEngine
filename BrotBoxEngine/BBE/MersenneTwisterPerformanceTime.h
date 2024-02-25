@@ -2,6 +2,7 @@
 
 #include "../BBE/MersenneTwister.h"
 #include "../BBE/CPUWatch.h"
+#include "../BBE/Logging.h"
 #include <iostream>
 
 namespace bbe
@@ -17,7 +18,7 @@ namespace bbe
 			{
 				val += mt.next();
 			}
-			std::cout << "Mersenne Twister BBE Time: " << watch.getTimeExpiredSeconds() << std::endl;
+			BBELOGLN("Mersenne Twister BBE Time: " << watch.getTimeExpiredSeconds());
 		}
 
 		void testMersenneTwisterSTL()
@@ -33,7 +34,7 @@ namespace bbe
 			{
 				val += dist(mt);
 			}
-			std::cout << "Mersenne Twister STL Time: " << watch.getTimeExpiredSeconds() << std::endl;
+			BBELOGLN("Mersenne Twister STL Time: " << watch.getTimeExpiredSeconds());
 
 		}
 	}

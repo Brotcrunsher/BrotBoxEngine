@@ -13,6 +13,7 @@
 #include "../BBE/BrotTime.h"
 #include "../BBE/TrayIcon.h"
 #include "../BBE/ImGuiExtensions.h"
+#include "../BBE/Logging.h"
 
 #include "../BBE/ExceptionHelper.h"
 #include "../BBE/Exceptions.h"

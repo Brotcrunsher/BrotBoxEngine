@@ -9,6 +9,7 @@
 #include <iostream>
 #include "implot.h"
 #include "BBE/ImGuiExtensions.h"
+#include "BBE/Logging.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -76,7 +77,7 @@ static void crashHandler(int sig)
 	string += "\n";
 	string += "Stacktrace:\n";
 	string += std::to_string(std::stacktrace::current());
-	std::cout << string << std::endl;
+	BBELOGLN(string);
 
 	bbe::simpleFile::createDirectory("CrashLogs");
 	bbe::simpleFile::writeStringToFile("CrashLogs/" + bbe::String(std::time(nullptr)) + ".txt", string);
@@ -86,25 +87,25 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 {
 	signal(SIGSEGV, crashHandler);
 
-	std::cout << "Starting Game: " << title << std::endl;
+	BBELOGLN("Starting Game: " << title);
 	if (m_started)
 	{
 		throw AlreadyCreatedException();
 	}
 	m_started = true;
 
-	std::cout << "Creating window" << std::endl;
+	BBELOGLN("Creating window");
 	m_pwindow = new Window(windowWidth, windowHeight, title, this);
 
-	std::cout << "Reseting game time" << std::endl;
+	BBELOGLN("Reseting game time");
 	m_gameTime.reset();
 
 #ifndef BBE_NO_AUDIO
-	std::cout << "Initializing SoundManager" << std::endl;
+	BBELOGLN("Initializing SoundManager");
 	m_soundManager.init();
 #endif
 
-	std::cout << "Calling onStart()" << std::endl;
+	BBELOGLN("Calling onStart()");
 	onStart();
 
 	if (videoRenderingPath)

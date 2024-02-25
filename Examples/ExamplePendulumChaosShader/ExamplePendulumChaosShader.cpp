@@ -20,7 +20,7 @@ public:
 
 	virtual void update(float timeSinceLastFrame) override
 	{
-		std::cout << "FPS: " << (1 / timeSinceLastFrame) << std::endl;
+		BBELOGLN("FPS: " << (1 / timeSinceLastFrame));
 
 		if (isMouseDown(bbe::MouseButton::LEFT))
 		{

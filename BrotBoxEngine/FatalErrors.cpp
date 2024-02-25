@@ -1,4 +1,5 @@
 #include "BBE/FatalErrors.h"
+#include "BBE/Logging.h"
 #include <iostream>
 
 #ifdef _WIN32
@@ -12,7 +13,7 @@ void bbe::INTERNAL::triggerFatalError(const bbe::String &msg)
 
 void bbe::INTERNAL::triggerFatalError(const char * msg)
 {
-	std::cout << "FATAL ERROR: " << msg << std::endl;
+	BBELOGLN("FATAL ERROR: " << msg);
 #ifdef _WIN32
 	//MessageBox(nullptr, msg, "FATAL ERROR", MB_OK);
 #endif

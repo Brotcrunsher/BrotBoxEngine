@@ -647,7 +647,6 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		//std::cout << "FPS: " << (1.f / timeSinceLastFrame) << std::endl;
 		constexpr int32_t brushSize = 10;
 
 

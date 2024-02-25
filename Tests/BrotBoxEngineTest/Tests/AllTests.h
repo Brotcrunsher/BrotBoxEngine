@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BBE/Logging.h"
 #include "DataStructures/ListTest.h"
 #include "DataStructures/HashMapTest.h"
 #include "DataStructures/StackTest.h"
@@ -17,60 +18,60 @@
 namespace bbe {
 	namespace test {
 		void runAllTests() {
-			std::cout << "Starting Tests!" << std::endl;
+			BBELOGLN("Starting Tests!");
 
 			Person::checkIfAllPersonsWereDestroyed();
 
-			std::cout << "Testing List" << std::endl;
+			BBELOGLN("Testing List");
 			bbe::test::testList();
 			Person::checkIfAllPersonsWereDestroyed();
 
-			std::cout << "Testing HashMap" << std::endl;
+			BBELOGLN("Testing HashMap");
 			bbe::test::testHashMap();
 			Person::checkIfAllPersonsWereDestroyed();
 
-			std::cout << "Testing Stack" << std::endl;
+			BBELOGLN("Testing Stack");
 			bbe::test::testStack();
 			Person::checkIfAllPersonsWereDestroyed();
 
-			std::cout << "Testing UniquePointer" << std::endl;
+			BBELOGLN("Testing UniquePointer");
 			bbe::test::testUniquePointer();
 			Person::checkIfAllPersonsWereDestroyed();
 
-			std::cout << "Testing Array" << std::endl;
+			BBELOGLN("Testing Array");
 			bbe::test::testArray();
 			Person::checkIfAllPersonsWereDestroyed();
 
-			std::cout << "Testing DynamicArray" << std::endl;
+			BBELOGLN("Testing DynamicArray");
 			bbe::test::testDynamicArray();
 			Person::checkIfAllPersonsWereDestroyed();
 
-			std::cout << "Testing testMatrix4" << std::endl;
+			BBELOGLN("Testing testMatrix4");
 			bbe::test::testMatrix4();
 			Person::checkIfAllPersonsWereDestroyed();
 
-			std::cout << "Testing testMath" << std::endl;
+			BBELOGLN("Testing testMath");
 			bbe::test::testMath();
 			Person::checkIfAllPersonsWereDestroyed();
 
-			std::cout << "Testing Vector2" << std::endl;
+			BBELOGLN("Testing Vector2");
 			bbe::test::testVector2();
 			Person::checkIfAllPersonsWereDestroyed();
 
-			std::cout << "Testing Vector3" << std::endl;
+			BBELOGLN("Testing Vector3");
 			bbe::test::testVector3();
 			Person::checkIfAllPersonsWereDestroyed();
 
-			std::cout << "Testing LinearCongruentialGenerator" << std::endl;
+			BBELOGLN("Testing LinearCongruentialGenerator");
 			bbe::test::testLinearCongruentailGenerators();
 			Person::checkIfAllPersonsWereDestroyed();
 
-			std::cout << "Testing Image" << std::endl;
+			BBELOGLN("Testing Image");
 			bbe::test::testImage();
 			Person::checkIfAllPersonsWereDestroyed();
 
 
-			std::cout << "All Tests complete!" << std::endl;
+			BBELOGLN("All Tests complete!");
 		}
 	}
 }

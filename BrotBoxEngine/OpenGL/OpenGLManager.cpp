@@ -16,6 +16,7 @@
 #include "BBE/FragmentShader.h"
 #include "BBE/OpenGL/OpenGLFragmentShader.h"
 #include "BBE/OpenGL/OpenGLLightBaker.h"
+#include "BBE/Logging.h"
 #include <iostream>
 
 // TODO: Is every OpenGL Resource properly freed? How can we find that out?
@@ -102,7 +103,7 @@ void bbe::INTERNAL::openGl::Program::compile(const bbe::String& label)
 		bbe::List<char> log;
 		log.resizeCapacityAndLength(length);
 		glGetProgramInfoLog(program, length, &length, log.getRaw());
-		std::cout << log.getRaw() << std::endl;
+		BBELOGLN(log.getRaw());
 
 		bbe::INTERNAL::triggerFatalError("Failed to link program");
 	}
@@ -125,7 +126,7 @@ GLuint bbe::INTERNAL::openGl::Program::getShader(const bbe::String& label, GLenu
 		bbe::List<char> log;
 		log.resizeCapacityAndLength(length);
 		glGetShaderInfoLog(shader, length, &length, log.getRaw());
-		std::cout << log.getRaw() << std::endl;
+		BBELOGLN(log.getRaw());
 
 		bbe::INTERNAL::triggerFatalError("Failed to compile shader");
 	}
@@ -1274,10 +1275,10 @@ MessageCallback(GLenum source,
 	default:                                typeString = "UNKNOWN";             break;
 	}
 
-	std::cout << "OpenGL " << typeString << " Callback: "
+	BBELOGLN("OpenGL " << typeString << " Callback: "
 		"\n   type     = " << type <<
 		"\n   severity = " << severity <<
-		"\n   message  = " << message << std::endl;
+		"\n   message  = " << message);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow* window, uint32_t initialWindowWidth, uint32_t initialWindowHeight)

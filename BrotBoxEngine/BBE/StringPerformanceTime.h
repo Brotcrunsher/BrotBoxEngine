@@ -5,6 +5,7 @@
 #include "../BBE/UtilTest.h"
 #include "../BBE/CPUWatch.h"
 #include "../BBE/String.h"
+#include "../BBE/Logging.h"
 #include <string>
 #include <vector>
 
@@ -30,7 +31,7 @@ namespace bbe {
 
 
 
-				std::cout << total/numRuns << std::endl;
+				BBELOGLN(total/numRuns);
 			}
 		}
 
@@ -48,7 +49,7 @@ namespace bbe {
 					//ape[0] = c;
 					//vec.push_back(ape);
 				}
-				std::cout << allocationWatch.getTimeExpiredSeconds() << std::endl;
+				BBELOGLN(allocationWatch.getTimeExpiredSeconds());
 				//vec.clear();
 			}
 

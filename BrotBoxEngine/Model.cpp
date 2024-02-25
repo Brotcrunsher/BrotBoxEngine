@@ -2,6 +2,7 @@
 #include "BBE/DynamicArray.h"
 #include "BBE/List.h"
 #include "BBE/HashMap.h"
+#include "BBE/Logging.h"
 
 bbe::Model::Model()
 {
@@ -115,7 +116,7 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 			if (!ignoredTokens.contains(tokens[0]))
 			{
 				ignoredTokens.add(tokens[0]);
-				std::cout << "Warning: Did not interpret obj element that started with " << tokens[0] << std::endl;
+				BBELOGLN("Warning: Did not interpret obj element that started with " << tokens[0]);
 			}
 		}
 	}

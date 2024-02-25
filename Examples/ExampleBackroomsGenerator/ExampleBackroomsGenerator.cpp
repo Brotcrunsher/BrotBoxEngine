@@ -205,7 +205,7 @@ namespace br
 				expandRoom++;
 			}
 
-			std::cout << "# Rooms: " << rooms.rooms.getLength() << std::endl;
+			BBELOGLN("# Rooms: " << rooms.rooms.getLength());
 
 			float cameraSpeed = 300.f;
 			if (isKeyDown(bbe::Key::LEFT_SHIFT))
@@ -253,7 +253,7 @@ namespace br
 			if (fps < minFps)
 			{
 				minFps = fps;
-				std::cout << fps << std::endl;
+				BBELOGLN(fps);
 			}
 
 			setSoundListener(ccnc.getCameraPos(), ccnc.getCameraForward());

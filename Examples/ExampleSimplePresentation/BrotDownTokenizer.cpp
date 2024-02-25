@@ -1,4 +1,5 @@
 #include "BrotDownTokenizer.h"
+#include "BBE/Logging.h"
 
 extern bbe::List<bbe::Font> fonts;
 
@@ -88,17 +89,17 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 				}
 				else
 				{
-					std::cout << "Found only a single \"" << std::endl;
+					BBELOGLN("Found only a single \"");
 					throw bbe::IllegalArgumentException();
 				}
 			}
 			command = command.trim();
-			std::cout << "COMMAND: " << command << std::endl;
+			BBELOGLN("COMMAND: " << command);
 
 			const auto commandTokens = command.split(" ", false);
 			for (const bbe::String& token : commandTokens)
 			{
-				std::cout << "\t" << token << std::endl;
+				BBELOGLN("\t" << token);
 			}
 			int32_t nextRepeats = 1;
 
@@ -443,7 +444,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 						}
 						else
 						{
-							std::cout << "Something strange happened..." << std::endl;
+							BBELOGLN("Something strange happened...");
 							throw bbe::IllegalStateException();
 						}
 					}
@@ -481,7 +482,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 
 				if (!commandRecognized)
 				{
-					std::cout << "Got illegal argument: " << command << std::endl;
+					BBELOGLN("Got illegal argument: " << command);
 					throw bbe::IllegalArgumentException();
 				}
 			}

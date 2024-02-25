@@ -13,16 +13,16 @@ namespace bbe
 		template<typename T>
 		void printList(List<T> l)
 		{
-			std::cout << "[";
+			BBELOG("[");
 			for (size_t i = 0; i < l.getLength(); i++)
 			{
-				std::cout << l[i];
+				BBELOG(l[i]);
 				if (i != l.getLength() - 1)
 				{
-					std::cout << ", ";
+					BBELOG(", ");
 				}
 			}
-			std::cout << "]" << std::endl;
+			BBELOGLN("]");
 		}
 
 		void testList()
@@ -1017,7 +1017,7 @@ namespace bbe
 				);
 
 				Person* find = findList.find(Person("0 year", "0 Street", 0));
-				std::cout << (long long) find << std::endl;
+				BBELOGLN((long long) find);
 				assertUnequals(find, nullptr);
 				assertEquals(find->name, "0 year");
 				assertEquals(find->address, "0 Street");

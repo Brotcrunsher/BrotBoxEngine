@@ -3,6 +3,7 @@
 #include "../BBE/HashMap.h"
 #include "../BBE/String.h"
 #include "../BBE/CPUWatch.h"
+#include "../BBE/Logging.h"
 #include <unordered_map>
 #include <iostream>
 
@@ -21,14 +22,14 @@ namespace bbe
 				{
 					map.add(i, L"Hallo");
 				}
-				std::cout << "BBE Hashmap add speed: " << watchAdd.getTimeExpiredSeconds() << std::endl;
+				BBELOGLN("BBE Hashmap add speed: " << watchAdd.getTimeExpiredSeconds());
 
 				CPUWatch watchGet;
 				for (int i = 0; i < 1024 * 1024; i++)
 				{
 					map.get(i);
 				}
-				std::cout << "BBE Hashmap get speed: " << watchGet.getTimeExpiredSeconds() << std::endl;
+				BBELOGLN("BBE Hashmap get speed: " << watchGet.getTimeExpiredSeconds());
 			}
 
 			{
@@ -42,14 +43,14 @@ namespace bbe
 				{
 					map.insert(std::pair<int, bbe::String>(i, L"Hallo"));
 				}
-				std::cout << "STD Hashmap add speed: " << watchAdd.getTimeExpiredSeconds() << std::endl;
+				BBELOGLN("STD Hashmap add speed: " << watchAdd.getTimeExpiredSeconds());
 
 				CPUWatch watchGet;
 				for (int i = 0; i < 1024 * 1024; i++)
 				{
 					map.find(i);
 				}
-				std::cout << "STD Hashmap get speed: " << watchGet.getTimeExpiredSeconds() << std::endl;
+				BBELOGLN("STD Hashmap get speed: " << watchGet.getTimeExpiredSeconds());
 			}
 		}
 	}

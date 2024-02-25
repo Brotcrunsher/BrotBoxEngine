@@ -290,7 +290,7 @@ public:
 
 	virtual void update(float timeSinceLastFrame) override
 	{
-		std::cout << "FPS: " << (1.f / timeSinceLastFrame) << std::endl;
+		BBELOGLN("FPS: " << (1.f / timeSinceLastFrame));
 
 		timeSinceStart += timeSinceLastFrame;
 		timeSinceStep  += timeSinceLastFrame;

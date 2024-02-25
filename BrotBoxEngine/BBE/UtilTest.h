@@ -3,6 +3,7 @@
 #include "../BBE/UtilDebug.h"
 #include "../BBE/String.h"
 #include "../BBE/Hash.h"
+#include "../BBE/Logging.h"
 #include <iostream>
 
 namespace bbe
@@ -40,7 +41,6 @@ namespace bbe {
 			inline Person()
 				: age(0)
 			{
-				//std::cout << "Constructor called!" << std::endl;
 				Person::s_amountOfPersons++;
 				Person::s_amountOfDefaulConstructorCalls++;
 			}
@@ -83,7 +83,6 @@ namespace bbe {
 			explicit inline Person(const bbe::String &name, const bbe::String &address, int age)
 				: name(name), address(address), age(age)
 			{
-				//std::cout << "Constructor with parameters called!" << std::endl;
 				s_amountOfPersons++;
 				Person::s_amountOfParameterConstructorCalls++;
 			}
@@ -106,18 +105,13 @@ namespace bbe {
 			}
 
 			void inline print() {
-				std::cout << "name: " << name << " address: " << address << " age: " << age << std::endl;
+				BBELOGLN("name: " << name << " address: " << address << " age: " << age);
 			}
 
 			bool inline operator==(const Person& other) const {
-				//std::cout << "Comparing---" << std::endl;
-				//std::wcout << this->name    << " " << other.name    << (this->name    == other.name)    << std::endl;
-				//std::wcout << this->address << " " << other.address << (this->address == other.address) << std::endl;
-				//std::wcout << this->age     << " " << other.age     << (this->age     == other.age)     << std::endl;
 				bool same = name == other.name
 					&& address == other.address
 					&& age == other.age;
-				//std::cout << "Comparison: " << same << std::endl;
 				return same;
 			}
 
@@ -161,7 +155,7 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
-				std::cout << "a=" << a << " b=" << b << std::endl;
+				BBELOGLN("a=" << a << " b=" << b);
 				debugBreakImpl(file, line);
 			}
 		}
@@ -175,7 +169,7 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
-				std::cout << "a=" << a << " b=" << b << std::endl;
+				BBELOGLN("a=" << a << " b=" << b);
 				debugBreakImpl(file, line);
 			}
 		}
@@ -187,7 +181,7 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
-				std::cout << "a=" << a << " b=" << b << std::endl;
+				BBELOGLN("a=" << a << " b=" << b);
 				debugBreakImpl(file, line);
 			}
 		}
@@ -199,7 +193,7 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
-				std::cout << "a=" << a << " b=" << b << std::endl;
+				BBELOGLN("a=" << a << " b=" << b);
 				debugBreakImpl(file, line);
 			}
 		}
@@ -211,7 +205,7 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
-				std::cout << "a=" << a << " b=" << b << std::endl;
+				BBELOGLN("a=" << a << " b=" << b);
 				debugBreakImpl(file, line);
 			}
 		}
@@ -223,7 +217,7 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
-				std::cout << "a=" << a << " b=" << b << std::endl;
+				BBELOGLN("a=" << a << " b=" << b);
 				debugBreakImpl(file, line);
 			}
 		}
@@ -235,7 +229,7 @@ namespace bbe {
 				//Do nothing, test passed
 			}
 			else {
-				std::cout << "a=" << a << " b=" << b << std::endl;
+				BBELOGLN("a=" << a << " b=" << b);
 				debugBreakImpl(file, line);
 			}
 		}

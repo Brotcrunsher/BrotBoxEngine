@@ -1,4 +1,5 @@
 #include "BBE/UtilDebug.h"
+#include "BBE/Logging.h"
 #include <iostream>
 
 #ifdef __linux__
@@ -8,7 +9,7 @@
 
 void bbe::debugBreakImpl(const char* file, int32_t line)
 {
-	std::cout << "debugBreak() was triggered! " << file << "(" << line << ")" << std::endl;
+	BBELOGLN("debugBreak() was triggered! " << file << "(" << line << ")");
 	#if defined(_MSC_VER) && defined(_WIN32)
 		__debugbreak();
 	#elif defined(__linux__)

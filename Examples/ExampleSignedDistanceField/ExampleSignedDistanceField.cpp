@@ -19,7 +19,7 @@ public:
 
 	virtual void update(float timeSinceLastFrame) override
 	{
-		std::cout << "FPS: " << (1 / timeSinceLastFrame) << std::endl;
+		BBELOGLN("FPS: " << (1 / timeSinceLastFrame));
 		ccnc.update(timeSinceLastFrame * 0.1);
 		//ccnc.setCameraForward({ 1, 0, 0 });
 	}

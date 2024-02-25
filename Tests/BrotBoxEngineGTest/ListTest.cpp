@@ -94,7 +94,7 @@ TEST(List, ConstructorInitializer)
 namespace bbe
 {
 	void aaa(const bbe::test::Person& a) {
-		std::cout << a;
+		BBELOG(a);
 	}
 }
 

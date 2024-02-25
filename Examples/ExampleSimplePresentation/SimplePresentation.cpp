@@ -551,7 +551,7 @@ void Slide::next()
 			}
 		}
 	}
-	std::cout << "Now at Entry: " << currentEntry << std::endl;
+	BBELOGLN("Now at Entry: " << currentEntry);
 }
 
 bool Slide::hasNext() const
@@ -587,7 +587,7 @@ void Slide::prev()
 			currentEntry--;
 		}
 	}
-	std::cout << "Now at Entry: " << currentEntry << std::endl;
+	BBELOGLN("Now at Entry: " << currentEntry);
 }
 
 bool Slide::hasPrev() const
@@ -735,7 +735,7 @@ bbe::Font& Slide::getFont()
 
 			if (textAabb.height > screenPosition.height - 50 || textAabb.width > screenPosition.width - 50) break;
 		}
-		std::cout << "Picked font size: " << selectedFont->getFontSize() << std::endl;
+		BBELOGLN("Picked font size: " << selectedFont->getFontSize());
 	}
 
 	return *selectedFont;
@@ -1037,7 +1037,7 @@ void SlideShow::addManifest(const char* inPath)
 		}
 		else
 		{
-			std::cout << "Found invalid token: " << tokens[0] << std::endl;
+			BBELOGLN("Found invalid token: " << tokens[0]);
 			throw bbe::UnknownException();
 		}
 	}

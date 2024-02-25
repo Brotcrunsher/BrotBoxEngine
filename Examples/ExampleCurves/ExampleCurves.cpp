@@ -64,7 +64,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		std::cout << "FPS: " << (1 / timeSinceLastFrame) << std::endl;
+		BBELOGLN("FPS: " << (1 / timeSinceLastFrame));
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{

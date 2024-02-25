@@ -41,7 +41,7 @@ class MyGame : public bbe::Game
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
-		std::cout << "Lights: " << lights.getLength() << " FPS: " << (1.f / timeSinceLastFrame) << std::endl;
+		BBELOGLN("Lights: " << lights.getLength() << " FPS: " << (1.f / timeSinceLastFrame));
 		ccnc.update(timeSinceLastFrame);
 		for (int i = 0; i < AMOUNT_OF_CUBES; i++)
 		{

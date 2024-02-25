@@ -142,7 +142,7 @@ public:
 		static float runningAverage = 33;
 		const float currentFps = (1 / timeSinceLastFrame);
 		runningAverage = 0.9999f * runningAverage + 0.0001f * currentFps;
-		std::cout << "AVG FPS: " << runningAverage << " FPS: " << currentFps << std::endl;
+		BBELOGLN("AVG FPS: " << runningAverage << " FPS: " << currentFps);
 
 		if (isKeyDown(bbe::Key::DOWN))
 		{

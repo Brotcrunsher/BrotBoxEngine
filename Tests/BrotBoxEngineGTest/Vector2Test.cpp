@@ -36,8 +36,6 @@ TEST(Vector2, ConstructionXYSame)
 
 TEST(Vector2, OnUnitCircle)
 {
-	bbe::Math::INTERNAL::startMath();
-
 	for (int i = 0; i < 128; i++)
 	{
 		float circles = bbe::Math::PI * 2 * i;

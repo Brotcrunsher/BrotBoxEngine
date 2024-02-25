@@ -2,6 +2,7 @@
 
 #include "BBE/SoundManager.h"
 #include "BBE/Exceptions.h"
+#include "BBE/Logging.h"
 #include <algorithm>
 #include <iostream>
 #include <mutex>
@@ -221,7 +222,7 @@ static void loadAllBuffers()
 	ALenum err = alGetError();
 	if (err != ALC_NO_ERROR)
 	{
-		std::cout << "Something went wrong when loading buffer contents! " << err << std::endl;
+		BBELOGLN("Something went wrong when loading buffer contents! " << err);
 		freeBuffer(buffer);
 		throw bbe::IllegalStateException();
 	}
@@ -249,7 +250,7 @@ static void refreshBuffers()
 			// TODO: Is there a way to do this automatically?
 			static uint32_t totalRestarts = 0;
 			totalRestarts++;
-			std::cout << "Sound died. Restarting. Total Restarts: " << totalRestarts << " Total sounds: " << playingSounds.size() << std::endl;
+			BBELOGLN("Sound died. Restarting. Total Restarts: " << totalRestarts << " Total sounds: " << playingSounds.size());
 			previouslyDied = true;
 			alSourcePlay(mainSource);
 		}
@@ -261,7 +262,7 @@ static bool initSoundSystem()
 	ALCdevice* device = alcOpenDevice(nullptr);
 	if (!device)
 	{
-		std::cout << "Could not init Sound Manager! Device was null." << std::endl;
+		BBELOGLN("Could not init Sound Manager! Device was null.");
 		return false;
 	}
 	ALCcontext* context = alcCreateContext(device, nullptr);
@@ -269,13 +270,13 @@ static bool initSoundSystem()
 	{
 		if (context) alcDestroyContext(context);
 		alcCloseDevice(device);
-		std::cout << "Could not init Sound Manager! Failed to create context." << std::endl;
+		BBELOGLN("Could not init Sound Manager! Failed to create context.");
 		return false;
 	}
 
 	if (!alIsExtensionPresent("AL_EXT_float32"))
 	{
-		std::cout << "Could not init Sound Manager! AL_EXT_float32 not present." << std::endl;
+		BBELOGLN("Could not init Sound Manager! AL_EXT_float32 not present.");
 		destroySoundSystem();
 		return false;
 	}
@@ -289,7 +290,7 @@ static bool initSoundSystem()
 	ALenum err = alGetError();
 	if (err != ALC_NO_ERROR)
 	{
-		std::cout << "Something went wrong when creating a ALSource! " << err << std::endl;
+		BBELOGLN("Something went wrong when creating a ALSource! " << err);
 		return false;
 	}
 

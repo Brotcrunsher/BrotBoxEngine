@@ -24,7 +24,7 @@ public:
 		
 		if (path)
 		{
-			std::cout << "Loading Manifest: " << path << std::endl;
+			BBELOGLN("Loading Manifest: ");
 		}
 		slideShow.addManifest(path ? path : "D:/Videos/C++ Tutorial/Episode Bonus 048 - OpenGL bis zum Dreieck/Manifest.txt");
 	}

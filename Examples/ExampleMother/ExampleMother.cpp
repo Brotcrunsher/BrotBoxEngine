@@ -1452,6 +1452,16 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	bbe::Vector2 drawTabConsole()
+	{
+		const auto& log = bbe::logging::getLog();
+		for (size_t i = 0; i < log.getLength(); i++)
+		{
+			ImGui::Text(log[i].getRaw());
+		}
+		return bbe::Vector2(1);
+	}
+
 	bbe::Vector2 drawTabConfig()
 	{
 		bool generalConfigChanged = false;
@@ -2102,6 +2112,7 @@ public:
 				Tab{"MouseTrack", [&]() { return drawTabMouseTracking(brush); }},
 				Tab{"KybrdTrack", [&]() { return drawTabKeyboardTracking(brush); }},
 				Tab{"Terri",      [&]() { return drawTabTerri(brush);         }},
+				Tab{"Console",    [&]() { return drawTabConsole();            }},
 				Tab{"Config",     [&]() { return drawTabConfig();             }},
 			};
 			static size_t previousShownTab = 0;

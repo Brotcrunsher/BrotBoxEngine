@@ -4,6 +4,7 @@
 #include <iostream>
 #include "BBE/MouseButtons.h"
 #include "BBE/FatalErrors.h"
+#include "BBE/Logging.h"
 #ifndef BBE_RENDERER_NULL
 #include "imgui_impl_glfw.h"
 #endif
@@ -81,7 +82,7 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 		bbe::INTERNAL::triggerFatalError("Could not create window!");
 	}
 
-	std::cout << "Init render manager" << std::endl;
+	BBELOGLN("Init render manager");
 
 	float windowXScale = 0;
 	float windowYScale = 0;
@@ -89,7 +90,7 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 	m_renderManager->init(title, major, minor, patch, m_pwindow, static_cast<uint32_t>(width * windowXScale), static_cast<uint32_t>(height * windowYScale));
 
 
-	std::cout << "Setting glfw callbacks" << std::endl;
+	BBELOGLN("Setting glfw callbacks");
 	glfwWrapper::glfwSetKeyCallback(m_pwindow, INTERNAL_keyCallback);
 	glfwWrapper::glfwSetCharCallback(m_pwindow, INTERNAL_charCallback);
 	glfwWrapper::glfwSetCursorPosCallback(m_pwindow, INTERNAL_cursorPosCallback);
@@ -104,7 +105,7 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 	glfwWrapper::glfwGetCursorPos(m_pwindow, &mX, &mY);
 	glfwWrapper::glfwSwapInterval(1);
 
-	std::cout << "Init mouse" << std::endl;
+	BBELOGLN("Init mouse");
 	INTERNAL_mouse.INTERNAL_moveMouse((float)mX, (float)mY);
 }
 

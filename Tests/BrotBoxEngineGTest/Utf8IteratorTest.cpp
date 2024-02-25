@@ -82,66 +82,66 @@ TEST(StringIteratorTest, mixDeIncrementPrePost)
 
 TEST(StringIteratorTest, utf8Increment)
 {
-	bbe::Utf8Iterator iter(u8"💣1🍣💃");
-	ASSERT_TRUE(0 == strcmp(iter, u8"💣1🍣💃"));
+	bbe::Utf8Iterator iter("💣1🍣💃");
+	ASSERT_TRUE(0 == strcmp(iter, "💣1🍣💃"));
 	iter++;
-	ASSERT_TRUE(0 == strcmp(iter, u8"1🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter, "1🍣💃"));
 	iter++;
-	ASSERT_TRUE(0 == strcmp(iter, u8"🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter, "🍣💃"));
 	iter++;
-	ASSERT_TRUE(0 == strcmp(iter, u8"💃"));
+	ASSERT_TRUE(0 == strcmp(iter, "💃"));
 	iter++;
-	ASSERT_TRUE(0 == strcmp(iter, u8""));
+	ASSERT_TRUE(0 == strcmp(iter, ""));
 }
 
 TEST(StringIteratorTest, ut8fDecrement)
 {
-	const char* str = u8"💣1🍣💃";
+	const char* str = "💣1🍣💃";
 	bbe::Utf8Iterator iter(str + ::strlen(str));
-	ASSERT_TRUE(0 == strcmp(iter, u8""));
+	ASSERT_TRUE(0 == strcmp(iter, ""));
 	iter--;
-	ASSERT_TRUE(0 == strcmp(iter, u8"💃"));
+	ASSERT_TRUE(0 == strcmp(iter, "💃"));
 	iter--;
-	ASSERT_TRUE(0 == strcmp(iter, u8"🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter, "🍣💃"));
 	iter--;
-	ASSERT_TRUE(0 == strcmp(iter, u8"1🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter, "1🍣💃"));
 	iter--;
-	ASSERT_TRUE(0 == strcmp(iter, u8"💣1🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter, "💣1🍣💃"));
 }
 
 TEST(StringIteratorTest, intManipulation)
 {
 	const int32_t negativeTwo = -2;
-	bbe::Utf8Iterator iter(u8"💣1🍣💃");
-	ASSERT_TRUE(0 == strcmp(iter, u8"💣1🍣💃"));
+	bbe::Utf8Iterator iter("💣1🍣💃");
+	ASSERT_TRUE(0 == strcmp(iter, "💣1🍣💃"));
 	iter += 2;
-	ASSERT_TRUE(0 == strcmp(iter, u8"🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter, "🍣💃"));
 	iter -= 2;
-	ASSERT_TRUE(0 == strcmp(iter, u8"💣1🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter, "💣1🍣💃"));
 	iter -= negativeTwo;
-	ASSERT_TRUE(0 == strcmp(iter, u8"🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter, "🍣💃"));
 	iter += negativeTwo;
-	ASSERT_TRUE(0 == strcmp(iter, u8"💣1🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter, "💣1🍣💃"));
 }
 
 TEST(StringIteratorTest, intManipulationCopy)
 {
 	const int32_t negativeTwo = -2;
-	bbe::Utf8Iterator iter(u8"💣1🍣💃");
+	bbe::Utf8Iterator iter("💣1🍣💃");
 	bbe::Utf8Iterator iter2 = iter + 2;
 	bbe::Utf8Iterator iter3 = iter2 - 2;
 	bbe::Utf8Iterator iter4 = iter3 - negativeTwo;
 	bbe::Utf8Iterator iter5 = iter4 + negativeTwo;
-	ASSERT_TRUE(0 == strcmp(iter, u8"💣1🍣💃"));
-	ASSERT_TRUE(0 == strcmp(iter2, u8"🍣💃"));
-	ASSERT_TRUE(0 == strcmp(iter3, u8"💣1🍣💃"));
-	ASSERT_TRUE(0 == strcmp(iter4, u8"🍣💃"));
-	ASSERT_TRUE(0 == strcmp(iter5, u8"💣1🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter, "💣1🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter2, "🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter3, "💣1🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter4, "🍣💃"));
+	ASSERT_TRUE(0 == strcmp(iter5, "💣1🍣💃"));
 }
 
 TEST(StringIteratorTest, distance)
 {
-	bbe::Utf8Iterator iter(u8"💣1🍣💃");
+	bbe::Utf8Iterator iter("💣1🍣💃");
 	bbe::Utf8Iterator iter2 = iter + 2;
 	ASSERT_EQ(iter - iter2, -2);
 	ASSERT_EQ(iter2 - iter,  2);
