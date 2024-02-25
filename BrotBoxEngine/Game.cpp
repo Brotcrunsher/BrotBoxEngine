@@ -16,7 +16,11 @@
 #endif
 
 #include <signal.h>
+#if __has_include(<stacktrace>)
 #include <stacktrace>
+#else
+#pragma warning("Stacktrace lib is not present!")
+#endif
 
 void bbe::Game::mainLoop()
 {
@@ -76,7 +80,11 @@ static void crashHandler(int sig)
 	string += "Signal: " + bbe::String(sig);
 	string += "\n";
 	string += "Stacktrace:\n";
+#if __has_include(<stacktrace>)
 	string += std::to_string(std::stacktrace::current());
+#else
+	string += "Stacktrace lib is not present!";
+#endif
 	BBELOGLN(string);
 
 	bbe::simpleFile::createDirectory("CrashLogs");
