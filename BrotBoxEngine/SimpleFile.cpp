@@ -6,6 +6,60 @@
 #include <sstream>
 #include <filesystem>
 
+static bbe::String backupPath;
+
+void bbe::backup::setBackupPath(const bbe::String& path)
+{
+	if (path.getLength() == 0)
+	{
+		backupPath = "";
+	}
+	else
+	{
+		if (path.endsWith("/")) backupPath = path;
+		else backupPath = path + "/";
+
+		bbe::simpleFile::createDirectory(backupPath);
+	}
+}
+
+bool bbe::backup::isBackupPathSet()
+{
+	return backupPath.getLength() > 0;
+}
+
+bbe::String bbe::backup::backupFullPath(const bbe::String& path)
+{
+	return backupPath + path;
+}
+
+void bbe::backup::writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
+{
+	bbe::simpleFile::writeBinaryToFile(filePath, buffer);
+	if (isBackupPathSet())
+	{
+		bbe::simpleFile::writeBinaryToFile(backupFullPath(filePath), buffer);
+	}
+}
+
+void bbe::backup::createDirectory(const bbe::String& path)
+{
+	bbe::simpleFile::createDirectory(path);
+	if (isBackupPathSet())
+	{
+		bbe::simpleFile::createDirectory(backupFullPath(path));
+	}
+}
+
+void bbe::backup::appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
+{
+	bbe::simpleFile::appendBinaryToFile(filePath, buffer);
+	if (isBackupPathSet())
+	{
+		bbe::simpleFile::appendBinaryToFile(backupFullPath(filePath), buffer);
+	}
+}
+
 bbe::ByteBuffer bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 {
 	if (std::filesystem::is_directory(filepath.getRaw()))

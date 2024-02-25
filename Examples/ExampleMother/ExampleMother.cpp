@@ -16,7 +16,7 @@
 //TODO: Bug: Crashed when closing Chrome? Only happened once, not easily reproducable.
 //TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
 //TODO: This file is getting massive. Split?
-//TODO: Make backup path configurable
+//TODO: Add console
 
 struct Task
 {
@@ -425,6 +425,7 @@ struct GeneralConfig
 {
 	char updatePath[1024] = {};
 	int32_t beepEvery = 0;
+	char backupPath[1024] = {};
 
 	// Non-Persisted Helper Data below.
 
@@ -432,6 +433,7 @@ struct GeneralConfig
 	{
 		buffer.writeNullString(updatePath);
 		buffer.write(beepEvery);
+		buffer.writeNullString(backupPath);
 	}
 	static GeneralConfig deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -439,6 +441,7 @@ struct GeneralConfig
 
 		strcpy(retVal.updatePath, buffer.readNullString());
 		buffer.read(retVal.beepEvery);
+		strcpy(retVal.backupPath, buffer.readNullString());
 
 		return retVal;
 	}
@@ -666,6 +669,8 @@ public:
 		createTrayIcons();
 		bbe::TrayIcon::init(this, "M.O.THE.R " __DATE__ ", " __TIME__, getCurrentTrayIcon());
 		bbe::TrayIcon::addPopupItem("Exit", [&]() { exitCallback(); });
+
+		bbe::backup::setBackupPath(generalConfig->backupPath);
 	}
 
 	bbe::TimePoint getNightStart()
@@ -1452,6 +1457,11 @@ public:
 		bool generalConfigChanged = false;
 		generalConfigChanged |= ImGui::InputText("Update Path", generalConfig->updatePath, sizeof(generalConfig->updatePath));
 		generalConfigChanged |= ImGui::InputInt("Beep every (mins)", &generalConfig->beepEvery);
+		if (ImGui::InputText("Backup Path", generalConfig->backupPath, sizeof(generalConfig->backupPath), ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			generalConfigChanged = true;
+			bbe::backup::setBackupPath(generalConfig->backupPath);
+		}
 
 		if (generalConfigChanged)
 		{
@@ -1997,6 +2007,9 @@ public:
 
 	bbe::Vector2 drawTabKeyboardTracking(bbe::PrimitiveBrush2D& brush)
 	{
+		static bool normalize = true;
+		ImGui::Checkbox("Normalize", &normalize);
+
 		using K = bbe::Key;
 		struct DrawnKey
 		{
@@ -2005,6 +2018,7 @@ public:
 			float value;
 		};
 		bbe::List<DrawnKey> keys = {
+			{K::_1, {-0.3f,-1}},{K::_2, {0.7f,-1}},{K::_3, {1.7f,-1}},{K::_4, {2.7f,-1}},{K::_5, {3.7f,-1}},{K::_6, {4.7f,-1}},{K::_7, {5.7f,-1}},{K::_8, {6.7f,-1}},{K::_9, {7.7f,-1}},{K::_0, {8.7f,-1}},
 			{K::Q, {0.0f, 0}},{K::W, {1.0f, 0}},{K::E, {2.0f, 0}},{K::R, {3.0f, 0}},{K::T, {4.0f, 0}},{K::Z, {5.0f, 0}},{K::U, {6.0f, 0}},{K::I, {7.0f, 0}},{K::O, {8.0f, 0}},{K::P, {9.0f, 0}},
 			{K::A, {0.3f, 1}},{K::S, {1.3f, 1}},{K::D, {2.3f, 1}},{K::F, {3.3f, 1}},{K::G, {4.3f, 1}},{K::H, {5.3f, 1}},{K::J, {6.3f, 1}},{K::K, {7.3f, 1}},{K::L, {8.3f, 1}},
 			{K::Y, {0.6f, 2}},{K::X, {1.6f, 2}},{K::C, {2.6f, 2}},{K::V, {3.6f, 2}},{K::B, {4.6f, 2}},{K::N, {5.6f, 2}},{K::M, {6.6f, 2}}
@@ -2020,12 +2034,14 @@ public:
 			max = bbe::Math::max(max, k.value);
 		}
 
+		if (!normalize) min = 0.0f;
+
 		for (size_t i = 0; i < keys.getLength(); i++)
 		{
 			DrawnKey& k = keys[i];
 			k.value = (k.value - min) / (max - min);
 			brush.setColorRGB(bbe::Color(k.value, k.value, k.value));
-			brush.fillText(30 + k.pos.x * 60, 200 + k.pos.y * 60, bbe::keyCodeToString(k.key), 40);
+			brush.fillText(30 + k.pos.x * 60, 400 + k.pos.y * 60, bbe::keyCodeToString(k.key), 40);
 		}
 
 		return bbe::Vector2(1.0f, 0.2f);

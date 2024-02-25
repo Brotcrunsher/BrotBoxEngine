@@ -8,6 +8,16 @@
 
 namespace bbe
 {
+	namespace backup
+	{
+		void setBackupPath(const bbe::String& path);
+		bool isBackupPathSet();
+		bbe::String backupFullPath(const bbe::String& path);
+		void writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
+		void createDirectory(const bbe::String& path);
+		void appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
+	}
+
 	namespace simpleFile
 	{
 		bbe::ByteBuffer readBinaryFile(const bbe::String &filepath);
