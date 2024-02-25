@@ -385,6 +385,7 @@ namespace bbe
 	};
 
 	using Vector2  = Vector2_t<float>;
+	using Vector2d = Vector2_t<double>;
 	using Vector2i = Vector2_t<int32_t>;
 
 	template<>

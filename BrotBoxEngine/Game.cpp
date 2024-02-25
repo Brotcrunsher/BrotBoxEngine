@@ -93,9 +93,6 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 	}
 	m_started = true;
 
-	std::cout << "Starting math" << std::endl;
-	bbe::Math::INTERNAL::startMath();
-
 	std::cout << "Creating window" << std::endl;
 	m_pwindow = new Window(windowWidth, windowHeight, title, this);
 

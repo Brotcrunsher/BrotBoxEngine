@@ -122,7 +122,8 @@ namespace bbe
 		void fillArrow(float x1, float y1, float x2, float y2, float tailWidth = 1, float spikeInnerLength = 20, float spikeOuterLength = 30, float spikeAngle = 0.35, bool dynamicSpikeLength = true);
 		void fillArrow(const Vector2& p1, const Vector2& p2,   float tailWidth = 1, float spikeInnerLength = 20, float spikeOuterLength = 30, float spikeAngle = 0.35, bool dynamicSpikeLength = true);
 
-		void fillLineStrip(const bbe::List<bbe::Vector2> &points, bool closed, float lineWidth = 1);
+		void fillLineStrip(const bbe::List<bbe::Vector2>& points, bool closed, float lineWidth = 1);
+		void fillLineStrip(const bbe::List<bbe::Vector2d>& points, bool closed, float lineWidth = 1);
 
 		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint, const bbe::List<Vector2>& controlPoints);
 		void fillBezierCurve(const Vector2& startPoint, const Vector2& endPoint);

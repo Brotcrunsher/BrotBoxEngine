@@ -4,27 +4,6 @@
 #include "BBE/Vector4.h"
 #include <cmath>
 
-double bbe::Math::INTERNAL::sinTable[TABLE_SIZES] = {};
-double bbe::Math::INTERNAL::cosTable[TABLE_SIZES] = {};
-double bbe::Math::INTERNAL::tanTable[TABLE_SIZES] = {};
-
-#ifdef _DEBUG
-static bool isMathInitialized()
-{
-	return bbe::Math::INTERNAL::cosTable[0] == 1.0f;
-}
-#endif
-
-static void throwIfUninitializedAndDebug()
-{
-#ifdef _DEBUG
-	if (!isMathInitialized())
-	{
-		throw bbe::NotInitializedException();
-	}
-#endif
-}
-
 double bbe::Math::pow(double base, double expo)
 {
 	return ::pow(base, expo);
@@ -32,11 +11,7 @@ double bbe::Math::pow(double base, double expo)
 
 double bbe::Math::cos(double val)
 {
-	throwIfUninitializedAndDebug();
-	if (val == INFINITY_POSITIVE || val == INFINITY_NEGATIVE) return 0;
-	val = bbe::Math::mod(val, TAU_d);
-	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
-	return INTERNAL::cosTable[index];
+	return ::cos(val);
 }
 
 float bbe::Math::acos(float val)
@@ -46,11 +21,7 @@ float bbe::Math::acos(float val)
 
 double bbe::Math::sin(double val)
 {
-	throwIfUninitializedAndDebug();
-	if (val == INFINITY_POSITIVE || val == INFINITY_NEGATIVE) return 0;
-	val = bbe::Math::mod(val, TAU_d);
-	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
-	return INTERNAL::sinTable[index];
+	return ::sin(val);
 }
 
 float bbe::Math::asin(float val)
@@ -60,10 +31,7 @@ float bbe::Math::asin(float val)
 
 double bbe::Math::tan(double val)
 {
-	throwIfUninitializedAndDebug();
-	val = bbe::Math::mod(val, TAU_d);
-	int index = (int)(val / TAU * INTERNAL::TABLE_SIZES);
-	return INTERNAL::tanTable[index];
+	return ::tan(val);
 }
 
 float bbe::Math::atan(float val)
@@ -639,18 +607,6 @@ bbe::Vector2 bbe::Math::maxAbsComponent(const bbe::List<Vector2>& vectors)
 	return retVal;
 }
 
-bbe::Vector2 bbe::Math::average(const bbe::List<Vector2>& vectors)
-{
-	bbe::Vector2 retVal = bbe::Vector2();
-
-	for (const bbe::Vector2& v : vectors)
-	{
-		retVal += v;
-	}
-
-	return retVal / (float)vectors.getLength();;
-}
-
 bbe::Vector3 bbe::Math::average(const bbe::List<Vector3>& vectors)
 {
 	bbe::Vector3 retVal = bbe::Vector3();
@@ -796,15 +752,4 @@ bbe::Vector4 bbe::Math::interpolateHermite(Vector4 a, Vector4 b, float t, Vector
 		interpolateHermite(a.z, b.z, t, tangent1.z, tangent2.z),
 		interpolateHermite(a.w, b.w, t, tangent1.w, tangent2.w)
 	);
-}
-
-void bbe::Math::INTERNAL::startMath()
-{
-	for (std::size_t i = 0; i < INTERNAL::TABLE_SIZES; i++)
-	{
-		float val = (float)i / INTERNAL::TABLE_SIZES * TAU;
-		sinTable[i] = ::sin(val);
-		cosTable[i] = ::cos(val);
-		tanTable[i] = ::tan(val);
-	}
 }

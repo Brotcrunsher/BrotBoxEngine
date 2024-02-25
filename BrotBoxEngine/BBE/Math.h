@@ -14,15 +14,6 @@ namespace bbe
 
 	namespace Math
 	{
-		namespace INTERNAL
-		{
-			void startMath();
-			constexpr std::size_t TABLE_SIZES = 1024 * 64;
-			extern double sinTable[TABLE_SIZES];
-			extern double cosTable[TABLE_SIZES];
-			extern double tanTable[TABLE_SIZES];
-		}
-
 		constexpr  int32_t BIGGEST_PRIME_32_SIGNED   = 2147483647;
 		constexpr uint32_t BIGGEST_PRIME_32_UNSIGNED = 4294967295;
 
@@ -215,7 +206,18 @@ namespace bbe
 		Vector2 maxComponent(const bbe::List<Vector2>& vectors);
 		Vector2 minAbsComponent(const bbe::List<Vector2>& vectors);
 		Vector2 maxAbsComponent(const bbe::List<Vector2>& vectors);
-		Vector2 average(const bbe::List<Vector2>& vectors);
+		template<typename T>
+		Vector2_t<T> average(const bbe::List<Vector2_t<T>>& vectors)
+		{
+			bbe::Vector2_t<T> retVal = bbe::Vector2_t<T>();
+
+			for (const bbe::Vector2_t<T>& v : vectors)
+			{
+				retVal += v;
+			}
+
+			return retVal / (double)vectors.getLength();;
+		}
 		Vector2 medianComponent(const bbe::List<Vector2>& vectors);
 
 		// An integer space filling curve that returns elements in this order:

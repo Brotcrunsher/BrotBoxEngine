@@ -391,6 +391,12 @@ void bbe::PrimitiveBrush2D::fillChar(const Vector2& p, int32_t c, unsigned fontS
 
 void bbe::PrimitiveBrush2D::fillLine(const Vector2& p1, const Vector2& p2, float lineWidth)
 {
+	// Quick checks if the line even has a chance to be on screen.
+	if (p1.x < -lineWidth && p2.x < -lineWidth) return;
+	if (p1.y < -lineWidth && p2.y < -lineWidth) return;
+	if (p1.x > m_screenWidth + lineWidth && p2.x > m_screenWidth + lineWidth) return;
+	if (p1.y > m_screenHeight + lineWidth && p2.y > m_screenHeight + lineWidth) return;
+
 	const Vector2 dir = p2 - p1;
 	const float dist = dir.getLength();
 	if (dist == 0) return;
@@ -407,7 +413,7 @@ void bbe::PrimitiveBrush2D::fillLine(const Line2& line, float lineWidth)
 	fillLine(line.m_start, line.m_stop, lineWidth);
 }
 
-void bbe::PrimitiveBrush2D::fillLineStrip(const bbe::List<bbe::Vector2> &points, bool closed, float lineWidth)
+void bbe::PrimitiveBrush2D::fillLineStrip(const bbe::List<bbe::Vector2>& points, bool closed, float lineWidth)
 {
 	for (size_t i = 1; i < points.getLength(); i++)
 	{
@@ -416,6 +422,18 @@ void bbe::PrimitiveBrush2D::fillLineStrip(const bbe::List<bbe::Vector2> &points,
 	if (closed && points.getLength() > 0)
 	{
 		fillLine(points[0], points[points.getLength() - 1], lineWidth);
+	}
+}
+
+void bbe::PrimitiveBrush2D::fillLineStrip(const bbe::List<bbe::Vector2d>& points, bool closed, float lineWidth)
+{
+	for (size_t i = 1; i < points.getLength(); i++)
+	{
+		fillLine(points[i - 1].as<float>(), points[i].as<float>(), lineWidth);
+	}
+	if (closed && points.getLength() > 0)
+	{
+		fillLine(points[0].as<float>(), points[points.getLength() - 1].as<float>(), lineWidth);
 	}
 }
 
