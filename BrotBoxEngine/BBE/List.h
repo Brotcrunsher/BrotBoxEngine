@@ -187,7 +187,7 @@ namespace bbe
 			{
 				debugBreak();
 			}
-			return m_pdata[index].m_value;
+			return getRaw()[index];
 		}
 
 		const T& operator[](size_t index) const
@@ -196,14 +196,15 @@ namespace bbe
 			{
 				debugBreak();
 			}
-			return m_pdata[index].m_value;
+			return getRaw()[index];
 		}
 
-		List<T>& operator+=(List<T> other)
+		List<T>& operator+=(const List<T>& other)
 		{
+			const T* optr = other.getRaw();
 			for (size_t i = 0; i < other.m_length; i++)
 			{
-				add(other.m_pdata[i].m_value);
+				add(optr[i]);
 			}
 			return *this;
 		}
@@ -211,9 +212,10 @@ namespace bbe
 		void add(const T& val, size_t amount = 1)
 		{
 			auto delVal = growIfNeeded(amount);
+			T* d = getRaw();
 			for (size_t i = 0; i < amount; i++)
 			{
-				new (bbe::addressOf(m_pdata[m_length + i])) T(val);
+				new (bbe::addressOf(d[m_length + i])) T(val);
 			}
 			m_length += amount;
 			delete[] delVal;
@@ -222,15 +224,16 @@ namespace bbe
 		void add(T&& val, size_t amount)
 		{
 			auto delVal = growIfNeeded(amount);
+			T* d = getRaw();
 			if (amount == 1)
 			{
-				new (bbe::addressOf(m_pdata[m_length])) T(std::move(val));
+				new (bbe::addressOf(d[m_length])) T(std::move(val));
 			}
 			else
 			{
 				for (size_t i = 0; i < amount; i++)
 				{
-					new (bbe::addressOf(m_pdata[m_length + i])) T(val);
+					new (bbe::addressOf(d[m_length + i])) T(val);
 				}
 			}
 
@@ -241,7 +244,7 @@ namespace bbe
 		void add(T&& val)
 		{
 			auto delVal = growIfNeeded(1);
-			new (bbe::addressOf(m_pdata[m_length])) T(std::move(val));
+			new (bbe::addressOf(getRaw()[m_length])) T(std::move(val));
 
 			m_length += 1;
 			delete[] delVal;
@@ -303,7 +306,7 @@ namespace bbe
 				debugBreak();
 			}
 			T retVal = std::move(last());
-			m_pdata[m_length - 1].m_value.~T();
+			getRaw()[m_length - 1].~T();
 			m_length--;
 			return retVal;
 		}
@@ -312,9 +315,10 @@ namespace bbe
 		{
 			if (!std::is_trivially_destructible_v<T>)
 			{
+				T* d = getRaw();
 				for (size_t i = 0; i < m_length; i++)
 				{
-					(&(m_pdata[i].m_value))->~T();
+					d[i].~T();
 				}
 			}
 			m_length = 0;
@@ -431,16 +435,17 @@ namespace bbe
 		size_t removeAll(std::function<bool(const T&)> predicate)
 		{
 			size_t moveRange = 0;
+			T* d = getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
-				if (predicate(m_pdata[i].m_value))
+				if (predicate(d[i]))
 				{
-					bbe::addressOf(m_pdata[i].m_value)->~T();
+					d[i].~T();
 					moveRange++;
 				}
 				else if (moveRange != 0)
 				{
-					m_pdata[i - moveRange].m_value = std::move(m_pdata[i].m_value);
+					d[i - moveRange] = std::move(d[i]);
 				}
 			}
 			m_length -= moveRange;
@@ -452,17 +457,12 @@ namespace bbe
 				return false;
 			}
 
-			m_pdata[index].m_value.~T();
-			if (index != m_length - 1)
+			T* d = getRaw();
+			for (size_t i = index; i < m_length - 1; i++)
 			{
-				new (bbe::addressOf(m_pdata[index].m_value)) T(std::move(m_pdata[index + 1].m_value));
-
-				for (size_t i = index + 1; i < m_length - 1; i++)
-				{
-					m_pdata[i].m_value = std::move(m_pdata[i + 1].m_value);
-				}
+				d[i] = std::move(d[i + 1]);
 			}
-
+			d[m_length - 1].~T();
 
 			m_length--;
 			return true;
@@ -481,9 +481,10 @@ namespace bbe
 		{
 			size_t index = 0;
 			bool found = false;
+			T* d = getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
-				if (predicate(m_pdata[i].m_value))
+				if (predicate(d[i]))
 				{
 					index = i;
 					found = true;
@@ -507,9 +508,10 @@ namespace bbe
 		size_t containsAmount(std::function<bool(const T&)> predicate) const
 		{
 			size_t amount = 0;
+			const T* d = getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
-				if (predicate(m_pdata[i].m_value))
+				if (predicate(d[i]))
 				{
 					amount++;
 				}
@@ -558,9 +560,10 @@ namespace bbe
 
 		bool contains(std::function<bool(const T&)> predicate) const
 		{
+			const T* d = getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
-				if (predicate(m_pdata[i].m_value))
+				if (predicate(d[i]))
 				{
 					return true;
 				}
@@ -585,9 +588,10 @@ namespace bbe
 
 		bool all(std::function<bool(const T&)> predicate) const
 		{
+			const T* d = getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
-				if (!predicate(m_pdata[i].m_value))
+				if (!predicate(d[i]))
 				{
 					return false;
 				}
@@ -598,40 +602,40 @@ namespace bbe
 		T* begin()
 		{
 			if (!m_length) return nullptr;
-			return &(this->m_pdata[0].m_value);
+			return getRaw();
 		}
 
 		const T* begin() const
 		{
 			if (!m_length) return nullptr;
-			return &(this->m_pdata[0].m_value);
+			return getRaw();
 		}
 
 		T* end()
 		{
 			if (!m_length) return nullptr;
-			return &(this->m_pdata[getLength()].m_value);
+			return getRaw() + getLength();
 		}
 
 		const T* end() const
 		{
 			if (!m_length) return nullptr;
-			return &(this->m_pdata[getLength()].m_value);
+			return getRaw() + getLength();
 		}
 
 		void sort()
 		{
-			sortSTL(reinterpret_cast<T*>(m_pdata), reinterpret_cast<T*>(m_pdata + m_length));
+			sortSTL(begin(), end());
 		}
 
 		void sort(std::function<bool(const T&, const T&)> predicate)
 		{
-			sortSTL(reinterpret_cast<T*>(m_pdata), reinterpret_cast<T*>(m_pdata + m_length), predicate);
+			sortSTL(begin(), end(), predicate);
 		}
 
 		void partition(std::function<bool(const T&)> predicate)
 		{
-			std::partition(reinterpret_cast<T*>(m_pdata), reinterpret_cast<T*>(m_pdata + m_length), predicate);
+			std::partition(begin(), end(), predicate);
 		}
 
 		void shuffle()
@@ -649,45 +653,49 @@ namespace bbe
 		T& first()
 		{
 			//UNTESTED
-			if (m_pdata == nullptr)
+			T* d = getRaw();
+			if (!d)
 			{
 				throw ContainerEmptyException();
 			}
 
-			return (m_pdata[0].m_value);
+			return *d;
 		}
 
 		const T& first() const
 		{
 			//UNTESTED
-			if (m_pdata == nullptr)
+			const T* d = getRaw();
+			if (!d)
 			{
 				throw ContainerEmptyException();
 			}
 
-			return (m_pdata[0].m_value);
+			return *d;
 		}
 
 		T& last()
 		{
 			//UNTESTED
-			if (m_pdata == nullptr || m_length == 0)
+			T* d = getRaw();
+			if (!d)
 			{
 				throw ContainerEmptyException();
 			}
 
-			return (m_pdata[m_length - 1].m_value);
+			return *(d + getLength() - 1);
 		}
 
 		const T& last() const
 		{
 			//UNTESTED
-			if (m_pdata == nullptr || m_length == 0)
+			const T* d = getRaw();
+			if (!d)
 			{
 				throw ContainerEmptyException();
 			}
 
-			return (m_pdata[m_length - 1].m_value);
+			return *(d + getLength() - 1);
 		}
 
 		T* find(const T& t)
@@ -701,11 +709,12 @@ namespace bbe
 
 		T* find(std::function<bool(const T&)> predicate)
 		{
+			T* d = getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
-				if (predicate(m_pdata[i].m_value))
+				if (predicate(d[i]))
 				{
-					return reinterpret_cast<T*>(m_pdata + i);
+					return d + i;
 				}
 			}
 			return nullptr;
@@ -722,26 +731,29 @@ namespace bbe
 
 		T* findLast(std::function<bool(const T&)> predicate)
 		{
+			T* d = getRaw();
 			for (size_t i = m_length - 1; i >= 0 && i != std::numeric_limits<size_t>::max(); i--)
 			{
-				if (predicate(m_pdata[i].m_value))
+				if (predicate(d[i]))
 				{
-					return reinterpret_cast<T*>(m_pdata + i);
+					return d + i;
 				}
 			}
 			return nullptr;
 		}
 
-		bool operator==(const List<T>& other)
+		bool operator==(const List<T>& other) const
 		{
 			if (m_length != other.m_length)
 			{
 				return false;
 			}
 
+			const T* d = getRaw();
+			const T* t = other.getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
-				if (m_pdata[i].m_value != other.m_pdata[i].m_value)
+				if (d[i] != t[i])
 				{
 					return false;
 				}

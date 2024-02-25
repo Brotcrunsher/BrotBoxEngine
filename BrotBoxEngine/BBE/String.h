@@ -12,7 +12,7 @@
 #include "../BBE/Hash.h"
 #include "../BBE/Utf8Iterator.h"
 #include "../BBE/ByteBuffer.h"
-
+#include "../BBE/List.h"
 
 namespace bbe
 {
@@ -41,6 +41,7 @@ namespace bbe
 
 		// TODO: This should use a bbe::List<char> instead, and the SSO should
 		//       be turned into SOO within bbe::List
+		bbe::List<char> m_data;
 		union
 		{
 			char *m_pdata;
