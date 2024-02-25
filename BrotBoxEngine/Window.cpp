@@ -364,7 +364,9 @@ void bbe::Window::update()
 		double mousePosX;
 		double mousePosY;
 		glfwWrapper::glfwGetCursorPos(m_pwindow, &mousePosX, &mousePosY);
+#ifndef BBE_RENDERER_NULL
 		ImGui_ImplGlfw_CursorPosCallback(m_pwindow, mousePosX, mousePosY);
+#endif
 	}
 }
 

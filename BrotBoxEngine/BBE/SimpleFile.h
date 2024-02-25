@@ -8,6 +8,7 @@
 
 namespace bbe
 {
+#ifndef __EMSCRIPTEN__
 	namespace backup
 	{
 		void setBackupPath(const bbe::String& path);
@@ -17,6 +18,7 @@ namespace bbe
 		void createDirectory(const bbe::String& path);
 		void appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
 	}
+#endif
 
 	namespace simpleFile
 	{

@@ -6,6 +6,7 @@
 #include <sstream>
 #include <filesystem>
 
+#ifndef __EMSCRIPTEN__
 static bbe::String backupPath;
 
 void bbe::backup::setBackupPath(const bbe::String& path)
@@ -59,6 +60,7 @@ void bbe::backup::appendBinaryToFile(const bbe::String& filePath, const bbe::Byt
 		bbe::simpleFile::appendBinaryToFile(backupFullPath(filePath), buffer);
 	}
 }
+#endif
 
 bbe::ByteBuffer bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 {
