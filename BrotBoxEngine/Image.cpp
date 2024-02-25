@@ -288,6 +288,7 @@ void bbe::Image::keepAfterUpload()
 	keep = true;
 }
 
+#ifdef _WIN32
 HICON bbe::Image::toIcon() const
 {
 	// See: https://learn.microsoft.com/en-us/windows/win32/menurc/using-cursors#creating-a-cursor
@@ -353,6 +354,7 @@ HICON bbe::Image::toIcon() const
 
 	return hAlphaCursor;
 }
+#endif
 
 #ifdef _WIN32
 bbe::Image bbe::Image::screenshot(int x, int y, int width, int height)
