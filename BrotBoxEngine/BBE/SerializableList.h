@@ -5,7 +5,6 @@
 #include "../BBE/SimpleFile.h"
 #include <ctime>
 
-#ifndef __EMSCRIPTEN__
 namespace bbe
 {
 	enum class Undoable
@@ -216,4 +215,3 @@ namespace bbe
 		}
 	};
 }
-#endif

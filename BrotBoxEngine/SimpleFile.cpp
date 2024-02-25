@@ -6,7 +6,6 @@
 #include <sstream>
 #include <filesystem>
 
-#ifndef __EMSCRIPTEN__
 static bbe::String backupPath;
 
 void bbe::backup::setBackupPath(const bbe::String& path)
@@ -60,7 +59,6 @@ void bbe::backup::appendBinaryToFile(const bbe::String& filePath, const bbe::Byt
 		bbe::simpleFile::appendBinaryToFile(backupFullPath(filePath), buffer);
 	}
 }
-#endif
 
 bbe::ByteBuffer bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 {
@@ -235,6 +233,7 @@ bbe::List<bbe::String> bbe::simpleFile::readLines(const bbe::String& filePath)
 	return retVal;
 }
 
+#ifndef __EMSCRIPTEN__
 void bbe::simpleFile::forEachFile(const bbe::String& filePath, const std::function<void(const bbe::String&)>& func)
 {
 	for (const auto& f : std::filesystem::directory_iterator(filePath.getRaw()))
@@ -242,6 +241,7 @@ void bbe::simpleFile::forEachFile(const bbe::String& filePath, const std::functi
 		func(f.path().c_str());
 	}
 }
+#endif
 
 #ifdef WIN32
 #include "windows.h"

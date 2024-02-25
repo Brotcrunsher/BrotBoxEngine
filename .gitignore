@@ -22,6 +22,7 @@
 [Bb]uildNull/
 [Bb]uildOpenGL/
 [Bb]uildEmscripten/
+[Bb]uildEm/
 [Bb]uildPortaudio/
 [Bb]uildLinuxNull/
 [Bb]uildVulkan/

@@ -8,7 +8,6 @@
 
 namespace bbe
 {
-#ifndef __EMSCRIPTEN__
 	namespace backup
 	{
 		void setBackupPath(const bbe::String& path);
@@ -18,7 +17,6 @@ namespace bbe
 		void createDirectory(const bbe::String& path);
 		void appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
 	}
-#endif
 
 	namespace simpleFile
 	{
@@ -38,7 +36,9 @@ namespace bbe
 		bbe::String readFile(const bbe::String& filePath);
 		bbe::List<bbe::String> readLines(const bbe::String& filePath);
 
+#ifndef __EMSCRIPTEN__
 		void forEachFile(const bbe::String& filePath, const std::function<void(const bbe::String&)>& func);
+#endif
 
 #ifdef WIN32
 		bbe::String getUserName();
