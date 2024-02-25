@@ -2,6 +2,32 @@
 
 static ::bbe::Game* activeGame = nullptr;
 
+static int InputTextCallback(ImGuiInputTextCallbackData* data)
+{
+	if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+	{
+		bbe::String* str = (bbe::String*)data->UserData;
+		str->resizeCapacity(data->BufTextLen + 1);
+		data->Buf = str->getRaw();
+	}
+	return 0;
+}
+
+bool ImGui::bbe::InputText(const char* label, ::bbe::String& s, ImGuiInputTextFlags flags)
+{
+	// Callbacks currently not supported.
+	IM_ASSERT((flags & ImGuiInputTextFlags_CallbackCompletion) == 0);
+    IM_ASSERT((flags & ImGuiInputTextFlags_CallbackHistory   ) == 0);
+    IM_ASSERT((flags & ImGuiInputTextFlags_CallbackAlways    ) == 0);
+    IM_ASSERT((flags & ImGuiInputTextFlags_CallbackCharFilter) == 0);
+    IM_ASSERT((flags & ImGuiInputTextFlags_CallbackResize    ) == 0);
+    IM_ASSERT((flags & ImGuiInputTextFlags_CallbackEdit      ) == 0);
+    
+	flags |= ImGuiInputTextFlags_CallbackResize;
+
+	return ImGui::InputText(label, s.getRaw(), s.getCapacity(), flags, InputTextCallback, &s);
+}
+
 void ImGui::bbe::tooltip(const char* text)
 {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort) && ImGui::BeginTooltip())
@@ -178,4 +204,14 @@ bool ImGui::bbe::datePicker(const char* label, ::bbe::TimePoint* time)
 void ImGui::bbe::INTERNAL::setActiveGame(::bbe::Game* game)
 {
 	activeGame = game;
+}
+
+bool ImGui::Button(const::bbe::String& s, const ImVec2& size)
+{
+	return ImGui::Button(s.getRaw(), size);
+}
+
+void ImGui::Text(const::bbe::String& s)
+{
+	ImGui::Text(s.getRaw());
 }

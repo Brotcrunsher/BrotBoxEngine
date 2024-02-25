@@ -17,6 +17,7 @@ public:
 
 	virtual float getSample(size_t i, uint32_t channel) const override
 	{
+		// TODO: This has a race condition! Manipulating the sound source and playing the sound happens on two different threads.
 		if (muted)
 		{
 			return 0.f;

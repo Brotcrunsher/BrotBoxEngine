@@ -1106,6 +1106,11 @@ std::size_t bbe::Utf8String::getCapacity() const
 	return m_capacity;
 }
 
+void bbe::Utf8String::resizeCapacity(size_t newCapacity)
+{
+	growIfNeeded(newCapacity);
+}
+
 bbe::Utf8String bbe::Utf8String::leftFill(char c, size_t length)
 {
 	bbe::String retVal = "";

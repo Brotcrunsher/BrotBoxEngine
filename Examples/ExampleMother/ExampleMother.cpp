@@ -16,11 +16,12 @@
 //TODO: Bug: Crashed when closing Chrome? Only happened once, not easily reproducable.
 //TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
 //TODO: This file is getting massive. Split?
-//TODO: Add console
+//TODO: Unify the buffer read/write mess
+//TODO: bbe::String should have bbe::List<char>
 
 struct Task
 {
-	char title[1024] = {};
+	bbe::String title;
 	int32_t repeatDays = 0;
 	bbe::TimePoint previousExecution = bbe::TimePoint::epoch();
 private:
@@ -49,7 +50,7 @@ public:
 	bool canBeFr = true;
 	bool canBeSa = true;
 	bool earlyAdvanceable = true;
-	char clipboard[1024] = {};
+	bbe::String clipboard;
 	bool lateTimeTask = false;
 	enum /*Non-Class*/ DateType
 	{
@@ -158,7 +159,7 @@ public:
 	}
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
-		buffer.writeNullString(title);
+		title.serialize(buffer);
 		buffer.write(repeatDays);
 		previousExecution.serialize(buffer);
 		nextExecution.serialize(buffer);
@@ -179,7 +180,7 @@ public:
 		buffer.write(canBeFr);
 		buffer.write(canBeSa);
 		buffer.write(earlyAdvanceable);
-		buffer.writeNullString(clipboard);
+		clipboard.serialize(buffer);
 		buffer.write(lateTimeTask);
 		buffer.write(dateType);
 		buffer.write(dtYearlyMonth);
@@ -193,7 +194,7 @@ public:
 	{
 		Task retVal;
 
-		strcpy(retVal.title, buffer.readNullString());
+		retVal.title = bbe::String::deserialize(buffer);
 		buffer.read(retVal.repeatDays);
 		retVal.previousExecution = bbe::TimePoint::deserialize(buffer);
 		retVal.nextExecution = bbe::TimePoint::deserialize(buffer);
@@ -214,7 +215,7 @@ public:
 		buffer.read(retVal.canBeFr, true);
 		buffer.read(retVal.canBeSa, true);
 		buffer.read(retVal.earlyAdvanceable, true);
-		strcpy(retVal.clipboard, buffer.readNullString());
+		retVal.clipboard = bbe::String::deserialize(buffer);
 		buffer.read(retVal.lateTimeTask, false);
 		buffer.read(retVal.dateType);
 		buffer.read(retVal.dtYearlyMonth, 1);
@@ -340,7 +341,7 @@ public:
 
 struct Process
 {
-	char title[1024] = {};
+	bbe::String title;
 
 	enum /*Non-Class*/ Type
 	{
@@ -356,14 +357,14 @@ struct Process
 
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
-		buffer.writeNullString(title);
+		title.serialize(buffer);
 		buffer.write(type);
 	}
 	static Process deserialize(bbe::ByteBufferSpan& buffer)
 	{
 		Process retVal;
 
-		strcpy(retVal.title, buffer.readNullString());
+		retVal.title = bbe::String::deserialize(buffer);
 		buffer.read(retVal.type);
 
 		return retVal;
@@ -372,7 +373,7 @@ struct Process
 
 struct Url
 {
-	char url[1024] = {};
+	bbe::String url;
 	enum /*Non-Class*/ Type
 	{
 		TYPE_UNKNOWN = 0,
@@ -386,14 +387,14 @@ struct Url
 
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
-		buffer.writeNullString(url);
+		url.serialize(buffer);
 		buffer.write(type);
 	}
 	static Url deserialize(bbe::ByteBufferSpan& buffer)
 	{
 		Url retVal;
 
-		strcpy(retVal.url, buffer.readNullString());
+		retVal.url = bbe::String::deserialize(buffer);
 		buffer.read(retVal.type);
 
 		return retVal;
@@ -402,20 +403,20 @@ struct Url
 
 struct ClipboardContent
 {
-	char content[1024] = {};
+	bbe::String content;
 
 
 	// Non-Persisted Helper Data below.
 
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
-		buffer.writeNullString(content);
+		content.serialize(buffer);
 	}
 	static ClipboardContent deserialize(bbe::ByteBufferSpan& buffer)
 	{
 		ClipboardContent retVal;
 
-		strcpy(retVal.content, buffer.readNullString());
+		retVal.content = bbe::String::deserialize(buffer);
 
 		return retVal;
 	}
@@ -423,25 +424,25 @@ struct ClipboardContent
 
 struct GeneralConfig
 {
-	char updatePath[1024] = {};
+	bbe::String updatePath;
 	int32_t beepEvery = 0;
-	char backupPath[1024] = {};
+	bbe::String backupPath;
 
 	// Non-Persisted Helper Data below.
 
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
-		buffer.writeNullString(updatePath);
+		updatePath.serialize(buffer);
 		buffer.write(beepEvery);
-		buffer.writeNullString(backupPath);
+		backupPath.serialize(buffer);
 	}
 	static GeneralConfig deserialize(bbe::ByteBufferSpan& buffer)
 	{
 		GeneralConfig retVal;
 
-		strcpy(retVal.updatePath, buffer.readNullString());
+		retVal.updatePath = bbe::String::deserialize(buffer);
 		buffer.read(retVal.beepEvery);
-		strcpy(retVal.backupPath, buffer.readNullString());
+		retVal.backupPath = bbe::String::deserialize(buffer);
 
 		return retVal;
 	}
@@ -496,7 +497,7 @@ struct BrainTeaserScore
 
 struct Stopwatch
 {
-	char title[1024] = {};
+	bbe::String title;
 	int32_t seconds = 0;
 	bbe::TimePoint doneAt;
 
@@ -505,7 +506,7 @@ struct Stopwatch
 
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
-		buffer.writeNullString(title);
+		title.serialize(buffer);
 		buffer.write(seconds);
 		doneAt.serialize(buffer);
 	}
@@ -513,7 +514,7 @@ struct Stopwatch
 	{
 		Stopwatch retVal;
 
-		strcpy(retVal.title, buffer.readNullString());
+		retVal.title = bbe::String::deserialize(buffer);
 		buffer.read(retVal.seconds);
 		retVal.doneAt.deserialize(buffer);
 
@@ -844,7 +845,7 @@ public:
 				bool found = false;
 				for (size_t i = 0; i < processes.getLength(); i++)
 				{
-					if (strcmp(processes[i].title, entry.szExeFile) == 0)
+					if (processes[i].title == entry.szExeFile)
 					{
 						if (processes[i].type == Process::TYPE_GAME) isGameOn = true;
 						found = true;
@@ -854,7 +855,7 @@ public:
 				if (!found)
 				{
 					Process newProcess;
-					strcpy(newProcess.title, entry.szExeFile);
+					newProcess.title = entry.szExeFile;
 					processes.add(newProcess);
 				}
 				hasEntry = Process32Next(snapshot, &entry);
@@ -885,7 +886,7 @@ public:
 				if (!found)
 				{
 					Url newUrl;
-					strcpy(newUrl.url, tabNames[i].getRaw());
+					newUrl.url = tabNames[i].getRaw();
 					urls.add(newUrl);
 				}
 			}
@@ -989,7 +990,7 @@ public:
 				{
 					if (ImGui::bbe::clickableText(modifiedTitle.getRaw(), t.internalValue))
 					{
-						ImGui::SetClipboardText(t.clipboard);
+						ImGui::SetClipboardText(t.clipboard.getRaw());
 					}
 				}
 				if (t.history.getLength() > 1)
@@ -1140,7 +1141,7 @@ public:
 	bool drawEditableTask(Task& t)
 	{
 		bool taskChanged = false;
-		taskChanged |= ImGui::InputText("Title", t.title, sizeof(t.title));
+		taskChanged |= ImGui::bbe::InputText("Title", t.title);
 		taskChanged |= ImGui::bbe::combo("Date Type", { "Dynamic", "Yearly" }, t.dateType);
 		if (t.dateType == Task::DT_DYNAMIC)
 		{
@@ -1199,7 +1200,7 @@ public:
 		ImGui::bbe::tooltip("Increases the Internal Value on ever Done by this much.");
 		taskChanged |= ImGui::bbe::combo("Input Type", { "None", "Integer", "Float" }, t.inputType);
 
-		taskChanged |= ImGui::InputText("Clipboard", t.clipboard, sizeof(t.clipboard));
+		taskChanged |= ImGui::bbe::InputText("Clipboard", t.clipboard);
 		ImGui::bbe::tooltip("When clicking the task, this will be sent to your clipboard.");
 
 		return taskChanged;
@@ -1424,7 +1425,7 @@ public:
 	bbe::Vector2 drawTabClipboard()
 	{
 		static ClipboardContent newContent;
-		if (ImGui::InputText("New Content", newContent.content, sizeof(newContent.content), ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue))
+		if (ImGui::bbe::InputText("New Content", newContent.content, ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue))
 		{
 			clipboardContent.add(newContent);
 			newContent = ClipboardContent();
@@ -1465,9 +1466,9 @@ public:
 	bbe::Vector2 drawTabConfig()
 	{
 		bool generalConfigChanged = false;
-		generalConfigChanged |= ImGui::InputText("Update Path", generalConfig->updatePath, sizeof(generalConfig->updatePath));
+		generalConfigChanged |= ImGui::bbe::InputText("Update Path", generalConfig->updatePath);
 		generalConfigChanged |= ImGui::InputInt("Beep every (mins)", &generalConfig->beepEvery);
-		if (ImGui::InputText("Backup Path", generalConfig->backupPath, sizeof(generalConfig->backupPath), ImGuiInputTextFlags_EnterReturnsTrue))
+		if (ImGui::bbe::InputText("Backup Path", generalConfig->backupPath, ImGuiInputTextFlags_EnterReturnsTrue))
 		{
 			generalConfigChanged = true;
 			bbe::backup::setBackupPath(generalConfig->backupPath);
@@ -1751,8 +1752,8 @@ public:
 		static bbe::TimePoint nextStateAt;
 		constexpr int32_t startScore = 3;
 		static int32_t currentScore = startScore;
-		static char patternBuf[1024] = {};
-		static char inputBuf[sizeof(patternBuf)] = {};
+		static bbe::String patternBuf;
+		static bbe::String inputBuf;
 		static bool freshlyEnteredState = false;
 
 		BTState nextState = BTState::invalid;
@@ -1786,7 +1787,7 @@ public:
 		else if (state == BTState::entering)
 		{
 			if(freshlyEnteredState) ImGui::SetKeyboardFocusHere();
-			if (ImGui::InputText("Your answer", inputBuf, sizeof(inputBuf), ImGuiInputTextFlags_EnterReturnsTrue))
+			if (ImGui::bbe::InputText("Your answer", inputBuf, ImGuiInputTextFlags_EnterReturnsTrue))
 			{
 				if (bbe::String(inputBuf) == bbe::String(patternBuf))
 				{
@@ -1802,8 +1803,8 @@ public:
 		}
 		else if (state == BTState::endscreen)
 		{
-			ImGui::Text("Input:  %s", inputBuf);
-			ImGui::Text("Actual: %s", patternBuf);
+			ImGui::Text("Input:  %s", inputBuf.getRaw());
+			ImGui::Text("Actual: %s", patternBuf.getRaw());
 			if (ImGui::Button("Start over"))
 			{
 				nextState = BTState::startable;
@@ -1826,13 +1827,13 @@ public:
 			{
 				nextStateAt = bbe::TimePoint().plusSeconds(10);
 				currentScore++;
+				patternBuf = "";
 				for (int32_t i = 0; i < currentScore; i++)
 				{
 					int32_t r = rand.randomInt(10);
-					patternBuf[i] = '0' + r;
+					patternBuf += r;
 				}
-				patternBuf[currentScore] = '\0';
-				memset(inputBuf, 0, sizeof(inputBuf));
+				inputBuf = "";
 			}
 			else if (nextState == BTState::waiting)
 			{
@@ -1904,7 +1905,7 @@ public:
 	{
 		{
 			static Stopwatch newStopwatch;
-			ImGui::InputText("Title", newStopwatch.title, sizeof(newStopwatch.title));
+			ImGui::bbe::InputText("Title", newStopwatch.title);
 			ImGui::InputInt("Seconds", &newStopwatch.seconds);
 			if (ImGui::Button("Create"))
 			{

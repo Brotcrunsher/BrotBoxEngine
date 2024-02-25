@@ -39,6 +39,8 @@ namespace bbe
 	private:
 		static constexpr size_t BBE_UTF8STRING_SSOSIZE = 16;
 
+		// TODO: This should use a bbe::List<char> instead, and the SSO should
+		//       be turned into SOO within bbe::List
 		union
 		{
 			char *m_pdata;
@@ -192,6 +194,8 @@ namespace bbe
 		size_t getLength     () const;
 		size_t getLengthBytes() const;
 		size_t getCapacity   () const;
+
+		void resizeCapacity(size_t newCapacity);
 
 		Utf8String leftFill(char c, size_t length);
 	};
