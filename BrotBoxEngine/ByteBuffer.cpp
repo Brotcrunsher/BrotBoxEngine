@@ -27,34 +27,6 @@ bbe::ByteBufferSpan::ByteBufferSpan(bbe::List<bbe::byte>& bytes, size_t start, s
 {
 }
 
-template<> void bbe::ByteBufferSpan::read(  int8_t& val,   int8_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-template<> void bbe::ByteBufferSpan::read( uint8_t& val,  uint8_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-template<> void bbe::ByteBufferSpan::read( int16_t& val,  int16_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-template<> void bbe::ByteBufferSpan::read(uint16_t& val, uint16_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-template<> void bbe::ByteBufferSpan::read( int32_t& val,  int32_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-template<> void bbe::ByteBufferSpan::read(uint32_t& val, uint32_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-template<> void bbe::ByteBufferSpan::read( int64_t& val,  int64_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-template<> void bbe::ByteBufferSpan::read(uint64_t& val, uint64_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-template<> void bbe::ByteBufferSpan::read(   float& val,    float default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-template<> void bbe::ByteBufferSpan::read(bbe::List<float>& val)
-{
-	int64_t size;
-	read(size);
-	val.resizeCapacityAndLengthUninit(size);
-	for (int64_t i = 0; i < size; i++)
-	{
-		float f;
-		read(f);
-		val[i] = f;
-	}
-}
-template<> void bbe::ByteBufferSpan::read(bool& val, bool default_)
-{
-	int32_t ival;
-	read(ival, default_ ? 1 : 0);
-	val = ival != 0;
-}
-
 bbe::ByteBufferSpan bbe::ByteBufferSpan::readSpan(size_t size)
 {
 	size_t subSpanStart = m_start;
@@ -120,33 +92,6 @@ bbe::ByteBuffer::ByteBuffer(bbe::List<bbe::byte>&& bytes) :
 bbe::ByteBuffer::ByteBuffer(const std::initializer_list<bbe::byte>& il)	:
 	m_bytes(il)
 {
-}
-
-template<> void bbe::ByteBuffer::write(const   int8_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-template<> void bbe::ByteBuffer::write(const  uint8_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-template<> void bbe::ByteBuffer::write(const  int16_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-template<> void bbe::ByteBuffer::write(const uint16_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-template<> void bbe::ByteBuffer::write(const  int32_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-template<> void bbe::ByteBuffer::write(const uint32_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-template<> void bbe::ByteBuffer::write(const  int64_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-template<> void bbe::ByteBuffer::write(const uint64_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-template<> void bbe::ByteBuffer::write(const float    &val) { write((bbe::byte*) &val, sizeof(val)); }
-
-template<>
-void bbe::ByteBuffer::write(const bbe::List<float>& vals)
-{
-	write((int64_t)vals.getLength());
-	for (int64_t i = 0; i < vals.getLength(); i++)
-	{
-		write(vals[i]);
-	}
-}
-
-template<>
-void bbe::ByteBuffer::write(const bool& val)
-{
-	int32_t ival = val ? 1 : 0;
-	write(ival);
 }
 
 void bbe::ByteBuffer::writeNullString(const char* string)

@@ -35,27 +35,43 @@ namespace bbe
 			val = T::deserialize(*this);
 		}
 
-		template <> void read(  int8_t& val,   int8_t default_);
-		template <> void read( uint8_t& val,  uint8_t default_);
-		template <> void read( int16_t& val,  int16_t default_);
-		template <> void read(uint16_t& val, uint16_t default_);
-		template <> void read( int32_t& val,  int32_t default_);
-		template <> void read(uint32_t& val, uint32_t default_);
-		template <> void read( int64_t& val,  int64_t default_);
-		template <> void read(uint64_t& val, uint64_t default_);
-		template <> void read(bool& val,     bool     default_);
-		template <> void read(float& val,    float    default_);
-		template <> void read(  int8_t& val) { read<  int8_t>(val, 0);};
-		template <> void read( uint8_t& val) { read< uint8_t>(val, 0);};
-		template <> void read( int16_t& val) { read< int16_t>(val, 0);};
-		template <> void read(uint16_t& val) { read<uint16_t>(val, 0);};
-		template <> void read( int32_t& val) { read< int32_t>(val, 0);};
-		template <> void read(uint32_t& val) { read<uint32_t>(val, 0);};
-		template <> void read( int64_t& val) { read< int64_t>(val, 0);};
-		template <> void read(uint64_t& val) { read<uint64_t>(val, 0);};
-		template <> void read(bool& val    ) { read<bool>(val, false);};
-		template <> void read(float& val   ) { read<float>(val, 0.0f);};
-		template <> void read(bbe::List<float>& val);
+		template <> void read(  int8_t& val,   int8_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+		template <> void read( uint8_t& val,  uint8_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+		template <> void read( int16_t& val,  int16_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+		template <> void read(uint16_t& val, uint16_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+		template <> void read( int32_t& val,  int32_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+		template <> void read(uint32_t& val, uint32_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+		template <> void read( int64_t& val,  int64_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+		template <> void read(uint64_t& val, uint64_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+		template <> void read(float& val,    float    default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+		template <> void read(bool& val,     bool     default_)
+		{
+			int32_t ival;
+			read(ival, default_ ? 1 : 0);
+			val = ival != 0;
+		}
+		template <> void read(  int8_t& val) { read<  int8_t>(val, 0);}
+		template <> void read( uint8_t& val) { read< uint8_t>(val, 0);}
+		template <> void read( int16_t& val) { read< int16_t>(val, 0);}
+		template <> void read(uint16_t& val) { read<uint16_t>(val, 0);}
+		template <> void read( int32_t& val) { read< int32_t>(val, 0);}
+		template <> void read(uint32_t& val) { read<uint32_t>(val, 0);}
+		template <> void read( int64_t& val) { read< int64_t>(val, 0);}
+		template <> void read(uint64_t& val) { read<uint64_t>(val, 0);}
+		template <> void read(bool& val    ) { read<bool>(val, false);}
+		template <> void read(float& val   ) { read<float>(val, 0.0f);}
+		template <> void read(bbe::List<float>& val)
+		{
+			int64_t size;
+			read(size);
+			val.resizeCapacityAndLengthUninit(size);
+			for (int64_t i = 0; i < size; i++)
+			{
+				float f;
+				read(f);
+				val[i] = f;
+			}
+		}
 		ByteBufferSpan readSpan(size_t size);
 		const char* readNullString();
 
@@ -80,17 +96,28 @@ namespace bbe
 		{
 			val.serialize(*this);
 		}
-		template<> void write(const   int8_t &val);
-		template<> void write(const  uint8_t &val);
-		template<> void write(const  int16_t &val);
-		template<> void write(const uint16_t &val);
-		template<> void write(const  int32_t &val);
-		template<> void write(const uint32_t &val);
-		template<> void write(const  int64_t &val);
-		template<> void write(const uint64_t &val);
-		template<> void write(const bool     &val);
-		template<> void write(const float    &val);
-		template<> void write(const bbe::List<float>& vals);
+		template<> void write(const   int8_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+		template<> void write(const  uint8_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+		template<> void write(const  int16_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+		template<> void write(const uint16_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+		template<> void write(const  int32_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+		template<> void write(const uint32_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+		template<> void write(const  int64_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+		template<> void write(const uint64_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+		template<> void write(const float    &val) { write((bbe::byte*) &val, sizeof(val)); }
+		template<> void write(const bool     &val) 
+		{
+			int32_t ival = val ? 1 : 0;
+			write(ival);
+		}
+		template<> void write(const bbe::List<float>& vals)
+		{
+			write((int64_t)vals.getLength());
+			for (int64_t i = 0; i < vals.getLength(); i++)
+			{
+				write(vals[i]);
+			}
+		}
 		void writeNullString(const char* string);
 
 		bbe::byte* getRaw();
