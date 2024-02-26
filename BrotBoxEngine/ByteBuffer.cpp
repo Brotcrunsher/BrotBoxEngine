@@ -6,6 +6,7 @@ void bbe::ByteBufferSpan::read(bbe::byte* bytes, bbe::byte* default_, size_t len
 	{
 		memcpy(bytes, default_, length);
 		m_start = m_end;
+		m_didErr = true;
 		return;
 	}
 	memcpy(bytes, m_bytes.getRaw() + m_start, length);
@@ -26,16 +27,16 @@ bbe::ByteBufferSpan::ByteBufferSpan(bbe::List<bbe::byte>& bytes, size_t start, s
 {
 }
 
-void bbe::ByteBufferSpan::read(  int8_t& val,   int8_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-void bbe::ByteBufferSpan::read( uint8_t& val,  uint8_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-void bbe::ByteBufferSpan::read( int16_t& val,  int16_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-void bbe::ByteBufferSpan::read(uint16_t& val, uint16_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-void bbe::ByteBufferSpan::read( int32_t& val,  int32_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-void bbe::ByteBufferSpan::read(uint32_t& val, uint32_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-void bbe::ByteBufferSpan::read( int64_t& val,  int64_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-void bbe::ByteBufferSpan::read(uint64_t& val, uint64_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-void bbe::ByteBufferSpan::read(   float& val,    float default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-void bbe::ByteBufferSpan::read(bbe::List<float>& val)
+template<> void bbe::ByteBufferSpan::read(  int8_t& val,   int8_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+template<> void bbe::ByteBufferSpan::read( uint8_t& val,  uint8_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+template<> void bbe::ByteBufferSpan::read( int16_t& val,  int16_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+template<> void bbe::ByteBufferSpan::read(uint16_t& val, uint16_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+template<> void bbe::ByteBufferSpan::read( int32_t& val,  int32_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+template<> void bbe::ByteBufferSpan::read(uint32_t& val, uint32_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+template<> void bbe::ByteBufferSpan::read( int64_t& val,  int64_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+template<> void bbe::ByteBufferSpan::read(uint64_t& val, uint64_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+template<> void bbe::ByteBufferSpan::read(   float& val,    float default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
+template<> void bbe::ByteBufferSpan::read(bbe::List<float>& val)
 {
 	int64_t size;
 	read(size);
@@ -47,7 +48,7 @@ void bbe::ByteBufferSpan::read(bbe::List<float>& val)
 		val[i] = f;
 	}
 }
-void bbe::ByteBufferSpan::read(bool& val, bool default_)
+template<> void bbe::ByteBufferSpan::read(bool& val, bool default_)
 {
 	int32_t ival;
 	read(ival, default_ ? 1 : 0);
@@ -121,16 +122,17 @@ bbe::ByteBuffer::ByteBuffer(const std::initializer_list<bbe::byte>& il)	:
 {
 }
 
-void bbe::ByteBuffer::write(  int8_t val) { write((bbe::byte*) &val, sizeof(val)); }
-void bbe::ByteBuffer::write( uint8_t val) { write((bbe::byte*) &val, sizeof(val)); }
-void bbe::ByteBuffer::write( int16_t val) { write((bbe::byte*) &val, sizeof(val)); }
-void bbe::ByteBuffer::write(uint16_t val) { write((bbe::byte*) &val, sizeof(val)); }
-void bbe::ByteBuffer::write( int32_t val) { write((bbe::byte*) &val, sizeof(val)); }
-void bbe::ByteBuffer::write(uint32_t val) { write((bbe::byte*) &val, sizeof(val)); }
-void bbe::ByteBuffer::write( int64_t val) { write((bbe::byte*) &val, sizeof(val)); }
-void bbe::ByteBuffer::write(uint64_t val) { write((bbe::byte*) &val, sizeof(val)); }
-void bbe::ByteBuffer::write(float val)    { write((bbe::byte*) &val, sizeof(val)); }
+template<> void bbe::ByteBuffer::write(const   int8_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+template<> void bbe::ByteBuffer::write(const  uint8_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+template<> void bbe::ByteBuffer::write(const  int16_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+template<> void bbe::ByteBuffer::write(const uint16_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+template<> void bbe::ByteBuffer::write(const  int32_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+template<> void bbe::ByteBuffer::write(const uint32_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+template<> void bbe::ByteBuffer::write(const  int64_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+template<> void bbe::ByteBuffer::write(const uint64_t &val) { write((bbe::byte*) &val, sizeof(val)); }
+template<> void bbe::ByteBuffer::write(const float    &val) { write((bbe::byte*) &val, sizeof(val)); }
 
+template<>
 void bbe::ByteBuffer::write(const bbe::List<float>& vals)
 {
 	write((int64_t)vals.getLength());
@@ -140,7 +142,8 @@ void bbe::ByteBuffer::write(const bbe::List<float>& vals)
 	}
 }
 
-void bbe::ByteBuffer::write(bool val)
+template<>
+void bbe::ByteBuffer::write(const bool& val)
 {
 	int32_t ival = val ? 1 : 0;
 	write(ival);

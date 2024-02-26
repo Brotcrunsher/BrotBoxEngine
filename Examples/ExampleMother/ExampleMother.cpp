@@ -16,7 +16,6 @@
 //TODO: Bug: Crashed when closing Chrome? Only happened once, not easily reproducable.
 //TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
 //TODO: This file is getting massive. Split?
-//TODO: Unify the buffer read/write mess
 //TODO: bbe::String should have bbe::List<char>
 
 struct Task
@@ -159,10 +158,10 @@ public:
 	}
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
-		title.serialize(buffer);
+		buffer.write(title);
 		buffer.write(repeatDays);
-		previousExecution.serialize(buffer);
-		nextExecution.serialize(buffer);
+		buffer.write(previousExecution);
+		buffer.write(nextExecution);
 		buffer.write(canBeSu);
 		buffer.write(followUp);
 		buffer.write(internalValue);
@@ -180,13 +179,13 @@ public:
 		buffer.write(canBeFr);
 		buffer.write(canBeSa);
 		buffer.write(earlyAdvanceable);
-		clipboard.serialize(buffer);
+		buffer.write(clipboard);
 		buffer.write(lateTimeTask);
 		buffer.write(dateType);
 		buffer.write(dtYearlyMonth);
 		buffer.write(dtYearlyDay);
 		buffer.write(startable);
-		endWorkTime.serialize(buffer);
+		buffer.write(endWorkTime);
 		buffer.write(indefinitelyAdvanceable);
 		buffer.write(shouldPlayNotificationSounds);
 	}
@@ -194,10 +193,10 @@ public:
 	{
 		Task retVal;
 
-		retVal.title = bbe::String::deserialize(buffer);
+		buffer.read(retVal.title);
 		buffer.read(retVal.repeatDays);
-		retVal.previousExecution = bbe::TimePoint::deserialize(buffer);
-		retVal.nextExecution = bbe::TimePoint::deserialize(buffer);
+		buffer.read(retVal.previousExecution);
+		buffer.read(retVal.nextExecution);
 		buffer.read(retVal.canBeSu, true);
 		buffer.read(retVal.followUp);
 		buffer.read(retVal.internalValue);
@@ -215,13 +214,13 @@ public:
 		buffer.read(retVal.canBeFr, true);
 		buffer.read(retVal.canBeSa, true);
 		buffer.read(retVal.earlyAdvanceable, true);
-		retVal.clipboard = bbe::String::deserialize(buffer);
+		buffer.read(retVal.clipboard);
 		buffer.read(retVal.lateTimeTask, false);
 		buffer.read(retVal.dateType);
 		buffer.read(retVal.dtYearlyMonth, 1);
 		buffer.read(retVal.dtYearlyDay, 1);
 		buffer.read(retVal.startable, false);
-		retVal.endWorkTime = bbe::TimePoint::deserialize(buffer);
+		buffer.read(retVal.endWorkTime);
 		buffer.read(retVal.indefinitelyAdvanceable, false);
 		buffer.read(retVal.shouldPlayNotificationSounds, true);
 
@@ -357,14 +356,14 @@ struct Process
 
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
-		title.serialize(buffer);
+		buffer.write(title);
 		buffer.write(type);
 	}
 	static Process deserialize(bbe::ByteBufferSpan& buffer)
 	{
 		Process retVal;
 
-		retVal.title = bbe::String::deserialize(buffer);
+		buffer.read(retVal.title);
 		buffer.read(retVal.type);
 
 		return retVal;
@@ -387,14 +386,14 @@ struct Url
 
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
-		url.serialize(buffer);
+		buffer.write(url);
 		buffer.write(type);
 	}
 	static Url deserialize(bbe::ByteBufferSpan& buffer)
 	{
 		Url retVal;
 
-		retVal.url = bbe::String::deserialize(buffer);
+		buffer.read(retVal.url);
 		buffer.read(retVal.type);
 
 		return retVal;
@@ -410,13 +409,13 @@ struct ClipboardContent
 
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
-		content.serialize(buffer);
+		buffer.write(content);
 	}
 	static ClipboardContent deserialize(bbe::ByteBufferSpan& buffer)
 	{
 		ClipboardContent retVal;
 
-		retVal.content = bbe::String::deserialize(buffer);
+		buffer.read(retVal.content);
 
 		return retVal;
 	}
@@ -432,17 +431,17 @@ struct GeneralConfig
 
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
-		updatePath.serialize(buffer);
+		buffer.write(updatePath);
 		buffer.write(beepEvery);
-		backupPath.serialize(buffer);
+		buffer.write(backupPath);
 	}
 	static GeneralConfig deserialize(bbe::ByteBufferSpan& buffer)
 	{
 		GeneralConfig retVal;
 
-		retVal.updatePath = bbe::String::deserialize(buffer);
+		buffer.read(retVal.updatePath);
 		buffer.read(retVal.beepEvery);
-		retVal.backupPath = bbe::String::deserialize(buffer);
+		buffer.read(retVal.backupPath);
 
 		return retVal;
 	}
@@ -482,7 +481,7 @@ struct BrainTeaserScore
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
 		buffer.write(score);
-		didItOn.serialize(buffer);
+		buffer.write(didItOn);
 	}
 	static BrainTeaserScore deserialize(bbe::ByteBufferSpan& buffer)
 	{
@@ -506,17 +505,17 @@ struct Stopwatch
 
 	void serialize(bbe::ByteBuffer& buffer) const
 	{
-		title.serialize(buffer);
+		buffer.write(title);
 		buffer.write(seconds);
-		doneAt.serialize(buffer);
+		buffer.write(doneAt);
 	}
 	static Stopwatch deserialize(bbe::ByteBufferSpan& buffer)
 	{
 		Stopwatch retVal;
 
-		retVal.title = bbe::String::deserialize(buffer);
+		buffer.read(retVal.title);
 		buffer.read(retVal.seconds);
-		retVal.doneAt.deserialize(buffer);
+		buffer.read(retVal.doneAt);
 
 		return retVal;
 	}
@@ -578,7 +577,7 @@ private:
 
 	bbe::GlobalKeyboard globalKeyboard;
 
-
+	bool nextBrainTeaser = false;
 	bool terriActive = false;
 
 public:
@@ -1310,6 +1309,19 @@ public:
 
 	bbe::Vector2 drawTabViewTasks()
 	{
+		{
+			static Task temp;
+			ImGui::Text("New One Shot:");
+			ImGui::SameLine();
+			if (ImGui::bbe::InputText("##bla", temp.title, ImGuiInputTextFlags_EnterReturnsTrue))
+			{
+				temp.oneShot = true;
+				tasks.add(temp);
+				temp = Task();
+				ImGui::SetKeyboardFocusHere(-1);
+			}
+		}
+
 		bool requiresWrite = false;
 		drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    requiresWrite, false, false, true,  true,  false, false, false, false);
 		drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              requiresWrite, true,  true,  true,  true,  false, false, false, false);
@@ -1489,7 +1501,10 @@ public:
 			Tab{"Alphabet"    , [&]() { return drawTabBrainTeaserAlphabet(brush);    }},
 			Tab{"Add"         , [&]() { return drawTabBrainTeaserAdd(brush);         }},
 		};
-		return drawTabs(tabs);
+		static size_t previouslyShown = 0;
+		bool dummy = false;
+		auto retVal = drawTabs(tabs, &previouslyShown, dummy, nextBrainTeaser);
+		return retVal;
 	}
 
 	void newAddPair(int32_t& left, int32_t& right)
@@ -1523,7 +1538,7 @@ public:
 
 		if (state == BTState::startable)
 		{
-			if (ImGui::Button("Start") || isKeyPressed(bbe::Key::SPACE))
+			if (ImGui::Button("Start") || isKeyPressed(bbe::Key::SPACE) || isKeyPressed(bbe::Key::ENTER))
 			{
 				nextState = BTState::playing;
 			}
@@ -1569,9 +1584,10 @@ public:
 		{
 			ImGui::Text("Score: %d", currentScore);
 			ImGui::Text("%s", reason.getRaw());
-			if (ImGui::Button("Start over") || isKeyPressed(bbe::Key::SPACE))
+			if (ImGui::Button("Start over") || isKeyPressed(bbe::Key::SPACE) || isKeyPressed(bbe::Key::ENTER))
 			{
 				nextState = BTState::startable;
+				nextBrainTeaser = 2;
 			}
 		}
 		else
@@ -1644,7 +1660,7 @@ public:
 
 		if (state == BTState::startable)
 		{
-			if (ImGui::Button("Start") || isKeyPressed(bbe::Key::SPACE))
+			if (ImGui::Button("Start") || isKeyPressed(bbe::Key::SPACE) || isKeyPressed(bbe::Key::ENTER))
 			{
 				nextState = BTState::playing;
 			}
@@ -1694,9 +1710,10 @@ public:
 		{
 			ImGui::Text("Score: %d", currentScore);
 			ImGui::Text("%s", reason.getRaw());
-			if (ImGui::Button("Start over") || isKeyPressed(bbe::Key::SPACE))
+			if (ImGui::Button("Start over") || isKeyPressed(bbe::Key::SPACE) || isKeyPressed(bbe::Key::ENTER))
 			{
 				nextState = BTState::startable;
+				nextBrainTeaser = 2;
 			}
 		}
 		else
@@ -1761,7 +1778,7 @@ public:
 
 		if (state == BTState::startable)
 		{
-			if (ImGui::Button("Start"))
+			if (ImGui::Button("Start") || isKeyPressed(bbe::Key::SPACE) || isKeyPressed(bbe::Key::ENTER))
 			{
 				nextState = BTState::showing;
 			}
@@ -1805,9 +1822,10 @@ public:
 		{
 			ImGui::Text("Input:  %s", inputBuf.getRaw());
 			ImGui::Text("Actual: %s", patternBuf.getRaw());
-			if (ImGui::Button("Start over"))
+			if (ImGui::Button("Start over") || isKeyPressed(bbe::Key::SPACE) || isKeyPressed(bbe::Key::ENTER))
 			{
 				nextState = BTState::startable;
+				nextBrainTeaser = 2;
 			}
 		}
 		else
@@ -1821,14 +1839,14 @@ public:
 			state = nextState;
 			if (nextState == BTState::startable)
 			{
+				patternBuf = "";
 				currentScore = startScore;
 			}
 			else if (nextState == BTState::showing)
 			{
 				nextStateAt = bbe::TimePoint().plusSeconds(10);
 				currentScore++;
-				patternBuf = "";
-				for (int32_t i = 0; i < currentScore; i++)
+				while(patternBuf.getLength() < currentScore)
 				{
 					int32_t r = rand.randomInt(10);
 					patternBuf += r;
@@ -1868,7 +1886,7 @@ public:
 		std::function<bbe::Vector2()> run;
 	};
 
-	bbe::Vector2 drawTabs(const bbe::List<Tab>& tabs, size_t* previousShownTab = nullptr, bool switchLeft = false, bool switchRight = false)
+	bbe::Vector2 drawTabs(const bbe::List<Tab>& tabs, size_t* previousShownTab, bool &switchLeft, bool &switchRight)
 	{
 		bbe::Vector2 sizeMult(1.0f, 1.0f);
 		if (ImGui::BeginTabBar("MainWindowTabs")) {
@@ -1885,6 +1903,8 @@ public:
 					if (switchRight) desiredShownTab++;
 					if (desiredShownTab == tabs.getLength()) desiredShownTab = 0;
 				}
+				switchLeft = false;
+				switchRight = false;
 			}
 			for (size_t i = 0; i < tabs.getLength(); i++)
 			{

@@ -11,6 +11,7 @@ namespace bbe
 		bbe::List<bbe::byte>& m_bytes; // List reference instead of byte* to ensure we are safe when the list resizes.
 		size_t m_start = 0;
 		size_t m_end = 0;
+		bool m_didErr = false;
 
 		void read(bbe::byte* bytes, bbe::byte* default_, size_t length);
 
@@ -18,17 +19,43 @@ namespace bbe
 		ByteBufferSpan(bbe::List<bbe::byte>& bytes);
 		ByteBufferSpan(bbe::List<bbe::byte>& bytes, size_t start, size_t end);
 
-		void read(  int8_t& val,   int8_t default_ = 0);
-		void read( uint8_t& val,  uint8_t default_ = 0);
-		void read( int16_t& val,  int16_t default_ = 0);
-		void read(uint16_t& val, uint16_t default_ = 0);
-		void read( int32_t& val,  int32_t default_ = 0);
-		void read(uint32_t& val, uint32_t default_ = 0);
-		void read( int64_t& val,  int64_t default_ = 0);
-		void read(uint64_t& val, uint64_t default_ = 0);
-		void read(bool& val, bool default_ = false);
-		void read(float& val, float default_ = 0.f);
-		void read(bbe::List<float>& val);
+		template<typename T>
+		void read(T& val, T default_)
+		{
+			val = T::deserialize(*this);
+			if (m_didErr)
+			{
+				val = default_;
+			}
+		}
+
+		template<typename T>
+		void read(T& val)
+		{
+			val = T::deserialize(*this);
+		}
+
+		template <> void read(  int8_t& val,   int8_t default_);
+		template <> void read( uint8_t& val,  uint8_t default_);
+		template <> void read( int16_t& val,  int16_t default_);
+		template <> void read(uint16_t& val, uint16_t default_);
+		template <> void read( int32_t& val,  int32_t default_);
+		template <> void read(uint32_t& val, uint32_t default_);
+		template <> void read( int64_t& val,  int64_t default_);
+		template <> void read(uint64_t& val, uint64_t default_);
+		template <> void read(bool& val,     bool     default_);
+		template <> void read(float& val,    float    default_);
+		template <> void read(  int8_t& val) { read<  int8_t>(val, 0);};
+		template <> void read( uint8_t& val) { read< uint8_t>(val, 0);};
+		template <> void read( int16_t& val) { read< int16_t>(val, 0);};
+		template <> void read(uint16_t& val) { read<uint16_t>(val, 0);};
+		template <> void read( int32_t& val) { read< int32_t>(val, 0);};
+		template <> void read(uint32_t& val) { read<uint32_t>(val, 0);};
+		template <> void read( int64_t& val) { read< int64_t>(val, 0);};
+		template <> void read(uint64_t& val) { read<uint64_t>(val, 0);};
+		template <> void read(bool& val    ) { read<bool>(val, false);};
+		template <> void read(float& val   ) { read<float>(val, 0.0f);};
+		template <> void read(bbe::List<float>& val);
 		ByteBufferSpan readSpan(size_t size);
 		const char* readNullString();
 
@@ -48,17 +75,22 @@ namespace bbe
 		ByteBuffer(bbe::List<bbe::byte>&& bytes);
 		ByteBuffer(const std::initializer_list<bbe::byte>& il);
 
-		void write(  int8_t val);
-		void write( uint8_t val);
-		void write( int16_t val);
-		void write(uint16_t val);
-		void write( int32_t val);
-		void write(uint32_t val);
-		void write( int64_t val);
-		void write(uint64_t val);
-		void write(bool val);
-		void write(float val);
-		void write(const bbe::List<float>& vals);
+		template<typename T>
+		void write(const T& val)
+		{
+			val.serialize(*this);
+		}
+		template<> void write(const   int8_t &val);
+		template<> void write(const  uint8_t &val);
+		template<> void write(const  int16_t &val);
+		template<> void write(const uint16_t &val);
+		template<> void write(const  int32_t &val);
+		template<> void write(const uint32_t &val);
+		template<> void write(const  int64_t &val);
+		template<> void write(const uint64_t &val);
+		template<> void write(const bool     &val);
+		template<> void write(const float    &val);
+		template<> void write(const bbe::List<float>& vals);
 		void writeNullString(const char* string);
 
 		bbe::byte* getRaw();
