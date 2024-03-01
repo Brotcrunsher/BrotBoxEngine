@@ -21,7 +21,12 @@ namespace ImGui
 		void tooltip(const ::bbe::String& text);
 		bool combo(const char* label, const ::bbe::List<::bbe::String>& selections, int32_t& selection);
 		bool clickableText(const char* fmt, ...);
-		bool securityButton(const char* text);
+		enum /*non-class*/ SecurityButtonFlags
+		{
+			SecurityButtonFlags_None                     = 0,
+			SecurityButtonFlags_DontShowWOSecurityButton = 1 << 0,
+		};
+		bool securityButton(const char* text, SecurityButtonFlags flags = SecurityButtonFlags_None);
 		bool datePicker(const char* label, ::bbe::TimePoint* time);
 	}
 

@@ -76,9 +76,17 @@ bool ImGui::bbe::clickableText(const char* fmt, ...)
 	return ImGui::Selectable(buffer.getRaw(), &dummy);
 }
 
-bool ImGui::bbe::securityButton(const char* text)
+bool ImGui::bbe::securityButton(const char* text, SecurityButtonFlags flags)
 {
 	const bool shiftPressed = activeGame->isKeyDown(::bbe::Key::LEFT_SHIFT);
+	if (flags & SecurityButtonFlags_DontShowWOSecurityButton)
+	{
+		if (!shiftPressed)
+		{
+			ImGui::Text(""); // This is here to make sure ImGui::SameLine() behaves as expected.
+			return false;
+		}
+	}
 	const bool retVal = ImGui::Button(shiftPressed ? text : "[Shift]") && shiftPressed;
 	ImGui::bbe::tooltip("Hold shift to activate this button.");
 	return retVal;
