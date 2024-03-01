@@ -8,6 +8,7 @@
 #include "AssetStore.h"
 #include "imgui_internal.h"
 #include "GlobalKeyboard.h"
+#include "Task.h"
 
 //TODO: Redo
 //TODO: Countdown beeps when starting and stopping startable tasks
@@ -17,326 +18,8 @@
 //TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
 //TODO: This file is getting massive. Split?
 //TODO: bbe::String should have bbe::List<char>
-
-struct Task
-{
-	bbe::String title;
-	int32_t repeatDays = 0;
-	bbe::TimePoint previousExecution = bbe::TimePoint::epoch();
-private:
-	bbe::TimePoint nextExecution; // Call nextPossibleExecution from the outside! 
-public:
-	bool canBeSu = true;
-	int32_t followUp = 0; // In minutes. When clicking follow up, the task will be rescheduled the same day.
-	int32_t internalValue = 0;
-	int32_t internalValueIncrease = 0;
-	int32_t followUp2 = 0;
-	enum /*Non-Class*/ InputType
-	{
-		IT_NONE,
-		IT_INTEGER,
-		IT_FLOAT,
-	};
-	int32_t inputType = IT_NONE;
-	bbe::List<float> history;
-	bool advanceable = false;
-	bool oneShot = false;
-	bool preparation = false;
-	bool canBeMo = true;
-	bool canBeTu = true;
-	bool canBeWe = true;
-	bool canBeTh = true;
-	bool canBeFr = true;
-	bool canBeSa = true;
-	bool earlyAdvanceable = true;
-	bbe::String clipboard;
-	bool lateTimeTask = false;
-	enum /*Non-Class*/ DateType
-	{
-		DT_DYNAMIC = 0,
-		DT_YEARLY  = 1,
-		// dt_monthly = 2, // Not implemented
-	};
-	int32_t dateType = DT_DYNAMIC;
-	int32_t dtYearlyMonth = 1;
-	int32_t dtYearlyDay = 1;
-	bool startable = false;
-	bbe::TimePoint endWorkTime = bbe::TimePoint::epoch();
-	bool indefinitelyAdvanceable = false;
-	bool shouldPlayNotificationSounds = true;
-
-	// Non-Persisted Helper Data below.
-	int32_t inputInt = 0;
-	float inputFloat = 0;
-	mutable bool armedToPlaySoundNewTask = false;
-	mutable bool armedToPlaySoundDone = false;
-	bbe::TimePoint execPointBuffer;
-	bbe::TimePoint yearlyBuffer;
-
-private:
-	bool timePointElapsed(const bbe::TimePoint& tp, bool& armed) const
-	{
-		if (tp.hasPassed())
-		{
-			if (armed)
-			{
-				armed = false;
-				return true;
-			}
-		}
-		else
-		{
-			armed = true;
-		}
-		return false;
-	}
-public:
-
-	bool shouldPlaySoundNewTask() const
-	{
-		return timePointElapsed(nextPossibleExecution(), armedToPlaySoundNewTask);
-	}
-
-	bool shouldPlaySoundDone() const
-	{
-		return timePointElapsed(endWorkTime, armedToPlaySoundDone);
-	}
-
-	void execDone()
-	{
-		internalValue += internalValueIncrease;
-		previousExecution = bbe::TimePoint();
-		if (dateType == DT_DYNAMIC)
-		{
-			nextExecution = toPossibleTimePoint(previousExecution.nextMorning().plusDays(repeatDays - 1));
-		}
-		else if (dateType == DT_YEARLY)
-		{
-			nextExecution = getNextYearlyExecution();
-		}
-	}
-	void execFollowUp()
-	{
-		previousExecution = bbe::TimePoint();
-		nextExecution = previousExecution.plusMinutes(followUp);
-	}
-	void execFollowUp2()
-	{
-		previousExecution = bbe::TimePoint();
-		nextExecution = previousExecution.plusMinutes(followUp2);
-	}
-	void execMoveToNow()
-	{
-		armedToPlaySoundNewTask = false;
-		nextExecution = bbe::TimePoint();
-	}
-	void execAdvance()
-	{
-		internalValue += internalValueIncrease;
-		previousExecution = bbe::TimePoint();
-		if (dateType == DT_DYNAMIC)
-		{
-			if (preparation)
-			{
-				nextExecution = toPossibleTimePoint(bbe::TimePoint().nextMorning().plusDays(repeatDays));
-			}
-			else
-			{
-				nextExecution = toPossibleTimePoint(nextExecution.plusDays(repeatDays));
-			}
-		}
-		else if (dateType == DT_YEARLY)
-		{
-			nextExecution = getNextYearlyExecution();
-		}
-	}
-
-	void sanity()
-	{
-		if (repeatDays < 1) repeatDays = 1;
-		if (followUp < 0) followUp = 0;
-	}
-	void serialize(bbe::ByteBuffer& buffer) const
-	{
-		buffer.write(title);
-		buffer.write(repeatDays);
-		buffer.write(previousExecution);
-		buffer.write(nextExecution);
-		buffer.write(canBeSu);
-		buffer.write(followUp);
-		buffer.write(internalValue);
-		buffer.write(internalValueIncrease);
-		buffer.write(followUp2);
-		buffer.write(inputType);
-		buffer.write(history);
-		buffer.write(advanceable);
-		buffer.write(oneShot);
-		buffer.write(preparation);
-		buffer.write(canBeMo);
-		buffer.write(canBeTu);
-		buffer.write(canBeWe);
-		buffer.write(canBeTh);
-		buffer.write(canBeFr);
-		buffer.write(canBeSa);
-		buffer.write(earlyAdvanceable);
-		buffer.write(clipboard);
-		buffer.write(lateTimeTask);
-		buffer.write(dateType);
-		buffer.write(dtYearlyMonth);
-		buffer.write(dtYearlyDay);
-		buffer.write(startable);
-		buffer.write(endWorkTime);
-		buffer.write(indefinitelyAdvanceable);
-		buffer.write(shouldPlayNotificationSounds);
-	}
-	static Task deserialize(bbe::ByteBufferSpan& buffer)
-	{
-		Task retVal;
-
-		buffer.read(retVal.title);
-		buffer.read(retVal.repeatDays);
-		buffer.read(retVal.previousExecution);
-		buffer.read(retVal.nextExecution);
-		buffer.read(retVal.canBeSu, true);
-		buffer.read(retVal.followUp);
-		buffer.read(retVal.internalValue);
-		buffer.read(retVal.internalValueIncrease);
-		buffer.read(retVal.followUp2);
-		buffer.read(retVal.inputType);
-		buffer.read(retVal.history);
-		buffer.read(retVal.advanceable);
-		buffer.read(retVal.oneShot);
-		buffer.read(retVal.preparation);
-		buffer.read(retVal.canBeMo, true);
-		buffer.read(retVal.canBeTu, true);
-		buffer.read(retVal.canBeWe, true);
-		buffer.read(retVal.canBeTh, true);
-		buffer.read(retVal.canBeFr, true);
-		buffer.read(retVal.canBeSa, true);
-		buffer.read(retVal.earlyAdvanceable, true);
-		buffer.read(retVal.clipboard);
-		buffer.read(retVal.lateTimeTask, false);
-		buffer.read(retVal.dateType);
-		buffer.read(retVal.dtYearlyMonth, 1);
-		buffer.read(retVal.dtYearlyDay, 1);
-		buffer.read(retVal.startable, false);
-		buffer.read(retVal.endWorkTime);
-		buffer.read(retVal.indefinitelyAdvanceable, false);
-		buffer.read(retVal.shouldPlayNotificationSounds, true);
-
-		return retVal;
-	}
-
-	void nextExecPlusDays(int32_t days)
-	{
-		nextExecution = toPossibleTimePoint(nextPossibleExecution().plusDays(days).toMorning(), days > 0);
-	}
-
-	bbe::TimePoint nextPossibleExecution() const
-	{
-		if (!nextExecution.hasPassed()) return nextExecution;
-		return toPossibleTimePoint(bbe::TimePoint());
-	}
-
-	bool isPossibleWeekday(const bbe::TimePoint& tp) const
-	{
-		if (!canBeMo && tp.isMonday())    return false;
-		if (!canBeTu && tp.isTuesday())   return false;
-		if (!canBeWe && tp.isWednesday()) return false;
-		if (!canBeTh && tp.isThursday())  return false;
-		if (!canBeFr && tp.isFriday())    return false;
-		if (!canBeSa && tp.isSaturday())  return false;
-		if (!canBeSu && tp.isSunday())    return false;
-		return true;
-	}
-
-	bbe::TimePoint toPossibleTimePoint(const bbe::TimePoint& tp, bool forwardInTime = true) const
-	{
-		bbe::TimePoint retVal = tp;
-		for (int32_t i = 0; i < 14; i++)
-		{
-			if (!isPossibleWeekday(retVal))
-			{
-				if (forwardInTime) retVal = retVal.nextMorning();
-				else               retVal = retVal.plusDays(-1);
-			}
-			else
-			{
-				break;
-			}
-		}
-		if (preparation && retVal.isToday()) retVal = retVal.nextMorning();
-		return retVal;
-	}
-
-	bool isImportantTomorrow() const
-	{
-		//TODO: "Interesting" calculation for "tomorrow"...
-		bbe::TimePoint tomorrow = bbe::TimePoint().nextMorning().plusDays(1).plusHours(-6);
-		if (!isPossibleWeekday(tomorrow)) return false;
-		if (nextExecution < tomorrow) return true;
-
-		return false;
-	}
-
-	bool isImportantToday() const
-	{
-		auto tp = nextPossibleExecution();
-		if (tp.hasPassed()) return true;
-		if (tp.isToday()) return true;
-		return false;
-	}
-
-	void setNextExecution(int32_t year, int32_t month, int32_t day)
-	{
-		nextExecution = toPossibleTimePoint(bbe::TimePoint::fromDate(year, month, day).nextMorning());
-	}
-
-	void setNextExecution(const bbe::TimePoint& tp)
-	{
-		setNextExecution(tp.getYear(), (int32_t)tp.getMonth(), tp.getDay());
-	}
-
-	int32_t amountPossibleWeekdays() const
-	{
-		int32_t retVal = 0;
-		if (canBeMo) retVal++;
-		if (canBeTu) retVal++;
-		if (canBeWe) retVal++;
-		if (canBeTh) retVal++;
-		if (canBeFr) retVal++;
-		if (canBeSa) retVal++;
-		if (canBeSu) retVal++;
-
-		return retVal;
-	}
-
-	bbe::TimePoint getNextYearlyExecution() const
-	{
-		bbe::TimePoint now;
-		return toPossibleTimePoint(bbe::TimePoint::fromDate(now.getYear() + 1, dtYearlyMonth, dtYearlyDay).nextMorning());
-	}
-
-	bool wasDoneToday() const
-	{
-		return previousExecution.isToday();
-	}
-
-	bbe::Duration getWorkDurationLeft() const
-	{
-		return endWorkTime - bbe::TimePoint();
-	}
-
-	bool wasStartedToday() const
-	{
-		return endWorkTime.isToday();
-	}
-
-	void execStart()
-	{
-		endWorkTime = bbe::TimePoint().plusSeconds(internalValue);
-	}
-};
+//TODO: New Feature: Lists! e.g. for lists of movies to watch etc.
+			// It follows
 
 struct Process
 {
@@ -541,7 +224,8 @@ struct Stopwatch
 class MyGame : public bbe::Game
 {
 private:
-	bbe::SerializableList<Task> tasks                           = bbe::SerializableList<Task>             ("config.dat",              "ParanoiaConfig", bbe::Undoable::YES);
+	SubsystemTask tasks;
+
 	bbe::SerializableList<Process> processes                    = bbe::SerializableList<Process>          ("processes.dat",           "ParanoiaConfig", bbe::Undoable::YES);
 	bbe::SerializableList<Url> urls                             = bbe::SerializableList<Url>              ("urls.dat",                "ParanoiaConfig", bbe::Undoable::YES);
 	bbe::SerializableList<ClipboardContent> clipboardContent    = bbe::SerializableList<ClipboardContent> ("Clipboard.dat",           "ParanoiaConfig", bbe::Undoable::YES);
@@ -559,17 +243,11 @@ private:
 	bool ignoreNight = false;
 	bool tabSwitchRequestedLeft = false;
 	bool tabSwitchRequestedRight = false;
-	bool forcePrepare = false;
 
 	bbe::List<HICON> trayIconsRed;
 	bbe::List<HICON> trayIconsGreen;
 	bbe::List<HICON> trayIconsBlue;
 	size_t trayIconIndex = 0;
-
-	int32_t amountOfTasksNow = 0;
-	// Madness names
-	int32_t amountOfTasksNowWithoutOneShotWithoutLateTime = 0;
-	int32_t amountOfTasksNowWithoutOneShotWithLateTime = 0;
 
 	bbe::Random rand;
 
@@ -646,7 +324,7 @@ public:
 	bbe::List<HICON>& getTrayIcons()
 	{
 		if (isNightTime()) return trayIconsRed;
-		if (amountOfTasksNow > 0) return trayIconsBlue;
+		if (tasks.hasCurrentTask()) return trayIconsBlue;
 		return trayIconsGreen;
 	}
 
@@ -690,17 +368,6 @@ public:
 	{
 		bbe::TimePoint now;
 		return bbe::TimePoint::todayAt(5, 00) > now || now > getNightStart();
-	}
-
-	bool isLateAdvanceableTime()
-	{
-		return bbe::TimePoint() > bbe::TimePoint::todayAt(18, 00);
-	}
-
-	bool isWorkTime()
-	{
-		bbe::TimePoint now;
-		return now > bbe::TimePoint::todayAt(5, 00) && now < bbe::TimePoint::todayAt(17, 00);
 	}
 
 	bool shouldPlayAlmostNightWarning()
@@ -764,14 +431,7 @@ public:
 		}
 
 		beginMeasure("Play Task Sounds");
-		if (tasks.getList().any([](const Task& t) { return t.shouldPlaySoundNewTask(); }))
-		{
-			assetStore::NewTask()->play();
-		}
-		if (tasks.getList().any([](const Task& t) { return t.shouldPlaySoundDone(); }))
-		{
-			assetStore::Done()->play();
-		}
+		tasks.update();
 		if (stopwatches.getList().any([](const Stopwatch& sw) { return sw.shouldPlaySound(); }))
 		{
 			assetStore::Stopwatch()->play();
@@ -804,31 +464,6 @@ public:
 		if (shouldPlayAlmostNightWarning())
 		{
 			assetStore::AlmostNightTime()->play();
-		}
-
-		beginMeasure("Task Amount Calculation");
-		amountOfTasksNow = 0;
-		amountOfTasksNowWithoutOneShotWithoutLateTime = 0;
-		amountOfTasksNowWithoutOneShotWithLateTime = 0;
-
-		for (size_t i = 0; i < tasks.getLength(); i++)
-		{
-			Task& t = tasks[i];
-			if (t.nextPossibleExecution().hasPassed())
-			{
-				amountOfTasksNow++;
-				if (!t.oneShot && t.shouldPlayNotificationSounds)
-				{
-					if (t.lateTimeTask)
-					{
-						amountOfTasksNowWithoutOneShotWithLateTime++;
-					}
-					else
-					{
-						amountOfTasksNowWithoutOneShotWithoutLateTime++;
-					}
-				}
-			}
 		}
 
 		beginMeasure("Process Stuff");
@@ -901,11 +536,7 @@ public:
 		}
 
 		beginMeasure("Working Hours");
-		bool workTodo =
-			   (amountOfTasksNowWithoutOneShotWithoutLateTime > 0 &&  isWorkTime())
-			|| (amountOfTasksNowWithoutOneShotWithLateTime    > 0 && !isWorkTime());
-
-		if (workTodo)
+		if (tasks.hasPotentialTaskComplaint())
 		{
 			// Because Process...
 			bool shouldPlayOpenTasks = !openTasksNotificationSilencedProcess && isGameOn;
@@ -920,289 +551,6 @@ public:
 				}
 			}
 		}
-	}
-
-	int32_t drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& requiresWrite, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable, bool respectIndefinitelyFlag, bool sorted)
-	{
-		int32_t amountDrawn = 0;
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
-		if (ImGui::BeginTable("table2", 7, ImGuiTableFlags_RowBg))
-		{
-			                    ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 400);
-			if (showCountdown)  ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
-			                    ImGui::TableSetupColumn("DDD", ImGuiTableColumnFlags_WidthFixed, 100);
-			if (showFollowUp)   ImGui::TableSetupColumn("EEE", ImGuiTableColumnFlags_WidthFixed, 100);
-			if (showFollowUp)   ImGui::TableSetupColumn("FFF", ImGuiTableColumnFlags_WidthFixed, 100);
-			if (showAdvancable) ImGui::TableSetupColumn("GGG", ImGuiTableColumnFlags_WidthFixed, 100);
-			if (showMoveToNow)  ImGui::TableSetupColumn("HHH", ImGuiTableColumnFlags_WidthFixed, 175);
-			static bbe::List<size_t> indices; // Avoid allocations
-			indices.clear();
-			for (size_t i = 0; i < tasks.getLength(); i++)
-			{
-				Task& t = tasks[i];
-				if (!predicate(t)) continue;
-				indices.add(i);
-			}
-			if (sorted)
-			{
-				indices.sort([&](const size_t& a, const size_t& b) 
-					{
-						return tasks[a].nextPossibleExecution() < tasks[b].nextPossibleExecution();
-					});
-			}
-			size_t deletedTasks = 0;
-			for (size_t indexindex = 0; indexindex < indices.getLength(); indexindex++)
-			{
-				const size_t i = indices[indexindex] - deletedTasks;
-				Task& t = tasks[i];
-				if (!predicate(t)) continue;
-				amountDrawn++;
-				ImGui::PushID(i);
-				ImGui::TableNextRow();
-				if(ImGui::TableGetHoveredRow() == indexindex) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, 0xFF333333);
-				int32_t column = 0;
-				ImGui::TableSetColumnIndex(column++);
-				if ((highlightRareTasks && t.repeatDays > 1) || t.oneShot)
-				{
-					const bool poosibleTodoToday = (t.nextPossibleExecution().hasPassed() || t.nextPossibleExecution().isToday());
-					if(t.oneShot)              { ImGui::TextColored(ImVec4(0.5f, 0.5f, 1.0f, 1.0f), "(!)"); ImGui::bbe::tooltip("A one shot task."); }
-					else if(poosibleTodoToday) { ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.8f, 1.0f), "(?)"); ImGui::bbe::tooltip("A rare task that could be done today."); }
-					else                       { ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(!)"); ImGui::bbe::tooltip("A rare task."); }
-					ImGui::SameLine();
-				}
-				bbe::String modifiedTitle = t.title;
-				if (modifiedTitle.contains("[MIN]"))
-				{
-					auto value = t.internalValue / 60;
-					modifiedTitle = modifiedTitle.replace("[MIN]", bbe::String(value));
-				}
-				if (modifiedTitle.contains("[SEC]"))
-				{
-					auto value = t.internalValue % 60;
-					modifiedTitle = modifiedTitle.replace("[SEC]", bbe::String::format("%.2d", value));
-				}
-				if (t.clipboard[0] == '\0')
-				{
-					ImGui::Text(modifiedTitle.getRaw(), t.internalValue);
-				}
-				else
-				{
-					if (ImGui::bbe::clickableText(modifiedTitle.getRaw(), t.internalValue))
-					{
-						ImGui::SetClipboardText(t.clipboard.getRaw());
-					}
-				}
-				if (t.history.getLength() > 1)
-				{
-					if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort) && ImGui::BeginTooltip())
-					{
-						ImGui::PlotLines("##History", t.history.getRaw(), t.history.getLength());
-						ImGui::EndTooltip();
-					}
-				}
-				if (showCountdown)
-				{
-					ImGui::TableSetColumnIndex(column++);
-					bbe::String s = (t.nextPossibleExecution() - bbe::TimePoint()).toString();
-					const char* c = s.getRaw();
-					ImGui::SetCursorPosX(
-						+ ImGui::GetCursorPosX() 
-						+ ImGui::GetColumnWidth() 
-						- ImGui::CalcTextSize(c).x
-						- ImGui::GetScrollX() 
-						- 10 * ImGui::GetStyle().ItemSpacing.x);
-					ImGui::Text(c);
-					ImGui::bbe::tooltip(t.nextPossibleExecution().toString());
-				}
-				ImGui::TableSetColumnIndex(column++);
-				if (showDone)
-				{
-					if (t.inputType == Task::IT_NONE)
-					{
-						bool showDoneButton = true;
-						if (t.startable)
-						{
-							if (!t.wasDoneToday())
-							{
-								bbe::Duration dur = t.getWorkDurationLeft();
-								if (!t.wasStartedToday())
-								{
-									showDoneButton = false;
-									if (ImGui::Button("Start"))
-									{
-										t.execStart();
-										requiresWrite = true;
-									}
-								}
-								else if (!dur.isNegative())
-								{
-									ImGui::Text(dur.toString().getRaw());
-									showDoneButton = false;
-								}
-							}
-						}
-
-						if (showDoneButton)
-						{
-							if (!t.oneShot)
-							{
-								if (ImGui::Button("Done"))
-								{
-									t.execDone();
-									requiresWrite = true;
-								}
-							}
-							else
-							{
-								if (ImGui::bbe::securityButton("Done"))
-								{
-									tasks.removeIndex(i);
-									// Doesn't require write cause removeIndex already does that.
-									deletedTasks++;
-								}
-							}
-						}
-					}
-					else if (t.inputType == Task::IT_INTEGER)
-					{
-						if (ImGui::InputInt("##input", &t.inputInt, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue))
-						{
-							t.history.add(t.inputInt);
-							t.execDone();
-							requiresWrite = true;
-						}
-					}
-					else if (t.inputType == Task::IT_FLOAT)
-					{
-						if (ImGui::InputFloat("##input", &t.inputFloat, 0, 0, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
-						{
-							t.history.add(t.inputFloat);
-							t.execDone();
-							requiresWrite = true;
-						}
-					}
-					else
-					{
-						throw bbe::IllegalStateException();
-					}
-				}
-				if (showFollowUp)
-				{
-					ImGui::TableSetColumnIndex(column++);
-					if (t.followUp > 0 && ImGui::Button((bbe::String("+") + t.followUp + "min").getRaw()))
-					{
-						t.execFollowUp();
-						requiresWrite = true;
-					}
-					ImGui::TableSetColumnIndex(column++);
-					if (t.followUp2 > 0 && ImGui::Button((bbe::String("+") + t.followUp2 + "min").getRaw()))
-					{
-						t.execFollowUp2();
-						requiresWrite = true;
-					}
-				}
-				if (showAdvancable)
-				{
-					ImGui::TableSetColumnIndex(column++);
-					if (t.advanceable && (!respectIndefinitelyFlag || t.indefinitelyAdvanceable) && (t.earlyAdvanceable || isLateAdvanceableTime() || forcePrepare) && ImGui::Button("Advance"))
-					{
-						t.execAdvance();
-						requiresWrite = true;
-					}
-				}
-				if (showMoveToNow)
-				{
-					ImGui::TableSetColumnIndex(column++);
-					if (ImGui::Button("Move to Now"))
-					{
-						t.execMoveToNow();
-						requiresWrite = true;
-					}
-				}
-				ImGui::PopID();
-			}
-			ImGui::EndTable();
-		}
-		ImGui::NewLine();
-		ImGui::Separator();
-		ImGui::NewLine();
-		return amountDrawn;
-	}
-
-	bool weekdayCheckbox(const char* label, bool* b, int32_t amountOfWeekdays)
-	{
-		ImGui::BeginDisabled(amountOfWeekdays <= 1 && *b);
-		const bool retVal = ImGui::Checkbox(label, b);
-		ImGui::EndDisabled();
-		return retVal;
-	}
-
-	bool drawEditableTask(Task& t)
-	{
-		bool taskChanged = false;
-		taskChanged |= ImGui::bbe::InputText("Title", t.title);
-		taskChanged |= ImGui::bbe::combo("Date Type", { "Dynamic", "Yearly" }, t.dateType);
-		if (t.dateType == Task::DT_DYNAMIC)
-		{
-			taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
-		}
-		else if(t.dateType == Task::DT_YEARLY)
-		{
-			ImGui::Text("Month/Day: ");
-			ImGui::SameLine();
-			ImGui::bbe::datePicker("Yearly Pick", &t.yearlyBuffer);
-			// TODO: It's possible to change the year in the date picker, which is kinda dumb
-			//       for a yearly task. The year is discarded, but the GUI could be nicer.
-
-			t.dtYearlyMonth = (int32_t)t.yearlyBuffer.getMonth();
-			t.dtYearlyDay = t.yearlyBuffer.getDay();
-		}
-		const int32_t amountOfWeekdays = t.amountPossibleWeekdays();
-		taskChanged |= weekdayCheckbox("Monday", &t.canBeMo, amountOfWeekdays);
-		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Tuesday",   &t.canBeTu, amountOfWeekdays);
-		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Wednesday", &t.canBeWe, amountOfWeekdays);
-		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Thursday",  &t.canBeTh, amountOfWeekdays);
-		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Friday",    &t.canBeFr, amountOfWeekdays);
-		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Saturday",  &t.canBeSa, amountOfWeekdays);
-		ImGui::SameLine(); taskChanged |= weekdayCheckbox("Sunday",    &t.canBeSu, amountOfWeekdays);
-		
-		taskChanged |= ImGui::Checkbox("Advanceable", &t.advanceable);
-		ImGui::bbe::tooltip("Can \"done\" even if it's not planned for today.");
-		if (t.advanceable)
-		{
-			ImGui::Indent(15.0f);
-			taskChanged |= ImGui::Checkbox("Preparation", &t.preparation);
-			ImGui::bbe::tooltip("Will never be shown for the current day. Inteded for Tasks that prepare stuff for tomorrow, e.g. pre brewing some coffee.");
-
-			taskChanged |= ImGui::Checkbox("Early Advanceable", &t.earlyAdvanceable);
-			ImGui::bbe::tooltip("If unchecked, the task is only advanceable after 18:00.");
-
-			taskChanged |= ImGui::Checkbox("Indefinitely Advanceable", &t.indefinitelyAdvanceable);
-			ImGui::bbe::tooltip("Can be advanced in the \"Later\" table.");
-			ImGui::Unindent(15.0f);
-		}
-		taskChanged |= ImGui::Checkbox("One Shot", &t.oneShot);
-		ImGui::bbe::tooltip("Delets the Task when Done.");
-		taskChanged |= ImGui::Checkbox("Late Time Task", &t.lateTimeTask);
-		ImGui::bbe::tooltip("A late time task triggers the \"Open Tasks\" sound outside of Working Hours instead of during Working Hours.");
-		taskChanged |= ImGui::Checkbox("Startable", &t.startable);
-		ImGui::bbe::tooltip("Doesn't show \"Done\" immediately, but instead a start button that starts a count down of the length\nof the internal value in seconds. After that time a sound is played and the \"Done\" Button appears.");
-		taskChanged |= ImGui::Checkbox("Play Notifications", &t.shouldPlayNotificationSounds);
-		ImGui::bbe::tooltip("If set, playing a notification sound when time wasters are open and the task isn't done. Else, play no sound.");
-		taskChanged |= ImGui::InputInt("Follow Up  (in Minutes)", &t.followUp);
-		ImGui::bbe::tooltip("Pushes the Task by this many minutes into the future. Useful for Tasks that can be fulfilled multiple times per day.");
-		taskChanged |= ImGui::InputInt("Follow Up2 (in Minutes)", &t.followUp2);
-		ImGui::bbe::tooltip("Pushes the Task by this many minutes into the future. Useful for Tasks that can be fulfilled multiple times per day.");
-		taskChanged |= ImGui::InputInt("Internal Value", &t.internalValue);
-		ImGui::bbe::tooltip("An internal value that can be printed out in the title via %%d, [SEC], and [MIN].");
-		taskChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
-		ImGui::bbe::tooltip("Increases the Internal Value on ever Done by this much.");
-		taskChanged |= ImGui::bbe::combo("Input Type", { "None", "Integer", "Float" }, t.inputType);
-
-		taskChanged |= ImGui::bbe::InputText("Clipboard", t.clipboard);
-		ImGui::bbe::tooltip("When clicking the task, this will be sent to your clipboard.");
-
-		return taskChanged;
 	}
 
 	bbe::List<bbe::String> getDomains()
@@ -1305,133 +653,6 @@ public:
 			}
 		}
 		return retVal;
-	}
-
-	bbe::Vector2 drawTabViewTasks()
-	{
-		{
-			static Task temp;
-			ImGui::Text("New One Shot:");
-			ImGui::SameLine();
-			if (ImGui::bbe::InputText("##bla", temp.title, ImGuiInputTextFlags_EnterReturnsTrue))
-			{
-				temp.oneShot = true;
-				tasks.add(temp);
-				temp = Task();
-				ImGui::SetKeyboardFocusHere(-1);
-			}
-		}
-
-		bool requiresWrite = false;
-		drawTable("Now",      [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; },                                                    requiresWrite, false, false, true,  true,  false, false, false, false);
-		drawTable("Today",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); },                              requiresWrite, true,  true,  true,  true,  false, false, false, false);
-		drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); },                                                                                    requiresWrite, true,  false, false, true,  true , true , false, false);
-		drawTable("Later",    [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, requiresWrite, true,  true,  true,  false, false, true , true , true );
-		if (requiresWrite)
-		{
-			tasks.writeToFile();
-		}
-		return bbe::Vector2(1);
-	}
-
-	bbe::Vector2 drawTabEditTasks()
-	{
-		{
-			static Task tempTask;
-			drawEditableTask(tempTask);
-			tempTask.sanity();
-
-			static bbe::TimePoint firstExec;
-
-			ImGui::Text("First execution: ");
-			ImGui::SameLine();
-			ImGui::bbe::datePicker("First Exec", &firstExec);
-
-			if (ImGui::Button("New Task"))
-			{
-				tempTask.setNextExecution(firstExec);
-				tasks.add(tempTask);
-				tempTask = Task();
-			}
-		}
-		ImGui::NewLine();
-		ImGui::Separator();
-		ImGui::Separator();
-		ImGui::Separator();
-		static char searchBuffer[128] = {};
-		ImGui::InputText("Search", searchBuffer, sizeof(searchBuffer));
-		ImGui::Separator();
-		ImGui::Separator();
-		ImGui::Separator();
-		ImGui::NewLine();
-
-		bool tasksChanged = false;
-		size_t deletionIndex = (size_t)-1;
-		for (size_t i = 0; i < tasks.getLength(); i++)
-		{
-			Task& t = tasks[i];
-			if (searchBuffer[0] != 0 && !bbe::String(t.title).containsIgnoreCase(searchBuffer)) continue;
-			ImGui::PushID(i);
-			if (ImGui::bbe::securityButton("Delete Task"))
-			{
-				deletionIndex = i;
-			}
-			if (i != 0)
-			{
-				ImGui::SameLine();
-				if (ImGui::Button("Up"))
-				{
-					tasks.swap(i, i - 1);
-				}
-			}
-			if (i != tasks.getLength() - 1)
-			{
-				ImGui::SameLine();
-				if (ImGui::Button("Down"))
-				{
-					tasks.swap(i, i + 1);
-				}
-			}
-			tasksChanged |= drawEditableTask(t);
-			tasksChanged |= ImGui::bbe::datePicker("previousExe", &t.previousExecution); ImGui::bbe::tooltip("Previous Execution");
-			t.execPointBuffer = t.nextPossibleExecution();
-			const bool execPointChanged = ImGui::bbe::datePicker("nextExe",     &t.execPointBuffer); ImGui::bbe::tooltip("Next Execution");
-			if (execPointChanged)
-			{
-				t.setNextExecution(t.execPointBuffer);
-				tasksChanged = true;
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Move to Now"))
-			{
-				t.execMoveToNow();
-				tasksChanged = true;
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("+1 Day"))
-			{
-				t.nextExecPlusDays(1);
-				tasksChanged = true;
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("-1 Day"))
-			{
-				t.nextExecPlusDays(-1);
-				tasksChanged = true;
-			}
-			tasksChanged |= ImGui::bbe::datePicker("EndWork", &t.endWorkTime); ImGui::bbe::tooltip("End Work Time");
-			ImGui::NewLine();
-			ImGui::Separator();
-			ImGui::NewLine();
-			ImGui::PopID();
-			t.sanity();
-		}
-		tasks.removeIndex(deletionIndex);
-		if (tasksChanged)
-		{
-			tasks.writeToFile();
-		}
-		return bbe::Vector2(1);
 	}
 
 	bbe::Vector2 drawTabClipboard()
@@ -2125,8 +1346,8 @@ public:
 		{
 			static bbe::List<Tab> tabs =
 			{
-				Tab{"View Tasks", [&]() { return drawTabViewTasks();          }},
-				Tab{"Edit Tasks", [&]() { return drawTabEditTasks();          }},
+				Tab{"View Tasks", [&]() { return tasks.drawTabViewTasks();    }},
+				Tab{"Edit Tasks", [&]() { return tasks.drawTabEditTasks();    }},
 				Tab{"Clipboard",  [&]() { return drawTabClipboard();          }},
 				Tab{"Brain-T",    [&]() { return drawTabBrainTeasers(brush);  }},
 				Tab{"Stopwatch",  [&]() { return drawTabStopwatch();          }},
@@ -2155,12 +1376,8 @@ public:
 			ImGui::Text(s.getRaw());
 			ImGui::bbe::tooltip(getNightStart().toString().getRaw());
 
-			ImGui::BeginDisabled(!tasks.canUndo());
-			if (ImGui::Button("Undo"))
-			{
-				tasks.undo();
-			}
-			ImGui::EndDisabled();
+			tasks.drawUndoButton();
+
 			const static bbe::String desiredName = bbe::simpleFile::getAutoStartDirectory() + "ExampleMother.exe.lnk";
 			static bool exists = bbe::simpleFile::doesFileExist(desiredName); // Avoid doing IO every frame.
 			ImGui::BeginDisabled(exists);
@@ -2200,11 +1417,20 @@ public:
 					bbe::simpleFile::executeBatchFile("update.bat");
 				}
 			}
+			static bool unlockCrashButton = false;
+			ImGui::Checkbox("Unlock Crash Button", &unlockCrashButton);
+			ImGui::SameLine();
+			ImGui::BeginDisabled(!unlockCrashButton);
+			if (ImGui::Button("Crash!"))
+			{
+				*((volatile int*)0);
+			}
+			ImGui::EndDisabled();
 
 			ImGui::Checkbox("Silence Open Task Notification Sound (Process)", &openTasksNotificationSilencedProcess);
 			ImGui::Checkbox("Silence Open Task Notification Sound (Url)",     &openTasksNotificationSilencedUrl);
 			ImGui::Checkbox("Ignore Night", &ignoreNight);
-			ImGui::Checkbox("Let me prepare", &forcePrepare); ImGui::bbe::tooltip("Make tasks advancable, even before late time happens.");
+			ImGui::Checkbox("Let me prepare", &tasks.forcePrepare); ImGui::bbe::tooltip("Make tasks advancable, even before late time happens.");
 			ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
 			ImGui::NewLine();
 			ImGui::Text("Playing sounds: %d", (int)getAmountOfPlayingSounds());
