@@ -8,7 +8,8 @@
 #include "AssetStore.h"
 #include "imgui_internal.h"
 #include "GlobalKeyboard.h"
-#include "Task.h"
+#include "EMTask.h"
+#include "EMProcess.h"
 
 //TODO: Redo
 //TODO: Countdown beeps when starting and stopping startable tasks
@@ -20,38 +21,6 @@
 //TODO: bbe::String should have bbe::List<char>
 //TODO: New Feature: Lists! e.g. for lists of movies to watch etc.
 			// It follows
-
-struct Process
-{
-	bbe::String title;
-
-	enum /*Non-Class*/ Type
-	{
-		TYPE_UNKNOWN = 0,
-		TYPE_SYSTEM = 1,
-		TYPE_OTHER = 2,
-		TYPE_GAME = 3,
-	};
-	int32_t type = TYPE_UNKNOWN;
-
-
-	// Non-Persisted Helper Data below.
-
-	void serialize(bbe::ByteBuffer& buffer) const
-	{
-		buffer.write(title);
-		buffer.write(type);
-	}
-	static Process deserialize(bbe::ByteBufferSpan& buffer)
-	{
-		Process retVal;
-
-		buffer.read(retVal.title);
-		buffer.read(retVal.type);
-
-		return retVal;
-	}
-};
 
 struct Url
 {
@@ -225,8 +194,8 @@ class MyGame : public bbe::Game
 {
 private:
 	SubsystemTask tasks;
+	SubsystemProcess processes;
 
-	bbe::SerializableList<Process> processes                    = bbe::SerializableList<Process>          ("processes.dat",           "ParanoiaConfig", bbe::Undoable::YES);
 	bbe::SerializableList<Url> urls                             = bbe::SerializableList<Url>              ("urls.dat",                "ParanoiaConfig", bbe::Undoable::YES);
 	bbe::SerializableList<ClipboardContent> clipboardContent    = bbe::SerializableList<ClipboardContent> ("Clipboard.dat",           "ParanoiaConfig", bbe::Undoable::YES);
 	bbe::SerializableObject<GeneralConfig> generalConfig        = bbe::SerializableObject<GeneralConfig>  ("generalConfig.dat",       "ParanoiaConfig");
@@ -236,7 +205,6 @@ private:
 	bbe::SerializableList<Stopwatch> stopwatches                = bbe::SerializableList<Stopwatch>        ("stopwatches.dat",         "ParanoiaConfig");
 	bbe::SerializableObject<KeyboardTracker> keyboardTracker    = bbe::SerializableObject<KeyboardTracker>("keyboardTracker.dat"); // No ParanoiaConfig to avoid accidentally logging passwords.
 
-	bool isGameOn = false;
 	bool openTasksNotificationSilencedProcess = false;
 	bool openTasksNotificationSilencedUrl     = false;
 	bool showDebugStuff = false;
@@ -467,35 +435,7 @@ public:
 		}
 
 		beginMeasure("Process Stuff");
-		EVERY_SECONDS(10)
-		{
-			HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
-			PROCESSENTRY32 entry;
-			entry.dwSize = sizeof(entry);
-			BOOL hasEntry = Process32First(snapshot, &entry);
-			isGameOn = false;
-			while (hasEntry)
-			{
-				bool found = false;
-				for (size_t i = 0; i < processes.getLength(); i++)
-				{
-					if (processes[i].title == entry.szExeFile)
-					{
-						if (processes[i].type == Process::TYPE_GAME) isGameOn = true;
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-				{
-					Process newProcess;
-					newProcess.title = entry.szExeFile;
-					processes.add(newProcess);
-				}
-				hasEntry = Process32Next(snapshot, &entry);
-			}
-			CloseHandle(snapshot);
-		}
+		processes.update();
 
 		beginMeasure("URL Stuff");
 		bool timeWasterUrlFound = false;
@@ -539,7 +479,7 @@ public:
 		if (tasks.hasPotentialTaskComplaint())
 		{
 			// Because Process...
-			bool shouldPlayOpenTasks = !openTasksNotificationSilencedProcess && isGameOn;
+			bool shouldPlayOpenTasks = !openTasksNotificationSilencedProcess && processes.isGameOn();
 
 			// ... because urls.
 			shouldPlayOpenTasks |= !openTasksNotificationSilencedUrl && timeWasterUrlFound;
@@ -1443,59 +1383,7 @@ public:
 		ImGui::SetNextWindowSize(viewport.WorkSize);
 		ImGui::Begin("Processes", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 		{
-			static bool showSystem = false;
-			ImGui::Checkbox("Show System", &showSystem);
-			static bool showOther = false;
-			ImGui::SameLine();
-			ImGui::Checkbox("Show Other", &showOther);
-			static bool showGames = false;
-			ImGui::SameLine();
-			ImGui::Checkbox("Show Games", &showGames);
-			if (ImGui::BeginTable("tableProcesses", 2, ImGuiTableFlags_RowBg))
-			{
-				ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 600);
-				ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
-				bool processChanged = false;
-				for (size_t i = 0; i < processes.getLength(); i++)
-				{
-					Process& p = processes[i];
-					if (p.type == Process::TYPE_SYSTEM && !showSystem) continue;
-					if (p.type == Process::TYPE_OTHER && !showOther) continue;
-					if (p.type == Process::TYPE_GAME && !showGames) continue;
-					ImGui::PushID(i);
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0);
-					ImGui::Text(p.title);
-
-					ImGui::TableSetColumnIndex(1);
-					if (ImGui::Button("S"))
-					{
-						processChanged = true;
-						p.type = Process::TYPE_SYSTEM;
-					}
-					ImGui::bbe::tooltip("System");
-					ImGui::SameLine();
-					if (ImGui::Button("O"))
-					{
-						processChanged = true;
-						p.type = Process::TYPE_OTHER;
-					}
-					ImGui::bbe::tooltip("Other");
-					ImGui::SameLine();
-					if (ImGui::Button("G"))
-					{
-						processChanged = true;
-						p.type = Process::TYPE_GAME;
-					}
-					ImGui::bbe::tooltip("Game");
-					ImGui::PopID();
-				}
-				if (processChanged)
-				{
-					processes.writeToFile();
-				}
-				ImGui::EndTable();
-			}
+			processes.drawGui();
 		}
 		ImGui::End();
 
