@@ -25,9 +25,9 @@ bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeasers(bbe::PrimitiveBrush2D& br
 {
 	static bbe::List<Tab> tabs =
 	{
-		Tab{"Digit Memory", [&]() { return drawTabBrainTeaserDigitMemory(brush); }},
-		Tab{"Alphabet"    , [&]() { return drawTabBrainTeaserAlphabet(brush);    }},
-		Tab{"Add"         , [&]() { return drawTabBrainTeaserAdd(brush);         }},
+		Tab{"Digit Memory", "", [&]() { return drawTabBrainTeaserDigitMemory(brush); }},
+		Tab{"Alphabet"    , "", [&]() { return drawTabBrainTeaserAlphabet(brush);    }},
+		Tab{"Add"         , "", [&]() { return drawTabBrainTeaserAdd(brush);         }},
 	};
 	static size_t previouslyShown = 0;
 	bool dummy = false;

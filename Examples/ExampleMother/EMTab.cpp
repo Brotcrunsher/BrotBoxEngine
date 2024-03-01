@@ -25,7 +25,13 @@ bbe::Vector2 drawTabs(const bbe::List<Tab>& tabs, size_t* previousShownTab, bool
 		for (size_t i = 0; i < tabs.getLength(); i++)
 		{
 			const Tab& t = tabs[i];
-			if (ImGui::BeginTabItem(t.title, nullptr, (programaticTabSwitch && i == desiredShownTab) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None))
+			const bool tabSelected = ImGui::BeginTabItem(t.title, nullptr, (programaticTabSwitch && i == desiredShownTab) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None);
+			if (t.tooltip[0])
+			{
+				ImGui::bbe::tooltip(t.tooltip);
+			}
+			
+			if (tabSelected)
 			{
 				if (previousShownTab) *previousShownTab = i;
 				sizeMult = t.run();

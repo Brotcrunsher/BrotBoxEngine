@@ -20,10 +20,7 @@
 //TODO: Clipboard: It should be possible to add a title
 //TODO: Bug: Crashed when closing Chrome? Only happened once, not easily reproducable.
 //TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
-//TODO: This file is getting massive. Split?
 //TODO: bbe::String should have bbe::List<char>
-//TODO: New Feature: Lists! e.g. for lists of movies to watch etc.
-			// It follows
 
 struct ClipboardContent
 {
@@ -140,6 +137,43 @@ struct Stopwatch
 	}
 };
 
+struct RememberList
+{
+	bbe::String title;
+	bbe::List<bbe::String> entries;
+
+	// Non-Persisted Helper Data below.
+	bbe::String newEntryBuffer;
+
+	void serialize(bbe::ByteBuffer& buffer) const
+	{
+		buffer.write(title);
+		// TODO: A buffer.write(bbe::List<T>::serialize) would be useful.
+		buffer.write((uint64_t)entries.getLength());
+		for (size_t i = 0; i < entries.getLength(); i++)
+		{
+			buffer.write(entries[i]);
+		}
+	}
+	static RememberList deserialize(bbe::ByteBufferSpan& buffer)
+	{
+		RememberList retVal;
+
+		buffer.read(retVal.title);
+		uint64_t entries = 0;
+		buffer.read(entries);
+		for (size_t i = 0; i < entries; i++)
+		{
+			// TODO: A returning read function would simplify this.
+			bbe::String entry;
+			buffer.read(entry);
+			retVal.entries.add(entry);
+		}
+
+		return retVal;
+	}
+};
+
 class MyGame : public bbe::Game
 {
 private:
@@ -151,6 +185,7 @@ private:
 	bbe::SerializableList<ClipboardContent> clipboardContent    = bbe::SerializableList<ClipboardContent> ("Clipboard.dat",           "ParanoiaConfig", bbe::Undoable::YES);
 	bbe::SerializableObject<GeneralConfig> generalConfig        = bbe::SerializableObject<GeneralConfig>  ("generalConfig.dat",       "ParanoiaConfig");
 	bbe::SerializableList<Stopwatch> stopwatches                = bbe::SerializableList<Stopwatch>        ("stopwatches.dat",         "ParanoiaConfig");
+	bbe::SerializableList<RememberList> rememberLists           = bbe::SerializableList<RememberList>     ("RemeberLists.dat",        "ParanoiaConfig");
 	bbe::SerializableObject<KeyboardTracker> keyboardTracker    = bbe::SerializableObject<KeyboardTracker>("keyboardTracker.dat"); // No ParanoiaConfig to avoid accidentally logging passwords.
 
 	bool openTasksNotificationSilencedProcess = false;
@@ -673,6 +708,71 @@ public:
 		return bbe::Vector2(1.0f);
 	}
 
+	bbe::Vector2 drawTabRememberLists()
+	{
+		ImGui::Text("Hold SHIFT to delete stuff.");
+		bool requiresWrite = false;
+		size_t listDeleteIndex = (size_t)-1;
+		for (size_t i = 0; i < rememberLists.getLength(); i++)
+		{
+			ImGui::PushID(i);
+			if (rememberLists[i].entries.getLength() == 0)
+			{
+				if (ImGui::bbe::securityButton("Delete", ImGui::bbe::SecurityButtonFlags_DontShowWOSecurityButton))
+				{
+					listDeleteIndex = i;
+				}
+				ImGui::SameLine();
+			}
+			if (ImGui::TreeNode((void*)(intptr_t)i, "%s", rememberLists[i].title.getRaw()))
+			{
+				size_t subDeleteIndex = (size_t)-1;
+				for (size_t k = 0; k < rememberLists[i].entries.getLength(); k++)
+				{
+					ImGui::PushID(k);
+					if (ImGui::bbe::securityButton("Delete", ImGui::bbe::SecurityButtonFlags_DontShowWOSecurityButton))
+					{
+						subDeleteIndex = k;
+					}
+					ImGui::SameLine();
+					ImGui::Text("%s", rememberLists[i].entries[k].getRaw());
+					ImGui::PopID();
+				}
+				if (ImGui::bbe::InputText("New Entry", rememberLists[i].newEntryBuffer, ImGuiInputTextFlags_EnterReturnsTrue))
+				{
+					rememberLists[i].entries.add(rememberLists[i].newEntryBuffer);
+					rememberLists[i].newEntryBuffer = {};
+					requiresWrite = true;
+				}
+				if (subDeleteIndex != (size_t)-1)
+				{
+					rememberLists[i].entries.removeIndex(subDeleteIndex);
+					requiresWrite = true;
+				}
+				ImGui::TreePop();
+			}
+			ImGui::PopID();
+		}
+		static bbe::String newListBuffer;
+		if (ImGui::bbe::InputText("New List", newListBuffer, ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			RememberList newList;
+			newList.title = newListBuffer;
+			rememberLists.add(newList);
+			newListBuffer = {};
+		}
+		if (listDeleteIndex != (size_t)-1)
+		{
+			rememberLists.removeIndex(listDeleteIndex);
+		}
+		if (requiresWrite)
+		{
+			rememberLists.writeToFile();
+		}
+
+		return bbe::Vector2(1);
+	}
+
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
 		static bbe::Vector2 sizeMult(1.0f, 1.0f);
@@ -685,16 +785,17 @@ public:
 		{
 			static bbe::List<Tab> tabs =
 			{
-				Tab{"View Tasks", [&]() { return tasks.drawTabViewTasks(); }},
-				Tab{"Edit Tasks", [&]() { return tasks.drawTabEditTasks(); }},
-				Tab{"Clipboard",  [&]() { return drawTabClipboard(); }},
-				Tab{"Brain-T",    [&]() { return brainTeasers.drawTabBrainTeasers(brush); }},
-				Tab{"Stopwatch",  [&]() { return drawTabStopwatch(); }},
-				Tab{"MouseTrack", [&]() { return drawTabMouseTracking(brush); }},
-				Tab{"KybrdTrack", [&]() { return drawTabKeyboardTracking(brush); }},
-				Tab{"Terri",      [&]() { return drawTabTerri(brush); }},
-				Tab{"Console",    [&]() { return drawTabConsole(); }},
-				Tab{"Config",     [&]() { return drawTabConfig(); }},
+				Tab{"VTasks",    "View Tasks",     [&]() { return tasks.drawTabViewTasks(); }},
+				Tab{"ETasks",    "Edit Tasks",     [&]() { return tasks.drawTabEditTasks(); }},
+				Tab{"Clpbrd",    "Clipboard",      [&]() { return drawTabClipboard(); }},
+				Tab{"Brn-T",     "Brain-Teaser",   [&]() { return brainTeasers.drawTabBrainTeasers(brush); }},
+				Tab{"Stpwtch",   "Stopwatch",      [&]() { return drawTabStopwatch(); }},
+				Tab{"MsTrck",    "Mouse Track",    [&]() { return drawTabMouseTracking(brush); }},
+				Tab{"KybrdTrck", "Keyboard Track", [&]() { return drawTabKeyboardTracking(brush); }},
+				Tab{"Terri",     "Territorial",    [&]() { return drawTabTerri(brush); }},
+				Tab{"Lsts",      "Lists",          [&]() { return drawTabRememberLists(); }},
+				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
+				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
 			};
 			static size_t previousShownTab = 0;
 			sizeMult = drawTabs(tabs, &previousShownTab, tabSwitchRequestedLeft, tabSwitchRequestedRight);
