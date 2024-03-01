@@ -607,12 +607,14 @@ public:
 
 		float min = 10000000000.f;
 		float max = 0.0f;
+		bool usedKeys[(size_t)bbe::Key::LAST] = {};
 		for (size_t i = 0; i < keys.getLength(); i++)
 		{
 			DrawnKey& k = keys[i];
 			k.value = keyboardTracker->keyPressed[(size_t)k.key];
 			min = bbe::Math::min(min, k.value);
 			max = bbe::Math::max(max, k.value);
+			usedKeys[(size_t)k.key] = true;
 		}
 
 		if (!normalize) min = 0.0f;
@@ -623,6 +625,14 @@ public:
 			k.value = (k.value - min) / (max - min);
 			brush.setColorRGB(bbe::Color(k.value, k.value, k.value));
 			brush.fillText(30 + k.pos.x * 60, 400 + k.pos.y * 60, bbe::keyCodeToString(k.key), 40);
+		}
+
+		for (size_t i = 0; i < (size_t)bbe::Key::LAST; i++)
+		{
+			if (!usedKeys[i] && keyboardTracker->keyPressed[i] > 0)
+			{
+				ImGui::Text("%s: %d", bbe::keyCodeToString((bbe::Key)i).getRaw(), keyboardTracker->keyPressed[i]);
+			}
 		}
 
 		return bbe::Vector2(1.0f, 0.2f);
