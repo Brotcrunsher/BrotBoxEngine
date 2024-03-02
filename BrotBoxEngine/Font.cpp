@@ -224,9 +224,9 @@ bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const ch
 
 	const bbe::String string = text;
 	//TODO Wasteful! This could really use an iterator.
-	for (size_t i = 0; i < string.getLength(); i++)
+	for (auto it = string.getIterator(); it.valid(); it++)
 	{
-		const int32_t codePoint = string.getCodepoint(i);
+		const int32_t codePoint = it.getCodepoint();
 		if (codePoint == '\n')
 		{
 			retVal.add(currentPosition);
@@ -264,16 +264,17 @@ bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const bb
 
 bbe::Rectangle bbe::Font::getBoundingBox(const bbe::String& text) const
 {
-	if (text.getLength() == 0) return bbe::Rectangle();
+	if (text.isEmpty()) return bbe::Rectangle();
 
 	bbe::List<bbe::Vector2> renderPositions = getRenderPositions(bbe::Vector2(0, 0), text);
 
 	bbe::Rectangle retVal = bbe::Rectangle(renderPositions[0], getDimensions(text.getCodepoint(0)).as<float>());
 
 	// TODO use iterators instead
-	for (size_t i = 1; i < text.getLength(); i++)
+	auto it = text.getIterator();
+	for (size_t i = 1; i < renderPositions.getLength(); i++, it++)
 	{
-		bbe::Rectangle curr = bbe::Rectangle(renderPositions[i], getDimensions(text.getCodepoint(i)).as<float>());
+		bbe::Rectangle curr = bbe::Rectangle(renderPositions[i], getDimensions(it.getCodepoint()).as<float>());
 		retVal = retVal.combine(curr);
 	}
 

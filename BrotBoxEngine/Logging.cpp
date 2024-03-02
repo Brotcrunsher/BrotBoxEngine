@@ -10,7 +10,7 @@ void bbe::logging::INTERNAL::partialLog(const char* c)
 
 void bbe::logging::INTERNAL::fullLog(const char* c)
 {
-	if (currentLine.getLength() == 0)
+	if (currentLine.isEmpty())
 	{
 		logLines.add(c);
 	}

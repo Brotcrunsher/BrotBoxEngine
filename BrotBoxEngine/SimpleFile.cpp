@@ -10,7 +10,7 @@ static bbe::String backupPath;
 
 void bbe::backup::setBackupPath(const bbe::String& path)
 {
-	if (path.getLength() == 0)
+	if (path.isEmpty())
 	{
 		backupPath = "";
 	}
@@ -25,7 +25,7 @@ void bbe::backup::setBackupPath(const bbe::String& path)
 
 bool bbe::backup::isBackupPathSet()
 {
-	return backupPath.getLength() > 0;
+	return !backupPath.isEmpty();
 }
 
 bbe::String bbe::backup::backupFullPath(const bbe::String& path)
@@ -294,7 +294,7 @@ void bbe::simpleFile::createLink(const bbe::String& from, const bbe::String& to,
 	if (SUCCEEDED(hres))
 	{
 		psl->SetPath(to.getRaw());
-		if(workDir.getLength() > 0) psl->SetWorkingDirectory(workDir.getRaw());
+		if(!workDir.isEmpty()) psl->SetWorkingDirectory(workDir.getRaw());
 
 		IPersistFile* ppf;
 		hres = psl->QueryInterface(IID_IPersistFile, (LPVOID*)&ppf);

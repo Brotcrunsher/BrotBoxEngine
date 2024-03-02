@@ -78,7 +78,7 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 	{
 		line = line.trim();
 		if (line.startsWith("#")) continue;
-		if (line.getLength() == 0) continue;
+		if (line.isEmpty()) continue;
 
 		const bbe::DynamicArray<bbe::String> tokens = line.split(" ", false);
 		if (tokens[0] == "v") // tokens[0] is save to query because we know that the line wasn't empty.

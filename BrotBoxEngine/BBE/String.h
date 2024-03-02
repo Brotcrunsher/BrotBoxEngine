@@ -13,6 +13,7 @@
 #include "../BBE/Utf8Iterator.h"
 #include "../BBE/ByteBuffer.h"
 #include "../BBE/List.h"
+#include "../BBE/SOOBlock.h"
 
 namespace bbe
 {
@@ -39,19 +40,8 @@ namespace bbe
 	private:
 		static constexpr size_t BBE_UTF8STRING_SSOSIZE = 16;
 
-		// TODO: This should use a bbe::List<char> instead, and the SSO should
-		//       be turned into SOO within bbe::List
-		bbe::List<char> m_data;
-		union
-		{
-			char *m_pdata;
-			char  m_ssoData[BBE_UTF8STRING_SSOSIZE];
-		} m_UNION;
-		bool        m_usesSSO  = true;
-		std::size_t m_length   = 0;
-		std::size_t m_capacity = 0;
+		SOOBlock<char, BBE_UTF8STRING_SSOSIZE> m_data;
 
-		void growIfNeeded(std::size_t newSize);
 		void initializeFromCharArr(const char *data);
 
 	public:
@@ -77,16 +67,8 @@ namespace bbe
 		void serialize(bbe::ByteBuffer& buffer) const;
 		static bbe::Utf8String deserialize(bbe::ByteBufferSpan& buffer);
 
-		Utf8String(const Utf8String&  other);    //Copy Constructor
-		Utf8String(Utf8String&& other) noexcept; //Move Constructor
-
-		Utf8String& operator=(const Utf8String&  other);    //Copy Assignment
-		Utf8String& operator=(Utf8String&& other) noexcept; //Move Assignment
-
 		static Utf8String fromCodePoint(int32_t codePoint);
 		static Utf8String toHex(uint32_t value);
-
-		~Utf8String();
 
 		bool operator==(const Utf8String& other) const;
 		bool operator==(const char*       other) const;
@@ -168,6 +150,7 @@ namespace bbe
 		int64_t searchLast(const char* string) const;
 
 		bool isNumber() const;
+		bool isEmpty() const;
 
 		long   toLong  (int base = 10) const;
 		double toDouble() const;

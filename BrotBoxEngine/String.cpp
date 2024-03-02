@@ -8,46 +8,11 @@
 #include "stdarg.h"
 #include "BBE/Utf8Helpers.h"
 
-void bbe::Utf8String::growIfNeeded(std::size_t newSize)
-{
-	if(getCapacity() < newSize)
-	{
-		size_t newCapa = newSize * 2;
-		char *newData = new char[newCapa];
-		memcpy(newData, getRaw(), getLengthBytes() + 1);
-
-		if(!m_usesSSO)
-		{
-			delete[] getRaw();
-		}
-		else
-		{
-			m_usesSSO = false;
-		}
-
-		m_capacity = newCapa;
-		m_UNION.m_pdata = newData;
-	}
-}
-
 void bbe::Utf8String::initializeFromCharArr(const char* data)
 {
-	m_length = utf8len(data);
 	auto amountOfByte = strlen(data);
-
-	if(amountOfByte < BBE_UTF8STRING_SSOSIZE - 1)
-	{
-		memcpy(m_UNION.m_ssoData, data, amountOfByte + 1);
-		m_usesSSO = true;
-		m_capacity = BBE_UTF8STRING_SSOSIZE;
-	}
-	else
-	{
-		m_UNION.m_pdata = new char[amountOfByte + 1];
-		memcpy(m_UNION.m_pdata, data, amountOfByte + 1);
-		m_usesSSO = false;
-		m_capacity = amountOfByte + 1;
-	}
+	m_data.growIfNeeded(amountOfByte + 1);
+	memcpy(m_data.get(), data, amountOfByte + 1);
 }
 
 bbe::Utf8String::Utf8String()
@@ -160,23 +125,9 @@ bbe::Utf8String bbe::Utf8String::format(const char* format, ...)
 	bbe::String retVal;
 
 	auto amountOfByte = vsnprintf(nullptr, 0, format, args1);
+	retVal.m_data.growIfNeeded(amountOfByte + 1);
+	vsnprintf(retVal.m_data.get(), amountOfByte + 1, format, args2);
 
-	if (amountOfByte < BBE_UTF8STRING_SSOSIZE - 1)
-	{
-		vsnprintf(retVal.m_UNION.m_ssoData, sizeof(retVal.m_UNION.m_ssoData), format, args2);
-		retVal.m_usesSSO = true;
-		retVal.m_capacity = BBE_UTF8STRING_SSOSIZE;
-	}
-	else
-	{
-		retVal.m_UNION.m_pdata = new char[amountOfByte + 1];
-		vsnprintf(retVal.m_UNION.m_pdata, amountOfByte + 1, format, args2);
-		retVal.m_usesSSO = false;
-		retVal.m_capacity = amountOfByte + 1;
-	}
-
-
-	retVal.m_length = utf8len(retVal.getRaw());
 	return retVal;
 }
 
@@ -188,69 +139,6 @@ void bbe::Utf8String::serialize(bbe::ByteBuffer& buffer) const
 bbe::Utf8String bbe::Utf8String::deserialize(bbe::ByteBufferSpan& buffer)
 {
 	return bbe::Utf8String(buffer.readNullString());
-}
-
-bbe::Utf8String::Utf8String(const Utf8String& other)//Copy Constructor
-{ 
-	//UNTESTED
-	initializeFromCharArr(other.getRaw());
-}
-
-bbe::Utf8String::Utf8String(Utf8String&& other) noexcept //Move Constructor
-{
-	//UNTESTED
-	m_length = other.m_length;
-	m_usesSSO = other.m_usesSSO;
-	if (m_usesSSO)
-	{
-		memcpy(m_UNION.m_ssoData, other.m_UNION.m_ssoData, BBE_UTF8STRING_SSOSIZE);
-		m_capacity = BBE_UTF8STRING_SSOSIZE;
-	}
-	else
-	{
-		m_UNION.m_pdata = other.m_UNION.m_pdata;
-		m_capacity = other.m_capacity;
-		other.m_UNION.m_pdata = nullptr;
-	}
-	other.m_length = 0;
-}
-
-bbe::Utf8String& bbe::Utf8String::operator=(const Utf8String &other)//Copy Assignment
-{
-	//UNTESTED
-	if (!m_usesSSO && m_UNION.m_pdata != nullptr)
-	{
-		delete[] m_UNION.m_pdata;
-	}
-
-	m_length = other.getLength();
-	initializeFromCharArr(other.getRaw());
-	return *this;
-}
-
-bbe::Utf8String& bbe::Utf8String::operator=(Utf8String &&other) noexcept//Move Assignment
-{
-	//UNTESTED
-	if (!m_usesSSO && m_UNION.m_pdata != nullptr)
-	{
-		delete[] m_UNION.m_pdata;
-	}
-	
-	m_length = other.m_length;
-	m_usesSSO = other.m_usesSSO;
-	if (m_usesSSO)
-	{
-		memcpy(m_UNION.m_ssoData, other.m_UNION.m_ssoData, BBE_UTF8STRING_SSOSIZE);
-		m_capacity = BBE_UTF8STRING_SSOSIZE;
-	}
-	else
-	{
-		m_UNION.m_pdata = other.m_UNION.m_pdata;
-		m_capacity = other.m_capacity;
-		other.m_UNION.m_pdata = nullptr;
-	}
-	other.m_length = 0;
-	return *this;
 }
 
 bbe::Utf8String bbe::Utf8String::fromCodePoint(int32_t codePoint)
@@ -291,16 +179,6 @@ bbe::Utf8String bbe::Utf8String::toHex(uint32_t value)
 	return retVal;
 }
 
-bbe::Utf8String::~Utf8String()
-{
-	//UNTESTED
-	if (!m_usesSSO && m_UNION.m_pdata != nullptr)
-	{
-		delete[] m_UNION.m_pdata;
-		m_UNION.m_pdata = nullptr;
-	}
-}
-
 bool bbe::Utf8String::operator==(const Utf8String& other) const
 {
 	return strcmp(getRaw(), other.getRaw()) == 0;
@@ -323,13 +201,13 @@ bbe::Utf8StringView::Utf8StringView()
 bbe::Utf8StringView::Utf8StringView(const Utf8String& string, std::size_t m_start, std::size_t m_end)
 	:m_pstring(&string), m_start(m_start), m_end(m_end)
 {
+	if (m_end == (size_t)-1)
+	{
+		m_end = utf8len(m_pstring->getRaw());
+	}
 }
 std::size_t bbe::Utf8StringView::getEnd() const
 {
-	if (m_end == (std::size_t) - 1)
-	{
-		return m_pstring->getLength();
-	}
 	return m_end;
 }
 
@@ -521,8 +399,7 @@ bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8String& other)
 	//UNTESTED
 	const size_t totalLength = getLengthBytes() + other.getLengthBytes();
 	const size_t oldLength = getLengthBytes();
-	m_length = getLength() + other.getLength();
-	growIfNeeded(totalLength + 1);
+	m_data.growIfNeeded(totalLength + 1);
 	memcpy(getRaw() + oldLength, other.getRaw(), other.getLengthBytes());
 	getRaw()[totalLength] = 0;
 
@@ -536,8 +413,7 @@ bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8StringView& other)
 	const size_t otherLength = other.getLengthBytes();
 	const size_t totalLength = oldLength + otherLength;
 	const char* otherRaw = other.m_pstring->getRaw();
-	m_length = getLength() + utf8len(&((*other.m_pstring)[other.m_start]), &((*other.m_pstring)[other.getEnd()]));
-	growIfNeeded(totalLength + 1);
+	m_data.growIfNeeded(totalLength + 1);
 	memcpy(getRaw() + oldLength, &((*other.m_pstring)[other.m_start]), otherLength);
 	getRaw()[totalLength] = 0;
 
@@ -626,12 +502,11 @@ bbe::Utf8String bbe::Utf8String::trim() const
 void bbe::Utf8String::trimInPlace()
 {
 	//UNTESTED
-	if (m_length == 0) return;
-
 	size_t start = 0;
-	size_t end = m_length - 1;
+	size_t end = utf8len(m_data.get()) - 1;
+	if (end == 0) return;
 
-	while (utf8IsWhitespace(&(*this)[start]) && start != m_length - 1)
+	while (utf8IsWhitespace(&(*this)[start]) && start != end - 1)
 	{
 		start++;
 	}
@@ -654,30 +529,22 @@ bbe::Utf8String bbe::Utf8String::substring(std::size_t start, std::size_t end) c
 void bbe::Utf8String::substringInPlace(size_t start, size_t end)
 {
 	//UNTESTED
-	if(end > m_length)
+	if(end == (size_t)-1)
 	{
-		end = m_length;
+		end = utf8len(m_data.get());
 	}
-	auto raw = getRaw();
-	if (start != 0 || end != m_length)
+
+	std::size_t sizeOfSubstringInByte = 0;
+	auto it = getIterator();
+	for (size_t i = 0; i < start; i++) it++;
+	for(std::size_t i = start; i<end; i++)
 	{
-		if (end == 0) //Special Case, if the string only contains whitespace
-		{ 
-			m_length = 0;
-			raw[m_length] = 0;
-		}
-		else
-		{
-			std::size_t sizeOfSubstringInByte = 0;
-			for(std::size_t i = start; i<end; i++)
-			{
-				sizeOfSubstringInByte += utf8charlen(&(*this)[i]);
-			}
-			memmove(raw, &raw[start], sizeOfSubstringInByte);
-			raw[sizeOfSubstringInByte] = 0;
-			m_length = end - start;
-		}
+		sizeOfSubstringInByte += utf8codePointLen(it.getCodepoint());
+		it++;
 	}
+	auto raw = m_data.get();
+	memmove(raw, &raw[start], sizeOfSubstringInByte);
+	raw[sizeOfSubstringInByte] = 0;
 }
 
 bbe::Utf8StringView bbe::Utf8String::substringView(std::size_t start, std::size_t end) const
@@ -688,7 +555,7 @@ bbe::Utf8StringView bbe::Utf8String::substringView(std::size_t start, std::size_
 size_t bbe::Utf8String::count(const Utf8String& countand) const
 {
 	//UNTESTED
-	size_t countandLength = countand.getLength();
+	size_t countandLength = utf8len(countand.getRaw());
 	if (countandLength == 0)
 	{
 		return 0;
@@ -758,24 +625,20 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String&
 		}
 		Utf8String currentString;
 		size_t currentStringLength = currentFinding - previousFinding;
-		currentString.m_usesSSO = false; //TODO make this better! current string could use SSO!
-		currentString.m_UNION.m_pdata = new char[currentStringLength + 1];
-		memcpy(currentString.m_UNION.m_pdata, previousFinding, currentStringLength);
-		currentString.m_UNION.m_pdata[currentStringLength] = 0;
-		currentString.m_length = currentStringLength;
+		currentString.m_data.growIfNeeded(currentStringLength + 1);
+		memcpy(currentString.m_data.get(), previousFinding, currentStringLength);
+		currentString.m_data.get()[currentStringLength] = 0;
 
 		retVal[i] = currentString;
 
-		previousFinding = currentFinding + splitAt.getLength();
+		previousFinding = currentFinding + utf8len(splitAt.getRaw());
 	}
 
 	Utf8String currentString;
 	size_t currentStringLength = getRaw() + getLengthBytes() - previousFinding;
-	currentString.m_usesSSO = false; //TODO make this better! current string could use SSO!
-	currentString.m_UNION.m_pdata = new char[currentStringLength + 1];
-	memcpy(currentString.m_UNION.m_pdata, previousFinding, currentStringLength);
-	currentString.m_UNION.m_pdata[currentStringLength] = 0;
-	currentString.m_length = currentStringLength;
+	currentString.m_data.growIfNeeded(currentStringLength + 1);
+	memcpy(currentString.m_data.get(), previousFinding, currentStringLength);
+	currentString.m_data.get()[currentStringLength] = 0;
 	retVal[retVal.getLength() - 1] = currentString;
 
 	return retVal;
@@ -794,7 +657,7 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::lines(bool addEmpty) const
 	{
 		if (lines[i].endsWith("\r"))
 		{
-			lines[i].substringInPlace(0, lines[i].getLength() - 1);
+			lines[i].substringInPlace(0, utf8len(lines[i].getRaw()) - 1);
 		}
 	}
 
@@ -865,7 +728,7 @@ bool bbe::Utf8String::isTextAtLocation(const char* string, size_t index) const
 {
 	while (*string)
 	{
-		if (index >= m_length || *string != operator[](index))
+		if (index >= utf8len(getRaw()) || *string != operator[](index))
 		{
 			return false;
 		}
@@ -883,11 +746,11 @@ bool bbe::Utf8String::startsWith(const char* string) const
 bool bbe::Utf8String::endsWith(const char* string) const
 {
 	const size_t sLen = strlen(string);
-	if (sLen > m_length)
+	if (sLen > utf8len(getRaw()))
 	{
 		return false;
 	}
-	return isTextAtLocation(string, m_length - sLen);
+	return isTextAtLocation(string, utf8len(getRaw()) - sLen);
 }
 
 int64_t bbe::Utf8String::search(const char* string, int64_t startIndex) const
@@ -913,9 +776,9 @@ int64_t bbe::Utf8String::searchLast(const char* string) const
 
 	const size_t sLen = strlen(string);
 
-	if (sLen > m_length || sLen == 0) return -1;
+	if (sLen > utf8len(getRaw()) || sLen == 0) return -1;
 
-	for (size_t i = m_length - sLen; i != (size_t)-1; i--)
+	for (size_t i = utf8len(getRaw()) - sLen; i != (size_t)-1; i--)
 	{
 		// TODO Urghs ... also inefficient, use iterators once we have them...
 		const bbe::String temp = bbe::String(&operator[](i));
@@ -930,12 +793,12 @@ int64_t bbe::Utf8String::searchLast(const char* string) const
 
 bool bbe::Utf8String::isNumber() const
 {
-	if (m_length == 0) return false;
+	if (utf8len(getRaw()) == 0) return false;
 
 	size_t i = 0;
 	if (startsWith("+") || startsWith("-")) i++;
 
-	for (; i < m_length; i++)
+	for (; i < utf8len(getRaw()); i++)
 	{
 		const char& c = operator[](i);
 		if (c < '0' || c > '9')
@@ -945,6 +808,11 @@ bool bbe::Utf8String::isNumber() const
 	}
 
 	return true;
+}
+
+bool bbe::Utf8String::isEmpty() const
+{
+	return getRaw()[0] == 0;
 }
 
 long bbe::Utf8String::toLong(int base) const
@@ -967,11 +835,11 @@ float bbe::Utf8String::toFloat() const
 
 const char& bbe::Utf8String::operator[](std::size_t index) const
 {
-	if(index > m_length)
+	if(index > utf8len(getRaw()))
 	{
 		throw IllegalIndexException();
 	}
-	else if (index == m_length)
+	else if (index == utf8len(getRaw()))
 	{
 		return *""; // Woah...
 	}
@@ -1007,27 +875,13 @@ int32_t bbe::Utf8String::getCodepoint(size_t index) const
 char* bbe::Utf8String::getRaw()
 {
 	//UNTESTED
-	if(m_usesSSO)
-	{
-		return m_UNION.m_ssoData;
-	}
-	else
-	{
-		return m_UNION.m_pdata;
-	}
+	return m_data.get();
 }
 
 const char* bbe::Utf8String::getRaw() const
 {
 	//UNTESTED
-	if(m_usesSSO)
-	{
-		return m_UNION.m_ssoData;
-	}
-	else
-	{
-		return m_UNION.m_pdata;
-	}
+	return m_data.get();
 }
 
 bbe::Utf8Iterator bbe::Utf8String::getIterator() const
@@ -1042,7 +896,7 @@ bbe::Utf8String bbe::Utf8String::replace(const Utf8String& searchString, const U
 
 	bbe::Utf8String retVal = "";
 	const size_t searchStringOccurences = count(searchString);
-	retVal.growIfNeeded(getLengthBytes() + (replaceString.getLengthBytes() - searchString.getLengthBytes()) * searchStringOccurences );
+	retVal.m_data.growIfNeeded(getLengthBytes() + (replaceString.getLengthBytes() - searchString.getLengthBytes()) * searchStringOccurences );
 	uint64_t currentFoundIndex = 0;
 	uint64_t lastFoundIndex = 0;
 	while ((currentFoundIndex = search(searchString, currentFoundIndex)) != (uint64_t)-1)
@@ -1050,10 +904,10 @@ bbe::Utf8String bbe::Utf8String::replace(const Utf8String& searchString, const U
 		retVal += substringView(lastFoundIndex, currentFoundIndex);
 		retVal += replaceString;
 		
-		currentFoundIndex += searchString.getLength();
+		currentFoundIndex += utf8len(searchString.getRaw());
 		lastFoundIndex = currentFoundIndex;
 	}
-	retVal += substringView(lastFoundIndex, getLength());
+	retVal += substringView(lastFoundIndex, utf8len(getRaw()));
 	return retVal;
 }
 
@@ -1076,7 +930,7 @@ bbe::Utf8String bbe::Utf8String::toLowerCase() const
 void bbe::Utf8String::toUpperCaseInPlace()
 {
 	auto raw = getRaw();
-	for(std::size_t i = 0; i < m_length; i++)
+	for(std::size_t i = 0; i < utf8len(getRaw()); i++)
 	{
 		raw[i] = toupper(raw[i]);
 	}
@@ -1085,15 +939,15 @@ void bbe::Utf8String::toUpperCaseInPlace()
 void bbe::Utf8String::toLowerCaseInPlace()
 {
 	auto raw = getRaw();
-	for(std::size_t i = 0; i < m_length; i++)
+	for(std::size_t i = 0; i < utf8len(getRaw()); i++)
 	{
 		raw[i] = tolower(raw[i]);
 	}
 }
 
-std::size_t bbe::Utf8String::getLength() const
+size_t bbe::Utf8String::getLength() const
 {
-	return m_length;
+	return utf8len(getRaw());
 }
 
 std::size_t bbe::Utf8String::getLengthBytes() const
@@ -1103,20 +957,20 @@ std::size_t bbe::Utf8String::getLengthBytes() const
 
 std::size_t bbe::Utf8String::getCapacity() const
 {
-	return m_capacity;
+	return m_data.getCapacity();
 }
 
 void bbe::Utf8String::resizeCapacity(size_t newCapacity)
 {
-	growIfNeeded(newCapacity);
+	m_data.growIfNeeded(newCapacity);
 }
 
 bbe::Utf8String bbe::Utf8String::leftFill(char c, size_t length)
 {
 	bbe::String retVal = "";
-	if (length > getLength())
+	if (length > utf8len(getRaw()))
 	{
-		const size_t charsToPlace = length - getLength();
+		const size_t charsToPlace = length - utf8len(getRaw());
 		for (size_t i = 0; i < charsToPlace; i++)
 		{
 			retVal += c;
@@ -1140,7 +994,7 @@ uint32_t bbe::hash(const bbe::String & t)
 	//  2. Only the first 128 chars are used for hashing
 	//  3. wchar_t is used instead of char
 	uint32_t _hash = 5381;
-	size_t length = t.getLength();
+	size_t length = utf8len(t.getRaw());
 	if (length > 128)
 	{
 		length = 128;

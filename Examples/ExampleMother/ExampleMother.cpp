@@ -575,6 +575,9 @@ public:
 	{
 		static bbe::Image image;
 		static bool loaded = false;
+		static bool divideByMax = false;
+		ImGui::Checkbox("Divide by Max", &divideByMax);
+
 		if (ImGui::Button("Do it!"))
 		{
 			bbe::List<bbe::Vector2> positions;
@@ -611,8 +614,8 @@ public:
 			{
 				for (size_t y = 0; y < grid.getHeight(); y++)
 				{
-					//grid[x][y] /= maxValue;
-					image.setPixel(x, y, bbe::Color(grid[x][y] > 0 ? 1.f : 0.f));
+					if(divideByMax) grid[x][y] /= maxValue;
+					image.setPixel(x, y, bbe::Color(grid[x][y] > 1.f ? 1.f : grid[x][y]));
 				}
 			}
 		}
