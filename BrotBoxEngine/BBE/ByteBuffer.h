@@ -22,56 +22,72 @@ namespace bbe
 		template<typename T>
 		void read(T& val, T default_)
 		{
-			val = T::deserialize(*this);
-			if (m_didErr)
+			if constexpr (
+				   std::is_same_v<T, int8_t>
+				|| std::is_same_v<T, uint8_t>
+				|| std::is_same_v<T, int16_t>
+				|| std::is_same_v<T, uint16_t>
+				|| std::is_same_v<T, int32_t>
+				|| std::is_same_v<T, uint32_t>
+				|| std::is_same_v<T, int64_t>
+				|| std::is_same_v<T, uint64_t>
+				|| std::is_same_v<T, float>
+				)
 			{
-				val = default_;
+				read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(T));
+			}
+			else if constexpr (std::is_same_v<T, bool>)
+			{
+				int32_t ival;
+				read(ival, default_ ? 1 : 0);
+				val = ival != 0;
+			}
+			else
+			{
+				val = T::deserialize(*this);
+				if (m_didErr)
+				{
+					val = default_;
+				}
 			}
 		}
 
 		template<typename T>
 		void read(T& val)
 		{
-			val = T::deserialize(*this);
-		}
-
-		template <> void read(  int8_t& val,   int8_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-		template <> void read( uint8_t& val,  uint8_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-		template <> void read( int16_t& val,  int16_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-		template <> void read(uint16_t& val, uint16_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-		template <> void read( int32_t& val,  int32_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-		template <> void read(uint32_t& val, uint32_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-		template <> void read( int64_t& val,  int64_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-		template <> void read(uint64_t& val, uint64_t default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-		template <> void read(float& val,    float    default_) { read((bbe::byte*)&val, (bbe::byte*)&default_, sizeof(val)); }
-		template <> void read(bool& val,     bool     default_)
-		{
-			int32_t ival;
-			read(ival, default_ ? 1 : 0);
-			val = ival != 0;
-		}
-		template <> void read(  int8_t& val) { read<  int8_t>(val, 0);}
-		template <> void read( uint8_t& val) { read< uint8_t>(val, 0);}
-		template <> void read( int16_t& val) { read< int16_t>(val, 0);}
-		template <> void read(uint16_t& val) { read<uint16_t>(val, 0);}
-		template <> void read( int32_t& val) { read< int32_t>(val, 0);}
-		template <> void read(uint32_t& val) { read<uint32_t>(val, 0);}
-		template <> void read( int64_t& val) { read< int64_t>(val, 0);}
-		template <> void read(uint64_t& val) { read<uint64_t>(val, 0);}
-		template <> void read(bool& val    ) { read<bool>(val, false);}
-		template <> void read(float& val   ) { read<float>(val, 0.0f);}
-		template <> void read(bbe::List<float>& val)
-		{
-			int64_t size;
-			read(size);
-			val.resizeCapacityAndLengthUninit(size);
-			for (int64_t i = 0; i < size; i++)
+			if constexpr (
+				   std::is_same_v<T, int8_t>
+				|| std::is_same_v<T, uint8_t>
+				|| std::is_same_v<T, int16_t>
+				|| std::is_same_v<T, uint16_t>
+				|| std::is_same_v<T, int32_t>
+				|| std::is_same_v<T, uint32_t>
+				|| std::is_same_v<T, int64_t>
+				|| std::is_same_v<T, uint64_t>
+				|| std::is_same_v<T, bool>
+				|| std::is_same_v<T, float>
+				)
 			{
-				float f;
-				read(f);
-				val[i] = f;
+				read<T>(val, (T)0);
+			}
+			else if constexpr (std::is_same_v<T, bbe::List<float>>)
+			{
+				int64_t size;
+				read(size);
+				val.resizeCapacityAndLengthUninit(size);
+				for (int64_t i = 0; i < size; i++)
+				{
+					float f;
+					read(f);
+					val[i] = f;
+				}
+			}
+			else
+			{
+				val = T::deserialize(*this);
 			}
 		}
+
 		ByteBufferSpan readSpan(size_t size);
 		const char* readNullString();
 
