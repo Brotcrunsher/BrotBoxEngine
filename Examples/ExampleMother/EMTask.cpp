@@ -689,7 +689,10 @@ bbe::Vector2 SubsystemTask::drawTabEditTasks()
 			t.nextExecPlusDays(-1);
 			tasksChanged = true;
 		}
-		tasksChanged |= ImGui::bbe::datePicker("EndWork", &t.endWorkTime); ImGui::bbe::tooltip("End Work Time");
+		if (t.startable)
+		{
+			tasksChanged |= ImGui::bbe::datePicker("EndWork", &t.endWorkTime); ImGui::bbe::tooltip("End Work Time");
+		}
 		ImGui::NewLine();
 		ImGui::Separator();
 		ImGui::NewLine();
