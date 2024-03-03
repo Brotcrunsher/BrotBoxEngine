@@ -3,6 +3,7 @@
 #include "../BBE/Array.h"
 #include "../BBE/Hash.h"
 #include "../BBE/Exceptions.h"
+#include "../BBE/AllocBlock.h"
 #include <type_traits>
 #include <stddef.h>
 #include <initializer_list>
@@ -16,18 +17,24 @@ namespace bbe
 	class DynamicArray
 	{
 	private:
-		T*     m_pdata;
-		size_t m_length;
+		T*         m_pdata;
+		size_t     m_length;
+		AllocBlock m_allocBlock;
 
 		void createArray(std::size_t size)
 		{
 			m_length = size;
-			m_pdata = new T[size];
+			m_allocBlock = bbe::allocateBlock(sizeof(T) * size);
+			m_pdata = new (m_allocBlock.data) T[size];
 		}
 
 		void deleteArray()
 		{
-			delete[] m_pdata;
+			for (size_t i = 0; i < m_length; i++)
+			{
+				m_pdata[i].~T();
+			}
+			bbe::freeBlock(m_allocBlock);
 			m_length = 0;
 		}
 
@@ -94,8 +101,10 @@ namespace bbe
 			: m_pdata(other.m_pdata)
 		{
 			m_length = other.m_length;
+			m_allocBlock = other.m_allocBlock;
 			other.m_pdata = nullptr;
 			other.m_length = 0;
+			other.m_allocBlock = {};
 		}
 		DynamicArray& operator=(const DynamicArray&  other)  //Copy Assignment
 		{
@@ -115,8 +124,10 @@ namespace bbe
 
 			m_pdata = other.m_pdata;
 			m_length = other.m_length;
+			m_allocBlock = other.m_allocBlock;
 			other.m_pdata = nullptr;
 			other.m_length = 0;
+			other.m_allocBlock = {};
 
 			return *this;
 		}

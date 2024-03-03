@@ -1,5 +1,6 @@
 #pragma once
 #include <type_traits>
+#include "AllocBlock.h"
 
 namespace bbe
 {
@@ -14,6 +15,7 @@ namespace bbe
 			T m_sooData[sooSize];
 		};
 		size_t m_capacity = sooSize;
+		bbe::AllocBlock ab;
 
 	public:
 		SOOBlock() 
@@ -46,6 +48,7 @@ namespace bbe
 			}
 			else
 			{
+				ab = other.ab;
 				m_pdata = other.m_pdata;
 				other.m_capacity = sooSize;
 			}
@@ -67,7 +70,7 @@ namespace bbe
 		{
 			if (!isUsingSoo())
 			{
-				delete[] m_pdata;
+				bbe::freeBlock(ab);
 			}
 			m_capacity = other.m_capacity;
 			if (isUsingSoo())
@@ -81,6 +84,7 @@ namespace bbe
 			}
 			else
 			{
+				ab = other.ab;
 				m_pdata = other.m_pdata;
 				other.m_capacity = sooSize;
 			}
@@ -91,7 +95,7 @@ namespace bbe
 		{
 			if (!isUsingSoo())
 			{
-				delete[] m_pdata;
+				bbe::freeBlock(ab);
 			}
 		}
 
@@ -124,7 +128,8 @@ namespace bbe
 				if (newCapacity < 2 * m_capacity) newCapacity = 2 * m_capacity;
 				if (copyUntil == (size_t)-1) copyUntil = m_capacity;
 
-				T* newData = new T[newCapacity];
+				AllocBlock ab = bbe::allocateBlock(newCapacity * sizeof(T));
+				T* newData = new (ab.data) T[newCapacity];
 				T* oldData = get();
 				for (size_t i = 0; i < copyUntil; i++)
 				{
@@ -132,11 +137,12 @@ namespace bbe
 				}
 				if (!isUsingSoo())
 				{
-					delete[] oldData;
+					bbe::freeBlock(this->ab);
 				}
 
+				this->ab = ab;
 				m_pdata = newData;
-				m_capacity = newCapacity;
+				m_capacity = ab.size / sizeof(T);
 			}
 		}
 	};

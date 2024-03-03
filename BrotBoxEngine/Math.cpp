@@ -158,6 +158,12 @@ bool bbe::Math::isEven(int val)
 	return (val & 1) == 0;
 }
 
+bool bbe::Math::isPowerOfTwo(uint64_t val)
+{
+	if (val == 0) return false;
+	return (val & (val - 1)) == 0;
+}
+
 int bbe::Math::log2Floor(unsigned int val)
 {
 	//UNTESTED
