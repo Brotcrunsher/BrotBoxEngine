@@ -575,8 +575,8 @@ public:
 	{
 		static bbe::Image image;
 		static bool loaded = false;
-		static bool divideByMax = false;
-		ImGui::Checkbox("Divide by Max", &divideByMax);
+		static float multiplier = 1.0f;
+		ImGui::SliderFloat("Multiplier", &multiplier, 0.0f, 1.0f);
 
 		if (ImGui::Button("Do it!"))
 		{
@@ -614,7 +614,7 @@ public:
 			{
 				for (size_t y = 0; y < grid.getHeight(); y++)
 				{
-					if(divideByMax) grid[x][y] /= maxValue;
+					grid[x][y] *= multiplier;
 					image.setPixel(x, y, bbe::Color(grid[x][y] > 1.f ? 1.f : grid[x][y]));
 				}
 			}
