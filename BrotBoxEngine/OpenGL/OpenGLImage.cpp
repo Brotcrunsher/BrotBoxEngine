@@ -32,8 +32,7 @@ bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image)
 
 	if (!image.keep)
 	{
-		image.m_pdata.clear();
-		image.m_pdata.shrink();
+		image.m_pdata = {};
 	}
 }
 

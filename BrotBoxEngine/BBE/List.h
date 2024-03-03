@@ -8,6 +8,7 @@
 #include "../BBE/Hash.h"
 #include "../BBE/Exceptions.h"
 #include "../BBE/MersenneTwister.h"
+#include "../BBE/AllocBlock.h"
 #include <initializer_list>
 #include <iostream>
 #include <cstring>
@@ -19,83 +20,81 @@ namespace bbe
 	class List
 	{
 	private:
-		size_t m_length;
-		size_t m_capacity;
-		INTERNAL::Unconstructed<T>* m_pdata;
+		size_t m_length = 0;
+		bbe::AllocBlock m_allocBlock;
 
-		INTERNAL::Unconstructed<T>* growIfNeeded(size_t amountOfNewObjects)
+		bbe::AllocBlock growIfNeeded(size_t amountOfNewObjects)
 		{
-			INTERNAL::Unconstructed<T>* retVal = nullptr;
-			if (m_capacity < m_length + amountOfNewObjects)
+			bbe::AllocBlock retVal;
+			if (getCapacity() < m_length + amountOfNewObjects)
 			{
 				size_t newCapacity = m_length + amountOfNewObjects;
-				if (newCapacity < m_capacity * 2)
+				if (newCapacity < getCapacity() * 2)
 				{
-					newCapacity = m_capacity * 2;
+					newCapacity = getCapacity() * 2;
 				}
 
-				INTERNAL::Unconstructed<T>* newData = new INTERNAL::Unconstructed<T>[newCapacity];
+				bbe::AllocBlock newData = bbe::allocateBlock(newCapacity * sizeof(T));
+				T* newDataPtr = (T*)newData.data;
+				T* oldDataPtr = getRaw();
 
 				for (size_t i = 0; i < m_length; i++)
 				{
-					new (bbe::addressOf(newData[i].m_value)) T(std::move(m_pdata[i].m_value));
-					m_pdata[i].m_value.~T();
+					new (bbe::addressOf(newDataPtr[i])) T(std::move(oldDataPtr[i]));
+					oldDataPtr[i].~T();
 				}
 
-				retVal = m_pdata;
-				m_pdata = newData;
-				m_capacity = newCapacity;
+				retVal = m_allocBlock;
+				m_allocBlock = newData;
 			}
 			return retVal;
 		}
 
 	public:
 		List()
-			: m_length(0), m_capacity(0), m_pdata(nullptr)
+			: m_length(0), m_allocBlock()
 		{
 			//DO NOTHING
 		}
 
 		explicit List(size_t amountOfData)
-			: m_length(0), m_capacity(amountOfData)
+			: m_length(0)
 		{
-			m_pdata = new INTERNAL::Unconstructed<T>[amountOfData];
+			growIfNeeded(amountOfData);
 		}
 
 		template <typename... arguments>
 		List(size_t amountOfObjects, arguments&&... args)
-			: m_length(amountOfObjects), m_capacity(amountOfObjects)
 		{
-			m_pdata = new INTERNAL::Unconstructed<T>[amountOfObjects];
+			growIfNeeded(amountOfObjects);
+			m_length = amountOfObjects;
 			const T copyVal = T(std::forward<arguments>(args)...);
 			for (size_t i = 0; i < amountOfObjects; i++)
 			{
-				new (bbe::addressOf(m_pdata[i])) T(copyVal);
+				new (bbe::addressOf(getRaw()[i])) T(copyVal);
 			}
 		}
 
 		List(const List<T>& other)
-			: m_length(other.m_length), m_capacity(other.m_capacity)
 		{
-			m_pdata = new INTERNAL::Unconstructed<T>[m_capacity];
+			growIfNeeded(other.m_length);
+			m_length = other.m_length;
 			for (size_t i = 0; i < m_length; i++)
 			{
-				new (bbe::addressOf(m_pdata[i])) T(other.m_pdata[i].m_value);
+				new (bbe::addressOf(getRaw()[i])) T(other.getRaw()[i]);
 			}
 		}
 
 		List(List<T>&& other) noexcept
-			: m_length(other.m_length), m_capacity(other.m_capacity), m_pdata(other.m_pdata)
+			: m_length(other.m_length), m_allocBlock(std::move(other.m_allocBlock))
 		{
-			other.m_pdata = nullptr;
 			other.m_length = 0;
-			other.m_capacity = 0;
+			other.m_allocBlock = {};
 		}
 
 		/*nonexplicit*/ List(const std::initializer_list<T> &il)
-			: m_length(0), m_capacity(il.size())
 		{
-			m_pdata = new INTERNAL::Unconstructed<T>[m_capacity];
+			growIfNeeded(il.size());
 			for (auto iter = il.begin(); iter != il.end(); iter++) {
 				add(*iter);
 			}
@@ -105,17 +104,14 @@ namespace bbe
 		{
 			clear();
 
-			if (m_pdata != nullptr)
-			{
-				delete[] m_pdata;
-			}
-
+			bbe::freeBlock(m_allocBlock);
+			m_length = 0;
+			growIfNeeded(other.getCapacity());
 			m_length = other.m_length;
-			m_capacity = other.m_capacity;
-			m_pdata = new INTERNAL::Unconstructed<T>[m_capacity];
+
 			for (size_t i = 0; i < m_length; i++)
 			{
-				new (bbe::addressOf(m_pdata[i])) T(other.m_pdata[i].m_value);
+				new (bbe::addressOf(getRaw()[i])) T(other.getRaw()[i]);
 			}
 
 			return *this;
@@ -125,18 +121,13 @@ namespace bbe
 		{
 			clear();
 
-			if (m_pdata != nullptr)
-			{
-				delete[] m_pdata;
-			}
+			bbe::freeBlock(m_allocBlock);
 
 			m_length = other.m_length;
-			m_capacity = other.m_capacity;
-			m_pdata = other.m_pdata;
+			m_allocBlock = other.m_allocBlock;
 
-			other.m_pdata = nullptr;
 			other.m_length = 0;
-			other.m_capacity = 0;
+			other.m_allocBlock = {};
 
 			return *this;
 		}
@@ -145,19 +136,13 @@ namespace bbe
 		{
 			clear();
 
-			if (m_pdata != nullptr)
-			{
-				delete[] m_pdata;
-			}
-
-			m_pdata = nullptr;
+			bbe::freeBlock(m_allocBlock);
 			m_length = 0;
-			m_capacity = 0;
 		}
 
 		size_t getCapacity() const
 		{
-			return m_capacity;
+			return m_allocBlock.size / sizeof(T);
 		}
 
 		size_t getLength() const
@@ -167,13 +152,13 @@ namespace bbe
 
 		T* getRaw()
 		{
-			return reinterpret_cast<T*>(m_pdata);
+			return reinterpret_cast<T*>(m_allocBlock.data);
 		}
 
 		const T* getRaw() const
 		{
 			//UNTESTED
-			return reinterpret_cast<const T*>(m_pdata);
+			return reinterpret_cast<const T*>(m_allocBlock.data);
 		}
 
 		bool isEmpty() const
@@ -218,7 +203,7 @@ namespace bbe
 				new (bbe::addressOf(d[m_length + i])) T(val);
 			}
 			m_length += amount;
-			delete[] delVal;
+			bbe::freeBlock(delVal);
 		}
 
 		void add(T&& val, size_t amount)
@@ -238,7 +223,7 @@ namespace bbe
 			}
 
 			m_length += amount;
-			delete[] delVal;
+			bbe::freeBlock(delVal);
 		}
 
 		void add(T&& val)
@@ -247,7 +232,7 @@ namespace bbe
 			new (bbe::addressOf(getRaw()[m_length])) T(std::move(val));
 
 			m_length += 1;
-			delete[] delVal;
+			bbe::freeBlock(delVal);
 		}
 
 		bool addUnique(const T& val)
@@ -323,40 +308,6 @@ namespace bbe
 			}
 			m_length = 0;
 		}
-		
-		bool shrink()
-		{
-			if (m_length == m_capacity)
-			{
-				return false;
-			}
-			m_capacity = m_length;
-
-			if (m_length == 0)
-			{
-				if (m_pdata != nullptr)
-				{
-					delete[] m_pdata;
-				}
-				m_pdata = nullptr;
-				return true;
-			}
-			INTERNAL::Unconstructed<T>* newList = new INTERNAL::Unconstructed<T>[m_length];
-			for (size_t i = 0; i < m_length; i++)
-			{
-				new (bbe::addressOf(newList[i])) T(std::move(m_pdata[i].m_value));
-			}
-			if (m_pdata != nullptr)
-			{
-				for (size_t i = 0; i < m_length; i++)
-				{
-					bbe::addressOf(m_pdata[i].m_value)->~T();
-				}
-				delete[] m_pdata;
-			}
-			m_pdata = newList;
-			return true;
-		}
 
 		template <typename dummyT = T>
 		typename std::enable_if<std::is_fundamental<dummyT>::value || std::is_pointer<dummyT>::value, void>::type
@@ -366,10 +317,9 @@ namespace bbe
 			static_assert(std::is_same<dummyT, T>::value, "Do not specify dummyT!");
 			if (newCapacity == m_length) return;
 
-			delete[] m_pdata;
-			m_pdata = new INTERNAL::Unconstructed<T>[newCapacity];
+			bbe::freeBlock(m_allocBlock);
+			growIfNeeded(newCapacity);
 			m_length = newCapacity;
-			m_capacity = newCapacity;
 		}
 
 		template <typename dummyT = T>
@@ -403,24 +353,12 @@ namespace bbe
 				throw IllegalArgumentException();
 			}
 
-			if (newCapacity <= m_capacity)
+			if (newCapacity <= getCapacity())
 			{
 				return;
 			}
 
-			INTERNAL::Unconstructed<T>* newList = new INTERNAL::Unconstructed<T>[newCapacity];
-			for (size_t i = 0; i < m_length; i++)
-			{
-				new (bbe::addressOf(newList[i])) T(std::move(m_pdata[i].m_value));
-			}
-			if (m_pdata != nullptr) {
-				for (size_t i = 0; i < m_length; i++) {
-					bbe::addressOf(m_pdata[i].m_value)->~T();
-				}
-				delete[] m_pdata;
-			}
-			m_pdata = newList;
-			m_capacity = newCapacity;
+			growIfNeeded(newCapacity - getCapacity());
 		}
 
 		size_t removeAll(const T& remover)

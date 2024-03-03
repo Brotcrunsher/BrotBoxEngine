@@ -36,7 +36,6 @@ namespace bbe
 				Person::resetTestStatistics();
 
 				List<Person> listEmpty;
-				assertEquals(listEmpty.getCapacity(), 0);
 				assertEquals(listEmpty.getLength(), 0);
 				assertEquals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), true);
@@ -46,7 +45,6 @@ namespace bbe
 				assertEquals(0, Person::s_amountOfParameterConstructorCalls);
 				listEmpty.add(Person("Peter", "AStr", 18));
 				
-				assertEquals(listEmpty.getCapacity(), 1);
 				assertEquals(listEmpty.getLength(), 1);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty[0].name, "Peter");
@@ -59,7 +57,6 @@ namespace bbe
 				assertEquals(1, Person::s_amountOfParameterConstructorCalls);
 
 				listEmpty.popBack();
-				assertEquals(listEmpty.getCapacity(), 1);
 				assertEquals(listEmpty.getLength(), 0);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), true);
@@ -67,17 +64,10 @@ namespace bbe
 				assertEquals(0, Person::s_amountOfPersons);
 				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
 				assertEquals(1, Person::s_amountOfParameterConstructorCalls);
-				
-				listEmpty.shrink();
-				assertEquals(listEmpty.getCapacity(), 0);
-				assertEquals(listEmpty.getLength(), 0);
-				assertEquals(listEmpty.getRaw(), nullptr);
-				assertEquals(listEmpty.isEmpty(), true);
 
 				listEmpty.add(Person("Petra", "BStr", 19));
 				listEmpty.add(Person("Hans", "CStr", 20));
 				listEmpty.add(Person("Eugen", "DStr", 21));
-				assertEquals(listEmpty.getCapacity(), 4);
 				assertEquals(listEmpty.getLength(), 3);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), false);
@@ -97,7 +87,6 @@ namespace bbe
 				assertEquals(listEmpty[2].age, 21);
 
 				listEmpty.add(Person("Brunhilde", "EStr", 22));
-				assertEquals(listEmpty.getCapacity(), 4);
 				assertEquals(listEmpty.getLength(), 4);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), false);
@@ -119,7 +108,6 @@ namespace bbe
 				assertEquals( 5, Person::s_amountOfParameterConstructorCalls);
 
 				listEmpty.popBack();
-				assertEquals(listEmpty.getCapacity(), 4);
 				assertEquals(listEmpty.getLength(), 3);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), false);
@@ -138,7 +126,6 @@ namespace bbe
 				assertEquals( 5, Person::s_amountOfParameterConstructorCalls);
 
 				listEmpty.add(Person("Zebramensch", "FStr", 23));
-				assertEquals(listEmpty.getCapacity(), 4);
 				assertEquals(listEmpty.getLength(), 4);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), false);
@@ -160,7 +147,6 @@ namespace bbe
 				assertEquals( 6, Person::s_amountOfParameterConstructorCalls);
 
 				listEmpty.clear();
-				assertEquals(listEmpty.getCapacity(), 4);
 				assertEquals(listEmpty.getLength(), 0);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), true);
@@ -174,7 +160,6 @@ namespace bbe
 				listEmpty.add(Person("Someone", "IStr", 26));
 				listEmpty.add(Person("Dragon", "JStr", 27));
 				listEmpty.add(Person("KeyboardWarrior", "KStr", 28));
-				assertEquals(listEmpty.getCapacity(), 8);
 				assertEquals(listEmpty.getLength(), 5);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), false);
@@ -198,8 +183,6 @@ namespace bbe
 				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
 				assertEquals(11, Person::s_amountOfParameterConstructorCalls);
 
-				listEmpty.shrink();
-				assertEquals(listEmpty.getCapacity(), 5);
 				assertEquals(listEmpty.getLength(), 5);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), false);
@@ -225,7 +208,6 @@ namespace bbe
 
 				Person outerPerson("Outlander", "OutStr", 99);
 				listEmpty.add(outerPerson);
-				assertEquals(listEmpty.getCapacity(), 10);
 				assertEquals(listEmpty.getLength(), 6);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), false);
@@ -260,7 +242,6 @@ namespace bbe
 				outerPerson.address = "OtherStreet";
 				outerPerson.age = 100;
 
-				assertEquals(listEmpty.getCapacity(), 10);
 				assertEquals(listEmpty.getLength(), 6);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), false);
@@ -292,7 +273,6 @@ namespace bbe
 				assertEquals(12, Person::s_amountOfParameterConstructorCalls);
 
 				listEmpty.add(Person("CopyMan!", "CopyStr!", -7), 3);
-				assertEquals(listEmpty.getCapacity(), 10);
 				assertEquals(listEmpty.getLength(), 9);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), false);
@@ -332,7 +312,6 @@ namespace bbe
 				listEmpty[7].address = "Wabble";
 				listEmpty[7].age = 7;
 
-				assertEquals(listEmpty.getCapacity(), 10);
 				assertEquals(listEmpty.getLength(), 9);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), false);
@@ -378,7 +357,6 @@ namespace bbe
 				assertEquals(16, Person::s_amountOfParameterConstructorCalls);
 
 				listEmpty += otherList;
-				assertEquals(listEmpty.getCapacity(), 20);
 				assertEquals(listEmpty.getLength(), 12);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), false);
@@ -433,7 +411,6 @@ namespace bbe
 				otherList[2].address = "Hide Str #3";
 				otherList[2].age = 82;
 
-				assertEquals(listEmpty.getCapacity(), 20);
 				assertEquals(listEmpty.getLength(), 12);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), false);
@@ -484,7 +461,6 @@ namespace bbe
 
 			{
 				bbe::List<Person> copyFrom(4, "PersonCopy", "StreetCopy", 15);
-				assertEquals(copyFrom.getCapacity(), 4);
 				assertEquals(copyFrom.getLength(), 4);
 				assertUnequals(copyFrom.getRaw(), nullptr);
 				assertEquals(copyFrom.isEmpty(), false);
@@ -502,7 +478,6 @@ namespace bbe
 				assertEquals(copyFrom[3].age, 15);
 
 				List<Person> copyTo(copyFrom);
-				assertEquals(copyFrom.getCapacity(), 4);
 				assertEquals(copyFrom.getLength(), 4);
 				assertUnequals(copyFrom.getRaw(), nullptr);
 				assertEquals(copyFrom.isEmpty(), false);
@@ -518,7 +493,6 @@ namespace bbe
 				assertEquals(copyFrom[3].name, "PersonCopy");
 				assertEquals(copyFrom[3].address, "StreetCopy");
 				assertEquals(copyFrom[3].age, 15);
-				assertEquals(copyTo.getCapacity(), 4);
 				assertEquals(copyTo.getLength(), 4);
 				assertUnequals(copyTo.getRaw(), nullptr);
 				assertEquals(copyTo.isEmpty(), false);
@@ -536,11 +510,9 @@ namespace bbe
 				assertEquals(copyTo[3].age, 15);
 
 				List<Person> movedTo(std::move(copyFrom));
-				assertEquals(copyFrom.getCapacity(), 0);
 				assertEquals(copyFrom.getLength(), 0);
 				assertEquals(copyFrom.getRaw(), nullptr);
 				assertEquals(copyFrom.isEmpty(), true);
-				assertEquals(movedTo.getCapacity(), 4);
 				assertEquals(movedTo.getLength(), 4);
 				assertUnequals(movedTo.getRaw(), nullptr);
 				assertEquals(movedTo.isEmpty(), false);
@@ -556,7 +528,6 @@ namespace bbe
 				assertEquals(movedTo[3].name, "PersonCopy");
 				assertEquals(movedTo[3].address, "StreetCopy");
 				assertEquals(movedTo[3].age, 15);
-				assertEquals(copyTo.getCapacity(), 4);
 				assertEquals(copyTo.getLength(), 4);
 				assertUnequals(copyTo.getRaw(), nullptr);
 				assertEquals(copyTo.isEmpty(), false);
@@ -574,7 +545,6 @@ namespace bbe
 				assertEquals(copyTo[3].age, 15);
 
 				copyFrom = copyTo;
-				assertEquals(copyFrom.getCapacity(), 4);
 				assertEquals(copyFrom.getLength(), 4);
 				assertUnequals(copyFrom.getRaw(), nullptr);
 				assertEquals(copyFrom.isEmpty(), false);
@@ -590,7 +560,6 @@ namespace bbe
 				assertEquals(copyFrom[3].name, "PersonCopy");
 				assertEquals(copyFrom[3].address, "StreetCopy");
 				assertEquals(copyFrom[3].age, 15);
-				assertEquals(movedTo.getCapacity(), 4);
 				assertEquals(movedTo.getLength(), 4);
 				assertUnequals(movedTo.getRaw(), nullptr);
 				assertEquals(movedTo.isEmpty(), false);
@@ -606,7 +575,6 @@ namespace bbe
 				assertEquals(movedTo[3].name, "PersonCopy");
 				assertEquals(movedTo[3].address, "StreetCopy");
 				assertEquals(movedTo[3].age, 15);
-				assertEquals(copyTo.getCapacity(), 4);
 				assertEquals(copyTo.getLength(), 4);
 				assertUnequals(copyTo.getRaw(), nullptr);
 				assertEquals(copyTo.isEmpty(), false);
@@ -624,10 +592,8 @@ namespace bbe
 				assertEquals(copyTo[3].age, 15);
 
 				copyFrom.clear();
-				copyFrom.shrink();
 
 				copyFrom = std::move(copyTo);
-				assertEquals(copyFrom.getCapacity(), 4);
 				assertEquals(copyFrom.getLength(), 4);
 				assertUnequals(copyFrom.getRaw(), nullptr);
 				assertEquals(copyFrom.isEmpty(), false);
@@ -643,7 +609,6 @@ namespace bbe
 				assertEquals(copyFrom[3].name, "PersonCopy");
 				assertEquals(copyFrom[3].address, "StreetCopy");
 				assertEquals(copyFrom[3].age, 15);
-				assertEquals(movedTo.getCapacity(), 4);
 				assertEquals(movedTo.getLength(), 4);
 				assertUnequals(movedTo.getRaw(), nullptr);
 				assertEquals(movedTo.isEmpty(), false);
@@ -659,7 +624,6 @@ namespace bbe
 				assertEquals(movedTo[3].name, "PersonCopy");
 				assertEquals(movedTo[3].address, "StreetCopy");
 				assertEquals(movedTo[3].age, 15);
-				assertEquals(copyTo.getCapacity(), 0);
 				assertEquals(copyTo.getLength(), 0);
 				assertEquals(copyTo.getRaw(), nullptr);
 				assertEquals(copyTo.isEmpty(), true);
@@ -670,7 +634,6 @@ namespace bbe
 
 			{
 				const List<Person> constList(3, "Sumthing", "nother", 1337);
-				assertEquals(constList.getCapacity(), 3);
 				assertEquals(constList.getLength(), 3);
 				assertEquals(constList.isEmpty(), false);
 				assertEquals(constList[0].name, "Sumthing");
@@ -694,14 +657,12 @@ namespace bbe
 					size_tList.add(i);
 				}
 
-				assertEquals(size_tList.getCapacity(), 256);
 				assertEquals(size_tList.getLength(), 131);
 				assertUnequals(size_tList.getRaw(), nullptr);
 				assertEquals(size_tList.isEmpty(), false);
 
 				size_t removedVals = size_tList.removeAll(2);
 				assertEquals(removedVals, 4);
-				assertEquals(size_tList.getCapacity(), 256);
 				assertEquals(size_tList.getLength(), 127);
 				assertUnequals(size_tList.getRaw(), nullptr);
 				assertEquals(size_tList.isEmpty(), false);
@@ -719,7 +680,6 @@ namespace bbe
 						return t % 2 == 0;
 					});
 				assertEquals(removedVals, 63);
-				assertEquals(size_tList.getCapacity(), 256);
 				assertEquals(size_tList.getLength(), 64);
 				assertUnequals(size_tList.getRaw(), nullptr);
 				assertEquals(size_tList.isEmpty(), false);
@@ -733,7 +693,6 @@ namespace bbe
 
 				removedVals = size_tList.removeAll(1337);
 				assertEquals(removedVals, 0);
-				assertEquals(size_tList.getCapacity(), 256);
 				assertEquals(size_tList.getLength(), 64);
 				assertUnequals(size_tList.getRaw(), nullptr);
 				assertEquals(size_tList.isEmpty(), false);
@@ -751,7 +710,6 @@ namespace bbe
 						return false;
 					});
 				assertEquals(removedVals, 0);
-				assertEquals(size_tList.getCapacity(), 256);
 				assertEquals(size_tList.getLength(), 64);
 				assertUnequals(size_tList.getRaw(), nullptr);
 				assertEquals(size_tList.isEmpty(), false);
@@ -765,7 +723,6 @@ namespace bbe
 
 				bool didRemove = size_tList.removeSingle(7);
 				assertEquals(didRemove, true);
-				assertEquals(size_tList.getCapacity(), 256);
 				assertEquals(size_tList.getLength(), 63);
 				assertUnequals(size_tList.getRaw(), nullptr);
 				assertEquals(size_tList.isEmpty(), false);
@@ -779,7 +736,6 @@ namespace bbe
 
 				didRemove = size_tList.removeSingle(7);
 				assertEquals(didRemove, false);
-				assertEquals(size_tList.getCapacity(), 256);
 				assertEquals(size_tList.getLength(), 63);
 				assertUnequals(size_tList.getRaw(), nullptr);
 				assertEquals(size_tList.isEmpty(), false);
@@ -797,7 +753,6 @@ namespace bbe
 						return val == 13;
 					});
 				assertEquals(didRemove, true);
-				assertEquals(size_tList.getCapacity(), 256);
 				assertEquals(size_tList.getLength(), 62);
 				assertUnequals(size_tList.getRaw(), nullptr);
 				assertEquals(size_tList.isEmpty(), false);
@@ -815,7 +770,6 @@ namespace bbe
 						return val == 13;
 					});
 				assertEquals(didRemove, false);
-				assertEquals(size_tList.getCapacity(), 256);
 				assertEquals(size_tList.getLength(), 62);
 				assertUnequals(size_tList.getRaw(), nullptr);
 				assertEquals(size_tList.isEmpty(), false);
@@ -844,7 +798,6 @@ namespace bbe
 					Person("F", "FStr", 22)
 				);
 
-				assertEquals(pushBackAllList.getCapacity(), 8);
 				assertEquals(pushBackAllList.getLength(), 7);
 				assertUnequals(pushBackAllList.getRaw(), nullptr);
 				assertEquals(pushBackAllList.isEmpty(), false);
@@ -924,7 +877,6 @@ namespace bbe
 				assertEquals(containsList.containsAmount([](const int& val) {return val == 8; }), 0);
 				assertEquals(containsList.containsAmount([](const int& val) {return val == 10; }), 0);
 
-				assertEquals(containsList.getCapacity(), 16);
 				assertEquals(containsList.getLength(), 11);
 				assertUnequals(containsList.getRaw(), nullptr);
 				assertEquals(containsList.isEmpty(), false);
@@ -946,7 +898,6 @@ namespace bbe
 				assertEquals(sortIntList[5], 10);
 				assertEquals(sortIntList[6], 49);
 
-				assertEquals(sortIntList.getCapacity(), 8);
 				assertEquals(sortIntList.getLength(), 7);
 				assertUnequals(sortIntList.getRaw(), nullptr);
 				assertEquals(sortIntList.isEmpty(), false);
@@ -994,8 +945,6 @@ namespace bbe
 				assertEquals(sortPersonList[6].address, "49 Street");
 				assertEquals(sortPersonList[6].age, 49);
 
-
-				assertEquals(sortPersonList.getCapacity(), 8);
 				assertEquals(sortPersonList.getLength(), 7);
 				assertUnequals(sortPersonList.getRaw(), nullptr);
 				assertEquals(sortPersonList.isEmpty(), false);

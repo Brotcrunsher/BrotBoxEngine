@@ -3,6 +3,7 @@
 #include "BBE/Math.h"
 #include "BBE/Logging.h"
 #include <cstdlib>
+#include <vector>
 
 static bool isBlockZero(void* ptr, size_t size)
 {
@@ -10,11 +11,31 @@ static bool isBlockZero(void* ptr, size_t size)
 	return cptr[0] == 0 && !memcmp(cptr, cptr + 1, size - 1);
 }
 
-static bbe::List<void*> storedBlocks[64];
+static std::vector<void*> storedBlocks[64]; // Can't be a bbe::List, because bbe::List depends on this allocator.
 static constexpr size_t PAGE_SIZE = 4096;
+
+static void checkBlockHealth()
+{
+#ifdef _DEBUG
+	void* block = nullptr;
+	for (int i = 0; i < 64; i++)
+	{
+		const size_t size = (((size_t)1) << (i));
+		for (size_t k = 0; k < storedBlocks[i].size(); k++)
+		{
+			block = storedBlocks[i][k];
+			if (!isBlockZero(block, size))
+			{
+				throw bbe::IllegalStateException();
+			}
+		}
+	}
+#endif
+}
 
 bbe::AllocBlock bbe::allocateBlock(size_t size)
 {
+	checkBlockHealth();
 	if (size == 0) return AllocBlock{ nullptr, 0 };
 
 	auto access = bbe::Math::log2Floor(size);
@@ -24,9 +45,10 @@ bbe::AllocBlock bbe::allocateBlock(size_t size)
 		access++;
 	}
 	
-	if (!storedBlocks[access].isEmpty())
+	if (storedBlocks[access].size() != 0)
 	{
-		void* addr = storedBlocks[access].popBack();
+		void* addr = storedBlocks[access].back();
+		storedBlocks[access].pop_back();
 #ifdef _DEBUG
 		if (!isBlockZero(addr, size))
 		{
@@ -40,9 +62,12 @@ bbe::AllocBlock bbe::allocateBlock(size_t size)
 	{
 		char* page = (char*)std::malloc(PAGE_SIZE);
 		if (!page) throw NullPointerException();
+#ifdef _DEBUG
+		memset(page, 0, PAGE_SIZE);
+#endif
 		for (size_t i = 1; i < PAGE_SIZE / size; i++)
 		{
-			storedBlocks[access].add(page + i * size);
+			storedBlocks[access].push_back(page + i * size);
 		}
 		return AllocBlock{ page , size };
 	}
@@ -56,10 +81,11 @@ bbe::AllocBlock bbe::allocateBlock(size_t size)
 
 void bbe::freeBlock(AllocBlock& block)
 {
+	checkBlockHealth();
 	if (block.data == nullptr || block.size == 0) return;
 
 	auto access = bbe::Math::log2Floor(block.size);
-	storedBlocks[access].add(block.data);
+	storedBlocks[access].push_back(block.data);
 #ifdef _DEBUG
 	memset(block.data, 0, block.size);
 #endif
