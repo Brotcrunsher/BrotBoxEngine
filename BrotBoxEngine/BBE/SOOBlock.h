@@ -34,7 +34,7 @@ namespace bbe
 			}
 		}
 
-		SOOBlock(SOOBlock&& other)
+		SOOBlock(SOOBlock&& other) noexcept
 		{
 			m_capacity = other.m_capacity;
 			if (isUsingSoo())
@@ -66,7 +66,7 @@ namespace bbe
 			return *this;
 		}
 
-		SOOBlock& operator=(SOOBlock&& other)
+		SOOBlock& operator=(SOOBlock&& other) noexcept
 		{
 			if (!isUsingSoo())
 			{

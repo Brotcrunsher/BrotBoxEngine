@@ -1168,7 +1168,7 @@ static size_t getIndex(const bbe::Vector2i& pos, uint32_t width)
 	return pos.y * width + pos.x;
 }
 
-static void transferBorderPixels(bbe::List<bbe::byte>& byteBuffer, const bbe::List<float>& colorFloatBuffer, size_t i, const bbe::Vector2i& src, uint32_t width, uint32_t height)
+static void transferBorderPixels(bbe::List<bbe::byte>& byteBuffer, const bbe::List<float>& colorFloatBuffer, size_t i, const bbe::Vector2i& src, int32_t width, int32_t height)
 {
 	if (src.x < 0 || src.y < 0 || src.x >= width || src.y >= height) return;
 	const size_t srcIndex = getIndex(src, width) * 4;
@@ -1206,10 +1206,10 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t wid
 			&& colorFloatBuffer[i + 2] == 0)
 		{
 			const bbe::Vector2i pos = getPos(i / 4, width);
-			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 1,  0), width, height);
-			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(-1,  0), width, height);
-			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 0,  1), width, height);
-			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 0, -1), width, height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 1,  0), (int32_t)width, (int32_t)height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(-1,  0), (int32_t)width, (int32_t)height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 0,  1), (int32_t)width, (int32_t)height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 0, -1), (int32_t)width, (int32_t)height);
 		}
 	}
 	return bbe::Image(width, height, byteBuffer.getRaw(), bbe::ImageFormat::R8G8B8A8);

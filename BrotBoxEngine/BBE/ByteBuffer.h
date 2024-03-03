@@ -110,28 +110,36 @@ namespace bbe
 		template<typename T>
 		void write(const T& val)
 		{
-			val.serialize(*this);
-		}
-		template<> void write(const   int8_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-		template<> void write(const  uint8_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-		template<> void write(const  int16_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-		template<> void write(const uint16_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-		template<> void write(const  int32_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-		template<> void write(const uint32_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-		template<> void write(const  int64_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-		template<> void write(const uint64_t &val) { write((bbe::byte*) &val, sizeof(val)); }
-		template<> void write(const float    &val) { write((bbe::byte*) &val, sizeof(val)); }
-		template<> void write(const bool     &val) 
-		{
-			int32_t ival = val ? 1 : 0;
-			write(ival);
-		}
-		template<> void write(const bbe::List<float>& vals)
-		{
-			write((int64_t)vals.getLength());
-			for (int64_t i = 0; i < vals.getLength(); i++)
+			if constexpr (
+				   std::is_same_v<T, int8_t>
+				|| std::is_same_v<T, uint8_t>
+				|| std::is_same_v<T, int16_t>
+				|| std::is_same_v<T, uint16_t>
+				|| std::is_same_v<T, int32_t>
+				|| std::is_same_v<T, uint32_t>
+				|| std::is_same_v<T, int64_t>
+				|| std::is_same_v<T, uint64_t>
+				|| std::is_same_v<T, float>
+				)
 			{
-				write(vals[i]);
+				write((bbe::byte*)&val, sizeof(T));
+			}
+			else if constexpr (std::is_same_v<T, bool>)
+			{
+				int32_t ival = val ? 1 : 0;
+				write(ival);
+			}
+			else if constexpr (std::is_same_v<T, bbe::List<float>>)
+			{
+				write((uint64_t)val.getLength());
+				for (uint64_t i = 0; i < val.getLength(); i++)
+				{
+					write(val[i]);
+				}
+			}
+			else
+			{
+				val.serialize(*this);
 			}
 		}
 		void writeNullString(const char* string);

@@ -18,7 +18,7 @@ namespace bbe
 	class PrimitiveBrush3D;
 	class Image;
 	class FragmentShader;
-	class PointLight;
+	struct PointLight;
 
 	class LightBaker
 	{

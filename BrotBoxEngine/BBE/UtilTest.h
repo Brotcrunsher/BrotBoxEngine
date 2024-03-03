@@ -51,7 +51,7 @@ namespace bbe {
 				Person::s_amountOfPersons++;
 			}
 
-			inline Person(Person&& other)
+			inline Person(Person&& other) noexcept
 				: name(other.name), address(other.address), age(other.age)
 			{
 				Person::s_amountOfPersons++;
@@ -68,7 +68,7 @@ namespace bbe {
 				return *this;
 			}
 
-			inline Person& operator=(Person&& other) {
+			inline Person& operator=(Person&& other) noexcept {
 				if (destructed)
 				{
 					debugBreak(); //Destructed Object got equal to other object
