@@ -13,6 +13,15 @@ static bool isBlockZero(void* ptr, size_t size)
 
 static std::vector<void*> storedBlocks[64]; // Can't be a bbe::List, because bbe::List depends on this allocator.
 static constexpr size_t BBE_PAGE_SIZE = 4096;
+static std::vector<void*> pages;
+
+void bbe::INTERNAL::alloc_cleanup()
+{
+	for (size_t i = 0; i < pages.size(); i++)
+	{
+		std::free(pages[i]);
+	}
+}
 
 static void checkBlockHealth()
 {
@@ -61,6 +70,7 @@ bbe::AllocBlock bbe::allocateBlock(size_t size)
 	if (size < BBE_PAGE_SIZE)
 	{
 		char* page = (char*)std::malloc(BBE_PAGE_SIZE);
+		pages.push_back(page);
 		if (!page) throw NullPointerException();
 #ifdef _DEBUG
 		memset(page, 0, BBE_PAGE_SIZE);
@@ -74,6 +84,7 @@ bbe::AllocBlock bbe::allocateBlock(size_t size)
 	else
 	{
 		void* ptr = std::malloc(size);
+		pages.push_back(ptr);
 		if (!ptr) throw NullPointerException();
 		return AllocBlock{ ptr , size };
 	}

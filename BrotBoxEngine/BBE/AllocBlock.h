@@ -3,6 +3,10 @@
 
 namespace bbe
 {
+	namespace INTERNAL
+	{
+		void alloc_cleanup();
+	}
 	struct AllocBlock
 	{
 		void* data = nullptr;

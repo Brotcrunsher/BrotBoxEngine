@@ -696,12 +696,12 @@ public:
 			static int previousI = 0;
 			if (previousI != i)
 			{
-				if (i == 0) assetStore::One()->play();
-				if (i == 1) assetStore::Two()->play();
+				if (i == 0) assetStore::One()  ->play();
+				if (i == 1) assetStore::Two()  ->play();
 				if (i == 2) assetStore::Three()->play();
-				if (i == 3) assetStore::Four()->play();
-				if (i == 4) assetStore::Five()->play();
-				if (i == 5) assetStore::Six()->play();
+				if (i == 3) assetStore::Four() ->play();
+				if (i == 4) assetStore::Five() ->play();
+				if (i == 5) assetStore::Six()  ->play();
 				if (i == 6) assetStore::Seven()->play();
 				if (i == 7) assetStore::Eight()->play();
 				previousI = i;

@@ -22,10 +22,10 @@ static bbe::List<ALuint> unusedBuffers;
 static bbe::List<ALuint> buffers;
 
 static bbe::WriterReaderBuffer<uint64_t, 1024> stopRequests;
-static bbe::ReaderAccess<uint64_t, 1024> stopRequestsReader = stopRequests.reader();
+static auto stopRequestsReader = stopRequests.reader();
 
 static bbe::WriterReaderBuffer<uint64_t, 1024> removedIds;
-static bbe::ReaderAccess<uint64_t, 1024> removedIdsReader = removedIds.reader();
+static auto removedIdsReader = removedIds.reader();
 
 struct ListenerData
 {
@@ -33,7 +33,7 @@ struct ListenerData
 	bbe::Vector3 dir = bbe::Vector3(0, 0, 1);
 };
 static bbe::WriterReaderBuffer<ListenerData, 1024> newListenerData;
-static bbe::ReaderAccess<ListenerData, 1024> newListenerDataReader = newListenerData.reader();
+static auto newListenerDataReader = newListenerData.reader();
 static ListenerData listener;
 static ListenerData listenerPrevious;
 
@@ -43,7 +43,7 @@ struct SetPositionRequest
 	bbe::Vector3 pos;
 };
 static bbe::WriterReaderBuffer<SetPositionRequest, 1024> setPositionRequests;
-static bbe::ReaderAccess<SetPositionRequest, 1024> setPositionRequestsReader = setPositionRequests.reader();
+static auto setPositionRequestsReader = setPositionRequests.reader();
 
 struct PlayRequest
 {
@@ -54,7 +54,7 @@ struct PlayRequest
 	float volume = 0.0f;
 };
 static bbe::WriterReaderBuffer<PlayRequest, 1024> playRequests;
-static bbe::ReaderAccess<PlayRequest, 1024> playRequestsReader = playRequests.reader();
+static auto playRequestsReader = playRequests.reader();
 
 static ALuint mainSource = 0;
 ALCdevice* device = nullptr;
