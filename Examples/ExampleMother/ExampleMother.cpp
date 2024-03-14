@@ -18,7 +18,6 @@
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Gamification, add a score how much time I needed to do all Now Tasks
 //TODO: Clipboard: It should be possible to add a title
-//TODO: Bug: Crashed when closing Chrome? Only happened once, not easily reproducable.
 //TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
 //TODO: bbe::String should have bbe::List<char>
 

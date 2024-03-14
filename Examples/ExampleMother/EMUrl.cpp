@@ -204,6 +204,7 @@ bbe::List<bbe::String> SubsystemUrl::getDomains()
 
 		CComVariant url;
 		edit->GetCurrentPropertyValue(UIA_ValueValuePropertyId, &url);
+		if (!url.bstrVal) continue;
 
 		bbe::String newElem = bbe::String(url.bstrVal).split("/")[0];
 		if (newElem.getLength() > 0
