@@ -3,6 +3,7 @@
 #include "BBE/SoundManager.h"
 #include "BBE/Exceptions.h"
 #include "BBE/Logging.h"
+#include "BBE/WriterReaderBuffer.h"
 #include <algorithm>
 #include <iostream>
 #include <mutex>
@@ -20,24 +21,30 @@ namespace bbe
 static bbe::List<ALuint> unusedBuffers;
 static bbe::List<ALuint> buffers;
 
-static std::mutex stopRequestsMutex;
-static bbe::List<uint64_t> stopRequests;
+static bbe::WriterReaderBuffer<uint64_t, 1024> stopRequests;
+static bbe::ReaderAccess<uint64_t, 1024> stopRequestsReader = stopRequests.reader();
 
-static std::mutex listenerMutex;
-static bbe::Vector3 listenerPos(0, 0, 0);
-static bbe::Vector3 listenerDirection(0, 0, 1);
-static bbe::Vector3 listenerPosPreviousBufferCalculation = listenerPos;
-static bbe::Vector3 listenerDirectionPreviousBufferCalculation = listenerDirection;
+static bbe::WriterReaderBuffer<uint64_t, 1024> removedIds;
+static bbe::ReaderAccess<uint64_t, 1024> removedIdsReader = removedIds.reader();
 
-static std::mutex setPositionRequestMutex;
+struct ListenerData
+{
+	bbe::Vector3 pos = bbe::Vector3(0, 0, 0);
+	bbe::Vector3 dir = bbe::Vector3(0, 0, 1);
+};
+static bbe::WriterReaderBuffer<ListenerData, 1024> newListenerData;
+static bbe::ReaderAccess<ListenerData, 1024> newListenerDataReader = newListenerData.reader();
+static ListenerData listener;
+static ListenerData listenerPrevious;
+
 struct SetPositionRequest
 {
 	uint64_t index = 0;
 	bbe::Vector3 pos;
 };
-static bbe::List<SetPositionRequest> setPositionRequests;
+static bbe::WriterReaderBuffer<SetPositionRequest, 1024> setPositionRequests;
+static bbe::ReaderAccess<SetPositionRequest, 1024> setPositionRequestsReader = setPositionRequests.reader();
 
-static std::mutex playRequestsMutex;
 struct PlayRequest
 {
 	uint64_t index = 0;
@@ -46,9 +53,11 @@ struct PlayRequest
 	bbe::Vector3 pos;
 	float volume = 0.0f;
 };
-static bbe::List<PlayRequest> playRequests;
+static bbe::WriterReaderBuffer<PlayRequest, 1024> playRequests;
+static bbe::ReaderAccess<PlayRequest, 1024> playRequestsReader = playRequests.reader();
 
 static ALuint mainSource = 0;
+ALCdevice* device = nullptr;
 static bool previouslyDied = false;
 
 static ALuint getNewBuffer()
@@ -97,14 +106,14 @@ struct SoundInstanceData
 				if (posAvailable)
 				{
 					bbe::Vector3 lerpedPos = bbe::Math::interpolateLinear(posPreviousLoad, pos, percentage);
-					bbe::Vector3 lerpedListenerPos = bbe::Math::interpolateLinear(listenerPosPreviousBufferCalculation, listenerPos, percentage);
+					bbe::Vector3 lerpedListenerPos = bbe::Math::interpolateLinear(listenerPrevious.pos, listener.pos, percentage);
 
 					bbe::Vector3 toListener = lerpedListenerPos - lerpedPos;
 					bbe::Vector2 toListener2d = bbe::Vector2(toListener.x, toListener.y);
 					bbe::Vector2 toListener2dNorm = toListener2d.normalize();
 
 					// TODO: Slerp instead?
-					bbe::Vector3 lerpedDirection = bbe::Math::interpolateLinear(listenerDirectionPreviousBufferCalculation, listenerDirection, percentage).normalize();
+					bbe::Vector3 lerpedDirection = bbe::Math::interpolateLinear(listenerPrevious.dir, listener.dir, percentage).normalize();
 
 					bbe::Vector2 listenerRight = bbe::Vector2(-lerpedDirection.y, lerpedDirection.x).normalize();
 
@@ -158,7 +167,6 @@ struct SoundInstanceData
 		return m_samples_loaded < m_psound->getAmountOfSamples();
 	}
 };
-static std::mutex playingSoundsMutex;
 static std::map<uint64_t, SoundInstanceData> playingSounds;
 
 static void destroySoundSystem()
@@ -230,8 +238,7 @@ static void loadAllBuffers()
 
 	alSourceQueueBuffers(mainSource, 1, &buffer);
 
-	listenerPosPreviousBufferCalculation = listenerPos;
-	listenerDirectionPreviousBufferCalculation = listenerDirection;
+	listenerPrevious = listener;
 }
 
 static void refreshBuffers()
@@ -259,7 +266,7 @@ static void refreshBuffers()
 
 static bool initSoundSystem()
 {
-	ALCdevice* device = alcOpenDevice(nullptr);
+	device = alcOpenDevice(nullptr);
 	if (!device)
 	{
 		BBELOGLN("Could not init Sound Manager! Device was null.");
@@ -283,7 +290,6 @@ static bool initSoundSystem()
 
 	alGenSources(1, &mainSource);
 	{
-		std::lock_guard<std::mutex> playingSoundsGuard(playingSoundsMutex);
 		for(size_t i = 0; i<2; i++) loadAllBuffers();
 	}
 	alSourcePlay(mainSource);
@@ -299,24 +305,22 @@ static bool initSoundSystem()
 
 static void updateSoundSystem()
 {
-	std::lock_guard<std::mutex> playingSoundsGuard(playingSoundsMutex);
 	{
-		std::lock_guard<std::mutex> guard(setPositionRequestMutex);
-		for (const SetPositionRequest& spr : setPositionRequests)
+		while(setPositionRequestsReader.hasNext())
 		{
+			const SetPositionRequest& spr = setPositionRequestsReader.next();
 			auto it = playingSounds.find(spr.index);
 			if (it != playingSounds.end())
 			{
 				it->second.pos = spr.pos;
 			}
 		}
-		setPositionRequests.clear();
 	}
 
 	{
-		std::lock_guard<std::mutex> guard(playRequestsMutex);
-		for (const PlayRequest& pr : playRequests)
+		while(playRequestsReader.hasNext())
 		{
+			const PlayRequest& pr = playRequestsReader.next();
 			SoundInstanceData sid;
 			sid.m_psound = pr.sound;
 			sid.m_volume = pr.volume;
@@ -325,13 +329,13 @@ static void updateSoundSystem()
 
 			playingSounds.insert({ pr.index, sid });
 		}
-		playRequests.clear();
 	}
 
 	for (auto it = playingSounds.begin(); it != playingSounds.end(); /*no inc*/)
 	{
 		if (!it->second.isPlaying() || it->second.readyForDelete)
 		{
+			removedIds.add(it->first);
 			playingSounds.erase(it++);
 		}
 		else
@@ -341,32 +345,31 @@ static void updateSoundSystem()
 	}
 
 	{
-		std::lock_guard<std::mutex> guard(stopRequestsMutex);
-		for (int64_t index : stopRequests)
+		while (stopRequestsReader.hasNext())
 		{
+			const int64_t& index = stopRequestsReader.next();
 			auto it = playingSounds.find(index);
 			if (it != playingSounds.end())
 			{
 				it->second.stopRequested = true;
 			}
 		}
-		stopRequests.clear();
 	}
 
-	std::lock_guard<std::mutex> guard(listenerMutex);
+	while (newListenerDataReader.hasNext())
+	{
+		listener = newListenerDataReader.next();
+	}
 	refreshBuffers();
 }
 
-static std::mutex endRequestedMutex;
-static bool endRequested = false;
+static std::atomic<bool> endRequested = false;
 static void requestEnd()
 {
-	std::lock_guard<std::mutex> guard(endRequestedMutex);
 	endRequested = true;
 }
 static bool isEndRequested()
 {
-	std::lock_guard<std::mutex> guard(endRequestedMutex);
 	return endRequested;
 }
 
@@ -400,6 +403,8 @@ static bbe::INTERNAL::SoundManager* m_pinstance = nullptr;
 // ***                                                                                                         ***
 // ***************************************************************************************************************
 
+static bbe::List<uint64_t> playingIds;
+
 bbe::INTERNAL::SoundManager* bbe::INTERNAL::SoundManager::getInstance()
 {
 	return m_pinstance;
@@ -424,37 +429,17 @@ bbe::INTERNAL::SoundManager::~SoundManager()
 
 void bbe::INTERNAL::SoundManager::stopSoundWithIndex(uint64_t index)
 {
-	std::lock_guard<std::mutex> guard(stopRequestsMutex);
 	stopRequests.add(index);
+	playingIds.removeSingle(index);
 }
 
 bool bbe::INTERNAL::SoundManager::isSoundWithIndexPlaying(uint64_t index)
 {
-	{
-		std::lock_guard<std::mutex> guard(stopRequestsMutex);
-		if (stopRequests.contains(index)) return false;
-	}
-	{
-		std::lock_guard<std::mutex> guard(playRequestsMutex);
-		for (size_t i = 0; i < playRequests.getLength(); i++)
-		{
-			if (playRequests[i].index == index) return true;
-		}
-	}
-	// TODO: Aquiring this lock is potentially quite expensive, because the sound thread is running constantly
-	std::lock_guard<std::mutex> guard(playingSoundsMutex);
-	auto it = playingSounds.find(index);
-	if (it != playingSounds.end())
-	{
-		SoundInstanceData& sid = it->second;
-		return sid.isPlaying() && !sid.stopRequested && !sid.readyForDelete;
-	}
-	return false;
+	return playingIds.contains(index);
 }
 
 void bbe::INTERNAL::SoundManager::setPosition(uint64_t index, const bbe::Vector3& pos)
 {
-	std::lock_guard<std::mutex> guard(setPositionRequestMutex);
 	setPositionRequests.add(SetPositionRequest{
 		index,
 		pos
@@ -463,15 +448,12 @@ void bbe::INTERNAL::SoundManager::setPosition(uint64_t index, const bbe::Vector3
 
 void bbe::INTERNAL::SoundManager::setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection)
 {
-	std::lock_guard<std::mutex> guard(listenerMutex);
-	listenerPos = pos;
-	listenerDirection = lookDirection;
+	newListenerData.add({ pos, lookDirection });
 }
 
 size_t bbe::INTERNAL::SoundManager::getAmountOfPlayingSounds() const
 {
-	std::lock_guard<std::mutex> playingSoundsGuard(playingSoundsMutex);
-	return playingSounds.size();
+	return playingIds.getLength();
 }
 
 void bbe::INTERNAL::SoundManager::update()
@@ -481,6 +463,10 @@ void bbe::INTERNAL::SoundManager::update()
 #else
 	// Do nothing, the thread updates itself.
 #endif
+	while (removedIdsReader.hasNext())
+	{
+		playingIds.removeSingle(removedIdsReader.next());
+	}
 }
 
 void bbe::INTERNAL::SoundManager::init()
@@ -506,16 +492,15 @@ bbe::SoundInstance bbe::INTERNAL::SoundManager::play(const SoundDataSource& soun
 {
 	uint64_t index = getNextIndex();
 
-	{
-		std::lock_guard<std::mutex> guard(playRequestsMutex);
-		playRequests.add(PlayRequest{
-			index,
-			&sound,
-			pos != nullptr,
-			pos != nullptr ? *pos : bbe::Vector3(),
-			volume
-			});
-	}
+	playRequests.add(PlayRequest{
+		index,
+		&sound,
+		pos != nullptr,
+		pos != nullptr ? *pos : bbe::Vector3(),
+		volume
+		});
+
+	playingIds.add(index);
 
 	return SoundInstance(index);
 }
