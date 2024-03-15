@@ -4,6 +4,7 @@
 #include "BBE/Logging.h"
 #include <cstdlib>
 #include <vector>
+#include <array>
 
 static bool isBlockZero(void* ptr, size_t size)
 {
@@ -11,15 +12,20 @@ static bool isBlockZero(void* ptr, size_t size)
 	return cptr[0] == 0 && !memcmp(cptr, cptr + 1, size - 1);
 }
 
-static std::vector<void*> storedBlocks[64]; // Can't be a bbe::List, because bbe::List depends on this allocator.
+static std::array<std::vector<void*>, 64> storedBlocks; // Can't be a bbe::List, because bbe::List depends on this allocator.
 static constexpr size_t BBE_PAGE_SIZE = 4096;
-static std::vector<void*> pages;
+static bool allocatorShutdown = false;
 
-void bbe::INTERNAL::alloc_cleanup()
+void bbe::INTERNAL::allocCleanup()
 {
-	for (size_t i = 0; i < pages.size(); i++)
+	allocatorShutdown = true;
+	for (size_t i = 0; i < storedBlocks.size(); i++)
 	{
-		std::free(pages[i]);
+		for (size_t k = 0; k < storedBlocks[i].size(); k++)
+		{
+			std::free(storedBlocks[i][k]);
+		}
+		storedBlocks[i].clear();
 	}
 }
 
@@ -67,39 +73,28 @@ bbe::AllocBlock bbe::allocateBlock(size_t size)
 		return AllocBlock{ addr, size };
 	}
 
-	if (size < BBE_PAGE_SIZE)
-	{
-		char* page = (char*)std::malloc(BBE_PAGE_SIZE);
-		pages.push_back(page);
-		if (!page) throw NullPointerException();
-#ifdef _DEBUG
-		memset(page, 0, BBE_PAGE_SIZE);
-#endif
-		for (size_t i = 1; i < BBE_PAGE_SIZE / size; i++)
-		{
-			storedBlocks[access].push_back(page + i * size);
-		}
-		return AllocBlock{ page , size };
-	}
-	else
-	{
-		void* ptr = std::malloc(size);
-		pages.push_back(ptr);
-		if (!ptr) throw NullPointerException();
-		return AllocBlock{ ptr , size };
-	}
+	void* ptr = std::malloc(size);
+	if (!ptr) throw NullPointerException();
+	return AllocBlock{ ptr , size };
 }
 
 void bbe::freeBlock(AllocBlock& block)
 {
-	checkBlockHealth();
-	if (block.data == nullptr || block.size == 0) return;
+	if (allocatorShutdown)
+	{
+		std::free(block.data);
+	}
+	else
+	{
+		checkBlockHealth();
+		if (block.data == nullptr || block.size == 0) return;
 
-	auto access = bbe::Math::log2Floor(block.size);
-	storedBlocks[access].push_back(block.data);
+		auto access = bbe::Math::log2Floor(block.size);
+		storedBlocks[access].push_back(block.data);
 #ifdef _DEBUG
-	memset(block.data, 0, block.size);
+		memset(block.data, 0, block.size);
 #endif
+	}
 
 	block.data = nullptr;
 	block.size = 0;

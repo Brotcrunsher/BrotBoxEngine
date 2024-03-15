@@ -5,7 +5,7 @@ namespace bbe
 {
 	namespace INTERNAL
 	{
-		void alloc_cleanup();
+		void allocCleanup();
 	}
 	struct AllocBlock
 	{

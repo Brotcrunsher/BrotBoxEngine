@@ -237,7 +237,7 @@ void bbe::Game::shutdown()
 #ifndef BBE_NO_AUDIO
 	m_soundManager.destroy();
 #endif
-	bbe::INTERNAL::alloc_cleanup();
+	INTERNAL::allocCleanup();
 }
 
 void bbe::Game::setExternallyManaged(bool managed)
