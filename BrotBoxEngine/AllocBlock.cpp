@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <vector>
 #include <array>
+#include <mutex>
 
 static bool isBlockZero(void* ptr, size_t size)
 {
@@ -15,9 +16,11 @@ static bool isBlockZero(void* ptr, size_t size)
 static std::array<std::vector<void*>, 64> storedBlocks; // Can't be a bbe::List, because bbe::List depends on this allocator.
 static constexpr size_t BBE_PAGE_SIZE = 4096;
 static bool allocatorShutdown = false;
+static std::mutex mutex;
 
 void bbe::INTERNAL::allocCleanup()
 {
+	std::lock_guard<std::mutex> guard(mutex);
 	allocatorShutdown = true;
 	for (size_t i = 0; i < storedBlocks.size(); i++)
 	{
@@ -32,13 +35,12 @@ void bbe::INTERNAL::allocCleanup()
 static void checkBlockHealth()
 {
 #ifdef _DEBUG
-	void* block = nullptr;
-	for (int i = 0; i < 64; i++)
+	for (size_t i = 0; i < storedBlocks.size(); i++)
 	{
 		const size_t size = (((size_t)1) << (i));
 		for (size_t k = 0; k < storedBlocks[i].size(); k++)
 		{
-			block = storedBlocks[i][k];
+			void* block = storedBlocks[i][k];
 			if (!isBlockZero(block, size))
 			{
 				throw bbe::IllegalStateException();
@@ -50,6 +52,7 @@ static void checkBlockHealth()
 
 bbe::AllocBlock bbe::allocateBlock(size_t size)
 {
+	std::lock_guard<std::mutex> guard(mutex);
 	checkBlockHealth();
 	if (size == 0) return AllocBlock{ nullptr, 0 };
 
@@ -80,6 +83,7 @@ bbe::AllocBlock bbe::allocateBlock(size_t size)
 
 void bbe::freeBlock(AllocBlock& block)
 {
+	std::lock_guard<std::mutex> guard(mutex);
 	if (allocatorShutdown)
 	{
 		std::free(block.data);

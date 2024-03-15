@@ -13,12 +13,14 @@ namespace bbe
 		explicit n(const char* msg)	                \
 			: m_msg(msg)							\
 		{                                           \
+			__debugbreak();                         \
 			std::cout << #n << std::endl;           \
 			std::cout << msg << std::endl;          \
 		}											\
 													\
 		n()					                        \
 		{                                           \
+			__debugbreak();                         \
 			std::cout << #n << std::endl;           \
 		}											\
 													\
