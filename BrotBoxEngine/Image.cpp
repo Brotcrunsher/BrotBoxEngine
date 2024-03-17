@@ -200,7 +200,12 @@ bbe::Color bbe::Image::getPixel(size_t x, size_t y) const
 	
 }
 
-void bbe::Image::setPixel(size_t x, size_t y, Color c)
+void bbe::Image::setPixel(const bbe::Vector2i& pos, const bbe::Color& c)
+{
+	setPixel(pos.x, pos.y, c);
+}
+
+void bbe::Image::setPixel(size_t x, size_t y, const bbe::Color& c)
 {
 	if (!isLoadedCpu())
 	{
@@ -224,6 +229,8 @@ void bbe::Image::setPixel(size_t x, size_t y, Color c)
 	default:
 		throw FormatNotSupportedException();
 	}
+
+	m_prendererData = nullptr;
 }
 
 size_t bbe::Image::getIndexForRawAccess(size_t x, size_t y) const
@@ -356,6 +363,38 @@ HICON bbe::Image::toIcon() const
 }
 #endif
 
+static void floodFillStep(bbe::Image& image, bbe::List<bbe::Vector2i>& posToCheck, const bbe::Vector2i& pos, const bbe::Color& from, const bbe::Color& to)
+{
+	if (pos.x < 0 || pos.x >= image.getWidth() || pos.y < 0 || pos.y >= image.getHeight()) return;
+	if (image.getPixel(pos) != from) return;
+	image.setPixel(pos, to);
+	posToCheck.add(pos);
+}
+
+void bbe::Image::floodFill(const bbe::Vector2i& pos, const bbe::Color& to, bool fillDiagonal)
+{
+	const bbe::Color from = getPixel(pos);
+	if (from == to) return;
+	bbe::List<bbe::Vector2i> posToCheck;
+	floodFillStep(*this, posToCheck, pos, from, to);
+
+	while (posToCheck.getLength() > 0)
+	{
+		const bbe::Vector2i pos = posToCheck.popBack();
+		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x + 1, pos.y), from, to);
+		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x - 1, pos.y), from, to);
+		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x, pos.y + 1), from, to);
+		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x, pos.y - 1), from, to);
+		if (fillDiagonal)
+		{
+			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x + 1, pos.y + 1), from, to);
+			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x - 1, pos.y + 1), from, to);
+			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x + 1, pos.y - 1), from, to);
+			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x - 1, pos.y - 1), from, to);
+		}
+	}
+}
+
 #ifdef _WIN32
 bbe::Image bbe::Image::screenshot(int x, int y, int width, int height)
 {
@@ -410,6 +449,11 @@ bbe::Image bbe::Image::screenshot(int x, int y, int width, int height)
 bool bbe::Image::isLoadedCpu() const
 {
 	return m_pdata.getLength() > 0;
+}
+
+bbe::Color bbe::Image::getPixel(const bbe::Vector2i& pos) const
+{
+	return getPixel(pos.x, pos.y);
 }
 
 bool bbe::Image::isLoadedGpu() const

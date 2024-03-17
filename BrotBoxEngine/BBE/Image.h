@@ -111,8 +111,10 @@ namespace bbe
 		size_t getSizeInBytes() const;
 		size_t getAmountOfChannels() const;
 		size_t getBytesPerChannel() const;
+		Color getPixel(const bbe::Vector2i& pos) const;
 		Color getPixel(size_t x, size_t y) const;
-		void setPixel(size_t x, size_t y, Color c);
+		void setPixel(const bbe::Vector2i& pos, const bbe::Color& c);
+		void setPixel(size_t x, size_t y, const Color& c);
 		size_t getIndexForRawAccess(size_t x, size_t y) const;
 
 		ImageRepeatMode getRepeatMode() const;
@@ -124,6 +126,8 @@ namespace bbe
 		bool isLoadedCpu() const;
 		bool isLoadedGpu() const;
 		void keepAfterUpload();
+
+		void floodFill(const bbe::Vector2i& pos, const bbe::Color& to, bool fillDiagonal = false);
 
 #ifdef _WIN32
 		HICON toIcon() const;
