@@ -9,6 +9,45 @@
 namespace bbe
 {
 	template<typename T>
+	class GridIterator_t
+	{
+	private:
+		T current;
+		T end;
+		bool hasMore = true;
+
+	public:
+		GridIterator_t(const bbe::Vector2& current, const bbe::Vector2& end) : current(current), end(end) {}
+
+		bool hasNext() const
+		{
+			return hasMore;
+		}
+
+		bbe::Vector2i next()
+		{
+			bbe::Vector2i retVal = current.as<int32_t>();
+			if (retVal == end.as<int32_t>())
+			{
+				hasMore = false;
+				return retVal;
+			}
+			T dir = (end - current);
+			float dist = dir.getLength();
+			if (dist <= 1.0f)
+			{
+				current = end;
+				return retVal;
+			}
+			dir /= dist;
+			current += dir;
+			if (current.as<int32_t>() == retVal) current += dir;
+			return retVal;
+		}
+	};
+	using GridIterator = GridIterator_t<bbe::Vector2>;
+
+	template<typename T>
 	class Grid
 	{
 	private:
