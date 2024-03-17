@@ -306,7 +306,7 @@ public:
 		const bbe::TimePoint qualifyingDate = bbe::TimePoint::fromDate(2023, bbe::Month::NOVEMBER, 22);
 		const bbe::Duration timeSinceQualifyingDate = bbe::TimePoint() - qualifyingDate;
 		int32_t daysSinceQualifyingDate = timeSinceQualifyingDate.toDays();
-		if (daysSinceQualifyingDate > 120) daysSinceQualifyingDate = 120;
+		if (daysSinceQualifyingDate > 180) daysSinceQualifyingDate = 180;
 
 		return bbe::TimePoint::todayAt(23, 59 - daysSinceQualifyingDate);
 	}
