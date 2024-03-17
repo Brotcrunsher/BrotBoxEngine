@@ -96,14 +96,17 @@ namespace bbe
 		bool isFocused() const;
 		bool isHovered() const;
 
-		bool isMouseDown(bbe::MouseButton button);
-		bool isMouseUp(bbe::MouseButton button);
-		bool wasMouseDownLastFrame(bbe::MouseButton button);
-		bool wasMouseUpLastFrame(bbe::MouseButton button);
-		bool isMousePressed(bbe::MouseButton button);
+		bool isMouseDown(bbe::MouseButton button) const;
+		bool isMouseUp(bbe::MouseButton button) const;
+		bool wasMouseDownLastFrame(bbe::MouseButton button) const;
+		bool wasMouseUpLastFrame(bbe::MouseButton button) const;
+		bool isMousePressed(bbe::MouseButton button) const;
 		float getMouseX() const;
 		float getMouseY() const;
 		Vector2 getMouse() const;
+		float getMouseXPrevious() const;
+		float getMouseYPrevious() const;
+		Vector2 getMousePrevious() const;
 		float getMouseXGlobal() const;
 		float getMouseYGlobal() const;
 		Vector2 getMouseGlobal() const;

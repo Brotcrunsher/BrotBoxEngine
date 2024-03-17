@@ -2,7 +2,7 @@
 #include "BBE/Vector2.h"
 #include "BBE/Exceptions.h"
 
-bool bbe::Mouse::isButtonDown(bbe::MouseButton button)
+bool bbe::Mouse::isButtonDown(bbe::MouseButton button) const
 {
 	if (!isMouseButtonValid(button))
 	{
@@ -11,7 +11,7 @@ bool bbe::Mouse::isButtonDown(bbe::MouseButton button)
 	return m_pButtonsThisFrame[(int)button];
 }
 
-bool bbe::Mouse::isButtonUp(bbe::MouseButton button)
+bool bbe::Mouse::isButtonUp(bbe::MouseButton button) const
 {
 	if (!isMouseButtonValid(button))
 	{
@@ -20,7 +20,7 @@ bool bbe::Mouse::isButtonUp(bbe::MouseButton button)
 	return !m_pButtonsThisFrame[(int)button];
 }
 
-bool bbe::Mouse::wasButtonDownLastFrame(bbe::MouseButton button)
+bool bbe::Mouse::wasButtonDownLastFrame(bbe::MouseButton button) const
 {
 	if (!isMouseButtonValid(button))
 	{
@@ -29,7 +29,7 @@ bool bbe::Mouse::wasButtonDownLastFrame(bbe::MouseButton button)
 	return m_pButtonsLastFrame[(int)button];
 }
 
-bool bbe::Mouse::wasButtonUpLastFrame(bbe::MouseButton button)
+bool bbe::Mouse::wasButtonUpLastFrame(bbe::MouseButton button) const
 {
 	if (!isMouseButtonValid(button))
 	{
@@ -38,7 +38,7 @@ bool bbe::Mouse::wasButtonUpLastFrame(bbe::MouseButton button)
 	return !m_pButtonsLastFrame[(int)button];
 }
 
-bool bbe::Mouse::isButtonPressed(bbe::MouseButton button)
+bool bbe::Mouse::isButtonPressed(bbe::MouseButton button) const
 {
 	if (!isMouseButtonValid(button))
 	{
@@ -121,6 +121,16 @@ float bbe::Mouse::getMouseY() const
 bbe::Vector2 bbe::Mouse::getMouse() const
 {
 	return Vector2(getMouseX(), getMouseY());
+}
+
+float bbe::Mouse::getMouseXPrevious() const
+{
+	return m_mouseLastFrameX;
+}
+
+float bbe::Mouse::getMouseYPrevious() const
+{
+	return m_mouseLastFrameY;
 }
 
 float bbe::Mouse::getMouseXGlobal() const

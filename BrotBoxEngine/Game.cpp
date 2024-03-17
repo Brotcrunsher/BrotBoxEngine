@@ -280,27 +280,27 @@ bool bbe::Game::isHovered() const
 	return m_pwindow->isHovered();
 }
 
-bool bbe::Game::isMouseDown(bbe::MouseButton button)
+bool bbe::Game::isMouseDown(bbe::MouseButton button) const
 {
 	return m_pwindow->INTERNAL_mouse.isButtonDown(button);
 }
 
-bool bbe::Game::isMouseUp(bbe::MouseButton button)
+bool bbe::Game::isMouseUp(bbe::MouseButton button) const
 {
 	return m_pwindow->INTERNAL_mouse.isButtonUp(button);
 }
 
-bool bbe::Game::wasMouseDownLastFrame(bbe::MouseButton button)
+bool bbe::Game::wasMouseDownLastFrame(bbe::MouseButton button) const
 {
 	return m_pwindow->INTERNAL_mouse.wasButtonDownLastFrame(button);
 }
 
-bool bbe::Game::wasMouseUpLastFrame(bbe::MouseButton button)
+bool bbe::Game::wasMouseUpLastFrame(bbe::MouseButton button) const
 {
 	return m_pwindow->INTERNAL_mouse.wasButtonUpLastFrame(button);
 }
 
-bool bbe::Game::isMousePressed(bbe::MouseButton button)
+bool bbe::Game::isMousePressed(bbe::MouseButton button) const
 {
 	return m_pwindow->INTERNAL_mouse.isButtonPressed(button);
 }
@@ -318,6 +318,21 @@ float bbe::Game::getMouseY() const
 bbe::Vector2 bbe::Game::getMouse() const
 {
 	return Vector2(getMouseX(), getMouseY());
+}
+
+float bbe::Game::getMouseXPrevious() const
+{
+	return (float)(m_pwindow->INTERNAL_mouse.getMouseXPrevious());
+}
+
+float bbe::Game::getMouseYPrevious() const
+{
+	return (float)(m_pwindow->INTERNAL_mouse.getMouseYPrevious());
+}
+
+bbe::Vector2 bbe::Game::getMousePrevious() const
+{
+	return Vector2(getMouseXPrevious(), getMouseYPrevious());
 }
 
 float bbe::Game::getMouseXGlobal() const

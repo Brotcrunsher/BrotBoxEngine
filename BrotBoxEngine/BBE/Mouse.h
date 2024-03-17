@@ -42,6 +42,9 @@ namespace bbe
 		float getMouseY() const;
 		Vector2 getMouse() const;
 
+		float getMouseXPrevious() const;
+		float getMouseYPrevious() const;
+
 		float getMouseXGlobal() const;
 		float getMouseYGlobal() const;
 		Vector2 getMouseGlobal() const;
@@ -54,13 +57,13 @@ namespace bbe
 		float getMouseYDelta();
 		Vector2 getMouseDelta();
 
-		bool isButtonDown(bbe::MouseButton button);
-		bool isButtonUp(bbe::MouseButton button);
+		bool isButtonDown(bbe::MouseButton button) const;
+		bool isButtonUp(bbe::MouseButton button) const;
 
-		bool wasButtonDownLastFrame(bbe::MouseButton button);
-		bool wasButtonUpLastFrame(bbe::MouseButton button);
+		bool wasButtonDownLastFrame(bbe::MouseButton button) const;
+		bool wasButtonUpLastFrame(bbe::MouseButton button) const;
 
-		bool isButtonPressed(bbe::MouseButton button);
+		bool isButtonPressed(bbe::MouseButton button) const;
 
 		void INTERNAL_moveMouse(float x, float y);
 		void INTERNAL_press(MouseButton button);
