@@ -25,6 +25,9 @@ namespace bbe
 		constexpr Color(float r, float g, float b, float a)
 			: r(r), g(g), b(b), a(a)
 		{}
+		constexpr Color(const float* arr)
+			: r(arr[0]), g(arr[1]), b(arr[2]), a(arr[3])
+		{}
 
 		static Color white();
 
