@@ -20,7 +20,18 @@ bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	if (image.getFilterMode() == bbe::ImageFilterMode::LINEAR)
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	}
+	else if (image.getFilterMode() == bbe::ImageFilterMode::NEAREST)
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
+	else
+	{
+		throw bbe::IllegalStateException();
+	}
 
 	
 	// TODO This might break if the image decoder has a different row alignment than 1.
