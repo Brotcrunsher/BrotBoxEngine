@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include "../BBE/UtilDebug.h"
 
 namespace bbe
 {
@@ -13,14 +14,14 @@ namespace bbe
 		explicit n(const char* msg)	                \
 			: m_msg(msg)							\
 		{                                           \
-			__debugbreak();                         \
+			bbe::debugBreak();                      \
 			std::cout << #n << std::endl;           \
 			std::cout << msg << std::endl;          \
 		}											\
 													\
 		n()					                        \
 		{                                           \
-			__debugbreak();                         \
+			bbe::debugBreak();                      \
 			std::cout << #n << std::endl;           \
 		}											\
 													\
