@@ -51,9 +51,9 @@ class MyGame : public bbe::Game
 		offset += (mouseAfterZoom - mouseBeforeZoom) * zoomLevel;
 	}
 
-	bbe::Color getMouseColor() const
+	bbe::Colori getMouseColor() const
 	{
-		return isMouseDown(bbe::MouseButton::LEFT) ? bbe::Color(leftColor) : bbe::Color(rightColor);
+		return isMouseDown(bbe::MouseButton::LEFT) ? bbe::Color(leftColor).asByteColor() : bbe::Color(rightColor).asByteColor();
 	}
 
 	virtual void onStart() override

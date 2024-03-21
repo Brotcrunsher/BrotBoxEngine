@@ -180,7 +180,7 @@ size_t bbe::Image::getBytesPerChannel() const
 	}
 }
 
-bbe::Color bbe::Image::getPixel(size_t x, size_t y) const
+bbe::Colori bbe::Image::getPixel(size_t x, size_t y) const
 {
 	if (!isLoadedCpu())
 	{
@@ -191,21 +191,21 @@ bbe::Color bbe::Image::getPixel(size_t x, size_t y) const
 	switch(m_format)
 	{
 	case ImageFormat::R8:
-		return Color(m_pdata[index] / 255.f, m_pdata[index] / 255.f, m_pdata[index] / 255.f, 1.0f);
+		return Colori(m_pdata[index], m_pdata[index], m_pdata[index], 255);
 	case ImageFormat::R8G8B8A8:
-		return Color(m_pdata[index] / 255.f, m_pdata[index + 1] / 255.f, m_pdata[index + 2] / 255.f, m_pdata[index + 3] / 255.f);
+		return Colori(m_pdata[index], m_pdata[index + 1], m_pdata[index + 2], m_pdata[index + 3]);
 	default:
 		throw FormatNotSupportedException();
 	}
 	
 }
 
-void bbe::Image::setPixel(const bbe::Vector2i& pos, const bbe::Color& c)
+void bbe::Image::setPixel(const bbe::Vector2i& pos, const bbe::Colori& c)
 {
 	setPixel(pos.x, pos.y, c);
 }
 
-void bbe::Image::setPixel(size_t x, size_t y, const bbe::Color& c)
+void bbe::Image::setPixel(size_t x, size_t y, const bbe::Colori& c)
 {
 	if (!isLoadedCpu())
 	{
@@ -216,15 +216,15 @@ void bbe::Image::setPixel(size_t x, size_t y, const bbe::Color& c)
 	switch (m_format)
 	{
 	case ImageFormat::R8:
-		m_pdata[index + 0] = c.r * 255.f;
-		m_pdata[index + 1] = c.r * 255.f;
-		m_pdata[index + 2] = c.r * 255.f;
+		m_pdata[index + 0] = c.r;
+		m_pdata[index + 1] = c.r;
+		m_pdata[index + 2] = c.r;
 		break;
 	case ImageFormat::R8G8B8A8:
-		m_pdata[index + 0] = c.r * 255.f;
-		m_pdata[index + 1] = c.g * 255.f;
-		m_pdata[index + 2] = c.b * 255.f;
-		m_pdata[index + 3] = c.a * 255.f;
+		m_pdata[index + 0] = c.r;
+		m_pdata[index + 1] = c.g;
+		m_pdata[index + 2] = c.b;
+		m_pdata[index + 3] = c.a;
 		break;
 	default:
 		throw FormatNotSupportedException();
@@ -333,16 +333,12 @@ HICON bbe::Image::toIcon() const
 	{
 		for (DWORD y = 0; y < iconHeight; y++)
 		{
-			const Color c = getPixel(x, y);
-			const byte r = c.r * 255;
-			const byte g = c.g * 255;
-			const byte b = c.b * 255;
-			const byte a = c.a * 255;
+			const Colori c = getPixel(x, y);
 
-			*lpdwPixel  = b;
-			*lpdwPixel |= g << 8;
-			*lpdwPixel |= r << 16;
-			*lpdwPixel |= a << 24;
+			*lpdwPixel  = c.b;
+			*lpdwPixel |= c.g << 8;
+			*lpdwPixel |= c.r << 16;
+			*lpdwPixel |= c.a << 24;
 
 			lpdwPixel++;
 		}
@@ -363,7 +359,7 @@ HICON bbe::Image::toIcon() const
 }
 #endif
 
-static void floodFillStep(bbe::Image& image, bbe::List<bbe::Vector2i>& posToCheck, const bbe::Vector2i& pos, const bbe::Color& from, const bbe::Color& to)
+static void floodFillStep(bbe::Image& image, bbe::List<bbe::Vector2i>& posToCheck, const bbe::Vector2i& pos, const bbe::Colori& from, const bbe::Colori& to)
 {
 	if (pos.x < 0 || pos.x >= image.getWidth() || pos.y < 0 || pos.y >= image.getHeight()) return;
 	if (image.getPixel(pos) != from) return;
@@ -371,9 +367,9 @@ static void floodFillStep(bbe::Image& image, bbe::List<bbe::Vector2i>& posToChec
 	posToCheck.add(pos);
 }
 
-void bbe::Image::floodFill(const bbe::Vector2i& pos, const bbe::Color& to, bool fillDiagonal)
+void bbe::Image::floodFill(const bbe::Vector2i& pos, const bbe::Colori& to, bool fillDiagonal)
 {
-	const bbe::Color from = getPixel(pos);
+	const bbe::Colori from = getPixel(pos);
 	if (from == to) return;
 	bbe::List<bbe::Vector2i> posToCheck;
 	floodFillStep(*this, posToCheck, pos, from, to);
@@ -451,7 +447,7 @@ bool bbe::Image::isLoadedCpu() const
 	return m_pdata.getLength() > 0;
 }
 
-bbe::Color bbe::Image::getPixel(const bbe::Vector2i& pos) const
+bbe::Colori bbe::Image::getPixel(const bbe::Vector2i& pos) const
 {
 	return getPixel(pos.x, pos.y);
 }

@@ -16,7 +16,9 @@
 
 namespace bbe
 {
-	class Color;
+	template<typename T, T maxValue>
+	class Color_t;
+	using Color = Color_t<float, 1.0f>;
 	namespace INTERNAL
 	{
 		namespace vulkan

@@ -17,7 +17,9 @@ namespace bbe
 	class PrimitiveBrush2D;
 	class PrimitiveBrush3D;
 	class FragmentShader;
-	class Color;
+	template<typename T, T maxValue>
+	class Color_t;
+	using Color = Color_t<float, 1.0f>;
 	template<typename Vec> class Rectangle_t;
 	using Rectangle = Rectangle_t<bbe::Vector2>;
 	class Cube;
