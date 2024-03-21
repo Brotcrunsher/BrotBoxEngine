@@ -1,11 +1,8 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
+#include <Windows.h>
 
 // TODO: Proper GUI
-// TODO: Save
-// TODO: Load
-// TODO: View menu that allows you to tile draw or hide the grid when zoomed in
-// TODO: "New..."
 // TODO: Layers
 // TODO: Text
 // TODO: Copy from Paint to clipboard
@@ -14,6 +11,7 @@
 class MyGame : public bbe::Game
 {
 	bbe::Vector2 offset;
+	bbe::String path;
 	bbe::Image canvas;
 	float zoomLevel = 1.f;
 
@@ -24,20 +22,36 @@ class MyGame : public bbe::Game
 	constexpr static int32_t MODE_FLOOD_FILL = 1;
 	int32_t mode = MODE_BRUSH;
 
+	bool drawGridLines = true;
+	bool tiled = false;
+
 	void resetCamera()
 	{
 		offset = bbe::Vector2(getWindowWidth() / 2 - canvas.getWidth() / 2, getWindowHeight() / 2 - canvas.getHeight() / 2);
 		zoomLevel = 1.f;
 	}
 
-	void newCanvas(uint32_t width, uint32_t height)
+	void setupCanvas()
 	{
-		canvas = bbe::Image(width, height, bbe::Color::white());
 		canvas.keepAfterUpload();
 		canvas.setFilterMode(bbe::ImageFilterMode::NEAREST);
 		resetCamera();
 	}
 
+	void newCanvas(uint32_t width, uint32_t height)
+	{
+		canvas = bbe::Image(width, height, bbe::Color::white());
+		this->path = "";
+		setupCanvas();
+	}
+
+	void newCanvas(const char* path)
+	{
+		canvas = bbe::Image(path);
+		this->path = path;
+		setupCanvas();
+	}
+	
 	bbe::Vector2 screenToCanvas(const bbe::Vector2& pos)
 	{
 		return (pos - offset) / zoomLevel;
@@ -102,8 +116,11 @@ class MyGame : public bbe::Game
 				while (gi.hasNext())
 				{
 					bbe::Vector2 coord = screenToCanvas(gi.next().as<float>());
-					coord.x = bbe::Math::mod<float>(coord.x, canvas.getWidth());
-					coord.y = bbe::Math::mod<float>(coord.y, canvas.getHeight());
+					if (tiled)
+					{
+						coord.x = bbe::Math::mod<float>(coord.x, canvas.getWidth());
+						coord.y = bbe::Math::mod<float>(coord.y, canvas.getHeight());
+					}
 					if (coord.x >= 0 && coord.y >= 0 && coord.x < canvas.getWidth() && coord.y < canvas.getHeight())
 					{
 						canvas.setPixel(coord.x, coord.y, getMouseColor());
@@ -123,6 +140,13 @@ class MyGame : public bbe::Game
 		if (isMouseDown(bbe::MouseButton::MIDDLE))
 		{
 			offset += getMouseDelta();
+			if (tiled)
+			{
+				if (offset.x < 0) offset.x += canvas.getWidth() * zoomLevel;
+				if (offset.y < 0) offset.y += canvas.getHeight() * zoomLevel;
+				if (offset.x > canvas.getWidth() * zoomLevel) offset.x -= canvas.getWidth() * zoomLevel;
+				if (offset.y > canvas.getHeight() * zoomLevel) offset.y -= canvas.getHeight() * zoomLevel;
+			}
 		}
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
@@ -134,15 +158,15 @@ class MyGame : public bbe::Game
 		ImGui::ColorEdit4("Right Color", rightColor);
 		ImGui::bbe::combo("Mode", { "Brush", "Flood fill" }, mode);
 
-		constexpr int32_t repeats = 0;
+		const int32_t repeats = tiled ? 20 : 0;
 		for (int32_t i = -repeats; i <= repeats; i++)
 		{
 			for (int32_t k = -repeats; k <= repeats; k++)
 			{
-				brush.drawImage(offset.x + i * canvas.getWidth(), offset.y + k * canvas.getHeight(), canvas.getWidth() * zoomLevel, canvas.getHeight() * zoomLevel, canvas);
+				brush.drawImage(offset.x + i * canvas.getWidth() * zoomLevel, offset.y + k * canvas.getHeight() * zoomLevel, canvas.getWidth() * zoomLevel, canvas.getHeight() * zoomLevel, canvas);
 			}
 		}
-		if (zoomLevel > 3)
+		if (zoomLevel > 3 && drawGridLines)
 		{
 			bbe::Vector2 zeroPos = screenToCanvas({ 0, 0 });
 			brush.setColorRGB(0.5f, 0.5f, 0.5f, 0.5f);
@@ -155,7 +179,93 @@ class MyGame : public bbe::Game
 				brush.fillLine(0, i, getWindowWidth(), i);
 			}
 		}
+
+		// HACK: We can only open popups if we are in the same ID Stack. See: https://github.com/ocornut/imgui/issues/331
+		bool openNewCanvas = false;
+		if (ImGui::BeginMainMenuBar())
+		{
+			if (ImGui::BeginMenu("Menu"))
+			{
+				if (ImGui::MenuItem("New..."))
+				{
+					openNewCanvas = true;
+				}
+				if (ImGui::MenuItem("Open..."))
+				{
+					if (bbe::simpleFile::showOpenDialog(path))
+					{
+						newCanvas(path.getRaw());
+					}
+				}
+				if (ImGui::MenuItem("Save"))
+				{
+					if (path.isEmpty())
+					{
+						bbe::simpleFile::showSaveDialog(path, "png");
+					}
+					if (!path.isEmpty())
+					{
+						canvas.writeToFile(path);
+					}
+				}
+				if (ImGui::MenuItem("Save As..."))
+				{
+					if (bbe::simpleFile::showSaveDialog(path, "png"))
+					{
+						canvas.writeToFile(path);
+					}
+				}
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("View"))
+			{
+				if (ImGui::MenuItem("Draw Grid Lines", nullptr, drawGridLines))
+				{
+					drawGridLines = !drawGridLines;
+				}
+				if (ImGui::MenuItem("Tiled", nullptr, tiled))
+				{
+					tiled = !tiled;
+				}
+				ImGui::EndMenu();
+			}
+			ImGui::EndMainMenuBar();
+		}
+
+		// Always center this window when appearing
+		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+		static int newWidth = 0;
+		static int newHeight = 0;
+		if (openNewCanvas)
+		{
+			ImGui::OpenPopup("New Canvas");
+			newWidth = canvas.getWidth();
+			newHeight = canvas.getHeight();
+		}
+		if (ImGui::BeginPopupModal("New Canvas", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::InputInt("Width", &newWidth);
+			ImGui::SameLine();
+			ImGui::InputInt("Height", &newHeight);
+			if (ImGui::Button("OK", ImVec2(120, 0)))
+			{
+				newCanvas(newWidth, newHeight);
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
+		ImGui::ShowDemoWindow();
 	}
+
 	virtual void onEnd() override
 	{
 	}

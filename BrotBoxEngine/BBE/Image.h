@@ -129,6 +129,9 @@ namespace bbe
 
 		void floodFill(const bbe::Vector2i& pos, const bbe::Colori& to, bool fillDiagonal = false);
 
+		void writeToFile(const bbe::String& path) const;
+		void writeToFile(const char* path) const;
+
 #ifdef _WIN32
 		HICON toIcon() const;
 		static Image screenshot(int x, int y, int width, int height);

@@ -4,6 +4,10 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+
 #ifdef _WIN32
 #include <Windows.h>
 #endif
@@ -358,6 +362,36 @@ HICON bbe::Image::toIcon() const
 	return hAlphaCursor;
 }
 #endif
+
+void bbe::Image::writeToFile(const char* path) const
+{
+	const bbe::String lowerPath = bbe::String(path).toLowerCase();
+	if (lowerPath.endsWith(".png"))
+	{
+		stbi_write_png(path, m_width, m_height, getAmountOfChannels(), m_pdata.getRaw(), 0);
+	}
+	else if (lowerPath.endsWith(".bmp"))
+	{
+		stbi_write_bmp(path, m_width, m_height, getAmountOfChannels(), m_pdata.getRaw());
+	}
+	else if (lowerPath.endsWith(".tga"))
+	{
+		stbi_write_tga(path, m_width, m_height, getAmountOfChannels(), m_pdata.getRaw());
+	}
+	else if (lowerPath.endsWith(".jpg"))
+	{
+		stbi_write_jpg(path, m_width, m_height, getAmountOfChannels(), m_pdata.getRaw(), 90);
+	}
+	else
+	{
+		throw bbe::NotImplementedException();
+	}
+}
+
+void bbe::Image::writeToFile(const bbe::String& path) const
+{
+	writeToFile(path.getRaw());
+}
 
 static void floodFillStep(bbe::Image& image, bbe::List<bbe::Vector2i>& posToCheck, const bbe::Vector2i& pos, const bbe::Colori& from, const bbe::Colori& to)
 {

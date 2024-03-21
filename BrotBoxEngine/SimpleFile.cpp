@@ -336,4 +336,50 @@ void bbe::simpleFile::executeBatchFile(const bbe::String& path)
 	//CloseHandle(pi.hProcess);
 	//CloseHandle(pi.hThread);
 }
+
+bool bbe::simpleFile::showOpenDialog(bbe::String& outPath)
+{
+	OPENFILENAME ofn;
+	char path[1024] = {};
+
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.lpstrFile = path;
+	ofn.nMaxFile = sizeof(path);
+	ofn.lpstrFilter = "All\0*.*\0";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+	if (GetOpenFileName(&ofn))
+	{
+		outPath = path;
+		return true;
+	}
+	return false;
+}
+bool bbe::simpleFile::showSaveDialog(bbe::String& outPath, const bbe::String& defaultExtension)
+{
+	OPENFILENAME ofn;
+	char path[1024] = {};
+
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.lpstrFile = path;
+	ofn.nMaxFile = sizeof(path);
+	ofn.lpstrFilter = "All\0*.*\0";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST;
+	ofn.lpstrDefExt = defaultExtension.getRaw();
+	if (GetSaveFileName(&ofn))
+	{
+		outPath = path;
+		return true;
+	}
+	return false;
+}
 #endif

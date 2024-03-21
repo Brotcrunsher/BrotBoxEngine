@@ -47,6 +47,8 @@ namespace bbe
 		bbe::String getWorkingDirectory();
 		void createLink(const bbe::String& from, const bbe::String& to, const bbe::String& workDir = "");
 		void executeBatchFile(const bbe::String& path);
+		bool showOpenDialog(bbe::String& outPath);
+		bool showSaveDialog(bbe::String& outPath, const bbe::String& defaultExtension);
 #endif
 	}
 }
