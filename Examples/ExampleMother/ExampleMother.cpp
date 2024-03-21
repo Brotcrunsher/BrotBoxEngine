@@ -251,7 +251,7 @@ public:
 					throw bbe::IllegalArgumentException();
 				}
 
-				image.setPixel(x, y, c);
+				image.setPixel(x, y, c.asByteColor());
 			}
 		}
 
@@ -614,7 +614,7 @@ public:
 				for (size_t y = 0; y < grid.getHeight(); y++)
 				{
 					grid[x][y] *= multiplier;
-					image.setPixel(x, y, bbe::Color(grid[x][y] > 1.f ? 1.f : grid[x][y]));
+					image.setPixel(x, y, bbe::Color(grid[x][y] > 1.f ? 1.f : grid[x][y]).asByteColor());
 				}
 			}
 		}
@@ -689,9 +689,9 @@ public:
 			int i;
 			for (i = 0; i < 8; i++)
 			{
-				bbe::Color c = screenshot.getPixel(0, 70 - 10 * i);
+				bbe::Colori c = screenshot.getPixel(0, 70 - 10 * i);
 				float val = (c.r + c.g + c.b) / 3.0f;
-				if (val < 0.5f) break;
+				if (val < 128) break;
 			}
 			static int previousI = 0;
 			if (previousI != i)

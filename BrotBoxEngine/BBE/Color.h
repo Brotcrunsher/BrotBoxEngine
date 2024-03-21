@@ -47,11 +47,11 @@ namespace bbe
 
 		bbe::Color_t<T, maxValue> operator* (float scalar) const
 		{
-			return bbe::Color_t(r * scalar, g * scalar, b * scalar, a * scalar);
+			return bbe::Color_t<T, maxValue>(r * scalar, g * scalar, b * scalar, a * scalar);
 		}
 		bbe::Color_t<T, maxValue> operator/ (float scalar) const
 		{
-			return bbe::Color_t(r / scalar, g / scalar, b / scalar, a / scalar);
+			return bbe::Color_t<T, maxValue>(r / scalar, g / scalar, b / scalar, a / scalar);
 		}
 
 		bbe::Color_t<T, maxValue>& operator*= (float scalar)

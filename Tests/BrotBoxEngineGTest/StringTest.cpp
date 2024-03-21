@@ -7,7 +7,7 @@ class DelayedDeleter
 public:
 	~DelayedDeleter()
 	{
-		bbe::INTERNAL::alloc_cleanup();
+		bbe::INTERNAL::allocCleanup();
 	}
 };
 DelayedDeleter dd;

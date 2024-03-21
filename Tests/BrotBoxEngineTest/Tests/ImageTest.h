@@ -14,7 +14,7 @@ namespace bbe
 				Image image;
 				image.load(BBE_APPLICATION_ASSET_PATH "/TestImage.png");
 
-				Color c = image.getPixel(0, 0);
+				Colori c = image.getPixel(0, 0);
 				assertEquals(c.r, 0);
 				assertEquals(c.g, 0);
 				assertEquals(c.b, 0);
