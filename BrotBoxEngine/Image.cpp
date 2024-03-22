@@ -299,7 +299,85 @@ void bbe::Image::keepAfterUpload()
 	keep = true;
 }
 
+size_t bbe::Image::getBytesPerPixel() const
+{
+	return getBytesPerChannel() * getAmountOfChannels();
+}
+
+void bbe::Image::flipHorizontally()
+{
+	bbe::List<byte> rowBuffer;
+	const size_t bytesPerRow = getWidth() * getBytesPerPixel();
+	rowBuffer.resizeCapacity(bytesPerRow);
+	for (size_t row = 0; row < getHeight() / 2; row++)
+	{
+		const size_t lowerRow = getHeight() - 1 - row;
+		void* rowPtr      = m_pdata.getRaw() + row      * bytesPerRow;
+		void* rowLowerPtr = m_pdata.getRaw() + lowerRow * bytesPerRow;
+		memcpy(rowBuffer.getRaw(), rowPtr,             bytesPerRow);
+		memcpy(rowPtr,             rowLowerPtr,        bytesPerRow);
+		memcpy(rowLowerPtr,        rowBuffer.getRaw(), bytesPerRow);
+	}
+}
+
 #ifdef _WIN32
+bool bbe::Image::isImageInClipbaord()
+{
+	return ::IsClipboardFormatAvailable(CF_BITMAP);
+}
+
+bbe::Image bbe::Image::getClipboardImage()
+{
+	if (!isImageInClipbaord()) return bbe::Image();
+	if (!OpenClipboard(0)) return bbe::Image();
+	
+	bbe::Image retVal;
+	HBITMAP hBitmap = (HBITMAP)GetClipboardData(CF_BITMAP);
+	if (hBitmap && hBitmap != INVALID_HANDLE_VALUE)
+	{
+		BITMAP bitmap;
+		GetObject(hBitmap, sizeof(bitmap), &bitmap);
+
+		if (bitmap.bmPlanes == 1 && bitmap.bmBitsPixel == 32)
+		{
+			retVal = bbe::Image(bitmap.bmWidth, bitmap.bmHeight);
+
+			BITMAPINFO info = {};
+			HDC dc = CreateCompatibleDC(0);
+			HBITMAP oldBitmap = (HBITMAP)SelectObject(dc, hBitmap);
+
+			info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+			info.bmiHeader.biWidth = bitmap.bmWidth;
+			info.bmiHeader.biHeight = bitmap.bmHeight;
+			info.bmiHeader.biPlanes = 1;
+			info.bmiHeader.biBitCount = bitmap.bmBitsPixel;
+			info.bmiHeader.biCompression = BI_RGB;
+			info.bmiHeader.biSizeImage = bitmap.bmWidth * bitmap.bmHeight * 4;
+
+			bbe::List<byte>& bytes = retVal.m_pdata;
+			GetDIBits(dc, hBitmap, 0, bitmap.bmHeight, bytes.getRaw(), &info, DIB_RGB_COLORS);
+
+			//Windows gives us BGR, but we want RGB, so flip R and B channels:
+			for (size_t i = 0; i < bytes.getLength(); i += 4)
+			{
+				auto temp = bytes[i];
+				bytes[i] = bytes[i + 2];
+				bytes[i + 2] = temp;
+			}
+
+			retVal.flipHorizontally();
+
+			SelectObject(dc, oldBitmap);
+
+			DeleteDC(dc);
+		}
+	}
+
+	CloseClipboard();
+
+	return retVal;
+}
+
 HBITMAP bbe::Image::toBitmap() const
 {
 	// See: https://learn.microsoft.com/en-us/windows/win32/menurc/using-cursors#creating-a-cursor

@@ -5,8 +5,10 @@
 // TODO: Proper GUI
 // TODO: Layers
 // TODO: Text
-// TODO: Copy from Paint to clipboard
-// TODO: Paste from Clipboard to Paint
+// TODO: Select+Move Tool
+// TODO: Color Selector Tool
+// TODO: Drag and Drop image files into paint
+// TODO: Tiled view is kinda messed. Zooming out draws too few, line drawer seems to skip, etc...
 
 class MyGame : public bbe::Game
 {
@@ -161,6 +163,15 @@ class MyGame : public bbe::Game
 		{
 			canvas.copyToClipboard();
 		}
+		ImGui::Text(bbe::Image::isImageInClipbaord() ? "Yes" : "No");
+
+		ImGui::BeginDisabled(!bbe::Image::isImageInClipbaord());
+		if (ImGui::Button("Paste"))
+		{
+			canvas = bbe::Image::getClipboardImage();
+			setupCanvas();
+		}
+		ImGui::EndDisabled();
 
 		const int32_t repeats = tiled ? 20 : 0;
 		for (int32_t i = -repeats; i <= repeats; i++)

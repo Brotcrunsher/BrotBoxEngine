@@ -113,6 +113,7 @@ namespace bbe
 		size_t getSizeInBytes() const;
 		size_t getAmountOfChannels() const;
 		size_t getBytesPerChannel() const;
+		size_t getBytesPerPixel() const;
 		Colori getPixel(const bbe::Vector2i& pos) const;
 		Colori getPixel(size_t x, size_t y) const;
 		void setPixel(const bbe::Vector2i& pos, const bbe::Colori& c);
@@ -134,7 +135,11 @@ namespace bbe
 		void writeToFile(const bbe::String& path) const;
 		void writeToFile(const char* path) const;
 
+		void flipHorizontally();
+
 #ifdef _WIN32
+		static bool isImageInClipbaord();
+		static bbe::Image getClipboardImage();
 		HBITMAP toBitmap() const;
 		HICON toIcon() const;
 		void copyToClipboard() const;
