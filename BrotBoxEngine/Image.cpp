@@ -300,16 +300,13 @@ void bbe::Image::keepAfterUpload()
 }
 
 #ifdef _WIN32
-HICON bbe::Image::toIcon() const
+HBITMAP bbe::Image::toBitmap() const
 {
 	// See: https://learn.microsoft.com/en-us/windows/win32/menurc/using-cursors#creating-a-cursor
-	const DWORD iconWidth = getWidth();
-	const DWORD iconHeight = getHeight();
-
 	BITMAPV5HEADER bi = {};
 	bi.bV5Size = sizeof(BITMAPV5HEADER);
-	bi.bV5Width = iconWidth;
-	bi.bV5Height = iconHeight;
+	bi.bV5Width = getWidth();
+	bi.bV5Height = getHeight();
 	bi.bV5Planes = 1;
 	bi.bV5BitCount = 32;
 	bi.bV5Compression = BI_BITFIELDS;
@@ -327,27 +324,54 @@ HICON bbe::Image::toIcon() const
 		&lpBits, NULL, (DWORD)0);
 	ReleaseDC(NULL, hdc);
 
-	// Create an empty mask bitmap.
-	HBITMAP hMonoBitmap = CreateBitmap(iconWidth, iconHeight, 1, 1, NULL);
 
 	// Set the alpha values for each pixel in the cursor so that
 	// the complete cursor is semi-transparent.
 	DWORD* lpdwPixel = (DWORD*)lpBits;
-	for (DWORD x = 0; x < iconWidth; x++)
+	for (int32_t y = getHeight() - 1; y >= 0; y--)
 	{
-		for (DWORD y = 0; y < iconHeight; y++)
+		for (int32_t x = 0; x < getWidth(); x++)
 		{
 			const Colori c = getPixel(x, y);
 
-			*lpdwPixel  = c.b;
+			*lpdwPixel = c.b;
 			*lpdwPixel |= c.g << 8;
 			*lpdwPixel |= c.r << 16;
 			*lpdwPixel |= c.a << 24;
 
 			lpdwPixel++;
 		}
-		}
+	}
 
+	return hBitmap;
+}
+
+void bbe::Image::copyToClipboard() const
+{
+	// TODO: Investigate - Why is all this crap even needed... why can't we just put the bitmap into the clipboard directly?
+	HBITMAP hBitmap = toBitmap();
+	HBITMAP hBitmap_copy = CreateBitmap(getWidth(), getHeight(), 1, 32, NULL);  
+	HDC srcDC = CreateCompatibleDC(GetDC(NULL));
+	HDC newDC = CreateCompatibleDC(GetDC(NULL));
+	HBITMAP srcBitmap = (HBITMAP)SelectObject(srcDC, hBitmap);
+	HBITMAP newBitmap = (HBITMAP)SelectObject(newDC, hBitmap_copy);
+	BitBlt(newDC, 0, 0, getWidth(), getHeight(), srcDC, 0, 0, SRCCOPY);
+	SelectObject(srcDC, srcBitmap);
+	SelectObject(newDC, newBitmap);
+	DeleteDC(srcDC);
+	DeleteDC(newDC);
+
+	OpenClipboard(0);
+	EmptyClipboard();
+	SetClipboardData(CF_BITMAP, hBitmap_copy);
+	CloseClipboard();
+}
+
+HICON bbe::Image::toIcon() const
+{
+	HBITMAP hBitmap = toBitmap();
+
+	HBITMAP hMonoBitmap = CreateBitmap(getWidth(), getHeight(), 1, 1, NULL);
 	ICONINFO ii = {};
 	ii.fIcon = TRUE;
 	ii.hbmMask = hMonoBitmap;

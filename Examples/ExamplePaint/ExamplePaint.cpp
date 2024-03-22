@@ -157,6 +157,10 @@ class MyGame : public bbe::Game
 		ImGui::ColorEdit4("Left Color", leftColor);
 		ImGui::ColorEdit4("Right Color", rightColor);
 		ImGui::bbe::combo("Mode", { "Brush", "Flood fill" }, mode);
+		if (ImGui::Button("Copy to Clipboard"))
+		{
+			canvas.copyToClipboard();
+		}
 
 		const int32_t repeats = tiled ? 20 : 0;
 		for (int32_t i = -repeats; i <= repeats; i++)

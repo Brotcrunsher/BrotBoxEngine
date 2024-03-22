@@ -11,6 +11,8 @@
 // Forward declare it to avoid including the whole windows header everywhere.
 class HICON__;
 typedef HICON__* HICON;
+class HBITMAP__;
+typedef HBITMAP__* HBITMAP;
 #endif
 #endif
 
@@ -133,7 +135,9 @@ namespace bbe
 		void writeToFile(const char* path) const;
 
 #ifdef _WIN32
+		HBITMAP toBitmap() const;
 		HICON toIcon() const;
+		void copyToClipboard() const;
 		static Image screenshot(int x, int y, int width, int height);
 #endif
 	};
