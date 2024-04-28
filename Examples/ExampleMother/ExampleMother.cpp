@@ -202,6 +202,7 @@ private:
 	bbe::List<float> mousePositions;
 
 	bbe::GlobalKeyboard globalKeyboard;
+	bool keyboardTrackingActive = false;
 
 	bool terriActive = false;
 
@@ -358,21 +359,24 @@ public:
 		tabSwitchRequestedRight = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E);
 
 		beginMeasure("GlobalKeyboard");
-		globalKeyboard.update();
-		for (size_t i = 0; i < (size_t)bbe::Key::LAST + 1; i++)
+		if (keyboardTrackingActive)
 		{
-			if (globalKeyboard.isKeyPressed((bbe::Key)i, false))
+			globalKeyboard.update();
+			for (size_t i = 0; i < (size_t)bbe::Key::LAST + 1; i++)
 			{
-				keyboardTracker->keyPressed[i]++;
-				static int writes = 0;
-				writes++;
-				if (writes >= 1024)
+				if (globalKeyboard.isKeyPressed((bbe::Key)i, false))
 				{
-					// Only writing out every 1024 chars. This way we avoid accidentally
-					// writing out passwords to the file (or at least easily reconstructable
-					// passwords). Additionally it reduced the amount of IO.
-					keyboardTracker.writeToFile();
-					writes = 0;
+					keyboardTracker->keyPressed[i]++;
+					static int writes = 0;
+					writes++;
+					if (writes >= 1024)
+					{
+						// Only writing out every 1024 chars. This way we avoid accidentally
+						// writing out passwords to the file (or at least easily reconstructable
+						// passwords). Additionally it reduced the amount of IO.
+						keyboardTracker.writeToFile();
+						writes = 0;
+					}
 				}
 			}
 		}
@@ -627,6 +631,11 @@ public:
 	{
 		static bool normalize = true;
 		ImGui::Checkbox("Normalize", &normalize);
+		if (ImGui::Checkbox("Active", &keyboardTrackingActive))
+		{
+			if (keyboardTrackingActive) globalKeyboard.init();
+			else globalKeyboard.uninit();
+		}
 
 		using K = bbe::Key;
 		struct DrawnKey
@@ -675,6 +684,7 @@ public:
 		return bbe::Vector2(1.0f, 0.2f);
 	}
 
+#if 0
 	bbe::Vector2 drawTabTerri(bbe::PrimitiveBrush2D& brush)
 	{
 		ImGui::Checkbox("Active", &terriActive);
@@ -709,6 +719,7 @@ public:
 		}
 		return bbe::Vector2(1.0f);
 	}
+#endif
 
 	bbe::Vector2 drawTabRememberLists()
 	{
@@ -794,7 +805,9 @@ public:
 				Tab{"Stpwtch",   "Stopwatch",      [&]() { return drawTabStopwatch(); }},
 				Tab{"MsTrck",    "Mouse Track",    [&]() { return drawTabMouseTracking(brush); }},
 				Tab{"KybrdTrck", "Keyboard Track", [&]() { return drawTabKeyboardTracking(brush); }},
+#if 0
 				Tab{"Terri",     "Territorial",    [&]() { return drawTabTerri(brush); }},
+#endif
 				Tab{"Lsts",      "Lists",          [&]() { return drawTabRememberLists(); }},
 				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
 				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},

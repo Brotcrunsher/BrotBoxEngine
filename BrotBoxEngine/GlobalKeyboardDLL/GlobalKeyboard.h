@@ -22,10 +22,15 @@ namespace bbe
 		HMODULE hmod = nullptr;
 		HHOOK hook = nullptr;
 		void* getNextEvent = nullptr;
+		bool hooked = false;
 
 	public:
-		GlobalKeyboard();
+		GlobalKeyboard() = default;
 		~GlobalKeyboard();
+
+		void init();
+		void uninit();
+		bool isInit() const;
 
 		GlobalKeyboard(const GlobalKeyboard&) = delete;
 		GlobalKeyboard(GlobalKeyboard&&) = delete;

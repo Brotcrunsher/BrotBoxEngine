@@ -10,8 +10,16 @@
 
 typedef BOOL(WINAPI* GetNextEvent)(int* code, WPARAM* wParam, LPARAM* lParam, DWORD* pid);
 
-bbe::GlobalKeyboard::GlobalKeyboard()
+bbe::GlobalKeyboard::~GlobalKeyboard()
 {
+	uninit();
+}
+
+void bbe::GlobalKeyboard::init()
+{
+	if (hooked) return;
+	hooked = true;
+
 	if (!bbe::simpleFile::doesFileExist("GlobalKeyboard.dll"))
 	{
 		bbe::simpleFile::writeBinaryToFile("GlobalKeyboard.dll", GlobalKeyboardDLL);
@@ -23,10 +31,18 @@ bbe::GlobalKeyboard::GlobalKeyboard()
 	getNextEvent = (void*)GetProcAddress(hmod, "GetNextEvent");
 }
 
-bbe::GlobalKeyboard::~GlobalKeyboard()
+void bbe::GlobalKeyboard::uninit()
 {
+	if (!hooked) return;
+	hooked = false;
+
 	UnhookWindowsHookEx(hook);
 	FreeLibrary(hmod);
+}
+
+bool bbe::GlobalKeyboard::isInit() const
+{
+	return hooked;
 }
 
 static bbe::Key vkToBbe(WPARAM vk)
@@ -142,6 +158,7 @@ static bbe::Key vkToBbe(WPARAM vk)
 
 void bbe::GlobalKeyboard::update()
 {
+	if (!hooked) throw bbe::IllegalArgumentException();
 	bbe::Keyboard::update();
 
 	int code = 0;
