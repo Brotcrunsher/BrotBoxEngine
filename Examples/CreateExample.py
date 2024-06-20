@@ -61,6 +61,6 @@ with open("CMakeLists.txt", "a") as f:
     if experimental:
         f.write("if(BBE_ADD_EXPERIMENTAL)\n")
         f.write("  add_subdirectory(" + name + ")\n")
-        f.write("endif()")
+        f.write("endif()\n")
     else:
         f.write("add_subdirectory(" + name + ")\n")
