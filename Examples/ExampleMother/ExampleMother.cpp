@@ -301,15 +301,7 @@ public:
 
 	bbe::TimePoint getNightStart()
 	{
-		// TODO: This is something highly personalized for my own current usage. It probably needs to be removed some day.
-		//       It takes away one minute for every passed day since 2023/11/22. Slowly approaching a more healthy sleep
-		//       schedule =)
-		const bbe::TimePoint qualifyingDate = bbe::TimePoint::fromDate(2023, bbe::Month::NOVEMBER, 22);
-		const bbe::Duration timeSinceQualifyingDate = bbe::TimePoint() - qualifyingDate;
-		int32_t daysSinceQualifyingDate = timeSinceQualifyingDate.toDays();
-		if (daysSinceQualifyingDate > 180) daysSinceQualifyingDate = 180;
-
-		return bbe::TimePoint::todayAt(23, 59 - daysSinceQualifyingDate);
+		return bbe::TimePoint::todayAt(22, 00);
 	}
 
 	bool isNightTime()
