@@ -42,6 +42,27 @@ struct ClipboardContent
 	}
 };
 
+struct StreakDay
+{
+	bbe::TimePoint day;
+
+
+	// Non-Persisted Helper Data below.
+
+	void serialize(bbe::ByteBuffer& buffer) const
+	{
+		buffer.write(day);
+	}
+	static StreakDay deserialize(bbe::ByteBufferSpan& buffer)
+	{
+		StreakDay retVal;
+
+		buffer.read(retVal.day);
+
+		return retVal;
+	}
+};
+
 struct GeneralConfig
 {
 	bbe::String updatePath;
@@ -185,6 +206,7 @@ private:
 	bbe::SerializableObject<GeneralConfig> generalConfig        = bbe::SerializableObject<GeneralConfig>  ("generalConfig.dat",       "ParanoiaConfig");
 	bbe::SerializableList<Stopwatch> stopwatches                = bbe::SerializableList<Stopwatch>        ("stopwatches.dat",         "ParanoiaConfig");
 	bbe::SerializableList<RememberList> rememberLists           = bbe::SerializableList<RememberList>     ("RemeberLists.dat",        "ParanoiaConfig");
+	bbe::SerializableList<StreakDay> streakDays                 = bbe::SerializableList<StreakDay>        ("streakDays.dat",          "ParanoiaConfi");
 	bbe::SerializableObject<KeyboardTracker> keyboardTracker    = bbe::SerializableObject<KeyboardTracker>("keyboardTracker.dat"); // No ParanoiaConfig to avoid accidentally logging passwords.
 
 	bool openTasksNotificationSilencedProcess = false;
@@ -414,6 +436,12 @@ public:
 
 		beginMeasure("URL Stuff");
 		urls.update();
+
+		beginMeasure("Streak Stuff");
+		if ((streakDays.getLength() == 0 || !streakDays.getList().last().day.isToday()) && tasks.isStreakFulfilled())
+		{
+			streakDays.add(StreakDay{bbe::TimePoint::todayAt(0, 0, 0)});
+		}
 
 		beginMeasure("Beeper");
 		if (generalConfig->beepEvery > 0)
@@ -676,6 +704,50 @@ public:
 		return bbe::Vector2(1.0f, 0.2f);
 	}
 
+	bbe::Vector2 drawTabStreaks(bbe::PrimitiveBrush2D& brush)
+	{
+		const int32_t year = bbe::TimePoint().getYear();
+		for (int32_t i = 1; i <= 12; i++)
+		{
+			const int32_t days = bbe::TimePoint::getDaysInMonth(year, i);
+			for (int32_t k = 1; k <= days; k++)
+			{
+				bbe::TimePoint tp = bbe::TimePoint::fromDate(year, i, k);
+				bool isStreakDay = false;
+				for (size_t m = 0; m < streakDays.getLength(); m++)
+				{
+					const bbe::TimePoint& cDay = streakDays[m].day;
+					if (cDay.getYear() == tp.getYear() && cDay.getMonth() == tp.getMonth() && cDay.getDay() == tp.getDay())
+					{
+						isStreakDay = true;
+						break;
+					}
+				}
+
+				if (isStreakDay)
+				{
+					brush.setColorRGB(1.0f, 1.0f, 0.5f, 1.0f);
+				}
+				else if (tp.isToday())
+				{
+					brush.setColorRGB(0.5f, 0.5f, 1, 1);
+				}
+				else if (tp.hasPassed())
+				{
+					brush.setColorRGB(1, 1, 1, 1);
+				}
+				else
+				{
+					brush.setColorRGB(0.3f, 0.3f, 0.3f, 1);
+				}
+				brush.sketchRect(5 - 2 + k * 23, 5 + i * 30, 20, 20);
+				brush.fillText(5 + k * 23, 20 + i * 30, bbe::String(k));
+			}
+		}
+
+		return bbe::Vector2(1.0f, 0.0f);
+	}
+
 #if 0
 	bbe::Vector2 drawTabTerri(bbe::PrimitiveBrush2D& brush)
 	{
@@ -800,6 +872,7 @@ public:
 #if 0
 				Tab{"Terri",     "Territorial",    [&]() { return drawTabTerri(brush); }},
 #endif
+				Tab{"Strks",     "Streaks",        [&]() { return drawTabStreaks(brush); }},
 				Tab{"Lsts",      "Lists",          [&]() { return drawTabRememberLists(); }},
 				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
 				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},

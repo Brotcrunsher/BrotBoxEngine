@@ -752,3 +752,16 @@ bool SubsystemTask::hasPotentialTaskComplaint() const
 	}
 	return false;
 }
+
+bool SubsystemTask::isStreakFulfilled() const
+{
+	for (size_t i = 0; i < tasks.getLength(); i++)
+	{
+		const Task& t = tasks[i];
+		if (t.nextPossibleExecution().isToday())
+		{
+			return false;
+		}
+	}
+	return true;
+}

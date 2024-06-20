@@ -119,4 +119,5 @@ public:
 
 	bool hasCurrentTask() const;
 	bool hasPotentialTaskComplaint() const;
+	bool isStreakFulfilled() const;
 };
