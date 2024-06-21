@@ -12,6 +12,10 @@
 #include "AL/alc.h"
 #include "AL/alext.h"
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 namespace bbe
 {
 	struct SoundDataSource;
@@ -36,6 +40,7 @@ static bbe::WriterReaderBuffer<ListenerData, 1024> newListenerData;
 static auto newListenerDataReader = newListenerData.reader();
 static ListenerData listener;
 static ListenerData listenerPrevious;
+static std::atomic_bool restartRequest = false;
 
 struct SetPositionRequest
 {
@@ -391,6 +396,13 @@ static void soundSystemMain()
 		{
 			std::this_thread::yield();
 		}
+
+		if (restartRequest)
+		{
+			restartRequest = false;
+			destroySoundSystem();
+			initSoundSystem();
+		}
 	}
 	destroySoundSystem();
 }
@@ -475,6 +487,13 @@ void bbe::INTERNAL::SoundManager::init()
 	initSoundSystem();
 #else
 	soundSystemThread = std::thread(soundSystemMain);
+#ifdef WIN32
+	BOOL prioSuccess = ::SetThreadPriority(soundSystemThread.native_handle(), THREAD_PRIORITY_TIME_CRITICAL);
+	if (!prioSuccess)
+	{
+		debugBreak();
+	}
+#endif
 #endif
 }
 
@@ -486,6 +505,11 @@ void bbe::INTERNAL::SoundManager::destroy()
 	requestEnd();
 	soundSystemThread.join();
 #endif
+}
+
+void bbe::INTERNAL::SoundManager::restart()
+{
+	restartRequest = true;
 }
 
 bbe::SoundInstance bbe::INTERNAL::SoundManager::play(const SoundDataSource& sound, const bbe::Vector3* pos, float volume)

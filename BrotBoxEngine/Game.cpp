@@ -40,6 +40,13 @@ void bbe::Game::setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lo
 }
 #endif
 
+#ifndef BBE_NO_AUDIO
+void bbe::Game::restartSoundSystem()
+{
+	m_soundManager.restart();
+}
+#endif
+
 #ifdef BBE_RENDERER_OPENGL
 uint32_t bbe::Game::getAmountOfDrawcalls() const
 {

@@ -69,6 +69,7 @@ namespace bbe
 
 		static int32_t isLeapYear(int32_t year);
 		static int32_t getDaysInMonth(int32_t year, Month month);
+		static int32_t getDaysInMonth(int32_t year, int32_t month);
 		static Weekday getFirstWeekdayOfMonth(int32_t year, Month month);
 
 		TimePoint nextMorning(int64_t morningHour = 5) const;

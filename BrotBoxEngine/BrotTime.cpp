@@ -118,6 +118,11 @@ int32_t bbe::TimePoint::getDaysInMonth(int32_t year, Month month)
 	return 0;
 }
 
+int32_t bbe::TimePoint::getDaysInMonth(int32_t year, int32_t month)
+{
+	return getDaysInMonth(year, (Month)month);
+}
+
 bbe::Weekday bbe::TimePoint::getFirstWeekdayOfMonth(int32_t year, Month month)
 {
 	return bbe::TimePoint::fromDate(year, month, 1).getWeekday();
