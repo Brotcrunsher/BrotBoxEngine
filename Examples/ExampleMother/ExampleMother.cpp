@@ -940,6 +940,7 @@ public:
 			{
 				assetStore::NewTask()->play();
 			}
+			ImGui::SameLine();
 			if (ImGui::Button("Restart Sound System"))
 			{
 				restartSoundSystem();
