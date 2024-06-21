@@ -45,6 +45,19 @@ namespace bbe
 			return !(*this == other);
 		}
 
+		bbe::Color_t<T, maxValue> blendTo(const bbe::Color_t<T, maxValue>& other, float t) const
+		{
+			if (t < 0.f) return *this;
+			if (t > 1.f) return other;
+
+			return bbe::Color_t<T, maxValue>(
+				bbe::Math::interpolateLinear(r, other.r, t),
+				bbe::Math::interpolateLinear(g, other.g, t),
+				bbe::Math::interpolateLinear(b, other.b, t),
+				bbe::Math::interpolateLinear(a, other.a, t)
+			);
+		}
+
 		bbe::Color_t<T, maxValue> operator* (float scalar) const
 		{
 			return bbe::Color_t<T, maxValue>(r * scalar, g * scalar, b * scalar, a * scalar);

@@ -24,6 +24,9 @@ class MyGame : public bbe::Game
 	constexpr static int32_t MODE_FLOOD_FILL = 1;
 	int32_t mode = MODE_BRUSH;
 
+	// MODE_BRUSH
+	int32_t brushWidth = 1;
+
 	bool drawGridLines = true;
 	bool tiled = false;
 
@@ -117,15 +120,33 @@ class MyGame : public bbe::Game
 				bbe::GridIterator gi(getMouse(), getMousePrevious());
 				while (gi.hasNext())
 				{
-					bbe::Vector2 coord = screenToCanvas(gi.next().as<float>());
-					if (tiled)
+					const bbe::Vector2 coordBase = screenToCanvas(gi.next().as<float>());
+					for (int32_t i = -brushWidth + 1; i < brushWidth; i++)
 					{
-						coord.x = bbe::Math::mod<float>(coord.x, canvas.getWidth());
-						coord.y = bbe::Math::mod<float>(coord.y, canvas.getHeight());
-					}
-					if (coord.x >= 0 && coord.y >= 0 && coord.x < canvas.getWidth() && coord.y < canvas.getHeight())
-					{
-						canvas.setPixel(coord.x, coord.y, getMouseColor());
+						for (int32_t k = -brushWidth + 1; k < brushWidth; k++)
+						{
+							float pencilStrength = brushWidth - bbe::Math::sqrt(i * i + k * k);
+							if (pencilStrength < 0) continue;
+
+							bbe::Vector2 coord = coordBase + bbe::Vector2(i, k);
+							if (tiled)
+							{
+								coord.x = bbe::Math::mod<float>(coord.x, canvas.getWidth());
+								coord.y = bbe::Math::mod<float>(coord.y, canvas.getHeight());
+							}
+							if (coord.x >= 0 && coord.y >= 0 && coord.x < canvas.getWidth() && coord.y < canvas.getHeight())
+							{
+								if (pencilStrength > 1)
+								{
+									canvas.setPixel(coord.x, coord.y, getMouseColor());
+								}
+								else
+								{
+									bbe::Colori oldColor = canvas.getPixel(coord.x, coord.y);
+									canvas.setPixel(coord.x, coord.y, getMouseColor().blendTo(oldColor, 1.f - pencilStrength));
+								}
+							}
+						}
 					}
 				}
 			}
@@ -159,6 +180,13 @@ class MyGame : public bbe::Game
 		ImGui::ColorEdit4("Left Color", leftColor);
 		ImGui::ColorEdit4("Right Color", rightColor);
 		ImGui::bbe::combo("Mode", { "Brush", "Flood fill" }, mode);
+		if (mode == MODE_BRUSH)
+		{
+			if (ImGui::InputInt("Brush Width", &brushWidth))
+			{
+				if (brushWidth < 1) brushWidth = 1;
+			}
+		}
 		if (ImGui::Button("Copy to Clipboard"))
 		{
 			canvas.copyToClipboard();
