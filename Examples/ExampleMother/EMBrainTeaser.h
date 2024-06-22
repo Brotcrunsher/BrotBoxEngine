@@ -7,9 +7,7 @@ struct BrainTeaserScore
 	bbe::TimePoint didItOn;
 
 	// Non-Persisted Helper Data below.
-
-	void serialize(bbe::ByteBuffer& buffer) const;
-	static BrainTeaserScore deserialize(bbe::ByteBufferSpan& buffer);
+	void serialDescription(bbe::SerializedDescription& desc) const;
 };
 
 class SubsystemBrainTeaser

@@ -8,20 +8,10 @@
 #include <AtlBase.h>
 #include <UIAutomation.h>
 
-void Url::serialize(bbe::ByteBuffer& buffer) const
+void Url::serialDescription(bbe::SerializedDescription& desc) const
 {
-	buffer.write(url);
-	buffer.write(type);
-}
-
-Url Url::deserialize(bbe::ByteBufferSpan& buffer)
-{
-	Url retVal;
-
-	buffer.read(retVal.url);
-	buffer.read(retVal.type);
-
-	return retVal;
+	desc.describe(url);
+	desc.describe(type);
 }
 
 void SubsystemUrl::update()

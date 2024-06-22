@@ -21,13 +21,27 @@ namespace bbe
 		bbe::String paranoiaPath;
 		T data;
 
+		constexpr static bool hasSerialDescription = requires(T & t, bbe::SerializedDescription & desc) {
+			t.serialDescription(desc);
+		};
+
 		void load()
 		{
 			if (bbe::simpleFile::doesFileExist(path))
 			{
 				bbe::ByteBuffer binary = bbe::simpleFile::readBinaryFile(path);
 				auto span = binary.getSpan();
-				data = T::deserialize(span);
+
+				if constexpr (hasSerialDescription)
+				{
+					bbe::SerializedDescription desc;
+					data.serialDescription(desc);
+					desc.writeFromSpan(span);
+				}
+				else
+				{
+					data = T::deserialize(span);
+				}
 			}
 			else
 			{
@@ -51,8 +65,8 @@ namespace bbe
 		void writeToFile()
 		{
 			bbe::ByteBuffer buffer;
-			data.serialize(buffer);
-			
+			buffer.write(data);
+
 			bbe::backup::writeBinaryToFile(path, buffer);
 			if (paranoiaPath.getLength() != 0)
 			{
@@ -75,6 +89,10 @@ namespace bbe
 		bbe::List<bbe::List<T>> history;
 		Undoable undoable = Undoable::NO;
 
+		constexpr static bool hasSerialDescription = requires(T & t, bbe::SerializedDescription & desc) {
+			t.serialDescription(desc);
+		};
+
 		void load(const bbe::String& path, const bbe::List<T>& data)
 		{
 			this->path = path;
@@ -88,7 +106,19 @@ namespace bbe
 					int64_t size;
 					span.read(size);
 					auto subSpan = span.readSpan(size);
-					this->data.add(T::deserialize(subSpan));
+
+					if constexpr (hasSerialDescription)
+					{
+						T t;
+						bbe::SerializedDescription desc;
+						t.serialDescription(desc);
+						desc.writeFromSpan(subSpan);
+						this->data.add(t);
+					}
+					else
+					{
+						this->data.add(T::deserialize(subSpan));
+					}
 				}
 			}
 			else
@@ -135,7 +165,7 @@ namespace bbe
 			data.add(t);
 			bbe::ByteBuffer buffer;
 			auto token = buffer.reserveSizeToken();
-			t.serialize(buffer);
+			buffer.write(t);
 			buffer.fillSizeToken(token);
 			bbe::backup::appendBinaryToFile(path, buffer);
 			pushUndoable();
@@ -179,7 +209,7 @@ namespace bbe
 			for (size_t i = 0; i < data.getLength(); i++)
 			{
 				auto token = buffer.reserveSizeToken();
-				data[i].serialize(buffer);
+				buffer.write(data[i]);
 				buffer.fillSizeToken(token);
 			}
 			bbe::backup::writeBinaryToFile(path, buffer);

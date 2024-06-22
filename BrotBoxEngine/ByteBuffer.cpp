@@ -1,4 +1,6 @@
 #include "BBE/ByteBuffer.h"
+#include "BBE/String.h"
+#include "BBE/BrotTime.h"
 
 void bbe::ByteBufferSpan::read(bbe::byte* bytes, bbe::byte* default_, size_t length)
 {
@@ -176,3 +178,46 @@ uint64_t bbe::ByteBufferSpan::readU64() { uint64_t val; read(val); return val; }
  int16_t bbe::ByteBufferSpan::readI16() {  int16_t val; read(val); return val; }
  int32_t bbe::ByteBufferSpan::readI32() {  int32_t val; read(val); return val; }
  int64_t bbe::ByteBufferSpan::readI64() {  int64_t val; read(val); return val; }
+
+
+void bbe::SerializedDescription::toByteBuffer(bbe::ByteBuffer& buffer) const
+{
+	for (size_t i = 0; i < descriptors.getLength(); i++)
+	{
+		     if (descriptors[i].type == typeid(uint8_t )) buffer.write(*(uint8_t* )descriptors[i].addr);
+		else if (descriptors[i].type == typeid(uint16_t)) buffer.write(*(uint16_t*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid(uint32_t)) buffer.write(*(uint32_t*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid(uint64_t)) buffer.write(*(uint64_t*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid( int8_t )) buffer.write(*( int8_t* )descriptors[i].addr);
+		else if (descriptors[i].type == typeid( int16_t)) buffer.write(*( int16_t*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid( int32_t)) buffer.write(*( int32_t*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid( int64_t)) buffer.write(*( int64_t*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid( float  )) buffer.write(*( float*  )descriptors[i].addr);
+		else if (descriptors[i].type == typeid( bool   )) buffer.write(*( bool*   )descriptors[i].addr);
+		else if (descriptors[i].type == typeid(bbe::List<float>)) buffer.write(*(bbe::List<float>*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid(bbe::String)) ((bbe::String*)descriptors[i].addr)->serialize(buffer);
+		else if (descriptors[i].type == typeid(bbe::TimePoint)) ((bbe::TimePoint*)descriptors[i].addr)->serialize(buffer);
+		else throw bbe::IllegalArgumentException("Unsupported Type");
+	}
+}
+
+void bbe::SerializedDescription::writeFromSpan(bbe::ByteBufferSpan& span) const
+{
+	for (size_t i = 0; i < descriptors.getLength(); i++)
+	{
+		     if (descriptors[i].type == typeid(uint8_t )) span.read(*(uint8_t* )descriptors[i].addr);
+		else if (descriptors[i].type == typeid(uint16_t)) span.read(*(uint16_t*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid(uint32_t)) span.read(*(uint32_t*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid(uint64_t)) span.read(*(uint64_t*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid( int8_t )) span.read(*( int8_t* )descriptors[i].addr);
+		else if (descriptors[i].type == typeid( int16_t)) span.read(*( int16_t*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid( int32_t)) span.read(*( int32_t*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid( int64_t)) span.read(*( int64_t*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid( float  )) span.read(*( float*  )descriptors[i].addr);
+		else if (descriptors[i].type == typeid( bool   )) span.read(*( bool*   )descriptors[i].addr);
+		else if (descriptors[i].type == typeid(bbe::List<float>)) span.read(*(bbe::List<float>*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid(bbe::String)) (*(bbe::String*)descriptors[i].addr) = bbe::String::deserialize(span);
+		else if (descriptors[i].type == typeid(bbe::TimePoint)) (*(bbe::TimePoint*)descriptors[i].addr) = bbe::TimePoint::deserialize(span);
+		else throw bbe::IllegalArgumentException("Unsupported Type");
+	}
+}

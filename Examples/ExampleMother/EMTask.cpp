@@ -89,76 +89,38 @@ void Task::sanity()
 	if (followUp < 0) followUp = 0;
 }
 
-void Task::serialize(bbe::ByteBuffer& buffer) const
+void Task::serialDescription(bbe::SerializedDescription& desc) const
 {
-	buffer.write(title);
-	buffer.write(repeatDays);
-	buffer.write(previousExecution);
-	buffer.write(nextExecution);
-	buffer.write(canBeSu);
-	buffer.write(followUp);
-	buffer.write(internalValue);
-	buffer.write(internalValueIncrease);
-	buffer.write(followUp2);
-	buffer.write(inputType);
-	buffer.write(history);
-	buffer.write(advanceable);
-	buffer.write(oneShot);
-	buffer.write(preparation);
-	buffer.write(canBeMo);
-	buffer.write(canBeTu);
-	buffer.write(canBeWe);
-	buffer.write(canBeTh);
-	buffer.write(canBeFr);
-	buffer.write(canBeSa);
-	buffer.write(earlyAdvanceable);
-	buffer.write(clipboard);
-	buffer.write(lateTimeTask);
-	buffer.write(dateType);
-	buffer.write(dtYearlyMonth);
-	buffer.write(dtYearlyDay);
-	buffer.write(startable);
-	buffer.write(endWorkTime);
-	buffer.write(indefinitelyAdvanceable);
-	buffer.write(shouldPlayNotificationSounds);
-}
-
-Task Task::deserialize(bbe::ByteBufferSpan& buffer)
-{
-	Task retVal;
-
-	buffer.read(retVal.title);
-	buffer.read(retVal.repeatDays);
-	buffer.read(retVal.previousExecution);
-	buffer.read(retVal.nextExecution);
-	buffer.read(retVal.canBeSu, true);
-	buffer.read(retVal.followUp);
-	buffer.read(retVal.internalValue);
-	buffer.read(retVal.internalValueIncrease);
-	buffer.read(retVal.followUp2);
-	buffer.read(retVal.inputType);
-	buffer.read(retVal.history);
-	buffer.read(retVal.advanceable);
-	buffer.read(retVal.oneShot);
-	buffer.read(retVal.preparation);
-	buffer.read(retVal.canBeMo, true);
-	buffer.read(retVal.canBeTu, true);
-	buffer.read(retVal.canBeWe, true);
-	buffer.read(retVal.canBeTh, true);
-	buffer.read(retVal.canBeFr, true);
-	buffer.read(retVal.canBeSa, true);
-	buffer.read(retVal.earlyAdvanceable, true);
-	buffer.read(retVal.clipboard);
-	buffer.read(retVal.lateTimeTask, false);
-	buffer.read(retVal.dateType);
-	buffer.read(retVal.dtYearlyMonth, 1);
-	buffer.read(retVal.dtYearlyDay, 1);
-	buffer.read(retVal.startable, false);
-	buffer.read(retVal.endWorkTime);
-	buffer.read(retVal.indefinitelyAdvanceable, false);
-	buffer.read(retVal.shouldPlayNotificationSounds, true);
-
-	return retVal;
+	desc.describe(title);
+	desc.describe(repeatDays);
+	desc.describe(previousExecution);
+	desc.describe(nextExecution);
+	desc.describe(canBeSu);
+	desc.describe(followUp);
+	desc.describe(internalValue);
+	desc.describe(internalValueIncrease);
+	desc.describe(followUp2);
+	desc.describe(inputType);
+	desc.describe(history);
+	desc.describe(advanceable);
+	desc.describe(oneShot);
+	desc.describe(preparation);
+	desc.describe(canBeMo);
+	desc.describe(canBeTu);
+	desc.describe(canBeWe);
+	desc.describe(canBeTh);
+	desc.describe(canBeFr);
+	desc.describe(canBeSa);
+	desc.describe(earlyAdvanceable);
+	desc.describe(clipboard);
+	desc.describe(lateTimeTask);
+	desc.describe(dateType);
+	desc.describe(dtYearlyMonth);
+	desc.describe(dtYearlyDay);
+	desc.describe(startable);
+	desc.describe(endWorkTime);
+	desc.describe(indefinitelyAdvanceable);
+	desc.describe(shouldPlayNotificationSounds);
 }
 
 void Task::nextExecPlusDays(int32_t days)

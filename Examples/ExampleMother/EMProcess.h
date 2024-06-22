@@ -17,8 +17,7 @@ struct Process
 
 	// Non-Persisted Helper Data below.
 
-	void serialize(bbe::ByteBuffer& buffer) const;
-	static Process deserialize(bbe::ByteBufferSpan& buffer);
+	void serialDescription(bbe::SerializedDescription& desc) const;
 };
 
 class SubsystemProcess

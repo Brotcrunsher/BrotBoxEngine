@@ -4,20 +4,10 @@
 #include <AtlBase.h>
 #include <UIAutomation.h>
 
-void Process::serialize(bbe::ByteBuffer& buffer) const
+void Process::serialDescription(bbe::SerializedDescription& desc) const
 {
-	buffer.write(title);
-	buffer.write(type);
-}
-
-Process Process::deserialize(bbe::ByteBufferSpan& buffer)
-{
-	Process retVal;
-
-	buffer.read(retVal.title);
-	buffer.read(retVal.type);
-
-	return retVal;
+	desc.describe(title);
+	desc.describe(type);
 }
 
 void SubsystemProcess::update()
@@ -114,3 +104,4 @@ void SubsystemProcess::drawGui()
 		ImGui::EndTable();
 	}
 }
+

@@ -25,18 +25,9 @@ struct ClipboardContent
 
 
 	// Non-Persisted Helper Data below.
-
-	void serialize(bbe::ByteBuffer& buffer) const
+	void serialDescription(bbe::SerializedDescription& desc) const
 	{
-		buffer.write(content);
-	}
-	static ClipboardContent deserialize(bbe::ByteBufferSpan& buffer)
-	{
-		ClipboardContent retVal;
-
-		buffer.read(retVal.content);
-
-		return retVal;
+		desc.describe(content);
 	}
 };
 
@@ -46,18 +37,9 @@ struct StreakDay
 
 
 	// Non-Persisted Helper Data below.
-
-	void serialize(bbe::ByteBuffer& buffer) const
+	void serialDescription(bbe::SerializedDescription& desc) const
 	{
-		buffer.write(day);
-	}
-	static StreakDay deserialize(bbe::ByteBufferSpan& buffer)
-	{
-		StreakDay retVal;
-
-		buffer.read(retVal.day);
-
-		return retVal;
+		desc.describe(day);
 	}
 };
 
@@ -68,22 +50,11 @@ struct GeneralConfig
 	bbe::String backupPath;
 
 	// Non-Persisted Helper Data below.
-
-	void serialize(bbe::ByteBuffer& buffer) const
+	void serialDescription(bbe::SerializedDescription& desc) const
 	{
-		buffer.write(updatePath);
-		buffer.write(beepEvery);
-		buffer.write(backupPath);
-	}
-	static GeneralConfig deserialize(bbe::ByteBufferSpan& buffer)
-	{
-		GeneralConfig retVal;
-
-		buffer.read(retVal.updatePath);
-		buffer.read(retVal.beepEvery);
-		buffer.read(retVal.backupPath);
-
-		return retVal;
+		desc.describe(updatePath);
+		desc.describe(beepEvery);
+		desc.describe(backupPath);
 	}
 };
 
@@ -120,21 +91,11 @@ struct Stopwatch
 	// Non-Persisted Helper Data below.
 	mutable bool soundArmed = false;
 
-	void serialize(bbe::ByteBuffer& buffer) const
+	void serialDescription(bbe::SerializedDescription& desc) const
 	{
-		buffer.write(title);
-		buffer.write(seconds);
-		buffer.write(doneAt);
-	}
-	static Stopwatch deserialize(bbe::ByteBufferSpan& buffer)
-	{
-		Stopwatch retVal;
-
-		buffer.read(retVal.title);
-		buffer.read(retVal.seconds);
-		buffer.read(retVal.doneAt);
-
-		return retVal;
+		desc.describe(title);
+		desc.describe(seconds);
+		desc.describe(doneAt);
 	}
 
 	bool shouldPlaySound() const

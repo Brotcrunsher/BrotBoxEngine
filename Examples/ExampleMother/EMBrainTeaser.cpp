@@ -1,20 +1,10 @@
 #include "EMBrainTeaser.h"
 #include "EMTab.h"
 
-void BrainTeaserScore::serialize(bbe::ByteBuffer& buffer) const
+void BrainTeaserScore::serialDescription(bbe::SerializedDescription& desc) const
 {
-	buffer.write(score);
-	buffer.write(didItOn);
-}
-
-BrainTeaserScore BrainTeaserScore::deserialize(bbe::ByteBufferSpan& buffer)
-{
-	BrainTeaserScore retVal;
-
-	buffer.read(retVal.score);
-	retVal.didItOn.deserialize(buffer);
-
-	return retVal;
+	desc.describe(score);
+	desc.describe(didItOn);
 }
 
 SubsystemBrainTeaser::SubsystemBrainTeaser(bbe::Game* game) : m_game(game)

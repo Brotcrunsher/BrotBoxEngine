@@ -1,10 +1,40 @@
 #pragma once
 
+#include <typeinfo>
+#include <typeindex>
+#include <type_traits>
 #include "../BBE/List.h"
 #include "../BBE/DataType.h"
 
 namespace bbe
 {
+	class ByteBuffer;
+	class ByteBufferSpan;
+
+	class SerializedDescription
+	{
+	private:
+		struct Descriptor
+		{
+			std::type_index type;
+			const void* addr;
+		};
+		bbe::List<Descriptor> descriptors;
+
+	public:
+		SerializedDescription() = default;
+
+		template<typename T>
+		void describe(const T& val)
+		{
+			Descriptor desc{ typeid(std::remove_const_t<std::remove_reference_t<T>>), &val };
+			descriptors.add(desc);
+		}
+
+		void toByteBuffer(bbe::ByteBuffer& buffer) const;
+		void writeFromSpan(bbe::ByteBufferSpan& span) const;
+	};
+
 	class ByteBufferSpan
 	{
 	private:
@@ -152,6 +182,12 @@ namespace bbe
 				{
 					write(val[i]);
 				}
+			}
+			else if constexpr (requires(T & t, bbe::SerializedDescription & desc) { t.serialDescription(desc);})
+			{
+				bbe::SerializedDescription desc;
+				val.serialDescription(desc);
+				desc.toByteBuffer(*this);
 			}
 			else
 			{

@@ -16,8 +16,7 @@ struct Url
 
 	// Non-Persisted Helper Data below.
 
-	void serialize(bbe::ByteBuffer& buffer) const;
-	static Url deserialize(bbe::ByteBufferSpan& buffer);
+	void serialDescription(bbe::SerializedDescription& desc) const;
 };
 
 class SubsystemUrl

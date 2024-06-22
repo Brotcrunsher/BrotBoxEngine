@@ -70,8 +70,7 @@ public:
 	void execMoveToNow();
 	void execAdvance();
 
-	void serialize(bbe::ByteBuffer& buffer) const;
-	static Task deserialize(bbe::ByteBufferSpan& buffer);
+	void serialDescription(bbe::SerializedDescription& desc) const;
 
 	void sanity();
 	void nextExecPlusDays(int32_t days);
