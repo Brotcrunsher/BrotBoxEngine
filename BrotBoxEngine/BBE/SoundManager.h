@@ -36,6 +36,7 @@ namespace bbe
 			void update();
 			void init();
 			void destroy();
+			void restart();
 			SoundInstance play(const SoundDataSource& sound, const bbe::Vector3* pos, float volume);
 
 			void stopSoundWithIndex(uint64_t index);

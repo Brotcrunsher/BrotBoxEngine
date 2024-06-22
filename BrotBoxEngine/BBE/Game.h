@@ -162,6 +162,7 @@ namespace bbe
 
 #ifndef BBE_NO_AUDIO
 		void setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection);
+		void restartSoundSystem();
 #endif
 #ifdef BBE_RENDERER_OPENGL
 		uint32_t getAmountOfDrawcalls() const;

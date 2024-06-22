@@ -8,14 +8,16 @@ namespace bbe
 	class ByteBufferSpan
 	{
 	private:
-		bbe::List<bbe::byte>& m_bytes; // List reference instead of byte* to ensure we are safe when the list resizes.
+		bbe::List<bbe::byte>* m_bytes = nullptr; // List* instead of byte* to ensure we are safe when the list resizes.
 		size_t m_start = 0;
 		size_t m_end = 0;
 		bool m_didErr = false;
+		bool m_endiannessFlipped = false;
 
 		void read(bbe::byte* bytes, bbe::byte* default_, size_t length);
 
 	public:
+		ByteBufferSpan() = default;
 		ByteBufferSpan(bbe::List<bbe::byte>& bytes);
 		ByteBufferSpan(bbe::List<bbe::byte>& bytes, size_t start, size_t end);
 
@@ -88,11 +90,25 @@ namespace bbe
 			}
 		}
 
+		uint8_t readU8();
+		uint16_t readU16();
+		uint32_t readU32();
+		uint64_t readU64();
+		int8_t readI8();
+		int16_t readI16();
+		int32_t readI32();
+		int64_t readI64();
+
 		ByteBufferSpan readSpan(size_t size);
 		const char* readNullString();
 
 		bool hasMore() const;
 		size_t getLength() const;
+		void reduceLengthTo(size_t length);
+		void skipBytes(size_t bytes);
+
+		bool valid() const;
+		void flipEndianness();
 	};
 
 	class ByteBuffer
