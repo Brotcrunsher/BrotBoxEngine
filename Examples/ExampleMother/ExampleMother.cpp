@@ -21,41 +21,25 @@
 
 struct ClipboardContent
 {
-	bbe::String content;
-
-
-	// Non-Persisted Helper Data below.
-	void serialDescription(bbe::SerializedDescription& desc) const
-	{
-		desc.describe(content);
-	}
+	BBE_SERIALIZABLE_DATA(
+		(bbe::String, content)
+	)
 };
 
 struct StreakDay
 {
-	bbe::TimePoint day;
-
-
-	// Non-Persisted Helper Data below.
-	void serialDescription(bbe::SerializedDescription& desc) const
-	{
-		desc.describe(day);
-	}
+	BBE_SERIALIZABLE_DATA(
+		(bbe::TimePoint, day)
+	)
 };
 
 struct GeneralConfig
 {
-	bbe::String updatePath;
-	int32_t beepEvery = 0;
-	bbe::String backupPath;
-
-	// Non-Persisted Helper Data below.
-	void serialDescription(bbe::SerializedDescription& desc) const
-	{
-		desc.describe(updatePath);
-		desc.describe(beepEvery);
-		desc.describe(backupPath);
-	}
+	BBE_SERIALIZABLE_DATA(
+		(bbe::String, updatePath),
+		(int32_t, beepEvery),
+		(bbe::String, backupPath)
+	)
 };
 
 struct KeyboardTracker
@@ -84,19 +68,12 @@ struct KeyboardTracker
 
 struct Stopwatch
 {
-	bbe::String title;
-	int32_t seconds = 0;
-	bbe::TimePoint doneAt;
-
-	// Non-Persisted Helper Data below.
+	BBE_SERIALIZABLE_DATA(
+		(bbe::String, title),
+		(int32_t, seconds),
+		(bbe::TimePoint, doneAt)
+	)
 	mutable bool soundArmed = false;
-
-	void serialDescription(bbe::SerializedDescription& desc) const
-	{
-		desc.describe(title);
-		desc.describe(seconds);
-		desc.describe(doneAt);
-	}
 
 	bool shouldPlaySound() const
 	{

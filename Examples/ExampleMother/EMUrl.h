@@ -4,19 +4,16 @@
 
 struct Url
 {
-	bbe::String url;
 	enum /*Non-Class*/ Type
 	{
 		TYPE_UNKNOWN = 0,
 		TYPE_TIME_WASTER = 1,
 		TYPE_WORK = 2,
 	};
-	int32_t type = TYPE_UNKNOWN;
-
-
-	// Non-Persisted Helper Data below.
-
-	void serialDescription(bbe::SerializedDescription& desc) const;
+	BBE_SERIALIZABLE_DATA(
+		(bbe::String, url),
+		(int32_t, type)
+	)
 };
 
 class SubsystemUrl

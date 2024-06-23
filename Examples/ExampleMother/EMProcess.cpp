@@ -4,12 +4,6 @@
 #include <AtlBase.h>
 #include <UIAutomation.h>
 
-void Process::serialDescription(bbe::SerializedDescription& desc) const
-{
-	desc.describe(title);
-	desc.describe(type);
-}
-
 void SubsystemProcess::update()
 {
 	EVERY_SECONDS(10)

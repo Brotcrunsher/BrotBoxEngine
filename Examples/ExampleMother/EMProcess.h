@@ -3,8 +3,6 @@
 
 struct Process
 {
-	bbe::String title;
-
 	enum /*Non-Class*/ Type
 	{
 		TYPE_UNKNOWN = 0,
@@ -12,12 +10,10 @@ struct Process
 		TYPE_OTHER = 2,
 		TYPE_GAME = 3,
 	};
-	int32_t type = TYPE_UNKNOWN;
-
-
-	// Non-Persisted Helper Data below.
-
-	void serialDescription(bbe::SerializedDescription& desc) const;
+	BBE_SERIALIZABLE_DATA(
+		(bbe::String, title),
+		(int32_t, type)
+	)
 };
 
 class SubsystemProcess

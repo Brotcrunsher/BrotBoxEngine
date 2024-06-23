@@ -8,12 +8,6 @@
 #include <AtlBase.h>
 #include <UIAutomation.h>
 
-void Url::serialDescription(bbe::SerializedDescription& desc) const
-{
-	desc.describe(url);
-	desc.describe(type);
-}
-
 void SubsystemUrl::update()
 {
 	m_timeWasterUrlFound = false;

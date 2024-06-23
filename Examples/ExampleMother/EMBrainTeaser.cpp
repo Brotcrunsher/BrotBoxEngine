@@ -1,12 +1,6 @@
 #include "EMBrainTeaser.h"
 #include "EMTab.h"
 
-void BrainTeaserScore::serialDescription(bbe::SerializedDescription& desc) const
-{
-	desc.describe(score);
-	desc.describe(didItOn);
-}
-
 SubsystemBrainTeaser::SubsystemBrainTeaser(bbe::Game* game) : m_game(game)
 {
 }

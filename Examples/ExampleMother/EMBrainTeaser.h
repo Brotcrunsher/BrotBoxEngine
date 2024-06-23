@@ -3,11 +3,10 @@
 
 struct BrainTeaserScore
 {
-	int32_t score = 0;
-	bbe::TimePoint didItOn;
-
-	// Non-Persisted Helper Data below.
-	void serialDescription(bbe::SerializedDescription& desc) const;
+	BBE_SERIALIZABLE_DATA(
+		(int32_t, score),
+		(bbe::TimePoint, didItOn)
+	)
 };
 
 class SubsystemBrainTeaser
