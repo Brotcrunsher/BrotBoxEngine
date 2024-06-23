@@ -15,6 +15,7 @@ class MyGame : public bbe::Game
 	bbe::Vector2 offset;
 	bbe::String path;
 	bbe::Image canvas;
+	bbe::Image workArea;
 	float zoomLevel = 1.f;
 
 	float leftColor[4]  = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -36,10 +37,36 @@ class MyGame : public bbe::Game
 		zoomLevel = 1.f;
 	}
 
+	void clearWorkArea()
+	{
+		workArea = bbe::Image(canvas.getWidth(), canvas.getHeight(), bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
+		workArea.keepAfterUpload();
+		workArea.setFilterMode(bbe::ImageFilterMode::NEAREST);
+	}
+
+	void applyWorkArea()
+	{
+		// TODO: This should probably be moved to the image class
+		for (size_t i = 0; i < workArea.getWidth(); i++)
+		{
+			for (size_t k = 0; k < workArea.getHeight(); k++)
+			{
+				const bbe::Colori c = workArea.getPixel(i, k);
+				if (c.a == 0) continue;
+
+				const bbe::Colori oldColor = canvas.getPixel(i, k);
+				const bbe::Colori newColor = oldColor.blendTo(c);
+				canvas.setPixel(i, k, newColor);
+			}
+		}
+		clearWorkArea();
+	}
+
 	void setupCanvas()
 	{
 		canvas.keepAfterUpload();
 		canvas.setFilterMode(bbe::ImageFilterMode::NEAREST);
+		clearWorkArea();
 		resetCamera();
 	}
 
@@ -121,12 +148,12 @@ class MyGame : public bbe::Game
 				while (gi.hasNext())
 				{
 					const bbe::Vector2 coordBase = screenToCanvas(gi.next().as<float>());
-					for (int32_t i = -brushWidth + 1; i < brushWidth; i++)
+					for (int32_t i = -brushWidth; i <= brushWidth; i++)
 					{
-						for (int32_t k = -brushWidth + 1; k < brushWidth; k++)
+						for (int32_t k = -brushWidth; k <= brushWidth; k++)
 						{
-							float pencilStrength = brushWidth - bbe::Math::sqrt(i * i + k * k);
-							if (pencilStrength < 0) continue;
+							float pencilStrength = bbe::Math::clamp01(brushWidth - bbe::Math::sqrt(i * i + k * k));
+							if (pencilStrength <= 0.f) continue;
 
 							bbe::Vector2 coord = coordBase + bbe::Vector2(i, k);
 							if (tiled)
@@ -136,14 +163,12 @@ class MyGame : public bbe::Game
 							}
 							if (coord.x >= 0 && coord.y >= 0 && coord.x < canvas.getWidth() && coord.y < canvas.getHeight())
 							{
-								if (pencilStrength > 1)
+								bbe::Colori newColor = getMouseColor();
+								newColor.a = newColor.MAXIMUM_VALUE * pencilStrength;
+								bbe::Colori oldWorkColor = workArea.getPixel(coord.x, coord.y);
+								if (newColor.a > oldWorkColor.a)
 								{
-									canvas.setPixel(coord.x, coord.y, getMouseColor());
-								}
-								else
-								{
-									bbe::Colori oldColor = canvas.getPixel(coord.x, coord.y);
-									canvas.setPixel(coord.x, coord.y, getMouseColor().blendTo(oldColor, 1.f - pencilStrength));
+									workArea.setPixel(coord.x, coord.y, newColor);
 								}
 							}
 						}
@@ -157,6 +182,14 @@ class MyGame : public bbe::Game
 			else
 			{
 				throw bbe::IllegalStateException();
+			}
+		}
+
+		if (isMouseReleased(bbe::MouseButton::LEFT) || isMouseReleased(bbe::MouseButton::RIGHT))
+		{
+			if (!isMouseDown(bbe::MouseButton::LEFT) && !isMouseDown(bbe::MouseButton::RIGHT))
+			{
+				applyWorkArea();
 			}
 		}
 
@@ -207,6 +240,7 @@ class MyGame : public bbe::Game
 			for (int32_t k = -repeats; k <= repeats; k++)
 			{
 				brush.drawImage(offset.x + i * canvas.getWidth() * zoomLevel, offset.y + k * canvas.getHeight() * zoomLevel, canvas.getWidth() * zoomLevel, canvas.getHeight() * zoomLevel, canvas);
+				brush.drawImage(offset.x + i * canvas.getWidth() * zoomLevel, offset.y + k * canvas.getHeight() * zoomLevel, canvas.getWidth() * zoomLevel, canvas.getHeight() * zoomLevel, workArea);
 			}
 		}
 		if (zoomLevel > 3 && drawGridLines)

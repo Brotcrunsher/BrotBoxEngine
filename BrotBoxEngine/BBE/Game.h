@@ -101,6 +101,7 @@ namespace bbe
 		bool wasMouseDownLastFrame(bbe::MouseButton button) const;
 		bool wasMouseUpLastFrame(bbe::MouseButton button) const;
 		bool isMousePressed(bbe::MouseButton button) const;
+		bool isMouseReleased(bbe::MouseButton button) const;
 		float getMouseX() const;
 		float getMouseY() const;
 		Vector2 getMouse() const;

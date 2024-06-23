@@ -47,6 +47,15 @@ bool bbe::Mouse::isButtonPressed(bbe::MouseButton button) const
 	return m_pButtonsThisFrame[(int)button] && !m_pButtonsLastFrame[(int)button];
 }
 
+bool bbe::Mouse::isButtonReleased(bbe::MouseButton button) const
+{
+	if (!isMouseButtonValid(button))
+	{
+		throw NoSuchMouseButtonException();
+	}
+	return !m_pButtonsThisFrame[(int)button] && m_pButtonsLastFrame[(int)button];
+}
+
 void bbe::Mouse::INTERNAL_moveMouse(float x, float y)
 {
 	m_mouseNextFrameX = x;

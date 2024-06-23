@@ -312,6 +312,11 @@ bool bbe::Game::isMousePressed(bbe::MouseButton button) const
 	return m_pwindow->INTERNAL_mouse.isButtonPressed(button);
 }
 
+bool bbe::Game::isMouseReleased(bbe::MouseButton button) const
+{
+	return m_pwindow->INTERNAL_mouse.isButtonReleased(button);
+}
+
 float bbe::Game::getMouseX() const
 {
 	return (float)(m_pwindow->INTERNAL_mouse.getMouseX());

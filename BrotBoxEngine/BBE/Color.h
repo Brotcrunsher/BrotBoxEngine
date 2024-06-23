@@ -10,6 +10,8 @@ namespace bbe
 	class Color_t
 	{
 	public:
+		static constexpr T MAXIMUM_VALUE = maxValue;
+
 		T r;
 		T g;
 		T b;
@@ -55,6 +57,20 @@ namespace bbe
 				bbe::Math::interpolateLinear(g, other.g, t),
 				bbe::Math::interpolateLinear(b, other.b, t),
 				bbe::Math::interpolateLinear(a, other.a, t)
+			);
+		}
+
+		bbe::Color_t<T, maxValue> blendTo(const bbe::Color_t<T, maxValue>& other) const
+		{
+			const float t = other.a / float(maxValue);
+			if (t < 0.f) return *this;
+			if (t > 1.f) return other;
+
+			return bbe::Color_t<T, maxValue>(
+				bbe::Math::interpolateLinear(r, other.r, t),
+				bbe::Math::interpolateLinear(g, other.g, t),
+				bbe::Math::interpolateLinear(b, other.b, t),
+				maxValue // Is this correct?
 			);
 		}
 

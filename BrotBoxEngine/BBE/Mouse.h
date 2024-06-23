@@ -64,6 +64,7 @@ namespace bbe
 		bool wasButtonUpLastFrame(bbe::MouseButton button) const;
 
 		bool isButtonPressed(bbe::MouseButton button) const;
+		bool isButtonReleased(bbe::MouseButton button) const;
 
 		void INTERNAL_moveMouse(float x, float y);
 		void INTERNAL_press(MouseButton button);
