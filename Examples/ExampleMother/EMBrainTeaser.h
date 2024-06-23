@@ -4,8 +4,8 @@
 struct BrainTeaserScore
 {
 	BBE_SERIALIZABLE_DATA(
-		(int32_t, score),
-		(bbe::TimePoint, didItOn)
+		((int32_t), score),
+		((bbe::TimePoint), didItOn)
 	)
 };
 

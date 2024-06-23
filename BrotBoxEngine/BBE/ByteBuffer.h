@@ -31,6 +31,15 @@ namespace bbe
 			descriptors.add(desc);
 		}
 
+		template<typename T, size_t U>
+		void describe(const std::array<T, U>& val)
+		{
+			for (size_t i = 0; i < U; i++)
+			{
+				describe(val[i]);
+			}
+		}
+
 		void toByteBuffer(bbe::ByteBuffer& buffer) const;
 		void writeFromSpan(bbe::ByteBufferSpan& span) const;
 	};

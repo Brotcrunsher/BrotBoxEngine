@@ -4,50 +4,51 @@
 
 struct Task
 {
-	bbe::String title;
-	int32_t repeatDays = 0;
-	bbe::TimePoint previousExecution = bbe::TimePoint::epoch();
-private:
-	bbe::TimePoint nextExecution; // Call nextPossibleExecution from the outside! 
-public:
-	bool canBeSu = true;
-	int32_t followUp = 0; // In minutes. When clicking follow up, the task will be rescheduled the same day.
-	int32_t internalValue = 0;
-	int32_t internalValueIncrease = 0;
-	int32_t followUp2 = 0;
 	enum /*Non-Class*/ InputType
 	{
 		IT_NONE,
 		IT_INTEGER,
 		IT_FLOAT,
 	};
-	int32_t inputType = IT_NONE;
-	bbe::List<float> history;
-	bool advanceable = false;
-	bool oneShot = false;
-	bool preparation = false;
-	bool canBeMo = true;
-	bool canBeTu = true;
-	bool canBeWe = true;
-	bool canBeTh = true;
-	bool canBeFr = true;
-	bool canBeSa = true;
-	bool earlyAdvanceable = true;
-	bbe::String clipboard;
-	bool lateTimeTask = false;
 	enum /*Non-Class*/ DateType
 	{
 		DT_DYNAMIC = 0,
 		DT_YEARLY = 1,
 		// dt_monthly = 2, // Not implemented
 	};
-	int32_t dateType = DT_DYNAMIC;
-	int32_t dtYearlyMonth = 1;
-	int32_t dtYearlyDay = 1;
-	bool startable = false;
-	bbe::TimePoint endWorkTime = bbe::TimePoint::epoch();
-	bool indefinitelyAdvanceable = false;
-	bool shouldPlayNotificationSounds = true;
+
+	BBE_SERIALIZABLE_DATA(
+		((bbe::String), title),
+		((int32_t), repeatDays, 0),
+		((bbe::TimePoint), previousExecution, bbe::TimePoint::epoch()),
+		((bbe::TimePoint), nextExecution), // Call nextPossibleExecution from the outside! 
+		((bool), canBeSu, true),
+		((int32_t), followUp, 0), // In minutes. When clicking follow up, the task will be rescheduled the same day.
+		((int32_t), internalValue, 0),
+		((int32_t), internalValueIncrease, 0),
+		((int32_t), followUp2, 0),
+		((int32_t), inputType, IT_NONE),
+		((bbe::List<float>), history),
+		((bool), advanceable, false),
+		((bool), oneShot, false),
+		((bool), preparation, false),
+		((bool), canBeMo, true),
+		((bool), canBeTu, true),
+		((bool), canBeWe, true),
+		((bool), canBeTh, true),
+		((bool), canBeFr, true),
+		((bool), canBeSa, true),
+		((bool), earlyAdvanceable, true),
+		((bbe::String), clipboard),
+		((bool), lateTimeTask, false),
+		((int32_t), dateType, DT_DYNAMIC),
+		((int32_t), dtYearlyMonth, 1),
+		((int32_t), dtYearlyDay, 1),
+		((bool), startable, false),
+		((bbe::TimePoint), endWorkTime, bbe::TimePoint::epoch()),
+		((bool), indefinitelyAdvanceable, false),
+		((bool), shouldPlayNotificationSounds, true)
+	)
 
 	// Non-Persisted Helper Data below.
 	int32_t inputInt = 0;
@@ -69,8 +70,6 @@ public:
 	void execFollowUp2();
 	void execMoveToNow();
 	void execAdvance();
-
-	void serialDescription(bbe::SerializedDescription& desc) const;
 
 	void sanity();
 	void nextExecPlusDays(int32_t days);

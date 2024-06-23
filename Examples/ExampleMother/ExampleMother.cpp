@@ -22,56 +22,39 @@
 struct ClipboardContent
 {
 	BBE_SERIALIZABLE_DATA(
-		(bbe::String, content)
+		((bbe::String), content)
 	)
 };
 
 struct StreakDay
 {
 	BBE_SERIALIZABLE_DATA(
-		(bbe::TimePoint, day)
+		((bbe::TimePoint), day)
 	)
 };
 
 struct GeneralConfig
 {
 	BBE_SERIALIZABLE_DATA(
-		(bbe::String, updatePath),
-		(int32_t, beepEvery),
-		(bbe::String, backupPath)
+		((bbe::String), updatePath),
+		((int32_t), beepEvery, 17),
+		((bbe::String), backupPath)
 	)
 };
 
 struct KeyboardTracker
 {
-	uint32_t keyPressed[(size_t)bbe::Key::LAST + 1] = {};
-
-	// Non-Persisted Helper Data below.
-
-	void serialize(bbe::ByteBuffer& buffer) const
-	{
-		for (size_t i = 0; i < (size_t)bbe::Key::LAST + 1; i++)
-		{
-			buffer.write(keyPressed[i]);
-		}
-	}
-	static KeyboardTracker deserialize(bbe::ByteBufferSpan& buffer)
-	{
-		KeyboardTracker retVal;
-		for (size_t i = 0; i < (size_t)bbe::Key::LAST + 1; i++)
-		{
-			buffer.read(retVal.keyPressed[i]);
-		}
-		return retVal;
-	}
+	BBE_SERIALIZABLE_DATA(
+		((std::array<uint32_t, (size_t)bbe::Key::LAST + 1>), keyPressed)
+	)
 };
 
 struct Stopwatch
 {
 	BBE_SERIALIZABLE_DATA(
-		(bbe::String, title),
-		(int32_t, seconds),
-		(bbe::TimePoint, doneAt)
+		((bbe::String), title),
+		((int32_t), seconds),
+		((bbe::TimePoint), doneAt)
 	)
 	mutable bool soundArmed = false;
 

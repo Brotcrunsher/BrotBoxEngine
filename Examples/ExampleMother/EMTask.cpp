@@ -89,40 +89,6 @@ void Task::sanity()
 	if (followUp < 0) followUp = 0;
 }
 
-void Task::serialDescription(bbe::SerializedDescription& desc) const
-{
-	desc.describe(title);
-	desc.describe(repeatDays);
-	desc.describe(previousExecution);
-	desc.describe(nextExecution);
-	desc.describe(canBeSu);
-	desc.describe(followUp);
-	desc.describe(internalValue);
-	desc.describe(internalValueIncrease);
-	desc.describe(followUp2);
-	desc.describe(inputType);
-	desc.describe(history);
-	desc.describe(advanceable);
-	desc.describe(oneShot);
-	desc.describe(preparation);
-	desc.describe(canBeMo);
-	desc.describe(canBeTu);
-	desc.describe(canBeWe);
-	desc.describe(canBeTh);
-	desc.describe(canBeFr);
-	desc.describe(canBeSa);
-	desc.describe(earlyAdvanceable);
-	desc.describe(clipboard);
-	desc.describe(lateTimeTask);
-	desc.describe(dateType);
-	desc.describe(dtYearlyMonth);
-	desc.describe(dtYearlyDay);
-	desc.describe(startable);
-	desc.describe(endWorkTime);
-	desc.describe(indefinitelyAdvanceable);
-	desc.describe(shouldPlayNotificationSounds);
-}
-
 void Task::nextExecPlusDays(int32_t days)
 {
 	nextExecution = toPossibleTimePoint(nextPossibleExecution().plusDays(days).toMorning(), days > 0);

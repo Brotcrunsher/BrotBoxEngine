@@ -11,8 +11,8 @@ struct Url
 		TYPE_WORK = 2,
 	};
 	BBE_SERIALIZABLE_DATA(
-		(bbe::String, url),
-		(int32_t, type)
+		((bbe::String), url),
+		((int32_t), type)
 	)
 };
 

@@ -11,8 +11,8 @@ struct Process
 		TYPE_GAME = 3,
 	};
 	BBE_SERIALIZABLE_DATA(
-		(bbe::String, title),
-		(int32_t, type)
+		((bbe::String), title),
+		((int32_t), type)
 	)
 };
 
