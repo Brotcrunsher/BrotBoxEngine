@@ -397,6 +397,8 @@ public:
 			clipboardContent.add(newContent);
 			newContent = ClipboardContent();
 		}
+		static bool editMode = false;
+		ImGui::Checkbox("Edit Mode", &editMode);
 		size_t deleteIndex = (size_t)-1;
 		for (size_t i = 0; i < clipboardContent.getLength(); i++)
 		{
@@ -406,9 +408,19 @@ public:
 				deleteIndex = i;
 			}
 			ImGui::SameLine();
-			if (ImGui::Button(clipboardContent[i].content))
+			if (editMode)
 			{
-				setClipboard(clipboardContent[i].content);
+				if (ImGui::bbe::InputText("##Content", clipboardContent[i].content))
+				{
+					clipboardContent.writeToFile();
+				}
+			}
+			else
+			{
+				if (ImGui::Button(clipboardContent[i].content))
+				{
+					setClipboard(clipboardContent[i].content);
+				}
 			}
 			ImGui::bbe::tooltip(bbe::String(clipboardContent[i].content).hardBreakEvery(100));
 			ImGui::PopID();
