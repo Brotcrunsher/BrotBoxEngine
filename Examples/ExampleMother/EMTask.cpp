@@ -667,9 +667,12 @@ bool SubsystemTask::hasPotentialTaskComplaint() const
 		{
 			if (!t.oneShot && t.shouldPlayNotificationSounds)
 			{
-				if (t.lateTimeTask && !isWorkTime())
+				if (t.lateTimeTask)
 				{
-					return true;
+					if (!isWorkTime())
+					{
+						return true;
+					}
 				}
 				else if(isWorkTime())
 				{
