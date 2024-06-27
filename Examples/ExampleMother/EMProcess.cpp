@@ -15,21 +15,28 @@ void SubsystemProcess::update()
 		m_isGameOn = false;
 		while (hasEntry)
 		{
-			bool found = false;
-			for (size_t i = 0; i < processes.getLength(); i++)
+			const bbe::String scannedProcessName = entry.szExeFile;
+			if (!scannedProcessName.startsWith("AM_Delta_Patch_") // Microsoft Anti-Malware Signature Delta Update Package
+				&& !scannedProcessName.endsWith("_chrome_updater.exe")
+				&& !scannedProcessName.startsWith("MicrosoftEdge_")
+				) 
 			{
-				if (processes[i].title == entry.szExeFile)
+				bool found = false;
+				for (size_t i = 0; i < processes.getLength(); i++)
 				{
-					if (processes[i].type == Process::TYPE_GAME) m_isGameOn = true;
-					found = true;
-					break;
+					if (processes[i].title == entry.szExeFile)
+					{
+						if (processes[i].type == Process::TYPE_GAME) m_isGameOn = true;
+						found = true;
+						break;
+					}
 				}
-			}
-			if (!found)
-			{
-				Process newProcess;
-				newProcess.title = entry.szExeFile;
-				processes.add(newProcess);
+				if (!found)
+				{
+					Process newProcess;
+					newProcess.title = entry.szExeFile;
+					processes.add(newProcess);
+				}
 			}
 			hasEntry = Process32Next(snapshot, &entry);
 		}
