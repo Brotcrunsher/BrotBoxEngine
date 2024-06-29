@@ -20,7 +20,6 @@
 //TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
 //TODO: Restart Sound System if no sound is played
 //TODO: Default value of BBE_SERIALIZABLE_DATA buggy when adding new elements to the end of an existing struct.
-//TODO: ExampleWaveFunction is broken. Can't compile.
 
 struct ClipboardContent
 {

@@ -713,7 +713,7 @@ namespace bbe
 			return true;
 		}
 
-		bool operator!=(const List<T>& other)
+		bool operator!=(const List<T>& other) const
 		{
 			return !(operator==(other));
 		}
