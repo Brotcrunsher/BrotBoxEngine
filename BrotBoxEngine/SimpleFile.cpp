@@ -5,11 +5,17 @@
 #include <string>
 #include <sstream>
 #include <filesystem>
+#include <mutex>
+#include <atomic>
+#include <thread>
+#include <condition_variable>
 
+static std::mutex backupPathMutex;
 static bbe::String backupPath;
 
-void bbe::backup::setBackupPath(const bbe::String& path)
+void bbe::simpleFile::backup::setBackupPath(const bbe::String& path)
 {
+	std::lock_guard lg(backupPathMutex);
 	if (path.isEmpty())
 	{
 		backupPath = "";
@@ -23,17 +29,19 @@ void bbe::backup::setBackupPath(const bbe::String& path)
 	}
 }
 
-bool bbe::backup::isBackupPathSet()
+bool bbe::simpleFile::backup::isBackupPathSet()
 {
+	std::lock_guard lg(backupPathMutex);
 	return !backupPath.isEmpty();
 }
 
-bbe::String bbe::backup::backupFullPath(const bbe::String& path)
+bbe::String bbe::simpleFile::backup::backupFullPath(const bbe::String& path)
 {
+	std::lock_guard lg(backupPathMutex);
 	return backupPath + path;
 }
 
-void bbe::backup::writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
+void bbe::simpleFile::backup::writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
 {
 	bbe::simpleFile::writeBinaryToFile(filePath, buffer);
 	if (isBackupPathSet())
@@ -42,7 +50,7 @@ void bbe::backup::writeBinaryToFile(const bbe::String& filePath, const bbe::Byte
 	}
 }
 
-void bbe::backup::createDirectory(const bbe::String& path)
+void bbe::simpleFile::backup::createDirectory(const bbe::String& path)
 {
 	bbe::simpleFile::createDirectory(path);
 	if (isBackupPathSet())
@@ -51,7 +59,7 @@ void bbe::backup::createDirectory(const bbe::String& path)
 	}
 }
 
-void bbe::backup::appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
+void bbe::simpleFile::backup::appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
 {
 	bbe::simpleFile::appendBinaryToFile(filePath, buffer);
 	if (isBackupPathSet())
@@ -383,3 +391,97 @@ bool bbe::simpleFile::showSaveDialog(bbe::String& outPath, const bbe::String& de
 	return false;
 }
 #endif
+
+enum class AsyncJobType
+{
+	WRITE_BINARY,
+	CREATE_DIRECTORY,
+	APPEND_BINARY,
+};
+
+struct AsyncJob
+{
+	AsyncJobType type;
+	bbe::String path;
+	bbe::ByteBuffer buffer;
+};
+
+bbe::ConcurrentList<AsyncJob> jobs;
+std::atomic_bool ioThreadRunning = false;
+std::jthread ioThread;
+std::condition_variable_any conditional;
+
+static void ioThreadMain()
+{
+	while (jobs.getLength() > 0)
+	{
+		const AsyncJob job = jobs.popFront();
+		if (job.type == AsyncJobType::WRITE_BINARY)
+		{
+			bbe::simpleFile::backup::writeBinaryToFile(job.path, job.buffer);
+		}
+		else if (job.type == AsyncJobType::CREATE_DIRECTORY)
+		{
+			bbe::simpleFile::backup::createDirectory(job.path);
+		}
+		else if (job.type == AsyncJobType::APPEND_BINARY)
+		{
+			bbe::simpleFile::backup::appendBinaryToFile(job.path, job.buffer);
+		}
+		else
+		{
+			throw bbe::IllegalStateException();
+		}
+
+		if (jobs.getLength() == 0 && ioThreadRunning)
+		{
+			std::unique_lock ul(jobs);
+			conditional.wait(ul, [] {
+				return jobs.getLength() > 0 || !ioThreadRunning;
+				});
+		}
+	}
+}
+
+static void notifyIOThread()
+{
+	const bool launchIoThread = !ioThreadRunning.exchange(true);
+	if (launchIoThread)
+	{
+		ioThread = std::jthread(ioThreadMain);
+	}
+	conditional.notify_all();
+}
+
+bool bbe::simpleFile::backup::async::hasOpenIO()
+{
+	return jobs.getLength() > 0;
+}
+
+void bbe::simpleFile::backup::async::stopIoThread()
+{
+	ioThreadRunning = false;
+	conditional.notify_all();
+	if (ioThread.joinable())
+	{
+		ioThread.join();
+	}
+}
+
+void bbe::simpleFile::backup::async::writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
+{
+	jobs.add({ AsyncJobType::WRITE_BINARY, filePath, buffer });
+	notifyIOThread();
+}
+
+void bbe::simpleFile::backup::async::createDirectory(const bbe::String& path)
+{
+	jobs.add({ AsyncJobType::CREATE_DIRECTORY, path });
+	notifyIOThread();
+}
+
+void bbe::simpleFile::backup::async::appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
+{
+	jobs.add({ AsyncJobType::APPEND_BINARY, filePath, buffer });
+	notifyIOThread();
+}

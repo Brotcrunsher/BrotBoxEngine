@@ -13,6 +13,8 @@
 #include <iostream>
 #include <cstring>
 #include <limits>
+#include <mutex>
+#include <utility>
 
 namespace bbe
 {
@@ -293,6 +295,17 @@ namespace bbe
 			T retVal = std::move(last());
 			getRaw()[m_length - 1].~T();
 			m_length--;
+			return retVal;
+		}
+
+		T popFront()
+		{
+			if (m_length < 1)
+			{
+				debugBreak();
+			}
+			T retVal = std::move(first());
+			removeIndex(0);
 			return retVal;
 		}
 
@@ -706,6 +719,63 @@ namespace bbe
 		}
 
 
+	};
+
+	template<typename T>
+	class ConcurrentList
+	{
+	private:
+		bbe::List<T> m_data;
+		mutable std::recursive_mutex m_mutex;
+
+	public:
+		ConcurrentList() = default;
+
+		T& operator[](size_t index)
+		{
+			std::lock_guard lg(m_mutex);
+			return m_data[index];
+		}
+
+		const T& operator[](size_t index) const
+		{
+			std::lock_guard lg(m_mutex);
+			return m_data[index];
+		}
+
+		void add(const T& t)
+		{
+			std::lock_guard lg(m_mutex);
+			m_data.add(t);
+		}
+
+		void add(T&& t)
+		{
+			std::lock_guard lg(m_mutex);
+			m_data.add(t);
+		}
+
+		size_t getLength() const
+		{
+			std::lock_guard lg(m_mutex);
+			return m_data.getLength();
+		}
+
+		void lock()
+		{
+			m_mutex.lock();
+		}
+
+		void unlock()
+		{
+			m_mutex.unlock();
+		}
+
+		T popFront()
+		{
+			std::lock_guard lg(m_mutex);
+			return m_data.popFront();
+		}
 	};
 
 	template<typename T>

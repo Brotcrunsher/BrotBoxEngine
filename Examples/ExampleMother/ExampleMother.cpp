@@ -18,6 +18,9 @@
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Clipboard: It should be possible to add a title
 //TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
+//TODO: Restart Sound System if no sound is played
+//TODO: Default value of BBE_SERIALIZABLE_DATA buggy when adding new elements to the end of an existing struct.
+//TODO: ExampleWaveFunction is broken. Can't compile.
 
 struct ClipboardContent
 {
@@ -237,7 +240,7 @@ public:
 		bbe::TrayIcon::init(this, "M.O.THE.R " __DATE__ ", " __TIME__, getCurrentTrayIcon());
 		bbe::TrayIcon::addPopupItem("Exit", [&]() { exitCallback(); });
 
-		bbe::backup::setBackupPath(generalConfig->backupPath);
+		bbe::simpleFile::backup::setBackupPath(generalConfig->backupPath);
 	}
 
 	bbe::TimePoint getNightStart()
@@ -450,7 +453,7 @@ public:
 		if (ImGui::bbe::InputText("Backup Path", generalConfig->backupPath, ImGuiInputTextFlags_EnterReturnsTrue))
 		{
 			generalConfigChanged = true;
-			bbe::backup::setBackupPath(generalConfig->backupPath);
+			bbe::simpleFile::backup::setBackupPath(generalConfig->backupPath);
 		}
 
 		if (generalConfigChanged)
@@ -823,6 +826,7 @@ public:
 		ImGui::Begin("Info", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 		{
 			ImGui::Text("Build: " __DATE__ ", " __TIME__);
+			ImGui::Text(bbe::simpleFile::backup::async::hasOpenIO() ? "Saving" : "Done");
 			bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
 			ImGui::Text(s.getRaw());
 			ImGui::bbe::tooltip(getNightStart().toString().getRaw());
@@ -878,6 +882,8 @@ public:
 			{
 				restartSoundSystem();
 			}
+			ImGui::Text(getCurrentSoundDeviceName());
+			ImGui::Text(getNewSoundDeviceName());
 
 			static bool unlockCrashButton = false;
 			ImGui::Checkbox("Unlock Crash Button", &unlockCrashButton);

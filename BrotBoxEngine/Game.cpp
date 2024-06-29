@@ -245,6 +245,7 @@ void bbe::Game::shutdown()
 	m_soundManager.destroy();
 #endif
 	INTERNAL::allocCleanup();
+	bbe::simpleFile::backup::async::stopIoThread();
 }
 
 void bbe::Game::setExternallyManaged(bool managed)
@@ -617,4 +618,14 @@ bbe::String bbe::Game::getMeasuresString()
 size_t bbe::Game::getAmountOfPlayingSounds() const
 {
 	return m_soundManager.getAmountOfPlayingSounds();
+}
+
+bbe::String bbe::Game::getCurrentSoundDeviceName() const
+{
+	return m_soundManager.getCurrentDeviceName();
+}
+
+bbe::String bbe::Game::getNewSoundDeviceName() const
+{
+	return m_soundManager.getNewDeviceName();
 }

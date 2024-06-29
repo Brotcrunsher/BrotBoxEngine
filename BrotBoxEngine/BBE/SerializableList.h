@@ -220,13 +220,13 @@ namespace bbe
 			bbe::ByteBuffer buffer;
 			buffer.write(data);
 
-			bbe::backup::writeBinaryToFile(path, buffer);
+			bbe::simpleFile::backup::async::writeBinaryToFile(path, buffer);
 			if (paranoiaPath.getLength() != 0)
 			{
 				time_t t;
 				time(&t);
-				bbe::backup::createDirectory(paranoiaPath);
-				bbe::backup::writeBinaryToFile(paranoiaPath + "/" + path + t + ".bak", buffer);
+				bbe::simpleFile::backup::async::createDirectory(paranoiaPath);
+				bbe::simpleFile::backup::async::writeBinaryToFile(paranoiaPath + "/" + path + t + ".bak", buffer);
 			}
 		}
 	};
@@ -320,7 +320,7 @@ namespace bbe
 			auto token = buffer.reserveSizeToken();
 			buffer.write(t);
 			buffer.fillSizeToken(token);
-			bbe::backup::appendBinaryToFile(path, buffer);
+			bbe::simpleFile::backup::async::appendBinaryToFile(path, buffer);
 			pushUndoable();
 		}
 
@@ -365,13 +365,13 @@ namespace bbe
 				buffer.write(data[i]);
 				buffer.fillSizeToken(token);
 			}
-			bbe::backup::writeBinaryToFile(path, buffer);
+			bbe::simpleFile::backup::async::writeBinaryToFile(path, buffer);
 			if (paranoiaPath.getLength() != 0)
 			{
 				time_t t;
 				time(&t);
-				bbe::backup::createDirectory(paranoiaPath);
-				bbe::backup::writeBinaryToFile(paranoiaPath + "/" + path + t + ".bak", buffer);
+				bbe::simpleFile::backup::async::createDirectory(paranoiaPath);
+				bbe::simpleFile::backup::async::writeBinaryToFile(paranoiaPath + "/" + path + t + ".bak", buffer);
 			}
 			
 			if(updateHistory) pushUndoable();

@@ -468,6 +468,27 @@ size_t bbe::INTERNAL::SoundManager::getAmountOfPlayingSounds() const
 	return playingIds.getLength();
 }
 
+bbe::String bbe::INTERNAL::SoundManager::getCurrentDeviceName() const
+{
+	// TODO: This might datarace...
+	auto retVal = alcGetString(device, ALC_DEVICE_SPECIFIER);
+	return retVal ? retVal : "NULL DEVICE";
+}
+
+bbe::String bbe::INTERNAL::SoundManager::getNewDeviceName() const
+{
+	bbe::String retVal;
+	const char* ptr = alcGetString(nullptr, ALC_DEVICE_SPECIFIER);
+	while (true)
+	{
+		bbe::String currentDevice = ptr;
+		if (currentDevice.getLength() == 0) break;
+		retVal += currentDevice;
+		ptr += retVal.getLength() + 1;
+	}
+	return retVal;
+}
+
 void bbe::INTERNAL::SoundManager::update()
 {
 #ifdef __EMSCRIPTEN__

@@ -8,18 +8,28 @@
 
 namespace bbe
 {
-	namespace backup
-	{
-		void setBackupPath(const bbe::String& path);
-		bool isBackupPathSet();
-		bbe::String backupFullPath(const bbe::String& path);
-		void writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
-		void createDirectory(const bbe::String& path);
-		void appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
-	}
-
 	namespace simpleFile
 	{
+		namespace backup
+		{
+			namespace async
+			{
+				bool hasOpenIO();
+				void stopIoThread();
+
+				void writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
+				void createDirectory(const bbe::String& path);
+				void appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
+			}
+			void setBackupPath(const bbe::String& path);
+			bool isBackupPathSet();
+			bbe::String backupFullPath(const bbe::String& path);
+			
+			void writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
+			void createDirectory(const bbe::String& path);
+			void appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
+		}
+
 		bbe::ByteBuffer readBinaryFile(const bbe::String &filepath);
 		bool readBinaryFileIfChanged(const bbe::String& filepath, bbe::ByteBuffer& outContents, std::filesystem::file_time_type& inOutPreviousModify);
 

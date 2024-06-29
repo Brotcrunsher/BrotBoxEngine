@@ -46,6 +46,9 @@ namespace bbe
 			void setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection);
 
 			size_t getAmountOfPlayingSounds() const;
+
+			bbe::String getCurrentDeviceName() const;
+			bbe::String getNewDeviceName() const;
 		};
 	}
 }
