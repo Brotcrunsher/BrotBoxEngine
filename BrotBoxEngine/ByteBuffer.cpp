@@ -205,19 +205,25 @@ void bbe::SerializedDescription::writeFromSpan(bbe::ByteBufferSpan& span) const
 {
 	for (size_t i = 0; i < descriptors.getLength(); i++)
 	{
-		     if (descriptors[i].type == typeid(uint8_t )) span.read(*(uint8_t* )descriptors[i].addr);
-		else if (descriptors[i].type == typeid(uint16_t)) span.read(*(uint16_t*)descriptors[i].addr);
-		else if (descriptors[i].type == typeid(uint32_t)) span.read(*(uint32_t*)descriptors[i].addr);
-		else if (descriptors[i].type == typeid(uint64_t)) span.read(*(uint64_t*)descriptors[i].addr);
-		else if (descriptors[i].type == typeid( int8_t )) span.read(*( int8_t* )descriptors[i].addr);
-		else if (descriptors[i].type == typeid( int16_t)) span.read(*( int16_t*)descriptors[i].addr);
-		else if (descriptors[i].type == typeid( int32_t)) span.read(*( int32_t*)descriptors[i].addr);
-		else if (descriptors[i].type == typeid( int64_t)) span.read(*( int64_t*)descriptors[i].addr);
-		else if (descriptors[i].type == typeid( float  )) span.read(*( float*  )descriptors[i].addr);
-		else if (descriptors[i].type == typeid( bool   )) span.read(*( bool*   )descriptors[i].addr);
+		bool defaultValueAccepted = false;
+		     if (descriptors[i].type == typeid(uint8_t )) { span.read(*(uint8_t* )descriptors[i].addr, *(uint8_t* )&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
+		else if (descriptors[i].type == typeid(uint16_t)) { span.read(*(uint16_t*)descriptors[i].addr, *(uint16_t*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
+		else if (descriptors[i].type == typeid(uint32_t)) { span.read(*(uint32_t*)descriptors[i].addr, *(uint32_t*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
+		else if (descriptors[i].type == typeid(uint64_t)) { span.read(*(uint64_t*)descriptors[i].addr, *(uint64_t*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
+		else if (descriptors[i].type == typeid( int8_t )) { span.read(*( int8_t* )descriptors[i].addr, *( int8_t* )&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
+		else if (descriptors[i].type == typeid( int16_t)) { span.read(*( int16_t*)descriptors[i].addr, *( int16_t*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
+		else if (descriptors[i].type == typeid( int32_t)) { span.read(*( int32_t*)descriptors[i].addr, *( int32_t*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
+		else if (descriptors[i].type == typeid( int64_t)) { span.read(*( int64_t*)descriptors[i].addr, *( int64_t*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
+		else if (descriptors[i].type == typeid( float  )) { span.read(*( float*  )descriptors[i].addr, *( float*  )&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
+		else if (descriptors[i].type == typeid( bool   )) { span.read(*( bool*   )descriptors[i].addr, *( bool*   )&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
 		else if (descriptors[i].type == typeid(bbe::List<float>)) span.read(*(bbe::List<float>*)descriptors[i].addr);
-		else if (descriptors[i].type == typeid(bbe::String)) (*(bbe::String*)descriptors[i].addr) = bbe::String::deserialize(span);
-		else if (descriptors[i].type == typeid(bbe::TimePoint)) (*(bbe::TimePoint*)descriptors[i].addr) = bbe::TimePoint::deserialize(span);
+		else if (descriptors[i].type == typeid(bbe::String)) span.read(*(bbe::String*)descriptors[i].addr);
+		else if (descriptors[i].type == typeid(bbe::TimePoint)) { span.read(*(bbe::TimePoint*)descriptors[i].addr, *(bbe::TimePoint*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
 		else throw bbe::IllegalArgumentException("Unsupported Type");
+		
+		if(!defaultValueAccepted && descriptors[i].defaultValueStorage != 0)
+		{
+			throw bbe::IllegalArgumentException("This type does not suppoert default values (yet).");
+		}
 	}
 }

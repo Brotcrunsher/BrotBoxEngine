@@ -18,6 +18,7 @@ namespace bbe
 		{
 			std::type_index type;
 			const void* addr;
+			int64_t defaultValueStorage = 0;
 		};
 		bbe::List<Descriptor> descriptors;
 
@@ -28,6 +29,15 @@ namespace bbe
 		void describe(const T& val)
 		{
 			Descriptor desc{ typeid(std::remove_const_t<std::remove_reference_t<T>>), &val };
+			descriptors.add(desc);
+		}
+
+		template<typename T>
+		void describe(const T& val, const T& default_)
+		{
+			static_assert(sizeof(T) <= sizeof(Descriptor::defaultValueStorage), "");
+			Descriptor desc{ typeid(std::remove_const_t<std::remove_reference_t<T>>), &val };
+			memcpy(&desc.defaultValueStorage, &default_, sizeof(T));
 			descriptors.add(desc);
 		}
 
