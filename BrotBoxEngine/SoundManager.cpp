@@ -7,13 +7,15 @@
 #include <algorithm>
 #include <iostream>
 #include <mutex>
+#include <chrono>
 
 #include "AL/al.h"
 #include "AL/alc.h"
 #include "AL/alext.h"
 
 #ifdef WIN32
-#include <windows.h>
+#include <Windows.h>
+#include <mmdeviceapi.h>
 #endif
 
 namespace bbe
@@ -415,6 +417,93 @@ static bbe::INTERNAL::SoundManager* m_pinstance = nullptr;
 // ***                                                                                                         ***
 // ***************************************************************************************************************
 
+#ifdef _WIN32
+std::mutex restartTpMutex;
+std::chrono::time_point<std::chrono::steady_clock> restartTp;
+bool armed = false;
+void scheduleRestart()
+{
+	std::lock_guard lg(restartTpMutex);
+	restartTp = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+	armed = true;
+}
+
+bool testScheduledRestart()
+{
+	std::lock_guard lg(restartTpMutex);
+	if (armed && std::chrono::steady_clock::now() > restartTp)
+	{
+		armed = false;
+		return true;
+	}
+	return false;
+}
+
+
+class CMMNotificationClient : public IMMNotificationClient
+{
+private:
+	LONG refCount = 1;
+
+public:
+	// IUnknown methods -- AddRef, Release, and QueryInterface
+	ULONG STDMETHODCALLTYPE AddRef()
+	{
+		return InterlockedIncrement(&refCount);
+	}
+	ULONG STDMETHODCALLTYPE Release()
+	{
+		ULONG ulRef = InterlockedDecrement(&refCount);
+		if (0 == ulRef)
+		{
+			delete this;
+		}
+		return ulRef;
+	}
+	HRESULT STDMETHODCALLTYPE QueryInterface(
+		REFIID riid, VOID** ppvInterface)
+	{
+		return E_NOINTERFACE;
+	}
+
+	HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(
+		EDataFlow flow, ERole role,
+		LPCWSTR pwstrDeviceId)
+	{
+		scheduleRestart();
+		return S_OK;
+	}
+
+	HRESULT STDMETHODCALLTYPE OnDeviceAdded(LPCWSTR pwstrDeviceId)
+	{
+		scheduleRestart();
+		return S_OK;
+	};
+
+	HRESULT STDMETHODCALLTYPE OnDeviceRemoved(LPCWSTR pwstrDeviceId)
+	{
+		scheduleRestart();
+		return S_OK;
+	}
+
+	HRESULT STDMETHODCALLTYPE OnDeviceStateChanged(
+		LPCWSTR pwstrDeviceId,
+		DWORD dwNewState)
+	{
+		scheduleRestart();
+		return S_OK;
+	}
+
+	HRESULT STDMETHODCALLTYPE OnPropertyValueChanged(
+		LPCWSTR pwstrDeviceId,
+		const PROPERTYKEY key)
+	{
+		scheduleRestart();
+		return S_OK;
+	}
+};
+#endif
+
 static bbe::List<uint64_t> playingIds;
 
 bbe::INTERNAL::SoundManager* bbe::INTERNAL::SoundManager::getInstance()
@@ -468,27 +557,6 @@ size_t bbe::INTERNAL::SoundManager::getAmountOfPlayingSounds() const
 	return playingIds.getLength();
 }
 
-bbe::String bbe::INTERNAL::SoundManager::getCurrentDeviceName() const
-{
-	// TODO: This might datarace...
-	auto retVal = alcGetString(device, ALC_DEVICE_SPECIFIER);
-	return retVal ? retVal : "NULL DEVICE";
-}
-
-bbe::String bbe::INTERNAL::SoundManager::getNewDeviceName() const
-{
-	bbe::String retVal;
-	const char* ptr = alcGetString(nullptr, ALC_DEVICE_SPECIFIER);
-	while (true)
-	{
-		bbe::String currentDevice = ptr;
-		if (currentDevice.getLength() == 0) break;
-		retVal += currentDevice;
-		ptr += retVal.getLength() + 1;
-	}
-	return retVal;
-}
-
 void bbe::INTERNAL::SoundManager::update()
 {
 #ifdef __EMSCRIPTEN__
@@ -500,6 +568,12 @@ void bbe::INTERNAL::SoundManager::update()
 	{
 		playingIds.removeSingle(removedIdsReader.next());
 	}
+#ifdef _WIN32
+	if (testScheduledRestart())
+	{
+		restart();
+	}
+#endif
 }
 
 void bbe::INTERNAL::SoundManager::init()
@@ -514,6 +588,16 @@ void bbe::INTERNAL::SoundManager::init()
 	{
 		debugBreak();
 	}
+
+	IMMDeviceEnumerator* _pEnumerator;
+	HRESULT hr = S_OK;
+	hr = CoCreateInstance(__uuidof(MMDeviceEnumerator),
+		NULL, CLSCTX_INPROC_SERVER,
+		__uuidof(IMMDeviceEnumerator),
+		(void**)&_pEnumerator);
+	hr = _pEnumerator->RegisterEndpointNotificationCallback(new CMMNotificationClient());
+
+	_pEnumerator->Release();
 #endif
 #endif
 }

@@ -17,8 +17,6 @@
 //TODO: Redo
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Clipboard: It should be possible to add a title
-//TODO: Bug: When switching headphones, the sound system doesn't switch as well. It stays playing sounds on the old device.
-//TODO: Restart Sound System if no sound is played
 
 struct ClipboardContent
 {
@@ -880,8 +878,6 @@ public:
 			{
 				restartSoundSystem();
 			}
-			ImGui::Text(getCurrentSoundDeviceName());
-			ImGui::Text(getNewSoundDeviceName());
 
 			static bool unlockCrashButton = false;
 			ImGui::Checkbox("Unlock Crash Button", &unlockCrashButton);
@@ -941,7 +937,6 @@ int main()
 {
 	HWND hWnd = GetConsoleWindow(); 
 	FreeConsole();
-	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 	MyGame *mg = new MyGame();
 	mg->start(1280, 720, "M.O.THE.R - Memory of the repetitive");
 #ifndef __EMSCRIPTEN__

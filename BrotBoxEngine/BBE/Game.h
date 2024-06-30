@@ -160,8 +160,6 @@ namespace bbe
 		bbe::String getMeasuresString();
 
 		size_t getAmountOfPlayingSounds() const;
-		bbe::String getCurrentSoundDeviceName() const;
-		bbe::String getNewSoundDeviceName() const;
 
 #ifndef BBE_NO_AUDIO
 		void setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection);

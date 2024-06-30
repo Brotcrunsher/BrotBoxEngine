@@ -22,6 +22,11 @@
 #pragma warning("Stacktrace lib is not present!")
 #endif
 
+#ifdef _WIN32
+#define NOMINMAX
+#include <Objbase.h>
+#endif
+
 void bbe::Game::mainLoop()
 {
 	m_frameNumber++;
@@ -100,6 +105,9 @@ static void crashHandler(int sig)
 
 void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 {
+#ifdef _WIN32
+	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+#endif
 	signal(SIGSEGV, crashHandler);
 
 	BBELOGLN("Starting Game: " << title);
@@ -618,14 +626,4 @@ bbe::String bbe::Game::getMeasuresString()
 size_t bbe::Game::getAmountOfPlayingSounds() const
 {
 	return m_soundManager.getAmountOfPlayingSounds();
-}
-
-bbe::String bbe::Game::getCurrentSoundDeviceName() const
-{
-	return m_soundManager.getCurrentDeviceName();
-}
-
-bbe::String bbe::Game::getNewSoundDeviceName() const
-{
-	return m_soundManager.getNewDeviceName();
 }
