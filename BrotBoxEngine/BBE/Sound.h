@@ -45,6 +45,7 @@ namespace bbe
 		virtual const bbe::List<float>* getRaw() const = 0;
 
 		mutable ALuint INTERNAL_buffer = 0;
+		mutable ALuint INTERNAL_restartCycle = 0;
 	};
 
 	class Sound : 

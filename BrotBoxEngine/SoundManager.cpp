@@ -36,6 +36,8 @@ static auto stopRequestsReader = stopRequests.reader();
 static bbe::WriterReaderBuffer<uint64_t, 1024> removedIds;
 static auto removedIdsReader = removedIds.reader();
 
+static ALuint restartCycle = 0;
+
 struct ListenerData
 {
 	bbe::Vector3 pos = bbe::Vector3(0, 0, 0);
@@ -307,6 +309,7 @@ static void refreshBuffers()
 
 static bool initSoundSystem()
 {
+	restartCycle++;
 	device = alcOpenDevice(nullptr);
 	if (!device)
 	{
@@ -370,7 +373,7 @@ static void updateSoundSystem()
 
 			if (const bbe::SoundDataSourceStatic* SDSS = dynamic_cast<const bbe::SoundDataSourceStatic*>(pr.sound))
 			{
-				if (!SDSS->INTERNAL_buffer)
+				if (!SDSS->INTERNAL_buffer || SDSS->INTERNAL_restartCycle != restartCycle)
 				{
 					alGenBuffers(1, &SDSS->INTERNAL_buffer);
 					const bbe::List<float>* samples = SDSS->getRaw();
@@ -387,6 +390,7 @@ static void updateSoundSystem()
 						throw bbe::IllegalStateException();
 					}
 					alBufferData(SDSS->INTERNAL_buffer, AL_FORMAT_STEREO_FLOAT32, samples->getRaw(), sizeof(float) * samples->getLength(), SDSS->getHz());
+					SDSS->INTERNAL_restartCycle = restartCycle;
 				}
 
 				ALuint source = getNewStaticSource();
