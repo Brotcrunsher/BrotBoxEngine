@@ -26,7 +26,7 @@ constexpr int WINDOW_HEIGHT = 720;
 
 namespace br
 {
-	class BackgroundHum : public bbe::SoundDataSource
+	class BackgroundHum : public bbe::SoundDataSourceDynamic
 	{
 	public:
 		static constexpr uint32_t hz = 44100;
@@ -82,10 +82,6 @@ namespace br
 
 			return retVal * 0.5f;
 		}
-		virtual size_t getAmountOfSamples() const override
-		{
-			return (size_t)-1;
-		}
 
 		virtual uint32_t getHz() const override
 		{
@@ -98,7 +94,7 @@ namespace br
 		}
 	};
 
-	class LightBuzz : public bbe::SoundDataSource
+	class LightBuzz : public bbe::SoundDataSourceDynamic
 	{
 	public:
 		virtual float getSample(size_t i, uint32_t channel) const override
@@ -110,10 +106,6 @@ namespace br
 				fadeIn = (float)i / (float)fadeInTime;
 			}
 			return (bbe::Math::cos(i * 0.01233f) + bbe::Math::cos(i * 0.016435f) + bbe::Math::cos(i * 0.01f)) * 0.03f * fadeIn;
-		}
-		virtual size_t getAmountOfSamples() const override
-		{
-			return (size_t)-1;
 		}
 
 		virtual uint32_t getHz() const override

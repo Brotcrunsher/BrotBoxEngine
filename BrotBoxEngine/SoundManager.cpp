@@ -24,8 +24,11 @@ namespace bbe
 }
 
 // No mutexes:
+using BufferContents = bbe::Array<bbe::Vector2, 100>;
 static bbe::List<ALuint> unusedBuffers;
 static bbe::List<ALuint> buffers;
+
+static bbe::List<ALuint> staticSources;
 
 static bbe::WriterReaderBuffer<uint64_t, 1024> stopRequests;
 static auto stopRequestsReader = stopRequests.reader();
@@ -83,6 +86,18 @@ static void freeBuffer(ALuint buffer)
 	unusedBuffers.add(buffer);
 }
 
+static ALuint getNewStaticSource()
+{
+	ALuint source = 0;
+	alGenSources(1, &source);
+	return source;
+}
+
+static void freeStaticSource(ALuint source)
+{
+	alDeleteSources(1, &source);
+}
+
 struct SoundInstanceData
 {
 	uint64_t m_samples_loaded = 0;
@@ -94,14 +109,13 @@ struct SoundInstanceData
 
 	bool stopRequested = false;
 	bool readyForDelete = false;
+	ALuint source = 0;
 
-	void loadBuffer(bbe::Vector2 *samples, size_t numSamples)
+	void loadDynamicBuffer(const bbe::SoundDataSourceDynamic* sdsd, bbe::Vector2* samples, size_t numSamples)
 	{
-		const uint32_t channels = m_psound->getAmountOfChannels();
+		const uint32_t channels = sdsd->getAmountOfChannels();
 		for (size_t i = 0; i < numSamples; i++)
 		{
-			if (m_samples_loaded == m_psound->getAmountOfSamples()) break;
-
 			bbe::Vector2 sample;
 			float percentage = (float)i / (float)numSamples;
 
@@ -134,7 +148,7 @@ struct SoundInstanceData
 					leftMult /= distSq;
 				}
 
-				float val = m_psound->getSample(m_samples_loaded, 0);
+				float val = sdsd->getSample(m_samples_loaded, 0);
 				sample = bbe::Vector2(leftMult * val, rightMult * val);
 			}
 			else if (channels == 2)
@@ -145,8 +159,8 @@ struct SoundInstanceData
 					throw bbe::IllegalStateException();
 				}
 				sample = bbe::Vector2(
-					m_psound->getSample(m_samples_loaded, 0), 
-					m_psound->getSample(m_samples_loaded, 1));
+					sdsd->getSample(m_samples_loaded, 0),
+					sdsd->getSample(m_samples_loaded, 1));
 			}
 			else
 			{
@@ -171,7 +185,20 @@ struct SoundInstanceData
 
 	bool isPlaying() const
 	{
-		return m_samples_loaded < m_psound->getAmountOfSamples();
+		if (const bbe::SoundDataSourceDynamic* sdsd = dynamic_cast<const bbe::SoundDataSourceDynamic*>(m_psound))
+		{
+			return true;
+		}
+		else if (const bbe::SoundDataSourceStatic* sdss = dynamic_cast<const bbe::SoundDataSourceStatic*>(m_psound))
+		{
+			ALint state = 0;
+			alGetSourcei(source, AL_SOURCE_STATE, &state);
+			return state == AL_PLAYING;
+		}
+		else
+		{
+			throw bbe::IllegalStateException();
+		}
 	}
 };
 static std::map<uint64_t, SoundInstanceData> playingSounds;
@@ -191,6 +218,11 @@ static void destroySoundSystem()
 	playingSounds.clear();
 	alDeleteBuffers(unusedBuffers.getLength(), unusedBuffers.getRaw());
 	unusedBuffers.clear();
+	for (ALuint source : staticSources)
+	{
+		freeStaticSource(source);
+	}
+	staticSources.clear();
 	ALCcontext* context = alcGetCurrentContext();
 	if (!context) return;
 
@@ -204,12 +236,11 @@ static ALint freeUsedUpBuffers()
 {
 	ALint usedUpBuffers = 0;
 	alGetSourcei(mainSource, AL_BUFFERS_PROCESSED, &usedUpBuffers);
+	alSourceUnqueueBuffers(mainSource, usedUpBuffers, buffers.getRaw());
 
 	for (ALint i = 0; i < usedUpBuffers; i++)
 	{
-		ALuint buffer = buffers[0];
-		buffers.removeIndex(0);
-		alSourceUnqueueBuffers(mainSource, 1, &buffer);
+		ALuint buffer = buffers.popFront();
 		freeBuffer(buffer);
 	}
 	return usedUpBuffers;
@@ -217,18 +248,21 @@ static ALint freeUsedUpBuffers()
 
 static void loadAllBuffers()
 {
-	bbe::Array<bbe::Vector2, 1000> samples;
+	BufferContents samples;
 
 	for (auto it = playingSounds.begin(); it != playingSounds.end(); ++it)
 	{
 		SoundInstanceData& sid = it->second;
-		sid.loadBuffer(samples.getRaw(), samples.getLength());
-		if (sid.m_psound->getHz() != 44100)
+		if (const bbe::SoundDataSourceDynamic* sdsd = dynamic_cast<const bbe::SoundDataSourceDynamic*>(sid.m_psound))
 		{
-			bbe::String errorMsg = "";
-			errorMsg += sid.m_psound->getHz();
-			errorMsg += " Hz not supported";
-			throw bbe::IllegalStateException(errorMsg.getRaw());
+			sid.loadDynamicBuffer(sdsd, samples.getRaw(), samples.getLength());
+			if (sid.m_psound->getHz() != 44100)
+			{
+				bbe::String errorMsg = "";
+				errorMsg += sid.m_psound->getHz();
+				errorMsg += " Hz not supported";
+				throw bbe::IllegalStateException(errorMsg.getRaw());
+			}
 		}
 	}
 
@@ -297,7 +331,7 @@ static bool initSoundSystem()
 
 	alGenSources(1, &mainSource);
 	{
-		for(size_t i = 0; i<2; i++) loadAllBuffers();
+		for(size_t i = 0; i<20; i++) loadAllBuffers();
 	}
 	alSourcePlay(mainSource);
 	ALenum err = alGetError();
@@ -334,6 +368,34 @@ static void updateSoundSystem()
 			sid.pos = pr.pos;
 			sid.posAvailable = pr.posAvailable;
 
+			if (const bbe::SoundDataSourceStatic* SDSS = dynamic_cast<const bbe::SoundDataSourceStatic*>(pr.sound))
+			{
+				if (!SDSS->INTERNAL_buffer)
+				{
+					alGenBuffers(1, &SDSS->INTERNAL_buffer);
+					const bbe::List<float>* samples = SDSS->getRaw();
+					ALenum format;
+					switch (SDSS->getAmountOfChannels())
+					{
+					case 1:
+						format = AL_FORMAT_MONO_FLOAT32;
+						break;
+					case 2:
+						format = AL_FORMAT_STEREO_FLOAT32;
+						break;
+					default:
+						throw bbe::IllegalStateException();
+					}
+					alBufferData(SDSS->INTERNAL_buffer, AL_FORMAT_STEREO_FLOAT32, samples->getRaw(), sizeof(float) * samples->getLength(), SDSS->getHz());
+				}
+
+				ALuint source = getNewStaticSource();
+				staticSources.add(source);
+				alSourceQueueBuffers(source, 1, &SDSS->INTERNAL_buffer);
+				alSourcePlay(source);
+				sid.source = source;
+			}
+
 			playingSounds.insert({ pr.index, sid });
 		}
 	}
@@ -360,6 +422,18 @@ static void updateSoundSystem()
 			{
 				it->second.stopRequested = true;
 			}
+		}
+	}
+
+	for (size_t i = 0; i < staticSources.getLength(); i++)
+	{
+		ALint state = 0;
+		alGetSourcei(staticSources[i], AL_SOURCE_STATE, &state);
+		if (state != AL_PLAYING)
+		{
+			freeStaticSource(staticSources[i]);
+			staticSources.removeIndex(i);
+			break;
 		}
 	}
 

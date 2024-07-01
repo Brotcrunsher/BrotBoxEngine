@@ -7,6 +7,8 @@
 #include "../BBE/SoundInstance.h"
 #include "../BBE/Vector2.h"
 
+#include "AL/al.h"
+
 namespace bbe
 {
 	enum class SoundLoadFormat
@@ -17,23 +19,36 @@ namespace bbe
 
 	class SoundDataSource
 	{
-	private:
-		bool             m_looped   = false;
 	public:
-		virtual float getSample(size_t i, uint32_t channel) const = 0;
-		virtual size_t getAmountOfSamples() const = 0;
 		virtual uint32_t getAmountOfChannels() const = 0;
 		virtual uint32_t getHz() const = 0;
-
-		bool isLooped() const;
-		void setLooped(bool looped);
 
 		SoundInstance play(float volume = 1) const;
 		SoundInstance play(const bbe::Vector3& pos, float volume = 1) const;
 	};
 
+	class SoundDataSourceDynamic : public SoundDataSource
+	{
+	public:
+		virtual float getSample(size_t i, uint32_t channel) const = 0;
+	};
+
+	class SoundDataSourceStatic : public SoundDataSource
+	{
+	private:
+		bool             m_looped = false;
+
+	public:
+		bool isLooped() const;
+		void setLooped(bool looped);
+
+		virtual const bbe::List<float>* getRaw() const = 0;
+
+		mutable ALuint INTERNAL_buffer = 0;
+	};
+
 	class Sound : 
-		public SoundDataSource
+		public SoundDataSourceStatic
 	{
 	private:
 		bool             m_loaded   = false;
@@ -52,10 +67,10 @@ namespace bbe
 
 		bool isLoaded() const;
 		uint32_t getChannels() const;
-		virtual float getSample(size_t i, uint32_t channel) const override;
-		virtual size_t getAmountOfSamples() const override;
 		virtual uint32_t getAmountOfChannels() const override;
 		virtual uint32_t getHz() const override;
+
+		const bbe::List<float>* getRaw() const override;
 	};
 }
 

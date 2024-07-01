@@ -7,7 +7,7 @@
 */
 
 
-class MySoundSource : public bbe::SoundDataSource
+class MySoundSource : public bbe::SoundDataSourceDynamic
 {
 public:
 	virtual float getSample(size_t i, uint32_t channel) const override
@@ -25,10 +25,6 @@ public:
 		val *= 2;
 
 		return val;
-	}
-	virtual size_t getAmountOfSamples() const override
-	{
-		return (size_t)-1;
 	}
 
 	virtual uint32_t getHz() const override

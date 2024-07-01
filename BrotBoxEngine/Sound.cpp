@@ -96,7 +96,7 @@ bool bbe::Sound::isLoaded() const
 	return m_loaded;
 }
 
-bool bbe::SoundDataSource::isLooped() const
+bool bbe::SoundDataSourceStatic::isLooped() const
 {
 	return m_looped;
 }
@@ -105,19 +105,6 @@ uint32_t bbe::Sound::getChannels() const
 {
 	if (!m_loaded) throw NotInitializedException();
 	return m_channels;
-}
-
-float bbe::Sound::getSample(size_t i, uint32_t channel) const
-{
-	if (!m_loaded) throw NotInitializedException();
-	if (channel >= m_channels) throw IllegalArgumentException();
-
-	return m_data[i * m_channels + channel];
-}
-
-size_t bbe::Sound::getAmountOfSamples() const
-{
-	return m_data.getLength() / m_channels;
 }
 
 uint32_t bbe::Sound::getAmountOfChannels() const
@@ -130,7 +117,12 @@ uint32_t bbe::Sound::getHz() const
 	return m_hz;
 }
 
-void bbe::SoundDataSource::setLooped(bool looped)
+const bbe::List<float>* bbe::Sound::getRaw() const
+{
+	return &m_data;
+}
+
+void bbe::SoundDataSourceStatic::setLooped(bool looped)
 {
 	m_looped = looped;
 }

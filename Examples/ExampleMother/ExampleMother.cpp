@@ -17,6 +17,11 @@
 //TODO: Redo
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Clipboard: It should be possible to add a title
+//TODO: Streak numbers aren't centered :(
+//TODO: When playing the "open tasks" sound it would be useful to see which processes/urls caused it
+//TODO: Cnsl can lagg extremely with a lot of logs.
+//TODO: Newly created tasks that are due "soon" (e.g. in 2 days) seem to have a bug to be due in 366 days. Tested in a leap year (important?)
+//TODO: Todo-Server?
 
 struct ClipboardContent
 {
@@ -36,7 +41,7 @@ struct GeneralConfig
 {
 	BBE_SERIALIZABLE_DATA(
 		((bbe::String), updatePath),
-		((int32_t), beepEvery, 17),
+		((int32_t), beepEvery),
 		((bbe::String), backupPath)
 	)
 };
