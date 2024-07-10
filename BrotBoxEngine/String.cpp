@@ -743,6 +743,11 @@ bool bbe::Utf8String::startsWith(const char* string) const
 	return isTextAtLocation(string, 0);
 }
 
+bool bbe::Utf8String::startsWith(const bbe::String& string) const
+{
+	return startsWith(string.getRaw());
+}
+
 bool bbe::Utf8String::endsWith(const char* string) const
 {
 	const size_t sLen = strlen(string);

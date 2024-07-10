@@ -142,6 +142,7 @@ namespace bbe
 
 		bool isTextAtLocation(const char* string, size_t index) const;
 		bool startsWith(const char* string) const;
+		bool startsWith(const bbe::Utf8String& string) const;
 		bool endsWith(const char* string) const;
 
 		int64_t search(const char*       string, int64_t startIndex = 0) const;
