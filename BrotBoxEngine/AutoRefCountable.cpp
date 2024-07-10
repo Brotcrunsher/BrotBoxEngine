@@ -1,5 +1,5 @@
 #include "BBE/AutoRefCountable.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 bbe::AutoRefCountable::~AutoRefCountable()
 {

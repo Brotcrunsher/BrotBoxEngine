@@ -285,7 +285,7 @@ namespace bbe {
 					return container[i].element;
 				}
 			}
-			throw bbe::IllegalStateException();
+			bbe::Crash(bbe::Error::IllegalState);
 		}
 	};
 }

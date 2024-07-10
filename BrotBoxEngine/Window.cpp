@@ -181,7 +181,7 @@ void bbe::Window::setCursorMode(bbe::CursorMode cursorMode)
 		glfwWrapper::glfwSetInputMode(m_pwindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 		break;
 	default:
-		throw IllegalArgumentException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 }
 
@@ -460,7 +460,7 @@ void bbe::INTERNAL_windowCloseCallback(GLFWwindow* window)
 		glfwWrapper::glfwHideWindow(window);
 		break;
 	default:
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 }
 

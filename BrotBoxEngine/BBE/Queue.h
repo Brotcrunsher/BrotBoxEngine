@@ -41,7 +41,7 @@ namespace bbe
 
 		T pop()
 		{
-			if (isEmpty()) throw IllegalStateException();
+			if (isEmpty()) bbe::Crash(bbe::Error::IllegalState);
 			T retVal = data[readPointer];
 			readPointer++;
 			if (readPointer == data.getLength()) readPointer = 0;
@@ -51,7 +51,7 @@ namespace bbe
 
 		const T& peek()
 		{
-			if (isEmpty()) throw IllegalStateException();
+			if (isEmpty()) bbe::Crash(bbe::Error::IllegalState);
 			return data[readPointer];
 		}
 

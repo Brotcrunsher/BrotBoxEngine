@@ -1,6 +1,6 @@
 #include "BBE/Matrix4.h"
 #include "BBE/Math.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 bbe::Matrix4::Matrix4()
 {
@@ -186,7 +186,7 @@ float bbe::Matrix4::get(int row, int col) const
 {
 	if (row < 0 || row > 3 || col < 0 || col > 3)
 	{
-		throw IllegalIndexException();
+		bbe::Crash(bbe::Error::IllegalIndex);
 	}
 
 	switch (row)
@@ -201,14 +201,14 @@ float bbe::Matrix4::get(int row, int col) const
 		return m_cols[col].w;
 	}
 
-	throw IllegalIndexException();
+	bbe::Crash(bbe::Error::IllegalIndex);
 }
 
 void bbe::Matrix4::set(int row, int col, float val)
 {
 	if (row < 0 || row > 3 || col < 0 || col > 3)
 	{
-		throw IllegalIndexException();
+		bbe::Crash(bbe::Error::IllegalIndex);
 	}
 
 	switch (row)
@@ -232,7 +232,7 @@ float & bbe::Matrix4::operator[](int index)
 {
 	if (index < 0 || index > 15)
 	{
-		throw IllegalIndexException();
+		bbe::Crash(bbe::Error::IllegalIndex);
 	}
 	float* data = reinterpret_cast<float*>(this);
 
@@ -243,7 +243,7 @@ const float & bbe::Matrix4::operator[](int index) const
 {
 	if (index < 0 || index > 15)
 	{
-		throw IllegalIndexException();
+		bbe::Crash(bbe::Error::IllegalIndex);
 	}
 	const float* data = reinterpret_cast<const float*>(this);
 
@@ -264,7 +264,7 @@ bbe::Vector4 bbe::Matrix4::getColumn(int colIndex) const
 {
 	if (colIndex < 0 || colIndex > 3)
 	{
-		throw IllegalIndexException();
+		bbe::Crash(bbe::Error::IllegalIndex);
 	}
 	return Vector4(m_cols[colIndex]);
 }
@@ -273,7 +273,7 @@ bbe::Vector4 bbe::Matrix4::getRow(int rowIndex) const
 {
 	if (rowIndex < 0 || rowIndex > 3)
 	{
-		throw IllegalIndexException();
+		bbe::Crash(bbe::Error::IllegalIndex);
 	}
 	return Vector4(m_cols[0][rowIndex], m_cols[1][rowIndex], m_cols[2][rowIndex], m_cols[3][rowIndex]);
 }

@@ -6,7 +6,7 @@
 #include "../BBE/Unconstructed.h"
 #include "../BBE/UtilDebug.h"
 #include "../BBE/Hash.h"
-#include "../BBE/Exceptions.h"
+#include "../BBE/Error.h"
 #include "../BBE/MersenneTwister.h"
 #include "../BBE/AllocBlock.h"
 #include <initializer_list>
@@ -363,7 +363,7 @@ namespace bbe
 			if (newCapacity < m_length)
 			{
 				debugBreak();
-				throw IllegalArgumentException();
+				bbe::Crash(bbe::Error::IllegalArgument);
 			}
 
 			if (newCapacity <= getCapacity())
@@ -607,7 +607,7 @@ namespace bbe
 			T* d = getRaw();
 			if (!d)
 			{
-				throw ContainerEmptyException();
+				bbe::Crash(bbe::Error::ContainerEmpty);
 			}
 
 			return *d;
@@ -619,7 +619,7 @@ namespace bbe
 			const T* d = getRaw();
 			if (!d)
 			{
-				throw ContainerEmptyException();
+				bbe::Crash(bbe::Error::ContainerEmpty);
 			}
 
 			return *d;
@@ -631,7 +631,7 @@ namespace bbe
 			T* d = getRaw();
 			if (!d)
 			{
-				throw ContainerEmptyException();
+				bbe::Crash(bbe::Error::ContainerEmpty);
 			}
 
 			return *(d + getLength() - 1);
@@ -643,7 +643,7 @@ namespace bbe
 			const T* d = getRaw();
 			if (!d)
 			{
-				throw ContainerEmptyException();
+				bbe::Crash(bbe::Error::ContainerEmpty);
 			}
 
 			return *(d + getLength() - 1);

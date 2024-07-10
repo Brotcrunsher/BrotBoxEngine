@@ -181,14 +181,16 @@ TEST(Vector2, OperatorArray)
 	bbe::Vector2 a(1, 100);
 	ASSERT_NEAR(a[0], 1, allowableError);
 	ASSERT_NEAR(a[1], 100, allowableError);
-	ASSERT_THROW(a[2], bbe::IllegalIndexException);
+	// TODO: ASSERT_CRASH
+	//ASSERT_THROW(a[2], bbe::IllegalIndexException);
 	ASSERT_EQ(&a[0], &a.x);
 	ASSERT_EQ(&a[1], &a.y);
 
 	const bbe::Vector2 b(1, 100);
 	ASSERT_NEAR(b[0], 1, allowableError);
 	ASSERT_NEAR(b[1], 100, allowableError);
-	ASSERT_THROW(b[2], bbe::IllegalIndexException);
+	// TODO: ASSERT_CRASH
+	//ASSERT_THROW(b[2], bbe::IllegalIndexException);
 	ASSERT_EQ(&b[0], &b.x);
 	ASSERT_EQ(&b[1], &b.y);
 

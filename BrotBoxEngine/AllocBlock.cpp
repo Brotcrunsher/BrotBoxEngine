@@ -43,7 +43,7 @@ static void checkBlockHealth()
 			void* block = storedBlocks[i][k];
 			if (!isBlockZero(block, size))
 			{
-				throw bbe::IllegalStateException();
+				bbe::Crash(bbe::Error::IllegalState);
 			}
 		}
 	}
@@ -70,14 +70,14 @@ bbe::AllocBlock bbe::allocateBlock(size_t size)
 #ifdef _DEBUG
 		if (!isBlockZero(addr, size))
 		{
-			throw IllegalStateException();
+			bbe::Crash(bbe::Error::IllegalState);
 		}
 #endif
 		return AllocBlock{ addr, size };
 	}
 
 	void* ptr = std::malloc(size);
-	if (!ptr) throw NullPointerException();
+	if (!ptr) bbe::Crash(bbe::Error::NullPointer);
 	return AllocBlock{ ptr , size };
 }
 

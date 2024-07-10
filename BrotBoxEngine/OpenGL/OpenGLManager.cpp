@@ -271,7 +271,7 @@ GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label, uint32_
 		}
 		else
 		{
-			throw bbe::IllegalArgumentException();
+			bbe::Crash(bbe::Error::IllegalArgument);
 		}
 	}
 #ifndef __EMSCRIPTEN__
@@ -288,7 +288,7 @@ GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label, uint32_
 		}
 		else
 		{
-			throw bbe::IllegalArgumentException();
+			bbe::Crash(bbe::Error::IllegalArgument);
 		}
 	}
 #endif
@@ -928,7 +928,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 		{
 			     if (m_renderMode == bbe::RenderMode::DEFERRED)          fs3d = &fs->getThreeD();
 			else if (m_renderMode == bbe::RenderMode::FORWARD_NO_LIGHTS) fs3d = &fs->getThreeDForwardNoLight();
-			else throw bbe::IllegalStateException();
+			else bbe::Crash(bbe::Error::IllegalState);
 		}
 		else
 		{
@@ -1084,7 +1084,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::flushInstanceData2D()
 	}
 	else
 	{
-		throw IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	GLuint program = m_program2d.program;
@@ -1239,7 +1239,7 @@ GLuint bbe::INTERNAL::openGl::OpenGLManager::getModeFramebuffer()
 	{
 	case(bbe::RenderMode::DEFERRED):          return mrtFb           .framebuffer;
 	case(bbe::RenderMode::FORWARD_NO_LIGHTS): return forwardNoLightFb.framebuffer;
-	default: throw bbe::IllegalStateException();
+	default: bbe::Crash(bbe::Error::IllegalState);
 	}
 }
 
@@ -1754,7 +1754,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStart()
 	m_imguiInitSuccessful = ImGui_ImplOpenGL3_Init();
 	if (!m_imguiInitSuccessful)
 	{
-		throw IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	ImGuiIO& io = ImGui::GetIO();
@@ -1806,7 +1806,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiEndFrame()
 
 void bbe::INTERNAL::openGl::OpenGLManager::bakeLightMrt(bbe::LightBaker& lightBaker)
 {
-	if (lightBaker.m_prendererData != nullptr) throw bbe::IllegalStateException();
+	if (lightBaker.m_prendererData != nullptr) bbe::Crash(bbe::Error::IllegalState);
 
 	OpenGLLightBaker* ogllb = new OpenGLLightBaker();
 	lightBaker.m_prendererData = ogllb;
@@ -1845,7 +1845,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::bakeLightMrt(bbe::LightBaker& lightBa
 
 void bbe::INTERNAL::openGl::OpenGLManager::bakeLight(bbe::LightBaker& lightBaker, const bbe::PointLight& light)
 {
-	if (lightBaker.m_prendererData == nullptr) throw bbe::IllegalStateException();
+	if (lightBaker.m_prendererData == nullptr) bbe::Crash(bbe::Error::IllegalState);
 
 	OpenGLLightBaker* ogllb = (OpenGLLightBaker*)lightBaker.m_prendererData.get();
 
@@ -1877,7 +1877,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::bakeLight(bbe::LightBaker& lightBaker
 
 void bbe::INTERNAL::openGl::OpenGLManager::bakeLightGammaCorrect(bbe::LightBaker& lightBaker)
 {
-	if (lightBaker.m_prendererData == nullptr) throw bbe::IllegalStateException();
+	if (lightBaker.m_prendererData == nullptr) bbe::Crash(bbe::Error::IllegalState);
 
 	OpenGLLightBaker* ogllb = (OpenGLLightBaker*)lightBaker.m_prendererData.get();
 
@@ -1914,7 +1914,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::bakeLightGammaCorrect(bbe::LightBaker
 
 bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLightDetach(bbe::LightBaker& lightBaker)
 {
-	if (lightBaker.m_prendererData == nullptr) throw bbe::IllegalStateException();
+	if (lightBaker.m_prendererData == nullptr) bbe::Crash(bbe::Error::IllegalState);
 
 	OpenGLLightBaker* ogllb = (OpenGLLightBaker*)lightBaker.m_prendererData.get();
 	bbe::Image image;
@@ -1957,7 +1957,7 @@ bbe::String bbe::INTERNAL::openGl::UniformVariable::toString() const
 		retVal += "sampler2D ";
 		break;
 	default:
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	retVal += name;

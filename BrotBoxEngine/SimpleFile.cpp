@@ -72,7 +72,7 @@ bbe::ByteBuffer bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 {
 	if (std::filesystem::is_directory(filepath.getRaw()))
 	{
-		throw bbe::IllegalArgumentException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 
 	std::ifstream file(filepath.getRaw(), std::ios::binary | std::ios::ate);
@@ -101,7 +101,7 @@ bool bbe::simpleFile::readBinaryFileIfChanged(const bbe::String& filepath, bbe::
 {
 	if (std::filesystem::is_directory(filepath.getRaw()))
 	{
-		throw bbe::IllegalArgumentException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 
 	std::filesystem::file_time_type currentModifyTime;
@@ -430,7 +430,7 @@ static void ioThreadMain()
 		}
 		else
 		{
-			throw bbe::IllegalStateException();
+			bbe::Crash(bbe::Error::IllegalState);
 		}
 
 		if (jobs.getLength() == 0 && ioThreadRunning)

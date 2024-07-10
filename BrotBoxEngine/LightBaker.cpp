@@ -15,7 +15,7 @@ bbe::LightBaker::LightBaker(const bbe::Matrix4& transform, const Model& model, c
 }
 void bbe::LightBaker::init(const bbe::Matrix4& transform, const Model& model, const Image* normals, const FragmentShader* shader, const bbe::Vector2i& resolution)
 {
-	if (m_state != State::UNINIT) throw bbe::IllegalStateException();
+	if (m_state != State::UNINIT) bbe::Crash(bbe::Error::IllegalState);
 	m_state = State::INIT;
 	m_transform = transform;
 	m_model = model;

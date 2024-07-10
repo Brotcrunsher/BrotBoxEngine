@@ -1,6 +1,6 @@
 #include "BBE/String.h"
 #include "BBE/DataType.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 #include "BBE/Math.h"
 #include <string>
 #include <codecvt>
@@ -108,7 +108,7 @@ bbe::Utf8String::Utf8String(const std::initializer_list<char>& il)
 	{
 		if (*(il.end() - 1) != '\0')
 		{
-			throw IllegalArgumentException("End of il wasn't nul.");
+			bbe::Crash(bbe::Error::IllegalArgument, "End of il wasn't nul.");
 		}
 		initializeFromCharArr(il.begin());
 	}
@@ -614,7 +614,7 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String&
 	auto previousFinding = getRaw();
 	if (!previousFinding)
 	{
-		throw IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	for (size_t i = 0; i < retVal.getLength() - 1; i++)
 	{
@@ -842,7 +842,7 @@ const char& bbe::Utf8String::operator[](std::size_t index) const
 {
 	if(index > utf8len(getRaw()))
 	{
-		throw IllegalIndexException();
+		bbe::Crash(bbe::Error::IllegalIndex);
 	}
 	else if (index == utf8len(getRaw()))
 	{

@@ -366,7 +366,7 @@ int32_t SubsystemTask::drawTable(const char* title, const std::function<bool(Tas
 				}
 				else
 				{
-					throw bbe::IllegalStateException();
+					bbe::Crash(bbe::Error::IllegalState);
 				}
 			}
 			if (showFollowUp)

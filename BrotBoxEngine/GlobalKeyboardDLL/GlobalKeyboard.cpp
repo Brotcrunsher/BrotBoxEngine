@@ -158,7 +158,7 @@ static bbe::Key vkToBbe(WPARAM vk)
 
 void bbe::GlobalKeyboard::update()
 {
-	if (!hooked) throw bbe::IllegalArgumentException();
+	if (!hooked) bbe::Crash(bbe::Error::IllegalArgument);
 	bbe::Keyboard::update();
 
 	int code = 0;

@@ -1,11 +1,11 @@
 #include "BBE/Keyboard.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 void bbe::Keyboard::INTERNAL_press(bbe::Key key)
 {
 	if (!isKeyCodeValid(key))
 	{
-		throw NoSuchKeycodeException();
+		bbe::Crash(bbe::Error::NoSuchKeycode);
 	}
 
 	m_pkeysNextFrame[(int)key].down = true;
@@ -16,7 +16,7 @@ void bbe::Keyboard::INTERNAL_release(bbe::Key key)
 {
 	if (!isKeyCodeValid(key))
 	{
-		throw NoSuchKeycodeException();
+		bbe::Crash(bbe::Error::NoSuchKeycode);
 	}
 
 	m_pkeysNextFrame[(int)key].down = false;
@@ -35,7 +35,7 @@ bool bbe::Keyboard::isKeyDown(bbe::Key key, bool checkValid)
 {
 	if (checkValid && !isKeyCodeValid(key))
 	{
-		throw NoSuchKeycodeException();
+		bbe::Crash(bbe::Error::NoSuchKeycode);
 	}
 
 	return m_pkeysThisFrame[(int)key].down;
@@ -45,7 +45,7 @@ bool bbe::Keyboard::isKeyUp(bbe::Key key, bool checkValid)
 {
 	if (checkValid && !isKeyCodeValid(key))
 	{
-		throw NoSuchKeycodeException();
+		bbe::Crash(bbe::Error::NoSuchKeycode);
 	}
 
 	return !m_pkeysThisFrame[(int)key].down;
@@ -55,7 +55,7 @@ bool bbe::Keyboard::isKeyPressed(bbe::Key key, bool checkValid)
 {
 	if (checkValid && !isKeyCodeValid(key))
 	{
-		throw NoSuchKeycodeException();
+		bbe::Crash(bbe::Error::NoSuchKeycode);
 	}
 
 	return m_pkeysThisFrame[(int)key].pressed;

@@ -54,7 +54,7 @@ bbe::Model bbe::Model::toBakingModel() const
 	if (m_bakingUvs.getLength() != m_vertices.getLength())
 	{
 		// The Model wasn't properly prepared for baking.
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	bbe::Model copy = *this;
 	for (size_t i = 0; i < m_bakingUvs.getLength(); i++)
@@ -83,7 +83,7 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 		const bbe::DynamicArray<bbe::String> tokens = line.split(" ", false);
 		if (tokens[0] == "v") // tokens[0] is save to query because we know that the line wasn't empty.
 		{
-			if (tokens.getLength() < 4) throw IllegalStateException();
+			if (tokens.getLength() < 4) bbe::Crash(bbe::Error::IllegalState);
 			rawVertices.add(bbe::Vector3(
 				tokens[1].toFloat(),
 				tokens[3].toFloat(),
@@ -92,7 +92,7 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 		}
 		else if (tokens[0] == "vn")
 		{
-			if (tokens.getLength() < 4) throw IllegalStateException();
+			if (tokens.getLength() < 4) bbe::Crash(bbe::Error::IllegalState);
 			rawNormals.add(bbe::Vector3(
 				tokens[1].toFloat(),
 				tokens[3].toFloat(),
@@ -101,7 +101,7 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 		}
 		else if (tokens[0] == "vt")
 		{
-			if (tokens.getLength() < 3) throw IllegalStateException();
+			if (tokens.getLength() < 3) bbe::Crash(bbe::Error::IllegalState);
 			rawUvCoords.add(bbe::Vector2(
 				tokens[1].toFloat(),
 				tokens[2].toFloat()
@@ -134,7 +134,7 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 			int a = 0;
 		}
 		// A face with less than 3 (4 with the prefix) tokens doesn't make sense.
-		if (face.getLength() < 4) throw IllegalStateException();
+		if (face.getLength() < 4) bbe::Crash(bbe::Error::IllegalState);
 
 		for (size_t i = 1; i<face.getLength(); i++)
 		{
@@ -154,7 +154,7 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 				// "7/9/1" => ["7", "9", "1]
 				const DynamicArray<bbe::String>& subTokens = vertexInfo.split("/", true);
 				// TODO: The obj file format also allows fewer indizes, but we don't support them right now.
-				if (subTokens.getLength() < 3) throw IllegalStateException();
+				if (subTokens.getLength() < 3) bbe::Crash(bbe::Error::IllegalState);
 				vertices.add({ 
 						rawVertices[subTokens[0].toLong() - 1], 
 						rawNormals [subTokens[2].toLong() - 1],

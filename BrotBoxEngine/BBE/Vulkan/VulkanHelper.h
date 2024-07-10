@@ -4,7 +4,7 @@
 #include <type_traits>
 #include "GLFW/glfw3.h"
 #include "../BBE/List.h"
-#include "../BBE/Exceptions.h"
+#include "../BBE/Error.h"
 #include "../BBE/UtilDebug.h"
 
 namespace bbe

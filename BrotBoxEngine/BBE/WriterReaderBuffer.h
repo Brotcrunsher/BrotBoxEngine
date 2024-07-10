@@ -1,6 +1,6 @@
 #pragma once
 #include <atomic>
-#include "../BBE/Exceptions.h"
+#include "../BBE/Error.h"
 
 namespace bbe
 {
@@ -24,7 +24,7 @@ namespace bbe
 
 		const T& next()
 		{
-			if (!hasNext()) throw bbe::IllegalStateException();
+			if (!hasNext()) bbe::Crash(bbe::Error::IllegalState);
 
 			const T& retVal = buffer.data[readHead];
 			readHead++;

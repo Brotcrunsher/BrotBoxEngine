@@ -187,7 +187,7 @@ bbe::Vector2 normalPos(int32_t face, int32_t sub, bbe::Vector2& maxPos)
 	case(1): retVal = basePos + bbe::Vector2(1.0f, 1.0f); break;
 	case(2): retVal = basePos + bbe::Vector2(0.0f, 1.0f); break;
 	case(3): retVal = basePos + bbe::Vector2(0.0f, 0.0f); break;
-	default: throw bbe::IllegalArgumentException();
+	default: bbe::Crash(bbe::Error::IllegalArgument);
 	}
 
 	maxPos.x = bbe::Math::max(maxPos.x, retVal.x);

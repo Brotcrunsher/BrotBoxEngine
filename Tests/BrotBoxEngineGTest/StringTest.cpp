@@ -39,15 +39,18 @@ TEST(String, TotalStringTest)
 	ASSERT_EQ((int)bbe::utf8charlen("🍣"), 4);
 	ASSERT_EQ((int)bbe::utf8charlen("💃"), 4);
 	ASSERT_EQ((int)bbe::utf8charlen("\uFEFF"), 3);
-	try
-	{
-		bbe::utf8charlen("💃" + 1); //This should create an exception.
-		bbe::debugBreak();
-	}
-	catch (const bbe::NotStartOfUtf8Exception&)
-	{
-		//Do nothing, everything worked as expected.
-	}
+
+	// TODO: This is technically a good idea to test. The new Crash instead Exception approach makes it currently hard tho'. Would be nice
+	//       if we could disable crashes during tests and test if crashes happened.
+	//try
+	//{
+	//	bbe::utf8charlen("💃" + 1); //This should create an exception.
+	//	bbe::debugBreak();
+	//}
+	//catch (const bbe::NotStartOfUtf8Exception&)
+	//{
+	//	//Do nothing, everything worked as expected.
+	//}
 
 	{
 		char data[] = "a";

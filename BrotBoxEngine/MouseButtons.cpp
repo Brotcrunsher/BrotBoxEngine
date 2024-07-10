@@ -1,5 +1,5 @@
 #include "BBE/MouseButtons.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 bbe::String bbe::mouseButtonToString(MouseButton button)
 {
@@ -23,7 +23,7 @@ bbe::String bbe::mouseButtonToString(MouseButton button)
 		return bbe::String("MB_8");
 	}
 
-	throw NoSuchMouseButtonException();
+	bbe::Crash(bbe::Error::IllegalArgument);
 }
 
 bool bbe::isMouseButtonValid(MouseButton button)

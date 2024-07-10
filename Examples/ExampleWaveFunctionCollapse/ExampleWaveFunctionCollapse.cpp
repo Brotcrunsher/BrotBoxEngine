@@ -196,7 +196,7 @@ class MyGame : public bbe::Game
 			return { 1, 0, 0 };
 		}
 
-		throw bbe::IllegalArgumentException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 
 	bbe::List<TileGrid> getAllKernels()
@@ -527,7 +527,7 @@ class MyGame : public bbe::Game
 		const bbe::List<int32_t>& otherIndices = outputTiles[otherPos.x][otherPos.y];
 		if (otherIndices.getLength() != 1)
 		{
-			throw bbe::IllegalArgumentException();
+			bbe::Crash(bbe::Error::IllegalArgument);
 		}
 
 		const TileGrid& compareKernel = kernels[otherIndices[0]];

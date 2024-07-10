@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../BBE/Exceptions.h"
+#include "../BBE/Error.h"
 #include "../BBE/String.h"
 
 namespace bbe

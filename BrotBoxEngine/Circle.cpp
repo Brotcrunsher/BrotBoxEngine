@@ -215,7 +215,7 @@ bool bbe::Circle::intersects(const Circle& other) const
 	if (getWidth() != getHeight() || other.getWidth() != other.getHeight())
 	{
 		//Only supported for circles, not ovals!
-		throw NotImplementedException();
+		bbe::Crash(bbe::Error::NotImplemented);
 	}
 
 	const float distance = getMiddle().getDistanceTo(other.getMiddle());
@@ -233,7 +233,7 @@ bool bbe::Circle::resolveIntersection(Circle& other, float massThis, float massO
 	if (this == &other)
 	{
 		//Can't resolve intersection with itself!
-		throw IllegalArgumentException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 
 	if (!intersects(other))

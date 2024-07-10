@@ -1,6 +1,6 @@
 #include "BBE/Sound.h"
 #include "BBE/SoundManager.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 #include "BBE/SimpleFile.h"
 #define MINIMP3_IMPLEMENTATION
 #ifndef BBE_NO_AUDIO
@@ -18,15 +18,15 @@ void bbe::Sound::loadMp3(const bbe::ByteBuffer& data)
 		switch (err)
 		{
 		case MP3D_E_PARAM:
-			throw IllegalArgumentException();
+			bbe::Crash(bbe::Error::IllegalArgument);
 		case MP3D_E_IOERROR:
-			throw LoadException();
+			bbe::Crash(bbe::Error::IllegalState);
 		case MP3D_E_MEMORY:
-			throw OutOfMemoryException();
+			bbe::Crash(bbe::Error::OutOfMemory);
 		case MP3D_E_DECODE:
-			throw DecodeException();
+			bbe::Crash(bbe::Error::Decode);
 		default:
-			throw UnknownException();
+			bbe::Crash(bbe::Error::Unknown);
 		}
 	}
 	else
@@ -35,7 +35,7 @@ void bbe::Sound::loadMp3(const bbe::ByteBuffer& data)
 		{
 			// Currently only up to 2 channels are supported.
 			free(info.buffer);
-			throw IllegalArgumentException();
+			bbe::Crash(bbe::Error::IllegalArgument);
 		}
 
 		m_hz = info.hz;
@@ -70,7 +70,7 @@ void bbe::Sound::load(const bbe::ByteBuffer& data, SoundLoadFormat soundLoadForm
 {
 	if (isLoaded())
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 
 	if (soundLoadFormat == SoundLoadFormat::AUTOMATIC)
@@ -85,7 +85,7 @@ void bbe::Sound::load(const bbe::ByteBuffer& data, SoundLoadFormat soundLoadForm
 		loadMp3(data);
 		break;
 	default:
-		throw IllegalArgumentException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 
 	m_loaded = true;
@@ -103,7 +103,7 @@ bool bbe::SoundDataSourceStatic::isLooped() const
 
 uint32_t bbe::Sound::getChannels() const
 {
-	if (!m_loaded) throw NotInitializedException();
+	if (!m_loaded) bbe::Crash(bbe::Error::NotInitialized);
 	return m_channels;
 }
 

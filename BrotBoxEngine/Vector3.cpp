@@ -2,7 +2,7 @@
 #include "BBE/Vector3.h"
 #include "BBE/Vector2.h"
 #include "BBE/Matrix4.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 bbe::Vector3::Vector3()
 	: x(0), y(0), z(0)
@@ -134,7 +134,7 @@ float & bbe::Vector3::operator[](int index)
 	case 2:
 		return z;
 	default:
-		throw IllegalIndexException();
+		bbe::Crash(bbe::Error::IllegalIndex);
 	}
 }
 
@@ -150,7 +150,7 @@ const float & bbe::Vector3::operator[](int index) const
 	case 2:
 		return z;
 	default:
-		throw IllegalIndexException();
+		bbe::Crash(bbe::Error::IllegalIndex);
 	}
 }
 

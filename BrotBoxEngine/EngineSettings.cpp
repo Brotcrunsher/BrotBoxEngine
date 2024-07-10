@@ -1,5 +1,5 @@
 #include "BBE/EngineSettings.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 static bool started = false;
 static int amountOfLightSources = 4;
@@ -22,7 +22,7 @@ void bbe::Settings::setAmountOfLightSources(int amount)
 	//UNTESTED
 	if (started)
 	{
-		throw AlreadyStartedException();
+		bbe::Crash(bbe::Error::AlreadyStarted);
 	}
 
 	amountOfLightSources = amount;
@@ -33,7 +33,7 @@ void bbe::Settings::setShaderDoublesAllowed(bool allowed)
 {
 	if (started)
 	{
-		throw AlreadyStartedException();
+		bbe::Crash(bbe::Error::AlreadyStarted);
 	}
 
 	shaderDoublesAllowed = allowed;

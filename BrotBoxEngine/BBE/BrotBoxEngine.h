@@ -16,8 +16,7 @@
 #include "../BBE/Logging.h"
 #include "../BBE/ByteBuffer.h"
 
-#include "../BBE/ExceptionHelper.h"
-#include "../BBE/Exceptions.h"
+#include "../BBE/Error.h"
 
 #include "../BBE/SimpleFile.h"
 #include "../BBE/SimpleUrlRequest.h"

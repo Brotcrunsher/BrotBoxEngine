@@ -10,9 +10,9 @@
 
 const bbe::Font::CharData& bbe::Font::loadCharData(const int32_t codePoint, float scale_) const
 {
-	if (!isInit) throw NotInitializedException();
+	if (!isInit) bbe::Crash(bbe::Error::NotInitialized);
 
-	if (charDatas.find({ codePoint, scale_ }) != charDatas.end()) throw IllegalArgumentException(); // A char was passed twice.
+	if (charDatas.find({ codePoint, scale_ }) != charDatas.end()) bbe::Crash(bbe::Error::IllegalArgument); // A char was passed twice.
 
 	CharData cd;
 
@@ -31,7 +31,7 @@ const bbe::Font::CharData& bbe::Font::loadCharData(const int32_t codePoint, floa
 	int xoff = 0;
 	int yoff = 0;
 	unsigned char* bitmap = stbtt_GetCodepointBitmap(&fontInfo, 0, scale, codePoint, &width, &height, &xoff, &yoff);
-	if (bitmap == nullptr) throw NullPointerException();
+	if (bitmap == nullptr) bbe::Crash(bbe::Error::NullPointer);
 
 	//TODO: Currently this is a very wasteful approach to rendering text as we create a separate image for every distinct
 	//      char. It would be much more efficient to implement some form of texture atlas and use that here instead.
@@ -68,7 +68,7 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 {
 	if (isInit)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 
 	if (fontPath == "OpenSansRegular.ttf")
@@ -107,7 +107,7 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 			if (!found)
 			{
 				BBELOGLN("Could not find font!");
-				throw NullPointerException();
+				bbe::Crash(bbe::Error::NullPointer);
 			}
 		}
 		
@@ -146,19 +146,19 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 
 const bbe::String& bbe::Font::getFontPath() const
 {
-	if (!isInit) throw NotInitializedException();
+	if (!isInit) bbe::Crash(bbe::Error::NotInitialized);
 	return fontPath;
 }
 
 uint32_t bbe::Font::getFontSize() const
 {
-	if (!isInit) throw NotInitializedException();
+	if (!isInit) bbe::Crash(bbe::Error::NotInitialized);
 	return fontSize;
 }
 
 int32_t bbe::Font::getPixelsFromLineToLine() const
 {
-	if (!isInit) throw NotInitializedException();
+	if (!isInit) bbe::Crash(bbe::Error::NotInitialized);
 	return pixelsFromLineToLine;
 }
 
@@ -182,7 +182,7 @@ int32_t bbe::Font::getLeftSideBearing(int32_t c) const
 
 int32_t bbe::Font::getAdvanceWidth(int32_t c) const
 {
-	if (!isInit) throw NotInitializedException();
+	if (!isInit) bbe::Crash(bbe::Error::NotInitialized);
 	if (getFixedWidth() > 0)
 	{
 		return getFixedWidth() - getLeftSideBearing(c);
@@ -195,7 +195,7 @@ int32_t bbe::Font::getAdvanceWidth(int32_t c) const
 
 int32_t bbe::Font::getVerticalOffset(int32_t c) const
 {
-	if (!isInit) throw NotInitializedException();
+	if (!isInit) bbe::Crash(bbe::Error::NotInitialized);
 	return getCharData(c, 1.0f).verticalOffset;
 }
 

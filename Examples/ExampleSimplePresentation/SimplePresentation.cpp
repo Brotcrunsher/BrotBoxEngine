@@ -29,7 +29,7 @@ bbe::Color Slide::tokenTypeToColor(TokenType type)
 	case TokenType::text        : return bbe::Color(200.f / 255.f, 200.f / 255.f, 200.f / 255.f);
 	}
 
-	throw bbe::IllegalArgumentException();
+	bbe::Crash(bbe::Error::IllegalArgument);
 }
 
 MoveAnimation::MoveAnimation(float targetX, float targetY)
@@ -59,7 +59,7 @@ bbe::Vector2 MoveAnimation::animate(float startX, float startY, float t) const
 	else if (mat == MoveAnimationType::BEZIER2C)
 		return bbe::Math::interpolateBezier(bbe::Vector2{ startX, startY }, bbe::Vector2{ targetX, targetY }, t, { bbe::Vector2{ controlX, controlY }, bbe::Vector2{ controlX2, controlY2 } });
 	else
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 }
 
 RenderObject::RenderObject(const bbe::String& name, RenderType rt, StartAnimation startAnim, float x, float y, float width, float height, float outlineWidth, const bbe::String& text, const bbe::Font* font)
@@ -92,7 +92,7 @@ bbe::Vector2 RenderObject::getPos(float t) const
 	}
 	else
 	{
-		throw bbe::IllegalArgumentException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 
 	if (animations.getLength() == 0) return bbe::Vector2(x + startAnimOffsetX, y + startAnimOffsetY);
@@ -145,7 +145,7 @@ bbe::Vector2 RenderObject::getDim(float t) const
 			return bbe::Vector2(width * t, height * t) + offset;
 		}
 	}
-	throw bbe::IllegalStateException();
+	bbe::Crash(bbe::Error::IllegalState);
 }
 
 void RenderObject::exhaustAnimations()
@@ -212,7 +212,7 @@ Slide::Slide(const char* path)
 	}
 	else
 	{
-		throw bbe::IllegalArgumentException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 
 	if(tokenizer->isTextBased()) addText(bbe::simpleFile::readFile(ppath).getRaw());
@@ -310,7 +310,7 @@ void Slide::update(PresentationControl pc, float scrollValue, float timeSinceLas
 	}
 	else
 	{
-		throw bbe::IllegalArgumentException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 
 	if (scrollingAllowed)
@@ -389,7 +389,7 @@ void Slide::forceFontSize(uint32_t size)
 			return;
 		}
 	}
-	throw bbe::IllegalArgumentException();
+	bbe::Crash(bbe::Error::IllegalArgument);
 }
 
 void Slide::setComplete(bool complete_)
@@ -473,7 +473,7 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 					brush.drawImage(pos, dim, *ro.image);
 				}
 				else
-					throw bbe::IllegalArgumentException();
+					bbe::Crash(bbe::Error::IllegalArgument);
 				if (ro.outlineWidth > 0)
 				{
 					brush.setColorRGB(ro.fillColor);
@@ -490,7 +490,7 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 					else if (ro.rt == RenderType::IMAGE)
 						{ /*Do nothing*/ }
 					else
-						throw bbe::IllegalArgumentException();
+						bbe::Crash(bbe::Error::IllegalArgument);
 				}
 				if (ro.text.getLength() > 0 && ro.font && ro.showText && ro.rt != RenderType::IMAGE)
 				{
@@ -887,7 +887,7 @@ void SlideShow::update(PresentationControl pc, float scrollValue, float timeSinc
 	}
 	else
 	{
-		throw bbe::IllegalArgumentException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 }
 
@@ -952,7 +952,7 @@ void SlideShow::addManifest(const char* inPath)
 			}
 			else
 			{
-				throw bbe::UnknownException();
+				bbe::Crash(bbe::Error::Unknown);
 			}
 
 			if (horizontalCount == 0)
@@ -1038,7 +1038,7 @@ void SlideShow::addManifest(const char* inPath)
 		else
 		{
 			BBELOGLN("Found invalid token: " << tokens[0]);
-			throw bbe::UnknownException();
+			bbe::Crash(bbe::Error::Unknown);
 		}
 	}
 }

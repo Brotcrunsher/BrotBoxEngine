@@ -181,7 +181,7 @@ class MyGame : public bbe::Game
 			}
 			else
 			{
-				throw bbe::IllegalStateException();
+				bbe::Crash(bbe::Error::IllegalState);
 			}
 		}
 

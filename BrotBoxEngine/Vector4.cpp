@@ -1,7 +1,7 @@
 #include "BBE/Vector2.h"
 #include "BBE/Vector3.h"
 #include "BBE/Vector4.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 #include "BBE/Vector4.h"
 #include "BBE/Math.h"
 
@@ -146,7 +146,7 @@ float& bbe::Vector4::operator[](int index)
 	case 3:
 		return w;
 	default:
-		throw IllegalIndexException();
+		bbe::Crash(bbe::Error::IllegalIndex);
 	}
 }
 
@@ -164,7 +164,7 @@ const float& bbe::Vector4::operator[](int index) const
 	case 3:
 		return w;
 	default:
-		throw IllegalIndexException();
+		bbe::Crash(bbe::Error::IllegalIndex);
 	}
 }
 

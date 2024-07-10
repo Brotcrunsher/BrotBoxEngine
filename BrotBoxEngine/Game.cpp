@@ -1,6 +1,6 @@
 #include "BBE/Game.h"
 #include "BBE/Window.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 #include "BBE/PrimitiveBrush2D.h"
 #include "BBE/PrimitiveBrush3D.h"
 #include "BBE/Math.h"
@@ -85,6 +85,7 @@ static void crashHandler(int sig)
 	string += "###################\n";
 	string += "#                 #\n";
 	string += "#   !!!CRASH!!!   #\n";
+	string += "#     Signal      #\n";
 	string += "#                 #\n";
 	string += "###################\n";
 	string += "\n";
@@ -113,7 +114,7 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 	BBELOGLN("Starting Game: " << title);
 	if (m_started)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_started = true;
 
@@ -261,7 +262,7 @@ void bbe::Game::setExternallyManaged(bool managed)
 	if (m_started)
 	{
 		// Managed must be set before calling start!
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_externallyManaged = managed;
 }
@@ -484,7 +485,7 @@ void bbe::Game::setVideoRenderingMode(const char* path)
 	if (m_started)
 	{
 		// Video Rendering must be enabled before start()!
-		throw IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	videoRenderingPath = path;
 	setFixedFrametime(1.f / 60.f);
@@ -499,7 +500,7 @@ void bbe::Game::setScreenshotRecordingMode(const char* path)
 	if (m_started)
 	{
 		// Screenshot Recording must be enabled before start()!
-		throw IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	screenshotRenderingPath = path;
 	setFixedFrametime(1.f / 60.f);

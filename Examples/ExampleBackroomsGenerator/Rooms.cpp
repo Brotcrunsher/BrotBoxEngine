@@ -178,13 +178,13 @@ size_t br::Rooms::lookupRoomIndex(const bbe::Vector2i& position)
 	}
 
 	bbe::Rectanglei bounding = newBoundingAt(position);
-	bounding = shrinkBoundingBox(bounding);
+	bounding = *shrinkBoundingBox(bounding);
 	
 	addRoom(bounding);
 	return rooms.getLength() - 1;
 }
 
-bbe::Rectanglei br::Rooms::shrinkBoundingBox(const bbe::Rectanglei& bounding) const
+std::optional<bbe::Rectanglei> br::Rooms::shrinkBoundingBox(const bbe::Rectanglei& bounding) const
 {
 	bbe::List<bbe::Rectanglei> intersections;
 	bbe::List<bbe::Vector2i> hashGridPositions = Room::getHashGridPositions(bounding);
@@ -239,7 +239,7 @@ bbe::Rectanglei br::Rooms::shrinkBoundingBox(const bbe::Rectanglei& bounding) co
 	
 	if (retVal.getArea() == 0)
 	{
-		throw bbe::IllegalStateException();
+		return std::nullopt;
 	}
 
 	return retVal;
@@ -313,14 +313,15 @@ bool br::Rooms::expandRoom(size_t roomi)
 		}
 		else // ???
 		{
-			throw bbe::IllegalStateException();
+			bbe::Crash(bbe::Error::IllegalState);
 		}
 
-		try
+		std::optional<bbe::Rectanglei> boundingOverride = shrinkBoundingBox(newBounding);
+		if (boundingOverride)
 		{
-			newBounding = shrinkBoundingBox(newBounding);
+			newBounding = *boundingOverride;
 		}
-		catch (const bbe::IllegalStateException& e)
+		else
 		{
 			return false;
 		}
@@ -347,7 +348,7 @@ void br::Rooms::determineNeighbors_(size_t roomi, const bbe::Vector2i& roomiGate
 	if (neighborIndex == roomi)
 	{
 		// A room is its own neighbor? Can't happen.
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	if (!rooms[roomi].neighbors.contains([&](const br::Neighbor& n) { return neighborIndex == n.neighborId; }))
@@ -453,7 +454,7 @@ void br::Rooms::connectGates(size_t roomi)
 	if (r.neighbors.getLength() < 2)
 	{
 		// To connect rooms, we need at least two neighbors.
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	r.walkable = bbe::Grid<bool>(r.boundingBox.getDim() * wallSpaceScale);
@@ -574,7 +575,7 @@ void br::Rooms::connectGates(size_t roomi)
 	}
 	else
 	{
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	{
@@ -762,7 +763,7 @@ bool br::Rooms::bakeLightsStep(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::
 		{
 			// Shouldn't happen - right?
 			// Would mean we have finished baking, but reached the end of a new baking process.
-			throw bbe::IllegalStateException();
+			bbe::Crash(bbe::Error::IllegalState);
 		}
 	}
 
@@ -794,11 +795,11 @@ void br::Rooms::unbakeLights(size_t roomi)
 {
 	if (rooms[roomi].state < RoomGenerationState::baking)
 	{
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	if (!bakedRoomIds.removeSingle(roomi))
 	{
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	Room& r = rooms[roomi];
 	r.bakedCeiling = bbe::Image();
@@ -983,7 +984,7 @@ void br::Rooms::drawRoom(size_t roomi, bbe::PrimitiveBrush3D& brush, bbe::Fragme
 	}
 	brush.setColorHSV(r.hue, r.saturation, r.value);
 	brush.setColor(1, 1, 1, 1);
-	if (r.bakedWalls.getLength() != 1) throw bbe::IllegalStateException();
+	if (r.bakedWalls.getLength() != 1) bbe::Crash(bbe::Error::IllegalState);
 	if(drawFloor)         brush.fillModel(r.floorTranslation(),        r.floorModel.model,               nullptr, nullptr, &r.bakedFloor,            shaderFloor);
 	if(drawCeiling)       brush.fillModel(r.ceilingTranslation(),      r.ceilingModel.model,             nullptr, nullptr, &r.bakedCeiling,          shaderCeiling);
 	if(drawWalls)         brush.fillModel(r.wallsModel.offset,         r.wallsModel.model.model,         nullptr, nullptr, &r.bakedWalls[0],         shaderWall);

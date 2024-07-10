@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../BBE/Exceptions.h"
+#include "../BBE/Error.h"
 #include "../BBE/AutoRefCountable.h"
 
 namespace bbe
@@ -40,7 +40,7 @@ namespace bbe
 		{
 			if (!isValueReady())
 			{
-				throw bbe::IllegalStateException();
+				bbe::Crash(bbe::Error::IllegalState);
 			}
 			return ((const DataProvider<T>*)ref.get())->getValue();
 		}

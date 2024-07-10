@@ -1,6 +1,6 @@
 #include "BBE/PixelObserver.h"
 #include "BBE/Vector2.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -54,7 +54,7 @@ bbe::Color bbe::PixelObserver::getColor(int32_t x, int32_t y) const
 		b / 255.f
 	);
 #else
-	throw NotImplementedException();
+	bbe::Crash(bbe::Error::NotImplemented);
 #endif
 }
 

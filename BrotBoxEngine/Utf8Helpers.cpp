@@ -1,6 +1,6 @@
 #include "BBE/Utf8Helpers.h"
 #include "BBE/Utf8Iterator.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 #include "BBE/DataType.h"
 
 int32_t bbe::utf8CharToCodePoint(const char* ptr)
@@ -17,14 +17,14 @@ int32_t bbe::utf8CharToCodePoint(const char* ptr)
 	case 4: return ((bptr[0] & 0b00000111) << 18) | ((bptr[1] & 0b00111111) << 12) | ((bptr[2] & 0b00111111) << 6) | ((bptr[3] & 0b00111111));
 	}
 
-	throw IllegalArgumentException();
+	bbe::Crash(bbe::Error::IllegalArgument);
 }
 
 std::size_t bbe::utf8len(const char* ptr)
 {
 	if(ptr == nullptr)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 	std::size_t len = 0;
 	bbe::Utf8Iterator iter(ptr);
@@ -40,7 +40,7 @@ std::size_t bbe::utf8len(const char* ptr, const char* end)
 {
 	if(ptr == nullptr)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 	std::size_t len = 0;
 	const byte* bptr = reinterpret_cast<const byte*>(ptr);
@@ -59,7 +59,7 @@ std::size_t bbe::utf8charlen(const char* ptr)
 {
 	if(ptr == nullptr)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 	const byte* bptr = reinterpret_cast<const byte*>(ptr);
 
@@ -68,7 +68,7 @@ std::size_t bbe::utf8charlen(const char* ptr)
 	if(((*bptr) & (byte)0b11110000) == (byte)0b11100000) return 3;
 	if(((*bptr) & (byte)0b11111000) == (byte)0b11110000) return 4;
 
-	throw NotStartOfUtf8Exception();
+	bbe::Crash(bbe::Error::NotStartOfUtf8);
 }
 
 std::size_t bbe::utf8codePointLen(int32_t codePoint)
@@ -85,7 +85,7 @@ bool bbe::utf8IsStartOfChar(const char* ptr)
 	//UNTESTED
 	if(ptr == nullptr)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 	const byte* bptr = reinterpret_cast<const byte*>(ptr);
 
@@ -102,19 +102,19 @@ const char* bbe::utf8GetStartAddrOfCodePoint(const char* ptr)
 	//UNTESTED
 	if(ptr == nullptr)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 
 	if(*ptr == '\0')
 	{
-		throw UnexpectedEndOfStringException();
+		bbe::Crash(bbe::Error::UnexpectedEndOfString);
 	}
 
 	for(int i = 0; i<4; i++)
 	{
 		if(ptr[-i] == '\0') 
 		{
-			throw NotAUtf8CharException();
+			bbe::Crash(bbe::Error::NotAUtf8Char);
 		}
 		if(bbe::utf8IsStartOfChar(&ptr[-i])) 
 		{
@@ -122,7 +122,7 @@ const char* bbe::utf8GetStartAddrOfCodePoint(const char* ptr)
 		}
 	}
 
-	throw NotAUtf8CharException();
+	bbe::Crash(bbe::Error::NotAUtf8Char);
 }
 
 const char* bbe::utf8GetNextChar(const char* ptr)
@@ -130,7 +130,7 @@ const char* bbe::utf8GetNextChar(const char* ptr)
 	//UNTESTED
 	if(*ptr == '\0')
 	{
-		throw UnexpectedEndOfStringException();
+		bbe::Crash(bbe::Error::UnexpectedEndOfString);
 	}
 
 	std::size_t length = bbe::utf8charlen(ptr);
@@ -140,7 +140,7 @@ const char* bbe::utf8GetNextChar(const char* ptr)
 
 bool bbe::utf8IsSameChar(const char* ptr1, const char* ptr2)
 {
-	if(ptr1 == nullptr || ptr2 == nullptr) throw NullPointerException();
+	if(ptr1 == nullptr || ptr2 == nullptr) bbe::Crash(bbe::Error::NullPointer);
 	if(ptr1 == ptr2) return true;
 
 	auto len1 = bbe::utf8charlen(ptr1);
@@ -163,7 +163,7 @@ bool bbe::utf8IsWhitespace(const char* ptr)
 {
 	if(ptr == nullptr)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 
 	if(bbe::utf8IsSameChar("\u0009", ptr)) return true; // CHARACTER TABULATION
@@ -206,7 +206,7 @@ bool bbe::utf8IsLatinChar(const char* ptr)
 	//UNTESTED
 	if(ptr == nullptr)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 
 	return (*ptr >= 'a' && *ptr <= 'z') || (*ptr >= 'A' && *ptr <= 'Z');
@@ -217,7 +217,7 @@ bool bbe::utf8IsDigitChar(const char* ptr)
 	//UNTESTED
 	if(ptr == nullptr)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 
 	return (*ptr >= '0' && *ptr <= '9');
@@ -228,7 +228,7 @@ bool bbe::utf8IsAsciiChar(const char* ptr)
 	//UNTESTED
 	if(ptr == nullptr)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 
 	const byte* bptr = reinterpret_cast<const byte*>(ptr);
@@ -241,7 +241,7 @@ bool bbe::utf8IsSmallerCodePoint(const char* ptr1, const char* ptr2)
 	//UNTESTED
 	if(ptr1 == nullptr || ptr2 == nullptr)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 
 	auto size1 = bbe::utf8charlen(ptr1);

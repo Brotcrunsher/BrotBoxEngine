@@ -1,6 +1,6 @@
 #include "BBE/Async.h"
 #include "BBE/SimpleUrlRequest.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 #include "BBE/List.h"
 #include "sodium.h"
 #include "BBE/SimpleFile.h"
@@ -22,7 +22,7 @@ struct CurlRaii
 		curl = curl_easy_init();
 		if (!curl)
 		{
-			throw bbe::IllegalStateException();
+			bbe::Crash(bbe::Error::IllegalState);
 		}
 	}
 
@@ -64,7 +64,7 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlRequest(const 
 	CURLcode res;
 	if ((res = curl_easy_perform(curl)) != CURLcode::CURLE_OK)
 	{
-		throw IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	if (addTrailingNul)	retVal.dataContainer.add('\0');
@@ -94,12 +94,12 @@ std::optional<bbe::List<char>> bbe::simpleUrlRequest::decryptXChaCha(const bbe::
 {
 	if (sodium_init() < 0)
 	{
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	const bbe::ByteBuffer key = bbe::simpleFile::readBinaryFile(pathToKeyFile);
 	if (key.getLength() != crypto_aead_xchacha20poly1305_ietf_KEYBYTES)
 	{
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	if (data.getLength() < crypto_aead_xchacha20poly1305_ietf_NPUBBYTES)
@@ -128,7 +128,7 @@ std::optional<bbe::List<char>> bbe::simpleUrlRequest::decryptXChaCha(const bbe::
 		return std::nullopt;
 	}
 
-	if (messageLength > message.getLength()) throw bbe::IllegalStateException();
+	if (messageLength > message.getLength()) bbe::Crash(bbe::Error::IllegalState);
 
 	if (addTrailingNul) message.add(0);
 	return message;
@@ -141,13 +141,13 @@ bbe::simpleUrlRequest::SocketRequestXChaChaRet bbe::simpleUrlRequest::socketRequ
 
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != NO_ERROR)
 	{
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock == INVALID_SOCKET)
 	{
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	sockaddr_in addr;
 	addr.sin_family = AF_INET;
@@ -185,7 +185,7 @@ bbe::simpleUrlRequest::SocketRequestXChaChaRet bbe::simpleUrlRequest::socketRequ
 	
 	if (closesocket(sock) == SOCKET_ERROR)
 	{
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	if (!decrypted)
 	{

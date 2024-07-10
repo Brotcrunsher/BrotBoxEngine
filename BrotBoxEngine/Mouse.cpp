@@ -1,12 +1,12 @@
 #include "BBE/Mouse.h"
 #include "BBE/Vector2.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 bool bbe::Mouse::isButtonDown(bbe::MouseButton button) const
 {
 	if (!isMouseButtonValid(button))
 	{
-		throw NoSuchMouseButtonException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 	return m_pButtonsThisFrame[(int)button];
 }
@@ -15,7 +15,7 @@ bool bbe::Mouse::isButtonUp(bbe::MouseButton button) const
 {
 	if (!isMouseButtonValid(button))
 	{
-		throw NoSuchMouseButtonException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 	return !m_pButtonsThisFrame[(int)button];
 }
@@ -24,7 +24,7 @@ bool bbe::Mouse::wasButtonDownLastFrame(bbe::MouseButton button) const
 {
 	if (!isMouseButtonValid(button))
 	{
-		throw NoSuchMouseButtonException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 	return m_pButtonsLastFrame[(int)button];
 }
@@ -33,7 +33,7 @@ bool bbe::Mouse::wasButtonUpLastFrame(bbe::MouseButton button) const
 {
 	if (!isMouseButtonValid(button))
 	{
-		throw NoSuchMouseButtonException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 	return !m_pButtonsLastFrame[(int)button];
 }
@@ -42,7 +42,7 @@ bool bbe::Mouse::isButtonPressed(bbe::MouseButton button) const
 {
 	if (!isMouseButtonValid(button))
 	{
-		throw NoSuchMouseButtonException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 	return m_pButtonsThisFrame[(int)button] && !m_pButtonsLastFrame[(int)button];
 }
@@ -51,7 +51,7 @@ bool bbe::Mouse::isButtonReleased(bbe::MouseButton button) const
 {
 	if (!isMouseButtonValid(button))
 	{
-		throw NoSuchMouseButtonException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 	return !m_pButtonsThisFrame[(int)button] && m_pButtonsLastFrame[(int)button];
 }
@@ -66,7 +66,7 @@ void bbe::Mouse::INTERNAL_press(MouseButton button)
 {
 	if (!isMouseButtonValid(button))
 	{
-		throw NoSuchMouseButtonException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 
 	m_pButtonsNextFrame[(int)button] = true;
@@ -76,7 +76,7 @@ void bbe::Mouse::INTERNAL_release(MouseButton button)
 {
 	if (!isMouseButtonValid(button))
 	{
-		throw NoSuchMouseButtonException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 
 	m_pButtonsNextFrame[(int)button] = false;

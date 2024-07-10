@@ -4,7 +4,7 @@
 #include "../Vulkan/VulkanHelper.h"
 #include "../Vulkan/VulkanCommandPool.h"
 #include "../BBE/List.h"
-#include "../BBE/Exceptions.h"
+#include "../BBE/Error.h"
 
 namespace bbe
 {

@@ -4,12 +4,12 @@ bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image)
 {
 	if (!image.isLoadedCpu())
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 
 	if (image.m_prendererData != nullptr)
 	{
-		throw IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	image.m_prendererData = this;
@@ -30,7 +30,7 @@ bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image)
 	}
 	else
 	{
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	
@@ -51,7 +51,7 @@ bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image, GLuint 
 {
 	if (image.m_prendererData != nullptr)
 	{
-		throw IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	image.m_prendererData = this;
@@ -77,7 +77,7 @@ GLint bbe::INTERNAL::openGl::OpenGLImage::internalFormat(const bbe::Image& image
 	case (ImageFormat::R32G32B32A32FLOAT): return GL_RGBA32F;
 	}
 
-	throw bbe::IllegalArgumentException();
+	bbe::Crash(bbe::Error::IllegalArgument);
 }
 
 GLenum bbe::INTERNAL::openGl::OpenGLImage::format(const bbe::Image& image)
@@ -90,7 +90,7 @@ GLenum bbe::INTERNAL::openGl::OpenGLImage::format(const bbe::Image& image)
 	case (ImageFormat::R32G32B32A32FLOAT): return GL_RGBA;
 	}
 
-	throw bbe::IllegalArgumentException();
+	bbe::Crash(bbe::Error::IllegalArgument);
 }
 
 GLenum bbe::INTERNAL::openGl::OpenGLImage::type(const bbe::Image& image)
@@ -103,5 +103,5 @@ GLenum bbe::INTERNAL::openGl::OpenGLImage::type(const bbe::Image& image)
 	case (ImageFormat::R32G32B32A32FLOAT): return GL_FLOAT;
 	}
 
-	throw bbe::IllegalArgumentException();
+	bbe::Crash(bbe::Error::IllegalArgument);
 }

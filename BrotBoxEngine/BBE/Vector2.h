@@ -1,7 +1,7 @@
 #pragma once
 
 #include "BBE/Math.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 namespace bbe
 {
@@ -124,7 +124,7 @@ namespace bbe
 			case 1:
 				return y;
 			default:
-				throw IllegalIndexException();
+				bbe::Crash(bbe::Error::IllegalIndex);
 			}
 		}
 
@@ -137,7 +137,7 @@ namespace bbe
 			case 1:
 				return y;
 			default:
-				throw IllegalIndexException();
+				bbe::Crash(bbe::Error::IllegalIndex);
 			}
 		}
 

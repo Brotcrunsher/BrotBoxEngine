@@ -5,7 +5,6 @@
 #include <cwchar>
 #include <stdlib.h>
 #include <iostream>
-#include "../BBE/NewDeleteAllocator.h"
 #include "../BBE/DynamicArray.h"
 #include "../BBE/Array.h"
 #include "../BBE/UtilDebug.h"

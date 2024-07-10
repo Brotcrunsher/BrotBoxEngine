@@ -23,10 +23,10 @@
 //TODO: When playing the "open tasks" sound it would be useful to see which processes/urls caused it
 //TODO: Cnsl can lagg extremely with a lot of logs.
 //TODO: Newly created tasks that are due "soon" (e.g. in 2 days) seem to have a bug to be due in 366 days. Tested in a leap year (important?)
-//TODO: Todo-Server?
-//TODO: Uncaught exception should create a crash log. This also applies to other threads! Test with both
-//TODO: Minimize does not work when clicking the icon in the tray
+//TODO: Minimize does not work when clicking the icon in the tray. Sometimes! It's weird. Hard to reproduce.
 //TODO: Make the UTF8String actually UTF8...
+//TODO: "A rare task" should be re-thought. Doesn't make sense to NOT mark a task as rare only because the repeat is 1 days, but the only possible day is a monday for example.
+//TODO: BBE_SERIALIZABLE_DATA should be able to accept any bbe::List<T> if T itself is serializable.
 
 struct ClipboardContent
 {
@@ -212,7 +212,7 @@ public:
 				}
 				else
 				{
-					throw bbe::IllegalArgumentException();
+					bbe::Crash(bbe::Error::IllegalArgument);
 				}
 
 				image.setPixel(x, y, c.asByteColor());

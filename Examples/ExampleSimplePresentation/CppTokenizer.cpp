@@ -8,7 +8,7 @@ void CppTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 
 	if (renderPositions.getLength() != text.getLength())
 	{
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	Token currentToken;

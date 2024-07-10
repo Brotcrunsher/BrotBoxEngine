@@ -32,17 +32,17 @@ void bbe::FragmentShader::load(const bbe::ByteBuffer& rawData)
 {
 	if (bbe::Window::INTERNAL_firstInstance == nullptr)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 #ifdef BBE_RENDERER_VULKAN
 	if (bbe::INTERNAL::vulkan::VulkanManager::s_pinstance == nullptr)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 #endif
 	if (isLoaded)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 
 	m_rawData = rawData;
@@ -59,7 +59,7 @@ void bbe::FragmentShader::setPushConstant(uint32_t offset, uint32_t length, cons
 	if (offset < PUSHCONST_START_ADDR || offset + length > PUSHCONST_START_ADDR + pushConstants.getLength())
 	{
 		//Only in the range of [80..128) the push constants are guaranteed to be present.
-		throw IllegalArgumentException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 	memcpy(pushConstants.getRaw() + offset - PUSHCONST_START_ADDR, data, length);
 }

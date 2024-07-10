@@ -13,9 +13,10 @@ void bbe::INTERNAL::triggerFatalError(const bbe::String &msg)
 
 void bbe::INTERNAL::triggerFatalError(const char * msg)
 {
+	// TODO: This whole triggerFatalError stuff is kinda obsolete from the introduction of bbe::Crash.
 	BBELOGLN("FATAL ERROR: " << msg);
 #ifdef _WIN32
 	//MessageBox(nullptr, msg, "FATAL ERROR", MB_OK);
 #endif
-	throw FatalError(msg);
+	bbe::Crash(bbe::Error::FatalError);
 }

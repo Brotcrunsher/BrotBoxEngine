@@ -90,7 +90,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 				else
 				{
 					BBELOGLN("Found only a single \"");
-					throw bbe::IllegalArgumentException();
+					bbe::Crash(bbe::Error::IllegalArgument);
 				}
 			}
 			command = command.trim();
@@ -203,7 +203,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 				{
 					if (commandTokens[1] == "None")   startAnim = StartAnimation::NONE;
 					else if (commandTokens[1] == "ZoomIn") startAnim = StartAnimation::ZOOM_IN;
-					else throw bbe::IllegalArgumentException();
+					else bbe::Crash(bbe::Error::IllegalArgument);
 
 					commandRecognized = true;
 				}
@@ -393,7 +393,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 					else if (commandTokens[accessIndex] == "Line")   rt = RenderType::LINE;
 					else if (commandTokens[accessIndex] == "Arrow")  rt = RenderType::ARROW;
 					else if (commandTokens[accessIndex] == "Image")  rt = RenderType::IMAGE;
-					else throw bbe::IllegalArgumentException();
+					else bbe::Crash(bbe::Error::IllegalArgument);
 
 					accessIndex++;
 					if (commandTokens.getLength() > accessIndex)
@@ -445,7 +445,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 						else
 						{
 							BBELOGLN("Something strange happened...");
-							throw bbe::IllegalStateException();
+							bbe::Crash(bbe::Error::IllegalState);
 						}
 					}
 
@@ -483,7 +483,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 				if (!commandRecognized)
 				{
 					BBELOGLN("Got illegal argument: " << command);
-					throw bbe::IllegalArgumentException();
+					bbe::Crash(bbe::Error::IllegalArgument);
 				}
 			}
 

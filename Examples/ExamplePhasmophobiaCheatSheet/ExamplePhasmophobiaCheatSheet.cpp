@@ -26,7 +26,7 @@ Evidence strToEvidence(const bbe::String& s)
 	else if (s == "COLD"   ) return Evidence::COLD;
 	else if (s == "FINGIES") return Evidence::FINGIES;
 	else if (s == "DOTS"   ) return Evidence::DOTS;
-	else throw bbe::IllegalArgumentException();
+	else bbe::Crash(bbe::Error::IllegalArgument);
 }
 
 struct Ghost

@@ -2,7 +2,7 @@
 
 #include "../BBE/List.h"
 #include "../BBE/UtilDebug.h"
-#include "../BBE/Exceptions.h"
+#include "../BBE/Error.h"
 
 namespace bbe
 {
@@ -22,7 +22,7 @@ namespace bbe
 		{
 			if (m_data.getLength() <= 0)
 			{
-				throw ContainerEmptyException();
+				bbe::Crash(bbe::Error::ContainerEmpty);
 			}
 
 			T data = std::move(m_data.last());
@@ -34,7 +34,7 @@ namespace bbe
 		{
 			if (m_data.getLength() <= 0)
 			{
-				throw ContainerEmptyException();
+				bbe::Crash(bbe::Error::ContainerEmpty);
 			}
 
 			return m_data.last();

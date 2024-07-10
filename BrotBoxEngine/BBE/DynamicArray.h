@@ -2,7 +2,7 @@
 
 #include "../BBE/Array.h"
 #include "../BBE/Hash.h"
-#include "../BBE/Exceptions.h"
+#include "../BBE/Error.h"
 #include "../BBE/AllocBlock.h"
 #include <type_traits>
 #include <stddef.h>
@@ -136,7 +136,7 @@ namespace bbe
 		{
 			if (index < 0 || index >= m_length)
 			{
-				throw IllegalIndexException();
+				bbe::Crash(bbe::Error::IllegalIndex);
 			}
 			return m_pdata[index];
 		}
@@ -145,7 +145,7 @@ namespace bbe
 		{
 			if (index < 0 || index >= m_length)
 			{
-				throw IllegalIndexException();
+				bbe::Crash(bbe::Error::IllegalIndex);
 			}
 			return m_pdata[index];
 		}

@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include "BBE/BrotBoxEngine.h"
 #include "Room.h"
 
@@ -51,7 +52,7 @@ namespace br
 
 		bbe::Rectanglei newBoundingAt(const bbe::Vector2i& position);
 		size_t lookupRoomIndex(const bbe::Vector2i& position);
-		bbe::Rectanglei shrinkBoundingBox(const bbe::Rectanglei &bounding) const;
+		std::optional<bbe::Rectanglei> shrinkBoundingBox(const bbe::Rectanglei &bounding) const;
 		bool expandRoom(size_t roomi);
 		void determineNeighbors(size_t roomi);
 		void collapseGates(size_t roomi);

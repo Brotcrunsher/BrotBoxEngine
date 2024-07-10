@@ -6,7 +6,7 @@ void AsmTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 	const bbe::List<bbe::Vector2> powerPointPositions = font.getRenderPositions(bbe::Vector2(0, 0), text, 0, false);
 	if (renderPositions.getLength() != text.getLength())
 	{
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	Token currentToken;

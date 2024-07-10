@@ -1,7 +1,7 @@
 #ifndef BBE_NO_AUDIO
 
 #include "BBE/SoundManager.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 #include "BBE/Logging.h"
 #include "BBE/WriterReaderBuffer.h"
 #include <algorithm>
@@ -158,7 +158,7 @@ struct SoundInstanceData
 				if (posAvailable)
 				{
 					// A position for a multi channel sound is currently unsupported.
-					throw bbe::IllegalStateException();
+					bbe::Crash(bbe::Error::IllegalState);
 				}
 				sample = bbe::Vector2(
 					sdsd->getSample(m_samples_loaded, 0),
@@ -166,7 +166,7 @@ struct SoundInstanceData
 			}
 			else
 			{
-				throw bbe::IllegalStateException();
+				bbe::Crash(bbe::Error::IllegalState);
 			}
 
 			if (stopRequested)
@@ -199,7 +199,7 @@ struct SoundInstanceData
 		}
 		else
 		{
-			throw bbe::IllegalStateException();
+			bbe::Crash(bbe::Error::IllegalState);
 		}
 	}
 };
@@ -263,7 +263,7 @@ static void loadAllBuffers()
 				bbe::String errorMsg = "";
 				errorMsg += sid.m_psound->getHz();
 				errorMsg += " Hz not supported";
-				throw bbe::IllegalStateException(errorMsg.getRaw());
+				bbe::Crash(bbe::Error::IllegalState, errorMsg.getRaw());
 			}
 		}
 	}
@@ -275,7 +275,7 @@ static void loadAllBuffers()
 	{
 		BBELOGLN("Something went wrong when loading buffer contents! " << err);
 		freeBuffer(buffer);
-		throw bbe::IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	buffers.add(buffer);
 
@@ -387,7 +387,7 @@ static void updateSoundSystem()
 						format = AL_FORMAT_STEREO_FLOAT32;
 						break;
 					default:
-						throw bbe::IllegalStateException();
+						bbe::Crash(bbe::Error::IllegalState);
 					}
 					alBufferData(SDSS->INTERNAL_buffer, AL_FORMAT_STEREO_FLOAT32, samples->getRaw(), sizeof(float) * samples->getLength(), SDSS->getHz());
 					SDSS->INTERNAL_restartCycle = restartCycle;
@@ -593,7 +593,7 @@ bbe::INTERNAL::SoundManager::SoundManager()
 {
 	if (m_pinstance != nullptr)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_pinstance = this;
 }

@@ -31,7 +31,7 @@ float bbe::PointLight::getLightRadius() const
 	case LightFalloffMode::LIGHT_FALLOFF_SQRT:
 		return 1000000.f;
 	default:
-		throw IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	if (radius > 10000)

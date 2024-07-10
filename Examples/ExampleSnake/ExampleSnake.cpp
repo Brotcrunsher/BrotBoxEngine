@@ -96,7 +96,7 @@ public:
 			bodyParts[0].x++;
 			break;
 		default:
-			throw bbe::IllegalStateException();
+			bbe::Crash(bbe::Error::IllegalState);
 		}
 
 		if (bodyParts[0].x < 0)

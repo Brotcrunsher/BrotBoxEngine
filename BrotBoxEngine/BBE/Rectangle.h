@@ -252,7 +252,7 @@ namespace bbe
 		}
 		bool intersects(const Circle& circle) const
 		{
-			if (circle.getWidth() != circle.getHeight()) throw NotImplementedException();
+			if (circle.getWidth() != circle.getHeight()) bbe::Crash(bbe::Error::NotImplemented);
 
 			const Vec circleMidPoint = circle.getPos() - circle.getDim() / 2;
 

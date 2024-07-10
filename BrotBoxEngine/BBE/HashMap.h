@@ -2,7 +2,7 @@
 
 #include "../BBE/List.h"
 #include "../BBE/Hash.h"
-#include "../BBE/Exceptions.h"
+#include "../BBE/Error.h"
 
 namespace bbe
 {
@@ -57,7 +57,7 @@ namespace bbe
 			{
 				if (key == m_buckets[index][i].m_key)
 				{
-					throw KeyAlreadyUsedException();
+					bbe::Crash(bbe::Error::KeyAlreadyUsed);
 				}
 			}
 

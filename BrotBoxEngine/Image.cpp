@@ -1,5 +1,5 @@
 #include "BBE/Image.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 #include "BBE/Math.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -18,7 +18,7 @@ void bbe::Image::finishLoad(stbi_uc* pixels)
 
 	if (pixels == nullptr)
 	{
-		throw LoadException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	m_pdata.resizeCapacityAndLengthUninit(getSizeInBytes());
@@ -163,7 +163,7 @@ size_t bbe::Image::getAmountOfChannels() const
 	case ImageFormat::R32G32B32A32FLOAT:
 		return 4;
 	default:
-		throw FormatNotSupportedException();
+		bbe::Crash(bbe::Error::FormatNotSupported);
 	}
 }
 
@@ -180,7 +180,7 @@ size_t bbe::Image::getBytesPerChannel() const
 	case ImageFormat::R32G32B32A32FLOAT:
 		return 4;
 	default:
-		throw FormatNotSupportedException();
+		bbe::Crash(bbe::Error::FormatNotSupported);
 	}
 }
 
@@ -188,7 +188,7 @@ bbe::Colori bbe::Image::getPixel(size_t x, size_t y) const
 {
 	if (!isLoadedCpu())
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 
 	const size_t index = getIndexForRawAccess(x, y);
@@ -199,7 +199,7 @@ bbe::Colori bbe::Image::getPixel(size_t x, size_t y) const
 	case ImageFormat::R8G8B8A8:
 		return Colori(m_pdata[index], m_pdata[index + 1], m_pdata[index + 2], m_pdata[index + 3]);
 	default:
-		throw FormatNotSupportedException();
+		bbe::Crash(bbe::Error::FormatNotSupported);
 	}
 	
 }
@@ -213,7 +213,7 @@ void bbe::Image::setPixel(size_t x, size_t y, const bbe::Colori& c)
 {
 	if (!isLoadedCpu())
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 
 	const size_t index = getIndexForRawAccess(x, y);
@@ -231,7 +231,7 @@ void bbe::Image::setPixel(size_t x, size_t y, const bbe::Colori& c)
 		m_pdata[index + 3] = c.a;
 		break;
 	default:
-		throw FormatNotSupportedException();
+		bbe::Crash(bbe::Error::FormatNotSupported);
 	}
 
 	m_prendererData = nullptr;
@@ -273,7 +273,7 @@ void bbe::Image::setRepeatMode(ImageRepeatMode irm)
 {
 	if (m_prendererData != nullptr)
 	{
-		throw AlreadyUploadedException();
+		bbe::Crash(bbe::Error::AlreadyUploaded);
 	}
 
 	m_repeatMode = irm;
@@ -288,7 +288,7 @@ void bbe::Image::setFilterMode(ImageFilterMode ifm)
 {
 	if (m_prendererData != nullptr)
 	{
-		throw AlreadyUploadedException();
+		bbe::Crash(bbe::Error::AlreadyUploaded);
 	}
 
 	m_filterMode = ifm;
@@ -486,7 +486,7 @@ void bbe::Image::writeToFile(const char* path) const
 	}
 	else
 	{
-		throw bbe::NotImplementedException();
+		bbe::Crash(bbe::Error::NotImplemented);
 	}
 }
 

@@ -1,5 +1,5 @@
 #include "BBE/KeyboardKeys.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 bbe::String bbe::keyCodeToString(bbe::Key key)
 {
@@ -246,8 +246,8 @@ bbe::String bbe::keyCodeToString(bbe::Key key)
 		case bbe::Key::MENU          :
 			return bbe::String("MENU");
 	}
-	
-	throw NoSuchKeycodeException();
+
+	bbe::Crash(bbe::Error::NoSuchKeycode);
 
 }
 

@@ -298,7 +298,7 @@ namespace br
 			}
 			else
 			{
-				throw bbe::IllegalStateException();
+				bbe::Crash(bbe::Error::IllegalState);
 			}
 		}
 
