@@ -239,6 +239,12 @@ int32_t SubsystemTask::drawTable(const char* title, const std::function<bool(Tas
 			if (ImGui::TableGetHoveredRow() == indexindex) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, 0xFF333333);
 			int32_t column = 0;
 			ImGui::TableSetColumnIndex(column++);
+			if (!t.serverId.isEmpty())
+			{
+				ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), "(!)");
+				ImGui::bbe::tooltip("This Task originated from the Server");
+				ImGui::SameLine();
+			}
 			if ((highlightRareTasks && t.repeatDays > 1) || t.oneShot)
 			{
 				const bool poosibleTodoToday = (t.nextPossibleExecution().hasPassed() || t.nextPossibleExecution().isToday());
@@ -695,4 +701,13 @@ bool SubsystemTask::isStreakFulfilled() const
 		}
 	}
 	return true;
+}
+
+void SubsystemTask::addServerTask(const bbe::String& id, const bbe::String& task)
+{
+	Task t;
+	t.serverId = id;
+	t.title = task;
+	t.oneShot = true;
+	tasks.add(t);
 }

@@ -47,7 +47,8 @@ struct Task
 		((bool), startable, false),
 		((bbe::TimePoint), endWorkTime, bbe::TimePoint::epoch()),
 		((bool), indefinitelyAdvanceable, false),
-		((bool), shouldPlayNotificationSounds, true)
+		((bool), shouldPlayNotificationSounds, true),
+		((bbe::String), serverId)
 	)
 
 	// Non-Persisted Helper Data below.
@@ -118,4 +119,6 @@ public:
 	bool hasCurrentTask() const;
 	bool hasPotentialTaskComplaint() const;
 	bool isStreakFulfilled() const;
+
+	void addServerTask(const bbe::String& id, const bbe::String& task);
 };

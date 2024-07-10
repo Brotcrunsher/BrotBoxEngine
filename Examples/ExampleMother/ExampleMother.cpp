@@ -1,6 +1,8 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 #define NOMINMAX
+// Need to link with Ws2_32.lib
+#pragma comment(lib, "ws2_32.lib")
 #include <Windows.h>
 #include <tlhelp32.h>
 #include <AtlBase.h>
@@ -22,6 +24,9 @@
 //TODO: Cnsl can lagg extremely with a lot of logs.
 //TODO: Newly created tasks that are due "soon" (e.g. in 2 days) seem to have a bug to be due in 366 days. Tested in a leap year (important?)
 //TODO: Todo-Server?
+//TODO: Uncaught exception should create a crash log. This also applies to other threads! Test with both
+//TODO: Minimize does not work when clicking the icon in the tray
+//TODO: Make the UTF8String actually UTF8...
 
 struct ClipboardContent
 {
@@ -42,7 +47,10 @@ struct GeneralConfig
 	BBE_SERIALIZABLE_DATA(
 		((bbe::String), updatePath),
 		((int32_t), beepEvery),
-		((bbe::String), backupPath)
+		((bbe::String), backupPath),
+		((bbe::String), serverKeyFilePath),
+		((bbe::String), serverAddress),
+		((int32_t), serverPort, 3490)
 	)
 };
 
@@ -51,6 +59,15 @@ struct KeyboardTracker
 	BBE_SERIALIZABLE_DATA(
 		((std::array<uint32_t, (size_t)bbe::Key::LAST + 1>), keyPressed)
 	)
+};
+
+struct SeenServerTaskId
+{
+	BBE_SERIALIZABLE_DATA(
+		((bbe::String), id)
+	)
+
+	auto operator<=>(const SeenServerTaskId&) const = default;
 };
 
 struct Stopwatch
@@ -129,8 +146,9 @@ private:
 	bbe::SerializableObject<GeneralConfig> generalConfig        = bbe::SerializableObject<GeneralConfig>  ("generalConfig.dat",       "ParanoiaConfig");
 	bbe::SerializableList<Stopwatch> stopwatches                = bbe::SerializableList<Stopwatch>        ("stopwatches.dat",         "ParanoiaConfig");
 	bbe::SerializableList<RememberList> rememberLists           = bbe::SerializableList<RememberList>     ("RemeberLists.dat",        "ParanoiaConfig");
-	bbe::SerializableList<StreakDay> streakDays                 = bbe::SerializableList<StreakDay>        ("streakDays.dat",          "ParanoiaConfi");
+	bbe::SerializableList<StreakDay> streakDays                 = bbe::SerializableList<StreakDay>        ("streakDays.dat",          "ParanoiaConfig");
 	bbe::SerializableObject<KeyboardTracker> keyboardTracker    = bbe::SerializableObject<KeyboardTracker>("keyboardTracker.dat"); // No ParanoiaConfig to avoid accidentally logging passwords.
+	bbe::SerializableList<SeenServerTaskId> seenServerTaskIds   = bbe::SerializableList<SeenServerTaskId> ("SeenServerTaskIds.dat",   "ParanoiaCOnfig");
 
 	bool openTasksNotificationSilencedProcess = false;
 	bool openTasksNotificationSilencedUrl     = false;
@@ -270,8 +288,62 @@ public:
 		return false;
 	}
 
+	auto getServerFuture()
+	{
+		return bbe::simpleUrlRequest::socketRequestXChaChaAsync(generalConfig->serverAddress, generalConfig->serverPort, generalConfig->serverKeyFilePath, true, true);;
+	}
+
 	virtual void update(float timeSinceLastFrame) override
 	{
+		beginMeasure("Server Stuff");
+		{
+			EVERY_SECONDS(5)
+			{
+				if (!generalConfig->serverAddress.isEmpty()
+					&& generalConfig->serverPort != 0
+					&& !generalConfig->serverKeyFilePath.isEmpty()
+					&& bbe::simpleFile::doesFileExist(generalConfig->serverKeyFilePath))
+				{
+					static bbe::TimePoint serverDeadline = bbe::TimePoint().plusMinutes(1);
+					static auto fut = getServerFuture();
+					if (fut.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+					{
+						auto response = fut.get();
+						fut = getServerFuture();
+						if (response.code == bbe::simpleUrlRequest::SocketRequestXChaChaCode::SUCCESS)
+						{
+							serverDeadline = bbe::TimePoint().plusMinutes(1);
+
+							bbe::String content(response.dataContainer.getRaw());
+
+							auto lines = content.lines(false);
+
+							for (const bbe::String& line : lines)
+							{
+								int64_t separator = line.search(":");
+								if (separator >= 0)
+								{
+									bbe::String id = line.substring(0, separator);
+									if (!seenServerTaskIds.getList().contains({ id }))
+									{
+										bbe::String task = line.substring(separator + 1, -1);
+										BBELOGLN(task);
+										tasks.addServerTask(id, task);
+										seenServerTaskIds.add({ id });
+									}
+								}
+							}
+						}
+					}
+					if (serverDeadline.hasPassed())
+					{
+						assetStore::ServerUnreachable()->play();
+						serverDeadline = bbe::TimePoint().plusMinutes(5);
+					}
+				}
+			}
+		}
+
 		beginMeasure("Mouse Tracking");
 		{
 			EVERY_MILLISECONDS(100)
@@ -456,6 +528,9 @@ public:
 			generalConfigChanged = true;
 			bbe::simpleFile::backup::setBackupPath(generalConfig->backupPath);
 		}
+		generalConfigChanged |= ImGui::bbe::InputText("Server Address", generalConfig->serverAddress, ImGuiInputTextFlags_EnterReturnsTrue);
+		generalConfigChanged |= ImGui::InputInt("Server Port", &generalConfig->serverPort);
+		generalConfigChanged |= ImGui::bbe::InputText("Server Key Path", generalConfig->serverKeyFilePath, ImGuiInputTextFlags_EnterReturnsTrue);
 
 		if (generalConfigChanged)
 		{
