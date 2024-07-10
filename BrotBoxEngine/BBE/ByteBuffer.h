@@ -169,6 +169,7 @@ namespace bbe
 
 	public:
 		ByteBuffer();
+		ByteBuffer(bbe::byte* data, size_t size);
 		ByteBuffer(bbe::List<bbe::byte>&& bytes);
 		ByteBuffer(const std::initializer_list<bbe::byte>& il);
 

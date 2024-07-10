@@ -118,6 +118,11 @@ bbe::ByteBuffer::ByteBuffer()
 {
 }
 
+bbe::ByteBuffer::ByteBuffer(bbe::byte* data, size_t size)
+{
+	m_bytes.addArray(data, size);
+}
+
 bbe::ByteBuffer::ByteBuffer(bbe::List<bbe::byte>&& bytes) :
 	m_bytes(bytes)
 {
