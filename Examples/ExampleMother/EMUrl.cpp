@@ -10,9 +10,9 @@
 
 void SubsystemUrl::update()
 {
-	m_timeWasterUrlFound = false;
 	EVERY_SECONDS(1)
 	{
+		m_foundTimewasters.clear();
 		auto tabNames = getDomains();
 		for (size_t i = 0; i < tabNames.getLength(); i++)
 		{
@@ -24,9 +24,8 @@ void SubsystemUrl::update()
 					found = true;
 					if (urls[k].type == Url::TYPE_TIME_WASTER)
 					{
-						m_timeWasterUrlFound = true;
+						m_foundTimewasters.add(tabNames[i]);
 					}
-					break;
 				}
 			}
 			if (!found)
@@ -46,6 +45,12 @@ void SubsystemUrl::drawGui()
 	static bool showWork = false;
 	ImGui::SameLine();
 	ImGui::Checkbox("Show Work", &showWork);
+
+	for (size_t i = 0; i < m_foundTimewasters.getLength(); i++)
+	{
+		ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), m_foundTimewasters[i].getRaw());
+	}
+
 	if (ImGui::BeginTable("tableUrls", 2, ImGuiTableFlags_RowBg))
 	{
 		ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 600);
@@ -94,7 +99,7 @@ void SubsystemUrl::drawGui()
 
 bool SubsystemUrl::timeWasterFound() const
 {
-	return m_timeWasterUrlFound;
+	return m_foundTimewasters.getLength() > 0;
 }
 
 bbe::List<bbe::String> SubsystemUrl::getDomains()

@@ -21,7 +21,7 @@ class SubsystemUrl
 private:
 	bbe::SerializableList<Url> urls = bbe::SerializableList<Url>("urls.dat", "ParanoiaConfig", bbe::Undoable::YES);
 	bbe::List<bbe::String> getDomains();
-	bool m_timeWasterUrlFound = false;
+	bbe::List<bbe::String> m_foundTimewasters;
 
 public:
 	void update();
