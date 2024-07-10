@@ -20,7 +20,7 @@ class SubsystemProcess
 {
 private:
 	bbe::SerializableList<Process> processes = bbe::SerializableList<Process>("processes.dat", "ParanoiaConfig", bbe::Undoable::YES);
-	bool m_isGameOn = false;
+	bbe::List<bbe::String> foundGames;
 
 public:
 	void update();

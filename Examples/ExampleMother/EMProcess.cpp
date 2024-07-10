@@ -12,7 +12,7 @@ void SubsystemProcess::update()
 		PROCESSENTRY32 entry;
 		entry.dwSize = sizeof(entry);
 		BOOL hasEntry = Process32First(snapshot, &entry);
-		m_isGameOn = false;
+		foundGames.clear();
 		while (hasEntry)
 		{
 			const bbe::String scannedProcessName = entry.szExeFile;
@@ -26,9 +26,8 @@ void SubsystemProcess::update()
 				{
 					if (processes[i].title == entry.szExeFile)
 					{
-						if (processes[i].type == Process::TYPE_GAME) m_isGameOn = true;
+						if (processes[i].type == Process::TYPE_GAME) foundGames.add(processes[i].title);
 						found = true;
-						break;
 					}
 				}
 				if (!found)
@@ -46,7 +45,7 @@ void SubsystemProcess::update()
 
 bool SubsystemProcess::isGameOn() const
 {
-	return m_isGameOn;
+	return !foundGames.isEmpty();
 }
 
 void SubsystemProcess::drawGui()
@@ -59,6 +58,12 @@ void SubsystemProcess::drawGui()
 	static bool showGames = false;
 	ImGui::SameLine();
 	ImGui::Checkbox("Show Games", &showGames);
+
+	for (size_t i = 0; i < foundGames.getLength(); i++)
+	{
+		ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), foundGames[i].getRaw());
+	}
+
 	if (ImGui::BeginTable("tableProcesses", 2, ImGuiTableFlags_RowBg))
 	{
 		ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 600);

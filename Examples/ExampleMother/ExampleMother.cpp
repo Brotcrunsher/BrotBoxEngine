@@ -20,7 +20,6 @@
 //TODO: Countdown beeps when starting and stopping startable tasks
 //TODO: Clipboard: It should be possible to add a title
 //TODO: Streak numbers aren't centered :(
-//TODO: When playing the "open tasks" sound it would be useful to see which processes/urls caused it
 //TODO: Cnsl can lagg extremely with a lot of logs.
 //TODO: Minimize does not work when clicking the icon in the tray. Sometimes! It's weird. Hard to reproduce.
 //TODO: Make the UTF8String actually UTF8...
