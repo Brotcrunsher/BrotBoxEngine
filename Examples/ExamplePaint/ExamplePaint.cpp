@@ -9,7 +9,6 @@
 // TODO: Color Selector Tool
 // TODO: Drag and Drop image files into paint
 // TODO: Tiled view is kinda messed. Zooming out draws too few, line drawer seems to skip, etc...
-// TODO: Flood Fill should fill over the edge if tiled is selected.
 
 class MyGame : public bbe::Game
 {
@@ -189,7 +188,7 @@ class MyGame : public bbe::Game
 				bbe::Vector2 pos = screenToCanvas(getMouse());
 				if (toTiledPos(pos))
 				{
-					canvas.floodFill(pos.as<int32_t>(), getMouseColor());
+					canvas.floodFill(pos.as<int32_t>(), getMouseColor(), false, tiled);
 				}
 			}
 			else

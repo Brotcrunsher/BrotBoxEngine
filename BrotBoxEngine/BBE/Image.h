@@ -130,7 +130,7 @@ namespace bbe
 		bool isLoadedGpu() const;
 		void keepAfterUpload();
 
-		void floodFill(const bbe::Vector2i& pos, const bbe::Colori& to, bool fillDiagonal = false);
+		void floodFill(const bbe::Vector2i& pos, const bbe::Colori& to, bool fillDiagonal = false, bool tiled = false);
 
 		void writeToFile(const bbe::String& path) const;
 		void writeToFile(const char* path) const;

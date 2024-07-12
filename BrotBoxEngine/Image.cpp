@@ -495,34 +495,41 @@ void bbe::Image::writeToFile(const bbe::String& path) const
 	writeToFile(path.getRaw());
 }
 
-static void floodFillStep(bbe::Image& image, bbe::List<bbe::Vector2i>& posToCheck, const bbe::Vector2i& pos, const bbe::Colori& from, const bbe::Colori& to)
+static void floodFillStep(bbe::Image& image, bbe::List<bbe::Vector2i>& posToCheck, bbe::Vector2i /*copy*/ pos, const bbe::Colori& from, const bbe::Colori& to, bool tiled)
 {
-	if (pos.x < 0 || pos.x >= image.getWidth() || pos.y < 0 || pos.y >= image.getHeight()) return;
+	if (pos.x < 0 || pos.x >= image.getWidth() || pos.y < 0 || pos.y >= image.getHeight())
+	{
+		if (!tiled) return;
+		if (pos.x < 0) pos.x = image.getWidth() - 1;
+		if (pos.y < 0) pos.y = image.getHeight() - 1;
+		if (pos.x >= image.getWidth()) pos.x = 0;
+		if (pos.y >= image.getHeight()) pos.y = 0;
+	}
 	if (image.getPixel(pos) != from) return;
 	image.setPixel(pos, to);
 	posToCheck.add(pos);
 }
 
-void bbe::Image::floodFill(const bbe::Vector2i& pos, const bbe::Colori& to, bool fillDiagonal)
+void bbe::Image::floodFill(const bbe::Vector2i& pos, const bbe::Colori& to, bool fillDiagonal, bool tiled)
 {
 	const bbe::Colori from = getPixel(pos);
 	if (from == to) return;
 	bbe::List<bbe::Vector2i> posToCheck;
-	floodFillStep(*this, posToCheck, pos, from, to);
+	floodFillStep(*this, posToCheck, pos, from, to, tiled);
 
 	while (posToCheck.getLength() > 0)
 	{
 		const bbe::Vector2i pos = posToCheck.popBack();
-		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x + 1, pos.y), from, to);
-		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x - 1, pos.y), from, to);
-		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x, pos.y + 1), from, to);
-		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x, pos.y - 1), from, to);
+		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x + 1, pos.y), from, to, tiled);
+		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x - 1, pos.y), from, to, tiled);
+		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x, pos.y + 1), from, to, tiled);
+		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x, pos.y - 1), from, to, tiled);
 		if (fillDiagonal)
 		{
-			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x + 1, pos.y + 1), from, to);
-			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x - 1, pos.y + 1), from, to);
-			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x + 1, pos.y - 1), from, to);
-			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x - 1, pos.y - 1), from, to);
+			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x + 1, pos.y + 1), from, to, tiled);
+			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x - 1, pos.y + 1), from, to, tiled);
+			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x + 1, pos.y - 1), from, to, tiled);
+			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x - 1, pos.y - 1), from, to, tiled);
 		}
 	}
 }
