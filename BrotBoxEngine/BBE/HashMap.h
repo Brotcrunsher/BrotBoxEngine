@@ -13,10 +13,13 @@ namespace bbe
 		class HashMapNode
 		{
 			friend class HashMap<Key, Value>;
+		public:
+			HashMapNode() = default;
 		private:
 			Key      m_key;
 			Value    m_value;
 			uint32_t m_hash;
+
 
 			HashMapNode(const Key &key, const Value &value, const uint32_t _hash)
 				: m_key(key), m_value(value), m_hash(_hash)

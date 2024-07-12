@@ -24,7 +24,6 @@
 //TODO: Minimize does not work when clicking the icon in the tray. Sometimes! It's weird. Hard to reproduce.
 //TODO: Make the UTF8String actually UTF8...
 //TODO: "A rare task" should be re-thought. Doesn't make sense to NOT mark a task as rare only because the repeat is 1 days, but the only possible day is a monday for example.
-//TODO: BBE_SERIALIZABLE_DATA should be able to accept any bbe::List<T> if T itself is serializable.
 
 struct ClipboardContent
 {
@@ -97,39 +96,13 @@ struct Stopwatch
 
 struct RememberList
 {
-	bbe::String title;
-	bbe::List<bbe::String> entries;
+	BBE_SERIALIZABLE_DATA(
+		((bbe::String), title),
+		((bbe::List<bbe::String>), entries)
+	)
 
 	// Non-Persisted Helper Data below.
 	bbe::String newEntryBuffer;
-
-	void serialize(bbe::ByteBuffer& buffer) const
-	{
-		buffer.write(title);
-		// TODO: A buffer.write(bbe::List<T>::serialize) would be useful.
-		buffer.write((uint64_t)entries.getLength());
-		for (size_t i = 0; i < entries.getLength(); i++)
-		{
-			buffer.write(entries[i]);
-		}
-	}
-	static RememberList deserialize(bbe::ByteBufferSpan& buffer)
-	{
-		RememberList retVal;
-
-		buffer.read(retVal.title);
-		uint64_t entries = 0;
-		buffer.read(entries);
-		for (size_t i = 0; i < entries; i++)
-		{
-			// TODO: A returning read function would simplify this.
-			bbe::String entry;
-			buffer.read(entry);
-			retVal.entries.add(entry);
-		}
-
-		return retVal;
-	}
 };
 
 class MyGame : public bbe::Game

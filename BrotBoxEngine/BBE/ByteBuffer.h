@@ -16,9 +16,12 @@ namespace bbe
 	private:
 		struct Descriptor
 		{
-			std::type_index type;
-			const void* addr;
+			std::type_index type = typeid(nullptr);
+			const void* addr = nullptr;
 			int64_t defaultValueStorage = 0;
+
+			const bbe::AnyList* anyList = nullptr;
+			int64_t listLength = 0;
 		};
 		bbe::List<Descriptor> descriptors;
 
@@ -27,6 +30,17 @@ namespace bbe
 
 		template<typename T>
 		void describe(const T& val)
+			requires(std::is_base_of_v<bbe::AnyList, T>)
+		{
+			Descriptor desc{ typeid(std::remove_const_t<std::remove_reference_t<typename T::SubType>>), val.getRaw()};
+			desc.anyList = &val;
+			desc.listLength = val.getLength();
+			descriptors.add(desc);
+		}
+
+		template<typename T>
+		void describe(const T& val)
+			requires(!std::is_base_of_v<bbe::AnyList, T>)
 		{
 			Descriptor desc{ typeid(std::remove_const_t<std::remove_reference_t<T>>), &val };
 			descriptors.add(desc);

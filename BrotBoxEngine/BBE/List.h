@@ -18,9 +18,19 @@
 
 namespace bbe
 {
-	template <typename T>
-	class List
+	class AnyList
 	{
+	public:
+		virtual void resizeCapacityAndLength(size_t newCapacity) = 0;
+		virtual const void* getVoidRaw() = 0;
+	};
+
+	template <typename T>
+	class List : public AnyList
+	{
+	public:
+		using SubType = T;
+
 	private:
 		size_t m_length = 0;
 		bbe::AllocBlock m_allocBlock;
@@ -161,6 +171,11 @@ namespace bbe
 		{
 			//UNTESTED
 			return reinterpret_cast<const T*>(m_allocBlock.data);
+		}
+
+		virtual const void* getVoidRaw() final
+		{
+			return (void*)getRaw();
 		}
 
 		bool isEmpty() const
@@ -335,12 +350,9 @@ namespace bbe
 			m_length = newCapacity;
 		}
 
-		template <typename dummyT = T>
-		typename std::enable_if<std::is_default_constructible<dummyT>::value, void>::type
-			resizeCapacityAndLength(size_t newCapacity)
+		virtual void resizeCapacityAndLength(size_t newCapacity) final
 		{
 			//UNTESTED
-			static_assert(std::is_same<dummyT, T>::value, "Do not specify dummyT!");
 			const size_t oldLength = getLength();
 			resizeCapacity(newCapacity);
 			if constexpr (std::is_trivially_constructible_v<T>)
