@@ -9,6 +9,7 @@
 // TODO: Color Selector Tool
 // TODO: Drag and Drop image files into paint
 // TODO: Tiled view is kinda messed. Zooming out draws too few, line drawer seems to skip, etc...
+// TODO: Flood Fill should fill over the edge if tiled is selected.
 
 class MyGame : public bbe::Game
 {
@@ -89,6 +90,19 @@ class MyGame : public bbe::Game
 		return (pos - offset) / zoomLevel;
 	}
 
+	bool toTiledPos(bbe::Vector2& pos)
+	{
+		if (tiled)
+		{
+			pos.x = bbe::Math::mod<float>(pos.x, canvas.getWidth());
+			pos.y = bbe::Math::mod<float>(pos.y, canvas.getHeight());
+			return true; // If we are tiled, then any position is always within the canvas.
+		}
+
+		// If we are not tiled, then we have to check if the pos is actually part of the canvas.
+		return pos.x >= 0 && pos.y >= 0 && pos.x < canvas.getWidth() && pos.y < canvas.getHeight();
+	}
+
 	void changeZoom(float val)
 	{
 		auto mouseBeforeZoom = screenToCanvas(getMouse());
@@ -156,12 +170,7 @@ class MyGame : public bbe::Game
 							if (pencilStrength <= 0.f) continue;
 
 							bbe::Vector2 coord = coordBase + bbe::Vector2(i, k);
-							if (tiled)
-							{
-								coord.x = bbe::Math::mod<float>(coord.x, canvas.getWidth());
-								coord.y = bbe::Math::mod<float>(coord.y, canvas.getHeight());
-							}
-							if (coord.x >= 0 && coord.y >= 0 && coord.x < canvas.getWidth() && coord.y < canvas.getHeight())
+							if (toTiledPos(coord))
 							{
 								bbe::Colori newColor = getMouseColor();
 								newColor.a = newColor.MAXIMUM_VALUE * pencilStrength;
@@ -177,7 +186,11 @@ class MyGame : public bbe::Game
 			}
 			else if (mode == MODE_FLOOD_FILL)
 			{
-				canvas.floodFill(screenToCanvas(getMouse()).as<int32_t>(), getMouseColor());
+				bbe::Vector2 pos = screenToCanvas(getMouse());
+				if (toTiledPos(pos))
+				{
+					canvas.floodFill(pos.as<int32_t>(), getMouseColor());
+				}
 			}
 			else
 			{
