@@ -9,12 +9,17 @@
 // TODO: Color Selector Tool
 // TODO: Drag and Drop image files into paint
 // TODO: Tiled view is kinda messed. Zooming out draws too few, line drawer seems to skip, etc...
+// TODO: Line tool
+// TODO: Rectangle tool
+// TODO: Circle tool
 
 class MyGame : public bbe::Game
 {
 	bbe::Vector2 offset;
 	bbe::String path;
 	bbe::Image canvas;
+	bbe::List<bbe::Image> history;
+	int64_t historyIndex = 0;
 	bbe::Image workArea;
 	float zoomLevel = 1.f;
 
@@ -62,12 +67,60 @@ class MyGame : public bbe::Game
 		clearWorkArea();
 	}
 
+	void clearHistory()
+	{
+		history.clear();
+		history.add(canvas);
+		historyIndex = 0;
+	}
+
+	void submitWork()
+	{
+		while (historyIndex + 1 < history.getLength())
+		{
+			history.popBack();
+		}
+		history.add(canvas);
+		historyIndex++;
+	}
+
+	void undo()
+	{
+		if (!isUndoable())
+		{
+			bbe::Crash(bbe::Error::IllegalState);
+		}
+		historyIndex--;
+		canvas = history[historyIndex];
+	}
+
+	bool isUndoable()
+	{
+		return historyIndex > 0;
+	}
+
+	void redo()
+	{
+		if (!isRedoable())
+		{
+			bbe::Crash(bbe::Error::IllegalState);
+		}
+		historyIndex++;
+		canvas = history[historyIndex];
+	}
+
+	bool isRedoable()
+	{
+		return historyIndex + 1 < history.getLength();
+	}
+
 	void setupCanvas()
 	{
 		canvas.keepAfterUpload();
 		canvas.setFilterMode(bbe::ImageFilterMode::NEAREST);
 		clearWorkArea();
 		resetCamera();
+		clearHistory();
 	}
 
 	void newCanvas(uint32_t width, uint32_t height)
@@ -153,6 +206,7 @@ class MyGame : public bbe::Game
 			changeZoom(1.1f);
 		}
 
+		static bool changeRegisterd = false;
 		if (isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT))
 		{
 			if (mode == MODE_BRUSH)
@@ -177,6 +231,7 @@ class MyGame : public bbe::Game
 								if (newColor.a > oldWorkColor.a)
 								{
 									workArea.setPixel(coord.x, coord.y, newColor);
+									changeRegisterd = true;
 								}
 							}
 						}
@@ -189,6 +244,7 @@ class MyGame : public bbe::Game
 				if (toTiledPos(pos))
 				{
 					canvas.floodFill(pos.as<int32_t>(), getMouseColor(), false, tiled);
+					changeRegisterd = true;
 				}
 			}
 			else
@@ -197,11 +253,16 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		if (isMouseReleased(bbe::MouseButton::LEFT) || isMouseReleased(bbe::MouseButton::RIGHT))
+		if (changeRegisterd)
 		{
-			if (!isMouseDown(bbe::MouseButton::LEFT) && !isMouseDown(bbe::MouseButton::RIGHT))
+			if (isMouseReleased(bbe::MouseButton::LEFT) || isMouseReleased(bbe::MouseButton::RIGHT))
 			{
-				applyWorkArea();
+				if (!isMouseDown(bbe::MouseButton::LEFT) && !isMouseDown(bbe::MouseButton::RIGHT))
+				{
+					applyWorkArea();
+					submitWork();
+					changeRegisterd = false;
+				}
 			}
 		}
 
@@ -222,6 +283,21 @@ class MyGame : public bbe::Game
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
+		ImGui::BeginDisabled(!isUndoable());
+		if (ImGui::Button("Undo"))
+		{
+			undo();
+		}
+		ImGui::EndDisabled();
+		ImGui::SameLine();
+		ImGui::BeginDisabled(!isRedoable());
+		if (ImGui::Button("Redo"))
+		{
+			redo();
+		}
+		ImGui::EndDisabled();
+
+
 		ImGui::ColorEdit4("Left Color", leftColor);
 		ImGui::ColorEdit4("Right Color", rightColor);
 		ImGui::bbe::combo("Mode", { "Brush", "Flood fill" }, mode);
