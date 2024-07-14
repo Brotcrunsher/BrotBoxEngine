@@ -113,11 +113,12 @@ bbe::List<bbe::String> SubsystemUrl::getDomains()
 	static bool iniDone = false;
 	static CComQIPtr<IUIAutomation> uia;
 	static CComPtr<IUIAutomationCondition> condition;
+	static CComPtr<IUIAutomationCondition> topLevelCondition;
 	if (!iniDone)
 	{
 		iniDone = true;
 		if (FAILED(uia.CoCreateInstance(CLSID_CUIAutomation)) || !uia)
-			return retVal;
+			bbe::Crash(bbe::Error::IllegalState);
 
 		//uia->CreatePropertyCondition(UIA_ControlTypePropertyId,
 		//	CComVariant(0xC354), &condition);
@@ -126,6 +127,8 @@ bbe::List<bbe::String> SubsystemUrl::getDomains()
 		//       sometimes fulfill the condition.
 		uia->CreatePropertyCondition(UIA_NamePropertyId,
 			CComVariant(L"Adress- und Suchleiste"), &condition);
+
+		uia->CreatePropertyCondition(UIA_ControlTypePropertyId, CComVariant(0xC371), &topLevelCondition);
 	}
 
 	static bool redGreen = true;
@@ -158,8 +161,12 @@ bbe::List<bbe::String> SubsystemUrl::getDomains()
 			if (FAILED(uia->ElementFromHandle(hwnd, &root)) || !root)
 				continue;
 
+			CComPtr<IUIAutomationElement> topLevel;
+			if (FAILED(root->FindFirst(TreeScope_Children, topLevelCondition, &topLevel)) || !topLevel)
+				continue;
+
 			CComPtr<IUIAutomationElement> edit;
-			if (FAILED(root->FindFirst(TreeScope_Descendants, condition, &edit))
+			if (FAILED(topLevel->FindFirst(TreeScope_Descendants, condition, &edit))
 				|| !edit)
 				continue;
 			// ^^^^--- This is the actual reason why we do this cache stuff!
