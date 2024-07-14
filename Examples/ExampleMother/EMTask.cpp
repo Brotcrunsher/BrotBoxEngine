@@ -490,7 +490,7 @@ bool SubsystemTask::drawEditableTask(Task& t)
 	taskChanged |= ImGui::Checkbox("One Shot", &t.oneShot);
 	ImGui::bbe::tooltip("Delets the Task when Done.");
 	taskChanged |= ImGui::Checkbox("Late Time Task", &t.lateTimeTask);
-	ImGui::bbe::tooltip("A late time task triggers the \"Open Tasks\" sound outside of Working Hours instead of during Working Hours.");
+	ImGui::bbe::tooltip("A late time task triggers the \"Open Tasks\" sound only outside of Working Hours.");
 	taskChanged |= ImGui::Checkbox("Startable", &t.startable);
 	ImGui::bbe::tooltip("Doesn't show \"Done\" immediately, but instead a start button that starts a count down of the length\nof the internal value in seconds. After that time a sound is played and the \"Done\" Button appears.");
 	taskChanged |= ImGui::Checkbox("Play Notifications", &t.shouldPlayNotificationSounds);
@@ -673,17 +673,8 @@ bool SubsystemTask::hasPotentialTaskComplaint() const
 		{
 			if (!t.oneShot && t.shouldPlayNotificationSounds)
 			{
-				if (t.lateTimeTask)
-				{
-					if (!isWorkTime())
-					{
-						return true;
-					}
-				}
-				else if(isWorkTime())
-				{
-					return true;
-				}
+				if (!isWorkTime()) return true;
+				if (!t.lateTimeTask) return true;
 			}
 		}
 	}
@@ -695,7 +686,7 @@ bool SubsystemTask::isStreakFulfilled() const
 	for (size_t i = 0; i < tasks.getLength(); i++)
 	{
 		const Task& t = tasks[i];
-		if (t.nextPossibleExecution().isToday())
+		if (t.nextPossibleExecution().isToday() && !t.oneShot)
 		{
 			return false;
 		}
