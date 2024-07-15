@@ -60,6 +60,7 @@ void Task::execMoveToNow()
 {
 	armedToPlaySoundNewTask = false;
 	nextExecution = bbe::TimePoint();
+	overwriteTime = bbe::TimePoint();
 }
 
 void Task::execAdvance()
@@ -96,6 +97,7 @@ void Task::nextExecPlusDays(int32_t days)
 
 bbe::TimePoint Task::nextPossibleExecution() const
 {
+	if (overwriteTime.isToday()) return nextExecution;
 	if (!nextExecution.hasPassed()) return nextExecution;
 	return toPossibleTimePoint(bbe::TimePoint());
 }

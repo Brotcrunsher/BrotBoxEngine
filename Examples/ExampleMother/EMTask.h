@@ -48,7 +48,8 @@ struct Task
 		((bbe::TimePoint), endWorkTime, bbe::TimePoint::epoch()),
 		((bool), indefinitelyAdvanceable, false),
 		((bool), shouldPlayNotificationSounds, true),
-		((bbe::String), serverId)
+		((bbe::String), serverId),
+		((bbe::TimePoint), overwriteTime)
 	)
 
 	// Non-Persisted Helper Data below.
