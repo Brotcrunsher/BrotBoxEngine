@@ -277,6 +277,7 @@ int32_t SubsystemTask::drawTable(const char* title, const std::function<bool(Tas
 					ImGui::SetClipboardText(t.clipboard.getRaw());
 				}
 			}
+			ImGui::bbe::tooltip(modifiedTitle);
 			if (t.history.getLength() > 1)
 			{
 				if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort) && ImGui::BeginTooltip())
