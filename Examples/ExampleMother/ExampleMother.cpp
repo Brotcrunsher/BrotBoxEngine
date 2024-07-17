@@ -26,6 +26,7 @@
 //TODO: "A rare task" should be re-thought. Doesn't make sense to NOT mark a task as rare only because the repeat is 1 days, but the only possible day is a monday for example.
 //TODO: It would be cool if "Move to Now" would overwrite anything that makes it impossible - weekday restrictions etc.
 //TODO: Would be useful if we could mark stuff as private/protected/public in BBE_SERIALIZABLE_DATA blocks.
+//TODO: Unhandled exceptions should "crash" gracefully and report a stack trace
 
 struct ClipboardContent
 {
@@ -933,12 +934,22 @@ public:
 			}
 
 			static bool unlockCrashButton = false;
-			ImGui::Checkbox("Unlock Crash Button", &unlockCrashButton);
+			ImGui::Checkbox("Unlock Crash Buttons", &unlockCrashButton);
 			ImGui::SameLine();
 			ImGui::BeginDisabled(!unlockCrashButton);
-			if (ImGui::Button("Crash!"))
+			if (ImGui::Button("Segv!"))
 			{
 				*((volatile int*)0);
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Crash!"))
+			{
+				bbe::Crash(bbe::Error::IllegalState);
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Exception!"))
+			{
+				throw 1;
 			}
 			ImGui::EndDisabled();
 

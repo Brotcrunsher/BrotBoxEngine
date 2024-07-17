@@ -9,6 +9,7 @@
 
 void bbe::debugBreakImpl(const char* file, int32_t line)
 {
+#ifndef NDEBUG
 	BBELOGLN("debugBreak() was triggered! " << file << "(" << line << ")");
 	#if defined(_MSC_VER) && defined(_WIN32)
 		__debugbreak();
@@ -18,4 +19,5 @@ void bbe::debugBreakImpl(const char* file, int32_t line)
 		backtrace_symbols_fd(stackTrace, size, STDERR_FILENO); 
 		__builtin_trap();
 	#endif
+#endif
 }

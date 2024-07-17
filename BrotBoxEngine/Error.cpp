@@ -31,6 +31,7 @@
 	string += "\n";
 	string += "Time:   " + time;
 	string += "Crash: " + bbe::String((int)error);
+	string += "\n";
 	string += "Msg: " + bbe::String(msg);
 	string += "\n";
 	string += "Stacktrace:\n";
