@@ -59,7 +59,7 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlRequest(const 
 	curl_easy_setopt(curl, CURLOPT_URL, url.getRaw());
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &(retVal.dataContainer));
-	if(verbose) curl_easy_setopt(curl, CURLOPT_VERBOSE, TRUE);
+	if(verbose) curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
 	CURLcode res;
 	if ((res = curl_easy_perform(curl)) != CURLcode::CURLE_OK)

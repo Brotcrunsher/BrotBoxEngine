@@ -408,7 +408,7 @@ struct AsyncJob
 
 bbe::ConcurrentList<AsyncJob> jobs;
 std::atomic_bool ioThreadRunning = false;
-std::jthread ioThread;
+std::thread ioThread;
 std::condition_variable_any conditional;
 
 static void ioThreadMain()
@@ -448,7 +448,7 @@ static void notifyIOThread()
 	const bool launchIoThread = !ioThreadRunning.exchange(true);
 	if (launchIoThread)
 	{
-		ioThread = std::jthread(ioThreadMain);
+		ioThread = std::thread(ioThreadMain);
 	}
 	conditional.notify_all();
 }

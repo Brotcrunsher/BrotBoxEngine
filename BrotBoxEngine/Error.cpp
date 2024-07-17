@@ -35,7 +35,7 @@
 	string += "Msg: " + bbe::String(msg);
 	string += "\n";
 	string += "Stacktrace:\n";
-#if __has_include(<stacktrace>)
+#ifdef WIN32 // TODO: GCC14 does support this! But it's currently hard to find a stable, easy to install version of it on debian and ubuntu...
 	string += std::to_string(std::stacktrace::current());
 #else
 	string += "Stacktrace lib is not present!";
