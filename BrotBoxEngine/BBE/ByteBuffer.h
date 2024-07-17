@@ -17,10 +17,11 @@ namespace bbe
 		struct Descriptor
 		{
 			std::type_index type = typeid(nullptr);
-			const void* addr = nullptr;
+			void* addr = nullptr;
 			int64_t defaultValueStorage = 0;
 
-			const bbe::AnyList* anyList = nullptr;
+			std::function<const void* (void)> getRawVoid = nullptr;
+			std::function<void(size_t)> resize = nullptr;
 			int64_t listLength = 0;
 		};
 		bbe::List<Descriptor> descriptors;
@@ -29,25 +30,26 @@ namespace bbe
 		SerializedDescription() = default;
 
 		template<typename T>
-		void describe(const T& val)
-			requires(std::is_base_of_v<bbe::AnyList, T>)
+		void describe(T& val)
+			requires(IsList<T>::value)
 		{
 			Descriptor desc{ typeid(std::remove_const_t<std::remove_reference_t<typename T::SubType>>), val.getRaw()};
-			desc.anyList = &val;
+			desc.getRawVoid = std::bind(&T::getVoidRaw, &val);
+			desc.resize = [&](size_t size) { val.resizeCapacityAndLength(size); };
 			desc.listLength = val.getLength();
 			descriptors.add(desc);
 		}
 
 		template<typename T>
-		void describe(const T& val)
-			requires(!std::is_base_of_v<bbe::AnyList, T>)
+		void describe(T& val)
+			requires(!IsList<T>::value)
 		{
 			Descriptor desc{ typeid(std::remove_const_t<std::remove_reference_t<T>>), &val };
 			descriptors.add(desc);
 		}
 
 		template<typename T>
-		void describe(const T& val, const T& default_)
+		void describe(T& val, const T& default_)
 		{
 			static_assert(sizeof(T) <= sizeof(Descriptor::defaultValueStorage), "");
 			Descriptor desc{ typeid(std::remove_const_t<std::remove_reference_t<T>>), &val };
@@ -56,7 +58,7 @@ namespace bbe
 		}
 
 		template<typename T, size_t U>
-		void describe(const std::array<T, U>& val)
+		void describe(std::array<T, U>& val)
 		{
 			for (size_t i = 0; i < U; i++)
 			{
@@ -188,7 +190,7 @@ namespace bbe
 		ByteBuffer(const std::initializer_list<bbe::byte>& il);
 
 		template<typename T>
-		void write(const T& val)
+		void write(T& val)
 		{
 			if constexpr (
 				   std::is_same_v<T, int8_t>

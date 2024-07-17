@@ -15,18 +15,12 @@
 #include <limits>
 #include <mutex>
 #include <utility>
+#include <type_traits>
 
 namespace bbe
 {
-	class AnyList
-	{
-	public:
-		virtual void resizeCapacityAndLength(size_t newCapacity) = 0;
-		virtual const void* getVoidRaw() = 0;
-	};
-
 	template <typename T>
-	class List : public AnyList
+	class List
 	{
 	public:
 		using SubType = T;
@@ -173,7 +167,7 @@ namespace bbe
 			return reinterpret_cast<const T*>(m_allocBlock.data);
 		}
 
-		virtual const void* getVoidRaw() final
+		void* getVoidRaw()
 		{
 			return (void*)getRaw();
 		}
@@ -350,9 +344,12 @@ namespace bbe
 			m_length = newCapacity;
 		}
 
-		virtual void resizeCapacityAndLength(size_t newCapacity) final
+		template <typename dummyT = T>
+		typename std::enable_if<std::is_default_constructible<dummyT>::value, void>::type
+			resizeCapacityAndLength(size_t newCapacity)
 		{
 			//UNTESTED
+			static_assert(std::is_same<dummyT, T>::value, "Do not specify dummyT!");
 			const size_t oldLength = getLength();
 			resizeCapacity(newCapacity);
 			if constexpr (std::is_trivially_constructible_v<T>)
@@ -809,4 +806,10 @@ namespace bbe
 
 		return _hash;
 	}
+
+	template<typename>
+	struct IsList : std::false_type {};
+
+	template<typename T>
+	struct IsList<bbe::List<T>> : std::true_type {};
 }

@@ -154,7 +154,7 @@ N, ...) N
 #define BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR_SINGLE_EXPAND(x) BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR_SINGLE x
 #define BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR_2(LOOP, ...) BBE_SERIALIZABLE_DATA_IMPL_EXPAND(LOOP(BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR_SINGLE_EXPAND, __VA_ARGS__))
 #define BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR(NARGS, ...) \
-void serialDescription(bbe::SerializedDescription& desc) const \
+void serialDescription(bbe::SerializedDescription& desc) \
 { \
     BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR_2(BBE_SERIALIZABLE_DATA_IMPL_CAT(BBE_SERIALIZABLE_DATA_IMPL_LOOP_, NARGS), __VA_ARGS__) \
 }
@@ -317,12 +317,12 @@ namespace bbe
 			return sl;
 		}
 
-		void add(const T& t)
+		void add(T /*copy*/ t)
 		{
-			data.add(t);
+			data.add(std::move(t));
 			bbe::ByteBuffer buffer;
 			auto token = buffer.reserveSizeToken();
-			buffer.write(t);
+			buffer.write(data.last());
 			buffer.fillSizeToken(token);
 			bbe::simpleFile::backup::async::appendBinaryToFile(path, buffer);
 			pushUndoable();

@@ -160,7 +160,8 @@ size_t bbe::ByteBuffer::getLength() const
 
 int64_t bbe::ByteBuffer::reserveSizeToken()
 {
-	write((int64_t)0);
+	int64_t val = 0;
+	write(val);
 	return m_bytes.getLength();
 }
 
@@ -190,7 +191,7 @@ void bbe::SerializedDescription::toByteBuffer(bbe::ByteBuffer& buffer) const
 	for (size_t i = 0; i < descriptors.getLength(); i++)
 	{
 		int64_t elementLength = 1;
-		if (descriptors[i].anyList)
+		if (descriptors[i].getRawVoid)
 		{
 			elementLength = descriptors[i].listLength;
 			buffer.write(elementLength);
@@ -221,13 +222,11 @@ void bbe::SerializedDescription::writeFromSpan(bbe::ByteBufferSpan& span) const
 	{
 		int64_t elementLength = 1;
 		const void* addr = descriptors[i].addr;
-		if (descriptors[i].anyList)
+		if (descriptors[i].getRawVoid)
 		{
 			span.read(elementLength);
-			// This might be the first time ever that I encounter a valid usage of const_cast that is not insane...
-			// but then again, I might be insane myself :-)
-			(const_cast<bbe::AnyList*>(descriptors[i].anyList))->resizeCapacityAndLength(elementLength);
-			addr = (const_cast<bbe::AnyList*>(descriptors[i].anyList))->getVoidRaw();
+			descriptors[i].resize(elementLength);
+			addr = descriptors[i].getRawVoid();
 		}
 
 		for(size_t k = 0; k < elementLength; k++)
@@ -247,7 +246,7 @@ void bbe::SerializedDescription::writeFromSpan(bbe::ByteBufferSpan& span) const
 			else if (descriptors[i].type == typeid(bbe::TimePoint)) { span.read(*((bbe::TimePoint*)addr + k), *(bbe::TimePoint*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
 			else bbe::Crash(bbe::Error::IllegalArgument);
 			
-			if((!defaultValueAccepted || descriptors[i].anyList) && descriptors[i].defaultValueStorage != 0)
+			if((!defaultValueAccepted || descriptors[i].getRawVoid) && descriptors[i].defaultValueStorage != 0)
 			{
 				// This type does not suppoert default values (yet).
 				bbe::Crash(bbe::Error::IllegalArgument);
