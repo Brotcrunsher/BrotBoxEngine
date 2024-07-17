@@ -26,8 +26,8 @@ namespace bbe
 
 		bbe::Vector2i next()
 		{
-			bbe::Vector2i retVal = current.as<int32_t>();
-			if (retVal == end.as<int32_t>())
+			bbe::Vector2i retVal = current.template as<int32_t>();
+			if (retVal == end.template as<int32_t>())
 			{
 				hasMore = false;
 				return retVal;
