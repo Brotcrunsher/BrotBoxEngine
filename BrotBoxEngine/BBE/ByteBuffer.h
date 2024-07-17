@@ -213,7 +213,8 @@ namespace bbe
 			}
 			else if constexpr (std::is_same_v<T, bbe::List<float>>)
 			{
-				write((uint64_t)val.getLength());
+				uint64_t len = val.getLength();
+				write(len);
 				for (uint64_t i = 0; i < val.getLength(); i++)
 				{
 					write(val[i]);
