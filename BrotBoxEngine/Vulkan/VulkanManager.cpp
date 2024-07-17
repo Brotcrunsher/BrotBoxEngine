@@ -19,7 +19,6 @@
 #include "BBE/Vulkan/VulkanFragmentShader.h"
 #include "EmbedOutput.h"
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../Third-Party/stb/stb_image_write.h"
 
 #include "../Third-Party/jo/jo_mpeg.cpp"
