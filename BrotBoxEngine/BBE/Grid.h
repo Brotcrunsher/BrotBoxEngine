@@ -41,7 +41,7 @@ namespace bbe
 			}
 			dir /= dist;
 			current += dir;
-			if (current.as<int32_t>() == retVal) current += dir;
+			if (current.template as<int32_t>() == retVal) current += dir;
 			return retVal;
 		}
 	};
