@@ -2,7 +2,7 @@
 #include "BBE/Vulkan/VulkanSurface.h"
 #include "BBE/Vulkan/VulkanPhysicalDevices.h"
 #include "BBE/Vulkan/VulkanHelper.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 #include "BBE/EngineSettings.h"
 
 void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & physicalDevices, const VulkanSurface & surface) {
@@ -74,7 +74,7 @@ void bbe::INTERNAL::vulkan::VulkanDevice::waitIdle() const
 {
 	if (m_device == VK_NULL_HANDLE)
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 
 	vkDeviceWaitIdle(m_device);

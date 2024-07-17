@@ -1,13 +1,13 @@
 #include "BBE/Vulkan/VulkanDescriptorSetLayout.h"
 #include "BBE/Vulkan/VulkanHelper.h"
 #include "BBE/Vulkan/VulkanDevice.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 void bbe::INTERNAL::vulkan::VulkanDescriptorSetLayout::addBinding(const VkDescriptorSetLayoutBinding & dslb)
 {
 	if (m_descriptorSetLayout != VK_NULL_HANDLE)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_bindings.add(dslb);
 }

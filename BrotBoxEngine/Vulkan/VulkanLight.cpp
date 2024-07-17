@@ -1,6 +1,6 @@
 #include "BBE/Vulkan/VulkanLight.h"
 #include "BBE/EngineSettings.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 static size_t lightAmount = 0;
 static bbe::INTERNAL::vulkan::VulkanBuffer s_bufferVertexData;
@@ -41,7 +41,7 @@ void bbe::INTERNAL::vulkan::VulkanLight::addLight(const bbe::Vector3& pos, float
 	lightAmount++;
 	if (lightAmount >= Settings::getAmountOfLightSources())
 	{
-		throw bbe::OutOfLightResourcesException();
+		bbe::Crash(bbe::Error::OutOfMemory);
 	}
 
 	s_dataVertex[lightAmount].m_position = pos;

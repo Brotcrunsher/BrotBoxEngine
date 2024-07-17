@@ -14,7 +14,7 @@ void bbe::INTERNAL::vulkan::VulkanShader::init(const bbe::String& path)
 {
 	if (VulkanManager::s_pinstance == nullptr)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 	init(VulkanManager::s_pinstance->getVulkanDevice(), path);
 }

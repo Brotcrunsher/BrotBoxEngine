@@ -4,18 +4,19 @@
 #include "BBE/Vulkan/VulkanDescriptorPool.h"
 #include "BBE/Vulkan/VulkanDescriptorSetLayout.h"
 #include "BBE/Vulkan/VulkanBuffer.h"
+#include "BBE/Error.h"
 #include "BBE/Image.h"
 
 bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image& image, const INTERNAL::vulkan::VulkanDevice& device, const INTERNAL::vulkan::VulkanCommandPool& commandPool, const INTERNAL::vulkan::VulkanDescriptorPool& descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout& setLayout)
 {
 	if (!image.isLoadedCpu())
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 
 	if (image.m_prendererData != nullptr)
 	{
-		throw IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	image.m_prendererData = this;

@@ -133,7 +133,7 @@ VkSwapchainKHR bbe::INTERNAL::vulkan::VulkanSwapchain::getSwapchain() const
 {
 	if (m_swapchain == VK_NULL_HANDLE)
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 	return m_swapchain;
 }

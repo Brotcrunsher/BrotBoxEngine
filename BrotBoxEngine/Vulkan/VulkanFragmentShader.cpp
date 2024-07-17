@@ -6,7 +6,7 @@ bbe::INTERNAL::vulkan::VulkanFragmentShader::VulkanFragmentShader(const bbe::Fra
 {
 	if (shader.m_prendererData != nullptr)
 	{
-		throw IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	shader.m_prendererData = this;

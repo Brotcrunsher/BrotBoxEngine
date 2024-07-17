@@ -9,7 +9,7 @@ void bbe::INTERNAL::vulkan::VWDepthImage::create(const VulkanDevice & device, co
 {
 	if (m_created)
 	{
-		throw AlreadyCreatedException("DepthImage was already created!");
+		bbe::Crash(bbe::Error::AlreadyCreated, "DepthImage was already created!");
 	}
 
 	m_device = device.getDevice();

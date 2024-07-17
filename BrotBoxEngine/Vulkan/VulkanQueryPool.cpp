@@ -1,6 +1,6 @@
 #include "BBE/Vulkan/VulkanQueryPool.h"
 #include "BBE/Vulkan/VulkanHelper.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 bbe::INTERNAL::vulkan::VulkanQueryPool::VulkanQueryPool()
 {
@@ -12,7 +12,7 @@ void bbe::INTERNAL::vulkan::VulkanQueryPool::create(VulkanDevice &device, VkQuer
 {
 	if (m_wasCreated)
 	{
-		throw bbe::AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 
 	m_device = device.getDevice();
@@ -40,7 +40,7 @@ void bbe::INTERNAL::vulkan::VulkanQueryPool::destroy()
 {
 	if (!m_wasCreated)
 	{
-		throw bbe::NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 
 	vkDestroyQueryPool(m_device, m_queryPool, nullptr);
@@ -56,7 +56,7 @@ void bbe::INTERNAL::vulkan::VulkanQueryPool::reset(VkCommandPool commandPool, Vk
 {
 	if (!m_wasCreated)
 	{
-		throw bbe::NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 	auto command = bbe::INTERNAL::vulkan::startSingleTimeCommandBuffer(m_device, commandPool);
 	vkCmdResetQueryPool(command, m_queryPool, 0, m_count);
@@ -69,11 +69,11 @@ uint32_t bbe::INTERNAL::vulkan::VulkanQueryPool::beginQuery(VkCommandBuffer comm
 {
 	if (!m_wasCreated)
 	{
-		throw bbe::NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 	if (m_currentQueryIndex >= m_count)
 	{
-		throw bbe::OutOfQuerysException();
+		bbe::Crash(bbe::Error::OutOfMemory);
 	}
 	uint32_t index = m_currentQueryIndex;
 	m_currentQueryIndex++;
@@ -85,11 +85,11 @@ void bbe::INTERNAL::vulkan::VulkanQueryPool::endQuery(VkCommandBuffer command, u
 {
 	if (!m_wasCreated)
 	{
-		throw bbe::NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 	if (query >= m_currentQueryIndex)
 	{
-		throw bbe::QueryWasNotStartedException();
+		bbe::Crash(bbe::Error::OutOfMemory);
 	}
 	vkCmdEndQuery(command, m_queryPool, query);
 }
@@ -98,11 +98,11 @@ void bbe::INTERNAL::vulkan::VulkanQueryPool::writeTimestamp(VkCommandBuffer comm
 {
 	if (!m_wasCreated)
 	{
-		throw bbe::NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 	if (m_currentQueryIndex >= m_count)
 	{
-		throw bbe::OutOfQuerysException();
+		bbe::Crash(bbe::Error::OutOfMemory);
 	}
 	uint32_t index = m_currentQueryIndex;
 	m_currentQueryIndex++;
@@ -113,7 +113,7 @@ void bbe::INTERNAL::vulkan::VulkanQueryPool::getResults()
 {
 	if (!m_wasCreated)
 	{
-		throw bbe::NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 
 	vkGetQueryPoolResults(m_device, m_queryPool, 0, m_currentQueryIndex, sizeof(uint64_t) * m_count, m_presultArray, 0, VK_QUERY_RESULT_64_BIT);
@@ -125,7 +125,7 @@ uint64_t bbe::INTERNAL::vulkan::VulkanQueryPool::getResult(size_t index)
 {
 	if (!getResultsWasCalled)
 	{
-		throw IllegalStateException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	return m_presultArray[index];
@@ -135,7 +135,7 @@ VkDevice bbe::INTERNAL::vulkan::VulkanQueryPool::getDevice() const
 {
 	if (!m_wasCreated)
 	{
-		throw bbe::NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 	return m_device;
 }

@@ -8,7 +8,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addVulkanDescriptorSetLayout(c
 {
 	if (m_descriptorPool != VK_NULL_HANDLE)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_setLayouts.add(VulkanDescriptorPoolSetLayoutContainer(&dsl, amountOfSets));
 }
@@ -37,7 +37,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(const VulkanDevice & de
 				amountOfSampler              += m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings[k].descriptorCount * m_setLayouts[i].m_amountOfSets;
 				break;
 			default:
-				throw NotImplementedException();
+				bbe::Crash(bbe::Error::NotImplemented);
 			}
 
 			amountOfSets += m_setLayouts[i].m_amountOfSets;

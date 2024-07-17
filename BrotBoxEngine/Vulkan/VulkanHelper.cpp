@@ -13,7 +13,7 @@ uint32_t bbe::INTERNAL::vulkan::findMemoryTypeIndex(VkPhysicalDevice physicalDev
 		}
 	}
 
-	throw NoCorrectMemoryType();
+	bbe::Crash(bbe::Error::IllegalArgument);
 }
 
 bool bbe::INTERNAL::vulkan::isFormatSupported(VkPhysicalDevice physicalDevice, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags featureFlags)

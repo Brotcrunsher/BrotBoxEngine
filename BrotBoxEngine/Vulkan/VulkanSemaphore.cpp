@@ -1,7 +1,7 @@
 #include "BBE/Vulkan/VulkanSemaphore.h"
 #include "BBE/Vulkan/VulkanDevice.h"
 #include "BBE/Vulkan/VulkanHelper.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 bbe::INTERNAL::vulkan::VulkanSemaphore::VulkanSemaphore()
 {
@@ -12,7 +12,7 @@ void bbe::INTERNAL::vulkan::VulkanSemaphore::init(const VulkanDevice & device)
 {
 	if (m_semaphore != VK_NULL_HANDLE)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 
 	m_device = device.getDevice();
@@ -40,7 +40,7 @@ VkSemaphore bbe::INTERNAL::vulkan::VulkanSemaphore::getSemaphore()
 {
 	if (m_semaphore == VK_NULL_HANDLE)
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 
 	return m_semaphore;

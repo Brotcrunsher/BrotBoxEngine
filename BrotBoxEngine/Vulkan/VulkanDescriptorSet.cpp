@@ -11,7 +11,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addUniformBuffer(const VulkanBu
 {
 	if (m_descriptorSet != VK_NULL_HANDLE)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 
 	VkDescriptorBufferInfo dbi = {};
@@ -28,7 +28,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addCombinedImageSampler(const I
 	VulkanImage* vi = (VulkanImage*)image.m_prendererData.get();
 	if (!vi)
 	{
-		throw NullPointerException();
+		bbe::Crash(bbe::Error::NullPointer);
 	}
 	dii.sampler = vi->getSampler();
 	dii.imageView = vi->getImageView();

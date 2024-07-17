@@ -1,5 +1,5 @@
 #include "BBE/Vulkan/VulkanBuffer.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 #include "BBE/Vulkan/VulkanDevice.h"
 #include "BBE/Vulkan/VulkanHelper.h"
 #include "BBE/Vulkan/VulkanCommandPool.h"
@@ -24,17 +24,17 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::create(VkDevice vulkanDevice, VkPhysic
 {
 	if (sizeInBytes == 0)
 	{
-		throw bbe::IllegalBufferSize();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 
 	if (m_wasCreated)
 	{
-		throw bbe::AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 
 	if (m_wasUploaded)
 	{
-		throw bbe::AlreadyUploadedException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	m_bufferSize = sizeInBytes;
@@ -58,19 +58,19 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::upload(const VulkanCommandPool &comman
 {
 	if ((m_usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT) == 0)
 	{
-		throw BufferNoSourceException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 	if (!m_wasCreated)
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	if (m_wasUploaded)
 	{
-		throw BufferAlreadyUploadedException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	if (m_isMapped)
 	{
-		throw BufferMappedException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	VkBuffer uploadedBuffer = VK_NULL_HANDLE;
@@ -93,19 +93,19 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::upload(const VulkanCommandPool & comma
 {
 	if ((m_usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT) == 0)
 	{
-		throw BufferNoSourceException();
+		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 	if (!m_wasCreated)
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	if (m_wasUploaded)
 	{
-		throw BufferAlreadyUploadedException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	if (m_isMapped)
 	{
-		throw BufferMappedException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	VkBuffer uploadedBuffer = VK_NULL_HANDLE;
@@ -130,7 +130,7 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::destroy()
 	{
 		if (m_isMapped)
 		{
-			throw BufferMappedException();
+			bbe::Crash(bbe::Error::IllegalState);
 		}
 		vkDestroyBuffer(m_device, m_buffer, nullptr);
 		m_buffer = VK_NULL_HANDLE;
@@ -149,15 +149,15 @@ void * bbe::INTERNAL::vulkan::VulkanBuffer::map()
 {
 	if (m_wasUploaded)
 	{
-		throw BufferAlreadyUploadedException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	if (!m_wasCreated)
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	if (m_isMapped)
 	{
-		throw BufferMappedException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	void* data;
@@ -171,7 +171,7 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::unmap()
 {
 	if (!m_isMapped)
 	{
-		throw BufferIsNotMappedException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 	vkUnmapMemory(m_device, m_memory);
@@ -182,11 +182,11 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::copy(const VulkanBuffer &other, VkComm
 {
 	if (!m_wasCreated)
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 	if (m_bufferSize < other.m_bufferSize)
 	{
-		throw BufferTooSmallException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 
 

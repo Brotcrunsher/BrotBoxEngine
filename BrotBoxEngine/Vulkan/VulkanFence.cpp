@@ -1,7 +1,7 @@
 #include "BBE/Vulkan/VulkanFence.h"
 #include "BBE/Vulkan/VulkanDevice.h"
 #include "BBE/Vulkan/VulkanHelper.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 bbe::INTERNAL::vulkan::VulkanFence::VulkanFence()
 {
@@ -34,7 +34,7 @@ void bbe::INTERNAL::vulkan::VulkanFence::waitForFence(uint64_t timeout)
 {
 	if (m_fence == VK_NULL_HANDLE)
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 	
 
@@ -49,7 +49,7 @@ void bbe::INTERNAL::vulkan::VulkanFence::reset()
 {
 	if (m_fence == VK_NULL_HANDLE)
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 
 	vkResetFences(m_device, 1, &m_fence);
@@ -59,7 +59,7 @@ VkFence bbe::INTERNAL::vulkan::VulkanFence::getFence()
 {
 	if (m_fence == VK_NULL_HANDLE)
 	{
-		throw NotInitializedException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 
 	return m_fence;

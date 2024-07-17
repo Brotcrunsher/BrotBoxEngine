@@ -1,7 +1,7 @@
 #include "BBE/Vulkan/VulkanPipeline.h"
 #include "BBE/Vulkan/VWDepthImage.h"
 #include "BBE/Vulkan/VulkanShader.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 
 bbe::INTERNAL::vulkan::VulkanPipeline::VulkanPipeline()
 {
@@ -112,12 +112,12 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 {
 	if (!m_wasInitialized)
 	{
-		throw bbe::NotInitializedException("Call init first!");
+		bbe::Crash(bbe::Error::NotInitialized, "Call init first!");
 	}
 
 	if (m_wasCreated)
 	{
-		throw bbe::AlreadyCreatedException("VulkanPipeline was already created!");
+		bbe::Crash(bbe::Error::AlreadyCreated, "VulkanPipeline was already created!");
 	}
 
 	VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo;
@@ -275,7 +275,7 @@ VkPipeline bbe::INTERNAL::vulkan::VulkanPipeline::getPipeline(FillMode fm) const
 	case FillMode::WIREFRAME:
 		return m_pipeline[1];
 	default:
-		throw VulkanPipelineModeNotSupportedException();
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 }
 
@@ -292,7 +292,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::setGeometryShader(VkShaderModule sha
 {
 	if (m_wasCreated)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_geometryShader = shaderModule;
 }
@@ -314,7 +314,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexBinding(const VkVertexInput
 {
 	if (m_wasCreated)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_vertexBindingDescription.add(vb);
 }
@@ -323,7 +323,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexBinding(uint32_t binding, u
 {
 	if (m_wasCreated)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	VkVertexInputBindingDescription vb = {};
 	vb.binding = binding;
@@ -336,7 +336,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexDescription(const VkVertexI
 {
 	if (m_wasCreated)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_vertexAttributeDescriptions.add(vd);
 }
@@ -345,7 +345,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addVertexDescription(uint32_t locati
 {
 	if (m_wasCreated)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	VkVertexInputAttributeDescription vd = {};
 	vd.location = location;
@@ -359,7 +359,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addDescriptorSetLayout(const VkDescr
 {
 	if (m_wasCreated)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_descriptorSetLayouts.add(dsl);
 }
@@ -368,7 +368,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addPushConstantRange(const VkPushCon
 {
 	if (m_wasCreated)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_pushConstantRanges.add(pcr);
 }
@@ -377,7 +377,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addPushConstantRange(VkShaderStageFl
 {
 	if (m_wasCreated)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	VkPushConstantRange pcr = {};
 	pcr.stageFlags = stageFlags;
@@ -410,7 +410,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::setPrimitiveTopology(VkPrimitiveTopo
 {
 	if (m_wasCreated)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_inputAssemblyCreateInfo.topology = topology;
 }
@@ -419,7 +419,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::enablePrimitiveRestart(bool enable)
 {
 	if (m_wasCreated)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_inputAssemblyCreateInfo.primitiveRestartEnable = enable ? VK_TRUE : VK_FALSE;
 }
@@ -428,7 +428,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::enableDepthBuffer()
 {
 	if (m_wasCreated)
 	{
-		throw AlreadyCreatedException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_useDepthBuffer = true;
 }

@@ -2,7 +2,7 @@
 #include "BBE/Vector3.h"
 #include "BBE/Vulkan/VulkanManager.h"
 #include "BBE/Color.h"
-#include "BBE/Exceptions.h"
+#include "BBE/Error.h"
 #include "BBE/Rectangle.h"
 #include "BBE/EngineSettings.h"
 #include "BBE/VertexWithNormal.h"
@@ -46,7 +46,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 {
 	if (s_pinstance != nullptr)
 	{
-		throw SingletonViolationException();
+		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	s_pinstance = this;
 
@@ -1060,7 +1060,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiStart()
 	m_imguiInitSuccessful = ImGui_ImplVulkan_Init(&implVulkanInitInfo, m_renderPass.getRenderPass());
 	if (!m_imguiInitSuccessful)
 	{
-		throw IllegalStateException();
+		bbe::Crash(bbe::Error::NotInitialized);
 	}
 
 	ImGuiIO& io = ImGui::GetIO();
