@@ -4,11 +4,7 @@
 #include "BBE/List.h"
 #include "sodium.h"
 #include "BBE/SimpleFile.h"
-
-#ifdef _WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#endif
+#include "BBE/Socket.h"
 
 #ifdef BBE_ADD_CURL
 #include "curl/curl.h"
@@ -135,64 +131,21 @@ std::optional<bbe::List<char>> bbe::simpleUrlRequest::decryptXChaCha(const bbe::
 }
 
 #ifdef _WIN32
-bbe::simpleUrlRequest::SocketRequestXChaChaRet bbe::simpleUrlRequest::socketRequestXChaCha(bbe::String /*copy*/ url, uint16_t port, const String& pathToKeyFile, bool addTrailingNul, bool verbose)
+bbe::simpleUrlRequest::SocketRequestXChaChaRet bbe::simpleUrlRequest::socketRequestXChaCha(const bbe::String& url, uint16_t port, const String& pathToKeyFile, bool addTrailingNul, bool verbose)
 {
-	WSADATA wsaData = { 0 };
-
-	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != NO_ERROR)
+	bbe::Socket socket(url, port);
+	if (!socket.established())
 	{
-		bbe::Crash(bbe::Error::IllegalState);
-	}
-
-	SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (sock == INVALID_SOCKET)
-	{
-		bbe::Crash(bbe::Error::IllegalState);
-	}
-	sockaddr_in addr;
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
-
-	hostent* hent = gethostbyname(url.getRaw());
-	if (hent && hent->h_addrtype == AF_INET && hent->h_length == 4)
-	{
-		// TODO: IPv6
-		addr.sin_addr.s_addr = *(u_long*)hent->h_addr_list[0];
-	}
-	else
-	{
-		if (url == "localhost") url = "127.0.0.1";
-		addr.sin_addr.s_addr = inet_addr(url.getRaw());
-	}
-	if (connect(sock, (SOCKADDR*)&addr, sizeof(addr)) == SOCKET_ERROR)
-	{
-		WSACleanup();
 		return SocketRequestXChaChaRet{ SocketRequestXChaChaCode::HOST_NOT_REACHABLE };
 	}
-	
-	bbe::List<char> data;
-	char buffer[1024];
-	while (true)
-	{
-		int recvLength = recv(sock, buffer, sizeof(buffer), 0);
-		if (recvLength <= 0)
-		{
-			break;
-		}
-		data.addArray(buffer, recvLength);
-	}
+	bbe::List<char> data = socket.drain();
+
 	auto decrypted = bbe::simpleUrlRequest::decryptXChaCha(data, pathToKeyFile);
-	
-	if (closesocket(sock) == SOCKET_ERROR)
-	{
-		bbe::Crash(bbe::Error::IllegalState);
-	}
 	if (!decrypted)
 	{
 		return SocketRequestXChaChaRet{ SocketRequestXChaChaCode::FAILED_TO_DECRYPT };
 	}
 
-	WSACleanup();
 	return SocketRequestXChaChaRet{ SocketRequestXChaChaCode::SUCCESS, *decrypted };
 }
 std::future<bbe::simpleUrlRequest::SocketRequestXChaChaRet> bbe::simpleUrlRequest::socketRequestXChaChaAsync(bbe::String url, uint16_t port, const String& pathToKeyFile, bool addTrailingNul, bool verbose)

@@ -108,6 +108,14 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 {
 #ifdef _WIN32
 	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	{
+		WSADATA wsaData = { 0 };
+
+		if (WSAStartup(MAKEWORD(2, 2), &wsaData) != NO_ERROR)
+		{
+			bbe::Crash(bbe::Error::IllegalState);
+		}
+	}
 #endif
 	signal(SIGSEGV, crashHandler);
 
@@ -255,6 +263,9 @@ void bbe::Game::shutdown()
 #endif
 	INTERNAL::allocCleanup();
 	bbe::simpleFile::backup::async::stopIoThread();
+#ifdef WIN32
+	WSACleanup();
+#endif
 }
 
 void bbe::Game::setExternallyManaged(bool managed)

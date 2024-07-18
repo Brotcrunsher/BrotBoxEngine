@@ -20,6 +20,7 @@
 
 #include "../BBE/SimpleFile.h"
 #include "../BBE/SimpleUrlRequest.h"
+#include "../BBE/Socket.h"
 
 #include "../BBE/EngineSettings.h"
 #include "../BBE/Utf8Helpers.h"

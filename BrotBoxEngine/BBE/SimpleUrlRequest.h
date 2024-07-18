@@ -34,7 +34,7 @@ namespace bbe
 			SocketRequestXChaChaCode code = SocketRequestXChaChaCode::SUCCESS;
 			bbe::List<char> dataContainer;
 		};
-		SocketRequestXChaChaRet socketRequestXChaCha(bbe::String /*copy*/ url, uint16_t port, const String& pathToKeyFile, bool addTrailingNul = true, bool verbose = false);
+		SocketRequestXChaChaRet socketRequestXChaCha(const bbe::String& url, uint16_t port, const String& pathToKeyFile, bool addTrailingNul = true, bool verbose = false);
 		std::future<SocketRequestXChaChaRet> socketRequestXChaChaAsync(bbe::String /*copy*/ url, uint16_t port, const String& pathToKeyFile, bool addTrailingNul = true, bool verbose = false);
 #endif
 	}
