@@ -392,6 +392,7 @@ bool bbe::simpleFile::showSaveDialog(bbe::String& outPath, const bbe::String& de
 }
 #endif
 
+#ifndef __EMSCRIPTEN__
 enum class AsyncJobType
 {
 	WRITE_BINARY,
@@ -452,36 +453,55 @@ static void notifyIOThread()
 	}
 	conditional.notify_all();
 }
+#endif
 
 bool bbe::simpleFile::backup::async::hasOpenIO()
 {
+#ifdef __EMSCRIPTEN__
+	return false;
+#else
 	return jobs.getLength() > 0;
+#endif
 }
 
 void bbe::simpleFile::backup::async::stopIoThread()
 {
+#ifndef __EMSCRIPTEN__
 	ioThreadRunning = false;
 	conditional.notify_all();
 	if (ioThread.joinable())
 	{
 		ioThread.join();
 	}
+#endif
 }
 
 void bbe::simpleFile::backup::async::writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
 {
+#ifdef __EMSCRIPTEN__
+	bbe::simpleFile::backup::writeBinaryToFile(filePath, buffer);
+#else
 	jobs.add({ AsyncJobType::WRITE_BINARY, filePath, buffer });
 	notifyIOThread();
+#endif
 }
 
 void bbe::simpleFile::backup::async::createDirectory(const bbe::String& path)
 {
+#ifdef __EMSCRIPTEN__
+	bbe::simpleFile::backup::createDirectory(path);
+#else
 	jobs.add({ AsyncJobType::CREATE_DIRECTORY, path });
 	notifyIOThread();
+#endif
 }
 
 void bbe::simpleFile::backup::async::appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
 {
+#ifdef __EMSCRIPTEN__
+	bbe::simpleFile::backup::appendBinaryToFile(filePath, buffer);
+#else
 	jobs.add({ AsyncJobType::APPEND_BINARY, filePath, buffer });
 	notifyIOThread();
+#endif
 }

@@ -27,6 +27,7 @@
 //TODO: It would be cool if "Move to Now" would overwrite anything that makes it impossible - weekday restrictions etc.
 //TODO: Would be useful if we could mark stuff as private/protected/public in BBE_SERIALIZABLE_DATA blocks.
 //TODO: Unhandled exceptions should "crash" gracefully and report a stack trace
+//TODO: Crashlog Stacktrace sometimes broken. Assumption: When Mother is Recompiled and not yet updated with the running version, then the pdb isn't properly loaded anymore.
 
 struct ClipboardContent
 {
