@@ -73,16 +73,16 @@ std::size_t bbe::utf8charlen(const char* ptr)
 
 std::size_t bbe::utf8codePointLen(int32_t codePoint)
 {
-	if (codePoint <= 0) return 0;
-	if (codePoint < (1 << 7)) return 1;
-	if (codePoint < (1 << 11)) return 2;
-	if (codePoint < (1 << 16)) return 3;
-	else return 4;
+	if (codePoint < 0) return 0;
+	if (codePoint <= 0x7F) return 1;
+	if (codePoint <= 0x7FF) return 2;
+	if (codePoint <= 0xFFFF) return 3;
+	if (codePoint <= 0x10FFFF) return 4;
+	return 0; // Invalid code point
 }
 
 bool bbe::utf8IsStartOfChar(const char* ptr)
 {
-	//UNTESTED
 	if(ptr == nullptr)
 	{
 		bbe::Crash(bbe::Error::NullPointer);
@@ -99,7 +99,6 @@ bool bbe::utf8IsStartOfChar(const char* ptr)
 
 const char* bbe::utf8GetStartAddrOfCodePoint(const char* ptr)
 {
-	//UNTESTED
 	if(ptr == nullptr)
 	{
 		bbe::Crash(bbe::Error::NullPointer);
@@ -127,7 +126,6 @@ const char* bbe::utf8GetStartAddrOfCodePoint(const char* ptr)
 
 const char* bbe::utf8GetNextChar(const char* ptr)
 {
-	//UNTESTED
 	if(*ptr == '\0')
 	{
 		bbe::Crash(bbe::Error::UnexpectedEndOfString);
@@ -203,7 +201,6 @@ bool bbe::utf8IsWhitespace(const char* ptr)
 
 bool bbe::utf8IsLatinChar(const char* ptr)
 {
-	//UNTESTED
 	if(ptr == nullptr)
 	{
 		bbe::Crash(bbe::Error::NullPointer);
@@ -214,7 +211,6 @@ bool bbe::utf8IsLatinChar(const char* ptr)
 
 bool bbe::utf8IsDigitChar(const char* ptr)
 {
-	//UNTESTED
 	if(ptr == nullptr)
 	{
 		bbe::Crash(bbe::Error::NullPointer);
@@ -225,7 +221,6 @@ bool bbe::utf8IsDigitChar(const char* ptr)
 
 bool bbe::utf8IsAsciiChar(const char* ptr)
 {
-	//UNTESTED
 	if(ptr == nullptr)
 	{
 		bbe::Crash(bbe::Error::NullPointer);
@@ -238,7 +233,6 @@ bool bbe::utf8IsAsciiChar(const char* ptr)
 
 bool bbe::utf8IsSmallerCodePoint(const char* ptr1, const char* ptr2)
 {
-	//UNTESTED
 	if(ptr1 == nullptr || ptr2 == nullptr)
 	{
 		bbe::Crash(bbe::Error::NullPointer);
@@ -261,7 +255,6 @@ bool bbe::utf8IsSmallerCodePoint(const char* ptr1, const char* ptr2)
 
 int bbe::utf8Distance(const char* ptr1, const char* ptr2)
 {
-	//UNTESTED
 	bool negative = false;
 	if(ptr2 < ptr1)
 	{
