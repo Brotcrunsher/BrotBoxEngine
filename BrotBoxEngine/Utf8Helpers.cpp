@@ -89,12 +89,7 @@ bool bbe::utf8IsStartOfChar(const char* ptr)
 	}
 	const byte* bptr = reinterpret_cast<const byte*>(ptr);
 
-	if(((*bptr) & (byte)0b10000000) == (byte)0b00000000) return true;
-	if(((*bptr) & (byte)0b11100000) == (byte)0b11000000) return true;
-	if(((*bptr) & (byte)0b11110000) == (byte)0b11100000) return true;
-	if(((*bptr) & (byte)0b11111000) == (byte)0b11110000) return true;
-
-	return false;
+	return ((*bptr & (byte)0b11000000) != (byte)0b10000000);
 }
 
 const char* bbe::utf8GetStartAddrOfCodePoint(const char* ptr)
