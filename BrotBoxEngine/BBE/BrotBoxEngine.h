@@ -20,7 +20,7 @@
 
 #include "../BBE/SimpleFile.h"
 #include "../BBE/SimpleUrlRequest.h"
-#include "../BBE/Socket.h"
+//#include "../BBE/Socket.h" // NOTE: NOT included because it would include way too much windows related stuff. Could be fixed, probably. TODO.
 
 #include "../BBE/EngineSettings.h"
 #include "../BBE/Utf8Helpers.h"
