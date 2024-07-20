@@ -143,23 +143,43 @@ bbe::Utf8String bbe::Utf8String::deserialize(bbe::ByteBufferSpan& buffer)
 
 bbe::Utf8String bbe::Utf8String::fromCodePoint(int32_t codePoint)
 {
-	const std::size_t length = utf8codePointLen(codePoint);
+	if (codePoint < 0 || codePoint > 0x10FFFF)
+	{
+		bbe::Crash(bbe::Error::IllegalArgument, "Invalid CodePoint");
+	}
 
 	char c[5] = {};
 
-	switch (length)
+	if (codePoint <= 0x7F)
 	{
-	case 0:
-		return "";
-	case 1:
-		return bbe::Utf8String((char)codePoint);
-	case 2:
-		c[0] = ((codePoint >> 6) & 0b00011111) | 0b11000000;
-		c[1] =  (codePoint       & 0b00111111) | 0b10000000;
+		// 1-byte: 0xxxxxxx
+		c[0] = static_cast<char>(codePoint);
+	}
+	else if (codePoint <= 0x7FF)
+	{
+		// 2-byte: 110xxxxx 10xxxxxx
+		c[0] = static_cast<char>((codePoint >> 6)         | 0b11000000);
+		c[1] = static_cast<char>((codePoint & 0b00111111) | 0b10000000);
+	}
+	else if (codePoint <= 0xFFFF)
+	{
+		// 3-byte: 1110xxxx 10xxxxxx 10xxxxxx
+		c[0] = static_cast<char>(( codePoint >> 12)               | 0b11100000);
+		c[1] = static_cast<char>(((codePoint >>  6) & 0b00111111) | 0b10000000);
+		c[2] = static_cast<char>(( codePoint        & 0b00111111) | 0b10000000);
+	}
+	else
+	{
+		// 4-byte: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+		c[0] = static_cast<char>(( codePoint >> 18)               | 0b11110000);
+		c[1] = static_cast<char>(((codePoint >> 12) & 0b00111111) | 0b10000000);
+		c[2] = static_cast<char>(((codePoint >>  6) & 0b00111111) | 0b10000000);
+		c[3] = static_cast<char>(( codePoint        & 0b00111111) | 0b10000000);
 	}
 
 	return bbe::Utf8String(c);
 }
+
 
 bbe::Utf8String bbe::Utf8String::toHex(uint32_t value)
 {
