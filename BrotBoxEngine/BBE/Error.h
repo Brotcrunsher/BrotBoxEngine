@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace bbe
 {
 	enum class Error
@@ -36,6 +38,7 @@ namespace bbe
 		FatalError,
 	};
 
-	[[noreturn]] void Crash(Error error);
-	[[noreturn]] void Crash(Error error, const char* msg);
+	[[noreturn]] void CrashImpl(const char* file, int32_t line, Error error);
+	[[noreturn]] void CrashImpl(const char* file, int32_t line, Error error, const char* msg);
+#define Crash(...) CrashImpl(__FILE__, __LINE__, __VA_ARGS__)
 }

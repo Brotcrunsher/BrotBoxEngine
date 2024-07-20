@@ -9,12 +9,12 @@
 #include <stacktrace>
 #endif
 
-[[noreturn]] void bbe::Crash(Error error)
+[[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, Error error)
 {
-	Crash(error, "no message");
+	CrashImpl(file, line, error, "no message");
 }
 
-[[noreturn]] void bbe::Crash(Error error, const char* msg)
+[[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, Error error, const char* msg)
 {
 	debugBreak();
 
@@ -29,11 +29,12 @@
 	string += "#                 #\n";
 	string += "###################\n";
 	string += "\n";
-	string += "Time:   " + time;
+	string += "Time:  " + time;
 	string += "Crash: " + bbe::String((int)error);
 	string += "\n";
-	string += "Msg: " + bbe::String(msg);
+	string += "Msg:   " + bbe::String(msg);
 	string += "\n";
+	string += "Where: " + bbe::String(file) + "(" + line + ")\n\n";
 	string += "Stacktrace:\n";
 #ifdef WIN32 // TODO: GCC14 does support this! But it's currently hard to find a stable, easy to install version of it on debian and ubuntu...
 	string += std::to_string(std::stacktrace::current());
