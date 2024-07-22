@@ -24,7 +24,7 @@ namespace bbe
 }
 
 // No mutexes:
-using BufferContents = bbe::Array<bbe::Vector2, 100>;
+using BufferContents = bbe::Array<bbe::Vector2, 1024>;
 static bbe::List<ALuint> unusedBuffers;
 static bbe::List<ALuint> buffers;
 
@@ -217,6 +217,10 @@ static void destroySoundSystem()
 		freeBuffer(buffer);
 	}
 	buffers.clear();
+	for (auto sound : playingSounds)
+	{
+		removedIds.add(sound.first);
+	}
 	playingSounds.clear();
 	alDeleteBuffers(unusedBuffers.getLength(), unusedBuffers.getRaw());
 	unusedBuffers.clear();
@@ -273,9 +277,15 @@ static void loadAllBuffers()
 	ALenum err = alGetError();
 	if (err != ALC_NO_ERROR)
 	{
-		BBELOGLN("Something went wrong when loading buffer contents! " << err);
 		freeBuffer(buffer);
-		bbe::Crash(bbe::Error::IllegalState);
+		bbe::String msg = "Something went wrong when loading buffer contents!";
+		msg += " Error: ";
+		msg += err;
+		msg += " Cycle: ";
+		msg += restartCycle;
+		msg += " Buffer: ";
+		msg += buffer;
+		bbe::Crash(bbe::Error::IllegalState, msg.getRaw());
 	}
 	buffers.add(buffer);
 
@@ -334,7 +344,7 @@ static bool initSoundSystem()
 
 	alGenSources(1, &mainSource);
 	{
-		for(size_t i = 0; i<20; i++) loadAllBuffers();
+		for(size_t i = 0; i<10; i++) loadAllBuffers();
 	}
 	alSourcePlay(mainSource);
 	ALenum err = alGetError();
