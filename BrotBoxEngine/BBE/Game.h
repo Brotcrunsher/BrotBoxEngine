@@ -64,6 +64,8 @@ namespace bbe
 		bool m_performanceMeasurementsRequired = false;
 		bool m_performanceMeasurementsForced = false;
 
+		void innerStart(int windowWidth, int windowHeight, const char* title);
+
 	public:
 		Game();
 		virtual ~Game();

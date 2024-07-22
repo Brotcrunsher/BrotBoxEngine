@@ -458,7 +458,8 @@ static bool isEndRequested()
 	return endRequested;
 }
 
-static void soundSystemMain()
+
+static void innerSoundSystemMain()
 {
 	if (!initSoundSystem())
 	{
@@ -485,6 +486,18 @@ static void soundSystemMain()
 		}
 	}
 	destroySoundSystem();
+}
+
+static void soundSystemMain()
+{
+	BBE_TRY_RELEASE
+	{
+		innerSoundSystemMain();
+	}
+	BBE_CATCH_RELEASE
+	{
+		bbe::Crash(bbe::Error::UnhandledException, "Sound Thread");
+	}
 }
 
 static bbe::INTERNAL::SoundManager* m_pinstance = nullptr;

@@ -10,6 +10,7 @@
 #include "implot.h"
 #include "BBE/ImGuiExtensions.h"
 #include "BBE/Logging.h"
+#include "BBE/Error.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -77,34 +78,24 @@ bbe::Game::~Game()
 	}
 }
 
-static void crashHandler(int sig)
+static void segvHandler(int sig)
 {
-	const bbe::String time = bbe::TimePoint().toString();
-
-	bbe::String string;
-	string += "###################\n";
-	string += "#                 #\n";
-	string += "#   !!!CRASH!!!   #\n";
-	string += "#     Signal      #\n";
-	string += "#                 #\n";
-	string += "###################\n";
-	string += "\n";
-	string += "Time:   " + time;
-	string += "Signal: " + bbe::String(sig);
-	string += "\n";
-	string += "Stacktrace:\n";
-#ifdef WIN32 // TODO: GCC14 does support this! But it's currently hard to find a stable, easy to install version of it on debian and ubuntu...
-	string += std::to_string(std::stacktrace::current());
-#else
-	string += "Stacktrace lib is not present!";
-#endif
-	BBELOGLN(string);
-
-	bbe::simpleFile::createDirectory("CrashLogs");
-	bbe::simpleFile::writeStringToFile("CrashLogs/" + bbe::String(std::time(nullptr)) + ".txt", string);
+	bbe::Crash(bbe::Error::Segfault);
 }
 
 void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
+{
+	BBE_TRY_RELEASE
+	{
+		innerStart(windowWidth, windowHeight, title);
+	}
+	BBE_CATCH_RELEASE
+	{
+		bbe::Crash(bbe::Error::UnhandledException, "Main Thread");
+	}
+}
+
+void bbe::Game::innerStart(int windowWidth, int windowHeight, const char* title)
 {
 #ifdef _WIN32
 	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -117,7 +108,7 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 		}
 	}
 #endif
-	signal(SIGSEGV, crashHandler);
+	signal(SIGSEGV, segvHandler);
 
 	BBELOGLN("Starting Game: " << title);
 	if (m_started)

@@ -6,39 +6,53 @@ namespace bbe
 {
 	enum class Error
 	{
-		AlreadyCreated,
-		AlreadyStarted,
-		AlreadyUploaded,
-		NotInitialized,
+		AlreadyCreated = 1000,
+		AlreadyStarted = 2000,
+		AlreadyUploaded = 3000,
+		NotInitialized = 4000,
 
-		NoSuchKeycode,
-		NoSuchMouseButton,
+		NoSuchKeycode = 5000,
+		NoSuchMouseButton = 6000,
 
-		IllegalState,
-		OutOfMemory,
+		IllegalState = 7000,
+		OutOfMemory = 8000,
 
-		KeyAlreadyUsed,
+		KeyAlreadyUsed = 9000,
 
-		IllegalArgument,
-		ContainerEmpty,
+		IllegalArgument = 10000,
+		ContainerEmpty = 11000,
 
-		IllegalIndex,
+		IllegalIndex = 12000,
 
-		NotImplemented,
+		NotImplemented = 13000,
 
-		Decode,
-		Unknown,
-		FormatNotSupported,
+		Decode = 14000,
+		Unknown = 15000,
+		FormatNotSupported = 16000,
 
-		NotStartOfUtf8,
-		NullPointer,
-		UnexpectedEndOfString,
-		NotAUtf8Char,
+		NotStartOfUtf8 = 17000,
+		NullPointer = 18000,
+		UnexpectedEndOfString = 19000,
+		NotAUtf8Char = 20000,
 
-		FatalError,
+		FatalError = 21000,
+		Segfault = 22000,
+		UnhandledException = 23000,
 	};
 
 	[[noreturn]] void CrashImpl(const char* file, int32_t line, Error error);
 	[[noreturn]] void CrashImpl(const char* file, int32_t line, Error error, const char* msg);
 #define Crash(...) CrashImpl(__FILE__, __LINE__, __VA_ARGS__)
 }
+
+#ifndef NDEBUG
+#define BBE_TRY_RELEASE
+#else
+#define BBE_TRY_RELEASE try
+#endif
+
+#ifndef NDEBUG
+#define BBE_CATCH_RELEASE if(0)
+#else
+#define BBE_CATCH_RELEASE catch(...)
+#endif

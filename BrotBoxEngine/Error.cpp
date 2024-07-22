@@ -7,6 +7,8 @@
 #include <cstdlib>
 #if __has_include(<stacktrace>)
 #include <stacktrace>
+#else
+#pragma warning("Stacktrace lib is not present!")
 #endif
 
 [[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, Error error)
@@ -25,7 +27,6 @@
 	string += "###################\n";
 	string += "#                 #\n";
 	string += "#   !!!CRASH!!!   #\n";
-	string += "#   bbe::Crash    #\n";
 	string += "#                 #\n";
 	string += "###################\n";
 	string += "\n";

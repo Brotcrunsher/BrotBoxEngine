@@ -412,7 +412,7 @@ std::atomic_bool ioThreadRunning = false;
 std::thread ioThread;
 std::condition_variable_any conditional;
 
-static void ioThreadMain()
+static void innerIoThreadMain()
 {
 	while (jobs.getLength() > 0)
 	{
@@ -441,6 +441,18 @@ static void ioThreadMain()
 				return jobs.getLength() > 0 || !ioThreadRunning;
 				});
 		}
+	}
+}
+
+static void ioThreadMain()
+{
+	BBE_TRY_RELEASE
+	{
+		innerIoThreadMain();
+	}
+	BBE_CATCH_RELEASE
+	{
+		bbe::Crash(bbe::Error::UnhandledException, "IO Thread");
 	}
 }
 
