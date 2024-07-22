@@ -8,7 +8,6 @@
 // TODO: Select+Move Tool
 // TODO: Color Selector Tool
 // TODO: Drag and Drop image files into paint
-// TODO: Tiled view is kinda messed. Zooming out draws too few, line drawer seems to skip, etc...
 // TODO: Line tool
 // TODO: Rectangle tool
 // TODO: Circle tool
@@ -211,10 +210,10 @@ class MyGame : public bbe::Game
 		{
 			if (mode == MODE_BRUSH)
 			{
-				bbe::GridIterator gi(getMouse(), getMousePrevious());
+				bbe::GridIterator gi(screenToCanvas(getMouse()), screenToCanvas(getMousePrevious()));
 				while (gi.hasNext())
 				{
-					const bbe::Vector2 coordBase = screenToCanvas(gi.next().as<float>());
+					const bbe::Vector2 coordBase = gi.next().as<float>();
 					for (int32_t i = -brushWidth; i <= brushWidth; i++)
 					{
 						for (int32_t k = -brushWidth; k <= brushWidth; k++)
