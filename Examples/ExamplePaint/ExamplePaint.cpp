@@ -6,11 +6,10 @@
 // TODO: Layers
 // TODO: Text
 // TODO: Select+Move Tool
-// TODO: Color Selector Tool
+// TODO: Color Selector Tool (Pipette)
 // TODO: Drag and Drop image files into paint
-// TODO: Line tool
-// TODO: Rectangle tool
 // TODO: Circle tool
+// TODO: CTRL+Z/Y
 
 class MyGame : public bbe::Game
 {
@@ -28,6 +27,7 @@ class MyGame : public bbe::Game
 	constexpr static int32_t MODE_BRUSH      = 0;
 	constexpr static int32_t MODE_FLOOD_FILL = 1;
 	constexpr static int32_t MODE_LINE       = 2;
+	constexpr static int32_t MODE_RECTANGLE  = 3;
 	int32_t mode = MODE_BRUSH;
 
 	// MODE_BRUSH
@@ -35,6 +35,9 @@ class MyGame : public bbe::Game
 
 	// MODE_LINE
 	bbe::Vector2 startMousePos;
+
+	// MODE_RECTANGLE
+	bool roundEdges = false;
 
 	bool drawGridLines = true;
 	bool tiled = false;
@@ -171,7 +174,7 @@ class MyGame : public bbe::Game
 		return isMouseDown(bbe::MouseButton::LEFT) ? bbe::Color(leftColor).asByteColor() : bbe::Color(rightColor).asByteColor();
 	}
 
-	bool touch(const bbe::Vector2& touchPos)
+	bool touch(const bbe::Vector2& touchPos, bool rectangleShape = false)
 	{
 		bool changeRegistered = false;
 		for (int32_t i = -brushWidth; i <= brushWidth; i++)
@@ -179,6 +182,17 @@ class MyGame : public bbe::Game
 			for (int32_t k = -brushWidth; k <= brushWidth; k++)
 			{
 				float pencilStrength = bbe::Math::clamp01(brushWidth - bbe::Math::sqrt(i * i + k * k));
+				if (rectangleShape)
+				{
+					if (i != -brushWidth && i != brushWidth && k != -brushWidth && k != brushWidth)
+					{
+						pencilStrength = 1.0f;
+					}
+					else
+					{
+						pencilStrength = 0.0f;
+					}
+				}
 				if (pencilStrength <= 0.f) continue;
 
 				bbe::Vector2 coord = touchPos + bbe::Vector2(i, k);
@@ -198,14 +212,14 @@ class MyGame : public bbe::Game
 		return changeRegistered;
 	}
 
-	bool touchLine(const bbe::Vector2& pos1, const bbe::Vector2& pos2)
+	bool touchLine(const bbe::Vector2& pos1, const bbe::Vector2& pos2, bool rectangleShape = false)
 	{
 		bool changeRegistered = false;
 		bbe::GridIterator gi(pos1, pos2);
 		while (gi.hasNext())
 		{
 			const bbe::Vector2 coordBase = gi.next().as<float>();
-			changeRegistered |= touch(coordBase);
+			changeRegistered |= touch(coordBase, rectangleShape);
 		}
 		return changeRegistered;
 	}
@@ -249,6 +263,11 @@ class MyGame : public bbe::Game
 		}
 
 		static bool changeRegistered = false;
+		if (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT))
+		{
+			startMousePos = screenToCanvas(getMouse());
+		}
+		const bbe::Vector2 currMousePos = screenToCanvas(getMouse());
 		if (isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT))
 		{
 			if (mode == MODE_BRUSH)
@@ -266,12 +285,20 @@ class MyGame : public bbe::Game
 			}
 			else if (mode == MODE_LINE)
 			{
-				if (isMousePressed(bbe::MouseButton::LEFT))
-				{
-					startMousePos = screenToCanvas(getMouse());
-				}
 				clearWorkArea();
-				changeRegistered |= touchLine(screenToCanvas(getMouse()), startMousePos);
+				changeRegistered |= touchLine(currMousePos, startMousePos);
+			}
+			else if (mode == MODE_RECTANGLE)
+			{
+				clearWorkArea();
+				const bbe::Vector2 topLeft = startMousePos;
+				const bbe::Vector2 topRight = bbe::Vector2(currMousePos.x, startMousePos.y);
+				const bbe::Vector2 bottomLeft = bbe::Vector2(startMousePos.x, currMousePos.y);
+				const bbe::Vector2 bottomRight = currMousePos;
+				changeRegistered |= touchLine(topLeft, topRight, !roundEdges);
+				changeRegistered |= touchLine(topRight, bottomRight, !roundEdges);
+				changeRegistered |= touchLine(bottomRight, bottomLeft, !roundEdges);
+				changeRegistered |= touchLine(bottomLeft, topLeft, !roundEdges);
 			}
 			else
 			{
@@ -326,13 +353,17 @@ class MyGame : public bbe::Game
 
 		ImGui::ColorEdit4("Left Color", leftColor);
 		ImGui::ColorEdit4("Right Color", rightColor);
-		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line tool" }, mode);
-		if (mode == MODE_BRUSH || mode == MODE_LINE)
+		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line tool" , "Rectangle Tool"}, mode);
+		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE)
 		{
 			if (ImGui::InputInt("Brush Width", &brushWidth))
 			{
 				if (brushWidth < 1) brushWidth = 1;
 			}
+		}
+		if (mode == MODE_RECTANGLE)
+		{
+			ImGui::Checkbox("Round Edges", &roundEdges);
 		}
 		if (ImGui::Button("Copy to Clipboard"))
 		{
