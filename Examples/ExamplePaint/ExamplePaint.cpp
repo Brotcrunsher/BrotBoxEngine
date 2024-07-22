@@ -27,10 +27,14 @@ class MyGame : public bbe::Game
 
 	constexpr static int32_t MODE_BRUSH      = 0;
 	constexpr static int32_t MODE_FLOOD_FILL = 1;
+	constexpr static int32_t MODE_LINE       = 2;
 	int32_t mode = MODE_BRUSH;
 
 	// MODE_BRUSH
 	int32_t brushWidth = 1;
+
+	// MODE_LINE
+	bbe::Vector2 startMousePos;
 
 	bool drawGridLines = true;
 	bool tiled = false;
@@ -167,6 +171,45 @@ class MyGame : public bbe::Game
 		return isMouseDown(bbe::MouseButton::LEFT) ? bbe::Color(leftColor).asByteColor() : bbe::Color(rightColor).asByteColor();
 	}
 
+	bool touch(const bbe::Vector2& touchPos)
+	{
+		bool changeRegistered = false;
+		for (int32_t i = -brushWidth; i <= brushWidth; i++)
+		{
+			for (int32_t k = -brushWidth; k <= brushWidth; k++)
+			{
+				float pencilStrength = bbe::Math::clamp01(brushWidth - bbe::Math::sqrt(i * i + k * k));
+				if (pencilStrength <= 0.f) continue;
+
+				bbe::Vector2 coord = touchPos + bbe::Vector2(i, k);
+				if (toTiledPos(coord))
+				{
+					bbe::Colori newColor = getMouseColor();
+					newColor.a = newColor.MAXIMUM_VALUE * pencilStrength;
+					bbe::Colori oldWorkColor = workArea.getPixel(coord.x, coord.y);
+					if (newColor.a > oldWorkColor.a)
+					{
+						workArea.setPixel(coord.x, coord.y, newColor);
+						changeRegistered = true;
+					}
+				}
+			}
+		}
+		return changeRegistered;
+	}
+
+	bool touchLine(const bbe::Vector2& pos1, const bbe::Vector2& pos2)
+	{
+		bool changeRegistered = false;
+		bbe::GridIterator gi(pos1, pos2);
+		while (gi.hasNext())
+		{
+			const bbe::Vector2 coordBase = gi.next().as<float>();
+			changeRegistered |= touch(coordBase);
+		}
+		return changeRegistered;
+	}
+
 	virtual void onStart() override
 	{
 		newCanvas(400, 300);
@@ -205,37 +248,12 @@ class MyGame : public bbe::Game
 			changeZoom(1.1f);
 		}
 
-		static bool changeRegisterd = false;
+		static bool changeRegistered = false;
 		if (isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT))
 		{
 			if (mode == MODE_BRUSH)
 			{
-				bbe::GridIterator gi(screenToCanvas(getMouse()), screenToCanvas(getMousePrevious()));
-				while (gi.hasNext())
-				{
-					const bbe::Vector2 coordBase = gi.next().as<float>();
-					for (int32_t i = -brushWidth; i <= brushWidth; i++)
-					{
-						for (int32_t k = -brushWidth; k <= brushWidth; k++)
-						{
-							float pencilStrength = bbe::Math::clamp01(brushWidth - bbe::Math::sqrt(i * i + k * k));
-							if (pencilStrength <= 0.f) continue;
-
-							bbe::Vector2 coord = coordBase + bbe::Vector2(i, k);
-							if (toTiledPos(coord))
-							{
-								bbe::Colori newColor = getMouseColor();
-								newColor.a = newColor.MAXIMUM_VALUE * pencilStrength;
-								bbe::Colori oldWorkColor = workArea.getPixel(coord.x, coord.y);
-								if (newColor.a > oldWorkColor.a)
-								{
-									workArea.setPixel(coord.x, coord.y, newColor);
-									changeRegisterd = true;
-								}
-							}
-						}
-					}
-				}
+				changeRegistered |= touchLine(screenToCanvas(getMouse()), screenToCanvas(getMousePrevious()));
 			}
 			else if (mode == MODE_FLOOD_FILL)
 			{
@@ -243,8 +261,17 @@ class MyGame : public bbe::Game
 				if (toTiledPos(pos))
 				{
 					canvas.floodFill(pos.as<int32_t>(), getMouseColor(), false, tiled);
-					changeRegisterd = true;
+					changeRegistered = true;
 				}
+			}
+			else if (mode == MODE_LINE)
+			{
+				if (isMousePressed(bbe::MouseButton::LEFT))
+				{
+					startMousePos = screenToCanvas(getMouse());
+				}
+				clearWorkArea();
+				changeRegistered |= touchLine(screenToCanvas(getMouse()), startMousePos);
 			}
 			else
 			{
@@ -252,15 +279,15 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		if (changeRegisterd)
+		if (changeRegistered)
 		{
 			if (isMouseReleased(bbe::MouseButton::LEFT) || isMouseReleased(bbe::MouseButton::RIGHT))
 			{
 				if (!isMouseDown(bbe::MouseButton::LEFT) && !isMouseDown(bbe::MouseButton::RIGHT))
 				{
 					applyWorkArea();
-					submitWork();
-					changeRegisterd = false;
+					submitWork(); // <- changeRegistered is for this
+					changeRegistered = false;
 				}
 			}
 		}
@@ -299,8 +326,8 @@ class MyGame : public bbe::Game
 
 		ImGui::ColorEdit4("Left Color", leftColor);
 		ImGui::ColorEdit4("Right Color", rightColor);
-		ImGui::bbe::combo("Mode", { "Brush", "Flood fill" }, mode);
-		if (mode == MODE_BRUSH)
+		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line tool" }, mode);
+		if (mode == MODE_BRUSH || mode == MODE_LINE)
 		{
 			if (ImGui::InputInt("Brush Width", &brushWidth))
 			{
