@@ -124,8 +124,9 @@ private:
 	bbe::SerializableObject<KeyboardTracker> keyboardTracker    = bbe::SerializableObject<KeyboardTracker>("keyboardTracker.dat"); // No ParanoiaConfig to avoid accidentally logging passwords.
 	bbe::SerializableList<SeenServerTaskId> seenServerTaskIds   = bbe::SerializableList<SeenServerTaskId> ("SeenServerTaskIds.dat",   "ParanoiaCOnfig");
 
-	bool openTasksNotificationSilencedProcess = false;
-	bool openTasksNotificationSilencedUrl     = false;
+	bool openTasksSilenced = false;
+	bool openTasksSilencedIndefinitely = false;
+	bbe::TimePoint openTasksSilencedEnd = bbe::TimePoint::epoch();
 	bool showDebugStuff = false;
 	bool ignoreNight = false;
 	bool tabSwitchRequestedLeft = false;
@@ -424,11 +425,15 @@ public:
 		beginMeasure("Working Hours");
 		if (tasks.hasPotentialTaskComplaint())
 		{
+			if (openTasksSilencedEnd.hasPassed() && !openTasksSilencedIndefinitely)
+			{
+				openTasksSilenced = false;
+			}
 			// Because Process...
-			bool shouldPlayOpenTasks = !openTasksNotificationSilencedProcess && processes.isGameOn();
+			bool shouldPlayOpenTasks = !openTasksSilenced && processes.isGameOn();
 
 			// ... because urls.
-			shouldPlayOpenTasks |= !openTasksNotificationSilencedUrl && urls.timeWasterFound();
+			shouldPlayOpenTasks |= !openTasksSilenced && urls.timeWasterFound();
 			if (shouldPlayOpenTasks)
 			{
 				EVERY_MINUTES(15)
@@ -953,8 +958,21 @@ public:
 			}
 			ImGui::EndDisabled();
 
-			ImGui::Checkbox("Silence Open Task Notification Sound (Process)", &openTasksNotificationSilencedProcess);
-			ImGui::Checkbox("Silence Open Task Notification Sound (Url)",     &openTasksNotificationSilencedUrl);
+			if (ImGui::Checkbox("Silence Open Task (1 Hour)", &openTasksSilenced))
+			{
+				if (openTasksSilenced)
+				{
+					openTasksSilencedEnd = bbe::TimePoint().plusHours(1);
+				}
+				else
+				{
+					openTasksSilencedIndefinitely = false;
+				}
+			}
+			ImGui::SameLine();
+			ImGui::BeginDisabled(!openTasksSilenced);
+			ImGui::Checkbox("Indefinitely ", &openTasksSilencedIndefinitely);
+			ImGui::EndDisabled();
 			ImGui::Checkbox("Ignore Night", &ignoreNight);
 			ImGui::Checkbox("Let me prepare", &tasks.forcePrepare); ImGui::bbe::tooltip("Make tasks advancable, even before late time happens.");
 			ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
