@@ -10,6 +10,7 @@
 // TODO: Drag and Drop image files into paint
 // TODO: Circle tool
 // TODO: CTRL+Z/Y
+// TODO: Show a shadow of what would be drawn if the mouse would be clicked.
 
 class MyGame : public bbe::Game
 {
@@ -267,12 +268,13 @@ class MyGame : public bbe::Game
 		{
 			startMousePos = screenToCanvas(getMouse());
 		}
+		const bbe::Vector2 prevMousePos = screenToCanvas(getMousePrevious());
 		const bbe::Vector2 currMousePos = screenToCanvas(getMouse());
 		if (isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT))
 		{
 			if (mode == MODE_BRUSH)
 			{
-				changeRegistered |= touchLine(screenToCanvas(getMouse()), screenToCanvas(getMousePrevious()));
+				changeRegistered |= touchLine(currMousePos, prevMousePos);
 			}
 			else if (mode == MODE_FLOOD_FILL)
 			{
