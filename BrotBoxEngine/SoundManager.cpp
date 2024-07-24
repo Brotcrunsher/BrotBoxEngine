@@ -26,7 +26,6 @@ namespace bbe
 // No mutexes:
 using BufferContents = bbe::Array<bbe::Vector2, 1024>;
 static bbe::List<ALuint> unusedBuffers;
-static bbe::List<ALuint> buffers;
 
 static bbe::List<ALuint> staticSources;
 
@@ -212,17 +211,11 @@ static void destroySoundSystem()
 		alDeleteSources(1, &mainSource);
 		mainSource = 0;
 	}
-	for (ALuint buffer : buffers)
-	{
-		freeBuffer(buffer);
-	}
-	buffers.clear();
 	for (auto sound : playingSounds)
 	{
 		removedIds.add(sound.first);
 	}
 	playingSounds.clear();
-	alDeleteBuffers(unusedBuffers.getLength(), unusedBuffers.getRaw());
 	unusedBuffers.clear();
 	for (ALuint source : staticSources)
 	{
@@ -242,11 +235,16 @@ static ALint freeUsedUpBuffers()
 {
 	ALint usedUpBuffers = 0;
 	alGetSourcei(mainSource, AL_BUFFERS_PROCESSED, &usedUpBuffers);
-	alSourceUnqueueBuffers(mainSource, usedUpBuffers, buffers.getRaw());
+	static bbe::List<ALuint> buffersBuffer;
+	if (usedUpBuffers > buffersBuffer.getLength())
+	{
+		buffersBuffer.resizeCapacityAndLength(usedUpBuffers);
+	}
+	alSourceUnqueueBuffers(mainSource, usedUpBuffers, buffersBuffer.getRaw());
 
 	for (ALint i = 0; i < usedUpBuffers; i++)
 	{
-		ALuint buffer = buffers.popFront();
+		ALuint buffer = buffersBuffer[i];
 		freeBuffer(buffer);
 	}
 	return usedUpBuffers;
@@ -287,7 +285,6 @@ static void loadAllBuffers()
 		msg += buffer;
 		bbe::Crash(bbe::Error::IllegalState, msg.getRaw());
 	}
-	buffers.add(buffer);
 
 	alSourceQueueBuffers(mainSource, 1, &buffer);
 
