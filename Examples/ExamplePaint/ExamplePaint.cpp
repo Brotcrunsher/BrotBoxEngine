@@ -6,11 +6,11 @@
 // TODO: Layers
 // TODO: Text
 // TODO: Select+Move Tool
-// TODO: Color Selector Tool (Pipette)
 // TODO: Drag and Drop image files into paint
 // TODO: Circle tool
 // TODO: Show a shadow of what would be drawn if the mouse would be clicked.
-// TODO: Flood fill with edges of pencil tool kinda bad.
+// TODO: Flood fill with edges of brush tool kinda bad.
+// TODO: WASD controls with brush tool messed up (tested in debug, might be only visible with slight lag)
 
 class MyGame : public bbe::Game
 {
@@ -29,15 +29,11 @@ class MyGame : public bbe::Game
 	constexpr static int32_t MODE_FLOOD_FILL = 1;
 	constexpr static int32_t MODE_LINE       = 2;
 	constexpr static int32_t MODE_RECTANGLE  = 3;
+	constexpr static int32_t MODE_PIPETTE    = 4;
 	int32_t mode = MODE_BRUSH;
 
-	// MODE_BRUSH
 	int32_t brushWidth = 1;
-
-	// MODE_LINE
 	bbe::Vector2 startMousePos;
-
-	// MODE_RECTANGLE
 	bool roundEdges = false;
 
 	bool drawGridLines = true;
@@ -308,6 +304,30 @@ class MyGame : public bbe::Game
 				changeRegistered |= touchLine(bottomRight, bottomLeft, !roundEdges);
 				changeRegistered |= touchLine(bottomLeft, topLeft, !roundEdges);
 			}
+			else if (mode == MODE_PIPETTE)
+			{
+				auto pos = screenToCanvas(getMouse());
+				if (toTiledPos(pos))
+				{
+					const size_t x = (size_t)pos.x;
+					const size_t y = (size_t)pos.y;
+					const bbe::Colori color = canvas.getPixel(x, y);
+					if (isMouseDown(bbe::MouseButton::LEFT))
+					{
+						leftColor[0] = color.r / 255.f;
+						leftColor[1] = color.g / 255.f;
+						leftColor[2] = color.b / 255.f;
+						leftColor[3] = color.a / 255.f;
+					}
+					if (isMouseDown(bbe::MouseButton::RIGHT))
+					{
+						rightColor[0] = color.r / 255.f;
+						rightColor[1] = color.g / 255.f;
+						rightColor[2] = color.b / 255.f;
+						rightColor[3] = color.a / 255.f;
+					}
+				}
+			}
 			else
 			{
 				bbe::Crash(bbe::Error::IllegalState);
@@ -361,7 +381,7 @@ class MyGame : public bbe::Game
 
 		ImGui::ColorEdit4("Left Color", leftColor);
 		ImGui::ColorEdit4("Right Color", rightColor);
-		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line tool" , "Rectangle Tool"}, mode);
+		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line" , "Rectangle", "Pipette"}, mode);
 		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE)
 		{
 			if (ImGui::InputInt("Brush Width", &brushWidth))
