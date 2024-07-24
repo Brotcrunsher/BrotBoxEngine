@@ -9,8 +9,8 @@
 // TODO: Color Selector Tool (Pipette)
 // TODO: Drag and Drop image files into paint
 // TODO: Circle tool
-// TODO: CTRL+Z/Y
 // TODO: Show a shadow of what would be drawn if the mouse would be clicked.
+// TODO: Flood fill with edges of pencil tool kinda bad.
 
 class MyGame : public bbe::Game
 {
@@ -252,6 +252,12 @@ class MyGame : public bbe::Game
 		if (isKeyDown(bbe::Key::D))
 		{
 			offset.x -= timeSinceLastFrame * CAM_WASD_SPEED;
+		}
+
+		if (isKeyDown(bbe::Key::LEFT_CONTROL))
+		{
+			if (isKeyPressed(bbe::Key::Z) && isUndoable()) undo();
+			if (isKeyPressed(bbe::Key::Y) && isRedoable()) redo();
 		}
 
 		if (getMouseScrollY() < 0)
