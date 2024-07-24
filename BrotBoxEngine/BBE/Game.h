@@ -94,6 +94,7 @@ namespace bbe
 		bool isKeyDown(bbe::Key key);
 		bool isKeyUp(bbe::Key key);
 		bool isKeyPressed(bbe::Key key);
+		bool isKeyTyped(bbe::Key key);
 
 		bool isFocused() const;
 		bool isHovered() const;

@@ -289,6 +289,11 @@ bool bbe::Game::isKeyPressed(bbe::Key key)
 	return m_pwindow->INTERNAL_keyboard.isKeyPressed(key);
 }
 
+bool bbe::Game::isKeyTyped(bbe::Key key)
+{
+	return m_pwindow->INTERNAL_keyboard.isKeyTyped(key);
+}
+
 bool bbe::Game::isFocused() const
 {
 	return m_pwindow->isFocused();

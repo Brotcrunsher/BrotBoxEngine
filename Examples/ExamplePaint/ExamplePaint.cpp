@@ -9,7 +9,6 @@
 // TODO: Drag and Drop image files into paint
 // TODO: Circle tool
 // TODO: Flood fill with edges of brush tool kinda bad.
-// TODO: Keep holding CTRL+Z/Y should go back/forward multiple times.
 
 class MyGame : public bbe::Game
 {
@@ -275,8 +274,8 @@ class MyGame : public bbe::Game
 
 		if (isKeyDown(bbe::Key::LEFT_CONTROL))
 		{
-			if (isKeyPressed(bbe::Key::Z) && isUndoable()) undo();
-			if (isKeyPressed(bbe::Key::Y) && isRedoable()) redo();
+			if (isKeyTyped(bbe::Key::Z) && isUndoable()) undo();
+			if (isKeyTyped(bbe::Key::Y) && isRedoable()) redo();
 		}
 
 		static bool changeRegistered = false;
