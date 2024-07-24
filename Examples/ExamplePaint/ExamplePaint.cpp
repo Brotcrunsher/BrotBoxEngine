@@ -10,7 +10,6 @@
 // TODO: Circle tool
 // TODO: Show a shadow of what would be drawn if the mouse would be clicked.
 // TODO: Flood fill with edges of brush tool kinda bad.
-// TODO: WASD controls with brush tool messed up (tested in debug, might be only visible with slight lag)
 
 class MyGame : public bbe::Game
 {
@@ -227,6 +226,7 @@ class MyGame : public bbe::Game
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
+		const bbe::Vector2 prevMousePos = screenToCanvas(getMousePrevious());
 		if (isKeyPressed(bbe::Key::SPACE))
 		{
 			resetCamera();
@@ -250,10 +250,16 @@ class MyGame : public bbe::Game
 			offset.x -= timeSinceLastFrame * CAM_WASD_SPEED;
 		}
 
-		if (isKeyDown(bbe::Key::LEFT_CONTROL))
+		if (isMouseDown(bbe::MouseButton::MIDDLE))
 		{
-			if (isKeyPressed(bbe::Key::Z) && isUndoable()) undo();
-			if (isKeyPressed(bbe::Key::Y) && isRedoable()) redo();
+			offset += getMouseDelta();
+			if (tiled)
+			{
+				if (offset.x < 0) offset.x += canvas.getWidth() * zoomLevel;
+				if (offset.y < 0) offset.y += canvas.getHeight() * zoomLevel;
+				if (offset.x > canvas.getWidth() * zoomLevel) offset.x -= canvas.getWidth() * zoomLevel;
+				if (offset.y > canvas.getHeight() * zoomLevel) offset.y -= canvas.getHeight() * zoomLevel;
+			}
 		}
 
 		if (getMouseScrollY() < 0)
@@ -264,14 +270,20 @@ class MyGame : public bbe::Game
 		{
 			changeZoom(1.1f);
 		}
+		const bbe::Vector2 currMousePos = screenToCanvas(getMouse());
+
+		if (isKeyDown(bbe::Key::LEFT_CONTROL))
+		{
+			if (isKeyPressed(bbe::Key::Z) && isUndoable()) undo();
+			if (isKeyPressed(bbe::Key::Y) && isRedoable()) redo();
+		}
 
 		static bool changeRegistered = false;
 		if (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT))
 		{
 			startMousePos = screenToCanvas(getMouse());
 		}
-		const bbe::Vector2 prevMousePos = screenToCanvas(getMousePrevious());
-		const bbe::Vector2 currMousePos = screenToCanvas(getMouse());
+
 		if (isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT))
 		{
 			if (mode == MODE_BRUSH)
@@ -344,18 +356,6 @@ class MyGame : public bbe::Game
 					submitWork(); // <- changeRegistered is for this
 					changeRegistered = false;
 				}
-			}
-		}
-
-		if (isMouseDown(bbe::MouseButton::MIDDLE))
-		{
-			offset += getMouseDelta();
-			if (tiled)
-			{
-				if (offset.x < 0) offset.x += canvas.getWidth() * zoomLevel;
-				if (offset.y < 0) offset.y += canvas.getHeight() * zoomLevel;
-				if (offset.x > canvas.getWidth() * zoomLevel) offset.x -= canvas.getWidth() * zoomLevel;
-				if (offset.y > canvas.getHeight() * zoomLevel) offset.y -= canvas.getHeight() * zoomLevel;
 			}
 		}
 	}
