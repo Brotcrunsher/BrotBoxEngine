@@ -386,6 +386,7 @@ void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, i
 		// As we don't care about that key, we just drop the event.
 		return;
 	}
+	keyCode = ImGui_ImplGlfw_TranslateUntranslatedKey(keyCode, scanCode);
 	ImGui_ImplGlfw_KeyCallback(window, keyCode, scanCode, action, mods);
 	if (ImGui::GetIO().WantCaptureKeyboard) return;
 	if (action == GLFW_PRESS)

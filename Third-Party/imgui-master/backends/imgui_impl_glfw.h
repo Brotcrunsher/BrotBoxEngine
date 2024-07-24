@@ -55,4 +55,6 @@ IMGUI_IMPL_API void     ImGui_ImplGlfw_KeyCallback(GLFWwindow* window, int key, 
 IMGUI_IMPL_API void     ImGui_ImplGlfw_CharCallback(GLFWwindow* window, unsigned int c);
 IMGUI_IMPL_API void     ImGui_ImplGlfw_MonitorCallback(GLFWmonitor* monitor, int event);
 
+IMGUI_IMPL_API int ImGui_ImplGlfw_TranslateUntranslatedKey(int key, int scancode);
+
 #endif // #ifndef IMGUI_DISABLE
