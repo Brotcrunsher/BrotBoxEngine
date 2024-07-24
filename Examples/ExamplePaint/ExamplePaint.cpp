@@ -8,8 +8,8 @@
 // TODO: Select+Move Tool
 // TODO: Drag and Drop image files into paint
 // TODO: Circle tool
-// TODO: Show a shadow of what would be drawn if the mouse would be clicked.
 // TODO: Flood fill with edges of brush tool kinda bad.
+// TODO: Keep holding CTRL+Z/Y should go back/forward multiple times.
 
 class MyGame : public bbe::Game
 {
@@ -167,6 +167,7 @@ class MyGame : public bbe::Game
 
 	bbe::Colori getMouseColor() const
 	{
+		if (!isMouseDown(bbe::MouseButton::LEFT) && !isMouseDown(bbe::MouseButton::RIGHT)) return bbe::Color(leftColor).asByteColor();
 		return isMouseDown(bbe::MouseButton::LEFT) ? bbe::Color(leftColor).asByteColor() : bbe::Color(rightColor).asByteColor();
 	}
 
@@ -284,8 +285,25 @@ class MyGame : public bbe::Game
 			startMousePos = screenToCanvas(getMouse());
 		}
 
-		if (isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT))
+		// TODO: Would be nice if we had a constexpr list
+		const bbe::List<decltype(mode)> shadowDrawModes = { MODE_BRUSH };
+		const bool drawMode = isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT);
+
+		if (drawMode || shadowDrawModes.contains(mode))
 		{
+			// This counter is a bit of a hack. Problem is if we wouldn't have it and immediately call clearWorkArea then the workArea would never get applied.
+			// Applying the work area could be moved before this if, but then we might lose a frame of "work" which might feel odd.
+			static uint32_t counter = 0;
+			if (!drawMode)
+			{
+				counter++;
+				if(counter > 1) clearWorkArea();
+			}
+			else
+			{
+				counter = 0;
+			}
+
 			if (mode == MODE_BRUSH)
 			{
 				changeRegistered |= touchLine(currMousePos, prevMousePos);
