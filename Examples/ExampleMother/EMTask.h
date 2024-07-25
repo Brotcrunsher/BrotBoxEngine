@@ -21,7 +21,9 @@ struct Task
 		((bbe::String), title),
 		((int32_t), repeatDays, 0),
 		((bbe::TimePoint), previousExecution, bbe::TimePoint::epoch()),
+	(private:),
 		((bbe::TimePoint), nextExecution), // Call nextPossibleExecution from the outside! 
+	(public:),
 		((bool), canBeSu, true),
 		((int32_t), followUp, 0), // In minutes. When clicking follow up, the task will be rescheduled the same day.
 		((int32_t), internalValue, 0),
