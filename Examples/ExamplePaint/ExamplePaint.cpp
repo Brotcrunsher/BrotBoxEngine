@@ -9,6 +9,7 @@
 // TODO: Drag and Drop image files into paint
 // TODO: Circle tool
 // TODO: Flood fill with edges of brush tool kinda bad.
+// TODO: Bug: right click has weird behaviour with shadow
 
 class MyGame : public bbe::Game
 {

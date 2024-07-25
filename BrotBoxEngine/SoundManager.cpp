@@ -25,7 +25,6 @@ namespace bbe
 
 // No mutexes:
 using BufferContents = bbe::Array<bbe::Vector2, 1024>;
-static bbe::List<ALuint> unusedBuffers;
 
 static bbe::List<ALuint> staticSources;
 
@@ -73,10 +72,6 @@ static bool previouslyDied = false;
 
 static ALuint getNewBuffer()
 {
-	if (unusedBuffers.getLength() > 0)
-	{
-		return unusedBuffers.popBack();
-	}
 	ALuint buffer = 0;
 	alGenBuffers(1, &buffer);
 	return buffer;
@@ -84,7 +79,7 @@ static ALuint getNewBuffer()
 
 static void freeBuffer(ALuint buffer)
 {
-	unusedBuffers.add(buffer);
+	alDeleteBuffers(1, &buffer);
 }
 
 static ALuint getNewStaticSource()
@@ -216,7 +211,6 @@ static void destroySoundSystem()
 		removedIds.add(sound.first);
 	}
 	playingSounds.clear();
-	unusedBuffers.clear();
 	for (ALuint source : staticSources)
 	{
 		freeStaticSource(source);
