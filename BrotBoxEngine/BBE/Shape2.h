@@ -54,12 +54,12 @@ namespace bbe
 			const bbe::List<Vec> vertices = getVertices();
 			const bbe::List<Vec> projections = bbe::Math::project(vertices, projection);
 
-			const float init = projections[0] * projection;
+			const float init = (float)(projections[0] * projection);
 			ProjectionResult retVal{ init, init };
 
 			for (size_t i = 1; i < projections.getLength(); i++)
 			{
-				const float dot = projections[i] * projection;
+				const float dot = (float)(projections[i] * projection);
 				if (dot > retVal.stop)
 				{
 					retVal.stop = dot;
@@ -156,7 +156,7 @@ namespace bbe
 				}
 			}
 
-			this->translate(-resolveAxis * minPenetration);
+			this->translate(-resolveAxis * (Vec::template SubType)minPenetration);
 
 			return true;
 		}

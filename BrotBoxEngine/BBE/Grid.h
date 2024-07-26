@@ -171,7 +171,7 @@ namespace bbe
 					}
 				}
 
-				// TODO: This can get a speed up from O(N²) to O(N) using a stack.
+				// TODO: This can get a speed up from O(N^2) to O(N) using a stack.
 				//       See "Largest rectangle in Histogram"
 				for (size_t k = 0; k < m_height; k++)
 				{

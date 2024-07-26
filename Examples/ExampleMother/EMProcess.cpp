@@ -1,8 +1,6 @@
 #include "EMProcess.h"
 #include <Windows.h>
 #include <tlhelp32.h>
-#include <AtlBase.h>
-#include <UIAutomation.h>
 
 void SubsystemProcess::update()
 {

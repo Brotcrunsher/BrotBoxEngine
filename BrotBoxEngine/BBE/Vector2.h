@@ -293,7 +293,7 @@ namespace bbe
 
 		T getLength() const
 		{
-			return Math::sqrt(getLengthSq());
+			return (T)Math::sqrt((float)getLengthSq());
 		}
 		T getLengthSq() const
 		{

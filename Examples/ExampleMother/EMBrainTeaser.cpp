@@ -100,7 +100,7 @@ bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserAdd(bbe::PrimitiveBrush2D& 
 		if (ImGui::Button("Start over") || m_game->isKeyPressed(bbe::Key::SPACE) || m_game->isKeyPressed(bbe::Key::ENTER))
 		{
 			nextState = BTState::startable;
-			nextBrainTeaser = 2;
+			nextBrainTeaser = true;
 		}
 	}
 	else
@@ -226,7 +226,7 @@ bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserAlphabet(bbe::PrimitiveBrus
 		if (ImGui::Button("Start over") || m_game->isKeyPressed(bbe::Key::SPACE) || m_game->isKeyPressed(bbe::Key::ENTER))
 		{
 			nextState = BTState::startable;
-			nextBrainTeaser = 2;
+			nextBrainTeaser = true;
 		}
 	}
 	else
@@ -338,7 +338,7 @@ bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserDigitMemory(bbe::PrimitiveB
 		if (ImGui::Button("Start over") || m_game->isKeyPressed(bbe::Key::SPACE) || m_game->isKeyPressed(bbe::Key::ENTER))
 		{
 			nextState = BTState::startable;
-			nextBrainTeaser = 2;
+			nextBrainTeaser = true;
 		}
 	}
 	else
