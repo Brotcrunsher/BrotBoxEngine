@@ -2,16 +2,6 @@
 #include "BBE/BrotBoxEngine.h"
 #include "TestUtils.h"
 
-class DelayedDeleter
-{
-public:
-	~DelayedDeleter()
-	{
-		bbe::INTERNAL::allocCleanup();
-	}
-};
-DelayedDeleter dd;
-
 TEST(String, TotalStringTest)
 {
 	ASSERT_EQ((int)bbe::utf8len(""), 0);					//Simple!
