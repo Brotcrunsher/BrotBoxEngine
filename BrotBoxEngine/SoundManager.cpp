@@ -74,6 +74,18 @@ static ALuint getNewBuffer()
 {
 	ALuint buffer = 0;
 	alGenBuffers(1, &buffer);
+	ALenum err = alGetError();
+	if (err != ALC_NO_ERROR)
+	{
+		bbe::String msg = "alGenBuffers ";
+		msg += " Error: ";
+		msg += err;
+		msg += " Cycle: ";
+		msg += restartCycle;
+		msg += " Buffer: ";
+		msg += buffer;
+		bbe::Crash(bbe::Error::IllegalState, msg.getRaw());
+	}
 	return buffer;
 }
 
