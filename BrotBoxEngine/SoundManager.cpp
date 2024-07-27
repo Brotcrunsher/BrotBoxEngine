@@ -445,7 +445,19 @@ static void updateSoundSystem()
 	for (size_t i = 0; i < staticSources.getLength(); i++)
 	{
 		ALint state = 0;
+		ALenum err = alGetError();
+		if (err != AL_NO_ERROR)
+		{
+			bbe::Crash(bbe::Error::IllegalState, "Some uncaught AL error happened.");
+		}
 		alGetSourcei(staticSources[i], AL_SOURCE_STATE, &state);
+		err = alGetError();
+		if (err == AL_INVALID_NAME)
+		{
+			// TODO: This shouldn't happen! Unfortunately it does though. Fix!
+			BBELOGLN("Warning: Invalid AL Source.");
+			state = AL_INITIAL;
+		}
 		if (state != AL_PLAYING)
 		{
 			freeStaticSource(staticSources[i]);
