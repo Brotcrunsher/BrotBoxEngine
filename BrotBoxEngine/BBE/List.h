@@ -380,7 +380,8 @@ namespace bbe
 				return;
 			}
 
-			growIfNeeded(newCapacity - getCapacity());
+			auto delVal = growIfNeeded(newCapacity - getCapacity());
+			bbe::freeBlock(delVal);
 		}
 
 		size_t removeAll(const T& remover)

@@ -49,7 +49,7 @@ jobs:
 
     - name: Test
       working-directory: ${{github.workspace}}/build/bin
-      run: ./BrotBoxEngineGTest && ./BrotBoxEngineTest
+      run: ASAN_OPTIONS=fast_unwind_on_malloc=0 ./BrotBoxEngineGTest && ./BrotBoxEngineTest
       
     - name: DryRuns
       if: ${{ matrix.execDryRuns }}
