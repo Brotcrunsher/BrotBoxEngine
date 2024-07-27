@@ -6,6 +6,8 @@
 #include <vector>
 #include <array>
 #include <mutex>
+#define EASY_ALLOC
+
 
 static bool isBlockZero(void* ptr, size_t size)
 {
@@ -52,6 +54,12 @@ static void checkBlockHealth()
 
 bbe::AllocBlock bbe::allocateBlock(size_t size)
 {
+#ifdef EASY_ALLOC
+	bbe::AllocBlock ab;
+	ab.size = size;
+	ab.data = malloc(size);
+	return ab;
+#endif
 	std::lock_guard<std::mutex> guard(mutex);
 	checkBlockHealth();
 	if (size == 0) return AllocBlock{ nullptr, 0 };
@@ -83,6 +91,13 @@ bbe::AllocBlock bbe::allocateBlock(size_t size)
 
 void bbe::freeBlock(AllocBlock& block)
 {
+#ifdef EASY_ALLOC
+	free(block.data);
+
+	block.data = nullptr;
+	block.size = 0;
+	return;
+#endif
 	std::lock_guard<std::mutex> guard(mutex);
 	if (allocatorShutdown)
 	{

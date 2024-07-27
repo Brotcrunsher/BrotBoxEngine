@@ -17,19 +17,19 @@ TEST(List, ConstructorAmountOfData)
 {
 	bbe::List<SomeClass<int>> list(17);
 	bbe::List<SomeClass<int>> const* pList = &list;
-	ASSERT_EQ(list.getCapacity(), 32);
+	ASSERT_GE(list.getCapacity(), 17);
 	ASSERT_EQ(list.getLength(), 0);
 	ASSERT_NE(list.getRaw(), nullptr);
 	ASSERT_NE(pList->getRaw(), nullptr);
 	ASSERT_TRUE(list.isEmpty());
-	ASSERT_EQ(list.getCapacity(), 32);
+	ASSERT_GE(list.getCapacity(), 17);
 }
 
 TEST(List, ConstructorWithData)
 {
 	bbe::List<SomeClass<int>> list(17, 1337);
 	bbe::List<SomeClass<int>> const* pList = &list;
-	ASSERT_EQ(list.getCapacity(), 32);
+	ASSERT_GE(list.getCapacity(), 17);
 	ASSERT_EQ(list.getLength(), 17);
 	ASSERT_NE(list.getRaw(), nullptr);
 	ASSERT_NE(pList->getRaw(), nullptr);
@@ -44,9 +44,9 @@ TEST(List, ConstructorCopy)
 {
 	bbe::List<SomeClass<int>> list(100, 42);
 	bbe::List<SomeClass<int>> copy(list);
-	ASSERT_EQ(list.getCapacity(), 128);
+	ASSERT_GE(list.getCapacity(), 100);
 	ASSERT_EQ(list.getLength(), 100);
-	ASSERT_EQ(copy.getCapacity(), 128);
+	ASSERT_GE(copy.getCapacity(), 100);
 	ASSERT_EQ(copy.getLength(), 100);
 	for (size_t i = 0; i < list.getLength(); i++)
 	{
@@ -66,7 +66,7 @@ TEST(List, ConstructorMove)
 	ASSERT_EQ(list.getCapacity(), 0);
 	ASSERT_EQ(list.getLength(), 0);
 	ASSERT_EQ(list.getRaw(), nullptr);
-	ASSERT_EQ(move.getCapacity(), 128);
+	ASSERT_GE(move.getCapacity(), 81);
 	ASSERT_EQ(move.getLength(), 81);
 	ASSERT_NE(move.getRaw(), nullptr);
 	for (size_t i = 0; i < move.getLength(); i++)
@@ -78,7 +78,7 @@ TEST(List, ConstructorMove)
 TEST(List, ConstructorInitializer)
 {
 	bbe::List<int> list = { 17, 32, 19, 2, 15 };
-	ASSERT_EQ(list.getCapacity(), 8);
+	ASSERT_GE(list.getCapacity(), 5);
 	ASSERT_EQ(list.getLength(), 5);
 	ASSERT_NE(list.getRaw(), nullptr);
 	ASSERT_EQ(list[0], 17);
@@ -291,7 +291,7 @@ TEST(List, resizeCapacity)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4) };
 	list.resizeCapacity(100);
-	ASSERT_EQ(list.getCapacity(), 128);
+	ASSERT_GE(list.getCapacity(), 100);
 	ASSERT_EQ(list.getLength(), 4);
 }
 
@@ -299,7 +299,7 @@ TEST(List, resizeCapacityAndLength)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4) };
 	list.resizeCapacityAndLength(100);
-	ASSERT_EQ(list.getCapacity(), 128);
+	ASSERT_GE(list.getCapacity(), 100);
 	ASSERT_EQ(list.getLength(), 100);
 }
 
