@@ -41,6 +41,7 @@
 #include "core/logging.h"
 #include "opthelpers.h"
 #include "vector.h"
+#include "../../BrotBoxEngine/BBE/Error.h"
 
 
 bool TrapALError{false};
@@ -66,6 +67,9 @@ void ALCcontext::setError(ALenum errorCode, const char *msg, ...)
 
     WARN("Error generated on context %p, code 0x%04x, \"%s\"\n",
         decltype(std::declval<void*>()){this}, errorCode, msg);
+
+    bbe::Crash(bbe::Error::IllegalState, msg);
+
     if(TrapALError)
     {
 #ifdef _WIN32
