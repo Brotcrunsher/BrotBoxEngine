@@ -3,6 +3,7 @@
 #include "../BBE/List.h"
 #include "../BBE/String.h"
 #include "../BBE/ByteBuffer.h"
+#include "../BBE/BrotTime.h"
 #include <fstream>
 #include <filesystem>
 
@@ -45,6 +46,7 @@ namespace bbe
 		bool deleteFile(const bbe::String& path);
 		bbe::String readFile(const bbe::String& filePath);
 		bbe::List<bbe::String> readLines(const bbe::String& filePath);
+		bbe::TimePoint getLastModifyTime(const bbe::String& filePath);
 
 #ifndef __EMSCRIPTEN__
 		void forEachFile(const bbe::String& filePath, const std::function<void(const bbe::String&)>& func);

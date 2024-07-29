@@ -241,6 +241,19 @@ bbe::List<bbe::String> bbe::simpleFile::readLines(const bbe::String& filePath)
 	return retVal;
 }
 
+bbe::TimePoint bbe::simpleFile::getLastModifyTime(const bbe::String& filePath)
+{
+	const auto mod = std::filesystem::last_write_time(filePath.getRaw());
+	// Madness :)
+	const std::time_t t = 
+		std::chrono::system_clock::to_time_t(
+			std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+				mod - std::chrono::file_clock::now() + std::chrono::system_clock::now()
+			)
+		);
+	return bbe::TimePoint(t);
+}
+
 #ifndef __EMSCRIPTEN__
 void bbe::simpleFile::forEachFile(const bbe::String& filePath, const std::function<void(const bbe::String&)>& func)
 {

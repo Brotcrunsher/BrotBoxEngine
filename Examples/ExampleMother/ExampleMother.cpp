@@ -899,12 +899,19 @@ public:
 			ImGui::EndDisabled();
 
 			static bool updatePathExists = false;
-			if (!updatePathExists)
+			static bool updatePathNewer = false;
+			// Avoiding multiple IO calls.
+			EVERY_SECONDS(10)
 			{
-				// Avoiding multiple IO calls.
-				EVERY_SECONDS(10)
+				if (!updatePathExists)
 				{
 					updatePathExists = bbe::simpleFile::doesFileExist(generalConfig->updatePath);
+				}
+				else
+				{
+					const auto updateModTime = bbe::simpleFile::getLastModifyTime(generalConfig->updatePath);
+					const auto thisModTime = bbe::simpleFile::getLastModifyTime(bbe::simpleFile::getExecutablePath());
+					updatePathNewer = updateModTime > thisModTime;
 				}
 			}
 			if (updatePathExists)
@@ -925,6 +932,12 @@ public:
 					}
 
 					bbe::simpleFile::executeBatchFile("update.bat");
+				}
+				if (updatePathNewer)
+				{
+					ImGui::SameLine();
+					ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "(!)");
+					ImGui::bbe::tooltip("The update path is newer than this version!");
 				}
 			}
 
