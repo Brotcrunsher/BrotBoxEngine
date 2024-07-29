@@ -350,20 +350,6 @@ static void loadAllBuffers()
 
 	ALuint buffer = getNewBuffer();
 	eh::alBufferData(buffer, AL_FORMAT_STEREO_FLOAT32, samples.getRaw(), sizeof(bbe::Vector2) * samples.getLength(), 44100); // TODO HZ
-	ALenum err = alGetError();
-	if (err != ALC_NO_ERROR)
-	{
-		freeBuffer(buffer);
-		bbe::String msg = "Something went wrong when loading buffer contents!";
-		msg += " Error: ";
-		msg += err;
-		msg += " Cycle: ";
-		msg += restartCycle;
-		msg += " Buffer: ";
-		msg += buffer;
-		bbe::Crash(bbe::Error::IllegalState, msg.getRaw());
-	}
-
 	eh::alSourceQueueBuffers(mainSource, 1, &buffer);
 
 	listenerPrevious = listener;
