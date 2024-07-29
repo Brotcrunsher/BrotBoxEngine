@@ -11,6 +11,37 @@
 #pragma warning("Stacktrace lib is not present!")
 #endif
 
+const char* bbe::toString(Error err)
+{
+#define TO_STR(x) if(err == Error::x) return #x;
+	TO_STR(AlreadyCreated       );
+	TO_STR(AlreadyStarted       );
+	TO_STR(AlreadyUploaded      );
+	TO_STR(NotInitialized       );
+	TO_STR(NoSuchKeycode        );
+	TO_STR(NoSuchMouseButton    );
+	TO_STR(IllegalState         );
+	TO_STR(OutOfMemory          );
+	TO_STR(KeyAlreadyUsed       );
+	TO_STR(IllegalArgument      );
+	TO_STR(ContainerEmpty       );
+	TO_STR(IllegalIndex         );
+	TO_STR(NotImplemented       );
+	TO_STR(Decode               );
+	TO_STR(Unknown              );
+	TO_STR(FormatNotSupported   );
+	TO_STR(NotStartOfUtf8       );
+	TO_STR(NullPointer          );
+	TO_STR(UnexpectedEndOfString);
+	TO_STR(NotAUtf8Char         );
+	TO_STR(FatalError           );
+	TO_STR(Segfault             );
+	TO_STR(UnhandledException   );
+#undef TO_STR
+
+	return "Missing translation";
+}
+
 [[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, const char* function, Error error)
 {
 	CrashImpl(file, line, function, error, "no message");
@@ -31,7 +62,7 @@
 	string += "###################\n";
 	string += "\n";
 	string += "Time:  " + time;
-	string += "Crash: " + bbe::String((int)error);
+	string += "Crash: " + bbe::String((int)error) + " : " + toString(error);
 	string += "\n";
 	string += "Msg:   " + bbe::String(msg);
 	string += "\n";
