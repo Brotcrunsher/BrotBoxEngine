@@ -83,9 +83,12 @@ const char* bbe::toString(Error err)
 		string += log[i];
 		string += "\n";
 	}
-
+#ifndef __EMSCRIPTEN__
 	bbe::simpleFile::createDirectory("CrashLogs");
 	bbe::simpleFile::writeStringToFile("CrashLogs/" + bbe::String(std::time(nullptr)) + ".txt", string);
+#else
+	std::cout << string.getRaw() << std::endl;
+#endif
 
 
 	std::abort();
