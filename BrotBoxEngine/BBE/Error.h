@@ -40,9 +40,9 @@ namespace bbe
 		UnhandledException = 23000,
 	};
 
-	[[noreturn]] void CrashImpl(const char* file, int32_t line, Error error);
-	[[noreturn]] void CrashImpl(const char* file, int32_t line, Error error, const char* msg);
-#define Crash(...) CrashImpl(__FILE__, __LINE__, __VA_ARGS__)
+	[[noreturn]] void CrashImpl(const char* file, int32_t line, const char* function, Error error);
+	[[noreturn]] void CrashImpl(const char* file, int32_t line, const char* function, Error error, const char* msg);
+#define Crash(...) CrashImpl(__FILE__, __LINE__, __func__, __VA_ARGS__)
 }
 
 #ifndef NDEBUG

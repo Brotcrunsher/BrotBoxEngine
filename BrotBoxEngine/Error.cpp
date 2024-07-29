@@ -11,12 +11,12 @@
 #pragma warning("Stacktrace lib is not present!")
 #endif
 
-[[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, Error error)
+[[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, const char* function, Error error)
 {
-	CrashImpl(file, line, error, "no message");
+	CrashImpl(file, line, function, error, "no message");
 }
 
-[[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, Error error, const char* msg)
+[[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, const char* function, Error error, const char* msg)
 {
 	debugBreak();
 
@@ -35,14 +35,23 @@
 	string += "\n";
 	string += "Msg:   " + bbe::String(msg);
 	string += "\n";
-	string += "Where: " + bbe::String(file) + "(" + line + ")\n\n";
+	string += "Where: " + bbe::String(file) + "(" + line + ")\n";
+	string += "       @" + bbe::String(function) + "\n\n";
 	string += "Stacktrace:\n";
 #ifdef WIN32 // TODO: GCC14 does support this! But it's currently hard to find a stable, easy to install version of it on debian and ubuntu...
 	string += std::to_string(std::stacktrace::current());
 #else
 	string += "Stacktrace lib is not present!";
 #endif
-	BBELOGLN(string);
+
+	string += "\n\nLog:\n";
+
+	const bbe::List<bbe::String>& log = bbe::logging::getLog();
+	for (size_t i = 0; i < log.getLength(); i++)
+	{
+		string += log[i];
+		string += "\n";
+	}
 
 	bbe::simpleFile::createDirectory("CrashLogs");
 	bbe::simpleFile::writeStringToFile("CrashLogs/" + bbe::String(std::time(nullptr)) + ".txt", string);

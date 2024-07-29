@@ -25,6 +25,8 @@
 //TODO: Make the UTF8String actually UTF8...
 //TODO: "A rare task" should be re-thought. Doesn't make sense to NOT mark a task as rare only because the repeat is 1 days, but the only possible day is a monday for example.
 //TODO: It would be cool if "Move to Now" would overwrite anything that makes it impossible - weekday restrictions etc.
+//TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
+//      Careful when doing this ^^^^^^ - Audio Restart on device change?
 
 struct ClipboardContent
 {
