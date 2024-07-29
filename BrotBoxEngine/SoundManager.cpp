@@ -20,7 +20,7 @@
 
 namespace bbe
 {
-	struct SoundDataSource;
+	class SoundDataSource;
 }
 
 // No mutexes:
@@ -70,40 +70,112 @@ static ALuint mainSource = 0;
 ALCdevice* device = nullptr;
 static bool previouslyDied = false;
 
+namespace eh /* = error handled */
+{
+	void buildErrorString(bbe::String& s)
+	{
+		// Do nothing
+	}
+
+	template <typename T, typename... Types>
+	void buildErrorString(bbe::String& s, T t1, Types... ts)
+	{
+		s += t1;
+		s += " ";
+		buildErrorString(s, ts...);
+	}
+
+	template <typename... Types>
+	void handleErrors(const char* funcName, Types... ts)
+	{
+		ALenum err = ::alGetError();
+		if (err != AL_NO_ERROR)
+		{
+			bbe::String msg = "SoundManager crashed. Function: ";
+			msg += funcName;
+			msg += "Variables: ";
+			buildErrorString(msg, ts...);
+			bbe::Crash(bbe::Error::IllegalState, msg.getRaw());
+		}
+	}
+
+	void alGenBuffers(ALsizei n, ALuint* buffers)
+	{
+		::alGenBuffers(n, buffers);
+		handleErrors("alGenBuffers", n, (size_t)buffers);
+	}
+
+	void alDeleteBuffers(ALsizei n, const ALuint* buffers)
+	{
+		::alDeleteBuffers(n, buffers);
+		handleErrors("alDeleteBuffers", n, (size_t)buffers);
+	}
+
+	void alGenSources(ALsizei n, ALuint* sources)
+	{
+		::alGenSources(n, sources);
+		handleErrors("alGenSources", n, (size_t)sources);
+	}
+
+	void alDeleteSources(ALsizei n, const ALuint* sources)
+	{
+		::alDeleteSources(n, sources);
+		handleErrors("alDeleteSources", n, (size_t)sources);
+	}
+
+	void alGetSourcei(ALuint source, ALenum param, ALint* value)
+	{
+		::alGetSourcei(source, param, value);
+		handleErrors("alGetSourcei", source, param, (size_t)value);
+	}
+
+	void alSourceUnqueueBuffers(ALuint src, ALsizei nb, ALuint* buffers)
+	{
+		::alSourceUnqueueBuffers(src, nb, buffers);
+		handleErrors("alSourceUnqueueBuffers", src, nb, (size_t)buffers);
+	}
+
+	void alBufferData(ALuint buffer, ALenum format, const ALvoid* data, ALsizei size, ALsizei freq)
+	{
+		::alBufferData(buffer, format, data, size, freq);
+		handleErrors("alBufferData", buffer, format, (size_t)data, size, freq);
+	}
+
+	void alSourceQueueBuffers(ALuint src, ALsizei nb, const ALuint* buffers)
+	{
+		::alSourceQueueBuffers(src, nb, buffers);
+		handleErrors("alSourceQueueBuffers", src, nb, (size_t)buffers);
+	}
+
+	void alSourcePlay(ALuint source)
+	{
+		::alSourcePlay(source);
+		handleErrors("alSourcePlay", source);
+	}
+}
+
 static ALuint getNewBuffer()
 {
 	ALuint buffer = 0;
-	alGenBuffers(1, &buffer);
-	ALenum err = alGetError();
-	if (err != ALC_NO_ERROR)
-	{
-		bbe::String msg = "alGenBuffers ";
-		msg += " Error: ";
-		msg += err;
-		msg += " Cycle: ";
-		msg += restartCycle;
-		msg += " Buffer: ";
-		msg += buffer;
-		bbe::Crash(bbe::Error::IllegalState, msg.getRaw());
-	}
+	eh::alGenBuffers(1, &buffer);
 	return buffer;
 }
 
 static void freeBuffer(ALuint buffer)
 {
-	alDeleteBuffers(1, &buffer);
+	eh::alDeleteBuffers(1, &buffer);
 }
 
 static ALuint getNewStaticSource()
 {
 	ALuint source = 0;
-	alGenSources(1, &source);
+	eh::alGenSources(1, &source);
 	return source;
 }
 
 static void freeStaticSource(ALuint source)
 {
-	alDeleteSources(1, &source);
+	eh::alDeleteSources(1, &source);
 }
 
 struct SoundInstanceData
@@ -200,7 +272,7 @@ struct SoundInstanceData
 		else if (const bbe::SoundDataSourceStatic* sdss = dynamic_cast<const bbe::SoundDataSourceStatic*>(m_psound))
 		{
 			ALint state = 0;
-			alGetSourcei(source, AL_SOURCE_STATE, &state);
+			eh::alGetSourcei(source, AL_SOURCE_STATE, &state);
 			return state == AL_PLAYING;
 		}
 		else
@@ -215,7 +287,7 @@ static void destroySoundSystem()
 {
 	if (mainSource)
 	{
-		alDeleteSources(1, &mainSource);
+		eh::alDeleteSources(1, &mainSource);
 		mainSource = 0;
 	}
 	for (auto sound : playingSounds)
@@ -240,13 +312,13 @@ static void destroySoundSystem()
 static ALint freeUsedUpBuffers()
 {
 	ALint usedUpBuffers = 0;
-	alGetSourcei(mainSource, AL_BUFFERS_PROCESSED, &usedUpBuffers);
+	eh::alGetSourcei(mainSource, AL_BUFFERS_PROCESSED, &usedUpBuffers);
 	static bbe::List<ALuint> buffersBuffer;
 	if (usedUpBuffers > buffersBuffer.getLength())
 	{
 		buffersBuffer.resizeCapacityAndLength(usedUpBuffers);
 	}
-	alSourceUnqueueBuffers(mainSource, usedUpBuffers, buffersBuffer.getRaw());
+	eh::alSourceUnqueueBuffers(mainSource, usedUpBuffers, buffersBuffer.getRaw());
 
 	for (ALint i = 0; i < usedUpBuffers; i++)
 	{
@@ -277,7 +349,7 @@ static void loadAllBuffers()
 	}
 
 	ALuint buffer = getNewBuffer();
-	alBufferData(buffer, AL_FORMAT_STEREO_FLOAT32, samples.getRaw(), sizeof(bbe::Vector2) * samples.getLength(), 44100); // TODO HZ
+	eh::alBufferData(buffer, AL_FORMAT_STEREO_FLOAT32, samples.getRaw(), sizeof(bbe::Vector2) * samples.getLength(), 44100); // TODO HZ
 	ALenum err = alGetError();
 	if (err != ALC_NO_ERROR)
 	{
@@ -292,7 +364,7 @@ static void loadAllBuffers()
 		bbe::Crash(bbe::Error::IllegalState, msg.getRaw());
 	}
 
-	alSourceQueueBuffers(mainSource, 1, &buffer);
+	eh::alSourceQueueBuffers(mainSource, 1, &buffer);
 
 	listenerPrevious = listener;
 }
@@ -307,7 +379,7 @@ static void refreshBuffers()
 	if (usedBuffers)
 	{
 		ALenum state;
-		alGetSourcei(mainSource, AL_SOURCE_STATE, &state);
+		eh::alGetSourcei(mainSource, AL_SOURCE_STATE, &state);
 		if (state != AL_PLAYING)
 		{
 			// TODO: Is there a way to do this automatically?
@@ -315,7 +387,7 @@ static void refreshBuffers()
 			totalRestarts++;
 			BBELOGLN("Sound died. Restarting. Total Restarts: " << totalRestarts << " Total sounds: " << playingSounds.size());
 			previouslyDied = true;
-			alSourcePlay(mainSource);
+			eh::alSourcePlay(mainSource);
 		}
 	}
 }
@@ -345,11 +417,11 @@ static bool initSoundSystem()
 		return false;
 	}
 
-	alGenSources(1, &mainSource);
+	eh::alGenSources(1, &mainSource);
 	{
 		for(size_t i = 0; i<10; i++) loadAllBuffers();
 	}
-	alSourcePlay(mainSource);
+	eh::alSourcePlay(mainSource);
 	ALenum err = alGetError();
 	if (err != ALC_NO_ERROR)
 	{
@@ -388,7 +460,7 @@ static void updateSoundSystem()
 			{
 				if (!SDSS->INTERNAL_buffer || SDSS->INTERNAL_restartCycle != restartCycle)
 				{
-					alGenBuffers(1, &SDSS->INTERNAL_buffer);
+					eh::alGenBuffers(1, &SDSS->INTERNAL_buffer);
 					const bbe::List<float>* samples = SDSS->getRaw();
 					ALenum format;
 					switch (SDSS->getAmountOfChannels())
@@ -402,14 +474,14 @@ static void updateSoundSystem()
 					default:
 						bbe::Crash(bbe::Error::IllegalState);
 					}
-					alBufferData(SDSS->INTERNAL_buffer, AL_FORMAT_STEREO_FLOAT32, samples->getRaw(), sizeof(float) * samples->getLength(), SDSS->getHz());
+					eh::alBufferData(SDSS->INTERNAL_buffer, AL_FORMAT_STEREO_FLOAT32, samples->getRaw(), sizeof(float) * samples->getLength(), SDSS->getHz());
 					SDSS->INTERNAL_restartCycle = restartCycle;
 				}
 
 				ALuint source = getNewStaticSource();
 				staticSources.add(source);
-				alSourceQueueBuffers(source, 1, &SDSS->INTERNAL_buffer);
-				alSourcePlay(source);
+				eh::alSourceQueueBuffers(source, 1, &SDSS->INTERNAL_buffer);
+				eh::alSourcePlay(source);
 				sid.source = source;
 			}
 
