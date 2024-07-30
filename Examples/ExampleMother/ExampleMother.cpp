@@ -17,14 +17,10 @@
 #include "EMBrainTeaser.h"
 
 //TODO: Redo
-//TODO: Countdown beeps when starting and stopping startable tasks
-//TODO: Clipboard: It should be possible to add a title
-//TODO: Streak numbers aren't centered :(
 //TODO: Cnsl can lagg extremely with a lot of logs.
 //TODO: Minimize does not work when clicking the icon in the tray. Sometimes! It's weird. Hard to reproduce.
 //TODO: Make the UTF8String actually UTF8...
 //TODO: "A rare task" should be re-thought. Doesn't make sense to NOT mark a task as rare only because the repeat is 1 days, but the only possible day is a monday for example.
-//TODO: It would be cool if "Move to Now" would overwrite anything that makes it impossible - weekday restrictions etc.
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
 
@@ -730,7 +726,7 @@ public:
 					brush.setColorRGB(0.3f, 0.3f, 0.3f, 1);
 				}
 				brush.sketchRect(5 - 2 + k * 23, 5 + i * 30, 20, 20);
-				brush.fillText(5 + k * 23, 20 + i * 30, bbe::String(k));
+				brush.fillText(15 - 2 + k * 23, 20 + i * 30, bbe::String(k), 20, bbe::Anchor::BOTTOM_CENTER);
 			}
 		}
 

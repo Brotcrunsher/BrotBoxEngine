@@ -748,6 +748,7 @@ bool bbe::Utf8String::isTextAtLocation(const char* string, size_t index) const
 {
 	while (*string)
 	{
+		// TODO:                           VVVVVVVVVVVVVVVVVVVVVVVVVV Not UTF8!
 		if (index >= utf8len(getRaw()) || *string != operator[](index))
 		{
 			return false;

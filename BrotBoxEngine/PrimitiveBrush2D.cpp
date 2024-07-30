@@ -437,16 +437,29 @@ void bbe::PrimitiveBrush2D::fillLineStrip(const bbe::List<bbe::Vector2d>& points
 	}
 }
 
-void bbe::PrimitiveBrush2D::fillText(float x, float y, const char* text, const bbe::Font& font, float rotation)
+void bbe::PrimitiveBrush2D::fillText(float x, float y, const char* text, Anchor anchor, const bbe::Font& font, float rotation)
 {
-	fillText(Vector2(x, y), text, font, rotation);
+	fillText(Vector2(x, y), text, anchor, font, rotation);
 }
 
-void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, const bbe::Font& font, float rotation)
+void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, Anchor anchor, const bbe::Font& font, float rotation)
 {
 	const float lineStart = p.x;
-	
+
+	auto bounding = font.getBoundingBox(text);
 	Vector2 currentPosition = p;
+	if (anchor == Anchor::BOTTOM_LEFT)
+	{
+		// Do nothing.
+	}
+	else if (anchor == Anchor::BOTTOM_CENTER)
+	{
+		currentPosition.x -= bounding.width / 2;
+	}
+	else if (anchor == Anchor::BOTTOM_RIGHT)
+	{
+		currentPosition.x -= bounding.width;
+	}
 
 	while (*text)
 	{
@@ -471,34 +484,34 @@ void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, const b
 	}
 }
 
-void bbe::PrimitiveBrush2D::fillText(float x, float y, const bbe::String& text, const bbe::Font& font, float rotation)
+void bbe::PrimitiveBrush2D::fillText(float x, float y, const bbe::String& text, Anchor anchor, const bbe::Font& font, float rotation)
 {
-	fillText(x, y, text.getRaw(), font, rotation);
+	fillText(x, y, text.getRaw(), anchor, font, rotation);
 }
 
-void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const bbe::String& text, const bbe::Font& font, float rotation)
+void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const bbe::String& text, Anchor anchor, const bbe::Font& font, float rotation)
 {
-	fillText(p.x, p.y, text, font, rotation);
+	fillText(p.x, p.y, text, anchor, font, rotation);
 }
 
-void bbe::PrimitiveBrush2D::fillText(float x, float y, const char* text, unsigned fontSize, const bbe::String& fontName, float rotation)
+void bbe::PrimitiveBrush2D::fillText(float x, float y, const char* text, unsigned fontSize, Anchor anchor, const bbe::String& fontName, float rotation)
 {
-	fillText(x, y, text, getFont(fontName, fontSize), rotation);
+	fillText(x, y, text, anchor, getFont(fontName, fontSize), rotation);
 }
 
-void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, unsigned fontSize, const bbe::String& fontName, float rotation)
+void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const char* text, unsigned fontSize, Anchor anchor, const bbe::String& fontName, float rotation)
 {
-	fillText(p, text, getFont(fontName, fontSize), rotation);
+	fillText(p, text, anchor, getFont(fontName, fontSize), rotation);
 }
 
-void bbe::PrimitiveBrush2D::fillText(float x, float y, const bbe::String& text, unsigned fontSize, const bbe::String& fontName, float rotation)
+void bbe::PrimitiveBrush2D::fillText(float x, float y, const bbe::String& text, unsigned fontSize, Anchor anchor, const bbe::String& fontName, float rotation)
 {
-	fillText(x, y, text, getFont(fontName, fontSize), rotation);
+	fillText(x, y, text, anchor, getFont(fontName, fontSize), rotation);
 }
 
-void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const bbe::String& text, unsigned fontSize, const bbe::String& fontName, float rotation)
+void bbe::PrimitiveBrush2D::fillText(const Vector2& p, const bbe::String& text, unsigned fontSize, Anchor anchor, const bbe::String& fontName, float rotation)
 {
-	fillText(p, text, getFont(fontName, fontSize), rotation);
+	fillText(p, text, anchor, getFont(fontName, fontSize), rotation);
 }
 
 void bbe::PrimitiveBrush2D::setColorRGB(float r, float g, float b, float a)
@@ -550,6 +563,11 @@ void bbe::PrimitiveBrush2D::setOutlineRGB(const Vector3& c, float a)
 void bbe::PrimitiveBrush2D::setOutlineRGB(const Color& c)
 {
 	m_outlineColor = c;
+}
+
+bbe::Color bbe::PrimitiveBrush2D::getColorRGB() const
+{
+	return m_color;
 }
 
 void bbe::PrimitiveBrush2D::setColorHSV(float h, float s, float v, float a)

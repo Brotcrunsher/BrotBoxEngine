@@ -26,6 +26,13 @@ namespace bbe
 		NONE, PRIMITIVE, IMAGE
 	};
 
+	enum class Anchor
+	{
+		BOTTOM_LEFT,
+		BOTTOM_CENTER,
+		BOTTOM_RIGHT,
+	};
+
 	namespace INTERNAL
 	{
 		namespace vulkan
@@ -137,15 +144,15 @@ namespace bbe
 		void fillChar(float x, float y, int32_t c, unsigned fontSize = DEFAULT_FONT_SIZE, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
 		void fillChar(const Vector2& p, int32_t c, unsigned fontSize = DEFAULT_FONT_SIZE, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
 
-		void fillText(float x, float y, const char* text, const bbe::Font& font, float rotation = 0);
-		void fillText(const Vector2& p, const char* text, const bbe::Font& font, float rotation = 0);
-		void fillText(float x, float y, const bbe::String &text, const bbe::Font& font, float rotation = 0);
-		void fillText(const Vector2& p, const bbe::String& text, const bbe::Font& font, float rotation = 0);
+		void fillText(float x, float y, const char* text, Anchor anchor, const bbe::Font& font, float rotation = 0);
+		void fillText(const Vector2& p, const char* text, Anchor anchor, const bbe::Font& font, float rotation = 0);
+		void fillText(float x, float y, const bbe::String &text, Anchor anchor, const bbe::Font& font, float rotation = 0);
+		void fillText(const Vector2& p, const bbe::String& text, Anchor anchor, const bbe::Font& font, float rotation = 0);
 		
-		void fillText(float x, float y, const char* text, unsigned fontSize = DEFAULT_FONT_SIZE, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
-		void fillText(const Vector2& p, const char* text, unsigned fontSize = DEFAULT_FONT_SIZE, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
-		void fillText(float x, float y, const bbe::String& text, unsigned fontSize = DEFAULT_FONT_SIZE, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
-		void fillText(const Vector2& p, const bbe::String& text, unsigned fontSize = DEFAULT_FONT_SIZE, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
+		void fillText(float x, float y, const char* text, unsigned fontSize = DEFAULT_FONT_SIZE, Anchor anchor = Anchor::BOTTOM_LEFT, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
+		void fillText(const Vector2& p, const char* text, unsigned fontSize = DEFAULT_FONT_SIZE, Anchor anchor = Anchor::BOTTOM_LEFT, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
+		void fillText(float x, float y, const bbe::String& text, unsigned fontSize = DEFAULT_FONT_SIZE, Anchor anchor = Anchor::BOTTOM_LEFT, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
+		void fillText(const Vector2& p, const bbe::String& text, unsigned fontSize = DEFAULT_FONT_SIZE, Anchor anchor = Anchor::BOTTOM_LEFT, const bbe::String& fontName = DEFAULT_FONT_NAME, float rotation = 0);
 
 		void setColorRGB(float r, float g, float b, float a);
 		void setColorRGB(float r, float g, float b);
@@ -157,6 +164,8 @@ namespace bbe
 		void setOutlineRGB(const Vector3& c);
 		void setOutlineRGB(const Vector3& c, float a);
 		void setOutlineRGB(const Color& c);
+
+		bbe::Color getColorRGB() const;
 
 		void setColorHSV(float h, float s, float v, float a);
 		void setColorHSV(float h, float s, float v);

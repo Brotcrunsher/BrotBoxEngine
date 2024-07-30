@@ -497,7 +497,7 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 					brush.setColorRGB(ro.textColor);
 					brush.fillText(pos.x + textMargin + ro.outlineWidth - ro.textBoundingBox.x - ro.textBoundingBox.width  / 2 + (dim.x - textMargin * 2 - ro.outlineWidth * 2) / 2
 						         , pos.y + textMargin + ro.outlineWidth - ro.textBoundingBox.y - ro.textBoundingBox.height / 2 + (dim.y - textMargin * 2 - ro.outlineWidth * 2) / 2
-						         , ro.text, *ro.font);
+						         , ro.text, bbe::Anchor::BOTTOM_LEFT, *ro.font);
 				}
 			}
 			//for (const RenderObject& ro : tokenizer->tokens[i].renderObjects)

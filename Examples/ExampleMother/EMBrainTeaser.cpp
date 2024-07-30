@@ -60,7 +60,7 @@ bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserAdd(bbe::PrimitiveBrush2D& 
 	{
 		size.y = 0.1f;
 		static auto font = bbe::Font("Arial.ttf", 50);
-		brush.fillText(50, 150, bbe::String(left) + " + " + right, font);
+		brush.fillText(50, 150, bbe::String(left) + " + " + right, bbe::Anchor::BOTTOM_LEFT, font);
 		if (nextStateAt.hasPassed())
 		{
 			nextState = BTState::endscreen;
@@ -299,7 +299,7 @@ bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserDigitMemory(bbe::PrimitiveB
 	else if (state == BTState::showing)
 	{
 		static auto font = bbe::Font("Arial.ttf", 50);
-		brush.fillText(50, 100, patternBuf, font);
+		brush.fillText(50, 100, patternBuf, bbe::Anchor::BOTTOM_LEFT, font);
 		size.y = 0.f;
 		if (nextStateAt.hasPassed())
 		{

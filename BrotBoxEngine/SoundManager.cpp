@@ -70,6 +70,8 @@ static ALuint mainSource = 0;
 ALCdevice* device = nullptr;
 static bool previouslyDied = false;
 
+static bool usingDynamicSounds = false;
+
 namespace eh /* = error handled */
 {
 	void buildErrorString(bbe::String& s)
@@ -369,9 +371,14 @@ static void refreshBuffers()
 		if (state != AL_PLAYING)
 		{
 			// TODO: Is there a way to do this automatically?
-			static uint32_t totalRestarts = 0;
+			static uint64_t totalRestarts = 0;
 			totalRestarts++;
-			BBELOGLN("Sound died. Restarting. Total Restarts: " << totalRestarts << " Total sounds: " << playingSounds.size());
+			static uint64_t targetRestartsForPrint = 1;
+			if (totalRestarts >= targetRestartsForPrint)
+			{
+				targetRestartsForPrint *= 2;
+				BBELOGLN("Sound died. Restarting. Total Restarts: " << totalRestarts << " Total sounds: " << playingSounds.size());
+			}
 			previouslyDied = true;
 			eh::alSourcePlay(mainSource);
 		}
@@ -470,6 +477,14 @@ static void updateSoundSystem()
 				eh::alSourcePlay(source);
 				sid.source = source;
 			}
+			else if (const bbe::SoundDataSourceDynamic* SDSD = dynamic_cast<const bbe::SoundDataSourceDynamic*>(pr.sound))
+			{
+				usingDynamicSounds = true;
+			}
+			else
+			{
+				bbe::Crash(bbe::Error::IllegalState, "Neither SDSS nor SDSD");
+			}
 
 			playingSounds.insert({ pr.index, sid });
 		}
@@ -524,11 +539,14 @@ static void updateSoundSystem()
 		}
 	}
 
-	while (newListenerDataReader.hasNext())
+	if (usingDynamicSounds)
 	{
-		listener = newListenerDataReader.next();
+		while (newListenerDataReader.hasNext())
+		{
+			listener = newListenerDataReader.next();
+		}
+		refreshBuffers();
 	}
-	refreshBuffers();
 }
 
 static std::atomic<bool> endRequested = false;
