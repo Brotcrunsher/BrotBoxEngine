@@ -164,12 +164,12 @@ bool bbe::Math::isPowerOfTwo(uint64_t val)
 	return (val & (val - 1)) == 0;
 }
 
-int bbe::Math::log2Floor(unsigned int val)
+uint32_t bbe::Math::log2Floor(uint32_t val)
 {
 	//UNTESTED
 	//Should be the fastest possible way to calculate a floored log 2 of a number. 
 	//Inspired by https://graphics.stanford.edu/~seander/bithacks.html#IntegerLog
-	unsigned int retVal = 0;
+	uint32_t retVal = 0;
 	if (val & 0xFFFF0000)
 	{
 		val >>= 16;
@@ -532,7 +532,7 @@ bbe::Vector2 bbe::Math::minComponent(const bbe::List<Vector2>& vectors)
 bbe::Vector2i bbe::Math::squareCantor(uint32_t index)
 {
 	if (index == 0) return bbe::Vector2i(0, 0);
-	const uint32_t sqrt = (uint32_t)bbe::Math::sqrt(index); // 2
+	const uint32_t sqrt = (uint32_t)bbe::Math::sqrt((float)index); // 2
 	const uint32_t sq = sqrt * sqrt; // 1
 	const uint32_t distOnHull = index - sq; // 2
 

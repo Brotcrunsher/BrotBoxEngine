@@ -78,7 +78,7 @@ class MyGame : public bbe::Game
 
 	void submitWork()
 	{
-		while (historyIndex + 1 < history.getLength())
+		while (historyIndex + 1 < (int64_t)history.getLength())
 		{
 			history.popBack();
 		}
@@ -113,7 +113,7 @@ class MyGame : public bbe::Game
 
 	bool isRedoable()
 	{
-		return historyIndex + 1 < history.getLength();
+		return historyIndex + 1 < (int64_t)history.getLength();
 	}
 
 	void setupCanvas()

@@ -655,7 +655,7 @@ TEST(Queue, TestQueue)
 		uint32_t expectedNextPop = 0;
 		uint32_t nextAdd = 0;
 		bbe::Random rand;
-		rand.setSeed(seed);
+		rand.setSeed((uint32_t)seed);
 
 
 		for (size_t i = 0; i < 1000; i++)

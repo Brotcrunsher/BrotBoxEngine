@@ -122,7 +122,7 @@ namespace bbe
 			struct InstanceData2D
 			{
 				bbe::Vector4 scalePosOffset;
-				float rotation;
+				float rotation = 0.f;
 				bbe::Vector4 color;
 			};
 
@@ -194,7 +194,7 @@ namespace bbe
 				bbe::Color m_color2d;
 				bbe::Color m_color3d;
 
-				bbe::RenderMode m_renderMode;
+				bbe::RenderMode m_renderMode = bbe::RenderMode::DEFERRED;
 
 				bbe::List<InstanceData2D> instanceDatas;
 				void addInstancedData2D(PreviousDrawCall2D type, float x, float y, float width, float height, float rotation);

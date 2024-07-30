@@ -57,8 +57,8 @@ bbe::MeshBuilder::ModelUvDimensionsPair bbe::MeshBuilder::getModel(uint32_t pixe
 		const bbe::Vector3 scale = quads[i].extractScale();
 		rects.add(bbe::Rectanglei(
 			0, 0,
-			bbe::Math::max(1.0f, scale.x * pixelsPerUnit),
-			bbe::Math::max(1.0f, scale.y * pixelsPerUnit)
+			(int32_t)bbe::Math::max(1.0f, scale.x * (float)pixelsPerUnit),
+			(int32_t)bbe::Math::max(1.0f, scale.y * (float)pixelsPerUnit)
 		));
 	}
 	if (rects.getLength() == 0)
@@ -83,10 +83,10 @@ bbe::MeshBuilder::ModelUvDimensionsPair bbe::MeshBuilder::getModel(uint32_t pixe
 			bbe::PosNormalPair{bbe::Vector3( 0.5, -0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(uvRect.getRight() - 0.5f, uvRect.getTop()    + 0.5f)},
 			bbe::PosNormalPair{bbe::Vector3( 0.5,  0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(uvRect.getRight() - 0.5f, uvRect.getBottom() - 0.5f)},
 		};
-		retVal.model.m_bakingUvs.add(bbe::Vector2(uvRect.getLeft() , uvRect.getTop()   ));
-		retVal.model.m_bakingUvs.add(bbe::Vector2(uvRect.getLeft() , uvRect.getBottom()));
-		retVal.model.m_bakingUvs.add(bbe::Vector2(uvRect.getRight(), uvRect.getTop()   ));
-		retVal.model.m_bakingUvs.add(bbe::Vector2(uvRect.getRight(), uvRect.getBottom()));
+		retVal.model.m_bakingUvs.add(bbe::Vector2((float)uvRect.getLeft() , (float)uvRect.getTop()   ));
+		retVal.model.m_bakingUvs.add(bbe::Vector2((float)uvRect.getLeft() , (float)uvRect.getBottom()));
+		retVal.model.m_bakingUvs.add(bbe::Vector2((float)uvRect.getRight(), (float)uvRect.getTop()   ));
+		retVal.model.m_bakingUvs.add(bbe::Vector2((float)uvRect.getRight(), (float)uvRect.getBottom()));
 		bbe::PosNormalPair::transform(vertices, quad);
 		const bbe::List<uint32_t> indices = { 
 			0 + 4 * (uint32_t)i,

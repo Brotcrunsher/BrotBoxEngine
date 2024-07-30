@@ -71,7 +71,6 @@ class MyGame : public bbe::Game
 	float minSpeed = 0;
 	bool wireframe = false;
 
-	// Geerbt über Game
 	virtual void onStart() override
 	{
 		BBELOGLN("hai onStart");

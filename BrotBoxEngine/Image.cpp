@@ -470,19 +470,19 @@ void bbe::Image::writeToFile(const char* path) const
 	const bbe::String lowerPath = bbe::String(path).toLowerCase();
 	if (lowerPath.endsWith(".png"))
 	{
-		stbi_write_png(path, m_width, m_height, getAmountOfChannels(), m_pdata.getRaw(), 0);
+		stbi_write_png(path, m_width, m_height, (int)getAmountOfChannels(), m_pdata.getRaw(), 0);
 	}
 	else if (lowerPath.endsWith(".bmp"))
 	{
-		stbi_write_bmp(path, m_width, m_height, getAmountOfChannels(), m_pdata.getRaw());
+		stbi_write_bmp(path, m_width, m_height, (int)getAmountOfChannels(), m_pdata.getRaw());
 	}
 	else if (lowerPath.endsWith(".tga"))
 	{
-		stbi_write_tga(path, m_width, m_height, getAmountOfChannels(), m_pdata.getRaw());
+		stbi_write_tga(path, m_width, m_height, (int)getAmountOfChannels(), m_pdata.getRaw());
 	}
 	else if (lowerPath.endsWith(".jpg"))
 	{
-		stbi_write_jpg(path, m_width, m_height, getAmountOfChannels(), m_pdata.getRaw(), 90);
+		stbi_write_jpg(path, m_width, m_height, (int)getAmountOfChannels(), m_pdata.getRaw(), 90);
 	}
 	else
 	{

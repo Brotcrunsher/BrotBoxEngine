@@ -156,7 +156,7 @@ namespace bbe
 				}
 			}
 
-			this->translate(-resolveAxis * (float)minPenetration);
+			this->translate(-resolveAxis * static_cast<Vec::SubType>(minPenetration));
 
 			return true;
 		}

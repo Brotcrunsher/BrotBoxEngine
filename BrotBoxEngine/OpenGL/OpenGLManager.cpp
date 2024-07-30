@@ -1116,7 +1116,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::flushInstanceData2D()
 	glVertexAttribDivisor(pos, 1);
 
 
-	glDrawElementsInstanced(mode, size, GL_UNSIGNED_INT, 0, instanceDatas.getLength()); addDrawcallStat();
+	glDrawElementsInstanced(mode, size, GL_UNSIGNED_INT, 0, (GLsizei)instanceDatas.getLength()); addDrawcallStat();
 	instanceDatas.clear();
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDeleteBuffers(1, &instanceVBO);
@@ -1160,7 +1160,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& ligh
 
 static bbe::Vector2i getPos(size_t i, uint32_t width)
 {
-	return bbe::Vector2i(i % width, i / width);
+	return bbe::Vector2i((int32_t)(i % width), (int32_t)(i / width));
 }
 
 static size_t getIndex(const bbe::Vector2i& pos, uint32_t width)
@@ -1192,9 +1192,9 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t wid
 	glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, colorFloatBuffer.getRaw());
 	for (size_t i = 0; i < colorFloatBuffer.getLength(); i += 4)
 	{
-		byteBuffer[i + 0] = bbe::Math::pow(bbe::Math::clamp01(colorFloatBuffer[i + 0]), 1.0 / 2.2) * 255;
-		byteBuffer[i + 1] = bbe::Math::pow(bbe::Math::clamp01(colorFloatBuffer[i + 1]), 1.0 / 2.2) * 255;
-		byteBuffer[i + 2] = bbe::Math::pow(bbe::Math::clamp01(colorFloatBuffer[i + 2]), 1.0 / 2.2) * 255;
+		byteBuffer[i + 0] = (bbe::byte)(bbe::Math::pow(bbe::Math::clamp01(colorFloatBuffer[i + 0]), 1.0 / 2.2) * 255);
+		byteBuffer[i + 1] = (bbe::byte)(bbe::Math::pow(bbe::Math::clamp01(colorFloatBuffer[i + 1]), 1.0 / 2.2) * 255);
+		byteBuffer[i + 2] = (bbe::byte)(bbe::Math::pow(bbe::Math::clamp01(colorFloatBuffer[i + 2]), 1.0 / 2.2) * 255);
 		byteBuffer[i + 3] = 255;
 	}
 
@@ -1858,7 +1858,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::bakeLight(bbe::LightBaker& lightBaker
 
 	// Light Passes
 	m_program3dLightBaking.use();
-	m_program3dLightBaking.uniform2f(m_program3dLightBaking.screenSize3dLight, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
+	m_program3dLightBaking.uniform2f(m_program3dLightBaking.screenSize3dLight, (GLfloat)lightBaker.m_resolution.x, (GLfloat)lightBaker.m_resolution.y);
 
 	ogllb->geometryBuffer.useAsInput();
 	glDisable(GL_DEPTH_TEST);
@@ -1886,7 +1886,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::bakeLightGammaCorrect(bbe::LightBaker
 	// Gamma Correction Step
 	glBindFramebuffer(GL_FRAMEBUFFER, ogllb->colorBufferGamma.framebuffer);
 	m_programBakingGammaCorrection.use();
-	m_programBakingGammaCorrection.uniform2f(screenSizeBakingGammaCorrection, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
+	m_programBakingGammaCorrection.uniform2f(screenSizeBakingGammaCorrection, (GLfloat)lightBaker.m_resolution.x, (GLfloat)lightBaker.m_resolution.y);
 	ogllb->colorBuffer.useAsInput();
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIbo);
 	glDisable(GL_DEPTH_TEST);

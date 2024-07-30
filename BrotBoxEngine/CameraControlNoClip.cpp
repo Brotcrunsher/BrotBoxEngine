@@ -50,7 +50,7 @@ void bbe::CameraControlNoClip::update(float timeSinceLastFrame)
 		switch (m_speedBuildUp)
 		{
 		case(SpeedBuildUp::QUADRATIC): speedFactor = 10 * m_timeSinceShiftPress * m_timeSinceShiftPress; break;
-		case(SpeedBuildUp::EXPONENTIAL): speedFactor = 10 * bbe::Math::pow(2, m_timeSinceShiftPress - 1.0); break;
+		case(SpeedBuildUp::EXPONENTIAL): speedFactor = (float)(10 * bbe::Math::pow(2, m_timeSinceShiftPress - 1.0)); break;
 		default: bbe::Crash(bbe::Error::IllegalState);
 		}
 		

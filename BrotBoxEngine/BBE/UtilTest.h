@@ -163,7 +163,7 @@ namespace bbe {
 
 		template <typename T, typename U>
 		void assertEqualsFloatImpl(const char* file, int32_t line, T a, U b, T epsilon = 0.01f) {
-			T diff = a - b;
+			T diff = a - (T)b;
 
 			if (diff > -epsilon && diff < epsilon) {
 				//Do nothing, test passed

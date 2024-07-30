@@ -292,7 +292,7 @@ static void destroySoundSystem()
 		eh::alDeleteSources(1, &mainSource);
 		mainSource = 0;
 	}
-	for (auto sound : playingSounds)
+	for (const auto& sound : playingSounds)
 	{
 		removedIds.add(sound.first);
 	}
@@ -351,7 +351,7 @@ static void loadAllBuffers()
 	}
 
 	ALuint buffer = getNewBuffer();
-	eh::alBufferData(buffer, AL_FORMAT_STEREO_FLOAT32, samples.getRaw(), sizeof(bbe::Vector2) * samples.getLength(), 44100); // TODO HZ
+	eh::alBufferData(buffer, AL_FORMAT_STEREO_FLOAT32, samples.getRaw(), (ALsizei)(sizeof(bbe::Vector2) * samples.getLength()), 44100); // TODO HZ
 	eh::alSourceQueueBuffers(mainSource, 1, &buffer);
 
 	listenerPrevious = listener;
@@ -467,7 +467,7 @@ static void updateSoundSystem()
 					default:
 						bbe::Crash(bbe::Error::IllegalState);
 					}
-					eh::alBufferData(SDSS->INTERNAL_buffer, AL_FORMAT_STEREO_FLOAT32, samples->getRaw(), sizeof(float) * samples->getLength(), SDSS->getHz());
+					eh::alBufferData(SDSS->INTERNAL_buffer, AL_FORMAT_STEREO_FLOAT32, samples->getRaw(), (ALsizei)(sizeof(float) * samples->getLength()), SDSS->getHz());
 					SDSS->INTERNAL_restartCycle = restartCycle;
 				}
 

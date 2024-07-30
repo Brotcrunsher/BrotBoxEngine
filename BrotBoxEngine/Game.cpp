@@ -98,13 +98,17 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 void bbe::Game::innerStart(int windowWidth, int windowHeight, const char* title)
 {
 #ifdef _WIN32
-	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	HRESULT res = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	if (res != S_OK)
+	{
+		bbe::Crash(bbe::Error::IllegalState, "CoInitializeEx Failed");
+	}
 	{
 		WSADATA wsaData = { 0 };
 
 		if (WSAStartup(MAKEWORD(2, 2), &wsaData) != NO_ERROR)
 		{
-			bbe::Crash(bbe::Error::IllegalState);
+			bbe::Crash(bbe::Error::IllegalState, "WSAStartup Failed");
 		}
 	}
 #endif
@@ -190,7 +194,7 @@ void bbe::Game::frameUpdate()
 	if (m_fixedFrameTime != 0.f) timeSinceLastFrame = m_fixedFrameTime;
 	
 	if (m_frameNumber < 100) m_frameTimeRunningAverage = timeSinceLastFrame;
-	else m_frameTimeRunningAverage = 0.99 * m_frameTimeRunningAverage + 0.01 * timeSinceLastFrame;
+	else m_frameTimeRunningAverage = 0.99f * m_frameTimeRunningAverage + 0.01f * timeSinceLastFrame;
 
 	if (m_frameNumber > 100)
 	{
@@ -615,7 +619,7 @@ bbe::String bbe::Game::getMeasuresString()
 		if (it != m_performanceMeasurements.begin()) retVal += "\n";
 
 		const PerformanceMeasurement& pm = it->second;
-		int32_t padding = maxLen - strlen(it->first);
+		int32_t padding = maxLen - (int32_t)strlen(it->first);
 		retVal += it->first;
 		retVal += ": ";
 		retVal += bbe::String(" ") * padding;

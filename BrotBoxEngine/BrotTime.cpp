@@ -1,10 +1,32 @@
 #include "BBE/BrotTime.h"
 #include <time.h>
 
+static ::tm localtime_rs(std::time_t t)
+{
+	::tm retVal;
+#ifdef WIN32
+	localtime_s(&retVal, &t);
+#else
+	localtime_r(&t, &retVal);
+#endif
+	return retVal;
+}
+
+static bbe::String ctime_rs(const std::time_t* t)
+{
+	char buffer[1024] = "ERROR";
+#ifdef WIN32
+	::ctime_s(buffer, sizeof(buffer), t);
+#else
+	::ctime_r(t, buffer);
+#endif
+	return bbe::String(buffer);
+}
+
 ::tm bbe::TimePoint::toTm() const
 {
 	std::time_t nowT = std::chrono::system_clock::to_time_t(m_time);
-	::tm retVal = *localtime(&nowT);
+	::tm retVal = localtime_rs(nowT);
 	return retVal;
 }
 
@@ -128,16 +150,16 @@ bbe::Weekday bbe::TimePoint::getFirstWeekdayOfMonth(int32_t year, Month month)
 	return bbe::TimePoint::fromDate(year, month, 1).getWeekday();
 }
 
-bbe::TimePoint bbe::TimePoint::nextMorning(int64_t morningHour) const
+bbe::TimePoint bbe::TimePoint::nextMorning(int32_t morningHour) const
 {
 	std::time_t t = std::chrono::system_clock::to_time_t(m_time);
-	::tm timeinfo = *localtime(&t);
+	::tm timeinfo = localtime_rs(t);
 	if (timeinfo.tm_hour >= morningHour)
 	{
 		bbe::TimePoint nextDay(m_time);
 		nextDay = nextDay.plusDays(1);
 		t = std::chrono::system_clock::to_time_t(nextDay.m_time);
-		timeinfo = *localtime(&t);
+		timeinfo = localtime_rs(t);
 	}
 	timeinfo.tm_sec = 0;
 	timeinfo.tm_min = 0;
@@ -146,10 +168,10 @@ bbe::TimePoint bbe::TimePoint::nextMorning(int64_t morningHour) const
 	return TimePoint(t);
 }
 
-bbe::TimePoint bbe::TimePoint::toMorning(int64_t morningHour) const
+bbe::TimePoint bbe::TimePoint::toMorning(int32_t morningHour) const
 {
 	std::time_t t = std::chrono::system_clock::to_time_t(m_time);
-	::tm timeinfo = *localtime(&t);
+	::tm timeinfo = localtime_rs(t);
 	timeinfo.tm_sec = 0;
 	timeinfo.tm_min = 0;
 	timeinfo.tm_hour = morningHour;
@@ -216,7 +238,7 @@ bool bbe::TimePoint::hasPassed() const
 bool bbe::TimePoint::isNight(int64_t fromHour, int64_t toHour) const
 {
 	std::time_t t = std::chrono::system_clock::to_time_t(m_time);
-	::tm timeinfo = *localtime(&t);
+	::tm timeinfo = localtime_rs(t);
 
 	if (fromHour < toHour)
 	{
@@ -231,7 +253,7 @@ bool bbe::TimePoint::isNight(int64_t fromHour, int64_t toHour) const
 static int getWDay(const std::chrono::system_clock::time_point& tp)
 {
 	std::time_t t = std::chrono::system_clock::to_time_t(tp);
-	::tm timeinfo = *localtime(&t);
+	::tm timeinfo = localtime_rs(t);
 	return timeinfo.tm_wday;
 }
 
@@ -297,9 +319,7 @@ bool bbe::TimePoint::isToday() const
 bbe::String bbe::TimePoint::toString() const
 {
 	::time_t t = std::chrono::system_clock::to_time_t(m_time);
-	const char* c = ::ctime(&t);
-	if (!c) c = "ERROR";
-	return bbe::String(c);
+	return ctime_rs(&t);
 }
 
 void bbe::TimePoint::serialize(bbe::ByteBuffer& buffer) const
@@ -360,17 +380,17 @@ bbe::String bbe::Duration::toString() const
 
 int32_t bbe::Duration::toSeconds() const
 {
-	return std::chrono::duration_cast<std::chrono::seconds>(m_duration).count();
+	return (int32_t)std::chrono::duration_cast<std::chrono::seconds>(m_duration).count();
 }
 
 int32_t bbe::Duration::toMinutes() const
 {
-	return std::chrono::duration_cast<std::chrono::minutes>(m_duration).count();
+	return (int32_t)std::chrono::duration_cast<std::chrono::minutes>(m_duration).count();
 }
 
 int32_t bbe::Duration::toHours() const
 {
-	return std::chrono::duration_cast<std::chrono::hours>(m_duration).count();
+	return (int32_t)std::chrono::duration_cast<std::chrono::hours>(m_duration).count();
 }
 
 int32_t bbe::Duration::toDays() const

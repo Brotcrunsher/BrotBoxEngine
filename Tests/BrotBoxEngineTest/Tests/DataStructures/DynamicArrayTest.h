@@ -150,7 +150,7 @@ namespace bbe
 				Array<int, 6> arr;
 				for (size_t i = 0; i < arr.getLength(); i++)
 				{
-					arr[i] = i + 50;
+					arr[i] = (int)i + 50;
 				}
 				DynamicArray<int> da7(arr);
 				assertEquals(da7.getLength(), 6);
@@ -188,7 +188,7 @@ namespace bbe
 
 				for (size_t i = 0; i < da.getLength(); i++)
 				{
-					da[i] = Person("", "", i + 1000);
+					da[i] = Person("", "", (int)i + 1000);
 				}
 
 				for (size_t i = 0; i < da.getLength(); i++)
@@ -211,7 +211,7 @@ namespace bbe
 
 				for (size_t i = 0; i < da.getLength(); i++)
 				{
-					da[i] = Person("", "", i + 2000);
+					da[i] = Person("", "", (int)i + 2000);
 				}
 
 				for (size_t i = 0; i < da.getLength(); i++)
@@ -235,7 +235,7 @@ namespace bbe
 
 				for (size_t i = 0; i < da3.getLength(); i++)
 				{
-					da2[i] = Person("", "", i + 4000);
+					da2[i] = Person("", "", (int)i + 4000);
 				}
 
 				for (size_t i = 0; i < da3.getLength(); i++)
@@ -254,7 +254,7 @@ namespace bbe
 
 				for (size_t i = 0; i < da3.getLength(); i++)
 				{
-					da3[i] = Person("", "", i + 5000);
+					da3[i] = Person("", "", (int)i + 5000);
 				}
 
 				for (size_t i = 0; i < da3.getLength(); i++)
@@ -267,7 +267,7 @@ namespace bbe
 				DynamicArray<Person> da5(128);
 				for (size_t i = 0; i < da5.getLength(); i++)
 				{
-					da5[i] = Person("", "", 6000 + i);
+					da5[i] = Person("", "", 6000 + (int)i);
 				}
 
 				da3 = da5;
@@ -285,7 +285,7 @@ namespace bbe
 
 				for (size_t i = 0; i < da5.getLength(); i++)
 				{
-					da3[i] = Person("", "", 7000 + i);
+					da3[i] = Person("", "", 7000 + (int)i);
 				}
 
 				for (size_t i = 0; i < da5.getLength(); i++)
@@ -322,7 +322,7 @@ namespace bbe
 				Array<Person, 6> arr;
 				for (size_t i = 0; i < arr.getLength(); i++)
 				{
-					arr[i] = Person("", "", i + 50);
+					arr[i] = Person("", "", (int)i + 50);
 				}
 				DynamicArray<Person> da7(arr);
 				assertEquals(da7.getLength(), 6);
@@ -355,7 +355,7 @@ namespace bbe
 
 				for (size_t i = 0; i < hashDa1.getLength(); i++)
 				{
-					assertEquals(hashDa1[i], Person("", "", i + 1));
+					assertEquals(hashDa1[i], Person("", "", (int)i + 1));
 				}
 			}
 

@@ -527,9 +527,9 @@ void br::Rooms::connectGates(size_t roomi)
 	}
 	else if (irt == InnerRoomType::COLUMNS)
 	{
-		uint32_t columnSize = rand.randomInt(3) + 1;
-		uint32_t columnSpread = columnSize + 5 + rand.randomInt(10);
-		uint32_t columnOffset = rand.randomInt(columnSpread) / 2;
+		int32_t columnSize = rand.randomInt(3) + 1;
+		int32_t columnSpread = columnSize + 5 + rand.randomInt(10);
+		int32_t columnOffset = rand.randomInt(columnSpread) / 2;
 		for (int32_t i = 2 + columnOffset; i < r.walkable.getWidth() - 2; i += columnSpread)
 		{
 			for (int32_t k = 2 + columnOffset; k < r.walkable.getHeight() - 2; k += columnSpread)

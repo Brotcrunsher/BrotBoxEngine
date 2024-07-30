@@ -64,7 +64,7 @@ bbe::AllocBlock bbe::allocateBlock(size_t size)
 	checkBlockHealth();
 	if (size == 0) return AllocBlock{ nullptr, 0 };
 
-	auto access = bbe::Math::log2Floor(size);
+	auto access = bbe::Math::log2Floor((uint32_t)size);
 	if (!bbe::Math::isPowerOfTwo(size))
 	{
 		size = (((size_t)1) << (access + 1));
@@ -108,7 +108,7 @@ void bbe::freeBlock(AllocBlock& block)
 		checkBlockHealth();
 		if (block.data == nullptr || block.size == 0) return;
 
-		auto access = bbe::Math::log2Floor(block.size);
+		auto access = bbe::Math::log2Floor((uint32_t)block.size);
 		storedBlocks[access].push_back(block.data);
 #ifdef _DEBUG
 		memset(block.data, 0, block.size);

@@ -148,7 +148,7 @@ namespace bbe
 
 				for (size_t i = 0; i < arr.getLength(); i++)
 				{
-					arr[i] = Person("", "", i + 1000);
+					arr[i] = Person("", "", (int)i + 1000);
 				}
 				
 				for (size_t i = 0; i < arr.getLength(); i++)
@@ -170,7 +170,7 @@ namespace bbe
 
 				for (size_t i = 0; i < arr.getLength(); i++)
 				{
-					arr[i] = Person("", "", i + 2000);
+					arr[i] = Person("", "", (int)i + 2000);
 				}
 
 				for (size_t i = 0; i < arr.getLength(); i++)
@@ -191,7 +191,7 @@ namespace bbe
 
 				for (size_t i = 0; i < arr2.getLength(); i++)
 				{
-					arr2[i] = Person("", "", i + 3000);
+					arr2[i] = Person("", "", (int)i + 3000);
 				}
 				for (size_t i = 0; i < arr2.getLength(); i++)
 				{
@@ -212,7 +212,7 @@ namespace bbe
 
 				for (size_t i = 0; i < arr3.getLength(); i++)
 				{
-					arr3[i] = Person("", "", i + 4000);
+					arr3[i] = Person("", "", (int)i + 4000);
 				}
 				for (size_t i = 0; i < arr3.getLength(); i++)
 				{

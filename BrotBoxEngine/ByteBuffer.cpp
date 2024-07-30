@@ -197,7 +197,7 @@ void bbe::SerializedDescription::toByteBuffer(bbe::ByteBuffer& buffer) const
 			buffer.write(elementLength);
 		}
 
-		for (size_t k = 0; k < elementLength; k++)
+		for (int64_t k = 0; k < elementLength; k++)
 		{
 			     if (descriptors[i].type == typeid(uint8_t))  buffer.write(*((uint8_t*) descriptors[i].addr + k));
 			else if (descriptors[i].type == typeid(uint16_t)) buffer.write(*((uint16_t*)descriptors[i].addr + k));
@@ -229,7 +229,7 @@ void bbe::SerializedDescription::writeFromSpan(bbe::ByteBufferSpan& span) const
 			addr = descriptors[i].getRawVoid();
 		}
 
-		for(size_t k = 0; k < elementLength; k++)
+		for(int64_t k = 0; k < elementLength; k++)
 		{
 			bool defaultValueAccepted = false;
 			     if (descriptors[i].type == typeid(uint8_t )) { span.read(*((uint8_t* )addr + k), *(uint8_t* )&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }

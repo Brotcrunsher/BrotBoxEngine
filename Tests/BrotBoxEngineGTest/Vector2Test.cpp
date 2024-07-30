@@ -225,8 +225,8 @@ TEST(Vector2, TestEquals)
 	{
 		const bbe::Vector2 a(1,      100);
 		const bbe::Vector2 b(1,      100);
-		const bbe::Vector2 c(1.01,   100);
-		const bbe::Vector2 d(1.105,  100);
+		const bbe::Vector2 c(1.01f,  100);
+		const bbe::Vector2 d(1.105f, 100);
 
 		ASSERT_TRUE (a.equals(a, 0.1f)); ASSERT_TRUE (a.equals(b, 0.1f)); ASSERT_TRUE (a.equals(c, 0.1f)); ASSERT_FALSE(a.equals(d, 0.1f));
 		ASSERT_TRUE (b.equals(a, 0.1f)); ASSERT_TRUE (b.equals(b, 0.1f)); ASSERT_TRUE (b.equals(c, 0.1f)); ASSERT_FALSE(b.equals(d, 0.1f));
@@ -237,8 +237,8 @@ TEST(Vector2, TestEquals)
 		//Same as above but coordinates have been flipped.
 		const bbe::Vector2 a(100, 1);
 		const bbe::Vector2 b(100, 1);
-		const bbe::Vector2 c(100, 1.01);
-		const bbe::Vector2 d(100, 1.105);
+		const bbe::Vector2 c(100, 1.01f);
+		const bbe::Vector2 d(100, 1.105f);
 
 		ASSERT_TRUE (a.equals(a, 0.1f)); ASSERT_TRUE (a.equals(b, 0.1f)); ASSERT_TRUE (a.equals(c, 0.1f)); ASSERT_FALSE(a.equals(d, 0.1f));
 		ASSERT_TRUE (b.equals(a, 0.1f)); ASSERT_TRUE (b.equals(b, 0.1f)); ASSERT_TRUE (b.equals(c, 0.1f)); ASSERT_FALSE(b.equals(d, 0.1f));
@@ -340,12 +340,12 @@ TEST(Vector2, TestContainingInfinity)
 
 TEST(Vector2, TestIsUnit)
 {
-	for (float rad = 0; rad < bbe::Math::TAU; rad += 0.001)
+	for (float rad = 0; rad < bbe::Math::TAU; rad += 0.001f)
 	{
 		const bbe::Vector2 a = bbe::Vector2::createVector2OnUnitCircle(rad);
 		ASSERT_TRUE(a.isUnit());
-		ASSERT_FALSE((a * 0.99).isUnit());
-		ASSERT_FALSE((a * 1.01).isUnit());
+		ASSERT_FALSE((a * 0.99f).isUnit());
+		ASSERT_FALSE((a * 1.01f).isUnit());
 	}
 }
 
@@ -371,9 +371,9 @@ TEST(Vector2, TestIsCloseTo)
 TEST(Vector2, TestZero)
 {
 	const bbe::Vector2 a(0, 0);
-	const bbe::Vector2 b(0.01, 0);
-	const bbe::Vector2 c(0, 0.01);
-	const bbe::Vector2 d(0.01, 0.01);
+	const bbe::Vector2 b(0.01f, 0);
+	const bbe::Vector2 c(0, 0.01f);
+	const bbe::Vector2 d(0.01f, 0.01f);
 
 	ASSERT_TRUE(a.isZero());
 	ASSERT_FALSE(b.isZero());
@@ -388,7 +388,7 @@ TEST(Vector2, TestRotate)
 	ASSERT_NEAR(sb.x, 0, allowableError);
 	ASSERT_NEAR(sb.y, 1, allowableError);
 
-	for (float rad = 0; rad < bbe::Math::TAU * 10; rad += 0.001)
+	for (float rad = 0; rad < bbe::Math::TAU * 10; rad += 0.001f)
 	{
 		const bbe::Vector2 a = bbe::Vector2::createVector2OnUnitCircle(rad) * rad;
 		const bbe::Vector2 b = bbe::Vector2(rad, 0).rotate(rad);
@@ -403,7 +403,7 @@ TEST(Vector2, TestRotateAround)
 	ASSERT_NEAR(sb.x, 2, allowableError);
 	ASSERT_NEAR(sb.y, 1, allowableError);
 
-	for (float rad = 0; rad < bbe::Math::TAU * 10; rad += 0.001)
+	for (float rad = 0; rad < bbe::Math::TAU * 10; rad += 0.001f)
 	{
 		const bbe::Vector2 center = bbe::Vector2(rad, rad * 2);
 		const bbe::Vector2 base = bbe::Vector2(rad, 0);
@@ -437,10 +437,10 @@ TEST(Vector2, TestSetLength)
 {
 	for (int i = 0; i < 16; i++)
 	{
-		const bbe::Vector2 a(i, 10);
-		const bbe::Vector2 b = a.withLenght(i);
+		const bbe::Vector2 a((float)i, 10);
+		const bbe::Vector2 b = a.withLenght((float)i);
 
-		ASSERT_EQ(b, a.normalize() * i);
+		ASSERT_EQ(b, a.normalize() * (float)i);
 		ASSERT_NEAR(b.getLength(), i, allowableError);
 	}
 }

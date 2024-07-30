@@ -160,8 +160,8 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 						rawNormals [subTokens[2].toLong() - 1],
 						rawUvCoords[subTokens[1].toLong() - 1]
 					});
-				seenFaceVertices.add(vertexInfo, vertices.getLength() - 1);
-				indices.add(vertices.getLength() - 1);
+				seenFaceVertices.add(vertexInfo, (int32_t)vertices.getLength() - 1);
+				indices.add((uint32_t)vertices.getLength() - 1);
 			}
 		}
 	}

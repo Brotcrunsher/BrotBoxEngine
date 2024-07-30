@@ -164,7 +164,7 @@ namespace bbe
 		bool isEven(int val);
 		bool isPowerOfTwo(uint64_t val);
 
-		int log2Floor(unsigned int val);
+		uint32_t log2Floor(uint32_t val);
 		float log2(float val);
 		float logn(float val);
 		float log10(float val);

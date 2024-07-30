@@ -2,8 +2,8 @@
 #include <iostream>
 #include <set>
 
-constexpr float WINDOW_WIDTH  = 1280.f;
-constexpr float WINDOW_HEIGHT =  720.f;
+constexpr int WINDOW_WIDTH  = 1280;
+constexpr int WINDOW_HEIGHT =  720;
 
 class MyGame : public bbe::Game
 {
@@ -38,7 +38,7 @@ class MyGame : public bbe::Game
 			rand.randomFloat(WINDOW_HEIGHT - playerRadius * 2),
 			playerRadius,
 		}});
-		circles.last().circle.setFriction(0.1);
+		circles.last().circle.setFriction(0.1f);
 		circles.last().circle.setDensity(1000);
 		for (uint32_t i = 0; i < 1024 * 2; i++)
 		{
@@ -49,8 +49,8 @@ class MyGame : public bbe::Game
 				rand.randomFloat(WINDOW_HEIGHT - radius * 2),
 				radius,
 			};
-			c.setFriction(0.1);
-			c.setDensity(0.1);
+			c.setFriction(0.1f);
+			c.setDensity(0.1f);
 			c.addSpeed(rand.randomVector2InUnitSphere() * 100);
 			circles.add({ 0, 0, c });
 		}

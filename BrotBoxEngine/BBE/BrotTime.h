@@ -9,7 +9,7 @@ namespace bbe
 	class Duration
 	{
 	private:
-		std::chrono::system_clock::duration m_duration;
+		std::chrono::system_clock::duration m_duration = std::chrono::system_clock::duration::zero();
 
 	public:
 		Duration();
@@ -72,8 +72,8 @@ namespace bbe
 		static int32_t getDaysInMonth(int32_t year, int32_t month);
 		static Weekday getFirstWeekdayOfMonth(int32_t year, Month month);
 
-		TimePoint nextMorning(int64_t morningHour = 5) const;
-		TimePoint toMorning(int64_t morningHour = 5) const;
+		TimePoint nextMorning(int32_t morningHour = 5) const;
+		TimePoint toMorning(int32_t morningHour = 5) const;
 		TimePoint plusDays(int64_t days) const;
 		TimePoint plusHours(int64_t hours) const;
 		TimePoint plusMinutes(int64_t minutes) const;

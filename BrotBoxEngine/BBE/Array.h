@@ -11,7 +11,7 @@ namespace bbe
 	class Array
 	{
 	private:
-		T m_pdata[LENGTH];
+		T m_pdata[LENGTH] = {};
 	public:
 		Array()
 		{

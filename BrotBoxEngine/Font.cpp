@@ -268,14 +268,14 @@ bbe::Rectangle bbe::Font::getBoundingBox(const bbe::String& text) const
 	bbe::List<bbe::Vector2> renderPositions = getRenderPositions(bbe::Vector2(0, 0), text);
 
 	bbe::Rectangle retVal = bbe::Rectangle(renderPositions[0], getDimensions(text.getCodepoint(0)).as<float>());
-	retVal.width = getAdvanceWidth(text.getCodepoint(0));
+	retVal.width = (float)getAdvanceWidth(text.getCodepoint(0));
 
 	auto it = text.getIterator();
 	it++;
 	for (size_t i = 1; i < renderPositions.getLength(); i++, it++)
 	{
 		bbe::Rectangle curr = bbe::Rectangle(renderPositions[i], getDimensions(it.getCodepoint()).as<float>());
-		curr.width = getAdvanceWidth(it.getCodepoint());
+		curr.width = (float)getAdvanceWidth(it.getCodepoint());
 		retVal = retVal.combine(curr);
 	}
 

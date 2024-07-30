@@ -236,7 +236,7 @@ bbe::Vector2 bbe::Window::getGlobalMousePos() const
 #ifdef _WIN32
 	POINT pos;
 	if (!GetCursorPos(&pos)) return bbe::Vector2();
-	return bbe::Vector2(pos.x, pos.y);
+	return bbe::Vector2((float)pos.x, (float)pos.y);
 #else
 	int windowPosX;
 	int windowPosY;

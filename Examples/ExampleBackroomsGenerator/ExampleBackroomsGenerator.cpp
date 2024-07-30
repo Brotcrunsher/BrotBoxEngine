@@ -105,7 +105,7 @@ namespace br
 			{
 				fadeIn = (float)i / (float)fadeInTime;
 			}
-			return (bbe::Math::cos(i * 0.01233f) + bbe::Math::cos(i * 0.016435f) + bbe::Math::cos(i * 0.01f)) * 0.03f * fadeIn;
+			return float(bbe::Math::cos(i * 0.01233f) + bbe::Math::cos(i * 0.016435f) + bbe::Math::cos(i * 0.01f)) * 0.03f * fadeIn;
 		}
 
 		virtual uint32_t getHz() const override
@@ -342,7 +342,7 @@ namespace br
 				return;
 			}
 
-			bbe::Rectanglei cameraRect(cameraPos.x, cameraPos.y, WINDOW_WIDTH, WINDOW_HEIGHT);
+			bbe::Rectanglei cameraRect((int32_t)cameraPos.x, (int32_t)cameraPos.y, WINDOW_WIDTH, WINDOW_HEIGHT);
 			for (const Room& r : rooms.rooms)
 			{
 				if (cameraRect.intersects(r.boundingBox))
@@ -353,7 +353,7 @@ namespace br
 						if (r.id == 8 || r.id == 9)
 						{
 							static int hue = 0;
-							brush.setColorHSV(hue, r.saturation, r.value, roomAlpha);
+							brush.setColorHSV((float)hue, r.saturation, r.value, roomAlpha);
 							hue++;
 						}
 						else

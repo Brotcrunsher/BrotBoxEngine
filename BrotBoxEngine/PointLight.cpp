@@ -20,13 +20,13 @@ float bbe::PointLight::getLightRadius() const
 	case LightFalloffMode::LIGHT_FALLOFF_NONE:
 		return 1000000.f;
 	case LightFalloffMode::LIGHT_FALLOFF_LINEAR:
-		radius = /*(1 / x )^(1/2.2) < (1 / 255)*/ 500 * lightStrength;
+		radius = /*(1 / x  )^(1/2.2) < (1 / 255)*/ 500 * lightStrength;
 		break;
 	case LightFalloffMode::LIGHT_FALLOFF_SQUARED:
-		radius = /*(1 / x²)^(1/2.2) < (2 / 255)*/ 25 * lightStrength;
+		radius = /*(1 / x^2)^(1/2.2) < (2 / 255)*/ 25 * lightStrength;
 		break;
 	case LightFalloffMode::LIGHT_FALLOFF_CUBIC:
-		radius = /*(1 / x³)^(1/2.2) < (1 / 255)*/ 58.183f * lightStrength;
+		radius = /*(1 / x^3)^(1/2.2) < (1 / 255)*/ 58.183f * lightStrength;
 		break;
 	case LightFalloffMode::LIGHT_FALLOFF_SQRT:
 		return 1000000.f;

@@ -22,6 +22,7 @@ State& operator++(State& s)
 	case State::freeze:     return s = State::restarting;
 	case State::restarting: return s = State::physics;
 	}
+	bbe::Crash(bbe::Error::IllegalArgument);
 }
 
 float getStateDuration(State& s)
@@ -33,6 +34,7 @@ float getStateDuration(State& s)
 	case State::freeze:		return 1.f;
 	case State::restarting: return 3.f;
 	}
+	bbe::Crash(bbe::Error::IllegalArgument);
 }
 
 class MyGame : public bbe::Game

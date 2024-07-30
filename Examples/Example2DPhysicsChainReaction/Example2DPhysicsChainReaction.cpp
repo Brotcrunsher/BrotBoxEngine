@@ -2,8 +2,8 @@
 #include <iostream>
 #include <set>
 
-constexpr float WINDOW_WIDTH  = 1280.f;
-constexpr float WINDOW_HEIGHT =  720.f;
+constexpr int WINDOW_WIDTH  = 1280;
+constexpr int WINDOW_HEIGHT =  720;
 
 class MyGame : public bbe::Game
 {
@@ -26,7 +26,7 @@ class MyGame : public bbe::Game
 		statics.add(createStatic(bbe::Rectangle(80, 60, 20, 60), 0));
 		for (int i = 0; i < 12; i++)
 		{
-			bodiesRect.add(bbe::PhysRectangle(this, bbe::Rectangle(120 + i * 40, 50, 10, 50)));
+			bodiesRect.add(bbe::PhysRectangle(this, bbe::Rectangle(120 + (float)i * 40, 50, 10, 50)));
 		}
 		bodiesCircle.add(bbe::PhysCircle(this, 50, 0, 10, 0));
 
@@ -41,8 +41,8 @@ class MyGame : public bbe::Game
 		bodiesCircle.add(bbe::PhysCircle(this, 610, 180, 20, 0));
 		for (int i = 0; i < 7; i++)
 		{
-			float x = 100 + i * 60;
-			float heightOfWhiteBlock = 160 - i * 15;
+			float x = 100 + (float)i * 60;
+			float heightOfWhiteBlock = 160 - (float)i * 15;
 			statics.add(createStatic(bbe::Rectangle(x, 120, 20, heightOfWhiteBlock), 0));
 			bodiesRect.add(bbe::PhysRectangle(this, bbe::Rectangle(x + 5, 117 + heightOfWhiteBlock, 10, 65)));
 			statics.last().addJointRevolute(bodiesRect.last(), { x + 10, 120 + heightOfWhiteBlock });
