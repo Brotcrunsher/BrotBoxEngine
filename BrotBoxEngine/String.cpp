@@ -128,6 +128,9 @@ bbe::Utf8String bbe::Utf8String::format(const char* format, ...)
 	retVal.m_data.growIfNeeded(amountOfByte + 1);
 	vsnprintf(retVal.m_data.get(), amountOfByte + 1, format, args2);
 
+	va_end(args2);
+	va_end(args1);
+
 	return retVal;
 }
 

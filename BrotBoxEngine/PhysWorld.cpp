@@ -31,6 +31,8 @@ bbe::PhysWorld::PhysWorld(const bbe::Vector2& gravity)
 bbe::PhysWorld::PhysWorld(PhysWorld&& other)
 {
 	m_pworld = other.m_pworld;
+	timeSinceLastStep = other.timeSinceLastStep;
+	physicsScale = other.physicsScale;
 	other.m_pworld = nullptr;
 }
 
@@ -38,6 +40,8 @@ bbe::PhysWorld& bbe::PhysWorld::operator=(PhysWorld&& other)
 {
 	destroy();
 	m_pworld = other.m_pworld;
+	timeSinceLastStep = other.timeSinceLastStep;
+	physicsScale = other.physicsScale;
 	other.m_pworld = nullptr;
 	return *this;
 }

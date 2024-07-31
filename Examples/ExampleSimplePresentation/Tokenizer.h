@@ -62,16 +62,16 @@ struct MoveAnimation
 	MoveAnimation(float targetX, float targetY, float controlX, float controlY);
 	MoveAnimation(float targetX, float targetY, float controlX, float controlY, float controlX2, float controlY2);
 
-	MoveAnimationType mat;
+	MoveAnimationType mat = MoveAnimationType::LINEAR;
 
-	float targetX;
-	float targetY;
+	float targetX = 0.0f;
+	float targetY = 0.0f;
 
-	float controlX;
-	float controlY;
+	float controlX = 0.0f;
+	float controlY = 0.0f;
 
-	float controlX2;
-	float controlY2;
+	float controlX2 = 0.0f;
+	float controlY2 = 0.0f;
 
 	bbe::Vector2 animate(float startX, float startY, float t) const;
 };

@@ -14,7 +14,7 @@ class MyGame : public bbe::Game
 	int particleTypes = 3;
 	float maxMax = 600;
 	float minMin = 20;
-	float maxAttraction;
+	float maxAttraction = 0.0f;
 
 	struct Particle
 	{

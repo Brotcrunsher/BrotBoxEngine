@@ -16,9 +16,9 @@ namespace bbe
 		public:
 			HashMapNode() = default;
 		private:
-			Key      m_key;
-			Value    m_value;
-			uint32_t m_hash;
+			Key      m_key = {};
+			Value    m_value = {};
+			uint32_t m_hash = 0;
 
 
 			HashMapNode(const Key &key, const Value &value, const uint32_t _hash)

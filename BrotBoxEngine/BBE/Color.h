@@ -122,6 +122,7 @@ namespace bbe
 
 				return bbe::String::toHex(rgb);
 			}
+			bbe::Crash(bbe::Error::NotImplemented);
 		}
 
 		bbe::Vector4 toVector() const
@@ -172,6 +173,7 @@ namespace bbe
 			{
 				return *this;
 			}
+			bbe::Crash(bbe::Error::NotImplemented);
 		}
 	};
 

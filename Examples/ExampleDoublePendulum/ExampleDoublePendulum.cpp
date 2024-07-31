@@ -58,14 +58,14 @@ class MyGame : public bbe::Game
 		constexpr static double m2 = 1;
 		constexpr static double tickTime = 0.0001;
 
-		double interpolationStartOmega1;
-		double interpolationStartOmega2;
+		double interpolationStartOmega1 = 0.0;
+		double interpolationStartOmega2 = 0.0;
 
-		double omega1;
-		double omega2;
+		double omega1 = 0.0;
+		double omega2 = 0.0;
 
-		double velo1;
-		double velo2;
+		double velo1 = 0.0;
+		double velo2 = 0.0;
 
 		DoublePendulum(double omega1, double omega2, double velo1, double velo2)
 			: omega1(omega1), omega2(omega2), velo1(velo1), velo2(velo2)

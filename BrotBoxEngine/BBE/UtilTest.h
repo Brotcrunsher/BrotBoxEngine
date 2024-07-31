@@ -65,6 +65,7 @@ namespace bbe {
 				name = other.name;
 				address = other.address;
 				age = other.age;
+				personIndex = other.personIndex;
 				return *this;
 			}
 
@@ -77,6 +78,7 @@ namespace bbe {
 				name = std::move(other.name);
 				address = std::move(other.address);
 				age = other.age;
+				personIndex = other.personIndex;
 				return *this;
 			}
 

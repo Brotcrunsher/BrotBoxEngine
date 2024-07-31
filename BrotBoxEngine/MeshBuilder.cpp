@@ -1,11 +1,6 @@
 #include "BBE/MeshBuilder.h"
 #include "BBE/Rectangle.h"
 
-bbe::MeshBuilder::MeshBuilder()
-{
-	// Do nothing.
-}
-
 void bbe::MeshBuilder::addCube(const bbe::Cube& cube, FaceFlag ff)
 {
 	const bbe::Matrix4 t = bbe::Matrix4::createTranslationMatrix(bbe::Vector3(0, 0, 0.5));

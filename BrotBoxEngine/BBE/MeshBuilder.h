@@ -13,7 +13,7 @@ namespace bbe
 		bbe::List<bbe::Matrix4> quads;
 
 	public:
-		MeshBuilder();
+		MeshBuilder() = default;
 
 		void addCube(const bbe::Cube& cube, FaceFlag ff = FaceFlag::ALL);
 		void addCubes(const bbe::List<Cube>& cubes);

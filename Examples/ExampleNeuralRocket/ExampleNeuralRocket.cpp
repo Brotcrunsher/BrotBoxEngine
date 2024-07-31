@@ -426,7 +426,7 @@ class MyGame : public bbe::Game
 		}
 	};
 
-	bool isB[WINDOW_WIDTH][WINDOW_HEIGHT];
+	bool isB[WINDOW_WIDTH][WINDOW_HEIGHT] = {};
 	bool isBlocked(int32_t x, int32_t y)
 	{
 		if (x < 0 || x >= WINDOW_WIDTH || y < 0 || y >= WINDOW_HEIGHT) return true;
@@ -434,7 +434,7 @@ class MyGame : public bbe::Game
 		return isB[x][y];
 	}
 
-	int32_t distanceToTarget[WINDOW_WIDTH][WINDOW_HEIGHT];
+	int32_t distanceToTarget[WINDOW_WIDTH][WINDOW_HEIGHT] = {};
 
 	int32_t getDistance(int32_t x, int32_t y)
 	{
