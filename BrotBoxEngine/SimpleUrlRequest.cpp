@@ -60,7 +60,9 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlRequest(const 
 	CURLcode res;
 	if ((res = curl_easy_perform(curl)) != CURLcode::CURLE_OK)
 	{
-		bbe::Crash(bbe::Error::IllegalState);
+		bbe::String error = "Error: ";
+		error += res;
+		bbe::Crash(bbe::Error::IllegalState, error.getRaw());
 	}
 
 	if (addTrailingNul)	retVal.dataContainer.add('\0');

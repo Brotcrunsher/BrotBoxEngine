@@ -350,7 +350,6 @@ namespace bbe
 		{
 			//UNTESTED
 			static_assert(std::is_same<dummyT, T>::value, "Do not specify dummyT!");
-			const size_t oldLength = getLength();
 			resizeCapacity(newCapacity);
 			add(T(), newCapacity - m_length);
 		}
@@ -682,7 +681,7 @@ namespace bbe
 		T* findLast(std::function<bool(const T&)> predicate)
 		{
 			T* d = getRaw();
-			for (size_t i = m_length - 1; i >= 0 && i != std::numeric_limits<size_t>::max(); i--)
+			for (size_t i = m_length - 1; i != std::numeric_limits<size_t>::max(); i--)
 			{
 				if (predicate(d[i]))
 				{

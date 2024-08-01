@@ -207,7 +207,7 @@ namespace bbe
 		}
 
 	public:
-		SerializableObject(const bbe::String& path, const bbe::String& paranoiaPath = "") :
+		explicit SerializableObject(const bbe::String& path, const bbe::String& paranoiaPath = "") :
 			path(path),
 			paranoiaPath(paranoiaPath)
 		{
@@ -301,7 +301,7 @@ namespace bbe
 		}
 
 	public:
-		SerializableList(const bbe::String& path, const bbe::String& paranoiaPath = "", Undoable undoable = Undoable::NO) :
+		explicit SerializableList(const bbe::String& path, const bbe::String& paranoiaPath = "", Undoable undoable = Undoable::NO) :
 			paranoiaPath(paranoiaPath),
 			undoable(undoable)
 		{

@@ -286,7 +286,7 @@ namespace bbe
 			{
 				ptrs[i] = &(list[i]);
 			}
-			ptrs.sort([](Rectangle_t<Vec>* const& a, const Rectangle_t<Vec>* const& b) {
+			ptrs.sort([](const Rectangle_t<Vec>* const& a, const Rectangle_t<Vec>* const& b) {
 				return a->height > b->height;
 				});
 			const SubType height = ptrs[0]->height;

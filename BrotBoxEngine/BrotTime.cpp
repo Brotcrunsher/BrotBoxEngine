@@ -182,31 +182,31 @@ bbe::TimePoint bbe::TimePoint::toMorning(int32_t morningHour) const
 bbe::TimePoint bbe::TimePoint::plusDays(int64_t days) const
 {
 	using namespace std::literals;
-	return m_time + 24h * days;
+	return bbe::TimePoint(m_time + 24h * days);
 }
 
 bbe::TimePoint bbe::TimePoint::plusHours(int64_t hours) const
 {
 	using namespace std::literals;
-	return m_time + 1h * hours;
+	return bbe::TimePoint(m_time + 1h * hours);
 }
 
 bbe::TimePoint bbe::TimePoint::plusMinutes(int64_t minutes) const
 {
 	using namespace std::literals;
-	return m_time + 1min * minutes;
+	return bbe::TimePoint(m_time + 1min * minutes);
 }
 
 bbe::TimePoint bbe::TimePoint::plusSeconds(int64_t seconds) const
 {
 	using namespace std::literals;
-	return m_time + 1s * seconds;
+	return bbe::TimePoint(m_time + 1s * seconds);
 }
 
 bbe::TimePoint bbe::TimePoint::plusMilliseconds(int64_t ms) const
 {
 	using namespace std::literals;
-	return m_time + 1ms * ms;
+	return bbe::TimePoint(m_time + 1ms * ms);
 }
 
 bbe::Duration bbe::TimePoint::operator-(const bbe::TimePoint& other) const

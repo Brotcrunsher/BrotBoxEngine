@@ -66,7 +66,7 @@ float bbe::IcoSphere::getDepth() const
 	return getScale().y;
 }
 
-bbe::Matrix4 bbe::IcoSphere::getTransform() const
+const bbe::Matrix4& bbe::IcoSphere::getTransform() const
 {
 	return m_transform;
 }

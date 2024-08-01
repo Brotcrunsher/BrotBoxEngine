@@ -14,9 +14,9 @@ namespace bbe
 			{
 				GLuint tex = 0;
 
-				OpenGLImage(const bbe::Image& image);
+				explicit OpenGLImage(const bbe::Image& image);
 				OpenGLImage(const bbe::Image& image, GLuint tex);
-				~OpenGLImage();
+				~OpenGLImage() override;
 
 				OpenGLImage(const OpenGLImage&) = delete;
 				OpenGLImage(OpenGLImage&&) = delete;

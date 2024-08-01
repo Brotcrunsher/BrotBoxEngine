@@ -79,11 +79,11 @@ namespace bbe
 		bool m_didErr = false;
 		bool m_endiannessFlipped = false;
 
-		void read(bbe::byte* bytes, bbe::byte* default_, size_t length);
+		void read(bbe::byte* bytes, const bbe::byte* default_, size_t length);
 
 	public:
 		ByteBufferSpan() = default;
-		ByteBufferSpan(bbe::List<bbe::byte>& bytes);
+		explicit ByteBufferSpan(bbe::List<bbe::byte>& bytes);
 		ByteBufferSpan(bbe::List<bbe::byte>& bytes, size_t start, size_t end);
 
 		template<typename T>
@@ -185,8 +185,8 @@ namespace bbe
 
 	public:
 		ByteBuffer();
-		ByteBuffer(bbe::byte* data, size_t size);
-		ByteBuffer(bbe::List<bbe::byte>&& bytes);
+		ByteBuffer(const bbe::byte* data, size_t size);
+		explicit ByteBuffer(bbe::List<bbe::byte>&& bytes);
 		ByteBuffer(const std::initializer_list<bbe::byte>& il);
 
 		template<typename T>

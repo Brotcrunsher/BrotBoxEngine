@@ -13,6 +13,8 @@ namespace bbe
 	template<typename T>
 	class List;
 
+	// TODO: I think Dynamic Array should be removed. The only advantage compared to a List is that it has no capacity. The disadvantage is that code gets more messy when
+	//       parts take a list and parts take a dynamic array.
 	template <typename T>
 	class DynamicArray
 	{

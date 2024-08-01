@@ -51,7 +51,7 @@ namespace bbe
 			setSeed((FieldType)timeStamp);
 		}
 
-		MersenneTwisterBase(FieldType seed)
+		explicit MersenneTwisterBase(FieldType seed)
 		{
 			setSeed(seed);
 		}

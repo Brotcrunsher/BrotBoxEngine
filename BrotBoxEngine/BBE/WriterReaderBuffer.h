@@ -14,7 +14,7 @@ namespace bbe
 		WriterReaderBuffer<T, N>& buffer;
 		size_t readHead;
 
-		ReaderAccess(WriterReaderBuffer<T, N>& buffer) : buffer(buffer), readHead(buffer.writeHead.load()) {};
+		explicit ReaderAccess(WriterReaderBuffer<T, N>& buffer) : buffer(buffer), readHead(buffer.writeHead.load()) {};
 
 	public:
 		bool hasNext()

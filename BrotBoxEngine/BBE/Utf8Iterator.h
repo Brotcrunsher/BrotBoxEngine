@@ -11,7 +11,7 @@ namespace bbe
 
 	public:
 		Utf8Iterator();
-		Utf8Iterator(const char* ptr);
+		/*nonexplicit*/ Utf8Iterator(const char* ptr);
 
 		Utf8Iterator           (const Utf8Iterator& ) = default;
 		Utf8Iterator           (      Utf8Iterator&&) = default;

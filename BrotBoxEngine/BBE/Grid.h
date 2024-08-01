@@ -71,7 +71,7 @@ namespace bbe
 			m_pdata.resizeCapacityAndLength(m_width * m_height);
 		}
 
-		Grid(const bbe::Vector2i& dim) :
+		explicit Grid(const bbe::Vector2i& dim) :
 			m_width(dim.x),
 			m_height(dim.y),
 			m_pdata()

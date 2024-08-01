@@ -44,7 +44,13 @@ namespace bbe
 #endif
 
 #ifndef NDEBUG
-#define BBE_CATCH_RELEASE if(0)
+#define BBE_CATCH_UNKNOWN_RELEASE if(0)
 #else
-#define BBE_CATCH_RELEASE catch(...)
+#define BBE_CATCH_UNKNOWN_RELEASE catch(...)
+#endif
+
+#ifndef NDEBUG
+#define BBE_CATCH_STD_RELEASE if(0 && (std::exception e = std::exception()).what())
+#else
+#define BBE_CATCH_STD_RELEASE catch(std::exception& e)
 #endif

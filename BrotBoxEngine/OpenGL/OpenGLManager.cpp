@@ -232,9 +232,8 @@ bbe::INTERNAL::openGl::Framebuffer::Framebuffer()
 }
 
 bbe::INTERNAL::openGl::Framebuffer::Framebuffer(GLsizei width, GLsizei height)
-	: width(width), height(height)
+	: framebuffer(genFramebuffer()), width(width), height(height)
 {
-	framebuffer = genFramebuffer();
 }
 
 void bbe::INTERNAL::openGl::Framebuffer::destroy()
@@ -1330,7 +1329,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	glFrontFace(GL_CCW);
 	imguiStart();
 
-	uint32_t indices[] = { 0, 3, 1, 1, 3, 2 };
+	const uint32_t indices[] = { 0, 3, 1, 1, 3, 2 };
 	quadIbo = genBuffer("quadIbo", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 }
 
@@ -1568,7 +1567,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	}
 
 	GLuint vbo = genBuffer("drawImageVBO", BufferTarget::ARRAY_BUFFER, sizeof(bbe::Vector2) * vertices.getLength(), vertices.getRaw());
-	static uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
+	constexpr uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
 	static GLuint ibo = genBuffer("drawImageIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 	glBindBuffer((GLenum)BufferTarget::ELEMENT_ARRAY_BUFFER, ibo);
 	//TODO: The ibo is never freed - is that actually bad or does OpenGL clean it up when we remove the context?
@@ -1703,7 +1702,7 @@ struct OcclusionQuery : public bbe::DataProvider<bool>
 		glEndQuery(GL_ANY_SAMPLES_PASSED);
 	}
 
-	~OcclusionQuery()
+	~OcclusionQuery() override
 	{
 		glDeleteQueries(1, &id);
 	}
@@ -1714,7 +1713,7 @@ struct OcclusionQuery : public bbe::DataProvider<bool>
 		glGetQueryObjectuiv(id, GL_QUERY_RESULT_AVAILABLE, &val);
 		return val;
 	}
-	virtual bool getValue() const
+	virtual bool getValue() const override
 	{
 		GLuint val;
 		glGetQueryObjectuiv(id, GL_QUERY_RESULT, &val);

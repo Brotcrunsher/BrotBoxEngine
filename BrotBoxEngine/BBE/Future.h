@@ -9,7 +9,7 @@ namespace bbe
 	class DataProvider : public bbe::AutoRefCountable
 	{
 	public:
-		~DataProvider() {}
+		~DataProvider() override {}
 		virtual bool isValueReady() const = 0;
 		virtual T    getValue()     const = 0;
 	};
@@ -22,7 +22,7 @@ namespace bbe
 
 	public:
 		Future() {}
-		Future(DataProvider<T>* dataProvider)
+		explicit Future(DataProvider<T>* dataProvider)
 			: ref(dataProvider) // TODO: This is far from ideal. What if the dataProvider wasn't created with new?
 			                    //       Right now the alternative would be to take an AutoRef as parameter, but then
 			                    //       the API doesn't enforce that the value is actually a DataProvider. We need

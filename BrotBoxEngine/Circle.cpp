@@ -248,8 +248,6 @@ bool bbe::Circle::resolveIntersection(Circle& other, float massThis, float massO
 	const Vector2 direction = midThis - midOther;
 	const Vector2 normalizedDirection = direction.normalize();
 
-	const float distanceBeforeResolve = direction.getLength();
-	const float distanceAfterResolve = (getWidth() + other.getWidth()) / 2;
 	const float massSum = massThis + massOther;
 	
 	const Vector2 moveVectorThis  =  normalizedDirection * (massOther / massSum);

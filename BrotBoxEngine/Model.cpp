@@ -125,14 +125,8 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 	bbe::List<uint32_t> indices;
 	bbe::HashMap<bbe::String, int32_t> seenFaceVertices;
 
-	size_t REMOVE_ME_DEBUG_COUNTER = (size_t)-1;
 	for (const bbe::DynamicArray<bbe::String>& face : rawFaces)
 	{
-		REMOVE_ME_DEBUG_COUNTER++;
-		if (REMOVE_ME_DEBUG_COUNTER == 5)
-		{
-			int a = 0;
-		}
 		// A face with less than 3 (4 with the prefix) tokens doesn't make sense.
 		if (face.getLength() < 4) bbe::Crash(bbe::Error::IllegalState);
 

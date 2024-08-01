@@ -74,7 +74,7 @@ static bool usingDynamicSounds = false;
 
 namespace eh /* = error handled */
 {
-	void buildErrorString(bbe::String& s)
+	void buildErrorString(const bbe::String& s)
 	{
 		// Do nothing
 	}
@@ -267,11 +267,11 @@ struct SoundInstanceData
 
 	bool isPlaying() const
 	{
-		if (const bbe::SoundDataSourceDynamic* sdsd = dynamic_cast<const bbe::SoundDataSourceDynamic*>(m_psound))
+		if (dynamic_cast<const bbe::SoundDataSourceDynamic*>(m_psound))
 		{
 			return true;
 		}
-		else if (const bbe::SoundDataSourceStatic* sdss = dynamic_cast<const bbe::SoundDataSourceStatic*>(m_psound))
+		else if (dynamic_cast<const bbe::SoundDataSourceStatic*>(m_psound))
 		{
 			ALint state = 0;
 			eh::alGetSourcei(source, AL_SOURCE_STATE, &state);
@@ -477,7 +477,7 @@ static void updateSoundSystem()
 				eh::alSourcePlay(source);
 				sid.source = source;
 			}
-			else if (const bbe::SoundDataSourceDynamic* SDSD = dynamic_cast<const bbe::SoundDataSourceDynamic*>(pr.sound))
+			else if (dynamic_cast<const bbe::SoundDataSourceDynamic*>(pr.sound))
 			{
 				usingDynamicSounds = true;
 			}
@@ -595,7 +595,13 @@ static void soundSystemMain()
 	{
 		innerSoundSystemMain();
 	}
-	BBE_CATCH_RELEASE
+	BBE_CATCH_STD_RELEASE
+	{
+		bbe::String msg = "Thread: Sound Thread. Exception = ";
+		msg += e.what();
+		bbe::Crash(bbe::Error::UnhandledException, msg.getRaw());
+	}
+	BBE_CATCH_UNKNOWN_RELEASE
 	{
 		bbe::Crash(bbe::Error::UnhandledException, "Sound Thread");
 	}
@@ -768,6 +774,18 @@ void bbe::INTERNAL::SoundManager::update()
 #endif
 }
 
+static void checkHr(HRESULT hr, const char* location)
+{
+	if (hr != S_OK)
+	{
+		bbe::String msg = "Error: ";
+		msg += hr;
+		msg += " location: ";
+		msg += location;
+		bbe::Crash(bbe::Error::IllegalState, msg.getRaw());
+	}
+}
+
 void bbe::INTERNAL::SoundManager::init()
 {
 #ifdef __EMSCRIPTEN__
@@ -787,7 +805,9 @@ void bbe::INTERNAL::SoundManager::init()
 		NULL, CLSCTX_INPROC_SERVER,
 		__uuidof(IMMDeviceEnumerator),
 		(void**)&_pEnumerator);
+	checkHr(hr, "CoCreateInstance");
 	hr = _pEnumerator->RegisterEndpointNotificationCallback(new CMMNotificationClient());
+	checkHr(hr, "RegisterEndpointNotificationCallback");
 
 	_pEnumerator->Release();
 #endif

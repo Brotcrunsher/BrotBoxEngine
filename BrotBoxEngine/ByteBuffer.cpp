@@ -2,7 +2,7 @@
 #include "BBE/String.h"
 #include "BBE/BrotTime.h"
 
-void bbe::ByteBufferSpan::read(bbe::byte* bytes, bbe::byte* default_, size_t length)
+void bbe::ByteBufferSpan::read(bbe::byte* bytes, const bbe::byte* default_, size_t length)
 {
 	if (getLength() < length)
 	{
@@ -118,7 +118,7 @@ bbe::ByteBuffer::ByteBuffer()
 {
 }
 
-bbe::ByteBuffer::ByteBuffer(bbe::byte* data, size_t size)
+bbe::ByteBuffer::ByteBuffer(const bbe::byte* data, size_t size)
 {
 	m_bytes.addArray(data, size);
 }

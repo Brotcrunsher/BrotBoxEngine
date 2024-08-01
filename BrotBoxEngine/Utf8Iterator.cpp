@@ -92,7 +92,7 @@ int32_t bbe::Utf8Iterator::operator-(const bbe::Utf8Iterator& other) const
 	while (copy != other)
 	{
 		dist--;
-		copy++;
+		++copy;
 	}
 	return dist;
 }

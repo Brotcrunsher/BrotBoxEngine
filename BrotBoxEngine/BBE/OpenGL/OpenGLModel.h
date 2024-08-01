@@ -18,8 +18,8 @@ namespace bbe
 				GLuint m_ibo = 0;
 				size_t m_amountOfIndices = 0;
 			public:
-				OpenGLModel(const bbe::Model& model);
-				virtual ~OpenGLModel();
+				explicit OpenGLModel(const bbe::Model& model);
+				virtual ~OpenGLModel() override;
 
 				GLuint getVbo();
 				GLuint getIbo();

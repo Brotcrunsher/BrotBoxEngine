@@ -49,11 +49,11 @@ namespace bbe
 
 	public:
 		Font();
-		Font(const bbe::String& fontPath, 
-		     unsigned fontSize        = DEFAULT_FONT_SIZE);
+		explicit Font(const bbe::String& fontPath, 
+		              unsigned fontSize = DEFAULT_FONT_SIZE);
 
 		void load(const bbe::String& fontPath,
-		          unsigned fontSize        = DEFAULT_FONT_SIZE);
+		          unsigned fontSize = DEFAULT_FONT_SIZE);
 
 		const    bbe::String& getFontPath() const;
 		uint32_t getFontSize()              const;

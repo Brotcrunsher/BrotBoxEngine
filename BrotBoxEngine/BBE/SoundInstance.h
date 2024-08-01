@@ -20,7 +20,7 @@ namespace bbe
 	private:
 		uint64_t m_index = 0;
 
-		SoundInstance(uint64_t index);
+		explicit SoundInstance(uint64_t index);
 
 	public:
 		SoundInstance() = default;

@@ -11,7 +11,7 @@
 
 static bool isBlockZero(void* ptr, size_t size)
 {
-	char* cptr = (char*)ptr;
+	const char* cptr = (const char*)ptr;
 	return cptr[0] == 0 && !memcmp(cptr, cptr + 1, size - 1);
 }
 

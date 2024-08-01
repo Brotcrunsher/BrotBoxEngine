@@ -16,7 +16,7 @@ namespace bbe
 				Framebuffer colorBuffer;
 				Framebuffer colorBufferGamma;
 
-				virtual ~OpenGLLightBaker();
+				virtual ~OpenGLLightBaker() override;
 			};
 		}
 	}

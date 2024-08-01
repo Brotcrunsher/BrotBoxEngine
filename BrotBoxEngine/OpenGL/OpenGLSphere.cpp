@@ -36,7 +36,7 @@ static bbe::List<uint32_t> indices = {
 	1,  8, 9,
 };
 
-static uint32_t getHalfPointIndex(bbe::List<bbe::Vector3>& vertices, bbe::Vector3& a, bbe::Vector3& b)
+static uint32_t getHalfPointIndex(bbe::List<bbe::Vector3>& vertices, const bbe::Vector3& a, const bbe::Vector3& b)
 {
 	bbe::Vector3 halfPoint = (a + b).normalize() / 2;
 	for (uint32_t i = 0; i < vertices.getLength(); i++)
@@ -82,24 +82,12 @@ void bbe::INTERNAL::openGl::OpenGLSphere::init()
 			uint32_t b = getHalfPointIndex(positions, positions[indices[k + 1]], positions[indices[k + 2]]);
 			uint32_t c = getHalfPointIndex(positions, positions[indices[k + 2]], positions[indices[k + 0]]);
 
-			if (iterations % 2 == 0)
-			{
-				newIndices.addAll(
-					c, a, indices[k + 0],
-					a, b, indices[k + 1],
-					b, c, indices[k + 2],
-					c, b, a
-				);
-			}
-			else
-			{
-				newIndices.addAll(
-					a, c, indices[k + 0],
-					b, a, indices[k + 1],
-					c, b, indices[k + 2],
-					b, c, a
-				);
-			}
+			newIndices.addAll(
+				c, a, indices[k + 0],
+				a, b, indices[k + 1],
+				b, c, indices[k + 2],
+				c, b, a
+			);
 		}
 
 		indices = std::move(newIndices);

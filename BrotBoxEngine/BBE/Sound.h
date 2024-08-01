@@ -61,7 +61,7 @@ namespace bbe
 
 	public:
 		Sound();
-		Sound(const bbe::String& path, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
+		explicit Sound(const bbe::String& path, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
 
 		void load(const bbe::String& path, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
 		void load(const bbe::ByteBuffer &data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);

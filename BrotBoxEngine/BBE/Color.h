@@ -20,7 +20,7 @@ namespace bbe
 		constexpr Color_t()
 			: r(0), g(0), b(0), a(maxValue)
 		{}
-		constexpr Color_t(T rgb)
+		explicit constexpr Color_t(T rgb)
 			: r(rgb), g(rgb), b(rgb), a(maxValue)
 		{}
 		constexpr Color_t(T r, T g, T b)
@@ -29,7 +29,7 @@ namespace bbe
 		constexpr Color_t(T r, T g, T b, T a)
 			: r(r), g(g), b(b), a(a)
 		{}
-		constexpr Color_t(const T* arr)
+		explicit constexpr Color_t(const T* arr)
 			: r(arr[0]), g(arr[1]), b(arr[2]), a(arr[3])
 		{}
 

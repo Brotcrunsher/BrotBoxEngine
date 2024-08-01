@@ -223,7 +223,7 @@ bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const ch
 	Vector2 currentPosition = p;
 
 	const bbe::String string = text;
-	for (auto it = string.getIterator(); it.valid(); it++)
+	for (auto it = string.getIterator(); it.valid(); ++it)
 	{
 		const int32_t codePoint = it.getCodepoint();
 		if (codePoint == '\n')
@@ -271,8 +271,8 @@ bbe::Rectangle bbe::Font::getBoundingBox(const bbe::String& text) const
 	retVal.width = (float)getAdvanceWidth(text.getCodepoint(0));
 
 	auto it = text.getIterator();
-	it++;
-	for (size_t i = 1; i < renderPositions.getLength(); i++, it++)
+	++it;
+	for (size_t i = 1; i < renderPositions.getLength(); ++i, ++it)
 	{
 		bbe::Rectangle curr = bbe::Rectangle(renderPositions[i], getDimensions(it.getCodepoint()).as<float>());
 		curr.width = (float)getAdvanceWidth(it.getCodepoint());
@@ -310,13 +310,11 @@ bbe::FittedFont bbe::Font::getBestFittingFont(const bbe::List<Font>& fonts, cons
 	for (size_t i = fonts.getLength() - 1; i != (size_t)-1; i--)
 	{
 		bbe::String combination = "";
-		bool newLine = true;
 		bool foundMatch = true;
-		bbe::Vector2 candidateSize = bbe::Vector2(0, 0);
 		for (size_t k = 0; k < splits.getLength(); k++)
 		{
 			bbe::String candidate = combination + (k == 0 ? splits[k].trim() : splits[k]);
-			candidateSize = fonts[i].getSize(candidate);
+			bbe::Vector2 candidateSize = fonts[i].getSize(candidate);
 			if (candidateSize.x > maxSize.x)
 			{
 				if (k == 0)
@@ -332,14 +330,6 @@ bbe::FittedFont bbe::Font::getBestFittingFont(const bbe::List<Font>& fonts, cons
 					foundMatch = false;
 					break;
 				}
-				else
-				{
-					newLine = true;
-				}
-			}
-			else
-			{
-				newLine = false;
 			}
 
 			combination = candidate;

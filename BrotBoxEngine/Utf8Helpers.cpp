@@ -31,7 +31,7 @@ std::size_t bbe::utf8len(const char* ptr)
 	while (*iter != '\0')
 	{
 		len++;
-		iter++;
+		++iter;
 	}
 	return len;
 }

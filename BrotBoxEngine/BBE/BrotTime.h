@@ -13,7 +13,7 @@ namespace bbe
 
 	public:
 		Duration();
-		Duration(const std::chrono::system_clock::duration& duration);
+		explicit Duration(const std::chrono::system_clock::duration& duration);
 
 		bbe::String toString() const;
 		int32_t toSeconds() const;
@@ -59,8 +59,8 @@ namespace bbe
 
 	public:
 		TimePoint();
-		TimePoint(const std::chrono::system_clock::time_point &time);
-		TimePoint(std::time_t time);
+		explicit TimePoint(const std::chrono::system_clock::time_point &time);
+		explicit TimePoint(std::time_t time);
 
 		static TimePoint todayAt(int32_t hour, int32_t minute, int32_t second = 0);
 		static TimePoint fromDate(int32_t year, Month   month, int32_t day, int32_t hour = 0, int32_t minute = 0, int32_t second = 0);

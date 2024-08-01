@@ -59,8 +59,8 @@ namespace bbe
 				bool hasThreeD() const;
 				bool hasThreeDBake() const;
 
-				OpenGLFragmentShader(const bbe::FragmentShader& shader);
-				~OpenGLFragmentShader();
+				explicit OpenGLFragmentShader(const bbe::FragmentShader& shader);
+				~OpenGLFragmentShader() override;
 
 				OpenGLFragmentShader(const OpenGLFragmentShader&) = delete;
 				OpenGLFragmentShader(OpenGLFragmentShader&&) = delete;

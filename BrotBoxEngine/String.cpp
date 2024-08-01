@@ -35,7 +35,7 @@ bbe::Utf8String::Utf8String(const wchar_t* data)
 
 bbe::Utf8String::Utf8String(char c)
 {
-	char arr[] = { c, 0 };
+	const char arr[] = { c, 0 };
 	initializeFromCharArr(arr);
 }
 
@@ -221,8 +221,8 @@ namespace bbe
 bbe::Utf8StringView::Utf8StringView()
 {
 }
-bbe::Utf8StringView::Utf8StringView(const Utf8String& string, std::size_t m_start, std::size_t m_end)
-	:m_pstring(&string), m_start(m_start), m_end(m_end)
+bbe::Utf8StringView::Utf8StringView(const Utf8String& string, std::size_t start, std::size_t end)
+	:m_pstring(&string), m_start(start), m_end(end)
 {
 	if (m_end == (size_t)-1)
 	{
@@ -435,7 +435,6 @@ bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8StringView& other)
 	const size_t oldLength = getLengthBytes();
 	const size_t otherLength = other.getLengthBytes();
 	const size_t totalLength = oldLength + otherLength;
-	const char* otherRaw = other.m_pstring->getRaw();
 	m_data.growIfNeeded(totalLength + 1);
 	memcpy(getRaw() + oldLength, &((*other.m_pstring)[other.m_start]), otherLength);
 	getRaw()[totalLength] = 0;
@@ -559,11 +558,11 @@ void bbe::Utf8String::substringInPlace(size_t start, size_t end)
 
 	std::size_t sizeOfSubstringInByte = 0;
 	auto it = getIterator();
-	for (size_t i = 0; i < start; i++) it++;
+	for (size_t i = 0; i < start; i++) ++it;
 	for(std::size_t i = start; i<end; i++)
 	{
 		sizeOfSubstringInByte += utf8codePointLen(it.getCodepoint());
-		it++;
+		++it;
 	}
 	auto raw = m_data.get();
 	memmove(raw, &raw[start], sizeOfSubstringInByte);
@@ -730,7 +729,7 @@ bbe::Utf8String bbe::Utf8String::hardBreakEvery(int32_t x) const
 	bbe::Utf8String retVal;
 
 	int32_t column = 0;
-	for (auto it = getIterator(); it.valid(); it++)
+	for (auto it = getIterator(); it.valid(); ++it)
 	{
 		if (column == x)
 		{
@@ -889,8 +888,8 @@ bool bbe::Utf8String::operator<(const bbe::Utf8String& other) const
 		&& *thisIterator != '\0'
 		&& *otherIterator != '\0')
 	{
-		thisIterator++;
-		otherIterator++;
+		++thisIterator;
+		++otherIterator;
 	}
 
 	return thisIterator.getCodepoint() < otherIterator.getCodepoint();
