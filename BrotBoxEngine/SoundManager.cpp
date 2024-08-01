@@ -595,16 +595,7 @@ static void soundSystemMain()
 	{
 		innerSoundSystemMain();
 	}
-	BBE_CATCH_STD_RELEASE
-	{
-		bbe::String msg = "Thread: Sound Thread. Exception = ";
-		msg += e.what();
-		bbe::Crash(bbe::Error::UnhandledException, msg.getRaw());
-	}
-	BBE_CATCH_UNKNOWN_RELEASE
-	{
-		bbe::Crash(bbe::Error::UnhandledException, "Sound Thread");
-	}
+	BBE_CATCH_RELEASE(Sound Thread)
 }
 
 static bbe::INTERNAL::SoundManager* m_pinstance = nullptr;

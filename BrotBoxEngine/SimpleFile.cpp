@@ -463,16 +463,7 @@ static void ioThreadMain()
 	{
 		innerIoThreadMain();
 	}
-	BBE_CATCH_STD_RELEASE
-	{
-		bbe::String msg = "Thread: IO Thread. Exception = ";
-		msg += e.what();
-		bbe::Crash(bbe::Error::UnhandledException, msg.getRaw());
-	}
-	BBE_CATCH_UNKNOWN_RELEASE
-	{
-		bbe::Crash(bbe::Error::UnhandledException, "IO Thread");
-	}
+	BBE_CATCH_RELEASE(IO Thread)
 }
 
 static void notifyIOThread()

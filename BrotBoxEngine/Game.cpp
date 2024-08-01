@@ -89,16 +89,7 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 	{
 		innerStart(windowWidth, windowHeight, title);
 	}
-	BBE_CATCH_STD_RELEASE
-	{
-		bbe::String msg = "Thread: Main Thread. Exception = ";
-		msg += e.what();
-		bbe::Crash(bbe::Error::UnhandledException, msg.getRaw());
-	}
-	BBE_CATCH_UNKNOWN_RELEASE
-	{
-		bbe::Crash(bbe::Error::UnhandledException, "Main Thread");
-	}
+	BBE_CATCH_RELEASE(Main Thread)
 }
 
 void bbe::Game::innerStart(int windowWidth, int windowHeight, const char* title)

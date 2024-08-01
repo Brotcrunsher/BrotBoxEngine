@@ -44,9 +44,15 @@ namespace bbe
 #endif
 
 #ifndef NDEBUG
-#define BBE_CATCH_UNKNOWN_RELEASE if(0)
+#define BBE_CATCH_RELEASE(threadName)
 #else
-#define BBE_CATCH_UNKNOWN_RELEASE catch(...)
+#define BBE_CATCH_RELEASE(threadName) catch(std::exception& e) {\
+bbe::String msg = "Thread: " #threadName ".Exception = ";\
+	msg += e.what();\
+	bbe::Crash(bbe::Error::UnhandledException, msg.getRaw());\
+} catch (...) { \
+	bbe::Crash(bbe::Error::UnhandledException, #threadName);\
+}
 #endif
 
 #ifndef NDEBUG
