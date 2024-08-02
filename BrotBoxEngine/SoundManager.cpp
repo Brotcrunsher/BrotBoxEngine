@@ -765,6 +765,7 @@ void bbe::INTERNAL::SoundManager::update()
 #endif
 }
 
+#ifdef WIN32
 static void checkHr(HRESULT hr, const char* location)
 {
 	if (hr != S_OK)
@@ -776,6 +777,7 @@ static void checkHr(HRESULT hr, const char* location)
 		bbe::Crash(bbe::Error::IllegalState, msg.getRaw());
 	}
 }
+#endif
 
 void bbe::INTERNAL::SoundManager::init()
 {
