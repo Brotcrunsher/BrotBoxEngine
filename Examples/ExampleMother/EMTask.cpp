@@ -703,5 +703,6 @@ void SubsystemTask::addServerTask(const bbe::String& id, const bbe::String& task
 	t.serverId = id;
 	t.title = task;
 	t.oneShot = true;
+	t.clipboard = task;
 	tasks.add(t);
 }

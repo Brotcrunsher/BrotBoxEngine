@@ -25,7 +25,6 @@
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
 //TODO: Compiling Mother can make running version of mother crash (unhandled exception) - probably because update path checks.
 //TODO: Opening the task menu shows the wrong icon until it's updates (e.g. blue instead of green). Would be nice if a state update would trigger a redraw so that the right color is visible immediately.
-//TODO: Servertasks title should be automatically added to clipboard field (clicking it = copy name)
 
 struct ClipboardContent
 {
