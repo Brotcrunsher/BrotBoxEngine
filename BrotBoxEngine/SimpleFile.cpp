@@ -241,9 +241,14 @@ bbe::List<bbe::String> bbe::simpleFile::readLines(const bbe::String& filePath)
 	return retVal;
 }
 
-bbe::TimePoint bbe::simpleFile::getLastModifyTime(const bbe::String& filePath)
+std::optional<bbe::TimePoint> bbe::simpleFile::getLastModifyTime(const bbe::String& filePath)
 {
-	const auto mod = std::filesystem::last_write_time(filePath.getRaw());
+	std::error_code ec;
+	const auto mod = std::filesystem::last_write_time(filePath.getRaw(), ec);
+	if (ec)
+	{
+		return std::nullopt;
+	}
 	// Madness :)
 	const std::time_t t = 
 		std::chrono::system_clock::to_time_t(
