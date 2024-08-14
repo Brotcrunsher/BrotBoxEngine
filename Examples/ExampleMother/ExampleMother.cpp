@@ -23,6 +23,9 @@
 //TODO: "A rare task" should be re-thought. Doesn't make sense to NOT mark a task as rare only because the repeat is 1 days, but the only possible day is a monday for example.
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
+//TODO: Compiling Mother can make running version of mother crash (unhandled exception) - probably because update path checks.
+//TODO: Opening the task menu shows the wrong icon until it's updates (e.g. blue instead of green). Would be nice if a state update would trigger a redraw so that the right color is visible immediately.
+//TODO: Servertasks title should be automatically added to clipboard field (clicking it = copy name)
 
 struct ClipboardContent
 {

@@ -35,7 +35,7 @@ bbe::Socket::Socket(bbe::String /*copy*/ url, uint16_t port)
     if (connect(nativeSocket, (SOCKADDR*)&addr, sizeof(addr)) == SOCKET_ERROR)
     {
         closesocket(nativeSocket);
-        bbe::Crash(bbe::Error::IllegalState);
+        nativeSocket = INVALID_SOCKET;
     }
 }
 
@@ -54,6 +54,10 @@ bool bbe::Socket::established() const
 
 bbe::List<char> bbe::Socket::drain()
 {
+    if (nativeSocket == INVALID_SOCKET)
+    {
+        bbe::Crash(bbe::Error::IllegalState);
+    }
     bbe::List<char> retVal;
     char buffer[4096];
     while (true)
