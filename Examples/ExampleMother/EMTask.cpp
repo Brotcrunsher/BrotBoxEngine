@@ -196,6 +196,11 @@ void Task::execStart()
 	endWorkTime = bbe::TimePoint().plusSeconds(internalValue);
 }
 
+bool Task::isRareTask() const
+{
+	return repeatDays > 1 || !isPossibleWeekday(nextPossibleExecution().plusDays(-1));
+}
+
 bbe::Duration Task::getWorkDurationLeft() const
 {
 	return endWorkTime - bbe::TimePoint();
@@ -247,7 +252,7 @@ int32_t SubsystemTask::drawTable(const char* title, const std::function<bool(Tas
 				ImGui::bbe::tooltip("This Task originated from the Server");
 				ImGui::SameLine();
 			}
-			if ((highlightRareTasks && t.repeatDays > 1) || t.oneShot)
+			if ((highlightRareTasks && t.isRareTask()) || t.oneShot)
 			{
 				const bool poosibleTodoToday = (t.nextPossibleExecution().hasPassed() || t.nextPossibleExecution().isToday());
 				if (t.oneShot) { ImGui::TextColored(ImVec4(0.5f, 0.5f, 1.0f, 1.0f), "(!)"); ImGui::bbe::tooltip("A one shot task."); }

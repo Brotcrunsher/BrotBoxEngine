@@ -90,6 +90,8 @@ public:
 	bbe::Duration getWorkDurationLeft() const;
 	bool wasStartedToday() const;
 	void execStart();
+
+	bool isRareTask() const;
 };
 
 class SubsystemTask

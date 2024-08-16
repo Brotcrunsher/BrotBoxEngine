@@ -20,7 +20,6 @@
 //TODO: Cnsl can lagg extremely with a lot of logs.
 //TODO: Minimize does not work when clicking the icon in the tray. Sometimes! It's weird. Hard to reproduce.
 //TODO: Make the UTF8String actually UTF8...
-//TODO: "A rare task" should be re-thought. Doesn't make sense to NOT mark a task as rare only because the repeat is 1 days, but the only possible day is a monday for example.
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
 
