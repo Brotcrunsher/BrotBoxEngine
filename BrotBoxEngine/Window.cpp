@@ -445,7 +445,8 @@ void bbe::INTERNAL_mouseScrollCallback(GLFWwindow * window, double xoffset, doub
 {
 #ifndef BBE_RENDERER_NULL
 	ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
-	if (ImGui::GetIO().WantCaptureMouse) return;
+	// TODO: This lead to issues in the MOTHER console. We need to have scroll events there, even though a ImGui Window is in the foreground. Fix me.
+	//if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
 	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_scroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
 }

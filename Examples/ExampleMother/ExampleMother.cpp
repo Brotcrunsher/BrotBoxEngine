@@ -17,7 +17,6 @@
 #include "EMBrainTeaser.h"
 
 //TODO: Redo
-//TODO: Cnsl can lagg extremely with a lot of logs.
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
 
@@ -509,10 +508,32 @@ public:
 	bbe::Vector2 drawTabConsole()
 	{
 		const auto& log = bbe::logging::getLog();
-		for (size_t i = 0; i < log.getLength(); i++)
+		static int64_t sliderVal = 0;
+		const int64_t min = 0;
+		const int64_t max = log.getLength() - 2;
+		ImGui::VSliderScalar("##Scrollbar", {25, ImGui::GetWindowHeight() - 50}, ImGuiDataType_S64, &sliderVal, &max, &min);
+		constexpr int64_t wheelSpeed = 5;
+		if (getMouseScrollY() > 0)
 		{
-			ImGui::Text(log[i].getRaw());
+			sliderVal -= wheelSpeed;
 		}
+		else if (getMouseScrollY() < 0)
+		{
+			sliderVal += wheelSpeed;
+		}
+		sliderVal = bbe::Math::clamp(sliderVal, min, max);
+		bbe::String txt = "";
+		for (size_t i = 0; i < 1024; i++)
+		{
+			const size_t index = i + sliderVal;
+			if (index >= log.getLength()) break;
+			txt += log[index];
+			txt += "\n";
+		}
+		ImGui::SameLine();
+		ImGui::Text(txt.getRaw());
+
+
 		return bbe::Vector2(1);
 	}
 
@@ -866,7 +887,8 @@ public:
 		viewport.WorkSize.y *= sizeMult.y;
 		ImGui::SetNextWindowPos(viewport.WorkPos);
 		ImGui::SetNextWindowSize(viewport.WorkSize);
-		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+		static Tab previousTab;
+		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | (previousTab.title == bbe::String("Cnsl") ? ImGuiWindowFlags_NoScrollWithMouse : 0));
 		{
 			static bbe::List<Tab> tabs =
 			{
@@ -886,7 +908,9 @@ public:
 				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
 			};
 			static size_t previousShownTab = 0;
-			sizeMult = drawTabs(tabs, &previousShownTab, tabSwitchRequestedLeft, tabSwitchRequestedRight);
+			DrawTabResult dtr = drawTabs(tabs, &previousShownTab, tabSwitchRequestedLeft, tabSwitchRequestedRight);
+			sizeMult = dtr.sizeMult;
+			previousTab = dtr.tab;
 		}
 		ImGui::End();
 
@@ -971,6 +995,17 @@ public:
 			if (ImGui::Button("Restart Sound System"))
 			{
 				restartSoundSystem();
+			}
+			if (ImGui::Button("Print something to log"))
+			{
+				static int64_t counter = 0;
+				for (int i = 0; i < 4000000; i++)
+				{
+					bbe::String s = "Something ";
+					s += counter;
+					counter++;
+					BBELOGLN(s);
+				}
 			}
 
 			static bool unlockCrashButton = false;

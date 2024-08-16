@@ -9,4 +9,10 @@ struct Tab
 	std::function<bbe::Vector2()> run;
 };
 
-bbe::Vector2 drawTabs(const bbe::List<Tab>& tabs, size_t* previousShownTab, bool& switchLeft, bool& switchRight);
+struct DrawTabResult
+{
+	bbe::Vector2 sizeMult;
+	Tab tab;
+};
+
+DrawTabResult drawTabs(const bbe::List<Tab>& tabs, size_t* previousShownTab, bool& switchLeft, bool& switchRight);

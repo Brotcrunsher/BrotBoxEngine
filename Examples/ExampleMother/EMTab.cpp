@@ -2,9 +2,10 @@
 
 #include "EMTab.h"
 
-bbe::Vector2 drawTabs(const bbe::List<Tab>& tabs, size_t* previousShownTab, bool& switchLeft, bool& switchRight)
+DrawTabResult drawTabs(const bbe::List<Tab>& tabs, size_t* previousShownTab, bool& switchLeft, bool& switchRight)
 {
 	bbe::Vector2 sizeMult(1.0f, 1.0f);
+	Tab tabby;
 	if (ImGui::BeginTabBar("MainWindowTabs")) {
 		size_t desiredShownTab = 0;
 		bool programaticTabSwitch = false;
@@ -35,10 +36,11 @@ bbe::Vector2 drawTabs(const bbe::List<Tab>& tabs, size_t* previousShownTab, bool
 			{
 				if (previousShownTab) *previousShownTab = i;
 				sizeMult = t.run();
+				tabby = t;
 				ImGui::EndTabItem();
 			}
 		}
 		ImGui::EndTabBar();
 	}
-	return sizeMult;
+	return { sizeMult, tabby };
 }

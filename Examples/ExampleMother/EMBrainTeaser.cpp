@@ -15,7 +15,7 @@ bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeasers(bbe::PrimitiveBrush2D& br
 	};
 	static size_t previouslyShown = 0;
 	bool dummy = false;
-	auto retVal = drawTabs(tabs, &previouslyShown, dummy, nextBrainTeaser);
+	auto retVal = drawTabs(tabs, &previouslyShown, dummy, nextBrainTeaser).sizeMult;
 	return retVal;
 }
 
