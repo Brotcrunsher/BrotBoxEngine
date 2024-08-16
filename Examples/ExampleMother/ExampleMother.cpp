@@ -16,7 +16,6 @@
 #include "EMTab.h"
 #include "EMBrainTeaser.h"
 
-//TODO: Redo
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
 
@@ -929,7 +928,7 @@ public:
 			ImGui::Text(s.getRaw());
 			ImGui::bbe::tooltip(getNightStart().toString().getRaw());
 
-			tasks.drawUndoButton();
+			tasks.drawUndoRedoButtons();
 
 			const static bbe::String desiredName = bbe::simpleFile::getAutoStartDirectory() + "ExampleMother.exe.lnk";
 			static bool exists = bbe::simpleFile::doesFileExist(desiredName); // Avoid doing IO every frame.

@@ -15,9 +15,7 @@ class MyGame : public bbe::Game
 {
 	bbe::Vector2 offset;
 	bbe::String path;
-	bbe::Image canvas;
-	bbe::List<bbe::Image> history;
-	int64_t historyIndex = 0;
+	bbe::UndoableObject<bbe::Image> canvas;
 	bbe::Image workArea;
 	float zoomLevel = 1.f;
 
@@ -40,13 +38,13 @@ class MyGame : public bbe::Game
 
 	void resetCamera()
 	{
-		offset = bbe::Vector2(getWindowWidth() / 2 - canvas.getWidth() / 2, getWindowHeight() / 2 - canvas.getHeight() / 2);
+		offset = bbe::Vector2(getWindowWidth() / 2 - canvas.get().getWidth() / 2, getWindowHeight() / 2 - canvas.get().getHeight() / 2);
 		zoomLevel = 1.f;
 	}
 
 	void clearWorkArea()
 	{
-		workArea = bbe::Image(canvas.getWidth(), canvas.getHeight(), bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
+		workArea = bbe::Image(canvas.get().getWidth(), canvas.get().getHeight(), bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
 		workArea.keepAfterUpload();
 		workArea.setFilterMode(bbe::ImageFilterMode::NEAREST);
 	}
@@ -61,80 +59,33 @@ class MyGame : public bbe::Game
 				const bbe::Colori c = workArea.getPixel(i, k);
 				if (c.a == 0) continue;
 
-				const bbe::Colori oldColor = canvas.getPixel(i, k);
+				const bbe::Colori oldColor = canvas.get().getPixel(i, k);
 				const bbe::Colori newColor = oldColor.blendTo(c);
-				canvas.setPixel(i, k, newColor);
+				canvas.get().setPixel(i, k, newColor);
 			}
 		}
 		clearWorkArea();
 	}
 
-	void clearHistory()
-	{
-		history.clear();
-		history.add(canvas);
-		historyIndex = 0;
-	}
-
-	void submitWork()
-	{
-		while (historyIndex + 1 < (int64_t)history.getLength())
-		{
-			history.popBack();
-		}
-		history.add(canvas);
-		historyIndex++;
-	}
-
-	void undo()
-	{
-		if (!isUndoable())
-		{
-			bbe::Crash(bbe::Error::IllegalState);
-		}
-		historyIndex--;
-		canvas = history[historyIndex];
-	}
-
-	bool isUndoable()
-	{
-		return historyIndex > 0;
-	}
-
-	void redo()
-	{
-		if (!isRedoable())
-		{
-			bbe::Crash(bbe::Error::IllegalState);
-		}
-		historyIndex++;
-		canvas = history[historyIndex];
-	}
-
-	bool isRedoable()
-	{
-		return historyIndex + 1 < (int64_t)history.getLength();
-	}
-
 	void setupCanvas()
 	{
-		canvas.keepAfterUpload();
-		canvas.setFilterMode(bbe::ImageFilterMode::NEAREST);
+		canvas.get().keepAfterUpload();
+		canvas.get().setFilterMode(bbe::ImageFilterMode::NEAREST);
 		clearWorkArea();
 		resetCamera();
-		clearHistory();
+		canvas.clearHistory();
 	}
 
 	void newCanvas(uint32_t width, uint32_t height)
 	{
-		canvas = bbe::Image(width, height, bbe::Color::white());
+		canvas.get() = bbe::Image(width, height, bbe::Color::white());
 		this->path = "";
 		setupCanvas();
 	}
 
 	void newCanvas(const char* path)
 	{
-		canvas = bbe::Image(path);
+		canvas.get() = bbe::Image(path);
 		this->path = path;
 		setupCanvas();
 	}
@@ -148,13 +99,13 @@ class MyGame : public bbe::Game
 	{
 		if (tiled)
 		{
-			pos.x = bbe::Math::mod<float>(pos.x, canvas.getWidth());
-			pos.y = bbe::Math::mod<float>(pos.y, canvas.getHeight());
+			pos.x = bbe::Math::mod<float>(pos.x, canvas.get().getWidth());
+			pos.y = bbe::Math::mod<float>(pos.y, canvas.get().getHeight());
 			return true; // If we are tiled, then any position is always within the canvas.
 		}
 
 		// If we are not tiled, then we have to check if the pos is actually part of the canvas.
-		return pos.x >= 0 && pos.y >= 0 && pos.x < canvas.getWidth() && pos.y < canvas.getHeight();
+		return pos.x >= 0 && pos.y >= 0 && pos.x < canvas.get().getWidth() && pos.y < canvas.get().getHeight();
 	}
 
 	void changeZoom(float val)
@@ -256,10 +207,10 @@ class MyGame : public bbe::Game
 			offset += getMouseDelta();
 			if (tiled)
 			{
-				if (offset.x < 0) offset.x += canvas.getWidth() * zoomLevel;
-				if (offset.y < 0) offset.y += canvas.getHeight() * zoomLevel;
-				if (offset.x > canvas.getWidth() * zoomLevel) offset.x -= canvas.getWidth() * zoomLevel;
-				if (offset.y > canvas.getHeight() * zoomLevel) offset.y -= canvas.getHeight() * zoomLevel;
+				if (offset.x < 0) offset.x += canvas.get().getWidth() * zoomLevel;
+				if (offset.y < 0) offset.y += canvas.get().getHeight() * zoomLevel;
+				if (offset.x > canvas.get().getWidth() * zoomLevel) offset.x -= canvas.get().getWidth() * zoomLevel;
+				if (offset.y > canvas.get().getHeight() * zoomLevel) offset.y -= canvas.get().getHeight() * zoomLevel;
 			}
 		}
 
@@ -275,8 +226,8 @@ class MyGame : public bbe::Game
 
 		if (isKeyDown(bbe::Key::LEFT_CONTROL))
 		{
-			if (isKeyTyped(bbe::Key::Z) && isUndoable()) undo();
-			if (isKeyTyped(bbe::Key::Y) && isRedoable()) redo();
+			if (isKeyTyped(bbe::Key::Z) && canvas.isUndoable()) canvas.undo();
+			if (isKeyTyped(bbe::Key::Y) && canvas.isRedoable()) canvas.redo();
 		}
 
 		static bool changeRegistered = false;
@@ -313,7 +264,7 @@ class MyGame : public bbe::Game
 				bbe::Vector2 pos = screenToCanvas(getMouse());
 				if (toTiledPos(pos))
 				{
-					canvas.floodFill(pos.as<int32_t>(), getMouseColor(), false, tiled);
+					canvas.get().floodFill(pos.as<int32_t>(), getMouseColor(), false, tiled);
 					changeRegistered = true;
 				}
 			}
@@ -341,7 +292,7 @@ class MyGame : public bbe::Game
 				{
 					const size_t x = (size_t)pos.x;
 					const size_t y = (size_t)pos.y;
-					const bbe::Colori color = canvas.getPixel(x, y);
+					const bbe::Colori color = canvas.get().getPixel(x, y);
 					if (isMouseDown(bbe::MouseButton::LEFT))
 					{
 						leftColor[0] = color.r / 255.f;
@@ -371,7 +322,7 @@ class MyGame : public bbe::Game
 				if (!isMouseDown(bbe::MouseButton::LEFT) && !isMouseDown(bbe::MouseButton::RIGHT))
 				{
 					applyWorkArea();
-					submitWork(); // <- changeRegistered is for this
+					canvas.submit(); // <- changeRegistered is for this
 					changeRegistered = false;
 				}
 			}
@@ -382,17 +333,17 @@ class MyGame : public bbe::Game
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
 	{
-		ImGui::BeginDisabled(!isUndoable());
+		ImGui::BeginDisabled(!canvas.isUndoable());
 		if (ImGui::Button("Undo"))
 		{
-			undo();
+			canvas.undo();
 		}
 		ImGui::EndDisabled();
 		ImGui::SameLine();
-		ImGui::BeginDisabled(!isRedoable());
+		ImGui::BeginDisabled(!canvas.isRedoable());
 		if (ImGui::Button("Redo"))
 		{
-			redo();
+			canvas.redo();
 		}
 		ImGui::EndDisabled();
 
@@ -413,14 +364,14 @@ class MyGame : public bbe::Game
 		}
 		if (ImGui::Button("Copy to Clipboard"))
 		{
-			canvas.copyToClipboard();
+			canvas.get().copyToClipboard();
 		}
 		ImGui::Text(bbe::Image::isImageInClipbaord() ? "Yes" : "No");
 
 		ImGui::BeginDisabled(!bbe::Image::isImageInClipbaord());
 		if (ImGui::Button("Paste"))
 		{
-			canvas = bbe::Image::getClipboardImage();
+			canvas.get() = bbe::Image::getClipboardImage();
 			setupCanvas();
 		}
 		ImGui::EndDisabled();
@@ -430,8 +381,8 @@ class MyGame : public bbe::Game
 		{
 			for (int32_t k = -repeats; k <= repeats; k++)
 			{
-				brush.drawImage(offset.x + i * canvas.getWidth() * zoomLevel, offset.y + k * canvas.getHeight() * zoomLevel, canvas.getWidth() * zoomLevel, canvas.getHeight() * zoomLevel, canvas);
-				brush.drawImage(offset.x + i * canvas.getWidth() * zoomLevel, offset.y + k * canvas.getHeight() * zoomLevel, canvas.getWidth() * zoomLevel, canvas.getHeight() * zoomLevel, workArea);
+				brush.drawImage(offset.x + i * canvas.get().getWidth() * zoomLevel, offset.y + k * canvas.get().getHeight() * zoomLevel, canvas.get().getWidth() * zoomLevel, canvas.get().getHeight() * zoomLevel, canvas.get());
+				brush.drawImage(offset.x + i * canvas.get().getWidth() * zoomLevel, offset.y + k * canvas.get().getHeight() * zoomLevel, canvas.get().getWidth() * zoomLevel, canvas.get().getHeight() * zoomLevel, workArea);
 			}
 		}
 		if (zoomLevel > 3 && drawGridLines)
@@ -473,14 +424,14 @@ class MyGame : public bbe::Game
 					}
 					if (!path.isEmpty())
 					{
-						canvas.writeToFile(path);
+						canvas.get().writeToFile(path);
 					}
 				}
 				if (ImGui::MenuItem("Save As..."))
 				{
 					if (bbe::simpleFile::showSaveDialog(path, "png"))
 					{
-						canvas.writeToFile(path);
+						canvas.get().writeToFile(path);
 					}
 				}
 				ImGui::EndMenu();
@@ -510,8 +461,8 @@ class MyGame : public bbe::Game
 		if (openNewCanvas)
 		{
 			ImGui::OpenPopup("New Canvas");
-			newWidth = canvas.getWidth();
-			newHeight = canvas.getHeight();
+			newWidth = canvas.get().getWidth();
+			newHeight = canvas.get().getHeight();
 		}
 		if (ImGui::BeginPopupModal("New Canvas", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{

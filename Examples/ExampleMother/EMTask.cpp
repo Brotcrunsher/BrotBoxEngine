@@ -649,12 +649,19 @@ bbe::Vector2 SubsystemTask::drawTabEditTasks()
 	return bbe::Vector2(1);
 }
 
-void SubsystemTask::drawUndoButton()
+void SubsystemTask::drawUndoRedoButtons()
 {
 	ImGui::BeginDisabled(!tasks.canUndo());
 	if (ImGui::Button("Undo"))
 	{
 		tasks.undo();
+	}
+	ImGui::EndDisabled();
+	ImGui::SameLine();
+	ImGui::BeginDisabled(!tasks.canRedo());
+	if (ImGui::Button("Redo"))
+	{
+		tasks.redo();
 	}
 	ImGui::EndDisabled();
 }

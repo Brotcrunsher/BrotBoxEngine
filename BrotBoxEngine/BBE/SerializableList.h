@@ -3,6 +3,7 @@
 #include "../BBE/List.h"
 #include "../BBE/String.h"
 #include "../BBE/SimpleFile.h"
+#include "../BBE/UndoableObject.h"
 #include <ctime>
 
 #define BBE_TEMPLATE_ESCAPE(...) __VA_ARGS__
@@ -241,9 +242,8 @@ namespace bbe
 	private:
 		bbe::String path;
 		bbe::String paranoiaPath;
-		bbe::List<T> data;
+		bbe::UndoableObject<bbe::List<T>> data;
 
-		bbe::List<bbe::List<T>> history;
 		Undoable undoable = Undoable::NO;
 
 		constexpr static bool hasSerialDescription = requires(T & t, bbe::SerializedDescription & desc) {
@@ -270,28 +270,27 @@ namespace bbe
 						bbe::SerializedDescription desc;
 						t.serialDescription(desc);
 						desc.writeFromSpan(subSpan);
-						this->data.add(t);
+						this->data.get().add(t);
 					}
 					else
 					{
-						this->data.add(T::deserialize(subSpan));
+						this->data.get().add(T::deserialize(subSpan));
 					}
 				}
 			}
 			else
 			{
-				this->data = data;
+				this->data.get() = data;
 				writeToFile();
 			}
-
-			pushUndoable();
+			this->data.clearHistory();
 		}
 
 		void pushUndoable()
 		{
 			if (undoable == Undoable::YES)
 			{
-				history.add(data);
+				data.submit();
 			}
 		}
 
@@ -319,10 +318,10 @@ namespace bbe
 
 		void add(T /*copy*/ t)
 		{
-			data.add(std::move(t));
+			data.get().add(std::move(t));
 			bbe::ByteBuffer buffer;
 			auto token = buffer.reserveSizeToken();
-			buffer.write(data.last());
+			buffer.write(data.get().last());
 			buffer.fillSizeToken(token);
 			bbe::simpleFile::backup::async::appendBinaryToFile(path, buffer);
 			pushUndoable();
@@ -330,7 +329,7 @@ namespace bbe
 
 		bool removeIndex(size_t index)
 		{
-			if (data.removeIndex(index))
+			if (data.get().removeIndex(index))
 			{
 				writeToFile();
 				return true;
@@ -340,33 +339,33 @@ namespace bbe
 
 		bool swap(size_t a, size_t b)
 		{
-			bool retVal = data.swap(a, b);
+			bool retVal = data.get().swap(a, b);
 			if(retVal) writeToFile();
 			return retVal;
 		}
 
 		size_t getLength() const
 		{
-			return data.getLength();
+			return data.get().getLength();
 		}
 
 		T& operator[](size_t index)
 		{
-			return data[index];
+			return data.get()[index];
 		}
 
 		const T& operator[](size_t index) const
 		{
-			return data[index];
+			return data.get()[index];
 		}
 
 		void writeToFile(bool updateHistory = true)
 		{
 			bbe::ByteBuffer buffer;
-			for (size_t i = 0; i < data.getLength(); i++)
+			for (size_t i = 0; i < data.get().getLength(); i++)
 			{
 				auto token = buffer.reserveSizeToken();
-				buffer.write(data[i]);
+				buffer.write(data.get()[i]);
 				buffer.fillSizeToken(token);
 			}
 			bbe::simpleFile::backup::async::writeBinaryToFile(path, buffer);
@@ -383,22 +382,29 @@ namespace bbe
 
 		bool canUndo() const
 		{
-			return history.getLength() > 1;
+			return data.isUndoable();
 		}
 
-		bool undo()
+		void undo()
 		{
-			if (!canUndo()) return false;
-
-			history.popBack();
-			data = history.last();
+			data.undo();
 			writeToFile(false);
-			return true;
+		}
+
+		bool canRedo() const
+		{
+			return data.isRedoable();
+		}
+
+		void redo()
+		{
+			data.redo();
+			writeToFile(false);
 		}
 
 		const bbe::List<T>& getList() const
 		{
-			return data;
+			return data.get();
 		}
 	};
 }

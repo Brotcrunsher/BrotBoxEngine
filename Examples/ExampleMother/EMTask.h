@@ -119,7 +119,7 @@ public:
 	bbe::Vector2 drawTabViewTasks();
 	bbe::Vector2 drawTabEditTasks();
 
-	void drawUndoButton();
+	void drawUndoRedoButtons();
 
 	bool hasCurrentTask() const;
 	bool hasPotentialTaskComplaint() const;
