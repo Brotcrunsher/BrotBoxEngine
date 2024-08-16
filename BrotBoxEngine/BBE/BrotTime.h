@@ -84,6 +84,8 @@ namespace bbe
 
 		bool operator<(const TimePoint& other) const;
 		bool operator>(const TimePoint& other) const;
+		bool operator==(const TimePoint& other) const;
+		bool operator!=(const TimePoint& other) const;
 
 		bool hasPassed() const;
 

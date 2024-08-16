@@ -141,6 +141,9 @@ private:
 
 	bool terriActive = false;
 
+	bbe::TimePoint lastServerReach = bbe::TimePoint::epoch();
+	bool serverUnreachableSilenced = false;
+
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
 	{
@@ -284,7 +287,8 @@ public:
 						fut = getServerFuture();
 						if (response.code == bbe::simpleUrlRequest::SocketRequestXChaChaCode::SUCCESS)
 						{
-							serverDeadline = bbe::TimePoint().plusMinutes(1);
+							lastServerReach = bbe::TimePoint();
+							serverDeadline = lastServerReach.plusMinutes(1);
 
 							bbe::String content(response.dataContainer.getRaw());
 
@@ -307,7 +311,7 @@ public:
 							}
 						}
 					}
-					if (serverDeadline.hasPassed())
+					if (!serverUnreachableSilenced && serverDeadline.hasPassed())
 					{
 						assetStore::ServerUnreachable()->play();
 						serverDeadline = bbe::TimePoint().plusMinutes(5);
@@ -988,6 +992,16 @@ public:
 			ImGui::EndDisabled();
 			ImGui::Checkbox("Ignore Night", &ignoreNight);
 			ImGui::Checkbox("Let me prepare", &tasks.forcePrepare); ImGui::bbe::tooltip("Make tasks advancable, even before late time happens.");
+			bbe::String serverUnreachableString = "Silence Server Unreachable. Last reach: ";
+			if (lastServerReach == bbe::TimePoint::epoch())
+			{
+				serverUnreachableString += "Never";
+			}
+			else
+			{
+				serverUnreachableString += (bbe::TimePoint() - lastServerReach).toString();
+			}
+			ImGui::Checkbox(serverUnreachableString.getRaw(), &serverUnreachableSilenced);
 			ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
 			ImGui::NewLine();
 			ImGui::Text("Playing sounds: %d", (int)getAmountOfPlayingSounds());
