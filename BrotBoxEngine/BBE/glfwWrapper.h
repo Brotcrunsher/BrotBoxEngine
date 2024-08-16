@@ -40,6 +40,7 @@ namespace bbe
 		void glfwShowWindow(GLFWwindow* window);
 		void glfwHideWindow(GLFWwindow* window);
 		void glfwFocusWindow(GLFWwindow* window);
+		void glfwRestoreWindow(GLFWwindow* window);
 		int glfwGetWindowAttrib(GLFWwindow* window, int attrib);
 		void glfwSetWindowUserPointer(GLFWwindow* window, void* pointer);
 		void* glfwGetWindowUserPointer(GLFWwindow* window);

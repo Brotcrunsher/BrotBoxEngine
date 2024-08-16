@@ -238,6 +238,13 @@ void bbe::glfwWrapper::glfwFocusWindow(GLFWwindow* window)
 #endif
 }
 
+void bbe::glfwWrapper::glfwRestoreWindow(GLFWwindow* window)
+{
+#ifndef BBE_RENDERER_NULL
+	::glfwRestoreWindow(window);
+#endif
+}
+
 int bbe::glfwWrapper::glfwGetWindowAttrib(GLFWwindow* window, int attrib)
 {
 #ifndef BBE_RENDERER_NULL

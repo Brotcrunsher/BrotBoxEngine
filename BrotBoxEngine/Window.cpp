@@ -264,6 +264,7 @@ void bbe::Window::showWindow()
 {
 	glfwWrapper::glfwShowWindow(m_pwindow);
 	glfwWrapper::glfwFocusWindow(m_pwindow);
+	glfwWrapper::glfwRestoreWindow(m_pwindow);
 }
 
 void bbe::Window::hideWindow()
