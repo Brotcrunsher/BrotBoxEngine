@@ -129,7 +129,14 @@ namespace bbe
 				if (copyUntil == (size_t)-1) copyUntil = m_capacity;
 
 				AllocBlock ab = bbe::allocateBlock(newCapacity * sizeof(T));
-				T* newData = new (ab.data) T[newCapacity];
+				T* newData = reinterpret_cast<T*>(ab.data);
+				for (size_t i = 0; i < newCapacity; i++)
+				{
+					// Placement new for each element individually.
+					// Placement new on arrays has issues on some compilers and some standards.
+					// See: https://stackoverflow.com/questions/15254/can-placement-new-for-arrays-be-used-in-a-portable-way
+					new (newData + i) T();
+				}
 				T* oldData = get();
 				for (size_t i = 0; i < copyUntil; i++)
 				{
