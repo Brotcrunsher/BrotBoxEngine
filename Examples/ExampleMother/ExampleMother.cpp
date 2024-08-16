@@ -23,7 +23,6 @@
 //TODO: "A rare task" should be re-thought. Doesn't make sense to NOT mark a task as rare only because the repeat is 1 days, but the only possible day is a monday for example.
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
-//TODO: Opening the task menu shows the wrong icon until it's updates (e.g. blue instead of green). Would be nice if a state update would trigger a redraw so that the right color is visible immediately.
 
 struct ClipboardContent
 {
@@ -103,6 +102,14 @@ struct RememberList
 
 	// Non-Persisted Helper Data below.
 	bbe::String newEntryBuffer;
+};
+
+enum class IconCategory
+{
+	NONE,
+	RED,
+	GREEN,
+	BLUE,
 };
 
 class MyGame : public bbe::Game
@@ -207,11 +214,22 @@ public:
 		}
 	}
 
+	IconCategory getTrayIconCategory() const
+	{
+		if (isNightTime()) return IconCategory::RED;
+		if (tasks.hasCurrentTask()) return IconCategory::BLUE;
+		return IconCategory::GREEN;
+	}
+
 	bbe::List<HICON>& getTrayIcons()
 	{
-		if (isNightTime()) return trayIconsRed;
-		if (tasks.hasCurrentTask()) return trayIconsBlue;
-		return trayIconsGreen;
+		switch (getTrayIconCategory())
+		{
+		case IconCategory::RED: return trayIconsRed;
+		case IconCategory::GREEN: return trayIconsGreen;
+		case IconCategory::BLUE: return trayIconsBlue;
+		}
+		bbe::Crash(bbe::Error::IllegalState, "That's not a tray icon category!");
 	}
 
 	HICON getCurrentTrayIcon()
@@ -237,12 +255,12 @@ public:
 		bbe::simpleFile::backup::setBackupPath(generalConfig->backupPath);
 	}
 
-	bbe::TimePoint getNightStart()
+	bbe::TimePoint getNightStart() const
 	{
 		return bbe::TimePoint::todayAt(22, 00);
 	}
 
-	bool isNightTime()
+	bool isNightTime() const
 	{
 		bbe::TimePoint now;
 		return bbe::TimePoint::todayAt(5, 00) > now || now > getNightStart();
@@ -374,7 +392,10 @@ public:
 		}
 
 		beginMeasure("Tray Icon");
-		if(bbe::TrayIcon::isVisible()) bbe::TrayIcon::setIcon(getCurrentTrayIcon());
+		static IconCategory prevIconCategory = IconCategory::NONE;
+		const IconCategory currIconCategory = getTrayIconCategory();
+		if(prevIconCategory != currIconCategory || bbe::TrayIcon::isVisible()) bbe::TrayIcon::setIcon(getCurrentTrayIcon());
+		prevIconCategory = currIconCategory;
 
 		beginMeasure("Night Time");
 		if (isNightTime())
