@@ -29,6 +29,7 @@ namespace bbe
 		FatalError            = 21000,
 		Segfault              = 22000,
 		UnhandledException    = 23000,
+		VectoredException     = 24000,
 	};
 	const char* toString(Error err);
 

@@ -1026,6 +1026,11 @@ public:
 			{
 				throw 1;
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("Free Illegal!"))
+			{
+				free((void*)0x12345678);
+			}
 			ImGui::EndDisabled();
 
 			if (ImGui::Checkbox("Silence Open Task (1 Hour)", &openTasksSilenced))
