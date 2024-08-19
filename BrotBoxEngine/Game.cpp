@@ -192,6 +192,9 @@ LONG WINAPI UnhandledVectoredExceptionHandler(EXCEPTION_POINTERS* exceptionPoint
 	// Within the BBE, this is used by OpenAL.
 	if (exceptionPointers->ExceptionRecord->ExceptionCode == 0x406d1388) return EXCEPTION_CONTINUE_SEARCH;
 
+	// 0xE06D7363 stands for a C++ Exception. Such are handled with try/catch blocks and should not necessarily cause a crash.
+	if (exceptionPointers->ExceptionRecord->ExceptionCode == 0xE06D7363) return EXCEPTION_CONTINUE_SEARCH;
+
 
 	bbe::String msg = "Exception Code: ";
 	msg += vecExToString(exceptionPointers->ExceptionRecord->ExceptionCode);
