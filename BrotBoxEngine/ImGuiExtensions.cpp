@@ -66,14 +66,11 @@ bool ImGui::bbe::clickableText(const char* fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	int size = vsnprintf(nullptr, 0, fmt, args);
-	static ::bbe::List<char> buffer; // Avoid allocations
-	buffer.resizeCapacity(size + 1);
-	vsnprintf(buffer.getRaw(), size + 1, fmt, args);
+	::bbe::String s = ::bbe::String::formatVa(fmt, args);
 	va_end(args);
-
+	
 	bool dummy = false;
-	return ImGui::Selectable(buffer.getRaw(), &dummy);
+	return ImGui::Selectable(s.getRaw(), &dummy);
 }
 
 bool ImGui::bbe::securityButton(const char* text, SecurityButtonFlags flags)

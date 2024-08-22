@@ -18,7 +18,6 @@
 
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
-//TODO: LSTS should be clickable which adds elements to clipboard
 
 struct ClipboardContent
 {
@@ -841,7 +840,10 @@ public:
 						subDeleteIndex = k;
 					}
 					ImGui::SameLine();
-					ImGui::Text("%s", rememberLists[i].entries[k].getRaw());
+					if (ImGui::bbe::clickableText("%s", rememberLists[i].entries[k].getRaw()))
+					{
+						ImGui::SetClipboardText(rememberLists[i].entries[k].getRaw());
+					}
 					ImGui::PopID();
 				}
 				if (ImGui::bbe::InputText("New Entry", rememberLists[i].newEntryBuffer, ImGuiInputTextFlags_EnterReturnsTrue))
@@ -1102,6 +1104,7 @@ public:
 
 int main()
 {
+	_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF); // See: https://stackoverflow.com/questions/30413066/how-do-i-diagnose-heap-corruption-errors-on-windows
 	HWND hWnd = GetConsoleWindow(); 
 	FreeConsole();
 	MyGame *mg = new MyGame();

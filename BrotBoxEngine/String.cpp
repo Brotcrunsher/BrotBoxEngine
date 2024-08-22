@@ -116,21 +116,26 @@ bbe::Utf8String::Utf8String(const std::initializer_list<char>& il)
 
 bbe::Utf8String bbe::Utf8String::format(const char* format, ...)
 {
-	va_list args1;
-	va_list args2;
+	va_list args;
+	va_start(args, format);
+	bbe::Utf8String retVal = formatVa(format, args);
+	va_end(args);
 
-	va_start(args1, format);
-	va_copy(args2, args1);
+	return retVal;
+}
+
+bbe::Utf8String bbe::Utf8String::formatVa(const char* format, va_list va)
+{
+	va_list va2;
+	va_copy(va2, va);
 
 	bbe::String retVal;
 
-	auto amountOfByte = vsnprintf(nullptr, 0, format, args1);
+	auto amountOfByte = vsnprintf(nullptr, 0, format, va);
 	retVal.m_data.growIfNeeded(amountOfByte + 1);
-	vsnprintf(retVal.m_data.get(), amountOfByte + 1, format, args2);
+	vsnprintf(retVal.m_data.get(), amountOfByte + 1, format, va2);
 
-	va_end(args2);
-	va_end(args1);
-
+	va_end(va2);
 	return retVal;
 }
 
