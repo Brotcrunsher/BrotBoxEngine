@@ -582,8 +582,18 @@ static void innerSoundSystemMain()
 		if (restartRequest)
 		{
 			restartRequest = false;
-			destroySoundSystem();
-			initSoundSystem();
+			bool success = false;
+			if (alcIsExtensionPresent(device, "ALC_SOFT_reopen_device"))
+			{
+				LPALCREOPENDEVICESOFT alcReopenDeviceSOFT = (LPALCREOPENDEVICESOFT)alcGetProcAddress(device, "alcReopenDeviceSOFT");
+				success = alcReopenDeviceSOFT(device, nullptr, nullptr);
+			}
+			if(!success)
+			{
+				BBELOGLN("Failed to reopen device. Destroy and reinit instead.");
+				destroySoundSystem();
+				initSoundSystem();
+			}
 		}
 	}
 	destroySoundSystem();
