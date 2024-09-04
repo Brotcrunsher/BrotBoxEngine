@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../BBE/list.h"
+#include "../BBE/List.h"
 
 
 namespace bbe
