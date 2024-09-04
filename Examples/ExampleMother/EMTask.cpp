@@ -75,6 +75,10 @@ void Task::execAdvance()
 		}
 		else
 		{
+			if (nextExecution.hasPassed())
+			{
+				nextExecution = bbe::TimePoint();
+			}
 			nextExecution = toPossibleTimePoint(nextExecution.plusDays(repeatDays));
 		}
 	}
