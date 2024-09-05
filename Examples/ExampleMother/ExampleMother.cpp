@@ -18,6 +18,7 @@
 
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
+//TODO: Dim monitor
 
 struct ClipboardContent
 {
@@ -300,6 +301,15 @@ public:
 						fut = getServerFuture();
 						if (response.code == bbe::simpleUrlRequest::SocketRequestXChaChaCode::SUCCESS)
 						{
+							if (lastServerReach != bbe::TimePoint::epoch())
+							{
+								auto timeSinceLastReach = bbe::TimePoint() - lastServerReach;
+								if (timeSinceLastReach.toMinutes() > 1)
+								{
+									assetStore::ServerReached()->play();
+								}
+							}
+
 							lastServerReach = bbe::TimePoint();
 							serverDeadline = lastServerReach.plusMinutes(1);
 
