@@ -84,5 +84,15 @@ namespace bbe
 		{
 			return EndlessGridColProxy<T>(*this, x);
 		}
+
+		size_t getNativeWidth() const
+		{
+			return m_grid.getWidth();
+		}
+
+		size_t getNativeHeight() const
+		{
+			return m_grid.getHeight();
+		}
 	};
 }
