@@ -9,6 +9,7 @@ namespace bbe
 	template<typename T> class Vector2_t;
 	using Vector2 = Vector2_t<float>;
 	using Vector2i = Vector2_t<int32_t>;
+	using Vector2i64 = Vector2_t<int64_t>;
 	class Vector3;
 	class Vector4;
 
@@ -193,6 +194,14 @@ namespace bbe
 			}
 
 			return retVal;
+		}
+
+		template<typename T>
+		T distanceToRange(T startRange, T endRange /*Exclusive!*/, T t)
+		{
+			if (t < startRange) return startRange - t;
+			if (t >= endRange) return t - endRange + 1;
+			return 0;
 		}
 
 		Vector2 interpolateLinear(Vector2 a, Vector2 b, float t);
