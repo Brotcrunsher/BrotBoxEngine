@@ -10,6 +10,7 @@
 #include "../BBE/Queue.h"
 #include "../BBE/Span.h"
 #include "../BBE/Grid.h"
+#include "../BBE/EndlessGrid.h"
 #include "../BBE/Stack.h"
 #include "../BBE/BrotTime.h"
 #include "../BBE/TrayIcon.h"

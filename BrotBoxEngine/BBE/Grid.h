@@ -151,6 +151,53 @@ namespace bbe
 			return m_pdata;
 		}
 
+		void fill(T val)
+		{
+			for (size_t i = 0; i < m_width * m_height; i++)
+			{
+				m_pdata[i] = val;
+			}
+		}
+
+		size_t count(T val) const
+		{
+			size_t retVal = 0;
+			for (size_t i = 0; i < m_width * m_height; i++)
+			{
+				if (m_pdata[i] == val)
+				{
+					retVal++;
+				}
+			}
+			return retVal;
+		}
+
+		bbe::Grid<T> rotated() const
+		{
+			bbe::Grid<T> retVal = bbe::Grid<T>(m_height, m_width);
+			for (size_t x = 0; x < m_width; x++)
+			{
+				for (size_t y = 0; y < m_height; y++)
+				{
+					retVal[y][x] = (*this)[m_width - 1 - x][y];
+				}
+			}
+			return retVal;
+		}
+
+		bbe::Grid<T> transposed() const
+		{
+			bbe::Grid<T> retVal = bbe::Grid<T>(m_height, m_width);
+			for (size_t x = 0; x < m_width; x++)
+			{
+				for (size_t y = 0; y < m_height; y++)
+				{
+					retVal[y][x] = (*this)[x][y];
+				}
+			}
+			return retVal;
+		}
+
 		bbe::Rectanglei getBiggestRect(const T& value) const
 		{
 			bbe::Rectanglei retVal;
