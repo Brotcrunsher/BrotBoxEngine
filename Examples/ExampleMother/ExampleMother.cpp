@@ -665,8 +665,8 @@ public:
 			for (size_t i = 0; i < positions.getLength(); i++)
 			{
 				bbe::Vector2& p = positions[i];
-				grid[p.x][p.y]++;
-				maxValue = bbe::Math::max(maxValue, grid[p.x][p.y]);
+				grid[p.x - minX][p.y - minY]++;
+				maxValue = bbe::Math::max(maxValue, grid[p.x - minX][p.y - minY]);
 			}
 
 			image = bbe::Image(maxX - minX + 1, maxY - minY + 1);
@@ -680,9 +680,11 @@ public:
 				}
 			}
 		}
+		bbe::Vector2 globalMouse = getMouseGlobal();
+		ImGui::Text("Global Mouse: %f/%f", globalMouse.x, globalMouse.y);
 
 		if(loaded) brush.drawImage(0, 200, 800, 400, image);
-		return bbe::Vector2(1.0f, 0.1f);
+		return bbe::Vector2(1.0f, 0.14f);
 	}
 
 	bbe::Vector2 drawTabKeyboardTracking(bbe::PrimitiveBrush2D& brush)
