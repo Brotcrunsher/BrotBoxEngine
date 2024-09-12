@@ -19,5 +19,7 @@ void bbe::debugBreakImpl(const char* file, int32_t line)
 		backtrace_symbols_fd(stackTrace, size, STDERR_FILENO); 
 		__builtin_trap();
 	#endif
+#else
+	bbe::Crash(bbe::Error::DebugBreakInRelease);
 #endif
 }
