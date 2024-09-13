@@ -32,7 +32,7 @@ namespace bbe
 	private:
 		bbe::Vector2i64 m_offset;
 		bbe::Grid<T> m_grid;
-		T m_defaultValue;
+		T m_defaultValue = {};
 
 		bool isValidIndex(const bbe::Vector2i64& pos) const
 		{
