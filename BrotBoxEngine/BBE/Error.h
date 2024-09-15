@@ -34,9 +34,10 @@ namespace bbe
 	};
 	const char* toString(Error err);
 
-	[[noreturn]] void CrashImpl(const char* file, int32_t line, const char* function, Error error);
-	[[noreturn]] void CrashImpl(const char* file, int32_t line, const char* function, Error error, const char* msg);
-#define Crash(...) CrashImpl(__FILE__, __LINE__, __func__, __VA_ARGS__)
+	[[noreturn]] void CrashImpl(const char* file, int32_t line, const char* function, Error error, bool callDebugBreak);
+	[[noreturn]] void CrashImpl(const char* file, int32_t line, const char* function, Error error, const char* msg, bool callDebugBreak);
+#define Crash(...) CrashImpl(__FILE__, __LINE__, __func__, __VA_ARGS__, true)
+#define CrashNoDebugbreak(...) CrashImpl(__FILE__, __LINE__, __func__, __VA_ARGS__, false)
 }
 
 #ifndef NDEBUG

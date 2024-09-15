@@ -43,14 +43,14 @@ const char* bbe::toString(Error err)
 	return "Missing translation";
 }
 
-[[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, const char* function, Error error)
+[[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, const char* function, Error error, bool callDebugBreak)
 {
-	CrashImpl(file, line, function, error, "no message");
+	CrashImpl(file, line, function, error, "no message", callDebugBreak);
 }
 
-[[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, const char* function, Error error, const char* msg)
+[[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, const char* function, Error error, const char* msg, bool callDebugBreak)
 {
-	debugBreak();
+	if(callDebugBreak) debugBreak();
 
 
 	const bbe::String time = bbe::TimePoint().toString();

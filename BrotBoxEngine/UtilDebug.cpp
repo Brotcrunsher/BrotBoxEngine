@@ -20,6 +20,6 @@ void bbe::debugBreakImpl(const char* file, int32_t line)
 		__builtin_trap();
 	#endif
 #else
-	bbe::Crash(bbe::Error::DebugBreakInRelease);
+	bbe::CrashNoDebugbreak(bbe::Error::DebugBreakInRelease);
 #endif
 }
