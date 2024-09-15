@@ -18,6 +18,8 @@
 #include "../BBE/Logging.h"
 #include "../BBE/ByteBuffer.h"
 
+#include "../BBE/Monitor.h"
+
 #include "../BBE/Error.h"
 
 #include "../BBE/SimpleFile.h"

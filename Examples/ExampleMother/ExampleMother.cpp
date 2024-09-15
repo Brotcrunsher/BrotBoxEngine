@@ -147,6 +147,10 @@ private:
 	bbe::TimePoint lastServerReach = bbe::TimePoint::epoch();
 	bool serverUnreachableSilenced = false;
 
+	bbe::Monitor monitor;
+	float monitorBrightness = 1.0f;
+	bool monitorBrightnessOverwrite = false;
+
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
 	{
@@ -260,6 +264,20 @@ public:
 	{
 		bbe::TimePoint now;
 		return bbe::TimePoint::todayAt(5, 00) > now || now > getNightStart();
+	}
+
+	float getMonitorDim() const
+	{
+		bbe::TimePoint now;
+		if (isNightTime()) return 0.0f;
+		const bbe::TimePoint dimStart = getNightStart().plusHours(-2);
+		const bbe::TimePoint dimEnd = dimStart.plusHours(1);
+		if (now < dimStart) return 1.0f;
+		if (now > dimEnd) return 0.0f;
+
+		const auto dimDur = (dimEnd - dimStart).toSeconds();
+		const auto dimCur = (now - dimStart).toSeconds();
+		return 1.0f - (float)dimCur / dimDur;
 	}
 
 	bool shouldPlayAlmostNightWarning()
@@ -448,6 +466,13 @@ public:
 				assetStore::Beep()->play();
 			}
 		}
+
+		beginMeasure("Monitor Dim");
+		if (!monitorBrightnessOverwrite)
+		{
+			monitorBrightness = getMonitorDim();
+		}
+		monitor.setBrightness(monitorBrightness);
 
 		beginMeasure("Working Hours");
 		if (tasks.hasPotentialTaskComplaint())
@@ -1075,6 +1100,18 @@ public:
 			}
 			ImGui::Checkbox(serverUnreachableString.getRaw(), &serverUnreachableSilenced);
 			ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
+
+			ImGui::Checkbox("Overwrite Monitor Brightness", &monitorBrightnessOverwrite);
+			ImGui::BeginDisabled(!monitorBrightnessOverwrite);
+			ImGui::SameLine();
+			ImGui::PushItemWidth(100);
+			if (ImGui::SliderFloat("##Monitor Brightness", &monitorBrightness, 0.0, 1.0))
+			{
+				monitor.setBrightness(monitorBrightness);
+			}
+			ImGui::PopItemWidth();
+			ImGui::EndDisabled();
+
 			ImGui::NewLine();
 			ImGui::Text("Playing sounds: %d", (int)getAmountOfPlayingSounds());
 			ImGui::Text(getMeasuresString().getRaw());
