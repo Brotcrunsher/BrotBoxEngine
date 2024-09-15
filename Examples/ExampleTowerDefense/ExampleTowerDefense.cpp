@@ -240,29 +240,44 @@ public:
 	}
 };
 
+constexpr int32_t UNITS_PER_GRID_TILE = 1000;
+
 class Enemy
 {
 public:
 	int32_t distanceToGoal = 0;
+	int32_t hue = 0;
 
-	Enemy(int32_t distanceToGoal) : distanceToGoal(distanceToGoal - 1) {}
+	Enemy() : distanceToGoal((path.getLength() - 1) * UNITS_PER_GRID_TILE - 1) 
+	{
+		static int32_t nextHue = 0;
+		hue = nextHue;
+		nextHue += 90;
+	}
 
 	bbe::Vector2i getPosition() const
 	{
-		const int32_t baseIndex = distanceToGoal / 1000;
-		const int32_t subIndex  = distanceToGoal - baseIndex * 1000;
+		if (distanceToGoal < 0) return path[0];
+
+		const int32_t baseIndex = distanceToGoal / UNITS_PER_GRID_TILE;
+		const int32_t subIndex  = UNITS_PER_GRID_TILE - (distanceToGoal - baseIndex * UNITS_PER_GRID_TILE);
 
 		const bbe::Vector2i p1 = path[baseIndex];
 		const bbe::Vector2i p2 = path[baseIndex + 1];
 		const bbe::Vector2i d = p1 - p2;
 
-		return p1 * 1000 + d * subIndex;
+		return p1 * UNITS_PER_GRID_TILE + d * subIndex;
 	}
 
 	void tick()
 	{
 		distanceToGoal -= 15;
 		if (distanceToGoal < 0) distanceToGoal = 0;
+	}
+
+	bool shouldDelete()
+	{
+		return distanceToGoal < 0;
 	}
 };
 
@@ -274,6 +289,35 @@ class MyGame : public bbe::Game
 	bbe::Vector2i tileOffset;
 	Tile::Entrance previousEntrance = Tile::Entrance{ {}, Direction::UNKNOWN };
 	bbe::Vector2 cameraOffset;
+
+	bbe::List<Enemy> enemies;
+	int32_t ticksSinceLastEnemySpawn = 0;
+
+	float timeSinceLastTick = 0.0f;
+
+	void tick()
+	{
+		ticksSinceLastEnemySpawn++;
+		if (ticksSinceLastEnemySpawn > 120)
+		{
+			ticksSinceLastEnemySpawn = 0;
+			enemies.add(Enemy());
+		}
+
+		for (size_t i = 0; i < enemies.getLength(); i++)
+		{
+			enemies[i].tick();
+		}
+
+		for (size_t i = 0; i < enemies.getLength(); i++)
+		{
+			if (enemies[i].shouldDelete())
+			{
+				enemies.removeIndex(i);
+				i--;
+			}
+		}
+	}
 
 	void createTile()
 	{
@@ -310,6 +354,14 @@ class MyGame : public bbe::Game
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
+		timeSinceLastTick += timeSinceLastFrame;
+		constexpr float tickTime = 1.0f / 120.f;
+		while (timeSinceLastTick > tickTime)
+		{
+			timeSinceLastTick -= tickTime;
+			tick();
+		}
+
 		if (isKeyTyped(bbe::Key::SPACE))
 		{
 			applyTile();
@@ -346,6 +398,13 @@ class MyGame : public bbe::Game
 		for (size_t i = 1; i < path.getLength(); i++)
 		{
 			brush.fillLine(path[i].as<float>() * 25 + cameraOffset + bbe::Vector2(12.5f), path[i - 1].as<float>() * 25 + cameraOffset + bbe::Vector2(12.5f));
+		}
+
+		for (size_t i = 0; i < enemies.getLength(); i++)
+		{
+			brush.setColorHSV(enemies[i].hue, 0.5f, 1.0f);
+			bbe::Vector2 pos = enemies[i].getPosition().as<float>() / UNITS_PER_GRID_TILE * 25;
+			brush.fillRect(pos + cameraOffset - bbe::Vector2(5) + bbe::Vector2(25 / 2.f), 10, 10);
 		}
 	}
 	virtual void onEnd() override
