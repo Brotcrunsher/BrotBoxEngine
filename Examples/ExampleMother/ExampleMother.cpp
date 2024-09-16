@@ -561,6 +561,7 @@ public:
 		{
 			const size_t index = i + sliderVal;
 			if (index >= log.getLength()) break;
+			std::lock_guard _(log);
 			txt += log[index];
 			txt += "\n";
 		}

@@ -15,7 +15,7 @@ namespace bbe
 			void fullLog(const char* c);
 		}
 
-		const bbe::List<bbe::String>& getLog();
+		const bbe::ConcurrentList<bbe::String>& getLog();
 	}
 }
 

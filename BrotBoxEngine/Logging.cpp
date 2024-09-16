@@ -1,10 +1,11 @@
 #include "BBE/Logging.h"
 
-static bbe::List<bbe::String> logLines = { "" };
+static bbe::ConcurrentList<bbe::String> logLines = { "" };
 
 void bbe::logging::INTERNAL::partialLog(const char* c)
 {
-	logLines.last() += c;
+	std::lock_guard _(logLines);
+	logLines.getUnderlying().last() += c;
 }
 
 void bbe::logging::INTERNAL::fullLog(const char* c)
@@ -13,7 +14,7 @@ void bbe::logging::INTERNAL::fullLog(const char* c)
 	logLines.add("");
 }
 
-const bbe::List<bbe::String>& bbe::logging::getLog()
+const bbe::ConcurrentList<bbe::String>& bbe::logging::getLog()
 {
 	return logLines;
 }

@@ -725,19 +725,45 @@ namespace bbe
 	private:
 		bbe::List<T> m_data;
 		mutable std::recursive_mutex m_mutex;
+		mutable int64_t m_lockCount = 0;
+
+		void enforceLocked(const char* msg) const
+		{
+			if (m_lockCount == 0)
+			{
+				bbe::Crash(bbe::Error::IllegalState, msg);
+			}
+			else if (m_lockCount < 0)
+			{
+				bbe::Crash(bbe::Error::IllegalState, "Negative m_lockCount detected!");
+			}
+		}
 
 	public:
 		ConcurrentList() = default;
+		/*nonexplicit*/ ConcurrentList(const std::initializer_list<T>& il) :
+			m_data(il)
+		{}
 
 		T& operator[](size_t index)
 		{
-			std::lock_guard lg(m_mutex);
+			enforceLocked("ConcurrentList: operator[]");
 			return m_data[index];
 		}
 
 		const T& operator[](size_t index) const
 		{
-			std::lock_guard lg(m_mutex);
+			enforceLocked("ConcurrentList: operator[] const");
+			return m_data[index];
+		}
+
+		T& getUnprotected(size_t index)
+		{
+			return m_data[index];
+		}
+
+		const T& getUnprotected(size_t index) const
+		{
 			return m_data[index];
 		}
 
@@ -759,14 +785,22 @@ namespace bbe
 			return m_data.getLength();
 		}
 
-		void lock()
+		void lock() const
 		{
 			m_mutex.lock();
+			++m_lockCount;
 		}
 
-		void unlock()
+		void unlock() const
 		{
+			--m_lockCount;
 			m_mutex.unlock();
+		}
+
+		bbe::List<T>& getUnderlying()
+		{
+			enforceLocked("ConcurrentList: getUnderlying");
+			return m_data;
 		}
 
 		T popFront()

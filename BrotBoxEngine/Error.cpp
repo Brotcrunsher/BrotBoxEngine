@@ -51,8 +51,9 @@ const char* bbe::toString(Error err)
 
 [[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, const char* function, Error error, const char* msg, bool callDebugBreak)
 {
+#ifndef NDEBUG
 	if(callDebugBreak) debugBreak();
-
+#endif
 
 	const bbe::String time = bbe::TimePoint().toString();
 
@@ -79,12 +80,14 @@ const char* bbe::toString(Error err)
 
 	string += "\n\nLog:\n";
 
-	const bbe::List<bbe::String>& log = bbe::logging::getLog();
+	const bbe::ConcurrentList<bbe::String>& log = bbe::logging::getLog();
+	log.lock(); // No lock_guard to keep stuff around this crash handler as simple as possible. We might be in a very vulnerable and unreliable state here.
 	for (size_t i = 0; i < log.getLength(); i++)
 	{
-		string += log[i];
+		string += log.getUnprotected(i); // Making sure that we don't recursively crash because of a negative lock count within the ConcurrentList.
 		string += "\n";
 	}
+	log.unlock();
 #ifndef __EMSCRIPTEN__
 	bbe::simpleFile::createDirectory("CrashLogs");
 	bbe::simpleFile::writeStringToFile("CrashLogs/" + bbe::String(std::time(nullptr)) + ".txt", string);
