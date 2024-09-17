@@ -18,7 +18,7 @@
 
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
-//TODO: Dim monitor
+//TODO: Time selector (next to date picker)
 
 struct ClipboardContent
 {

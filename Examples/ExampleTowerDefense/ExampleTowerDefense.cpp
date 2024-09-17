@@ -266,7 +266,7 @@ public:
 		const bbe::Vector2i p2 = path[baseIndex + 1];
 		const bbe::Vector2i d = p1 - p2;
 
-		return p1 * UNITS_PER_GRID_TILE + d * subIndex;
+		return p2 * UNITS_PER_GRID_TILE + d * subIndex;
 	}
 
 	void tick()
@@ -277,7 +277,7 @@ public:
 
 	bool shouldDelete()
 	{
-		return distanceToGoal < 0;
+		return distanceToGoal <= 0;
 	}
 };
 
@@ -294,6 +294,7 @@ class MyGame : public bbe::Game
 	int32_t ticksSinceLastEnemySpawn = 0;
 
 	float timeSinceLastTick = 0.0f;
+	int tickMultiplier = 1;
 
 	void tick()
 	{
@@ -354,12 +355,13 @@ class MyGame : public bbe::Game
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
+		std::cout << "FPS: " << (1 / timeSinceLastFrame) << std::endl;
 		timeSinceLastTick += timeSinceLastFrame;
 		constexpr float tickTime = 1.0f / 120.f;
 		while (timeSinceLastTick > tickTime)
 		{
 			timeSinceLastTick -= tickTime;
-			tick();
+			for(int i = 0; i < tickMultiplier; i++) tick();
 		}
 
 		if (isKeyTyped(bbe::Key::SPACE))
@@ -406,6 +408,8 @@ class MyGame : public bbe::Game
 			bbe::Vector2 pos = enemies[i].getPosition().as<float>() / UNITS_PER_GRID_TILE * 25;
 			brush.fillRect(pos + cameraOffset - bbe::Vector2(5) + bbe::Vector2(25 / 2.f), 10, 10);
 		}
+
+		ImGui::InputInt("Tick Multiplier", &tickMultiplier);
 	}
 	virtual void onEnd() override
 	{
