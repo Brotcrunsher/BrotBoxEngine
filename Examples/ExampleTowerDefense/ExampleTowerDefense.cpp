@@ -33,11 +33,31 @@ bbe::Color heightToColor(int32_t height)
 	}
 }
 
-int32_t mergeTiles(int32_t a, int32_t b)
+class Block
+{
+private:
+	int32_t height = -1000;
+
+public:
+	Block() = default;
+	explicit Block(int32_t height) : height(height) {}
+
+	int32_t getHeight() const
+	{
+		return height;
+	}
+};
+
+int32_t mergeHeights(int32_t a, int32_t b)
 {
 	if (a == -1 || b == -1) return -1;
 	if (a == 0 || b == 0) return 0;
 	return a > b ? a : b;
+}
+
+Block mergeBlocks(const Block& a, const Block& b)
+{
+	return Block(mergeHeights(a.getHeight(), b.getHeight()));
 }
 
 bbe::List<bbe::Vector2i> path;
@@ -176,13 +196,13 @@ public:
 		} while (!exitsAlign(exit));
 	}
 
-	void draw(bbe::PrimitiveBrush2D& brush, const bbe::EndlessGrid<int32_t>& map, const bbe::Vector2i& tileOffset, float baseX, float baseY)
+	void draw(bbe::PrimitiveBrush2D& brush, const bbe::EndlessGrid<Block>& map, const bbe::Vector2i& tileOffset, float baseX, float baseY)
 	{
 		for (int32_t x = 0; x < Tile::gridSize; x++)
 		{
 			for (int32_t y = 0; y < Tile::gridSize; y++)
 			{
-				brush.setColorRGB(heightToColor(mergeTiles(getHeight(x, y), map.observe(tileOffset.x + x, tileOffset.y + y))));
+				brush.setColorRGB(heightToColor(mergeHeights(getHeight(x, y), map.observe(tileOffset.x + x, tileOffset.y + y).getHeight())));
 				brush.fillRect(x * 25 + baseX, y * 25 + baseY, 25, 25);
 			}
 		}
@@ -220,10 +240,10 @@ public:
 	{
 		bbe::Vector2i pos;
 		if (entrance.dir == Direction::UNKNOWN) pos = bbe::Vector2i(gridSize / 2, gridSize / 2);
-		if (entrance.dir == Direction::UP   ) pos = bbe::Vector2i(gridSize / 2, gridSize - 1);
-		if (entrance.dir == Direction::DOWN) pos = bbe::Vector2i(gridSize / 2, 0);
-		if (entrance.dir == Direction::RIGHT   ) pos = bbe::Vector2i(0           , gridSize / 2);
-		if (entrance.dir == Direction::LEFT) pos = bbe::Vector2i(gridSize - 1, gridSize / 2);
+		if (entrance.dir == Direction::UP     ) pos = bbe::Vector2i(gridSize / 2, gridSize - 1);
+		if (entrance.dir == Direction::DOWN   ) pos = bbe::Vector2i(gridSize / 2, 0);
+		if (entrance.dir == Direction::RIGHT  ) pos = bbe::Vector2i(0           , gridSize / 2);
+		if (entrance.dir == Direction::LEFT   ) pos = bbe::Vector2i(gridSize - 1, gridSize / 2);
 
 		bbe::Grid<bool> visited(gridSize, gridSize);
 		while (true)
@@ -283,7 +303,7 @@ public:
 
 class MyGame : public bbe::Game
 {
-	bbe::EndlessGrid<int32_t> map;
+	bbe::EndlessGrid<Block> map;
 	Tile currentTile;
 	bbe::Random rand;
 	bbe::Vector2i tileOffset;
@@ -333,8 +353,8 @@ class MyGame : public bbe::Game
 		{
 			for (int32_t y = 0; y < Tile::gridSize; y++)
 			{
-				const int32_t oldValue = map.observe(x + tileOffset.x, y + tileOffset.y);
-				map[x + tileOffset.x][y + tileOffset.y] = mergeTiles(oldValue, currentTile.getGrid()[x][y]);
+				const Block oldValue = map.observe(x + tileOffset.x, y + tileOffset.y);
+				map[x + tileOffset.x][y + tileOffset.y] = mergeBlocks(oldValue, Block(currentTile.getGrid()[x][y]));
 			}
 		}
 		previousEntrance = currentTile.getEntrance(previousEntrance);
@@ -348,7 +368,7 @@ class MyGame : public bbe::Game
 
 	virtual void onStart() override
 	{
-		map.setDefaultValue(-1000);
+		map.setDefaultValue(Block(-1000));
 		currentTile = Tile();
 		applyTile();
 		createTile();
@@ -390,7 +410,12 @@ class MyGame : public bbe::Game
 		{
 			for (int32_t k = -100; k < 100; k++)
 			{
-				brush.setColorRGB(heightToColor(map.observe(i, k)));
+				if (i == 0 && k == 0)
+				{
+					// TODO remove
+					int a = 0;
+				}
+				brush.setColorRGB(heightToColor(map.observe(i, k).getHeight()));
 				brush.fillRect(i * 25 + cameraOffset.x, k * 25 + cameraOffset.y, 25, 25);
 			}
 		}
