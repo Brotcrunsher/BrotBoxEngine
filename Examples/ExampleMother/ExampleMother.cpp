@@ -19,7 +19,8 @@
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
 //TODO: Time selector (next to date picker)
-//TODO: "Silence Open Task" should show time left until auto unsilence
+//TODO: Non eearly tasks should be greyed out during early hours
+//TODO: A permanently advancable task appeared in the "today" instead of the "now" area. Wonder how that has happened.
 
 struct ClipboardContent
 {
@@ -1089,6 +1090,15 @@ public:
 			ImGui::BeginDisabled(!openTasksSilenced);
 			ImGui::Checkbox("Indefinitely ", &openTasksSilencedIndefinitely);
 			ImGui::EndDisabled();
+
+			if (openTasksSilenced && !openTasksSilencedIndefinitely)
+			{
+				const bbe::TimePoint now;
+				const bbe::Duration duration = openTasksSilencedEnd - now;
+				ImGui::SameLine();
+				ImGui::Text("Time left: %s", duration.toString().getRaw());
+			}
+
 			ImGui::Checkbox("Ignore Night", &ignoreNight);
 			ImGui::Checkbox("Let me prepare", &tasks.forcePrepare); ImGui::bbe::tooltip("Make tasks advancable, even before late time happens.");
 			bbe::String serverUnreachableString = "Silence Server Unreachable. Last reach: ";
