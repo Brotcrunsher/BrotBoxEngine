@@ -79,7 +79,7 @@ void Task::execAdvance()
 			{
 				nextExecution = bbe::TimePoint();
 			}
-			nextExecution = toPossibleTimePoint(nextExecution.plusDays(repeatDays));
+			nextExecution = toPossibleTimePoint(nextExecution.plusDays(repeatDays)).toMorning();
 		}
 	}
 	else if (dateType == DT_YEARLY)

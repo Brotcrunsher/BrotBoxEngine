@@ -107,7 +107,6 @@ public:
 	start:
 		int32_t depth = 0;
 		t++;
-		BBELOGLN("Try: " << t << " Depth: " << deepest);
 		grid = bbe::Grid<int32_t>(gridSize, gridSize);
 		grid.fill(1);
 		grid[gridSize / 2][0] = 0;

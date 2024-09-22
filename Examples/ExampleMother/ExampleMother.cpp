@@ -20,7 +20,6 @@
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
 //TODO: Time selector (next to date picker)
 //TODO: Non eearly tasks should be greyed out during early hours
-//TODO: A permanently advancable task appeared in the "today" instead of the "now" area. Wonder how that has happened.
 //TODO: Serializable List/Object should somehow handle versions... it's really complicated to do that within the nice BBE_SERIALIZABLE_DATA macro though.
 
 struct ClipboardContent
