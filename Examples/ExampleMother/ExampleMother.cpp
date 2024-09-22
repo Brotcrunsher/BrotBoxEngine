@@ -21,6 +21,7 @@
 //TODO: Time selector (next to date picker)
 //TODO: Non eearly tasks should be greyed out during early hours
 //TODO: A permanently advancable task appeared in the "today" instead of the "now" area. Wonder how that has happened.
+//TODO: Serializable List/Object should somehow handle versions... it's really complicated to do that within the nice BBE_SERIALIZABLE_DATA macro though.
 
 struct ClipboardContent
 {
@@ -124,7 +125,7 @@ private:
 	bbe::SerializableList<RememberList> rememberLists           = bbe::SerializableList<RememberList>     ("RememberLists.dat",       "ParanoiaConfig");
 	bbe::SerializableList<StreakDay> streakDays                 = bbe::SerializableList<StreakDay>        ("streakDays.dat",          "ParanoiaConfig");
 	bbe::SerializableObject<KeyboardTracker> keyboardTracker    = bbe::SerializableObject<KeyboardTracker>("keyboardTracker.dat"); // No ParanoiaConfig to avoid accidentally logging passwords.
-	bbe::SerializableList<SeenServerTaskId> seenServerTaskIds   = bbe::SerializableList<SeenServerTaskId> ("SeenServerTaskIds.dat",   "ParanoiaCOnfig");
+	bbe::SerializableList<SeenServerTaskId> seenServerTaskIds   = bbe::SerializableList<SeenServerTaskId> ("SeenServerTaskIds.dat",   "ParanoiaConfig");
 
 	bool openTasksSilenced = false;
 	bool openTasksSilencedIndefinitely = false;
