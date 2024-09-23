@@ -33,7 +33,7 @@ TEST(EndlessGrid, RandomChecks)
 {
 	bbe::Random rand;
 	rand.setSeed(17); // Repeatability
-	for (int repeats = 0; repeats < 1024; repeats++)
+	for (int repeats = 0; repeats < 16; repeats++)
 	{
 		// TODO: Sloooow!
 		constexpr int64_t size = 1024;

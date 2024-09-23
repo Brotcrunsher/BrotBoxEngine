@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <limits>
+#include <bit>
 #include "../BBE/List.h"
 
 namespace bbe
@@ -164,6 +165,27 @@ namespace bbe
 		bool isOdd(int val);
 		bool isEven(int val);
 		bool isPowerOfTwo(uint64_t val);
+
+		template<typename T>
+		constexpr int popcount(T x)
+		{
+			return std::popcount(x);
+		}
+		template<typename T>
+		constexpr T setBit(T t, int32_t pos)
+		{
+			return t | (1ULL << pos);
+		}
+		template<typename T>
+		constexpr T clearBit(T t, int32_t pos)
+		{
+			return t & ~(1ULL << pos);
+		}
+		template<typename T>
+		constexpr bool getBit(T t, int32_t pos)
+		{
+			return (t >> pos) & 1ULL;
+		}
 
 		uint32_t log2Floor(uint32_t val);
 		float log2(float val);
