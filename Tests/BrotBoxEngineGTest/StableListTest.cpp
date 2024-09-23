@@ -143,7 +143,8 @@ TEST_F(StableListTest, RemoveElements) {
 
     // Remove the third element (value 3)
     auto it = list.begin();
-    std::advance(it, 2); // Points to 3
+    ++it;
+    ++it; // Points to 3
     it.remove();
 
     // Expected list: 1, 2, 4, 5
@@ -170,7 +171,7 @@ TEST_F(StableListTest, RemoveFirstAndLastElements) {
 
     // Remove last element
     it = list.begin();
-    std::advance(it, 1); // Now points to 300
+    ++it; // Now points to 300
     it.remove();
 
     // Expected list: 200
@@ -400,7 +401,7 @@ TEST_F(StableListTest, BlockBoundary) {
     // Remove elements from both blocks
     auto it = list.begin();
     it.remove(); // Remove 1
-    std::advance(it, 3); // Points to 5
+    ++it; ++it; ++it; // Points to 5
     it.remove(); // Remove 5
 
     // Expected list: 2, 3, 4, 6
