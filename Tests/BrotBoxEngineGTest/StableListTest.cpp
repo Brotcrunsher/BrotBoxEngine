@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include "../BBE/StableList.h"
 #include <string>
+#include <vector>
+#include <random>
 
 
 namespace bbe {
@@ -581,5 +583,72 @@ TEST_F(StableListTest, AddAndRemoveNullptrs) {
         actual.push_back(*itr);
     }
     EXPECT_EQ(actual, expected);
+}
+
+// Test Random Insertions and Removals to Stress-Test StableList
+TEST_F(StableListTest, RandomInsertRemove) {
+    bbe::StableList<int> list;               // Initialize StableList of integers
+    std::vector<int> expectedList;           // Parallel vector to track expected content
+
+    // Random number generator setup with a fixed seed for reproducibility
+    std::mt19937 rng(42);                    // Mersenne Twister RNG
+    std::uniform_int_distribution<int> opDist(0, 1); // 0: Insert, 1: Remove
+    std::uniform_int_distribution<int> valueDist(1, 10000); // Values to insert
+
+    // Define the number of random operations to perform
+    const int numOperations = 1000;
+
+    // Counter to ensure unique values if desired (optional)
+    int uniqueValue = 1;
+
+    for (int i = 0; i < numOperations; ++i) {
+        //if (i % 10000 == 0) std::cout << "Iteration: " << i << " Size: " << expectedList.size() << " Blocks: " << list.getAmountOfBlocks() << std::endl;
+        int operation = opDist(rng); // Randomly decide to Insert (0) or Remove (1)
+
+        if (operation == 0 || expectedList.empty()) {
+            // **Insert Operation**
+
+            // Generate a random value to insert
+            int value = valueDist(rng);
+            // Alternatively, use uniqueValue++ to ensure uniqueness
+            // int value = uniqueValue++;
+
+            // Insert the value into the StableList
+            list.add(value);
+            // Append the value to the expected list
+            expectedList.push_back(value);
+        }
+        else {
+            // **Remove Operation**
+
+            // Ensure there are elements to remove
+            if (!expectedList.empty()) {
+                // Generate a random index to remove
+                std::uniform_int_distribution<size_t> removeDist(0, expectedList.size() - 1);
+                size_t removeIndex = removeDist(rng);
+
+                // Obtain an iterator to the element to remove in StableList
+                auto it = list.begin();
+                for (int i = 0; i < removeIndex; i++) ++it; // Advance iterator to removeIndex
+                it.remove();                   // Remove the element via iterator
+
+                // Remove the element from the expected list
+                expectedList.erase(expectedList.begin() + removeIndex);
+            }
+        }
+
+        // Check that list and expectedList are the same after every iteration.
+        // Iterate through both lists and compare each element
+        auto listIt = list.begin();
+        auto expectedIt = expectedList.begin();
+
+        for (; listIt != list.end() && expectedIt != expectedList.end(); ++listIt, ++expectedIt) {
+            EXPECT_EQ(*listIt, *expectedIt) << "Element mismatch at verification.";
+        }
+
+        // Ensure both iterators have reached the end
+        EXPECT_EQ(listIt, list.end()) << "StableList has extra elements.";
+        EXPECT_EQ(expectedIt, expectedList.end()) << "Expected list has extra elements.";
+    }
 }
 

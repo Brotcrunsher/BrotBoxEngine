@@ -169,8 +169,8 @@ namespace bbe
 			friend class StableList;
 
 		public:
-			Iterator() : currentBlock(nullptr), index(0) {}
-			Iterator(Block* block, size_t idx) : currentBlock(block), index(idx) { advanceToValid(); }
+			Iterator() : list(nullptr), currentBlock(nullptr), index(0) {}
+			Iterator(StableList* list, Block* block, size_t idx) : list(list), currentBlock(block), index(idx) { advanceToValid(); }
 
 			T& operator*() const
 			{
@@ -198,7 +198,7 @@ namespace bbe
 
 			bool operator==(const Iterator& other) const
 			{
-				return currentBlock == other.currentBlock && index == other.index;
+				return list == other.list && currentBlock == other.currentBlock && index == other.index;
 			}
 
 			bool operator!=(const Iterator& other) const
@@ -232,6 +232,15 @@ namespace bbe
 						currentBlock->previousBlock->nextBlock = currentBlock->nextBlock;
 					}
 
+					if (list->m_firstBlock == currentBlock)
+					{
+						list->m_firstBlock = currentBlock->nextBlock;
+					}
+					if (list->m_lastBlock == currentBlock)
+					{
+						list->m_lastBlock = currentBlock->previousBlock;
+					}
+
 					Block* deleteBlock = currentBlock;
 					currentBlock = currentBlock->nextBlock;
 					delete deleteBlock;
@@ -245,6 +254,7 @@ namespace bbe
 			}
 
 		private:
+			StableList* list = nullptr;
 			Block* currentBlock = nullptr;
 			size_t index = 0;
 
@@ -333,12 +343,12 @@ namespace bbe
 
 		Iterator begin()
 		{
-			return Iterator(m_firstBlock, 0);
+			return Iterator(this, m_firstBlock, 0);
 		}
 
 		Iterator end()
 		{
-			return Iterator(nullptr, 0);
+			return Iterator(this, nullptr, 0);
 		}
 
 		ConstIterator begin() const
@@ -425,6 +435,18 @@ namespace bbe
 			const int32_t location = getAddLocation();
 			new (m_lastBlock->get(location)) T(std::move(t));
 			m_lastBlock->m_used.set(location);
+		}
+
+		size_t getAmountOfBlocks() const
+		{
+			Block* currentBlock = this->m_firstBlock;
+			size_t retVal = 0;
+			while (currentBlock)
+			{
+				currentBlock = currentBlock->nextBlock;
+				retVal++;
+			}
+			return retVal;
 		}
 	};
 }
