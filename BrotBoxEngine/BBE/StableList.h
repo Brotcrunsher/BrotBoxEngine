@@ -56,6 +56,7 @@ namespace bbe
 			{
 				other.m_used.reset();
 				other.m_data = {};
+				// NOTE: We do NOT take others next and previous pointers, as we will most likely end up in some other linked list.
 			}
 
 			Block& operator=(const Block& other)
