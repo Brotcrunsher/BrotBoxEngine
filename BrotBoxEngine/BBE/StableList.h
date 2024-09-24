@@ -99,7 +99,7 @@ namespace bbe
 				m_used.reset();
 			}
 
-			int32_t getAddLocation() noexcept
+			int32_t getAddLocation() const noexcept
 			{
 				if (m_used[blockSize - 1]) return -1; // Block might not be full, but the last element is blocked. We always want to add at the end of the list, never before that.
 
