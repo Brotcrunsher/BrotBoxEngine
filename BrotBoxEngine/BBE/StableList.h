@@ -434,7 +434,7 @@ namespace bbe
 
 		size_t getAmountOfBlocks() const noexcept
 		{
-			Block* currentBlock = this->m_firstBlock;
+			const Block* currentBlock = this->m_firstBlock;
 			size_t retVal = 0;
 			while (currentBlock)
 			{
