@@ -29,10 +29,7 @@ namespace bbe
 				return ((T*)m_data.data) + i;
 			}
 
-			Block()
-			{
-				m_data = bbe::allocateBlock(sizeof(T) * blockSize);
-			}
+			Block() : m_data(bbe::allocateBlock(sizeof(T)* blockSize)) {}
 
 			~Block()
 			{
