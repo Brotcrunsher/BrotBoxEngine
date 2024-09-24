@@ -99,7 +99,7 @@ namespace bbe
 				m_used = {};
 			}
 
-			int32_t getAddLocation()
+			int32_t getAddLocation() noexcept
 			{
 				if (m_used[blockSize - 1]) return -1; // Block might not be full, but the last element is blocked. We always want to add at the end of the list, never before that.
 
@@ -406,7 +406,7 @@ namespace bbe
 			clear();
 		}
 
-		void clear()
+		void clear() noexcept
 		{
 			Block* nextBlock = m_firstBlock;
 			while (nextBlock)
