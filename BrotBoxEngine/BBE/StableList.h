@@ -217,7 +217,31 @@ namespace bbe
 				currentBlock->get(index)->~T();
 				currentBlock->m_used.reset(index);
 
-				++(*this);
+				if (currentBlock->m_used.any())
+				{
+					++(*this);
+				}
+				else
+				{
+					if (currentBlock->nextBlock)
+					{
+						currentBlock->nextBlock->previousBlock = currentBlock->previousBlock;
+					}
+					if (currentBlock->previousBlock)
+					{
+						currentBlock->previousBlock->nextBlock = currentBlock->nextBlock;
+					}
+
+					Block* deleteBlock = currentBlock;
+					currentBlock = currentBlock->nextBlock;
+					delete deleteBlock;
+					index = 0;
+					if (currentBlock && !currentBlock->m_used[0])
+					{
+						++(*this);
+					}
+				}
+
 			}
 
 		private:
