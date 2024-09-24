@@ -419,17 +419,11 @@ namespace bbe
 			m_lastBlock = nullptr;
 		}
 
-		void add(const T& t)
+		template<typename U>
+		void add(U&& t)
 		{
 			const int32_t location = getAddLocation();
-			new (m_lastBlock->get(location)) T(t);
-			m_lastBlock->m_used.set(location);
-		}
-
-		void add(T&& t)
-		{
-			const int32_t location = getAddLocation();
-			new (m_lastBlock->get(location)) T(std::move(t));
+			new (m_lastBlock->get(location)) T(std::forward<U>(t));
 			m_lastBlock->m_used.set(location);
 		}
 
