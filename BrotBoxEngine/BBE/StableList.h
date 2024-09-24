@@ -26,7 +26,7 @@ namespace bbe
 
 			const T* get(size_t i) const
 			{
-				return ((T*)m_data.data) + i;
+				return ((const T*)m_data.data) + i;
 			}
 
 			Block() : m_data(bbe::allocateBlock(sizeof(T)* blockSize)) {}
