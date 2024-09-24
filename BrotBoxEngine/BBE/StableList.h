@@ -321,7 +321,7 @@ namespace bbe
 
 		private:
 			const Block* currentBlock = nullptr;
-			size_t index = nullptr;
+			size_t index = 0;
 
 			void advanceToValid()
 			{
