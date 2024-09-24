@@ -374,10 +374,10 @@ namespace bbe
 			copy(other);
 		}
 
-		StableList(StableList&& other) noexcept
+		StableList(StableList&& other) noexcept :
+			m_firstBlock(other.m_firstBlock),
+			m_lastBlock(other.m_lastBlock)
 		{
-			m_firstBlock = other.m_firstBlock;
-			m_lastBlock = other.m_lastBlock;
 			other.m_firstBlock = nullptr;
 			other.m_lastBlock = nullptr;
 		}
