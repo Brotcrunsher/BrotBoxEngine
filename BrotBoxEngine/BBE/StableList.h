@@ -433,7 +433,7 @@ namespace bbe
 			m_lastBlock->m_used.set(location);
 		}
 
-		size_t getAmountOfBlocks() const
+		size_t getAmountOfBlocks() const noexcept
 		{
 			Block* currentBlock = this->m_firstBlock;
 			size_t retVal = 0;
