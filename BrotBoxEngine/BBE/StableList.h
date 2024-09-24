@@ -378,7 +378,7 @@ namespace bbe
 			copy(other);
 		}
 
-		StableList(StableList&& other)
+		StableList(StableList&& other) noexcept
 		{
 			m_firstBlock = other.m_firstBlock;
 			m_lastBlock = other.m_lastBlock;
@@ -394,7 +394,7 @@ namespace bbe
 			return *this;
 		}
 
-		StableList& operator=(StableList&& other)
+		StableList& operator=(StableList&& other) noexcept
 		{
 			if (this == &other) return *this;
 			clear();
