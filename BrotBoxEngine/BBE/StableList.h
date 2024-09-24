@@ -143,7 +143,7 @@ namespace bbe
 			}
 		}
 
-		int32_t getAddLocation() noexcept
+		int32_t getAddLocation()
 		{
 			if (!m_lastBlock)
 			{
