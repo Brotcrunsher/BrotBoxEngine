@@ -115,7 +115,7 @@ namespace bbe
 		Block* m_firstBlock = nullptr;
 		Block* m_lastBlock = nullptr;
 
-		void addNewBlock() noexcept
+		void addNewBlock()
 		{
 			Block* newBlock = new Block();
 			if (!m_firstBlock)
