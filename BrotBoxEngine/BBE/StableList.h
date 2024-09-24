@@ -50,11 +50,10 @@ namespace bbe
 				}
 			}
 
-			Block(Block&& other)
+			Block(Block&& other) noexcept : 
+				m_used(std::move(other.m_used)),
+				m_data(std::move(other.m_data))
 			{
-				m_used = other.m_used;
-				m_data = other.m_data;
-
 				other.m_used = {};
 				other.m_data = {};
 			}
