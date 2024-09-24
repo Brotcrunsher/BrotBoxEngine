@@ -37,10 +37,10 @@ namespace bbe
 				bbe::freeBlock(m_data);
 			}
 
-			Block(const Block& other)
+			Block(const Block& other) :
+				m_used(other.m_used),
+				m_data(bbe::allocateBlock(sizeof(T)* blockSize))
 			{
-				m_used = other.m_used;
-				m_data = bbe::allocateBlock(sizeof(T) * blockSize);
 				for (size_t i = 0; i < blockSize; i++)
 				{
 					if (m_used[i])
