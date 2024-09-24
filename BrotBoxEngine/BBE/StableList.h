@@ -19,19 +19,19 @@ namespace bbe
 			Block* nextBlock = nullptr;
 			Block* previousBlock = nullptr;
 
-			T* get(size_t i)
+			T* get(size_t i) noexcept
 			{
 				return reinterpret_cast<T*>(m_data.data) + i;
 			}
 
-			const T* get(size_t i) const
+			const T* get(size_t i) const noexcept
 			{
 				return reinterpret_cast<const T*>(m_data.data) + i;
 			}
 
 			Block() : m_data(bbe::allocateBlock(sizeof(T)* blockSize)) {}
 
-			~Block()
+			~Block() noexcept
 			{
 				clear();
 				bbe::freeBlock(m_data);
@@ -50,7 +50,7 @@ namespace bbe
 				}
 			}
 
-			Block(Block&& other) noexcept : 
+			Block(Block&& other) noexcept :
 				m_used(std::move(other.m_used)),
 				m_data(std::move(other.m_data))
 			{
@@ -73,7 +73,7 @@ namespace bbe
 				return *this;
 			}
 
-			Block& operator=(Block&& other)
+			Block& operator=(Block&& other) noexcept
 			{
 				if (this == &other) return *this;
 				clear();
@@ -87,7 +87,7 @@ namespace bbe
 				return *this;
 			}
 
-			void clear()
+			void clear() noexcept
 			{
 				for (size_t i = 0; i < blockSize; i++)
 				{
@@ -115,7 +115,7 @@ namespace bbe
 		Block* m_firstBlock = nullptr;
 		Block* m_lastBlock = nullptr;
 
-		void addNewBlock()
+		void addNewBlock() noexcept
 		{
 			Block* newBlock = new Block();
 			if (!m_firstBlock)
@@ -143,7 +143,7 @@ namespace bbe
 			}
 		}
 
-		int32_t getAddLocation()
+		int32_t getAddLocation() noexcept
 		{
 			if (!m_lastBlock)
 			{
@@ -165,39 +165,39 @@ namespace bbe
 			friend class StableList;
 
 		public:
-			Iterator() : list(nullptr), currentBlock(nullptr), index(0) {}
-			Iterator(StableList* list, Block* block, size_t idx) : list(list), currentBlock(block), index(idx) { advanceToValid(); }
+			Iterator() noexcept : list(nullptr), currentBlock(nullptr), index(0) {}
+			Iterator(StableList* list, Block* block, size_t idx) noexcept : list(list), currentBlock(block), index(idx) { advanceToValid(); }
 
-			T& operator*() const
+			T& operator*() const noexcept
 			{
 				return *(currentBlock->get(index));
 			}
 
-			T* operator->() const
+			T* operator->() const noexcept
 			{
 				return currentBlock->get(index);
 			}
 
-			Iterator& operator++()
+			Iterator& operator++() noexcept
 			{
 				++index;
 				advanceToValid();
 				return *this;
 			}
 
-			Iterator operator++(int)
+			Iterator operator++(int) noexcept
 			{
 				Iterator temp = *this;
 				++(*this);
 				return temp;
 			}
 
-			bool operator==(const Iterator& other) const
+			bool operator==(const Iterator& other) const noexcept
 			{
 				return list == other.list && currentBlock == other.currentBlock && index == other.index;
 			}
 
-			bool operator!=(const Iterator& other) const
+			bool operator!=(const Iterator& other) const noexcept
 			{
 				return !(*this == other);
 			}
@@ -246,7 +246,6 @@ namespace bbe
 						++(*this);
 					}
 				}
-
 			}
 
 		private:
@@ -254,7 +253,7 @@ namespace bbe
 			Block* currentBlock = nullptr;
 			size_t index = 0;
 
-			void advanceToValid()
+			void advanceToValid() noexcept
 			{
 				while (currentBlock)
 				{
@@ -277,40 +276,40 @@ namespace bbe
 			friend class StableList;
 
 		public:
-			ConstIterator() : currentBlock(nullptr), index(0) {}
-			ConstIterator(const Block* block, size_t idx) : currentBlock(block), index(idx) { advanceToValid(); }
-			ConstIterator(const Iterator& it) : currentBlock(it.currentBlock), index(it.index) { }
+			ConstIterator() noexcept : currentBlock(nullptr), index(0) {}
+			ConstIterator(const Block* block, size_t idx) noexcept : currentBlock(block), index(idx) { advanceToValid(); }
+			ConstIterator(const Iterator& it) noexcept : currentBlock(it.currentBlock), index(it.index) { }
 
-			const T& operator*() const
+			const T& operator*() const noexcept
 			{
 				return *(currentBlock->get(index));
 			}
 
-			const T* operator->() const
+			const T* operator->() const noexcept
 			{
 				return currentBlock->get(index);
 			}
 
-			ConstIterator& operator++()
+			ConstIterator& operator++() noexcept
 			{
 				++index;
 				advanceToValid();
 				return *this;
 			}
 
-			ConstIterator operator++(int)
+			ConstIterator operator++(int) noexcept
 			{
 				ConstIterator temp = *this;
 				++(*this);
 				return temp;
 			}
 
-			bool operator==(const ConstIterator& other) const
+			bool operator==(const ConstIterator& other) const noexcept
 			{
 				return currentBlock == other.currentBlock && index == other.index;
 			}
 
-			bool operator!=(const ConstIterator& other) const
+			bool operator!=(const ConstIterator& other) const noexcept
 			{
 				return !(*this == other);
 			}
@@ -319,7 +318,7 @@ namespace bbe
 			const Block* currentBlock = nullptr;
 			size_t index = 0;
 
-			void advanceToValid()
+			void advanceToValid() noexcept
 			{
 				while (currentBlock)
 				{
@@ -337,37 +336,37 @@ namespace bbe
 			}
 		};
 
-		Iterator begin()
+		Iterator begin() noexcept
 		{
 			return Iterator(this, m_firstBlock, 0);
 		}
 
-		Iterator end()
+		Iterator end() noexcept
 		{
 			return Iterator(this, nullptr, 0);
 		}
 
-		ConstIterator begin() const
+		ConstIterator begin() const noexcept
 		{
 			return ConstIterator(m_firstBlock, 0);
 		}
 
-		ConstIterator end() const
+		ConstIterator end() const noexcept
 		{
 			return ConstIterator(nullptr, 0);
 		}
 
-		ConstIterator cbegin() const
+		ConstIterator cbegin() const noexcept
 		{
 			return ConstIterator(m_firstBlock, 0);
 		}
 
-		ConstIterator cend() const
+		ConstIterator cend() const noexcept
 		{
 			return ConstIterator(nullptr, 0);
 		}
 
-		StableList() = default;
+		StableList() noexcept = default;
 
 		StableList(const StableList& other)
 		{
@@ -401,7 +400,7 @@ namespace bbe
 			return *this;
 		}
 
-		~StableList()
+		~StableList() noexcept
 		{
 			clear();
 		}
