@@ -21,12 +21,12 @@ namespace bbe
 
 			T* get(size_t i)
 			{
-				return ((T*)m_data.data) + i;
+				return reinterpret_cast<T*>(m_data.data) + i;
 			}
 
 			const T* get(size_t i) const
 			{
-				return ((const T*)m_data.data) + i;
+				return reinterpret_cast<const T*>(m_data.data) + i;
 			}
 
 			Block() : m_data(bbe::allocateBlock(sizeof(T)* blockSize)) {}
