@@ -54,7 +54,7 @@ namespace bbe
 				m_used(std::move(other.m_used)),
 				m_data(std::move(other.m_data))
 			{
-				other.m_used = {};
+				other.m_used.reset();
 				other.m_data = {};
 			}
 
@@ -82,7 +82,7 @@ namespace bbe
 				m_used = other.m_used;
 				m_data = other.m_data;
 
-				other.m_used = {};
+				other.m_used.reset();
 				other.m_data = {};
 				return *this;
 			}
@@ -96,7 +96,7 @@ namespace bbe
 						get(i)->~T();
 					}
 				}
-				m_used = {};
+				m_used.reset();
 			}
 
 			int32_t getAddLocation() noexcept
@@ -202,7 +202,7 @@ namespace bbe
 				return !(*this == other);
 			}
 
-			void remove()
+			void remove() noexcept
 			{
 				if (!currentBlock || index >= blockSize || !currentBlock->m_used[index])
 				{
