@@ -21,9 +21,9 @@ struct Task
 		((bbe::String), title),
 		((int32_t), repeatDays, 0),
 		((bbe::TimePoint), previousExecution, bbe::TimePoint::epoch()),
-	(private:),
+(private:),
 		((bbe::TimePoint), nextExecution), // Call nextPossibleExecution from the outside! 
-	(public:),
+(public:),
 		((bool), canBeSu, true),
 		((int32_t), followUp, 0), // In minutes. When clicking follow up, the task will be rescheduled the same day.
 		((int32_t), internalValue, 0),
@@ -51,7 +51,12 @@ struct Task
 		((bool), indefinitelyAdvanceable, false),
 		((bool), shouldPlayNotificationSounds, true),
 		((bbe::String), serverId),
-		((bbe::TimePoint), overwriteTime)
+		((bbe::TimePoint), overwriteTime),
+		((bool), contingentTask, false),
+		((int32_t), collectedContingentSeconds, 0),
+		((int32_t), contingentSecondsPerDay, 0),
+		((bbe::TimePoint), contingentCountingStart, bbe::TimePoint::epoch()),
+		((bbe::TimePoint), previousContingentSubtraction, bbe::TimePoint::epoch())
 	)
 
 	// Non-Persisted Helper Data below.
@@ -74,6 +79,8 @@ public:
 	void execFollowUp2();
 	void execMoveToNow();
 	void execAdvance();
+	void execContingentStart();
+	void execContingentStop();
 
 	void sanity();
 	void nextExecPlusDays(int32_t days);
@@ -102,6 +109,7 @@ public:
 private:
 	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", "ParanoiaConfig", bbe::Undoable::YES);
 
+	bool drawContingentButton(Task& t);
 	int32_t drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& requiresWrite,
 		bool showMoveToNow,      bool showCountdown,  bool showDone,                bool showFollowUp,
 		bool highlightRareTasks, bool showAdvancable, bool respectIndefinitelyFlag, bool sorted);

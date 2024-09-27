@@ -21,9 +21,9 @@
 //TODO: Time selector (next to date picker)
 //TODO: Non eearly tasks should be greyed out during early hours
 //TODO: Serializable List/Object should somehow handle versions... it's really complicated to do that within the nice BBE_SERIALIZABLE_DATA macro though.
-//TODO: Introduce "Contingent" Tasks. These are tasks where you can press "start" and "stop", and Mother then measures the time you spent on the task. Every day X minutes are removed from this sum.
 //TODO: Nighttime configurable
 //TODO: Latetime configurable
+//TODO: Time left was negative. Why? It was evening and no tasks were remaining.
 
 struct ClipboardContent
 {

@@ -88,6 +88,17 @@ void Task::execAdvance()
 	}
 }
 
+void Task::execContingentStart()
+{
+	contingentCountingStart = bbe::TimePoint();
+}
+
+void Task::execContingentStop()
+{
+	collectedContingentSeconds += (bbe::TimePoint() - contingentCountingStart).toSeconds();
+	contingentCountingStart = bbe::TimePoint::epoch();
+}
+
 void Task::sanity()
 {
 	if (repeatDays < 1) repeatDays = 1;
@@ -101,6 +112,12 @@ void Task::nextExecPlusDays(int32_t days)
 
 bbe::TimePoint Task::nextPossibleExecution() const
 {
+	if (contingentTask)
+	{
+		const int32_t daysToAdd = collectedContingentSeconds / (contingentSecondsPerDay > 0 ? contingentSecondsPerDay : 1);
+		if (daysToAdd <= 0) return bbe::TimePoint();
+		return bbe::TimePoint().plusDays(daysToAdd).toMorning();
+	}
 	if (overwriteTime.isToday()) return nextExecution;
 	if (!nextExecution.hasPassed()) return nextExecution;
 	return toPossibleTimePoint(bbe::TimePoint());
@@ -142,7 +159,14 @@ bool Task::isImportantTomorrow() const
 	//TODO: "Interesting" calculation for "tomorrow"...
 	bbe::TimePoint tomorrow = bbe::TimePoint().nextMorning().plusDays(1).plusHours(-6);
 	if (!isPossibleWeekday(tomorrow)) return false;
-	if (nextExecution < tomorrow) return true;
+	if (contingentTask)
+	{
+		if (nextPossibleExecution() < tomorrow) return true;
+	}
+	else
+	{
+		if (nextExecution < tomorrow) return true;
+	}
 
 	return false;
 }
@@ -208,6 +232,27 @@ bool Task::isRareTask() const
 bbe::Duration Task::getWorkDurationLeft() const
 {
 	return endWorkTime - bbe::TimePoint();
+}
+
+bool SubsystemTask::drawContingentButton(Task& t)
+{
+	if (t.contingentCountingStart == bbe::TimePoint::epoch())
+	{
+		if (ImGui::Button("Start"))
+		{
+			t.execContingentStart();
+			return true;
+		}
+	}
+	else
+	{
+		if (ImGui::Button("Stop"))
+		{
+			t.execContingentStop();
+			return true;
+		}
+	}
+	return false;
 }
 
 int32_t SubsystemTask::drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& requiresWrite, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable, bool respectIndefinitelyFlag, bool sorted)
@@ -341,10 +386,17 @@ int32_t SubsystemTask::drawTable(const char* title, const std::function<bool(Tas
 					{
 						if (!t.oneShot)
 						{
-							if (ImGui::Button("Done"))
+							if (!t.contingentTask)
 							{
-								t.execDone();
-								requiresWrite = true;
+								if (ImGui::Button("Done"))
+								{
+									t.execDone();
+									requiresWrite = true;
+								}
+							}
+							else
+							{
+								requiresWrite |= drawContingentButton(t);
 							}
 						}
 						else
@@ -399,10 +451,22 @@ int32_t SubsystemTask::drawTable(const char* title, const std::function<bool(Tas
 			if (showAdvancable)
 			{
 				ImGui::TableSetColumnIndex(column++);
-				if (t.advanceable && (!respectIndefinitelyFlag || t.indefinitelyAdvanceable) && (t.earlyAdvanceable || isLateAdvanceableTime() || forcePrepare) && ImGui::Button("Advance"))
+				if (t.advanceable)
 				{
-					t.execAdvance();
-					requiresWrite = true;
+					if (!t.contingentTask)
+					{
+						if (   (!respectIndefinitelyFlag || t.indefinitelyAdvanceable)
+							&& (t.earlyAdvanceable || isLateAdvanceableTime() || forcePrepare)
+							&& ImGui::Button("Advance"))
+						{
+							t.execAdvance();
+							requiresWrite = true;
+						}
+					}
+					else
+					{
+						requiresWrite |= drawContingentButton(t);
+					}
 				}
 			}
 			if (showMoveToNow)
@@ -437,13 +501,34 @@ bool SubsystemTask::isWorkTime() const
 
 void SubsystemTask::update()
 {
-	if (tasks.getList().any([](const Task& t) { return t.shouldPlaySoundNewTask(); }))
+	bbe::List<Task>& taskList = tasks.getList();
+	bool requiresWrite = false;
+	if (taskList.any([](const Task& t) { return t.shouldPlaySoundNewTask(); }))
 	{
 		assetStore::NewTask()->play();
 	}
-	if (tasks.getList().any([](const Task& t) { return t.shouldPlaySoundDone(); }))
+	if (taskList.any([](const Task& t) { return t.shouldPlaySoundDone(); }))
 	{
 		assetStore::Done()->play();
+	}
+	for (Task& t : taskList)
+	{
+		if (t.contingentTask)
+		{
+			const bbe::TimePoint today = bbe::TimePoint().toMorning();
+			const int32_t days = (today - t.previousContingentSubtraction).toDays();
+			if (days > 0)
+			{
+				t.previousContingentSubtraction = today;
+				requiresWrite = true;
+				t.collectedContingentSeconds -= days * t.contingentSecondsPerDay;
+				if (t.collectedContingentSeconds < 0) t.collectedContingentSeconds = 0;
+			}
+		}
+	}
+	if (requiresWrite)
+	{
+		tasks.writeToFile(false); // Updating history because of contingent update feels "weird".
 	}
 }
 
@@ -497,6 +582,22 @@ bool SubsystemTask::drawEditableTask(Task& t)
 
 		taskChanged |= ImGui::Checkbox("Indefinitely Advanceable", &t.indefinitelyAdvanceable);
 		ImGui::bbe::tooltip("Can be advanced in the \"Later\" table.");
+
+		if (ImGui::Checkbox("Contingent Task", &t.contingentTask))
+		{
+			taskChanged = true;
+			t.contingentCountingStart = bbe::TimePoint::epoch();
+			t.previousContingentSubtraction = bbe::TimePoint().toMorning();
+			t.collectedContingentSeconds = 0;
+		}
+		ImGui::bbe::tooltip("A contingent task requires you to do X seconds of work every day. You can always start and stop the timer. When the timer is stopped, the spent time is added to the contingent.");
+		if (t.contingentTask)
+		{
+			ImGui::Indent(15.0f);
+			taskChanged |= ImGui::InputInt("Collected Contingent (Seconds)", &t.collectedContingentSeconds);
+			taskChanged |= ImGui::InputInt("Contingent Per Day (Seconds)", &t.contingentSecondsPerDay);
+			ImGui::Unindent(15.0f);
+		}
 		ImGui::Unindent(15.0f);
 	}
 	taskChanged |= ImGui::Checkbox("One Shot", &t.oneShot);
