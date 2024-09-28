@@ -15,6 +15,7 @@
 #include "EMUrl.h"
 #include "EMTab.h"
 #include "EMBrainTeaser.h"
+#include "BBE/ChatGPTComm.h"
 
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
@@ -64,7 +65,7 @@ struct SeenServerTaskId
 		((bbe::String), id)
 	)
 
-	auto operator<=>(const SeenServerTaskId&) const = default;
+		auto operator<=>(const SeenServerTaskId&) const = default;
 };
 
 struct Stopwatch
@@ -74,7 +75,7 @@ struct Stopwatch
 		((int32_t), seconds),
 		((bbe::TimePoint), doneAt)
 	)
-	mutable bool soundArmed = false;
+		mutable bool soundArmed = false;
 
 	bool shouldPlaySound() const
 	{
@@ -101,8 +102,15 @@ struct RememberList
 		((bbe::List<bbe::String>), entries)
 	)
 
-	// Non-Persisted Helper Data below.
-	bbe::String newEntryBuffer;
+		// Non-Persisted Helper Data below.
+		bbe::String newEntryBuffer;
+};
+
+struct ChatGPTConfig
+{
+	BBE_SERIALIZABLE_DATA(
+		((bbe::String), apiKey)
+	)
 };
 
 enum class IconCategory
@@ -128,6 +136,10 @@ private:
 	bbe::SerializableList<StreakDay> streakDays                 = bbe::SerializableList<StreakDay>        ("streakDays.dat",          "ParanoiaConfig");
 	bbe::SerializableObject<KeyboardTracker> keyboardTracker    = bbe::SerializableObject<KeyboardTracker>("keyboardTracker.dat"); // No ParanoiaConfig to avoid accidentally logging passwords.
 	bbe::SerializableList<SeenServerTaskId> seenServerTaskIds   = bbe::SerializableList<SeenServerTaskId> ("SeenServerTaskIds.dat",   "ParanoiaConfig");
+	bbe::SerializableObject<ChatGPTConfig> chatGPTConfig        = bbe::SerializableObject<ChatGPTConfig>  ("ChatGPTConfig.dat",       "ParanoiaConfig");
+
+	bbe::ChatGPTComm chatGPTComm; // ChatGPT communication object
+	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
 
 	bool openTasksSilenced = false;
 	bool openTasksSilencedIndefinitely = false;
@@ -177,7 +189,7 @@ public:
 				const DWORD cVal = dist % 512;
 
 				const float highlight = (cVal > 255 ? 255 : cVal) / 255.f;
-				const float white =     (cVal > 255 ? (cVal - 255) : 0) / 255.f;
+				const float white = (cVal > 255 ? (cVal - 255) : 0) / 255.f;
 
 				bbe::Color c;
 				c.a = 1.0f;
@@ -211,7 +223,7 @@ public:
 
 	void createTrayIcons()
 	{
-		for (DWORD offset = 0; offset < 512; offset ++)
+		for (DWORD offset = 0; offset < 512; offset++)
 		{
 			trayIconsRed.add(createTrayIcon(offset, 0));
 			trayIconsGreen.add(createTrayIcon(offset, 1));
@@ -258,6 +270,12 @@ public:
 		bbe::TrayIcon::addPopupItem("Exit", [&]() { exitCallback(); });
 
 		bbe::simpleFile::backup::setBackupPath(generalConfig->backupPath);
+
+		// Initialize ChatGPTComm with the API key if available
+		if (!chatGPTConfig->apiKey.isEmpty())
+		{
+			chatGPTComm.key = chatGPTConfig->apiKey;
+		}
 	}
 
 	bbe::TimePoint getNightStart() const
@@ -386,7 +404,7 @@ public:
 
 		beginMeasure("Basic Controls");
 		setTargetFrametime((isFocused() || isHovered() || terriActive) ? (1.f / 144.f) : (1.f / 10.f));
-		tabSwitchRequestedLeft  = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::Q);
+		tabSwitchRequestedLeft = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::Q);
 		tabSwitchRequestedRight = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E);
 
 		beginMeasure("GlobalKeyboard");
@@ -422,7 +440,7 @@ public:
 		beginMeasure("Tray Icon");
 		static IconCategory prevIconCategory = IconCategory::NONE;
 		const IconCategory currIconCategory = getTrayIconCategory();
-		if(prevIconCategory != currIconCategory || bbe::TrayIcon::isVisible()) bbe::TrayIcon::setIcon(getCurrentTrayIcon());
+		if (prevIconCategory != currIconCategory || bbe::TrayIcon::isVisible()) bbe::TrayIcon::setIcon(getCurrentTrayIcon());
 		prevIconCategory = currIconCategory;
 
 		beginMeasure("Night Time");
@@ -460,7 +478,7 @@ public:
 		beginMeasure("Streak Stuff");
 		if ((streakDays.getLength() == 0 || !streakDays.getList().last().day.isToday()) && tasks.isStreakFulfilled())
 		{
-			streakDays.add(StreakDay{bbe::TimePoint::todayAt(0, 0, 0)});
+			streakDays.add(StreakDay{ bbe::TimePoint::todayAt(0, 0, 0) });
 		}
 
 		beginMeasure("Beeper");
@@ -550,7 +568,7 @@ public:
 		static int64_t sliderVal = 0;
 		const int64_t min = 0;
 		const int64_t max = log.getLength() - 2;
-		ImGui::VSliderScalar("##Scrollbar", {25, ImGui::GetWindowHeight() - 50}, ImGuiDataType_S64, &sliderVal, &max, &min);
+		ImGui::VSliderScalar("##Scrollbar", { 25, ImGui::GetWindowHeight() - 50 }, ImGuiDataType_S64, &sliderVal, &max, &min);
 		constexpr int64_t wheelSpeed = 5;
 		if (getMouseScrollY() > 0)
 		{
@@ -714,7 +732,7 @@ public:
 		bbe::Vector2 globalMouse = getMouseGlobal();
 		ImGui::Text("Global Mouse: %f/%f", globalMouse.x, globalMouse.y);
 
-		if(loaded) brush.drawImage(0, 200, 800, 400, image);
+		if (loaded) brush.drawImage(0, 200, 800, 400, image);
 		return bbe::Vector2(1.0f, 0.14f);
 	}
 
@@ -924,6 +942,111 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	bbe::Vector2 drawTabChatGPT()
+	{
+		if (ImGui::bbe::InputText("API Key", chatGPTConfig->apiKey, ImGuiInputTextFlags_Password))
+		{
+			chatGPTConfig.writeToFile();
+			// Set the API key in chatGPTComm
+			chatGPTComm.key = chatGPTConfig->apiKey;
+		}
+
+		// Input field for user's message
+		static bbe::String userInput;
+		static bbe::String errorString;
+		if (ImGui::bbe::InputText("Your Message", userInput, ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			// When the user presses Enter, send the message
+			if (chatGPTComm.isKeySet())
+			{
+				// Call queryAsync to avoid blocking UI
+				try
+				{
+					chatGPTFuture = chatGPTComm.queryAsync(userInput);
+					userInput = "";
+					errorString = "";
+				}
+				catch (const std::exception& e)
+				{
+					errorString = "Error initiating query";
+					errorString += e.what();
+				}
+			}
+			else
+			{
+				errorString = "Please set the API key.";
+			}
+		}
+		ImGui::Text(errorString);
+
+		// Check if the future is ready
+		bool waitingPrinted = false;
+		if (chatGPTFuture.valid())
+		{
+			std::future_status status = chatGPTFuture.wait_for(std::chrono::milliseconds(0));
+			if (status == std::future_status::ready)
+			{
+				try
+				{
+					// Get the response
+					bbe::ChatGPTQueryResponse response = chatGPTFuture.get();
+					// The response is already added to chatGPTComm.history
+				}
+				catch (const std::exception& e)
+				{
+					ImGui::Text("Error: %s", e.what());
+				}
+			}
+			else
+			{
+				// Optionally, display a "Loading..." indicator
+				ImGui::Text("Waiting for response...");
+				waitingPrinted = true;
+			}
+		}
+		if(!waitingPrinted) ImGui::Text(" "); // So that the "Waiting for response" doesn't move part of the GUI.
+
+		// Provide a button to purge the conversation
+		if (ImGui::Button("Clear Conversation"))
+		{
+			chatGPTComm.purgeMemory();
+		}
+
+		// Display the conversation history
+		ImGui::BeginChild("Conversation", ImVec2(0, 0), true);
+
+		// Skip the system message (first message)
+		for (size_t i = 0; i < chatGPTComm.history.size(); ++i)
+		{
+			const auto& message = chatGPTComm.history[i];
+			std::string role = message["role"];
+			std::string content = message["content"];
+			if (role == "system")
+			{
+				// Skip system message
+				continue;
+			}
+			else if (role == "user")
+			{
+				// Display user message
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8, 0.8, 1, 1)); // Blue color
+				ImGui::TextWrapped("You: %s", content.c_str());
+				ImGui::PopStyleColor();
+			}
+			else if (role == "assistant")
+			{
+				// Display assistant message
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 1, 0.8f, 1)); // Green color
+				ImGui::TextWrapped("Assistant: %s", content.c_str());
+				ImGui::PopStyleColor();
+			}
+		}
+
+		ImGui::EndChild();
+
+		return bbe::Vector2(1);
+	}
+
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
 		static bbe::Vector2 sizeMult(1.0f, 1.0f);
@@ -949,6 +1072,7 @@ public:
 #endif
 				Tab{"Strks",     "Streaks",        [&]() { return drawTabStreaks(brush); }},
 				Tab{"Lsts",      "Lists",          [&]() { return drawTabRememberLists(); }},
+				Tab{"GPT",       "ChatGPT",        [&]() { return drawTabChatGPT(); }},
 				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
 				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
 			};
@@ -1169,9 +1293,9 @@ public:
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF); // See: https://stackoverflow.com/questions/30413066/how-do-i-diagnose-heap-corruption-errors-on-windows
-	HWND hWnd = GetConsoleWindow(); 
+	HWND hWnd = GetConsoleWindow();
 	FreeConsole();
-	MyGame *mg = new MyGame();
+	MyGame* mg = new MyGame();
 	mg->start(1280, 720, "M.O.THE.R - Memory of the repetitive");
 #ifndef __EMSCRIPTEN__
 	delete mg;

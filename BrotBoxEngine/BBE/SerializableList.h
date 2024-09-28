@@ -406,5 +406,10 @@ namespace bbe
 		{
 			return data.get();
 		}
+
+		bbe::List<T>& getList()
+		{
+			return data.get();
+		}
 	};
 }
