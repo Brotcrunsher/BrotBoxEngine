@@ -91,12 +91,19 @@ void Task::execAdvance()
 void Task::execContingentStart()
 {
 	contingentCountingStart = bbe::TimePoint();
+	contingentRunning = true;
+}
+
+void Task::addContingent()
+{
+	collectedContingentSeconds += (bbe::TimePoint() - contingentCountingStart).toSeconds();
+	contingentCountingStart = bbe::TimePoint::epoch();
 }
 
 void Task::execContingentStop()
 {
-	collectedContingentSeconds += (bbe::TimePoint() - contingentCountingStart).toSeconds();
-	contingentCountingStart = bbe::TimePoint::epoch();
+	addContingent();
+	contingentRunning = false;
 }
 
 void Task::sanity()
@@ -524,6 +531,24 @@ void SubsystemTask::update()
 				t.collectedContingentSeconds -= days * t.contingentSecondsPerDay;
 				if (t.collectedContingentSeconds < 0) t.collectedContingentSeconds = 0;
 			}
+
+			if (t.stopContingentWhenLocked)
+			{
+				if (sessionLockMonitor.isScreenLocked()
+					&& t.contingentCountingStart != bbe::TimePoint::epoch()
+					&& t.contingentRunning)
+				{
+					t.addContingent();
+					requiresWrite = true;
+				}
+				if (!sessionLockMonitor.isScreenLocked()
+					&& t.contingentRunning
+					&& t.contingentCountingStart == bbe::TimePoint::epoch())
+				{
+					t.execContingentStart();
+					requiresWrite = true;
+				}
+			}
 		}
 	}
 	if (requiresWrite)
@@ -596,6 +621,7 @@ bool SubsystemTask::drawEditableTask(Task& t)
 			ImGui::Indent(15.0f);
 			taskChanged |= ImGui::InputInt("Collected Contingent (Seconds)", &t.collectedContingentSeconds);
 			taskChanged |= ImGui::InputInt("Contingent Per Day (Seconds)", &t.contingentSecondsPerDay);
+			taskChanged |= ImGui::Checkbox("Stop Contingent Counting when Locked", &t.stopContingentWhenLocked);
 			ImGui::Unindent(15.0f);
 		}
 		ImGui::Unindent(15.0f);

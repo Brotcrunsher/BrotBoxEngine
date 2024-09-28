@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BBE/BrotBoxEngine.h"
+#include "BBE/SessionLockMonitor.h"
 
 struct Task
 {
@@ -56,7 +57,9 @@ struct Task
 		((int32_t), collectedContingentSeconds, 0),
 		((int32_t), contingentSecondsPerDay, 0),
 		((bbe::TimePoint), contingentCountingStart, bbe::TimePoint::epoch()),
-		((bbe::TimePoint), previousContingentSubtraction, bbe::TimePoint::epoch())
+		((bbe::TimePoint), previousContingentSubtraction, bbe::TimePoint::epoch()),
+		((bool), contingentRunning, false),
+		((bool), stopContingentWhenLocked, false)
 	)
 
 	// Non-Persisted Helper Data below.
@@ -80,6 +83,7 @@ public:
 	void execMoveToNow();
 	void execAdvance();
 	void execContingentStart();
+	void addContingent();
 	void execContingentStop();
 
 	void sanity();
@@ -108,6 +112,7 @@ public:
 
 private:
 	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SessionLockMonitor sessionLockMonitor;
 
 	bool drawContingentButton(Task& t);
 	int32_t drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& requiresWrite,
