@@ -25,6 +25,7 @@
 //TODO: Nighttime configurable
 //TODO: Latetime configurable
 //TODO: Time left was negative. Why? It was evening and no tasks were remaining.
+//TODO: Add a new checkbox to tasks with contingent. When that checkbox is ticked, then adding to the contingent should be paused if the windows screen is locked.
 
 struct ClipboardContent
 {
@@ -684,55 +685,115 @@ public:
 	bbe::Vector2 drawTabMouseTracking(bbe::PrimitiveBrush2D& brush)
 	{
 		static bbe::Image image;
-		static bool loaded = false;
+		static std::atomic<bool> loaded(false);
 		static float multiplier = 1.0f;
+		static std::atomic<float> progress(0.0f);
+		static std::future<void> computationFuture;
+
 		ImGui::SliderFloat("Multiplier", &multiplier, 0.0f, 1.0f);
 
+		bool computationInProgress = computationFuture.valid() && computationFuture.wait_for(std::chrono::seconds(0)) != std::future_status::ready;
+
+		ImGui::BeginDisabled(computationInProgress);
 		if (ImGui::Button("Do it!"))
 		{
-			bbe::List<bbe::Vector2> positions;
-			float maxX = 0;
-			float maxY = 0;
-			float minX = 0;
-			float minY = 0;
-			bbe::simpleFile::forEachFile("mousePositions", [&](const bbe::String& path) {
-				bbe::List<float> contents = bbe::simpleFile::readFloatArrFromFile(path);
-				for (size_t i = 0; i < contents.getLength(); i += 2)
-				{
-					float& x = contents[i + 0];
-					float& y = contents[i + 1];
-					positions.add({ x, y });
-					maxX = bbe::Math::max(maxX, x);
-					maxY = bbe::Math::max(maxY, y);
-					minX = bbe::Math::min(minX, x);
-					minY = bbe::Math::min(minY, y);
-				}
-				});
-
-			bbe::Grid<float> grid(maxX - minX + 1, maxY - minY + 1);
-			float maxValue = 0;
-			for (size_t i = 0; i < positions.getLength(); i++)
+			if (!computationInProgress)
 			{
-				bbe::Vector2& p = positions[i];
-				grid[p.x - minX][p.y - minY]++;
-				maxValue = bbe::Math::max(maxValue, grid[p.x - minX][p.y - minY]);
-			}
+				// Start the computation
+				progress = 0.0f;
+				loaded = false;
 
-			image = bbe::Image(maxX - minX + 1, maxY - minY + 1);
-			loaded = true;
-			for (size_t x = 0; x < grid.getWidth(); x++)
-			{
-				for (size_t y = 0; y < grid.getHeight(); y++)
-				{
-					grid[x][y] *= multiplier;
-					image.setPixel(x, y, bbe::Color(grid[x][y] > 1.f ? 1.f : grid[x][y]).asByteColor());
-				}
+				computationFuture = std::async(std::launch::async, [&]() {
+
+					bbe::List<bbe::Vector2> positions;
+					float maxX = 0;
+					float maxY = 0;
+					float minX = 0;
+					float minY = 0;
+
+					bbe::List<bbe::String> files;
+					bbe::simpleFile::forEachFile("mousePositions", [&](const bbe::String& path) {
+						files.add(path);
+						});
+
+					size_t totalFiles = files.getLength();
+					for (size_t idx = 0; idx < totalFiles; ++idx)
+					{
+						const bbe::String& path = files[idx];
+
+						bbe::List<float> contents = bbe::simpleFile::readFloatArrFromFile(path);
+						for (size_t i = 0; i < contents.getLength(); i += 2)
+						{
+							float& x = contents[i + 0];
+							float& y = contents[i + 1];
+							positions.add({ x, y });
+							maxX = bbe::Math::max(maxX, x);
+							maxY = bbe::Math::max(maxY, y);
+							minX = bbe::Math::min(minX, x);
+							minY = bbe::Math::min(minY, y);
+						}
+
+						progress = 10.0f * (float)(idx + 1) / (float)totalFiles; // Reading files progress
+					}
+
+					bbe::Grid<float> grid(maxX - minX + 1, maxY - minY + 1);
+					float maxValue = 0;
+
+					size_t totalPositions = positions.getLength();
+					for (size_t i = 0; i < totalPositions; i++)
+					{
+						bbe::Vector2& p = positions[i];
+						grid[p.x - minX][p.y - minY]++;
+						maxValue = bbe::Math::max(maxValue, grid[p.x - minX][p.y - minY]);
+
+						if (i % 1000 == 0)
+						{
+							progress = 10.0f + 40.0f * (float)(i + 1) / (float)totalPositions; // Processing positions progress
+						}
+					}
+
+					image = bbe::Image(maxX - minX + 1, maxY - minY + 1);
+
+					size_t gridWidth = grid.getWidth();
+					size_t gridHeight = grid.getHeight();
+
+					for (size_t x = 0; x < gridWidth; x++)
+					{
+						for (size_t y = 0; y < gridHeight; y++)
+						{
+							grid[x][y] *= multiplier;
+							image.setPixel(x, y, bbe::Color(grid[x][y] > 1.f ? 1.f : grid[x][y]).asByteColor());
+						}
+
+						if (x % 10 == 0)
+						{
+							progress = 50.0f + 50.0f * (float)(x + 1) / (float)gridWidth; // Image creation progress
+						}
+					}
+
+					loaded = true;
+					progress = 100.0f;
+					});
 			}
 		}
+		ImGui::EndDisabled();
+
+		if (computationInProgress)
+		{
+			ImGui::Text("Progress: %.2f%%", progress.load());
+		}
+		else
+		{
+			ImGui::Text("");
+		}
+		if (!computationInProgress && loaded)
+		{
+			brush.drawImage(0, 200, 800, 400, image);
+		}
+
 		bbe::Vector2 globalMouse = getMouseGlobal();
 		ImGui::Text("Global Mouse: %f/%f", globalMouse.x, globalMouse.y);
 
-		if (loaded) brush.drawImage(0, 200, 800, 400, image);
 		return bbe::Vector2(1.0f, 0.14f);
 	}
 
