@@ -17,8 +17,8 @@ namespace bbe
 			long responseCode;
 		};
 
-		UrlRequestResult urlRequest(const bbe::String& url, bool addTrailingNul = true, bool verbose = false);
-		std::future<UrlRequestResult> urlRequestAsync(const bbe::String& url, bool addTrailingNul = true, bool verbose = false);
+		UrlRequestResult urlRequest(const bbe::String& url, const bbe::List<bbe::String>& headerFields = {}, const bbe::String& postData = "", bool addTrailingNul = true, bool verbose = false);
+		std::future<UrlRequestResult> urlRequestAsync(const bbe::String& url, const bbe::List<bbe::String>& headerFields = {}, const bbe::String& postData = "", bool addTrailingNul = true, bool verbose = false);
 
 		std::optional<bbe::List<char>> decryptXChaCha(const bbe::List<char>& data, const String& pathToKeyFile, bool addTrailingNul = true);
 

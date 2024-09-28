@@ -12,6 +12,7 @@
 struct CurlRaii
 {
 	CURL* curl = nullptr;
+	curl_slist* headers = nullptr;
 
 	CurlRaii()
 	{
@@ -24,6 +25,7 @@ struct CurlRaii
 
 	~CurlRaii()
 	{
+		curl_slist_free_all(headers);
 		curl_easy_cleanup(curl);
 	}
 
@@ -45,7 +47,7 @@ size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
 	return nmemb;
 }
 
-bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlRequest(const bbe::String& url, bool addTrailingNul, bool verbose)
+bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlRequest(const bbe::String& url, const bbe::List<bbe::String>& headerFields, const bbe::String& postData, bool addTrailingNul, bool verbose)
 {
 	CurlRaii c;
 	CURL*& curl = c.curl;
@@ -55,7 +57,19 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlRequest(const 
 	curl_easy_setopt(curl, CURLOPT_URL, url.getRaw());
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &(retVal.dataContainer));
-	if(verbose) curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+	if (verbose) curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+	if (postData.getLength() > 0) {
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postData.getRaw());
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postData.getLengthBytes());
+	}
+	for (size_t i = 0; i < headerFields.getLength(); i++)
+	{
+		c.headers = curl_slist_append(c.headers, headerFields[i].getRaw());
+	}
+	if (c.headers)
+	{
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, c.headers);
+	}
 
 	CURLcode res;
 	if ((res = curl_easy_perform(curl)) != CURLcode::CURLE_OK)
@@ -72,9 +86,9 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlRequest(const 
 	return retVal;
 }
 
-std::future<bbe::simpleUrlRequest::UrlRequestResult> bbe::simpleUrlRequest::urlRequestAsync(const bbe::String& url, bool addTrailingNul, bool verbose)
+std::future<bbe::simpleUrlRequest::UrlRequestResult> bbe::simpleUrlRequest::urlRequestAsync(const bbe::String& url, const bbe::List<bbe::String>& headerFields, const bbe::String& postData, bool addTrailingNul, bool verbose)
 {
-	return bbe::async(&urlRequest, url, addTrailingNul, verbose);
+	return bbe::async(&urlRequest, url, headerFields, postData, addTrailingNul, verbose);
 }
 
 
