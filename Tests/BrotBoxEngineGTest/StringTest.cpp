@@ -586,3 +586,227 @@ TEST(String, TotalStringTest)
 		ASSERT_TRUE (s2 < s1);
 	}
 }
+
+// Test appending another Utf8String
+TEST(String, AppendUtf8String) {
+	bbe::String str1("Hello");
+	bbe::String str2(", World!");
+	str1.append(str2);
+	ASSERT_EQ(str1, "Hello, World!");
+}
+
+// Test appending a substring of another Utf8String
+TEST(String, AppendUtf8String_Substring) {
+	bbe::String str1("Hello");
+	bbe::String str2(", Wonderful World!");
+	// Append "Wonderful" starting from position 2, count 9
+	str1.append(str2, 2, 9);
+	ASSERT_EQ(str1, "HelloWonderful");
+}
+
+// Test appending a C-style null-terminated string
+TEST(String, AppendCStr) {
+	bbe::String str1("Hello");
+	const char* toAppend = ", World!";
+	str1.append(toAppend);
+	ASSERT_EQ(str1, "Hello, World!");
+}
+
+// Test appending a specific number of characters from a C-style string
+TEST(String, AppendCStr_WithCount) {
+	bbe::String str1("Hello");
+	const char* toAppend = ", Wonderful World!";
+	// Append first 10 characters: ", Wonderfu"
+	str1.append(toAppend, 10);
+	ASSERT_EQ(str1, "Hello, Wonderfu");
+}
+
+// Test appending a Utf8StringView
+TEST(String, AppendUtf8StringView) {
+	bbe::String str1("Hello");
+	bbe::String str2(", Wonderful World!");
+	bbe::Utf8StringView view = str2.substringView(2, 11); // "Wonderful"
+	str1.append(view);
+	ASSERT_EQ(str1, "HelloWonderful");
+}
+
+// Test appending an empty Utf8String
+TEST(String, AppendEmptyUtf8String) {
+	bbe::String str1("Hello");
+	bbe::String empty;
+	str1.append(empty);
+	ASSERT_EQ(str1, "Hello");
+}
+
+// Test appending from an empty C-style string
+TEST(String, AppendEmptyCStr) {
+	bbe::String str1("Hello");
+	const char* empty = "";
+	str1.append(empty);
+	ASSERT_EQ(str1, "Hello");
+}
+
+// Test appending an empty Utf8StringView
+TEST(String, AppendEmptyUtf8StringView) {
+	bbe::String str1("Hello");
+	bbe::String empty;
+	bbe::Utf8StringView view = empty.substringView(0, 0);
+	str1.append(view);
+	ASSERT_EQ(str1, "Hello");
+}
+
+// **Note:** Testing for crashes (e.g., appending with position out of range) typically requires Death Tests.
+// However, Death Tests can be complex and may require separate test executables or specific setup.
+// Below is an example of how you might write such a test if your testing environment supports it.
+
+// Uncomment and adjust the following test if you have Death Tests enabled and `bbe::Crash` terminates the program.
+/*
+TEST(String, AppendUtf8String_Substring_PosOutOfRange) {
+	bbe::String str1("Hello");
+	bbe::String str2(", World!");
+	// Attempt to append starting at position 100, which is out of range
+	ASSERT_DEATH(str1.append(str2, 100, 5), ".*");
+}
+*/
+
+// Test appending with count exceeding the string length
+TEST(String, AppendUtf8String_Substring_CountExceeds) {
+	bbe::String str1("Hello");
+	bbe::String str2(", World!");
+	// str2 length is 8, pos=2, count=100 (should append from pos=2 to end)
+	str1.append(str2, 2, 100);
+	ASSERT_EQ(str1, "HelloWorld!");
+}
+
+// Test appending UTF-8 multi-byte characters
+TEST(String, AppendUtf8String_MultiByte) {
+	bbe::String str1("Hello");
+	bbe::String str2(" 🌍"); // Earth emoji (multi-byte)
+	str1.append(str2);
+	ASSERT_EQ(str1, "Hello 🌍");
+}
+
+// Test appending multiple UTF-8 multi-byte characters
+TEST(String, AppendUtf8String_MultiByteMultiple) {
+	bbe::String str1("🚀"); // Rocket emoji
+	bbe::String str2("🌟✨");
+	str1.append(str2);
+	ASSERT_EQ(str1, "🚀🌟✨");
+}
+
+// Test appending after multiple appends
+TEST(String, AppendMultipleTimes) {
+	bbe::String str1("Hello");
+	str1.append(", ");
+	str1.append("World");
+	str1.append("!");
+	ASSERT_EQ(str1, "Hello, World!");
+}
+
+// Test appending overlapping substrings
+TEST(String, AppendOverlappingSubstrings) {
+	bbe::String str1("abc");
+	bbe::String str2("abcd");
+	// Append substring "abc" from str2
+	str1.append(str2, 0, 3);
+	ASSERT_EQ(str1, "abcabc");
+}
+
+// Test appending using all existing overloads together
+TEST(String, AppendUsingAllOverloads) {
+	bbe::String str1("Start");
+	bbe::String str2(" Middle ");
+	const char* cstr = "End";
+	bbe::Utf8StringView view = str2.substringView(1, 4); // "Mid"
+
+	str1.append(str2);                   // "Start Middle "
+	str1.append(view);                   // "Start Middle Mid"
+	str1.append(cstr);                   // "Start Middle MidEnd"
+	str1.append(cstr, 2);                // "Start Middle MidEndEn"
+	// Note: There is no append overload that takes (int), so we skip appending an int
+
+	ASSERT_EQ(str1, "Start Middle MidEndEn");
+}
+
+// Test appending an empty string multiple times
+TEST(String, AppendEmptyMultipleTimes) {
+	bbe::String str1("Hello");
+	bbe::String empty;
+	str1.append(empty);
+	str1.append(empty);
+	ASSERT_EQ(str1, "Hello");
+}
+
+// Test appending special characters and whitespace
+TEST(String, AppendSpecialCharacters) {
+	bbe::String str1("Hello");
+	bbe::String str2(" \t\n💣🍣💃");
+	str1.append(str2);
+	ASSERT_EQ(str1, "Hello \t\n💣🍣💃");
+}
+
+// Test appending after trimming
+TEST(String, AppendAfterTrim) {
+	bbe::String str1("  Hello  ");
+	str1.trimInPlace(); // "Hello"
+	bbe::String str2(", World!");
+	str1.append(str2);
+	ASSERT_EQ(str1, "Hello, World!");
+}
+
+// Test appending to an empty string
+TEST(String, AppendToEmptyString) {
+	bbe::String str1("");
+	bbe::String str2("Hello");
+	str1.append(str2);
+	ASSERT_EQ(str1, "Hello");
+}
+
+// Test appending multiple varying inputs using existing overloads
+TEST(String, AppendMultipleVaryingInputs) {
+	bbe::String str1("Start");
+	str1.append(" Middle "); // append(const char*)
+	str1.append("End", 2);   // append(const char*, size_t)
+	// No append overload for int, so we skip appending an int
+	bbe::Utf8StringView view = str1.substringView(0, 5); // "Start"
+	str1.append(view);       // append(Utf8StringView)
+	ASSERT_EQ(str1, "Start Middle EnStart");
+}
+
+// Test appending with overlapping and non-overlapping patterns
+TEST(String, AppendOverlappingAndNonOverlapping) {
+	bbe::String str1("aaa");
+	bbe::String str2("aaab");
+	str1.append(str2, 0, 3); // Append "aaa"
+	ASSERT_EQ(str1, "aaaaaa");
+	// No append overload for int, so we skip appending an int
+	// Append "b" by appending a substring
+	str1.append(str2, 3, 1); // Append "b"
+	ASSERT_EQ(str1, "aaaaaab");
+}
+
+// Test appending with large number of characters to trigger buffer growth
+TEST(String, AppendLargeNumberOfCharacters) {
+	bbe::String str1("Start");
+	std::string largeAppend(1000, 'a'); // 1000 'a's
+	str1.append(largeAppend.c_str(), largeAppend.size());
+	ASSERT_EQ(str1.getLengthBytes(), 5 + 1000);
+	// Since getRaw() returns char*, use string comparison
+	ASSERT_TRUE(str1.getRaw()[5] == 'a' && str1.getRaw()[1004] == 'a' && str1.getRaw()[1005] == '\0');
+}
+
+// Test appending multiple multi-byte characters
+TEST(String, AppendMultipleMultiByteCharacters) {
+	bbe::String str1("🔥");
+	bbe::String str2("🚀🌟✨💫");
+	str1.append(str2);
+	ASSERT_EQ(str1, "🔥🚀🌟✨💫");
+}
+
+// Test appending strings with different UTF-8 encodings
+TEST(String, AppendDifferentUtf8Encodings) {
+	bbe::String str1("こんにちは"); // Japanese for "Hello"
+	bbe::String str2("世界");       // Japanese for "World"
+	str1.append(str2);
+	ASSERT_EQ(str1, "こんにちは世界");
+}

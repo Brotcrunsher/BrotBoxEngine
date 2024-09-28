@@ -1013,7 +1013,67 @@ bbe::Utf8String bbe::Utf8String::leftFill(char c, size_t length)
 	return retVal;
 }
 
+bbe::Utf8String& bbe::Utf8String::append(const bbe::Utf8String& other)
+{
+	size_t totalLength = getLengthBytes() + other.getLengthBytes();
+	m_data.growIfNeeded(totalLength + 1); // +1 for null terminator
+	memcpy(getRaw() + getLengthBytes(), other.getRaw(), other.getLengthBytes());
+	getRaw()[totalLength] = '\0';
+	return *this;
+}
 
+bbe::Utf8String& bbe::Utf8String::append(const bbe::Utf8String& other, size_t pos, size_t count)
+{
+	if (pos > other.getLength())
+	{
+		bbe::Crash(bbe::Error::IllegalArgument, "Position out of range in append.");
+	}
+
+#undef min
+	size_t actualCount = (count == npos) ? (other.getLength() - pos) : bbe::Math::min(count, other.getLength() - pos);
+	Utf8StringView view = other.substringView(pos, pos + actualCount);
+	return append(view);
+}
+
+bbe::Utf8String& bbe::Utf8String::append(const char* s)
+{
+	size_t sLengthBytes = strlen(s);
+	size_t totalLength = getLengthBytes() + sLengthBytes;
+	m_data.growIfNeeded(totalLength + 1); // +1 for null terminator
+	memcpy(getRaw() + getLengthBytes(), s, sLengthBytes);
+	getRaw()[totalLength] = '\0';
+	return *this;
+}
+
+bbe::Utf8String& bbe::Utf8String::append(const char* s, size_t count)
+{
+	size_t sLengthBytes = strlen(s);
+	size_t actualCount = std::min(count, sLengthBytes);
+	size_t totalLength = getLengthBytes() + actualCount;
+	m_data.growIfNeeded(totalLength + 1); // +1 for null terminator
+	memcpy(getRaw() + getLengthBytes(), s, actualCount);
+	getRaw()[totalLength] = '\0';
+	return *this;
+}
+
+bbe::Utf8String& bbe::Utf8String::append(size_t count, char c)
+{
+	size_t totalLength = getLengthBytes() + count;
+	m_data.growIfNeeded(totalLength + 1); // +1 for null terminator
+	memset(getRaw() + getLengthBytes(), c, count);
+	getRaw()[totalLength] = '\0';
+	return *this;
+}
+
+bbe::Utf8String& bbe::Utf8String::append(const bbe::Utf8StringView& view)
+{
+	size_t otherLengthBytes = view.getLengthBytes();
+	size_t totalLength = getLengthBytes() + otherLengthBytes;
+	m_data.growIfNeeded(totalLength + 1); // +1 for null terminator
+	memcpy(getRaw() + getLengthBytes(), &((*view.m_pstring)[view.m_start]), otherLengthBytes);
+	getRaw()[totalLength] = '\0';
+	return *this;
+}
 
 
 template<>

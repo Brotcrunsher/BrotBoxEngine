@@ -183,6 +183,14 @@ namespace bbe
 		void resizeCapacity(size_t newCapacity);
 
 		Utf8String leftFill(char c, size_t length);
+
+		Utf8String& append(const Utf8String& other);
+		Utf8String& append(const Utf8String& other, size_t pos, size_t count = npos);
+		Utf8String& append(const char* s);
+		Utf8String& append(const char* s, size_t count);
+		Utf8String& append(size_t count, char c);
+		Utf8String& append(const Utf8StringView& view);
+		static constexpr size_t npos = static_cast<size_t>(-1);
 	};
 
 	typedef Utf8String String;
