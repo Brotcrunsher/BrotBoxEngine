@@ -6,6 +6,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include "../BBE/List.h"
 
 namespace bbe
 {
@@ -15,8 +16,8 @@ namespace bbe
 		std::mutex mutex;
 		std::condition_variable gate;
 		std::thread thread;
-		float targetBrightness = -1.0f;
-		float currentBrightness = -1.0f;
+		bbe::List<float> targetBrightness = {};
+		bbe::List<float> currentBrightness = {};
 		bool stopRequested = false;
 
 		void threadMain();
@@ -28,7 +29,7 @@ namespace bbe
 		Monitor& operator=(Monitor&) = delete;
 		Monitor(Monitor&) = delete;
 
-		void setBrightness(float brightnessPercentag);
+		void setBrightness(const bbe::List<float>& brightnessPercentag);
 	};
 }
 #endif

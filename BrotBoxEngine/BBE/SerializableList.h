@@ -220,6 +220,11 @@ namespace bbe
 			return &data;
 		}
 
+		const T* operator->() const
+		{
+			return &data;
+		}
+
 		void writeToFile()
 		{
 			bbe::ByteBuffer buffer;

@@ -25,7 +25,6 @@
 //TODO: Nighttime configurable
 //TODO: Latetime configurable
 //TODO: Time left was negative. Why? It was evening and no tasks were remaining.
-//TODO: Add a new checkbox to tasks with contingent. When that checkbox is ticked, then adding to the contingent should be paused if the windows screen is locked.
 
 struct ClipboardContent
 {
@@ -49,7 +48,10 @@ struct GeneralConfig
 		((bbe::String), backupPath),
 		((bbe::String), serverKeyFilePath),
 		((bbe::String), serverAddress),
-		((int32_t), serverPort, 3490)
+		((int32_t), serverPort, 3490),
+		((float), baseMonitorBrightness1, 1.0f),
+		((float), baseMonitorBrightness2, 1.0f),
+		((float), baseMonitorBrightness3, 1.0f)
 	)
 };
 
@@ -496,7 +498,13 @@ public:
 		{
 			monitorBrightness = getMonitorDim();
 		}
-		monitor.setBrightness(monitorBrightness);
+		monitor.setBrightness(
+			{
+			monitorBrightness * generalConfig->baseMonitorBrightness1,
+			monitorBrightness * generalConfig->baseMonitorBrightness2,
+			monitorBrightness * generalConfig->baseMonitorBrightness3
+			}
+		);
 
 		beginMeasure("Working Hours");
 		if (tasks.hasPotentialTaskComplaint())
@@ -609,6 +617,10 @@ public:
 		generalConfigChanged |= ImGui::bbe::InputText("Server Address", generalConfig->serverAddress, ImGuiInputTextFlags_EnterReturnsTrue);
 		generalConfigChanged |= ImGui::InputInt("Server Port", &generalConfig->serverPort);
 		generalConfigChanged |= ImGui::bbe::InputText("Server Key Path", generalConfig->serverKeyFilePath, ImGuiInputTextFlags_EnterReturnsTrue);
+
+		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 1", &generalConfig->baseMonitorBrightness1, 0.0f, 1.0f);
+		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 2", &generalConfig->baseMonitorBrightness2, 0.0f, 1.0f);
+		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 3", &generalConfig->baseMonitorBrightness3, 0.0f, 1.0f);
 
 		if (generalConfigChanged)
 		{
@@ -1305,10 +1317,7 @@ public:
 			ImGui::BeginDisabled(!monitorBrightnessOverwrite);
 			ImGui::SameLine();
 			ImGui::PushItemWidth(100);
-			if (ImGui::SliderFloat("##Monitor Brightness", &monitorBrightness, 0.0, 1.0))
-			{
-				monitor.setBrightness(monitorBrightness);
-			}
+			ImGui::SliderFloat("##Monitor Brightness", &monitorBrightness, 0.0, 1.0);
 			ImGui::PopItemWidth();
 			ImGui::EndDisabled();
 
