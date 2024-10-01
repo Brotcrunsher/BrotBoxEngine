@@ -13,17 +13,52 @@
 
 static void internalSetBrightness(bbe::List<float> &brightnessPercentag)
 {
-    struct Data
+    // First we have to get all the monitor infos and then sort them so that we later know which brightnessPercentage is for which monitor.
+    // If we don't do this, then the order is rather random, as the order in which EnumDisplayMonitors iterates is not specified and can change
+    // between calls.
+    struct MonitorInfos
     {
-        std::atomic<size_t> counter = 0;
+        std::mutex m;
+        bbe::List<MONITORINFOEX> monitorInfos;
         bbe::List<DWORD> brightness;
     };
-    Data data;
+    MonitorInfos monitorInfos;
+    if (!EnumDisplayMonitors(nullptr, nullptr, [](HMONITOR hMonitor, HDC, LPRECT, LPARAM dwData) -> BOOL {
+        MONITORINFOEX monitorInfo;
+        monitorInfo.cbSize = sizeof(MONITORINFOEX);
+        if (!GetMonitorInfo(hMonitor, &monitorInfo))
+        {
+            return true;
+        }
+
+        MonitorInfos& mi = *((MonitorInfos*)dwData);
+        std::lock_guard _(mi.m);
+        mi.monitorInfos.add(monitorInfo);
+
+        return true;
+    }, (LPARAM)&monitorInfos))
+    {
+        BBELOGLN("Failed to enumerate display monitors for MonitorInfos");
+    }
+    monitorInfos.monitorInfos.sort([](const MONITORINFOEX& a, const MONITORINFOEX& b)
+        {
+            if (a.rcMonitor.right < b.rcMonitor.right) return true;
+            if (a.rcMonitor.right > b.rcMonitor.right) return false;
+            if (a.rcMonitor.top < b.rcMonitor.top) return true;
+            if (a.rcMonitor.top > b.rcMonitor.top) return false;
+            if (a.rcMonitor.bottom < b.rcMonitor.bottom) return true;
+            if (a.rcMonitor.bottom > b.rcMonitor.bottom) return false;
+            if (a.rcMonitor.right < b.rcMonitor.right) return true;
+            if (a.rcMonitor.right > b.rcMonitor.right) return false;
+
+            return false;
+        });
+
     for (size_t i = 0; i < brightnessPercentag.getLength(); i++)
     {
         if (brightnessPercentag[i] > 1.0f) brightnessPercentag[i] = 1.0f;
         if (brightnessPercentag[i] < 0.0f) brightnessPercentag[i] = 0.0f;
-        data.brightness.add(brightnessPercentag[i] * 10000);
+        monitorInfos.brightness.add(brightnessPercentag[i] * 10000);
     }
 
     if (!EnumDisplayMonitors(nullptr, nullptr, [](HMONITOR hMonitor, HDC, LPRECT, LPARAM dwData) -> BOOL {
@@ -44,13 +79,29 @@ static void internalSetBrightness(bbe::List<float> &brightnessPercentag)
             return true;
         }
 
-        Data& data = *((Data*)dwData);
+        MonitorInfos& data = *((MonitorInfos*)dwData);
         for (DWORD i = 0; i < numPhysicalMonitors; i++)
         {
             DWORD min, cur, max;
             if (GetMonitorBrightness(physicalMonitors[i].hPhysicalMonitor, &min, &cur, &max))
             {
-                size_t dataAccess = data.counter.fetch_add(1);
+                size_t dataAccess = 0;
+                MONITORINFOEX monitorInfo;
+                monitorInfo.cbSize = sizeof(MONITORINFOEX);
+                if (GetMonitorInfo(hMonitor, &monitorInfo))
+                {
+                    for (size_t k = 0; k < data.monitorInfos.getLength(); k++)
+                    {
+                        if (data.monitorInfos[k].rcMonitor.right     == monitorInfo.rcMonitor.right
+                            && data.monitorInfos[k].rcMonitor.left   == monitorInfo.rcMonitor.left
+                            && data.monitorInfos[k].rcMonitor.top    == monitorInfo.rcMonitor.top
+                            && data.monitorInfos[k].rcMonitor.bottom == monitorInfo.rcMonitor.bottom)
+                        {
+                            dataAccess = k;
+                            break;
+                        }
+                    }
+                }
                 if (dataAccess >= data.brightness.getLength()) dataAccess = 0;
 
                 float percentage = data.brightness[dataAccess] / 10000.f;
@@ -69,9 +120,9 @@ static void internalSetBrightness(bbe::List<float> &brightnessPercentag)
         DestroyPhysicalMonitors(numPhysicalMonitors, physicalMonitors.getRaw());
 
         return true;
-        }, (LPARAM)&data))
+        }, (LPARAM)&monitorInfos))
     {
-        BBELOGLN("Failed to enumerate display monitors");
+        BBELOGLN("Failed to enumerate display monitors for brightness");
     }
 }
 

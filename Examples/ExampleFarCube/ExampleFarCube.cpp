@@ -17,8 +17,8 @@
 class MyGame : public bbe::Game
 {
 	float timePassed = 0;
+	bbe::Vector3 offsetPos;
 	bbe::Vector3 currentPos;
-	bool running = true;
 	virtual void onStart() override
 	{
 	}
@@ -26,10 +26,11 @@ class MyGame : public bbe::Game
 	{
 		if (isKeyDown(bbe::Key::SPACE))
 		{
-			running = false;
+			offsetPos = currentPos;
+			timePassed = 0.0f;
 		}
-		if(running) timePassed += timeSinceLastFrame;
-		currentPos.x = bbe::Math::pow(1.5, timePassed);
+		timePassed += timeSinceLastFrame;
+		currentPos.x = offsetPos.x + bbe::Math::pow(1.5, timePassed);
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
 	{
