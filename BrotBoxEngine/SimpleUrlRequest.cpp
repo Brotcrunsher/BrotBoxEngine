@@ -1,13 +1,30 @@
 #include "BBE/Async.h"
 #include "BBE/SimpleUrlRequest.h"
+#include "BBE/SimpleProcess.h"
 #include "BBE/Error.h"
 #include "BBE/List.h"
 #include "sodium.h"
 #include "BBE/SimpleFile.h"
 #include "BBE/Socket.h"
+#include "BBE/Logging.h"
 
 #ifdef BBE_ADD_CURL
 #include "curl/curl.h"
+
+#ifdef WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <netfw.h>
+#pragma comment(lib, "ole32.lib")
+#pragma comment(lib, "ws2_32.lib")
+
+#include <vector>
+#include <string>
+#include <iostream>
+#include <algorithm>
+#endif
 
 struct CurlRaii
 {
@@ -167,6 +184,128 @@ bbe::simpleUrlRequest::SocketRequestXChaChaRet bbe::simpleUrlRequest::socketRequ
 std::future<bbe::simpleUrlRequest::SocketRequestXChaChaRet> bbe::simpleUrlRequest::socketRequestXChaChaAsync(bbe::String url, uint16_t port, const String& pathToKeyFile, bool addTrailingNul, bool verbose)
 {
 	return bbe::async(&socketRequestXChaCha, url, port, pathToKeyFile, addTrailingNul, verbose);
+}
+bbe::List<bbe::String> bbe::simpleUrlRequest::resolveDomain(const bbe::String& domain)
+{
+	bbe::List<bbe::String> retVal;
+	ADDRINFOA info = { 0 };
+	info.ai_family = AF_UNSPEC; // IPv4 + IPv6
+	info.ai_socktype = SOCK_STREAM;
+	info.ai_protocol = IPPROTO_TCP;
+
+	ADDRINFOA* result = nullptr;
+	int ret = GetAddrInfoA(domain.getRaw(), NULL, &info, &result);
+	if (ret == 0 && result != NULL) {
+		for (ADDRINFOA* ptr = result; ptr != NULL; ptr = ptr->ai_next) {
+			char ipString[INET6_ADDRSTRLEN] = {};
+
+			if (ptr->ai_family == AF_INET) {
+				// IPv4
+				SOCKADDR_IN* sockaddr_ipv4 = (SOCKADDR_IN*)ptr->ai_addr;
+				InetNtopA(AF_INET, &sockaddr_ipv4->sin_addr, ipString, INET6_ADDRSTRLEN);
+			}
+			else if (ptr->ai_family == AF_INET6) {
+				// IPv6
+				SOCKADDR_IN6* sockaddr_ipv6 = (SOCKADDR_IN6*)ptr->ai_addr;
+				InetNtopA(AF_INET6, &sockaddr_ipv6->sin6_addr, ipString, INET6_ADDRSTRLEN);
+			}
+
+			if (strlen(ipString) > 0) {
+				retVal.add(ipString);
+			}
+		}
+		FreeAddrInfoA(result);
+	}
+
+	return retVal;
+}
+bbe::List<bbe::String> bbe::simpleUrlRequest::resolveDomains(const bbe::List<bbe::String>& domains)
+{
+	bbe::List<bbe::String> retVal;
+	for (size_t i = 0; i < domains.getLength(); i++)
+	{
+		bbe::List<bbe::String> cur = resolveDomain(domains[i]);
+		for (size_t k = 0; k < cur.getLength(); k++)
+		{
+			retVal.addUnique(cur[k]);
+		}
+	}
+	return retVal;
+}
+bbe::String bbe::simpleUrlRequest::firewallBlockString(const bbe::List<bbe::String>& domains)
+{
+	bbe::List<bbe::String> resolved = resolveDomains(domains);
+	bbe::String retVal;
+	for (size_t i = 0; i < resolved.getLength(); i++)
+	{
+		if (!retVal.isEmpty()) retVal += ",";
+		retVal += resolved[i];
+	}
+	return retVal;
+}
+void bbe::simpleUrlRequest::firewallBlockDomains(const bbe::String& ruleName, const bbe::List<bbe::String>& domains)
+{
+	if (!bbe::simpleProcess::isRunAsAdmin())
+	{
+		bbe::Crash(bbe::Error::IllegalState, "Operation requires Admin/Elevation!");
+	}
+
+	INetFwPolicy2* policy = nullptr;
+	HRESULT hr = CoCreateInstance(__uuidof(NetFwPolicy2), NULL, CLSCTX_INPROC_SERVER,
+		__uuidof(INetFwPolicy2), (void**)&policy);
+	if (FAILED(hr)) {
+		// Error handling
+		return;
+	}
+
+	INetFwRules* rules = nullptr;
+	hr = policy->get_Rules(&rules);
+	if (FAILED(hr)) {
+		// Error handling
+		policy->Release();
+		return;
+	}
+
+	std::wstring ruleNameAsW = ruleName.toStdWString();
+	if (domains.getLength() > 0) {
+		const std::wstring remoteAddresses = firewallBlockString(domains).toStdWString();
+
+		INetFwRule* rule = nullptr;
+		hr = CoCreateInstance(__uuidof(NetFwRule), nullptr, CLSCTX_INPROC_SERVER,
+			__uuidof(INetFwRule), (void**)&rule);
+		if (SUCCEEDED(hr)) {
+			rule->put_Name((wchar_t*)ruleNameAsW.c_str());
+			rule->put_Action(NET_FW_ACTION_BLOCK);
+			rule->put_Enabled(VARIANT_TRUE);
+			wchar_t type[] = L"All";
+			rule->put_InterfaceTypes(type);
+
+			// Block both inbound and outbound traffic
+			rule->put_Direction(NET_FW_RULE_DIR_OUT);
+
+			// Set Protocol to Any
+			rule->put_Protocol(NET_FW_IP_PROTOCOL_ANY);
+
+			// Set valid RemoteAddresses
+			rule->put_RemoteAddresses((wchar_t*)remoteAddresses.c_str());
+
+			hr = rules->Add(rule);
+			BBELOGLN("Firewall Add return: " << hr);
+
+			rule->Release();
+		}
+	}
+	else {
+		INetFwRule* checkRule = nullptr;
+		while (SUCCEEDED(rules->Item((wchar_t*)ruleNameAsW.c_str(), &checkRule)))
+		{
+			hr = rules->Remove((wchar_t*)ruleNameAsW.c_str());
+			BBELOGLN("Firewall Remove return: " << hr);
+		}
+	}
+
+	rules->Release();
+	policy->Release();
 }
 #endif
 #endif

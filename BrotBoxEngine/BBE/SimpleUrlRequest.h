@@ -36,6 +36,11 @@ namespace bbe
 		};
 		SocketRequestXChaChaRet socketRequestXChaCha(const bbe::String& url, uint16_t port, const String& pathToKeyFile, bool addTrailingNul = true, bool verbose = false);
 		std::future<SocketRequestXChaChaRet> socketRequestXChaChaAsync(bbe::String /*copy*/ url, uint16_t port, const String& pathToKeyFile, bool addTrailingNul = true, bool verbose = false);
+		
+		bbe::List<bbe::String> resolveDomain(const bbe::String& domain);
+		bbe::List<bbe::String> resolveDomains(const bbe::List<bbe::String>& domains);
+		bbe::String firewallBlockString(const bbe::List<bbe::String>& domains);
+		void firewallBlockDomains(const bbe::String& ruleName, const bbe::List<bbe::String>& domains);
 #endif
 	}
 }

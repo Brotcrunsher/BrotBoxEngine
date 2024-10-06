@@ -191,6 +191,9 @@ namespace bbe
 		Utf8String& append(size_t count, char c);
 		Utf8String& append(const Utf8StringView& view);
 		static constexpr size_t npos = static_cast<size_t>(-1);
+
+		std::string toStdString() const;
+		std::wstring toStdWString() const;
 	};
 
 	typedef Utf8String String;

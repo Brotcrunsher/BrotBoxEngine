@@ -1,4 +1,5 @@
 #include "BBE/BrotBoxEngine.h"
+#include "BBE/SimpleProcess.h"
 #include <iostream>
 #define NOMINMAX
 // Need to link with Ws2_32.lib
@@ -25,6 +26,9 @@
 //TODO: Nighttime configurable
 //TODO: Latetime configurable
 //TODO: Time left was negative. Why? It was evening and no tasks were remaining.
+//TODO: Server was unable to be reached for a while (for what ever reason). Problem: After the server fixed itself,
+//      Mother was still not making a connection until I manually restarted the Program. Why?
+//TODO: Left a contingent Task running (oopsie). A fail safe of some kind would be nice. Some kind of warning system?
 
 struct ClipboardContent
 {
@@ -170,6 +174,8 @@ private:
 	bbe::Monitor monitor;
 	float monitorBrightness = 1.0f;
 	bool monitorBrightnessOverwrite = false;
+
+	bool highConcentrationMode = false;
 
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
@@ -1229,6 +1235,8 @@ public:
 				}
 			}
 
+			bbe::simpleProcess::drawElevationButton(this);
+
 			if (ImGui::Button("Play Sound"))
 			{
 				assetStore::NewTask()->play();
@@ -1300,6 +1308,21 @@ public:
 			}
 
 			ImGui::Checkbox("Ignore Night", &ignoreNight);
+
+			ImGui::BeginDisabled(!bbe::simpleProcess::isRunAsAdmin());
+			if (ImGui::Checkbox("Enable High Concentration Mode", &highConcentrationMode))
+			{
+				if (highConcentrationMode)
+				{
+					urls.enableHighConcentrationMode();
+				}
+				else
+				{
+					urls.disableHighConcentrationMode();
+				}
+			}
+			ImGui::EndDisabled();
+
 			ImGui::Checkbox("Let me prepare", &tasks.forcePrepare); ImGui::bbe::tooltip("Make tasks advancable, even before late time happens.");
 			bbe::String serverUnreachableString = "Silence Server Unreachable. Last reach: ";
 			if (lastServerReach == bbe::TimePoint::epoch())

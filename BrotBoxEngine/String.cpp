@@ -1075,6 +1075,17 @@ bbe::Utf8String& bbe::Utf8String::append(const bbe::Utf8StringView& view)
 	return *this;
 }
 
+std::string bbe::Utf8String::toStdString() const
+{
+	return std::string(getRaw());
+}
+
+std::wstring bbe::Utf8String::toStdWString() const
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	return converter.from_bytes(getRaw());
+}
+
 
 template<>
 uint32_t bbe::hash(const bbe::String & t)

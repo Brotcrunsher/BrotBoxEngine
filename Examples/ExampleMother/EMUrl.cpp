@@ -2,6 +2,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "AssetStore.h"
+#include "BBE/SimpleUrlRequest.h"
 #define NOMINMAX
 #include <Windows.h>
 #include <tlhelp32.h>
@@ -100,6 +101,16 @@ void SubsystemUrl::drawGui()
 bool SubsystemUrl::timeWasterFound() const
 {
 	return m_foundTimewasters.getLength() > 0;
+}
+
+void SubsystemUrl::enableHighConcentrationMode() const
+{
+	bbe::simpleUrlRequest::firewallBlockDomains("M.O.THE.R Rule", getTimeWasterUrls());
+}
+
+void SubsystemUrl::disableHighConcentrationMode() const
+{
+	bbe::simpleUrlRequest::firewallBlockDomains("M.O.THE.R Rule", {});
 }
 
 bbe::List<bbe::String> SubsystemUrl::getDomains()
@@ -207,6 +218,19 @@ bbe::List<bbe::String> SubsystemUrl::getDomains()
 			&& newElem.contains("."))
 		{
 			retVal.add(newElem);
+		}
+	}
+	return retVal;
+}
+
+bbe::List<bbe::String> SubsystemUrl::getTimeWasterUrls() const
+{
+	bbe::List<bbe::String> retVal;
+	for (size_t i = 0; i < urls.getLength(); i++)
+	{
+		if (urls[i].type == Url::TYPE_TIME_WASTER)
+		{
+			retVal.add(urls[i].url);
 		}
 	}
 	return retVal;

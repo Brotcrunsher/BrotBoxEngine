@@ -2,7 +2,7 @@
 
 #include "../BBE/glfwWrapper.h"
 #include "../BBE/String.h"
-
+#undef DELETE
 namespace bbe
 {
 	enum class Key

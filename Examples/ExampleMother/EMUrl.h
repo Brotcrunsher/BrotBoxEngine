@@ -22,10 +22,14 @@ private:
 	bbe::SerializableList<Url> urls = bbe::SerializableList<Url>("urls.dat", "ParanoiaConfig", bbe::Undoable::YES);
 	bbe::List<bbe::String> getDomains();
 	bbe::List<bbe::String> m_foundTimewasters;
+	bbe::List<bbe::String> getTimeWasterUrls() const;
 
 public:
 	void update();
 	void drawGui();
 
 	bool timeWasterFound() const;
+
+	void enableHighConcentrationMode() const;
+	void disableHighConcentrationMode() const;
 };
