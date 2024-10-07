@@ -1,5 +1,6 @@
 #include "BBE/BrotBoxEngine.h"
 #include "BBE/SimpleProcess.h"
+#include "BBE/AdafruitMacroPadRP2040.h"
 #include <iostream>
 #define NOMINMAX
 // Need to link with Ws2_32.lib
@@ -176,6 +177,8 @@ private:
 	bool monitorBrightnessOverwrite = false;
 
 	bool highConcentrationMode = false;
+
+	bbe::AdafruitMacroPadRP2040 adafruitMacroPadRP2040;
 
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
@@ -391,6 +394,16 @@ public:
 					}
 				}
 			}
+		}
+
+		beginMeasure("AdafruitMacroPadRP2040");
+		if (adafruitMacroPadRP2040.isConnected())
+		{
+			adafruitMacroPadRP2040.update();
+		}
+		else
+		{
+			adafruitMacroPadRP2040.connect();
 		}
 
 		beginMeasure("Mouse Tracking");
@@ -1126,6 +1139,36 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	bbe::Vector2 drawAdafruitMacroPadRP2040(bbe::PrimitiveBrush2D& brush)
+	{
+		if (adafruitMacroPadRP2040.isKeyDown(bbe::RP2040Key::BUTTON_AUDIO))
+		{
+			brush.setColorRGB(0.5f, 0.5f, 1.0f);
+		}
+		else
+		{
+			brush.setColorRGB(1, 1, 1);
+		}
+
+		brush.fillText(350, 100, bbe::String(adafruitMacroPadRP2040.getRotationValue()));
+		for (int i = 0; i < 12; i++)
+		{
+			brush.setColorRGB(1, 1, 1);
+			int x = i % 3;
+			int y = i / 3;
+			constexpr int rectSize = 100;
+			bbe::Rectangle r(100 + x * (rectSize + 4), 140 + y * (rectSize + 4), rectSize, rectSize);
+			brush.sketchRect(r);
+			if (adafruitMacroPadRP2040.isKeyDown((bbe::RP2040Key)i))
+			{
+				r.shrinkInPlace(5);
+				brush.setColorRGB(0.5f, 0.5f, 1.0f);
+				brush.fillRect(r);
+			}
+		}
+		return bbe::Vector2(0);
+	}
+
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
 		static bbe::Vector2 sizeMult(1.0f, 1.0f);
@@ -1152,6 +1195,7 @@ public:
 				Tab{"Strks",     "Streaks",        [&]() { return drawTabStreaks(brush); }},
 				Tab{"Lsts",      "Lists",          [&]() { return drawTabRememberLists(); }},
 				Tab{"GPT",       "ChatGPT",        [&]() { return drawTabChatGPT(); }},
+				Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() {return drawAdafruitMacroPadRP2040(brush); }},
 				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
 				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
 			};
