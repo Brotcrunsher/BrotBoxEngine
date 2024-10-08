@@ -106,6 +106,8 @@ namespace bbe
 		void serialize(bbe::ByteBuffer& buffer) const;
 		static TimePoint deserialize(bbe::ByteBufferSpan& buffer);
 
+		static TimePoint fromString(const bbe::String& s, const bbe::String& format);
+
 		int32_t getYear() const;
 		Month getMonth() const;
 		int32_t getDay() const;

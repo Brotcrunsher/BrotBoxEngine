@@ -32,7 +32,6 @@
 //TODO: Left a contingent Task running (oopsie). A fail safe of some kind would be nice. Some kind of warning system?
 //TODO: Show Bitcoin chart
 //TODO: Show average driving time
-//TODO: Show weather
 //TODO: Show news
 //TODO: Ada functionality: Put something in clipboard.
 //TODO: Ada functionality: Open a webbrowser and URL bla
@@ -40,6 +39,10 @@
 //TODO: Ada functionality: Silence open tasks for 1 hour
 //TODO: Ada functionality: Ignore night
 //TODO: Ada functionality: Ask a question to chat gpt via microphone (Hard!)
+//TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
+//TODO: Fix the text rendering (Hard!)
+//TODO: "Remember Screen Location" button
+//TODO: The weather tab looks aweful, but is strictly speaking functional. Improve.
 
 struct ClipboardContent
 {
@@ -131,6 +134,13 @@ struct ChatGPTConfig
 	)
 };
 
+struct WeaterConfig
+{
+	BBE_SERIALIZABLE_DATA(
+		((bbe::String), city)
+	)
+};
+
 enum class IconCategory
 {
 	NONE,
@@ -155,6 +165,7 @@ private:
 	bbe::SerializableObject<KeyboardTracker> keyboardTracker    = bbe::SerializableObject<KeyboardTracker>("keyboardTracker.dat"); // No ParanoiaConfig to avoid accidentally logging passwords.
 	bbe::SerializableList<SeenServerTaskId> seenServerTaskIds   = bbe::SerializableList<SeenServerTaskId> ("SeenServerTaskIds.dat",   "ParanoiaConfig");
 	bbe::SerializableObject<ChatGPTConfig> chatGPTConfig        = bbe::SerializableObject<ChatGPTConfig>  ("ChatGPTConfig.dat",       "ParanoiaConfig");
+	bbe::SerializableObject<WeaterConfig> weatherConfig         = bbe::SerializableObject<WeaterConfig>   ("WeaterConfig.dat",        "ParanoiaConfig");
 
 	bbe::ChatGPTComm chatGPTComm; // ChatGPT communication object
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
@@ -598,6 +609,109 @@ public:
 			clipboardContent.removeIndex(deleteIndex);
 		}
 		return bbe::Vector2(1);
+	}
+
+	struct WeatherEntry
+	{
+		float temperatureC = 0.0f;
+		float temperatureCFelt = 0.0f;
+		float humidity = 0.0f;
+		bbe::TimePoint time;
+		float uvIndex = 0.0f;
+		float winddir = 0.0f;
+		float windspeedKmph = 0.0f;
+		float precipMM = 0.0f;
+		float chanceOfRain = 0.0f;
+	};
+
+	WeatherEntry jsonToWeatherEntry(const nlohmann::json& json)
+	{
+		WeatherEntry retVal;
+
+		if      (json.contains("temp_C")) retVal.temperatureC = std::stof(json["temp_C"].get<std::string>());
+		else if (json.contains("tempC"))  retVal.temperatureC = std::stof(json["tempC"] .get<std::string>());
+
+		if (json.contains("FeelsLikeC")) retVal.temperatureCFelt = std::stof(json["FeelsLikeC"].get<std::string>());
+		if (json.contains("humidity")) retVal.humidity = std::stof(json["humidity"].get<std::string>());
+
+		if (json.contains("localObsDateTime"))
+		{
+			retVal.time = bbe::TimePoint::fromString(json["localObsDateTime"].get<std::string>().c_str(), "yyyy-MM-dd hh:mm a");
+		}
+		else if (json.contains("time"))
+		{
+			retVal.time = bbe::TimePoint::todayAt(std::stoi(json["time"].get<std::string>()) / 100, 0);
+		}
+
+		if (json.contains("uvIndex")) retVal.uvIndex = std::stof(json["uvIndex"].get<std::string>());
+		if (json.contains("winddirDegree"))	retVal.winddir = std::stof(json["winddirDegree"].get<std::string>());
+		if (json.contains("windspeedKmph"))	retVal.windspeedKmph = std::stof(json["windspeedKmph"].get<std::string>());
+		if (json.contains("precipMM")) retVal.precipMM = std::stof(json["precipMM"].get<std::string>());
+		if (json.contains("chanceofrain")) retVal.chanceOfRain = std::stof(json["chanceofrain"].get<std::string>());
+
+		return retVal;
+	}
+
+	void drawWeatherEntry(bbe::PrimitiveBrush2D& brush, const bbe::Vector2& offset, const WeatherEntry& entry)
+	{
+		brush.fillText(offset + bbe::Vector2{ 0,   0 }, "Temp: " + bbe::String((int)entry.temperatureC));
+		brush.fillText(offset + bbe::Vector2{ 0,  20 }, "FTemp: " + bbe::String((int)entry.temperatureCFelt));
+		brush.fillText(offset + bbe::Vector2{ 0,  40 }, "Hum: " + bbe::String((int)entry.humidity));
+		brush.fillText(offset + bbe::Vector2{ 0,  60 }, "Time: " + entry.time.toString());
+		brush.fillText(offset + bbe::Vector2{ 0,  80 }, "UV: " + bbe::String((int)entry.uvIndex));
+		brush.fillText(offset + bbe::Vector2{ 0, 100 }, "Winddir: " + bbe::String((int)entry.winddir));
+		brush.fillText(offset + bbe::Vector2{ 0, 120 }, "Windspeed: " + bbe::String((int)entry.windspeedKmph));
+		brush.fillText(offset + bbe::Vector2{ 0, 140 }, "Precip: " + bbe::String((int)entry.precipMM));
+		brush.fillText(offset + bbe::Vector2{ 0, 160 }, "ChanceOfRain: " + bbe::String((int)entry.chanceOfRain));
+	}
+
+	bbe::Vector2 drawWeather(bbe::PrimitiveBrush2D& brush)
+	{
+		static bbe::TimePoint nextWeatherQuery;
+		static std::future<bbe::simpleUrlRequest::UrlRequestResult> future;
+		static bbe::List<WeatherEntry> weatherEntries;
+		if (ImGui::bbe::InputText("City", weatherConfig->city, ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			nextWeatherQuery = bbe::TimePoint();
+			weatherConfig.writeToFile();
+		}
+
+		if (nextWeatherQuery.hasPassed())
+		{
+			nextWeatherQuery = bbe::TimePoint().plusHours(1);
+			future = bbe::simpleUrlRequest::urlRequestAsync("https://wttr.in/" + weatherConfig->city + "?format=j1");
+		}
+
+		if (future.valid())
+		{
+			auto contents = future.get();
+			bbe::String s;
+			s.append(contents.dataContainer.getRaw(), contents.dataContainer.getLength());
+
+			nlohmann::json j = nlohmann::json::parse(s.getRaw());
+
+			weatherEntries.clear();
+
+			weatherEntries.add(jsonToWeatherEntry(j["current_condition"][0]));
+
+			nlohmann::json& weather = j["weather"];
+
+			for (size_t i = 0; i < weather.size(); i++)
+			{
+				nlohmann::json& hourly = weather[i]["hourly"];
+				for (size_t k = 0; k < hourly.size(); k++)
+				{
+					weatherEntries.add(jsonToWeatherEntry(hourly[k]));
+				}
+			}
+		}
+
+		for (size_t i = 0; i < weatherEntries.getLength(); i++)
+		{
+			drawWeatherEntry(brush, bbe::Vector2(20, 100 + i * 200), weatherEntries[i]);
+		}
+
+		return bbe::Vector2(1, 0.1);
 	}
 
 	bbe::Vector2 drawTabConsole()
@@ -1205,7 +1319,8 @@ public:
 				Tab{"Strks",     "Streaks",        [&]() { return drawTabStreaks(brush); }},
 				Tab{"Lsts",      "Lists",          [&]() { return drawTabRememberLists(); }},
 				Tab{"GPT",       "ChatGPT",        [&]() { return drawTabChatGPT(); }},
-				Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() {return drawAdafruitMacroPadRP2040(brush); }},
+				Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
+				Tab{"Wthr",      "Weather",        [&]() { return drawWeather(brush); }},
 				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
 				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
 			};

@@ -1,5 +1,37 @@
 #include "BBE/BrotTime.h"
 #include <time.h>
+#include <sstream>
+#include <iomanip>
+
+static bbe::String convertFormatString(const bbe::String& format)
+{
+	bbe::String result = format;
+	result = result.replace("yyyy", "%Y");
+	result = result.replace("yy", "%y");
+	result = result.replace("MM", "%m");
+	result = result.replace("dd", "%d");
+	result = result.replace("HH", "%H");  // 24-hour format
+	result = result.replace("hh", "%I");  // 12-hour format
+	result = result.replace("mm", "%M");
+	result = result.replace("ss", "%S");
+	result = result.replace("a", "%p");   // AM/PM
+	return result;
+}
+
+bbe::TimePoint bbe::TimePoint::fromString(const bbe::String& s, const bbe::String& format)
+{
+	bbe::String strptimeFormat = convertFormatString(format);
+	std::tm tm = {};
+	std::istringstream ss(s.toStdString());
+	ss >> std::get_time(&tm, strptimeFormat.toStdString().c_str());
+	if (ss.fail())
+	{
+		bbe::String errString = "Could not Parse: " + s;
+		bbe::Crash(bbe::Error::IllegalArgument, errString.getRaw());
+	}
+	std::time_t t = std::mktime(&tm);
+	return TimePoint(t);
+}
 
 static ::tm localtime_rs(std::time_t t)
 {
