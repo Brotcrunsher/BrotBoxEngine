@@ -30,6 +30,16 @@
 //TODO: Server was unable to be reached for a while (for what ever reason). Problem: After the server fixed itself,
 //      Mother was still not making a connection until I manually restarted the Program. Why?
 //TODO: Left a contingent Task running (oopsie). A fail safe of some kind would be nice. Some kind of warning system?
+//TODO: Show Bitcoin chart
+//TODO: Show average driving time
+//TODO: Show weather
+//TODO: Show news
+//TODO: Ada functionality: Put something in clipboard.
+//TODO: Ada functionality: Open a webbrowser and URL bla
+//TODO: Ada functionality: Kill all timewasting programs
+//TODO: Ada functionality: Silence open tasks for 1 hour
+//TODO: Ada functionality: Ignore night
+//TODO: Ada functionality: Ask a question to chat gpt via microphone (Hard!)
 
 struct ClipboardContent
 {
