@@ -43,7 +43,6 @@
 //TODO: Fix the text rendering (Hard!)
 //TODO: "Remember Screen Location" button
 //TODO: The weather tab looks aweful, but is strictly speaking functional. Improve.
-//TODO: "Nighttime" can distort program renderings, e.g. in chrome. Can we do something less invasive?
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
 //TODO: Natvis for list, string, etc.
 
@@ -151,6 +150,16 @@ enum class IconCategory
 	GREEN,
 	BLUE,
 };
+
+BOOL CALLBACK MinimizeWindowCallback(HWND hwnd, LPARAM lParam) {
+	char className[256];
+	GetClassName(hwnd, className, sizeof(className));
+
+	if (strcmp(className, "Shell_TrayWnd") != 0 && hwnd != (HWND)lParam && IsWindowVisible(hwnd)) {
+		ShowWindow(hwnd, SW_MINIMIZE);
+	}
+	return TRUE;
+}
 
 class MyGame : public bbe::Game
 {
@@ -359,6 +368,11 @@ public:
 		return bbe::simpleUrlRequest::socketRequestXChaChaAsync(generalConfig->serverAddress, generalConfig->serverPort, generalConfig->serverKeyFilePath, true, true);;
 	}
 
+	void minimizeAllWindows()
+	{
+		EnumWindows(MinimizeWindowCallback, (LPARAM)getNativeWindowHandle());
+	}
+
 	virtual void update(float timeSinceLastFrame) override
 	{
 		beginMeasure("Server Stuff");
@@ -503,8 +517,7 @@ public:
 			{
 				EVERY_MINUTES(1)
 				{
-					HWND hwnd = FindWindow("Shell_TrayWnd", NULL);
-					LRESULT res = SendMessage(hwnd, WM_COMMAND, (WPARAM)419, 0);
+					minimizeAllWindows();
 					showWindow();
 					assetStore::NightTime()->play();
 				}
@@ -1298,6 +1311,7 @@ public:
 
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
+		bool shouldMinimize = false;
 		beginMeasure("Draw main window");
 		static bbe::Vector2 sizeMult(1.0f, 1.0f);
 		ImGuiViewport viewport = *ImGui::GetMainViewport();
@@ -1431,6 +1445,10 @@ public:
 					BBELOGLN(s);
 				}
 			}
+			if (ImGui::Button("Minimize all Windows"))
+			{
+				shouldMinimize = true;
+			}
 
 			static bool unlockCrashButton = false;
 			ImGui::Checkbox("Unlock Crash Buttons", &unlockCrashButton);
@@ -1550,6 +1568,12 @@ public:
 		{
 			ImGui::ShowDemoWindow();
 			ImPlot::ShowDemoWindow();
+		}
+
+		if (shouldMinimize)
+		{
+			// We need to delay this to the end, or else dear ImGui gets confused.
+			minimizeAllWindows();
 		}
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override

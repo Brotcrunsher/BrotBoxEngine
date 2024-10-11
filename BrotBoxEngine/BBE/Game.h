@@ -165,6 +165,8 @@ namespace bbe
 
 		size_t getAmountOfPlayingSounds() const;
 
+		void* getNativeWindowHandle();
+
 #ifndef BBE_NO_AUDIO
 		void setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection);
 		void restartSoundSystem();

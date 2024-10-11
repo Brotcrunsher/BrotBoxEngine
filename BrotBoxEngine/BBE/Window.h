@@ -97,6 +97,8 @@ namespace bbe
 		void executeFrameStartListeneres();
 		void update();
 
+		void* getNativeHandle();
+
 #ifdef BBE_RENDERER_OPENGL
 		uint32_t getAmountOfDrawcalls() const;
 #endif

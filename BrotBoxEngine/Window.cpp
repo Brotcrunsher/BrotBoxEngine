@@ -26,6 +26,8 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 #endif
 
 size_t bbe::Window::windowsAliveCounter = 0;
@@ -369,6 +371,15 @@ void bbe::Window::update()
 		ImGui_ImplGlfw_CursorPosCallback(m_pwindow, mousePosX, mousePosY);
 #endif
 	}
+}
+
+void* bbe::Window::getNativeHandle()
+{
+#ifdef WIN32
+	return (void*)glfwGetWin32Window(m_pwindow);
+#else
+	return nullptr;
+#endif
 }
 
 #ifdef BBE_RENDERER_OPENGL

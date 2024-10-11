@@ -804,3 +804,8 @@ size_t bbe::Game::getAmountOfPlayingSounds() const
 {
 	return m_soundManager.getAmountOfPlayingSounds();
 }
+
+void* bbe::Game::getNativeWindowHandle()
+{
+	return m_pwindow->getNativeHandle();
+}
