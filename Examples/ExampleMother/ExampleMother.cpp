@@ -43,6 +43,9 @@
 //TODO: Fix the text rendering (Hard!)
 //TODO: "Remember Screen Location" button
 //TODO: The weather tab looks aweful, but is strictly speaking functional. Improve.
+//TODO: "Nighttime" can distort program renderings, e.g. in chrome. Can we do something less invasive?
+//TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
+//TODO: Natvis for list, string, etc.
 
 struct ClipboardContent
 {
@@ -1295,6 +1298,7 @@ public:
 
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
+		beginMeasure("Draw main window");
 		static bbe::Vector2 sizeMult(1.0f, 1.0f);
 		ImGuiViewport viewport = *ImGui::GetMainViewport();
 		viewport.WorkSize.x *= 0.6f * sizeMult.x;
@@ -1331,6 +1335,7 @@ public:
 		}
 		ImGui::End();
 
+		beginMeasure("Draw info window");
 		viewport = *ImGui::GetMainViewport();
 		viewport.WorkSize.x *= 0.6f;
 		viewport.WorkPos.x += viewport.WorkSize.x;
@@ -1515,10 +1520,11 @@ public:
 
 			ImGui::NewLine();
 			ImGui::Text("Playing sounds: %d", (int)getAmountOfPlayingSounds());
-			ImGui::Text(getMeasuresString().getRaw());
+			drawMeasurement();
 		}
 		ImGui::End();
 
+		beginMeasure("Draw process window");
 		viewport.WorkPos.y = viewport.WorkSize.y;
 		ImGui::SetNextWindowPos(viewport.WorkPos);
 		ImGui::SetNextWindowSize(viewport.WorkSize);
@@ -1529,6 +1535,7 @@ public:
 		ImGui::End();
 
 
+		beginMeasure("Draw url window");
 		viewport.WorkPos.y = viewport.WorkSize.y * 2;
 		ImGui::SetNextWindowPos(viewport.WorkPos);
 		ImGui::SetNextWindowSize(viewport.WorkSize);
@@ -1538,6 +1545,7 @@ public:
 		}
 		ImGui::End();
 
+		beginMeasure("Draw debug windows");
 		if (showDebugStuff)
 		{
 			ImGui::ShowDemoWindow();

@@ -32,4 +32,5 @@ namespace ImGui
 
 	bool Button(const ::bbe::String& s, const ImVec2& size = ImVec2(0, 0));
 	void Text(const ::bbe::String& s);
+	void TextColored(const ImVec4& col, const ::bbe::String& s);
 }

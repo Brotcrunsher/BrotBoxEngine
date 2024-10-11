@@ -323,9 +323,10 @@ void bbe::Game::frameUpdate()
 #ifndef BBE_NO_AUDIO
 	m_soundManager.update();
 #endif
-	update(timeSinceLastFrame);
 	endMeasure();
+	update(timeSinceLastFrame);
 
+	beginMeasure("INTERNAL - MinuteMaxMove");
 	if (nextMinuteMaxMove.hasPassed())
 	{
 		nextMinuteMaxMove = bbe::TimePoint().plusMinutes(1);
@@ -336,6 +337,7 @@ void bbe::Game::frameUpdate()
 			pm.minuteMax1 = 0.0;
 		}
 	}
+	endMeasure();
 }
 
 void bbe::Game::frameDraw(bool dragging)
@@ -349,11 +351,14 @@ void bbe::Game::frameDraw(bool dragging)
 		return;
 	}
 
+	beginMeasure("INTERNAL - Pre Draw 3D");
 	m_pwindow->preDraw();
 	m_pwindow->preDraw3D();
-	draw3D(m_pwindow->getBrush3D());
 	endMeasure();
+	draw3D(m_pwindow->getBrush3D());
+	beginMeasure("INTERNAL - Pre Draw 2D");
 	m_pwindow->preDraw2D();
+	endMeasure();
 	draw2D(m_pwindow->getBrush2D());
 	beginMeasure("INTERNAL - Overhead (wait)");
 	m_pwindow->postDraw();
@@ -720,7 +725,6 @@ void bbe::Game::beginMeasure(const char* tag, bool force)
 
 bbe::String bbe::Game::getMeasuresString()
 {
-
 	int32_t maxLen = 0;
 	for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
 	{
@@ -749,6 +753,51 @@ bbe::String bbe::Game::getMeasuresString()
 	}
 
 	return retVal;
+}
+
+void bbe::Game::drawMeasurement()
+{
+	double maxMax = 0.0;
+	double maxAvg = 0.0;
+	double maxNow = 0.0;
+	double maxMinuteMax = 0.0;
+
+	int32_t maxLen = 0;
+	for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
+	{
+		maxLen = bbe::Math::max(maxLen, (int32_t)strlen(it->first));
+
+		maxMax = bbe::Math::max(maxMax, it->second.max);
+		maxAvg = bbe::Math::max(maxAvg, it->second.avg);
+		maxNow = bbe::Math::max(maxNow, it->second.now);
+		maxMinuteMax = bbe::Math::max(maxMinuteMax, it->second.minuteMax1);
+		maxMinuteMax = bbe::Math::max(maxMinuteMax, it->second.minuteMax2);
+	}
+
+	bbe::String header = bbe::String(" ") * maxLen;
+	header += "  MAX      AVG      NOW      MINUTEMAX\n";
+	ImGui::Text(header);
+
+	for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
+	{
+		const PerformanceMeasurement& pm = it->second;
+		int32_t padding = maxLen - (int32_t)strlen(it->first);
+		ImGui::Text(it->first);
+		ImGui::SameLine(0.0f, 0.0f); ImGui::Text(": ");
+		ImGui::SameLine(0.0f, 0.0f); ImGui::Text(bbe::String(" ") * padding);
+
+		const double maxPercentage = pm.max / maxMax;
+		ImGui::SameLine(0.0f, 0.0f); ImGui::TextColored(ImVec4(1.0f, 1.0f - maxPercentage, 1.0f - maxPercentage, 1.0f), bbe::String(pm.max));
+		ImGui::SameLine(0.0f, 0.0f); ImGui::Text(" ");
+		const double avgPercentage = pm.avg / maxAvg;
+		ImGui::SameLine(0.0f, 0.0f); ImGui::TextColored(ImVec4(1.0f, 1.0f - avgPercentage, 1.0f - avgPercentage, 1.0f), bbe::String(pm.avg));
+		ImGui::SameLine(0.0f, 0.0f); ImGui::Text(" ");
+		const double nowPercentage = pm.now / maxNow;
+		ImGui::SameLine(0.0f, 0.0f); ImGui::TextColored(ImVec4(1.0f, 1.0f - nowPercentage, 1.0f - nowPercentage, 1.0f), bbe::String(pm.now));
+		ImGui::SameLine(0.0f, 0.0f); ImGui::Text(" ");
+		const double minuteMaxPercentage = bbe::Math::max(pm.minuteMax1, pm.minuteMax2) / maxMinuteMax;
+		ImGui::SameLine(0.0f, 0.0f); ImGui::TextColored(ImVec4(1.0f, 1.0f - minuteMaxPercentage, 1.0f - minuteMaxPercentage, 1.0f), bbe::String(bbe::Math::max(pm.minuteMax1, pm.minuteMax2)));
+	}
 }
 
 size_t bbe::Game::getAmountOfPlayingSounds() const

@@ -218,5 +218,10 @@ bool ImGui::Button(const::bbe::String& s, const ImVec2& size)
 
 void ImGui::Text(const::bbe::String& s)
 {
-	ImGui::Text(s.getRaw());
+	ImGui::Text("%s", s.getRaw());
+}
+
+void ImGui::TextColored(const ImVec4& col, const::bbe::String& s)
+{
+	ImGui::TextColored(col, "%s", s.getRaw());
 }

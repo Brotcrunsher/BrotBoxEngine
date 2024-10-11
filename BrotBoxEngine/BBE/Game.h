@@ -161,6 +161,7 @@ namespace bbe
 		void endMeasure();
 		void beginMeasure(const char* tag, bool force = false); // CAREFUL: Static string assumed!
 		bbe::String getMeasuresString();
+		void drawMeasurement();
 
 		size_t getAmountOfPlayingSounds() const;
 
