@@ -186,6 +186,9 @@ private:
 
 	bbe::ChatGPTComm chatGPTComm; // ChatGPT communication object
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
+	std::future<bbe::Sound> chatGPTTTSFuture; // Future for TTS
+	bbe::Sound currentTTSSound;
+	bool ttsSoundSet = false;
 
 	bool openTasksSilenced = false;
 	bool openTasksSilencedIndefinitely = false;
@@ -1187,6 +1190,30 @@ public:
 			// Set the API key in chatGPTComm
 			chatGPTComm.key = chatGPTConfig->apiKey;
 		}
+		
+		static bbe::String ttsInput;
+		if (ImGui::bbe::InputText("TTS Test", ttsInput, ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			if (chatGPTComm.isKeySet())
+			{
+				ttsSoundSet = false;
+				chatGPTTTSFuture = chatGPTComm.synthesizeSpeechAsync(ttsInput);
+			}
+		}
+
+		if (chatGPTTTSFuture.valid())
+		{
+			currentTTSSound = chatGPTTTSFuture.get();
+			ttsSoundSet = true;
+		}
+
+		ImGui::BeginDisabled(!ttsSoundSet);
+		ImGui::SameLine();
+		if (ImGui::Button("Play it!"))
+		{
+			currentTTSSound.play();
+		}
+		ImGui::EndDisabled();
 
 		// Input field for user's message
 		static bbe::String userInput;

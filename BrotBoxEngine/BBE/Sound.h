@@ -65,6 +65,7 @@ namespace bbe
 
 		void load(const bbe::String& path, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
 		void load(const bbe::ByteBuffer &data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
+		void load(const bbe::List<char>& data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
 
 		bool isLoaded() const;
 		uint32_t getChannels() const;

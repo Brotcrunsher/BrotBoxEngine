@@ -91,6 +91,12 @@ void bbe::Sound::load(const bbe::ByteBuffer& data, SoundLoadFormat soundLoadForm
 	m_loaded = true;
 }
 
+void bbe::Sound::load(const bbe::List<char>& data, SoundLoadFormat soundLoadFormat)
+{
+	bbe::ByteBuffer buffer((bbe::byte*)data.getRaw(), data.getLength());
+	load(buffer, soundLoadFormat);
+}
+
 bool bbe::Sound::isLoaded() const
 {
 	return m_loaded;

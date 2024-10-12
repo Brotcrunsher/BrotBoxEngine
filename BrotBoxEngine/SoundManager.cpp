@@ -467,7 +467,7 @@ static void updateSoundSystem()
 					default:
 						bbe::Crash(bbe::Error::IllegalState);
 					}
-					eh::alBufferData(SDSS->INTERNAL_buffer, AL_FORMAT_STEREO_FLOAT32, samples->getRaw(), (ALsizei)(sizeof(float) * samples->getLength()), SDSS->getHz());
+					eh::alBufferData(SDSS->INTERNAL_buffer, format, samples->getRaw(), (ALsizei)(sizeof(float) * samples->getLength()), SDSS->getHz());
 					SDSS->INTERNAL_restartCycle = restartCycle;
 				}
 
