@@ -155,8 +155,13 @@ BOOL CALLBACK MinimizeWindowCallback(HWND hwnd, LPARAM lParam) {
 	char className[256];
 	GetClassName(hwnd, className, sizeof(className));
 
-	if (strcmp(className, "Shell_TrayWnd") != 0 && hwnd != (HWND)lParam && IsWindowVisible(hwnd)) {
+	if (strcmp(className, "Shell_TrayWnd") != 0 && strcmp(className, "Shell_SecondaryTrayWnd") != 0 && hwnd != (HWND)lParam && IsWindowVisible(hwnd)) {
+		BBELOGLN("Minimizing: " << className);
 		ShowWindow(hwnd, SW_MINIMIZE);
+	}
+	else
+	{
+		BBELOGLN("NOT Minimizing: " << className);
 	}
 	return TRUE;
 }
