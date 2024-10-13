@@ -15,6 +15,7 @@ namespace bbe
 	{
 		AUTOMATIC = 0,
 		MP3 = 1,
+		RAW_MONO_FLOAT_44100 = 2,
 	};
 
 	class SoundDataSource
@@ -58,6 +59,7 @@ namespace bbe
 		uint32_t         m_hz       = 0;
 
 		void loadMp3(const bbe::ByteBuffer& data);
+		void loadRawMonoFloat44100(const bbe::ByteBuffer& data);
 
 	public:
 		Sound();
@@ -66,6 +68,7 @@ namespace bbe
 		void load(const bbe::String& path, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
 		void load(const bbe::ByteBuffer &data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
 		void load(const bbe::List<char>& data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
+		void load(const bbe::List<float>& data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::RAW_MONO_FLOAT_44100);
 
 		bool isLoaded() const;
 		uint32_t getChannels() const;

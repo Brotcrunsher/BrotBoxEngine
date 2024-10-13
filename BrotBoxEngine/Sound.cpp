@@ -50,6 +50,17 @@ void bbe::Sound::loadMp3(const bbe::ByteBuffer& data)
 	free(info.buffer);
 }
 
+void bbe::Sound::loadRawMonoFloat44100(const bbe::ByteBuffer& data)
+{
+	if (data.getLength() % sizeof(float) != 0) bbe::Crash(bbe::Error::IllegalArgument, "Not a multiple of float!");
+
+	m_data.resizeCapacityAndLengthUninit(data.getLength() / sizeof(float));
+	memcpy(m_data.getRaw(), data.getRaw(), data.getLength());
+
+	m_hz = 44100;
+	m_channels = 1;
+}
+
 bbe::Sound::Sound()
 {
 	// do nothing
@@ -84,6 +95,9 @@ void bbe::Sound::load(const bbe::ByteBuffer& data, SoundLoadFormat soundLoadForm
 	case SoundLoadFormat::MP3:
 		loadMp3(data);
 		break;
+	case SoundLoadFormat::RAW_MONO_FLOAT_44100:
+		loadRawMonoFloat44100(data);
+		break;
 	default:
 		bbe::Crash(bbe::Error::IllegalArgument);
 	}
@@ -94,6 +108,14 @@ void bbe::Sound::load(const bbe::ByteBuffer& data, SoundLoadFormat soundLoadForm
 void bbe::Sound::load(const bbe::List<char>& data, SoundLoadFormat soundLoadFormat)
 {
 	bbe::ByteBuffer buffer((bbe::byte*)data.getRaw(), data.getLength());
+	load(buffer, soundLoadFormat);
+}
+
+
+void bbe::Sound::load(const bbe::List<float>& data, SoundLoadFormat soundLoadFormat)
+{
+	if (soundLoadFormat != SoundLoadFormat::RAW_MONO_FLOAT_44100) bbe::Crash(bbe::Error::IllegalArgument, "Only RAW_MONO_FLOAT_44100 currently supported!");
+	bbe::ByteBuffer buffer((bbe::byte*)data.getRaw(), data.getLength() * sizeof(float));
 	load(buffer, soundLoadFormat);
 }
 

@@ -295,6 +295,19 @@ namespace bbe
 			addArray(arr.getRaw(), size);
 		}
 
+		T* addRaw(size_t size)
+		{
+			auto delVal = growIfNeeded(size);
+			T* retVal = getRaw() + m_length;
+			for (size_t i = 0; i < size; i++)
+			{
+				new (bbe::addressOf(getRaw()[m_length])) T();
+				m_length += 1;
+			}
+			bbe::freeBlock(delVal);
+			return retVal;
+		}
+
 		T popBack()
 		{
 			if (m_length < 1)

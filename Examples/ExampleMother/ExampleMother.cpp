@@ -18,6 +18,7 @@
 #include "EMTab.h"
 #include "EMBrainTeaser.h"
 #include "BBE/ChatGPTComm.h"
+#include "BBE/Microphone.h"
 
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
@@ -220,6 +221,9 @@ private:
 	bool highConcentrationMode = false;
 
 	bbe::AdafruitMacroPadRP2040 adafruitMacroPadRP2040;
+
+	bbe::Microphone microphone;
+	bbe::Sound microphoneSound;
 
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
@@ -1182,6 +1186,30 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	bbe::Vector2 drawMicrophoneTest()
+	{
+		if (microphone.isRecording())
+		{
+			if (ImGui::Button("Stop"))
+			{
+				microphoneSound = microphone.stopRecording();
+			}
+		}
+		else
+		{
+			if (ImGui::Button("Start"))
+			{
+				microphone.startRecording();
+			}
+		}
+
+		if (ImGui::Button("Play!"))
+		{
+			microphoneSound.play();
+		}
+		return bbe::Vector2(1);
+	}
+
 	bbe::Vector2 drawTabChatGPT()
 	{
 		if (ImGui::bbe::InputText("API Key", chatGPTConfig->apiKey, ImGuiInputTextFlags_Password))
@@ -1369,6 +1397,7 @@ public:
 				Tab{"Strks",     "Streaks",        [&]() { return drawTabStreaks(brush); }},
 				Tab{"Lsts",      "Lists",          [&]() { return drawTabRememberLists(); }},
 				Tab{"GPT",       "ChatGPT",        [&]() { return drawTabChatGPT(); }},
+				Tab{"Mic",       "Microphone Test",[&]() { return drawMicrophoneTest(); }},
 				Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
 				Tab{"Wthr",      "Weather",        [&]() { return drawWeather(brush); }},
 				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
