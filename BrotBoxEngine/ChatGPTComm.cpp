@@ -114,8 +114,8 @@ bbe::String bbe::ChatGPTComm::transcribe(const bbe::Sound& sound)
 		&file,
 		"file",
 		"audio.wav",
-		false,
-		true
+		true,
+		false
 	);
 
 	return bbe::String(reinterpret_cast<const char*>(response.dataContainer.getRaw()));

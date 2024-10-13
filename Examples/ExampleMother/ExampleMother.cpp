@@ -456,6 +456,44 @@ public:
 			adafruitMacroPadRP2040.connect();
 		}
 
+		beginMeasure("Talk with ChatGPT");
+		if (adafruitMacroPadRP2040.isConnected() && chatGPTComm.isKeySet())
+		{
+			static std::future<bbe::String> transcribeFuture;
+			if (microphone.isRecording() && !adafruitMacroPadRP2040.isKeyDown(bbe::RP2040Key::BUTTON_11))
+			{
+				bbe::Sound sound = microphone.stopRecording();
+				transcribeFuture = chatGPTComm.transcribeAsync(sound);
+			}
+			static std::future<bbe::ChatGPTQueryResponse> queryFuture;
+			if (transcribeFuture.valid())
+			{
+				bbe::String transcript = transcribeFuture.get();
+				queryFuture = chatGPTComm.queryAsync(transcript);
+			}
+			static std::future<bbe::Sound> ttsFuture;
+			if (queryFuture.valid())
+			{
+				bbe::ChatGPTQueryResponse query = queryFuture.get();
+				ttsFuture = chatGPTComm.synthesizeSpeechAsync(query.message);
+			}
+			static bbe::Sound sound;
+			if (ttsFuture.valid())
+			{
+				sound = ttsFuture.get();
+				sound.play();
+			}
+			if (adafruitMacroPadRP2040.isKeyPressed(bbe::RP2040Key::BUTTON_11))
+			{
+				microphone.startRecording();
+			}
+
+			if (adafruitMacroPadRP2040.isKeyPressed(bbe::RP2040Key::BUTTON_0))
+			{
+				chatGPTComm.purgeMemory();
+			}
+		}
+
 		beginMeasure("Mouse Tracking");
 		{
 			EVERY_MILLISECONDS(100)
