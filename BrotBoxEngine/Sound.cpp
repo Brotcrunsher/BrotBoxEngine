@@ -150,6 +150,44 @@ const bbe::List<float>* bbe::Sound::getRaw() const
 	return &m_data;
 }
 
+bbe::ByteBuffer bbe::Sound::toWav() const
+{
+	bbe::ByteBuffer buffer;
+
+	int32_t byteRate = m_hz * 2 * m_channels;
+	int32_t dataSize = m_data.getLength() * 2;
+	
+	// Write the header
+	buffer.writeNullString("RIFF", false);
+	int32_t chunkSize = 36 + dataSize;
+	buffer.write(chunkSize);
+	buffer.writeNullString("WAVE", false);
+	buffer.writeNullString("fmt ", false);
+	int32_t subchunk1Size = 16;
+	buffer.write(subchunk1Size);
+	int16_t audioFormat = 1;
+	buffer.write(audioFormat);
+	int16_t numChannels = m_channels;
+	buffer.write(numChannels);
+	auto hz = m_hz;
+	buffer.write(hz);
+	buffer.write(byteRate);
+	int16_t blockAlign = numChannels * 2;
+	buffer.write(blockAlign);
+	int16_t bitsPerSample = 16;
+	buffer.write(bitsPerSample);
+	buffer.writeNullString("data", false);
+	buffer.write(dataSize);
+	
+	// Write the data
+	for (float sample : m_data) {
+		int16_t pcm_value = static_cast<int16_t>(sample * 32767.0f);
+		buffer.write(pcm_value);
+	}
+
+	return buffer;
+}
+
 void bbe::SoundDataSourceStatic::setLooped(bool looped)
 {
 	m_looped = looped;

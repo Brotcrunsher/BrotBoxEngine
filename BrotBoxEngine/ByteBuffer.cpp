@@ -133,14 +133,14 @@ bbe::ByteBuffer::ByteBuffer(const std::initializer_list<bbe::byte>& il)	:
 {
 }
 
-void bbe::ByteBuffer::writeNullString(const char* string)
+void bbe::ByteBuffer::writeNullString(const char* string, bool addNull)
 {
 	while (char c = *string)
 	{
 		m_bytes.add((bbe::byte)c);
 		string++;
 	}
-	m_bytes.add((bbe::byte)0);
+	if(addNull) m_bytes.add((bbe::byte)0);
 }
 
 bbe::byte* bbe::ByteBuffer::getRaw()

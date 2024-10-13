@@ -1207,6 +1207,13 @@ public:
 		{
 			microphoneSound.play();
 		}
+
+		if (ImGui::Button("Save!"))
+		{
+			auto wav = microphoneSound.toWav();
+			bbe::simpleFile::writeBinaryToFile("Debug.wav", wav);
+		}
+
 		return bbe::Vector2(1);
 	}
 

@@ -76,6 +76,8 @@ namespace bbe
 		virtual uint32_t getHz() const override;
 
 		const bbe::List<float>* getRaw() const override;
+
+		bbe::ByteBuffer toWav() const;
 	};
 }
 

@@ -231,7 +231,7 @@ namespace bbe
 				val.serialize(*this);
 			}
 		}
-		void writeNullString(const char* string);
+		void writeNullString(const char* string, bool addNull = true);
 
 		bbe::byte* getRaw();
 		const bbe::byte* getRaw() const;
