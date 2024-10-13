@@ -1214,6 +1214,20 @@ public:
 			bbe::simpleFile::writeBinaryToFile("Debug.wav", wav);
 		}
 
+		static std::future<bbe::String> transcribeFuture;
+		if (ImGui::Button("Transcribe"))
+		{
+			transcribeFuture = chatGPTComm.transcribeAsync(microphoneSound);
+		}
+
+		static bbe::String transcription;
+		if (transcribeFuture.valid())
+		{
+			transcription = transcribeFuture.get();
+		}
+
+		ImGui::Text(transcription);
+
 		return bbe::Vector2(1);
 	}
 

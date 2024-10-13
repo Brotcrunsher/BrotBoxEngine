@@ -45,6 +45,9 @@ namespace bbe
 		bbe::Sound synthesizeSpeech(const bbe::String& text);
 		std::future<bbe::Sound> synthesizeSpeechAsync(const bbe::String& text);
 
+		bbe::String transcribe(const bbe::Sound& sound);
+		std::future<bbe::String> transcribeAsync(const bbe::Sound& sound);
+
 		void purgeMemory();
 
 		bbe::List<bbe::String> getAvailableModels() const;

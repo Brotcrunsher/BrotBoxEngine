@@ -176,6 +176,11 @@ bbe::ByteBufferSpan bbe::ByteBuffer::getSpan()
 	return ByteBufferSpan(m_bytes);
 }
 
+void bbe::ByteBuffer::removeFirstBytes(size_t amount)
+{
+	m_bytes.removeRange(0, amount);
+}
+
 uint8_t  bbe::ByteBufferSpan::readU8()  { uint8_t  val; read(val); return val; }
 uint16_t bbe::ByteBufferSpan::readU16() { uint16_t val; read(val); return val; }
 uint32_t bbe::ByteBufferSpan::readU32() { uint32_t val; read(val); return val; }

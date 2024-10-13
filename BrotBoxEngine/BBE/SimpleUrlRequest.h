@@ -3,9 +3,11 @@
 #ifdef BBE_ADD_CURL
 #include <future>
 #include <optional>
+#include <map>
 
 #include "../BBE/String.h"
 #include "../BBE/List.h"
+#include "../BBE/ByteBuffer.h"
 
 namespace bbe
 {
@@ -20,6 +22,25 @@ namespace bbe
 		UrlRequestResult urlRequest(const bbe::String& url, const bbe::List<bbe::String>& headerFields = {}, const bbe::String& postData = "", bool addTrailingNul = true, bool verbose = false);
 		std::future<UrlRequestResult> urlRequestAsync(const bbe::String& url, const bbe::List<bbe::String>& headerFields = {}, const bbe::String& postData = "", bool addTrailingNul = true, bool verbose = false);
 
+		bbe::simpleUrlRequest::UrlRequestResult urlFile(
+			const bbe::String& url,
+			const bbe::List<bbe::String>& headerFields = {},
+			const std::map<bbe::String, bbe::String>& formFields = {},
+			const bbe::ByteBuffer* fileData = nullptr,
+			const bbe::String& fileFieldName = "",
+			const bbe::String& fileName = "",
+			bool addTrailingNul = true,
+			bool verbose = false);
+		std::future<UrlRequestResult> urlFileAsync(
+			const bbe::String& url,
+			const bbe::List<bbe::String>& headerFields = {},
+			const std::map<bbe::String, bbe::String>& formFields = {},
+			const bbe::ByteBuffer* fileData = nullptr,
+			const bbe::String& fileFieldName = "",
+			const bbe::String& fileName = "",
+			bool addTrailingNul = true,
+			bool verbose = false);
+		
 		std::optional<bbe::List<char>> decryptXChaCha(const bbe::List<char>& data, const String& pathToKeyFile, bool addTrailingNul = true);
 
 #ifdef _WIN32

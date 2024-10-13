@@ -241,5 +241,7 @@ namespace bbe
 		void fillSizeToken(int64_t sizeToken);
 
 		ByteBufferSpan getSpan();
+
+		void removeFirstBytes(size_t amount);
 	};
 }

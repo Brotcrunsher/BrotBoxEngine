@@ -99,6 +99,34 @@ std::future<bbe::Sound> bbe::ChatGPTComm::synthesizeSpeechAsync(const bbe::Strin
 	return bbe::async(&bbe::ChatGPTComm::synthesizeSpeech, this, text);
 }
 
+bbe::String bbe::ChatGPTComm::transcribe(const bbe::Sound& sound)
+{
+	std::map<bbe::String, bbe::String> formFields = {
+		{"model", "whisper-1"}
+	};
+
+	const bbe::ByteBuffer file = sound.toWav();
+
+	auto response = bbe::simpleUrlRequest::urlFile(
+		"https://api.openai.com/v1/audio/transcriptions",
+		{ "Authorization: Bearer " + key },
+		formFields,
+		&file,
+		"file",
+		"audio.wav",
+		false,
+		true
+	);
+
+	return bbe::String(reinterpret_cast<const char*>(response.dataContainer.getRaw()));
+}
+
+
+std::future<bbe::String> bbe::ChatGPTComm::transcribeAsync(const bbe::Sound& sound)
+{
+	return bbe::async(&bbe::ChatGPTComm::transcribe, this, sound);
+}
+
 void bbe::ChatGPTComm::purgeMemory()
 {
 	std::lock_guard _(mutex);

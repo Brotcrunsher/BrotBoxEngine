@@ -458,6 +458,25 @@ namespace bbe
 			return removeIndex(index);
 		}
 
+		void removeRange(size_t start, size_t length)
+		{
+			if (start + length >= m_length) bbe::Crash(bbe::Error::IllegalArgument);
+			if (length == 0) return;
+
+			T* d = getRaw();
+			for (size_t i = start; i < m_length - length; i++)
+			{
+				d[i] = d[i + length];
+			}
+
+			for (size_t i = m_length - length; i < m_length; i++)
+			{
+				d[i].~T();
+			}
+
+			m_length -= length;
+		}
+
 		size_t containsAmount(const T& t) const
 		{
 			return containsAmount(

@@ -53,7 +53,7 @@ struct CurlRaii
 
 };
 
-size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
+static size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
 {
 	assert(size == 1); // Is documented to be always 1. This assertion protects us from API changes in the future.
 
@@ -108,7 +108,87 @@ std::future<bbe::simpleUrlRequest::UrlRequestResult> bbe::simpleUrlRequest::urlR
 	return bbe::async(&urlRequest, url, headerFields, postData, addTrailingNul, verbose);
 }
 
+bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlFile(
+	const bbe::String& url,
+	const bbe::List<bbe::String>& headerFields,
+	const std::map<bbe::String, bbe::String>& formFields,
+	const bbe::ByteBuffer* fileData,
+	const bbe::String& fileFieldName,
+	const bbe::String& fileName,
+	bool addTrailingNul,
+	bool verbose)
+{
+	CurlRaii c;
+	CURL*& curl = c.curl;
 
+	UrlRequestResult retVal;
+
+	curl_easy_setopt(curl, CURLOPT_URL, url.getRaw());
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &(retVal.dataContainer));
+	if (verbose) curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+
+	for (size_t i = 0; i < headerFields.getLength(); i++)
+	{
+		c.headers = curl_slist_append(c.headers, headerFields[i].getRaw());
+	}
+	if (c.headers)
+	{
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, c.headers);
+	}
+
+	curl_mime* mime = curl_mime_init(curl);
+
+	for (const auto& field : formFields)
+	{
+		curl_mimepart* part = curl_mime_addpart(mime);
+		curl_mime_name(part, field.first.getRaw());
+		curl_mime_data(part, field.second.getRaw(), CURL_ZERO_TERMINATED);
+	}
+
+	if (fileData != nullptr)
+	{
+		curl_mimepart* part = curl_mime_addpart(mime);
+		curl_mime_name(part, fileFieldName.getRaw());
+		curl_mime_filename(part, fileName.getRaw());
+		curl_mime_data(part, reinterpret_cast<const char*>(fileData->getRaw()), fileData->getLength());
+		curl_mime_type(part, "audio/wav");
+	}
+
+	curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
+
+	CURLcode res = curl_easy_perform(curl);
+
+	curl_mime_free(mime);
+
+	if (res != CURLE_OK)
+	{
+		bbe::String error = "Error: ";
+		error += curl_easy_strerror(res);
+		bbe::Crash(bbe::Error::IllegalState, error.getRaw());
+	}
+
+	if (addTrailingNul) retVal.dataContainer.add('\0');
+
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &retVal.responseCode);
+
+	return retVal;
+}
+
+
+
+std::future<bbe::simpleUrlRequest::UrlRequestResult > bbe::simpleUrlRequest::urlFileAsync(
+	const bbe::String& url,
+	const bbe::List<bbe::String>& headerFields,
+	const std::map<bbe::String, bbe::String>& formFields,
+	const bbe::ByteBuffer* fileData,
+	const bbe::String& fileFieldName,
+	const bbe::String& fileName,
+	bool addTrailingNul,
+	bool verbose)
+{
+	return bbe::async(&urlFile, url, headerFields, formFields, fileData, fileFieldName, fileName, addTrailingNul, verbose);
+}
 
 void printArr(const unsigned char* arr, int len)
 {
