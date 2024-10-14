@@ -270,6 +270,7 @@ void bbe::simpleFile::forEachFile(const bbe::String& filePath, const std::functi
 #endif
 
 #ifdef WIN32
+#define NOMINMAX
 #include "windows.h"
 #include "winnls.h"
 #include "shobjidl.h"

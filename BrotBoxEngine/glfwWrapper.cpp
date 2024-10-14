@@ -269,3 +269,31 @@ void* bbe::glfwWrapper::glfwGetWindowUserPointer(GLFWwindow* window)
 	return nullptr;
 #endif
 }
+
+void bbe::glfwWrapper::glfwSetWindowSize(GLFWwindow* window, int width, int height)
+{
+#ifndef BBE_RENDERER_NULL
+	::glfwSetWindowSize(window, width, height);
+#endif
+}
+
+void bbe::glfwWrapper::glfwGetWindowSize(GLFWwindow* window, int* width, int* height)
+{
+#ifndef BBE_RENDERER_NULL
+	::glfwGetWindowSize(window, width, height);
+#endif
+}
+
+void bbe::glfwWrapper::glfwMaximizeWindow(GLFWwindow* window)
+{
+#ifndef BBE_RENDERER_NULL
+	::glfwMaximizeWindow(window);
+#endif
+}
+
+void bbe::glfwWrapper::glfwSetWindowPos(GLFWwindow* window, int x, int y)
+{
+#ifndef BBE_RENDERER_NULL
+	::glfwSetWindowPos(window, x, y);
+#endif
+}

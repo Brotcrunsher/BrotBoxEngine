@@ -3,6 +3,8 @@
 #include "../BBE/Logging.h"
 #include "../BBE/Math.h"
 
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
 #include <highlevelmonitorconfigurationapi.h>
 #include <lowlevelmonitorconfigurationapi.h>

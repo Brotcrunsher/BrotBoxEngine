@@ -25,6 +25,8 @@
 #include "BBE/Game.h"
 
 #ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <Windows.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
@@ -231,6 +233,40 @@ int bbe::Window::getScaledHeight() const
 	float scale = 0;
 	glfwWrapper::glfwGetWindowContentScale(m_pwindow, nullptr, &scale);
 	return static_cast<int>(getHeight() * scale);
+}
+
+bbe::Vector2i bbe::Window::getSize() const
+{
+	bbe::Vector2i retVal;
+	glfwWrapper::glfwGetWindowSize(m_pwindow, &retVal.x, &retVal.y);
+	return retVal;
+}
+
+void bbe::Window::setSize(const Vector2i& size)
+{
+	glfwWrapper::glfwSetWindowSize(m_pwindow, size.x, size.y);
+}
+
+bool bbe::Window::isMaximized() const
+{
+	return glfwWrapper::glfwGetWindowAttrib(m_pwindow, GLFW_MAXIMIZED) != 0;
+}
+
+void bbe::Window::maximize()
+{
+	glfwWrapper::glfwMaximizeWindow(m_pwindow);
+}
+
+bbe::Vector2i bbe::Window::getPos() const
+{
+	bbe::Vector2i retVal;
+	glfwWrapper::glfwGetWindowPos(m_pwindow, &retVal.x, &retVal.y);
+	return retVal;
+}
+
+void bbe::Window::setPos(const Vector2i& pos)
+{
+	glfwWrapper::glfwSetWindowPos(m_pwindow, pos.x, pos.y);
 }
 
 bbe::Vector2 bbe::Window::getGlobalMousePos() const

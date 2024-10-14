@@ -44,5 +44,9 @@ namespace bbe
 		int glfwGetWindowAttrib(GLFWwindow* window, int attrib);
 		void glfwSetWindowUserPointer(GLFWwindow* window, void* pointer);
 		void* glfwGetWindowUserPointer(GLFWwindow* window);
+		void glfwSetWindowSize(GLFWwindow* window, int width, int height);
+		void glfwGetWindowSize(GLFWwindow* window, int* width, int* height);
+		void glfwMaximizeWindow(GLFWwindow* window);
+		void glfwSetWindowPos(GLFWwindow* window, int x, int y);
 	}
 }

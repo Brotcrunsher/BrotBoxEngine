@@ -809,3 +809,9 @@ void* bbe::Game::getNativeWindowHandle()
 {
 	return m_pwindow->getNativeHandle();
 }
+
+bbe::Window* bbe::Game::getWindow()
+{
+	return m_pwindow;
+}
+

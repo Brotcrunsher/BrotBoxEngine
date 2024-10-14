@@ -1,5 +1,6 @@
 #include "BBE/TrayIcon.h"
 #ifdef _WIN32
+#define NOMINMAX
 #include <Windows.h>
 
 static NOTIFYICONDATA notifyIconData = {};

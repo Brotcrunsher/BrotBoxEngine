@@ -39,10 +39,8 @@
 //TODO: Ada functionality: Kill all timewasting programs
 //TODO: Ada functionality: Silence open tasks for 1 hour
 //TODO: Ada functionality: Ignore night
-//TODO: Ada functionality: Ask a question to chat gpt via microphone (Hard!)
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: Fix the text rendering (Hard!)
-//TODO: "Remember Screen Location" button
 //TODO: The weather tab looks aweful, but is strictly speaking functional. Improve.
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
 //TODO: Natvis for list, string, etc.
@@ -72,7 +70,13 @@ struct GeneralConfig
 		((int32_t), serverPort, 3490),
 		((float), baseMonitorBrightness1, 1.0f),
 		((float), baseMonitorBrightness2, 1.0f),
-		((float), baseMonitorBrightness3, 1.0f)
+		((float), baseMonitorBrightness3, 1.0f),
+		((bool), windowSet, false),
+		((int32_t), windowPosX, 0),
+		((int32_t), windowPosY, 0),
+		((int32_t), windowSizeX, 0),
+		((int32_t), windowSizeY, 0),
+		((bool), windowMaximized)
 	)
 };
 
@@ -332,6 +336,17 @@ public:
 		if (!chatGPTConfig->apiKey.isEmpty())
 		{
 			chatGPTComm.key = chatGPTConfig->apiKey;
+		}
+
+		if (generalConfig->windowSet)
+		{
+			getWindow()->setPos({ generalConfig->windowPosX, generalConfig->windowPosY });
+			getWindow()->setSize({ generalConfig->windowSizeX, generalConfig->windowSizeY });
+
+			if (generalConfig->windowMaximized)
+			{
+				getWindow()->maximize();
+			}
 		}
 	}
 
@@ -830,6 +845,17 @@ public:
 		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 1", &generalConfig->baseMonitorBrightness1, 0.0f, 1.0f);
 		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 2", &generalConfig->baseMonitorBrightness2, 0.0f, 1.0f);
 		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 3", &generalConfig->baseMonitorBrightness3, 0.0f, 1.0f);
+		
+		if (ImGui::Button("Remember Window Position"))
+		{
+			generalConfig->windowSet = true;
+			generalConfig->windowPosX = getWindow()->getPos().x;
+			generalConfig->windowPosY = getWindow()->getPos().y;
+			generalConfig->windowSizeX = getWindow()->getSize().x;
+			generalConfig->windowSizeY = getWindow()->getSize().y;
+			generalConfig->windowMaximized = getWindow()->isMaximized();
+			generalConfigChanged = true;
+		}
 
 		if (generalConfigChanged)
 		{

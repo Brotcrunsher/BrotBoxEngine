@@ -67,6 +67,14 @@ namespace bbe
 		int getHeight() const;
 		int getScaledHeight() const;
 
+		Vector2i getSize() const;
+		void setSize(const Vector2i& size);
+		bool isMaximized() const;
+		void maximize();
+		Vector2i getPos() const;
+		void setPos(const Vector2i& pos);
+
+
 		Vector2 getGlobalMousePos() const;
 
 		void setWindowCloseMode(bbe::WindowCloseMode wcm);
