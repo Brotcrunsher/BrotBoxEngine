@@ -23,8 +23,10 @@
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
 //TODO: Time selector (next to date picker)
-//TODO: Non eearly tasks should be greyed out during early hours
 //TODO: Serializable List/Object should somehow handle versions... it's really complicated to do that within the nice BBE_SERIALIZABLE_DATA macro though.
+//TODO: Ada functionality: Kill all timewasting programs (Risky? "Oopsie I pressed the kill button... arghs")
+
+//TODO: Non eearly tasks should be greyed out during early hours
 //TODO: Nighttime configurable
 //TODO: Latetime configurable
 //TODO: Left a contingent Task running (oopsie). A fail safe of some kind would be nice. Some kind of warning system?
@@ -33,9 +35,7 @@
 //TODO: Show news
 //TODO: Ada functionality: Put something in clipboard.
 //TODO: Ada functionality: Open a webbrowser and URL bla
-//TODO: Ada functionality: Kill all timewasting programs
 //TODO: Ada functionality: Silence open tasks for 1 hour
-//TODO: Ada functionality: Ignore night
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: The weather tab looks aweful, but is strictly speaking functional. Improve.
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
@@ -460,6 +460,11 @@ public:
 		if (adafruitMacroPadRP2040.isConnected())
 		{
 			adafruitMacroPadRP2040.update();
+
+			if (adafruitMacroPadRP2040.isKeyPressed(bbe::RP2040Key::BUTTON_10))
+			{
+				ignoreNight = !ignoreNight;
+			}
 		}
 		else
 		{
