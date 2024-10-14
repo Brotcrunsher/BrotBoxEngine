@@ -27,7 +27,6 @@
 //TODO: Serializable List/Object should somehow handle versions... it's really complicated to do that within the nice BBE_SERIALIZABLE_DATA macro though.
 //TODO: Nighttime configurable
 //TODO: Latetime configurable
-//TODO: Time left was negative. Why? It was evening and no tasks were remaining.
 //TODO: Left a contingent Task running (oopsie). A fail safe of some kind would be nice. Some kind of warning system?
 //TODO: Show Bitcoin chart
 //TODO: Show average driving time
@@ -1633,7 +1632,7 @@ public:
 			ImGui::Checkbox("Indefinitely ", &openTasksSilencedIndefinitely);
 			ImGui::EndDisabled();
 
-			if (openTasksSilenced && !openTasksSilencedIndefinitely)
+			if (openTasksSilenced && !openTasksSilencedIndefinitely && !openTasksSilencedEnd.hasPassed())
 			{
 				const bbe::TimePoint now;
 				const bbe::Duration duration = openTasksSilencedEnd - now;
