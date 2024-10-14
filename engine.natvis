@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="bbe::List&lt;*&gt;">
+    <DisplayString>length = {m_length}</DisplayString>
+    <Expand>
+      <Item Name="[size]">m_length</Item>
+      <ArrayItems>
+        <Size>m_length</Size>
+        <ValuePointer>(($T1*)m_allocBlock.data)</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+  <Type Name="bbe::Utf8String">
+    <Intrinsic Name="capacity" Expression="m_data.m_capacity" />
+    <Intrinsic Name="sooSize" Expression="16" />
+    <Intrinsic Name="isSoo" Expression="capacity() &lt;= sooSize()" />
+    <Intrinsic Name="isNotSoo" Expression="capacity() &gt; sooSize()" />
+    <DisplayString Condition="isSoo()">{m_data.m_sooData,na}</DisplayString>
+    <DisplayString Condition="isNotSoo()">{m_data.m_pdata,na}</DisplayString>
+  </Type>
+</AutoVisualizer>

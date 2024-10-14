@@ -43,7 +43,6 @@
 //TODO: Fix the text rendering (Hard!)
 //TODO: The weather tab looks aweful, but is strictly speaking functional. Improve.
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
-//TODO: Natvis for list, string, etc.
 
 struct ClipboardContent
 {

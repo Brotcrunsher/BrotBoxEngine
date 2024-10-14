@@ -388,6 +388,9 @@ set_target_properties(box2d PROPERTIES FOLDER Deps)
 
 if(WIN32)
   target_link_libraries(BrotBoxEngine wsock32 ws2_32)
+  
+  target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/engine.natvis)
+  set_target_properties(BrotBoxEngine PROPERTIES VS_DEBUGGER_VISUALIZERS "${CMAKE_CURRENT_SOURCE_DIR}/engine.natvis")
 endif()
 
 if(BBE_ADD_CURL)
