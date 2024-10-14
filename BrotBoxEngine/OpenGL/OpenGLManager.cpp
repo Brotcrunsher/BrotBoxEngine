@@ -429,7 +429,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexSh
 		"   vec4 texColor = texture(tex, uvPassOn);"
 		"   if(swizzleMode == SWIZZL_MODE_RRRR)"
 		"   {"
-		"      texColor = vec4(texColor[0], texColor[0], texColor[0], texColor[0]);"
+		"      texColor = vec4(1, 1, 1, texColor[0]);"
 		"   }"
 		"	outColor = inColor * texColor;\n"
 		"}";
