@@ -28,8 +28,6 @@
 //TODO: Nighttime configurable
 //TODO: Latetime configurable
 //TODO: Time left was negative. Why? It was evening and no tasks were remaining.
-//TODO: Server was unable to be reached for a while (for what ever reason). Problem: After the server fixed itself,
-//      Mother was still not making a connection until I manually restarted the Program. Why?
 //TODO: Left a contingent Task running (oopsie). A fail safe of some kind would be nice. Some kind of warning system?
 //TODO: Show Bitcoin chart
 //TODO: Show average driving time
@@ -40,7 +38,6 @@
 //TODO: Ada functionality: Silence open tasks for 1 hour
 //TODO: Ada functionality: Ignore night
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
-//TODO: Fix the text rendering (Hard!)
 //TODO: The weather tab looks aweful, but is strictly speaking functional. Improve.
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
 

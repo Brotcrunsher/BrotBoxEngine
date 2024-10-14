@@ -56,8 +56,15 @@ bbe::List<char> bbe::Socket::drain()
 {
     if (nativeSocket == INVALID_SOCKET)
     {
-        bbe::Crash(bbe::Error::IllegalState);
+        bbe::Crash(bbe::Error::IllegalState, "Socket is invalid");
     }
+
+    int timeout = 5000; // ms
+    if (setsockopt(nativeSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) == SOCKET_ERROR)
+    {
+        bbe::Crash(bbe::Error::IllegalState, "Failed to set timeout.");
+    }
+
     bbe::List<char> retVal;
     char buffer[4096];
     while (true)
