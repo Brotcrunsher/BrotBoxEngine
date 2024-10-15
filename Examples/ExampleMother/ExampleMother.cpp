@@ -272,6 +272,7 @@ private:
 	std::future<bbe::Sound> readingNewsFuture;
 	bbe::Sound readingNewsSound;
 	bbe::SoundInstance readingNewsSoundInstance;
+	NewsEntry readingNewsCurrently;
 
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
@@ -629,11 +630,13 @@ public:
 						if (news.isNull())
 						{
 							readingNews = false;
+							readingNewsCurrently = {};
 						}
 						else
 						{
 							bbe::String s = news.title + "... " + news.description;
 							readingNewsFuture = chatGPTComm.synthesizeSpeechAsync(s);
+							readingNewsCurrently = news;
 						}
 					}
 					else
@@ -1269,7 +1272,15 @@ public:
 				{
 					colorMult = 0.3f;
 				}
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f * colorMult, 1.0f * colorMult, 1.0f * colorMult, 1.0f));
+				if (readingNewsCurrently == newsConfig[i].newsEntries[k] && (readingNews || readingNewsSoundInstance.isPlaying()))
+				{
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 1.0f, 0.8f, 1.0f));
+					colorMult = 1.0f;
+				}
+				else
+				{
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f * colorMult, 1.0f * colorMult, 1.0f * colorMult, 1.0f));
+				}
 				ImGui::TextWrapped("%s", newsConfig[i].newsEntries[k].title.getRaw());
 				ImGui::Indent(10.0f);
 				ImGui::TextWrapped("%s", newsConfig[i].newsEntries[k].description.getRaw());
