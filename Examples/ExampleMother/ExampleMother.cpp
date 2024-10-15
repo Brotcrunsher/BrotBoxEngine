@@ -33,7 +33,6 @@
 //TODO: Show Bitcoin chart
 //TODO: Show average driving time
 //TODO: Show news
-//TODO: Ada functionality: Put something in clipboard.
 //TODO: Ada functionality: Open a webbrowser and URL bla
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: The weather tab looks aweful, but is strictly speaking functional. Improve.
@@ -42,7 +41,8 @@
 struct ClipboardContent
 {
 	BBE_SERIALIZABLE_DATA(
-		((bbe::String), content)
+		((bbe::String), content),
+		((int32_t), adaKey, 0)
 	)
 };
 
@@ -356,6 +356,18 @@ public:
 		}
 	}
 
+	void adaClipboardKey(int32_t key)
+	{
+		for (size_t i = 0; i < clipboardContent.getLength(); i++)
+		{
+			if (clipboardContent[i].adaKey == key)
+			{
+				setClipboard(clipboardContent[i].content);
+				break;
+			}
+		}
+	}
+
 	bbe::TimePoint getNightStart() const
 	{
 		return bbe::TimePoint::todayAt(22, 00);
@@ -480,6 +492,18 @@ public:
 			{
 				openTasksSilenced = !openTasksSilenced;
 				updateOpenTasksSilenced();
+			}
+			if (adafruitMacroPadRP2040.isKeyPressed(bbe::RP2040Key::BUTTON_3))
+			{
+				adaClipboardKey(1);
+			}
+			if (adafruitMacroPadRP2040.isKeyPressed(bbe::RP2040Key::BUTTON_4))
+			{
+				adaClipboardKey(2);
+			}
+			if (adafruitMacroPadRP2040.isKeyPressed(bbe::RP2040Key::BUTTON_5))
+			{
+				adaClipboardKey(3);
 			}
 		}
 		else
@@ -676,6 +700,7 @@ public:
 		static bool editMode = false;
 		ImGui::Checkbox("Edit Mode", &editMode);
 		size_t deleteIndex = (size_t)-1;
+		bool requiresWrite = false;
 		for (size_t i = 0; i < clipboardContent.getLength(); i++)
 		{
 			ImGui::PushID(i);
@@ -683,6 +708,24 @@ public:
 			{
 				deleteIndex = i;
 			}
+			ImGui::SameLine();
+			ImGui::PushItemWidth(100);
+			if (ImGui::bbe::combo("##Adakey", { "None", "1", "2", "3" }, clipboardContent[i].adaKey))
+			{
+				requiresWrite = true;
+				if (clipboardContent[i].adaKey != 0)
+				{
+					for (size_t k = 0; k < clipboardContent.getLength(); k++)
+					{
+						if (i == k) continue;
+						if (clipboardContent[i].adaKey == clipboardContent[k].adaKey)
+						{
+							clipboardContent[k].adaKey = 0;
+						}
+					}
+				}
+			}
+			ImGui::PopItemWidth();
 			ImGui::SameLine();
 			if (editMode)
 			{
@@ -704,6 +747,10 @@ public:
 		if (deleteIndex != (size_t)-1)
 		{
 			clipboardContent.removeIndex(deleteIndex);
+		}
+		if (requiresWrite)
+		{
+			clipboardContent.writeToFile();
 		}
 		return bbe::Vector2(1);
 	}
