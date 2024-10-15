@@ -20,10 +20,6 @@ namespace bbe
 
 	class ChatGPTComm
 	{
-	private:
-		std::string sendRequest(const std::string& url, const std::string& jsonInput) const;
-		bbe::List<char> sendRequestBinary(const std::string& url, const std::string& jsonInput) const;
-
 	public:
 		bbe::String key = "";
 		bbe::String model = "gpt-4";

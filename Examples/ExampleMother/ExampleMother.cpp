@@ -35,7 +35,6 @@
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
 //TODO: Weather and ada GPT Talk freeze the gui even tho' they use bbe::async. Why?
-//TODO: Read news button
 
 //TODO: Show average driving time
 
@@ -562,29 +561,33 @@ public:
 			adafruitMacroPadRP2040.connect();
 		}
 
-		beginMeasure("Talk with ChatGPT");
+		beginMeasure("ChatGPT: Header...");
 		if (adafruitMacroPadRP2040.isConnected() && chatGPTComm.isKeySet())
 		{
+			beginMeasure("ChatGPT: Transcribing...");
 			static std::future<bbe::String> transcribeFuture;
 			if (microphone.isRecording() && !adafruitMacroPadRP2040.isKeyDown(bbe::RP2040Key::BUTTON_11))
 			{
 				bbe::Sound sound = microphone.stopRecording();
 				transcribeFuture = chatGPTComm.transcribeAsync(sound);
 			}
+			beginMeasure("ChatGPT: Querying...");
 			static std::future<bbe::ChatGPTQueryResponse> queryFuture;
-			if (transcribeFuture.valid())
+			if (transcribeFuture.valid() && transcribeFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 			{
 				bbe::String transcript = transcribeFuture.get();
 				queryFuture = chatGPTComm.queryAsync(transcript);
 			}
+			beginMeasure("ChatGPT: Synthesizing...");
 			static std::future<bbe::Sound> ttsFuture;
-			if (queryFuture.valid())
+			if (queryFuture.valid() && queryFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 			{
 				bbe::ChatGPTQueryResponse query = queryFuture.get();
 				ttsFuture = chatGPTComm.synthesizeSpeechAsync(query.message);
 			}
+			beginMeasure("ChatGPT: Sound stuff...");
 			static bbe::Sound sound;
-			if (ttsFuture.valid())
+			if (ttsFuture.valid() && ttsFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 			{
 				sound = ttsFuture.get();
 				sound.play();
@@ -928,7 +931,7 @@ public:
 			future = bbe::simpleUrlRequest::urlRequestAsync("https://wttr.in/" + weatherConfig->city + "?format=j1");
 		}
 
-		if (future.valid())
+		if (future.valid() && future.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 		{
 			auto contents = future.get();
 			bbe::String s;
@@ -1017,7 +1020,7 @@ public:
 		{
 			requestFuture = bbe::simpleUrlRequest::urlRequestAsync("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1");
 		}
-		if (requestFuture.valid())
+		if (requestFuture.valid() && requestFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 		{
 			auto val = requestFuture.get();
 			if (val.responseCode == 200)
@@ -1204,7 +1207,7 @@ public:
 		bool didFail = false;
 		for (size_t i = 0; i < newsConfig.getLength(); i++)
 		{
-			if (newsConfig[i].queryFuture.valid())
+			if (newsConfig[i].queryFuture.valid() && newsConfig[i].queryFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 			{
 				auto response = newsConfig[i].queryFuture.get();
 				newsConfig[i].queryFuture = std::shared_future<bbe::simpleUrlRequest::UrlRequestResult>();
@@ -1791,7 +1794,7 @@ public:
 		}
 
 		static bbe::String transcription;
-		if (transcribeFuture.valid())
+		if (transcribeFuture.valid() && transcribeFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 		{
 			transcription = transcribeFuture.get();
 		}
@@ -1820,7 +1823,7 @@ public:
 			}
 		}
 
-		if (chatGPTTTSFuture.valid())
+		if (chatGPTTTSFuture.valid() && chatGPTTTSFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 		{
 			currentTTSSound = chatGPTTTSFuture.get();
 			ttsSoundSet = true;

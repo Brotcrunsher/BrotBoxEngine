@@ -4,11 +4,7 @@
 #include "BBE/SimpleFile.h"
 #include "BBE/Async.h"
 
-std::string bbe::ChatGPTComm::sendRequest(const std::string& url, const std::string& jsonInput) const {
-	return sendRequestBinary(url, jsonInput).getRaw();
-}
-
-bbe::List<char> bbe::ChatGPTComm::sendRequestBinary(const std::string& url, const std::string& jsonInput) const {
+static bbe::List<char> sendRequestBinary(const std::string& url, const bbe::String& key, const std::string& jsonInput) {
 	auto response = bbe::simpleUrlRequest::urlRequest(
 		url.c_str(),
 		{ "Authorization: Bearer " + key, "Content-Type: application/json" },
@@ -16,6 +12,10 @@ bbe::List<char> bbe::ChatGPTComm::sendRequestBinary(const std::string& url, cons
 	);
 
 	return response.dataContainer;
+}
+
+static std::string sendRequest(const std::string& url, const bbe::String& key, const std::string& jsonInput) {
+	return sendRequestBinary(url, key, jsonInput).getRaw();
 }
 
 bbe::ChatGPTComm::ChatGPTComm(const bbe::String& key) : key(key)
@@ -30,7 +30,7 @@ bool bbe::ChatGPTComm::isKeySet() const
 
 bbe::ChatGPTQueryResponse bbe::ChatGPTComm::query(const bbe::String& msg)
 {
-	std::lock_guard _(mutex);
+	std::unique_lock ul(mutex);
 	// Add user's message to the conversation
 	history.push_back({ {"role", "user"}, {"content", msg.getRaw()}});
 
@@ -49,7 +49,10 @@ bbe::ChatGPTQueryResponse bbe::ChatGPTComm::query(const bbe::String& msg)
 	};
 
 	// Send the request
-	std::string response = sendRequest("https://api.openai.com/v1/chat/completions", jsonData.dump(-1, ' ', false, nlohmann::detail::error_handler_t::ignore));
+	bbe::String keyCopy = key;
+	ul.unlock(); // Making the actual sendRequest call outside the lock. This is what actually hangs and we shouldn't hold the lock longer than needed.
+	std::string response = sendRequest("https://api.openai.com/v1/chat/completions", keyCopy, jsonData.dump(-1, ' ', false, nlohmann::detail::error_handler_t::ignore));
+	ul.lock();
 
 	// Parse and display the response
 	try {
@@ -80,7 +83,7 @@ std::future<bbe::ChatGPTQueryResponse> bbe::ChatGPTComm::queryAsync(const bbe::S
 
 bbe::Sound bbe::ChatGPTComm::synthesizeSpeech(const bbe::String& text)
 {
-	std::lock_guard _(mutex);
+	std::unique_lock ul(mutex);
 
 	nlohmann::json jsonData = {
 		{"model", ttsModel.getRaw()},
@@ -88,7 +91,10 @@ bbe::Sound bbe::ChatGPTComm::synthesizeSpeech(const bbe::String& text)
 		{"voice", voice.getRaw()}
 	};
 
-	bbe::List<char> soundData = sendRequestBinary("https://api.openai.com/v1/audio/speech", jsonData.dump());
+	bbe::String keyCopy = key;
+	ul.unlock(); // Making the actual sendRequest call outside the lock. This is what actually hangs and we shouldn't hold the lock longer than needed.
+	bbe::List<char> soundData = sendRequestBinary("https://api.openai.com/v1/audio/speech", keyCopy, jsonData.dump());
+	ul.lock();
 	bbe::Sound sound;
 	sound.load(soundData, bbe::SoundLoadFormat::MP3);
 	return sound;
@@ -135,9 +141,13 @@ void bbe::ChatGPTComm::purgeMemory()
 
 bbe::List<bbe::String> bbe::ChatGPTComm::getAvailableModels() const
 {
-	std::lock_guard _(mutex);
+	std::unique_lock ul(mutex);
 	std::string url = "https://api.openai.com/v1/models";
-	std::string response = sendRequest(url, "");
+
+	bbe::String keyCopy = key;
+	ul.unlock(); // Making the actual sendRequest call outside the lock. This is what actually hangs and we shouldn't hold the lock longer than needed.
+	std::string response = sendRequest(url, keyCopy, "");
+	ul.unlock();
 
 	bbe::List<bbe::String> models;
 	try {
