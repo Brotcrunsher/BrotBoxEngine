@@ -144,6 +144,30 @@ struct WeaterConfig
 	)
 };
 
+struct NewsEntry
+{
+	BBE_SERIALIZABLE_DATA(
+		((bbe::String), title),
+		((bbe::String), description),
+		((bbe::String), link)
+	)
+	bool wasRead = false;
+
+	bool isNull() const
+	{
+		return title       == ""
+			&& description == ""
+			&& link        == "";
+	}
+
+	bool operator==(const NewsEntry& other) const
+	{
+		return title       == other.title
+			&& description == other.description
+			&& link        == other.link;
+	}
+};
+
 struct NewsConfig
 {
 	BBE_SERIALIZABLE_DATA(
@@ -157,12 +181,6 @@ struct NewsConfig
 	// Not persisted.
 	std::shared_future<bbe::simpleUrlRequest::UrlRequestResult> queryFuture;
 	bbe::String queryData;
-	struct NewsEntry
-	{
-		bbe::String title;
-		bbe::String description;
-		bbe::String link;
-	};
 	bbe::List<NewsEntry> newsEntries;
 };
 
@@ -207,6 +225,7 @@ private:
 	bbe::SerializableObject<ChatGPTConfig> chatGPTConfig        = bbe::SerializableObject<ChatGPTConfig>  ("ChatGPTConfig.dat",       "ParanoiaConfig");
 	bbe::SerializableObject<WeaterConfig> weatherConfig         = bbe::SerializableObject<WeaterConfig>   ("WeaterConfig.dat",        "ParanoiaConfig");
 	bbe::SerializableList<NewsConfig> newsConfig                = bbe::SerializableList<NewsConfig>       ("NewsConfig.dat",          "ParanoiaConfig");
+	bbe::SerializableList<NewsEntry> readNews                   = bbe::SerializableList<NewsEntry>        ("ReadNews.dat",            "ParanoiaConfig");
 
 	bbe::ChatGPTComm chatGPTComm; // ChatGPT communication object
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
@@ -249,6 +268,10 @@ private:
 	bbe::Sound microphoneSound;
 
 	bbe::TimePoint nextNewsQuery;
+	bool readingNews = false;
+	std::future<bbe::Sound> readingNewsFuture;
+	bbe::Sound readingNewsSound;
+	bbe::SoundInstance readingNewsSoundInstance;
 
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
@@ -590,6 +613,37 @@ public:
 					bbe::simpleFile::createDirectory("mousePositions");
 					bbe::simpleFile::writeFloatArrToFile(bbe::String("mousePositions/mouse") + t + ".dat", mousePositions);
 					mousePositions.clear();
+				}
+			}
+		}
+
+		beginMeasure("Reading News");
+		{
+			if (chatGPTComm.isKeySet() && readingNews)
+			{
+				if (!readingNewsSoundInstance.isPlaying())
+				{
+					if (!readingNewsFuture.valid())
+					{
+						auto news = getUnreadNews();
+						if (news.isNull())
+						{
+							readingNews = false;
+						}
+						else
+						{
+							bbe::String s = news.title + "... " + news.description;
+							readingNewsFuture = chatGPTComm.synthesizeSpeechAsync(s);
+						}
+					}
+					else
+					{
+						if (readingNewsFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+						{
+							readingNewsSound = readingNewsFuture.get();
+							readingNewsSoundInstance = readingNewsSound.play();
+						}
+					}
 				}
 			}
 		}
@@ -990,6 +1044,37 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	bool wasNewsRead(NewsEntry& ne)
+	{
+		if (ne.wasRead) return true;
+		for (size_t i = 0; i < readNews.getLength(); i++)
+		{
+			if (readNews[i] == ne)
+			{
+				ne.wasRead = true;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	NewsEntry getUnreadNews()
+	{
+		for (size_t i = 0; i < newsConfig.getLength(); i++)
+		{
+			for (size_t k = 0; k < newsConfig[i].newsEntries.getLength(); k++)
+			{
+				NewsEntry& ne = newsConfig[i].newsEntries[k];
+				if (wasNewsRead(ne)) continue;
+
+				ne.wasRead = true;
+				readNews.add(ne);
+				return ne;
+			}
+		}
+		return NewsEntry();
+	}
+
 	bool isValidUrl(const bbe::String& url)
 	{
 		if (url.containsAny("&|;><"))
@@ -1102,6 +1187,8 @@ public:
 
 	bbe::Vector2 drawNews()
 	{
+		ImGui::Checkbox("Reading news", &readingNews);
+
 		if (nextNewsQuery.hasPassed())
 		{
 			nextNewsQuery = bbe::TimePoint().plusMinutes(5);
@@ -1145,9 +1232,10 @@ public:
 					}
 				}
 
+				newsConfig[i].newsEntries.clear();
 				while (iterationElement)
 				{
-					NewsConfig::NewsEntry entry;
+					NewsEntry entry;
 					entry.title       = extractInfoFromXmlElement(iterationElement, newsConfig[i].titlePath);
 					entry.description = extractInfoFromXmlElement(iterationElement, newsConfig[i].descriptionPath);
 					entry.link        = extractInfoFromXmlElement(iterationElement, newsConfig[i].linkPath);
@@ -1176,10 +1264,17 @@ public:
 			ImGui::PopStyleColor();
 			for (size_t k = 0; k < newsConfig[i].newsEntries.getLength(); k++)
 			{
+				float colorMult = 1.0f;
+				if (wasNewsRead(newsConfig[i].newsEntries[k]))
+				{
+					colorMult = 0.3f;
+				}
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f * colorMult, 1.0f * colorMult, 1.0f * colorMult, 1.0f));
 				ImGui::TextWrapped("%s", newsConfig[i].newsEntries[k].title.getRaw());
 				ImGui::Indent(10.0f);
 				ImGui::TextWrapped("%s", newsConfig[i].newsEntries[k].description.getRaw());
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 1.0f, 1.0f));
+				ImGui::PopStyleColor();
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f * colorMult, 0.5f * colorMult, 1.0f * colorMult, 1.0f));
 				if (newsConfig[i].newsEntries[k].link.getLength() > 0)
 				{
 					if (ImGui::Selectable(newsConfig[i].newsEntries[k].link.getRaw()))
