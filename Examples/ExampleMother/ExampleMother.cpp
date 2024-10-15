@@ -2,6 +2,7 @@
 #include "BBE/SimpleProcess.h"
 #include "BBE/AdafruitMacroPadRP2040.h"
 #include <iostream>
+#include <cmath>
 #define NOMINMAX
 // Need to link with Ws2_32.lib
 #pragma comment(lib, "ws2_32.lib")
@@ -25,18 +26,19 @@
 //TODO: Time selector (next to date picker)
 //TODO: Serializable List/Object should somehow handle versions... it's really complicated to do that within the nice BBE_SERIALIZABLE_DATA macro though.
 //TODO: Ada functionality: Kill all timewasting programs (Risky? "Oopsie I pressed the kill button... arghs")
-
-//TODO: Non eearly tasks should be greyed out during early hours
 //TODO: Nighttime configurable
 //TODO: Latetime configurable
+//TODO: Non eearly tasks should be greyed out during early hours
 //TODO: Left a contingent Task running (oopsie). A fail safe of some kind would be nice. Some kind of warning system?
-//TODO: Show Bitcoin chart
-//TODO: Show average driving time
-//TODO: Show news
 //TODO: Ada functionality: Open a webbrowser and URL bla
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
-//TODO: The weather tab looks aweful, but is strictly speaking functional. Improve.
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
+//TODO: Weather and ada GPT Talk freeze the guy even tho' they use bbe::async. Why?
+
+//TODO: Show average driving time
+//TODO: Show news
+//TODO: The weather tab looks aweful, but is strictly speaking functional. Improve.
+
 
 struct ClipboardContent
 {
@@ -858,6 +860,45 @@ public:
 		return bbe::Vector2(1, 0.1);
 	}
 
+	bbe::Vector2 drawBitcoin()
+	{
+		static std::future<bbe::simpleUrlRequest::UrlRequestResult> requestFuture;
+		static bbe::List<float> times;
+		static bbe::List<float> prices;
+		EVERY_MINUTES(5)
+		{
+			requestFuture = bbe::simpleUrlRequest::urlRequestAsync("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1");
+		}
+		if (requestFuture.valid())
+		{
+			auto val = requestFuture.get();
+			if (val.responseCode == 200)
+			{
+				nlohmann::json json = nlohmann::json::parse(val.dataContainer.getRaw());
+				nlohmann::json& pJson = json["prices"];
+				times.clear();
+				prices.clear();
+				for (size_t i = 0; i < pJson.size(); i++)
+				{
+					times.add(pJson[i][0]);
+					prices.add(pJson[i][1]);
+				}
+			}
+		}
+
+		if (prices.getLength() > 0)
+		{
+			ImGui::Text("Current Price: $%.2f", prices.last());
+			if (ImPlot::BeginPlot("Line Plots")) {
+				ImPlot::SetupAxes("time", "price");
+				ImPlot::PlotLine("Bitcoin", times.getRaw(), prices.getRaw(), times.getLength());
+				ImPlot::EndPlot();
+			}
+			
+		}
+		return bbe::Vector2(1);
+	}
+
 	bbe::Vector2 drawTabConsole()
 	{
 		const auto& log = bbe::logging::getLog();
@@ -1548,6 +1589,7 @@ public:
 				Tab{"Mic",       "Microphone Test",[&]() { return drawMicrophoneTest(); }},
 				Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
 				Tab{"Wthr",      "Weather",        [&]() { return drawWeather(brush); }},
+				Tab{"BTC",       "Bitcoin",        [&]() { return drawBitcoin(); }},
 				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
 				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
 			};
