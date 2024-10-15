@@ -100,6 +100,7 @@ namespace bbe
 		bool isSaturday() const;
 		bool isSunday() const;
 		bool isToday() const;
+		bool isSameDay(const bbe::TimePoint& other) const;
 
 		bbe::String toString() const;
 
@@ -111,6 +112,9 @@ namespace bbe
 		int32_t getYear() const;
 		Month getMonth() const;
 		int32_t getDay() const;
+		int32_t getHour() const;
+		int32_t getMinute() const;
+		int32_t getSecond() const;
 	};
 
 	class TimeGate

@@ -33,11 +33,10 @@
 //TODO: Ada functionality: Open a webbrowser and URL bla
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
-//TODO: Weather and ada GPT Talk freeze the guy even tho' they use bbe::async. Why?
+//TODO: Weather and ada GPT Talk freeze the gui even tho' they use bbe::async. Why?
 
 //TODO: Show average driving time
 //TODO: Show news
-//TODO: The weather tab looks aweful, but is strictly speaking functional. Improve.
 
 
 struct ClipboardContent
@@ -770,7 +769,7 @@ public:
 		float chanceOfRain = 0.0f;
 	};
 
-	WeatherEntry jsonToWeatherEntry(const nlohmann::json& json)
+	WeatherEntry jsonToWeatherEntry(const nlohmann::json& json, const bbe::TimePoint& day)
 	{
 		WeatherEntry retVal;
 
@@ -787,6 +786,7 @@ public:
 		else if (json.contains("time"))
 		{
 			retVal.time = bbe::TimePoint::todayAt(std::stoi(json["time"].get<std::string>()) / 100, 0);
+			retVal.time = bbe::TimePoint::fromDate(day.getYear(), day.getMonth(), day.getDay(), retVal.time.getHour(), retVal.time.getMinute(), retVal.time.getSecond());
 		}
 
 		if (json.contains("uvIndex")) retVal.uvIndex = std::stof(json["uvIndex"].get<std::string>());
@@ -800,15 +800,32 @@ public:
 
 	void drawWeatherEntry(bbe::PrimitiveBrush2D& brush, const bbe::Vector2& offset, const WeatherEntry& entry)
 	{
-		brush.fillText(offset + bbe::Vector2{ 0,   0 }, "Temp: " + bbe::String((int)entry.temperatureC));
-		brush.fillText(offset + bbe::Vector2{ 0,  20 }, "FTemp: " + bbe::String((int)entry.temperatureCFelt));
-		brush.fillText(offset + bbe::Vector2{ 0,  40 }, "Hum: " + bbe::String((int)entry.humidity));
-		brush.fillText(offset + bbe::Vector2{ 0,  60 }, "Time: " + entry.time.toString());
-		brush.fillText(offset + bbe::Vector2{ 0,  80 }, "UV: " + bbe::String((int)entry.uvIndex));
-		brush.fillText(offset + bbe::Vector2{ 0, 100 }, "Winddir: " + bbe::String((int)entry.winddir));
-		brush.fillText(offset + bbe::Vector2{ 0, 120 }, "Windspeed: " + bbe::String((int)entry.windspeedKmph));
-		brush.fillText(offset + bbe::Vector2{ 0, 140 }, "Precip: " + bbe::String((int)entry.precipMM));
-		brush.fillText(offset + bbe::Vector2{ 0, 160 }, "ChanceOfRain: " + bbe::String((int)entry.chanceOfRain));
+		const bbe::List<std::pair<float, bbe::Color>> colorLerps =
+		{
+			{ -10.0f, bbe::Color(0.8f, 0.8f, 1.0f)},
+			{   0.0f, bbe::Color(0.5f, 0.5f, 1.0f)},
+			{  22.0f, bbe::Color(0.2f, 1.0f, 0.2f)},
+			{  25.0f, bbe::Color(0.8f, 0.8f, 0.2f)},
+			{  30.0f, bbe::Color(1.0f, 0.5f, 0.5f)},
+			{  40.0f, bbe::Color(0.5f, 0.0f, 0.0f)}
+		};
+
+		bbe::String timeString = "";
+		timeString += entry.time.getHour();
+		timeString += ":00";
+		brush.fillText(offset + bbe::Vector2{ 0,  0 }, timeString);
+		const bbe::Color tempColor = bbe::Math::multiLerp(colorLerps, entry.temperatureC);
+		brush.setColorRGB(tempColor);
+		brush.fillText(offset + bbe::Vector2{ 40, 0 }, bbe::String((int)entry.temperatureC) + "C");
+
+		brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
+		brush.fillText(offset + bbe::Vector2{ 80,  0 }, "Hum: " + bbe::String((int)entry.humidity));
+		brush.fillText(offset + bbe::Vector2{ 150, 0 }, "UV: " + bbe::String((int)entry.uvIndex));
+		brush.fillText(offset + bbe::Vector2{ 0, 20 }, "Prcp: " + bbe::String(entry.precipMM).rounded(2));
+		brush.fillText(offset + bbe::Vector2{ 79, 20 }, "%Rn: " + bbe::String((int)entry.chanceOfRain));
+		brush.fillText(offset + bbe::Vector2{ 138, 20 }, "Wnd: " + bbe::String((int)entry.windspeedKmph));
+
+		brush.sketchRect(offset - bbe::Vector2{ 2, 15 }, { 189, 45 });
 	}
 
 	bbe::Vector2 drawWeather(bbe::PrimitiveBrush2D& brush)
@@ -838,23 +855,71 @@ public:
 
 			weatherEntries.clear();
 
-			weatherEntries.add(jsonToWeatherEntry(j["current_condition"][0]));
+			weatherEntries.add(jsonToWeatherEntry(j["current_condition"][0], bbe::TimePoint()));
 
 			nlohmann::json& weather = j["weather"];
 
 			for (size_t i = 0; i < weather.size(); i++)
 			{
+				bbe::String dayString = weather[i]["date"].get<std::string>().c_str();
+				auto dayStringTokens = dayString.split("-");
+				if (dayStringTokens.getLength() != 3)
+				{
+					static bool lengthWarningPrinted = false;
+					if (!lengthWarningPrinted)
+					{
+						lengthWarningPrinted = true;
+						BBELOGLN("Warning: Weather reported " << dayStringTokens.getLength() << "tokens!");
+					}
+					continue;
+				}
+				bool onlyNumbers = true;
+				for (size_t i = 0; i < dayStringTokens.getLength(); i++)
+				{
+					if (!dayStringTokens[i].isNumber())
+					{
+						onlyNumbers = false;
+						break;;
+					}
+				}
+				if (!onlyNumbers)
+				{
+					static bool notANumberWarningPrinted = false;
+					if (!notANumberWarningPrinted)
+					{
+						notANumberWarningPrinted = true;
+						BBELOGLN("Warning: Weather reported a non number in date!");
+					}
+					continue;
+				}
+				bbe::TimePoint day = bbe::TimePoint::fromDate(dayStringTokens[0].toLong(), dayStringTokens[1].toLong(), dayStringTokens[2].toLong());
 				nlohmann::json& hourly = weather[i]["hourly"];
 				for (size_t k = 0; k < hourly.size(); k++)
 				{
-					weatherEntries.add(jsonToWeatherEntry(hourly[k]));
+					weatherEntries.add(jsonToWeatherEntry(hourly[k], day));
 				}
 			}
 		}
 
-		for (size_t i = 0; i < weatherEntries.getLength(); i++)
+		if (weatherEntries.getLength() > 0)
 		{
-			drawWeatherEntry(brush, bbe::Vector2(20, 100 + i * 200), weatherEntries[i]);
+			int32_t curX = 20;
+			int32_t curY = 120;
+			bbe::TimePoint previousTime = weatherEntries[0].time;
+			for (size_t i = 0; i < weatherEntries.getLength(); i++)
+			{
+				if (i != 0 && weatherEntries[i].time.hasPassed()) continue;
+				if (!previousTime.isSameDay(weatherEntries[i].time))
+				{
+					curX += 200;
+					curY = 120;
+				}
+				previousTime = weatherEntries[i].time;
+
+				drawWeatherEntry(brush, bbe::Vector2(curX, curY), weatherEntries[i]);
+
+				curY += 50;
+			}
 		}
 
 		return bbe::Vector2(1, 0.1);

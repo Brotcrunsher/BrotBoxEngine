@@ -199,6 +199,29 @@ namespace bbe
 		float interpolateBezier(float a, float b, float t, float control);
 		float interpolateHermite(float a, float b, float t, float tangent1, float tangent2);
 
+		template<typename T>
+		T multiLerp(const bbe::List<std::pair<float, T>>& lerpValues, float t)
+		{
+			if (t <= lerpValues.first().first) return lerpValues.first().second;
+			if (t >= lerpValues.last() .first) return lerpValues.last() .second;
+
+			for (size_t i = 1; i < lerpValues.getLength(); i++)
+			{
+				if (t <= lerpValues[i].first)
+				{
+					const T& a = lerpValues[i - 1].second;
+					const T& b = lerpValues[i].second;
+					const float dist = lerpValues[i].first - lerpValues[i - 1].first;
+					const float lt = (t - lerpValues[i - 1].first) / dist;
+
+					const T toB = b - a;
+					return a + toB * lt;
+				}
+			}
+
+			bbe::Crash(bbe::Error::IllegalArgument);
+		}
+
 		bool isLeftTurn(const bbe::Vector2& a, const bbe::Vector2& b, const bbe::Vector2& c);
 		bbe::List<bbe::Vector2> getConvexHull(const bbe::List<bbe::Vector2>& points);
 		const bbe::Vector2* getClosest(const bbe::Vector2& pos, const bbe::List<bbe::Vector2>& points);

@@ -83,6 +83,26 @@ namespace bbe
 			return bbe::Color_t<T, maxValue>(r / scalar, g / scalar, b / scalar, a / scalar);
 		}
 
+		bbe::Color_t<T, maxValue> operator-(const bbe::Color_t<T, maxValue>& other) const
+		{
+			return bbe::Color_t<T, maxValue>(
+				r - other.r,
+				g - other.g,
+				b - other.b,
+				a - other.a
+			);
+		}
+
+		bbe::Color_t<T, maxValue> operator+(const bbe::Color_t<T, maxValue>& other) const
+		{
+			return bbe::Color_t<T, maxValue>(
+				r + other.r,
+				g + other.g,
+				b + other.b,
+				a + other.a
+			);
+		}
+
 		bbe::Color_t<T, maxValue>& operator*= (float scalar)
 		{
 			r *= scalar;

@@ -118,6 +118,8 @@ namespace bbe
 		Utf8String& operator+=(long               number);
 		Utf8String& operator+=(unsigned int       number);
 
+		bbe::Utf8String rounded(int32_t digitsAfterDot) const;
+
 		bbe::Utf8String trim       () const;
 		void            trimInPlace();
 

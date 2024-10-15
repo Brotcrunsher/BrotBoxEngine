@@ -518,6 +518,16 @@ bbe::Utf8String& bbe::Utf8String::operator+=(unsigned int number)
 	return operator+=(bbe::Utf8String(number));
 }
 
+bbe::Utf8String bbe::Utf8String::rounded(int32_t digitsAfterDot) const
+{
+	if (!isNumber()) bbe::Crash(bbe::Error::IllegalState, "Not a number, can't be rounded");
+
+	auto dotLocation = search(".");
+	if (dotLocation == -1) return *this;
+
+	return substring(0, dotLocation + digitsAfterDot + 1);
+}
+
 bbe::Utf8String bbe::Utf8String::trim() const
 {
 	//UNTESTED
@@ -831,10 +841,16 @@ bool bbe::Utf8String::isNumber() const
 	size_t i = 0;
 	if (startsWith("+") || startsWith("-")) i++;
 
+	bool dotFound = false;
 	for (; i < utf8len(getRaw()); i++)
 	{
 		const char& c = operator[](i);
-		if (c < '0' || c > '9')
+		if (c == '.')
+		{
+			if (dotFound) return false;
+			dotFound = true;
+		}
+		else if (c < '0' || c > '9')
 		{
 			return false;
 		}

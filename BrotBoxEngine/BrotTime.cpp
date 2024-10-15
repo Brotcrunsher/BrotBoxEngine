@@ -29,6 +29,7 @@ bbe::TimePoint bbe::TimePoint::fromString(const bbe::String& s, const bbe::Strin
 		bbe::String errString = "Could not Parse: " + s;
 		bbe::Crash(bbe::Error::IllegalArgument, errString.getRaw());
 	}
+	tm.tm_isdst = -1;
 	std::time_t t = std::mktime(&tm);
 	return TimePoint(t);
 }
@@ -116,6 +117,7 @@ bbe::TimePoint bbe::TimePoint::todayAt(int32_t hour, int32_t minute, int32_t sec
 	t.tm_hour = hour;
 	t.tm_min = minute;
 	t.tm_sec = second;
+	t.tm_isdst = -1;
 
 	return TimePoint(::mktime(&t)).plusDays(daysOffset);
 }
@@ -129,6 +131,7 @@ bbe::TimePoint bbe::TimePoint::fromDate(int32_t year, Month month, int32_t day, 
 	t.tm_hour = hour;
 	t.tm_min = minute;
 	t.tm_sec = second;
+	t.tm_isdst = -1;
 
 	return TimePoint(::mktime(&t));
 }
@@ -196,6 +199,7 @@ bbe::TimePoint bbe::TimePoint::nextMorning(int32_t morningHour) const
 	timeinfo.tm_sec = 0;
 	timeinfo.tm_min = 0;
 	timeinfo.tm_hour = morningHour;
+	timeinfo.tm_isdst = -1;
 	t = ::mktime(&timeinfo);
 	return TimePoint(t);
 }
@@ -207,6 +211,7 @@ bbe::TimePoint bbe::TimePoint::toMorning(int32_t morningHour) const
 	timeinfo.tm_sec = 0;
 	timeinfo.tm_min = 0;
 	timeinfo.tm_hour = morningHour;
+	timeinfo.tm_isdst = -1;
 	t = ::mktime(&timeinfo);
 	return TimePoint(t);
 }
@@ -358,6 +363,13 @@ bool bbe::TimePoint::isToday() const
 	return thisTimeinfo.tm_year == nowTimeinfo.tm_year && thisTimeinfo.tm_yday == nowTimeinfo.tm_yday;
 }
 
+bool bbe::TimePoint::isSameDay(const bbe::TimePoint& other) const
+{
+	return getYear()  == other.getYear() 
+		&& getMonth() == other.getMonth() 
+		&& getDay()   == other.getDay();
+}
+
 bbe::String bbe::TimePoint::toString() const
 {
 	::time_t t = std::chrono::system_clock::to_time_t(m_time);
@@ -390,6 +402,21 @@ bbe::Month bbe::TimePoint::getMonth() const
 int32_t bbe::TimePoint::getDay() const
 {
 	return toTm().tm_mday;
+}
+
+int32_t bbe::TimePoint::getHour() const
+{
+	return toTm().tm_hour;
+}
+
+int32_t bbe::TimePoint::getMinute() const
+{
+	return toTm().tm_min;
+}
+
+int32_t bbe::TimePoint::getSecond() const
+{
+	return toTm().tm_sec;
 }
 
 bbe::Duration::Duration()
