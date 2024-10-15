@@ -34,7 +34,6 @@
 //TODO: Ada functionality: Open a webbrowser and URL bla
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
-//TODO: Weather and ada GPT Talk freeze the gui even tho' they use bbe::async. Why?
 
 //TODO: Show average driving time
 
@@ -272,6 +271,7 @@ private:
 	bbe::Sound readingNewsSound;
 	bbe::SoundInstance readingNewsSoundInstance;
 	NewsEntry readingNewsCurrently;
+	bool showReadNews = true;
 
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
@@ -1194,6 +1194,7 @@ public:
 	bbe::Vector2 drawNews()
 	{
 		ImGui::Checkbox("Reading news", &readingNews);
+		ImGui::Checkbox("Show read news", &showReadNews);
 
 		if (nextNewsQuery.hasPassed())
 		{
@@ -1271,18 +1272,26 @@ public:
 			for (size_t k = 0; k < newsConfig[i].newsEntries.getLength(); k++)
 			{
 				float colorMult = 1.0f;
+				bool newsWasRead = false;
 				if (wasNewsRead(newsConfig[i].newsEntries[k]))
 				{
 					colorMult = 0.3f;
+					newsWasRead = true;
 				}
 				if (readingNewsCurrently == newsConfig[i].newsEntries[k] && (readingNews || readingNewsSoundInstance.isPlaying()))
 				{
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 1.0f, 0.8f, 1.0f));
 					colorMult = 1.0f;
+					newsWasRead = false;
 				}
 				else
 				{
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f * colorMult, 1.0f * colorMult, 1.0f * colorMult, 1.0f));
+				}
+				if (!showReadNews && newsWasRead)
+				{
+					ImGui::PopStyleColor();
+					continue;
 				}
 				ImGui::TextWrapped("%s", newsConfig[i].newsEntries[k].title.getRaw());
 				ImGui::Indent(10.0f);
