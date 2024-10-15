@@ -20,6 +20,7 @@ A C++ prototyping engine that is striving for an easy to use API, hiding all the
 * [libcurl](https://curl.se/libcurl/)
 * [libsodium](https://github.com/jedisct1/libsodium), added through [libsodium-cmake](https://github.com/robinlinden/libsodium-cmake)
 * [nlohmann json](https://github.com/nlohmann/json)
+* [tinyxml2](https://github.com/leethomason/tinyxml2)
 
 ## Quick Start
 
