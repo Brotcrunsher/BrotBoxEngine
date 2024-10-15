@@ -701,6 +701,23 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::lines(bool addEmpty) const
 	return lines;
 }
 
+bool bbe::Utf8String::containsAny(const char* string) const
+{
+	for (auto it = getIterator(); it.valid(); ++it)
+	{
+		const char* s = string;
+		while (*s)
+		{
+			if (it.getCodepoint() == *s)
+			{
+				return true;
+			}
+			s++;
+		}
+	}
+	return false;
+}
+
 bool bbe::Utf8String::contains(const char* string) const
 {
 	//UNTESTED

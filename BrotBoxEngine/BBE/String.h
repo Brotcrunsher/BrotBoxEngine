@@ -135,6 +135,7 @@ namespace bbe
 
 		DynamicArray<Utf8String> lines(bool addEmpty = true) const;
 		
+		bool containsAny(const char* string) const;
 		bool contains(const char*       string) const;
 		bool contains(const Utf8String& string) const;
 		bool containsIgnoreCase(const char*       string) const;

@@ -1,3 +1,4 @@
+#include "tinyxml2.h"
 #include "BBE/BrotBoxEngine.h"
 #include "BBE/SimpleProcess.h"
 #include "BBE/AdafruitMacroPadRP2040.h"
@@ -34,9 +35,9 @@
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
 //TODO: Weather and ada GPT Talk freeze the gui even tho' they use bbe::async. Why?
+//TODO: Read news button
 
 //TODO: Show average driving time
-//TODO: Show news
 
 
 struct ClipboardContent
@@ -143,6 +144,28 @@ struct WeaterConfig
 	)
 };
 
+struct NewsConfig
+{
+	BBE_SERIALIZABLE_DATA(
+		((bbe::String), url),
+		((bbe::String), iterationPath),
+		((bbe::String), titlePath),
+		((bbe::String), descriptionPath),
+		((bbe::String), linkPath)
+	)
+
+	// Not persisted.
+	std::shared_future<bbe::simpleUrlRequest::UrlRequestResult> queryFuture;
+	bbe::String queryData;
+	struct NewsEntry
+	{
+		bbe::String title;
+		bbe::String description;
+		bbe::String link;
+	};
+	bbe::List<NewsEntry> newsEntries;
+};
+
 enum class IconCategory
 {
 	NONE,
@@ -183,6 +206,7 @@ private:
 	bbe::SerializableList<SeenServerTaskId> seenServerTaskIds   = bbe::SerializableList<SeenServerTaskId> ("SeenServerTaskIds.dat",   "ParanoiaConfig");
 	bbe::SerializableObject<ChatGPTConfig> chatGPTConfig        = bbe::SerializableObject<ChatGPTConfig>  ("ChatGPTConfig.dat",       "ParanoiaConfig");
 	bbe::SerializableObject<WeaterConfig> weatherConfig         = bbe::SerializableObject<WeaterConfig>   ("WeaterConfig.dat",        "ParanoiaConfig");
+	bbe::SerializableList<NewsConfig> newsConfig                = bbe::SerializableList<NewsConfig>       ("NewsConfig.dat",          "ParanoiaConfig");
 
 	bbe::ChatGPTComm chatGPTComm; // ChatGPT communication object
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
@@ -223,6 +247,8 @@ private:
 
 	bbe::Microphone microphone;
 	bbe::Sound microphoneSound;
+
+	bbe::TimePoint nextNewsQuery;
 
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
@@ -964,6 +990,211 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	bool isValidUrl(const bbe::String& url)
+	{
+		if (url.containsAny("&|;><"))
+		{
+			// Naughty characters that could be used to execute other stuff
+			// in ShellExecute. Technically & is a legal url char, but none
+			// of the RSS feeds I observed contained it. So let's ignore it.
+			return false;
+		}
+		if (url.startsWith("http://") ||
+			url.startsWith("https://") ||
+			url.startsWith("www.")) {
+			return true;
+		}
+		return false;
+	}
+
+	bbe::Vector2 drawNewsConfig()
+	{
+		bool requiresWrite = false;
+		static NewsConfig newNewsConfig;
+		ImGui::bbe::InputText("Url", newNewsConfig.url);
+		ImGui::bbe::InputText("Iteration Path", newNewsConfig.iterationPath);
+		ImGui::bbe::InputText("Title Path", newNewsConfig.titlePath);
+		ImGui::bbe::InputText("Description Path", newNewsConfig.descriptionPath);
+		ImGui::bbe::InputText("Link Path", newNewsConfig.linkPath);
+		if (ImGui::Button("Add Element"))
+		{
+			newsConfig.add(std::move(newNewsConfig));
+			newNewsConfig = {};
+			nextNewsQuery = bbe::TimePoint();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Add Tagesschau"))
+		{
+			newNewsConfig.url = "https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml";
+			newNewsConfig.iterationPath = "channel/item";
+			newNewsConfig.titlePath = "title";
+			newNewsConfig.descriptionPath = "description";
+			newNewsConfig.linkPath = "link";
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Add Heise"))
+		{
+			newNewsConfig.url = "https://www.heise.de/rss/heise-top-atom.xml";
+			newNewsConfig.iterationPath = "entry";
+			newNewsConfig.titlePath = "title";
+			newNewsConfig.descriptionPath = "summary";
+			newNewsConfig.linkPath = "link@href";
+		}
+
+		ImGui::Separator();
+		ImGui::Separator();
+
+		size_t deletionIndex = -1;
+		for (size_t i = 0; i < newsConfig.getLength(); i++)
+		{
+			ImGui::Separator();
+			ImGui::PushID(i);
+			if (ImGui::Button("Delete")) deletionIndex = i;
+			requiresWrite |= ImGui::bbe::InputText("Url", newsConfig[i].url);
+			requiresWrite |= ImGui::bbe::InputText("Iteration Path", newsConfig[i].iterationPath);
+			requiresWrite |= ImGui::bbe::InputText("Title Path", newsConfig[i].titlePath);
+			requiresWrite |= ImGui::bbe::InputText("Description Path", newsConfig[i].descriptionPath);
+			requiresWrite |= ImGui::bbe::InputText("Link Path", newsConfig[i].linkPath);
+			ImGui::PopID();
+		}
+
+		if (deletionIndex != -1)
+		{
+			newsConfig.removeIndex(deletionIndex);
+			nextNewsQuery = bbe::TimePoint();
+		}
+
+		if (requiresWrite)
+		{
+			newsConfig.writeToFile();
+			nextNewsQuery = bbe::TimePoint();
+		}
+
+		return bbe::Vector2(1);
+	}
+
+	bbe::String extractInfoFromXmlElement(const tinyxml2::XMLElement* element, const bbe::String& path)
+	{
+		const size_t ats = path.count("@");
+		if (ats > 1) return ""; // Only one at allowed.
+
+		auto atSplit = path.split("@");
+		auto slashSplit = atSplit[0].split("/");
+
+		for (size_t i = 0; i < slashSplit.getLength(); i++)
+		{
+			element = element->FirstChildElement(slashSplit[i].getRaw());
+			if (!element) return "";
+		}
+
+		const char* val = nullptr;
+		if (atSplit.getLength() == 1)
+		{
+			val = element->GetText();
+		}
+		else
+		{
+			val = element->Attribute(atSplit[1].getRaw());
+		}
+		if (!val) return "";
+		return val;
+	}
+
+	bbe::Vector2 drawNews()
+	{
+		if (nextNewsQuery.hasPassed())
+		{
+			nextNewsQuery = bbe::TimePoint().plusMinutes(5);
+			for (size_t i = 0; i < newsConfig.getLength(); i++)
+			{
+				newsConfig[i].queryFuture = bbe::simpleUrlRequest::urlRequestAsync(newsConfig[i].url).share();
+			}
+		}
+
+		bool didFail = false;
+		for (size_t i = 0; i < newsConfig.getLength(); i++)
+		{
+			if (newsConfig[i].queryFuture.valid())
+			{
+				auto response = newsConfig[i].queryFuture.get();
+				newsConfig[i].queryFuture = std::shared_future<bbe::simpleUrlRequest::UrlRequestResult>();
+				newsConfig[i].queryData = response.dataContainer.getRaw();
+
+				tinyxml2::XMLDocument doc;
+				if (doc.Parse(newsConfig[i].queryData.getRaw()) != tinyxml2::XML_SUCCESS)
+				{
+					didFail = true;
+					goto fail;
+				}
+
+				tinyxml2::XMLElement* iterationElement = doc.RootElement();
+
+				auto path = newsConfig[i].iterationPath.split("/");
+				if (path.getLength() == 0)
+				{
+					didFail = true;
+					goto fail;
+				}
+				for (size_t i = 0; i < path.getLength(); i++)
+				{
+					iterationElement = iterationElement->FirstChildElement(path[i].getRaw());
+					if (!iterationElement)
+					{
+						didFail = true;
+						goto fail;
+					}
+				}
+
+				while (iterationElement)
+				{
+					NewsConfig::NewsEntry entry;
+					entry.title       = extractInfoFromXmlElement(iterationElement, newsConfig[i].titlePath);
+					entry.description = extractInfoFromXmlElement(iterationElement, newsConfig[i].descriptionPath);
+					entry.link        = extractInfoFromXmlElement(iterationElement, newsConfig[i].linkPath);
+					if (!isValidUrl(entry.link)) entry.link = "";
+					newsConfig[i].newsEntries.add(entry);
+
+					iterationElement = iterationElement->NextSiblingElement(path.last().getRaw());
+				}
+			}
+		}
+	fail:
+		if (didFail)
+		{
+			static bool reportedFailure = false;
+			if (!reportedFailure)
+			{
+				reportedFailure = true;
+				BBELOGLN("Failed to parse news!");
+			}
+		}
+
+		for (size_t i = 0; i < newsConfig.getLength(); i++)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.5f, 1.0f, 1.0f));
+			ImGui::Text("%s", newsConfig[i].url.getRaw());
+			ImGui::PopStyleColor();
+			for (size_t k = 0; k < newsConfig[i].newsEntries.getLength(); k++)
+			{
+				ImGui::TextWrapped("%s", newsConfig[i].newsEntries[k].title.getRaw());
+				ImGui::Indent(10.0f);
+				ImGui::TextWrapped("%s", newsConfig[i].newsEntries[k].description.getRaw());
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 1.0f, 1.0f));
+				if (newsConfig[i].newsEntries[k].link.getLength() > 0)
+				{
+					if (ImGui::Selectable(newsConfig[i].newsEntries[k].link.getRaw()))
+					{
+						ShellExecuteA(nullptr, "open", newsConfig[i].newsEntries[k].link.getRaw(), nullptr, nullptr, SW_SHOWNORMAL);
+					}
+				}
+				ImGui::PopStyleColor();
+				ImGui::Indent(-10.0f);
+			}
+		}
+
+		return bbe::Vector2(1);
+	}
+
 	bbe::Vector2 drawTabConsole()
 	{
 		const auto& log = bbe::logging::getLog();
@@ -1655,6 +1886,8 @@ public:
 				Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
 				Tab{"Wthr",      "Weather",        [&]() { return drawWeather(brush); }},
 				Tab{"BTC",       "Bitcoin",        [&]() { return drawBitcoin(); }},
+				Tab{"VNews",     "View News",      [&]() { return drawNews(); }},
+				Tab{"ENews",     "Edit News",      [&]() { return drawNewsConfig(); }},
 				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
 				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
 			};
