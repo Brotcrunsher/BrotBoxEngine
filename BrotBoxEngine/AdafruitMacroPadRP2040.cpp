@@ -138,6 +138,11 @@ bool bbe::AdafruitMacroPadRP2040::isConnected() const
 	return threadRunning;
 }
 
+bool bbe::AdafruitMacroPadRP2040::anyActivity() const
+{
+    return anyActivityFound;
+}
+
 bool bbe::AdafruitMacroPadRP2040::isKeyDown(RP2040Key key) const
 {
     return keyDown[(size_t)key];
@@ -160,6 +165,7 @@ int64_t bbe::AdafruitMacroPadRP2040::getRotationValue() const
 
 void bbe::AdafruitMacroPadRP2040::update()
 {
+    anyActivityFound = false;
     bbe::List<KeyEvent> currentEvents;
     {
         std::lock_guard _(keyEventsMutex);
@@ -170,6 +176,7 @@ void bbe::AdafruitMacroPadRP2040::update()
 
     for (size_t i = 0; i < currentEvents.getLength(); i++)
     {
+        anyActivityFound = true;
         if (currentEvents[i].key == (unsigned char)RP2040Key::BUTTON_ROTATE_AUDIO)
         {
             if (currentEvents[i].pressed == 0)

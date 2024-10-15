@@ -655,7 +655,14 @@ public:
 		}
 
 		beginMeasure("Basic Controls");
-		setTargetFrametime((isFocused() || isHovered() || terriActive) ? (1.f / 144.f) : (1.f / 10.f));
+		static bbe::TimePoint flipToLowEnergyMode = bbe::TimePoint().plusSeconds(2);
+		static bbe::TimePoint flipToSuperLowEnergyMode = bbe::TimePoint().plusSeconds(100);
+		if (isFocused() || isHovered() || terriActive || adafruitMacroPadRP2040.anyActivity())
+		{
+			flipToLowEnergyMode      = bbe::TimePoint().plusSeconds(2);
+			flipToSuperLowEnergyMode = bbe::TimePoint().plusSeconds(100);
+		}
+		setTargetFrametime(flipToSuperLowEnergyMode.hasPassed() ? (1.0f / 3.0f) : (flipToLowEnergyMode.hasPassed() ? (1.f / 10.f) : (1.f / 144.f)));
 		tabSwitchRequestedLeft = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::Q);
 		tabSwitchRequestedRight = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E);
 

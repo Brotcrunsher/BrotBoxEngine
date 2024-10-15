@@ -53,6 +53,7 @@ namespace bbe
 
 		std::array<bool, (size_t)RP2040Key::BUTTON_LAST + 1> keyDown = {};
 		std::array<bool, (size_t)RP2040Key::BUTTON_LAST + 1> keyPressed = {};
+		bool anyActivityFound = false;
 
 		int64_t rotationValue = 0;
 
@@ -69,6 +70,7 @@ namespace bbe
 		void disconnect();
 
 		bool isConnected() const;
+		bool anyActivity() const;
 
 		bool isKeyDown(RP2040Key key) const;
 		bool isKeyUp(RP2040Key key) const;
