@@ -2272,6 +2272,7 @@ public:
 		}
 		ImGui::End();
 
+		beginMeasure("Draw adaptive windows");
 		if (adaptive)
 		{
 			static bbe::List<bbe::Vector2> adaptiveSizes;

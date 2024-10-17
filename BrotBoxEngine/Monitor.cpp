@@ -149,7 +149,6 @@ void bbe::Monitor::threadMain()
 
 bbe::Monitor::Monitor()
 {
-    setBrightness({ 1.0f });
     thread = std::thread(&bbe::Monitor::threadMain, this);
 }
 

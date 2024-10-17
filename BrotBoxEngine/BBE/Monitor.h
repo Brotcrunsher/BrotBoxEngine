@@ -16,8 +16,8 @@ namespace bbe
 		std::mutex mutex;
 		std::condition_variable gate;
 		std::thread thread;
-		bbe::List<float> targetBrightness = {};
-		bbe::List<float> currentBrightness = {};
+		bbe::List<float> targetBrightness = { };
+		bbe::List<float> currentBrightness = { };
 		bool stopRequested = false;
 
 		void threadMain();
