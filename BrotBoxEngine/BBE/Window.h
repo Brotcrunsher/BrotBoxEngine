@@ -67,6 +67,8 @@ namespace bbe
 		int getHeight() const;
 		int getScaledHeight() const;
 
+		float getScale() const;
+
 		Vector2i getSize() const;
 		void setSize(const Vector2i& size);
 		bool isMaximized() const;

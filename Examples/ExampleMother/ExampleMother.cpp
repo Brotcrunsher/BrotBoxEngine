@@ -34,6 +34,7 @@
 //TODO: Ada functionality: Open a webbrowser and URL bla
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
+//TODO: Talk to GPT: Only send if clip is actually long enough. 0.3 seconds?
 
 //TODO: Show average driving time
 
@@ -893,6 +894,7 @@ public:
 
 	void drawWeatherEntry(bbe::PrimitiveBrush2D& brush, const bbe::Vector2& offset, const WeatherEntry& entry)
 	{
+		constexpr signed fontSize = 15;
 		const bbe::List<std::pair<float, bbe::Color>> colorLerps =
 		{
 			{ -10.0f, bbe::Color(0.8f, 0.8f, 1.0f)},
@@ -906,22 +908,22 @@ public:
 		bbe::String timeString = "";
 		timeString += entry.time.getHour();
 		timeString += ":00";
-		brush.fillText(offset + bbe::Vector2{ 0,  0 }, timeString);
+		brush.fillText(offset + bbe::Vector2{ 0,  0 }, timeString, fontSize);
 		const bbe::Color tempColor = bbe::Math::multiLerp(colorLerps, entry.temperatureC);
 		brush.setColorRGB(tempColor);
-		brush.fillText(offset + bbe::Vector2{ 40, 0 }, bbe::String((int)entry.temperatureC) + "C");
+		brush.fillText(offset + bbe::Vector2{ 40, 0 }, bbe::String((int)entry.temperatureC) + "C", fontSize);
 
 		brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
-		brush.fillText(offset + bbe::Vector2{ 80,  0 }, "Hum: " + bbe::String((int)entry.humidity));
-		brush.fillText(offset + bbe::Vector2{ 150, 0 }, "UV: " + bbe::String((int)entry.uvIndex));
-		brush.fillText(offset + bbe::Vector2{ 0, 20 }, "Prcp: " + bbe::String(entry.precipMM).rounded(2));
-		brush.fillText(offset + bbe::Vector2{ 79, 20 }, "%Rn: " + bbe::String((int)entry.chanceOfRain));
-		brush.fillText(offset + bbe::Vector2{ 138, 20 }, "Wnd: " + bbe::String((int)entry.windspeedKmph));
+		brush.fillText(offset + bbe::Vector2{ 80,  0 }, "Hum: " + bbe::String((int)entry.humidity), fontSize);
+		brush.fillText(offset + bbe::Vector2{ 150, 0 }, "UV: " + bbe::String((int)entry.uvIndex), fontSize);
+		brush.fillText(offset + bbe::Vector2{ 0, 15 }, "Prcp: " + bbe::String(entry.precipMM).rounded(2), fontSize);
+		brush.fillText(offset + bbe::Vector2{ 79, 15 }, "%Rn: " + bbe::String((int)entry.chanceOfRain), fontSize);
+		brush.fillText(offset + bbe::Vector2{ 138, 15 }, "Wnd: " + bbe::String((int)entry.windspeedKmph), fontSize);
 
-		brush.sketchRect(offset - bbe::Vector2{ 2, 15 }, { 189, 45 });
+		brush.sketchRect(offset - bbe::Vector2{ 2, 15 }, { 189, 33 });
 	}
 
-	bbe::Vector2 drawWeather(bbe::PrimitiveBrush2D& brush)
+	bbe::Vector2 drawWeather(bbe::PrimitiveBrush2D& brush, const bbe::Vector2& offset)
 	{
 		static bbe::TimePoint nextWeatherQuery;
 		static std::future<bbe::simpleUrlRequest::UrlRequestResult> future;
@@ -996,8 +998,8 @@ public:
 
 		if (weatherEntries.getLength() > 0)
 		{
-			int32_t curX = 20;
-			int32_t curY = 120;
+			int32_t curX = 0;
+			int32_t curY = 0;
 			bbe::TimePoint previousTime = weatherEntries[0].time;
 			for (size_t i = 0; i < weatherEntries.getLength(); i++)
 			{
@@ -1005,13 +1007,13 @@ public:
 				if (!previousTime.isSameDay(weatherEntries[i].time))
 				{
 					curX += 200;
-					curY = 120;
+					curY = 0;
 				}
 				previousTime = weatherEntries[i].time;
 
-				drawWeatherEntry(brush, bbe::Vector2(curX, curY), weatherEntries[i]);
+				drawWeatherEntry(brush, bbe::Vector2(curX, curY) + offset, weatherEntries[i]);
 
-				curY += 50;
+				curY += 35;
 			}
 		}
 
@@ -1981,56 +1983,25 @@ public:
 
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
+		const ImGuiViewport fullViewport = *ImGui::GetMainViewport();
 		bool shouldMinimize = false;
-		beginMeasure("Draw main window");
-		static bbe::Vector2 sizeMult(1.0f, 1.0f);
-		ImGuiViewport viewport = *ImGui::GetMainViewport();
-		viewport.WorkSize.x *= 0.6f * sizeMult.x;
-		viewport.WorkSize.y *= sizeMult.y;
-		ImGui::SetNextWindowPos(viewport.WorkPos);
-		ImGui::SetNextWindowSize(viewport.WorkSize);
-		static Tab previousTab;
-		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | (previousTab.title == bbe::String("Cnsl") ? ImGuiWindowFlags_NoScrollWithMouse : 0));
-		{
-			static bbe::List<Tab> tabs =
-			{
-				Tab{"VTasks",    "View Tasks",     [&]() { return tasks.drawTabViewTasks(); }},
-				Tab{"ETasks",    "Edit Tasks",     [&]() { return tasks.drawTabEditTasks(); }},
-				Tab{"Clpbrd",    "Clipboard",      [&]() { return drawTabClipboard(); }},
-				//Tab{"Brn-T",     "Brain-Teaser",   [&]() { return brainTeasers.drawTabBrainTeasers(brush); }},
-				Tab{"Stpwtch",   "Stopwatch",      [&]() { return drawTabStopwatch(); }},
-				Tab{"MsTrck",    "Mouse Track",    [&]() { return drawTabMouseTracking(brush); }},
-				Tab{"KybrdTrck", "Keyboard Track", [&]() { return drawTabKeyboardTracking(brush); }},
-#if 0
-				Tab{"Terri",     "Territorial",    [&]() { return drawTabTerri(brush); }},
-#endif
-				Tab{"Strks",     "Streaks",        [&]() { return drawTabStreaks(brush); }},
-				Tab{"Lsts",      "Lists",          [&]() { return drawTabRememberLists(); }},
-				Tab{"GPT",       "ChatGPT",        [&]() { return drawTabChatGPT(); }},
-				//Tab{"Mic",       "Microphone Test",[&]() { return drawMicrophoneTest(); }},
-				//Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
-				Tab{"Wthr",      "Weather",        [&]() { return drawWeather(brush); }},
-				Tab{"BTC",       "Bitcoin",        [&]() { return drawBitcoin(); }},
-				Tab{"VNews",     "View News",      [&]() { return drawNews(); }},
-				Tab{"ENews",     "Edit News",      [&]() { return drawNewsConfig(); }},
-				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
-				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
-			};
-			static size_t previousShownTab = 0;
-			DrawTabResult dtr = drawTabs(tabs, &previousShownTab, tabSwitchRequestedLeft, tabSwitchRequestedRight);
-			sizeMult = dtr.sizeMult;
-			previousTab = dtr.tab;
-		}
-		ImGui::End();
 
 		beginMeasure("Draw info window");
-		viewport = *ImGui::GetMainViewport();
-		viewport.WorkSize.x *= 0.6f;
-		viewport.WorkPos.x += viewport.WorkSize.x;
-		viewport.WorkSize.x *= ImGui::GetMainViewport()->WorkSize.x * 0.4f;
-		viewport.WorkSize.y *= 1.f / 3.f;
-		ImGui::SetNextWindowPos(viewport.WorkPos);
-		ImGui::SetNextWindowSize(viewport.WorkSize);
+		ImGuiViewport infoViewport = fullViewport;
+		infoViewport.WorkSize.x *= 0.4f;
+		infoViewport.WorkSize.y *= 1.f / 3.f;
+		infoViewport.WorkPos.x += fullViewport.WorkSize.x * 0.6;
+
+		const float maxInfoWindowWidth = 550 * getWindow()->getScale();
+		if (infoViewport.WorkSize.x > maxInfoWindowWidth)
+		{
+			const float offset = infoViewport.WorkSize.x - maxInfoWindowWidth;
+			infoViewport.WorkPos.x += offset;
+			infoViewport.WorkSize.x = maxInfoWindowWidth;
+		}
+
+		ImGui::SetNextWindowPos(infoViewport.WorkPos);
+		ImGui::SetNextWindowSize(infoViewport.WorkSize);
 		ImGui::Begin("Info", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 		{
 			ImGui::Text("Build: " __DATE__ ", " __TIME__);
@@ -2210,9 +2181,9 @@ public:
 		ImGui::End();
 
 		beginMeasure("Draw process window");
-		viewport.WorkPos.y = viewport.WorkSize.y;
-		ImGui::SetNextWindowPos(viewport.WorkPos);
-		ImGui::SetNextWindowSize(viewport.WorkSize);
+		infoViewport.WorkPos.y = infoViewport.WorkSize.y;
+		ImGui::SetNextWindowPos(infoViewport.WorkPos);
+		ImGui::SetNextWindowSize(infoViewport.WorkSize);
 		ImGui::Begin("Processes", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 		{
 			processes.drawGui();
@@ -2221,14 +2192,110 @@ public:
 
 
 		beginMeasure("Draw url window");
-		viewport.WorkPos.y = viewport.WorkSize.y * 2;
-		ImGui::SetNextWindowPos(viewport.WorkPos);
-		ImGui::SetNextWindowSize(viewport.WorkSize);
+		infoViewport.WorkPos.y = infoViewport.WorkSize.y * 2;
+		ImGui::SetNextWindowPos(infoViewport.WorkPos);
+		ImGui::SetNextWindowSize(infoViewport.WorkSize);
 		ImGui::Begin("URLs", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 		{
 			urls.drawGui();
 		}
 		ImGui::End();
+
+
+		beginMeasure("Draw main window");
+		static bbe::Vector2 sizeMult(1.0f, 1.0f);
+		ImGuiViewport viewport = fullViewport;
+		viewport.WorkSize.x -= infoViewport.WorkSize.x;
+		viewport.WorkSize.y *= sizeMult.y;
+
+		const float adaptiveFlipSize = 1000.f * getWindow()->getScale();
+		const float adaptiveMaxSize = adaptiveFlipSize - 400 * getWindow()->getScale();
+
+		bool adaptive = false;
+		if (viewport.WorkSize.x > adaptiveFlipSize)
+		{
+			viewport.WorkSize.x = adaptiveMaxSize;
+			adaptive = true;
+		}
+
+		ImGui::SetNextWindowPos(viewport.WorkPos);
+		ImGui::SetNextWindowSize(viewport.WorkSize);
+		static Tab previousTab;
+
+		bbe::Vector2 weatherOffset = { 20, 120 };
+		bbe::List<Tab> adaptiveTabs =
+		{
+			Tab{"BTC",       "Bitcoin",        [&]() { return drawBitcoin(); }},
+			Tab{"Wthr",      "Weather",        [&]() { return drawWeather(brush, weatherOffset); }},
+			Tab{"VNews",     "View News",      [&]() { return drawNews(); }},
+		};
+
+		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | (previousTab.title == bbe::String("Cnsl") ? ImGuiWindowFlags_NoScrollWithMouse : 0));
+		{
+			bbe::List<Tab> tabs =
+			{
+				Tab{"VTasks",    "View Tasks",     [&]() { return tasks.drawTabViewTasks(); }},
+				Tab{"ETasks",    "Edit Tasks",     [&]() { return tasks.drawTabEditTasks(); }},
+				Tab{"Clpbrd",    "Clipboard",      [&]() { return drawTabClipboard(); }},
+				//Tab{"Brn-T",     "Brain-Teaser",   [&]() { return brainTeasers.drawTabBrainTeasers(brush); }},
+				Tab{"Stpwtch",   "Stopwatch",      [&]() { return drawTabStopwatch(); }},
+				Tab{"MsTrck",    "Mouse Track",    [&]() { return drawTabMouseTracking(brush); }},
+				Tab{"KybrdTrck", "Keyboard Track", [&]() { return drawTabKeyboardTracking(brush); }},
+#if 0
+				Tab{"Terri",     "Territorial",    [&]() { return drawTabTerri(brush); }},
+#endif
+				Tab{"Strks",     "Streaks",        [&]() { return drawTabStreaks(brush); }},
+				Tab{"Lsts",      "Lists",          [&]() { return drawTabRememberLists(); }},
+				Tab{"GPT",       "ChatGPT",        [&]() { return drawTabChatGPT(); }},
+				//Tab{"Mic",       "Microphone Test",[&]() { return drawMicrophoneTest(); }},
+				//Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
+				Tab{"ENews",     "Edit News",      [&]() { return drawNewsConfig(); }},
+				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
+				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
+			};
+			if (!adaptive)
+			{
+				tabs.addList(adaptiveTabs);
+			}
+			static size_t previousShownTab = 0;
+			DrawTabResult dtr = drawTabs(tabs, &previousShownTab, tabSwitchRequestedLeft, tabSwitchRequestedRight);
+			sizeMult = dtr.sizeMult;
+			previousTab = dtr.tab;
+		}
+		ImGui::End();
+
+		if (adaptive)
+		{
+			static bbe::List<bbe::Vector2> adaptiveSizes;
+			adaptiveSizes.resizeCapacityAndLength(adaptiveTabs.getLength());
+			for (size_t i = 0; i < adaptiveTabs.getLength(); i++)
+			{
+				bbe::String name = "Adaptive Window: ";
+				name += i;
+				ImGuiViewport adaptiveViewport = fullViewport;
+				adaptiveViewport.WorkSize.x -= viewport.WorkSize.x;
+				adaptiveViewport.WorkSize.x -= infoViewport.WorkSize.x;
+				adaptiveViewport.WorkSize.y /= adaptiveTabs.getLength();
+				adaptiveViewport.WorkPos.x = viewport.WorkSize.x;
+				adaptiveViewport.WorkPos.y = fullViewport.WorkSize.y * i / adaptiveTabs.getLength();
+				if (i == 1)
+				{
+					weatherOffset = bbe::Vector2(adaptiveViewport.WorkPos.x, adaptiveViewport.WorkPos.y);
+					weatherOffset /= getWindow()->getScale();
+					weatherOffset.x += 10;
+					weatherOffset.y += 60;
+				}
+
+				adaptiveViewport.WorkSize.x *= adaptiveSizes[i].x;
+				adaptiveViewport.WorkSize.y *= adaptiveSizes[i].y;
+				ImGui::SetNextWindowPos(adaptiveViewport.WorkPos);
+				ImGui::SetNextWindowSize(adaptiveViewport.WorkSize);
+				ImGui::Begin(name.getRaw(), 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | (previousTab.title == bbe::String("Cnsl") ? ImGuiWindowFlags_NoScrollWithMouse : 0));
+				{
+					adaptiveSizes[i] = adaptiveTabs[i].run();
+				}
+			}
+		}
 
 		beginMeasure("Draw debug windows");
 		if (showDebugStuff)

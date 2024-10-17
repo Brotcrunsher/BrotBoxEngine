@@ -235,6 +235,13 @@ int bbe::Window::getScaledHeight() const
 	return static_cast<int>(getHeight() * scale);
 }
 
+float bbe::Window::getScale() const
+{
+	float scale = 0;
+	glfwWrapper::glfwGetWindowContentScale(m_pwindow, nullptr, &scale);
+	return scale;
+}
+
 bbe::Vector2i bbe::Window::getSize() const
 {
 	bbe::Vector2i retVal;
