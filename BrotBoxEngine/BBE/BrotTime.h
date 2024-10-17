@@ -115,6 +115,8 @@ namespace bbe
 		int32_t getHour() const;
 		int32_t getMinute() const;
 		int32_t getSecond() const;
+
+		int64_t toMilliseconds() const;
 	};
 
 	class TimeGate

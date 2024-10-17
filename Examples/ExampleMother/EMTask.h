@@ -115,7 +115,7 @@ private:
 	bbe::SessionLockMonitor sessionLockMonitor;
 
 	bool drawContingentButton(Task& t);
-	int32_t drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& requiresWrite,
+	int32_t drawTable(float scale, const char* title, const std::function<bool(Task&)>& predicate, bool& requiresWrite,
 		bool showMoveToNow,      bool showCountdown,  bool showDone,                bool showFollowUp,
 		bool highlightRareTasks, bool showAdvancable, bool respectIndefinitelyFlag, bool sorted);
 
@@ -129,7 +129,7 @@ public:
 	void update();
 
 	bool drawEditableTask(Task& t);
-	bbe::Vector2 drawTabViewTasks();
+	bbe::Vector2 drawTabViewTasks(float scale);
 	bbe::Vector2 drawTabEditTasks();
 
 	void drawUndoRedoButtons();

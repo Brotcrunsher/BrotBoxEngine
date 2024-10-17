@@ -915,9 +915,16 @@ public:
 
 		brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
 		brush.fillText(offset + bbe::Vector2{ 80,  0 }, "Hum: " + bbe::String((int)entry.humidity), fontSize);
+		brush.setColorRGB(1.0f, 1.0f, bbe::Math::clamp01(1.0f - entry.uvIndex / 10.f));
 		brush.fillText(offset + bbe::Vector2{ 150, 0 }, "UV: " + bbe::String((int)entry.uvIndex), fontSize);
+		brush.setColorRGB(1.0f, 1.0f, 1.0f);
+		if (entry.precipMM > 0.f || entry.chanceOfRain > 0.f)
+		{
+			brush.setColorRGB(0.5f, 0.5f, 1.0f);
+		}
 		brush.fillText(offset + bbe::Vector2{ 0, 15 }, "Prcp: " + bbe::String(entry.precipMM).rounded(2), fontSize);
 		brush.fillText(offset + bbe::Vector2{ 79, 15 }, "%Rn: " + bbe::String((int)entry.chanceOfRain), fontSize);
+		brush.setColorRGB(1.0f, 1.0f, 1.0f);
 		brush.fillText(offset + bbe::Vector2{ 138, 15 }, "Wnd: " + bbe::String((int)entry.windspeedKmph), fontSize);
 
 		brush.sketchRect(offset - bbe::Vector2{ 2, 15 }, { 189, 33 });
@@ -1025,7 +1032,7 @@ public:
 		static std::future<bbe::simpleUrlRequest::UrlRequestResult> requestFuture;
 		static bbe::List<float> times;
 		static bbe::List<float> prices;
-		EVERY_MINUTES(5)
+		EVERY_MINUTES(1)
 		{
 			requestFuture = bbe::simpleUrlRequest::urlRequestAsync("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1");
 		}
@@ -1048,12 +1055,13 @@ public:
 
 		if (prices.getLength() > 0)
 		{
-			ImGui::Text("Current Price: $%.2f", prices.last());
-			if (ImPlot::BeginPlot("Line Plots")) {
+			ImPlot::SetNextAxesToFit();
+			if (ImPlot::BeginPlot("Line Plots", {-1, 250 * getWindow()->getScale()})) {
 				ImPlot::SetupAxes("time", "price");
 				ImPlot::PlotLine("Bitcoin", times.getRaw(), prices.getRaw(), times.getLength());
 				ImPlot::EndPlot();
 			}
+			ImGui::Text("Current Price: $%.2f", prices.last());
 			
 		}
 		return bbe::Vector2(1);
@@ -2234,7 +2242,7 @@ public:
 		{
 			bbe::List<Tab> tabs =
 			{
-				Tab{"VTasks",    "View Tasks",     [&]() { return tasks.drawTabViewTasks(); }},
+				Tab{"VTasks",    "View Tasks",     [&]() { return tasks.drawTabViewTasks(getWindow()->getScale()); }},
 				Tab{"ETasks",    "Edit Tasks",     [&]() { return tasks.drawTabEditTasks(); }},
 				Tab{"Clpbrd",    "Clipboard",      [&]() { return drawTabClipboard(); }},
 				//Tab{"Brn-T",     "Brain-Teaser",   [&]() { return brainTeasers.drawTabBrainTeasers(brush); }},
@@ -2294,6 +2302,7 @@ public:
 				{
 					adaptiveSizes[i] = adaptiveTabs[i].run();
 				}
+				ImGui::End();
 			}
 		}
 

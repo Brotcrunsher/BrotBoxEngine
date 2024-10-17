@@ -262,19 +262,19 @@ bool SubsystemTask::drawContingentButton(Task& t)
 	return false;
 }
 
-int32_t SubsystemTask::drawTable(const char* title, const std::function<bool(Task&)>& predicate, bool& requiresWrite, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable, bool respectIndefinitelyFlag, bool sorted)
+int32_t SubsystemTask::drawTable(float scale, const char* title, const std::function<bool(Task&)>& predicate, bool& requiresWrite, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable, bool respectIndefinitelyFlag, bool sorted)
 {
 	int32_t amountDrawn = 0;
 	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
 	if (ImGui::BeginTable("table2", 7, ImGuiTableFlags_RowBg))
 	{
-		ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 400);
-		if (showCountdown)  ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
-		ImGui::TableSetupColumn("DDD", ImGuiTableColumnFlags_WidthFixed, 100);
-		if (showFollowUp)   ImGui::TableSetupColumn("EEE", ImGuiTableColumnFlags_WidthFixed, 100);
-		if (showFollowUp)   ImGui::TableSetupColumn("FFF", ImGuiTableColumnFlags_WidthFixed, 100);
-		if (showAdvancable) ImGui::TableSetupColumn("GGG", ImGuiTableColumnFlags_WidthFixed, 100);
-		if (showMoveToNow)  ImGui::TableSetupColumn("HHH", ImGuiTableColumnFlags_WidthFixed, 175);
+		ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 200 * scale);
+		if (showCountdown)  ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 125 * scale);
+		ImGui::TableSetupColumn("DDD", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
+		if (showFollowUp)   ImGui::TableSetupColumn("EEE", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
+		if (showFollowUp)   ImGui::TableSetupColumn("FFF", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
+		if (showAdvancable) ImGui::TableSetupColumn("GGG", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
+		if (showMoveToNow)  ImGui::TableSetupColumn("HHH", ImGuiTableColumnFlags_WidthFixed, 87.5f * scale);
 		static bbe::List<size_t> indices; // Avoid allocations
 		indices.clear();
 		for (size_t i = 0; i < tasks.getLength(); i++)
@@ -470,13 +470,13 @@ int32_t SubsystemTask::drawTable(const char* title, const std::function<bool(Tas
 							requiresWrite = true;
 						}
 					}
-					else
+					else if(title != bbe::String("Later"))
 					{
 						requiresWrite |= drawContingentButton(t);
 					}
 				}
 			}
-			if (showMoveToNow)
+			if (showMoveToNow && !t.contingentTask)
 			{
 				ImGui::TableSetColumnIndex(column++);
 				if (ImGui::Button("Move to Now"))
@@ -650,7 +650,7 @@ bool SubsystemTask::drawEditableTask(Task& t)
 	return taskChanged;
 }
 
-bbe::Vector2 SubsystemTask::drawTabViewTasks()
+bbe::Vector2 SubsystemTask::drawTabViewTasks(float scale)
 {
 	{
 		static Task temp;
@@ -666,10 +666,10 @@ bbe::Vector2 SubsystemTask::drawTabViewTasks()
 	}
 
 	bool requiresWrite = false;
-	drawTable("Now", [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; }, requiresWrite, false, false, true, true, false, false, false, false);
-	drawTable("Today", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); }, requiresWrite, true, true, true, true, false, false, false, false);
-	drawTable("Tomorrow", [](Task& t) { return t.isImportantTomorrow(); }, requiresWrite, true, false, false, true, true, true, false, false);
-	drawTable("Later", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, requiresWrite, true, true, true, false, false, true, true, true);
+	drawTable(scale, "Now", [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; }, requiresWrite, false, false, true, true, false, false, false, false);
+	drawTable(scale, "Today", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); }, requiresWrite, true, true, true, true, false, false, false, false);
+	drawTable(scale, "Tomorrow", [](Task& t) { return t.isImportantTomorrow(); }, requiresWrite, true, false, false, true, true, true, false, false);
+	drawTable(scale, "Later", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, requiresWrite, true, true, true, false, false, true, true, true);
 	if (requiresWrite)
 	{
 		tasks.writeToFile();

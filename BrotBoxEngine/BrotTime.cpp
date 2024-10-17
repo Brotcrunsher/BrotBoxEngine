@@ -419,6 +419,13 @@ int32_t bbe::TimePoint::getSecond() const
 	return toTm().tm_sec;
 }
 
+int64_t bbe::TimePoint::toMilliseconds() const
+{
+	auto d = m_time.time_since_epoch();
+	int64_t retVal = std::chrono::duration_cast<std::chrono::milliseconds>(d).count();
+	return retVal;
+}
+
 bbe::Duration::Duration()
 {
 }
