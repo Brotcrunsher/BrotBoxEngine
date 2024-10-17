@@ -141,9 +141,7 @@ void bbe::Monitor::threadMain()
         currentBrightness = targetBrightness;
         bbe::List<float> targetBrightnessCopy = targetBrightness; // So that we can change the brightness without being under the lock
         lk.unlock();
-        // TODO: We should not have to call this multiple times, but for some reason, during tests, only some monitors update. Calling it 2 times
-        //       was sufficient, the third time is just for extra paranoia sake.
-        for (int i = 0; i < 3; i++) internalSetBrightness(targetBrightnessCopy);
+        internalSetBrightness(targetBrightnessCopy);
     }
 }
 
