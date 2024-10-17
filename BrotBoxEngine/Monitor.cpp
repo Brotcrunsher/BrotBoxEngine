@@ -154,10 +154,7 @@ bbe::Monitor::Monitor()
 
 bbe::Monitor::~Monitor()
 {
-    {
-        std::lock_guard _(mutex);
-        stopRequested = true;
-    }
+    stopRequested = true;
     gate.notify_one();
     thread.join();
 }

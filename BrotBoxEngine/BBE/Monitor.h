@@ -5,6 +5,7 @@
 
 #include <thread>
 #include <mutex>
+#include <atomic>
 #include <condition_variable>
 #include "../BBE/List.h"
 
@@ -18,7 +19,7 @@ namespace bbe
 		std::thread thread;
 		bbe::List<float> targetBrightness = { };
 		bbe::List<float> currentBrightness = { };
-		bool stopRequested = false;
+		std::atomic_bool stopRequested = false;
 
 		void threadMain();
 
