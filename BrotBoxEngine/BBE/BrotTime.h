@@ -15,7 +15,12 @@ namespace bbe
 		Duration();
 		explicit Duration(const std::chrono::system_clock::duration& duration);
 
-		bbe::String toString() const;
+		static Duration fromMilliseconds(int64_t millis);
+
+		auto operator<=>(const Duration&) const = default;
+
+		bbe::String toString(bool showMillis = false) const;
+		int32_t toMillis() const;
 		int32_t toSeconds() const;
 		int32_t toMinutes() const;
 		int32_t toHours() const;

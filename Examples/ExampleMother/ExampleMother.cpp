@@ -580,7 +580,11 @@ public:
 			if (microphone.isRecording() && !adafruitMacroPadRP2040.isKeyDown(bbe::RP2040Key::BUTTON_11))
 			{
 				bbe::Sound sound = microphone.stopRecording();
-				transcribeFuture = chatGPTComm.transcribeAsync(sound);
+				BBELOGLN("Recorded Length: " << sound.getDuration().toString(true));
+				if (sound.getDuration() > bbe::Duration::fromMilliseconds(500))
+				{
+					transcribeFuture = chatGPTComm.transcribeAsync(sound);
+				}
 			}
 			beginMeasure("ChatGPT: Querying...");
 			static std::future<bbe::ChatGPTQueryResponse> queryFuture;

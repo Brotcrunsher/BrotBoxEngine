@@ -6,6 +6,7 @@
 #include "../BBE/List.h"
 #include "../BBE/SoundInstance.h"
 #include "../BBE/Vector2.h"
+#include "../BBE/BrotTime.h"
 
 #include "AL/al.h"
 
@@ -26,6 +27,7 @@ namespace bbe
 
 		SoundInstance play(float volume = 1) const;
 		SoundInstance play(const bbe::Vector3& pos, float volume = 1) const;
+
 	};
 
 	class SoundDataSourceDynamic : public SoundDataSource
@@ -78,6 +80,8 @@ namespace bbe
 		const bbe::List<float>* getRaw() const override;
 
 		bbe::ByteBuffer toWav() const;
+
+		Duration getDuration() const;
 	};
 }
 

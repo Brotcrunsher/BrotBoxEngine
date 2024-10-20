@@ -435,9 +435,16 @@ bbe::Duration::Duration(const std::chrono::system_clock::duration& duration) :
 {
 }
 
-bbe::String bbe::Duration::toString() const
+bbe::Duration bbe::Duration::fromMilliseconds(int64_t millis)
 {
-	int32_t seconds = toSeconds();
+	return Duration(std::chrono::milliseconds(millis));
+}
+
+bbe::String bbe::Duration::toString(bool showMillis) const
+{
+	int32_t millis = toMillis();
+	int32_t seconds = millis / 1000;
+	millis %= 1000;
 	int32_t minutes = seconds / 60;
 	seconds %= 60;
 	int32_t hours = minutes / 60;
@@ -445,13 +452,31 @@ bbe::String bbe::Duration::toString() const
 	int32_t days = hours / 24;
 	hours %= 24;
 
-	if(days == 0)
-		if(hours == 0)
-			return bbe::String::format("%.2d:%.2d", minutes, seconds);
+	if(showMillis)
+	{
+		if(days == 0)
+			if(hours == 0)
+				return bbe::String::format("%.2d:%.2d:%.3d", minutes, seconds, millis);
+			else
+				return bbe::String::format("%.2d:%.2d:%.2d:%.3d", hours, minutes, seconds, millis);
 		else
-			return bbe::String::format("%.2d:%.2d:%.2d", hours, minutes, seconds);
+			return bbe::String::format("%d:%.2d:%.2d:%.2d:%.3d", days, hours, minutes, seconds, millis);
+	}
 	else
-		return bbe::String::format("%d:%.2d:%.2d:%.2d", days, hours, minutes, seconds);
+	{
+		if(days == 0)
+			if(hours == 0)
+				return bbe::String::format("%.2d:%.2d", minutes, seconds);
+			else
+				return bbe::String::format("%.2d:%.2d:%.2d", hours, minutes, seconds);
+		else
+			return bbe::String::format("%d:%.2d:%.2d:%.2d", days, hours, minutes, seconds);
+	}
+}
+
+int32_t bbe::Duration::toMillis() const
+{
+	return (int32_t)std::chrono::duration_cast<std::chrono::milliseconds>(m_duration).count();
 }
 
 int32_t bbe::Duration::toSeconds() const

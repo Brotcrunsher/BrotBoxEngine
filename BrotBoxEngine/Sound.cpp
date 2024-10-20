@@ -188,6 +188,11 @@ bbe::ByteBuffer bbe::Sound::toWav() const
 	return buffer;
 }
 
+bbe::Duration bbe::Sound::getDuration() const
+{
+	return Duration::fromMilliseconds(m_data.getLength() / getAmountOfChannels() * 1000 / getHz());
+}
+
 void bbe::SoundDataSourceStatic::setLooped(bool looped)
 {
 	m_looped = looped;
