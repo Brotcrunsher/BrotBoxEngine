@@ -46,7 +46,7 @@ bool SubsystemProcess::isGameOn() const
 	return !foundGames.isEmpty();
 }
 
-void SubsystemProcess::drawGui()
+void SubsystemProcess::drawGui(float scale)
 {
 	static bool showSystem = false;
 	ImGui::Checkbox("Show System", &showSystem);
@@ -64,8 +64,8 @@ void SubsystemProcess::drawGui()
 
 	if (ImGui::BeginTable("tableProcesses", 2, ImGuiTableFlags_RowBg))
 	{
-		ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 600);
-		ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
+		ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 300 * scale);
+		ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 125 * scale);
 		bool processChanged = false;
 		for (size_t i = 0; i < processes.getLength(); i++)
 		{

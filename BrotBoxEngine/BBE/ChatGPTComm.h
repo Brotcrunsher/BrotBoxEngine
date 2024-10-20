@@ -6,6 +6,7 @@
 #include "../BBE/String.h"
 #include "../BBE/List.h"
 #include "../BBE/Sound.h"
+#include "../BBE/Image.h"
 #include "nlohmann/json.hpp"
 
 namespace bbe
@@ -16,6 +17,12 @@ namespace bbe
 		int32_t inputTokens = 0;
 		int32_t outputTokens = 0;
 		int32_t totalTokens = 0;
+	};
+
+	struct ChatGPTCreateImageResponse
+	{
+		bbe::Image image;
+		bbe::String url;
 	};
 
 	class ChatGPTComm
@@ -43,6 +50,13 @@ namespace bbe
 
 		bbe::String transcribe(const bbe::Sound& sound);
 		std::future<bbe::String> transcribeAsync(const bbe::Sound& sound);
+
+		ChatGPTCreateImageResponse createImage(const bbe::String& prompt, const bbe::Vector2i& size);
+		std::future<ChatGPTCreateImageResponse> createImageAsync(const bbe::String& prompt, const bbe::Vector2i& size);
+
+		// TODO: base 64 encoded image data instead of urls
+		bbe::String describeImage(const bbe::String& url);
+		std::future<bbe::String> describeImageAsync(const bbe::String& url);
 
 		void purgeMemory();
 

@@ -133,6 +133,86 @@ std::future<bbe::String> bbe::ChatGPTComm::transcribeAsync(const bbe::Sound& sou
 	return bbe::async(&bbe::ChatGPTComm::transcribe, this, sound);
 }
 
+bbe::ChatGPTCreateImageResponse bbe::ChatGPTComm::createImage(const bbe::String& prompt, const bbe::Vector2i& size)
+{
+	std::unique_lock ul(mutex);
+
+	nlohmann::json jsonData = {
+		{"model", "dall-e-3"},
+		{"prompt", prompt.getRaw()},
+		{"n", 1},
+		{"size", (size.x + bbe::String("x") + size.y).getRaw()}
+	};
+
+	bbe::String keyCopy = key;
+	ul.unlock(); // Making the actual sendRequest call outside the lock. This is what actually hangs and we shouldn't hold the lock longer than needed.
+	std::string imageJson = sendRequest("https://api.openai.com/v1/images/generations", keyCopy, jsonData.dump());
+	ul.lock();
+
+	std::string imageUrl;
+	try
+	{
+		nlohmann::json responseJson = nlohmann::json::parse(imageJson);
+		imageUrl = responseJson["data"][0]["url"].get<std::string>();
+	}
+	catch (...)
+	{
+		BBELOGLN("ChatGPTComm::createImage: Error parsing response Json");
+		return {};
+	}
+
+	ul.unlock(); // Making the actual sendRequest call outside the lock. This is what actually hangs and we shouldn't hold the lock longer than needed.
+	auto imageData = bbe::simpleUrlRequest::urlRequest(imageUrl.c_str(), {}, "", false);
+	ul.lock();
+
+	if (imageData.responseCode != 200)
+	{
+		BBELOGLN("ChatGPTComm::createImage:Failed to get image");
+		return {};
+	}
+
+	bbe::Image retVal;
+	retVal.loadRaw((bbe::byte*)imageData.dataContainer.getRaw(), imageData.dataContainer.getLength());
+
+	return { retVal, imageUrl.c_str() };
+}
+
+std::future<bbe::ChatGPTCreateImageResponse> bbe::ChatGPTComm::createImageAsync(const bbe::String& prompt, const bbe::Vector2i& size)
+{
+	return bbe::async(&bbe::ChatGPTComm::createImage, this, prompt, size);
+}
+
+bbe::String bbe::ChatGPTComm::describeImage(const bbe::String& url)
+{
+	std::unique_lock ul(mutex);
+	bbe::String keyCopy = key;
+	ul.unlock(); // Making the actual sendRequest call outside the lock. This is what actually hangs and we shouldn't hold the lock longer than needed.
+	
+	nlohmann::json json = {
+		{"model", "gpt-4o-mini"},
+		{"messages", {
+			{
+				{"role", "user"},
+				{"content", {
+					{{"type", "text"}, {"text", "What’s in this image?"}},
+					{
+						{"type", "image_url"},
+						{"image_url", {{"url", url.getRaw()}}}
+					}
+				}}
+			}
+		}}
+	};
+	std::string description = sendRequest("https://api.openai.com/v1/chat/completions", keyCopy, json.dump(-1, ' ', false, nlohmann::detail::error_handler_t::ignore));
+	nlohmann::json responseJson = nlohmann::json::parse(description);
+	return responseJson["choices"][0]["message"]["content"].get<std::string>().c_str();
+}
+
+std::future<bbe::String> bbe::ChatGPTComm::describeImageAsync(const bbe::String& url)
+{
+	return bbe::async(&bbe::ChatGPTComm::describeImage, this, url);
+}
+
 void bbe::ChatGPTComm::purgeMemory()
 {
 	std::lock_guard _(mutex);

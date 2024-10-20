@@ -27,5 +27,5 @@ public:
 
 	bool isGameOn() const;
 
-	void drawGui();
+	void drawGui(float scale);
 };

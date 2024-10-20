@@ -50,6 +50,7 @@ void bbe::PrimitiveBrush2D::INTERNAL_fillRect(const Rectangle &rect, float rotat
 
 void bbe::PrimitiveBrush2D::INTERNAL_drawImage(const Rectangle & rect, const Image & image, float rotation)
 {
+	if (image.getWidth() == 0 || image.getHeight() == 0) return;
 	m_prenderManager->drawImage2D(rect.offset(m_offset).stretchedSpace(m_windowXScale, m_windowYScale), image, rotation);
 }
 

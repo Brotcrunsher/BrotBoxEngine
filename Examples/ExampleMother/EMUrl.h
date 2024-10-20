@@ -26,7 +26,7 @@ private:
 
 public:
 	void update();
-	void drawGui();
+	void drawGui(float scale);
 
 	bool timeWasterFound() const;
 

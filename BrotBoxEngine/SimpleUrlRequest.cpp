@@ -61,7 +61,6 @@ static size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdat
 	bbe::List<char> *dataContainer = (bbe::List<char>*)userdata;
 	const size_t oldSize = dataContainer->getLength();
 	dataContainer->addArray(ptr, nmemb);
-	memcpy(dataContainer->getRaw() + oldSize, ptr, nmemb);
 	return nmemb;
 }
 
@@ -75,6 +74,8 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlRequest(const 
 	curl_easy_setopt(curl, CURLOPT_URL, url.getRaw());
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &(retVal.dataContainer));
+	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 60L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
 	if (verbose) curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 	if (postData.getLength() > 0) {
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postData.getRaw());
@@ -90,9 +91,17 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlRequest(const 
 	}
 
 	CURLcode res;
-	if ((res = curl_easy_perform(curl)) != CURLcode::CURLE_OK)
+	for (int retry = 0; retry < 3; retry++)
 	{
-		bbe::String error = "Error: ";
+		res = curl_easy_perform(curl);
+		if (res == CURLcode::CURLE_OK)
+		{
+			break;
+		}
+	}
+	if (res != CURLcode::CURLE_OK)
+	{
+		bbe::String error = "Error (urlRequest): ";
 		error += res;
 		bbe::Crash(bbe::Error::IllegalState, error.getRaw());
 	}
@@ -127,6 +136,8 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlFile(
 	curl_easy_setopt(curl, CURLOPT_URL, url.getRaw());
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &(retVal.dataContainer));
+	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 120L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120L);
 	if (verbose) curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
 	for (size_t i = 0; i < headerFields.getLength(); i++)
@@ -158,19 +169,25 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlFile(
 
 	curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
 
-	CURLcode res = curl_easy_perform(curl);
-
-	curl_mime_free(mime);
-
-	if (res != CURLE_OK)
+	CURLcode res;
+	for (int retry = 0; retry < 3; retry++)
 	{
-		bbe::String error = "Error: ";
-		error += curl_easy_strerror(res);
+		res = curl_easy_perform(curl);
+		if (res == CURLcode::CURLE_OK)
+		{
+			break;
+		}
+	}
+	if (res != CURLcode::CURLE_OK)
+	{
+		bbe::String error = "Error (urlFile): ";
+		error += res;
 		bbe::Crash(bbe::Error::IllegalState, error.getRaw());
 	}
 
 	if (addTrailingNul) retVal.dataContainer.add('\0');
 
+	curl_mime_free(mime);
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &retVal.responseCode);
 
 	return retVal;

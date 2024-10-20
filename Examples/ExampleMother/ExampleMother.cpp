@@ -35,6 +35,7 @@
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
 //TODO: Talk to GPT: Only send if clip is actually long enough. 0.3 seconds?
+//TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
 
 //TODO: Show average driving time
 
@@ -183,6 +184,14 @@ struct NewsConfig
 	bbe::List<NewsEntry> newsEntries;
 };
 
+struct DallEConfig
+{
+	BBE_SERIALIZABLE_DATA(
+		((bbe::String), prompt),
+		((int32_t), picNumber, 0)
+	)
+};
+
 enum class IconCategory
 {
 	NONE,
@@ -225,6 +234,7 @@ private:
 	bbe::SerializableObject<WeaterConfig> weatherConfig         = bbe::SerializableObject<WeaterConfig>   ("WeaterConfig.dat",        "ParanoiaConfig");
 	bbe::SerializableList<NewsConfig> newsConfig                = bbe::SerializableList<NewsConfig>       ("NewsConfig.dat",          "ParanoiaConfig");
 	bbe::SerializableList<NewsEntry> readNews                   = bbe::SerializableList<NewsEntry>        ("ReadNews.dat",            "ParanoiaConfig");
+	bbe::SerializableObject<DallEConfig> dallEConfig            = bbe::SerializableObject<DallEConfig>    ("DallEConfig.dat",         "ParanoiaConfig");
 
 	bbe::ChatGPTComm chatGPTComm; // ChatGPT communication object
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
@@ -1959,6 +1969,80 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	bbe::Vector2 drawTabDallE(bbe::PrimitiveBrush2D& brush)
+	{
+		static std::future<bbe::ChatGPTCreateImageResponse> imageFuture;
+		static bbe::ChatGPTCreateImageResponse image;
+		static std::future<bbe::String> descriptionFuture;
+
+		static float offsetX = 170;
+		static float offsetY = 110;
+		static float sizeMult = 0.87f;
+		static bool chainMode = false;
+
+		if (ImGui::bbe::InputText("prompt", dallEConfig->prompt, ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			imageFuture = chatGPTComm.createImageAsync(dallEConfig->prompt, { 1792, 1024});
+			dallEConfig.writeToFile();
+		}
+		if (descriptionFuture.valid() && descriptionFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+		{
+			bbe::String description = descriptionFuture.get();
+			imageFuture = chatGPTComm.createImageAsync(description, { 1792, 1024 });
+		}
+		if (imageFuture.valid() && imageFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+		{
+			image = imageFuture.get();
+			bbe::String imagePath = bbe::String::format("DallE%07d.png", dallEConfig->picNumber);
+			image.image.writeToFile(imagePath);
+			dallEConfig->picNumber++;
+			dallEConfig.writeToFile();
+
+			if (chainMode)
+			{
+				descriptionFuture = chatGPTComm.describeImageAsync(image.url);
+			}
+		}
+
+		// TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
+		//static bbe::String loadPath;
+		//if (ImGui::Button("load"))
+		//{
+		//	if (loadPath.startsWith("\"") && loadPath.endsWith("\""))
+		//	{
+		//		loadPath = loadPath.substring(1, loadPath.getLength() - 1);
+		//	}
+		//	image.load(loadPath);
+		//}
+		//ImGui::SameLine();
+		//ImGui::bbe::InputText("Load", loadPath);
+
+		ImGui::PushItemWidth(200);
+		ImGui::InputFloat("OffsetX", &offsetX);
+		ImGui::SameLine();
+		ImGui::InputFloat("offsetY", &offsetY);
+		ImGui::SameLine();
+		ImGui::InputFloat("sizeMult", &sizeMult);
+		ImGui::PopItemWidth();
+
+		if (ImGui::Checkbox("Chain Mode", &chainMode))
+		{
+			if (chainMode && !image.url.isEmpty())
+			{
+				descriptionFuture = chatGPTComm.describeImageAsync(image.url);
+			}
+			if (!chainMode)
+			{
+				descriptionFuture = {};
+				imageFuture = {};
+			}
+		}
+
+		brush.drawImage({ offsetX, offsetY }, image.image.getDimensions().as<float>() * sizeMult, image.image );
+
+		return bbe::Vector2(101, 100.1f);
+	}
+
 	bbe::Vector2 drawAdafruitMacroPadRP2040(bbe::PrimitiveBrush2D& brush)
 	{
 		if (adafruitMacroPadRP2040.isKeyDown(bbe::RP2040Key::BUTTON_AUDIO))
@@ -1991,6 +2075,7 @@ public:
 
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
+		static bool fullscreenTab = false;
 		const ImGuiViewport fullViewport = *ImGui::GetMainViewport();
 		bool shouldMinimize = false;
 
@@ -2008,207 +2093,209 @@ public:
 			infoViewport.WorkSize.x = maxInfoWindowWidth;
 		}
 
-		ImGui::SetNextWindowPos(infoViewport.WorkPos);
-		ImGui::SetNextWindowSize(infoViewport.WorkSize);
-		ImGui::Begin("Info", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+		if(!fullscreenTab)
 		{
-			ImGui::Text("Build: " __DATE__ ", " __TIME__);
-			ImGui::Text(bbe::simpleFile::backup::async::hasOpenIO() ? "Saving" : "Done");
-			bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
-			ImGui::Text(s.getRaw());
-			ImGui::bbe::tooltip(getNightStart().toString().getRaw());
-
-			tasks.drawUndoRedoButtons();
-
-			const static bbe::String desiredName = bbe::simpleFile::getAutoStartDirectory() + "ExampleMother.exe.lnk";
-			static bool exists = bbe::simpleFile::doesFileExist(desiredName); // Avoid doing IO every frame.
-			ImGui::BeginDisabled(exists);
-			if (ImGui::Button("Add to Autostart"))
+			ImGui::SetNextWindowPos(infoViewport.WorkPos);
+			ImGui::SetNextWindowSize(infoViewport.WorkSize);
+			ImGui::Begin("Info", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 			{
-				bbe::simpleFile::createLink(desiredName, bbe::simpleFile::getExecutablePath(), bbe::simpleFile::getWorkingDirectory());
-				exists = true;
-			}
-			ImGui::EndDisabled();
+				ImGui::Text("Build: " __DATE__ ", " __TIME__);
+				ImGui::Text(bbe::simpleFile::backup::async::hasOpenIO() ? "Saving" : "Done");
+				bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
+				ImGui::Text(s.getRaw());
+				ImGui::bbe::tooltip(getNightStart().toString().getRaw());
 
-			static bool updatePathExists = false;
-			static bool updatePathNewer = false;
-			// Avoiding multiple IO calls.
-			EVERY_SECONDS(10)
-			{
-				if (!updatePathExists)
+				tasks.drawUndoRedoButtons();
+
+				const static bbe::String desiredName = bbe::simpleFile::getAutoStartDirectory() + "ExampleMother.exe.lnk";
+				static bool exists = bbe::simpleFile::doesFileExist(desiredName); // Avoid doing IO every frame.
+				ImGui::BeginDisabled(exists);
+				if (ImGui::Button("Add to Autostart"))
 				{
-					updatePathExists = bbe::simpleFile::doesFileExist(generalConfig->updatePath);
+					bbe::simpleFile::createLink(desiredName, bbe::simpleFile::getExecutablePath(), bbe::simpleFile::getWorkingDirectory());
+					exists = true;
 				}
-				else
+				ImGui::EndDisabled();
+
+				static bool updatePathExists = false;
+				static bool updatePathNewer = false;
+				// Avoiding multiple IO calls.
+				EVERY_SECONDS(10)
 				{
-					const auto updateModTime = bbe::simpleFile::getLastModifyTime(generalConfig->updatePath);
-					const auto thisModTime = bbe::simpleFile::getLastModifyTime(bbe::simpleFile::getExecutablePath());
-					if (updateModTime && thisModTime)
+					if (!updatePathExists)
 					{
-						updatePathNewer = updateModTime > thisModTime;
+						updatePathExists = bbe::simpleFile::doesFileExist(generalConfig->updatePath);
+					}
+					else
+					{
+						const auto updateModTime = bbe::simpleFile::getLastModifyTime(generalConfig->updatePath);
+						const auto thisModTime = bbe::simpleFile::getLastModifyTime(bbe::simpleFile::getExecutablePath());
+						if (updateModTime && thisModTime)
+						{
+							updatePathNewer = updateModTime > thisModTime;
+						}
 					}
 				}
-			}
-			if (updatePathExists)
-			{
-				if (ImGui::Button("Update"))
+				if (updatePathExists)
 				{
-					bbe::String batchFileName = "update.bat";
-					bbe::simpleFile::deleteFile(batchFileName);
-
+					if (ImGui::Button("Update"))
 					{
-						std::ofstream file;
-						file.open(batchFileName.getRaw(), std::ios::out);
+						bbe::String batchFileName = "update.bat";
+						bbe::simpleFile::deleteFile(batchFileName);
 
-						file << "taskkill /f /im ExampleMother.exe\n";
-						file << "xcopy /s /y \"" + bbe::String(generalConfig->updatePath) + "\" " + bbe::simpleFile::getExecutablePath() + "\n";
-						file << "start ExampleMother.exe\n";
-						file << "del update.bat\n";
+						{
+							std::ofstream file;
+							file.open(batchFileName.getRaw(), std::ios::out);
+
+							file << "taskkill /f /im ExampleMother.exe\n";
+							file << "xcopy /s /y \"" + bbe::String(generalConfig->updatePath) + "\" " + bbe::simpleFile::getExecutablePath() + "\n";
+							file << "start ExampleMother.exe\n";
+							file << "del update.bat\n";
+						}
+
+						bbe::simpleFile::executeBatchFile("update.bat");
 					}
-
-					bbe::simpleFile::executeBatchFile("update.bat");
+					if (updatePathNewer)
+					{
+						ImGui::SameLine();
+						ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "(!)");
+						ImGui::bbe::tooltip("The update path is newer than this version!");
+					}
 				}
-				if (updatePathNewer)
+
+				bbe::simpleProcess::drawElevationButton(this);
+
+				if (ImGui::Button("Play Sound"))
 				{
-					ImGui::SameLine();
-					ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "(!)");
-					ImGui::bbe::tooltip("The update path is newer than this version!");
+					assetStore::NewTask()->play();
 				}
-			}
-
-			bbe::simpleProcess::drawElevationButton(this);
-
-			if (ImGui::Button("Play Sound"))
-			{
-				assetStore::NewTask()->play();
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Restart Sound System"))
-			{
-				restartSoundSystem();
-			}
-			if (ImGui::Button("Print something to log"))
-			{
-				static int64_t counter = 0;
-				for (int i = 0; i < 4000000; i++)
-				{
-					bbe::String s = "Something ";
-					s += counter;
-					counter++;
-					BBELOGLN(s);
-				}
-			}
-			if (ImGui::Button("Minimize all Windows"))
-			{
-				shouldMinimize = true;
-			}
-
-			static bool unlockCrashButton = false;
-			ImGui::Checkbox("Unlock Crash Buttons", &unlockCrashButton);
-			ImGui::SameLine();
-			ImGui::BeginDisabled(!unlockCrashButton);
-			if (ImGui::Button("Segv!"))
-			{
-				*((volatile int*)0);
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Crash!"))
-			{
-				bbe::Crash(bbe::Error::IllegalState);
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Exception!"))
-			{
-				throw 1;
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Free Illegal!"))
-			{
-				free((void*)0x12345678);
-			}
-			ImGui::EndDisabled();
-
-			if (ImGui::Checkbox("Silence Open Task (1 Hour)", &openTasksSilenced))
-			{
-				updateOpenTasksSilenced();
-			}
-			ImGui::SameLine();
-			ImGui::BeginDisabled(!openTasksSilenced);
-			ImGui::Checkbox("Indefinitely ", &openTasksSilencedIndefinitely);
-			ImGui::EndDisabled();
-
-			if (openTasksSilenced && !openTasksSilencedIndefinitely && !openTasksSilencedEnd.hasPassed())
-			{
-				const bbe::TimePoint now;
-				const bbe::Duration duration = openTasksSilencedEnd - now;
 				ImGui::SameLine();
-				ImGui::Text("Time left: %s", duration.toString().getRaw());
-			}
-
-			ImGui::Checkbox("Ignore Night", &ignoreNight);
-
-			ImGui::BeginDisabled(!bbe::simpleProcess::isRunAsAdmin());
-			if (ImGui::Checkbox("Enable High Concentration Mode", &highConcentrationMode))
-			{
-				if (highConcentrationMode)
+				if (ImGui::Button("Restart Sound System"))
 				{
-					urls.enableHighConcentrationMode();
+					restartSoundSystem();
+				}
+				if (ImGui::Button("Print something to log"))
+				{
+					static int64_t counter = 0;
+					for (int i = 0; i < 4000000; i++)
+					{
+						bbe::String s = "Something ";
+						s += counter;
+						counter++;
+						BBELOGLN(s);
+					}
+				}
+				if (ImGui::Button("Minimize all Windows"))
+				{
+					shouldMinimize = true;
+				}
+
+				static bool unlockCrashButton = false;
+				ImGui::Checkbox("Unlock Crash Buttons", &unlockCrashButton);
+				ImGui::SameLine();
+				ImGui::BeginDisabled(!unlockCrashButton);
+				if (ImGui::Button("Segv!"))
+				{
+					*((volatile int*)0);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Crash!"))
+				{
+					bbe::Crash(bbe::Error::IllegalState);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Exception!"))
+				{
+					throw 1;
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Free Illegal!"))
+				{
+					free((void*)0x12345678);
+				}
+				ImGui::EndDisabled();
+
+				if (ImGui::Checkbox("Silence Open Task (1 Hour)", &openTasksSilenced))
+				{
+					updateOpenTasksSilenced();
+				}
+				ImGui::SameLine();
+				ImGui::BeginDisabled(!openTasksSilenced);
+				ImGui::Checkbox("Indefinitely ", &openTasksSilencedIndefinitely);
+				ImGui::EndDisabled();
+
+				if (openTasksSilenced && !openTasksSilencedIndefinitely && !openTasksSilencedEnd.hasPassed())
+				{
+					const bbe::TimePoint now;
+					const bbe::Duration duration = openTasksSilencedEnd - now;
+					ImGui::SameLine();
+					ImGui::Text("Time left: %s", duration.toString().getRaw());
+				}
+
+				ImGui::Checkbox("Ignore Night", &ignoreNight);
+
+				ImGui::BeginDisabled(!bbe::simpleProcess::isRunAsAdmin());
+				if (ImGui::Checkbox("Enable High Concentration Mode", &highConcentrationMode))
+				{
+					if (highConcentrationMode)
+					{
+						urls.enableHighConcentrationMode();
+					}
+					else
+					{
+						urls.disableHighConcentrationMode();
+					}
+				}
+				ImGui::EndDisabled();
+
+				ImGui::Checkbox("Let me prepare", &tasks.forcePrepare); ImGui::bbe::tooltip("Make tasks advancable, even before late time happens.");
+				bbe::String serverUnreachableString = "Silence Server Unreachable. Last reach: ";
+				if (lastServerReach == bbe::TimePoint::epoch())
+				{
+					serverUnreachableString += "Never";
 				}
 				else
 				{
-					urls.disableHighConcentrationMode();
+					serverUnreachableString += (bbe::TimePoint() - lastServerReach).toString();
 				}
-			}
-			ImGui::EndDisabled();
+				ImGui::Checkbox(serverUnreachableString.getRaw(), &serverUnreachableSilenced);
+				ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
 
-			ImGui::Checkbox("Let me prepare", &tasks.forcePrepare); ImGui::bbe::tooltip("Make tasks advancable, even before late time happens.");
-			bbe::String serverUnreachableString = "Silence Server Unreachable. Last reach: ";
-			if (lastServerReach == bbe::TimePoint::epoch())
+				ImGui::Checkbox("Overwrite Monitor Brightness", &monitorBrightnessOverwrite);
+				ImGui::BeginDisabled(!monitorBrightnessOverwrite);
+				ImGui::SameLine();
+				ImGui::PushItemWidth(100);
+				ImGui::SliderFloat("##Monitor Brightness", &monitorBrightness, 0.0, 1.0);
+				ImGui::PopItemWidth();
+				ImGui::EndDisabled();
+
+				ImGui::NewLine();
+				ImGui::Text("Playing sounds: %d", (int)getAmountOfPlayingSounds());
+				drawMeasurement();
+			}
+			ImGui::End();
+
+			beginMeasure("Draw process window");
+			infoViewport.WorkPos.y = infoViewport.WorkSize.y;
+			ImGui::SetNextWindowPos(infoViewport.WorkPos);
+			ImGui::SetNextWindowSize(infoViewport.WorkSize);
+			ImGui::Begin("Processes", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 			{
-				serverUnreachableString += "Never";
+				processes.drawGui(getWindow()->getScale());
 			}
-			else
+			ImGui::End();
+
+
+			beginMeasure("Draw url window");
+			infoViewport.WorkPos.y = infoViewport.WorkSize.y * 2;
+			ImGui::SetNextWindowPos(infoViewport.WorkPos);
+			ImGui::SetNextWindowSize(infoViewport.WorkSize);
+			ImGui::Begin("URLs", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 			{
-				serverUnreachableString += (bbe::TimePoint() - lastServerReach).toString();
+				urls.drawGui(getWindow()->getScale());
 			}
-			ImGui::Checkbox(serverUnreachableString.getRaw(), &serverUnreachableSilenced);
-			ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
-
-			ImGui::Checkbox("Overwrite Monitor Brightness", &monitorBrightnessOverwrite);
-			ImGui::BeginDisabled(!monitorBrightnessOverwrite);
-			ImGui::SameLine();
-			ImGui::PushItemWidth(100);
-			ImGui::SliderFloat("##Monitor Brightness", &monitorBrightness, 0.0, 1.0);
-			ImGui::PopItemWidth();
-			ImGui::EndDisabled();
-
-			ImGui::NewLine();
-			ImGui::Text("Playing sounds: %d", (int)getAmountOfPlayingSounds());
-			drawMeasurement();
+			ImGui::End();
 		}
-		ImGui::End();
-
-		beginMeasure("Draw process window");
-		infoViewport.WorkPos.y = infoViewport.WorkSize.y;
-		ImGui::SetNextWindowPos(infoViewport.WorkPos);
-		ImGui::SetNextWindowSize(infoViewport.WorkSize);
-		ImGui::Begin("Processes", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
-		{
-			processes.drawGui();
-		}
-		ImGui::End();
-
-
-		beginMeasure("Draw url window");
-		infoViewport.WorkPos.y = infoViewport.WorkSize.y * 2;
-		ImGui::SetNextWindowPos(infoViewport.WorkPos);
-		ImGui::SetNextWindowSize(infoViewport.WorkSize);
-		ImGui::Begin("URLs", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
-		{
-			urls.drawGui();
-		}
-		ImGui::End();
-
 
 		beginMeasure("Draw main window");
 		static bbe::Vector2 sizeMult(1.0f, 1.0f);
@@ -2220,7 +2307,7 @@ public:
 		const float adaptiveMaxSize = adaptiveFlipSize - 400 * getWindow()->getScale();
 
 		bool adaptive = false;
-		if (viewport.WorkSize.x > adaptiveFlipSize)
+		if (viewport.WorkSize.x > adaptiveFlipSize && !fullscreenTab)
 		{
 			viewport.WorkSize.x = adaptiveMaxSize;
 			adaptive = true;
@@ -2255,6 +2342,7 @@ public:
 				Tab{"Strks",     "Streaks",        [&]() { return drawTabStreaks(brush); }},
 				Tab{"Lsts",      "Lists",          [&]() { return drawTabRememberLists(); }},
 				Tab{"GPT",       "ChatGPT",        [&]() { return drawTabChatGPT(); }},
+				Tab{"DE",        "DALL E",         [&]() { return drawTabDallE(brush); }},
 				//Tab{"Mic",       "Microphone Test",[&]() { return drawMicrophoneTest(); }},
 				//Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
 				Tab{"ENews",     "Edit News",      [&]() { return drawNewsConfig(); }},
@@ -2268,6 +2356,12 @@ public:
 			static size_t previousShownTab = 0;
 			DrawTabResult dtr = drawTabs(tabs, &previousShownTab, tabSwitchRequestedLeft, tabSwitchRequestedRight);
 			sizeMult = dtr.sizeMult;
+			fullscreenTab = sizeMult.x > 100 || sizeMult.y > 100;
+			if (fullscreenTab)
+			{
+				sizeMult.x -= 100;
+				sizeMult.y -= 100;
+			}
 			previousTab = dtr.tab;
 		}
 		ImGui::End();

@@ -39,7 +39,7 @@ void SubsystemUrl::update()
 	}
 }
 
-void SubsystemUrl::drawGui()
+void SubsystemUrl::drawGui(float scale)
 {
 	static bool showTimeWasters = false;
 	ImGui::Checkbox("Show Time Wasters", &showTimeWasters);
@@ -54,8 +54,8 @@ void SubsystemUrl::drawGui()
 
 	if (ImGui::BeginTable("tableUrls", 2, ImGuiTableFlags_RowBg))
 	{
-		ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 600);
-		ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 250);
+		ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 300 * scale);
+		ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 125 * scale);
 		bool urlChanged = false;
 		size_t deletionIndex = (size_t)-1;
 		for (size_t i = 0; i < urls.getLength(); i++)
