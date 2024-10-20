@@ -20,8 +20,8 @@ namespace bbe
 		auto operator<=>(const Duration&) const = default;
 
 		bbe::String toString(bool showMillis = false) const;
-		int32_t toMillis() const;
-		int32_t toSeconds() const;
+		int64_t toMillis() const;
+		int64_t toSeconds() const;
 		int32_t toMinutes() const;
 		int32_t toHours() const;
 		int32_t toDays() const;

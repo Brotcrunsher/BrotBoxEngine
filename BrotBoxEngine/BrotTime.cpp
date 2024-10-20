@@ -442,46 +442,42 @@ bbe::Duration bbe::Duration::fromMilliseconds(int64_t millis)
 
 bbe::String bbe::Duration::toString(bool showMillis) const
 {
-	int32_t millis = toMillis();
-	int32_t seconds = millis / 1000;
-	millis %= 1000;
-	int32_t minutes = seconds / 60;
-	seconds %= 60;
-	int32_t hours = minutes / 60;
-	minutes %= 60;
-	int32_t days = hours / 24;
-	hours %= 24;
+	const int64_t millis  = toMillis() % 1000;
+	const int64_t seconds = toSeconds() % 60;
+	const int64_t minutes = toMinutes() % 60;
+	const int64_t hours   = toHours() % 24;
+	const int64_t days    = toDays();
 
 	if(showMillis)
 	{
 		if(days == 0)
 			if(hours == 0)
-				return bbe::String::format("%.2d:%.2d:%.3d", minutes, seconds, millis);
+				return bbe::String::format("%.2lld:%.2lld:%.3lld", minutes, seconds, millis);
 			else
-				return bbe::String::format("%.2d:%.2d:%.2d:%.3d", hours, minutes, seconds, millis);
+				return bbe::String::format("%.2lld:%.2lld:%.2lld:%.3lld", hours, minutes, seconds, millis);
 		else
-			return bbe::String::format("%d:%.2d:%.2d:%.2d:%.3d", days, hours, minutes, seconds, millis);
+			return bbe::String::format("%lld:%.2lld:%.2lld:%.2lld:%.3lld", days, hours, minutes, seconds, millis);
 	}
 	else
 	{
 		if(days == 0)
 			if(hours == 0)
-				return bbe::String::format("%.2d:%.2d", minutes, seconds);
+				return bbe::String::format("%.2lld:%.2lld", minutes, seconds);
 			else
-				return bbe::String::format("%.2d:%.2d:%.2d", hours, minutes, seconds);
+				return bbe::String::format("%.2lld:%.2lld:%.2lld", hours, minutes, seconds);
 		else
-			return bbe::String::format("%d:%.2d:%.2d:%.2d", days, hours, minutes, seconds);
+			return bbe::String::format("%lld:%.2lld:%.2lld:%.2lld", days, hours, minutes, seconds);
 	}
 }
 
-int32_t bbe::Duration::toMillis() const
+int64_t bbe::Duration::toMillis() const
 {
-	return (int32_t)std::chrono::duration_cast<std::chrono::milliseconds>(m_duration).count();
+	return (int64_t)std::chrono::duration_cast<std::chrono::milliseconds>(m_duration).count();
 }
 
-int32_t bbe::Duration::toSeconds() const
+int64_t bbe::Duration::toSeconds() const
 {
-	return (int32_t)std::chrono::duration_cast<std::chrono::seconds>(m_duration).count();
+	return (int64_t)std::chrono::duration_cast<std::chrono::seconds>(m_duration).count();
 }
 
 int32_t bbe::Duration::toMinutes() const

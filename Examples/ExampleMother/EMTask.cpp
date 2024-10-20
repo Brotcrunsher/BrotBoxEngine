@@ -269,7 +269,7 @@ int32_t SubsystemTask::drawTable(float scale, const char* title, const std::func
 	if (ImGui::BeginTable("table2", 7, ImGuiTableFlags_RowBg))
 	{
 		ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 200 * scale);
-		if (showCountdown)  ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 125 * scale);
+		if (showCountdown)  ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 175 * scale);
 		ImGui::TableSetupColumn("DDD", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
 		if (showFollowUp)   ImGui::TableSetupColumn("EEE", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
 		if (showFollowUp)   ImGui::TableSetupColumn("FFF", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
