@@ -1,4 +1,5 @@
 #include "../BBE/SoundGenerator.h"
+#include <cmath>
 
 bbe::SoundGenerator::SoundGenerator(const bbe::Duration& duration) : duration(duration)
 {}
@@ -163,7 +164,7 @@ void bbe::SoundGenerator::applyRecipeSquareWave(bbe::List<double>& signal, doubl
 	for (size_t i = 0; i < signal.getLength(); i++)
 	{
 		const double time = (double)i / hz + offset;
-		if (fmod(time, totalDur) < highDur)
+		if (std::fmod(time, totalDur) < highDur)
 		{
 			signal[i] += highValue * mult;
 		}
@@ -179,7 +180,7 @@ void bbe::SoundGenerator::applyRecipeSawtoothWave(bbe::List<double>& signal, dou
 	for (size_t i = 0; i < signal.getLength(); i++)
 	{
 		double time = (double)i / hz + offset;
-		double frac = fmod(time, period) / period;
+		double frac = std::fmod(time, period) / period;
 		signal[i] += (frac * 2.0 - 1.0) * mult;
 	}
 }
@@ -190,7 +191,7 @@ void bbe::SoundGenerator::applyRecipeTriangleWave(bbe::List<double>& signal, dou
 	for (size_t i = 0; i < signal.getLength(); i++)
 	{
 		const double time = (double)i / hz + offset;
-		const double modTime = fmod(time, upDur + downDur);
+		const double modTime = std::fmod(time, upDur + downDur);
 
 		if (modTime < upDur) // Rising part of the triangle wave
 		{
@@ -238,9 +239,9 @@ void bbe::SoundGenerator::applyRecipeNormalization(bbe::List<double>& signal) co
 	// Find the maximum absolute amplitude
 	for (size_t i = 0; i < signal.getLength(); i++)
 	{
-		if (fabs(signal[i]) > maxAmplitude)
+		if (std::fabs(signal[i]) > maxAmplitude)
 		{
-			maxAmplitude = fabs(signal[i]);
+			maxAmplitude = std::fabs(signal[i]);
 		}
 	}
 	// Normalize the signal to the maximum amplitude
