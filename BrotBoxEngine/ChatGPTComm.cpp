@@ -1,3 +1,4 @@
+#ifdef WIN32
 #include "BBE/ChatGPTComm.h"
 #include "BBE/Logging.h"
 #include "BBE/SimpleUrlRequest.h"
@@ -246,3 +247,4 @@ bbe::List<bbe::String> bbe::ChatGPTComm::getAvailableModels() const
 
 	return models;
 }
+#endif
