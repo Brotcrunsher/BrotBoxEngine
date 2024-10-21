@@ -21,6 +21,7 @@
 #include "EMBrainTeaser.h"
 #include "BBE/ChatGPTComm.h"
 #include "BBE/Microphone.h"
+#include "BBE/SoundGenerator.h"
 
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
@@ -284,6 +285,8 @@ private:
 	NewsEntry readingNewsCurrently;
 	bool showReadNews = true;
 
+	bbe::Sound buzzingSound;
+
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
 	{
@@ -403,6 +406,12 @@ public:
 				getWindow()->maximize();
 			}
 		}
+
+
+		bbe::SoundGenerator sg(bbe::Duration::fromMilliseconds(500));
+		sg.addRecipeSineWave(0.0, 0.1, 150.0);
+		sg.addRecipeBitcrusher(0.0, 1.0, 5);
+		buzzingSound = sg.finalize();
 	}
 
 	void updateOpenTasksSilenced()
@@ -609,6 +618,7 @@ public:
 			}
 			if (adafruitMacroPadRP2040.isKeyPressed(bbe::RP2040Key::BUTTON_11))
 			{
+				buzzingSound.play();
 				microphone.startRecording();
 			}
 
@@ -966,56 +976,63 @@ public:
 			auto contents = future.get();
 			if (contents.responseCode == 200)
 			{
-				bbe::String s;
-				s.append(contents.dataContainer.getRaw(), contents.dataContainer.getLength());
-
-				nlohmann::json j = nlohmann::json::parse(s.getRaw());
-
-				weatherEntries.clear();
-
-				weatherEntries.add(jsonToWeatherEntry(j["current_condition"][0], bbe::TimePoint()));
-
-				nlohmann::json& weather = j["weather"];
-
-				for (size_t i = 0; i < weather.size(); i++)
+				try
 				{
-					bbe::String dayString = weather[i]["date"].get<std::string>().c_str();
-					auto dayStringTokens = dayString.split("-");
-					if (dayStringTokens.getLength() != 3)
+					bbe::String s;
+					s.append(contents.dataContainer.getRaw(), contents.dataContainer.getLength());
+
+					nlohmann::json j = nlohmann::json::parse(s.getRaw());
+
+					weatherEntries.clear();
+
+					weatherEntries.add(jsonToWeatherEntry(j["current_condition"][0], bbe::TimePoint()));
+
+					nlohmann::json& weather = j["weather"];
+
+					for (size_t i = 0; i < weather.size(); i++)
 					{
-						static bool lengthWarningPrinted = false;
-						if (!lengthWarningPrinted)
+						bbe::String dayString = weather[i]["date"].get<std::string>().c_str();
+						auto dayStringTokens = dayString.split("-");
+						if (dayStringTokens.getLength() != 3)
 						{
-							lengthWarningPrinted = true;
-							BBELOGLN("Warning: Weather reported " << dayStringTokens.getLength() << "tokens!");
+							static bool lengthWarningPrinted = false;
+							if (!lengthWarningPrinted)
+							{
+								lengthWarningPrinted = true;
+								BBELOGLN("Warning: Weather reported " << dayStringTokens.getLength() << "tokens!");
+							}
+							continue;
 						}
-						continue;
-					}
-					bool onlyNumbers = true;
-					for (size_t i = 0; i < dayStringTokens.getLength(); i++)
-					{
-						if (!dayStringTokens[i].isNumber())
+						bool onlyNumbers = true;
+						for (size_t i = 0; i < dayStringTokens.getLength(); i++)
 						{
-							onlyNumbers = false;
-							break;;
+							if (!dayStringTokens[i].isNumber())
+							{
+								onlyNumbers = false;
+								break;;
+							}
 						}
-					}
-					if (!onlyNumbers)
-					{
-						static bool notANumberWarningPrinted = false;
-						if (!notANumberWarningPrinted)
+						if (!onlyNumbers)
 						{
-							notANumberWarningPrinted = true;
-							BBELOGLN("Warning: Weather reported a non number in date!");
+							static bool notANumberWarningPrinted = false;
+							if (!notANumberWarningPrinted)
+							{
+								notANumberWarningPrinted = true;
+								BBELOGLN("Warning: Weather reported a non number in date!");
+							}
+							continue;
 						}
-						continue;
+						bbe::TimePoint day = bbe::TimePoint::fromDate(dayStringTokens[0].toLong(), dayStringTokens[1].toLong(), dayStringTokens[2].toLong());
+						nlohmann::json& hourly = weather[i]["hourly"];
+						for (size_t k = 0; k < hourly.size(); k++)
+						{
+							weatherEntries.add(jsonToWeatherEntry(hourly[k], day));
+						}
 					}
-					bbe::TimePoint day = bbe::TimePoint::fromDate(dayStringTokens[0].toLong(), dayStringTokens[1].toLong(), dayStringTokens[2].toLong());
-					nlohmann::json& hourly = weather[i]["hourly"];
-					for (size_t k = 0; k < hourly.size(); k++)
-					{
-						weatherEntries.add(jsonToWeatherEntry(hourly[k], day));
-					}
+				}
+				catch (const nlohmann::json::parse_error& e)
+				{
+					// Do nothing... Worst that happens is that we don't show the weather :)
 				}
 			}
 		}

@@ -517,6 +517,19 @@ namespace bbe
 			return biggestIndex;
 		}
 
+		template<typename U>
+		List<U> as() const
+		{
+			List<U> retVal;
+			retVal.resizeCapacity(m_length);
+			for (size_t i = 0; i < m_length; i++)
+			{
+				retVal.add(U(operator[](i)));
+			}
+
+			return retVal;
+		}
+
 		bool swap(size_t a, size_t b)
 		{
 			if (a == b) return false;

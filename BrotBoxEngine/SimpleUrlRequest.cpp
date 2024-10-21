@@ -71,7 +71,7 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlRequest(const 
 
 	UrlRequestResult retVal;
 
-	curl_easy_setopt(curl, CURLOPT_URL, url.getRaw());
+	curl_easy_setopt(curl, CURLOPT_URL, url.replace(" ", "%20").getRaw());
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &(retVal.dataContainer));
 	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 60L);
@@ -211,15 +211,6 @@ std::future<bbe::simpleUrlRequest::UrlRequestResult > bbe::simpleUrlRequest::url
 	return bbe::async(&urlFile, url, headerFields, formFields, fileData, fileFieldName, fileName, addTrailingNul, verbose);
 }
 
-void printArr(const unsigned char* arr, int len)
-{
-	for (int i = 0; i < len; i++)
-	{
-		printf("%02x", arr[i] & 0xff);
-		if (i % 4 == 3) printf(" ");
-	}
-}
-
 std::optional<bbe::List<char>> bbe::simpleUrlRequest::decryptXChaCha(const bbe::List<char>& data, const String& pathToKeyFile, bool addTrailingNul)
 {
 	if (sodium_init() < 0)
@@ -239,9 +230,6 @@ std::optional<bbe::List<char>> bbe::simpleUrlRequest::decryptXChaCha(const bbe::
 	const unsigned char* nonce = (const unsigned char*)data.getRaw();
 	const unsigned char* ciphertext = nonce + crypto_aead_xchacha20poly1305_ietf_NPUBBYTES;
 	const size_t ciphertextLenght = data.getLength() - crypto_aead_xchacha20poly1305_ietf_NPUBBYTES;
-
-	printArr(nonce, crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
-	printf("\n");
 
 	bbe::List<char> message;
 	message.resizeCapacityAndLengthUninit(ciphertextLenght - crypto_aead_xchacha20poly1305_ietf_ABYTES);
