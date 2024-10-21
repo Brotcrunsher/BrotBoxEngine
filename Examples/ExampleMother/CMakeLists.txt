@@ -1,1 +1,2 @@
 add_trivial_project(ExampleMother)
+set_target_properties(ExampleMother PROPERTIES WIN32_EXECUTABLE TRUE)

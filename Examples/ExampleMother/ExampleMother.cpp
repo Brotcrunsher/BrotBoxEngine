@@ -2446,11 +2446,9 @@ public:
 	}
 };
 
-int main()
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF); // See: https://stackoverflow.com/questions/30413066/how-do-i-diagnose-heap-corruption-errors-on-windows
-	HWND hWnd = GetConsoleWindow();
-	FreeConsole();
 	MyGame* mg = new MyGame();
 	mg->start(1280, 720, "M.O.THE.R - Memory of the repetitive");
 #ifndef __EMSCRIPTEN__
