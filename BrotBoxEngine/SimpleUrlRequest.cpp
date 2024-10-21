@@ -90,25 +90,25 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlRequest(const 
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, c.headers);
 	}
 
-	CURLcode res;
-	for (int retry = 0; retry < 3; retry++)
+	CURLcode res = curl_easy_perform(curl);
+
+	if (res == CURLcode::CURLE_OK)
 	{
-		res = curl_easy_perform(curl);
-		if (res == CURLcode::CURLE_OK)
-		{
-			break;
-		}
+		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &retVal.responseCode);
 	}
-	if (res != CURLcode::CURLE_OK)
+	else if (res == CURLcode::CURLE_OPERATION_TIMEDOUT)
+	{
+		retVal.responseCode = 523; // Origin Is Unreachable
+	}
+	else
 	{
 		bbe::String error = "Error (urlRequest): ";
 		error += res;
+		error += " For URL: " + url;
 		bbe::Crash(bbe::Error::IllegalState, error.getRaw());
 	}
 
 	if (addTrailingNul)	retVal.dataContainer.add('\0');
-
-	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &retVal.responseCode);
 
 	return retVal;
 }
@@ -169,19 +169,22 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlFile(
 
 	curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
 
-	CURLcode res;
-	for (int retry = 0; retry < 3; retry++)
+
+	CURLcode res = curl_easy_perform(curl);
+
+	if (res == CURLcode::CURLE_OK)
 	{
-		res = curl_easy_perform(curl);
-		if (res == CURLcode::CURLE_OK)
-		{
-			break;
-		}
+		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &retVal.responseCode);
 	}
-	if (res != CURLcode::CURLE_OK)
+	else if (res == CURLcode::CURLE_OPERATION_TIMEDOUT)
+	{
+		retVal.responseCode = 523; // Origin Is Unreachable
+	}
+	else
 	{
 		bbe::String error = "Error (urlFile): ";
 		error += res;
+		error += " For URL: " + url;
 		bbe::Crash(bbe::Error::IllegalState, error.getRaw());
 	}
 
