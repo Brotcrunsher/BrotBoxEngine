@@ -964,55 +964,58 @@ public:
 		if (future.valid() && future.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 		{
 			auto contents = future.get();
-			bbe::String s;
-			s.append(contents.dataContainer.getRaw(), contents.dataContainer.getLength());
-
-			nlohmann::json j = nlohmann::json::parse(s.getRaw());
-
-			weatherEntries.clear();
-
-			weatherEntries.add(jsonToWeatherEntry(j["current_condition"][0], bbe::TimePoint()));
-
-			nlohmann::json& weather = j["weather"];
-
-			for (size_t i = 0; i < weather.size(); i++)
+			if (contents.responseCode == 200)
 			{
-				bbe::String dayString = weather[i]["date"].get<std::string>().c_str();
-				auto dayStringTokens = dayString.split("-");
-				if (dayStringTokens.getLength() != 3)
+				bbe::String s;
+				s.append(contents.dataContainer.getRaw(), contents.dataContainer.getLength());
+
+				nlohmann::json j = nlohmann::json::parse(s.getRaw());
+
+				weatherEntries.clear();
+
+				weatherEntries.add(jsonToWeatherEntry(j["current_condition"][0], bbe::TimePoint()));
+
+				nlohmann::json& weather = j["weather"];
+
+				for (size_t i = 0; i < weather.size(); i++)
 				{
-					static bool lengthWarningPrinted = false;
-					if (!lengthWarningPrinted)
+					bbe::String dayString = weather[i]["date"].get<std::string>().c_str();
+					auto dayStringTokens = dayString.split("-");
+					if (dayStringTokens.getLength() != 3)
 					{
-						lengthWarningPrinted = true;
-						BBELOGLN("Warning: Weather reported " << dayStringTokens.getLength() << "tokens!");
+						static bool lengthWarningPrinted = false;
+						if (!lengthWarningPrinted)
+						{
+							lengthWarningPrinted = true;
+							BBELOGLN("Warning: Weather reported " << dayStringTokens.getLength() << "tokens!");
+						}
+						continue;
 					}
-					continue;
-				}
-				bool onlyNumbers = true;
-				for (size_t i = 0; i < dayStringTokens.getLength(); i++)
-				{
-					if (!dayStringTokens[i].isNumber())
+					bool onlyNumbers = true;
+					for (size_t i = 0; i < dayStringTokens.getLength(); i++)
 					{
-						onlyNumbers = false;
-						break;;
+						if (!dayStringTokens[i].isNumber())
+						{
+							onlyNumbers = false;
+							break;;
+						}
 					}
-				}
-				if (!onlyNumbers)
-				{
-					static bool notANumberWarningPrinted = false;
-					if (!notANumberWarningPrinted)
+					if (!onlyNumbers)
 					{
-						notANumberWarningPrinted = true;
-						BBELOGLN("Warning: Weather reported a non number in date!");
+						static bool notANumberWarningPrinted = false;
+						if (!notANumberWarningPrinted)
+						{
+							notANumberWarningPrinted = true;
+							BBELOGLN("Warning: Weather reported a non number in date!");
+						}
+						continue;
 					}
-					continue;
-				}
-				bbe::TimePoint day = bbe::TimePoint::fromDate(dayStringTokens[0].toLong(), dayStringTokens[1].toLong(), dayStringTokens[2].toLong());
-				nlohmann::json& hourly = weather[i]["hourly"];
-				for (size_t k = 0; k < hourly.size(); k++)
-				{
-					weatherEntries.add(jsonToWeatherEntry(hourly[k], day));
+					bbe::TimePoint day = bbe::TimePoint::fromDate(dayStringTokens[0].toLong(), dayStringTokens[1].toLong(), dayStringTokens[2].toLong());
+					nlohmann::json& hourly = weather[i]["hourly"];
+					for (size_t k = 0; k < hourly.size(); k++)
+					{
+						weatherEntries.add(jsonToWeatherEntry(hourly[k], day));
+					}
 				}
 			}
 		}
