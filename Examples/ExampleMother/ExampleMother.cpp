@@ -37,6 +37,7 @@
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
 //TODO: Talk to GPT: Only send if clip is actually long enough. 0.3 seconds?
 //TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
+//TODO: Sound system completely died for some reason. The amount of playing sounds was increasing but nothing could be heard. Reproduce: Turn off headset, start reading news.
 
 //TODO: Show average driving time
 
@@ -971,16 +972,20 @@ public:
 			future = bbe::simpleUrlRequest::urlRequestAsync("https://wttr.in/" + weatherConfig->city + "?format=j1");
 		}
 
+		static bbe::String errorString;
 		if (future.valid() && future.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 		{
 			auto contents = future.get();
-			if (contents.responseCode == 200)
+			if (contents.responseCode != 200)
 			{
+				errorString = bbe::String("Error Response Code: ") + contents.responseCode;
+			}
+			else
+			{
+				bbe::String s;
+				s.append(contents.dataContainer.getRaw(), contents.dataContainer.getLength());
 				try
 				{
-					bbe::String s;
-					s.append(contents.dataContainer.getRaw(), contents.dataContainer.getLength());
-
 					nlohmann::json j = nlohmann::json::parse(s.getRaw());
 
 					weatherEntries.clear();
@@ -1029,12 +1034,18 @@ public:
 							weatherEntries.add(jsonToWeatherEntry(hourly[k], day));
 						}
 					}
+					errorString = "";
 				}
 				catch (const nlohmann::json::parse_error& e)
 				{
-					// Do nothing... Worst that happens is that we don't show the weather :)
+					errorString = bbe::String("Failed to interpret json: ") + contents.dataContainer.getRaw();
 				}
 			}
+		}
+
+		if (!errorString.isEmpty())
+		{
+			brush.fillText(offset, errorString);
 		}
 
 		if (weatherEntries.getLength() > 0)
