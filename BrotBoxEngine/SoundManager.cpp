@@ -97,8 +97,10 @@ namespace eh /* = error handled */
 		{
 			bbe::String msg = "SoundManager crashed. Function: ";
 			msg += funcName;
-			msg += "Variables: ";
+			msg += " Variables: ";
 			buildErrorString(msg, ts...);
+			msg += " Error: ";
+			msg += err;
 			bbe::Crash(bbe::Error::IllegalState, msg.getRaw());
 		}
 	}
