@@ -22,6 +22,7 @@
 #include "BBE/ChatGPTComm.h"
 #include "BBE/Microphone.h"
 #include "BBE/SoundGenerator.h"
+#include "BBE/SoundManager.h"
 
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
@@ -2305,7 +2306,7 @@ public:
 				ImGui::EndDisabled();
 
 				ImGui::NewLine();
-				ImGui::Text("Playing sounds: %d", (int)getAmountOfPlayingSounds());
+				ImGui::Text("Playing sounds: %d, Heartbeat: %lld", (int)getAmountOfPlayingSounds(), bbe::INTERNAL::SoundManager::getHeartbeatSignal());
 				drawMeasurement();
 			}
 			ImGui::End();

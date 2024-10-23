@@ -57,6 +57,8 @@ struct SetPositionRequest
 static bbe::WriterReaderBuffer<SetPositionRequest, 1024> setPositionRequests;
 static auto setPositionRequestsReader = setPositionRequests.reader();
 
+static std::atomic_int64_t heartbeat;
+
 struct PlayRequest
 {
 	uint64_t index = 0;
@@ -431,6 +433,8 @@ static bool initSoundSystem()
 
 static void updateSoundSystem()
 {
+	heartbeat++;
+
 	{
 		while(setPositionRequestsReader.hasNext())
 		{
@@ -758,6 +762,11 @@ void bbe::INTERNAL::SoundManager::setSoundListener(const bbe::Vector3& pos, cons
 size_t bbe::INTERNAL::SoundManager::getAmountOfPlayingSounds() const
 {
 	return playingIds.getLength();
+}
+
+int64_t bbe::INTERNAL::SoundManager::getHeartbeatSignal()
+{
+	return heartbeat;
 }
 
 void bbe::INTERNAL::SoundManager::update()

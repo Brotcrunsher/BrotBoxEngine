@@ -46,6 +46,8 @@ namespace bbe
 			void setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection);
 
 			size_t getAmountOfPlayingSounds() const;
+
+			static int64_t getHeartbeatSignal();
 		};
 	}
 }
