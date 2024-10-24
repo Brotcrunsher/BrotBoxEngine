@@ -391,13 +391,13 @@ static void refreshBuffers()
 	}
 }
 
-static bool initSoundSystem()
+static bool initSoundSystem(bool logErrors)
 {
 	restartCycle++;
 	device = alcOpenDevice(nullptr);
 	if (!device)
 	{
-		BBELOGLN("Could not init Sound Manager! Device was null.");
+		if(logErrors) BBELOGLN("Could not init Sound Manager! Device was null.");
 		return false;
 	}
 	ALCcontext* context = alcCreateContext(device, nullptr);
@@ -405,13 +405,13 @@ static bool initSoundSystem()
 	{
 		if (context) alcDestroyContext(context);
 		alcCloseDevice(device);
-		BBELOGLN("Could not init Sound Manager! Failed to create context.");
+		if (logErrors) BBELOGLN("Could not init Sound Manager! Failed to create context.");
 		return false;
 	}
 
 	if (!alIsExtensionPresent("AL_EXT_float32"))
 	{
-		BBELOGLN("Could not init Sound Manager! AL_EXT_float32 not present.");
+		if (logErrors) BBELOGLN("Could not init Sound Manager! AL_EXT_float32 not present.");
 		destroySoundSystem();
 		return false;
 	}
@@ -424,7 +424,7 @@ static bool initSoundSystem()
 	ALenum err = alGetError();
 	if (err != ALC_NO_ERROR)
 	{
-		BBELOGLN("Something went wrong when creating a ALSource! " << err);
+		if (logErrors) BBELOGLN("Something went wrong when creating a ALSource! " << err);
 		return false;
 	}
 
@@ -567,14 +567,27 @@ static bool isEndRequested()
 	return endRequested;
 }
 
+static void initSoundSystemLoop()
+{
+	bool firstTry = true;
+	while (!isEndRequested())
+	{
+		if (initSoundSystem(firstTry))
+		{
+			return;
+		}
+		firstTry = false; // Avoid getting spammed by repeating error messages.
+		destroySoundSystem();
+		// Failed to init. Let's retry in one second. Reason: It could have failed cause
+		// no device was connected to the computer, or something else has changed about
+		// the users setup in the meantime that was previously stopping us.
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+	}
+}
 
 static void innerSoundSystemMain()
 {
-	if (!initSoundSystem())
-	{
-		destroySoundSystem();
-		return;
-	}
+	initSoundSystemLoop();
 	while (!isEndRequested())
 	{
 		updateSoundSystem();
@@ -600,7 +613,7 @@ static void innerSoundSystemMain()
 			{
 				BBELOGLN("Failed to reopen device. Destroy and reinit instead.");
 				destroySoundSystem();
-				initSoundSystem();
+				initSoundSystemLoop();
 			}
 		}
 	}
