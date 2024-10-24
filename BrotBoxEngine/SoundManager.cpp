@@ -818,7 +818,7 @@ static void checkHr(HRESULT hr, const char* location)
 void bbe::INTERNAL::SoundManager::init()
 {
 #ifdef __EMSCRIPTEN__
-	initSoundSystem();
+	initSoundSystem(true);
 #else
 	soundSystemThread = std::thread(soundSystemMain);
 #ifdef WIN32
