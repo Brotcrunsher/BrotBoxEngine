@@ -197,15 +197,27 @@ struct DallEConfig
 struct MouseWallConfig
 {
 	BBE_SERIALIZABLE_DATA(
-		((int32_t), x, 0),
-		((int32_t), thickness, 50),
-		((bool), left, false), // Not yet implemented
-		((bool), right, false) // Not yet implemented
+		((bool), active, false),
+		((int32_t), x1, 0),
+		((int32_t), y1, 0),
+		((int32_t), x2, 5760),
+		((int32_t), y2, 2062),
+		((float), borderBreakSeconds, 0.5f)
 	)
 
-	bool mouseIsLeft = false;
-	bbe::TimePoint nextRegen;
-	int32_t damage = 0;
+	bool isMouseInArea(int32_t mouseX, int32_t mouseY) const
+	{
+		return mouseX > x1 && mouseX < x2 - 1
+			&& mouseY > y1 && mouseY < y2 - 1;
+	}
+
+	bool isMouseOnBorder(int32_t mouseX, int32_t mouseY) const
+	{
+		return mouseX == x1 || mouseY == y1 || mouseX == x2 - 1 || mouseY == y2 - 1;
+	}
+
+	bool mouseTrapped = false;
+	float timeOnBorder = 0.0f;
 };
 
 enum class IconCategory
@@ -251,7 +263,7 @@ private:
 	bbe::SerializableList<NewsConfig> newsConfig                = bbe::SerializableList<NewsConfig>       ("NewsConfig.dat",          "ParanoiaConfig");
 	bbe::SerializableList<NewsEntry> readNews                   = bbe::SerializableList<NewsEntry>        ("ReadNews.dat",            "ParanoiaConfig");
 	bbe::SerializableObject<DallEConfig> dallEConfig            = bbe::SerializableObject<DallEConfig>    ("DallEConfig.dat",         "ParanoiaConfig");
-	bbe::SerializableList<MouseWallConfig> mouseWallConfig      = bbe::SerializableList<MouseWallConfig>  ("MouseWallConfig.dat",     "ParanoiaConfig");
+	bbe::SerializableObject<MouseWallConfig> mouseWallConfig    = bbe::SerializableObject<MouseWallConfig>("MouseWallConfig.dat",     "ParanoiaConfig");
 
 	bbe::ChatGPTComm chatGPTComm; // ChatGPT communication object
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
@@ -566,31 +578,33 @@ public:
 		}
 
 		beginMeasure("Mouse Wall");
-		bbe::Vector2 globalMouse = getMouseGlobal();
-		for (size_t i = 0; i < mouseWallConfig.getLength(); i++)
+		if (mouseWallConfig->active)
 		{
-			if (globalMouse.x == mouseWallConfig[i].x) continue;
-			const bool mouseIsLeft = globalMouse.x < mouseWallConfig[i].x;
-			if (mouseIsLeft != mouseWallConfig[i].mouseIsLeft)
+			bbe::Vector2 globalMouse = getMouseGlobal();
+			if (mouseWallConfig->mouseTrapped)
 			{
-				int32_t newDamage = 0;
-				if (mouseIsLeft) newDamage = mouseWallConfig[i].x - globalMouse.x;
-				else             newDamage = globalMouse.x - mouseWallConfig[i].x;
-
-				mouseWallConfig[i].damage += newDamage;
-				if (mouseWallConfig[i].damage > mouseWallConfig[i].thickness)
+				::RECT clipArea = { mouseWallConfig->x1, mouseWallConfig->y1, mouseWallConfig->x2, mouseWallConfig->y2 };
+				::ClipCursor(&clipArea);
+				if (mouseWallConfig->isMouseOnBorder(globalMouse.x, globalMouse.y))
 				{
-					mouseWallConfig[i].mouseIsLeft = !mouseWallConfig[i].mouseIsLeft;
+					mouseWallConfig->timeOnBorder += timeSinceLastFrame;
+					if (mouseWallConfig->timeOnBorder > mouseWallConfig->borderBreakSeconds)
+					{
+						mouseWallConfig->mouseTrapped = false;
+					}
 				}
 				else
 				{
-					setMouseGlobal(mouseWallConfig[i].x, globalMouse.y);
+					mouseWallConfig->timeOnBorder = 0.0f;
 				}
-				mouseWallConfig[i].nextRegen = bbe::TimePoint().plusSeconds(2);
 			}
-			if (mouseWallConfig[i].nextRegen.hasPassed())
+			else
 			{
-				mouseWallConfig[i].damage = 0;
+				::ClipCursor(nullptr);
+				if (mouseWallConfig->isMouseInArea(globalMouse.x, globalMouse.y))
+				{
+					mouseWallConfig->mouseTrapped = true;
+				}
 			}
 		}
 
@@ -619,6 +633,13 @@ public:
 			if (adafruitMacroPadRP2040.isKeyPressed(bbe::RP2040Key::BUTTON_5))
 			{
 				adaClipboardKey(3);
+			}
+
+			// Emergency Mouse trap button
+			if (adafruitMacroPadRP2040.isKeyPressed(bbe::RP2040Key::BUTTON_6))
+			{
+				mouseWallConfig->active = false;
+				::ClipCursor(NULL);
 			}
 		}
 		else
@@ -1275,38 +1296,18 @@ public:
 		bbe::Vector2 globalMouse = getMouseGlobal();
 		ImGui::Text("Global Mouse: %f/%f", globalMouse.x, globalMouse.y);
 
-		if (ImGui::Button("New Wall"))
-		{
-			mouseWallConfig.add(MouseWallConfig());
-		}
-
-		size_t deleteIndex = (size_t)-1;
 		bool requiresWrite = false;
-		for (size_t i = 0; i < mouseWallConfig.getLength(); i++)
-		{
-			ImGui::Separator();
-			ImGui::PushID(i);
 
-			requiresWrite |= ImGui::InputInt("X", &mouseWallConfig[i].x);
-			requiresWrite |= ImGui::InputInt("Thickness", &mouseWallConfig[i].thickness);
-			// Not yet implemented
-			//requiresWrite |= ImGui::Checkbox("Left", &mouseWallConfig[i].left);
-			//requiresWrite |= ImGui::Checkbox("Right", &mouseWallConfig[i].right);
-			ImGui::Text("Current Damage: %d", mouseWallConfig[i].damage);
+		requiresWrite |= ImGui::Checkbox("Active", &mouseWallConfig->active);
+		requiresWrite |= ImGui::InputInt("X1", &mouseWallConfig->x1);
+		requiresWrite |= ImGui::InputInt("Y1", &mouseWallConfig->y1);
+		requiresWrite |= ImGui::InputInt("X2", &mouseWallConfig->x2);
+		requiresWrite |= ImGui::InputInt("Y2", &mouseWallConfig->y2);
+		requiresWrite |= ImGui::InputFloat("borderBreakSeconds", &mouseWallConfig->borderBreakSeconds);
 
-			if (ImGui::Button("Delete"))
-			{
-				deleteIndex = i;
-			}
 
-			ImGui::PopID();
-
-		}
-
-		if (deleteIndex != (size_t)-1)
-		{
-			mouseWallConfig.removeIndex(deleteIndex);
-		}
+		ImGui::Text("mouseTrapped: %d", (int)mouseWallConfig->mouseTrapped);
+		ImGui::Text("timeOnBorder: %f", mouseWallConfig->timeOnBorder);
 
 		if (requiresWrite)
 		{
