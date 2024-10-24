@@ -514,6 +514,13 @@ float bbe::Game::getMouseYDelta()
 	return (float)(m_pwindow->INTERNAL_mouse.getMouseYDelta());
 }
 
+#ifdef WIN32
+void bbe::Game::setMouseGlobal(float x, float y) const
+{
+	::SetCursorPos(x, y);
+}
+#endif
+
 bbe::Vector2 bbe::Game::getMouseDelta()
 {
 	return Vector2(getMouseXDelta(), getMouseYDelta());

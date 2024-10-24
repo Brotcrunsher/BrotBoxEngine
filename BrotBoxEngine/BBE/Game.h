@@ -116,6 +116,9 @@ namespace bbe
 		Vector2 getMouseGlobal() const;
 		float getMouseXDelta();
 		float getMouseYDelta();
+#ifdef WIN32
+		void setMouseGlobal(float x, float y) const;
+#endif
 		Vector2 getMouseDelta();
 		float getMouseScrollX();
 		float getMouseScrollY();

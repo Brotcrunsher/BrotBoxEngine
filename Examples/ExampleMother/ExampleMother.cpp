@@ -36,7 +36,6 @@
 //TODO: Ada functionality: Open a webbrowser and URL bla
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
-//TODO: Talk to GPT: Only send if clip is actually long enough. 0.3 seconds?
 //TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
 //TODO: Sound system completely died for some reason. The amount of playing sounds was increasing but nothing could be heard. Reproduce: Turn off headset, start reading news.
 
@@ -195,6 +194,20 @@ struct DallEConfig
 	)
 };
 
+struct MouseWallConfig
+{
+	BBE_SERIALIZABLE_DATA(
+		((int32_t), x, 0),
+		((int32_t), thickness, 50),
+		((bool), left, false), // Not yet implemented
+		((bool), right, false) // Not yet implemented
+	)
+
+	bool mouseIsLeft = false;
+	bbe::TimePoint nextRegen;
+	int32_t damage = 0;
+};
+
 enum class IconCategory
 {
 	NONE,
@@ -238,6 +251,7 @@ private:
 	bbe::SerializableList<NewsConfig> newsConfig                = bbe::SerializableList<NewsConfig>       ("NewsConfig.dat",          "ParanoiaConfig");
 	bbe::SerializableList<NewsEntry> readNews                   = bbe::SerializableList<NewsEntry>        ("ReadNews.dat",            "ParanoiaConfig");
 	bbe::SerializableObject<DallEConfig> dallEConfig            = bbe::SerializableObject<DallEConfig>    ("DallEConfig.dat",         "ParanoiaConfig");
+	bbe::SerializableList<MouseWallConfig> mouseWallConfig      = bbe::SerializableList<MouseWallConfig>  ("MouseWallConfig.dat",     "ParanoiaConfig");
 
 	bbe::ChatGPTComm chatGPTComm; // ChatGPT communication object
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
@@ -548,6 +562,35 @@ public:
 						serverDeadline = bbe::TimePoint().plusMinutes(5);
 					}
 				}
+			}
+		}
+
+		beginMeasure("Mouse Wall");
+		bbe::Vector2 globalMouse = getMouseGlobal();
+		for (size_t i = 0; i < mouseWallConfig.getLength(); i++)
+		{
+			if (globalMouse.x == mouseWallConfig[i].x) continue;
+			const bool mouseIsLeft = globalMouse.x < mouseWallConfig[i].x;
+			if (mouseIsLeft != mouseWallConfig[i].mouseIsLeft)
+			{
+				int32_t newDamage = 0;
+				if (mouseIsLeft) newDamage = mouseWallConfig[i].x - globalMouse.x;
+				else             newDamage = globalMouse.x - mouseWallConfig[i].x;
+
+				mouseWallConfig[i].damage += newDamage;
+				if (mouseWallConfig[i].damage > mouseWallConfig[i].thickness)
+				{
+					mouseWallConfig[i].mouseIsLeft = !mouseWallConfig[i].mouseIsLeft;
+				}
+				else
+				{
+					setMouseGlobal(mouseWallConfig[i].x, globalMouse.y);
+				}
+				mouseWallConfig[i].nextRegen = bbe::TimePoint().plusSeconds(2);
+			}
+			if (mouseWallConfig[i].nextRegen.hasPassed())
+			{
+				mouseWallConfig[i].damage = 0;
 			}
 		}
 
@@ -1227,6 +1270,52 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	bbe::Vector2 drawMouseWallsConfig()
+	{
+		bbe::Vector2 globalMouse = getMouseGlobal();
+		ImGui::Text("Global Mouse: %f/%f", globalMouse.x, globalMouse.y);
+
+		if (ImGui::Button("New Wall"))
+		{
+			mouseWallConfig.add(MouseWallConfig());
+		}
+
+		size_t deleteIndex = (size_t)-1;
+		bool requiresWrite = false;
+		for (size_t i = 0; i < mouseWallConfig.getLength(); i++)
+		{
+			ImGui::Separator();
+			ImGui::PushID(i);
+
+			requiresWrite |= ImGui::InputInt("X", &mouseWallConfig[i].x);
+			requiresWrite |= ImGui::InputInt("Thickness", &mouseWallConfig[i].thickness);
+			// Not yet implemented
+			//requiresWrite |= ImGui::Checkbox("Left", &mouseWallConfig[i].left);
+			//requiresWrite |= ImGui::Checkbox("Right", &mouseWallConfig[i].right);
+			ImGui::Text("Current Damage: %d", mouseWallConfig[i].damage);
+
+			if (ImGui::Button("Delete"))
+			{
+				deleteIndex = i;
+			}
+
+			ImGui::PopID();
+
+		}
+
+		if (deleteIndex != (size_t)-1)
+		{
+			mouseWallConfig.removeIndex(deleteIndex);
+		}
+
+		if (requiresWrite)
+		{
+			mouseWallConfig.writeToFile();
+		}
+
+		return bbe::Vector2(1);
+	}
+
 	bbe::String extractInfoFromXmlElement(const tinyxml2::XMLElement* element, const bbe::String& path)
 	{
 		const size_t ats = path.count("@");
@@ -1718,8 +1807,8 @@ public:
 				{
 					brush.setColorRGB(0.3f, 0.3f, 0.3f, 1);
 				}
-				brush.sketchRect(5 - 2 + k * 23, 5 + i * 30, 20, 20);
-				brush.fillText(15 - 2 + k * 23, 20 + i * 30, bbe::String(k), 20, bbe::Anchor::BOTTOM_CENTER);
+				brush.sketchRect( -9 + k * 19, 5 + i * 30, 15, 15);
+				brush.fillText(3 - 4 + k * 19, 16 + i * 30, bbe::String(k), 15, bbe::Anchor::BOTTOM_CENTER);
 			}
 		}
 
@@ -2382,6 +2471,7 @@ public:
 				//Tab{"Mic",       "Microphone Test",[&]() { return drawMicrophoneTest(); }},
 				//Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
 				Tab{"ENews",     "Edit News",      [&]() { return drawNewsConfig(); }},
+				Tab{"MW",        "Mouse Walls",    [&]() { return drawMouseWallsConfig(); }},
 				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
 				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
 			};
