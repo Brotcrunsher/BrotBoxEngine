@@ -2432,10 +2432,20 @@ public:
 		const float adaptiveMaxSize = adaptiveFlipSize - 400 * getWindow()->getScale();
 
 		bool adaptive = false;
+		bool superAdaptive = false;
+		float adaptiveWidth = 0.0f;
 		if (viewport.WorkSize.x > adaptiveFlipSize && !fullscreenTab)
 		{
 			viewport.WorkSize.x = adaptiveMaxSize;
+
+			adaptiveWidth = fullViewport.WorkSize.x - viewport.WorkSize.x - infoViewport.WorkSize.x;
 			adaptive = true;
+
+			if (adaptiveWidth > 1700.f)
+			{
+				adaptiveWidth *= 0.5f;
+				superAdaptive = true;
+			}
 		}
 
 		ImGui::SetNextWindowPos(viewport.WorkPos);
@@ -2448,6 +2458,11 @@ public:
 			Tab{"BTC",       "Bitcoin",        [&]() { return drawBitcoin(); }},
 			Tab{"Wthr",      "Weather",        [&]() { return drawWeather(brush, weatherOffset); }},
 			Tab{"VNews",     "View News",      [&]() { return drawNews(); }},
+		};
+
+		bbe::List<Tab> superAdaptiveTabs =
+		{
+			Tab{"Hstry",     "History",        [&]() { return tasks.drawTabHistoryView(); }},
 		};
 
 		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | (previousTab.title == bbe::String("Cnsl") ? ImGuiWindowFlags_NoScrollWithMouse : 0));
@@ -2474,11 +2489,14 @@ public:
 				Tab{"MW",        "Mouse Walls",    [&]() { return drawMouseWallsConfig(); }},
 				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
 				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
-				Tab{"Hstry",     "History",        [&]() { return tasks.drawTabHistoryView(); }},
 			};
 			if (!adaptive)
 			{
 				tabs.addList(adaptiveTabs);
+			}
+			if (!superAdaptive)
+			{
+				tabs.addList(superAdaptiveTabs);
 			}
 			static size_t previousShownTab = 0;
 			DrawTabResult dtr = drawTabs(tabs, &previousShownTab, tabSwitchRequestedLeft, tabSwitchRequestedRight);
@@ -2503,8 +2521,7 @@ public:
 				bbe::String name = "Adaptive Window: ";
 				name += i;
 				ImGuiViewport adaptiveViewport = fullViewport;
-				adaptiveViewport.WorkSize.x -= viewport.WorkSize.x;
-				adaptiveViewport.WorkSize.x -= infoViewport.WorkSize.x;
+				adaptiveViewport.WorkSize.x = adaptiveWidth;
 				adaptiveViewport.WorkSize.y /= adaptiveTabs.getLength();
 				adaptiveViewport.WorkPos.x = viewport.WorkSize.x;
 				adaptiveViewport.WorkPos.y = fullViewport.WorkSize.y * i / adaptiveTabs.getLength();
@@ -2523,6 +2540,39 @@ public:
 				ImGui::Begin(name.getRaw(), 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | (previousTab.title == bbe::String("Cnsl") ? ImGuiWindowFlags_NoScrollWithMouse : 0));
 				{
 					adaptiveSizes[i] = adaptiveTabs[i].run();
+				}
+				ImGui::End();
+			}
+		}
+		beginMeasure("Draw super adaptive windows");
+		if (superAdaptive)
+		{
+			static bbe::List<bbe::Vector2> adaptiveSizes;
+			adaptiveSizes.resizeCapacityAndLength(superAdaptiveTabs.getLength());
+			for (size_t i = 0; i < superAdaptiveTabs.getLength(); i++)
+			{
+				bbe::String name = "Super Adaptive Window: ";
+				name += i;
+				ImGuiViewport adaptiveViewport = fullViewport;
+				adaptiveViewport.WorkSize.x = adaptiveWidth;
+				adaptiveViewport.WorkSize.y /= superAdaptiveTabs.getLength();
+				adaptiveViewport.WorkPos.x = viewport.WorkSize.x + adaptiveWidth;
+				adaptiveViewport.WorkPos.y = fullViewport.WorkSize.y * i / superAdaptiveTabs.getLength();
+				if (i == 1)
+				{
+					weatherOffset = bbe::Vector2(adaptiveViewport.WorkPos.x, adaptiveViewport.WorkPos.y);
+					weatherOffset /= getWindow()->getScale();
+					weatherOffset.x += 10;
+					weatherOffset.y += 60;
+				}
+
+				adaptiveViewport.WorkSize.x *= adaptiveSizes[i].x;
+				adaptiveViewport.WorkSize.y *= adaptiveSizes[i].y;
+				ImGui::SetNextWindowPos(adaptiveViewport.WorkPos);
+				ImGui::SetNextWindowSize(adaptiveViewport.WorkSize);
+				ImGui::Begin(name.getRaw(), 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | (previousTab.title == bbe::String("Cnsl") ? ImGuiWindowFlags_NoScrollWithMouse : 0));
+				{
+					adaptiveSizes[i] = superAdaptiveTabs[i].run();
 				}
 				ImGui::End();
 			}
