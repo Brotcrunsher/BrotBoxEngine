@@ -131,6 +131,7 @@ public:
 	bool drawEditableTask(Task& t);
 	bbe::Vector2 drawTabViewTasks(float scale);
 	bbe::Vector2 drawTabEditTasks();
+	bbe::Vector2 drawTabHistoryView();
 
 	void drawUndoRedoButtons();
 

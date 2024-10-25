@@ -37,7 +37,6 @@
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
 //TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
-//TODO: Sound system completely died for some reason. The amount of playing sounds was increasing but nothing could be heard. Reproduce: Turn off headset, start reading news.
 
 //TODO: Show average driving time
 
@@ -2475,6 +2474,7 @@ public:
 				Tab{"MW",        "Mouse Walls",    [&]() { return drawMouseWallsConfig(); }},
 				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
 				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
+				Tab{"Hstry",     "History",        [&]() { return tasks.drawTabHistoryView(); }},
 			};
 			if (!adaptive)
 			{

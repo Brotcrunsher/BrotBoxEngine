@@ -780,6 +780,41 @@ bbe::Vector2 SubsystemTask::drawTabEditTasks()
 	return bbe::Vector2(1);
 }
 
+bbe::Vector2 SubsystemTask::drawTabHistoryView()
+{
+	bbe::List<bbe::String> historyTitles;
+	bbe::List<size_t> historyIndices;
+	for (size_t i = 0; i < tasks.getLength(); i++)
+	{
+		if (tasks[i].inputType == (int32_t)Task::IT_FLOAT)
+		{
+			historyIndices.add(i);
+			historyTitles.add(tasks[i].title);
+		}
+	}
+
+	if (historyTitles.getLength() > 0)
+	{
+		static int32_t selection = 0;
+		ImGui::bbe::combo("History Selection", historyTitles, selection);
+
+		const bbe::List<float>& history = tasks[historyIndices[selection]].history;
+		bbe::List<float> time;
+		for (size_t i = 0; i < history.getLength(); i++)
+		{
+			time.add((float)i);
+		}
+
+		if (ImPlot::BeginPlot("History", { -1, 250 })) {
+			ImPlot::SetupAxes("Time", "Value");
+			ImPlot::PlotLine("History", time.getRaw(), history.getRaw(), time.getLength());
+			ImPlot::EndPlot();
+		}
+	}
+
+	return bbe::Vector2(1);
+}
+
 void SubsystemTask::drawUndoRedoButtons()
 {
 	ImGui::BeginDisabled(!tasks.canUndo());
