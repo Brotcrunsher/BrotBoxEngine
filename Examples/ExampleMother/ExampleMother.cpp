@@ -1173,12 +1173,18 @@ public:
 			ImGui::Text("Current Price: $%.2f", prices.last());
 			
 			static double dollar = 0.0f;
-			const bool dollarChanged = ImGui::InputDouble("Dollar", &dollar);
+			static bbe::TimePoint nextDollarClear;
+			const bool dollarChanged = ImGui::InputDouble("Dollar", &dollar, 0.0, 0.0, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
 			const bbe::String toBtc = bbe::String(dollar / prices.last(), 8);
 			ImGui::Text("BTC: " + toBtc);
 			if (dollarChanged)
 			{
 				setClipboard(toBtc);
+				nextDollarClear = bbe::TimePoint().plusSeconds(20);
+			}
+			if (nextDollarClear.hasPassed())
+			{
+				dollar = 0.0f;
 			}
 		}
 		return bbe::Vector2(1);
