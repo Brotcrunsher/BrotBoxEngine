@@ -1172,6 +1172,14 @@ public:
 			}
 			ImGui::Text("Current Price: $%.2f", prices.last());
 			
+			static double dollar = 0.0f;
+			const bool dollarChanged = ImGui::InputDouble("Dollar", &dollar);
+			const bbe::String toBtc = bbe::String(dollar / prices.last(), 8);
+			ImGui::Text("BTC: " + toBtc);
+			if (dollarChanged)
+			{
+				setClipboard(toBtc);
+			}
 		}
 		return bbe::Vector2(1);
 	}
