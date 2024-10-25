@@ -798,7 +798,8 @@ bbe::Vector2 SubsystemTask::drawTabHistoryView()
 		static int32_t selection = 0;
 		ImGui::bbe::combo("History Selection", historyTitles, selection);
 
-		const bbe::List<float>& history = tasks[historyIndices[selection]].history;
+		const Task& task = tasks[historyIndices[selection]];
+		const bbe::List<float>& history = task.history;
 		bbe::List<float> time;
 		for (size_t i = 0; i < history.getLength(); i++)
 		{
@@ -807,7 +808,7 @@ bbe::Vector2 SubsystemTask::drawTabHistoryView()
 
 		if (ImPlot::BeginPlot("History", { -1, 250 })) {
 			ImPlot::SetupAxes("Time", "Value");
-			ImPlot::PlotLine("History", time.getRaw(), history.getRaw(), time.getLength());
+			ImPlot::PlotLine(task.title.getRaw(), time.getRaw(), history.getRaw(), time.getLength());
 			ImPlot::EndPlot();
 		}
 	}
