@@ -49,11 +49,11 @@ namespace bbe
 		/*nonexplicit*/ Utf8String(const wchar_t* data);
 		explicit Utf8String(const std::string& data);
 		explicit Utf8String(char               c);
-		explicit Utf8String(double             number);
+		explicit Utf8String(double             number, int32_t precision = 6);
 		explicit Utf8String(int                number);
 		explicit Utf8String(long long          number);
 		explicit Utf8String(long double        number);
-		explicit Utf8String(float              number);
+		explicit Utf8String(float              number, int32_t precision = 6);
 		explicit Utf8String(unsigned long long number);
 		explicit Utf8String(unsigned long      number);
 		explicit Utf8String(long               number);

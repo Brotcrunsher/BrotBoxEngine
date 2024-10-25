@@ -5,6 +5,7 @@
 #include <string>
 #include <codecvt>
 #include <locale>
+#include <sstream>
 #include "stdarg.h"
 #include "BBE/Utf8Helpers.h"
 
@@ -39,10 +40,13 @@ bbe::Utf8String::Utf8String(char c)
 	initializeFromCharArr(arr);
 }
 
-bbe::Utf8String::Utf8String(double number)
+bbe::Utf8String::Utf8String(double number, int32_t precision)
 {
 	//UNTESTED
-	initializeFromCharArr(std::to_string(number).c_str());
+	std::ostringstream stream;
+	stream.precision(precision);
+	stream << std::fixed << number;
+	initializeFromCharArr(stream.str().c_str());
 }
 
 bbe::Utf8String::Utf8String(int number)
@@ -63,10 +67,13 @@ bbe::Utf8String::Utf8String(long double number)
 	initializeFromCharArr(std::to_string(number).c_str());
 }
 
-bbe::Utf8String::Utf8String(float number)
+bbe::Utf8String::Utf8String(float number, int32_t precision)
 {
 	//UNTESTED
-	initializeFromCharArr(std::to_string(number).c_str());
+	std::ostringstream stream;
+	stream.precision(precision);
+	stream << std::fixed << number;
+	initializeFromCharArr(stream.str().c_str());
 }
 
 bbe::Utf8String::Utf8String(unsigned long long number)
