@@ -73,6 +73,12 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 #ifdef BBE_RENDERER_OPENGL
 	glfwWrapper::glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWrapper::glfwWindowHint(GLFW_SAMPLES, 4);
+#ifdef __APPLE__
+	glfwWrapper::glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWrapper::glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+	glfwWrapper::glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWrapper::glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
 #endif
 	//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 #ifndef __EMSCRIPTEN__
