@@ -127,10 +127,10 @@ namespace bbe
 		float getTimeSinceStartSeconds();
 		float getTimeSinceStartMilliseconds(); 
 
-		int getWindowWidth();
-		int getScaledWindowWidth();
-		int getWindowHeight();
-		int getScaledWindowHeight();
+		int getWindowWidth() const;
+		int getScaledWindowWidth() const;
+		int getWindowHeight() const;
+		int getScaledWindowHeight() const;
 
 		uint64_t getAmountOfFrames();
 		float getAverageFrameTime();

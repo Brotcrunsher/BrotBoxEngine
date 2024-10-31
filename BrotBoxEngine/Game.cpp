@@ -7,6 +7,7 @@
 #include "BBE/StopWatch.h"
 #include "BBE/SimpleFile.h"
 #include <iostream>
+#include <exception>
 #include "implot.h"
 #include "BBE/ImGuiExtensions.h"
 #include "BBE/Logging.h"
@@ -192,6 +193,12 @@ LONG WINAPI UnhandledVectoredExceptionHandler(EXCEPTION_POINTERS* exceptionPoint
 	// Within the BBE, this is used by OpenAL.
 	if (exceptionPointers->ExceptionRecord->ExceptionCode == 0x406d1388) return EXCEPTION_CONTINUE_SEARCH;
 
+	// 0x4001000A stands for DBG_PRINTEXCEPTION_WIDE_C, which is raised to output debug strings. In practice this was called
+	// by """something""" while the MSVC profiler was running. This certainly shouldn't lead to a crash.
+	if (exceptionPointers->ExceptionRecord->ExceptionCode == 0x4001000A) return EXCEPTION_CONTINUE_SEARCH;
+	// 0x40010006 is similar to 0x4001000A. Stands for DBG_PRINTEXCEPTION_C.
+	if (exceptionPointers->ExceptionRecord->ExceptionCode == 0x40010006) return EXCEPTION_CONTINUE_SEARCH;
+
 	// 0xE06D7363 stands for a C++ Exception. Such are handled with try/catch blocks and should not necessarily cause a crash.
 	if (exceptionPointers->ExceptionRecord->ExceptionCode == 0xE06D7363) return EXCEPTION_CONTINUE_SEARCH;
 
@@ -208,6 +215,11 @@ LONG WINAPI UnhandledVectoredExceptionHandler(EXCEPTION_POINTERS* exceptionPoint
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 #endif
+
+static void terminateHandler()
+{
+	bbe::Crash(bbe::Error::Terminate);
+}
 
 void bbe::Game::innerStart(int windowWidth, int windowHeight, const char* title)
 {
@@ -228,6 +240,8 @@ void bbe::Game::innerStart(int windowWidth, int windowHeight, const char* title)
 		}
 	}
 #endif
+	std::set_terminate(&terminateHandler);
+
 	signal(SIGSEGV, segvHandler);
 
 	BBELOGLN("Starting Game: " << title);
@@ -551,22 +565,22 @@ float bbe::Game::getTimeSinceStartMilliseconds()
 	return m_gameTime.timeSinceStartMilliseconds();
 }
 
-int bbe::Game::getWindowWidth()
+int bbe::Game::getWindowWidth() const
 {
 	return m_pwindow->getWidth();
 }
 
-int bbe::Game::getScaledWindowWidth()
+int bbe::Game::getScaledWindowWidth() const
 {
 	return m_pwindow->getScaledWidth();
 }
 
-int bbe::Game::getWindowHeight()
+int bbe::Game::getWindowHeight() const
 {
 	return m_pwindow->getHeight();
 }
 
-int bbe::Game::getScaledWindowHeight()
+int bbe::Game::getScaledWindowHeight() const
 {
 	return m_pwindow->getScaledHeight();
 }

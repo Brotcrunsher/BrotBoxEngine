@@ -39,6 +39,7 @@ const char* bbe::toString(Error err)
 	TO_STR(UnhandledException   );
 	TO_STR(VectoredException    );
 	TO_STR(DebugBreakInRelease  );
+	TO_STR(Terminate            );
 #undef TO_STR
 
 	return "Missing translation";

@@ -31,6 +31,7 @@ namespace bbe
 		UnhandledException    = 23000,
 		VectoredException     = 24000,
 		DebugBreakInRelease   = 25000,
+		Terminate             = 26000,
 	};
 	const char* toString(Error err);
 
