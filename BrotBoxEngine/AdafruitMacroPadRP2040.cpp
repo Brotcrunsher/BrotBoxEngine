@@ -112,7 +112,7 @@ bool bbe::AdafruitMacroPadRP2040::connect()
                         deviceFound = true;
                         this->winHandle = deviceHandle;
                         threadRunning = true;
-                        thread = std::thread(&AdafruitMacroPadRP2040::threadMain, this);
+                        thread = std::jthread(&AdafruitMacroPadRP2040::threadMain, this);
                         break;
                     }
                 }

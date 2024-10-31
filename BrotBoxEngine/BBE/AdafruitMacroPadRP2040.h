@@ -48,7 +48,7 @@ namespace bbe
 		HANDLE winHandle = nullptr;
 		HANDLE stopEvent = nullptr;
 
-		std::thread thread;
+		std::jthread thread;
 		void threadMain();
 
 		std::array<bool, (size_t)RP2040Key::BUTTON_LAST + 1> keyDown = {};
