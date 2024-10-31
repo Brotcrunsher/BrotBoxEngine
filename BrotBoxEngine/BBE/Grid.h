@@ -131,6 +131,12 @@ namespace bbe
 			return operator[](access.x)[access.y];
 		}
 
+		bool isValidIndex(const bbe::Vector2i& access) const
+		{
+			return access.x >= 0 && access.x < getWidth()
+				&& access.y >= 0 && access.y < getHeight();
+		}
+
 		size_t getWidth() const
 		{
 			return m_width;

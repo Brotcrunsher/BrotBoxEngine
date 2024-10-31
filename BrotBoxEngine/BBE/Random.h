@@ -118,6 +118,11 @@ namespace bbe {
 			}
 		}
 
+		Vector2 randomVector2OnUnitSphere()
+		{
+			return Vector2(1, 0).rotate(randomFloat() * bbe::Math::TAU);
+		}
+
 		Vector4 randomVector4()
 		{
 			//UNTESTED

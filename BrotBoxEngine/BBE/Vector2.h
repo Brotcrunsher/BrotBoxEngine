@@ -307,6 +307,10 @@ namespace bbe
 		{
 			return (operator-(other)).getLength();
 		}
+		T getDistanceToSq(const Vector2_t<T>& other) const
+		{
+			return (operator-(other)).getLengthSq();
+		}
 		T getDistanceTo(T x, T y) const
 		{
 			return getDistanceTo(Vector2_t<T>(x, y));
