@@ -60,7 +60,12 @@ Block mergeBlocks(const Block& a, const Block& b)
 	return Block(mergeHeights(a.getHeight(), b.getHeight()));
 }
 
-bbe::List<bbe::Vector2i> path;
+struct PathElement
+{
+	bbe::Vector2i coords;
+	size_t nextElement = 0;
+};
+bbe::List<PathElement> path;
 
 class Tile
 {
@@ -248,7 +253,10 @@ public:
 		while (true)
 		{
 			visited[pos.x][pos.y] = true;
-			path.add(pos + base);
+			PathElement newElement;
+			newElement.coords = pos + base;
+			newElement.nextElement = path.getLength() > 0 ? path.getLength() - 1 : 0;
+			path.add(newElement);
 
 			     if (pos.x > 0            && grid[pos.x - 1][pos.y] == 0 && !visited[pos.x - 1][pos.y]) pos.x--;
 			else if (pos.x < gridSize - 1 && grid[pos.x + 1][pos.y] == 0 && !visited[pos.x + 1][pos.y]) pos.x++;
@@ -264,10 +272,11 @@ constexpr int32_t UNITS_PER_GRID_TILE = 1000;
 class Enemy
 {
 public:
-	int32_t distanceToGoal = 0;
+	int32_t currentPathIndex = 0;
+	int32_t pathElementTraveled = 0;
 	int32_t hue = 0;
 
-	Enemy() : distanceToGoal((path.getLength() - 1) * UNITS_PER_GRID_TILE - 1) 
+	Enemy() : currentPathIndex(path.getLength() - 1)
 	{
 		static int32_t nextHue = 0;
 		hue = nextHue;
@@ -276,27 +285,31 @@ public:
 
 	bbe::Vector2i getPosition() const
 	{
-		if (distanceToGoal < 0) return path[0];
+		if (currentPathIndex == 0 && pathElementTraveled >= UNITS_PER_GRID_TILE)
+		{
+			return path[0].coords;
+		}
 
-		const int32_t baseIndex = distanceToGoal / UNITS_PER_GRID_TILE;
-		const int32_t subIndex  = UNITS_PER_GRID_TILE - (distanceToGoal - baseIndex * UNITS_PER_GRID_TILE);
+		const bbe::Vector2i p1 = path[currentPathIndex].coords;
+		const bbe::Vector2i p2 = path[path[currentPathIndex].nextElement].coords;
+		const bbe::Vector2i d = p2 - p1;
 
-		const bbe::Vector2i p1 = path[baseIndex];
-		const bbe::Vector2i p2 = path[baseIndex + 1];
-		const bbe::Vector2i d = p1 - p2;
-
-		return p2 * UNITS_PER_GRID_TILE + d * subIndex;
+		return p1 * UNITS_PER_GRID_TILE + d * pathElementTraveled;
 	}
 
 	void tick()
 	{
-		distanceToGoal -= 15;
-		if (distanceToGoal < 0) distanceToGoal = 0;
+		pathElementTraveled += 15;
+		while (currentPathIndex != 0 && pathElementTraveled >= UNITS_PER_GRID_TILE)
+		{
+			currentPathIndex = path[currentPathIndex].nextElement;
+			pathElementTraveled -= UNITS_PER_GRID_TILE;
+		}
 	}
 
 	bool shouldDelete()
 	{
-		return distanceToGoal <= 0;
+		return currentPathIndex == 0 && pathElementTraveled >= UNITS_PER_GRID_TILE;
 	}
 };
 
@@ -409,11 +422,6 @@ class MyGame : public bbe::Game
 		{
 			for (int32_t k = -100; k < 100; k++)
 			{
-				if (i == 0 && k == 0)
-				{
-					// TODO remove
-					int a = 0;
-				}
 				brush.setColorRGB(heightToColor(map.observe(i, k).getHeight()));
 				brush.fillRect(i * 25 + cameraOffset.x, k * 25 + cameraOffset.y, 25, 25);
 			}
@@ -423,7 +431,7 @@ class MyGame : public bbe::Game
 		brush.setColorRGB(1, 1, 1);
 		for (size_t i = 1; i < path.getLength(); i++)
 		{
-			brush.fillLine(path[i].as<float>() * 25 + cameraOffset + bbe::Vector2(12.5f), path[i - 1].as<float>() * 25 + cameraOffset + bbe::Vector2(12.5f));
+			brush.fillLine(path[i].coords.as<float>() * 25 + cameraOffset + bbe::Vector2(12.5f), path[path[i].nextElement].coords.as<float>() * 25 + cameraOffset + bbe::Vector2(12.5f));
 		}
 
 		for (size_t i = 0; i < enemies.getLength(); i++)
