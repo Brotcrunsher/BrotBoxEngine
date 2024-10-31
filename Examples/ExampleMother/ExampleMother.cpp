@@ -1180,7 +1180,7 @@ public:
 			if (dollarChanged)
 			{
 				setClipboard(toBtc);
-				nextDollarClear = bbe::TimePoint().plusSeconds(20);
+				nextDollarClear = bbe::TimePoint().plusMinutes(2);
 			}
 			if (nextDollarClear.hasPassed())
 			{
