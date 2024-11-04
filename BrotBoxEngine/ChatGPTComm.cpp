@@ -206,7 +206,15 @@ bbe::String bbe::ChatGPTComm::describeImage(const bbe::String& url)
 	};
 	std::string description = sendRequest("https://api.openai.com/v1/chat/completions", keyCopy, json.dump(-1, ' ', false, nlohmann::detail::error_handler_t::ignore));
 	nlohmann::json responseJson = nlohmann::json::parse(description);
-	return responseJson["choices"][0]["message"]["content"].get<std::string>().c_str();
+	try
+	{
+		return responseJson["choices"][0]["message"]["content"].get<std::string>().c_str();
+	}
+	catch (...)
+	{
+		BBELOGLN(responseJson.dump());
+		bbe::Crash(bbe::Error::IllegalArgument, "See log msg");
+	}
 }
 
 std::future<bbe::String> bbe::ChatGPTComm::describeImageAsync(const bbe::String& url)
