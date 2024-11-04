@@ -3,6 +3,7 @@
 #include "BBE/SimpleProcess.h"
 #include "BBE/AdafruitMacroPadRP2040.h"
 #include <iostream>
+#include <mutex>
 #include <cmath>
 #define NOMINMAX
 // Need to link with Ws2_32.lib
@@ -234,12 +235,7 @@ BOOL CALLBACK MinimizeWindowCallback(HWND hwnd, LPARAM lParam) {
 	GetClassName(hwnd, className, sizeof(className));
 
 	if (strcmp(className, "Shell_TrayWnd") != 0 && strcmp(className, "Shell_SecondaryTrayWnd") != 0 && hwnd != (HWND)lParam && IsWindowVisible(hwnd)) {
-		BBELOGLN("Minimizing: " << className);
 		ShowWindow(hwnd, SW_MINIMIZE);
-	}
-	else
-	{
-		BBELOGLN("NOT Minimizing: " << className);
 	}
 	return TRUE;
 }
@@ -1164,36 +1160,17 @@ public:
 			}
 		}
 
-		static std::future<bbe::simpleUrlRequest::UrlRequestResult> requestFurutreMempool;
+		static std::mutex requestMutex;
 		static int32_t currentPriceMempool = 0;
 		EVERY_MINUTES(1)
 		{
-			requestFurutreMempool = bbe::simpleUrlRequest::urlRequestAsync("https://mempool.space/api/v1/prices");
-		}
-		if (requestFurutreMempool.valid() && requestFurutreMempool.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-		{
-			auto val = requestFurutreMempool.get();
-			if (val.responseCode == 200)
-			{
-				nlohmann::json json = nlohmann::json::parse(val.dataContainer.getRaw());
-				currentPriceMempool = json["USD"];
-			}
+			bbe::simpleUrlRequest::urlRequestJsonElementAsync(&currentPriceMempool, &requestMutex, "https://mempool.space/api/v1/prices", "USD");
 		}
 
-		static std::future<bbe::simpleUrlRequest::UrlRequestResult> requestFurutreBinance;
-		static int32_t currentPriceBinance = 0;
+		static std::string currentPriceBinance = "";
 		EVERY_MINUTES(1)
 		{
-			requestFurutreBinance = bbe::simpleUrlRequest::urlRequestAsync("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT");
-		}
-		if (requestFurutreBinance.valid() && requestFurutreBinance.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-		{
-			auto val = requestFurutreBinance.get();
-			if (val.responseCode == 200)
-			{
-				nlohmann::json json = nlohmann::json::parse(val.dataContainer.getRaw());
-				currentPriceBinance = std::atoi(json["price"].get<std::string>().c_str());
-			}
+			bbe::simpleUrlRequest::urlRequestJsonElementAsync(&currentPriceBinance, &requestMutex, "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", "price");
 		}
 
 		if (prices.getLength() > 0)
@@ -1204,10 +1181,11 @@ public:
 				ImPlot::PlotLine("Bitcoin", times.getRaw(), prices.getRaw(), times.getLength());
 				ImPlot::EndPlot();
 			}
+			std::unique_lock _(requestMutex);
 			ImGui::Text("Current Price (CoinGecko)    : $%d", prices.last());
 			ImGui::Text("Current Price (MemPool.space): $%d", currentPriceMempool);
-			ImGui::Text("Current Price (Binance)      : $%d", currentPriceBinance);
-			bbe::List<int32_t> currentPrices = { prices.last(), currentPriceMempool, currentPriceBinance };
+			ImGui::Text("Current Price (Binance)      : $%d", std::atoi(currentPriceBinance.c_str()));
+			bbe::List<int32_t> currentPrices = { prices.last(), currentPriceMempool, std::atoi(currentPriceBinance.c_str()) };
 			currentPrices.sort();
 			const float spread = (float)currentPrices.last() / (float)currentPrices.first();
 			const bool spreadHigh = spread > 1.0075f;

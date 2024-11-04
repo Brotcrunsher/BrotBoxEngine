@@ -4,10 +4,15 @@
 #include <future>
 #include <optional>
 #include <map>
+#include <mutex>
+
+#include "nlohmann/json.hpp"
 
 #include "../BBE/String.h"
 #include "../BBE/List.h"
 #include "../BBE/ByteBuffer.h"
+#include "../BBE/Logging.h"
+#include "../BBE/Async.h"
 
 namespace bbe
 {
@@ -42,6 +47,50 @@ namespace bbe
 			bool verbose = false);
 		
 		std::optional<bbe::List<char>> decryptXChaCha(const bbe::List<char>& data, const String& pathToKeyFile, bool addTrailingNul = true);
+
+		template<typename T>
+		void urlRequestJsonElement(T* value, std::mutex* mutex, const bbe::String& url, const bbe::String& jsonPath)
+		{
+			auto request = urlRequest(url);
+			if (request.responseCode == 200)
+			{
+				nlohmann::json json = nlohmann::json::parse(request.dataContainer.getRaw());
+				nlohmann::json::json_pointer ptr(("/" + jsonPath).getRaw());
+				if (json.contains(ptr))
+				{
+					try
+					{
+						if (mutex)
+						{
+							std::unique_lock _(*mutex);
+							*value = json[ptr].get<T>();
+						}
+						else
+						{
+							*value = json[ptr].get<T>();
+						}
+					}
+					catch (std::exception& e)
+					{
+						BBELOGLN("Failed to get Value in urlRequestJsonElement: " << e.what() << " for URL: " << url);
+					}
+				}
+				else
+				{
+					BBELOGLN("Path not element of json in urlRequestJsonElement: " << jsonPath.getRaw() << " for URL: " << url);
+				}
+			}
+			else
+			{
+				BBELOGLN("Request response wrong (" << request.responseCode << ") in urlRequestJsonElement" << " for URL: " << url);
+			}
+		}
+
+		template<typename T>
+		std::future<void> urlRequestJsonElementAsync(T* value, std::mutex* mutex, const bbe::String& url, const bbe::String& jsonPath)
+		{
+			return bbe::async(&urlRequestJsonElement<T>, value, mutex, url, jsonPath);
+		}
 
 #ifdef _WIN32
 		enum class SocketRequestXChaChaCode
