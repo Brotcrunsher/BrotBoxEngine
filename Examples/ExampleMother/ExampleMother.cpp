@@ -37,6 +37,8 @@
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
 //TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
+//TODO: Remember news items. Would be nice to hear all the news of the past week or so, not having to listen to them every day.
+//TODO: Record Bitcoin history prices
 
 //TODO: Show average driving time
 
@@ -1138,16 +1140,16 @@ public:
 
 	bbe::Vector2 drawBitcoin()
 	{
-		static std::future<bbe::simpleUrlRequest::UrlRequestResult> requestFuture;
-		static bbe::List<float> times;
-		static bbe::List<float> prices;
+		static std::future<bbe::simpleUrlRequest::UrlRequestResult> requestFutureCoinGecko;
+		static bbe::List<int32_t> times;
+		static bbe::List<int32_t> prices;
 		EVERY_MINUTES(1)
 		{
-			requestFuture = bbe::simpleUrlRequest::urlRequestAsync("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1");
+			requestFutureCoinGecko = bbe::simpleUrlRequest::urlRequestAsync("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1");
 		}
-		if (requestFuture.valid() && requestFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+		if (requestFutureCoinGecko.valid() && requestFutureCoinGecko.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 		{
-			auto val = requestFuture.get();
+			auto val = requestFutureCoinGecko.get();
 			if (val.responseCode == 200)
 			{
 				nlohmann::json json = nlohmann::json::parse(val.dataContainer.getRaw());
@@ -1162,6 +1164,38 @@ public:
 			}
 		}
 
+		static std::future<bbe::simpleUrlRequest::UrlRequestResult> requestFurutreMempool;
+		static int32_t currentPriceMempool = 0;
+		EVERY_MINUTES(1)
+		{
+			requestFurutreMempool = bbe::simpleUrlRequest::urlRequestAsync("https://mempool.space/api/v1/prices");
+		}
+		if (requestFurutreMempool.valid() && requestFurutreMempool.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+		{
+			auto val = requestFurutreMempool.get();
+			if (val.responseCode == 200)
+			{
+				nlohmann::json json = nlohmann::json::parse(val.dataContainer.getRaw());
+				currentPriceMempool = json["USD"];
+			}
+		}
+
+		static std::future<bbe::simpleUrlRequest::UrlRequestResult> requestFurutreBinance;
+		static int32_t currentPriceBinance = 0;
+		EVERY_MINUTES(1)
+		{
+			requestFurutreBinance = bbe::simpleUrlRequest::urlRequestAsync("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT");
+		}
+		if (requestFurutreBinance.valid() && requestFurutreBinance.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+		{
+			auto val = requestFurutreBinance.get();
+			if (val.responseCode == 200)
+			{
+				nlohmann::json json = nlohmann::json::parse(val.dataContainer.getRaw());
+				currentPriceBinance = std::atoi(json["price"].get<std::string>().c_str());
+			}
+		}
+
 		if (prices.getLength() > 0)
 		{
 			ImPlot::SetNextAxesToFit();
@@ -1170,11 +1204,24 @@ public:
 				ImPlot::PlotLine("Bitcoin", times.getRaw(), prices.getRaw(), times.getLength());
 				ImPlot::EndPlot();
 			}
-			ImGui::Text("Current Price: $%.2f", prices.last());
-			
+			ImGui::Text("Current Price (CoinGecko)    : $%d", prices.last());
+			ImGui::Text("Current Price (MemPool.space): $%d", currentPriceMempool);
+			ImGui::Text("Current Price (Binance)      : $%d", currentPriceBinance);
+			bbe::List<int32_t> currentPrices = { prices.last(), currentPriceMempool, currentPriceBinance };
+			currentPrices.sort();
+			const float spread = (float)currentPrices.last() / (float)currentPrices.first();
+			const bool spreadHigh = spread > 1.0075f;
+			ImGui::Text("Current Spread: %f", spread);
+
 			static double dollar = 0.0f;
 			static bbe::TimePoint nextDollarClear;
+			if (spreadHigh)
+			{
+				ImGui::TextColored({ 1.0f, 0.5f, 0.5f, 1.0f }, "Spread unusual high!");
+			}
+			ImGui::BeginDisabled(spreadHigh);
 			const bool dollarChanged = ImGui::InputDouble("Dollar", &dollar, 0.0, 0.0, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+			ImGui::EndDisabled();
 			const bbe::String toBtc = bbe::String(dollar / prices.last(), 8);
 			ImGui::Text("BTC: " + toBtc);
 			if (dollarChanged)
