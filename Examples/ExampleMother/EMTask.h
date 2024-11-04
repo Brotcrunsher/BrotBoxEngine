@@ -140,4 +140,6 @@ public:
 	bool isStreakFulfilled() const;
 
 	void addServerTask(const bbe::String& id, const bbe::String& task);
+
+	bbe::List<bbe::String> getWarnings() const;
 };

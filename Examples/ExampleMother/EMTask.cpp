@@ -885,3 +885,19 @@ void SubsystemTask::addServerTask(const bbe::String& id, const bbe::String& task
 	t.clipboard = task;
 	tasks.add(t);
 }
+
+bbe::List<bbe::String> SubsystemTask::getWarnings() const
+{
+	bbe::List<bbe::String> retVal;
+
+	for (size_t i = 0; i < tasks.getLength(); i++)
+	{
+		const Task& t = tasks[i];
+		if (t.contingentTask && t.contingentCountingStart != bbe::TimePoint::epoch())
+		{
+			retVal.add("Contingent Task running: " + t.title);
+		}
+	}
+
+	return retVal;
+}

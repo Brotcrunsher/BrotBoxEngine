@@ -312,6 +312,8 @@ private:
 
 	bbe::Sound buzzingSound;
 
+	size_t readConsoleMessages = 0;
+
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
 	{
@@ -437,6 +439,10 @@ public:
 		sg.addRecipeSineWave(0.0, 0.1, 150.0);
 		sg.addRecipeBitcrusher(0.0, 1.0, 5);
 		buzzingSound = sg.finalize();
+
+
+		const auto& log = bbe::logging::getLog();
+		readConsoleMessages = log.getLength();
 	}
 
 	void updateOpenTasksSilenced()
@@ -1504,9 +1510,42 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	bbe::List<bbe::String> getConsoleWarnings()
+	{
+		const auto& log = bbe::logging::getLog();
+		if (readConsoleMessages != log.getLength())
+		{
+			return { "Unread Console Messages!" };
+		}
+
+		return {};
+	}
+
+	bbe::Vector2 drawWarnings()
+	{
+		bbe::List<bbe::String> warnings = tasks.getWarnings();
+
+		warnings.addList(getConsoleWarnings());
+
+		if (warnings.getLength() == 0)
+		{
+			ImGui::Text("Warnings: None. All good :)");
+		}
+		else
+		{
+			for (size_t i = 0; i < warnings.getLength(); i++)
+			{
+				ImGui::TextColored({ 1.0f, 0.3f, 0.3f, 1.0f }, warnings[i]);
+			}
+		}
+
+		return bbe::Vector2(1);
+	}
+
 	bbe::Vector2 drawTabConsole()
 	{
 		const auto& log = bbe::logging::getLog();
+		readConsoleMessages = log.getLength();
 		static int64_t sliderVal = 0;
 		const int64_t min = 0;
 		const int64_t max = log.getLength() - 2;
@@ -2502,6 +2541,7 @@ public:
 		bbe::List<Tab> superAdaptiveTabs =
 		{
 			Tab{"Hstry",     "History",        [&]() { return tasks.drawTabHistoryView(); }},
+			Tab{"Wrns",      "Warnings",       [&]() { return drawWarnings(); }},
 		};
 
 		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | (previousTab.title == bbe::String("Cnsl") ? ImGuiWindowFlags_NoScrollWithMouse : 0));
