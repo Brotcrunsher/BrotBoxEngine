@@ -437,6 +437,10 @@ target_include_directories(BrotBoxEngine SYSTEM PUBLIC "Third-Party/stb")
 target_include_directories(BrotBoxEngine SYSTEM PUBLIC "Third-Party/minimp3")
 target_include_directories(BrotBoxEngine SYSTEM PUBLIC "Third-Party/nlohmann")
 
+find_package(Python3 COMPONENTS Development REQUIRED)
+target_include_directories(BrotBoxEngine SYSTEM PUBLIC "${Python3_INCLUDE_DIRS}")
+target_link_libraries(BrotBoxEngine "${Python3_LIBRARIES}")
+
 if(BBE_ADD_TEST_PROJECTS)
   add_subdirectory(Tests)
   set_target_properties(gtest gtest_main PROPERTIES FOLDER Deps)
