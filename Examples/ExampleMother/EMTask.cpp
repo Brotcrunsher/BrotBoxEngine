@@ -329,7 +329,15 @@ int32_t SubsystemTask::drawTable(float scale, const char* title, const std::func
 			}
 			if (t.clipboard[0] == '\0')
 			{
-				ImGui::Text(modifiedTitle.getRaw(), t.internalValue);
+				const bbe::String printableTitle = bbe::String::format(modifiedTitle.getRaw(), t.internalValue);
+				if (t.lateTimeTask && isWorkTime())
+				{
+					ImGui::TextColored({ 0.3f, 0.3f, 0.3f, 1.0f }, printableTitle);
+				}
+				else
+				{
+					ImGui::Text(printableTitle);
+				}
 			}
 			else
 			{

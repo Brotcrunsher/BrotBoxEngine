@@ -29,12 +29,8 @@
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
 //TODO: Time selector (next to date picker)
 //TODO: Serializable List/Object should somehow handle versions... it's really complicated to do that within the nice BBE_SERIALIZABLE_DATA macro though.
-//TODO: Ada functionality: Kill all timewasting programs (Risky? "Oopsie I pressed the kill button... arghs")
 //TODO: Nighttime configurable
 //TODO: Latetime configurable
-//TODO: Non eearly tasks should be greyed out during early hours
-//TODO: Left a contingent Task running (oopsie). A fail safe of some kind would be nice. Some kind of warning system?
-//TODO: Ada functionality: Open a webbrowser and URL bla
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
 //TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
@@ -42,6 +38,7 @@
 //TODO: Record Bitcoin history prices
 
 //TODO: Show average driving time
+//TODO: ChatGPT Function calling
 
 
 struct ClipboardContent
