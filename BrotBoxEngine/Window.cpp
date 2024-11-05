@@ -1,6 +1,7 @@
 #include "BBE/Window.h"
 #include "BBE/PrimitiveBrush2D.h"
 #include "BBE/PrimitiveBrush3D.h"
+#include "BBE/ImGuiExtensions.h"
 #include <iostream>
 #include "BBE/MouseButtons.h"
 #include "BBE/FatalErrors.h"
@@ -128,6 +129,7 @@ void bbe::Window::preDraw()
 	m_renderManager->preDraw();
 	m_renderManager->setColor2D(bbe::Color(1.0f, 1.0f, 1.0f, 1.0f));
 	m_renderManager->setColor3D(bbe::Color(1.0f, 1.0f, 1.0f, 1.0f));
+	ImGui::bbe::SetColor(ImGui::GetColorU32({ 1.0f, 1.0f, 1.0f, 1.0f }));
 #ifdef BBE_RENDERER_OPENGL
 	((bbe::INTERNAL::openGl::OpenGLManager*)m_renderManager.get())->setRenderMode(bbe::RenderMode::DEFERRED);
 #endif

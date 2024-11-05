@@ -1,4 +1,5 @@
 #include "BBE/ImGuiExtensions.h"
+#include "BBE/Window.h"
 
 static ::bbe::Game* activeGame = nullptr;
 
@@ -205,6 +206,230 @@ bool ImGui::bbe::datePicker(const char* label, ::bbe::TimePoint* time)
 	}
 	return changed;
 }
+
+static ImU32 col = 0;
+void ImGui::bbe::SetColor(ImU32 c)
+{
+	col = c;
+}
+
+float ImGui::bbe::ToResolution(float val)
+{
+	return activeGame->getWindow()->getScale() * val;
+}
+
+void ImGui::bbe::AddLine(const ImVec2& p1, const ImVec2& p2, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddLine(p1, p2, col, thickness);
+}
+
+void ImGui::bbe::AddRect(const ImVec2& p_min, const ImVec2& p_max, float rounding, ImDrawFlags flags, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddRect(p_min, p_max, col, rounding, flags, thickness);
+}
+
+void ImGui::bbe::AddRectFilled(const ImVec2& p_min, const ImVec2& p_max, float rounding, ImDrawFlags flags)
+{
+	ImGui::GetForegroundDrawList()->AddRectFilled(p_min, p_max, col, rounding, flags);
+}
+
+void ImGui::bbe::AddQuad(const ImVec2& p1, const ImVec2& p2, const ImVec2& p3, const ImVec2& p4, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddQuad(p1, p2, p3, p4, col, thickness);
+}
+
+void ImGui::bbe::AddQuadFilled(const ImVec2& p1, const ImVec2& p2, const ImVec2& p3, const ImVec2& p4)
+{
+	ImGui::GetForegroundDrawList()->AddQuadFilled(p1, p2, p3, p4, col);
+}
+
+void ImGui::bbe::AddTriangle(const ImVec2& p1, const ImVec2& p2, const ImVec2& p3, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddTriangle(p1, p2, p3, col, thickness);
+}
+
+void ImGui::bbe::AddTriangleFilled(const ImVec2& p1, const ImVec2& p2, const ImVec2& p3)
+{
+	ImGui::GetForegroundDrawList()->AddTriangleFilled(p1, p2, p3, col);
+}
+
+void ImGui::bbe::AddCircle(const ImVec2& center, float radius, int num_segments, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddCircle(center, ToResolution(radius), col, num_segments, thickness);
+}
+
+void ImGui::bbe::AddCircleFilled(const ImVec2& center, float radius, int num_segments)
+{
+	ImGui::GetForegroundDrawList()->AddCircleFilled(center, ToResolution(radius), col, num_segments);
+}
+
+void ImGui::bbe::AddNgon(const ImVec2& center, float radius, int num_segments, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddNgon(center, ToResolution(radius), col, num_segments, thickness);
+}
+
+void ImGui::bbe::AddNgonFilled(const ImVec2& center, float radius, int num_segments)
+{
+	ImGui::GetForegroundDrawList()->AddNgonFilled(center, ToResolution(radius), col, num_segments);
+}
+
+void ImGui::bbe::AddEllipse(const ImVec2& center, float radius_x, float radius_y, float rot, int num_segments, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddEllipse(center, ToResolution(radius_x), ToResolution(radius_y), col, rot, num_segments, thickness);
+}
+
+void ImGui::bbe::AddEllipseFilled(const ImVec2& center, float radius_x, float radius_y, float rot, int num_segments)
+{
+	ImGui::GetForegroundDrawList()->AddEllipseFilled(center, ToResolution(radius_x), ToResolution(radius_y), col, rot, num_segments);
+}
+
+void ImGui::bbe::AddText(const ImVec2& pos, const char* text_begin, const char* text_end)
+{
+	ImGui::GetForegroundDrawList()->AddText(pos, col, text_begin, text_end);
+}
+
+void ImGui::bbe::AddText(const ImFont* font, float font_size, const ImVec2& pos, const char* text_begin, const char* text_end, float wrap_width, const ImVec4* cpu_fine_clip_rect)
+{
+	ImGui::GetForegroundDrawList()->AddText(font, font_size, pos, col, text_begin, text_end, wrap_width, cpu_fine_clip_rect);
+}
+
+void ImGui::bbe::AddPolyline(const ImVec2* points, int num_points, ImDrawFlags flags, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddPolyline(points, num_points, col, flags, thickness);
+}
+
+void ImGui::bbe::AddConvexPolyFilled(const ImVec2* points, int num_points)
+{
+	ImGui::GetForegroundDrawList()->AddConvexPolyFilled(points, num_points, col);
+}
+
+void ImGui::bbe::AddBezierCubic(const ImVec2& p1, const ImVec2& p2, const ImVec2& p3, const ImVec2& p4, float thickness, int num_segments)
+{
+	ImGui::GetForegroundDrawList()->AddBezierCubic(p1, p2, p3, p4, col, thickness, num_segments);
+}
+
+void ImGui::bbe::AddBezierQuadratic(const ImVec2& p1, const ImVec2& p2, const ImVec2& p3, float thickness, int num_segments)
+{
+	ImGui::GetForegroundDrawList()->AddBezierQuadratic(p1, p2, p3, col, thickness, num_segments);
+}
+
+
+
+
+
+ImVec2 ImGui::bbe::window::ToWindowCoord(const ImVec2& p)
+{
+	ImVec2 w = ImGui::GetWindowPos();
+	return ImVec2(p.x + w.x, p.y + w.y);
+}
+
+::bbe::List<ImVec2> ImGui::bbe::window::ToWindowCoord(const ImVec2* points, int num_points)
+{
+	::bbe::List<ImVec2> retVal;
+	for (int i = 0; i < num_points; i++)
+	{
+		retVal.add(ToWindowCoord(points[i]));
+	}
+	return retVal;
+}
+
+void ImGui::bbe::window::AddLine(const ImVec2& p1, const ImVec2& p2, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddLine(ToWindowCoord(p1), ToWindowCoord(p2), col, thickness);
+}
+
+void ImGui::bbe::window::AddRect(const ImVec2& p_min, const ImVec2& p_max, float rounding, ImDrawFlags flags, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddRect(ToWindowCoord(p_min), ToWindowCoord(p_max), col, rounding, flags, thickness);
+}
+
+void ImGui::bbe::window::AddRectFilled(const ImVec2& p_min, const ImVec2& p_max, float rounding, ImDrawFlags flags)
+{
+	ImGui::GetForegroundDrawList()->AddRectFilled(ToWindowCoord(p_min), ToWindowCoord(p_max), col, rounding, flags);
+}
+
+void ImGui::bbe::window::AddQuad(const ImVec2& p1, const ImVec2& p2, const ImVec2& p3, const ImVec2& p4, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddQuad(ToWindowCoord(p1), ToWindowCoord(p2), ToWindowCoord(p3), ToWindowCoord(p4), col, thickness);
+}
+
+void ImGui::bbe::window::AddQuadFilled(const ImVec2& p1, const ImVec2& p2, const ImVec2& p3, const ImVec2& p4)
+{
+	ImGui::GetForegroundDrawList()->AddQuadFilled(ToWindowCoord(p1), ToWindowCoord(p2), ToWindowCoord(p3), ToWindowCoord(p4), col);
+}
+
+void ImGui::bbe::window::AddTriangle(const ImVec2& p1, const ImVec2& p2, const ImVec2& p3, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddTriangle(ToWindowCoord(p1), ToWindowCoord(p2), ToWindowCoord(p3), col, thickness);
+}
+
+void ImGui::bbe::window::AddTriangleFilled(const ImVec2& p1, const ImVec2& p2, const ImVec2& p3)
+{
+	ImGui::GetForegroundDrawList()->AddTriangleFilled(ToWindowCoord(p1), ToWindowCoord(p2), ToWindowCoord(p3), col);
+}
+
+void ImGui::bbe::window::AddCircle(const ImVec2& center, float radius, int num_segments, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddCircle(ToWindowCoord(center), ToResolution(radius), col, num_segments, thickness);
+}
+
+void ImGui::bbe::window::AddCircleFilled(const ImVec2& center, float radius, int num_segments)
+{
+	ImGui::GetForegroundDrawList()->AddCircleFilled(ToWindowCoord(center), ToResolution(radius), col, num_segments);
+}
+
+void ImGui::bbe::window::AddNgon(const ImVec2& center, float radius, int num_segments, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddNgon(ToWindowCoord(center), ToResolution(radius), col, num_segments, thickness);
+}
+
+void ImGui::bbe::window::AddNgonFilled(const ImVec2& center, float radius, int num_segments)
+{
+	ImGui::GetForegroundDrawList()->AddNgonFilled(ToWindowCoord(center), ToResolution(radius), col, num_segments);
+}
+
+void ImGui::bbe::window::AddEllipse(const ImVec2& center, float radius_x, float radius_y, float rot, int num_segments, float thickness)
+{
+	ImGui::GetForegroundDrawList()->AddEllipse(ToWindowCoord(center), ToResolution(radius_x), ToResolution(radius_y), col, rot, num_segments, thickness);
+}
+
+void ImGui::bbe::window::AddEllipseFilled(const ImVec2& center, float radius_x, float radius_y, float rot, int num_segments)
+{
+	ImGui::GetForegroundDrawList()->AddEllipseFilled(ToWindowCoord(center), ToResolution(radius_x), ToResolution(radius_y), col, rot, num_segments);
+}
+
+void ImGui::bbe::window::AddText(const ImVec2& pos, const char* text_begin, const char* text_end)
+{
+	ImGui::GetForegroundDrawList()->AddText(ToWindowCoord(pos), col, text_begin, text_end);
+}
+
+void ImGui::bbe::window::AddText(const ImFont* font, float font_size, const ImVec2& pos, const char* text_begin, const char* text_end, float wrap_width, const ImVec4* cpu_fine_clip_rect)
+{
+	ImGui::GetForegroundDrawList()->AddText(font, font_size, ToWindowCoord(pos), col, text_begin, text_end, wrap_width, cpu_fine_clip_rect);
+}
+
+void ImGui::bbe::window::AddPolyline(const ImVec2* points, int num_points, ImDrawFlags flags, float thickness)
+{
+	auto p = ToWindowCoord(points, num_points);
+	ImGui::GetForegroundDrawList()->AddPolyline(p.getRaw(), num_points, col, flags, thickness);
+}
+
+void ImGui::bbe::window::AddConvexPolyFilled(const ImVec2* points, int num_points)
+{
+	auto p = ToWindowCoord(points, num_points);
+	ImGui::GetForegroundDrawList()->AddConvexPolyFilled(p.getRaw(), num_points, col);
+}
+
+void ImGui::bbe::window::AddBezierCubic(const ImVec2& p1, const ImVec2& p2, const ImVec2& p3, const ImVec2& p4, float thickness, int num_segments)
+{
+	ImGui::GetForegroundDrawList()->AddBezierCubic(ToWindowCoord(p1), ToWindowCoord(p2), ToWindowCoord(p3), ToWindowCoord(p4), col, thickness, num_segments);
+}
+
+void ImGui::bbe::window::AddBezierQuadratic(const ImVec2& p1, const ImVec2& p2, const ImVec2& p3, float thickness, int num_segments)
+{
+	ImGui::GetForegroundDrawList()->AddBezierQuadratic(ToWindowCoord(p1), ToWindowCoord(p2), ToWindowCoord(p3), col, thickness, num_segments);
+}
+
 
 void ImGui::bbe::INTERNAL::setActiveGame(::bbe::Game* game)
 {
