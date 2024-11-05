@@ -1138,44 +1138,31 @@ public:
 
 	bbe::Vector2 drawBitcoin()
 	{
-		static std::future<bbe::simpleUrlRequest::UrlRequestResult> requestFutureCoinGecko;
+		static std::mutex requestMutex;
 		static bbe::List<int32_t> times;
 		static bbe::List<int32_t> prices;
 		EVERY_MINUTES(1)
 		{
-			requestFutureCoinGecko = bbe::simpleUrlRequest::urlRequestAsync("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1");
-		}
-		if (requestFutureCoinGecko.valid() && requestFutureCoinGecko.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-		{
-			auto val = requestFutureCoinGecko.get();
-			if (val.responseCode == 200)
-			{
-				nlohmann::json json = nlohmann::json::parse(val.dataContainer.getRaw());
-				nlohmann::json& pJson = json["prices"];
-				times.clear();
-				prices.clear();
-				for (size_t i = 0; i < pJson.size(); i++)
-				{
-					times.add(pJson[i][0]);
-					prices.add(pJson[i][1]);
-				}
-			}
+			bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1", &requestMutex, 
+				std::make_pair(&times,  "prices/%%%/0"),
+				std::make_pair(&prices, "prices/%%%/1")
+			);
 		}
 
-		static std::mutex requestMutex;
 		static int32_t currentPriceMempool = 0;
 		EVERY_MINUTES(1)
 		{
-			bbe::simpleUrlRequest::urlRequestJsonElementAsync(&currentPriceMempool, &requestMutex, "https://mempool.space/api/v1/prices", "USD");
+			bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://mempool.space/api/v1/prices", &requestMutex, std::make_pair(&currentPriceMempool, "USD"));
 		}
 
 		static std::string currentPriceBinance = "";
 		EVERY_MINUTES(1)
 		{
-			bbe::simpleUrlRequest::urlRequestJsonElementAsync(&currentPriceBinance, &requestMutex, "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", "price");
+			bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", &requestMutex, std::make_pair(&currentPriceBinance, "price"));
 		}
 
-		if (prices.getLength() > 0)
+		std::unique_lock _(requestMutex);
+		if (prices.getLength() > 0 && prices.getLength() == times.getLength())
 		{
 			ImPlot::SetNextAxesToFit();
 			if (ImPlot::BeginPlot("Line Plots", {-1, 250 * getWindow()->getScale()})) {
@@ -1183,7 +1170,6 @@ public:
 				ImPlot::PlotLine("Bitcoin", times.getRaw(), prices.getRaw(), times.getLength());
 				ImPlot::EndPlot();
 			}
-			std::unique_lock _(requestMutex);
 			ImGui::Text("Current Price (CoinGecko)    : $%d", prices.last());
 			ImGui::Text("Current Price (MemPool.space): $%d", currentPriceMempool);
 			ImGui::Text("Current Price (Binance)      : $%d", std::atoi(currentPriceBinance.c_str()));

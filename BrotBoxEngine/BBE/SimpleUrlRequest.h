@@ -49,36 +49,108 @@ namespace bbe
 		std::optional<bbe::List<char>> decryptXChaCha(const bbe::List<char>& data, const String& pathToKeyFile, bool addTrailingNul = true);
 
 		template<typename T>
-		void urlRequestJsonElement(T* value, std::mutex* mutex, const bbe::String& url, const bbe::String& jsonPath)
+		void jsonElement(T* value, const nlohmann::json& json, const char* jsonPath, int32_t depth = 0)
 		{
-			auto request = urlRequest(url);
-			if (request.responseCode == 200)
+			const char* nextSlash = strstr(jsonPath, "/");
+			bbe::String token;
+			if (!nextSlash) token = jsonPath;
+			else token.append(jsonPath, nextSlash - jsonPath);
+			int32_t index = 0;
+			if (json.is_array())
 			{
-				nlohmann::json json = nlohmann::json::parse(request.dataContainer.getRaw());
-				nlohmann::json::json_pointer ptr(("/" + jsonPath).getRaw());
-				if (json.contains(ptr))
+				index = token.toLong();
+				if (index >= json.size())
 				{
-					try
+					BBELOGLN("Index out of range in jsonElement: " << index);
+					return;
+				}
+			}
+			else
+			{
+				if (token != "%%%" && !json.contains(token.getRaw()))
+				{
+					BBELOGLN("Path not element of json in jsonElement: " << jsonPath);
+					return;
+				}
+			}
+
+			if constexpr (bbe::IsList<T>())
+			{
+				if (depth == 0)
+				{
+					value->clear();
+				}
+			}
+
+
+			if (!nextSlash)
+			{
+				try
+				{
+					if (json.is_array())
 					{
-						if (mutex)
+						if constexpr (bbe::IsList<T>())
 						{
-							std::unique_lock _(*mutex);
-							*value = json[ptr].get<T>();
+							value->add(json[index].get<typename T::SubType>());
 						}
 						else
 						{
-							*value = json[ptr].get<T>();
+							*value = json[index].get<T>();
 						}
 					}
-					catch (std::exception& e)
+					else
 					{
-						BBELOGLN("Failed to get Value in urlRequestJsonElement: " << e.what() << " for URL: " << url);
+						if constexpr (bbe::IsList<T>())
+						{
+							value->add(json[token.getRaw()].get<typename T::SubType>());
+						}
+						else
+						{
+							*value = json[token.getRaw()].get<T>();
+						}
+					}
+				}
+				catch (std::exception& e)
+				{
+					BBELOGLN("Failed to get Value in jsonElement: " << e.what());
+				}
+			}
+			else
+			{
+				if (token == "%%%")
+				{
+					for (auto it = json.begin(); it != json.end(); ++it)
+					{
+						jsonElement(value, *it, nextSlash + 1, depth + 1);
 					}
 				}
 				else
 				{
-					BBELOGLN("Path not element of json in urlRequestJsonElement: " << jsonPath.getRaw() << " for URL: " << url);
+					jsonElement(value, json[token.getRaw()], nextSlash + 1, depth + 1);
 				}
+			}
+		}
+
+		template<typename... Pairs>
+		void urlRequestJsonElements(const bbe::String& url, std::mutex* mutex, Pairs&&... pairs)
+		{
+			auto request = urlRequest(url);
+			if (request.responseCode == 200)
+			{
+				nlohmann::json json;
+				try
+				{
+					json = nlohmann::json::parse(request.dataContainer.getRaw());
+				}
+				catch (std::exception& e)
+				{
+					BBELOGLN("Failed to parse json in urlRequestJsonElement: " << e.what());
+					return;
+				}
+				std::unique_lock<std::mutex> ul;
+				if (mutex) ul = std::unique_lock(*mutex);
+
+				(jsonElement(pairs.first, json, pairs.second), ...);
 			}
 			else
 			{
@@ -86,10 +158,10 @@ namespace bbe
 			}
 		}
 
-		template<typename T>
-		std::future<void> urlRequestJsonElementAsync(T* value, std::mutex* mutex, const bbe::String& url, const bbe::String& jsonPath)
+		template<typename... Pairs>
+		std::future<void> urlRequestJsonElementsAsync(const bbe::String& url, std::mutex* mutex, Pairs&&... pairs)
 		{
-			return bbe::async(&urlRequestJsonElement<T>, value, mutex, url, jsonPath);
+			return bbe::async(&urlRequestJsonElements<Pairs...>, url, mutex, pairs...);
 		}
 
 #ifdef _WIN32
