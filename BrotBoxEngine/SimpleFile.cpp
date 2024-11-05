@@ -1,4 +1,5 @@
 #include "BBE/SimpleFile.h"
+#include "BBE/SimpleThread.h"
 #include <fstream>
 #include <iostream>
 #include <stdlib.h>
@@ -478,6 +479,7 @@ static void notifyIOThread()
 	if (launchIoThread)
 	{
 		ioThread = std::thread(ioThreadMain);
+		bbe::simpleThread::setName(ioThread, "BBE ioThread");
 	}
 	conditional.notify_all();
 }

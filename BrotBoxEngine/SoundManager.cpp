@@ -4,6 +4,7 @@
 #include "BBE/Error.h"
 #include "BBE/Logging.h"
 #include "BBE/WriterReaderBuffer.h"
+#include "BBE/SimpleThread.h"
 #include <algorithm>
 #include <iostream>
 #include <mutex>
@@ -821,7 +822,9 @@ void bbe::INTERNAL::SoundManager::init()
 	initSoundSystem(true);
 #else
 	soundSystemThread = std::thread(soundSystemMain);
+	bbe::simpleThread::setName(soundSystemThread, "BBE SoundManager");
 #ifdef WIN32
+	::SetThreadDescription(soundSystemThread.native_handle(), L"BBE Sound Manager Thread");
 	BOOL prioSuccess = ::SetThreadPriority(soundSystemThread.native_handle(), THREAD_PRIORITY_TIME_CRITICAL);
 	if (!prioSuccess)
 	{

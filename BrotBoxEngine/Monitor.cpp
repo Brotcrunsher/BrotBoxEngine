@@ -10,6 +10,7 @@
 #include <lowlevelmonitorconfigurationapi.h>
 #include <physicalmonitorenumerationapi.h>
 #include <atomic>
+#include "BBE/SimpleThread.h"
 
 #pragma comment(lib, "Dxva2.lib")
 
@@ -148,6 +149,7 @@ void bbe::Monitor::threadMain()
 bbe::Monitor::Monitor()
 {
     thread = std::thread(&bbe::Monitor::threadMain, this);
+    bbe::simpleThread::setName(thread, "BBE Monitor");
 }
 
 bbe::Monitor::~Monitor()

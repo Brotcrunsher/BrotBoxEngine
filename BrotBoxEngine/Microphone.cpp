@@ -2,6 +2,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
+#include "BBE/SimpleThread.h"
 
 void bbe::Microphone::recordingMain()
 {
@@ -41,6 +42,7 @@ void bbe::Microphone::startRecording()
     recording = true;
 
     thread = std::thread(&bbe::Microphone::recordingMain, this);
+    bbe::simpleThread::setName(thread, "BBE Microphone");
 }
 
 bbe::Sound bbe::Microphone::stopRecording()

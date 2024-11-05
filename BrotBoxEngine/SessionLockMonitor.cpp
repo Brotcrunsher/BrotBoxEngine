@@ -1,5 +1,6 @@
 #ifdef WIN32
 #include "BBE/SessionLockMonitor.h"
+#include "BBE/SimpleThread.h"
 
 bbe::SessionLockMonitor::SessionLockMonitor()
 {
@@ -17,6 +18,7 @@ void bbe::SessionLockMonitor::start()
 	{
 		running = true;
 		messageThread = std::thread(&SessionLockMonitor::messageLoop, this);
+		bbe::simpleThread::setName(messageThread, "BBE SessionLockMonitor");
 	}
 }
 
