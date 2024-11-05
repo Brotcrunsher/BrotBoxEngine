@@ -147,10 +147,22 @@ namespace bbe
 					BBELOGLN("Failed to parse json in urlRequestJsonElement: " << e.what());
 					return;
 				}
+
+				// We do all the calculations on local copies first so that we can hold the lock as briefly as possible.
+				auto computeLocalCopies = [&](auto&& pair)
+					{
+						using T = std::remove_pointer_t<decltype(pair.first)>;
+						T local;
+						jsonElement(&local, json, pair.second);
+						return std::make_pair(pair.first, std::move(local)); // Pair of where to write the value later, and the value itself.
+					};
+				// Invoke that monster for all pairs...
+				auto localValues = std::make_tuple(computeLocalCopies(pairs)...);
+
 				std::unique_lock<std::mutex> ul;
 				if (mutex) ul = std::unique_lock(*mutex);
-
-				(jsonElement(pairs.first, json, pairs.second), ...);
+				// I can feel the insanity rising...
+				std::apply([](auto&&... p) { ((*(p.first) = std::move(p.second)), ...); }, localValues);
 			}
 			else
 			{

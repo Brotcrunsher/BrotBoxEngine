@@ -1143,7 +1143,8 @@ public:
 		static bbe::List<int32_t> prices;
 		EVERY_MINUTES(1)
 		{
-			bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1", &requestMutex, 
+			static std::future<void> f;
+			f = bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1", &requestMutex, 
 				std::make_pair(&times,  "prices/%%%/0"),
 				std::make_pair(&prices, "prices/%%%/1")
 			);
@@ -1152,13 +1153,15 @@ public:
 		static int32_t currentPriceMempool = 0;
 		EVERY_MINUTES(1)
 		{
-			bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://mempool.space/api/v1/prices", &requestMutex, std::make_pair(&currentPriceMempool, "USD"));
+			static std::future<void> f;
+			f = bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://mempool.space/api/v1/prices", &requestMutex, std::make_pair(&currentPriceMempool, "USD"));
 		}
 
 		static std::string currentPriceBinance = "";
 		EVERY_MINUTES(1)
 		{
-			bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", &requestMutex, std::make_pair(&currentPriceBinance, "price"));
+			static std::future<void> f;
+			f = bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", &requestMutex, std::make_pair(&currentPriceBinance, "price"));
 		}
 
 		std::unique_lock _(requestMutex);
@@ -2581,6 +2584,7 @@ public:
 			adaptiveSizes.resizeCapacityAndLength(adaptiveTabs.getLength());
 			for (size_t i = 0; i < adaptiveTabs.getLength(); i++)
 			{
+				beginMeasure(adaptiveTabs[i].title);
 				bbe::String name = "Adaptive Window: ";
 				name += i;
 				ImGuiViewport adaptiveViewport = fullViewport;
@@ -2614,6 +2618,7 @@ public:
 			adaptiveSizes.resizeCapacityAndLength(superAdaptiveTabs.getLength());
 			for (size_t i = 0; i < superAdaptiveTabs.getLength(); i++)
 			{
+				beginMeasure(adaptiveTabs[i].title);
 				bbe::String name = "Super Adaptive Window: ";
 				name += i;
 				ImGuiViewport adaptiveViewport = fullViewport;
