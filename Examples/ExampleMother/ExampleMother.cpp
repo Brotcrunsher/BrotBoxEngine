@@ -27,10 +27,7 @@
 
 //TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //      Careful when doing this ^^^^^^ - Audio Restart on device change?
-//TODO: Time selector (next to date picker)
 //TODO: Serializable List/Object should somehow handle versions... it's really complicated to do that within the nice BBE_SERIALIZABLE_DATA macro though.
-//TODO: Nighttime configurable
-//TODO: Latetime configurable
 //TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 //TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
 //TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
@@ -73,7 +70,9 @@ struct GeneralConfig
 		((int32_t), windowPosY, 0),
 		((int32_t), windowSizeX, 0),
 		((int32_t), windowSizeY, 0),
-		((bool), windowMaximized)
+		((bool), windowMaximized),
+		((int32_t), nightTimeStartHour, 22),
+		((int32_t), nightTimeStartMinute, 00)
 	)
 };
 
@@ -468,7 +467,7 @@ public:
 
 	bbe::TimePoint getNightStart() const
 	{
-		return bbe::TimePoint::todayAt(22, 00);
+		return bbe::TimePoint::todayAt(generalConfig->nightTimeStartHour, generalConfig->nightTimeStartMinute);
 	}
 
 	bool isNightTime() const
@@ -895,7 +894,7 @@ public:
 			}
 			ImGui::SameLine();
 			ImGui::PushItemWidth(100);
-			if (ImGui::bbe::combo("##Adakey", { "None", "1", "2", "3" }, clipboardContent[i].adaKey))
+			if (ImGui::bbe::combo("##Adakey", { "None", "1", "2", "3" }, &clipboardContent[i].adaKey))
 			{
 				requiresWrite = true;
 				if (clipboardContent[i].adaKey != 0)
@@ -1601,6 +1600,8 @@ public:
 			generalConfig->windowMaximized = getWindow()->isMaximized();
 			generalConfigChanged = true;
 		}
+
+		generalConfigChanged |= ImGui::bbe::timePicker("Night Time", &generalConfig->nightTimeStartHour, &generalConfig->nightTimeStartMinute);
 
 		if (generalConfigChanged)
 		{

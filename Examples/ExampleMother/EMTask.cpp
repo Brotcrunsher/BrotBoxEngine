@@ -577,7 +577,7 @@ bool SubsystemTask::drawEditableTask(Task& t)
 {
 	bool taskChanged = false;
 	taskChanged |= ImGui::bbe::InputText("Title", t.title);
-	taskChanged |= ImGui::bbe::combo("Date Type", { "Dynamic", "Yearly" }, t.dateType);
+	taskChanged |= ImGui::bbe::combo("Date Type", { "Dynamic", "Yearly" }, &t.dateType);
 	if (t.dateType == Task::DT_DYNAMIC)
 	{
 		taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
@@ -650,7 +650,7 @@ bool SubsystemTask::drawEditableTask(Task& t)
 	ImGui::bbe::tooltip("An internal value that can be printed out in the title via %%d, [SEC], and [MIN].");
 	taskChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
 	ImGui::bbe::tooltip("Increases the Internal Value on ever Done by this much.");
-	taskChanged |= ImGui::bbe::combo("Input Type", { "None", "Integer", "Float" }, t.inputType);
+	taskChanged |= ImGui::bbe::combo("Input Type", { "None", "Integer", "Float" }, &t.inputType);
 
 	taskChanged |= ImGui::bbe::InputText("Clipboard", t.clipboard);
 	ImGui::bbe::tooltip("When clicking the task, this will be sent to your clipboard.");
@@ -804,7 +804,7 @@ bbe::Vector2 SubsystemTask::drawTabHistoryView()
 	if (historyTitles.getLength() > 0)
 	{
 		static int32_t selection = 0;
-		ImGui::bbe::combo("History Selection", historyTitles, selection);
+		ImGui::bbe::combo("History Selection", historyTitles, &selection);
 
 		const Task& task = tasks[historyIndices[selection]];
 		const bbe::List<float>& history = task.history;

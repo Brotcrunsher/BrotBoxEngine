@@ -19,7 +19,7 @@ namespace ImGui
 
 		void tooltip(const char* text);
 		void tooltip(const ::bbe::String& text);
-		bool combo(const char* label, const ::bbe::List<::bbe::String>& selections, int32_t& selection);
+		bool combo(const char* label, const ::bbe::List<::bbe::String>& selections, int32_t* selection);
 		bool clickableText(const char* fmt, ...);
 		enum /*non-class*/ SecurityButtonFlags
 		{
@@ -28,6 +28,7 @@ namespace ImGui
 		};
 		bool securityButton(const char* text, SecurityButtonFlags flags = SecurityButtonFlags_None);
 		bool datePicker(const char* label, ::bbe::TimePoint* time);
+		bool timePicker(const char* label, int32_t* hour, int32_t* minute);
 
 		void SetColor(ImU32 col);
 		float ToResolution(float val);

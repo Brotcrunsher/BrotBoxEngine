@@ -43,17 +43,17 @@ void ImGui::bbe::tooltip(const ::bbe::String& text)
 	tooltip(text.getRaw());
 }
 
-bool ImGui::bbe::combo(const char* label, const::bbe::List<::bbe::String>& selections, int32_t& selection)
+bool ImGui::bbe::combo(const char* label, const::bbe::List<::bbe::String>& selections, int32_t* selection)
 {
 	bool retVal = false;
 
-	if (ImGui::BeginCombo(label, selections[selection].getRaw()))
+	if (ImGui::BeginCombo(label, selections[*selection].getRaw()))
 	{
 		for (int32_t i = 0; i < selections.getLength(); i++)
 		{
 			if (ImGui::Selectable(selections[i].getRaw()))
 			{
-				selection = i;
+				*selection = i;
 				retVal = true;
 			}
 		}
@@ -205,6 +205,34 @@ bool ImGui::bbe::datePicker(const char* label, ::bbe::TimePoint* time)
 		ImGui::OpenPopup(label);
 	}
 	return changed;
+}
+
+bool ImGui::bbe::timePicker(const char* label, int32_t* hour, int32_t* minute)
+{
+	const ::bbe::String comboLabel1 = ::bbe::String("##1") + label;
+	const ::bbe::String comboLabel2 = ::bbe::String("##2") + label;
+
+	::bbe::List<::bbe::String> hourSelection;
+	for (int i = 0; i < 24; i++)
+	{
+		hourSelection.add(::bbe::String(i));
+	}
+	::bbe::List<::bbe::String> minuteSelection;
+	for (int i = 0; i < 60; i++)
+	{
+		minuteSelection.add(::bbe::String(i));
+	}
+
+	ImGui::Text("%s:", label);
+	ImGui::SameLine();
+	bool retVal = false;
+	ImGui::PushItemWidth(50 * activeGame->getWindow()->getScale());
+	retVal |= combo(comboLabel1.getRaw(), hourSelection,   hour);
+	ImGui::SameLine();
+	retVal |= combo(comboLabel2.getRaw(), minuteSelection, minute);
+	ImGui::PopItemWidth();
+
+	return retVal;
 }
 
 static ImU32 col = 0;
