@@ -33,9 +33,12 @@
 //TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
 //TODO: Remember news items. Would be nice to hear all the news of the past week or so, not having to listen to them every day.
 //TODO: Record Bitcoin history prices
+//TODO: Ignore list of messages in console that are not important enough to trigger a warning.
+//TODO: Shut down contingent tasks automatically when shutting off the pc
 
 //TODO: Show average driving time
 //TODO: ChatGPT Function calling
+//TODO: Thickness for mouse wall would be cool
 
 
 struct ClipboardContent
@@ -218,6 +221,13 @@ struct MouseWallConfig
 	float timeOnBorder = 0.0f;
 };
 
+struct BitcoinData
+{
+	BBE_SERIALIZABLE_DATA(
+		((int32_t), allTimeHigh, 0)
+	)
+};
+
 enum class IconCategory
 {
 	NONE,
@@ -257,6 +267,7 @@ private:
 	bbe::SerializableList<NewsEntry> readNews                   = bbe::SerializableList<NewsEntry>        ("ReadNews.dat",            "ParanoiaConfig");
 	bbe::SerializableObject<DallEConfig> dallEConfig            = bbe::SerializableObject<DallEConfig>    ("DallEConfig.dat",         "ParanoiaConfig");
 	bbe::SerializableObject<MouseWallConfig> mouseWallConfig    = bbe::SerializableObject<MouseWallConfig>("MouseWallConfig.dat",     "ParanoiaConfig");
+	bbe::SerializableObject<BitcoinData> bitcoinData            = bbe::SerializableObject<BitcoinData>    ("BitcoinData.dat",         "ParanoiaConfig");
 
 	bbe::ChatGPTComm chatGPTComm; // ChatGPT communication object
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
@@ -309,6 +320,8 @@ private:
 	bbe::Sound buzzingSound;
 
 	size_t readConsoleMessages = 0;
+
+	bool silenceBitcoinAth = false;
 
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
@@ -1164,6 +1177,23 @@ public:
 			f = bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", &requestMutex, std::make_pair(&currentPriceBinance, "price"));
 		}
 
+		for (size_t i = 0; i < prices.getLength(); i++)
+		{
+			if (prices[i] > bitcoinData->allTimeHigh)
+			{
+				bitcoinData->allTimeHigh = prices[i];
+				bitcoinData.writeToFile();
+
+				if (!silenceBitcoinAth)
+				{
+					EVERY_MINUTES(5)
+					{
+						assetStore::NewAth()->play();
+					}
+				}
+			}
+		}
+
 		std::unique_lock _(requestMutex);
 		if (prices.getLength() > 0 && prices.getLength() == times.getLength())
 		{
@@ -1202,6 +1232,7 @@ public:
 			{
 				dollar = 0.0f;
 			}
+			ImGui::Text("ATH: $%d", bitcoinData->allTimeHigh);
 		}
 		return bbe::Vector2(1);
 	}
@@ -2449,6 +2480,7 @@ public:
 					serverUnreachableString += (bbe::TimePoint() - lastServerReach).toString();
 				}
 				ImGui::Checkbox(serverUnreachableString.getRaw(), &serverUnreachableSilenced);
+				ImGui::Checkbox("Silence Bitcoin Ath", &silenceBitcoinAth);
 				ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
 
 				ImGui::Checkbox("Overwrite Monitor Brightness", &monitorBrightnessOverwrite);
