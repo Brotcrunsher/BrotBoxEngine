@@ -228,6 +228,13 @@ struct BitcoinData
 	)
 };
 
+struct ConsoleWarningIgnoreElement
+{
+	BBE_SERIALIZABLE_DATA(
+		((bbe::String), name)
+	)
+};
+
 enum class IconCategory
 {
 	NONE,
@@ -268,6 +275,7 @@ private:
 	bbe::SerializableObject<DallEConfig> dallEConfig            = bbe::SerializableObject<DallEConfig>    ("DallEConfig.dat",         "ParanoiaConfig");
 	bbe::SerializableObject<MouseWallConfig> mouseWallConfig    = bbe::SerializableObject<MouseWallConfig>("MouseWallConfig.dat",     "ParanoiaConfig");
 	bbe::SerializableObject<BitcoinData> bitcoinData            = bbe::SerializableObject<BitcoinData>    ("BitcoinData.dat",         "ParanoiaConfig");
+	bbe::SerializableList<ConsoleWarningIgnoreElement> cwiList  = bbe::SerializableList<ConsoleWarningIgnoreElement>("CWIList.dat",   "ParanoiaConfig");
 
 	bbe::ChatGPTComm chatGPTComm; // ChatGPT communication object
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
@@ -318,8 +326,6 @@ private:
 	bool showReadNews = true;
 
 	bbe::Sound buzzingSound;
-
-	size_t readConsoleMessages = 0;
 
 	bool silenceBitcoinAth = false;
 
@@ -448,10 +454,6 @@ public:
 		sg.addRecipeSineWave(0.0, 0.1, 150.0);
 		sg.addRecipeBitcrusher(0.0, 1.0, 5);
 		buzzingSound = sg.finalize();
-
-
-		const auto& log = bbe::logging::getLog();
-		readConsoleMessages = log.getLength();
 	}
 
 	void updateOpenTasksSilenced()
@@ -1529,9 +1531,23 @@ public:
 	bbe::List<bbe::String> getConsoleWarnings()
 	{
 		const auto& log = bbe::logging::getLog();
-		if (readConsoleMessages != log.getLength())
+		std::lock_guard _(log);
+		for (size_t i = 0; i<log.getLength(); i++)
 		{
-			return { "Unread Console Messages!" };
+			if (log[i].isEmpty()) continue;
+			bool isIgnoredLog = false;
+			for (size_t k = 0; k < cwiList.getLength(); k++)
+			{
+				if (cwiList[k].name == log[i])
+				{
+					isIgnoredLog = true;
+					break;
+				}
+			}
+			if (!isIgnoredLog)
+			{
+				return { "Unread Console Messages!" };
+			}
 		}
 
 		return {};
@@ -1558,35 +1574,83 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	bool isLogIgnored(const bbe::String& msg) const
+	{
+		for (size_t i = 0; i < cwiList.getLength(); i++)
+		{
+			if (cwiList[i].name == msg)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void toggleIgnoreState(const bbe::String& msg)
+	{
+		for (size_t i = 0; i < cwiList.getLength(); i++)
+		{
+			if (cwiList[i].name == msg)
+			{
+				cwiList.removeIndex(i);
+				return;
+			}
+		}
+		ConsoleWarningIgnoreElement newElement;
+		newElement.name = msg;
+		cwiList.add(newElement);
+	}
+
 	bbe::Vector2 drawTabConsole()
 	{
 		const auto& log = bbe::logging::getLog();
-		readConsoleMessages = log.getLength();
 		static int64_t sliderVal = 0;
 		const int64_t min = 0;
 		const int64_t max = log.getLength() - 2;
-		ImGui::VSliderScalar("##Scrollbar", { 25, ImGui::GetWindowHeight() - 50 }, ImGuiDataType_S64, &sliderVal, &max, &min);
-		constexpr int64_t wheelSpeed = 5;
-		if (getMouseScrollY() > 0)
+		if (ImGui::BeginTable("table", 2, ImGuiTableFlags_RowBg))
 		{
-			sliderVal -= wheelSpeed;
+			ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 10 * getWindow()->getScale());
+			ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthStretch);
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::VSliderScalar("##Scrollbar", { 10 * getWindow()->getScale(), ImGui::GetWindowHeight() - 50 }, ImGuiDataType_S64, &sliderVal, &max, &min);
+			constexpr int64_t wheelSpeed = 5;
+			if (getMouseScrollY() > 0)
+			{
+				sliderVal -= wheelSpeed;
+			}
+			else if (getMouseScrollY() < 0)
+			{
+				sliderVal += wheelSpeed;
+			}
+			sliderVal = bbe::Math::clamp(sliderVal, min, max);
+			ImGui::TableSetColumnIndex(1);
+			for (size_t i = 0; i < 1024; i++)
+			{
+				const size_t index = i + sliderVal;
+				if (index >= log.getLength()) break;
+				std::lock_guard _(log);
+				if (log[index].isEmpty()) continue;
+				ImGui::PushID(i);
+				bool toggle = ImGui::Button("X");
+				ImGui::bbe::tooltip("Toggle the ignore state of this console message");
+				if(toggle)
+				{
+					toggleIgnoreState(log[index]);
+				}
+				ImGui::SameLine();
+				if (isLogIgnored(log[index]))
+				{
+					ImGui::Text(log[index]);
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4{1.0f, 0.5f, 0.5f, 1.0f}, log[index]);
+				}
+				ImGui::PopID();
+			}
+			ImGui::EndTable();
 		}
-		else if (getMouseScrollY() < 0)
-		{
-			sliderVal += wheelSpeed;
-		}
-		sliderVal = bbe::Math::clamp(sliderVal, min, max);
-		bbe::String txt = "";
-		for (size_t i = 0; i < 1024; i++)
-		{
-			const size_t index = i + sliderVal;
-			if (index >= log.getLength()) break;
-			std::lock_guard _(log);
-			txt += log[index];
-			txt += "\n";
-		}
-		ImGui::SameLine();
-		ImGui::Text(txt.getRaw());
 
 
 		return bbe::Vector2(1);
