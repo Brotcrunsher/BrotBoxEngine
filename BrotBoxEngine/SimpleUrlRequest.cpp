@@ -104,7 +104,9 @@ bbe::simpleUrlRequest::UrlRequestResult bbe::simpleUrlRequest::urlRequest(const 
 		bbe::String error = "Error (urlRequest): ";
 		error += res;
 		error += " For URL: " + url;
-		bbe::Crash(bbe::Error::IllegalState, error.getRaw());
+		retVal.responseCode = res;
+		retVal.dataContainer.clear();
+		BBELOGLN(error);
 	}
 
 	if (addTrailingNul)	retVal.dataContainer.add('\0');
