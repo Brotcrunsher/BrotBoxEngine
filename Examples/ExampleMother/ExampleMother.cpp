@@ -2714,7 +2714,7 @@ public:
 			adaptiveSizes.resizeCapacityAndLength(superAdaptiveTabs.getLength());
 			for (size_t i = 0; i < superAdaptiveTabs.getLength(); i++)
 			{
-				beginMeasure(adaptiveTabs[i].title);
+				beginMeasure(superAdaptiveTabs[i].title);
 				bbe::String name = "Super Adaptive Window: ";
 				name += i;
 				ImGuiViewport adaptiveViewport = fullViewport;
