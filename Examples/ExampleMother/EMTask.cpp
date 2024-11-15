@@ -259,6 +259,7 @@ bool SubsystemTask::drawContingentButton(Task& t)
 		if (ImGui::Button("Stop"))
 		{
 			t.execContingentStop();
+			ImGui::PopStyleColor(3);
 			return true;
 		}
 		ImGui::PopStyleColor(3);
