@@ -83,8 +83,8 @@ public:
 	void execMoveToNow();
 	void execAdvance();
 	void execContingentStart();
-	void addContingent();
-	void execContingentStop();
+	void addContingent(const bbe::TimePoint& stopTime);
+	void execContingentStop(const bbe::TimePoint& stopTime);
 
 	void sanity();
 	void nextExecPlusDays(int32_t days);
@@ -105,13 +105,21 @@ public:
 	bool isRareTask() const;
 };
 
+struct Heartbeat
+{
+	BBE_SERIALIZABLE_DATA(
+		((bbe::TimePoint), time, bbe::TimePoint::epoch())
+	)
+};
+
 class SubsystemTask
 {
 public:
 	bool forcePrepare = false;
 
 private:
-	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<Task>        tasks     = bbe::SerializableList<Task>       ("config.dat",    "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableObject<Heartbeat> heartbeat = bbe::SerializableObject<Heartbeat>("Heartbeat.dat", "ParanoiaConfig");
 	bbe::SessionLockMonitor sessionLockMonitor;
 
 	bool drawContingentButton(Task& t);
@@ -125,6 +133,7 @@ private:
 	bool isWorkTime() const;
 
 public:
+	SubsystemTask();
 
 	void update();
 
@@ -142,4 +151,5 @@ public:
 	void addServerTask(const bbe::String& id, const bbe::String& task);
 
 	bbe::List<bbe::String> getWarnings() const;
+	bbe::TimePoint getHeartbeat() const;
 };

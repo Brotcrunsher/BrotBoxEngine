@@ -94,15 +94,15 @@ void Task::execContingentStart()
 	contingentRunning = true;
 }
 
-void Task::addContingent()
+void Task::addContingent(const bbe::TimePoint& stopTime)
 {
-	collectedContingentSeconds += (bbe::TimePoint() - contingentCountingStart).toSeconds();
+	if(stopTime > contingentCountingStart) collectedContingentSeconds += (stopTime - contingentCountingStart).toSeconds();
 	contingentCountingStart = bbe::TimePoint::epoch();
 }
 
-void Task::execContingentStop()
+void Task::execContingentStop(const bbe::TimePoint& stopTime)
 {
-	addContingent();
+	addContingent(stopTime);
 	contingentRunning = false;
 }
 
@@ -258,7 +258,7 @@ bool SubsystemTask::drawContingentButton(Task& t)
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0.0f, 0.8f, 0.8f));
 		if (ImGui::Button("Stop"))
 		{
-			t.execContingentStop();
+			t.execContingentStop(bbe::TimePoint());
 			ImGui::PopStyleColor(3);
 			return true;
 		}
@@ -519,6 +519,26 @@ bool SubsystemTask::isWorkTime() const
 	return now > bbe::TimePoint::todayAt(5, 00) && now < bbe::TimePoint::todayAt(17, 00);
 }
 
+SubsystemTask::SubsystemTask()
+{
+	if (heartbeat->time > bbe::TimePoint::epoch())
+	{
+		bool requiresWrite = false;
+		for (size_t i = 0; i < tasks.getLength(); i++)
+		{
+			if (tasks[i].contingentTask)
+			{
+				tasks[i].execContingentStop(heartbeat->time);
+				requiresWrite = true;
+			}
+		}
+		if (requiresWrite)
+		{
+			tasks.writeToFile();
+		}
+	}
+}
+
 void SubsystemTask::update()
 {
 	bbe::List<Task>& taskList = tasks.getList();
@@ -551,7 +571,7 @@ void SubsystemTask::update()
 					&& t.contingentCountingStart != bbe::TimePoint::epoch()
 					&& t.contingentRunning)
 				{
-					t.addContingent();
+					t.addContingent(bbe::TimePoint());
 					requiresWrite = true;
 				}
 				if (!sessionLockMonitor.isScreenLocked()
@@ -567,6 +587,12 @@ void SubsystemTask::update()
 	if (requiresWrite)
 	{
 		tasks.writeToFile(false); // Updating history because of contingent update feels "weird".
+	}
+
+	EVERY_MINUTES(1)
+	{
+		heartbeat->time = bbe::TimePoint();
+		heartbeat.writeToFile();
 	}
 }
 
@@ -913,4 +939,9 @@ bbe::List<bbe::String> SubsystemTask::getWarnings() const
 	}
 
 	return retVal;
+}
+
+bbe::TimePoint SubsystemTask::getHeartbeat() const
+{
+	return heartbeat->time;
 }

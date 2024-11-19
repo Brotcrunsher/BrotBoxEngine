@@ -77,6 +77,7 @@ bbe::Game::~Game()
 	{
 		delete m_pwindow;
 	}
+	bbe::simpleFile::backup::async::stopIoThread();
 }
 
 static void segvHandler(int sig)
@@ -392,7 +393,6 @@ void bbe::Game::shutdown()
 	m_soundManager.destroy();
 #endif
 	INTERNAL::allocCleanup();
-	bbe::simpleFile::backup::async::stopIoThread();
 #ifdef WIN32
 	WSACleanup();
 #endif

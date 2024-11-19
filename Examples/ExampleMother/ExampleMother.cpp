@@ -2386,8 +2386,14 @@ public:
 			{
 				ImGui::Text("Build: " __DATE__ ", " __TIME__);
 				ImGui::Text(bbe::simpleFile::backup::async::hasOpenIO() ? "Saving" : "Done");
-				bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
-				ImGui::Text(s.getRaw());
+				{
+					bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
+					ImGui::Text(s.getRaw());
+				}
+				{
+					bbe::String s = "Task Heartbeat: " + tasks.getHeartbeat().toString();
+					ImGui::Text(s.getRaw());
+				}
 				ImGui::bbe::tooltip(getNightStart().toString().getRaw());
 
 				tasks.drawUndoRedoButtons();
