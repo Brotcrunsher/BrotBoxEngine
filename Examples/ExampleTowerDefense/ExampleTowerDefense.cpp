@@ -81,16 +81,102 @@ public:
 private:
 	bbe::Grid<int32_t> grid;
 
-
-	int32_t getCrossCheck(size_t x, size_t y) const
+	bool isBorderCoord(size_t x, size_t y) const
 	{
-		int32_t retVal = 0;
-		if (grid[x][y] == 0) retVal++;
-		if (x > 0 && grid[x - 1][y] == 0) retVal++;
-		if (y > 0 && grid[x][y - 1] == 0) retVal++;
-		if (x < gridSize - 1 && grid[x + 1][y] == 0) retVal++;
-		if (y < gridSize - 1 && grid[x][y + 1] == 0) retVal++;
-		return retVal;
+		if (x == 0) return true;
+		if (y == 0) return true;
+		if (x == gridSize - 1) return true;
+		if (y == gridSize - 1) return true;
+
+		return false;
+	}
+
+	bool isExitCoord(size_t x, size_t y) const
+	{
+		if (!isBorderCoord(x, y)) return false;
+		if (x == 0 && y == gridSize / 2) return true;
+		if (y == 0 && x == gridSize / 2) return true;
+		if (x == gridSize - 1 && y == gridSize / 2) return true;
+		if (y == gridSize - 1 && x == gridSize / 2) return true;
+		return false;
+	}
+
+	int32_t getPathNeighbors(size_t x, size_t y) const
+	{
+		int32_t neighbors = 0;
+		if (x > 0 && grid[x - 1][y] == 0) neighbors++;
+		if (y > 0 && grid[x][y - 1] == 0) neighbors++;
+		if (x < gridSize - 1 && grid[x + 1][y] == 0) neighbors++;
+		if (y < gridSize - 1 && grid[x][y + 1] == 0) neighbors++;
+		return neighbors;
+	}
+	
+	bool isPath(size_t x, size_t y) const
+	{
+		return grid[x][y] == 0;
+	}
+
+	bool isValidCoord(size_t x, size_t y) const
+	{
+		return x < gridSize && y < gridSize;
+	}
+
+	bool isCandidateForPath(size_t x, size_t y) const
+	{
+		if (!isValidCoord(x, y)) return false;
+		if (isPath(x, y)) return false;
+		if (getPathNeighbors(x, y) != 1) return false;
+		if (isExitCoord(x, y)) return true;
+		if (isBorderCoord(x, y)) return false;
+		return true;
+	}
+
+	bool expandPathFrom(bbe::Random& rand, size_t x, size_t y)
+	{
+		bbe::Vector2i walkerPos(x, y);
+		while (true)
+		{
+			grid[walkerPos] = 0;
+			if (isExitCoord(walkerPos.x, walkerPos.y))
+			{
+				// Success!
+				return true;
+			}
+
+			bbe::List<Direction> validDirections;
+			if (isCandidateForPath(walkerPos.x - 1, walkerPos.y)) validDirections.add(Direction::LEFT);
+			if (isCandidateForPath(walkerPos.x + 1, walkerPos.y)) validDirections.add(Direction::RIGHT);
+			if (isCandidateForPath(walkerPos.x, walkerPos.y - 1)) validDirections.add(Direction::UP);
+			if (isCandidateForPath(walkerPos.x, walkerPos.y + 1)) validDirections.add(Direction::DOWN);
+
+			if (validDirections.getLength() == 0)
+			{
+				// We failed. There is nowhere to go from here.
+				return false;
+			}
+
+			const Direction dir = validDirections[rand.randomInt(validDirections.getLength())];
+			if (dir == Direction::UP)
+			{
+				walkerPos.y--;
+			}
+			else if (dir == Direction::DOWN)
+			{
+				walkerPos.y++;
+			}
+			else if (dir == Direction::LEFT)
+			{
+				walkerPos.x--;
+			}
+			else if (dir == Direction::RIGHT)
+			{
+				walkerPos.x++;
+			}
+			else
+			{
+				bbe::Crash(bbe::Error::IllegalState, "Illegal Direction");
+			}
+		}
 	}
 
 public:
@@ -107,70 +193,51 @@ public:
 
 	Tile(bbe::Random& rand)
 	{
-		int32_t t = 0;
-		int32_t deepest = 0;
-	start:
-		int32_t depth = 0;
-		t++;
 		grid = bbe::Grid<int32_t>(gridSize, gridSize);
-		grid.fill(1);
-		grid[gridSize / 2][0] = 0;
-		size_t currentX = gridSize / 2;
-		size_t currentY = 1;
-		while (true)
+		while (true) // Keep making new grids until we found a good one.
 		{
-			depth++;
-			if (depth > deepest) deepest = depth;
-			grid[currentX][currentY] = 0;
-			if (currentX == gridSize / 2 && currentY == gridSize - 2)
+			grid.fill(1);
+			grid[gridSize / 2][0] = 0;
+			if (expandPathFrom(rand, gridSize / 2, 1))
 			{
-				grid[currentX][currentY + 1] = 0;
-				goto success;
-			}
-			if (currentX == gridSize - 2 && currentY == gridSize / 2)
-			{
-				grid[currentX + 1][currentY] = 0;
-				goto success;
-			}
-			if (currentX == 1 && currentY == gridSize / 2)
-			{
-				grid[currentX - 1][currentY] = 0;
-				goto success;
-			}
+				bool twoExits = true;
+				if (twoExits)
+				{
+					const auto startingGrid = grid; // Make a copy of the grid we had so far so that we can always roll back.
+					
+					// Some grids might be so full that we can't put another path, so we only try for a few times before giving up and trying with another tile.
+					for (int32_t breakOut = 0; breakOut < 10; breakOut++)
+					{
+						// Figure out a random starting location that has one neighbor.
+						size_t posX = 0;
+						size_t posY = 0;
+						while (true)
+						{
+							posX = 1 + rand.randomInt(gridSize - 2);
+							posY = 1 + rand.randomInt(gridSize - 2);
+							if (getPathNeighbors(posX, posY) == 1) break;
+						}
 
-			bbe::List<Direction> possibleDirections;
-			
-			if (currentX > 1            && getCrossCheck(currentX - 1, currentY) == 1) possibleDirections.add(Direction::LEFT);
-			if (currentX < gridSize - 2 && getCrossCheck(currentX + 1, currentY) == 1) possibleDirections.add(Direction::RIGHT);
-			if (currentY > 1            && getCrossCheck(currentX, currentY - 1) == 1) possibleDirections.add(Direction::UP);
-			if (currentY < gridSize - 2 && getCrossCheck(currentX, currentY + 1) == 1) possibleDirections.add(Direction::DOWN);
-
-			if (possibleDirections.getLength() == 0) goto start;
-
-			const Direction dir = possibleDirections[rand.randomInt(possibleDirections.getLength())];
-			if (dir == Direction::UP)
-			{
-				currentY--;
-			}
-			else if (dir == Direction::DOWN)
-			{
-				currentY++;
-			}
-			else if (dir == Direction::LEFT)
-			{
-				currentX--;
-			}
-			else if (dir == Direction::RIGHT)
-			{
-				currentX++;
-			}
-			else
-			{
-				bbe::Crash(bbe::Error::IllegalState, "Illegal Direction");
+						// Expand from that location.
+						if (expandPathFrom(rand, posX, posY))
+						{
+							// Success!
+							return;
+						}
+						else
+						{
+							// Fail :( Rollback
+							grid = startingGrid;
+						}
+					}
+				}
+				else
+				{
+					// Success!
+					return;
+				}
 			}
 		}
-	success:
-		return;
 	}
 
 	int32_t getHeight(int32_t x, int32_t y) const
