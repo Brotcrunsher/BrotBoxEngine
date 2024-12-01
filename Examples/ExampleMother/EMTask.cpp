@@ -526,7 +526,7 @@ SubsystemTask::SubsystemTask()
 		bool requiresWrite = false;
 		for (size_t i = 0; i < tasks.getLength(); i++)
 		{
-			if (tasks[i].contingentTask)
+			if (tasks[i].contingentTask && tasks[i].contingentCountingStart != bbe::TimePoint::epoch())
 			{
 				tasks[i].execContingentStop(heartbeat->time);
 				requiresWrite = true;

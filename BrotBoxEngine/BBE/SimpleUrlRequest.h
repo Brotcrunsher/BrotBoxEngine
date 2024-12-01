@@ -2,6 +2,7 @@
 
 #ifdef BBE_ADD_CURL
 #include <future>
+#include <functional>
 #include <optional>
 #include <map>
 #include <mutex>
@@ -132,7 +133,7 @@ namespace bbe
 		}
 
 		template<typename... Pairs>
-		void urlRequestJsonElements(const bbe::String& url, std::mutex* mutex, Pairs&&... pairs)
+		void urlRequestJsonElements(const bbe::String& url, std::mutex* mutex, std::function<void()> andThen, Pairs&&... pairs)
 		{
 			auto request = urlRequest(url);
 			if (request.responseCode == 200)
@@ -163,6 +164,11 @@ namespace bbe
 				if (mutex) ul = std::unique_lock(*mutex);
 				// I can feel the insanity rising...
 				std::apply([](auto&&... p) { ((*(p.first) = std::move(p.second)), ...); }, localValues);
+
+				if (andThen)
+				{
+					andThen();
+				}
 			}
 			else
 			{
@@ -171,9 +177,9 @@ namespace bbe
 		}
 
 		template<typename... Pairs>
-		std::future<void> urlRequestJsonElementsAsync(const bbe::String& url, std::mutex* mutex, Pairs&&... pairs)
+		std::future<void> urlRequestJsonElementsAsync(const bbe::String& url, std::mutex* mutex, std::function<void()> andThen, Pairs&&... pairs)
 		{
-			return bbe::async(&urlRequestJsonElements<Pairs...>, url, mutex, pairs...);
+			return bbe::async(&urlRequestJsonElements<Pairs...>, url, mutex, andThen, pairs...);
 		}
 
 #ifdef _WIN32

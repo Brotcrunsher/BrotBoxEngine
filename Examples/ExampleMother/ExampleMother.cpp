@@ -33,8 +33,6 @@
 //TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
 //TODO: Remember news items. Would be nice to hear all the news of the past week or so, not having to listen to them every day.
 //TODO: Record Bitcoin history prices
-//TODO: Ignore list of messages in console that are not important enough to trigger a warning.
-//TODO: Shut down contingent tasks automatically when shutting off the pc
 
 //TODO: Show average driving time
 //TODO: ChatGPT Function calling
@@ -1160,6 +1158,14 @@ public:
 		{
 			static std::future<void> f;
 			f = bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1", &requestMutex, 
+				[]() {
+					// The timestamps are becoming so big that they lead to a float conversion overflow.
+					times.clear();
+					for (int32_t i = 0; i < prices.getLength(); i++)
+					{
+						times.add(i);
+					}
+				},
 				std::make_pair(&times,  "prices/%%%/0"),
 				std::make_pair(&prices, "prices/%%%/1")
 			);
@@ -1169,14 +1175,14 @@ public:
 		EVERY_MINUTES(1)
 		{
 			static std::future<void> f;
-			f = bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://mempool.space/api/v1/prices", &requestMutex, std::make_pair(&currentPriceMempool, "USD"));
+			f = bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://mempool.space/api/v1/prices", &requestMutex, nullptr, std::make_pair(&currentPriceMempool, "USD"));
 		}
 
 		static std::string currentPriceBinance = "";
 		EVERY_MINUTES(1)
 		{
 			static std::future<void> f;
-			f = bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", &requestMutex, std::make_pair(&currentPriceBinance, "price"));
+			f = bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", &requestMutex, nullptr, std::make_pair(&currentPriceBinance, "price"));
 		}
 
 		for (size_t i = 0; i < prices.getLength(); i++)
