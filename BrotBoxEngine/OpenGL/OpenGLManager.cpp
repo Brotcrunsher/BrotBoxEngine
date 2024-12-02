@@ -169,10 +169,17 @@ void bbe::INTERNAL::openGl::Program::addFragmentShader(const bbe::String& label,
 
 bbe::String bbe::INTERNAL::openGl::Program::getHeader(const bbe::List<UniformVariable>& uniformVariables)
 {
-	bbe::String retVal =
+	bbe::String retVal;
+#ifdef __APPLE__
+	retVal =
+		"#version 330 core\n";
+#else
+	retVal =
 		"#version 300 es\n"
 		"precision highp float;\n"
 		"precision highp int;\n"; // Actually required! Intel Drivers seem to have different default precisions of int between vertex and frament shaders, leading to linker issues.
+#endif
+
 	for (const UniformVariable& uv : uniformVariables)
 	{
 		retVal += uv.toString();
@@ -904,6 +911,13 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transfo
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, GLuint framebuffer, bool baking, const bbe::Color& bakingColor)
 {
+#ifdef __APPLE__
+	// Generate a VAO
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+#endif
+
 	// TODO This function wants way too much. Refactor.
 	GLuint program = 0;
 	GLint modelPos = 0;
@@ -1035,7 +1049,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 		glBindTexture(GL_TEXTURE_2D, toRendererData(*emissions)->tex);
 	}
 
+#ifdef __APPLE__
+	glBindVertexArray(vao);
+#else
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+#endif
+
 	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0); addDrawcallStat();
 }
 
@@ -1086,6 +1105,13 @@ void bbe::INTERNAL::openGl::OpenGLManager::flushInstanceData2D()
 		bbe::Crash(bbe::Error::IllegalState);
 	}
 
+#ifdef __APPLE__
+	// Generate a VAO
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+#endif
+
 	GLuint program = m_program2d.program;
 	glUseProgram(program);
 
@@ -1114,7 +1140,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::flushInstanceData2D()
 	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(5 * sizeof(float)));
 	glVertexAttribDivisor(pos, 1);
 
-
+#ifdef __APPLE__
+	glBindVertexArray(vao);
+#endif
 	glDrawElementsInstanced(mode, size, GL_UNSIGNED_INT, 0, (GLsizei)instanceDatas.getLength()); addDrawcallStat();
 	instanceDatas.clear();
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1135,6 +1163,13 @@ bbe::INTERNAL::openGl::OpenGLImage* bbe::INTERNAL::openGl::OpenGLManager::toRend
 
 void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& light, bool baking, GLuint ibo)
 {
+#ifdef __APPLE__
+	// Create and bind VAO for macOS Core Profile compatibility
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+#endif
+
 	if (!baking)
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, openGl::OpenGLSphere::getIbo());
@@ -1154,6 +1189,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& ligh
 	LightProgram& program = baking ? m_program3dLightBaking : m_program3dLight;
 	program.setLightUniform(light, baking ? bbe::Matrix4() : m_view);
 
+#ifdef __APPLE__
+	glBindVertexArray(vao);
+#endif
 	glDrawElements(GL_TRIANGLES, baking ? 6 : (GLsizei)openGl::OpenGLSphere::getAmountOfIndices(), GL_UNSIGNED_INT, 0); addDrawcallStat();
 }
 
@@ -1375,8 +1413,17 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
+#ifdef __APPLE__
+	// Create and bind VAO for macOS Core Profile compatibility
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+#endif
 	glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLRectangle::getIbo());
+#ifdef __APPLE__
+	glBindVertexArray(vao);
+#endif
 	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0); addDrawcallStat();
 
 	m_program3dLight.use();
@@ -1390,6 +1437,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 		drawLight(l, false);
 	}
 
+#ifdef __APPLE__
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+#endif
+
 	m_programPostProcessing.use();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	postProcessingFb.useAsInput();
@@ -1397,6 +1449,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
+
+#ifdef __APPLE__
+	glBindVertexArray(vao);
+#endif
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
 
 	// Switch to 2D
@@ -1517,6 +1573,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 
 	glUseProgram(program);
 
+#ifdef __APPLE__
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+#endif
+
 	if (previousDrawCall2d != PreviousDrawCall2D::RECT_SHADER)
 	{
 		previousDrawCall2d = PreviousDrawCall2D::RECT_SHADER;
@@ -1531,6 +1593,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 		glVertexAttribDivisor(positionAttribute, 0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
+
+#ifdef __APPLE__
+	glBindVertexArray(vao);
+#endif
 
 	glUniform2f(fs->getTwoD().screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
 	glUniform4f(scalePosOffsetPos, rect.width, rect.height, rect.x, rect.y);
@@ -1566,6 +1632,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 		m_program2dTex.uniform1i(swizzleModePos, 0);
 	}
 
+#ifdef __APPLE__
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+#endif
+
 	GLuint vbo = genBuffer("drawImageVBO", BufferTarget::ARRAY_BUFFER, sizeof(bbe::Vector2) * vertices.getLength(), vertices.getRaw());
 	constexpr uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
 	static GLuint ibo = genBuffer("drawImageIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
@@ -1591,6 +1663,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	bbe::INTERNAL::openGl::OpenGLImage* ogi = toRendererData(image);
 	glBindTexture(GL_TEXTURE_2D, ogi->tex);
 
+#ifdef __APPLE__
+	glBindVertexArray(vao);
+#endif
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1619,6 +1694,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 
 	GLuint instanceVBO = genBuffer("fillVertexIndexList2DInstanceVBO", BufferTarget::ARRAY_BUFFER, sizeof(InstanceData2D), &instanceData2D);
 
+#ifdef __APPLE__
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+#endif
+
 	GLint pos = 1;
 	glEnableVertexAttribArray(pos);
 	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(0 * sizeof(float)));
@@ -1642,7 +1723,16 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 	glVertexAttribDivisor(positionAttribute, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+#ifdef __APPLE__
+	glBindVertexArray(vao);
+#endif
+
 	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0, 1); addDrawcallStat();
+
+#ifdef __APPLE__
+	glBindVertexArray(0);
+	glDeleteVertexArrays(1, &vao);
+#endif
 
 	glDeleteBuffers(1, &instanceVBO);
 	glDeleteBuffers(1, &ibo);
@@ -1887,11 +1977,20 @@ void bbe::INTERNAL::openGl::OpenGLManager::bakeLightGammaCorrect(bbe::LightBaker
 	m_programBakingGammaCorrection.use();
 	m_programBakingGammaCorrection.uniform2f(screenSizeBakingGammaCorrection, (GLfloat)lightBaker.m_resolution.x, (GLfloat)lightBaker.m_resolution.y);
 	ogllb->colorBuffer.useAsInput();
+
+#ifdef __APPLE__
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+#endif
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIbo);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
+#ifdef __APPLE__
+	glBindVertexArray(vao);
+#endif
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
 
 	// Read the frambuffer to image
