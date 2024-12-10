@@ -212,13 +212,12 @@ std::future<bbe::simpleUrlRequest::UrlRequestResult > bbe::simpleUrlRequest::url
 	return bbe::async(&urlFile, url, headerFields, formFields, fileData, fileFieldName, fileName, addTrailingNul, verbose);
 }
 
-std::optional<bbe::List<char>> bbe::simpleUrlRequest::decryptXChaCha(const bbe::List<char>& data, const String& pathToKeyFile, bool addTrailingNul)
+std::optional<bbe::List<char>> bbe::simpleUrlRequest::decryptXChaCha(const bbe::List<char>& data, const bbe::ByteBuffer& key, bool addTrailingNul)
 {
 	if (sodium_init() < 0)
 	{
 		bbe::Crash(bbe::Error::IllegalState);
 	}
-	const bbe::ByteBuffer key = bbe::simpleFile::readBinaryFile(pathToKeyFile);
 	if (key.getLength() != crypto_aead_xchacha20poly1305_ietf_KEYBYTES)
 	{
 		bbe::Crash(bbe::Error::IllegalState);
@@ -254,7 +253,7 @@ std::optional<bbe::List<char>> bbe::simpleUrlRequest::decryptXChaCha(const bbe::
 }
 
 #ifdef _WIN32
-bbe::simpleUrlRequest::SocketRequestXChaChaRet bbe::simpleUrlRequest::socketRequestXChaCha(const bbe::String& url, uint16_t port, const String& pathToKeyFile, bool addTrailingNul, bool verbose)
+bbe::simpleUrlRequest::SocketRequestXChaChaRet bbe::simpleUrlRequest::socketRequestXChaCha(const bbe::String& url, uint16_t port, const bbe::ByteBuffer& key, bool addTrailingNul, bool verbose)
 {
 	bbe::Socket socket(url, port);
 	if (!socket.established())
@@ -263,7 +262,7 @@ bbe::simpleUrlRequest::SocketRequestXChaChaRet bbe::simpleUrlRequest::socketRequ
 	}
 	bbe::List<char> data = socket.drain();
 
-	auto decrypted = bbe::simpleUrlRequest::decryptXChaCha(data, pathToKeyFile);
+	auto decrypted = bbe::simpleUrlRequest::decryptXChaCha(data, key);
 	if (!decrypted)
 	{
 		return SocketRequestXChaChaRet{ SocketRequestXChaChaCode::FAILED_TO_DECRYPT };
@@ -271,9 +270,9 @@ bbe::simpleUrlRequest::SocketRequestXChaChaRet bbe::simpleUrlRequest::socketRequ
 
 	return SocketRequestXChaChaRet{ SocketRequestXChaChaCode::SUCCESS, *decrypted };
 }
-std::future<bbe::simpleUrlRequest::SocketRequestXChaChaRet> bbe::simpleUrlRequest::socketRequestXChaChaAsync(bbe::String url, uint16_t port, const String& pathToKeyFile, bool addTrailingNul, bool verbose)
+std::future<bbe::simpleUrlRequest::SocketRequestXChaChaRet> bbe::simpleUrlRequest::socketRequestXChaChaAsync(bbe::String url, uint16_t port, const bbe::ByteBuffer& key, bool addTrailingNul, bool verbose)
 {
-	return bbe::async(&socketRequestXChaCha, url, port, pathToKeyFile, addTrailingNul, verbose);
+	return bbe::async(&socketRequestXChaCha, url, port, key, addTrailingNul, verbose);
 }
 bbe::List<bbe::String> bbe::simpleUrlRequest::resolveDomain(const bbe::String& domain)
 {

@@ -520,7 +520,12 @@ public:
 
 	auto getServerFuture()
 	{
-		return bbe::simpleUrlRequest::socketRequestXChaChaAsync(generalConfig->serverAddress, generalConfig->serverPort, generalConfig->serverKeyFilePath, true, true);;
+		static bbe::ByteBuffer key;
+		if (key.getLength() == 0)
+		{
+			key = bbe::simpleFile::readBinaryFile(generalConfig->serverKeyFilePath);
+		}
+		return bbe::simpleUrlRequest::socketRequestXChaChaAsync(generalConfig->serverAddress, generalConfig->serverPort, key, true, true);;
 	}
 
 	void minimizeAllWindows()
@@ -534,11 +539,13 @@ public:
 		{
 			EVERY_SECONDS(5)
 			{
+				static bool checkPassedOnce = false; // Lessens the amount of IO.
 				if (!generalConfig->serverAddress.isEmpty()
 					&& generalConfig->serverPort != 0
 					&& !generalConfig->serverKeyFilePath.isEmpty()
-					&& bbe::simpleFile::doesFileExist(generalConfig->serverKeyFilePath))
+					&& (checkPassedOnce || bbe::simpleFile::doesFileExist(generalConfig->serverKeyFilePath)))
 				{
+					checkPassedOnce = true;
 					static bbe::TimePoint serverDeadline = bbe::TimePoint().plusMinutes(1);
 					static auto fut = getServerFuture();
 					if (fut.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
@@ -658,7 +665,7 @@ public:
 		{
 			adafruitMacroPadRP2040.connect();
 		}
-
+		
 		beginMeasure("ChatGPT: Header...");
 		if (adafruitMacroPadRP2040.isConnected() && chatGPTComm.isKeySet())
 		{
@@ -2400,6 +2407,13 @@ public:
 					bbe::String s = "Task Heartbeat: " + tasks.getHeartbeat().toString();
 					ImGui::Text(s.getRaw());
 				}
+				{
+					bbe::String s = "Last IO: " + bbe::simpleFile::getLastIo().toString();
+					ImGui::Text(s);
+					bbe::String s2 = "Total IO Calls: ";
+					s2 += bbe::simpleFile::getTotalIoCalls();
+					ImGui::Text(s2);
+				}
 				ImGui::bbe::tooltip(getNightStart().toString().getRaw());
 
 				tasks.drawUndoRedoButtons();
@@ -2417,7 +2431,7 @@ public:
 				static bool updatePathExists = false;
 				static bool updatePathNewer = false;
 				// Avoiding multiple IO calls.
-				EVERY_SECONDS(10)
+				EVERY_SECONDS(60)
 				{
 					if (!updatePathExists)
 					{

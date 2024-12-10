@@ -13,6 +13,16 @@
 
 static std::mutex backupPathMutex;
 static bbe::String backupPath;
+static std::mutex lastIoMutex;
+static bbe::TimePoint lastIo;
+static size_t totalIoCalls = 0;
+
+static void updateIoStats()
+{
+	std::lock_guard _(lastIoMutex);
+	lastIo = bbe::TimePoint();
+	totalIoCalls++;
+}
 
 void bbe::simpleFile::backup::setBackupPath(const bbe::String& path)
 {
@@ -71,6 +81,7 @@ void bbe::simpleFile::backup::appendBinaryToFile(const bbe::String& filePath, co
 
 bbe::ByteBuffer bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 {
+	updateIoStats();
 	if (std::filesystem::is_directory(filepath.getRaw()))
 	{
 		bbe::Crash(bbe::Error::IllegalArgument);
@@ -100,6 +111,7 @@ bbe::ByteBuffer bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 
 bool bbe::simpleFile::readBinaryFileIfChanged(const bbe::String& filepath, bbe::ByteBuffer& outContents, std::filesystem::file_time_type& inOutPreviousModify)
 {
+	updateIoStats();
 	if (std::filesystem::is_directory(filepath.getRaw()))
 	{
 		bbe::Crash(bbe::Error::IllegalArgument);
@@ -145,7 +157,8 @@ bbe::List<float> bbe::simpleFile::readFloatArrFromFile(const bbe::String& filePa
 }
 
 void bbe::simpleFile::writeFloatArrToFile(const bbe::String & filePath, const float * arr, size_t size)
-{	
+{
+	updateIoStats();
 	std::ofstream file(filePath.getRaw(), std::ios_base::binary);
 	if (!file.is_open()) {
 		throw std::runtime_error("Could not open file!");
@@ -162,6 +175,7 @@ void bbe::simpleFile::writeFloatArrToFile(const bbe::String& filePath, const bbe
 
 void bbe::simpleFile::writeStringToFile(const bbe::String& filePath, const bbe::String& stringToWrite)
 {
+	updateIoStats();
 	std::ofstream file(filePath.getRaw());
 	if (!file.is_open()) {
 		throw std::runtime_error("Could not open file!");
@@ -172,6 +186,7 @@ void bbe::simpleFile::writeStringToFile(const bbe::String& filePath, const bbe::
 
 void bbe::simpleFile::writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
 {
+	updateIoStats();
 	std::ofstream file(filePath.getRaw(), std::ios_base::binary);
 	if (!file.is_open()) {
 		throw std::runtime_error("Could not open file!");
@@ -182,6 +197,7 @@ void bbe::simpleFile::writeBinaryToFile(const bbe::String& filePath, const bbe::
 
 void bbe::simpleFile::appendStringToFile(const bbe::String& filePath, const bbe::String& stringToAppend)
 {
+	updateIoStats();
 	std::ofstream file(filePath.getRaw(), std::ofstream::app);
 	if (!file.is_open()) {
 		throw std::runtime_error("Could not open file!");
@@ -192,6 +208,7 @@ void bbe::simpleFile::appendStringToFile(const bbe::String& filePath, const bbe:
 
 void bbe::simpleFile::appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
 {
+	updateIoStats();
 	std::ofstream file(filePath.getRaw(), std::ios::binary | std::ofstream::app);
 	if (!file.is_open()) {
 		throw std::runtime_error("Could not open file!");
@@ -202,12 +219,14 @@ void bbe::simpleFile::appendBinaryToFile(const bbe::String& filePath, const bbe:
 
 bool bbe::simpleFile::doesFileExist(const bbe::String& filePath)
 {
+	updateIoStats();
 	std::ifstream f(filePath.getRaw());
 	return (bool)f;
 }
 
 void bbe::simpleFile::createDirectory(const bbe::String& path)
 {
+	updateIoStats();
 	if (!std::filesystem::is_directory(path.getRaw()) || !std::filesystem::exists(path.getRaw()))
 	{
 		std::filesystem::create_directories(path.getRaw());
@@ -216,11 +235,13 @@ void bbe::simpleFile::createDirectory(const bbe::String& path)
 
 bool bbe::simpleFile::deleteFile(const bbe::String& path)
 {
+	updateIoStats();
 	return std::filesystem::remove(path.getRaw());
 }
 
 bbe::String bbe::simpleFile::readFile(const bbe::String& filePath)
 {
+	updateIoStats();
 	std::ifstream f(filePath.getRaw());
 	if (!f.is_open()) {
 		throw std::runtime_error("Could not open file!");
@@ -231,6 +252,7 @@ bbe::String bbe::simpleFile::readFile(const bbe::String& filePath)
 
 bbe::List<bbe::String> bbe::simpleFile::readLines(const bbe::String& filePath)
 {
+	updateIoStats();
 	std::ifstream file(filePath.getRaw());
 	std::string line;
 	bbe::List<bbe::String> retVal;
@@ -244,6 +266,7 @@ bbe::List<bbe::String> bbe::simpleFile::readLines(const bbe::String& filePath)
 
 std::optional<bbe::TimePoint> bbe::simpleFile::getLastModifyTime(const bbe::String& filePath)
 {
+	updateIoStats();
 	std::error_code ec;
 	const auto mod = std::filesystem::last_write_time(filePath.getRaw(), ec);
 	if (ec)
@@ -260,9 +283,22 @@ std::optional<bbe::TimePoint> bbe::simpleFile::getLastModifyTime(const bbe::Stri
 	return bbe::TimePoint(t);
 }
 
+bbe::TimePoint bbe::simpleFile::getLastIo()
+{
+	std::lock_guard _(lastIoMutex);
+	return lastIo;
+}
+
+size_t bbe::simpleFile::getTotalIoCalls()
+{
+	std::lock_guard _(lastIoMutex);
+	return totalIoCalls;
+}
+
 #ifndef __EMSCRIPTEN__
 void bbe::simpleFile::forEachFile(const bbe::String& filePath, const std::function<void(const bbe::String&)>& func)
 {
+	updateIoStats();
 	for (const auto& f : std::filesystem::directory_iterator(filePath.getRaw()))
 	{
 		func(f.path().c_str());
@@ -281,6 +317,7 @@ void bbe::simpleFile::forEachFile(const bbe::String& filePath, const std::functi
 
 bbe::String bbe::simpleFile::getUserName()
 {
+	updateIoStats();
 	TCHAR buffer[256];
 	DWORD bufferSize = sizeof(buffer) / sizeof(TCHAR);
 	if (GetUserName(buffer, &bufferSize))
@@ -300,6 +337,7 @@ bbe::String bbe::simpleFile::getAutoStartDirectory()
 
 bbe::String bbe::simpleFile::getExecutablePath()
 {
+	updateIoStats();
 	TCHAR buffer[1024] = {};
 	GetModuleFileName(NULL, buffer, sizeof(buffer) / sizeof(TCHAR));
 	return bbe::String(buffer);
@@ -307,6 +345,7 @@ bbe::String bbe::simpleFile::getExecutablePath()
 
 bbe::String bbe::simpleFile::getWorkingDirectory()
 {
+	updateIoStats();
 	TCHAR buffer[1024] = {};
 	GetCurrentDirectory(sizeof(buffer) / sizeof(TCHAR), buffer);
 	return bbe::String(buffer);
@@ -314,6 +353,7 @@ bbe::String bbe::simpleFile::getWorkingDirectory()
 
 void bbe::simpleFile::createLink(const bbe::String& from, const bbe::String& to, const bbe::String& workDir)
 {
+	updateIoStats();
 	// More or less from the microsoft examples, adjusted to use BBE Types and coding style.
 	// See: https://learn.microsoft.com/en-us/windows/win32/shell/links
 
@@ -367,6 +407,7 @@ void bbe::simpleFile::executeBatchFile(const bbe::String& path)
 
 bool bbe::simpleFile::showOpenDialog(bbe::String& outPath)
 {
+	updateIoStats();
 	OPENFILENAME ofn;
 	char path[1024] = {};
 
@@ -389,6 +430,7 @@ bool bbe::simpleFile::showOpenDialog(bbe::String& outPath)
 }
 bool bbe::simpleFile::showSaveDialog(bbe::String& outPath, const bbe::String& defaultExtension)
 {
+	updateIoStats();
 	OPENFILENAME ofn;
 	char path[1024] = {};
 
@@ -508,6 +550,7 @@ void bbe::simpleFile::backup::async::stopIoThread()
 
 void bbe::simpleFile::backup::async::writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
 {
+	updateIoStats();
 #ifdef __EMSCRIPTEN__
 	bbe::simpleFile::backup::writeBinaryToFile(filePath, buffer);
 #else
@@ -518,6 +561,7 @@ void bbe::simpleFile::backup::async::writeBinaryToFile(const bbe::String& filePa
 
 void bbe::simpleFile::backup::async::createDirectory(const bbe::String& path)
 {
+	updateIoStats();
 #ifdef __EMSCRIPTEN__
 	bbe::simpleFile::backup::createDirectory(path);
 #else
@@ -528,6 +572,7 @@ void bbe::simpleFile::backup::async::createDirectory(const bbe::String& path)
 
 void bbe::simpleFile::backup::async::appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
 {
+	updateIoStats();
 #ifdef __EMSCRIPTEN__
 	bbe::simpleFile::backup::appendBinaryToFile(filePath, buffer);
 #else

@@ -49,6 +49,9 @@ namespace bbe
 		bbe::List<bbe::String> readLines(const bbe::String& filePath);
 		std::optional<bbe::TimePoint> getLastModifyTime(const bbe::String& filePath);
 
+		bbe::TimePoint getLastIo();
+		size_t getTotalIoCalls();
+
 #ifndef __EMSCRIPTEN__
 		void forEachFile(const bbe::String& filePath, const std::function<void(const bbe::String&)>& func);
 #endif

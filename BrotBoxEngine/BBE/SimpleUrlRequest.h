@@ -47,7 +47,7 @@ namespace bbe
 			bool addTrailingNul = true,
 			bool verbose = false);
 		
-		std::optional<bbe::List<char>> decryptXChaCha(const bbe::List<char>& data, const String& pathToKeyFile, bool addTrailingNul = true);
+		std::optional<bbe::List<char>> decryptXChaCha(const bbe::List<char>& data, const bbe::ByteBuffer& key, bool addTrailingNul = true);
 
 		template<typename T>
 		void jsonElement(T* value, const nlohmann::json& json, const char* jsonPath, int32_t depth = 0)
@@ -194,8 +194,8 @@ namespace bbe
 			SocketRequestXChaChaCode code = SocketRequestXChaChaCode::SUCCESS;
 			bbe::List<char> dataContainer;
 		};
-		SocketRequestXChaChaRet socketRequestXChaCha(const bbe::String& url, uint16_t port, const String& pathToKeyFile, bool addTrailingNul = true, bool verbose = false);
-		std::future<SocketRequestXChaChaRet> socketRequestXChaChaAsync(bbe::String /*copy*/ url, uint16_t port, const String& pathToKeyFile, bool addTrailingNul = true, bool verbose = false);
+		SocketRequestXChaChaRet socketRequestXChaCha(const bbe::String& url, uint16_t port, const bbe::ByteBuffer& key, bool addTrailingNul = true, bool verbose = false);
+		std::future<SocketRequestXChaChaRet> socketRequestXChaChaAsync(bbe::String /*copy*/ url, uint16_t port, const bbe::ByteBuffer& key, bool addTrailingNul = true, bool verbose = false);
 		
 		bbe::List<bbe::String> resolveDomain(const bbe::String& domain);
 		bbe::List<bbe::String> resolveDomains(const bbe::List<bbe::String>& domains);
