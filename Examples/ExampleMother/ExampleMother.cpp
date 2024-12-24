@@ -37,7 +37,7 @@
 //TODO: Show average driving time
 //TODO: ChatGPT Function calling
 //TODO: Thickness for mouse wall would be cool
-
+//TODO: (Can't reproduce, maybe I did the task after 22:00?) Creating a new yearly tasks that is due e.g. in a week seems to have the odd bug of putting the next execution date not in a week but in a year after that.
 
 struct ClipboardContent
 {
@@ -1946,13 +1946,21 @@ public:
 
 	bbe::Vector2 drawTabStreaks(bbe::PrimitiveBrush2D& brush)
 	{
-		const int32_t year = bbe::TimePoint().getYear();
-		for (int32_t i = 1; i <= 12; i++)
+		int32_t year = bbe::TimePoint().getYear();
+		int32_t month = (int32_t)bbe::TimePoint().getMonth() + 1; /* +1 so that we can decrement at the start of the loop, a bit more readable. */
+		for (int32_t monthIter = 1; monthIter <= 12; monthIter++)
 		{
-			const int32_t days = bbe::TimePoint::getDaysInMonth(year, i);
+			month--;
+			if (month <= 0)
+			{
+				month = 12;
+				year--;
+			}
+
+			const int32_t days = bbe::TimePoint::getDaysInMonth(year, month);
 			for (int32_t k = 1; k <= days; k++)
 			{
-				bbe::TimePoint tp = bbe::TimePoint::fromDate(year, i, k);
+				bbe::TimePoint tp = bbe::TimePoint::fromDate(year, month, k);
 				bool isStreakDay = false;
 				for (size_t m = 0; m < streakDays.getLength(); m++)
 				{
@@ -1980,8 +1988,8 @@ public:
 				{
 					brush.setColorRGB(0.3f, 0.3f, 0.3f, 1);
 				}
-				brush.sketchRect( -9 + k * 19, 5 + i * 30, 15, 15);
-				brush.fillText(3 - 4 + k * 19, 16 + i * 30, bbe::String(k), 15, bbe::Anchor::BOTTOM_CENTER);
+				brush.sketchRect( -9 + k * 19, 5 + (12 - monthIter) * 30, 15, 15);
+				brush.fillText(3 - 4 + k * 19, 16 + (12 - monthIter) * 30, bbe::String(k), 15, bbe::Anchor::BOTTOM_CENTER);
 			}
 		}
 
