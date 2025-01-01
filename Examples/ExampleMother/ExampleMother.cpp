@@ -1988,8 +1988,8 @@ public:
 				{
 					brush.setColorRGB(0.3f, 0.3f, 0.3f, 1);
 				}
-				brush.sketchRect( -9 + k * 19, 5 + (12 - monthIter) * 30, 15, 15);
-				brush.fillText(3 - 4 + k * 19, 16 + (12 - monthIter) * 30, bbe::String(k), 15, bbe::Anchor::BOTTOM_CENTER);
+				brush.sketchRect( -9 + k * 19, 35 + (12 - monthIter) * 30, 15, 15);
+				brush.fillText(3 - 4 + k * 19, 46 + (12 - monthIter) * 30, bbe::String(k), 15, bbe::Anchor::BOTTOM_CENTER);
 			}
 		}
 
