@@ -15,7 +15,7 @@ struct Task
 	{
 		DT_DYNAMIC = 0,
 		DT_YEARLY = 1,
-		// dt_monthly = 2, // Not implemented
+		DT_MONTHLY = 2,
 	};
 
 	BBE_SERIALIZABLE_DATA(
@@ -59,7 +59,8 @@ struct Task
 		((bbe::TimePoint), contingentCountingStart, bbe::TimePoint::epoch()),
 		((bbe::TimePoint), previousContingentSubtraction, bbe::TimePoint::epoch()),
 		((bool), contingentRunning, false),
-		((bool), stopContingentWhenLocked, false)
+		((bool), stopContingentWhenLocked, false),
+		((int32_t), dtMonthlyDay, 1)
 	)
 
 	// Non-Persisted Helper Data below.
@@ -97,6 +98,7 @@ public:
 	void setNextExecution(const bbe::TimePoint& tp);
 	int32_t amountPossibleWeekdays() const;
 	bbe::TimePoint getNextYearlyExecution() const;
+	bbe::TimePoint getNextMonthlyExecution() const;
 	bool wasDoneToday() const;
 	bbe::Duration getWorkDurationLeft() const;
 	bool wasStartedToday() const;

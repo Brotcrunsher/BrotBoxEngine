@@ -42,6 +42,10 @@ void Task::execDone()
 	{
 		nextExecution = getNextYearlyExecution();
 	}
+	else if (dateType == DT_MONTHLY)
+	{
+		nextExecution = getNextMonthlyExecution();
+	}
 }
 
 void Task::execFollowUp()
@@ -85,6 +89,10 @@ void Task::execAdvance()
 	else if (dateType == DT_YEARLY)
 	{
 		nextExecution = getNextYearlyExecution();
+	}
+	else if (dateType == DT_MONTHLY)
+	{
+		nextExecution = getNextMonthlyExecution();
 	}
 }
 
@@ -214,6 +222,24 @@ bbe::TimePoint Task::getNextYearlyExecution() const
 {
 	bbe::TimePoint now;
 	return toPossibleTimePoint(bbe::TimePoint::fromDate(now.getYear() + 1, dtYearlyMonth, dtYearlyDay).nextMorning());
+}
+
+bbe::TimePoint Task::getNextMonthlyExecution() const
+{
+	bbe::TimePoint now;
+	auto month = now.getMonth();
+	auto year = now.getYear();
+	if (month == bbe::Month::DECEMBER)
+	{
+		month = bbe::Month::JANUARY;
+		year++;
+	}
+	else
+	{
+		month = bbe::Month((int)month + 1);
+	}
+
+	return toPossibleTimePoint(bbe::TimePoint::fromDate(year, month, dtMonthlyDay).nextMorning());
 }
 
 bool Task::wasDoneToday() const
@@ -608,7 +634,7 @@ bool SubsystemTask::drawEditableTask(Task& t)
 {
 	bool taskChanged = false;
 	taskChanged |= ImGui::bbe::InputText("Title", t.title);
-	taskChanged |= ImGui::bbe::combo("Date Type", { "Dynamic", "Yearly" }, &t.dateType);
+	taskChanged |= ImGui::bbe::combo("Date Type", { "Dynamic", "Yearly", "Monthly" }, &t.dateType);
 	if (t.dateType == Task::DT_DYNAMIC)
 	{
 		taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
@@ -623,6 +649,13 @@ bool SubsystemTask::drawEditableTask(Task& t)
 
 		t.dtYearlyMonth = (int32_t)t.yearlyBuffer.getMonth();
 		t.dtYearlyDay = t.yearlyBuffer.getDay();
+	}
+	else if (t.dateType == Task::DT_MONTHLY)
+	{
+		ImGui::Text("Day: ");
+		ImGui::SameLine();
+		ImGui::InputInt("##MonthlyPick", &t.dtMonthlyDay);
+		t.dtMonthlyDay = bbe::Math::clamp(t.dtMonthlyDay, 1, 28); // TODO: What about days after the 28th?
 	}
 	const int32_t amountOfWeekdays = t.amountPossibleWeekdays();
 	taskChanged |= weekdayCheckbox("Monday", &t.canBeMo, amountOfWeekdays);
