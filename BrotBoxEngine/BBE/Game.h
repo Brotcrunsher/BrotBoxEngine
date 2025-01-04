@@ -51,6 +51,7 @@ namespace bbe
 		bbe::StopWatch m_performanceMeasurement;
 		struct PerformanceMeasurement
 		{
+			bbe::String name;
 			bbe::List<double> perFrame;
 			double max = 0.0;
 			double avg = 0.0;
@@ -60,7 +61,7 @@ namespace bbe
 			double minuteMax2 = 0.0;
 		};
 		bbe::TimePoint nextMinuteMaxMove;
-		std::map<const char*, PerformanceMeasurement> m_performanceMeasurements;
+		bbe::List<PerformanceMeasurement> m_performanceMeasurements;
 		bool m_performanceMeasurementsRequired = false;
 		bool m_performanceMeasurementsForced = false;
 
@@ -162,7 +163,7 @@ namespace bbe
 		bool isWindowShow() const;
 
 		void endMeasure();
-		void beginMeasure(const char* tag, bool force = false); // CAREFUL: Static string assumed!
+		void beginMeasure(const char* tag, bool force = false);
 		bbe::String getMeasuresString();
 		void drawMeasurement();
 

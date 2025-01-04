@@ -347,7 +347,7 @@ void bbe::Game::frameUpdate()
 		nextMinuteMaxMove = bbe::TimePoint().plusMinutes(1);
 		for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
 		{
-			PerformanceMeasurement& pm = it->second;
+			PerformanceMeasurement& pm = *it;
 			pm.minuteMax2 = pm.minuteMax1;
 			pm.minuteMax1 = 0.0;
 		}
@@ -714,23 +714,27 @@ void bbe::Game::endMeasure()
 	if (m_pcurrentPerformanceMeasurementTag)
 	{
 		auto passedTimeSeconds = m_performanceMeasurement.getTimeExpiredNanoseconds() / 1000.0 / 1000.0 / 1000.0;
-		const bool firstMeasurement = !m_performanceMeasurements.count(m_pcurrentPerformanceMeasurementTag);
-		PerformanceMeasurement& pm = m_performanceMeasurements[m_pcurrentPerformanceMeasurementTag];
-		pm.now = passedTimeSeconds;
-		pm.max = bbe::Math::max(pm.max, passedTimeSeconds);
-		pm.minuteMax1 = bbe::Math::max(pm.minuteMax1, passedTimeSeconds);
-		if (firstMeasurement)
+		PerformanceMeasurement* pm = m_performanceMeasurements.find([&](const PerformanceMeasurement& pm) {
+			return pm.name == m_pcurrentPerformanceMeasurementTag;
+		});
+		if (!pm)
 		{
-			pm.avg = passedTimeSeconds;
+			PerformanceMeasurement newPm;
+			newPm.name = m_pcurrentPerformanceMeasurementTag;
+			newPm.avg = passedTimeSeconds;
+			m_performanceMeasurements.add(newPm);
+			pm = &m_performanceMeasurements.last();
 		}
 		else
 		{
-
-			pm.avg = 0.999 * pm.avg + 0.001 * passedTimeSeconds;
+			pm->avg = 0.999 * pm->avg + 0.001 * passedTimeSeconds;
 		}
+		pm->now = passedTimeSeconds;
+		pm->max = bbe::Math::max(pm->max, passedTimeSeconds);
+		pm->minuteMax1 = bbe::Math::max(pm->minuteMax1, passedTimeSeconds);
 		if (m_performanceMeasurementsRequired || m_performanceMeasurementsForced)
 		{
-			pm.perFrame.add(passedTimeSeconds);
+			pm->perFrame.add(passedTimeSeconds);
 		}
 	}
 	m_pcurrentPerformanceMeasurementTag = nullptr;
@@ -749,7 +753,7 @@ bbe::String bbe::Game::getMeasuresString()
 	int32_t maxLen = 0;
 	for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
 	{
-		maxLen = bbe::Math::max(maxLen, (int32_t)strlen(it->first));
+		maxLen = bbe::Math::max(maxLen, (int32_t)it->name.getLength());
 	}
 
 	bbe::String retVal = bbe::String(" ") * maxLen;
@@ -759,9 +763,9 @@ bbe::String bbe::Game::getMeasuresString()
 	{
 		if (it != m_performanceMeasurements.begin()) retVal += "\n";
 
-		const PerformanceMeasurement& pm = it->second;
-		int32_t padding = maxLen - (int32_t)strlen(it->first);
-		retVal += it->first;
+		const PerformanceMeasurement& pm = *it;
+		int32_t padding = maxLen - (int32_t)pm.name.getLength();
+		retVal += pm.name;
 		retVal += ": ";
 		retVal += bbe::String(" ") * padding;
 		retVal += pm.max;
@@ -786,13 +790,13 @@ void bbe::Game::drawMeasurement()
 	int32_t maxLen = 0;
 	for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
 	{
-		maxLen = bbe::Math::max(maxLen, (int32_t)strlen(it->first));
+		maxLen = bbe::Math::max(maxLen, (int32_t)it->name.getLength());
 
-		maxMax = bbe::Math::max(maxMax, it->second.max);
-		maxAvg = bbe::Math::max(maxAvg, it->second.avg);
-		maxNow = bbe::Math::max(maxNow, it->second.now);
-		maxMinuteMax = bbe::Math::max(maxMinuteMax, it->second.minuteMax1);
-		maxMinuteMax = bbe::Math::max(maxMinuteMax, it->second.minuteMax2);
+		maxMax = bbe::Math::max(maxMax, it->max);
+		maxAvg = bbe::Math::max(maxAvg, it->avg);
+		maxNow = bbe::Math::max(maxNow, it->now);
+		maxMinuteMax = bbe::Math::max(maxMinuteMax, it->minuteMax1);
+		maxMinuteMax = bbe::Math::max(maxMinuteMax, it->minuteMax2);
 	}
 
 	bbe::String header = bbe::String(" ") * maxLen;
@@ -801,9 +805,9 @@ void bbe::Game::drawMeasurement()
 
 	for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
 	{
-		const PerformanceMeasurement& pm = it->second;
-		int32_t padding = maxLen - (int32_t)strlen(it->first);
-		ImGui::Text(it->first);
+		const PerformanceMeasurement& pm = *it;
+		int32_t padding = maxLen - (int32_t)it->name.getLength();
+		ImGui::Text(it->name);
 		ImGui::SameLine(0.0f, 0.0f); ImGui::Text(": ");
 		ImGui::SameLine(0.0f, 0.0f); ImGui::Text(bbe::String(" ") * padding);
 
