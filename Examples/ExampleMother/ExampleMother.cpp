@@ -327,6 +327,8 @@ private:
 
 	bool silenceBitcoinAth = false;
 
+	bbe::PixelObserver pixelObserver;
+
 public:
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
 	{
@@ -1388,6 +1390,40 @@ public:
 		{
 			mouseWallConfig.writeToFile();
 		}
+
+		return bbe::Vector2(1);
+	}
+
+	bbe::Vector2 drawEmpiresCommand()
+	{
+		const auto mouse = getMouseGlobal();
+		bbe::String mouseString = "";
+		mouseString += mouse.x;
+		mouseString += " / ";
+		mouseString += mouse.y;
+
+		ImGui::Text(mouseString);
+
+		auto color = pixelObserver.getColor(118, 40);
+
+		bbe::String colorString = "";
+		colorString += color.r;
+		colorString += " ";
+		colorString += color.g;
+		colorString += " ";
+		colorString += color.b;
+		ImGui::Text(colorString);
+
+		const bbe::Color noResearchColor(1.0f, 0.0f, 0.0f);
+
+		static bbe::TimePoint lastResearchFound;
+		if (color != noResearchColor)
+		{
+			lastResearchFound = bbe::TimePoint();
+		}
+
+		bbe::String timeSinceLastResearchString = "Time since last research: " + (bbe::TimePoint() - lastResearchFound).toString();
+		ImGui::Text(timeSinceLastResearchString);
 
 		return bbe::Vector2(1);
 	}
@@ -2683,6 +2719,7 @@ public:
 				//Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
 				Tab{"ENews",     "Edit News",      [&]() { return drawNewsConfig(); }},
 				Tab{"MW",        "Mouse Walls",    [&]() { return drawMouseWallsConfig(); }},
+				Tab{"EC",        "Empires Commander",[&]() { return drawEmpiresCommand(); }},
 				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
 				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
 			};
