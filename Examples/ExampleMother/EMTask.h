@@ -70,6 +70,7 @@ struct Task
 	mutable bool armedToPlaySoundDone = false;
 	bbe::TimePoint execPointBuffer;
 	bbe::TimePoint yearlyBuffer;
+	bool historyViewDirty = false;
 
 private:
 	bool timePointElapsed(const bbe::TimePoint& tp, bool& armed) const;
