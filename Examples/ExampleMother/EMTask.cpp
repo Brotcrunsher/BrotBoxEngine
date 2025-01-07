@@ -583,13 +583,16 @@ void SubsystemTask::update()
 		if (t.contingentTask)
 		{
 			const bbe::TimePoint today = bbe::TimePoint().toMorning();
-			const int32_t days = (today - t.previousContingentSubtraction).toDays();
-			if (days > 0)
+			if (today < bbe::TimePoint()) // Only update the contingent when we are after the current morning.
 			{
-				t.previousContingentSubtraction = today;
-				requiresWrite = true;
-				t.collectedContingentSeconds -= days * t.contingentSecondsPerDay;
-				if (t.collectedContingentSeconds < 0) t.collectedContingentSeconds = 0;
+				const int32_t days = (today - t.previousContingentSubtraction).toDays();
+				if (days > 0)
+				{
+					t.previousContingentSubtraction = today;
+					requiresWrite = true;
+					t.collectedContingentSeconds -= days * t.contingentSecondsPerDay;
+					if (t.collectedContingentSeconds < 0) t.collectedContingentSeconds = 0;
+				}
 			}
 
 			if (t.stopContingentWhenLocked)
