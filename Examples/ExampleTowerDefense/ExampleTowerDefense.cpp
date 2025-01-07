@@ -307,6 +307,26 @@ public:
 		bbe::Crash(bbe::Error::IllegalState, "Entrance mismatch!");
 	}
 
+	void _addToPath(bbe::Grid<bool>& visited, const bbe::Vector2i& base, const bbe::Vector2i& coord, size_t parentIndex)
+	{
+		if (   coord.x < 0 || coord.x >= gridSize
+			|| coord.y < 0 || coord.y >= gridSize) return;
+		if (visited[coord]) return;
+		visited[coord] = true;
+		if (grid[coord] > 0) return;
+
+		PathElement newElement;
+		newElement.coords = coord + base;
+		newElement.nextElement = parentIndex;
+		path.add(newElement);
+
+		const size_t thisIndex = path.getLength() > 0 ? path.getLength() - 1 : 0;
+		_addToPath(visited, base, coord + bbe::Vector2i( 1,  0), thisIndex);
+		_addToPath(visited, base, coord + bbe::Vector2i(-1,  0), thisIndex);
+		_addToPath(visited, base, coord + bbe::Vector2i( 0,  1), thisIndex);
+		_addToPath(visited, base, coord + bbe::Vector2i( 0, -1), thisIndex);
+	}
+
 	void addToPath(const bbe::Vector2i& base, Entrance& entrance)
 	{
 		bbe::Vector2i pos;
@@ -317,20 +337,7 @@ public:
 		if (entrance.dir == Direction::LEFT   ) pos = bbe::Vector2i(gridSize - 1, gridSize / 2);
 
 		bbe::Grid<bool> visited(gridSize, gridSize);
-		while (true)
-		{
-			visited[pos.x][pos.y] = true;
-			PathElement newElement;
-			newElement.coords = pos + base;
-			newElement.nextElement = path.getLength() > 0 ? path.getLength() - 1 : 0;
-			path.add(newElement);
-
-			     if (pos.x > 0            && grid[pos.x - 1][pos.y] == 0 && !visited[pos.x - 1][pos.y]) pos.x--;
-			else if (pos.x < gridSize - 1 && grid[pos.x + 1][pos.y] == 0 && !visited[pos.x + 1][pos.y]) pos.x++;
-			else if (pos.y > 0            && grid[pos.x][pos.y - 1] == 0 && !visited[pos.x][pos.y - 1]) pos.y--;
-			else if (pos.y < gridSize - 1 && grid[pos.x][pos.y + 1] == 0 && !visited[pos.x][pos.y + 1]) pos.y++;
-			else break;
-		}
+		_addToPath(visited, base, pos, path.getLength() > 0 ? path.getLength() - 1 : 0);
 	}
 };
 
