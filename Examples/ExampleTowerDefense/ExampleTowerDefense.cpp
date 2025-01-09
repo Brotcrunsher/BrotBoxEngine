@@ -67,14 +67,16 @@ struct PathElement
 };
 bbe::List<PathElement> path;
 
+struct TileConnector
+{
+	bbe::Vector2i position;
+	Direction dir;
+};
+// List of Tile connectors that don't have a connected tile yet.
+bbe::List<TileConnector> openTileConnectors;
+
 class Tile
 {
-public:
-	struct Entrance
-	{
-		bbe::Vector2i position;
-		Direction dir;
-	};
 public:
 	static constexpr size_t gridSize = 13;
 
@@ -250,7 +252,7 @@ public:
 		return grid.count(0);
 	}
 
-	bool exitsAlign(Entrance& exit)
+	bool exitsAlign(TileConnector& exit)
 	{
 		if (exit.dir == Direction::UP)    return grid[gridSize / 2][gridSize - 1] == 0;
 		if (exit.dir == Direction::DOWN)  return grid[gridSize / 2][0] == 0;
@@ -259,7 +261,7 @@ public:
 		bbe::Crash(bbe::Error::IllegalState, "Illegal Direction in exitsAlign");
 	}
 
-	void rotate(Entrance& exit)
+	void rotate(TileConnector& exit)
 	{
 		do
 		{
@@ -298,22 +300,33 @@ public:
 		return grid;
 	}
 
-	Entrance getEntrance(Entrance& exit)
+	TileConnector getEntrance(TileConnector& exit)
 	{
-		if (grid[0           ][gridSize / 2] == 0 && exit.dir != Direction::RIGHT) return Entrance{ {0,            gridSize / 2}, Direction::LEFT };
-		if (grid[gridSize - 1][gridSize / 2] == 0 && exit.dir != Direction::LEFT)  return Entrance{ {gridSize - 1, gridSize / 2}, Direction::RIGHT };
-		if (grid[gridSize / 2][0           ] == 0 && exit.dir != Direction::DOWN)  return Entrance{ {gridSize / 2, 0,          }, Direction::UP };
-		if (grid[gridSize / 2][gridSize - 1] == 0 && exit.dir != Direction::UP)    return Entrance{ {gridSize / 2, gridSize - 1}, Direction::DOWN };
+		if (grid[0           ][gridSize / 2] == 0 && exit.dir != Direction::RIGHT) return TileConnector{ {0,            gridSize / 2}, Direction::LEFT };
+		if (grid[gridSize - 1][gridSize / 2] == 0 && exit.dir != Direction::LEFT)  return TileConnector{ {gridSize - 1, gridSize / 2}, Direction::RIGHT };
+		if (grid[gridSize / 2][0           ] == 0 && exit.dir != Direction::DOWN)  return TileConnector{ {gridSize / 2, 0,          }, Direction::UP };
+		if (grid[gridSize / 2][gridSize - 1] == 0 && exit.dir != Direction::UP)    return TileConnector{ {gridSize / 2, gridSize - 1}, Direction::DOWN };
 		bbe::Crash(bbe::Error::IllegalState, "Entrance mismatch!");
 	}
 
-	void _addToPath(bbe::Grid<bool>& visited, const bbe::Vector2i& base, const bbe::Vector2i& coord, size_t parentIndex)
+	static Direction coordToDir(const bbe::Vector2i& coord)
+	{
+		const int32_t& x = coord.x;
+		const int32_t& y = coord.y;
+		if (x == 0            && y == gridSize / 2) return Direction::LEFT;
+		if (x == gridSize - 1 && y == gridSize / 2) return Direction::RIGHT;
+		if (x == gridSize / 2 && y == 0           ) return Direction::UP;
+		if (x == gridSize / 2 && y == gridSize - 1) return Direction::DOWN;
+		return Direction::UNKNOWN;
+	}
+
+	bool _addToPath(bbe::Grid<bool>& visited, const bbe::Vector2i& base, const bbe::Vector2i& coord, size_t parentIndex)
 	{
 		if (   coord.x < 0 || coord.x >= gridSize
-			|| coord.y < 0 || coord.y >= gridSize) return;
-		if (visited[coord]) return;
+			|| coord.y < 0 || coord.y >= gridSize) return true;
+		if (visited[coord]) return true;
 		visited[coord] = true;
-		if (grid[coord] > 0) return;
+		if (grid[coord] > 0) return true;
 
 		PathElement newElement;
 		newElement.coords = coord + base;
@@ -321,13 +334,27 @@ public:
 		path.add(newElement);
 
 		const size_t thisIndex = path.getLength() > 0 ? path.getLength() - 1 : 0;
-		_addToPath(visited, base, coord + bbe::Vector2i( 1,  0), thisIndex);
-		_addToPath(visited, base, coord + bbe::Vector2i(-1,  0), thisIndex);
-		_addToPath(visited, base, coord + bbe::Vector2i( 0,  1), thisIndex);
-		_addToPath(visited, base, coord + bbe::Vector2i( 0, -1), thisIndex);
+		bool isEndTile = true;
+		isEndTile &= _addToPath(visited, base, coord + bbe::Vector2i( 1,  0), thisIndex);
+		isEndTile &= _addToPath(visited, base, coord + bbe::Vector2i(-1,  0), thisIndex);
+		isEndTile &= _addToPath(visited, base, coord + bbe::Vector2i( 0,  1), thisIndex);
+		isEndTile &= _addToPath(visited, base, coord + bbe::Vector2i( 0, -1), thisIndex);
+		if (isEndTile)
+		{
+			TileConnector newConnector;
+			newConnector.position = base + coord;
+			newConnector.dir = coordToDir(coord);
+			if (newConnector.dir == Direction::UNKNOWN)
+			{
+				bbe::Crash(bbe::Error::IllegalState, "Unknown end tile direction");
+			}
+			openTileConnectors.add(newConnector);
+		}
+
+		return false;
 	}
 
-	void addToPath(const bbe::Vector2i& base, Entrance& entrance)
+	void addToPath(const bbe::Vector2i& base, TileConnector& entrance)
 	{
 		bbe::Vector2i pos;
 		if (entrance.dir == Direction::UNKNOWN) pos = bbe::Vector2i(gridSize / 2, gridSize / 2);
@@ -393,7 +420,7 @@ class MyGame : public bbe::Game
 	Tile currentTile;
 	bbe::Random rand;
 	bbe::Vector2i tileOffset;
-	Tile::Entrance previousEntrance = Tile::Entrance{ {}, Direction::UNKNOWN };
+	TileConnector previousEntrance = TileConnector{ {}, Direction::UNKNOWN };
 	bbe::Vector2 cameraOffset;
 
 	bbe::List<Enemy> enemies;
@@ -501,6 +528,12 @@ class MyGame : public bbe::Game
 			}
 		}
 		currentTile.draw(brush, map, tileOffset, tileOffset.x * 25 + cameraOffset.x, tileOffset.y * 25 + cameraOffset.y);
+
+		brush.setColorRGB(0.8, 0.8, 1);
+		for (size_t i = 0; i < openTileConnectors.getLength(); i++)
+		{
+			brush.fillRect(openTileConnectors[i].position.x * 25 + cameraOffset.x + 5, openTileConnectors[i].position.y * 25 + cameraOffset.y + 5, 15, 15);
+		}
 
 		brush.setColorRGB(1, 1, 1);
 		for (size_t i = 1; i < path.getLength(); i++)
