@@ -1,6 +1,8 @@
 #include "EMProcess.h"
 #include <Windows.h>
 #include <tlhelp32.h>
+#include <psapi.h>
+#include "BBE/ImGuiExtensions.h"
 
 void SubsystemProcess::update()
 {
@@ -32,6 +34,24 @@ void SubsystemProcess::update()
 				{
 					Process newProcess;
 					newProcess.title = entry.szExeFile;
+					constexpr int32_t MAX_EXE_PATH_LENGTH = 1024;
+					char exePathBuffer[MAX_EXE_PATH_LENGTH];
+					auto entryHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, entry.th32ProcessID);
+					if (entryHandle)
+					{
+						if (GetModuleFileNameEx(entryHandle, 0, exePathBuffer, MAX_EXE_PATH_LENGTH))
+						{
+							newProcess.exePath = exePathBuffer;
+						}
+						else
+						{
+							newProcess.exePath = "Failed to GetModuleFileNameEx";
+						}
+					}
+					else
+					{
+						newProcess.exePath = "Failed to OpenProcess";
+					}
 					processes.add(newProcess);
 				}
 			}
@@ -77,6 +97,7 @@ void SubsystemProcess::drawGui(float scale)
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::Text(p.title);
+			ImGui::bbe::tooltip(p.exePath);
 	
 			ImGui::TableSetColumnIndex(1);
 			if (ImGui::Button("S"))
