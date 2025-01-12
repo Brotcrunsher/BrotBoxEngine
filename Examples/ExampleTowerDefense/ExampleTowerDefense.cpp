@@ -75,6 +75,24 @@ struct TileConnector
 // List of Tile connectors that don't have a connected tile yet.
 bbe::List<TileConnector> openTileConnectors;
 
+size_t getClosestOpenTileConnectorIndex(const bbe::Vector2i& pos)
+{
+	size_t retVal = (size_t)-1;
+	int32_t closestDist = 0x7FFFFFFF;
+
+	for (size_t i = 0; i < openTileConnectors.getLength(); i++)
+	{
+		const int32_t dist = pos.getDistanceToManhatten(openTileConnectors[i].position);
+		if (dist < closestDist)
+		{
+			retVal = i;
+			closestDist = dist;
+		}
+	}
+
+	return retVal;
+}
+
 class Tile
 {
 public:
@@ -429,6 +447,12 @@ class MyGame : public bbe::Game
 	float timeSinceLastTick = 0.0f;
 	int tickMultiplier = 1;
 
+	bbe::Vector2i screenToTileCoord(const bbe::Vector2& screenCoord)
+	{
+		const bbe::Vector2 noCam = screenCoord - cameraOffset;
+		return bbe::Vector2i(noCam.x / 25, noCam.y / 25);
+	}
+
 	void tick()
 	{
 		ticksSinceLastEnemySpawn++;
@@ -461,6 +485,8 @@ class MyGame : public bbe::Game
 
 	void applyTile()
 	{
+		const size_t closestTile = getClosestOpenTileConnectorIndex(screenToTileCoord(getMouse()));;
+
 		currentTile.addToPath(tileOffset, previousEntrance);
 		for (int32_t x = 0; x < Tile::gridSize; x++)
 		{
@@ -477,6 +503,8 @@ class MyGame : public bbe::Game
 		else if (previousEntrance.dir == Direction::DOWN)  { tileOffset.x += -Tile::gridSize / 2 + 1; tileOffset.y += 1; }
 		else if (previousEntrance.dir == Direction::UP)    { tileOffset.x += -Tile::gridSize / 2 + 1; tileOffset.y += -Tile::gridSize; }
 		else { bbe::Crash(bbe::Error::IllegalState, "Illegal Entrance in applyTile"); }
+		
+		openTileConnectors.removeIndex(closestTile);
 	}
 
 	virtual void onStart() override
@@ -529,7 +557,11 @@ class MyGame : public bbe::Game
 		}
 		currentTile.draw(brush, map, tileOffset, tileOffset.x * 25 + cameraOffset.x, tileOffset.y * 25 + cameraOffset.y);
 
-		brush.setColorRGB(0.8, 0.8, 1);
+		const size_t closestOpenTileConnectorIndex = getClosestOpenTileConnectorIndex(screenToTileCoord(getMouse()));
+		brush.setColorRGB(0.4f, 0.4f, 0.5f);
+		brush.fillRect(openTileConnectors[closestOpenTileConnectorIndex].position.x * 25 + cameraOffset.x + 3, openTileConnectors[closestOpenTileConnectorIndex].position.y * 25 + cameraOffset.y + 3, 19, 19);
+
+		brush.setColorRGB(0.8f, 0.8f, 1.0f);
 		for (size_t i = 0; i < openTileConnectors.getLength(); i++)
 		{
 			brush.fillRect(openTileConnectors[i].position.x * 25 + cameraOffset.x + 5, openTileConnectors[i].position.y * 25 + cameraOffset.y + 5, 15, 15);

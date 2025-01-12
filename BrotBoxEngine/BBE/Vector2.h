@@ -315,6 +315,15 @@ namespace bbe
 		{
 			return getDistanceTo(Vector2_t<T>(x, y));
 		}
+		T getDistanceToManhatten(const Vector2_t<T>& other) const
+		{
+			return getDistanceToManhatten(other.x, other.y);
+		}
+		T getDistanceToManhatten(T x, T y) const
+		{
+			return bbe::Math::abs(this->x - x) +
+				   bbe::Math::abs(this->y - y);
+		}
 		T getMax() const
 		{
 			return Math::max(x, y);
