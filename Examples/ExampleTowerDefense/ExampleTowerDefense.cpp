@@ -83,7 +83,13 @@ size_t getClosestOpenTileConnectorIndex(const bbe::Vector2i& pos)
 
 	for (size_t i = 0; i < openTileConnectors.getLength(); i++)
 	{
-		const int32_t dist = pos.getDistanceToManhatten(openTileConnectors[i].position);
+		auto relevantPos = openTileConnectors[i].position;
+		if (openTileConnectors[i].dir == Direction::UP   ) relevantPos.y--;
+		if (openTileConnectors[i].dir == Direction::DOWN ) relevantPos.y++;
+		if (openTileConnectors[i].dir == Direction::LEFT ) relevantPos.x--;
+		if (openTileConnectors[i].dir == Direction::RIGHT) relevantPos.x++;
+
+		const int32_t dist = pos.getDistanceToManhatten(relevantPos);
 		if (dist < closestDist)
 		{
 			retVal = i;
@@ -473,7 +479,7 @@ class MyGame : public bbe::Game
 	void tick()
 	{
 		ticksSinceLastEnemySpawn++;
-		if (ticksSinceLastEnemySpawn > 120)
+		if (ticksSinceLastEnemySpawn > 16)
 		{
 			ticksSinceLastEnemySpawn = 0;
 			enemies.add(Enemy());
