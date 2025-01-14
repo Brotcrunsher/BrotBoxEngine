@@ -447,7 +447,7 @@ class MyGame : public bbe::Game
 	float timeSinceLastTick = 0.0f;
 	int tickMultiplier = 1;
 
-	bbe::Vector2i screenToTileCoord(const bbe::Vector2& screenCoord)
+	bbe::Vector2i screenToTileCoord(const bbe::Vector2& screenCoord) const
 	{
 		const bbe::Vector2 noCam = screenCoord - cameraOffset;
 		return bbe::Vector2i(noCam.x / 25, noCam.y / 25);
@@ -477,6 +477,11 @@ class MyGame : public bbe::Game
 		}
 	}
 
+	size_t getMouseConnectorIndex() const
+	{
+		return getClosestOpenTileConnectorIndex(screenToTileCoord(getMouse()));
+	}
+
 	void createTile()
 	{
 		currentTile = Tile::newTile(rand, 4);
@@ -485,7 +490,7 @@ class MyGame : public bbe::Game
 
 	void applyTile()
 	{
-		const size_t closestTile = getClosestOpenTileConnectorIndex(screenToTileCoord(getMouse()));;
+		const size_t closestTile = getMouseConnectorIndex();
 
 		currentTile.addToPath(tileOffset, previousEntrance);
 		for (int32_t x = 0; x < Tile::gridSize; x++)
@@ -497,7 +502,7 @@ class MyGame : public bbe::Game
 			}
 		}
 		previousEntrance = currentTile.getEntrance(previousEntrance);
-		tileOffset += previousEntrance.position;
+		tileOffset = previousEntrance.position;
 		     if (previousEntrance.dir == Direction::RIGHT) { tileOffset.x += 1;                       tileOffset.y += -Tile::gridSize / 2 + 1; }
 		else if (previousEntrance.dir == Direction::LEFT)  { tileOffset.x += -Tile::gridSize;         tileOffset.y += -Tile::gridSize / 2 + 1; }
 		else if (previousEntrance.dir == Direction::DOWN)  { tileOffset.x += -Tile::gridSize / 2 + 1; tileOffset.y += 1; }
@@ -557,7 +562,7 @@ class MyGame : public bbe::Game
 		}
 		currentTile.draw(brush, map, tileOffset, tileOffset.x * 25 + cameraOffset.x, tileOffset.y * 25 + cameraOffset.y);
 
-		const size_t closestOpenTileConnectorIndex = getClosestOpenTileConnectorIndex(screenToTileCoord(getMouse()));
+		const size_t closestOpenTileConnectorIndex = getMouseConnectorIndex();
 		brush.setColorRGB(0.4f, 0.4f, 0.5f);
 		brush.fillRect(openTileConnectors[closestOpenTileConnectorIndex].position.x * 25 + cameraOffset.x + 3, openTileConnectors[closestOpenTileConnectorIndex].position.y * 25 + cameraOffset.y + 3, 19, 19);
 
