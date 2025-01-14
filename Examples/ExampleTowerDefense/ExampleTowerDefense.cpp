@@ -414,11 +414,8 @@ public:
 
 	Enemy()
 	{
-		static int32_t nextHue = 0;
-		hue = nextHue;
-		nextHue += 90;
-
 		currentPathIndex = openTileConnectors[nextOpenConnectorSpawnIndex].pathIndex;
+		hue = (nextOpenConnectorSpawnIndex * 71) % 360;
 		nextOpenConnectorSpawnIndex++;
 		if (nextOpenConnectorSpawnIndex >= openTileConnectors.getLength())
 		{
