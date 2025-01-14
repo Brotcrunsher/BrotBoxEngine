@@ -285,7 +285,7 @@ public:
 		while (!exitsAlign(exit))
 		{
 			grid = grid.rotated();
-		};
+		}
 	}
 
 	void rotate(const TileConnector& exit)
@@ -400,15 +400,24 @@ constexpr int32_t UNITS_PER_GRID_TILE = 1000;
 class Enemy
 {
 public:
+	inline static size_t nextOpenConnectorSpawnIndex = 0;
+
 	int32_t currentPathIndex = 0;
 	int32_t pathElementTraveled = 0;
 	int32_t hue = 0;
 
-	Enemy() : currentPathIndex(path.getLength() - 1)
+	Enemy()
 	{
 		static int32_t nextHue = 0;
 		hue = nextHue;
 		nextHue += 90;
+
+		currentPathIndex = openTileConnectors[nextOpenConnectorSpawnIndex].pathIndex;
+		nextOpenConnectorSpawnIndex++;
+		if (nextOpenConnectorSpawnIndex >= openTileConnectors.getLength())
+		{
+			nextOpenConnectorSpawnIndex = 0;
+		}
 	}
 
 	bbe::Vector2i getPosition() const
@@ -522,6 +531,7 @@ class MyGame : public bbe::Game
 
 	virtual void onStart() override
 	{
+		Enemy::nextOpenConnectorSpawnIndex = 0;
 		map.setDefaultValue(Block(-1000));
 		currentTile = Tile();
 		applyTile();
