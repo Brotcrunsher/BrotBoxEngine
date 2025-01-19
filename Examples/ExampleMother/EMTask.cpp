@@ -719,6 +719,15 @@ bool SubsystemTask::drawEditableTask(Task& t)
 	taskChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
 	ImGui::bbe::tooltip("Increases the Internal Value on ever Done by this much.");
 	taskChanged |= ImGui::bbe::combo("Input Type", { "None", "Integer", "Float" }, &t.inputType);
+	if (t.inputType == Task::IT_FLOAT)
+	{
+		taskChanged |= ImGui::InputInt("History Target Anchor", &t.historyTargetAnchor);
+		ImGui::bbe::tooltip("The starting point (x-value) where to begin the target line.");
+		taskChanged |= ImGui::InputFloat("History Target Start Value", &t.historyTargetStartValue);
+		ImGui::bbe::tooltip("The starting point (y-value) where to begin the target line.");
+		taskChanged |= ImGui::InputFloat("History Target Change Value", &t.historyTargetChangeValue);
+		ImGui::bbe::tooltip("The change of the target line per x-step.");
+	}
 
 	taskChanged |= ImGui::bbe::InputText("Clipboard", t.clipboard);
 	ImGui::bbe::tooltip("When clicking the task, this will be sent to your clipboard.");
@@ -887,10 +896,33 @@ bbe::Vector2 SubsystemTask::drawTabHistoryView()
 			task.historyViewDirty = false;
 			ImPlot::SetNextAxesToFit();
 		}
+
+		bool shouldDrawTargetDifference = false;
+		float lastTargetValue = 0.0f;
 		if (ImPlot::BeginPlot("History", { -1, 250 })) {
 			ImPlot::SetupAxes("Time", "Value");
 			ImPlot::PlotLine(task.title.getRaw(), time.getRaw(), history.getRaw(), time.getLength());
+			if (task.historyTargetAnchor >= 0 && history.getLength() > 0)
+			{
+				shouldDrawTargetDifference = true;
+				bbe::List<float> targetTime;
+				bbe::List<float> targetValue;
+
+				for (size_t i = task.historyTargetAnchor; i < history.getLength(); i++)
+				{
+					targetTime.add((float)i);
+					lastTargetValue = task.historyTargetStartValue + task.historyTargetChangeValue * (i - task.historyTargetAnchor);
+					targetValue.add(lastTargetValue);
+				}
+
+				ImPlot::PlotLine("Target Line", targetTime.getRaw(), targetValue.getRaw(), targetTime.getLength());
+			}
 			ImPlot::EndPlot();
+		}
+		if (shouldDrawTargetDifference)
+		{
+			const float targetDifference = lastTargetValue - history.last();
+			ImGui::Text("Target Difference: %.2f", targetDifference);
 		}
 	}
 

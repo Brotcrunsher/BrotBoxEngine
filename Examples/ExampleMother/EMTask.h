@@ -60,7 +60,10 @@ struct Task
 		((bbe::TimePoint), previousContingentSubtraction, bbe::TimePoint::epoch()),
 		((bool), contingentRunning, false),
 		((bool), stopContingentWhenLocked, false),
-		((int32_t), dtMonthlyDay, 1)
+		((int32_t), dtMonthlyDay, 1),
+		((int32_t), historyTargetAnchor, -1),
+		((float), historyTargetStartValue, 0.0f),
+		((float), historyTargetChangeValue, 0.0f)
 	)
 
 	// Non-Persisted Helper Data below.
