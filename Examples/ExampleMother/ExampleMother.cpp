@@ -201,7 +201,8 @@ struct MouseWallConfig
 		((int32_t), y1, 0),
 		((int32_t), x2, 5760),
 		((int32_t), y2, 2062),
-		((float), borderBreakSeconds, 0.5f)
+		((float), borderBreakSeconds, 0.5f),
+		((bool), deactivateOnGame, false)
 	)
 
 	bool isMouseInArea(int32_t mouseX, int32_t mouseY) const
@@ -581,7 +582,6 @@ public:
 									if (!seenServerTaskIds.getList().contains({ id }))
 									{
 										bbe::String task = line.substring(separator + 1, -1);
-										BBELOGLN(task);
 										tasks.addServerTask(id, task);
 										seenServerTaskIds.add({ id });
 									}
@@ -599,7 +599,7 @@ public:
 		}
 
 		beginMeasure("Mouse Wall");
-		if (mouseWallConfig->active)
+		if (mouseWallConfig->active && (!processes.isGameOn() || !mouseWallConfig->deactivateOnGame))
 		{
 			bbe::Vector2 globalMouse = getMouseGlobal();
 			if (mouseWallConfig->mouseTrapped)
@@ -1122,7 +1122,7 @@ public:
 					}
 					errorString = "";
 				}
-				catch (const nlohmann::json::parse_error& e)
+				catch (const nlohmann::json::parse_error&)
 				{
 					errorString = bbe::String("Failed to interpret json: ") + contents.dataContainer.getRaw();
 				}
@@ -1376,6 +1376,8 @@ public:
 		bool requiresWrite = false;
 
 		requiresWrite |= ImGui::Checkbox("Active", &mouseWallConfig->active);
+		ImGui::Text((processes.isGameOn() && mouseWallConfig->deactivateOnGame) ? "Deactivated because of game!" : "");
+		requiresWrite |= ImGui::Checkbox("Deactives on game", &mouseWallConfig->deactivateOnGame);
 		requiresWrite |= ImGui::InputInt("X1", &mouseWallConfig->x1);
 		requiresWrite |= ImGui::InputInt("Y1", &mouseWallConfig->y1);
 		requiresWrite |= ImGui::InputInt("X2", &mouseWallConfig->x2);
