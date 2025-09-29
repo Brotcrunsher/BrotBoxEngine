@@ -22,6 +22,7 @@ add_subdirectory(ExampleFluidSimulation)
 if(BBE_ADD_EXPERIMENTAL)
   add_subdirectory(ExampleGrid)
 endif()
+add_subdirectory(ExampleHomeAssistant)
 add_subdirectory(ExampleMandelbrot)
 if(NOT EMSCRIPTEN) # Requires "double" in shader code.
   add_subdirectory(ExampleMandelbrotShader)

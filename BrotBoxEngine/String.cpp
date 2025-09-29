@@ -770,6 +770,10 @@ bbe::Utf8String bbe::Utf8String::hardBreakEvery(int32_t x) const
 	int32_t column = 0;
 	for (auto it = getIterator(); it.valid(); ++it)
 	{
+		if (*it == '\n')
+		{
+			column = 0;
+		}
 		if (column == x)
 		{
 			retVal += "\n";
