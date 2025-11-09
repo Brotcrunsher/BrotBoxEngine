@@ -2,6 +2,7 @@
 #include "BBE/BrotBoxEngine.h"
 #include "BBE/SimpleProcess.h"
 #include "BBE/AdafruitMacroPadRP2040.h"
+#include <sodium/crypto_pwhash_argon2id.h>
 #include <iostream>
 #include <mutex>
 #include <cmath>
@@ -1686,7 +1687,7 @@ public:
 				ImGui::PushID(i);
 				bool toggle = ImGui::Button("X");
 				ImGui::bbe::tooltip("Toggle the ignore state of this console message");
-				if(toggle)
+				if (toggle)
 				{
 					toggleIgnoreState(log[index]);
 				}
@@ -1697,7 +1698,7 @@ public:
 				}
 				else
 				{
-					ImGui::TextColored(ImVec4{1.0f, 0.5f, 0.5f, 1.0f}, log[index]);
+					ImGui::TextColored(ImVec4{ 1.0f, 0.5f, 0.5f, 1.0f }, log[index]);
 				}
 				ImGui::PopID();
 			}
@@ -1725,7 +1726,7 @@ public:
 		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 1", &generalConfig->baseMonitorBrightness1, 0.0f, 1.0f);
 		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 2", &generalConfig->baseMonitorBrightness2, 0.0f, 1.0f);
 		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 3", &generalConfig->baseMonitorBrightness3, 0.0f, 1.0f);
-		
+
 		if (ImGui::Button("Remember Window Position"))
 		{
 			generalConfig->windowSet = true;
@@ -2027,7 +2028,7 @@ public:
 				{
 					brush.setColorRGB(0.3f, 0.3f, 0.3f, 1);
 				}
-				brush.sketchRect( -9 + k * 19, 35 + (12 - monthIter) * 30, 15, 15);
+				brush.sketchRect(-9 + k * 19, 35 + (12 - monthIter) * 30, 15, 15);
 				brush.fillText(3 - 4 + k * 19, 46 + (12 - monthIter) * 30, bbe::String(k), 15, bbe::Anchor::BOTTOM_CENTER);
 			}
 		}
@@ -2185,6 +2186,88 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	bbe::String normalizeService(const bbe::String& service)
+	{
+		bbe::String normalizedService = service;
+		normalizedService.toLowerCaseInPlace();
+		normalizedService = normalizedService.replace(" ", "");
+		normalizedService = normalizedService.replace("http://", "");
+		normalizedService = normalizedService.replace("https://", "");
+		if (normalizedService.contains("/"))
+		{
+			normalizedService = normalizedService.substring(0, normalizedService.search("/"));
+		}
+		if (normalizedService.count(".") > 1)
+		{
+			auto normalizedServicesTokens = normalizedService.split(".");
+			normalizedService = normalizedServicesTokens[normalizedServicesTokens.getLength() - 2] + "." + normalizedServicesTokens[normalizedServicesTokens.getLength() - 1];
+		}
+		return normalizedService;
+	}
+
+	bbe::Vector2 drawPasswordManager()
+	{
+		static bbe::String masterPw;
+		static bbe::String masterPwRepeat;
+		static bbe::String service;
+		static bbe::String servicePw;
+		bool newHashRequested = false;
+		if (ImGui::bbe::InputText("Master PW", masterPw, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_Password))
+		{
+			newHashRequested = true;
+		}
+		if (ImGui::bbe::InputText("Master PW Repeat", masterPwRepeat, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_Password))
+		{
+			newHashRequested = true;
+		}
+		if (ImGui::bbe::InputText("Service", service, ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			newHashRequested = true;
+		}
+		bbe::String normServ = normalizeService(service);
+
+		if (newHashRequested && !normServ.isEmpty() && !masterPw.isEmpty() && masterPw == masterPwRepeat)
+		{
+			unsigned char hash[16] = {};
+			const bbe::String hashPw = masterPw + "|||" + normServ;
+			const int err = crypto_pwhash_argon2id(hash, sizeof(hash), hashPw.getRaw(), hashPw.getLength(), (const unsigned char*)"BrotbEnginePWGv1", 5, 256 * 1024 * 1024, crypto_pwhash_argon2id_ALG_ARGON2ID13);
+			if (err != 0) bbe::Crash(bbe::Error::NotImplemented, "Implement me properly.");
+			servicePw = "";
+			const bbe::String lower   = "abcdefghijklmnopqrstuvwxyz";
+			const bbe::String upper   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+			const bbe::String digits  = "0123456789";
+			const bbe::String special = "!@#%*-_=+,.?";
+			const bbe::String all = lower + upper + digits + special;
+			for (size_t i = 0; i < sizeof(hash); i++)
+			{
+				const bbe::String* set = nullptr;
+				// The first char is always lower, second always upper and so on. This is a very simple way to ensure
+				// we fulfill the vast majority of pw requirements while not reducing the amount of entropy by a lot.
+				if (i == 0) set = &lower;
+				else if (i == 1) set = &upper;
+				else if (i == 2) set = &digits;
+				else if (i == 3) set = &special;
+				else set = &all;
+
+				servicePw += (*set)[hash[i] % set->getLength()];
+			}
+		}
+
+		ImGui::Text("Normalized Service: " + normServ);
+		ImGui::Text("PW:                 " + bbe::String("*") * servicePw.getLength());
+		if (!servicePw.isEmpty())
+		{
+			if (ImGui::Button("Copy to Clipboard"))
+			{
+				setClipboard(servicePw);
+				servicePw = "";
+			}
+		}
+
+
+		return bbe::Vector2(1);
+	}
+
 	bbe::Vector2 drawTabChatGPT()
 	{
 		if (ImGui::bbe::InputText("API Key", chatGPTConfig->apiKey, ImGuiInputTextFlags_Password))
@@ -2193,7 +2276,7 @@ public:
 			// Set the API key in chatGPTComm
 			chatGPTComm.key = chatGPTConfig->apiKey;
 		}
-		
+
 		static bbe::String ttsInput;
 		if (ImGui::bbe::InputText("TTS Test", ttsInput, ImGuiInputTextFlags_EnterReturnsTrue))
 		{
@@ -2271,7 +2354,7 @@ public:
 				waitingPrinted = true;
 			}
 		}
-		if(!waitingPrinted) ImGui::Text(" "); // So that the "Waiting for response" doesn't move part of the GUI.
+		if (!waitingPrinted) ImGui::Text(" "); // So that the "Waiting for response" doesn't move part of the GUI.
 
 		// Provide a button to purge the conversation
 		if (ImGui::Button("Clear Conversation"))
@@ -2327,7 +2410,7 @@ public:
 
 		if (ImGui::bbe::InputText("prompt", dallEConfig->prompt, ImGuiInputTextFlags_EnterReturnsTrue))
 		{
-			imageFuture = chatGPTComm.createImageAsync(dallEConfig->prompt, { 1792, 1024});
+			imageFuture = chatGPTComm.createImageAsync(dallEConfig->prompt, { 1792, 1024 });
 			dallEConfig.writeToFile();
 		}
 		if (descriptionFuture.valid() && descriptionFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
@@ -2383,7 +2466,7 @@ public:
 			}
 		}
 
-		brush.drawImage({ offsetX, offsetY }, image.image.getDimensions().as<float>() * sizeMult, image.image );
+		brush.drawImage({ offsetX, offsetY }, image.image.getDimensions().as<float>() * sizeMult, image.image);
 
 		return bbe::Vector2(101, 100.1f);
 	}
@@ -2438,7 +2521,7 @@ public:
 			infoViewport.WorkSize.x = maxInfoWindowWidth;
 		}
 
-		if(!fullscreenTab)
+		if (!fullscreenTab)
 		{
 			ImGui::SetNextWindowPos(infoViewport.WorkPos);
 			ImGui::SetNextWindowSize(infoViewport.WorkSize);
@@ -2710,12 +2793,13 @@ public:
 				//Tab{"Brn-T",     "Brain-Teaser",   [&]() { return brainTeasers.drawTabBrainTeasers(brush); }},
 				Tab{"Stpwtch",   "Stopwatch",      [&]() { return drawTabStopwatch(); }},
 				Tab{"MsTrck",    "Mouse Track",    [&]() { return drawTabMouseTracking(brush); }},
-				Tab{"KybrdTrck", "Keyboard Track", [&]() { return drawTabKeyboardTracking(brush); }},
+				Tab{"KyTr",      "Keyboard Track", [&]() { return drawTabKeyboardTracking(brush); }},
 #if 0
 				Tab{"Terri",     "Territorial",    [&]() { return drawTabTerri(brush); }},
 #endif
 				Tab{"Strks",     "Streaks",        [&]() { return drawTabStreaks(brush); }},
 				Tab{"Lsts",      "Lists",          [&]() { return drawTabRememberLists(); }},
+				Tab{"PW",        "Password Manager", [&]() { return drawPasswordManager(); }},
 				Tab{"GPT",       "ChatGPT",        [&]() { return drawTabChatGPT(); }},
 				Tab{"DE",        "DALL E",         [&]() { return drawTabDallE(brush); }},
 				//Tab{"Mic",       "Microphone Test",[&]() { return drawMicrophoneTest(); }},
