@@ -56,7 +56,9 @@ namespace bbe
 		std::future<ChatGPTCreateImageResponse> createImageAsync(const bbe::String& prompt, const bbe::Vector2i& size);
 
 		// TODO: base 64 encoded image data instead of urls
+		bbe::String describeImage(const nlohmann::json& requestJson);
 		bbe::String describeImage(const bbe::String& url);
+		std::future<bbe::String> describeImageAsync(const nlohmann::json& requestJson);
 		std::future<bbe::String> describeImageAsync(const bbe::String& url);
 
 		void purgeMemory();

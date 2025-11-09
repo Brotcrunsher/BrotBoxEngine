@@ -33,7 +33,7 @@ bbe::ChatGPTQueryResponse bbe::ChatGPTComm::query(const bbe::String& msg)
 {
 	std::unique_lock ul(mutex);
 	// Add user's message to the conversation
-	history.push_back({ {"role", "user"}, {"content", msg.getRaw()}});
+	history.push_back({ {"role", "user"}, {"content", msg.getRaw()} });
 
 	std::vector<nlohmann::json> sendMessages = {
 		{{"role", "system"}, {"content", role.getRaw()}}
@@ -67,7 +67,7 @@ bbe::ChatGPTQueryResponse bbe::ChatGPTComm::query(const bbe::String& msg)
 		totalTokens += retVal.totalTokens;
 
 		// Add assistant's message to the conversation
-		history.push_back({ {"role", "assistant"}, {"content", retVal.message.getRaw()}});
+		history.push_back({ {"role", "assistant"}, {"content", retVal.message.getRaw()} });
 		return retVal;
 	}
 	catch (const std::exception& e) {
@@ -183,12 +183,27 @@ std::future<bbe::ChatGPTCreateImageResponse> bbe::ChatGPTComm::createImageAsync(
 	return bbe::async(&bbe::ChatGPTComm::createImage, this, prompt, size);
 }
 
-bbe::String bbe::ChatGPTComm::describeImage(const bbe::String& url)
+bbe::String bbe::ChatGPTComm::describeImage(const nlohmann::json& requestJson)
 {
 	std::unique_lock ul(mutex);
 	bbe::String keyCopy = key;
 	ul.unlock(); // Making the actual sendRequest call outside the lock. This is what actually hangs and we shouldn't hold the lock longer than needed.
-	
+
+	std::string description = sendRequest("https://api.openai.com/v1/chat/completions", keyCopy, requestJson.dump(-1, ' ', false, nlohmann::detail::error_handler_t::ignore));
+	try
+	{
+		nlohmann::json responseJson = nlohmann::json::parse(description);
+		return responseJson["choices"][0]["message"]["content"].get<std::string>().c_str();
+	}
+	catch (...)
+	{
+		BBELOGLN(description.c_str());
+		bbe::Crash(bbe::Error::IllegalArgument, "See log msg");
+	}
+}
+
+bbe::String bbe::ChatGPTComm::describeImage(const bbe::String& url)
+{
 	nlohmann::json json = {
 		{"model", "gpt-4o-mini"},
 		{"messages", {
@@ -204,22 +219,25 @@ bbe::String bbe::ChatGPTComm::describeImage(const bbe::String& url)
 			}
 		}}
 	};
-	std::string description = sendRequest("https://api.openai.com/v1/chat/completions", keyCopy, json.dump(-1, ' ', false, nlohmann::detail::error_handler_t::ignore));
-	nlohmann::json responseJson = nlohmann::json::parse(description);
-	try
-	{
-		return responseJson["choices"][0]["message"]["content"].get<std::string>().c_str();
-	}
-	catch (...)
-	{
-		BBELOGLN(responseJson.dump());
-		bbe::Crash(bbe::Error::IllegalArgument, "See log msg");
-	}
+	return describeImage(json);
+}
+
+std::future<bbe::String> bbe::ChatGPTComm::describeImageAsync(const nlohmann::json& requestJson)
+{
+	return bbe::async(
+		static_cast<bbe::String(bbe::ChatGPTComm::*)(const nlohmann::json&)>(&bbe::ChatGPTComm::describeImage),
+		this,
+		requestJson
+	);
 }
 
 std::future<bbe::String> bbe::ChatGPTComm::describeImageAsync(const bbe::String& url)
 {
-	return bbe::async(&bbe::ChatGPTComm::describeImage, this, url);
+	return bbe::async(
+		static_cast<bbe::String(bbe::ChatGPTComm::*)(const bbe::String&)>(&bbe::ChatGPTComm::describeImage),
+		this,
+		url
+	);
 }
 
 void bbe::ChatGPTComm::purgeMemory()

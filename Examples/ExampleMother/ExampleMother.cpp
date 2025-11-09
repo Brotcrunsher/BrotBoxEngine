@@ -1608,6 +1608,7 @@ public:
 	{
 		bbe::List<bbe::String> warnings = tasks.getWarnings();
 
+		warnings.addList(processes.getWarnings());
 		warnings.addList(getConsoleWarnings());
 
 		if (warnings.getLength() == 0)

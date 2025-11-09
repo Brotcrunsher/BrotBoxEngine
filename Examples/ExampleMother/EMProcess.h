@@ -22,6 +22,7 @@ class SubsystemProcess
 private:
 	bbe::SerializableList<Process> processes = bbe::SerializableList<Process>("processes.dat", "ParanoiaConfig", bbe::Undoable::YES);
 	bbe::List<bbe::String> foundGames;
+	int32_t motherPorcesses = 0;
 
 public:
 	void update();
@@ -29,4 +30,6 @@ public:
 	bool isGameOn() const;
 
 	void drawGui(float scale);
+
+	bbe::List<bbe::String> getWarnings() const;
 };

@@ -8,6 +8,7 @@ void SubsystemProcess::update()
 {
 	EVERY_SECONDS(10)
 	{
+		motherPorcesses = 0;
 		HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
 		PROCESSENTRY32 entry;
 		entry.dwSize = sizeof(entry);
@@ -16,6 +17,11 @@ void SubsystemProcess::update()
 		while (hasEntry)
 		{
 			const bbe::String scannedProcessName = entry.szExeFile;
+			if (scannedProcessName == "ExampleMother.exe")
+			{
+				motherPorcesses++;
+			}
+
 			if (!scannedProcessName.startsWith("AM_Delta_Patch_") // Microsoft Anti-Malware Signature Delta Update Package
 				&& !scannedProcessName.endsWith("_chrome_updater.exe")
 				&& !scannedProcessName.startsWith("MicrosoftEdge_")
@@ -128,5 +134,23 @@ void SubsystemProcess::drawGui(float scale)
 		}
 		ImGui::EndTable();
 	}
+}
+
+bbe::List<bbe::String> SubsystemProcess::getWarnings() const
+{
+	bbe::List<bbe::String> retVal;
+
+	if (motherPorcesses == 0)
+	{
+		retVal.add("Could not find any mother process.");
+	}
+	else if (motherPorcesses > 1)
+	{
+		bbe::String msg = "Found multiple Mother processes: ";
+		msg += motherPorcesses;
+		retVal.add(msg);
+	}
+
+	return retVal;
 }
 

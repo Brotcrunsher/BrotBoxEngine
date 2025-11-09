@@ -311,7 +311,10 @@ void bbe::Game::frame(bool dragging)
 	frameDraw(dragging);
 	if (m_targetFrameTime > 0)
 	{
-		std::this_thread::sleep_for(std::chrono::microseconds((int32_t)(m_targetFrameTime * 1000000.f) - sw.getTimeExpiredMicroseconds()));
+		const auto expired = sw.getTimeExpiredMicroseconds();
+		const auto target = (int32_t)(m_targetFrameTime * 1000000.f);
+		const auto wait = target - expired;
+		std::this_thread::sleep_for(std::chrono::microseconds(wait));
 	}
 	beginMeasure("INTERNAL - Overhead (Between Frames)");
 }
