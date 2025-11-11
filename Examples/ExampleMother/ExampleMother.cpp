@@ -132,6 +132,13 @@ struct RememberList
 		bbe::String newEntryBuffer;
 };
 
+struct PasswordManager
+{
+	BBE_SERIALIZABLE_DATA(
+		((bbe::List<bbe::String>), knownHashes)
+	)
+};
+
 struct ChatGPTConfig
 {
 	BBE_SERIALIZABLE_DATA(
@@ -275,6 +282,7 @@ private:
 	bbe::SerializableObject<DallEConfig> dallEConfig            = bbe::SerializableObject<DallEConfig>    ("DallEConfig.dat",         "ParanoiaConfig");
 	bbe::SerializableObject<MouseWallConfig> mouseWallConfig    = bbe::SerializableObject<MouseWallConfig>("MouseWallConfig.dat",     "ParanoiaConfig");
 	bbe::SerializableObject<BitcoinData> bitcoinData            = bbe::SerializableObject<BitcoinData>    ("BitcoinData.dat",         "ParanoiaConfig");
+	bbe::SerializableObject<PasswordManager> passwordManager    = bbe::SerializableObject<PasswordManager>("PasswordManager.dat",     "ParanoiaConfig");
 	bbe::SerializableList<ConsoleWarningIgnoreElement> cwiList  = bbe::SerializableList<ConsoleWarningIgnoreElement>("CWIList.dat",   "ParanoiaConfig");
 
 	bbe::ChatGPTComm chatGPTComm; // ChatGPT communication object
@@ -2205,18 +2213,63 @@ public:
 		return normalizedService;
 	}
 
+	bbe::String normalizeUser(const bbe::String& user)
+	{
+		bbe::String normalizedUser = user;
+		normalizedUser.toLowerCaseInPlace();
+		normalizedUser = normalizedUser.replace(" ", "");
+		return normalizedUser;
+	}
+
+	bbe::String GeneratePasswordHash(const bbe::String& data)
+	{
+		unsigned char hash[16] = {};
+		const int err = crypto_pwhash_argon2id(hash, sizeof(hash), data.getRaw(), data.getLength(), (const unsigned char*)"BrotbEnginePWGv1", 5, 256 * 1024 * 1024, crypto_pwhash_argon2id_ALG_ARGON2ID13);
+		if (err != 0) bbe::Crash(bbe::Error::NotImplemented, "Implement me properly.");
+		const bbe::String lower = "abcdefghijklmnopqrstuvwxyz";
+		const bbe::String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		const bbe::String digits = "0123456789";
+		const bbe::String special = "!@#%*-_=+,.?";
+		const bbe::String all = lower + upper + digits + special;
+		bbe::String retVal;
+		for (size_t i = 0; i < sizeof(hash); i++)
+		{
+			const bbe::String* set = nullptr;
+			// The first char is always lower, second always upper and so on. This is a very simple way to ensure
+			// we fulfill the vast majority of pw requirements while not reducing the amount of entropy by a lot.
+			if (i == 0) set = &lower;
+			else if (i == 1) set = &upper;
+			else if (i == 2) set = &digits;
+			else if (i == 3) set = &special;
+			else set = &all;
+
+			retVal += (*set)[hash[i] % set->getLength()];
+		}
+		return retVal;
+	}
+
 	bbe::Vector2 drawPasswordManager()
 	{
 		static bbe::String masterPw;
+		static bbe::String masterPwHash;
 		static bbe::String masterPwRepeat;
 		static bbe::String service;
+		static bbe::String user;
 		static bbe::String servicePw;
 		bool newHashRequested = false;
 		if (ImGui::bbe::InputText("Master PW", masterPw, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_Password))
 		{
 			newHashRequested = true;
+			masterPwHash = GeneratePasswordHash(masterPw);
 		}
-		if (ImGui::bbe::InputText("Master PW Repeat", masterPwRepeat, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_Password))
+		if (!passwordManager->knownHashes.contains(masterPwHash))
+		{
+			if (ImGui::bbe::InputText("Master PW Repeat", masterPwRepeat, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_Password))
+			{
+				newHashRequested = true;
+			}
+		}
+		if (ImGui::bbe::InputText("User", user, ImGuiInputTextFlags_EnterReturnsTrue))
 		{
 			newHashRequested = true;
 		}
@@ -2224,36 +2277,27 @@ public:
 		{
 			newHashRequested = true;
 		}
-		bbe::String normServ = normalizeService(service);
+		const bbe::String normServ = normalizeService(service);
+		const bbe::String normUser = normalizeUser(user);
 
-		if (newHashRequested && !normServ.isEmpty() && !masterPw.isEmpty() && masterPw == masterPwRepeat)
+		if (newHashRequested && !normServ.isEmpty() && !masterPw.isEmpty() && (masterPw == masterPwRepeat || passwordManager->knownHashes.contains(masterPwHash)))
 		{
-			unsigned char hash[16] = {};
-			const bbe::String hashPw = masterPw + "|||" + normServ;
-			const int err = crypto_pwhash_argon2id(hash, sizeof(hash), hashPw.getRaw(), hashPw.getLength(), (const unsigned char*)"BrotbEnginePWGv1", 5, 256 * 1024 * 1024, crypto_pwhash_argon2id_ALG_ARGON2ID13);
-			if (err != 0) bbe::Crash(bbe::Error::NotImplemented, "Implement me properly.");
-			servicePw = "";
-			const bbe::String lower   = "abcdefghijklmnopqrstuvwxyz";
-			const bbe::String upper   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-			const bbe::String digits  = "0123456789";
-			const bbe::String special = "!@#%*-_=+,.?";
-			const bbe::String all = lower + upper + digits + special;
-			for (size_t i = 0; i < sizeof(hash); i++)
+			masterPwHash = GeneratePasswordHash(masterPw);
+			if (masterPw == masterPwRepeat || passwordManager->knownHashes.contains(masterPwHash))
 			{
-				const bbe::String* set = nullptr;
-				// The first char is always lower, second always upper and so on. This is a very simple way to ensure
-				// we fulfill the vast majority of pw requirements while not reducing the amount of entropy by a lot.
-				if (i == 0) set = &lower;
-				else if (i == 1) set = &upper;
-				else if (i == 2) set = &digits;
-				else if (i == 3) set = &special;
-				else set = &all;
-
-				servicePw += (*set)[hash[i] % set->getLength()];
+				if (!passwordManager->knownHashes.contains(masterPwHash))
+				{
+					passwordManager->knownHashes.add(masterPwHash);
+					passwordManager.writeToFile();
+				}
+				bbe::String hashableString = masterPw + "|||" + normServ;
+				if (!normUser.isEmpty()) hashableString += "|||" + normUser;
+				servicePw = GeneratePasswordHash(hashableString);
 			}
 		}
 
 		ImGui::Text("Normalized Service: " + normServ);
+		ImGui::Text("Normalized User:    " + normUser);
 		ImGui::Text("PW:                 " + bbe::String("*") * servicePw.getLength());
 		if (!servicePw.isEmpty())
 		{
