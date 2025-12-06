@@ -1,7 +1,9 @@
 #include "tinyxml2.h"
 #include "BBE/BrotBoxEngine.h"
 #include "BBE/SimpleProcess.h"
+#ifdef ACTIVATE_ADA
 #include "BBE/AdafruitMacroPadRP2040.h"
+#endif
 #include <sodium/crypto_pwhash_argon2id.h>
 #include <iostream>
 #include <mutex>
@@ -319,8 +321,9 @@ private:
 	bool monitorBrightnessOverwrite = false;
 
 	bool highConcentrationMode = false;
-
+#ifdef ACTIVATE_ADA
 	bbe::AdafruitMacroPadRP2040 adafruitMacroPadRP2040;
+#endif
 
 	bbe::Microphone microphone;
 	bbe::Sound microphoneSound;
@@ -637,7 +640,7 @@ public:
 				}
 			}
 		}
-
+#ifdef ACTIVATE_ADA
 		beginMeasure("AdafruitMacroPadRP2040");
 		if (adafruitMacroPadRP2040.isConnected())
 		{
@@ -723,6 +726,7 @@ public:
 				chatGPTComm.purgeMemory();
 			}
 		}
+#endif
 
 		beginMeasure("Mouse Tracking");
 		{
@@ -778,7 +782,11 @@ public:
 		beginMeasure("Basic Controls");
 		static bbe::TimePoint flipToLowEnergyMode = bbe::TimePoint().plusSeconds(2);
 		static bbe::TimePoint flipToSuperLowEnergyMode = bbe::TimePoint().plusSeconds(100);
-		if (isFocused() || isHovered() || terriActive || adafruitMacroPadRP2040.anyActivity())
+		if (isFocused() || isHovered() || terriActive 
+#ifdef ACTIVATE_ADA
+			|| adafruitMacroPadRP2040.anyActivity()
+#endif
+			)
 		{
 			flipToLowEnergyMode      = bbe::TimePoint().plusSeconds(2);
 			flipToSuperLowEnergyMode = bbe::TimePoint().plusSeconds(100);
@@ -2515,6 +2523,7 @@ public:
 		return bbe::Vector2(101, 100.1f);
 	}
 
+#ifdef ACTIVATE_ADA
 	bbe::Vector2 drawAdafruitMacroPadRP2040(bbe::PrimitiveBrush2D& brush)
 	{
 		if (adafruitMacroPadRP2040.isKeyDown(bbe::RP2040Key::BUTTON_AUDIO))
@@ -2544,6 +2553,7 @@ public:
 		}
 		return bbe::Vector2(0);
 	}
+#endif
 
 	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
 	{
