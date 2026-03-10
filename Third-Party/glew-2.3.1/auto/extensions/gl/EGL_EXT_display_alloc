@@ -1,0 +1,6 @@
+EGL_EXT_display_alloc
+https://www.khronos.org/registry/egl/specs/eglspec.1.5.pdf
+EGL_EXT_display_alloc
+
+	EGL_ALLOC_NEW_DISPLAY_EXT 0x3379
+	EGLBoolean eglDestroyDisplayEXT (EGLDisplay dpy)

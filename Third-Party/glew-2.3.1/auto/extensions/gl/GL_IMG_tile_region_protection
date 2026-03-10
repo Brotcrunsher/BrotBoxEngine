@@ -1,0 +1,7 @@
+GL_IMG_tile_region_protection
+https://www.khronos.org/registry/OpenGL/extensions/IMG/IMG_tile_region_protection.txt
+GL_IMG_tile_region_protection
+
+	GL_TRP_IMG 0x8EA0
+	GL_TRP_ERROR_CONTEXT_RESET_IMG 0x8EA1
+	GL_TRP_UNSUPPORTED_CONTEXT_IMG 0x8EA2

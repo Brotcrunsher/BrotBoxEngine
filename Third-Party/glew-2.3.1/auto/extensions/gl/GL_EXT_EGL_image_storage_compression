@@ -1,0 +1,7 @@
+GL_EXT_EGL_image_storage_compression
+https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_EGL_image_storage_compression.txt
+GL_EXT_EGL_image_storage_compression
+
+	GL_SURFACE_COMPRESSION_EXT 0x96C0
+	GL_SURFACE_COMPRESSION_FIXED_RATE_NONE_EXT 0x96C1
+	GL_SURFACE_COMPRESSION_FIXED_RATE_DEFAULT_EXT 0x96C2

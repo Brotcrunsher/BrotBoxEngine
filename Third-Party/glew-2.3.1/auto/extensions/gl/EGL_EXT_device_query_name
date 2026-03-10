@@ -1,0 +1,5 @@
+EGL_EXT_device_query_name
+https://www.khronos.org/registry/egl/specs/eglspec.1.5.pdf
+EGL_EXT_device_query_name
+
+	EGL_RENDERER_EXT 0x335F

@@ -1,0 +1,8 @@
+EGL_EXT_device_persistent_id
+https://www.khronos.org/registry/egl/specs/eglspec.1.5.pdf
+EGL_EXT_device_persistent_id
+
+	EGL_DEVICE_UUID_EXT 0x335C
+	EGL_DRIVER_UUID_EXT 0x335D
+	EGL_DRIVER_NAME_EXT 0x335E
+	EGLBoolean eglQueryDeviceBinaryEXT (EGLDeviceEXT device, EGLint name, EGLint max_size, void* value, EGLint* size)

@@ -1,0 +1,5 @@
+GL_MESA_texture_const_bandwidth
+https://www.khronos.org/registry/OpenGL/extensions/MESA/MESA_texture_const_bandwidth.txt
+GL_MESA_texture_const_bandwidth
+
+	GL_CONST_BW_TILING_MESA 0x8BBE

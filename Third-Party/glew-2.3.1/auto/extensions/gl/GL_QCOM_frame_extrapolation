@@ -1,0 +1,5 @@
+GL_QCOM_frame_extrapolation
+https://www.khronos.org/registry/OpenGL/extensions/QCOM/QCOM_frame_extrapolation.txt
+GL_QCOM_frame_extrapolation
+
+	void glExtrapolateTex2DQCOM (GLuint src1, GLuint src2, GLuint output, GLfloat scaleFactor)

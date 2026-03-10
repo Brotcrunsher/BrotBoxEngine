@@ -1,0 +1,6 @@
+EGL_EXT_platform_xcb
+https://www.khronos.org/registry/egl/specs/eglspec.1.5.pdf
+EGL_EXT_platform_xcb
+
+	EGL_PLATFORM_XCB_EXT 0x31DC
+	EGL_PLATFORM_XCB_SCREEN_EXT 0x31DE

@@ -1,0 +1,5 @@
+EGL_ANGLE_sync_control_rate
+https://www.khronos.org/registry/egl/specs/eglspec.1.5.pdf
+EGL_ANGLE_sync_control_rate
+
+	EGLBoolean eglGetMscRateANGLE (EGLDisplay dpy, EGLSurface surface, EGLint* numerator, EGLint* denominator)

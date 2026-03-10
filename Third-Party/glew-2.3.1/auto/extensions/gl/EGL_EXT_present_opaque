@@ -1,0 +1,5 @@
+EGL_EXT_present_opaque
+https://www.khronos.org/registry/egl/specs/eglspec.1.5.pdf
+EGL_EXT_present_opaque
+
+	EGL_PRESENT_OPAQUE_EXT 0x31DF
