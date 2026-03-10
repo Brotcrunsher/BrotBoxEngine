@@ -14,26 +14,27 @@
 #include <Windows.h>
 #endif
 
-void bbe::Image::finishLoad(stbi_uc* pixels)
+bool bbe::Image::finishLoad(stbi_uc* pixels)
 {
 	m_format = ImageFormat::R8G8B8A8; // Is correct, even if texChannels == 3, because stbi is transforming the data for us on the fly.
 
 	if (pixels == nullptr)
 	{
-		bbe::Crash(bbe::Error::IllegalState);
+		return false;
 	}
 
 	m_pdata.resizeCapacityAndLengthUninit(getSizeInBytes());
 	memcpy(m_pdata.getRaw(), pixels, getSizeInBytes());
 
 	stbi_image_free(pixels);
+	return true;
 }
 
 bbe::Image::Image()
 {
 }
 
-bbe::Image::Image(const char * path)
+bbe::Image::Image(const char* path)
 {
 	load(path);
 }
@@ -48,7 +49,7 @@ bbe::Image::Image(int width, int height)
 	load(width, height);
 }
 
-bbe::Image::Image(int width, int height, const Color & c)
+bbe::Image::Image(int width, int height, const Color& c)
 {
 	load(width, height, c);
 }
@@ -58,29 +59,29 @@ bbe::Image::Image(int width, int height, const void* data, ImageFormat format)
 	load(width, height, data, format);
 }
 
-void bbe::Image::loadRaw(const bbe::ByteBuffer& buffer)
+bool bbe::Image::loadRaw(const bbe::ByteBuffer& buffer)
 {
-	loadRaw(buffer.getRaw(), buffer.getLength());
+	return loadRaw(buffer.getRaw(), buffer.getLength());
 }
 
-void bbe::Image::loadRaw(const bbe::List<unsigned char>& rawData)
+bool bbe::Image::loadRaw(const bbe::List<unsigned char>& rawData)
 {
-	loadRaw(rawData.getRaw(), rawData.getLength());
+	return loadRaw(rawData.getRaw(), rawData.getLength());
 }
 
-void bbe::Image::loadRaw(const unsigned char* rawData, size_t dataLength)
+bool bbe::Image::loadRaw(const unsigned char* rawData, size_t dataLength)
 {
 	m_prendererData = nullptr;
 	int texChannels = 0;
 	stbi_uc* pixels = stbi_load_from_memory(rawData, (int)dataLength, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
-	finishLoad(pixels);
+	return finishLoad(pixels);
 }
 
-void bbe::Image::load(const char * path)
+void bbe::Image::load(const char* path)
 {
 	m_prendererData = nullptr;
 	int texChannels = 0;
-	stbi_uc *pixels = stbi_load(path, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
+	stbi_uc* pixels = stbi_load(path, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
 	finishLoad(pixels);
 }
 
@@ -94,7 +95,7 @@ void bbe::Image::load(int width, int height)
 	load(width, height, Color());
 }
 
-void bbe::Image::load(int width, int height, const Color & c)
+void bbe::Image::load(int width, int height, const Color& c)
 {
 	m_width = width;
 	m_height = height;
@@ -103,7 +104,7 @@ void bbe::Image::load(int width, int height, const Color & c)
 
 	const size_t size = getSizeInBytes();
 	m_pdata.resizeCapacityAndLengthUninit(size); //TODO use allocator
-	for (int i = 0; i < size; i+=4)
+	for (int i = 0; i < size; i += 4)
 	{
 #ifdef _MSC_VER
 		// MSVC doesn't understand that getSizeInBytes() will always
@@ -194,7 +195,7 @@ bbe::Colori bbe::Image::getPixel(size_t x, size_t y) const
 	}
 
 	const size_t index = getIndexForRawAccess(x, y);
-	switch(m_format)
+	switch (m_format)
 	{
 	case ImageFormat::R8:
 		return Colori(m_pdata[index], m_pdata[index], m_pdata[index], 255);
@@ -203,7 +204,7 @@ bbe::Colori bbe::Image::getPixel(size_t x, size_t y) const
 	default:
 		bbe::Crash(bbe::Error::FormatNotSupported);
 	}
-	
+
 }
 
 void bbe::Image::setPixel(const bbe::Vector2i& pos, const bbe::Colori& c)
@@ -242,6 +243,27 @@ void bbe::Image::setPixel(size_t x, size_t y, const bbe::Colori& c)
 size_t bbe::Image::getIndexForRawAccess(size_t x, size_t y) const
 {
 	return (y * m_width + x) * getAmountOfChannels();
+}
+
+int64_t bbe::Image::distance(const Image& other) const
+{
+	if (other.getWidth() != getWidth() || other.getHeight() != getHeight())
+	{
+		bbe::Crash(bbe::Error::IllegalArgument);
+	}
+
+	int64_t retVal = 0;
+
+	for (size_t i = 0; i < getWidth(); i++)
+	{
+		for (size_t k = 0; k < getHeight(); k++)
+		{
+			auto myColor = getPixel(i, k);
+			auto otherColor = other.getPixel(i, k);
+			retVal += myColor.distance(otherColor);
+		}
+	}
+	return retVal;
 }
 
 bbe::ImageRepeatMode bbe::Image::getRepeatMode() const
@@ -314,11 +336,11 @@ void bbe::Image::flipHorizontally()
 	for (size_t row = 0; row < getHeight() / 2; row++)
 	{
 		const size_t lowerRow = getHeight() - 1 - row;
-		void* rowPtr      = m_pdata.getRaw() + row      * bytesPerRow;
+		void* rowPtr = m_pdata.getRaw() + row * bytesPerRow;
 		void* rowLowerPtr = m_pdata.getRaw() + lowerRow * bytesPerRow;
-		memcpy(rowBuffer.getRaw(), rowPtr,             bytesPerRow);
-		memcpy(rowPtr,             rowLowerPtr,        bytesPerRow);
-		memcpy(rowLowerPtr,        rowBuffer.getRaw(), bytesPerRow);
+		memcpy(rowBuffer.getRaw(), rowPtr, bytesPerRow);
+		memcpy(rowPtr, rowLowerPtr, bytesPerRow);
+		memcpy(rowLowerPtr, rowBuffer.getRaw(), bytesPerRow);
 	}
 }
 
@@ -332,7 +354,7 @@ bbe::Image bbe::Image::getClipboardImage()
 {
 	if (!isImageInClipbaord()) return bbe::Image();
 	if (!OpenClipboard(0)) return bbe::Image();
-	
+
 	bbe::Image retVal;
 	HBITMAP hBitmap = (HBITMAP)GetClipboardData(CF_BITMAP);
 	if (hBitmap && hBitmap != INVALID_HANDLE_VALUE)
@@ -430,7 +452,7 @@ void bbe::Image::copyToClipboard() const
 {
 	// TODO: Investigate - Why is all this crap even needed... why can't we just put the bitmap into the clipboard directly?
 	HBITMAP hBitmap = toBitmap();
-	HBITMAP hBitmap_copy = CreateBitmap(getWidth(), getHeight(), 1, 32, NULL);  
+	HBITMAP hBitmap_copy = CreateBitmap(getWidth(), getHeight(), 1, 32, NULL);
 	HDC srcDC = CreateCompatibleDC(GetDC(NULL));
 	HDC newDC = CreateCompatibleDC(GetDC(NULL));
 	HBITMAP srcBitmap = (HBITMAP)SelectObject(srcDC, hBitmap);

@@ -80,7 +80,7 @@ namespace bbe
 
 		mutable bbe::AutoRef m_prendererData;
 
-		void finishLoad(stbi_uc* pixels);
+		bool finishLoad(stbi_uc* pixels);
 
 	public:
 		static const Image& white();
@@ -98,9 +98,9 @@ namespace bbe
 		Image& operator=(const Image& other) = default; //Copy Assignment
 		Image& operator=(Image&& other) noexcept = default; //Move Assignment
 		
-		void loadRaw(const bbe::ByteBuffer& buffer);
-		void loadRaw(const bbe::List<unsigned char>& rawData);
-		void loadRaw(const unsigned char* rawData, size_t dataLength);
+		bool loadRaw(const bbe::ByteBuffer& buffer);
+		bool loadRaw(const bbe::List<unsigned char>& rawData);
+		bool loadRaw(const unsigned char* rawData, size_t dataLength);
 		void load(const char* path);
 		void load(const bbe::String& path);
 		void load(int width, int height);
@@ -119,6 +119,8 @@ namespace bbe
 		void setPixel(const bbe::Vector2i& pos, const bbe::Colori& c);
 		void setPixel(size_t x, size_t y, const Colori& c);
 		size_t getIndexForRawAccess(size_t x, size_t y) const;
+
+		int64_t distance(const Image& other) const;
 
 		ImageRepeatMode getRepeatMode() const;
 		void setRepeatMode(ImageRepeatMode irm);
