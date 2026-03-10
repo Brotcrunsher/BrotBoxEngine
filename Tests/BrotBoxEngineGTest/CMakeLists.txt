@@ -1,5 +1,3 @@
-include(google_test.cmake)
-
 add_executable(BrotBoxEngineGTest)
 target_link_libraries(BrotBoxEngineGTest PRIVATE gtest gtest_main BrotBoxEngine)
 file(GLOB local_src CONFIGURE_DEPENDS "*.cpp")

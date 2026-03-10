@@ -1,10 +1,11 @@
-# Copyright 2008, Google Inc.
-# All rights reserved.
-# 
+#!/usr/bin/env python
+#
+# Copyright 2018 Google LLC. All rights reserved.
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
 # met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above
@@ -14,7 +15,7 @@
 #     * Neither the name of Google Inc. nor the names of its
 # contributors may be used to endorse or promote products derived from
 # this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -26,36 +27,37 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""Verifies that Google Test uses filter provided via testbridge."""
+
+import os
+
+from googletest.test import gtest_test_utils
+
+binary_name = 'gtest_testbridge_test_'
+COMMAND = gtest_test_utils.GetTestExecutablePath(binary_name)
+TESTBRIDGE_NAME = 'TESTBRIDGE_TEST_ONLY'
 
 
-# Download and unpack googletest at configure time
-configure_file(google_test_subdir.cmake googletest-download/CMakeLists.txt)
-execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-  RESULT_VARIABLE result
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
-if(result)
-  message(FATAL_ERROR "CMake step for googletest failed: ${result}")
-endif()
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-  RESULT_VARIABLE result
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
-if(result)
-  message(FATAL_ERROR "Build step for googletest failed: ${result}")
-endif()
+def Assert(condition):
+  if not condition:
+    raise AssertionError
 
-# Prevent overriding the parent project's compiler/linker
-# settings on Windows
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-# Add googletest directly to our build. This defines
-# the gtest and gtest_main targets.
-add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
-                 ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
-                 EXCLUDE_FROM_ALL)
+class GTestTestFilterTest(gtest_test_utils.TestCase):
 
-# The gtest/gtest_main targets carry header search path
-# dependencies automatically when using CMake 2.8.11 or
-# later. Otherwise we have to add them here ourselves.
-if (CMAKE_VERSION VERSION_LESS 2.8.11)
-  include_directories("${gtest_SOURCE_DIR}/include")
-endif()
+  def testTestExecutionIsFiltered(self):
+    """Tests that the test filter is picked up from the testbridge env var."""
+    subprocess_env = os.environ.copy()
+
+    subprocess_env[TESTBRIDGE_NAME] = '*.TestThatSucceeds'
+    p = gtest_test_utils.Subprocess(COMMAND, env=subprocess_env)
+
+    self.assertEqual(0, p.exit_code)
+
+    Assert('filter = *.TestThatSucceeds' in p.output)
+    Assert('[       OK ] TestFilterTest.TestThatSucceeds' in p.output)
+    Assert('[  PASSED  ] 1 test.' in p.output)
+
+
+if __name__ == '__main__':
+  gtest_test_utils.Main()

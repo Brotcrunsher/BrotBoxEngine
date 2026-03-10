@@ -340,6 +340,8 @@ else()
   message(FATAL_ERROR "Unknown BBE_RENDER_MODE: ${BBE_RENDER_MODE}")
 endif()
 
+add_subdirectory(Third-Party/googletest-1.17.0)
+
 if(MSVC)
   # C++17 deprecated wstring_convert without providing an alternative. Thanks.
   target_compile_definitions(BrotBoxEngine PUBLIC _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
