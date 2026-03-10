@@ -350,7 +350,7 @@ class MyGame : public bbe::Game
 
 		ImGui::ColorEdit4("Left Color", leftColor);
 		ImGui::ColorEdit4("Right Color", rightColor);
-		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line" , "Rectangle", "Pipette"}, mode);
+		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line" , "Rectangle", "Pipette"}, &mode);
 		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE)
 		{
 			if (ImGui::InputInt("Brush Width", &brushWidth))

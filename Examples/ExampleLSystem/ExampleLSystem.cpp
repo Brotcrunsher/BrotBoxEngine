@@ -161,7 +161,7 @@ class MyGame : public bbe::Game
 		{
 			ImGui::PushItemWidth(100);
 			ImGui::PushID(i);
-			changed |= ImGui::bbe::combo("Type", { "Forward", "Rotate" }, sys.renderConstants[i].type);
+			changed |= ImGui::bbe::combo("Type", { "Forward", "Rotate" }, &sys.renderConstants[i].type);
 			ImGui::SameLine();
 			changed |= ImGui::InputText("Constant", sys.renderConstants[i].constant, sizeof(sys.renderConstants[i].constant));
 			ImGui::SameLine();
