@@ -259,6 +259,20 @@ namespace bbe
 			}
 		}
 
+		void addAt(size_t index, const T& val)
+		{
+			if (index > getLength())
+			{
+				bbe::Crash(bbe::Error::IllegalArgument);
+			}
+			add(val);
+
+			for (size_t i = getLength() - 1; i > index; --i)
+				(*this)[i] = std::move((*this)[i - 1]);
+
+			(*this)[index] = val;
+		}
+
 		template <typename U>
 		void addAll(U&& t)
 		{
