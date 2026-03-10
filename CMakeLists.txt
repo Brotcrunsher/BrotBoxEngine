@@ -349,11 +349,11 @@ target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/img
 
 if(EMSCRIPTEN)
 else()
-  include_directories(Third-Party/glfw-3.3.2/include)
+  include_directories(Third-Party/glfw-3.4/include)
   if(NOT BBE_RENDER_MODE STREQUAL "NullRenderer")
     set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-    add_subdirectory(Third-Party/glfw-3.3.2)
+    add_subdirectory(Third-Party/glfw-3.4)
     target_link_libraries(BrotBoxEngine glfw ${GLFW_LIBRARIES})
     set_target_properties(glfw uninstall PROPERTIES FOLDER Deps)
   endif()
