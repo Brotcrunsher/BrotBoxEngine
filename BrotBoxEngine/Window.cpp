@@ -41,12 +41,15 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 	: m_width(width), m_height(height), m_pgame(game)
 {
 #ifdef BBE_RENDERER_VULKAN
+	BBELOGLN("Backend: VULKAN");
 	m_renderManager.reset(new bbe::INTERNAL::vulkan::VulkanManager());
 #endif
 #ifdef BBE_RENDERER_NULL
+	BBELOGLN("Backend: NULL");
 	m_renderManager.reset(new bbe::INTERNAL::nullRenderer::NullRendererManager());
 #endif
 #ifdef BBE_RENDERER_OPENGL
+	BBELOGLN("Backend: OPENGL");
 	m_renderManager.reset(new bbe::INTERNAL::openGl::OpenGLManager());
 #endif
 
@@ -56,6 +59,7 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 	}
 	if (windowsAliveCounter == 0)
 	{
+		BBELOGLN("GLFWInit");
 		if (glfwWrapper::glfwInit() == GLFW_FALSE)
 		{
 			bbe::INTERNAL::triggerFatalError("An error occurred while initializing GLFW.");
@@ -68,6 +72,7 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 #endif
 	}
 
+	BBELOGLN("Setting WindowHints");
 #ifdef BBE_RENDERER_VULKAN
 	glfwWrapper::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #endif
