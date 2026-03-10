@@ -53,7 +53,7 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 	m_renderManager.reset(new bbe::INTERNAL::openGl::OpenGLManager());
 #endif
 
-	if(bbe::Window::INTERNAL_firstInstance == nullptr)
+	if (bbe::Window::INTERNAL_firstInstance == nullptr)
 	{
 		bbe::Window::INTERNAL_firstInstance = this;
 	}
@@ -85,7 +85,10 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 	glfwWrapper::glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 #endif
 
+	BBELOGLN("Creating GLFW window");
 	m_pwindow = glfwWrapper::glfwCreateWindow(width, height, title, nullptr, nullptr);
+
+	BBELOGLN("Setting window user pointer");
 	glfwWrapper::glfwSetWindowUserPointer(m_pwindow, this);
 	if (m_pwindow == nullptr)
 	{
@@ -196,7 +199,7 @@ void bbe::Window::setCursorMode(bbe::CursorMode cursorMode)
 	}
 }
 
-GLFWwindow * bbe::Window::getRaw()
+GLFWwindow* bbe::Window::getRaw()
 {
 	return m_pwindow;
 }
@@ -212,7 +215,7 @@ bbe::Window::~Window()
 
 	windowsAliveCounter--;
 
-	if(this == bbe::Window::INTERNAL_firstInstance)
+	if (this == bbe::Window::INTERNAL_firstInstance)
 	{
 		bbe::Window::INTERNAL_firstInstance = nullptr;
 	}
@@ -439,7 +442,7 @@ uint32_t bbe::Window::getAmountOfDrawcalls() const
 }
 #endif
 
-void bbe::INTERNAL_keyCallback(GLFWwindow * window, int keyCode, int scanCode, int action, int mods)
+void bbe::INTERNAL_keyCallback(GLFWwindow* window, int keyCode, int scanCode, int action, int mods)
 {
 #ifndef BBE_RENDERER_NULL
 	if (keyCode == GLFW_KEY_UNKNOWN)
@@ -469,7 +472,7 @@ void bbe::INTERNAL_charCallback(GLFWwindow* window, unsigned int c)
 #endif
 }
 
-void bbe::INTERNAL_cursorPosCallback(GLFWwindow * window, double xpos, double ypos)
+void bbe::INTERNAL_cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 {
 #ifdef BBE_RENDERER_VULKAN
 	if (ImGui::GetIO().WantCaptureMouse) return;
@@ -480,12 +483,12 @@ void bbe::INTERNAL_cursorPosCallback(GLFWwindow * window, double xpos, double yp
 	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_moveMouse((float)(xpos / windowXScale), (float)(ypos / windowYScale));
 }
 
-void bbe::INTERNAL_windowResizeCallback(GLFWwindow * window, int width, int height)
+void bbe::INTERNAL_windowResizeCallback(GLFWwindow* window, int width, int height)
 {
 	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_resize(width, height);
 }
 
-void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int action, int mods)
+void bbe::INTERNAL_mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
 #ifndef BBE_RENDERER_NULL
 	ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
@@ -502,7 +505,7 @@ void bbe::INTERNAL_mouseButtonCallback(GLFWwindow * window, int button, int acti
 	}
 }
 
-void bbe::INTERNAL_mouseScrollCallback(GLFWwindow * window, double xoffset, double yoffset)
+void bbe::INTERNAL_mouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 #ifndef BBE_RENDERER_NULL
 	ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
@@ -539,7 +542,7 @@ void bbe::INTERNAL_windowPosCallback(GLFWwindow* window, int, int)
 }
 
 template<>
-uint32_t bbe::hash(const bbe::Window & t)
+uint32_t bbe::hash(const bbe::Window& t)
 {
 	//UNTESTED
 	return t.getWidth() * 7 + t.getHeight() * 13;
