@@ -47,6 +47,22 @@ namespace bbe
 			return !(*this == other);
 		}
 
+		float distance(const bbe::Color_t<T, maxValue>& other) const
+		{
+			float retVal = 0.f;
+
+			if (r > other.r) retVal += r - other.r;
+			else retVal += other.r - r;
+
+			if (g > other.g) retVal += g - other.g;
+			else retVal += other.g - g;
+
+			if (b > other.b) retVal += b - other.b;
+			else retVal += other.b - b;
+			
+			return retVal;
+		}
+
 		bbe::Color_t<T, maxValue> blendTo(const bbe::Color_t<T, maxValue>& other, float t) const
 		{
 			if (t < 0.f) return *this;
