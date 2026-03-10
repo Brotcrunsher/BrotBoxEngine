@@ -181,6 +181,11 @@ void bbe::ByteBuffer::removeFirstBytes(size_t amount)
 	m_bytes.removeRange(0, amount);
 }
 
+bbe::List<bbe::byte> bbe::ByteBuffer::asList() const
+{
+	return m_bytes;
+}
+
 uint8_t  bbe::ByteBufferSpan::readU8()  { uint8_t  val; read(val); return val; }
 uint16_t bbe::ByteBufferSpan::readU16() { uint16_t val; read(val); return val; }
 uint32_t bbe::ByteBufferSpan::readU32() { uint32_t val; read(val); return val; }

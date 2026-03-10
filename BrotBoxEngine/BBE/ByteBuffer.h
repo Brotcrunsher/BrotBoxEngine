@@ -243,5 +243,7 @@ namespace bbe
 		ByteBufferSpan getSpan();
 
 		void removeFirstBytes(size_t amount);
+
+		bbe::List<bbe::byte> asList() const;
 	};
 }
