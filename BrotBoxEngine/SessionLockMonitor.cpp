@@ -37,9 +37,9 @@ LRESULT bbe::SessionLockMonitor::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
 	}
 	return 0;
 }
-#endif
 
 bool bbe::SessionLockMonitor::isScreenLocked() const
 {
 	return isLocked;
 }
+#endif
