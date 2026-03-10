@@ -254,7 +254,7 @@ void bbe::INTERNAL::openGl::Framebuffer::destroy()
 GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label, uint32_t bytes)
 {
 	GLuint texture = 0;
-	
+
 #ifndef __EMSCRIPTEN__
 	if (samples == 1)
 #endif
@@ -722,7 +722,7 @@ bbe::INTERNAL::openGl::LightProgram bbe::INTERNAL::openGl::OpenGLManager::init3d
 	LightProgram program;
 	char const* vertexShaderSrc;
 
-	if(!baking)
+	if (!baking)
 	{
 		vertexShaderSrc =
 			"in vec3 inPos;"
@@ -795,7 +795,7 @@ bbe::INTERNAL::openGl::LightProgram bbe::INTERNAL::openGl::OpenGLManager::init3d
 		"   }"
 		"   if(lightPower < 0.001) discard;"
 		"   vec3 L = normalize(toLight);";
-	if(!baking)
+	if (!baking)
 	{
 		fragmentShaderSource +=
 			"   vec3 albedo = texture(gAlbedoSpec, uvCoord).xyz;"
@@ -925,7 +925,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 
 		if (!baking)
 		{
-			     if (m_renderMode == bbe::RenderMode::DEFERRED)          fs3d = &fs->getThreeD();
+			if (m_renderMode == bbe::RenderMode::DEFERRED)          fs3d = &fs->getThreeD();
 			else if (m_renderMode == bbe::RenderMode::FORWARD_NO_LIGHTS) fs3d = &fs->getThreeDForwardNoLight();
 			else bbe::Crash(bbe::Error::IllegalState);
 		}
@@ -951,10 +951,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 			}
 			else if (m_renderMode == bbe::RenderMode::FORWARD_NO_LIGHTS)
 			{
-				program      = m_program3dForwardNoLight.program;
-				modelPos     = m_program3dForwardNoLight.modelPos3dMrt;
-				albedoTex    = m_program3dForwardNoLight.albedoTexMrt;
-				normalsTex   = m_program3dForwardNoLight.normalsTexMrt;
+				program = m_program3dForwardNoLight.program;
+				modelPos = m_program3dForwardNoLight.modelPos3dMrt;
+				albedoTex = m_program3dForwardNoLight.albedoTexMrt;
+				normalsTex = m_program3dForwardNoLight.normalsTexMrt;
 				emissionsTex = m_program3dForwardNoLight.emissionsTexMrt;
 			}
 		}
@@ -1171,7 +1171,7 @@ static void transferBorderPixels(bbe::List<bbe::byte>& byteBuffer, const bbe::Li
 {
 	if (src.x < 0 || src.y < 0 || src.x >= width || src.y >= height) return;
 	const size_t srcIndex = getIndex(src, width) * 4;
-	if (   colorFloatBuffer[srcIndex + 0] != 0
+	if (colorFloatBuffer[srcIndex + 0] != 0
 		|| colorFloatBuffer[srcIndex + 1] != 0
 		|| colorFloatBuffer[srcIndex + 2] != 0)
 	{
@@ -1187,7 +1187,7 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t wid
 	bbe::List<float> colorFloatBuffer;
 	bbe::List<byte> byteBuffer;
 	colorFloatBuffer.resizeCapacityAndLengthUninit(bufferSize);
-	byteBuffer      .resizeCapacityAndLengthUninit(bufferSize);
+	byteBuffer.resizeCapacityAndLengthUninit(bufferSize);
 	glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, colorFloatBuffer.getRaw());
 	for (size_t i = 0; i < colorFloatBuffer.getLength(); i += 4)
 	{
@@ -1200,15 +1200,15 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t wid
 	// TODO this should be put elsewhere. It isn't really the job of this function.
 	for (size_t i = 0; i < byteBuffer.getLength(); i += 4)
 	{
-		if (   colorFloatBuffer[i + 0] == 0
+		if (colorFloatBuffer[i + 0] == 0
 			&& colorFloatBuffer[i + 1] == 0
 			&& colorFloatBuffer[i + 2] == 0)
 		{
 			const bbe::Vector2i pos = getPos(i / 4, width);
-			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 1,  0), (int32_t)width, (int32_t)height);
-			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(-1,  0), (int32_t)width, (int32_t)height);
-			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 0,  1), (int32_t)width, (int32_t)height);
-			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 0, -1), (int32_t)width, (int32_t)height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(1, 0), (int32_t)width, (int32_t)height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(-1, 0), (int32_t)width, (int32_t)height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(0, 1), (int32_t)width, (int32_t)height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(0, -1), (int32_t)width, (int32_t)height);
 		}
 	}
 	return bbe::Image(width, height, byteBuffer.getRaw(), bbe::ImageFormat::R8G8B8A8);
@@ -1236,7 +1236,7 @@ GLuint bbe::INTERNAL::openGl::OpenGLManager::getModeFramebuffer()
 {
 	switch (m_renderMode)
 	{
-	case(bbe::RenderMode::DEFERRED):          return mrtFb           .framebuffer;
+	case(bbe::RenderMode::DEFERRED):          return mrtFb.framebuffer;
 	case(bbe::RenderMode::FORWARD_NO_LIGHTS): return forwardNoLightFb.framebuffer;
 	default: bbe::Crash(bbe::Error::IllegalState);
 	}
@@ -1290,7 +1290,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	glfwMakeContextCurrent(window);
 
 	GLenum resp = glewInit();
-	if (resp != GLEW_OK)
+	if (resp == GLEW_ERROR_NO_GLX_DISPLAY)
+	{
+		// Dirty hack for Wayland based Linux
+		BBELOGLN("WARNING: GLEW_ERROR_NO_GLX_DISPLAY");
+	}
+	else if (resp != GLEW_OK)
 	{
 		bbe::String errorMessage = "An error occurred while initializing GLEW: ";
 		errorMessage += (const char*)glewGetErrorString(resp);
@@ -1338,23 +1343,23 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 	glDeleteBuffers(1, &quadIbo);
 	imguiStop();
 
-	OpenGLSphere   ::destroy();
-	OpenGLCube     ::destroy();
-	OpenGLCircle   ::destroy();
+	OpenGLSphere::destroy();
+	OpenGLCube::destroy();
+	OpenGLCircle::destroy();
 	OpenGLRectangle::destroy();
 
-	mrtFb                         .destroy();
-	forwardNoLightFb              .destroy();
-	postProcessingFb              .destroy();
-	m_program3dMrt                .destroy();
-	m_programPostProcessing       .destroy();
+	mrtFb.destroy();
+	forwardNoLightFb.destroy();
+	postProcessingFb.destroy();
+	m_program3dMrt.destroy();
+	m_programPostProcessing.destroy();
 	m_programBakingGammaCorrection.destroy();
-	m_program3dLight              .destroy();
-	m_program3dMrtBaking          .destroy();
-	m_program3dLightBaking        .destroy();
+	m_program3dLight.destroy();
+	m_program3dMrtBaking.destroy();
+	m_program3dLightBaking.destroy();
 	glDeleteBuffers(1, &m_imageUvBuffer);
 	m_program2dTex.destroy();
-	m_program2d   .destroy();
+	m_program2d.destroy();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
@@ -1433,7 +1438,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
 	m_color2d = bbe::Color(1, 1, 1, 1);
 	m_color3d = bbe::Color(1, 1, 1, 1);
 	glViewport(0, 0, m_windowWidth, m_windowHeight);
-	glScissor (0, 0, m_windowWidth, m_windowHeight);
+	glScissor(0, 0, m_windowWidth, m_windowHeight);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::postDraw()
