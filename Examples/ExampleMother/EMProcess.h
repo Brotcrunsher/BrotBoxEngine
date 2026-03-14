@@ -1,4 +1,5 @@
 #pragma once
+#ifdef _WIN32
 #include "BBE/BrotBoxEngine.h"
 
 struct Process
@@ -33,3 +34,4 @@ public:
 
 	bbe::List<bbe::String> getWarnings() const;
 };
+#endif

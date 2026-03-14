@@ -1,3 +1,4 @@
+#ifdef _WIN32
 #include "EMUrl.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -60,14 +61,16 @@ void SubsystemUrl::drawGui(float scale)
 		size_t deletionIndex = (size_t)-1;
 		for (size_t i = 0; i < urls.getLength(); i++)
 		{
-			Url& url = urls[i];
-			if (url.type == Url::TYPE_TIME_WASTER && !showTimeWasters) continue;
-			if (url.type == Url::TYPE_WORK        && !showWork) continue;
+			Url &url = urls[i];
+			if (url.type == Url::TYPE_TIME_WASTER && !showTimeWasters)
+				continue;
+			if (url.type == Url::TYPE_WORK && !showWork)
+				continue;
 			ImGui::PushID(i);
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::Text(url.url);
-	
+
 			ImGui::TableSetColumnIndex(1);
 			if (ImGui::Button("Delete"))
 			{
@@ -116,10 +119,10 @@ void SubsystemUrl::disableHighConcentrationMode() const
 bbe::List<bbe::String> SubsystemUrl::getDomains()
 {
 	bbe::List<bbe::String> retVal;
-	//Inspired By: Barmak Shemirani see https://stackoverflow.com/a/48507146/7130273
-	//Modified to return a bbe::List<bbe::String>
-	//         only the domain part
-	//         performance optimized (caching etc.)
+	// Inspired By: Barmak Shemirani see https://stackoverflow.com/a/48507146/7130273
+	// Modified to return a bbe::List<bbe::String>
+	//          only the domain part
+	//          performance optimized (caching etc.)
 
 	static bool iniDone = false;
 	static CComQIPtr<IUIAutomation> uia;
@@ -131,13 +134,13 @@ bbe::List<bbe::String> SubsystemUrl::getDomains()
 		if (FAILED(uia.CoCreateInstance(CLSID_CUIAutomation)) || !uia)
 			bbe::Crash(bbe::Error::IllegalState);
 
-		//uia->CreatePropertyCondition(UIA_ControlTypePropertyId,
+		// uia->CreatePropertyCondition(UIA_ControlTypePropertyId,
 		//	CComVariant(0xC354), &condition);
-		// TODO: Localization. We should have something like the above 2 lines, but unfortunately
-		//       the layout of chrome seems to have changed quite a bit and some random UI Elements
-		//       sometimes fulfill the condition.
+		//  TODO: Localization. We should have something like the above 2 lines, but unfortunately
+		//        the layout of chrome seems to have changed quite a bit and some random UI Elements
+		//        sometimes fulfill the condition.
 		uia->CreatePropertyCondition(UIA_NamePropertyId,
-			CComVariant(L"Adress- und Suchleiste"), &condition);
+									 CComVariant(L"Adress- und Suchleiste"), &condition);
 
 		uia->CreatePropertyCondition(UIA_ControlTypePropertyId, CComVariant(0xC371), &topLevelCondition);
 	}
@@ -177,17 +180,16 @@ bbe::List<bbe::String> SubsystemUrl::getDomains()
 				continue;
 
 			CComPtr<IUIAutomationElement> edit;
-			if (FAILED(topLevel->FindFirst(TreeScope_Descendants, condition, &edit))
-				|| !edit)
+			if (FAILED(topLevel->FindFirst(TreeScope_Descendants, condition, &edit)) || !edit)
 				continue;
 			// ^^^^--- This is the actual reason why we do this cache stuff!
 			//         Highly expensive operation to call FindFirst.
-			editsCache[hwnd] = { edit, redGreen };
+			editsCache[hwnd] = {edit, redGreen};
 		}
 	}
 
 	// Remove cache entries that weren't "touched" in this call.
-	for (auto it = editsCache.cbegin(); it != editsCache.cend(); )
+	for (auto it = editsCache.cbegin(); it != editsCache.cend();)
 	{
 		if (it->second.currentRedGreen != redGreen)
 		{
@@ -211,11 +213,11 @@ bbe::List<bbe::String> SubsystemUrl::getDomains()
 
 		CComVariant url;
 		edit->GetCurrentPropertyValue(UIA_ValueValuePropertyId, &url);
-		if (!url.bstrVal) continue;
+		if (!url.bstrVal)
+			continue;
 
 		bbe::String newElem = bbe::String(url.bstrVal).split("/")[0];
-		if (newElem.getLength() > 0
-			&& newElem.contains("."))
+		if (newElem.getLength() > 0 && newElem.contains("."))
 		{
 			retVal.add(newElem);
 		}
@@ -235,3 +237,4 @@ bbe::List<bbe::String> SubsystemUrl::getTimeWasterUrls() const
 	}
 	return retVal;
 }
+#endif

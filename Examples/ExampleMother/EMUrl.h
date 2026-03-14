@@ -1,5 +1,5 @@
 #pragma once
-
+#ifdef _WIN32
 #include "BBE/BrotBoxEngine.h"
 
 struct Url
@@ -12,8 +12,7 @@ struct Url
 	};
 	BBE_SERIALIZABLE_DATA(
 		((bbe::String), url),
-		((int32_t), type)
-	)
+		((int32_t), type))
 };
 
 class SubsystemUrl
@@ -33,3 +32,4 @@ public:
 	void enableHighConcentrationMode() const;
 	void disableHighConcentrationMode() const;
 };
+#endif

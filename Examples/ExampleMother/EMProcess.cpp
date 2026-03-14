@@ -1,3 +1,4 @@
+#ifdef _WIN32
 #include "EMProcess.h"
 #include <Windows.h>
 #include <tlhelp32.h>
@@ -153,4 +154,4 @@ bbe::List<bbe::String> SubsystemProcess::getWarnings() const
 
 	return retVal;
 }
-
+#endif

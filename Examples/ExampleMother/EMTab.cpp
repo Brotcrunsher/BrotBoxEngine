@@ -1,5 +1,3 @@
-#pragma once
-
 #include "EMTab.h"
 
 DrawTabResult drawTabs(const bbe::List<Tab>& tabs, size_t* previousShownTab, bool& switchLeft, bool& switchRight)

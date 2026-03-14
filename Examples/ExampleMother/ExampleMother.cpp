@@ -1,4 +1,6 @@
+#ifdef _WIN32
 #include "tinyxml2.h"
+#endif
 #include "BBE/BrotBoxEngine.h"
 #include "BBE/SimpleProcess.h"
 #ifdef ACTIVATE_ADA
@@ -8,6 +10,7 @@
 #include <iostream>
 #include <mutex>
 #include <cmath>
+#ifdef _WIN32
 #define NOMINMAX
 // Need to link with Ws2_32.lib
 #pragma comment(lib, "ws2_32.lib")
@@ -15,9 +18,10 @@
 #include <tlhelp32.h>
 #include <AtlBase.h>
 #include <UIAutomation.h>
+#include "GlobalKeyboard.h"
+#endif
 #include "AssetStore.h"
 #include "imgui_internal.h"
-#include "GlobalKeyboard.h"
 #include "EMTask.h"
 #include "EMProcess.h"
 #include "EMUrl.h"
@@ -28,33 +32,31 @@
 #include "BBE/SoundGenerator.h"
 #include "BBE/SoundManager.h"
 
-//TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
-//      Careful when doing this ^^^^^^ - Audio Restart on device change?
-//TODO: Serializable List/Object should somehow handle versions... it's really complicated to do that within the nice BBE_SERIALIZABLE_DATA macro though.
-//TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
-//TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
-//TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
-//TODO: Remember news items. Would be nice to hear all the news of the past week or so, not having to listen to them every day.
-//TODO: Record Bitcoin history prices
+// TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
+//       Careful when doing this ^^^^^^ - Audio Restart on device change?
+// TODO: Serializable List/Object should somehow handle versions... it's really complicated to do that within the nice BBE_SERIALIZABLE_DATA macro though.
+// TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
+// TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
+// TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
+// TODO: Remember news items. Would be nice to hear all the news of the past week or so, not having to listen to them every day.
+// TODO: Record Bitcoin history prices
 
-//TODO: Show average driving time
-//TODO: ChatGPT Function calling
-//TODO: Thickness for mouse wall would be cool
-//TODO: (Can't reproduce, maybe I did the task after 22:00?) Creating a new yearly tasks that is due e.g. in a week seems to have the odd bug of putting the next execution date not in a week but in a year after that.
+// TODO: Show average driving time
+// TODO: ChatGPT Function calling
+// TODO: Thickness for mouse wall would be cool
+// TODO: (Can't reproduce, maybe I did the task after 22:00?) Creating a new yearly tasks that is due e.g. in a week seems to have the odd bug of putting the next execution date not in a week but in a year after that.
 
 struct ClipboardContent
 {
 	BBE_SERIALIZABLE_DATA(
 		((bbe::String), content),
-		((int32_t), adaKey, 0)
-	)
+		((int32_t), adaKey, 0))
 };
 
 struct StreakDay
 {
 	BBE_SERIALIZABLE_DATA(
-		((bbe::TimePoint), day)
-	)
+		((bbe::TimePoint), day))
 };
 
 struct GeneralConfig
@@ -76,24 +78,21 @@ struct GeneralConfig
 		((int32_t), windowSizeY, 0),
 		((bool), windowMaximized),
 		((int32_t), nightTimeStartHour, 22),
-		((int32_t), nightTimeStartMinute, 00)
-	)
+		((int32_t), nightTimeStartMinute, 00))
 };
 
 struct KeyboardTracker
 {
 	BBE_SERIALIZABLE_DATA(
-		((std::array<uint32_t, (size_t)bbe::Key::LAST + 1>), keyPressed)
-	)
+		((std::array<uint32_t, (size_t)bbe::Key::LAST + 1>), keyPressed))
 };
 
 struct SeenServerTaskId
 {
 	BBE_SERIALIZABLE_DATA(
-		((bbe::String), id)
-	)
+		((bbe::String), id))
 
-		auto operator<=>(const SeenServerTaskId&) const = default;
+	auto operator<=>(const SeenServerTaskId &) const = default;
 };
 
 struct Stopwatch
@@ -101,9 +100,8 @@ struct Stopwatch
 	BBE_SERIALIZABLE_DATA(
 		((bbe::String), title),
 		((int32_t), seconds),
-		((bbe::TimePoint), doneAt)
-	)
-		mutable bool soundArmed = false;
+		((bbe::TimePoint), doneAt))
+	mutable bool soundArmed = false;
 
 	bool shouldPlaySound() const
 	{
@@ -127,32 +125,28 @@ struct RememberList
 {
 	BBE_SERIALIZABLE_DATA(
 		((bbe::String), title),
-		((bbe::List<bbe::String>), entries)
-	)
+		((bbe::List<bbe::String>), entries))
 
-		// Non-Persisted Helper Data below.
-		bbe::String newEntryBuffer;
+	// Non-Persisted Helper Data below.
+	bbe::String newEntryBuffer;
 };
 
 struct PasswordManager
 {
 	BBE_SERIALIZABLE_DATA(
-		((bbe::List<bbe::String>), knownHashes)
-	)
+		((bbe::List<bbe::String>), knownHashes))
 };
 
 struct ChatGPTConfig
 {
 	BBE_SERIALIZABLE_DATA(
-		((bbe::String), apiKey)
-	)
+		((bbe::String), apiKey))
 };
 
 struct WeaterConfig
 {
 	BBE_SERIALIZABLE_DATA(
-		((bbe::String), city)
-	)
+		((bbe::String), city))
 };
 
 struct NewsEntry
@@ -160,22 +154,17 @@ struct NewsEntry
 	BBE_SERIALIZABLE_DATA(
 		((bbe::String), title),
 		((bbe::String), description),
-		((bbe::String), link)
-	)
+		((bbe::String), link))
 	bool wasRead = false;
 
 	bool isNull() const
 	{
-		return title       == ""
-			&& description == ""
-			&& link        == "";
+		return title == "" && description == "" && link == "";
 	}
 
-	bool operator==(const NewsEntry& other) const
+	bool operator==(const NewsEntry &other) const
 	{
-		return title       == other.title
-			&& description == other.description
-			&& link        == other.link;
+		return title == other.title && description == other.description && link == other.link;
 	}
 };
 
@@ -186,8 +175,7 @@ struct NewsConfig
 		((bbe::String), iterationPath),
 		((bbe::String), titlePath),
 		((bbe::String), descriptionPath),
-		((bbe::String), linkPath)
-	)
+		((bbe::String), linkPath))
 
 	// Not persisted.
 	std::shared_future<bbe::simpleUrlRequest::UrlRequestResult> queryFuture;
@@ -199,8 +187,7 @@ struct DallEConfig
 {
 	BBE_SERIALIZABLE_DATA(
 		((bbe::String), prompt),
-		((int32_t), picNumber, 0)
-	)
+		((int32_t), picNumber, 0))
 };
 
 struct MouseWallConfig
@@ -212,13 +199,11 @@ struct MouseWallConfig
 		((int32_t), x2, 5760),
 		((int32_t), y2, 2062),
 		((float), borderBreakSeconds, 0.5f),
-		((bool), deactivateOnGame, false)
-	)
+		((bool), deactivateOnGame, false))
 
 	bool isMouseInArea(int32_t mouseX, int32_t mouseY) const
 	{
-		return mouseX > x1 && mouseX < x2 - 1
-			&& mouseY > y1 && mouseY < y2 - 1;
+		return mouseX > x1 && mouseX < x2 - 1 && mouseY > y1 && mouseY < y2 - 1;
 	}
 
 	bool isMouseOnBorder(int32_t mouseX, int32_t mouseY) const
@@ -233,15 +218,13 @@ struct MouseWallConfig
 struct BitcoinData
 {
 	BBE_SERIALIZABLE_DATA(
-		((int32_t), allTimeHigh, 0)
-	)
+		((int32_t), allTimeHigh, 0))
 };
 
 struct ConsoleWarningIgnoreElement
 {
 	BBE_SERIALIZABLE_DATA(
-		((bbe::String), name)
-	)
+		((bbe::String), name))
 };
 
 enum class IconCategory
@@ -252,43 +235,54 @@ enum class IconCategory
 	BLUE,
 };
 
-BOOL CALLBACK MinimizeWindowCallback(HWND hwnd, LPARAM lParam) {
+#ifdef _WIN32
+BOOL CALLBACK MinimizeWindowCallback(HWND hwnd, LPARAM lParam)
+{
 	char className[256];
 	GetClassName(hwnd, className, sizeof(className));
 
-	if (strcmp(className, "Shell_TrayWnd") != 0 && strcmp(className, "Shell_SecondaryTrayWnd") != 0 && hwnd != (HWND)lParam && IsWindowVisible(hwnd)) {
+	if (strcmp(className, "Shell_TrayWnd") != 0 && strcmp(className, "Shell_SecondaryTrayWnd") != 0 && hwnd != (HWND)lParam && IsWindowVisible(hwnd))
+	{
 		ShowWindow(hwnd, SW_MINIMIZE);
 	}
 	return TRUE;
 }
+#endif
 
 class MyGame : public bbe::Game
 {
 private:
 	SubsystemTask tasks;
+#ifdef _WIN32
 	SubsystemProcess processes;
 	SubsystemUrl urls;
+#endif
+
+#ifdef _WIN32
 	SubsystemBrainTeaser brainTeasers = SubsystemBrainTeaser(this);
+#endif
 
-	bbe::SerializableList<ClipboardContent> clipboardContent    = bbe::SerializableList<ClipboardContent> ("Clipboard.dat",           "ParanoiaConfig", bbe::Undoable::YES);
-	bbe::SerializableObject<GeneralConfig> generalConfig        = bbe::SerializableObject<GeneralConfig>  ("generalConfig.dat",       "ParanoiaConfig");
-	bbe::SerializableList<Stopwatch> stopwatches                = bbe::SerializableList<Stopwatch>        ("stopwatches.dat",         "ParanoiaConfig");
-	bbe::SerializableList<RememberList> rememberLists           = bbe::SerializableList<RememberList>     ("RememberLists.dat",       "ParanoiaConfig");
-	bbe::SerializableList<StreakDay> streakDays                 = bbe::SerializableList<StreakDay>        ("streakDays.dat",          "ParanoiaConfig");
-	bbe::SerializableObject<KeyboardTracker> keyboardTracker    = bbe::SerializableObject<KeyboardTracker>("keyboardTracker.dat"); // No ParanoiaConfig to avoid accidentally logging passwords.
-	bbe::SerializableList<SeenServerTaskId> seenServerTaskIds   = bbe::SerializableList<SeenServerTaskId> ("SeenServerTaskIds.dat",   "ParanoiaConfig");
-	bbe::SerializableObject<ChatGPTConfig> chatGPTConfig        = bbe::SerializableObject<ChatGPTConfig>  ("ChatGPTConfig.dat",       "ParanoiaConfig");
-	bbe::SerializableObject<WeaterConfig> weatherConfig         = bbe::SerializableObject<WeaterConfig>   ("WeaterConfig.dat",        "ParanoiaConfig");
-	bbe::SerializableList<NewsConfig> newsConfig                = bbe::SerializableList<NewsConfig>       ("NewsConfig.dat",          "ParanoiaConfig");
-	bbe::SerializableList<NewsEntry> readNews                   = bbe::SerializableList<NewsEntry>        ("ReadNews.dat",            "ParanoiaConfig");
-	bbe::SerializableObject<DallEConfig> dallEConfig            = bbe::SerializableObject<DallEConfig>    ("DallEConfig.dat",         "ParanoiaConfig");
-	bbe::SerializableObject<MouseWallConfig> mouseWallConfig    = bbe::SerializableObject<MouseWallConfig>("MouseWallConfig.dat",     "ParanoiaConfig");
-	bbe::SerializableObject<BitcoinData> bitcoinData            = bbe::SerializableObject<BitcoinData>    ("BitcoinData.dat",         "ParanoiaConfig");
-	bbe::SerializableObject<PasswordManager> passwordManager    = bbe::SerializableObject<PasswordManager>("PasswordManager.dat",     "ParanoiaConfig");
-	bbe::SerializableList<ConsoleWarningIgnoreElement> cwiList  = bbe::SerializableList<ConsoleWarningIgnoreElement>("CWIList.dat",   "ParanoiaConfig");
+	bbe::SerializableList<ClipboardContent> clipboardContent = bbe::SerializableList<ClipboardContent>("Clipboard.dat", "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableObject<GeneralConfig> generalConfig = bbe::SerializableObject<GeneralConfig>("generalConfig.dat", "ParanoiaConfig");
+	bbe::SerializableList<Stopwatch> stopwatches = bbe::SerializableList<Stopwatch>("stopwatches.dat", "ParanoiaConfig");
+	bbe::SerializableList<RememberList> rememberLists = bbe::SerializableList<RememberList>("RememberLists.dat", "ParanoiaConfig");
+	bbe::SerializableList<StreakDay> streakDays = bbe::SerializableList<StreakDay>("streakDays.dat", "ParanoiaConfig");
+	bbe::SerializableObject<KeyboardTracker> keyboardTracker = bbe::SerializableObject<KeyboardTracker>("keyboardTracker.dat"); // No ParanoiaConfig to avoid accidentally logging passwords.
+	bbe::SerializableList<SeenServerTaskId> seenServerTaskIds = bbe::SerializableList<SeenServerTaskId>("SeenServerTaskIds.dat", "ParanoiaConfig");
+	bbe::SerializableObject<ChatGPTConfig> chatGPTConfig = bbe::SerializableObject<ChatGPTConfig>("ChatGPTConfig.dat", "ParanoiaConfig");
+	bbe::SerializableObject<WeaterConfig> weatherConfig = bbe::SerializableObject<WeaterConfig>("WeaterConfig.dat", "ParanoiaConfig");
+	bbe::SerializableList<NewsConfig> newsConfig = bbe::SerializableList<NewsConfig>("NewsConfig.dat", "ParanoiaConfig");
+	bbe::SerializableList<NewsEntry> readNews = bbe::SerializableList<NewsEntry>("ReadNews.dat", "ParanoiaConfig");
+	bbe::SerializableObject<DallEConfig> dallEConfig = bbe::SerializableObject<DallEConfig>("DallEConfig.dat", "ParanoiaConfig");
+	bbe::SerializableObject<MouseWallConfig> mouseWallConfig = bbe::SerializableObject<MouseWallConfig>("MouseWallConfig.dat", "ParanoiaConfig");
+	bbe::SerializableObject<BitcoinData> bitcoinData = bbe::SerializableObject<BitcoinData>("BitcoinData.dat", "ParanoiaConfig");
+	bbe::SerializableObject<PasswordManager> passwordManager = bbe::SerializableObject<PasswordManager>("PasswordManager.dat", "ParanoiaConfig");
+	bbe::SerializableList<ConsoleWarningIgnoreElement> cwiList = bbe::SerializableList<ConsoleWarningIgnoreElement>("CWIList.dat", "ParanoiaConfig");
 
-	bbe::ChatGPTComm chatGPTComm; // ChatGPT communication object
+#ifdef _WIN32
+	bbe::ChatGPTComm chatGPTComm;						  // ChatGPT communication object
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
+#endif
 	std::future<bbe::Sound> chatGPTTTSFuture; // Future for TTS
 	bbe::Sound currentTTSSound;
 	bool ttsSoundSet = false;
@@ -301,24 +295,30 @@ private:
 	bool tabSwitchRequestedLeft = false;
 	bool tabSwitchRequestedRight = false;
 
+#ifdef _WIN32
 	bbe::List<HICON> trayIconsRed;
 	bbe::List<HICON> trayIconsGreen;
 	bbe::List<HICON> trayIconsBlue;
 	size_t trayIconIndex = 0;
+#endif
 
 	bbe::List<float> mousePositions;
 
+#ifdef _WIN32
 	bbe::GlobalKeyboard globalKeyboard;
 	bool keyboardTrackingActive = false;
+#endif
 
 	bool terriActive = false;
 
 	bbe::TimePoint lastServerReach = bbe::TimePoint::epoch();
 	bool serverUnreachableSilenced = false;
 
+#ifdef _WIN32
 	bbe::Monitor monitor;
 	float monitorBrightness = 1.0f;
 	bool monitorBrightnessOverwrite = false;
+#endif
 
 	bool highConcentrationMode = false;
 #ifdef ACTIVATE_ADA
@@ -343,6 +343,7 @@ private:
 	bbe::PixelObserver pixelObserver;
 
 public:
+#ifdef _WIN32
 	HICON createTrayIcon(DWORD offset, int redGreenBlue)
 	{
 		// See: https://learn.microsoft.com/en-us/windows/win32/menurc/using-cursors#creating-a-cursor
@@ -407,28 +408,34 @@ public:
 
 	IconCategory getTrayIconCategory() const
 	{
-		if (isNightTime()) return IconCategory::RED;
-		if (tasks.hasCurrentTask()) return IconCategory::BLUE;
+		if (isNightTime())
+			return IconCategory::RED;
+		if (tasks.hasCurrentTask())
+			return IconCategory::BLUE;
 		return IconCategory::GREEN;
 	}
 
-	bbe::List<HICON>& getTrayIcons()
+	bbe::List<HICON> &getTrayIcons()
 	{
 		switch (getTrayIconCategory())
 		{
-		case IconCategory::RED: return trayIconsRed;
-		case IconCategory::GREEN: return trayIconsGreen;
-		case IconCategory::BLUE: return trayIconsBlue;
+		case IconCategory::RED:
+			return trayIconsRed;
+		case IconCategory::GREEN:
+			return trayIconsGreen;
+		case IconCategory::BLUE:
+			return trayIconsBlue;
 		}
 		bbe::Crash(bbe::Error::IllegalState, "That's not a tray icon category!");
 	}
 
 	HICON getCurrentTrayIcon()
 	{
-		bbe::List<HICON>& trayIcons = getTrayIcons();
+		bbe::List<HICON> &trayIcons = getTrayIcons();
 		HICON retVal = trayIcons[((int)(getTimeSinceStartSeconds() * 400)) % trayIcons.getLength()];
 		return retVal;
 	}
+#endif
 
 	void exitCallback()
 	{
@@ -439,29 +446,33 @@ public:
 	{
 		setWindowCloseMode(bbe::WindowCloseMode::HIDE);
 
+#ifdef _WIN32
 		createTrayIcons();
 		bbe::TrayIcon::init(this, "M.O.THE.R " __DATE__ ", " __TIME__, getCurrentTrayIcon());
-		bbe::TrayIcon::addPopupItem("Exit", [&]() { exitCallback(); });
+		bbe::TrayIcon::addPopupItem("Exit", [&]()
+									{ exitCallback(); });
+#endif
 
 		bbe::simpleFile::backup::setBackupPath(generalConfig->backupPath);
 
+#ifdef _WIN32
 		// Initialize ChatGPTComm with the API key if available
 		if (!chatGPTConfig->apiKey.isEmpty())
 		{
 			chatGPTComm.key = chatGPTConfig->apiKey;
 		}
+#endif
 
 		if (generalConfig->windowSet)
 		{
-			getWindow()->setPos({ generalConfig->windowPosX, generalConfig->windowPosY });
-			getWindow()->setSize({ generalConfig->windowSizeX, generalConfig->windowSizeY });
+			getWindow()->setPos({generalConfig->windowPosX, generalConfig->windowPosY});
+			getWindow()->setSize({generalConfig->windowSizeX, generalConfig->windowSizeY});
 
 			if (generalConfig->windowMaximized)
 			{
 				getWindow()->maximize();
 			}
 		}
-
 
 		bbe::SoundGenerator sg(bbe::Duration::fromMilliseconds(500));
 		sg.addRecipeSineWave(0.0, 0.1, 150.0);
@@ -487,7 +498,9 @@ public:
 		{
 			if (clipboardContent[i].adaKey == key)
 			{
+#ifdef _WIN32
 				setClipboard(clipboardContent[i].content);
+#endif
 				break;
 			}
 		}
@@ -507,11 +520,14 @@ public:
 	float getMonitorDim() const
 	{
 		bbe::TimePoint now;
-		if (isNightTime()) return 0.0f;
+		if (isNightTime())
+			return 0.0f;
 		const bbe::TimePoint dimStart = getNightStart().plusHours(-2);
 		const bbe::TimePoint dimEnd = dimStart.plusHours(1);
-		if (now < dimStart) return 1.0f;
-		if (now > dimEnd) return 0.0f;
+		if (now < dimStart)
+			return 1.0f;
+		if (now > dimEnd)
+			return 0.0f;
 
 		const auto dimDur = (dimEnd - dimStart).toSeconds();
 		const auto dimCur = (now - dimStart).toSeconds();
@@ -533,6 +549,7 @@ public:
 		return false;
 	}
 
+#ifdef _WIN32
 	auto getServerFuture()
 	{
 		static bbe::ByteBuffer key;
@@ -540,25 +557,27 @@ public:
 		{
 			key = bbe::simpleFile::readBinaryFile(generalConfig->serverKeyFilePath);
 		}
-		return bbe::simpleUrlRequest::socketRequestXChaChaAsync(generalConfig->serverAddress, generalConfig->serverPort, key, true, true);;
+		return bbe::simpleUrlRequest::socketRequestXChaChaAsync(generalConfig->serverAddress, generalConfig->serverPort, key, true, true);
+		;
 	}
+#endif
 
+#ifdef _WIN32
 	void minimizeAllWindows()
 	{
 		EnumWindows(MinimizeWindowCallback, (LPARAM)getNativeWindowHandle());
 	}
+#endif
 
 	virtual void update(float timeSinceLastFrame) override
 	{
+#ifdef _WIN32
 		beginMeasure("Server Stuff");
 		{
 			EVERY_SECONDS(5)
 			{
 				static bool checkPassedOnce = false; // Lessens the amount of IO.
-				if (!generalConfig->serverAddress.isEmpty()
-					&& generalConfig->serverPort != 0
-					&& !generalConfig->serverKeyFilePath.isEmpty()
-					&& (checkPassedOnce || bbe::simpleFile::doesFileExist(generalConfig->serverKeyFilePath)))
+				if (!generalConfig->serverAddress.isEmpty() && generalConfig->serverPort != 0 && !generalConfig->serverKeyFilePath.isEmpty() && (checkPassedOnce || bbe::simpleFile::doesFileExist(generalConfig->serverKeyFilePath)))
 				{
 					checkPassedOnce = true;
 					static bbe::TimePoint serverDeadline = bbe::TimePoint().plusMinutes(1);
@@ -585,17 +604,17 @@ public:
 
 							auto lines = content.lines(false);
 
-							for (const bbe::String& line : lines)
+							for (const bbe::String &line : lines)
 							{
 								int64_t separator = line.search(":");
 								if (separator >= 0)
 								{
 									bbe::String id = line.substring(0, separator);
-									if (!seenServerTaskIds.getList().contains({ id }))
+									if (!seenServerTaskIds.getList().contains({id}))
 									{
 										bbe::String task = line.substring(separator + 1, -1);
 										tasks.addServerTask(id, task);
-										seenServerTaskIds.add({ id });
+										seenServerTaskIds.add({id});
 									}
 								}
 							}
@@ -609,14 +628,16 @@ public:
 				}
 			}
 		}
+#endif
 
+#ifdef _WIN32
 		beginMeasure("Mouse Wall");
 		if (mouseWallConfig->active && (!processes.isGameOn() || !mouseWallConfig->deactivateOnGame))
 		{
 			bbe::Vector2 globalMouse = getMouseGlobal();
 			if (mouseWallConfig->mouseTrapped)
 			{
-				::RECT clipArea = { mouseWallConfig->x1, mouseWallConfig->y1, mouseWallConfig->x2, mouseWallConfig->y2 };
+				::RECT clipArea = {mouseWallConfig->x1, mouseWallConfig->y1, mouseWallConfig->x2, mouseWallConfig->y2};
 				::ClipCursor(&clipArea);
 				if (mouseWallConfig->isMouseOnBorder(globalMouse.x, globalMouse.y))
 				{
@@ -640,6 +661,7 @@ public:
 				}
 			}
 		}
+#endif
 #ifdef ACTIVATE_ADA
 		beginMeasure("AdafruitMacroPadRP2040");
 		if (adafruitMacroPadRP2040.isConnected())
@@ -679,7 +701,7 @@ public:
 		{
 			adafruitMacroPadRP2040.connect();
 		}
-		
+
 		beginMeasure("ChatGPT: Header...");
 		if (adafruitMacroPadRP2040.isConnected() && chatGPTComm.isKeySet())
 		{
@@ -746,6 +768,7 @@ public:
 			}
 		}
 
+#ifdef _WIN32
 		beginMeasure("Reading News");
 		{
 			if (chatGPTComm.isKeySet() && readingNews)
@@ -778,23 +801,25 @@ public:
 				}
 			}
 		}
+#endif
 
 		beginMeasure("Basic Controls");
 		static bbe::TimePoint flipToLowEnergyMode = bbe::TimePoint().plusSeconds(2);
 		static bbe::TimePoint flipToSuperLowEnergyMode = bbe::TimePoint().plusSeconds(100);
-		if (isFocused() || isHovered() || terriActive 
+		if (isFocused() || isHovered() || terriActive
 #ifdef ACTIVATE_ADA
 			|| adafruitMacroPadRP2040.anyActivity()
 #endif
-			)
+		)
 		{
-			flipToLowEnergyMode      = bbe::TimePoint().plusSeconds(2);
+			flipToLowEnergyMode = bbe::TimePoint().plusSeconds(2);
 			flipToSuperLowEnergyMode = bbe::TimePoint().plusSeconds(100);
 		}
 		setTargetFrametime(flipToSuperLowEnergyMode.hasPassed() ? (1.0f / 3.0f) : (flipToLowEnergyMode.hasPassed() ? (1.f / 10.f) : (1.f / 144.f)));
 		tabSwitchRequestedLeft = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::Q);
 		tabSwitchRequestedRight = isKeyDown(bbe::Key::LEFT_CONTROL) && isKeyPressed(bbe::Key::E);
 
+#ifdef _WIN32
 		beginMeasure("GlobalKeyboard");
 		if (keyboardTrackingActive)
 		{
@@ -817,19 +842,24 @@ public:
 				}
 			}
 		}
+#endif
 
 		beginMeasure("Play Task Sounds");
 		tasks.update();
-		if (stopwatches.getList().any([](const Stopwatch& sw) { return sw.shouldPlaySound(); }))
+		if (stopwatches.getList().any([](const Stopwatch &sw)
+									  { return sw.shouldPlaySound(); }))
 		{
 			assetStore::Stopwatch()->play();
 		}
 
+#ifdef _WIN32
 		beginMeasure("Tray Icon");
 		static IconCategory prevIconCategory = IconCategory::NONE;
 		const IconCategory currIconCategory = getTrayIconCategory();
-		if (prevIconCategory != currIconCategory || bbe::TrayIcon::isVisible()) bbe::TrayIcon::setIcon(getCurrentTrayIcon());
+		if (prevIconCategory != currIconCategory || bbe::TrayIcon::isVisible())
+			bbe::TrayIcon::setIcon(getCurrentTrayIcon());
 		prevIconCategory = currIconCategory;
+#endif
 
 		beginMeasure("Night Time");
 		if (isNightTime())
@@ -845,7 +875,9 @@ public:
 			{
 				EVERY_MINUTES(1)
 				{
+#ifdef _WIN32
 					minimizeAllWindows();
+#endif
 					showWindow();
 					assetStore::NightTime()->play();
 				}
@@ -856,16 +888,20 @@ public:
 			assetStore::AlmostNightTime()->play();
 		}
 
+#ifdef _WIN32
 		beginMeasure("Process Stuff");
 		processes.update();
+#endif
 
+#ifdef _WIN32
 		beginMeasure("URL Stuff");
 		urls.update();
+#endif
 
 		beginMeasure("Streak Stuff");
 		if ((streakDays.getLength() == 0 || !streakDays.getList().last().day.isToday()) && tasks.isStreakFulfilled())
 		{
-			streakDays.add(StreakDay{ bbe::TimePoint::todayAt(0, 0, 0) });
+			streakDays.add(StreakDay{bbe::TimePoint::todayAt(0, 0, 0)});
 		}
 
 		beginMeasure("Beeper");
@@ -877,19 +913,18 @@ public:
 			}
 		}
 
+#ifdef _WIN32
 		beginMeasure("Monitor Dim");
 		if (!monitorBrightnessOverwrite)
 		{
 			monitorBrightness = getMonitorDim();
 		}
 		monitor.setBrightness(
-			{
-			monitorBrightness * generalConfig->baseMonitorBrightness1,
-			monitorBrightness * generalConfig->baseMonitorBrightness2,
-			monitorBrightness * generalConfig->baseMonitorBrightness3
-			}
-		);
-
+			{monitorBrightness * generalConfig->baseMonitorBrightness1,
+			 monitorBrightness * generalConfig->baseMonitorBrightness2,
+			 monitorBrightness * generalConfig->baseMonitorBrightness3});
+#endif
+#ifdef _WIN32
 		beginMeasure("Working Hours");
 		if (tasks.hasPotentialTaskComplaint())
 		{
@@ -910,6 +945,7 @@ public:
 				}
 			}
 		}
+#endif
 	}
 
 	bbe::Vector2 drawTabClipboard()
@@ -933,14 +969,15 @@ public:
 			}
 			ImGui::SameLine();
 			ImGui::PushItemWidth(100);
-			if (ImGui::bbe::combo("##Adakey", { "None", "1", "2", "3" }, &clipboardContent[i].adaKey))
+			if (ImGui::bbe::combo("##Adakey", {"None", "1", "2", "3"}, &clipboardContent[i].adaKey))
 			{
 				requiresWrite = true;
 				if (clipboardContent[i].adaKey != 0)
 				{
 					for (size_t k = 0; k < clipboardContent.getLength(); k++)
 					{
-						if (i == k) continue;
+						if (i == k)
+							continue;
 						if (clipboardContent[i].adaKey == clipboardContent[k].adaKey)
 						{
 							clipboardContent[k].adaKey = 0;
@@ -991,15 +1028,19 @@ public:
 		float chanceOfRain = 0.0f;
 	};
 
-	WeatherEntry jsonToWeatherEntry(const nlohmann::json& json, const bbe::TimePoint& day)
+	WeatherEntry jsonToWeatherEntry(const nlohmann::json &json, const bbe::TimePoint &day)
 	{
 		WeatherEntry retVal;
 
-		if      (json.contains("temp_C")) retVal.temperatureC = std::stof(json["temp_C"].get<std::string>());
-		else if (json.contains("tempC"))  retVal.temperatureC = std::stof(json["tempC"] .get<std::string>());
+		if (json.contains("temp_C"))
+			retVal.temperatureC = std::stof(json["temp_C"].get<std::string>());
+		else if (json.contains("tempC"))
+			retVal.temperatureC = std::stof(json["tempC"].get<std::string>());
 
-		if (json.contains("FeelsLikeC")) retVal.temperatureCFelt = std::stof(json["FeelsLikeC"].get<std::string>());
-		if (json.contains("humidity")) retVal.humidity = std::stof(json["humidity"].get<std::string>());
+		if (json.contains("FeelsLikeC"))
+			retVal.temperatureCFelt = std::stof(json["FeelsLikeC"].get<std::string>());
+		if (json.contains("humidity"))
+			retVal.humidity = std::stof(json["humidity"].get<std::string>());
 
 		if (json.contains("localObsDateTime"))
 		{
@@ -1011,54 +1052,58 @@ public:
 			retVal.time = bbe::TimePoint::fromDate(day.getYear(), day.getMonth(), day.getDay(), retVal.time.getHour(), retVal.time.getMinute(), retVal.time.getSecond());
 		}
 
-		if (json.contains("uvIndex")) retVal.uvIndex = std::stof(json["uvIndex"].get<std::string>());
-		if (json.contains("winddirDegree"))	retVal.winddir = std::stof(json["winddirDegree"].get<std::string>());
-		if (json.contains("windspeedKmph"))	retVal.windspeedKmph = std::stof(json["windspeedKmph"].get<std::string>());
-		if (json.contains("precipMM")) retVal.precipMM = std::stof(json["precipMM"].get<std::string>());
-		if (json.contains("chanceofrain")) retVal.chanceOfRain = std::stof(json["chanceofrain"].get<std::string>());
+		if (json.contains("uvIndex"))
+			retVal.uvIndex = std::stof(json["uvIndex"].get<std::string>());
+		if (json.contains("winddirDegree"))
+			retVal.winddir = std::stof(json["winddirDegree"].get<std::string>());
+		if (json.contains("windspeedKmph"))
+			retVal.windspeedKmph = std::stof(json["windspeedKmph"].get<std::string>());
+		if (json.contains("precipMM"))
+			retVal.precipMM = std::stof(json["precipMM"].get<std::string>());
+		if (json.contains("chanceofrain"))
+			retVal.chanceOfRain = std::stof(json["chanceofrain"].get<std::string>());
 
 		return retVal;
 	}
 
-	void drawWeatherEntry(bbe::PrimitiveBrush2D& brush, const bbe::Vector2& offset, const WeatherEntry& entry)
+	void drawWeatherEntry(bbe::PrimitiveBrush2D &brush, const bbe::Vector2 &offset, const WeatherEntry &entry)
 	{
 		constexpr signed fontSize = 15;
 		const bbe::List<std::pair<float, bbe::Color>> colorLerps =
-		{
-			{ -10.0f, bbe::Color(0.8f, 0.8f, 1.0f)},
-			{   0.0f, bbe::Color(0.5f, 0.5f, 1.0f)},
-			{  22.0f, bbe::Color(0.2f, 1.0f, 0.2f)},
-			{  25.0f, bbe::Color(0.8f, 0.8f, 0.2f)},
-			{  30.0f, bbe::Color(1.0f, 0.5f, 0.5f)},
-			{  40.0f, bbe::Color(0.5f, 0.0f, 0.0f)}
-		};
+			{
+				{-10.0f, bbe::Color(0.8f, 0.8f, 1.0f)},
+				{0.0f, bbe::Color(0.5f, 0.5f, 1.0f)},
+				{22.0f, bbe::Color(0.2f, 1.0f, 0.2f)},
+				{25.0f, bbe::Color(0.8f, 0.8f, 0.2f)},
+				{30.0f, bbe::Color(1.0f, 0.5f, 0.5f)},
+				{40.0f, bbe::Color(0.5f, 0.0f, 0.0f)}};
 
 		bbe::String timeString = "";
 		timeString += entry.time.getHour();
 		timeString += ":00";
-		brush.fillText(offset + bbe::Vector2{ 0,  0 }, timeString, fontSize);
+		brush.fillText(offset + bbe::Vector2{0, 0}, timeString, fontSize);
 		const bbe::Color tempColor = bbe::Math::multiLerp(colorLerps, entry.temperatureC);
 		brush.setColorRGB(tempColor);
-		brush.fillText(offset + bbe::Vector2{ 40, 0 }, bbe::String((int)entry.temperatureC) + "C", fontSize);
+		brush.fillText(offset + bbe::Vector2{40, 0}, bbe::String((int)entry.temperatureC) + "C", fontSize);
 
 		brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
-		brush.fillText(offset + bbe::Vector2{ 80,  0 }, "Hum: " + bbe::String((int)entry.humidity), fontSize);
+		brush.fillText(offset + bbe::Vector2{80, 0}, "Hum: " + bbe::String((int)entry.humidity), fontSize);
 		brush.setColorRGB(1.0f, 1.0f, bbe::Math::clamp01(1.0f - entry.uvIndex / 10.f));
-		brush.fillText(offset + bbe::Vector2{ 150, 0 }, "UV: " + bbe::String((int)entry.uvIndex), fontSize);
+		brush.fillText(offset + bbe::Vector2{150, 0}, "UV: " + bbe::String((int)entry.uvIndex), fontSize);
 		brush.setColorRGB(1.0f, 1.0f, 1.0f);
 		if (entry.precipMM > 0.f || entry.chanceOfRain > 0.f)
 		{
 			brush.setColorRGB(0.5f, 0.5f, 1.0f);
 		}
-		brush.fillText(offset + bbe::Vector2{ 0, 15 }, "Prcp: " + bbe::String(entry.precipMM).rounded(2), fontSize);
-		brush.fillText(offset + bbe::Vector2{ 79, 15 }, "%Rn: " + bbe::String((int)entry.chanceOfRain), fontSize);
+		brush.fillText(offset + bbe::Vector2{0, 15}, "Prcp: " + bbe::String(entry.precipMM).rounded(2), fontSize);
+		brush.fillText(offset + bbe::Vector2{79, 15}, "%Rn: " + bbe::String((int)entry.chanceOfRain), fontSize);
 		brush.setColorRGB(1.0f, 1.0f, 1.0f);
-		brush.fillText(offset + bbe::Vector2{ 138, 15 }, "Wnd: " + bbe::String((int)entry.windspeedKmph), fontSize);
+		brush.fillText(offset + bbe::Vector2{138, 15}, "Wnd: " + bbe::String((int)entry.windspeedKmph), fontSize);
 
-		brush.sketchRect(offset - bbe::Vector2{ 2, 15 }, { 189, 33 });
+		brush.sketchRect(offset - bbe::Vector2{2, 15}, {189, 33});
 	}
 
-	bbe::Vector2 drawWeather(bbe::PrimitiveBrush2D& brush, const bbe::Vector2& offset)
+	bbe::Vector2 drawWeather(bbe::PrimitiveBrush2D &brush, const bbe::Vector2 &offset)
 	{
 		static bbe::TimePoint nextWeatherQuery;
 		static std::future<bbe::simpleUrlRequest::UrlRequestResult> future;
@@ -1095,7 +1140,7 @@ public:
 
 					weatherEntries.add(jsonToWeatherEntry(j["current_condition"][0], bbe::TimePoint()));
 
-					nlohmann::json& weather = j["weather"];
+					nlohmann::json &weather = j["weather"];
 
 					for (size_t i = 0; i < weather.size(); i++)
 					{
@@ -1117,7 +1162,8 @@ public:
 							if (!dayStringTokens[i].isNumber())
 							{
 								onlyNumbers = false;
-								break;;
+								break;
+								;
 							}
 						}
 						if (!onlyNumbers)
@@ -1131,7 +1177,7 @@ public:
 							continue;
 						}
 						bbe::TimePoint day = bbe::TimePoint::fromDate(dayStringTokens[0].toLong(), dayStringTokens[1].toLong(), dayStringTokens[2].toLong());
-						nlohmann::json& hourly = weather[i]["hourly"];
+						nlohmann::json &hourly = weather[i]["hourly"];
 						for (size_t k = 0; k < hourly.size(); k++)
 						{
 							weatherEntries.add(jsonToWeatherEntry(hourly[k], day));
@@ -1139,7 +1185,7 @@ public:
 					}
 					errorString = "";
 				}
-				catch (const nlohmann::json::parse_error&)
+				catch (const nlohmann::json::parse_error &)
 				{
 					errorString = bbe::String("Failed to interpret json: ") + contents.dataContainer.getRaw();
 				}
@@ -1158,7 +1204,8 @@ public:
 			bbe::TimePoint previousTime = weatherEntries[0].time;
 			for (size_t i = 0; i < weatherEntries.getLength(); i++)
 			{
-				if (i != 0 && weatherEntries[i].time.hasPassed()) continue;
+				if (i != 0 && weatherEntries[i].time.hasPassed())
+					continue;
 				if (!previousTime.isSameDay(weatherEntries[i].time))
 				{
 					curX += 200;
@@ -1183,18 +1230,14 @@ public:
 		EVERY_MINUTES(1)
 		{
 			static std::future<void> f;
-			f = bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1", &requestMutex, 
-				[]() {
+			f = bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1", &requestMutex, []()
+																   {
 					// The timestamps are becoming so big that they lead to a float conversion overflow.
 					times.clear();
 					for (int32_t i = 0; i < prices.getLength(); i++)
 					{
 						times.add(i);
-					}
-				},
-				std::make_pair(&times,  "prices/%%%/0"),
-				std::make_pair(&prices, "prices/%%%/1")
-			);
+					} }, std::make_pair(&times, "prices/%%%/0"), std::make_pair(&prices, "prices/%%%/1"));
 		}
 
 		static int32_t currentPriceMempool = 0;
@@ -1232,7 +1275,8 @@ public:
 		if (prices.getLength() > 0 && prices.getLength() == times.getLength())
 		{
 			ImPlot::SetNextAxesToFit();
-			if (ImPlot::BeginPlot("Line Plots", {-1, 250 * getWindow()->getScale()})) {
+			if (ImPlot::BeginPlot("Line Plots", {-1, 250 * getWindow()->getScale()}))
+			{
 				ImPlot::SetupAxes("time", "price");
 				ImPlot::PlotLine("Bitcoin", times.getRaw(), prices.getRaw(), times.getLength());
 				ImPlot::EndPlot();
@@ -1240,7 +1284,7 @@ public:
 			ImGui::Text("Current Price (CoinGecko)    : $%d", prices.last());
 			ImGui::Text("Current Price (MemPool.space): $%d", currentPriceMempool);
 			ImGui::Text("Current Price (Binance)      : $%d", std::atoi(currentPriceBinance.c_str()));
-			bbe::List<int32_t> currentPrices = { prices.last(), currentPriceMempool, std::atoi(currentPriceBinance.c_str()) };
+			bbe::List<int32_t> currentPrices = {prices.last(), currentPriceMempool, std::atoi(currentPriceBinance.c_str())};
 			currentPrices.sort();
 			const float spread = (float)currentPrices.last() / (float)currentPrices.first();
 			const bool spreadHigh = spread > 1.0075f;
@@ -1250,7 +1294,7 @@ public:
 			static bbe::TimePoint nextDollarClear;
 			if (spreadHigh)
 			{
-				ImGui::TextColored({ 1.0f, 0.5f, 0.5f, 1.0f }, "Spread unusual high!");
+				ImGui::TextColored({1.0f, 0.5f, 0.5f, 1.0f}, "Spread unusual high!");
 			}
 			ImGui::BeginDisabled(spreadHigh);
 			const bool dollarChanged = ImGui::InputDouble("Dollar", &dollar, 0.0, 0.0, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
@@ -1271,9 +1315,10 @@ public:
 		return bbe::Vector2(1);
 	}
 
-	bool wasNewsRead(NewsEntry& ne)
+	bool wasNewsRead(NewsEntry &ne)
 	{
-		if (ne.wasRead) return true;
+		if (ne.wasRead)
+			return true;
 		for (size_t i = 0; i < readNews.getLength(); i++)
 		{
 			if (readNews[i] == ne)
@@ -1291,8 +1336,9 @@ public:
 		{
 			for (size_t k = 0; k < newsConfig[i].newsEntries.getLength(); k++)
 			{
-				NewsEntry& ne = newsConfig[i].newsEntries[k];
-				if (wasNewsRead(ne)) continue;
+				NewsEntry &ne = newsConfig[i].newsEntries[k];
+				if (wasNewsRead(ne))
+					continue;
 
 				ne.wasRead = true;
 				readNews.add(ne);
@@ -1302,7 +1348,7 @@ public:
 		return NewsEntry();
 	}
 
-	bool isValidUrl(const bbe::String& url)
+	bool isValidUrl(const bbe::String &url)
 	{
 		if (url.containsAny("&|;><"))
 		{
@@ -1313,7 +1359,8 @@ public:
 		}
 		if (url.startsWith("http://") ||
 			url.startsWith("https://") ||
-			url.startsWith("www.")) {
+			url.startsWith("www."))
+		{
 			return true;
 		}
 		return false;
@@ -1361,7 +1408,8 @@ public:
 		{
 			ImGui::Separator();
 			ImGui::PushID(i);
-			if (ImGui::Button("Delete")) deletionIndex = i;
+			if (ImGui::Button("Delete"))
+				deletionIndex = i;
 			requiresWrite |= ImGui::bbe::InputText("Url", newsConfig[i].url);
 			requiresWrite |= ImGui::bbe::InputText("Iteration Path", newsConfig[i].iterationPath);
 			requiresWrite |= ImGui::bbe::InputText("Title Path", newsConfig[i].titlePath);
@@ -1385,6 +1433,7 @@ public:
 		return bbe::Vector2(1);
 	}
 
+#ifdef _WIN32
 	bbe::Vector2 drawMouseWallsConfig()
 	{
 		bbe::Vector2 globalMouse = getMouseGlobal();
@@ -1401,7 +1450,6 @@ public:
 		requiresWrite |= ImGui::InputInt("Y2", &mouseWallConfig->y2);
 		requiresWrite |= ImGui::InputFloat("borderBreakSeconds", &mouseWallConfig->borderBreakSeconds);
 
-
 		ImGui::Text("mouseTrapped: %d", (int)mouseWallConfig->mouseTrapped);
 		ImGui::Text("timeOnBorder: %f", mouseWallConfig->timeOnBorder);
 
@@ -1412,6 +1460,7 @@ public:
 
 		return bbe::Vector2(1);
 	}
+#endif
 
 	bbe::Vector2 drawEmpiresCommand()
 	{
@@ -1446,11 +1495,12 @@ public:
 
 		return bbe::Vector2(1);
 	}
-
-	bbe::String extractInfoFromXmlElement(const tinyxml2::XMLElement* element, const bbe::String& path)
+#ifdef _WIN32
+	bbe::String extractInfoFromXmlElement(const tinyxml2::XMLElement *element, const bbe::String &path)
 	{
 		const size_t ats = path.count("@");
-		if (ats > 1) return ""; // Only one at allowed.
+		if (ats > 1)
+			return ""; // Only one at allowed.
 
 		auto atSplit = path.split("@");
 		auto slashSplit = atSplit[0].split("/");
@@ -1458,10 +1508,11 @@ public:
 		for (size_t i = 0; i < slashSplit.getLength(); i++)
 		{
 			element = element->FirstChildElement(slashSplit[i].getRaw());
-			if (!element) return "";
+			if (!element)
+				return "";
 		}
 
-		const char* val = nullptr;
+		const char *val = nullptr;
 		if (atSplit.getLength() == 1)
 		{
 			val = element->GetText();
@@ -1470,10 +1521,13 @@ public:
 		{
 			val = element->Attribute(atSplit[1].getRaw());
 		}
-		if (!val) return "";
+		if (!val)
+			return "";
 		return val;
 	}
+#endif
 
+#ifdef _WIN32
 	bbe::Vector2 drawNews()
 	{
 		ImGui::Checkbox("Reading news", &readingNews);
@@ -1504,7 +1558,7 @@ public:
 					goto fail;
 				}
 
-				tinyxml2::XMLElement* iterationElement = doc.RootElement();
+				tinyxml2::XMLElement *iterationElement = doc.RootElement();
 
 				auto path = newsConfig[i].iterationPath.split("/");
 				if (path.getLength() == 0)
@@ -1526,10 +1580,11 @@ public:
 				while (iterationElement)
 				{
 					NewsEntry entry;
-					entry.title       = extractInfoFromXmlElement(iterationElement, newsConfig[i].titlePath);
+					entry.title = extractInfoFromXmlElement(iterationElement, newsConfig[i].titlePath);
 					entry.description = extractInfoFromXmlElement(iterationElement, newsConfig[i].descriptionPath);
-					entry.link        = extractInfoFromXmlElement(iterationElement, newsConfig[i].linkPath);
-					if (!isValidUrl(entry.link)) entry.link = "";
+					entry.link = extractInfoFromXmlElement(iterationElement, newsConfig[i].linkPath);
+					if (!isValidUrl(entry.link))
+						entry.link = "";
 					newsConfig[i].newsEntries.add(entry);
 
 					iterationElement = iterationElement->NextSiblingElement(path.last().getRaw());
@@ -1595,14 +1650,16 @@ public:
 
 		return bbe::Vector2(1);
 	}
+#endif
 
 	bbe::List<bbe::String> getConsoleWarnings()
 	{
-		const auto& log = bbe::logging::getLog();
+		const auto &log = bbe::logging::getLog();
 		std::lock_guard _(log);
-		for (size_t i = 0; i<log.getLength(); i++)
+		for (size_t i = 0; i < log.getLength(); i++)
 		{
-			if (log[i].isEmpty()) continue;
+			if (log[i].isEmpty())
+				continue;
 			bool isIgnoredLog = false;
 			for (size_t k = 0; k < cwiList.getLength(); k++)
 			{
@@ -1614,7 +1671,7 @@ public:
 			}
 			if (!isIgnoredLog)
 			{
-				return { "Unread Console Messages!" };
+				return {"Unread Console Messages!"};
 			}
 		}
 
@@ -1624,8 +1681,9 @@ public:
 	bbe::Vector2 drawWarnings()
 	{
 		bbe::List<bbe::String> warnings = tasks.getWarnings();
-
+#ifdef _WIN32
 		warnings.addList(processes.getWarnings());
+#endif
 		warnings.addList(getConsoleWarnings());
 
 		if (warnings.getLength() == 0)
@@ -1636,14 +1694,14 @@ public:
 		{
 			for (size_t i = 0; i < warnings.getLength(); i++)
 			{
-				ImGui::TextColored({ 1.0f, 0.3f, 0.3f, 1.0f }, warnings[i]);
+				ImGui::TextColored({1.0f, 0.3f, 0.3f, 1.0f}, warnings[i]);
 			}
 		}
 
 		return bbe::Vector2(1);
 	}
 
-	bool isLogIgnored(const bbe::String& msg) const
+	bool isLogIgnored(const bbe::String &msg) const
 	{
 		for (size_t i = 0; i < cwiList.getLength(); i++)
 		{
@@ -1655,7 +1713,7 @@ public:
 		return false;
 	}
 
-	void toggleIgnoreState(const bbe::String& msg)
+	void toggleIgnoreState(const bbe::String &msg)
 	{
 		for (size_t i = 0; i < cwiList.getLength(); i++)
 		{
@@ -1672,7 +1730,7 @@ public:
 
 	bbe::Vector2 drawTabConsole()
 	{
-		const auto& log = bbe::logging::getLog();
+		const auto &log = bbe::logging::getLog();
 		static int64_t sliderVal = 0;
 		const int64_t min = 0;
 		const int64_t max = log.getLength() - 2;
@@ -1682,7 +1740,7 @@ public:
 			ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthStretch);
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
-			ImGui::VSliderScalar("##Scrollbar", { 10 * getWindow()->getScale(), ImGui::GetWindowHeight() - 50 }, ImGuiDataType_S64, &sliderVal, &max, &min);
+			ImGui::VSliderScalar("##Scrollbar", {10 * getWindow()->getScale(), ImGui::GetWindowHeight() - 50}, ImGuiDataType_S64, &sliderVal, &max, &min);
 			constexpr int64_t wheelSpeed = 5;
 			if (getMouseScrollY() > 0)
 			{
@@ -1697,9 +1755,11 @@ public:
 			for (size_t i = 0; i < 1024; i++)
 			{
 				const size_t index = i + sliderVal;
-				if (index >= log.getLength()) break;
+				if (index >= log.getLength())
+					break;
 				std::lock_guard _(log);
-				if (log[index].isEmpty()) continue;
+				if (log[index].isEmpty())
+					continue;
 				ImGui::PushID(i);
 				bool toggle = ImGui::Button("X");
 				ImGui::bbe::tooltip("Toggle the ignore state of this console message");
@@ -1714,13 +1774,12 @@ public:
 				}
 				else
 				{
-					ImGui::TextColored(ImVec4{ 1.0f, 0.5f, 0.5f, 1.0f }, log[index]);
+					ImGui::TextColored(ImVec4{1.0f, 0.5f, 0.5f, 1.0f}, log[index]);
 				}
 				ImGui::PopID();
 			}
 			ImGui::EndTable();
 		}
-
 
 		return bbe::Vector2(1);
 	}
@@ -1786,7 +1845,7 @@ public:
 				for (size_t i = 0; i < stopwatches.getLength(); i++)
 				{
 					ImGui::PushID(i);
-					Stopwatch& sw = stopwatches[i];
+					Stopwatch &sw = stopwatches[i];
 
 					ImGui::TableNextRow();
 					ImGui::TableNextColumn();
@@ -1828,7 +1887,7 @@ public:
 		return bbe::Vector2(1);
 	}
 
-	bbe::Vector2 drawTabMouseTracking(bbe::PrimitiveBrush2D& brush)
+	bbe::Vector2 drawTabMouseTracking(bbe::PrimitiveBrush2D &brush)
 	{
 		static bbe::Image image;
 		static std::atomic<bool> loaded(false);
@@ -1849,7 +1908,8 @@ public:
 				progress = 0.0f;
 				loaded = false;
 
-				computationFuture = std::async(std::launch::async, [&]() {
+				computationFuture = std::async(std::launch::async, [&]()
+											   {
 
 					bbe::List<bbe::Vector2> positions;
 					float maxX = 0;
@@ -1918,8 +1978,7 @@ public:
 					}
 
 					loaded = true;
-					progress = 100.0f;
-					});
+					progress = 100.0f; });
 			}
 		}
 		ImGui::EndDisabled();
@@ -1943,14 +2002,17 @@ public:
 		return bbe::Vector2(1.0f, 0.14f);
 	}
 
-	bbe::Vector2 drawTabKeyboardTracking(bbe::PrimitiveBrush2D& brush)
+#ifdef _WIN32
+	bbe::Vector2 drawTabKeyboardTracking(bbe::PrimitiveBrush2D &brush)
 	{
 		static bool normalize = true;
 		ImGui::Checkbox("Normalize", &normalize);
 		if (ImGui::Checkbox("Active", &keyboardTrackingActive))
 		{
-			if (keyboardTrackingActive) globalKeyboard.init();
-			else globalKeyboard.uninit();
+			if (keyboardTrackingActive)
+				globalKeyboard.init();
+			else
+				globalKeyboard.uninit();
 		}
 
 		using K = bbe::Key;
@@ -1961,29 +2023,27 @@ public:
 			float value;
 		};
 		bbe::List<DrawnKey> keys = {
-			{K::_1, {-0.3f,-1}},{K::_2, {0.7f,-1}},{K::_3, {1.7f,-1}},{K::_4, {2.7f,-1}},{K::_5, {3.7f,-1}},{K::_6, {4.7f,-1}},{K::_7, {5.7f,-1}},{K::_8, {6.7f,-1}},{K::_9, {7.7f,-1}},{K::_0, {8.7f,-1}},
-			{K::Q, {0.0f, 0}},{K::W, {1.0f, 0}},{K::E, {2.0f, 0}},{K::R, {3.0f, 0}},{K::T, {4.0f, 0}},{K::Z, {5.0f, 0}},{K::U, {6.0f, 0}},{K::I, {7.0f, 0}},{K::O, {8.0f, 0}},{K::P, {9.0f, 0}},
-			{K::A, {0.3f, 1}},{K::S, {1.3f, 1}},{K::D, {2.3f, 1}},{K::F, {3.3f, 1}},{K::G, {4.3f, 1}},{K::H, {5.3f, 1}},{K::J, {6.3f, 1}},{K::K, {7.3f, 1}},{K::L, {8.3f, 1}},
-			{K::Y, {0.6f, 2}},{K::X, {1.6f, 2}},{K::C, {2.6f, 2}},{K::V, {3.6f, 2}},{K::B, {4.6f, 2}},{K::N, {5.6f, 2}},{K::M, {6.6f, 2}}
-		};
+			{K::_1, {-0.3f, -1}}, {K::_2, {0.7f, -1}}, {K::_3, {1.7f, -1}}, {K::_4, {2.7f, -1}}, {K::_5, {3.7f, -1}}, {K::_6, {4.7f, -1}}, {K::_7, {5.7f, -1}}, {K::_8, {6.7f, -1}}, {K::_9, {7.7f, -1}}, {K::_0, {8.7f, -1}}, {K::Q, {0.0f, 0}}, {K::W, {1.0f, 0}}, {K::E, {2.0f, 0}}, {K::R, {3.0f, 0}}, {K::T, {4.0f, 0}}, {K::Z, {5.0f, 0}}, {K::U, {6.0f, 0}}, {K::I, {7.0f, 0}}, {K::O, {8.0f, 0}}, {K::P, {9.0f, 0}}, {K::A, {0.3f, 1}}, {K::S, {1.3f, 1}}, {K::D, {2.3f, 1}}, {K::F, {3.3f, 1}}, {K::G, {4.3f, 1}}, {K::H, {5.3f, 1}}, {K::J, {6.3f, 1}}, {K::K, {7.3f, 1}}, {K::L, {8.3f, 1}}, {K::Y, {0.6f, 2}}, {K::X, {1.6f, 2}}, {K::C, {2.6f, 2}}, {K::V, {3.6f, 2}}, {K::B, {4.6f, 2}}, {K::N, {5.6f, 2}}, { K::M,
+																																																																																																																																																																															{6.6f, 2} }};
 
 		float min = 10000000000.f;
 		float max = 0.0f;
 		bool usedKeys[(size_t)bbe::Key::LAST] = {};
 		for (size_t i = 0; i < keys.getLength(); i++)
 		{
-			DrawnKey& k = keys[i];
+			DrawnKey &k = keys[i];
 			k.value = keyboardTracker->keyPressed[(size_t)k.key];
 			min = bbe::Math::min(min, k.value);
 			max = bbe::Math::max(max, k.value);
 			usedKeys[(size_t)k.key] = true;
 		}
 
-		if (!normalize) min = 0.0f;
+		if (!normalize)
+			min = 0.0f;
 
 		for (size_t i = 0; i < keys.getLength(); i++)
 		{
-			DrawnKey& k = keys[i];
+			DrawnKey &k = keys[i];
 			k.value = (k.value - min) / (max - min);
 			brush.setColorRGB(bbe::Color(k.value, k.value, k.value));
 			brush.fillText(30 + k.pos.x * 60, 400 + k.pos.y * 60, bbe::keyCodeToString(k.key), 40);
@@ -1999,8 +2059,9 @@ public:
 
 		return bbe::Vector2(1.0f, 0.2f);
 	}
+#endif
 
-	bbe::Vector2 drawTabStreaks(bbe::PrimitiveBrush2D& brush)
+	bbe::Vector2 drawTabStreaks(bbe::PrimitiveBrush2D &brush)
 	{
 		int32_t year = bbe::TimePoint().getYear();
 		int32_t month = (int32_t)bbe::TimePoint().getMonth() + 1; /* +1 so that we can decrement at the start of the loop, a bit more readable. */
@@ -2020,7 +2081,7 @@ public:
 				bool isStreakDay = false;
 				for (size_t m = 0; m < streakDays.getLength(); m++)
 				{
-					const bbe::TimePoint& cDay = streakDays[m].day;
+					const bbe::TimePoint &cDay = streakDays[m].day;
 					if (cDay.getYear() == tp.getYear() && cDay.getMonth() == tp.getMonth() && cDay.getDay() == tp.getDay())
 					{
 						isStreakDay = true;
@@ -2105,7 +2166,7 @@ public:
 				}
 				ImGui::SameLine();
 			}
-			if (ImGui::TreeNode((void*)(intptr_t)i, "%s", rememberLists[i].title.getRaw()))
+			if (ImGui::TreeNode((void *)(intptr_t)i, "%s", rememberLists[i].title.getRaw()))
 			{
 				size_t subDeleteIndex = (size_t)-1;
 				for (size_t k = 0; k < rememberLists[i].entries.getLength(); k++)
@@ -2157,6 +2218,7 @@ public:
 		return bbe::Vector2(1);
 	}
 
+#ifdef _WIN32
 	bbe::Vector2 drawMicrophoneTest()
 	{
 		if (microphone.isRecording())
@@ -2201,8 +2263,9 @@ public:
 
 		return bbe::Vector2(1);
 	}
+#endif
 
-	bbe::String normalizeService(const bbe::String& service)
+	bbe::String normalizeService(const bbe::String &service)
 	{
 		bbe::String normalizedService = service;
 		normalizedService.toLowerCaseInPlace();
@@ -2221,7 +2284,7 @@ public:
 		return normalizedService;
 	}
 
-	bbe::String normalizeUser(const bbe::String& user)
+	bbe::String normalizeUser(const bbe::String &user)
 	{
 		bbe::String normalizedUser = user;
 		normalizedUser.toLowerCaseInPlace();
@@ -2229,11 +2292,12 @@ public:
 		return normalizedUser;
 	}
 
-	bbe::String GeneratePasswordHash(const bbe::String& data)
+	bbe::String GeneratePasswordHash(const bbe::String &data)
 	{
 		unsigned char hash[16] = {};
-		const int err = crypto_pwhash_argon2id(hash, sizeof(hash), data.getRaw(), data.getLength(), (const unsigned char*)"BrotbEnginePWGv1", 5, 256 * 1024 * 1024, crypto_pwhash_argon2id_ALG_ARGON2ID13);
-		if (err != 0) bbe::Crash(bbe::Error::NotImplemented, "Implement me properly.");
+		const int err = crypto_pwhash_argon2id(hash, sizeof(hash), data.getRaw(), data.getLength(), (const unsigned char *)"BrotbEnginePWGv1", 5, 256 * 1024 * 1024, crypto_pwhash_argon2id_ALG_ARGON2ID13);
+		if (err != 0)
+			bbe::Crash(bbe::Error::NotImplemented, "Implement me properly.");
 		const bbe::String lower = "abcdefghijklmnopqrstuvwxyz";
 		const bbe::String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		const bbe::String digits = "0123456789";
@@ -2242,14 +2306,19 @@ public:
 		bbe::String retVal;
 		for (size_t i = 0; i < sizeof(hash); i++)
 		{
-			const bbe::String* set = nullptr;
+			const bbe::String *set = nullptr;
 			// The first char is always lower, second always upper and so on. This is a very simple way to ensure
 			// we fulfill the vast majority of pw requirements while not reducing the amount of entropy by a lot.
-			if (i == 0) set = &lower;
-			else if (i == 1) set = &upper;
-			else if (i == 2) set = &digits;
-			else if (i == 3) set = &special;
-			else set = &all;
+			if (i == 0)
+				set = &lower;
+			else if (i == 1)
+				set = &upper;
+			else if (i == 2)
+				set = &digits;
+			else if (i == 3)
+				set = &special;
+			else
+				set = &all;
 
 			retVal += (*set)[hash[i] % set->getLength()];
 		}
@@ -2299,7 +2368,8 @@ public:
 					passwordManager.writeToFile();
 				}
 				bbe::String hashableString = masterPw + "|||" + normServ;
-				if (!normUser.isEmpty()) hashableString += "|||" + normUser;
+				if (!normUser.isEmpty())
+					hashableString += "|||" + normUser;
 				servicePw = GeneratePasswordHash(hashableString);
 			}
 		}
@@ -2316,10 +2386,9 @@ public:
 			}
 		}
 
-
 		return bbe::Vector2(1);
 	}
-
+#ifdef _WIN32
 	bbe::Vector2 drawTabChatGPT()
 	{
 		if (ImGui::bbe::InputText("API Key", chatGPTConfig->apiKey, ImGuiInputTextFlags_Password))
@@ -2368,7 +2437,7 @@ public:
 					userInput = "";
 					errorString = "";
 				}
-				catch (const std::exception& e)
+				catch (const std::exception &e)
 				{
 					errorString = "Error initiating query";
 					errorString += e.what();
@@ -2394,7 +2463,7 @@ public:
 					bbe::ChatGPTQueryResponse response = chatGPTFuture.get();
 					// The response is already added to chatGPTComm.history
 				}
-				catch (const std::exception& e)
+				catch (const std::exception &e)
 				{
 					ImGui::Text("Error: %s", e.what());
 				}
@@ -2406,7 +2475,8 @@ public:
 				waitingPrinted = true;
 			}
 		}
-		if (!waitingPrinted) ImGui::Text(" "); // So that the "Waiting for response" doesn't move part of the GUI.
+		if (!waitingPrinted)
+			ImGui::Text(" "); // So that the "Waiting for response" doesn't move part of the GUI.
 
 		// Provide a button to purge the conversation
 		if (ImGui::Button("Clear Conversation"))
@@ -2420,7 +2490,7 @@ public:
 		// Skip the system message (first message)
 		for (size_t i = 0; i < chatGPTComm.history.size(); ++i)
 		{
-			const auto& message = chatGPTComm.history[i];
+			const auto &message = chatGPTComm.history[i];
 			std::string role = message["role"];
 			std::string content = message["content"];
 			if (role == "system")
@@ -2448,8 +2518,9 @@ public:
 
 		return bbe::Vector2(1);
 	}
-
-	bbe::Vector2 drawTabDallE(bbe::PrimitiveBrush2D& brush)
+#endif
+#ifdef _WIN32
+	bbe::Vector2 drawTabDallE(bbe::PrimitiveBrush2D &brush)
 	{
 		static std::future<bbe::ChatGPTCreateImageResponse> imageFuture;
 		static bbe::ChatGPTCreateImageResponse image;
@@ -2462,13 +2533,13 @@ public:
 
 		if (ImGui::bbe::InputText("prompt", dallEConfig->prompt, ImGuiInputTextFlags_EnterReturnsTrue))
 		{
-			imageFuture = chatGPTComm.createImageAsync(dallEConfig->prompt, { 1792, 1024 });
+			imageFuture = chatGPTComm.createImageAsync(dallEConfig->prompt, {1792, 1024});
 			dallEConfig.writeToFile();
 		}
 		if (descriptionFuture.valid() && descriptionFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 		{
 			bbe::String description = descriptionFuture.get();
-			imageFuture = chatGPTComm.createImageAsync(description, { 1792, 1024 });
+			imageFuture = chatGPTComm.createImageAsync(description, {1792, 1024});
 		}
 		if (imageFuture.valid() && imageFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 		{
@@ -2485,8 +2556,8 @@ public:
 		}
 
 		// TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
-		//static bbe::String loadPath;
-		//if (ImGui::Button("load"))
+		// static bbe::String loadPath;
+		// if (ImGui::Button("load"))
 		//{
 		//	if (loadPath.startsWith("\"") && loadPath.endsWith("\""))
 		//	{
@@ -2494,8 +2565,8 @@ public:
 		//	}
 		//	image.load(loadPath);
 		//}
-		//ImGui::SameLine();
-		//ImGui::bbe::InputText("Load", loadPath);
+		// ImGui::SameLine();
+		// ImGui::bbe::InputText("Load", loadPath);
 
 		ImGui::PushItemWidth(200);
 		ImGui::InputFloat("OffsetX", &offsetX);
@@ -2518,13 +2589,14 @@ public:
 			}
 		}
 
-		brush.drawImage({ offsetX, offsetY }, image.image.getDimensions().as<float>() * sizeMult, image.image);
+		brush.drawImage({offsetX, offsetY}, image.image.getDimensions().as<float>() * sizeMult, image.image);
 
 		return bbe::Vector2(101, 100.1f);
 	}
+#endif
 
 #ifdef ACTIVATE_ADA
-	bbe::Vector2 drawAdafruitMacroPadRP2040(bbe::PrimitiveBrush2D& brush)
+	bbe::Vector2 drawAdafruitMacroPadRP2040(bbe::PrimitiveBrush2D &brush)
 	{
 		if (adafruitMacroPadRP2040.isKeyDown(bbe::RP2040Key::BUTTON_AUDIO))
 		{
@@ -2555,7 +2627,7 @@ public:
 	}
 #endif
 
-	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		static bool fullscreenTab = false;
 		const ImGuiViewport fullViewport = *ImGui::GetMainViewport();
@@ -2602,6 +2674,7 @@ public:
 
 				tasks.drawUndoRedoButtons();
 
+#ifdef _WIN32
 				const static bbe::String desiredName = bbe::simpleFile::getAutoStartDirectory() + "ExampleMother.exe.lnk";
 				static bool exists = bbe::simpleFile::doesFileExist(desiredName); // Avoid doing IO every frame.
 				ImGui::BeginDisabled(exists);
@@ -2611,7 +2684,9 @@ public:
 					exists = true;
 				}
 				ImGui::EndDisabled();
+#endif
 
+#ifdef _WIN32
 				static bool updatePathExists = false;
 				static bool updatePathNewer = false;
 				// Avoiding multiple IO calls.
@@ -2657,8 +2732,10 @@ public:
 						ImGui::bbe::tooltip("The update path is newer than this version!");
 					}
 				}
-
+#endif
+#ifdef _WIN32
 				bbe::simpleProcess::drawElevationButton(this);
+#endif
 
 				if (ImGui::Button("Play Sound"))
 				{
@@ -2691,7 +2768,7 @@ public:
 				ImGui::BeginDisabled(!unlockCrashButton);
 				if (ImGui::Button("Segv!"))
 				{
-					*((volatile int*)0);
+					*((volatile int *)0);
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Crash!"))
@@ -2706,7 +2783,7 @@ public:
 				ImGui::SameLine();
 				if (ImGui::Button("Free Illegal!"))
 				{
-					free((void*)0x12345678);
+					free((void *)0x12345678);
 				}
 				ImGui::EndDisabled();
 
@@ -2729,6 +2806,7 @@ public:
 
 				ImGui::Checkbox("Ignore Night", &ignoreNight);
 
+#ifdef _WIN32
 				ImGui::BeginDisabled(!bbe::simpleProcess::isRunAsAdmin());
 				if (ImGui::Checkbox("Enable High Concentration Mode", &highConcentrationMode))
 				{
@@ -2742,8 +2820,10 @@ public:
 					}
 				}
 				ImGui::EndDisabled();
+#endif
 
-				ImGui::Checkbox("Let me prepare", &tasks.forcePrepare); ImGui::bbe::tooltip("Make tasks advancable, even before late time happens.");
+				ImGui::Checkbox("Let me prepare", &tasks.forcePrepare);
+				ImGui::bbe::tooltip("Make tasks advancable, even before late time happens.");
 				bbe::String serverUnreachableString = "Silence Server Unreachable. Last reach: ";
 				if (lastServerReach == bbe::TimePoint::epoch())
 				{
@@ -2757,6 +2837,7 @@ public:
 				ImGui::Checkbox("Silence Bitcoin Ath", &silenceBitcoinAth);
 				ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
 
+#ifdef _WIN32
 				ImGui::Checkbox("Overwrite Monitor Brightness", &monitorBrightnessOverwrite);
 				ImGui::BeginDisabled(!monitorBrightnessOverwrite);
 				ImGui::SameLine();
@@ -2764,6 +2845,7 @@ public:
 				ImGui::SliderFloat("##Monitor Brightness", &monitorBrightness, 0.0, 1.0);
 				ImGui::PopItemWidth();
 				ImGui::EndDisabled();
+#endif
 
 				ImGui::NewLine();
 				ImGui::Text("Playing sounds: %d, Heartbeat: %lld", (int)getAmountOfPlayingSounds(), bbe::INTERNAL::SoundManager::getHeartbeatSignal());
@@ -2771,6 +2853,7 @@ public:
 			}
 			ImGui::End();
 
+#ifdef _WIN32
 			beginMeasure("Draw process window");
 			infoViewport.WorkPos.y = infoViewport.WorkSize.y;
 			ImGui::SetNextWindowPos(infoViewport.WorkPos);
@@ -2780,8 +2863,9 @@ public:
 				processes.drawGui(getWindow()->getScale());
 			}
 			ImGui::End();
+#endif
 
-
+#ifdef _WIN32
 			beginMeasure("Draw url window");
 			infoViewport.WorkPos.y = infoViewport.WorkSize.y * 2;
 			ImGui::SetNextWindowPos(infoViewport.WorkPos);
@@ -2791,6 +2875,7 @@ public:
 				urls.drawGui(getWindow()->getScale());
 			}
 			ImGui::End();
+#endif
 		}
 
 		beginMeasure("Draw main window");
@@ -2823,47 +2908,78 @@ public:
 		ImGui::SetNextWindowSize(viewport.WorkSize);
 		static Tab previousTab;
 
-		bbe::Vector2 weatherOffset = { 20, 120 };
+		bbe::Vector2 weatherOffset = {20, 120};
 		bbe::List<Tab> adaptiveTabs =
-		{
-			Tab{"BTC",       "Bitcoin",        [&]() { return drawBitcoin(); }},
-			Tab{"Wthr",      "Weather",        [&]() { return drawWeather(brush, weatherOffset); }},
-			Tab{"VNews",     "View News",      [&]() { return drawNews(); }},
-		};
+			{
+				Tab{"BTC", "Bitcoin", [&]()
+					{ return drawBitcoin(); }},
+				Tab{"Wthr", "Weather", [&]()
+					{ return drawWeather(brush, weatherOffset); }},
+#ifdef _WIN32
+				Tab{"VNews", "View News", [&]()
+					{ return drawNews(); }},
+#endif
+			};
 
 		bbe::List<Tab> superAdaptiveTabs =
-		{
-			Tab{"Hstry",     "History",        [&]() { return tasks.drawTabHistoryView(); }},
-			Tab{"Wrns",      "Warnings",       [&]() { return drawWarnings(); }},
-		};
+			{
+				Tab{"Hstry", "History", [&]()
+					{ return tasks.drawTabHistoryView(); }},
+				Tab{"Wrns", "Warnings", [&]()
+					{ return drawWarnings(); }},
+			};
 
 		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | (previousTab.title == bbe::String("Cnsl") ? ImGuiWindowFlags_NoScrollWithMouse : 0));
 		{
 			bbe::List<Tab> tabs =
-			{
-				Tab{"VTasks",    "View Tasks",     [&]() { return tasks.drawTabViewTasks(getWindow()->getScale()); }},
-				Tab{"ETasks",    "Edit Tasks",     [&]() { return tasks.drawTabEditTasks(); }},
-				Tab{"Clpbrd",    "Clipboard",      [&]() { return drawTabClipboard(); }},
-				//Tab{"Brn-T",     "Brain-Teaser",   [&]() { return brainTeasers.drawTabBrainTeasers(brush); }},
-				Tab{"Stpwtch",   "Stopwatch",      [&]() { return drawTabStopwatch(); }},
-				Tab{"MsTrck",    "Mouse Track",    [&]() { return drawTabMouseTracking(brush); }},
-				Tab{"KyTr",      "Keyboard Track", [&]() { return drawTabKeyboardTracking(brush); }},
+				{
+					Tab{"VTasks", "View Tasks", [&]()
+						{ return tasks.drawTabViewTasks(getWindow()->getScale()); }},
+					Tab{"ETasks", "Edit Tasks", [&]()
+						{ return tasks.drawTabEditTasks(); }},
+					Tab{"Clpbrd", "Clipboard", [&]()
+						{ return drawTabClipboard(); }},
+					// Tab{"Brn-T",     "Brain-Teaser",   [&]() { return brainTeasers.drawTabBrainTeasers(brush); }},
+					Tab{"Stpwtch", "Stopwatch", [&]()
+						{ return drawTabStopwatch(); }},
+					Tab{"MsTrck", "Mouse Track", [&]()
+						{ return drawTabMouseTracking(brush); }},
+#ifdef _WIN32
+					Tab{"KyTr", "Keyboard Track", [&]()
+						{ return drawTabKeyboardTracking(brush); }},
+#endif
 #if 0
 				Tab{"Terri",     "Territorial",    [&]() { return drawTabTerri(brush); }},
 #endif
-				Tab{"Strks",     "Streaks",        [&]() { return drawTabStreaks(brush); }},
-				Tab{"Lsts",      "Lists",          [&]() { return drawTabRememberLists(); }},
-				Tab{"PW",        "Password Manager", [&]() { return drawPasswordManager(); }},
-				Tab{"GPT",       "ChatGPT",        [&]() { return drawTabChatGPT(); }},
-				Tab{"DE",        "DALL E",         [&]() { return drawTabDallE(brush); }},
-				//Tab{"Mic",       "Microphone Test",[&]() { return drawMicrophoneTest(); }},
-				//Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
-				Tab{"ENews",     "Edit News",      [&]() { return drawNewsConfig(); }},
-				Tab{"MW",        "Mouse Walls",    [&]() { return drawMouseWallsConfig(); }},
-				Tab{"EC",        "Empires Commander",[&]() { return drawEmpiresCommand(); }},
-				Tab{"Cnsl",      "Console",        [&]() { return drawTabConsole(); }},
-				Tab{"Cnfg",      "Config",         [&]() { return drawTabConfig(); }},
-			};
+					Tab{"Strks", "Streaks", [&]()
+						{ return drawTabStreaks(brush); }},
+					Tab{"Lsts", "Lists", [&]()
+						{ return drawTabRememberLists(); }},
+					Tab{"PW", "Password Manager", [&]()
+						{ return drawPasswordManager(); }},
+#ifdef _WIN32
+					Tab{"GPT", "ChatGPT", [&]()
+						{ return drawTabChatGPT(); }},
+#endif
+#ifdef _WIN32
+					Tab{"DE", "DALL E", [&]()
+						{ return drawTabDallE(brush); }},
+#endif
+					// Tab{"Mic",       "Microphone Test",[&]() { return drawMicrophoneTest(); }},
+					// Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
+					Tab{"ENews", "Edit News", [&]()
+						{ return drawNewsConfig(); }},
+#ifdef _WIN32
+					Tab{"MW", "Mouse Walls", [&]()
+						{ return drawMouseWallsConfig(); }},
+#endif
+					Tab{"EC", "Empires Commander", [&]()
+						{ return drawEmpiresCommand(); }},
+					Tab{"Cnsl", "Console", [&]()
+						{ return drawTabConsole(); }},
+					Tab{"Cnfg", "Config", [&]()
+						{ return drawTabConfig(); }},
+				};
 			if (!adaptive)
 			{
 				tabs.addList(adaptiveTabs);
@@ -2961,13 +3077,15 @@ public:
 			ImPlot::ShowDemoWindow();
 		}
 
+#ifdef _WIN32
 		if (shouldMinimize)
 		{
 			// We need to delay this to the end, or else dear ImGui gets confused.
 			minimizeAllWindows();
 		}
+#endif
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
 	virtual void onEnd() override
@@ -2975,10 +3093,16 @@ public:
 	}
 };
 
+#ifdef _WIN32
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+#else
+int main()
+#endif
 {
+#ifdef _WIN32
 	_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF); // See: https://stackoverflow.com/questions/30413066/how-do-i-diagnose-heap-corruption-errors-on-windows
-	MyGame* mg = new MyGame();
+#endif
+	MyGame *mg = new MyGame();
 	mg->start(1280, 720, "M.O.THE.R - Memory of the repetitive");
 #ifndef __EMSCRIPTEN__
 	delete mg;

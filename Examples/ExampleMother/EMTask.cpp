@@ -3,7 +3,7 @@
 #include "imgui_internal.h"
 #include "AssetStore.h"
 
-bool Task::timePointElapsed(const bbe::TimePoint& tp, bool& armed) const
+bool Task::timePointElapsed(const bbe::TimePoint &tp, bool &armed) const
 {
 	if (tp.hasPassed())
 	{
@@ -102,13 +102,14 @@ void Task::execContingentStart()
 	contingentRunning = true;
 }
 
-void Task::addContingent(const bbe::TimePoint& stopTime)
+void Task::addContingent(const bbe::TimePoint &stopTime)
 {
-	if(stopTime > contingentCountingStart) collectedContingentSeconds += (stopTime - contingentCountingStart).toSeconds();
+	if (stopTime > contingentCountingStart)
+		collectedContingentSeconds += (stopTime - contingentCountingStart).toSeconds();
 	contingentCountingStart = bbe::TimePoint::epoch();
 }
 
-void Task::execContingentStop(const bbe::TimePoint& stopTime)
+void Task::execContingentStop(const bbe::TimePoint &stopTime)
 {
 	addContingent(stopTime);
 	contingentRunning = false;
@@ -116,8 +117,10 @@ void Task::execContingentStop(const bbe::TimePoint& stopTime)
 
 void Task::sanity()
 {
-	if (repeatDays < 1) repeatDays = 1;
-	if (followUp < 0) followUp = 0;
+	if (repeatDays < 1)
+		repeatDays = 1;
+	if (followUp < 0)
+		followUp = 0;
 }
 
 void Task::nextExecPlusDays(int32_t days)
@@ -130,57 +133,73 @@ bbe::TimePoint Task::nextPossibleExecution() const
 	if (contingentTask)
 	{
 		const int32_t daysToAdd = collectedContingentSeconds / (contingentSecondsPerDay > 0 ? contingentSecondsPerDay : 1);
-		if (daysToAdd <= 0) return bbe::TimePoint();
+		if (daysToAdd <= 0)
+			return bbe::TimePoint();
 		return bbe::TimePoint().plusDays(daysToAdd).toMorning();
 	}
-	if (overwriteTime.isToday()) return nextExecution;
-	if (!nextExecution.hasPassed()) return nextExecution;
+	if (overwriteTime.isToday())
+		return nextExecution;
+	if (!nextExecution.hasPassed())
+		return nextExecution;
 	return toPossibleTimePoint(bbe::TimePoint());
 }
 
-bool Task::isPossibleWeekday(const bbe::TimePoint& tp) const
+bool Task::isPossibleWeekday(const bbe::TimePoint &tp) const
 {
-	if (!canBeMo && tp.isMonday())    return false;
-	if (!canBeTu && tp.isTuesday())   return false;
-	if (!canBeWe && tp.isWednesday()) return false;
-	if (!canBeTh && tp.isThursday())  return false;
-	if (!canBeFr && tp.isFriday())    return false;
-	if (!canBeSa && tp.isSaturday())  return false;
-	if (!canBeSu && tp.isSunday())    return false;
+	if (!canBeMo && tp.isMonday())
+		return false;
+	if (!canBeTu && tp.isTuesday())
+		return false;
+	if (!canBeWe && tp.isWednesday())
+		return false;
+	if (!canBeTh && tp.isThursday())
+		return false;
+	if (!canBeFr && tp.isFriday())
+		return false;
+	if (!canBeSa && tp.isSaturday())
+		return false;
+	if (!canBeSu && tp.isSunday())
+		return false;
 	return true;
 }
 
-bbe::TimePoint Task::toPossibleTimePoint(const bbe::TimePoint& tp, bool forwardInTime) const
+bbe::TimePoint Task::toPossibleTimePoint(const bbe::TimePoint &tp, bool forwardInTime) const
 {
 	bbe::TimePoint retVal = tp;
 	for (int32_t i = 0; i < 14; i++)
 	{
 		if (!isPossibleWeekday(retVal))
 		{
-			if (forwardInTime) retVal = retVal.nextMorning();
-			else               retVal = retVal.plusDays(-1);
+			if (forwardInTime)
+				retVal = retVal.nextMorning();
+			else
+				retVal = retVal.plusDays(-1);
 		}
 		else
 		{
 			break;
 		}
 	}
-	if (preparation && retVal.isToday()) retVal = retVal.nextMorning();
+	if (preparation && retVal.isToday())
+		retVal = retVal.nextMorning();
 	return retVal;
 }
 
 bool Task::isImportantTomorrow() const
 {
-	//TODO: "Interesting" calculation for "tomorrow"...
+	// TODO: "Interesting" calculation for "tomorrow"...
 	bbe::TimePoint tomorrow = bbe::TimePoint().nextMorning().plusDays(1).plusHours(-6);
-	if (!isPossibleWeekday(tomorrow)) return false;
+	if (!isPossibleWeekday(tomorrow))
+		return false;
 	if (contingentTask)
 	{
-		if (nextPossibleExecution() < tomorrow) return true;
+		if (nextPossibleExecution() < tomorrow)
+			return true;
 	}
 	else
 	{
-		if (nextExecution < tomorrow) return true;
+		if (nextExecution < tomorrow)
+			return true;
 	}
 
 	return false;
@@ -189,8 +208,10 @@ bool Task::isImportantTomorrow() const
 bool Task::isImportantToday() const
 {
 	auto tp = nextPossibleExecution();
-	if (tp.hasPassed()) return true;
-	if (tp.isToday()) return true;
+	if (tp.hasPassed())
+		return true;
+	if (tp.isToday())
+		return true;
 	return false;
 }
 
@@ -199,7 +220,7 @@ void Task::setNextExecution(int32_t year, int32_t month, int32_t day)
 	nextExecution = toPossibleTimePoint(bbe::TimePoint::fromDate(year, month, day).nextMorning());
 }
 
-void Task::setNextExecution(const bbe::TimePoint& tp)
+void Task::setNextExecution(const bbe::TimePoint &tp)
 {
 	setNextExecution(tp.getYear(), (int32_t)tp.getMonth(), tp.getDay());
 }
@@ -207,13 +228,20 @@ void Task::setNextExecution(const bbe::TimePoint& tp)
 int32_t Task::amountPossibleWeekdays() const
 {
 	int32_t retVal = 0;
-	if (canBeMo) retVal++;
-	if (canBeTu) retVal++;
-	if (canBeWe) retVal++;
-	if (canBeTh) retVal++;
-	if (canBeFr) retVal++;
-	if (canBeSa) retVal++;
-	if (canBeSu) retVal++;
+	if (canBeMo)
+		retVal++;
+	if (canBeTu)
+		retVal++;
+	if (canBeWe)
+		retVal++;
+	if (canBeTh)
+		retVal++;
+	if (canBeFr)
+		retVal++;
+	if (canBeSa)
+		retVal++;
+	if (canBeSu)
+		retVal++;
 
 	return retVal;
 }
@@ -267,7 +295,7 @@ bbe::Duration Task::getWorkDurationLeft() const
 	return endWorkTime - bbe::TimePoint();
 }
 
-bool SubsystemTask::drawContingentButton(Task& t)
+bool SubsystemTask::drawContingentButton(Task &t)
 {
 	if (t.contingentCountingStart == bbe::TimePoint::epoch())
 	{
@@ -293,44 +321,50 @@ bool SubsystemTask::drawContingentButton(Task& t)
 	return false;
 }
 
-int32_t SubsystemTask::drawTable(float scale, const char* title, const std::function<bool(Task&)>& predicate, bool& requiresWrite, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable, bool respectIndefinitelyFlag, bool sorted)
+int32_t SubsystemTask::drawTable(float scale, const char *title, const std::function<bool(Task &)> &predicate, bool &requiresWrite, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable, bool respectIndefinitelyFlag, bool sorted)
 {
 	int32_t amountDrawn = 0;
 	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
 	if (ImGui::BeginTable("table2", 7, ImGuiTableFlags_RowBg))
 	{
 		ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 200 * scale);
-		if (showCountdown)  ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 175 * scale);
+		if (showCountdown)
+			ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, 175 * scale);
 		ImGui::TableSetupColumn("DDD", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
-		if (showFollowUp)   ImGui::TableSetupColumn("EEE", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
-		if (showFollowUp)   ImGui::TableSetupColumn("FFF", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
-		if (showAdvancable) ImGui::TableSetupColumn("GGG", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
-		if (showMoveToNow)  ImGui::TableSetupColumn("HHH", ImGuiTableColumnFlags_WidthFixed, 87.5f * scale);
+		if (showFollowUp)
+			ImGui::TableSetupColumn("EEE", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
+		if (showFollowUp)
+			ImGui::TableSetupColumn("FFF", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
+		if (showAdvancable)
+			ImGui::TableSetupColumn("GGG", ImGuiTableColumnFlags_WidthFixed, 50 * scale);
+		if (showMoveToNow)
+			ImGui::TableSetupColumn("HHH", ImGuiTableColumnFlags_WidthFixed, 87.5f * scale);
 		static bbe::List<size_t> indices; // Avoid allocations
 		indices.clear();
 		for (size_t i = 0; i < tasks.getLength(); i++)
 		{
-			Task& t = tasks[i];
-			if (!predicate(t)) continue;
+			Task &t = tasks[i];
+			if (!predicate(t))
+				continue;
 			indices.add(i);
 		}
 		if (sorted)
 		{
-			indices.sort([&](const size_t& a, const size_t& b)
-				{
-					return tasks[a].nextPossibleExecution() < tasks[b].nextPossibleExecution();
-				});
+			indices.sort([&](const size_t &a, const size_t &b)
+						 { return tasks[a].nextPossibleExecution() < tasks[b].nextPossibleExecution(); });
 		}
 		size_t deletedTasks = 0;
 		for (size_t indexindex = 0; indexindex < indices.getLength(); indexindex++)
 		{
 			const size_t i = indices[indexindex] - deletedTasks;
-			Task& t = tasks[i];
-			if (!predicate(t)) continue;
+			Task &t = tasks[i];
+			if (!predicate(t))
+				continue;
 			amountDrawn++;
 			ImGui::PushID(i);
 			ImGui::TableNextRow();
-			if (ImGui::TableGetHoveredRow() == indexindex) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, 0xFF333333);
+			if (ImGui::TableGetHoveredRow() == indexindex)
+				ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, 0xFF333333);
 			int32_t column = 0;
 			ImGui::TableSetColumnIndex(column++);
 			if (!t.serverId.isEmpty())
@@ -342,9 +376,21 @@ int32_t SubsystemTask::drawTable(float scale, const char* title, const std::func
 			if ((highlightRareTasks && t.isRareTask()) || t.oneShot)
 			{
 				const bool poosibleTodoToday = (t.nextPossibleExecution().hasPassed() || t.nextPossibleExecution().isToday());
-				if (t.oneShot) { ImGui::TextColored(ImVec4(0.5f, 0.5f, 1.0f, 1.0f), "(!)"); ImGui::bbe::tooltip("A one shot task."); }
-				else if (poosibleTodoToday) { ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.8f, 1.0f), "(?)"); ImGui::bbe::tooltip("A rare task that could be done today."); }
-				else { ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(!)"); ImGui::bbe::tooltip("A rare task."); }
+				if (t.oneShot)
+				{
+					ImGui::TextColored(ImVec4(0.5f, 0.5f, 1.0f, 1.0f), "(!)");
+					ImGui::bbe::tooltip("A one shot task.");
+				}
+				else if (poosibleTodoToday)
+				{
+					ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.8f, 1.0f), "(?)");
+					ImGui::bbe::tooltip("A rare task that could be done today.");
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "(!)");
+					ImGui::bbe::tooltip("A rare task.");
+				}
 				ImGui::SameLine();
 			}
 			bbe::String modifiedTitle = t.title;
@@ -363,7 +409,7 @@ int32_t SubsystemTask::drawTable(float scale, const char* title, const std::func
 				const bbe::String printableTitle = bbe::String::format(modifiedTitle.getRaw(), t.internalValue);
 				if (t.lateTimeTask && isWorkTime())
 				{
-					ImGui::TextColored({ 0.3f, 0.3f, 0.3f, 1.0f }, printableTitle);
+					ImGui::TextColored({0.3f, 0.3f, 0.3f, 1.0f}, printableTitle);
 				}
 				else
 				{
@@ -390,13 +436,9 @@ int32_t SubsystemTask::drawTable(float scale, const char* title, const std::func
 			{
 				ImGui::TableSetColumnIndex(column++);
 				bbe::String s = (t.nextPossibleExecution() - bbe::TimePoint()).toString();
-				const char* c = s.getRaw();
+				const char *c = s.getRaw();
 				ImGui::SetCursorPosX(
-					+ImGui::GetCursorPosX()
-					+ ImGui::GetColumnWidth()
-					- ImGui::CalcTextSize(c).x
-					- ImGui::GetScrollX()
-					- 10 * ImGui::GetStyle().ItemSpacing.x);
+					+ImGui::GetCursorPosX() + ImGui::GetColumnWidth() - ImGui::CalcTextSize(c).x - ImGui::GetScrollX() - 10 * ImGui::GetStyle().ItemSpacing.x);
 				ImGui::Text(c);
 				ImGui::bbe::tooltip(t.nextPossibleExecution().toString());
 			}
@@ -502,15 +544,13 @@ int32_t SubsystemTask::drawTable(float scale, const char* title, const std::func
 				{
 					if (!t.contingentTask)
 					{
-						if (   (!respectIndefinitelyFlag || t.indefinitelyAdvanceable)
-							&& (t.earlyAdvanceable || isLateAdvanceableTime() || forcePrepare)
-							&& ImGui::Button("Advance"))
+						if ((!respectIndefinitelyFlag || t.indefinitelyAdvanceable) && (t.earlyAdvanceable || isLateAdvanceableTime() || forcePrepare) && ImGui::Button("Advance"))
 						{
 							t.execAdvance();
 							requiresWrite = true;
 						}
 					}
-					else if(title != bbe::String("Later"))
+					else if (title != bbe::String("Later"))
 					{
 						requiresWrite |= drawContingentButton(t);
 					}
@@ -568,17 +608,19 @@ SubsystemTask::SubsystemTask()
 
 void SubsystemTask::update()
 {
-	bbe::List<Task>& taskList = tasks.getList();
+	bbe::List<Task> &taskList = tasks.getList();
 	bool requiresWrite = false;
-	if (taskList.any([](const Task& t) { return t.shouldPlaySoundNewTask(); }))
+	if (taskList.any([](const Task &t)
+					 { return t.shouldPlaySoundNewTask(); }))
 	{
 		assetStore::NewTask()->play();
 	}
-	if (taskList.any([](const Task& t) { return t.shouldPlaySoundDone(); }))
+	if (taskList.any([](const Task &t)
+					 { return t.shouldPlaySoundDone(); }))
 	{
 		assetStore::Done()->play();
 	}
-	for (Task& t : taskList)
+	for (Task &t : taskList)
 	{
 		if (t.contingentTask)
 		{
@@ -591,27 +633,26 @@ void SubsystemTask::update()
 					t.previousContingentSubtraction = today;
 					requiresWrite = true;
 					t.collectedContingentSeconds -= days * t.contingentSecondsPerDay;
-					if (t.collectedContingentSeconds < 0) t.collectedContingentSeconds = 0;
+					if (t.collectedContingentSeconds < 0)
+						t.collectedContingentSeconds = 0;
 				}
 			}
 
+#ifdef _WIN32
 			if (t.stopContingentWhenLocked)
 			{
-				if (sessionLockMonitor.isScreenLocked()
-					&& t.contingentCountingStart != bbe::TimePoint::epoch()
-					&& t.contingentRunning)
+				if (sessionLockMonitor.isScreenLocked() && t.contingentCountingStart != bbe::TimePoint::epoch() && t.contingentRunning)
 				{
 					t.addContingent(bbe::TimePoint());
 					requiresWrite = true;
 				}
-				if (!sessionLockMonitor.isScreenLocked()
-					&& t.contingentRunning
-					&& t.contingentCountingStart == bbe::TimePoint::epoch())
+				if (!sessionLockMonitor.isScreenLocked() && t.contingentRunning && t.contingentCountingStart == bbe::TimePoint::epoch())
 				{
 					t.execContingentStart();
 					requiresWrite = true;
 				}
 			}
+#endif
 		}
 	}
 	if (requiresWrite)
@@ -626,7 +667,7 @@ void SubsystemTask::update()
 	}
 }
 
-static bool weekdayCheckbox(const char* label, bool* b, int32_t amountOfWeekdays)
+static bool weekdayCheckbox(const char *label, bool *b, int32_t amountOfWeekdays)
 {
 	ImGui::BeginDisabled(amountOfWeekdays <= 1 && *b);
 	const bool retVal = ImGui::Checkbox(label, b);
@@ -634,16 +675,16 @@ static bool weekdayCheckbox(const char* label, bool* b, int32_t amountOfWeekdays
 	return retVal;
 }
 
-bool SubsystemTask::drawEditableTask(Task& t)
+bool SubsystemTask::drawEditableTask(Task &t)
 {
 	bool taskChanged = false;
 	taskChanged |= ImGui::bbe::InputText("Title", t.title);
-	taskChanged |= ImGui::bbe::combo("Date Type", { "Dynamic", "Yearly", "Monthly" }, &t.dateType);
+	taskChanged |= ImGui::bbe::combo("Date Type", {"Dynamic", "Yearly", "Monthly"}, &t.dateType);
 	if (t.dateType == Task::DT_DYNAMIC)
 	{
 		taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
 	}
-	else if(t.dateType == Task::DT_YEARLY)
+	else if (t.dateType == Task::DT_YEARLY)
 	{
 		ImGui::Text("Month/Day: ");
 		ImGui::SameLine();
@@ -663,13 +704,19 @@ bool SubsystemTask::drawEditableTask(Task& t)
 	}
 	const int32_t amountOfWeekdays = t.amountPossibleWeekdays();
 	taskChanged |= weekdayCheckbox("Monday", &t.canBeMo, amountOfWeekdays);
-	ImGui::SameLine(); taskChanged |= weekdayCheckbox("Tuesday",   &t.canBeTu, amountOfWeekdays);
-	ImGui::SameLine(); taskChanged |= weekdayCheckbox("Wednesday", &t.canBeWe, amountOfWeekdays);
-	ImGui::SameLine(); taskChanged |= weekdayCheckbox("Thursday",  &t.canBeTh, amountOfWeekdays);
-	ImGui::SameLine(); taskChanged |= weekdayCheckbox("Friday",    &t.canBeFr, amountOfWeekdays);
-	ImGui::SameLine(); taskChanged |= weekdayCheckbox("Saturday",  &t.canBeSa, amountOfWeekdays);
-	ImGui::SameLine(); taskChanged |= weekdayCheckbox("Sunday",    &t.canBeSu, amountOfWeekdays);
-	
+	ImGui::SameLine();
+	taskChanged |= weekdayCheckbox("Tuesday", &t.canBeTu, amountOfWeekdays);
+	ImGui::SameLine();
+	taskChanged |= weekdayCheckbox("Wednesday", &t.canBeWe, amountOfWeekdays);
+	ImGui::SameLine();
+	taskChanged |= weekdayCheckbox("Thursday", &t.canBeTh, amountOfWeekdays);
+	ImGui::SameLine();
+	taskChanged |= weekdayCheckbox("Friday", &t.canBeFr, amountOfWeekdays);
+	ImGui::SameLine();
+	taskChanged |= weekdayCheckbox("Saturday", &t.canBeSa, amountOfWeekdays);
+	ImGui::SameLine();
+	taskChanged |= weekdayCheckbox("Sunday", &t.canBeSu, amountOfWeekdays);
+
 	taskChanged |= ImGui::Checkbox("Advanceable", &t.advanceable);
 	ImGui::bbe::tooltip("Can \"done\" even if it's not planned for today.");
 	if (t.advanceable)
@@ -718,7 +765,7 @@ bool SubsystemTask::drawEditableTask(Task& t)
 	ImGui::bbe::tooltip("An internal value that can be printed out in the title via %%d, [SEC], and [MIN].");
 	taskChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
 	ImGui::bbe::tooltip("Increases the Internal Value on ever Done by this much.");
-	taskChanged |= ImGui::bbe::combo("Input Type", { "None", "Integer", "Float" }, &t.inputType);
+	taskChanged |= ImGui::bbe::combo("Input Type", {"None", "Integer", "Float"}, &t.inputType);
 	if (t.inputType == Task::IT_FLOAT)
 	{
 		taskChanged |= ImGui::InputInt("History Target Anchor", &t.historyTargetAnchor);
@@ -751,10 +798,14 @@ bbe::Vector2 SubsystemTask::drawTabViewTasks(float scale)
 	}
 
 	bool requiresWrite = false;
-	drawTable(scale, "Now", [](Task& t) { return t.nextPossibleExecution().hasPassed() && !t.preparation; }, requiresWrite, false, false, true, true, false, false, false, false);
-	drawTable(scale, "Today", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); }, requiresWrite, true, true, true, true, false, false, false, false);
-	drawTable(scale, "Tomorrow", [](Task& t) { return t.isImportantTomorrow(); }, requiresWrite, true, false, false, true, true, true, false, false);
-	drawTable(scale, "Later", [](Task& t) { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, requiresWrite, true, true, true, false, false, true, true, true);
+	drawTable(scale, "Now", [](Task &t)
+			  { return t.nextPossibleExecution().hasPassed() && !t.preparation; }, requiresWrite, false, false, true, true, false, false, false, false);
+	drawTable(scale, "Today", [](Task &t)
+			  { return !t.nextPossibleExecution().hasPassed() && t.nextPossibleExecution().isToday(); }, requiresWrite, true, true, true, true, false, false, false, false);
+	drawTable(scale, "Tomorrow", [](Task &t)
+			  { return t.isImportantTomorrow(); }, requiresWrite, true, false, false, true, true, true, false, false);
+	drawTable(scale, "Later", [](Task &t)
+			  { return !t.nextPossibleExecution().hasPassed() && !t.nextPossibleExecution().isToday() && !t.isImportantTomorrow(); }, requiresWrite, true, true, true, false, false, true, true, true);
 	if (requiresWrite)
 	{
 		tasks.writeToFile();
@@ -797,8 +848,9 @@ bbe::Vector2 SubsystemTask::drawTabEditTasks()
 	size_t deletionIndex = (size_t)-1;
 	for (size_t i = 0; i < tasks.getLength(); i++)
 	{
-		Task& t = tasks[i];
-		if (searchBuffer[0] != 0 && !bbe::String(t.title).containsIgnoreCase(searchBuffer)) continue;
+		Task &t = tasks[i];
+		if (searchBuffer[0] != 0 && !bbe::String(t.title).containsIgnoreCase(searchBuffer))
+			continue;
 		ImGui::PushID(i);
 		if (ImGui::bbe::securityButton("Delete Task"))
 		{
@@ -821,9 +873,11 @@ bbe::Vector2 SubsystemTask::drawTabEditTasks()
 			}
 		}
 		tasksChanged |= drawEditableTask(t);
-		tasksChanged |= ImGui::bbe::datePicker("previousExe", &t.previousExecution); ImGui::bbe::tooltip("Previous Execution");
+		tasksChanged |= ImGui::bbe::datePicker("previousExe", &t.previousExecution);
+		ImGui::bbe::tooltip("Previous Execution");
 		t.execPointBuffer = t.nextPossibleExecution();
-		const bool execPointChanged = ImGui::bbe::datePicker("nextExe", &t.execPointBuffer); ImGui::bbe::tooltip("Next Execution");
+		const bool execPointChanged = ImGui::bbe::datePicker("nextExe", &t.execPointBuffer);
+		ImGui::bbe::tooltip("Next Execution");
 		if (execPointChanged)
 		{
 			t.setNextExecution(t.execPointBuffer);
@@ -849,7 +903,8 @@ bbe::Vector2 SubsystemTask::drawTabEditTasks()
 		}
 		if (t.startable)
 		{
-			tasksChanged |= ImGui::bbe::datePicker("EndWork", &t.endWorkTime); ImGui::bbe::tooltip("End Work Time");
+			tasksChanged |= ImGui::bbe::datePicker("EndWork", &t.endWorkTime);
+			ImGui::bbe::tooltip("End Work Time");
 		}
 		ImGui::NewLine();
 		ImGui::Separator();
@@ -883,8 +938,8 @@ bbe::Vector2 SubsystemTask::drawTabHistoryView()
 		static int32_t selection = 0;
 		ImGui::bbe::combo("History Selection", historyTitles, &selection);
 
-		Task& task = tasks[historyIndices[selection]];
-		const bbe::List<float>& history = task.history;
+		Task &task = tasks[historyIndices[selection]];
+		const bbe::List<float> &history = task.history;
 		bbe::List<float> time;
 		for (size_t i = 0; i < history.getLength(); i++)
 		{
@@ -899,7 +954,8 @@ bbe::Vector2 SubsystemTask::drawTabHistoryView()
 
 		bool shouldDrawTargetDifference = false;
 		float lastTargetValue = 0.0f;
-		if (ImPlot::BeginPlot("History", { -1, 250 })) {
+		if (ImPlot::BeginPlot("History", {-1, 250}))
+		{
 			ImPlot::SetupAxes("Time", "Value");
 			ImPlot::PlotLine(task.title.getRaw(), time.getRaw(), history.getRaw(), time.getLength());
 			if (task.historyTargetAnchor >= 0 && history.getLength() > 0)
@@ -950,7 +1006,7 @@ bool SubsystemTask::hasCurrentTask() const
 {
 	for (size_t i = 0; i < tasks.getLength(); i++)
 	{
-		const Task& t = tasks[i];
+		const Task &t = tasks[i];
 		if (t.nextPossibleExecution().hasPassed())
 		{
 			return true;
@@ -963,13 +1019,15 @@ bool SubsystemTask::hasPotentialTaskComplaint() const
 {
 	for (size_t i = 0; i < tasks.getLength(); i++)
 	{
-		const Task& t = tasks[i];
+		const Task &t = tasks[i];
 		if (t.nextPossibleExecution().hasPassed())
 		{
 			if (!t.oneShot && t.shouldPlayNotificationSounds)
 			{
-				if (!isWorkTime()) return true;
-				if (!t.lateTimeTask) return true;
+				if (!isWorkTime())
+					return true;
+				if (!t.lateTimeTask)
+					return true;
 			}
 		}
 	}
@@ -980,7 +1038,7 @@ bool SubsystemTask::isStreakFulfilled() const
 {
 	for (size_t i = 0; i < tasks.getLength(); i++)
 	{
-		const Task& t = tasks[i];
+		const Task &t = tasks[i];
 		if (t.nextPossibleExecution().isToday() && !t.oneShot)
 		{
 			return false;
@@ -989,7 +1047,7 @@ bool SubsystemTask::isStreakFulfilled() const
 	return true;
 }
 
-void SubsystemTask::addServerTask(const bbe::String& id, const bbe::String& task)
+void SubsystemTask::addServerTask(const bbe::String &id, const bbe::String &task)
 {
 	Task t;
 	t.serverId = id;
@@ -1005,7 +1063,7 @@ bbe::List<bbe::String> SubsystemTask::getWarnings() const
 
 	for (size_t i = 0; i < tasks.getLength(); i++)
 	{
-		const Task& t = tasks[i];
+		const Task &t = tasks[i];
 		if (t.contingentTask && t.contingentCountingStart != bbe::TimePoint::epoch())
 		{
 			retVal.add("Contingent Task running: " + t.title);
