@@ -262,7 +262,9 @@ private:
 	SubsystemBrainTeaser brainTeasers = SubsystemBrainTeaser(this);
 #endif
 
+#ifdef _WIN32
 	bbe::SerializableList<ClipboardContent> clipboardContent = bbe::SerializableList<ClipboardContent>("Clipboard.dat", "ParanoiaConfig", bbe::Undoable::YES);
+#endif
 	bbe::SerializableObject<GeneralConfig> generalConfig = bbe::SerializableObject<GeneralConfig>("generalConfig.dat", "ParanoiaConfig");
 	bbe::SerializableList<Stopwatch> stopwatches = bbe::SerializableList<Stopwatch>("stopwatches.dat", "ParanoiaConfig");
 	bbe::SerializableList<RememberList> rememberLists = bbe::SerializableList<RememberList>("RememberLists.dat", "ParanoiaConfig");
@@ -492,19 +494,19 @@ public:
 		}
 	}
 
+#ifdef _WIN32
 	void adaClipboardKey(int32_t key)
 	{
 		for (size_t i = 0; i < clipboardContent.getLength(); i++)
 		{
 			if (clipboardContent[i].adaKey == key)
 			{
-#ifdef _WIN32
 				setClipboard(clipboardContent[i].content);
-#endif
 				break;
 			}
 		}
 	}
+#endif
 
 	bbe::TimePoint getNightStart() const
 	{
@@ -750,6 +752,7 @@ public:
 		}
 #endif
 
+#ifdef _WIN32
 		beginMeasure("Mouse Tracking");
 		{
 			EVERY_MILLISECONDS(100)
@@ -767,6 +770,7 @@ public:
 				}
 			}
 		}
+#endif
 
 #ifdef _WIN32
 		beginMeasure("Reading News");
@@ -948,6 +952,7 @@ public:
 #endif
 	}
 
+#ifdef _WIN32
 	bbe::Vector2 drawTabClipboard()
 	{
 		static ClipboardContent newContent;
@@ -1014,6 +1019,7 @@ public:
 		}
 		return bbe::Vector2(1);
 	}
+#endif
 
 	struct WeatherEntry
 	{
@@ -2911,10 +2917,14 @@ public:
 		bbe::Vector2 weatherOffset = {20, 120};
 		bbe::List<Tab> adaptiveTabs =
 			{
+#ifdef _WIN32
 				Tab{"BTC", "Bitcoin", [&]()
 					{ return drawBitcoin(); }},
+#endif
+#ifdef _WIN32
 				Tab{"Wthr", "Weather", [&]()
 					{ return drawWeather(brush, weatherOffset); }},
+#endif
 #ifdef _WIN32
 				Tab{"VNews", "View News", [&]()
 					{ return drawNews(); }},
@@ -2923,10 +2933,14 @@ public:
 
 		bbe::List<Tab> superAdaptiveTabs =
 			{
+#ifdef _WIN32
 				Tab{"Hstry", "History", [&]()
 					{ return tasks.drawTabHistoryView(); }},
+#endif
+#ifdef _WIN32
 				Tab{"Wrns", "Warnings", [&]()
 					{ return drawWarnings(); }},
+#endif
 			};
 
 		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | (previousTab.title == bbe::String("Cnsl") ? ImGuiWindowFlags_NoScrollWithMouse : 0));
@@ -2937,13 +2951,19 @@ public:
 						{ return tasks.drawTabViewTasks(getWindow()->getScale()); }},
 					Tab{"ETasks", "Edit Tasks", [&]()
 						{ return tasks.drawTabEditTasks(); }},
+#ifdef _WIN32
 					Tab{"Clpbrd", "Clipboard", [&]()
 						{ return drawTabClipboard(); }},
-					// Tab{"Brn-T",     "Brain-Teaser",   [&]() { return brainTeasers.drawTabBrainTeasers(brush); }},
+#endif
+// Tab{"Brn-T",     "Brain-Teaser",   [&]() { return brainTeasers.drawTabBrainTeasers(brush); }},
+#ifdef _WIN32
 					Tab{"Stpwtch", "Stopwatch", [&]()
 						{ return drawTabStopwatch(); }},
+#endif
+#ifdef _WIN32
 					Tab{"MsTrck", "Mouse Track", [&]()
 						{ return drawTabMouseTracking(brush); }},
+#endif
 #ifdef _WIN32
 					Tab{"KyTr", "Keyboard Track", [&]()
 						{ return drawTabKeyboardTracking(brush); }},
@@ -2965,16 +2985,20 @@ public:
 					Tab{"DE", "DALL E", [&]()
 						{ return drawTabDallE(brush); }},
 #endif
-					// Tab{"Mic",       "Microphone Test",[&]() { return drawMicrophoneTest(); }},
-					// Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
+// Tab{"Mic",       "Microphone Test",[&]() { return drawMicrophoneTest(); }},
+// Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
+#ifdef _WIN32
 					Tab{"ENews", "Edit News", [&]()
 						{ return drawNewsConfig(); }},
+#endif
 #ifdef _WIN32
 					Tab{"MW", "Mouse Walls", [&]()
 						{ return drawMouseWallsConfig(); }},
 #endif
+#ifdef _WIN32
 					Tab{"EC", "Empires Commander", [&]()
 						{ return drawEmpiresCommand(); }},
+#endif
 					Tab{"Cnsl", "Console", [&]()
 						{ return drawTabConsole(); }},
 					Tab{"Cnfg", "Config", [&]()
