@@ -28,6 +28,7 @@
 #define IMPLOT_DISABLE_OBSOLETE_FUNCTIONS
 #endif
 
+#define IMPLOT_NO_FORCE_INLINE
 #include "implot.h"
 #ifndef IMGUI_DISABLE
 #include <math.h>

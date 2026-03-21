@@ -43,6 +43,7 @@
 #include "../BBE/Window.h"
 
 #include "imgui.h"
+#define IMPLOT_NO_FORCE_INLINE
 #include "implot.h"
 
 #ifdef BBE_RENDERER_VULKAN

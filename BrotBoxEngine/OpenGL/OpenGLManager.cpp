@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#define IMPLOT_NO_FORCE_INLINE
 #include "implot.h"
 #include "BBE/FatalErrors.h"
 #include "BBE/Rectangle.h"
