@@ -10,6 +10,10 @@ endif()
 add_subdirectory(Assets)
 
 file(GLOB local_src CONFIGURE_DEPENDS "*.cpp")
+if(NOT BBE_ADD_PYTHON)
+  list(FILTER local_src EXCLUDE REGEX ".*/SimplePythonInterpreter\\.cpp$")
+  list(FILTER local_src EXCLUDE REGEX "SimplePythonInterpreter\\.cpp$")
+endif()
 target_sources(BrotBoxEngine PRIVATE "${local_src}")
 
 target_include_directories(BrotBoxEngine PUBLIC .)
