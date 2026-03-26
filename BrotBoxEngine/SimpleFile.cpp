@@ -11,6 +11,12 @@
 #include <thread>
 #include <condition_variable>
 
+#ifdef __linux__
+#include <unistd.h>
+#include <limits.h>
+#include <cstdlib>
+#endif
+
 static std::mutex backupPathMutex;
 static bbe::String backupPath;
 static std::mutex lastIoMutex;
@@ -306,6 +312,124 @@ void bbe::simpleFile::forEachFile(const bbe::String& filePath, const std::functi
 }
 #endif
 
+#ifdef __linux__
+static std::string getLinuxAbsoluteEnv(const char* name)
+{
+	const char* value = std::getenv(name);
+	if (value == nullptr || value[0] != '/')
+	{
+		return "";
+	}
+	return value;
+}
+
+static std::string getLinuxConfigHome()
+{
+	std::string configHome = getLinuxAbsoluteEnv("XDG_CONFIG_HOME");
+	if (!configHome.empty())
+	{
+		return configHome;
+	}
+
+	std::string home = getLinuxAbsoluteEnv("HOME");
+	if (home.empty())
+	{
+		throw std::runtime_error("Could not determine HOME directory.");
+	}
+	return home + "/.config";
+}
+
+static std::string escapeDesktopEntryString(const char* input)
+{
+	std::string escaped;
+	for (const char* c = input; *c != '\0'; ++c)
+	{
+		if (*c == '\\')
+		{
+			escaped += "\\\\";
+		}
+		else if (*c == '\n')
+		{
+			escaped += "\\n";
+		}
+		else
+		{
+			escaped += *c;
+		}
+	}
+	return escaped;
+}
+
+static bool needsDesktopExecQuoting(const std::string& s)
+{
+	for (char c : s)
+	{
+		switch (c)
+		{
+		case ' ':
+		case '\t':
+		case '\n':
+		case '"':
+		case '\'':
+		case '>':
+		case '<':
+		case '~':
+		case '|':
+		case '&':
+		case ';':
+		case '$':
+		case '*':
+		case '?':
+		case '=':
+		case '#':
+		case '(':
+		case ')':
+		case '`':
+			return true;
+		default:
+			break;
+		}
+	}
+	return false;
+}
+
+static std::string quoteDesktopExecArg(const char* input)
+{
+	std::string raw = input;
+	if (!needsDesktopExecQuoting(raw))
+	{
+		return raw;
+	}
+
+	std::string escaped = "\"";
+	for (char c : raw)
+	{
+		if (c == '"')
+		{
+			escaped += "\\\"";
+		}
+		else if (c == '`')
+		{
+			escaped += "\\`";
+		}
+		else if (c == '$')
+		{
+			escaped += "\\$";
+		}
+		else if (c == '\\')
+		{
+			escaped += "\\\\\\\\";
+		}
+		else
+		{
+			escaped += c;
+		}
+	}
+	escaped += "\"";
+	return escaped;
+}
+#endif
+
 #ifdef WIN32
 #define NOMINMAX
 #include "windows.h"
@@ -453,6 +577,83 @@ bool bbe::simpleFile::showSaveDialog(bbe::String& outPath, const bbe::String& de
 	return false;
 }
 #endif
+
+#ifdef __linux__
+bbe::String bbe::simpleFile::getAutoStartDirectory()
+{
+	updateIoStats();
+	return bbe::String((getLinuxConfigHome() + "/autostart/").c_str());
+}
+
+bbe::String bbe::simpleFile::getExecutablePath()
+{
+	updateIoStats();
+	char buffer[PATH_MAX] = {};
+	const ssize_t length = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+	if (length < 0)
+	{
+		throw std::runtime_error("Failed to determine executable path.");
+	}
+	buffer[length] = '\0';
+	return bbe::String(buffer);
+}
+
+bbe::String bbe::simpleFile::getWorkingDirectory()
+{
+	updateIoStats();
+	return bbe::String(std::filesystem::current_path().string().c_str());
+}
+
+void bbe::simpleFile::createLink(const bbe::String& from, const bbe::String& to, const bbe::String& workDir)
+{
+	updateIoStats();
+
+	const std::filesystem::path desktopFilePath(from.getRaw());
+	if (desktopFilePath.has_parent_path())
+	{
+		std::filesystem::create_directories(desktopFilePath.parent_path());
+	}
+
+	std::ofstream file(from.getRaw());
+	if (!file.is_open())
+	{
+		throw std::runtime_error("Failed to create autostart desktop entry.");
+	}
+
+	std::string appName = desktopFilePath.stem().string();
+	if (appName.empty())
+	{
+		appName = "Application";
+	}
+
+	file << "[Desktop Entry]\n";
+	file << "Type=Application\n";
+	file << "Version=1.0\n";
+	file << "Name=" << escapeDesktopEntryString(appName.c_str()) << "\n";
+	file << "Exec=" << quoteDesktopExecArg(to.getRaw()) << "\n";
+	if (!workDir.isEmpty())
+	{
+		file << "Path=" << escapeDesktopEntryString(workDir.getRaw()) << "\n";
+	}
+	file << "Terminal=false\n";
+	file << "X-GNOME-Autostart-enabled=true\n";
+	file << "StartupNotify=false\n";
+	file.close();
+
+	std::filesystem::permissions(
+		desktopFilePath,
+		std::filesystem::perms::owner_read |
+		std::filesystem::perms::owner_write |
+		std::filesystem::perms::owner_exec |
+		std::filesystem::perms::group_read |
+		std::filesystem::perms::group_exec |
+		std::filesystem::perms::others_read |
+		std::filesystem::perms::others_exec,
+		std::filesystem::perm_options::replace
+	);
+}
+#endif
+
 
 #ifndef __EMSCRIPTEN__
 enum class AsyncJobType

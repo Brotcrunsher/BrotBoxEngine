@@ -56,15 +56,19 @@ namespace bbe
 		void forEachFile(const bbe::String& filePath, const std::function<void(const bbe::String&)>& func);
 #endif
 
+#if defined(WIN32) || defined(__linux__)
 #ifdef WIN32
 		bbe::String getUserName();
+#endif
 		bbe::String getAutoStartDirectory();
 		bbe::String getExecutablePath();
 		bbe::String getWorkingDirectory();
 		void createLink(const bbe::String& from, const bbe::String& to, const bbe::String& workDir = "");
+#ifdef WIN32
 		void executeBatchFile(const bbe::String& path);
 		bool showOpenDialog(bbe::String& outPath);
 		bool showSaveDialog(bbe::String& outPath, const bbe::String& defaultExtension);
+#endif
 #endif
 	}
 }

@@ -2703,8 +2703,12 @@ public:
 
 				tasks.drawUndoRedoButtons();
 
+#if defined(_WIN32) || defined(__linux__)
 #ifdef _WIN32
 				const static bbe::String desiredName = bbe::simpleFile::getAutoStartDirectory() + "ExampleMother.exe.lnk";
+#else
+				const static bbe::String desiredName = bbe::simpleFile::getAutoStartDirectory() + "ExampleMother.desktop";
+#endif
 				static bool exists = bbe::simpleFile::doesFileExist(desiredName); // Avoid doing IO every frame.
 				ImGui::BeginDisabled(exists);
 				if (ImGui::Button("Add to Autostart"))
