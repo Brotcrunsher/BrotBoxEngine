@@ -1291,7 +1291,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	glfwMakeContextCurrent(window);
 
 	GLenum resp = glewInit();
-	if (resp == GLEW_ERROR_NO_GLX_DISPLAY)
+	bool isNoGlxDisplayError = false;
+#ifdef GLEW_ERROR_NO_GLX_DISPLAY
+	isNoGlxDisplayError = (resp == GLEW_ERROR_NO_GLX_DISPLAY);
+#endif
+	if (isNoGlxDisplayError)
 	{
 		// Dirty hack for Wayland based Linux
 		BBELOGLN("WARNING: GLEW_ERROR_NO_GLX_DISPLAY");
