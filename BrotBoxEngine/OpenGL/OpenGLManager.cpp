@@ -1321,10 +1321,15 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	m_program3dLightBaking = init3dShadersLight(true);
 	initFrameBuffers();
 
-	OpenGLRectangle::init();
-	OpenGLCircle::init();
-	OpenGLCube::init();
-	OpenGLSphere::init();
+	static bool initDone = false;
+	if(!initDone)
+	{
+		initDone = true;
+		OpenGLRectangle::init();
+		OpenGLCircle::init();
+		OpenGLCube::init();
+		OpenGLSphere::init();
+	}
 
 	glEnable(GL_BLEND);
 	glEnable(GL_MULTISAMPLE);
@@ -1341,6 +1346,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 
 void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 {
+	if (m_pwindow == nullptr) return;
 	glDeleteBuffers(1, &quadIbo);
 	imguiStop();
 
@@ -1361,10 +1367,14 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 	glDeleteBuffers(1, &m_imageUvBuffer);
 	m_program2dTex.destroy();
 	m_program2d.destroy();
+	m_pwindow = nullptr;
+	m_windowWidth = 0;
+	m_windowHeight = 0;
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 {
+	if (m_pwindow == nullptr) return;
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
@@ -1417,6 +1427,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
 {
+	if (m_pwindow == nullptr) return;
 	glEnable(GL_DEPTH_TEST);
 	m_primitiveBrush3D.INTERNAL_beginDraw(m_windowWidth, m_windowHeight, this);
 	glBindFramebuffer(GL_FRAMEBUFFER, forwardNoLightFb.framebuffer);
@@ -1432,6 +1443,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
 {
+	if (m_pwindow == nullptr) return;
 	flipDrawcallStats();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	imguiStartFrame();
@@ -1444,8 +1456,20 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
 
 void bbe::INTERNAL::openGl::OpenGLManager::postDraw()
 {
+	if (m_pwindow == nullptr) return;
 	flushInstanceData2D();
 	imguiEndFrame();
+
+#ifdef __linux__
+	int fbW = 0;
+	int fbH = 0;
+	glfwGetFramebufferSize(m_pwindow, &fbW, &fbH);
+	if (!glfwWrapper::glfwGetWindowAttrib(m_pwindow, GLFW_VISIBLE) || fbW <= 0 || fbH <= 0)
+	{
+		return;
+	}
+#endif
+
 	glfwSwapBuffers(m_pwindow);
 }
 
@@ -1469,6 +1493,7 @@ bbe::PrimitiveBrush3D& bbe::INTERNAL::openGl::OpenGLManager::getBrush3D()
 
 void bbe::INTERNAL::openGl::OpenGLManager::resize(uint32_t width, uint32_t height)
 {
+	if (m_pwindow == nullptr) return;
 	m_program2d.uniform2f(screenSizePos2d, (float)width, (float)height);
 	m_program2dTex.uniform2f(screenSizePos2dTex, (float)width, (float)height);
 	m_program3dAmbient.uniform2f(screenSizeAmbient, (float)width, (float)height);

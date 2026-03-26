@@ -10,6 +10,7 @@
 #include <iostream>
 #include <mutex>
 #include <cmath>
+#include <vector>
 #ifdef _WIN32
 #define NOMINMAX
 // Need to link with Ws2_32.lib
@@ -297,10 +298,10 @@ private:
 	bool tabSwitchRequestedLeft = false;
 	bool tabSwitchRequestedRight = false;
 
-#ifdef _WIN32
-	bbe::List<HICON> trayIconsRed;
-	bbe::List<HICON> trayIconsGreen;
-	bbe::List<HICON> trayIconsBlue;
+#if defined(_WIN32) || defined(__linux__)
+	bbe::List<bbe::TrayIcon::IconHandle> trayIconsRed;
+	bbe::List<bbe::TrayIcon::IconHandle> trayIconsGreen;
+	bbe::List<bbe::TrayIcon::IconHandle> trayIconsBlue;
 	size_t trayIconIndex = 0;
 #endif
 
@@ -345,8 +346,8 @@ private:
 	bbe::PixelObserver pixelObserver;
 
 public:
-#ifdef _WIN32
-	HICON createTrayIcon(DWORD offset, int redGreenBlue)
+#if defined(_WIN32) || defined(__linux__)
+	bbe::TrayIcon::IconHandle createTrayIcon(uint32_t offset, int redGreenBlue)
 	{
 		// See: https://learn.microsoft.com/en-us/windows/win32/menurc/using-cursors#creating-a-cursor
 		constexpr size_t iconWidth = 32;
@@ -354,16 +355,21 @@ public:
 		constexpr size_t centerX = iconWidth / 2;
 		constexpr size_t centerY = iconHeight / 2;
 
+#ifdef _WIN32
 		bbe::Image image(iconWidth, iconHeight);
+#else
+		std::vector<uint32_t> argbPixels;
+		argbPixels.reserve(iconWidth * iconHeight);
+#endif
 		for (size_t x = 0; x < iconWidth; x++)
 		{
 			for (size_t y = 0; y < iconHeight; y++)
 			{
-				const DWORD xDiff = x - centerX;
-				const DWORD yDiff = y - centerY;
-				const DWORD distSq = xDiff * xDiff + yDiff * yDiff;
-				const DWORD dist = bbe::Math::sqrt(distSq * 1000) + offset;
-				const DWORD cVal = dist % 512;
+				const uint32_t xDiff = (uint32_t)x - (uint32_t)centerX;
+				const uint32_t yDiff = (uint32_t)y - (uint32_t)centerY;
+				const uint32_t distSq = xDiff * xDiff + yDiff * yDiff;
+				const uint32_t dist = bbe::Math::sqrt(distSq * 1000) + offset;
+				const uint32_t cVal = dist % 512;
 
 				const float highlight = (cVal > 255 ? 255 : cVal) / 255.f;
 				const float white = (cVal > 255 ? (cVal - 255) : 0) / 255.f;
@@ -391,16 +397,30 @@ public:
 					bbe::Crash(bbe::Error::IllegalArgument);
 				}
 
-				image.setPixel(x, y, c.asByteColor());
+				auto byteColor = c.asByteColor();
+#ifdef _WIN32
+				image.setPixel(x, y, byteColor);
+#else
+				const uint32_t argb =
+					((uint32_t)byteColor.a << 24) |
+					((uint32_t)byteColor.r << 16) |
+					((uint32_t)byteColor.g << 8) |
+					(uint32_t)byteColor.b;
+				argbPixels.push_back(argb);
+#endif
 			}
 		}
 
+#ifdef _WIN32
 		return image.toIcon();
+#else
+		return bbe::TrayIcon::createIcon((int)iconWidth, (int)iconHeight, argbPixels.data(), argbPixels.size());
+#endif
 	}
 
 	void createTrayIcons()
 	{
-		for (DWORD offset = 0; offset < 512; offset++)
+		for (uint32_t offset = 0; offset < 512; offset++)
 		{
 			trayIconsRed.add(createTrayIcon(offset, 0));
 			trayIconsGreen.add(createTrayIcon(offset, 1));
@@ -417,7 +437,7 @@ public:
 		return IconCategory::GREEN;
 	}
 
-	bbe::List<HICON> &getTrayIcons()
+	bbe::List<bbe::TrayIcon::IconHandle> &getTrayIcons()
 	{
 		switch (getTrayIconCategory())
 		{
@@ -431,10 +451,10 @@ public:
 		bbe::Crash(bbe::Error::IllegalState, "That's not a tray icon category!");
 	}
 
-	HICON getCurrentTrayIcon()
+	bbe::TrayIcon::IconHandle getCurrentTrayIcon()
 	{
-		bbe::List<HICON> &trayIcons = getTrayIcons();
-		HICON retVal = trayIcons[((int)(getTimeSinceStartSeconds() * 400)) % trayIcons.getLength()];
+		bbe::List<bbe::TrayIcon::IconHandle> &trayIcons = getTrayIcons();
+		bbe::TrayIcon::IconHandle retVal = trayIcons[((int)(getTimeSinceStartSeconds() * 400)) % trayIcons.getLength()];
 		return retVal;
 	}
 #endif
@@ -448,7 +468,7 @@ public:
 	{
 		setWindowCloseMode(bbe::WindowCloseMode::HIDE);
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 		createTrayIcons();
 		bbe::TrayIcon::init(this, "M.O.THE.R " __DATE__ ", " __TIME__, getCurrentTrayIcon());
 		bbe::TrayIcon::addPopupItem("Exit", [&]()
@@ -808,6 +828,9 @@ public:
 #endif
 
 		beginMeasure("Basic Controls");
+#if defined(_WIN32) || defined(__linux__)
+		bbe::TrayIcon::update();
+#endif
 		static bbe::TimePoint flipToLowEnergyMode = bbe::TimePoint().plusSeconds(2);
 		static bbe::TimePoint flipToSuperLowEnergyMode = bbe::TimePoint().plusSeconds(100);
 		if (isFocused() || isHovered() || terriActive
@@ -856,7 +879,7 @@ public:
 			assetStore::Stopwatch()->play();
 		}
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 		beginMeasure("Tray Icon");
 		static IconCategory prevIconCategory = IconCategory::NONE;
 		const IconCategory currIconCategory = getTrayIconCategory();

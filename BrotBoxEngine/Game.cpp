@@ -292,6 +292,10 @@ void bbe::Game::innerStart(int windowWidth, int windowHeight, const char* title)
 
 bool bbe::Game::keepAlive()
 {
+	if (m_requestShutdown)
+	{
+		return false;
+	}
 #ifdef BBE_RENDERER_NULL
 	// The null renderer keeps games alive for 128 frames and then closes them.
 	static int callCount = 0;
@@ -307,6 +311,11 @@ bool bbe::Game::keepAlive()
 void bbe::Game::frame(bool dragging)
 {
 	StopWatch sw;
+	if(m_requestShowWindow)
+	{
+		m_requestShowWindow = false;
+		showWindow();
+	}
 	frameUpdate();
 	frameDraw(dragging);
 	if (m_targetFrameTime > 0)
@@ -692,6 +701,12 @@ void bbe::Game::setClipboard(const bbe::String& string)
 	glfwWrapper::glfwSetClipboardString(m_pwindow->m_pwindow, string.getRaw());
 }
 
+void bbe::Game::requestShowWindow()
+{
+	// Can be used in cases where you don't want to show the window immediately inside the current thread but inside the gameloop instead.
+	m_requestShowWindow = true;
+}
+
 void bbe::Game::showWindow()
 {
 	m_pwindow->showWindow();
@@ -704,7 +719,11 @@ void bbe::Game::hideWindow()
 
 void bbe::Game::closeWindow()
 {
-	m_pwindow->close();
+	m_requestShutdown = true;
+	if (m_pwindow != nullptr)
+	{
+		m_pwindow->close();
+	}
 }
 
 bool bbe::Game::isWindowShow() const

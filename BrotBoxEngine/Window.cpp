@@ -6,6 +6,8 @@
 #include "BBE/MouseButtons.h"
 #include "BBE/FatalErrors.h"
 #include "BBE/Logging.h"
+#include <string>
+#include <unordered_map>
 #ifndef BBE_RENDERER_NULL
 #include "imgui_impl_glfw.h"
 #endif
@@ -36,10 +38,36 @@
 size_t bbe::Window::windowsAliveCounter = 0;
 bbe::Window* bbe::Window::INTERNAL_firstInstance = nullptr;
 
+namespace
+{
+	struct WindowRecreateState
+	{
+		std::string title;
+		uint32_t major = 0;
+		uint32_t minor = 0;
+		uint32_t patch = 0;
+		bbe::CursorMode cursorMode = bbe::CursorMode::NORMAL;
+		bbe::Vector2i lastWindowPos = { 0, 0 };
+		bbe::Vector2i lastWindowSize = { 0, 0 };
+		bool lastWindowMaximized = false;
+		bool hasPlacement = false;
+	};
+
+	std::unordered_map<bbe::Window*, WindowRecreateState> g_windowRecreateStates;
+}
+
 
 bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, uint32_t major, uint32_t minor, uint32_t patch)
 	: m_width(width), m_height(height), m_pgame(game)
 {
+	auto& recreateState = g_windowRecreateStates[this];
+	recreateState.title = title != nullptr ? title : "";
+	recreateState.major = major;
+	recreateState.minor = minor;
+	recreateState.patch = patch;
+	recreateState.lastWindowSize = { width, height };
+	recreateState.hasPlacement = true;
+
 #ifdef BBE_RENDERER_VULKAN
 	BBELOGLN("Backend: VULKAN");
 	m_renderManager.reset(new bbe::INTERNAL::vulkan::VulkanManager());
@@ -71,6 +99,7 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 		}
 #endif
 	}
+	windowsAliveCounter++;
 
 	BBELOGLN("Setting WindowHints");
 #ifdef BBE_RENDERER_VULKAN
@@ -80,28 +109,25 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 	glfwWrapper::glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWrapper::glfwWindowHint(GLFW_SAMPLES, 4);
 #endif
-	//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 #ifndef __EMSCRIPTEN__
 	glfwWrapper::glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 #endif
 
 	BBELOGLN("Creating GLFW window");
 	m_pwindow = glfwWrapper::glfwCreateWindow(width, height, title, nullptr, nullptr);
-
-	BBELOGLN("Setting window user pointer");
-	glfwWrapper::glfwSetWindowUserPointer(m_pwindow, this);
 	if (m_pwindow == nullptr)
 	{
 		bbe::INTERNAL::triggerFatalError("Could not create window!");
 	}
 
-	BBELOGLN("Init render manager");
+	BBELOGLN("Setting window user pointer");
+	glfwWrapper::glfwSetWindowUserPointer(m_pwindow, this);
 
+	BBELOGLN("Init render manager");
 	float windowXScale = 0;
 	float windowYScale = 0;
 	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
 	m_renderManager->init(title, major, minor, patch, m_pwindow, static_cast<uint32_t>(width * windowXScale), static_cast<uint32_t>(height * windowYScale));
-
 
 	BBELOGLN("Setting glfw callbacks");
 	glfwWrapper::glfwSetKeyCallback(m_pwindow, INTERNAL_keyCallback);
@@ -124,16 +150,19 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 
 void bbe::Window::preDraw2D()
 {
+	if (m_pwindow == nullptr) return;
 	m_renderManager->preDraw2D();
 }
 
 void bbe::Window::preDraw3D()
 {
+	if (m_pwindow == nullptr) return;
 	m_renderManager->preDraw3D();
 }
 
 void bbe::Window::preDraw()
 {
+	if (m_pwindow == nullptr) return;
 	m_renderManager->preDraw();
 	m_renderManager->setColor2D(bbe::Color(1.0f, 1.0f, 1.0f, 1.0f));
 	m_renderManager->setColor3D(bbe::Color(1.0f, 1.0f, 1.0f, 1.0f));
@@ -145,6 +174,12 @@ void bbe::Window::preDraw()
 
 bool bbe::Window::keepAlive()
 {
+	if (m_pwindow == nullptr)
+	{
+		glfwWrapper::glfwPollEvents();
+		return true;
+	}
+
 	if (glfwWrapper::glfwWindowShouldClose(m_pwindow))
 	{
 		return false;
@@ -156,11 +191,17 @@ bool bbe::Window::keepAlive()
 
 void bbe::Window::postDraw()
 {
+	if (m_pwindow == nullptr) return;
 	m_renderManager->postDraw();
 }
 
 void bbe::Window::waitEndDraw(bool dragging)
 {
+	if (m_pwindow == nullptr)
+	{
+		glfwWrapper::glfwPollEvents();
+		return;
+	}
 	m_renderManager->waitEndDraw();
 	if (dragging) glfwWrapper::glFinish();
 	else glfwWrapper::glfwPollEvents();
@@ -168,21 +209,26 @@ void bbe::Window::waitEndDraw(bool dragging)
 
 void bbe::Window::waitTillIdle()
 {
+	if (m_pwindow == nullptr) return;
 	m_renderManager->waitTillIdle();
 }
 
 bool bbe::Window::isReadyToDraw()
 {
+	if (m_pwindow == nullptr) return false;
 	return m_renderManager->isReadyToDraw();
 }
 
 bool bbe::Window::isFocused() const
 {
+	if (m_pwindow == nullptr) return false;
 	return glfwWrapper::glfwGetWindowAttrib(m_pwindow, GLFW_FOCUSED);
 }
 
 void bbe::Window::setCursorMode(bbe::CursorMode cursorMode)
 {
+	g_windowRecreateStates[this].cursorMode = cursorMode;
+	if (m_pwindow == nullptr) return;
 	switch (cursorMode)
 	{
 	case bbe::CursorMode::DISABLED:
@@ -206,14 +252,21 @@ GLFWwindow* bbe::Window::getRaw()
 
 bbe::Window::~Window()
 {
-	m_renderManager->destroy();
-	glfwWrapper::glfwDestroyWindow(m_pwindow);
-	if (windowsAliveCounter == 1)
+	if (m_pwindow != nullptr)
 	{
-		glfwWrapper::glfwTerminate();
+		m_renderManager->destroy();
+		glfwWrapper::glfwDestroyWindow(m_pwindow);
+		m_pwindow = nullptr;
 	}
-
-	windowsAliveCounter--;
+	if (windowsAliveCounter > 0)
+	{
+		windowsAliveCounter--;
+		if (windowsAliveCounter == 0)
+		{
+			glfwWrapper::glfwTerminate();
+		}
+	}
+	g_windowRecreateStates.erase(this);
 
 	if (this == bbe::Window::INTERNAL_firstInstance)
 	{
@@ -228,6 +281,7 @@ int bbe::Window::getWidth() const
 
 int bbe::Window::getScaledWidth() const
 {
+	if (m_pwindow == nullptr) return getWidth();
 	float scale = 0;
 	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
 	return static_cast<int>(getWidth() * scale);
@@ -240,6 +294,7 @@ int bbe::Window::getHeight() const
 
 int bbe::Window::getScaledHeight() const
 {
+	if (m_pwindow == nullptr) return getHeight();
 	float scale = 0;
 	glfwWrapper::glfwGetWindowContentScale(m_pwindow, nullptr, &scale);
 	return static_cast<int>(getHeight() * scale);
@@ -247,6 +302,7 @@ int bbe::Window::getScaledHeight() const
 
 float bbe::Window::getScale() const
 {
+	if (m_pwindow == nullptr) return 1.0f;
 	float scale = 0;
 	glfwWrapper::glfwGetWindowContentScale(m_pwindow, nullptr, &scale);
 	return scale;
@@ -254,6 +310,12 @@ float bbe::Window::getScale() const
 
 bbe::Vector2i bbe::Window::getSize() const
 {
+	if (m_pwindow == nullptr)
+	{
+		auto it = g_windowRecreateStates.find(const_cast<bbe::Window*>(this));
+		if (it != g_windowRecreateStates.end()) return it->second.lastWindowSize;
+		return { m_width, m_height };
+	}
 	bbe::Vector2i retVal;
 	glfwWrapper::glfwGetWindowSize(m_pwindow, &retVal.x, &retVal.y);
 	return retVal;
@@ -261,21 +323,45 @@ bbe::Vector2i bbe::Window::getSize() const
 
 void bbe::Window::setSize(const Vector2i& size)
 {
-	glfwWrapper::glfwSetWindowSize(m_pwindow, size.x, size.y);
+	m_width = size.x;
+	m_height = size.y;
+	auto& recreateState = g_windowRecreateStates[this];
+	recreateState.lastWindowSize = size;
+	recreateState.hasPlacement = true;
+	if (m_pwindow != nullptr)
+	{
+		glfwWrapper::glfwSetWindowSize(m_pwindow, size.x, size.y);
+	}
 }
 
 bool bbe::Window::isMaximized() const
 {
+	if (m_pwindow == nullptr)
+	{
+		auto it = g_windowRecreateStates.find(const_cast<bbe::Window*>(this));
+		return it != g_windowRecreateStates.end() && it->second.lastWindowMaximized;
+	}
 	return glfwWrapper::glfwGetWindowAttrib(m_pwindow, GLFW_MAXIMIZED) != 0;
 }
 
 void bbe::Window::maximize()
 {
-	glfwWrapper::glfwMaximizeWindow(m_pwindow);
+	auto& recreateState = g_windowRecreateStates[this];
+	recreateState.lastWindowMaximized = true;
+	if (m_pwindow != nullptr)
+	{
+		glfwWrapper::glfwMaximizeWindow(m_pwindow);
+	}
 }
 
 bbe::Vector2i bbe::Window::getPos() const
 {
+	if (m_pwindow == nullptr)
+	{
+		auto it = g_windowRecreateStates.find(const_cast<bbe::Window*>(this));
+		if (it != g_windowRecreateStates.end()) return it->second.lastWindowPos;
+		return { 0, 0 };
+	}
 	bbe::Vector2i retVal;
 	glfwWrapper::glfwGetWindowPos(m_pwindow, &retVal.x, &retVal.y);
 	return retVal;
@@ -283,11 +369,18 @@ bbe::Vector2i bbe::Window::getPos() const
 
 void bbe::Window::setPos(const Vector2i& pos)
 {
-	glfwWrapper::glfwSetWindowPos(m_pwindow, pos.x, pos.y);
+	auto& recreateState = g_windowRecreateStates[this];
+	recreateState.lastWindowPos = pos;
+	recreateState.hasPlacement = true;
+	if (m_pwindow != nullptr)
+	{
+		glfwWrapper::glfwSetWindowPos(m_pwindow, pos.x, pos.y);
+	}
 }
 
 bbe::Vector2 bbe::Window::getGlobalMousePos() const
 {
+	if (m_pwindow == nullptr) return bbe::Vector2();
 #ifdef _WIN32
 	POINT pos;
 	if (!GetCursorPos(&pos)) return bbe::Vector2();
@@ -317,24 +410,111 @@ bbe::WindowCloseMode bbe::Window::getWindowCloseMode() const
 
 void bbe::Window::showWindow()
 {
+	auto& recreateState = g_windowRecreateStates[this];
+
+	if (m_pwindow == nullptr)
+	{
+		BBELOGLN("Recreating GLFW window after tray close");
+
+		BBELOGLN("Setting WindowHints");
+#ifdef BBE_RENDERER_VULKAN
+		glfwWrapper::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+#endif
+#ifdef BBE_RENDERER_OPENGL
+		glfwWrapper::glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+		glfwWrapper::glfwWindowHint(GLFW_SAMPLES, 4);
+#endif
+#ifndef __EMSCRIPTEN__
+		glfwWrapper::glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
+#endif
+		glfwWrapper::glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+
+		const int recreateWidth = recreateState.lastWindowSize.x > 0 ? recreateState.lastWindowSize.x : m_width;
+		const int recreateHeight = recreateState.lastWindowSize.y > 0 ? recreateState.lastWindowSize.y : m_height;
+
+		m_pwindow = glfwWrapper::glfwCreateWindow(recreateWidth, recreateHeight, recreateState.title.c_str(), nullptr, nullptr);
+		glfwWrapper::glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+		if (m_pwindow == nullptr)
+		{
+			bbe::INTERNAL::triggerFatalError("Could not recreate window!");
+		}
+
+		glfwWrapper::glfwSetWindowUserPointer(m_pwindow, this);
+
+		float windowXScale = 0;
+		float windowYScale = 0;
+		glfwWrapper::glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
+		m_renderManager->init(recreateState.title.c_str(), recreateState.major, recreateState.minor, recreateState.patch, m_pwindow, static_cast<uint32_t>(recreateWidth * windowXScale), static_cast<uint32_t>(recreateHeight * windowYScale));
+
+		glfwWrapper::glfwSetKeyCallback(m_pwindow, INTERNAL_keyCallback);
+		glfwWrapper::glfwSetCharCallback(m_pwindow, INTERNAL_charCallback);
+		glfwWrapper::glfwSetCursorPosCallback(m_pwindow, INTERNAL_cursorPosCallback);
+		glfwWrapper::glfwSetMouseButtonCallback(m_pwindow, INTERNAL_mouseButtonCallback);
+		glfwWrapper::glfwSetWindowSizeCallback(m_pwindow, INTERNAL_windowResizeCallback);
+		glfwWrapper::glfwSetScrollCallback(m_pwindow, INTERNAL_mouseScrollCallback);
+		glfwWrapper::glfwSetWindowCloseCallback(m_pwindow, INTERNAL_windowCloseCallback);
+		glfwWrapper::glfwSetWindowRefreshCallback(m_pwindow, INTERNAL_windowRefreshCallback);
+		glfwWrapper::glfwSetWindowPosCallback(m_pwindow, INTERNAL_windowPosCallback);
+		glfwWrapper::glfwSwapInterval(1);
+
+		if (recreateState.hasPlacement)
+		{
+			glfwWrapper::glfwSetWindowSize(m_pwindow, recreateState.lastWindowSize.x, recreateState.lastWindowSize.y);
+			glfwWrapper::glfwSetWindowPos(m_pwindow, recreateState.lastWindowPos.x, recreateState.lastWindowPos.y);
+		}
+
+		setCursorMode(recreateState.cursorMode);
+		if (recreateState.lastWindowMaximized)
+		{
+			glfwWrapper::glfwMaximizeWindow(m_pwindow);
+		}
+
+		double mX = 0;
+		double mY = 0;
+		glfwWrapper::glfwGetCursorPos(m_pwindow, &mX, &mY);
+		INTERNAL_mouse.INTERNAL_moveMouse((float)mX, (float)mY);
+	}
+
+#ifdef __linux__
+	glfwWrapper::glfwRestoreWindow(m_pwindow);
+	glfwWrapper::glfwShowWindow(m_pwindow);
+	glfwWrapper::glfwPollEvents();
+#else
 	glfwWrapper::glfwShowWindow(m_pwindow);
 	glfwWrapper::glfwFocusWindow(m_pwindow);
 	glfwWrapper::glfwRestoreWindow(m_pwindow);
+#endif
 }
 
 void bbe::Window::hideWindow()
 {
+	if (m_pwindow == nullptr) return;
+#ifdef __linux__
+	auto& recreateState = g_windowRecreateStates[this];
+	recreateState.lastWindowSize = getSize();
+	recreateState.lastWindowPos = getPos();
+	recreateState.lastWindowMaximized = isMaximized();
+	recreateState.hasPlacement = true;
+
+	m_renderManager->waitTillIdle();
+	m_renderManager->destroy();
+	glfwWrapper::glfwDestroyWindow(m_pwindow);
+	m_pwindow = nullptr;
+#else
 	glfwWrapper::glfwHideWindow(m_pwindow);
+#endif
 }
 
 bool bbe::Window::isShown() const
 {
+	if (m_pwindow == nullptr) return false;
 	int visible = glfwWrapper::glfwGetWindowAttrib(m_pwindow, GLFW_VISIBLE);
 	return visible;
 }
 
 bool bbe::Window::isHovered() const
 {
+	if (m_pwindow == nullptr) return false;
 	int hovered = glfwWrapper::glfwGetWindowAttrib(m_pwindow, GLFW_HOVERED);
 	return hovered;
 }
@@ -351,6 +531,7 @@ bbe::PrimitiveBrush3D& bbe::Window::getBrush3D()
 
 void bbe::Window::INTERNAL_resize(int width, int height)
 {
+	if (m_pwindow == nullptr) return;
 	float windowXScale = 0;
 	float windowYScale = 0;
 	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
@@ -368,16 +549,19 @@ void bbe::Window::INTERNAL_onRefresh()
 
 void bbe::Window::screenshot(const bbe::String& path)
 {
+	if (m_pwindow == nullptr) return;
 	m_renderManager->screenshot(path);
 }
 
 void bbe::Window::setVideoRenderingMode(const char* path)
 {
+	if (m_pwindow == nullptr) return;
 	m_renderManager->setVideoRenderingMode(path);
 }
 
 void bbe::Window::close()
 {
+	if (m_pwindow == nullptr) return;
 	glfwWrapper::glfwSetWindowShouldClose(m_pwindow, GLFW_TRUE);
 }
 
@@ -411,6 +595,7 @@ void bbe::Window::update()
 {
 	executeFrameStartListeneres();
 	INTERNAL_keyboard.update();
+	if (m_pwindow == nullptr) return;
 	const bbe::Vector2 globalMousePos = getGlobalMousePos();
 	INTERNAL_mouse.update(globalMousePos.x, globalMousePos.y);
 	if (isShown() && !isFocused() && isHovered())
@@ -428,6 +613,7 @@ void bbe::Window::update()
 
 void* bbe::Window::getNativeHandle()
 {
+	if (m_pwindow == nullptr) return nullptr;
 #ifdef WIN32
 	return (void*)glfwGetWin32Window(m_pwindow);
 #else
@@ -438,6 +624,7 @@ void* bbe::Window::getNativeHandle()
 #ifdef BBE_RENDERER_OPENGL
 uint32_t bbe::Window::getAmountOfDrawcalls() const
 {
+	if (m_pwindow == nullptr) return 0;
 	return ((bbe::INTERNAL::openGl::OpenGLManager*)m_renderManager.get())->getAmountOfDrawcalls();
 }
 #endif
@@ -524,7 +711,7 @@ void bbe::INTERNAL_windowCloseCallback(GLFWwindow* window)
 		break;
 	case bbe::WindowCloseMode::HIDE:
 		glfwWrapper::glfwSetWindowShouldClose(window, GLFW_FALSE);
-		glfwWrapper::glfwHideWindow(window);
+		((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->hideWindow();
 		break;
 	default:
 		bbe::Crash(bbe::Error::IllegalState);

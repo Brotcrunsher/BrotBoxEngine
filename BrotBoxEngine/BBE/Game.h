@@ -65,6 +65,9 @@ namespace bbe
 		bool m_performanceMeasurementsRequired = false;
 		bool m_performanceMeasurementsForced = false;
 
+		bool m_requestShowWindow = false;
+		bool m_requestShutdown = false;
+
 		void innerStart(int windowWidth, int windowHeight, const char* title);
 
 	public:
@@ -157,6 +160,7 @@ namespace bbe
 
 		void mainLoop();
 
+		void requestShowWindow();
 		void showWindow();
 		void hideWindow();
 		void closeWindow();

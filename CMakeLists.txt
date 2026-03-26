@@ -340,6 +340,12 @@ else()
   message(FATAL_ERROR "Unknown BBE_RENDER_MODE: ${BBE_RENDER_MODE}")
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(DBUS REQUIRED IMPORTED_TARGET dbus-1)
+  target_link_libraries(BrotBoxEngine PkgConfig::DBUS)
+endif()
+
 add_subdirectory(Third-Party/googletest-1.17.0)
 
 if(MSVC)

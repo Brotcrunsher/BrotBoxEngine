@@ -204,6 +204,11 @@ bbe::Utf8String bbe::Utf8String::toHex(uint32_t value)
 
 	constexpr const char* hexDigits = "0123456789ABCDEF";
 
+	if (value == 0)
+	{
+		return bbe::Utf8String("0");
+	}
+
 	while (value > 0)
 	{
 		const uint32_t lowValue = value & 0x0F;
@@ -578,16 +583,21 @@ void bbe::Utf8String::substringInPlace(size_t start, size_t end)
 		end = utf8len(m_data.get());
 	}
 
+	std::size_t startByteOffset = 0;
 	std::size_t sizeOfSubstringInByte = 0;
 	auto it = getIterator();
-	for (size_t i = 0; i < start; i++) ++it;
+	for (size_t i = 0; i < start; i++)
+	{
+		startByteOffset += utf8codePointLen(it.getCodepoint());
+		++it;
+	}
 	for(std::size_t i = start; i<end; i++)
 	{
 		sizeOfSubstringInByte += utf8codePointLen(it.getCodepoint());
 		++it;
 	}
 	auto raw = m_data.get();
-	memmove(raw, &raw[start], sizeOfSubstringInByte);
+	memmove(raw, &raw[startByteOffset], sizeOfSubstringInByte);
 	raw[sizeOfSubstringInByte] = 0;
 }
 
@@ -675,7 +685,7 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String&
 
 		retVal[i] = currentString;
 
-		previousFinding = currentFinding + utf8len(splitAt.getRaw());
+		previousFinding = currentFinding + strlen(splitAt.getRaw());
 	}
 
 	Utf8String currentString;
@@ -1006,20 +1016,38 @@ bbe::Utf8String bbe::Utf8String::toLowerCase() const
 
 void bbe::Utf8String::toUpperCaseInPlace()
 {
-	auto raw = getRaw();
-	for(std::size_t i = 0; i < utf8len(getRaw()); i++)
+	bbe::Utf8String result;
+	for (auto it = getIterator(); it.valid(); ++it)
 	{
-		raw[i] = toupper(raw[i]);
+		int32_t codepoint = it.getCodepoint();
+		if (codepoint >= 'a' && codepoint <= 'z')
+		{
+			result += fromCodePoint(codepoint - 32);
+		}
+		else
+		{
+			result += fromCodePoint(codepoint);
+		}
 	}
+	*this = result;
 }
 
 void bbe::Utf8String::toLowerCaseInPlace()
 {
-	auto raw = getRaw();
-	for(std::size_t i = 0; i < utf8len(getRaw()); i++)
+	bbe::Utf8String result;
+	for (auto it = getIterator(); it.valid(); ++it)
 	{
-		raw[i] = tolower(raw[i]);
+		int32_t codepoint = it.getCodepoint();
+		if (codepoint >= 'A' && codepoint <= 'Z')
+		{
+			result += fromCodePoint(codepoint + 32);
+		}
+		else
+		{
+			result += fromCodePoint(codepoint);
+		}
 	}
+	*this = result;
 }
 
 size_t bbe::Utf8String::getLength() const
