@@ -361,13 +361,23 @@ class MyGame : public bbe::Game
 		{
 			ImGui::Checkbox("Round Edges", &roundEdges);
 		}
+		const bool supportsClipboardImages = bbe::Image::supportsClipboardImages();
+		ImGui::BeginDisabled(!supportsClipboardImages);
 		if (ImGui::Button("Copy to Clipboard"))
 		{
 			canvas.get().copyToClipboard();
 		}
-		ImGui::Text(bbe::Image::isImageInClipbaord() ? "Yes" : "No");
+		ImGui::EndDisabled();
+		if (supportsClipboardImages)
+		{
+			ImGui::Text(bbe::Image::isImageInClipbaord() ? "Yes" : "No");
+		}
+		else
+		{
+			ImGui::Text("Image Clipboard not supported on this platform");
+		}
 
-		ImGui::BeginDisabled(!bbe::Image::isImageInClipbaord());
+		ImGui::BeginDisabled(!supportsClipboardImages || !bbe::Image::isImageInClipbaord());
 		if (ImGui::Button("Paste"))
 		{
 			canvas.get() = bbe::Image::getClipboardImage();

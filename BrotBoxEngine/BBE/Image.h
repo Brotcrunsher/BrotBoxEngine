@@ -139,12 +139,14 @@ namespace bbe
 
 		void flipHorizontally();
 
-#ifdef _WIN32
+		static bool supportsClipboardImages();
 		static bool isImageInClipbaord();
 		static bbe::Image getClipboardImage();
+		void copyToClipboard() const;
+
+#ifdef _WIN32
 		HBITMAP toBitmap() const;
 		HICON toIcon() const;
-		void copyToClipboard() const;
 		static Image screenshot(int x, int y, int width, int height);
 #endif
 	};

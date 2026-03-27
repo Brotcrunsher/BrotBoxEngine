@@ -10,8 +10,11 @@
 #include <atomic>
 #include <thread>
 #include <condition_variable>
+#include <memory>
+#include <cstring>
 
 #ifdef __linux__
+#include <dbus/dbus.h>
 #include <unistd.h>
 #include <limits.h>
 #include <cstdlib>
@@ -428,6 +431,436 @@ static std::string quoteDesktopExecArg(const char* input)
 	escaped += "\"";
 	return escaped;
 }
+
+struct ScopedDBusError
+{
+	DBusError error;
+
+	ScopedDBusError()
+	{
+		dbus_error_init(&error);
+	}
+
+	~ScopedDBusError()
+	{
+		if (dbus_error_is_set(&error))
+		{
+			dbus_error_free(&error);
+		}
+	}
+
+	DBusError* get()
+	{
+		return &error;
+	}
+};
+
+struct DBusConnectionDeleter
+{
+	void operator()(DBusConnection* connection) const
+	{
+		if (connection)
+		{
+			dbus_connection_close(connection);
+			dbus_connection_unref(connection);
+		}
+	}
+};
+
+struct DBusMessageDeleter
+{
+	void operator()(DBusMessage* message) const
+	{
+		if (message)
+		{
+			dbus_message_unref(message);
+		}
+	}
+};
+
+using ScopedDBusConnection = std::unique_ptr<DBusConnection, DBusConnectionDeleter>;
+using ScopedDBusMessage = std::unique_ptr<DBusMessage, DBusMessageDeleter>;
+
+static ScopedDBusConnection getPrivateSessionBus()
+{
+	ScopedDBusError error;
+	DBusConnection* connection = dbus_bus_get_private(DBUS_BUS_SESSION, error.get());
+	if (connection == nullptr)
+	{
+		return ScopedDBusConnection(nullptr);
+	}
+	dbus_connection_set_exit_on_disconnect(connection, FALSE);
+	return ScopedDBusConnection(connection);
+}
+
+static bool linuxPortalIsAvailable(DBusConnection* connection)
+{
+	ScopedDBusError error;
+	const dbus_bool_t hasPortal = dbus_bus_name_has_owner(connection, "org.freedesktop.portal.Desktop", error.get());
+	return hasPortal == TRUE && !dbus_error_is_set(error.get());
+}
+
+static std::string makePortalHandleToken(const char* prefix)
+{
+	static std::atomic_uint64_t counter = 0;
+	return std::string(prefix) + "_" + std::to_string(::getpid()) + "_" + std::to_string(++counter);
+}
+
+static std::string makePortalExpectedRequestPath(DBusConnection* connection, const std::string& token)
+{
+	const char* uniqueName = dbus_bus_get_unique_name(connection);
+	if (uniqueName == nullptr || uniqueName[0] == '\0')
+	{
+		return "";
+	}
+
+	std::string sender = uniqueName;
+	if (!sender.empty() && sender[0] == ':')
+	{
+		sender.erase(sender.begin());
+	}
+	for (char& c : sender)
+	{
+		if (c == '.')
+		{
+			c = '_';
+		}
+	}
+	return "/org/freedesktop/portal/desktop/request/" + sender + "/" + token;
+}
+
+static bool addPortalResponseMatch(DBusConnection* connection, const std::string& requestPath)
+{
+	if (requestPath.empty())
+	{
+		return true;
+	}
+
+	const std::string matchRule =
+		"type='signal',interface='org.freedesktop.portal.Request',member='Response',path='" + requestPath + "'";
+	ScopedDBusError error;
+	dbus_bus_add_match(connection, matchRule.c_str(), error.get());
+	dbus_connection_flush(connection);
+	return !dbus_error_is_set(error.get());
+}
+
+static void removePortalResponseMatch(DBusConnection* connection, const std::string& requestPath)
+{
+	if (requestPath.empty())
+	{
+		return;
+	}
+
+	const std::string matchRule =
+		"type='signal',interface='org.freedesktop.portal.Request',member='Response',path='" + requestPath + "'";
+	ScopedDBusError error;
+	dbus_bus_remove_match(connection, matchRule.c_str(), error.get());
+	dbus_connection_flush(connection);
+}
+
+static bool appendStringOption(DBusMessageIter* optionsIter, const char* key, const char* value)
+{
+	DBusMessageIter entryIter;
+	DBusMessageIter variantIter;
+	if (!dbus_message_iter_open_container(optionsIter, DBUS_TYPE_DICT_ENTRY, nullptr, &entryIter)) return false;
+	if (!dbus_message_iter_append_basic(&entryIter, DBUS_TYPE_STRING, &key)) return false;
+	if (!dbus_message_iter_open_container(&entryIter, DBUS_TYPE_VARIANT, "s", &variantIter)) return false;
+	if (!dbus_message_iter_append_basic(&variantIter, DBUS_TYPE_STRING, &value)) return false;
+	if (!dbus_message_iter_close_container(&entryIter, &variantIter)) return false;
+	return dbus_message_iter_close_container(optionsIter, &entryIter) == TRUE;
+}
+
+static bool appendBoolOption(DBusMessageIter* optionsIter, const char* key, bool value)
+{
+	DBusMessageIter entryIter;
+	DBusMessageIter variantIter;
+	const dbus_bool_t boolValue = value ? TRUE : FALSE;
+	if (!dbus_message_iter_open_container(optionsIter, DBUS_TYPE_DICT_ENTRY, nullptr, &entryIter)) return false;
+	if (!dbus_message_iter_append_basic(&entryIter, DBUS_TYPE_STRING, &key)) return false;
+	if (!dbus_message_iter_open_container(&entryIter, DBUS_TYPE_VARIANT, "b", &variantIter)) return false;
+	if (!dbus_message_iter_append_basic(&variantIter, DBUS_TYPE_BOOLEAN, &boolValue)) return false;
+	if (!dbus_message_iter_close_container(&entryIter, &variantIter)) return false;
+	return dbus_message_iter_close_container(optionsIter, &entryIter) == TRUE;
+}
+
+static bool appendByteArrayOption(DBusMessageIter* optionsIter, const char* key, const std::string& value)
+{
+	DBusMessageIter entryIter;
+	DBusMessageIter variantIter;
+	DBusMessageIter arrayIter;
+
+	if (!dbus_message_iter_open_container(optionsIter, DBUS_TYPE_DICT_ENTRY, nullptr, &entryIter)) return false;
+	if (!dbus_message_iter_append_basic(&entryIter, DBUS_TYPE_STRING, &key)) return false;
+	if (!dbus_message_iter_open_container(&entryIter, DBUS_TYPE_VARIANT, "ay", &variantIter)) return false;
+	if (!dbus_message_iter_open_container(&variantIter, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE_AS_STRING, &arrayIter)) return false;
+
+	std::vector<unsigned char> bytes(value.begin(), value.end());
+	bytes.push_back('\0');
+	if (!bytes.empty())
+	{
+		const unsigned char* data = bytes.data();
+		if (!dbus_message_iter_append_fixed_array(&arrayIter, DBUS_TYPE_BYTE, &data, static_cast<int>(bytes.size()))) return false;
+	}
+
+	if (!dbus_message_iter_close_container(&variantIter, &arrayIter)) return false;
+	if (!dbus_message_iter_close_container(&entryIter, &variantIter)) return false;
+	return dbus_message_iter_close_container(optionsIter, &entryIter) == TRUE;
+}
+
+static int hexDigitToInt(char c)
+{
+	if (c >= '0' && c <= '9') return c - '0';
+	if (c >= 'a' && c <= 'f') return 10 + c - 'a';
+	if (c >= 'A' && c <= 'F') return 10 + c - 'A';
+	return -1;
+}
+
+static bbe::String decodeFileUri(const char* uri)
+{
+	constexpr const char* prefix = "file://";
+	if (std::strncmp(uri, prefix, std::strlen(prefix)) != 0)
+	{
+		return "";
+	}
+
+	std::string path = uri + std::strlen(prefix);
+	if (path.rfind("localhost/", 0) == 0)
+	{
+		path.erase(0, std::strlen("localhost"));
+	}
+	else if (!path.empty() && path[0] != '/')
+	{
+		return "";
+	}
+
+	std::string decoded;
+	for (size_t i = 0; i < path.size(); ++i)
+	{
+		if (path[i] == '%' && i + 2 < path.size())
+		{
+			const int high = hexDigitToInt(path[i + 1]);
+			const int low = hexDigitToInt(path[i + 2]);
+			if (high >= 0 && low >= 0)
+			{
+				decoded += static_cast<char>((high << 4) | low);
+				i += 2;
+				continue;
+			}
+		}
+		decoded += path[i];
+	}
+
+	return bbe::String(decoded.c_str());
+}
+
+static bool extractFirstUriFromResponse(DBusMessage* responseMessage, bbe::String& outPath)
+{
+	DBusMessageIter iter;
+	if (!dbus_message_iter_init(responseMessage, &iter)) return false;
+
+	if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_UINT32) return false;
+	dbus_uint32_t responseCode = 2;
+	dbus_message_iter_get_basic(&iter, &responseCode);
+	if (responseCode != 0) return false;
+
+	if (!dbus_message_iter_next(&iter)) return false;
+	if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_ARRAY) return false;
+
+	DBusMessageIter dictIter;
+	dbus_message_iter_recurse(&iter, &dictIter);
+	while (dbus_message_iter_get_arg_type(&dictIter) == DBUS_TYPE_DICT_ENTRY)
+	{
+		DBusMessageIter entryIter;
+		dbus_message_iter_recurse(&dictIter, &entryIter);
+		if (dbus_message_iter_get_arg_type(&entryIter) == DBUS_TYPE_STRING)
+		{
+			const char* key = nullptr;
+			dbus_message_iter_get_basic(&entryIter, &key);
+			if (std::strcmp(key, "uris") == 0 && dbus_message_iter_next(&entryIter) && dbus_message_iter_get_arg_type(&entryIter) == DBUS_TYPE_VARIANT)
+			{
+				DBusMessageIter variantIter;
+				dbus_message_iter_recurse(&entryIter, &variantIter);
+				if (dbus_message_iter_get_arg_type(&variantIter) == DBUS_TYPE_ARRAY)
+				{
+					DBusMessageIter uriIter;
+					dbus_message_iter_recurse(&variantIter, &uriIter);
+					if (dbus_message_iter_get_arg_type(&uriIter) == DBUS_TYPE_STRING)
+					{
+						const char* uri = nullptr;
+						dbus_message_iter_get_basic(&uriIter, &uri);
+						outPath = decodeFileUri(uri);
+						return !outPath.isEmpty();
+					}
+				}
+			}
+		}
+		dbus_message_iter_next(&dictIter);
+	}
+
+	return false;
+}
+
+static bool waitForPortalResponse(DBusConnection* connection, const std::string& requestPath, bbe::String& outPath)
+{
+	while (true)
+	{
+		if (!dbus_connection_read_write(connection, -1))
+		{
+			return false;
+		}
+
+		ScopedDBusMessage message(dbus_connection_pop_message(connection));
+		if (!message)
+		{
+			continue;
+		}
+
+		const char* path = dbus_message_get_path(message.get());
+		if (path == nullptr || requestPath != path)
+		{
+			continue;
+		}
+
+		if (dbus_message_is_signal(message.get(), "org.freedesktop.portal.Request", "Response"))
+		{
+			return extractFirstUriFromResponse(message.get(), outPath);
+		}
+	}
+}
+
+static bool linuxPortalFileChooser(const char* methodName, const char* title, bbe::String& inOutPath, const bbe::String& defaultExtension)
+{
+	ScopedDBusConnection connection = getPrivateSessionBus();
+	if (!connection || !linuxPortalIsAvailable(connection.get()))
+	{
+		return false;
+	}
+
+	const std::string handleToken = makePortalHandleToken("bbe");
+	const std::string expectedPath = makePortalExpectedRequestPath(connection.get(), handleToken);
+	if (!addPortalResponseMatch(connection.get(), expectedPath))
+	{
+		return false;
+	}
+
+	ScopedDBusMessage message(dbus_message_new_method_call(
+		"org.freedesktop.portal.Desktop",
+		"/org/freedesktop/portal/desktop",
+		"org.freedesktop.portal.FileChooser",
+		methodName));
+	if (!message)
+	{
+		removePortalResponseMatch(connection.get(), expectedPath);
+		return false;
+	}
+
+	DBusMessageIter iter;
+	dbus_message_iter_init_append(message.get(), &iter);
+	const char* parentWindow = "";
+	if (!dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &parentWindow))
+	{
+		removePortalResponseMatch(connection.get(), expectedPath);
+		return false;
+	}
+	if (!dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &title))
+	{
+		removePortalResponseMatch(connection.get(), expectedPath);
+		return false;
+	}
+
+	DBusMessageIter optionsIter;
+	if (!dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY, "{sv}", &optionsIter))
+	{
+		removePortalResponseMatch(connection.get(), expectedPath);
+		return false;
+	}
+
+	const bool isSaveDialog = std::strcmp(methodName, "SaveFile") == 0;
+	bool optionsOk = appendStringOption(&optionsIter, "handle_token", handleToken.c_str())
+		&& appendBoolOption(&optionsIter, "modal", true);
+
+	if (isSaveDialog)
+	{
+		std::filesystem::path currentPath;
+		if (!inOutPath.isEmpty())
+		{
+			currentPath = std::filesystem::path(inOutPath.getRaw());
+			if (currentPath.has_parent_path())
+			{
+				optionsOk = optionsOk && appendByteArrayOption(&optionsIter, "current_folder", currentPath.parent_path().string());
+			}
+			if (std::filesystem::exists(currentPath))
+			{
+				optionsOk = optionsOk && appendByteArrayOption(&optionsIter, "current_file", currentPath.string());
+			}
+		}
+
+		std::string currentName = currentPath.filename().string();
+		if (currentName.empty())
+		{
+			currentName = "untitled";
+			if (!defaultExtension.isEmpty())
+			{
+				currentName += ".";
+				currentName += defaultExtension.getRaw();
+			}
+		}
+		optionsOk = optionsOk && appendStringOption(&optionsIter, "current_name", currentName.c_str());
+	}
+	else if (!inOutPath.isEmpty())
+	{
+		const std::filesystem::path currentPath(inOutPath.getRaw());
+		const std::filesystem::path folder = std::filesystem::is_directory(currentPath) ? currentPath : currentPath.parent_path();
+		if (!folder.empty())
+		{
+			optionsOk = optionsOk && appendByteArrayOption(&optionsIter, "current_folder", folder.string());
+		}
+	}
+
+	if (!dbus_message_iter_close_container(&iter, &optionsIter) || !optionsOk)
+	{
+		removePortalResponseMatch(connection.get(), expectedPath);
+		return false;
+	}
+
+	ScopedDBusError error;
+	ScopedDBusMessage reply(dbus_connection_send_with_reply_and_block(connection.get(), message.get(), -1, error.get()));
+	if (!reply || dbus_error_is_set(error.get()))
+	{
+		removePortalResponseMatch(connection.get(), expectedPath);
+		return false;
+	}
+
+	const char* returnedHandle = nullptr;
+	if (!dbus_message_get_args(reply.get(), error.get(), DBUS_TYPE_OBJECT_PATH, &returnedHandle, DBUS_TYPE_INVALID) || returnedHandle == nullptr)
+	{
+		removePortalResponseMatch(connection.get(), expectedPath);
+		return false;
+	}
+
+	const std::string actualPath = returnedHandle;
+	if (actualPath != expectedPath && !addPortalResponseMatch(connection.get(), actualPath))
+	{
+		removePortalResponseMatch(connection.get(), expectedPath);
+		return false;
+	}
+
+	bbe::String selectedPath;
+	const bool success = waitForPortalResponse(connection.get(), actualPath.empty() ? expectedPath : actualPath, selectedPath);
+	removePortalResponseMatch(connection.get(), expectedPath);
+	if (actualPath != expectedPath)
+	{
+		removePortalResponseMatch(connection.get(), actualPath);
+	}
+
+	if (!success)
+	{
+		return false;
+	}
+
+	inOutPath = selectedPath;
+	return true;
+}
 #endif
 
 #ifdef WIN32
@@ -651,6 +1084,18 @@ void bbe::simpleFile::createLink(const bbe::String& from, const bbe::String& to,
 		std::filesystem::perms::others_exec,
 		std::filesystem::perm_options::replace
 	);
+}
+
+bool bbe::simpleFile::showOpenDialog(bbe::String& outPath)
+{
+	updateIoStats();
+	return linuxPortalFileChooser("OpenFile", "Open File", outPath, "");
+}
+
+bool bbe::simpleFile::showSaveDialog(bbe::String& outPath, const bbe::String& defaultExtension)
+{
+	updateIoStats();
+	return linuxPortalFileChooser("SaveFile", "Save File", outPath, defaultExtension);
 }
 #endif
 

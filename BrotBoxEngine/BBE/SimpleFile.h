@@ -64,10 +64,10 @@ namespace bbe
 		bbe::String getExecutablePath();
 		bbe::String getWorkingDirectory();
 		void createLink(const bbe::String& from, const bbe::String& to, const bbe::String& workDir = "");
-#ifdef WIN32
-		void executeBatchFile(const bbe::String& path);
 		bool showOpenDialog(bbe::String& outPath);
 		bool showSaveDialog(bbe::String& outPath, const bbe::String& defaultExtension);
+#ifdef WIN32
+		void executeBatchFile(const bbe::String& path);
 #endif
 #endif
 	}

@@ -344,6 +344,31 @@ void bbe::Image::flipHorizontally()
 	}
 }
 
+bool bbe::Image::supportsClipboardImages()
+{
+#ifdef _WIN32
+	return true;
+#else
+	return false;
+#endif
+}
+
+#ifndef _WIN32
+bool bbe::Image::isImageInClipbaord()
+{
+	return false;
+}
+
+bbe::Image bbe::Image::getClipboardImage()
+{
+	return bbe::Image();
+}
+
+void bbe::Image::copyToClipboard() const
+{
+}
+#endif
+
 #ifdef _WIN32
 bool bbe::Image::isImageInClipbaord()
 {

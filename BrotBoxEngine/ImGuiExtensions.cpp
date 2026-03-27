@@ -33,7 +33,7 @@ void ImGui::bbe::tooltip(const char* text)
 {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort) && ImGui::BeginTooltip())
 	{
-		ImGui::Text(text);
+		ImGui::Text("%s", text);
 		ImGui::EndTooltip();
 	}
 }
@@ -113,7 +113,8 @@ bool ImGui::bbe::datePicker(const char* label, ::bbe::TimePoint* time)
 		ImGui::SameLine();
 		if (ImGui::Button("<", bSize)) { dataDirty = true; month--; }
 		ImGui::SameLine();
-		ImGui::Text((::bbe::String(year) + "/" + month).getRaw());
+		const ::bbe::String monthLabel = ::bbe::String(year) + "/" + month;
+		ImGui::Text("%s", monthLabel.getRaw());
 		ImGui::SameLine(6.5f * columnWidth); // TODO: Wtf? Why 6.5?!
 		if (ImGui::Button(">", bSize)) { dataDirty = true; month++; }
 		ImGui::SameLine();
