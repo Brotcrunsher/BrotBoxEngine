@@ -5,6 +5,7 @@
 #include "../BBE/Span.h"
 #include "../BBE/Rectangle.h"
 #include "../BBE/Vector2.h"
+#include <limits>
 
 namespace bbe
 {
@@ -55,6 +56,23 @@ namespace bbe
 		size_t m_height;
 		bbe::List<T> m_pdata;
 
+		static size_t checkedArea(size_t width, size_t height)
+		{
+			if (height != 0 && width > std::numeric_limits<size_t>::max() / height)
+			{
+				bbe::Crash(bbe::Error::OutOfMemory, "Grid dimensions overflow.");
+			}
+
+			return width * height;
+		}
+
+		void initializeStorage(size_t width, size_t height)
+		{
+			m_width = width;
+			m_height = height;
+			m_pdata.resizeCapacityAndLength(checkedArea(m_width, m_height));
+		}
+
 
 	public:
 		Grid() :
@@ -64,26 +82,37 @@ namespace bbe
 		{}
 
 		Grid(size_t width, size_t height) :
-			m_width(width),
-			m_height(height),
+			m_width(0),
+			m_height(0),
 			m_pdata()
 		{
-			m_pdata.resizeCapacityAndLength(m_width * m_height);
+			initializeStorage(width, height);
 		}
 
 		explicit Grid(const bbe::Vector2i& dim) :
-			m_width(dim.x),
-			m_height(dim.y),
+			m_width(0),
+			m_height(0),
 			m_pdata()
 		{
-			m_pdata.resizeCapacityAndLength(m_width * m_height);
+			if (dim.x < 0 || dim.y < 0)
+			{
+				bbe::Crash(bbe::Error::IllegalArgument, "Grid dimensions must not be negative.");
+			}
+
+			initializeStorage(static_cast<size_t>(dim.x), static_cast<size_t>(dim.y));
 		}
 
 		/*nonexplicit*/ Grid(const std::initializer_list<std::initializer_list<T>>& il)
 		{
+			if (il.size() == 0)
+			{
+				m_width = 0;
+				m_height = 0;
+				return;
+			}
 			m_width = il.begin()->size();
 			m_height = il.size();
-			m_pdata.resizeCapacityAndLength(m_width * m_height);
+			m_pdata.resizeCapacityAndLength(checkedArea(m_width, m_height));
 
 			size_t x = 0;
 			size_t y = 0;

@@ -1,6 +1,8 @@
 #pragma once
 #include <type_traits>
+#include <limits>
 #include "AllocBlock.h"
+#include "Error.h"
 
 namespace bbe
 {
@@ -16,6 +18,35 @@ namespace bbe
 		};
 		size_t m_capacity = sooSize;
 		bbe::AllocBlock ab;
+
+		static size_t checkedAllocationSize(size_t capacity)
+		{
+			if (capacity > std::numeric_limits<size_t>::max() / sizeof(T))
+			{
+				bbe::Crash(bbe::Error::OutOfMemory, "SOOBlock allocation size overflow.");
+			}
+
+			return capacity * sizeof(T);
+		}
+
+		static size_t growCapacity(size_t currentCapacity, size_t requiredCapacity)
+		{
+			size_t doubledCapacity = currentCapacity;
+			if (currentCapacity <= std::numeric_limits<size_t>::max() / 2)
+			{
+				doubledCapacity = currentCapacity * 2;
+			}
+			else
+			{
+				doubledCapacity = std::numeric_limits<size_t>::max();
+			}
+
+			if (requiredCapacity < doubledCapacity)
+			{
+				requiredCapacity = doubledCapacity;
+			}
+			return requiredCapacity;
+		}
 
 	public:
 		SOOBlock() 
@@ -138,10 +169,10 @@ namespace bbe
 		{
 			if (newCapacity > m_capacity)
 			{
-				if (newCapacity < 2 * m_capacity) newCapacity = 2 * m_capacity;
+				newCapacity = growCapacity(m_capacity, newCapacity);
 				if (copyUntil == (size_t)-1) copyUntil = m_capacity;
 
-				AllocBlock ab = bbe::allocateBlock(newCapacity * sizeof(T));
+				AllocBlock ab = bbe::allocateBlock(checkedAllocationSize(newCapacity));
 				T* newData = reinterpret_cast<T*>(ab.data);
 				for (size_t i = 0; i < newCapacity; i++)
 				{

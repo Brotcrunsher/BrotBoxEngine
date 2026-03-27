@@ -12,6 +12,7 @@
 #include <initializer_list>
 #include <iostream>
 #include <cstring>
+#include <cstdint>
 #include <limits>
 #include <mutex>
 #include <utility>
@@ -29,18 +30,80 @@ namespace bbe
 		size_t m_length = 0;
 		bbe::AllocBlock m_allocBlock;
 
+		static size_t checkedAllocationSize(size_t amountOfObjects)
+		{
+			if (amountOfObjects > std::numeric_limits<size_t>::max() / sizeof(T))
+			{
+				bbe::Crash(bbe::Error::OutOfMemory, "Container allocation size overflow.");
+			}
+
+			return amountOfObjects * sizeof(T);
+		}
+
+		static size_t growCapacity(size_t currentCapacity, size_t requiredCapacity)
+		{
+			size_t doubledCapacity = currentCapacity;
+			if (currentCapacity <= std::numeric_limits<size_t>::max() / 2)
+			{
+				doubledCapacity = currentCapacity * 2;
+			}
+			else
+			{
+				doubledCapacity = std::numeric_limits<size_t>::max();
+			}
+
+			if (requiredCapacity < doubledCapacity)
+			{
+				requiredCapacity = doubledCapacity;
+			}
+
+			return requiredCapacity;
+		}
+
+		bool pointsIntoStorage(const T* ptr) const
+		{
+			if (ptr == nullptr || m_length == 0 || getRaw() == nullptr)
+			{
+				return false;
+			}
+
+			const std::uintptr_t ptrValue = reinterpret_cast<std::uintptr_t>(ptr);
+			const std::uintptr_t begin = reinterpret_cast<std::uintptr_t>(getRaw());
+			const size_t storageSize = checkedAllocationSize(m_length);
+			const std::uintptr_t end = begin + storageSize;
+			return ptrValue >= begin && ptrValue < end;
+		}
+
+		bool overlapsStorage(const T* ptr, size_t count) const
+		{
+			if (ptr == nullptr || count == 0 || m_length == 0 || getRaw() == nullptr)
+			{
+				return false;
+			}
+
+			const std::uintptr_t ptrValue = reinterpret_cast<std::uintptr_t>(ptr);
+			const std::uintptr_t begin = reinterpret_cast<std::uintptr_t>(getRaw());
+			const size_t storageSize = checkedAllocationSize(m_length);
+			const size_t dataSize = checkedAllocationSize(count);
+			const std::uintptr_t end = begin + storageSize;
+			const std::uintptr_t ptrEnd = ptrValue + dataSize;
+			return ptrValue < end && ptrEnd > begin;
+		}
+
 		bbe::AllocBlock growIfNeeded(size_t amountOfNewObjects)
 		{
 			bbe::AllocBlock retVal;
-			if (getCapacity() < m_length + amountOfNewObjects)
+			if (amountOfNewObjects > std::numeric_limits<size_t>::max() - m_length)
 			{
-				size_t newCapacity = m_length + amountOfNewObjects;
-				if (newCapacity < getCapacity() * 2)
-				{
-					newCapacity = getCapacity() * 2;
-				}
+				bbe::Crash(bbe::Error::OutOfMemory, "Container size overflow.");
+			}
 
-				bbe::AllocBlock newData = bbe::allocateBlock(newCapacity * sizeof(T));
+			const size_t requiredCapacity = m_length + amountOfNewObjects;
+			if (getCapacity() < requiredCapacity)
+			{
+				const size_t newCapacity = growCapacity(getCapacity(), requiredCapacity);
+
+				bbe::AllocBlock newData = bbe::allocateBlock(checkedAllocationSize(newCapacity));
 				T* newDataPtr = (T*)newData.data;
 				T* oldDataPtr = getRaw();
 
@@ -199,53 +262,88 @@ namespace bbe
 
 		List<T>& operator+=(const List<T>& other)
 		{
-			const T* optr = other.getRaw();
-			for (size_t i = 0; i < other.m_length; i++)
+			const size_t originalLength = other.m_length;
+			for (size_t i = 0; i < originalLength; i++)
 			{
-				add(optr[i]);
+				add(other[i]);
 			}
 			return *this;
 		}
 
 		void add(const T& val, size_t amount = 1)
 		{
+			const bool aliasesSelf = pointsIntoStorage(&val);
+			bbe::INTERNAL::Unconstructed<T> stableValue;
+			const T* source = &val;
+			if (aliasesSelf)
+			{
+				new (bbe::addressOf(stableValue.m_value)) T(val);
+				source = &stableValue.m_value;
+			}
+
 			auto delVal = growIfNeeded(amount);
 			T* d = getRaw();
 			for (size_t i = 0; i < amount; i++)
 			{
-				new (bbe::addressOf(d[m_length + i])) T(val);
+				new (bbe::addressOf(d[m_length + i])) T(*source);
 			}
 			m_length += amount;
 			bbe::freeBlock(delVal);
+			if (aliasesSelf)
+			{
+				stableValue.m_value.~T();
+			}
 		}
 
 		void add(T&& val, size_t amount)
 		{
+			const bool aliasesSelf = pointsIntoStorage(&val);
+			bbe::INTERNAL::Unconstructed<T> stableValue;
+			if (aliasesSelf)
+			{
+				new (bbe::addressOf(stableValue.m_value)) T(std::move(val));
+			}
+
 			auto delVal = growIfNeeded(amount);
 			T* d = getRaw();
 			if (amount == 1)
 			{
-				new (bbe::addressOf(d[m_length])) T(std::move(val));
+				new (bbe::addressOf(d[m_length])) T(aliasesSelf ? std::move(stableValue.m_value) : std::move(val));
 			}
 			else
 			{
 				for (size_t i = 0; i < amount; i++)
 				{
-					new (bbe::addressOf(d[m_length + i])) T(val);
+					new (bbe::addressOf(d[m_length + i])) T(aliasesSelf ? stableValue.m_value : val);
 				}
 			}
 
 			m_length += amount;
 			bbe::freeBlock(delVal);
+			if (aliasesSelf)
+			{
+				stableValue.m_value.~T();
+			}
 		}
 
 		void add(T&& val)
 		{
+			const bool aliasesSelf = pointsIntoStorage(&val);
+			bbe::INTERNAL::Unconstructed<T> stableValue;
+			if (aliasesSelf)
+			{
+				new (bbe::addressOf(stableValue.m_value)) T(std::move(val));
+			}
+
 			auto delVal = growIfNeeded(1);
-			new (bbe::addressOf(getRaw()[m_length])) T(std::move(val));
+			new (bbe::addressOf(getRaw()[m_length])) T(aliasesSelf ? std::move(stableValue.m_value) : std::move(val));
 
 			m_length += 1;
 			bbe::freeBlock(delVal);
+			if (aliasesSelf)
+			{
+				stableValue.m_value.~T();
+			}
 		}
 
 		bool addUnique(const T& val)
@@ -299,6 +397,18 @@ namespace bbe
 
 		void addArray(const T* data, size_t size)
 		{
+			if (overlapsStorage(data, size))
+			{
+				List<T> copy;
+				copy.resizeCapacity(size);
+				for (size_t i = 0; i < size; i++)
+				{
+					copy.add(data[i]);
+				}
+				addList(copy);
+				return;
+			}
+
 			for (size_t i = 0; i < size; i++)
 			{
 				add(data[i]);
@@ -372,7 +482,7 @@ namespace bbe
 			m_length = 0;
 			if (newCapacity != 0)
 			{
-				m_allocBlock = bbe::allocateBlock(newCapacity * sizeof(T));
+				m_allocBlock = bbe::allocateBlock(checkedAllocationSize(newCapacity));
 			}
 			m_length = newCapacity;
 		}

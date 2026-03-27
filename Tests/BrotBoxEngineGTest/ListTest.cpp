@@ -681,6 +681,36 @@ TEST(List, SelfAdd)
 	for(int i = 0; i < 1024; i++) l.add(l[0]);
 }
 
+TEST(List, SelfAppendList)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3) };
+
+	list += list;
+
+	ASSERT_EQ(list.getLength(), 6u);
+	ASSERT_EQ(list[0].getLength(), 1u);
+	ASSERT_EQ(list[1].getLength(), 2u);
+	ASSERT_EQ(list[2].getLength(), 3u);
+	ASSERT_EQ(list[3].getLength(), 1u);
+	ASSERT_EQ(list[4].getLength(), 2u);
+	ASSERT_EQ(list[5].getLength(), 3u);
+}
+
+TEST(List, AddArrayFromOwnStorage)
+{
+	bbe::List<SomeClass<int>> list = { SomeClass<int>(4), SomeClass<int>(5), SomeClass<int>(6) };
+
+	list.addArray(list.getRaw(), list.getLength());
+
+	ASSERT_EQ(list.getLength(), 6u);
+	ASSERT_EQ(list[0].getLength(), 4u);
+	ASSERT_EQ(list[1].getLength(), 5u);
+	ASSERT_EQ(list[2].getLength(), 6u);
+	ASSERT_EQ(list[3].getLength(), 4u);
+	ASSERT_EQ(list[4].getLength(), 5u);
+	ASSERT_EQ(list[5].getLength(), 6u);
+}
+
 TEST(Queue, TestQueue)
 {
 	for (size_t seed = 1; seed < 1000; seed++)

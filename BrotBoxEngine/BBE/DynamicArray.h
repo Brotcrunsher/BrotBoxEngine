@@ -6,6 +6,7 @@
 #include "../BBE/AllocBlock.h"
 #include <type_traits>
 #include <stddef.h>
+#include <limits>
 #include <initializer_list>
 
 namespace bbe
@@ -23,10 +24,28 @@ namespace bbe
 		size_t     m_length;
 		AllocBlock m_allocBlock;
 
+		static size_t checkedAllocationSize(std::size_t size)
+		{
+			if (size > std::numeric_limits<size_t>::max() / sizeof(T))
+			{
+				bbe::Crash(bbe::Error::OutOfMemory, "DynamicArray allocation size overflow.");
+			}
+
+			return sizeof(T) * size;
+		}
+
 		void createArray(std::size_t size)
 		{
+			if (size == 0)
+			{
+				m_length = 0;
+				m_allocBlock = {};
+				m_pdata = nullptr;
+				return;
+			}
+
 			m_length = size;
-			m_allocBlock = bbe::allocateBlock(sizeof(T) * size);
+			m_allocBlock = bbe::allocateBlock(checkedAllocationSize(size));
 			m_pdata = new (m_allocBlock.data) T[size];
 		}
 
