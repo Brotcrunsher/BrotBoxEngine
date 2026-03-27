@@ -438,10 +438,8 @@ private:
 		adaptiveTabs.add(Tab{"BTC", "Bitcoin", [this]()
 			{ return drawBitcoin(); }});
 #endif
-#ifdef _WIN32
 		adaptiveTabs.add(Tab{"Wthr", "Weather", [this]()
 			{ return drawWeather(*activeBrush, weatherOffset); }});
-#endif
 #ifdef _WIN32
 		adaptiveTabs.add(Tab{"VNews", "View News", [this]()
 			{ return drawNews(); }});
