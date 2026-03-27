@@ -77,7 +77,7 @@ public:
 	int fingies = 0;
 	int dots = 0;
 
-	bbe::List<Ghost> getFilteredGhosts() const
+	[[nodiscard]] bbe::List<Ghost> getFilteredGhosts() const
 	{
 		bbe::List<Ghost> retVal;
 

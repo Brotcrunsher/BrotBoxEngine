@@ -1,3 +1,5 @@
+#include <cstddef>
+
 #include "BBE/BrotBoxEngine.h"
 
 class MySoundSource : public bbe::SoundDataSourceDynamic
@@ -73,7 +75,7 @@ class MyGame : public bbe::Game
 	virtual void onStart() override
 	{
 		soundInstance = mySound.play();
-		shownVals.resizeCapacityAndLength(44000 * 10);
+		shownVals.resizeCapacityAndLength(static_cast<size_t>(44000 * 10));
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
@@ -165,7 +167,7 @@ class MyGame : public bbe::Game
 			shownVals[currentCalc] = mySound.getSample(currentCalc, 0);
 		}
 		if (currentCalc >= shownVals.getLength()) currentCalc = 0;
-		ImGui::PlotLines("##p", shownVals.getRaw(), shownVals.getLength(), 0, 0, FLT_MAX, FLT_MAX, ImVec2((float)getScaledWindowWidth() / 5.f, (float)getScaledWindowWidth() / 25.f));
+		ImGui::PlotLines("##p", shownVals.getRaw(), shownVals.getLength(), 0, nullptr, FLT_MAX, FLT_MAX, ImVec2((float)getScaledWindowWidth() / 5.f, (float)getScaledWindowWidth() / 25.f));
 
 		ImGui::End();
 	}

@@ -18,6 +18,7 @@
 #include "BBE/OpenGL/OpenGLFragmentShader.h"
 #include "BBE/OpenGL/OpenGLLightBaker.h"
 #include "BBE/Logging.h"
+#include <cstddef>
 #include <iostream>
 
 // TODO: Is every OpenGL Resource properly freed? How can we find that out?
@@ -114,7 +115,7 @@ GLuint bbe::INTERNAL::openGl::Program::getShader(const bbe::String &label, GLenu
 {
 	GLuint shader = createShader(label.getRaw(), shaderType);
 	const char *csrc = src.getRaw();
-	glShaderSource(shader, 1, &csrc, NULL);
+	glShaderSource(shader, 1, &csrc, nullptr);
 	glCompileShader(shader);
 	GLint success = 0;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
@@ -998,7 +999,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float *modelMa
 	GLint positionAttribute = glGetAttribLocation(program, "inPos");
 	if (positionAttribute != -1)
 	{
-		glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+		glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), nullptr);
 		glEnableVertexAttribArray(positionAttribute);
 		glVertexAttribDivisor(positionAttribute, 0);
 	}
@@ -1038,7 +1039,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float *modelMa
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, nullptr);
 	addDrawcallStat();
 }
 
@@ -1099,7 +1100,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::flushInstanceData2D()
 	glEnableVertexAttribArray(positionAttribute);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	GLuint instanceVBO = genBuffer("FlushInstanceVBO", BufferTarget::ARRAY_BUFFER, sizeof(InstanceData2D) * instanceDatas.getLength(), instanceDatas.getRaw());
@@ -1117,7 +1118,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::flushInstanceData2D()
 	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void *)(5 * sizeof(float)));
 	glVertexAttribDivisor(pos, 1);
 
-	glDrawElementsInstanced(mode, size, GL_UNSIGNED_INT, 0, (GLsizei)instanceDatas.getLength());
+	glDrawElementsInstanced(mode, size, GL_UNSIGNED_INT, nullptr, (GLsizei)instanceDatas.getLength());
 	addDrawcallStat();
 	instanceDatas.clear();
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1143,7 +1144,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight &ligh
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, openGl::OpenGLSphere::getIbo());
 		glBindBuffer(GL_ARRAY_BUFFER, openGl::OpenGLSphere::getVbo());
 		GLint positionAttribute = glGetAttribLocation(m_program3dLight.program, "inPos");
-		glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+		glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), nullptr);
 		glEnableVertexAttribArray(positionAttribute);
 		glVertexAttribDivisor(positionAttribute, 0);
 
@@ -1157,7 +1158,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight &ligh
 	LightProgram &program = baking ? m_program3dLightBaking : m_program3dLight;
 	program.setLightUniform(light, baking ? bbe::Matrix4() : m_view);
 
-	glDrawElements(GL_TRIANGLES, baking ? 6 : (GLsizei)openGl::OpenGLSphere::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, baking ? 6 : (GLsizei)openGl::OpenGLSphere::getAmountOfIndices(), GL_UNSIGNED_INT, nullptr);
 	addDrawcallStat();
 }
 
@@ -1185,7 +1186,7 @@ static void transferBorderPixels(bbe::List<bbe::byte> &byteBuffer, const bbe::Li
 
 bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t width, uint32_t height) const
 {
-	const size_t bufferSize = width * height * 4 /*channels*/;
+	const size_t bufferSize = static_cast<const size_t>(width * height * 4) /*channels*/;
 	bbe::List<float> colorFloatBuffer;
 	bbe::List<byte> byteBuffer;
 	colorFloatBuffer.resizeCapacityAndLengthUninit(bufferSize);
@@ -1418,7 +1419,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glBlendFunc(GL_ONE, GL_ONE);
 	glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLRectangle::getIbo());
-	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, nullptr);
 	addDrawcallStat();
 
 	m_program3dLight.use();
@@ -1439,7 +1440,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 	addDrawcallStat();
 
 	// Switch to 2D
@@ -1585,7 +1586,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle &rect, flo
 		glEnableVertexAttribArray(positionAttribute);
 
 		glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
-		glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 		glVertexAttribDivisor(positionAttribute, 0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
@@ -1593,7 +1594,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle &rect, flo
 	glUniform2f(fs->getTwoD().screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
 	glUniform4f(scalePosOffsetPos, rect.width, rect.height, rect.x, rect.y);
 	glUniform1f(rotationPos, rotation);
-	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, nullptr);
 	addDrawcallStat();
 }
 
@@ -1637,12 +1638,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle &rect, co
 	glEnableVertexAttribArray(positionAttribute);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	GLint uvPosition = glGetAttribLocation(m_program2dTex.program, "uv");
 	glEnableVertexAttribArray(uvPosition);
 	glBindBuffer(GL_ARRAY_BUFFER, m_imageUvBuffer);
-	glVertexAttribPointer(uvPosition, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+	glVertexAttribPointer(uvPosition, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
 	glVertexAttribDivisor(uvPosition, 0);
 
 	glUniform1i(texPos2dTex, 0);
@@ -1650,7 +1651,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle &rect, co
 	bbe::INTERNAL::openGl::OpenGLImage *ogi = toRendererData(image);
 	glBindTexture(GL_TEXTURE_2D, ogi->tex);
 
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 	addDrawcallStat();
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1698,11 +1699,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t 
 	glEnableVertexAttribArray(positionAttribute);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 	glVertexAttribDivisor(positionAttribute, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0, 1);
+	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, nullptr, 1);
 	addDrawcallStat();
 
 	glDeleteBuffers(1, &instanceVBO);
@@ -1953,7 +1954,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::bakeLightGammaCorrect(bbe::LightBaker
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 	addDrawcallStat();
 
 	// Read the frambuffer to image

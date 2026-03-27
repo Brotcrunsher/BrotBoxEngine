@@ -42,7 +42,7 @@ public:
 	Block() = default;
 	explicit Block(int32_t height) : height(height) {}
 
-	int32_t getHeight() const
+	[[nodiscard]] int32_t getHeight() const
 	{
 		return height;
 	}
@@ -108,7 +108,7 @@ public:
 private:
 	bbe::Grid<int32_t> grid;
 
-	bool isBorderCoord(size_t x, size_t y) const
+	[[nodiscard]] bool isBorderCoord(size_t x, size_t y) const
 	{
 		if (x == 0) return true;
 		if (y == 0) return true;
@@ -118,7 +118,7 @@ private:
 		return false;
 	}
 
-	bool isExitCoord(size_t x, size_t y) const
+	[[nodiscard]] bool isExitCoord(size_t x, size_t y) const
 	{
 		if (!isBorderCoord(x, y)) return false;
 		if (x == 0 && y == gridSize / 2) return true;
@@ -128,7 +128,7 @@ private:
 		return false;
 	}
 
-	int32_t getPathNeighbors(size_t x, size_t y) const
+	[[nodiscard]] int32_t getPathNeighbors(size_t x, size_t y) const
 	{
 		int32_t neighbors = 0;
 		if (x > 0 && grid[x - 1][y] == 0) neighbors++;
@@ -138,17 +138,17 @@ private:
 		return neighbors;
 	}
 
-	bool isPath(size_t x, size_t y) const
+	[[nodiscard]] bool isPath(size_t x, size_t y) const
 	{
 		return grid[x][y] == 0;
 	}
 
-	bool isValidCoord(size_t x, size_t y) const
+	[[nodiscard]] bool isValidCoord(size_t x, size_t y) const
 	{
 		return x < gridSize && y < gridSize;
 	}
 
-	bool isCandidateForPath(size_t x, size_t y) const
+	[[nodiscard]] bool isCandidateForPath(size_t x, size_t y) const
 	{
 		if (!isValidCoord(x, y)) return false;
 		if (isPath(x, y)) return false;
@@ -267,12 +267,12 @@ public:
 		}
 	}
 
-	int32_t getHeight(int32_t x, int32_t y) const
+	[[nodiscard]] int32_t getHeight(int32_t x, int32_t y) const
 	{
 		return grid[x][y];
 	}
 
-	int32_t getQuality() const
+	[[nodiscard]] int32_t getQuality() const
 	{
 		return grid.count(0);
 	}
@@ -426,7 +426,7 @@ public:
 		}
 	}
 
-	bbe::Vector2i getPosition() const
+	[[nodiscard]] bbe::Vector2i getPosition() const
 	{
 		if (currentPathIndex == 0 && pathElementTraveled >= UNITS_PER_GRID_TILE)
 		{
@@ -470,7 +470,7 @@ class MyGame : public bbe::Game
 	float timeSinceLastTick = 0.0f;
 	int tickMultiplier = 1;
 
-	bbe::Vector2i screenToTileCoord(const bbe::Vector2 &screenCoord) const
+	[[nodiscard]] bbe::Vector2i screenToTileCoord(const bbe::Vector2 &screenCoord) const
 	{
 		const bbe::Vector2 noCam = screenCoord - cameraOffset;
 		return bbe::Vector2i(noCam.x / 25, noCam.y / 25);
@@ -500,7 +500,7 @@ class MyGame : public bbe::Game
 		}
 	}
 
-	size_t getMouseConnectorIndex() const
+	[[nodiscard]] size_t getMouseConnectorIndex() const
 	{
 		return getClosestOpenTileConnectorIndex(screenToTileCoord(getMouse()));
 	}
@@ -545,7 +545,7 @@ class MyGame : public bbe::Game
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
-		std::cout << "FPS: " << (1 / timeSinceLastFrame) << std::endl;
+		std::cout << "FPS: " << (1 / timeSinceLastFrame) << '\n';
 		timeSinceLastTick += timeSinceLastFrame;
 		constexpr float tickTime = 1.0f / 120.f;
 		while (timeSinceLastTick > tickTime)

@@ -524,7 +524,7 @@ TEST(List, sort)
 	ASSERT_EQ(list[4].getLength(), 4);
 	ASSERT_EQ(list[5].getLength(), 7);
 
-	list.sort([](const SomeClass<int> a, const SomeClass<int> b)
+	list.sort([](const SomeClass<int> &a, const SomeClass<int> &b)
 			  { return a > b; });
 	ASSERT_EQ(list[0].getLength(), 7);
 	ASSERT_EQ(list[1].getLength(), 4);

@@ -55,7 +55,7 @@ bbe::Sound bbe::Microphone::stopRecording()
 	recording = false;
 
 	bbe::Sound sound;
-	sound.load(std::move(samples));
+	sound.load(samples);
 	samples.clear();
 
 	return sound;

@@ -33,12 +33,12 @@ private:
 		return x + y * width;
 	}
 
-	size_t coordToIndex(int32_t x, int32_t y) const
+	[[nodiscard]] size_t coordToIndex(int32_t x, int32_t y) const
 	{
 		return coordToIndex(x, y, getWidth());
 	}
 
-	size_t coordToIndexChecked(int32_t x, int32_t y) const
+	[[nodiscard]] size_t coordToIndexChecked(int32_t x, int32_t y) const
 	{
 		x = bbe::Math::clamp<int32_t>(x, 0, width - 1);
 		y = bbe::Math::clamp<int32_t>(y, 0, height - 1);
@@ -46,27 +46,27 @@ private:
 	}
 
 public:
-	size_t getWidth() const
+	[[nodiscard]] size_t getWidth() const
 	{
 		return width;
 	}
 
-	size_t getHeight() const
+	[[nodiscard]] size_t getHeight() const
 	{
 		return height;
 	}
 
-	float getDensityR(size_t x, size_t y) const
+	[[nodiscard]] float getDensityR(size_t x, size_t y) const
 	{
 		return densityR[coordToIndex(x, y)];
 	}
 
-	float getDensityG(size_t x, size_t y) const
+	[[nodiscard]] float getDensityG(size_t x, size_t y) const
 	{
 		return densityG[coordToIndex(x, y)];
 	}
 
-	float getDensityB(size_t x, size_t y) const
+	[[nodiscard]] float getDensityB(size_t x, size_t y) const
 	{
 		return densityB[coordToIndex(x, y)];
 	}

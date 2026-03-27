@@ -48,7 +48,7 @@ class MyGame : public bbe::Game
 		fullViewport.WorkSize.x *= 0.5f;
 		ImGui::SetNextWindowPos(fullViewport.WorkPos);
 		ImGui::SetNextWindowSize(fullViewport.WorkSize);
-		ImGui::Begin("Window", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+		ImGui::Begin("Window", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 		{
 			ImGui::bbe::InputText("Access Token", accessToken, ImGuiInputTextFlags_Password);
 			if (ImGui::BeginTabBar("MainWindowTabs"))

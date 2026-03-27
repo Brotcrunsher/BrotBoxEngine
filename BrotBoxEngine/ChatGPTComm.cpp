@@ -292,7 +292,7 @@ bbe::List<bbe::String> bbe::ChatGPTComm::getAvailableModels() const
 	}
 	catch (const std::exception &e)
 	{
-		std::cerr << "Error parsing JSON response: " << e.what() << std::endl;
+		std::cerr << "Error parsing JSON response: " << e.what() << '\n';
 	}
 
 	if (models.isEmpty())

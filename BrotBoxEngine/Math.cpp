@@ -16,7 +16,7 @@ double bbe::Math::cos(double val)
 
 float bbe::Math::acos(float val)
 {
-	return ::acos(val);
+	return std::acos(val);
 }
 
 double bbe::Math::sin(double val)
@@ -26,7 +26,7 @@ double bbe::Math::sin(double val)
 
 float bbe::Math::asin(float val)
 {
-	return ::asin(val);
+	return std::asin(val);
 }
 
 double bbe::Math::tan(double val)
@@ -36,12 +36,12 @@ double bbe::Math::tan(double val)
 
 float bbe::Math::atan(float val)
 {
-	return ::atan(val);
+	return std::atan(val);
 }
 
 float bbe::Math::sqrt(float val)
 {
-	return ::sqrt(val);
+	return std::sqrt(val);
 }
 
 float bbe::Math::sigmoid(float val)
@@ -207,7 +207,7 @@ float bbe::Math::log2(float val)
 float bbe::Math::logn(float val)
 {
 	//UNTESTED
-	return log(val);
+	return std::log(val);
 }
 
 float bbe::Math::log10(float val)
@@ -226,7 +226,7 @@ float bbe::Math::normalDist(float x, float u, float o)
 	const float MULT = 1.0f / bbe::Math::sqrt(2 * bbe::Math::PI);
 	float partExponent = (x - u) / o;
 	float exponent = -0.5f * partExponent * partExponent;
-	return MULT * ::pow(bbe::Math::E, exponent);
+	return MULT * std::pow(bbe::Math::E, exponent);
 }
 
 float bbe::Math::pingpong(float val, float border)

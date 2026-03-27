@@ -63,7 +63,7 @@ class MyGame : public bbe::Game
 	int numThreads = 23;
 	float fps = 0.0;
 
-	bbe::Vector2i posToGridIndex(const bbe::Vector2 &pos) const
+	[[nodiscard]] bbe::Vector2i posToGridIndex(const bbe::Vector2 &pos) const
 	{
 		int32_t x = pos.x / (getWindowWidth() / particleGrid.getWidth());
 		int32_t y = pos.y / (getWindowHeight() / particleGrid.getHeight());
@@ -170,6 +170,7 @@ class MyGame : public bbe::Game
 	void updateSpeeds()
 	{
 		std::vector<std::future<void>> futures;
+		futures.reserve(numThreads);
 		for (int i = 0; i < numThreads; i++)
 		{
 			futures.push_back(bbe::async(&MyGame::updateSpeedsThread, this, particles.getLength() / numThreads * i, particles.getLength() / numThreads * (i + 1)));

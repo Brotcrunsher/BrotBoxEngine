@@ -1,4 +1,5 @@
 #include "BBE/BrotBoxEngine.h"
+#include <cstddef>
 #include <iostream>
 #include <thread>
 
@@ -187,7 +188,7 @@ public:
 	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		bbe::List<float> floats;
-		floats.resizeCapacityAndLength(WINDOW_WIDTH * WINDOW_HEIGHT);
+		floats.resizeCapacityAndLength(static_cast<size_t>(WINDOW_WIDTH * WINDOW_HEIGHT));
 		float *dataArr = floats.getRaw();
 
 		for (int32_t k = 0; k < WINDOW_HEIGHT; k++)
@@ -195,7 +196,7 @@ public:
 			for (int32_t i = 0; i < WINDOW_WIDTH; i++)
 			{
 				const bbe::Color color = bbe::Color::HSVtoRGB(-picData[i][k] * 360 + 240, 1, 1 - picData[i][k]);
-				float *p = dataArr + k * WINDOW_WIDTH + i;
+				float *p = dataArr + static_cast<ptrdiff_t>(k * WINDOW_WIDTH) + i;
 				unsigned char *pc = (unsigned char *)p;
 				pc[0] = bbe::Math::clamp(color.r * 255, 0.f, 255.f);
 				pc[1] = bbe::Math::clamp(color.g * 255, 0.f, 255.f);

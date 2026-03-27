@@ -1,5 +1,6 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
+#include <utility>
 
 constexpr int32_t WINDOW_WIDTH = 1280;
 constexpr int32_t WINDOW_HEIGHT = 720;
@@ -34,10 +35,10 @@ public:
 	void slideRight();
 	void slideStop();
 
-	const bbe::Color &getColor() const;
-	CellBehaviour getBehaviour() const;
-	bool isSlidingLeft() const;
-	bool isSlidingRight() const;
+	[[nodiscard]] const bbe::Color &getColor() const;
+	[[nodiscard]] CellBehaviour getBehaviour() const;
+	[[nodiscard]] bool isSlidingLeft() const;
+	[[nodiscard]] bool isSlidingRight() const;
 };
 
 class Grid
@@ -45,7 +46,7 @@ class Grid
 private:
 	GridCell grid[GRID_WIDTH][GRID_HEIGHT];
 
-	bool isCoordValid(int32_t x, int32_t y) const;
+	[[nodiscard]] bool isCoordValid(int32_t x, int32_t y) const;
 
 	void swap(int32_t x1, int32_t y1, int32_t x2, int32_t y2);
 
@@ -53,10 +54,10 @@ public:
 	Grid();
 
 	void step();
-	bbe::Color getColor(int32_t x, int32_t y) const;
-	CellBehaviour getBehaviour(int32_t x, int32_t y) const;
-	bool isSlidingLeft(int32_t x, int32_t y) const;
-	bool isSlidingRight(int32_t x, int32_t y) const;
+	[[nodiscard]] bbe::Color getColor(int32_t x, int32_t y) const;
+	[[nodiscard]] CellBehaviour getBehaviour(int32_t x, int32_t y) const;
+	[[nodiscard]] bool isSlidingLeft(int32_t x, int32_t y) const;
+	[[nodiscard]] bool isSlidingRight(int32_t x, int32_t y) const;
 
 	void setCircleBehaviour(CellBehaviour behaviour, int32_t x, int32_t y, int32_t radius);
 	void setLineBehaviour(CellBehaviour behaviour, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t radius);
@@ -499,8 +500,8 @@ Button::Button(const bbe::Vector2 &pos, const bbe::Vector2 &dimension, std::func
 {
 	this->pos = pos;
 	this->dimension = dimension;
-	this->clickCallback = leftClickCallback;
-	this->drawCallback = drawCallback;
+	this->clickCallback = std::move(leftClickCallback);
+	this->drawCallback = std::move(drawCallback);
 }
 
 void Button::update(bbe::Game &context)

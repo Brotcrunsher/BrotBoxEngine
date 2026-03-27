@@ -237,7 +237,7 @@ std::optional<bbe::List<char>> bbe::simpleUrlRequest::decryptXChaCha(const bbe::
 	unsigned long long messageLength;
 
 	const int failure = crypto_aead_xchacha20poly1305_ietf_decrypt((unsigned char *)message.getRaw(), &messageLength,
-																   NULL,
+																   nullptr,
 																   ciphertext, ciphertextLenght,
 																   nullptr,
 																   0,

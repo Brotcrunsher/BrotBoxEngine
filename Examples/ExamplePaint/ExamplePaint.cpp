@@ -472,7 +472,7 @@ class MyGame : public bbe::Game
 			newWidth = canvas.get().getWidth();
 			newHeight = canvas.get().getHeight();
 		}
-		if (ImGui::BeginPopupModal("New Canvas", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal("New Canvas", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::InputInt("Width", &newWidth);
 			ImGui::SameLine();

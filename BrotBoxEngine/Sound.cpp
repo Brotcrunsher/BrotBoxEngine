@@ -11,7 +11,7 @@ void bbe::Sound::loadMp3(const bbe::ByteBuffer &data)
 {
 	mp3dec_t mp3d = {};
 	mp3dec_file_info_t info = {};
-	const int err = mp3dec_load_buf(&mp3d, data.getRaw(), data.getLength(), &info, NULL, NULL);
+	const int err = mp3dec_load_buf(&mp3d, data.getRaw(), data.getLength(), &info, nullptr, nullptr);
 	if (err)
 	{
 		free(info.buffer);

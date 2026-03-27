@@ -756,22 +756,22 @@ bbe::Font &Slide::getFont()
 
 void Slide::moveFrom(Slide &&other)
 {
-	currentEntry = std::move(other.currentEntry);
-	amountOfEntries = std::move(other.amountOfEntries);
-	dirty = std::move(other.dirty);
-	selectedFont = std::move(other.selectedFont);
-	forcedFontSize = std::move(other.forcedFontSize);
+	currentEntry = other.currentEntry;
+	amountOfEntries = other.amountOfEntries;
+	dirty = other.dirty;
+	selectedFont = other.selectedFont;
+	forcedFontSize = other.forcedFontSize;
 	additionalTypes = std::move(other.additionalTypes);
 	additionalValues = std::move(other.additionalValues);
 	textAabb = std::move(other.textAabb);
 	text = std::move(other.text);
 	tokenizer = std::move(other.tokenizer);
-	scrollValue = std::move(other.scrollValue);
-	scrollingAllowed = std::move(other.scrollingAllowed);
-	complete = std::move(other.complete);
+	scrollValue = other.scrollValue;
+	scrollingAllowed = other.scrollingAllowed;
+	complete = other.complete;
 	screenPosition = std::move(other.screenPosition);
 	childSlides = std::move(other.childSlides);
-	brightStateOverride = std::move(other.brightStateOverride);
+	brightStateOverride = other.brightStateOverride;
 }
 
 void Slide::copyFrom(const Slide &other)

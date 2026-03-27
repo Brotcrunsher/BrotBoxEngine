@@ -97,7 +97,7 @@ namespace br
 	class LightBuzz : public bbe::SoundDataSourceDynamic
 	{
 	public:
-		virtual float getSample(size_t i, uint32_t channel) const override
+		[[nodiscard]] virtual float getSample(size_t i, uint32_t channel) const override
 		{
 			float fadeIn = 1.0f;
 			size_t fadeInTime = 1000;
@@ -108,12 +108,12 @@ namespace br
 			return float(bbe::Math::cos(i * 0.01233f) + bbe::Math::cos(i * 0.016435f) + bbe::Math::cos(i * 0.01f)) * 0.03f * fadeIn;
 		}
 
-		virtual uint32_t getHz() const override
+		[[nodiscard]] virtual uint32_t getHz() const override
 		{
 			return 44100;
 		}
 
-		virtual uint32_t getAmountOfChannels() const override
+		[[nodiscard]] virtual uint32_t getAmountOfChannels() const override
 		{
 			return 1;
 		}

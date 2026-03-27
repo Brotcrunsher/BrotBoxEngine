@@ -5,7 +5,7 @@
 static GLuint getShader(GLenum shaderType, const char *src)
 {
 	GLuint shader = glCreateShader(shaderType);
-	glShaderSource(shader, 1, &src, NULL);
+	glShaderSource(shader, 1, &src, nullptr);
 	glCompileShader(shader);
 	GLint success = 0;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);

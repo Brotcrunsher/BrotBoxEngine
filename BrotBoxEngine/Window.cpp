@@ -8,6 +8,7 @@
 #include "BBE/Logging.h"
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #ifndef BBE_RENDERER_NULL
@@ -93,7 +94,7 @@ bbe::Window::Window(int width, int height, const char *title, bbe::Game *game, u
 #endif
 #ifdef BBE_RENDERER_OPENGL
 	BBELOGLN("Backend: OPENGL");
-	m_renderManager.reset(new bbe::INTERNAL::openGl::OpenGLManager());
+	m_renderManager = std::make_unique<bbe::INTERNAL::openGl::OpenGLManager>();
 #endif
 
 	if (bbe::Window::INTERNAL_firstInstance == nullptr)
@@ -632,7 +633,7 @@ void bbe::Window::registerCloseListener(const std::function<void()> &listener)
 
 void bbe::Window::executeCloseListeners()
 {
-	for (const std::function<void()> listener : m_closeListeners)
+	for (const std::function<void()> &listener : m_closeListeners)
 	{
 		listener();
 	}
@@ -645,7 +646,7 @@ void bbe::Window::registerFrameStartListener(const std::function<void()> &listen
 
 void bbe::Window::executeFrameStartListeneres()
 {
-	for (const std::function<void()> listener : m_frameStartListeners)
+	for (const std::function<void()> &listener : m_frameStartListeners)
 	{
 		listener();
 	}

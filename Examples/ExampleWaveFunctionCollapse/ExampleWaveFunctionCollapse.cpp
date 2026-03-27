@@ -36,7 +36,7 @@ class MyGame : public bbe::Game
 		_270 = 3,
 	};
 
-	TileGrid applyMirroring(const TileGrid &tileGrid, mirroring mir) const
+	[[nodiscard]] TileGrid applyMirroring(const TileGrid &tileGrid, mirroring mir) const
 	{
 		TileGrid retVal = tileGrid;
 
@@ -80,7 +80,7 @@ class MyGame : public bbe::Game
 		return retVal;
 	}
 
-	TileGrid applyRotation(const TileGrid &tileGrid, rotation rot) const
+	[[nodiscard]] TileGrid applyRotation(const TileGrid &tileGrid, rotation rot) const
 	{
 		TileGrid retVal = tileGrid;
 		if (rot == rotation::_90 || rot == rotation::_270)
@@ -112,7 +112,7 @@ class MyGame : public bbe::Game
 		return retVal;
 	}
 
-	TileGrid getTransformation(rotation rot, mirroring mir) const
+	[[nodiscard]] TileGrid getTransformation(rotation rot, mirroring mir) const
 	{
 		TileGrid retVal = inputTiles;
 		retVal = applyMirroring(retVal, mir);
@@ -120,7 +120,7 @@ class MyGame : public bbe::Game
 		return retVal;
 	}
 
-	bbe::List<TileGrid> getAllTransformations() const
+	[[nodiscard]] bbe::List<TileGrid> getAllTransformations() const
 	{
 		if (includeTransformations)
 		{
@@ -243,7 +243,7 @@ class MyGame : public bbe::Game
 		}
 	}
 
-	TileGrid initTileGrid(size_t size) const
+	[[nodiscard]] TileGrid initTileGrid(size_t size) const
 	{
 		bbe::List<bbe::List<int32_t>> retVal;
 		for (int i = 0; i < size; i++)
@@ -256,7 +256,7 @@ class MyGame : public bbe::Game
 		return retVal;
 	}
 
-	size_t getNeighborhoodCollapseSize(int32_t x, int32_t y) const
+	[[nodiscard]] size_t getNeighborhoodCollapseSize(int32_t x, int32_t y) const
 	{
 		size_t retVal = 0;
 		for (int32_t xOff = 0; xOff < kernelSize; xOff++)
@@ -302,12 +302,12 @@ class MyGame : public bbe::Game
 		}
 	};
 
-	CollapseSize getCollapseSize(size_t x, size_t y) const
+	[[nodiscard]] CollapseSize getCollapseSize(size_t x, size_t y) const
 	{
 		return { outputTiles[x][y].getLength(), getNeighborhoodCollapseSize(x, y) };
 	}
 
-	CollapseSize getSmallestCollapseSize() const
+	[[nodiscard]] CollapseSize getSmallestCollapseSize() const
 	{
 		CollapseSize retVal = { std::numeric_limits<size_t>::max(), std::numeric_limits<size_t>::max() };
 		for (size_t i = 0; i < OUTPUT_SIZE; i++)

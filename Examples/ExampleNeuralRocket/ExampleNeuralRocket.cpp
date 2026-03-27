@@ -1,4 +1,5 @@
 #include "BBE/BrotBoxEngine.h"
+#include <cstddef>
 #include <iostream>
 
 constexpr int32_t WINDOW_WIDTH = 1280;
@@ -310,10 +311,10 @@ class MyGame : public bbe::Game
 			brain.mutate();
 		}
 
-		bbe::List<bbe::Vector2> getSensorPositions() const
+		[[nodiscard]] bbe::List<bbe::Vector2> getSensorPositions() const
 		{
 			bbe::List<bbe::Vector2> retVal;
-			retVal.resizeCapacity(AMOUNT_OF_SENSORS_PER_ARM * AMOUNT_OF_SENSOR_ARMS);
+			retVal.resizeCapacity(static_cast<size_t>(AMOUNT_OF_SENSORS_PER_ARM * AMOUNT_OF_SENSOR_ARMS));
 
 			for (int32_t arm = 0; arm < AMOUNT_OF_SENSOR_ARMS; arm++)
 			{
@@ -531,7 +532,7 @@ class MyGame : public bbe::Game
 	void updateImage()
 	{
 		bbe::List<float> floats;
-		floats.resizeCapacityAndLength(WINDOW_WIDTH * WINDOW_HEIGHT);
+		floats.resizeCapacityAndLength(static_cast<size_t>(WINDOW_WIDTH * WINDOW_HEIGHT));
 		float *dataArr = floats.getRaw();
 
 		int32_t maxDist = 0;
@@ -550,7 +551,7 @@ class MyGame : public bbe::Game
 		{
 			for (int32_t i = 0; i < WINDOW_WIDTH; i++)
 			{
-				float *p = dataArr + k * WINDOW_WIDTH + i;
+				float *p = dataArr + static_cast<ptrdiff_t>(k * WINDOW_WIDTH) + i;
 				unsigned char *pc = (unsigned char *)p;
 				unsigned char val = 0;
 				if (isB[i][k]) val = 255;

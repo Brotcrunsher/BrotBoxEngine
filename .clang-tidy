@@ -1,0 +1,18 @@
+Checks: >
+  -*
+  ,clang-analyzer-*
+  ,bugprone-*
+  ,performance-*
+  ,modernize-make-unique
+  ,modernize-use-nullptr
+  ,modernize-use-nodiscard
+  ,cppcoreguidelines-owning-memory
+  ,-misc-include-cleaner
+  ,-llvm-include-order
+  ,-performance-noexcept-move-constructor
+  ,-readability-identifier-length
+  ,-modernize-use-trailing-return-type
+
+WarningsAsErrors: ''
+HeaderFilterRegex: '^(BrotBoxEngine|Examples|Tests)/'
+FormatStyle: file

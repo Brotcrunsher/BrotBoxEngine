@@ -272,7 +272,7 @@ struct SoundInstanceData
 		posPreviousLoad = pos;
 	}
 
-	bool isPlaying() const
+	[[nodiscard]] bool isPlaying() const
 	{
 		if (dynamic_cast<const bbe::SoundDataSourceDynamic *>(m_psound))
 		{

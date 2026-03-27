@@ -1,7 +1,8 @@
 #include "BBE/BrotBoxEngine.h"
+#include <cstddef>
 #include <iostream>
 
-constexpr size_t AMOUNT_OF_CUBES = 1024 * 2;
+constexpr size_t AMOUNT_OF_CUBES = static_cast<const size_t>(1024 * 2);
 class MyGame : public bbe::Game
 {
 	struct CubeEntity

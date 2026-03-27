@@ -5,6 +5,7 @@
 #include "BBE/AdafruitMacroPadRP2040.h"
 #endif
 #include <sodium/crypto_pwhash_argon2id.h>
+#include <cstddef>
 #include <iostream>
 #include <cstdint>
 #include <mutex>
@@ -162,7 +163,7 @@ struct NewsEntry
 		((bbe::String), link))
 	bool wasRead = false;
 
-	bool isNull() const
+	[[nodiscard]] bool isNull() const
 	{
 		return title == "" && description == "" && link == "";
 	}
@@ -206,12 +207,12 @@ struct MouseWallConfig
 		((float), borderBreakSeconds, 0.5f),
 		((bool), deactivateOnGame, false))
 
-	bool isMouseInArea(int32_t mouseX, int32_t mouseY) const
+	[[nodiscard]] bool isMouseInArea(int32_t mouseX, int32_t mouseY) const
 	{
 		return mouseX > x1 && mouseX < x2 - 1 && mouseY > y1 && mouseY < y2 - 1;
 	}
 
-	bool isMouseOnBorder(int32_t mouseX, int32_t mouseY) const
+	[[nodiscard]] bool isMouseOnBorder(int32_t mouseX, int32_t mouseY) const
 	{
 		return mouseX == x1 || mouseY == y1 || mouseX == x2 - 1 || mouseY == y2 - 1;
 	}
@@ -2500,7 +2501,7 @@ public:
 	bbe::String GeneratePasswordHash(const bbe::String &data)
 	{
 		unsigned char hash[16] = {};
-		const int err = crypto_pwhash_argon2id(hash, sizeof(hash), data.getRaw(), data.getLength(), (const unsigned char *)"BrotbEnginePWGv1", 5, 256 * 1024 * 1024, crypto_pwhash_argon2id_ALG_ARGON2ID13);
+		const int err = crypto_pwhash_argon2id(hash, sizeof(hash), data.getRaw(), data.getLength(), (const unsigned char *)"BrotbEnginePWGv1", 5, static_cast<size_t>(256 * 1024 * 1024), crypto_pwhash_argon2id_ALG_ARGON2ID13);
 		if (err != 0)
 			bbe::Crash(bbe::Error::NotImplemented, "Implement me properly.");
 		const bbe::String lower = "abcdefghijklmnopqrstuvwxyz";
@@ -2875,7 +2876,7 @@ public:
 		{
 			ImGui::SetNextWindowPos(infoViewport.WorkPos);
 			ImGui::SetNextWindowSize(infoViewport.WorkSize);
-			ImGui::Begin("Info", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+			ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 			{
 				ImGui::Text("Build: " __DATE__ ", " __TIME__);
 				ImGui::Text(bbe::simpleFile::backup::async::hasOpenIO() ? "Saving" : "Done");
@@ -2996,7 +2997,7 @@ public:
 				ImGui::BeginDisabled(!unlockCrashButton);
 				if (ImGui::Button("Segv!"))
 				{
-					*((volatile int *)0);
+					*((volatile int *)nullptr);
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Crash!"))
@@ -3087,7 +3088,7 @@ public:
 			infoViewport.WorkPos.y = infoViewport.WorkSize.y;
 			ImGui::SetNextWindowPos(infoViewport.WorkPos);
 			ImGui::SetNextWindowSize(infoViewport.WorkSize);
-			ImGui::Begin("Processes", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+			ImGui::Begin("Processes", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 			{
 				processes.drawGui(getWindow()->getScale());
 			}
@@ -3139,7 +3140,7 @@ public:
 		weatherOffset = { 20, 120 };
 
 		const ImGuiWindowFlags noConsoleMouseScroll = std::strcmp(previousTabTitle, "Cnsl") == 0 ? ImGuiWindowFlags_NoScrollWithMouse : ImGuiWindowFlags_None;
-		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | noConsoleMouseScroll);
+		ImGui::Begin("MainWindow", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | noConsoleMouseScroll);
 		{
 			static size_t previousShownTab = 0;
 			DrawTabResult dtr = drawTabs(mainTabs, adaptiveTabs, superAdaptiveTabs, !adaptive, !superAdaptive, &previousShownTab, tabSwitchRequestedLeft, tabSwitchRequestedRight);
@@ -3182,7 +3183,7 @@ public:
 				adaptiveViewport.WorkSize.y *= adaptiveSizes[i].y;
 				ImGui::SetNextWindowPos(adaptiveViewport.WorkPos);
 				ImGui::SetNextWindowSize(adaptiveViewport.WorkSize);
-				ImGui::Begin(kAdaptiveWindowNames[i], 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | noConsoleMouseScroll);
+				ImGui::Begin(kAdaptiveWindowNames[i], nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | noConsoleMouseScroll);
 				{
 					adaptiveSizes[i] = adaptiveTabs[i].run();
 				}
@@ -3214,7 +3215,7 @@ public:
 				adaptiveViewport.WorkSize.y *= adaptiveSizes[i].y;
 				ImGui::SetNextWindowPos(adaptiveViewport.WorkPos);
 				ImGui::SetNextWindowSize(adaptiveViewport.WorkSize);
-				ImGui::Begin(kSuperAdaptiveWindowNames[i], 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | noConsoleMouseScroll);
+				ImGui::Begin(kSuperAdaptiveWindowNames[i], nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | noConsoleMouseScroll);
 				{
 					adaptiveSizes[i] = superAdaptiveTabs[i].run();
 				}

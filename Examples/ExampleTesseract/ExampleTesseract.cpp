@@ -195,7 +195,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		bbe::Color getColor() const
+		[[nodiscard]] bbe::Color getColor() const
 		{
 			if (timeSinceLastHit >= DEATH_TIME) return bbe::Color(0, 1, 0);
 
@@ -203,7 +203,7 @@ class MyGame : public bbe::Game
 			return bbe::Color(0, 0.1f + percentage * 0.9f, 0);
 		}
 
-		bool isDead() const
+		[[nodiscard]] bool isDead() const
 		{
 			return timeSinceLastHit < DEATH_TIME;
 		}

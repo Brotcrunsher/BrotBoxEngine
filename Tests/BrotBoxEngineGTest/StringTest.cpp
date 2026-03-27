@@ -69,7 +69,7 @@ TEST(String, TotalStringTest)
 	bbe::String stringClassic("Hallo Classic");
 	bbe::String stringNumber(2839.192);
 
-	bbe::String stringCopyConstructor(stringWChar);
+	const bbe::String &stringCopyConstructor(stringWChar);
 	bbe::String stringMovedFrom("I will be moved!");
 	bbe::String stringMovedTo(std::move(stringMovedFrom));
 
