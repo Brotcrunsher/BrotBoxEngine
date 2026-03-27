@@ -434,10 +434,8 @@ private:
 		mainTabs.add(Tab{"Cnfg", "Config", [this]()
 			{ return drawTabConfig(); }});
 
-#ifdef _WIN32
 		adaptiveTabs.add(Tab{"BTC", "Bitcoin", [this]()
 			{ return drawBitcoin(); }});
-#endif
 		adaptiveTabs.add(Tab{"Wthr", "Weather", [this]()
 			{ return drawWeather(*activeBrush, weatherOffset); }});
 #ifdef _WIN32
