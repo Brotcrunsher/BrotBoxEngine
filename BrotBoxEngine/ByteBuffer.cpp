@@ -1,6 +1,51 @@
 #include "BBE/ByteBuffer.h"
 #include "BBE/String.h"
 #include "BBE/BrotTime.h"
+#include <limits>
+
+namespace
+{
+	bool getMinSerializedByteSize(const std::type_index& type, size_t& outSize)
+	{
+		if (type == typeid(uint8_t) || type == typeid(int8_t) || type == typeid(bool))
+		{
+			outSize = 1;
+			return true;
+		}
+		if (type == typeid(uint16_t) || type == typeid(int16_t))
+		{
+			outSize = 2;
+			return true;
+		}
+		if (type == typeid(uint32_t) || type == typeid(int32_t) || type == typeid(float))
+		{
+			outSize = 4;
+			return true;
+		}
+		if (type == typeid(uint64_t) || type == typeid(int64_t) || type == typeid(bbe::TimePoint))
+		{
+			outSize = 8;
+			return true;
+		}
+		if (type == typeid(bbe::String))
+		{
+			outSize = 1;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool isReasonableSerializedElementCount(const bbe::ByteBufferSpan& span, int64_t elementLength, size_t minSerializedSize)
+	{
+		if (elementLength < 0 || minSerializedSize == 0)
+		{
+			return false;
+		}
+
+		return static_cast<uint64_t>(elementLength) <= static_cast<uint64_t>(span.getLength() / minSerializedSize);
+	}
+}
 
 void bbe::ByteBufferSpan::read(bbe::byte* bytes, const bbe::byte* default_, size_t length)
 {
@@ -41,18 +86,19 @@ bbe::ByteBufferSpan::ByteBufferSpan(bbe::List<bbe::byte>& bytes, size_t start, s
 
 bbe::ByteBufferSpan bbe::ByteBufferSpan::readSpan(size_t size)
 {
-	size_t subSpanStart = m_start;
-	size_t subSpanEnd = m_start + size;
-	if (subSpanEnd > m_end)
+	const size_t subSpanStart = m_start;
+	size_t subSpanLength = size;
+	if (subSpanLength > getLength())
 	{
-		subSpanEnd = m_end;
+		subSpanLength = getLength();
 		m_start = m_end;
+		m_didErr = true;
 	}
 	else
 	{
-		m_start += size;
+		m_start += subSpanLength;
 	}
-	ByteBufferSpan span(*m_bytes, subSpanStart, subSpanEnd);
+	ByteBufferSpan span(*m_bytes, subSpanStart, subSpanStart + subSpanLength);
 	return span;
 }
 
@@ -235,7 +281,15 @@ void bbe::SerializedDescription::writeFromSpan(bbe::ByteBufferSpan& span) const
 		if (descriptors[i].getRawVoid)
 		{
 			span.read(elementLength);
-			descriptors[i].resize(elementLength);
+			size_t minSerializedSize = 0;
+			if (!getMinSerializedByteSize(descriptors[i].type, minSerializedSize)
+				|| !isReasonableSerializedElementCount(span, elementLength, minSerializedSize))
+			{
+				descriptors[i].resize(0);
+				span.skipBytes(span.getLength());
+				return;
+			}
+			descriptors[i].resize(static_cast<size_t>(elementLength));
 			addr = descriptors[i].getRawVoid();
 		}
 

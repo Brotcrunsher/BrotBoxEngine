@@ -267,7 +267,12 @@ namespace bbe
 				{
 					int64_t size;
 					span.read(size);
-					auto subSpan = span.readSpan(size);
+					if (size < 0 || static_cast<uint64_t>(size) > static_cast<uint64_t>(span.getLength()))
+					{
+						span.skipBytes(span.getLength());
+						break;
+					}
+					auto subSpan = span.readSpan(static_cast<size_t>(size));
 
 					if constexpr (hasSerialDescription)
 					{

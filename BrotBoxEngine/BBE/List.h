@@ -369,7 +369,11 @@ namespace bbe
 			if (newCapacity == m_length) return;
 
 			bbe::freeBlock(m_allocBlock);
-			growIfNeeded(newCapacity);
+			m_length = 0;
+			if (newCapacity != 0)
+			{
+				m_allocBlock = bbe::allocateBlock(newCapacity * sizeof(T));
+			}
 			m_length = newCapacity;
 		}
 

@@ -871,6 +871,7 @@ static bool linuxPortalFileChooser(const char* methodName, const char* title, bb
 #include "objbase.h"
 #include "objidl.h"
 #include "shlguid.h"
+#include <vector>
 
 bbe::String bbe::simpleFile::getUserName()
 {
@@ -939,27 +940,47 @@ void bbe::simpleFile::createLink(const bbe::String& from, const bbe::String& to,
 }
 void bbe::simpleFile::executeBatchFile(const bbe::String& path)
 {
-	// TODO: This is dumb.
-	system(path.getRaw());
+	updateIoStats();
 
-	// TODO: Why doesn't this work?
-	//PROCESS_INFORMATION pi = {};
-	//STARTUPINFOA si = {};
-	//si.cb = sizeof(si);
-	//CreateProcess(
-	//	"cmd.exe",
-	//	("/c " + path).getRaw(),
-	//	NULL,
-	//	NULL,
-	//	FALSE,
-	//	0,
-	//	NULL,
-	//	NULL,
-	//	&si,
-	//	&pi
-	//);
-	//CloseHandle(pi.hProcess);
-	//CloseHandle(pi.hThread);
+	const std::wstring widePath = path.toStdWString();
+	if (widePath.empty())
+	{
+		throw std::runtime_error("Failed to execute batch file.");
+	}
+
+	wchar_t systemDirectory[MAX_PATH] = {};
+	if (GetSystemDirectoryW(systemDirectory, MAX_PATH) == 0)
+	{
+		throw std::runtime_error("Failed to locate cmd.exe.");
+	}
+
+	const std::wstring cmdPath = std::wstring(systemDirectory) + L"\\cmd.exe";
+	std::wstring commandLine = L"/c call \"";
+	commandLine += widePath;
+	commandLine += L"\"";
+	std::vector<wchar_t> mutableCommandLine(commandLine.begin(), commandLine.end());
+	mutableCommandLine.push_back(L'\0');
+
+	STARTUPINFOW si = {};
+	si.cb = sizeof(si);
+	PROCESS_INFORMATION pi = {};
+	if (!CreateProcessW(
+		cmdPath.c_str(),
+		mutableCommandLine.data(),
+		nullptr,
+		nullptr,
+		FALSE,
+		0,
+		nullptr,
+		nullptr,
+		&si,
+		&pi))
+	{
+		throw std::runtime_error("Failed to execute batch file.");
+	}
+
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
 }
 
 bool bbe::simpleFile::showOpenDialog(bbe::String& outPath)

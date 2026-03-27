@@ -3,6 +3,7 @@
 #include <typeinfo>
 #include <typeindex>
 #include <type_traits>
+#include <limits>
 #include "../BBE/List.h"
 #include "../BBE/DataType.h"
 
@@ -141,7 +142,17 @@ namespace bbe
 			{
 				int64_t size;
 				read(size);
-				val.resizeCapacityAndLengthUninit(size);
+				if (size < 0
+					|| static_cast<uint64_t>(size) > static_cast<uint64_t>(std::numeric_limits<size_t>::max())
+					|| static_cast<uint64_t>(size) > static_cast<uint64_t>(getLength() / sizeof(float)))
+				{
+					val.clear();
+					m_start = m_end;
+					m_didErr = true;
+					return;
+				}
+
+				val.resizeCapacityAndLengthUninit(static_cast<size_t>(size));
 				for (int64_t i = 0; i < size; i++)
 				{
 					float f;
