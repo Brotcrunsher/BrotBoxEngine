@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <mutex>
 #include <cmath>
+#include <cstring>
 #include <vector>
 #ifdef _WIN32
 #define NOMINMAX
@@ -251,6 +252,20 @@ BOOL CALLBACK MinimizeWindowCallback(HWND hwnd, LPARAM lParam)
 }
 #endif
 
+namespace
+{
+	constexpr const char* kAdaptiveWindowNames[] = {
+		"Adaptive Window: 0",
+		"Adaptive Window: 1",
+		"Adaptive Window: 2",
+	};
+
+	constexpr const char* kSuperAdaptiveWindowNames[] = {
+		"Super Adaptive Window: 0",
+		"Super Adaptive Window: 1",
+	};
+}
+
 class MyGame : public bbe::Game
 {
 private:
@@ -347,6 +362,106 @@ private:
 	bool silenceBitcoinAth = false;
 
 	bbe::PixelObserver pixelObserver;
+	bbe::List<Tab> mainTabs;
+	bbe::List<Tab> adaptiveTabs;
+	bbe::List<Tab> superAdaptiveTabs;
+	bbe::PrimitiveBrush2D* activeBrush = nullptr;
+	bbe::Vector2 weatherOffset = {20, 120};
+	const char* previousTabTitle = "";
+	size_t consoleWarningIgnoreRevision = 0;
+	size_t cachedConsoleWarningIgnoreRevision = (size_t)-1;
+	size_t cachedConsoleWarningLogLength = 0;
+	bool cachedHasUnreadConsoleWarnings = false;
+
+	void initializeTabs()
+	{
+		mainTabs.clear();
+		adaptiveTabs.clear();
+		superAdaptiveTabs.clear();
+
+		mainTabs.resizeCapacity(16);
+		adaptiveTabs.resizeCapacity(3);
+		superAdaptiveTabs.resizeCapacity(2);
+
+		mainTabs.add(Tab{"VTasks", "View Tasks", [this]()
+			{ return tasks.drawTabViewTasks(getWindow()->getScale()); }});
+		mainTabs.add(Tab{"ETasks", "Edit Tasks", [this]()
+			{ return tasks.drawTabEditTasks(); }});
+#ifdef _WIN32
+		mainTabs.add(Tab{"Clpbrd", "Clipboard", [this]()
+			{ return drawTabClipboard(); }});
+#endif
+// mainTabs.add(Tab{"Brn-T", "Brain-Teaser", [this]() { return brainTeasers.drawTabBrainTeasers(*activeBrush); }});
+#ifdef _WIN32
+		mainTabs.add(Tab{"Stpwtch", "Stopwatch", [this]()
+			{ return drawTabStopwatch(); }});
+#endif
+#ifdef _WIN32
+		mainTabs.add(Tab{"MsTrck", "Mouse Track", [this]()
+			{ return drawTabMouseTracking(*activeBrush); }});
+#endif
+#ifdef _WIN32
+		mainTabs.add(Tab{"KyTr", "Keyboard Track", [this]()
+			{ return drawTabKeyboardTracking(*activeBrush); }});
+#endif
+#if 0
+		mainTabs.add(Tab{"Terri", "Territorial", [this]() { return drawTabTerri(*activeBrush); }});
+#endif
+		mainTabs.add(Tab{"Strks", "Streaks", [this]()
+			{ return drawTabStreaks(*activeBrush); }});
+		mainTabs.add(Tab{"Lsts", "Lists", [this]()
+			{ return drawTabRememberLists(); }});
+		mainTabs.add(Tab{"PW", "Password Manager", [this]()
+			{ return drawPasswordManager(); }});
+#ifdef _WIN32
+		mainTabs.add(Tab{"GPT", "ChatGPT", [this]()
+			{ return drawTabChatGPT(); }});
+#endif
+#ifdef _WIN32
+		mainTabs.add(Tab{"DE", "DALL E", [this]()
+			{ return drawTabDallE(*activeBrush); }});
+#endif
+// mainTabs.add(Tab{"Mic", "Microphone Test", [this]() { return drawMicrophoneTest(); }});
+// mainTabs.add(Tab{"Ada", "AdafruitMacroPadRP2040", [this]() { return drawAdafruitMacroPadRP2040(*activeBrush); }});
+#ifdef _WIN32
+		mainTabs.add(Tab{"ENews", "Edit News", [this]()
+			{ return drawNewsConfig(); }});
+#endif
+#ifdef _WIN32
+		mainTabs.add(Tab{"MW", "Mouse Walls", [this]()
+			{ return drawMouseWallsConfig(); }});
+#endif
+#ifdef _WIN32
+		mainTabs.add(Tab{"EC", "Empires Commander", [this]()
+			{ return drawEmpiresCommand(); }});
+#endif
+		mainTabs.add(Tab{"Cnsl", "Console", [this]()
+			{ return drawTabConsole(); }});
+		mainTabs.add(Tab{"Cnfg", "Config", [this]()
+			{ return drawTabConfig(); }});
+
+#ifdef _WIN32
+		adaptiveTabs.add(Tab{"BTC", "Bitcoin", [this]()
+			{ return drawBitcoin(); }});
+#endif
+#ifdef _WIN32
+		adaptiveTabs.add(Tab{"Wthr", "Weather", [this]()
+			{ return drawWeather(*activeBrush, weatherOffset); }});
+#endif
+#ifdef _WIN32
+		adaptiveTabs.add(Tab{"VNews", "View News", [this]()
+			{ return drawNews(); }});
+#endif
+
+#ifdef _WIN32
+		superAdaptiveTabs.add(Tab{"Hstry", "History", [this]()
+			{ return tasks.drawTabHistoryView(); }});
+#endif
+#if defined(_WIN32) || defined(__linux__)
+		superAdaptiveTabs.add(Tab{"Wrns", "Warnings", [this]()
+			{ return drawWarnings(); }});
+#endif
+	}
 
 public:
 #if defined(_WIN32) || defined(__linux__)
@@ -472,6 +587,7 @@ public:
 	virtual void onStart() override
 	{
 		setWindowCloseMode(bbe::WindowCloseMode::HIDE);
+		initializeTabs();
 
 #if defined(_WIN32) || defined(__linux__)
 		createTrayIcons();
@@ -1692,10 +1808,27 @@ public:
 	{
 		const auto &log = bbe::logging::getLog();
 		std::lock_guard _(log);
-		for (size_t i = 0; i < log.getLength(); i++)
+		if (cachedConsoleWarningIgnoreRevision != consoleWarningIgnoreRevision || cachedConsoleWarningLogLength > log.getLength())
+		{
+			cachedConsoleWarningIgnoreRevision = consoleWarningIgnoreRevision;
+			cachedConsoleWarningLogLength = 0;
+			cachedHasUnreadConsoleWarnings = false;
+		}
+
+		if (cachedHasUnreadConsoleWarnings)
+		{
+			cachedConsoleWarningLogLength = log.getLength();
+			return {"Unread Console Messages!"};
+		}
+
+		const size_t scanStart = cachedConsoleWarningLogLength > 0 ? cachedConsoleWarningLogLength - 1 : 0;
+		for (size_t i = scanStart; i < log.getLength(); i++)
 		{
 			if (log[i].isEmpty())
+			{
 				continue;
+			}
+
 			bool isIgnoredLog = false;
 			for (size_t k = 0; k < cwiList.getLength(); k++)
 			{
@@ -1707,10 +1840,13 @@ public:
 			}
 			if (!isIgnoredLog)
 			{
+				cachedHasUnreadConsoleWarnings = true;
+				cachedConsoleWarningLogLength = log.getLength();
 				return {"Unread Console Messages!"};
 			}
 		}
 
+		cachedConsoleWarningLogLength = log.getLength();
 		return {};
 	}
 
@@ -1756,12 +1892,14 @@ public:
 			if (cwiList[i].name == msg)
 			{
 				cwiList.removeIndex(i);
+				consoleWarningIgnoreRevision++;
 				return;
 			}
 		}
 		ConsoleWarningIgnoreElement newElement;
 		newElement.name = msg;
 		cwiList.add(newElement);
+		consoleWarningIgnoreRevision++;
 	}
 
 	bbe::Vector2 drawTabConsole()
@@ -2947,108 +3085,14 @@ public:
 
 		ImGui::SetNextWindowPos(viewport.WorkPos);
 		ImGui::SetNextWindowSize(viewport.WorkSize);
-		static Tab previousTab;
+		activeBrush = &brush;
+		weatherOffset = {20, 120};
 
-		bbe::Vector2 weatherOffset = {20, 120};
-		bbe::List<Tab> adaptiveTabs =
-			{
-#ifdef _WIN32
-				Tab{"BTC", "Bitcoin", [&]()
-					{ return drawBitcoin(); }},
-#endif
-#ifdef _WIN32
-				Tab{"Wthr", "Weather", [&]()
-					{ return drawWeather(brush, weatherOffset); }},
-#endif
-#ifdef _WIN32
-				Tab{"VNews", "View News", [&]()
-					{ return drawNews(); }},
-#endif
-			};
-
-		bbe::List<Tab> superAdaptiveTabs =
-			{
-#ifdef _WIN32
-				Tab{"Hstry", "History", [&]()
-					{ return tasks.drawTabHistoryView(); }},
-#endif
-#if defined(_WIN32) || defined(__linux__)
-				Tab{"Wrns", "Warnings", [&]()
-					{ return drawWarnings(); }},
-#endif
-			};
-
-		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | (previousTab.title == bbe::String("Cnsl") ? ImGuiWindowFlags_NoScrollWithMouse : 0));
+		const ImGuiWindowFlags noConsoleMouseScroll = std::strcmp(previousTabTitle, "Cnsl") == 0 ? ImGuiWindowFlags_NoScrollWithMouse : ImGuiWindowFlags_None;
+		ImGui::Begin("MainWindow", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | noConsoleMouseScroll);
 		{
-			bbe::List<Tab> tabs =
-				{
-					Tab{"VTasks", "View Tasks", [&]()
-						{ return tasks.drawTabViewTasks(getWindow()->getScale()); }},
-					Tab{"ETasks", "Edit Tasks", [&]()
-						{ return tasks.drawTabEditTasks(); }},
-#ifdef _WIN32
-					Tab{"Clpbrd", "Clipboard", [&]()
-						{ return drawTabClipboard(); }},
-#endif
-// Tab{"Brn-T",     "Brain-Teaser",   [&]() { return brainTeasers.drawTabBrainTeasers(brush); }},
-#ifdef _WIN32
-					Tab{"Stpwtch", "Stopwatch", [&]()
-						{ return drawTabStopwatch(); }},
-#endif
-#ifdef _WIN32
-					Tab{"MsTrck", "Mouse Track", [&]()
-						{ return drawTabMouseTracking(brush); }},
-#endif
-#ifdef _WIN32
-					Tab{"KyTr", "Keyboard Track", [&]()
-						{ return drawTabKeyboardTracking(brush); }},
-#endif
-#if 0
-				Tab{"Terri",     "Territorial",    [&]() { return drawTabTerri(brush); }},
-#endif
-					Tab{"Strks", "Streaks", [&]()
-						{ return drawTabStreaks(brush); }},
-					Tab{"Lsts", "Lists", [&]()
-						{ return drawTabRememberLists(); }},
-					Tab{"PW", "Password Manager", [&]()
-						{ return drawPasswordManager(); }},
-#ifdef _WIN32
-					Tab{"GPT", "ChatGPT", [&]()
-						{ return drawTabChatGPT(); }},
-#endif
-#ifdef _WIN32
-					Tab{"DE", "DALL E", [&]()
-						{ return drawTabDallE(brush); }},
-#endif
-// Tab{"Mic",       "Microphone Test",[&]() { return drawMicrophoneTest(); }},
-// Tab{"Ada",       "AdafruitMacroPadRP2040", [&]() { return drawAdafruitMacroPadRP2040(brush); }},
-#ifdef _WIN32
-					Tab{"ENews", "Edit News", [&]()
-						{ return drawNewsConfig(); }},
-#endif
-#ifdef _WIN32
-					Tab{"MW", "Mouse Walls", [&]()
-						{ return drawMouseWallsConfig(); }},
-#endif
-#ifdef _WIN32
-					Tab{"EC", "Empires Commander", [&]()
-						{ return drawEmpiresCommand(); }},
-#endif
-					Tab{"Cnsl", "Console", [&]()
-						{ return drawTabConsole(); }},
-					Tab{"Cnfg", "Config", [&]()
-						{ return drawTabConfig(); }},
-				};
-			if (!adaptive)
-			{
-				tabs.addList(adaptiveTabs);
-			}
-			if (!superAdaptive)
-			{
-				tabs.addList(superAdaptiveTabs);
-			}
 			static size_t previousShownTab = 0;
-			DrawTabResult dtr = drawTabs(tabs, &previousShownTab, tabSwitchRequestedLeft, tabSwitchRequestedRight);
+			DrawTabResult dtr = drawTabs(mainTabs, adaptiveTabs, superAdaptiveTabs, !adaptive, !superAdaptive, &previousShownTab, tabSwitchRequestedLeft, tabSwitchRequestedRight);
 			sizeMult = dtr.sizeMult;
 			fullscreenTab = sizeMult.x > 100 || sizeMult.y > 100;
 			if (fullscreenTab)
@@ -3056,7 +3100,10 @@ public:
 				sizeMult.x -= 100;
 				sizeMult.y -= 100;
 			}
-			previousTab = dtr.tab;
+			if (dtr.tab)
+			{
+				previousTabTitle = dtr.tab->title;
+			}
 		}
 		ImGui::End();
 
@@ -3068,8 +3115,6 @@ public:
 			for (size_t i = 0; i < adaptiveTabs.getLength(); i++)
 			{
 				beginMeasure(adaptiveTabs[i].title);
-				bbe::String name = "Adaptive Window: ";
-				name += i;
 				ImGuiViewport adaptiveViewport = fullViewport;
 				adaptiveViewport.WorkSize.x = adaptiveWidth;
 				adaptiveViewport.WorkSize.y /= adaptiveTabs.getLength();
@@ -3087,7 +3132,7 @@ public:
 				adaptiveViewport.WorkSize.y *= adaptiveSizes[i].y;
 				ImGui::SetNextWindowPos(adaptiveViewport.WorkPos);
 				ImGui::SetNextWindowSize(adaptiveViewport.WorkSize);
-				ImGui::Begin(name.getRaw(), 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | (previousTab.title == bbe::String("Cnsl") ? ImGuiWindowFlags_NoScrollWithMouse : 0));
+				ImGui::Begin(kAdaptiveWindowNames[i], 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | noConsoleMouseScroll);
 				{
 					adaptiveSizes[i] = adaptiveTabs[i].run();
 				}
@@ -3102,8 +3147,6 @@ public:
 			for (size_t i = 0; i < superAdaptiveTabs.getLength(); i++)
 			{
 				beginMeasure(superAdaptiveTabs[i].title);
-				bbe::String name = "Super Adaptive Window: ";
-				name += i;
 				ImGuiViewport adaptiveViewport = fullViewport;
 				adaptiveViewport.WorkSize.x = adaptiveWidth;
 				adaptiveViewport.WorkSize.y /= superAdaptiveTabs.getLength();
@@ -3121,7 +3164,7 @@ public:
 				adaptiveViewport.WorkSize.y *= adaptiveSizes[i].y;
 				ImGui::SetNextWindowPos(adaptiveViewport.WorkPos);
 				ImGui::SetNextWindowSize(adaptiveViewport.WorkSize);
-				ImGui::Begin(name.getRaw(), 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | (previousTab.title == bbe::String("Cnsl") ? ImGuiWindowFlags_NoScrollWithMouse : 0));
+				ImGui::Begin(kSuperAdaptiveWindowNames[i], 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | noConsoleMouseScroll);
 				{
 					adaptiveSizes[i] = superAdaptiveTabs[i].run();
 				}

@@ -3,6 +3,7 @@
 #include "BBE/ImGuiExtensions.h"
 
 #include <filesystem>
+#include <unordered_map>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -40,6 +41,7 @@ namespace
 
 	void handleScannedProcess(const bbe::String& scannedProcessName,
 							  const bbe::String& exePath,
+							  std::unordered_map<std::string, int32_t>& knownProcessTypes,
 							  bbe::SerializableList<Process>& processes,
 							  bbe::List<bbe::String>& foundGames,
 							  int32_t& motherPorcesses)
@@ -54,22 +56,21 @@ namespace
 			return;
 		}
 
-		for (size_t i = 0; i < processes.getLength(); i++)
+		auto processIt = knownProcessTypes.find(scannedProcessName.getRaw());
+		if (processIt != knownProcessTypes.end())
 		{
-			if (processes[i].title == scannedProcessName)
+			if (processIt->second == Process::TYPE_GAME)
 			{
-				if (processes[i].type == Process::TYPE_GAME)
-				{
-					foundGames.add(processes[i].title);
-				}
-				return;
+				foundGames.add(scannedProcessName);
 			}
+			return;
 		}
 
 		Process newProcess;
 		newProcess.title = scannedProcessName;
 		newProcess.exePath = exePath;
 		processes.add(newProcess);
+		knownProcessTypes.emplace(scannedProcessName.getRaw(), newProcess.type);
 	}
 
 #ifdef __linux__
@@ -123,6 +124,12 @@ void SubsystemProcess::update()
 	{
 		motherPorcesses = 0;
 		foundGames.clear();
+		std::unordered_map<std::string, int32_t> knownProcessTypes;
+		knownProcessTypes.reserve(processes.getLength());
+		for (size_t i = 0; i < processes.getLength(); i++)
+		{
+			knownProcessTypes.emplace(processes[i].title.getRaw(), processes[i].type);
+		}
 #ifdef _WIN32
 		HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
 		PROCESSENTRY32 entry;
@@ -148,7 +155,7 @@ void SubsystemProcess::update()
 				CloseHandle(entryHandle);
 			}
 
-			handleScannedProcess(scannedProcessName, exePath, processes, foundGames, motherPorcesses);
+			handleScannedProcess(scannedProcessName, exePath, knownProcessTypes, processes, foundGames, motherPorcesses);
 			hasEntry = Process32Next(snapshot, &entry);
 		}
 		CloseHandle(snapshot);
@@ -180,7 +187,7 @@ void SubsystemProcess::update()
 			}
 
 			const bbe::String exePath = readLinuxExePath(entry.path());
-			handleScannedProcess(scannedProcessName, exePath, processes, foundGames, motherPorcesses);
+			handleScannedProcess(scannedProcessName, exePath, knownProcessTypes, processes, foundGames, motherPorcesses);
 		}
 #endif
 	}

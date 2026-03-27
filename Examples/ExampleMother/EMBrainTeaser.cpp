@@ -308,7 +308,7 @@ bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserDigitMemory(bbe::PrimitiveB
 	}
 	else if (state == BTState::waiting)
 	{
-		ImGui::Text((nextStateAt - bbe::TimePoint()).toString().getRaw());
+		ImGui::Text("%s", (nextStateAt - bbe::TimePoint()).toString().getRaw());
 		if (nextStateAt.hasPassed())
 		{
 			nextState = BTState::entering;
