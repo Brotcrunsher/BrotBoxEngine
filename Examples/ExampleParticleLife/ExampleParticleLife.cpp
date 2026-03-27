@@ -33,15 +33,14 @@ class MyGame : public bbe::Game
 		AttractionFunction(float min, float max, float halfStrength)
 			: min(min), max(max), halfStrength(halfStrength), half((min + max) / 2.f)
 		{
-
 		}
 
-		AttractionFunction(const AttractionFunction& other) = default;
-		AttractionFunction(AttractionFunction&& other) = default;
-		AttractionFunction& operator=(const AttractionFunction& other) = default;
-		AttractionFunction& operator=(AttractionFunction&& other) = default;
+		AttractionFunction(const AttractionFunction &other) = default;
+		AttractionFunction(AttractionFunction &&other) = default;
+		AttractionFunction &operator=(const AttractionFunction &other) = default;
+		AttractionFunction &operator=(AttractionFunction &&other) = default;
 
-		bbe::Vector2 operator() (bbe::Vector2 a, bbe::Vector2 b) const
+		bbe::Vector2 operator()(bbe::Vector2 a, bbe::Vector2 b) const
 		{
 			const bbe::Vector2 to = b - a;
 			const float dist = to.getLength();
@@ -49,7 +48,6 @@ class MyGame : public bbe::Game
 			if (dist >= max) return bbe::Vector2(0, 0);
 
 			const bbe::Vector2 norm = to.normalize();
-
 
 			if (dist >= half)
 			{
@@ -84,9 +82,8 @@ class MyGame : public bbe::Game
 	{
 		particles.add(Particle{
 			rand.randomVector2(WINDOW_WIDTH, WINDOW_HEIGHT),
-			{0, 0},
-			rand.randomInt(particleTypes)
-			});
+			{ 0, 0 },
+			rand.randomInt(particleTypes) });
 	}
 
 	void generateRandomParticles()
@@ -114,8 +111,7 @@ class MyGame : public bbe::Game
 				attractionMatrix[i].add(AttractionFunction(
 					rand.randomFloat(minMin),
 					rand.randomFloat(maxMax),
-					attraction
-				));
+					attraction));
 			}
 		}
 	}
@@ -160,9 +156,9 @@ class MyGame : public bbe::Game
 				for (size_t m = 0; m < offsets.getLength(); m++)
 				{
 					const bbe::Vector2 otherParticlePos = particles[k].pos + offsets[m];
-					const bbe::Vector2& thisParticle = particles[i].pos;
+					const bbe::Vector2 &thisParticle = particles[i].pos;
 					const bbe::Vector2 moveDir = otherParticlePos - thisParticle;
-					const AttractionFunction& attractionFunction = attractionMatrix[particles[i].particleType][particles[k].particleType];
+					const AttractionFunction &attractionFunction = attractionMatrix[particles[i].particleType][particles[k].particleType];
 
 					particles[i].speed += attractionFunction(particles[i].pos, otherParticlePos) * 0.1f;
 				}
@@ -215,10 +211,10 @@ class MyGame : public bbe::Game
 			gameStart();
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		for (size_t i = 0; i < particles.getLength(); i++)
 		{
@@ -237,4 +233,3 @@ int main()
 	game.start(WINDOW_WIDTH, WINDOW_HEIGHT, "Particle Life");
 	return 0;
 }
-

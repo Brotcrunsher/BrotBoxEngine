@@ -7,17 +7,17 @@ bbe::IcoSphere::IcoSphere()
 {
 }
 
-bbe::IcoSphere::IcoSphere(const Vector3 & pos, const Vector3 & scale, const Vector3 & rotationVector, float radians)
+bbe::IcoSphere::IcoSphere(const Vector3 &pos, const Vector3 &scale, const Vector3 &rotationVector, float radians)
 {
 	set(pos, scale, rotationVector, radians);
 }
 
-bbe::IcoSphere::IcoSphere(const Matrix4 & transform)
+bbe::IcoSphere::IcoSphere(const Matrix4 &transform)
 	: m_transform(transform)
 {
 }
 
-void bbe::IcoSphere::set(const Vector3 & pos, const Vector3 & scale, const Vector3 & rotationVector, float radians)
+void bbe::IcoSphere::set(const Vector3 &pos, const Vector3 &scale, const Vector3 &rotationVector, float radians)
 {
 	Matrix4 matTranslation = Matrix4::createTranslationMatrix(pos);
 	Matrix4 matScale = Matrix4::createScaleMatrix(scale);
@@ -66,7 +66,7 @@ float bbe::IcoSphere::getDepth() const
 	return getScale().y;
 }
 
-const bbe::Matrix4& bbe::IcoSphere::getTransform() const
+const bbe::Matrix4 &bbe::IcoSphere::getTransform() const
 {
 	return m_transform;
 }

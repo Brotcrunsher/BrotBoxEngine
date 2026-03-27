@@ -164,21 +164,14 @@ namespace bbe
 				DynamicArray<int> hashDa2{ 1, 2, 3, 4 };
 				DynamicArray<int> hashDa3{ 2, 3, 4 };
 
-				assertEquals  (hash(hashDa1), hash(hashDa2));
+				assertEquals(hash(hashDa1), hash(hashDa2));
 				assertUnequals(hash(hashDa1), hash(hashDa3));
 
 				for (size_t i = 0; i < hashDa1.getLength(); i++)
 				{
 					assertEquals(hashDa1[i], i + 1);
 				}
-
 			}
-
-
-			
-
-
-
 
 			{
 				DynamicArray<Person> da(16);
@@ -306,11 +299,11 @@ namespace bbe
 					assertEquals(da5[i].age, 6000 + i);
 				}
 
-				List<Person> list{ Person("", "", 1), 
-					Person("", "", 2),
-					Person("", "", 3),
-					Person("", "", 4),
-					Person("", "", 5) };
+				List<Person> list{ Person("", "", 1),
+								   Person("", "", 2),
+								   Person("", "", 3),
+								   Person("", "", 4),
+								   Person("", "", 5) };
 				DynamicArray<Person> da6(list);
 				assertEquals(da6.getLength(), 5);
 				assertUnequals(da6.getRaw(), nullptr);
@@ -358,12 +351,6 @@ namespace bbe
 					assertEquals(hashDa1[i], Person("", "", (int)i + 1));
 				}
 			}
-
-
-
-
-
-
 
 			{
 				const DynamicArray<int> da(1337);

@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#define IMPLOT_NO_FORCE_INLINE
 #include "implot.h"
 #include "BBE/FatalErrors.h"
 #include "BBE/Rectangle.h"
@@ -21,14 +22,14 @@
 
 // TODO: Is every OpenGL Resource properly freed? How can we find that out?
 
-static void addLabel(GLenum identifier, GLuint name, const char* label)
+static void addLabel(GLenum identifier, GLuint name, const char *label)
 {
 #ifdef _DEBUG
 	glObjectLabel(identifier, name, -1, label);
 #endif
 }
 
-static GLuint genTexture(const char* label)
+static GLuint genTexture(const char *label)
 {
 	GLuint texture = 0;
 	glGenTextures(1, &texture);
@@ -39,8 +40,7 @@ static GLuint genTexture(const char* label)
 	return texture;
 }
 
-
-static GLuint genTextureMultisampled(const char* label)
+static GLuint genTextureMultisampled(const char *label)
 {
 	GLuint texture = 0;
 	glGenTextures(1, &texture);
@@ -56,7 +56,7 @@ enum class BufferTarget
 	ARRAY_BUFFER = GL_ARRAY_BUFFER,
 	ELEMENT_ARRAY_BUFFER = GL_ELEMENT_ARRAY_BUFFER,
 };
-static GLuint genBuffer(const char* label, BufferTarget target, size_t length, const void* data)
+static GLuint genBuffer(const char *label, BufferTarget target, size_t length, const void *data)
 {
 	GLuint buffer = 0;
 	glGenBuffers(1, &buffer);
@@ -66,14 +66,14 @@ static GLuint genBuffer(const char* label, BufferTarget target, size_t length, c
 	return buffer;
 }
 
-static GLuint createShader(const char* label, GLenum shaderType)
+static GLuint createShader(const char *label, GLenum shaderType)
 {
 	GLuint shader = glCreateShader(shaderType);
 	addLabel(GL_SHADER, shader, label);
 	return shader;
 }
 
-static GLuint createProgram(const char* label)
+static GLuint createProgram(const char *label)
 {
 	GLuint program = glCreateProgram();
 	addLabel(GL_PROGRAM, program, label);
@@ -87,7 +87,7 @@ static GLuint genFramebuffer()
 	return framebuffer;
 }
 
-void bbe::INTERNAL::openGl::Program::compile(const bbe::String& label)
+void bbe::INTERNAL::openGl::Program::compile(const bbe::String &label)
 {
 	program = createProgram((label + "(Program)").getRaw());
 	glAttachShader(program, vertex);
@@ -110,10 +110,10 @@ void bbe::INTERNAL::openGl::Program::compile(const bbe::String& label)
 	glUseProgram(program);
 }
 
-GLuint bbe::INTERNAL::openGl::Program::getShader(const bbe::String& label, GLenum shaderType, const bbe::String& src)
+GLuint bbe::INTERNAL::openGl::Program::getShader(const bbe::String &label, GLenum shaderType, const bbe::String &src)
 {
 	GLuint shader = createShader(label.getRaw(), shaderType);
-	const char* csrc = src.getRaw();
+	const char *csrc = src.getRaw();
 	glShaderSource(shader, 1, &csrc, NULL);
 	glCompileShader(shader);
 	GLint success = 0;
@@ -133,13 +133,13 @@ GLuint bbe::INTERNAL::openGl::Program::getShader(const bbe::String& label, GLenu
 	return shader;
 }
 
-void bbe::INTERNAL::openGl::Program::addShaders(const bbe::String& label, const char* vertexSrc, const char* fragmentSrc, const bbe::List<UniformVariable>& uniformVariables)
+void bbe::INTERNAL::openGl::Program::addShaders(const bbe::String &label, const char *vertexSrc, const char *fragmentSrc, const bbe::List<UniformVariable> &uniformVariables)
 {
 	const bbe::String header = getHeader(uniformVariables);
 	addVertexShader(label, header + vertexSrc);
 	addFragmentShader(label, header + fragmentSrc);
 	compile(label);
-	for (const UniformVariable& uv : uniformVariables)
+	for (const UniformVariable &uv : uniformVariables)
 	{
 		*(uv.cppHandle) = glGetUniformLocation(program, uv.name);
 	}
@@ -157,30 +157,29 @@ void bbe::INTERNAL::openGl::Program::use()
 	glUseProgram(program);
 }
 
-void bbe::INTERNAL::openGl::Program::addVertexShader(const bbe::String& label, const bbe::String& src)
+void bbe::INTERNAL::openGl::Program::addVertexShader(const bbe::String &label, const bbe::String &src)
 {
 	vertex = getShader(label + "(VertexShader)", GL_VERTEX_SHADER, src);
 }
 
-void bbe::INTERNAL::openGl::Program::addFragmentShader(const bbe::String& label, const bbe::String& src)
+void bbe::INTERNAL::openGl::Program::addFragmentShader(const bbe::String &label, const bbe::String &src)
 {
 	fragment = getShader(label + "(FragmentShader)", GL_FRAGMENT_SHADER, src);
 }
 
-bbe::String bbe::INTERNAL::openGl::Program::getHeader(const bbe::List<UniformVariable>& uniformVariables)
+bbe::String bbe::INTERNAL::openGl::Program::getHeader(const bbe::List<UniformVariable> &uniformVariables)
 {
 	bbe::String retVal;
 #ifdef __APPLE__
 	retVal =
-		"#version 330 core\n";
+		"#version 150\n";
 #else
 	retVal =
 		"#version 300 es\n"
 		"precision highp float;\n"
 		"precision highp int;\n"; // Actually required! Intel Drivers seem to have different default precisions of int between vertex and frament shaders, leading to linker issues.
 #endif
-
-	for (const UniformVariable& uv : uniformVariables)
+	for (const UniformVariable &uv : uniformVariables)
 	{
 		retVal += uv.toString();
 	}
@@ -206,7 +205,7 @@ void bbe::INTERNAL::openGl::Program::uniform3f(GLint pos, GLfloat a, GLfloat b, 
 	glUniform3f(pos, a, b, c);
 }
 
-void bbe::INTERNAL::openGl::Program::uniform3f(GLint pos, const bbe::Vector3& vec)
+void bbe::INTERNAL::openGl::Program::uniform3f(GLint pos, const bbe::Vector3 &vec)
 {
 	uniform3f(pos, vec.x, vec.y, vec.z);
 }
@@ -217,7 +216,7 @@ void bbe::INTERNAL::openGl::Program::uniform4f(GLint pos, GLfloat a, GLfloat b, 
 	glUniform4f(pos, a, b, c, d);
 }
 
-void bbe::INTERNAL::openGl::Program::uniform4f(GLint pos, const bbe::Color& color)
+void bbe::INTERNAL::openGl::Program::uniform4f(GLint pos, const bbe::Color &color)
 {
 	uniform4f(pos, color.r, color.g, color.b, color.a);
 }
@@ -228,7 +227,7 @@ void bbe::INTERNAL::openGl::Program::uniform1i(GLint pos, GLint a)
 	glUniform1i(pos, a);
 }
 
-void bbe::INTERNAL::openGl::Program::uniformMatrix4fv(GLint pos, GLboolean transpose, const bbe::Matrix4& val)
+void bbe::INTERNAL::openGl::Program::uniformMatrix4fv(GLint pos, GLboolean transpose, const bbe::Matrix4 &val)
 {
 	use();
 	glUniformMatrix4fv(pos, 1, transpose, &val[0]);
@@ -258,10 +257,10 @@ void bbe::INTERNAL::openGl::Framebuffer::destroy()
 	height = 0;
 }
 
-GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label, uint32_t bytes)
+GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char *label, uint32_t bytes)
 {
 	GLuint texture = 0;
-	
+
 #ifndef __EMSCRIPTEN__
 	if (samples == 1)
 #endif
@@ -302,7 +301,7 @@ GLuint bbe::INTERNAL::openGl::Framebuffer::addTexture(const char* label, uint32_
 	return texture;
 }
 
-void bbe::INTERNAL::openGl::Framebuffer::addDepthBuffer(const char* label)
+void bbe::INTERNAL::openGl::Framebuffer::addDepthBuffer(const char *label)
 {
 #ifndef __EMSCRIPTEN__
 	if (samples == 1)
@@ -340,13 +339,13 @@ void bbe::INTERNAL::openGl::Framebuffer::useAsInput()
 	}
 }
 
-void bbe::INTERNAL::openGl::Framebuffer::finalize(const char* label)
+void bbe::INTERNAL::openGl::Framebuffer::finalize(const char *label)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 	for (GLenum i = 0; i < (GLenum)textures.getLength(); i++)
 	{
 		if (samples == 1) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, textures[i], 0);
-		else              glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D_MULTISAMPLE, textures[i], 0);
+		else glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D_MULTISAMPLE, textures[i], 0);
 	}
 
 	bbe::List<GLenum> attachements;
@@ -369,7 +368,7 @@ static GLint screenSizePos2d = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShaders()
 {
 	Program program;
-	char const* vertexShaderSrc =
+	char const *vertexShaderSrc =
 		"layout (location = 0) in vec2 position;"
 		"layout (location = 1) in vec4 scalePosOffset;"
 		"layout (location = 2) in float rotation;"
@@ -388,7 +387,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShade
 		"   passColor = inColor;"
 		"}";
 
-	char const* fragmentShaderSource =
+	char const *fragmentShaderSource =
 		"flat in vec4 passColor;"
 		"out vec4 outColor;"
 		"void main()"
@@ -396,9 +395,9 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dShade
 		"	outColor = passColor;"
 		"}";
 	program.addShaders("2d", vertexShaderSrc, fragmentShaderSource,
-		{
-			{ UT::UT_vec2 , "screenSize"	, &screenSizePos2d},
-		});
+					   {
+						   { UT::UT_vec2, "screenSize", &screenSizePos2d },
+					   });
 
 	program.uniform2f(screenSizePos2d, (float)m_windowWidth, (float)m_windowHeight);
 
@@ -413,7 +412,7 @@ static GLint swizzleModePos = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexShaders()
 {
 	Program program;
-	char const* vertexShaderSrc =
+	char const *vertexShaderSrc =
 		"in vec2 position;\n"
 		"in vec2 uv;"
 		"out vec2 uvPassOn;"
@@ -424,7 +423,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexSh
 		"	gl_Position = vec4(pos, 0.0, 1.0);\n"
 		"}";
 
-	char const* fragmentShaderSource =
+	char const *fragmentShaderSource =
 		// WebGL does not support swizzles, so we
 		// have to implement them on our own.
 		"#define SWIZZL_MODE_RGBA 0\n"
@@ -441,13 +440,11 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexSh
 		"	outColor = inColor * texColor;\n"
 		"}";
 	program.addShaders("2dTex", vertexShaderSrc, fragmentShaderSource,
-		{
-			{UT::UT_int      , "swizzleMode", &swizzleModePos    },
-			{UT::UT_vec2     , "screenSize" , &screenSizePos2dTex},
-			{UT::UT_vec2     , "scale"      , &scalePos2dTex     },
-			{UT::UT_vec4     , "inColor"    , &inColorPos2dTex   },
-			{UT::UT_sampler2D, "tex"        , &texPos2dTex       }
-		});
+					   { { UT::UT_int, "swizzleMode", &swizzleModePos },
+						 { UT::UT_vec2, "screenSize", &screenSizePos2dTex },
+						 { UT::UT_vec2, "scale", &scalePos2dTex },
+						 { UT::UT_vec4, "inColor", &inColorPos2dTex },
+						 { UT::UT_sampler2D, "tex", &texPos2dTex } });
 
 	program.uniform1i(swizzleModePos, 0);
 	program.uniform2f(screenSizePos2dTex, (float)m_windowWidth, (float)m_windowHeight);
@@ -455,10 +452,14 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init2dTexSh
 	program.uniform4f(inColorPos2dTex, 1.f, 1.f, 1.f, 1.f);
 
 	bbe::List<float> uvCoordinates = {
-		0.0f, 0.0f,
-		0.0f, 1.0f,
-		1.0f, 1.0f,
-		1.0f, 0.0f,
+		0.0f,
+		0.0f,
+		0.0f,
+		1.0f,
+		1.0f,
+		1.0f,
+		1.0f,
+		0.0f,
 	};
 	m_imageUvBuffer = genBuffer("TexShadersUvBuffer", BufferTarget::ARRAY_BUFFER, sizeof(float) * uvCoordinates.getLength(), uvCoordinates.getRaw());
 
@@ -524,15 +525,15 @@ bbe::INTERNAL::openGl::MrtProgram bbe::INTERNAL::openGl::OpenGLManager::init3dSh
 	else label = "3dMrt";
 
 	program.addShaders(label, vertexShaderSrc.getRaw(), fragmentShaderSource.getRaw(),
-		{
-			{UT::UT_vec4,      "inColor"   , &program.inColorPos3dMrt   },
-			{UT::UT_mat4,      "view"      , &program.viewPos3dMrt	    },
-			{UT::UT_mat4,      "projection", &program.projectionPos3dMrt},
-			{UT::UT_mat4,      "model"	   , &program.modelPos3dMrt	    },
-			{UT::UT_sampler2D, "albedo"    , &program.albedoTexMrt      },
-			{UT::UT_sampler2D, "normals"   , &program.normalsTexMrt     },
-			{UT::UT_sampler2D, "emissions" , &program.emissionsTexMrt   },
-		});
+					   {
+						   { UT::UT_vec4, "inColor", &program.inColorPos3dMrt },
+						   { UT::UT_mat4, "view", &program.viewPos3dMrt },
+						   { UT::UT_mat4, "projection", &program.projectionPos3dMrt },
+						   { UT::UT_mat4, "model", &program.modelPos3dMrt },
+						   { UT::UT_sampler2D, "albedo", &program.albedoTexMrt },
+						   { UT::UT_sampler2D, "normals", &program.normalsTexMrt },
+						   { UT::UT_sampler2D, "emissions", &program.emissionsTexMrt },
+					   });
 
 	bbe::Matrix4 identity;
 	program.uniformMatrix4fv(program.viewPos3dMrt, false, identity);
@@ -571,15 +572,15 @@ bbe::INTERNAL::openGl::MrtProgram bbe::INTERNAL::openGl::OpenGLManager::init3dFo
 		"}";
 
 	program.addShaders("ForwardNoLight", vertexShaderSrc.getRaw(), fragmentShaderSource.getRaw(),
-		{
-			{UT::UT_vec4,      "inColor"   , &program.inColorPos3dMrt   },
-			{UT::UT_mat4,      "view"      , &program.viewPos3dMrt	    },
-			{UT::UT_mat4,      "projection", &program.projectionPos3dMrt},
-			{UT::UT_mat4,      "model"	   , &program.modelPos3dMrt	    },
-			{UT::UT_sampler2D, "albedo"    , &program.albedoTexMrt      },
-			{UT::UT_sampler2D, "normals"   , &program.normalsTexMrt     },
-			{UT::UT_sampler2D, "emissions" , &program.emissionsTexMrt   },
-		});
+					   {
+						   { UT::UT_vec4, "inColor", &program.inColorPos3dMrt },
+						   { UT::UT_mat4, "view", &program.viewPos3dMrt },
+						   { UT::UT_mat4, "projection", &program.projectionPos3dMrt },
+						   { UT::UT_mat4, "model", &program.modelPos3dMrt },
+						   { UT::UT_sampler2D, "albedo", &program.albedoTexMrt },
+						   { UT::UT_sampler2D, "normals", &program.normalsTexMrt },
+						   { UT::UT_sampler2D, "emissions", &program.emissionsTexMrt },
+					   });
 
 	return program;
 }
@@ -591,7 +592,7 @@ static GLint screenSizeAmbient = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShadersAmbient()
 {
 	Program program;
-	char const* vertexShaderSrc =
+	char const *vertexShaderSrc =
 		"void main()"
 		"{"
 		"   if(gl_VertexID == 0)"
@@ -612,7 +613,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   }"
 		"}";
 
-	char const* fragmentShaderSource =
+	char const *fragmentShaderSource =
 		"out vec4 outColor;"
 		"void main()"
 		"{"
@@ -622,12 +623,12 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dShade
 		"   outColor = vec4(ambient + albedo * pow(emissions, vec3(2.2)), 1.0);"
 		"}";
 	program.addShaders("3dAmbient", vertexShaderSrc, fragmentShaderSource,
-		{
-			{UT::UT_sampler2D, "gAlbedoSpec"  , &gAlbedoSpecPos3dAmbient  },
-			{UT::UT_sampler2D, "emissions"    , &emissionsPos3dAmbient},
-			{UT::UT_float    , "ambientFactor", &ambientFactorPos3dAmbient},
-			{UT::UT_vec2     , "screenSize",    &screenSizeAmbient        },
-		});
+					   {
+						   { UT::UT_sampler2D, "gAlbedoSpec", &gAlbedoSpecPos3dAmbient },
+						   { UT::UT_sampler2D, "emissions", &emissionsPos3dAmbient },
+						   { UT::UT_float, "ambientFactor", &ambientFactorPos3dAmbient },
+						   { UT::UT_vec2, "screenSize", &screenSizeAmbient },
+					   });
 
 	program.uniform1i(gAlbedoSpecPos3dAmbient, 2);
 	program.uniform1i(emissionsPos3dAmbient, 4);
@@ -641,7 +642,7 @@ static GLint screenSizePostProcessing = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dPostProcessing()
 {
 	Program program;
-	char const* vertexShaderSrc =
+	char const *vertexShaderSrc =
 		"void main()"
 		"{"
 		"   if(gl_VertexID == 0)"
@@ -662,7 +663,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dPostP
 		"   }"
 		"}";
 
-	char const* fragmentShaderSource =
+	char const *fragmentShaderSource =
 		"out vec4 outColor;"
 		"void main()"
 		"{"
@@ -670,10 +671,10 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::init3dPostP
 		"   outColor = pow(vec4(albedo, 1.0), vec4(1.0 / 2.2));"
 		"}";
 	program.addShaders("3dPostProcessing", vertexShaderSrc, fragmentShaderSource,
-		{
-			{UT::UT_sampler2D, "frame"     , &framePostProcessing     },
-			{UT::UT_vec2     , "screenSize", &screenSizePostProcessing},
-		});
+					   {
+						   { UT::UT_sampler2D, "frame", &framePostProcessing },
+						   { UT::UT_vec2, "screenSize", &screenSizePostProcessing },
+					   });
 
 	program.uniform1i(framePostProcessing, 0);
 	program.uniform2f(screenSizePostProcessing, (float)m_windowWidth, (float)m_windowHeight);
@@ -685,7 +686,7 @@ static GLint screenSizeBakingGammaCorrection = 0;
 bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::initBakingGammaCorrection()
 {
 	Program program;
-	char const* vertexShaderSrc =
+	char const *vertexShaderSrc =
 		"void main()"
 		"{"
 		"   if(gl_VertexID == 0)"
@@ -706,7 +707,7 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::initBakingG
 		"   }"
 		"}";
 
-	char const* fragmentShaderSource =
+	char const *fragmentShaderSource =
 		"out vec4 outColor;"
 		"void main()"
 		"{"
@@ -714,10 +715,10 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::initBakingG
 		"   outColor = pow(vec4(albedo, 1.0), vec4(1.0 / 2.2));"
 		"}";
 	program.addShaders("3dPostProcessing", vertexShaderSrc, fragmentShaderSource,
-		{
-			{UT::UT_sampler2D, "frame"     , &frameBakingGammaCorrection     },
-			{UT::UT_vec2     , "screenSize", &screenSizeBakingGammaCorrection},
-		});
+					   {
+						   { UT::UT_sampler2D, "frame", &frameBakingGammaCorrection },
+						   { UT::UT_vec2, "screenSize", &screenSizeBakingGammaCorrection },
+					   });
 
 	program.uniform1i(frameBakingGammaCorrection, 0);
 	program.uniform2f(screenSizeBakingGammaCorrection, (float)m_windowWidth, (float)m_windowHeight);
@@ -727,9 +728,9 @@ bbe::INTERNAL::openGl::Program bbe::INTERNAL::openGl::OpenGLManager::initBakingG
 bbe::INTERNAL::openGl::LightProgram bbe::INTERNAL::openGl::OpenGLManager::init3dShadersLight(bool baking)
 {
 	LightProgram program;
-	char const* vertexShaderSrc;
+	char const *vertexShaderSrc;
 
-	if(!baking)
+	if (!baking)
 	{
 		vertexShaderSrc =
 			"in vec3 inPos;"
@@ -802,7 +803,7 @@ bbe::INTERNAL::openGl::LightProgram bbe::INTERNAL::openGl::OpenGLManager::init3d
 		"   }"
 		"   if(lightPower < 0.001) discard;"
 		"   vec3 L = normalize(toLight);";
-	if(!baking)
+	if (!baking)
 	{
 		fragmentShaderSource +=
 			"   vec3 albedo = texture(gAlbedoSpec, uvCoord).xyz;"
@@ -828,20 +829,20 @@ bbe::INTERNAL::openGl::LightProgram bbe::INTERNAL::openGl::OpenGLManager::init3d
 	else label = "3dLight";
 
 	program.addShaders(label, vertexShaderSrc, fragmentShaderSource.getRaw(),
-		{
-			{UT::UT_sampler2D, "gPosition"	  , &program.gPositionPos3dLight     },
-			{UT::UT_sampler2D, "gNormal"	  , &program.gNormalPos3dLight       },
-			{UT::UT_sampler2D, "gAlbedoSpec"  , &program.gAlbedoSpecPos3dLight   },
-			{UT::UT_sampler2D, "gSpecular"    , &program.gSpecular3dLight        },
-			{UT::UT_mat4     , "projection"   , &program.projectionPos3dLight    },
-			{UT::UT_vec2     , "screenSize"   , &program.screenSize3dLight       },
+					   {
+						   { UT::UT_sampler2D, "gPosition", &program.gPositionPos3dLight },
+						   { UT::UT_sampler2D, "gNormal", &program.gNormalPos3dLight },
+						   { UT::UT_sampler2D, "gAlbedoSpec", &program.gAlbedoSpecPos3dLight },
+						   { UT::UT_sampler2D, "gSpecular", &program.gSpecular3dLight },
+						   { UT::UT_mat4, "projection", &program.projectionPos3dLight },
+						   { UT::UT_vec2, "screenSize", &program.screenSize3dLight },
 
-			{UT::UT_vec4     , "lightColor"	  , &program.lightColorPos3dLight    },
-			{UT::UT_vec4     , "specularColor", &program.specularColorPos3dLight },
-			{UT::UT_vec4     , "lightPos"	  , &program.lightPosPos3dLight      },
-			{UT::UT_float    , "lightRadius"  , &program.lightRadiusPos          },
-			{UT::UT_int      , "falloffMode"  , &program.falloffModePos3dLight   },
-		});
+						   { UT::UT_vec4, "lightColor", &program.lightColorPos3dLight },
+						   { UT::UT_vec4, "specularColor", &program.specularColorPos3dLight },
+						   { UT::UT_vec4, "lightPos", &program.lightPosPos3dLight },
+						   { UT::UT_float, "lightRadius", &program.lightRadiusPos },
+						   { UT::UT_int, "falloffMode", &program.falloffModePos3dLight },
+					   });
 
 	program.uniform1i(program.gPositionPos3dLight, 0);
 	program.uniform1i(program.gNormalPos3dLight, 1);
@@ -859,7 +860,7 @@ bbe::INTERNAL::openGl::LightProgram bbe::INTERNAL::openGl::OpenGLManager::init3d
 	return program;
 }
 
-bbe::INTERNAL::openGl::Framebuffer bbe::INTERNAL::openGl::OpenGLManager::getGeometryBuffer(const bbe::String& label, uint32_t width, uint32_t height, bool baking) const
+bbe::INTERNAL::openGl::Framebuffer bbe::INTERNAL::openGl::OpenGLManager::getGeometryBuffer(const bbe::String &label, uint32_t width, uint32_t height, bool baking) const
 {
 	Framebuffer fb(width, height);
 	fb.addTexture((label + "(Positions)").getRaw());
@@ -895,42 +896,35 @@ void bbe::INTERNAL::openGl::OpenGLManager::initFrameBuffers()
 	postProcessingFb.finalize("PostProcessingBuffer");
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, GLuint framebuffer, bool baking, const bbe::Color& bakingColor)
+void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4 &transform, const Model &model, const Image *albedo, const Image *normals, const Image *emissions, const FragmentShader *shader, GLuint framebuffer, bool baking, const bbe::Color &bakingColor)
 {
-	bbe::INTERNAL::openGl::OpenGLModel* ogm = nullptr;
+	bbe::INTERNAL::openGl::OpenGLModel *ogm = nullptr;
 	if (model.m_prendererData == nullptr)
 	{
 		ogm = new bbe::INTERNAL::openGl::OpenGLModel(model);
 	}
 	else
 	{
-		ogm = (bbe::INTERNAL::openGl::OpenGLModel*)model.m_prendererData.get();
+		ogm = (bbe::INTERNAL::openGl::OpenGLModel *)model.m_prendererData.get();
 	}
 	fillInternalMesh(&(transform[0]), ogm->getIbo(), ogm->getVbo(), ogm->getAmountOfIndices(), albedo, normals, emissions, shader, framebuffer, baking, bakingColor);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader, GLuint framebuffer, bool baking, const bbe::Color& bakingColor)
+void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float *modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image *albedo, const Image *normals, const Image *emissions, const FragmentShader *shader, GLuint framebuffer, bool baking, const bbe::Color &bakingColor)
 {
-#ifdef __APPLE__
-	// Generate a VAO
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-#endif
-
 	// TODO This function wants way too much. Refactor.
 	GLuint program = 0;
 	GLint modelPos = 0;
 	GLint albedoTex = 0;
 	GLint normalsTex = 0;
 	GLint emissionsTex = 0;
-	bbe::INTERNAL::openGl::OpenGLFragmentShader* fs = nullptr;
-	bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD* fs3d = nullptr;
+	bbe::INTERNAL::openGl::OpenGLFragmentShader *fs = nullptr;
+	bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD *fs3d = nullptr;
 	if (shader)
 	{
 		if (shader->m_prendererData != nullptr)
 		{
-			fs = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)shader->m_prendererData.get();
+			fs = (bbe::INTERNAL::openGl::OpenGLFragmentShader *)shader->m_prendererData.get();
 		}
 		else
 		{
@@ -939,7 +933,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 
 		if (!baking)
 		{
-			     if (m_renderMode == bbe::RenderMode::DEFERRED)          fs3d = &fs->getThreeD();
+			if (m_renderMode == bbe::RenderMode::DEFERRED) fs3d = &fs->getThreeD();
 			else if (m_renderMode == bbe::RenderMode::FORWARD_NO_LIGHTS) fs3d = &fs->getThreeDForwardNoLight();
 			else bbe::Crash(bbe::Error::IllegalState);
 		}
@@ -965,10 +959,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 			}
 			else if (m_renderMode == bbe::RenderMode::FORWARD_NO_LIGHTS)
 			{
-				program      = m_program3dForwardNoLight.program;
-				modelPos     = m_program3dForwardNoLight.modelPos3dMrt;
-				albedoTex    = m_program3dForwardNoLight.albedoTexMrt;
-				normalsTex   = m_program3dForwardNoLight.normalsTexMrt;
+				program = m_program3dForwardNoLight.program;
+				modelPos = m_program3dForwardNoLight.modelPos3dMrt;
+				albedoTex = m_program3dForwardNoLight.albedoTexMrt;
+				normalsTex = m_program3dForwardNoLight.normalsTexMrt;
 				emissionsTex = m_program3dForwardNoLight.emissionsTexMrt;
 			}
 		}
@@ -1018,7 +1012,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 	GLint normalPosition = glGetAttribLocation(program, "inNormal");
 	if (normalPosition != -1)
 	{
-		glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(3 * sizeof(float)));
+		glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void *)(3 * sizeof(float)));
 		glEnableVertexAttribArray(normalPosition);
 		glVertexAttribDivisor(normalPosition, 0);
 	}
@@ -1026,7 +1020,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 	GLint uvPosition = glGetAttribLocation(program, "inUvCoord");
 	if (uvPosition != -1)
 	{
-		glVertexAttribPointer(uvPosition, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(6 * sizeof(float)));
+		glVertexAttribPointer(uvPosition, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void *)(6 * sizeof(float)));
 		glEnableVertexAttribArray(uvPosition);
 		glVertexAttribDivisor(uvPosition, 0);
 	}
@@ -1049,13 +1043,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float* modelMa
 		glBindTexture(GL_TEXTURE_2D, toRendererData(*emissions)->tex);
 	}
 
-#ifdef __APPLE__
-	glBindVertexArray(vao);
-#else
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-#endif
-
-	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0); addDrawcallStat();
+	glDrawElements(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0);
+	addDrawcallStat();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::addInstancedData2D(PreviousDrawCall2D type, float x, float y, float width, float height, float rotation)
@@ -1105,13 +1095,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::flushInstanceData2D()
 		bbe::Crash(bbe::Error::IllegalState);
 	}
 
-#ifdef __APPLE__
-	// Generate a VAO
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-#endif
-
 	GLuint program = m_program2d.program;
 	glUseProgram(program);
 
@@ -1129,27 +1112,25 @@ void bbe::INTERNAL::openGl::OpenGLManager::flushInstanceData2D()
 
 	GLint pos = 1;
 	glEnableVertexAttribArray(pos);
-	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(0 * sizeof(float)));
+	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void *)(0 * sizeof(float)));
 	glVertexAttribDivisor(pos, 1);
 	pos = 2;
 	glEnableVertexAttribArray(pos);
-	glVertexAttribPointer(pos, 1, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(4 * sizeof(float)));
+	glVertexAttribPointer(pos, 1, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void *)(4 * sizeof(float)));
 	glVertexAttribDivisor(pos, 1);
 	pos = 3;
 	glEnableVertexAttribArray(pos);
-	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(5 * sizeof(float)));
+	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void *)(5 * sizeof(float)));
 	glVertexAttribDivisor(pos, 1);
 
-#ifdef __APPLE__
-	glBindVertexArray(vao);
-#endif
-	glDrawElementsInstanced(mode, size, GL_UNSIGNED_INT, 0, (GLsizei)instanceDatas.getLength()); addDrawcallStat();
+	glDrawElementsInstanced(mode, size, GL_UNSIGNED_INT, 0, (GLsizei)instanceDatas.getLength());
+	addDrawcallStat();
 	instanceDatas.clear();
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDeleteBuffers(1, &instanceVBO);
 }
 
-bbe::INTERNAL::openGl::OpenGLImage* bbe::INTERNAL::openGl::OpenGLManager::toRendererData(const bbe::Image& image) const
+bbe::INTERNAL::openGl::OpenGLImage *bbe::INTERNAL::openGl::OpenGLManager::toRendererData(const bbe::Image &image) const
 {
 	if (image.m_prendererData == nullptr)
 	{
@@ -1157,19 +1138,12 @@ bbe::INTERNAL::openGl::OpenGLImage* bbe::INTERNAL::openGl::OpenGLManager::toRend
 	}
 	else
 	{
-		return (bbe::INTERNAL::openGl::OpenGLImage*)image.m_prendererData.get();
+		return (bbe::INTERNAL::openGl::OpenGLImage *)image.m_prendererData.get();
 	}
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& light, bool baking, GLuint ibo)
+void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight &light, bool baking, GLuint ibo)
 {
-#ifdef __APPLE__
-	// Create and bind VAO for macOS Core Profile compatibility
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-#endif
-
 	if (!baking)
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, openGl::OpenGLSphere::getIbo());
@@ -1186,13 +1160,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawLight(const bbe::PointLight& ligh
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	}
 
-	LightProgram& program = baking ? m_program3dLightBaking : m_program3dLight;
+	LightProgram &program = baking ? m_program3dLightBaking : m_program3dLight;
 	program.setLightUniform(light, baking ? bbe::Matrix4() : m_view);
 
-#ifdef __APPLE__
-	glBindVertexArray(vao);
-#endif
-	glDrawElements(GL_TRIANGLES, baking ? 6 : (GLsizei)openGl::OpenGLSphere::getAmountOfIndices(), GL_UNSIGNED_INT, 0); addDrawcallStat();
+	glDrawElements(GL_TRIANGLES, baking ? 6 : (GLsizei)openGl::OpenGLSphere::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+	addDrawcallStat();
 }
 
 static bbe::Vector2i getPos(size_t i, uint32_t width)
@@ -1200,18 +1172,16 @@ static bbe::Vector2i getPos(size_t i, uint32_t width)
 	return bbe::Vector2i((int32_t)(i % width), (int32_t)(i / width));
 }
 
-static size_t getIndex(const bbe::Vector2i& pos, uint32_t width)
+static size_t getIndex(const bbe::Vector2i &pos, uint32_t width)
 {
 	return pos.y * width + pos.x;
 }
 
-static void transferBorderPixels(bbe::List<bbe::byte>& byteBuffer, const bbe::List<float>& colorFloatBuffer, size_t i, const bbe::Vector2i& src, int32_t width, int32_t height)
+static void transferBorderPixels(bbe::List<bbe::byte> &byteBuffer, const bbe::List<float> &colorFloatBuffer, size_t i, const bbe::Vector2i &src, int32_t width, int32_t height)
 {
 	if (src.x < 0 || src.y < 0 || src.x >= width || src.y >= height) return;
 	const size_t srcIndex = getIndex(src, width) * 4;
-	if (   colorFloatBuffer[srcIndex + 0] != 0
-		|| colorFloatBuffer[srcIndex + 1] != 0
-		|| colorFloatBuffer[srcIndex + 2] != 0)
+	if (colorFloatBuffer[srcIndex + 0] != 0 || colorFloatBuffer[srcIndex + 1] != 0 || colorFloatBuffer[srcIndex + 2] != 0)
 	{
 		byteBuffer[i + 0] = byteBuffer[srcIndex + 0];
 		byteBuffer[i + 1] = byteBuffer[srcIndex + 1];
@@ -1221,11 +1191,11 @@ static void transferBorderPixels(bbe::List<bbe::byte>& byteBuffer, const bbe::Li
 
 bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t width, uint32_t height) const
 {
-	const size_t bufferSize = width * height * 4/*channels*/;
+	const size_t bufferSize = width * height * 4 /*channels*/;
 	bbe::List<float> colorFloatBuffer;
 	bbe::List<byte> byteBuffer;
 	colorFloatBuffer.resizeCapacityAndLengthUninit(bufferSize);
-	byteBuffer      .resizeCapacityAndLengthUninit(bufferSize);
+	byteBuffer.resizeCapacityAndLengthUninit(bufferSize);
 	glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, colorFloatBuffer.getRaw());
 	for (size_t i = 0; i < colorFloatBuffer.getLength(); i += 4)
 	{
@@ -1238,15 +1208,13 @@ bbe::Image bbe::INTERNAL::openGl::OpenGLManager::framebufferToImage(uint32_t wid
 	// TODO this should be put elsewhere. It isn't really the job of this function.
 	for (size_t i = 0; i < byteBuffer.getLength(); i += 4)
 	{
-		if (   colorFloatBuffer[i + 0] == 0
-			&& colorFloatBuffer[i + 1] == 0
-			&& colorFloatBuffer[i + 2] == 0)
+		if (colorFloatBuffer[i + 0] == 0 && colorFloatBuffer[i + 1] == 0 && colorFloatBuffer[i + 2] == 0)
 		{
 			const bbe::Vector2i pos = getPos(i / 4, width);
-			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 1,  0), (int32_t)width, (int32_t)height);
-			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(-1,  0), (int32_t)width, (int32_t)height);
-			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 0,  1), (int32_t)width, (int32_t)height);
-			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i( 0, -1), (int32_t)width, (int32_t)height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(1, 0), (int32_t)width, (int32_t)height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(-1, 0), (int32_t)width, (int32_t)height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(0, 1), (int32_t)width, (int32_t)height);
+			transferBorderPixels(byteBuffer, colorFloatBuffer, i, pos + bbe::Vector2i(0, -1), (int32_t)width, (int32_t)height);
 		}
 	}
 	return bbe::Image(width, height, byteBuffer.getRaw(), bbe::ImageFormat::R8G8B8A8);
@@ -1264,7 +1232,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::addDrawcallStat()
 
 void bbe::INTERNAL::openGl::OpenGLManager::flipDrawcallStats()
 {
-	uint32_t* temp = amountOfDrawcallsRead;
+	uint32_t *temp = amountOfDrawcallsRead;
 	amountOfDrawcallsRead = amountOfDrawcallsWrite;
 	amountOfDrawcallsWrite = temp;
 	*amountOfDrawcallsWrite = 0;
@@ -1274,9 +1242,12 @@ GLuint bbe::INTERNAL::openGl::OpenGLManager::getModeFramebuffer()
 {
 	switch (m_renderMode)
 	{
-	case(bbe::RenderMode::DEFERRED):          return mrtFb           .framebuffer;
-	case(bbe::RenderMode::FORWARD_NO_LIGHTS): return forwardNoLightFb.framebuffer;
-	default: bbe::Crash(bbe::Error::IllegalState);
+	case (bbe::RenderMode::DEFERRED):
+		return mrtFb.framebuffer;
+	case (bbe::RenderMode::FORWARD_NO_LIGHTS):
+		return forwardNoLightFb.framebuffer;
+	default:
+		bbe::Crash(bbe::Error::IllegalState);
 	}
 }
 
@@ -1286,12 +1257,12 @@ bbe::INTERNAL::openGl::OpenGLManager::OpenGLManager()
 
 void GLAPIENTRY
 MessageCallback(GLenum source,
-	GLenum type,
-	GLuint id,
-	GLenum severity,
-	GLsizei length,
-	const GLchar* message,
-	const void* userParam)
+				GLenum type,
+				GLuint id,
+				GLenum severity,
+				GLsizei length,
+				const GLchar *message,
+				const void *userParam)
 {
 	// Filter too spammy types.
 	if (type == GL_DEBUG_TYPE_OTHER) return;
@@ -1300,25 +1271,44 @@ MessageCallback(GLenum source,
 	bbe::String typeString;
 	switch (type)
 	{
-	case GL_DEBUG_TYPE_ERROR:               typeString = "ERROR";               break;
-	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: typeString = "DEPRECATED_BEHAVIOR"; break;
-	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  typeString = "UNDEFINED_BEHAVIOR";  break;
-	case GL_DEBUG_TYPE_PORTABILITY:         typeString = "PORTABILITY";         break;
-	case GL_DEBUG_TYPE_PERFORMANCE:         typeString = "PERFORMANCE";         break;
-	case GL_DEBUG_TYPE_OTHER:               typeString = "OTHER";               break;
-	case GL_DEBUG_TYPE_MARKER:              typeString = "MARKER";              break;
-	case GL_DEBUG_TYPE_PUSH_GROUP:          typeString = "PUSH_GROUP";          break;
-	case GL_DEBUG_TYPE_POP_GROUP:           typeString = "POP_GROUP";           break;
-	default:                                typeString = "UNKNOWN";             break;
+	case GL_DEBUG_TYPE_ERROR:
+		typeString = "ERROR";
+		break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+		typeString = "DEPRECATED_BEHAVIOR";
+		break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+		typeString = "UNDEFINED_BEHAVIOR";
+		break;
+	case GL_DEBUG_TYPE_PORTABILITY:
+		typeString = "PORTABILITY";
+		break;
+	case GL_DEBUG_TYPE_PERFORMANCE:
+		typeString = "PERFORMANCE";
+		break;
+	case GL_DEBUG_TYPE_OTHER:
+		typeString = "OTHER";
+		break;
+	case GL_DEBUG_TYPE_MARKER:
+		typeString = "MARKER";
+		break;
+	case GL_DEBUG_TYPE_PUSH_GROUP:
+		typeString = "PUSH_GROUP";
+		break;
+	case GL_DEBUG_TYPE_POP_GROUP:
+		typeString = "POP_GROUP";
+		break;
+	default:
+		typeString = "UNKNOWN";
+		break;
 	}
 
 	BBELOGLN("OpenGL " << typeString << " Callback: "
-		"\n   type     = " << type <<
-		"\n   severity = " << severity <<
-		"\n   message  = " << message);
+										"\n   type     = "
+					   << type << "\n   severity = " << severity << "\n   message  = " << message);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow* window, uint32_t initialWindowWidth, uint32_t initialWindowHeight)
+void bbe::INTERNAL::openGl::OpenGLManager::init(const char *appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow *window, uint32_t initialWindowWidth, uint32_t initialWindowHeight)
 {
 	m_pwindow = window;
 
@@ -1328,10 +1318,19 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	glfwMakeContextCurrent(window);
 
 	GLenum resp = glewInit();
-	if (resp != GLEW_OK)
+	bool isNoGlxDisplayError = false;
+#ifdef GLEW_ERROR_NO_GLX_DISPLAY
+	isNoGlxDisplayError = (resp == GLEW_ERROR_NO_GLX_DISPLAY);
+#endif
+	if (isNoGlxDisplayError)
+	{
+		// Dirty hack for Wayland based Linux
+		BBELOGLN("WARNING: GLEW_ERROR_NO_GLX_DISPLAY");
+	}
+	else if (resp != GLEW_OK)
 	{
 		bbe::String errorMessage = "An error occurred while initializing GLEW: ";
-		errorMessage += (const char*)glewGetErrorString(resp);
+		errorMessage += (const char *)glewGetErrorString(resp);
 		bbe::INTERNAL::triggerFatalError(errorMessage);
 	}
 
@@ -1353,10 +1352,15 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 	m_program3dLightBaking = init3dShadersLight(true);
 	initFrameBuffers();
 
-	OpenGLRectangle::init();
-	OpenGLCircle::init();
-	OpenGLCube::init();
-	OpenGLSphere::init();
+	static bool initDone = false;
+	if (!initDone)
+	{
+		initDone = true;
+		OpenGLRectangle::init();
+		OpenGLCircle::init();
+		OpenGLCube::init();
+		OpenGLSphere::init();
+	}
 
 	glEnable(GL_BLEND);
 	glEnable(GL_MULTISAMPLE);
@@ -1369,34 +1373,50 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char* appName, uint32_t ma
 
 	const uint32_t indices[] = { 0, 3, 1, 1, 3, 2 };
 	quadIbo = genBuffer("quadIbo", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
+#ifdef __APPLE__
+	glGenVertexArrays(1, &m_defaultVao);
+	glBindVertexArray(m_defaultVao);
+#endif
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 {
+	if (m_pwindow == nullptr) return;
+#ifdef __APPLE__
+	if (m_defaultVao != 0)
+	{
+		glDeleteVertexArrays(1, &m_defaultVao);
+		m_defaultVao = 0;
+	}
+#endif
 	glDeleteBuffers(1, &quadIbo);
 	imguiStop();
 
-	OpenGLSphere   ::destroy();
-	OpenGLCube     ::destroy();
-	OpenGLCircle   ::destroy();
+	OpenGLSphere::destroy();
+	OpenGLCube::destroy();
+	OpenGLCircle::destroy();
 	OpenGLRectangle::destroy();
 
-	mrtFb                         .destroy();
-	forwardNoLightFb              .destroy();
-	postProcessingFb              .destroy();
-	m_program3dMrt                .destroy();
-	m_programPostProcessing       .destroy();
+	mrtFb.destroy();
+	forwardNoLightFb.destroy();
+	postProcessingFb.destroy();
+	m_program3dMrt.destroy();
+	m_programPostProcessing.destroy();
 	m_programBakingGammaCorrection.destroy();
-	m_program3dLight              .destroy();
-	m_program3dMrtBaking          .destroy();
-	m_program3dLightBaking        .destroy();
+	m_program3dLight.destroy();
+	m_program3dMrtBaking.destroy();
+	m_program3dLightBaking.destroy();
 	glDeleteBuffers(1, &m_imageUvBuffer);
 	m_program2dTex.destroy();
-	m_program2d   .destroy();
+	m_program2d.destroy();
+	m_pwindow = nullptr;
+	m_windowWidth = 0;
+	m_windowHeight = 0;
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 {
+	if (m_pwindow == nullptr) return;
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
@@ -1413,18 +1433,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
-#ifdef __APPLE__
-	// Create and bind VAO for macOS Core Profile compatibility
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-#endif
 	glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLRectangle::getIbo());
-#ifdef __APPLE__
-	glBindVertexArray(vao);
-#endif
-	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0); addDrawcallStat();
+	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+	addDrawcallStat();
 
 	m_program3dLight.use();
 	mrtFb.useAsInput();
@@ -1433,14 +1445,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glBlendFunc(GL_ONE, GL_ONE);
 	for (size_t i = 0; i < pointLights.getLength(); i++)
 	{
-		const bbe::PointLight& l = pointLights[i];
+		const bbe::PointLight &l = pointLights[i];
 		drawLight(l, false);
 	}
-
-#ifdef __APPLE__
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-#endif
 
 	m_programPostProcessing.use();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1449,11 +1456,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
-
-#ifdef __APPLE__
-	glBindVertexArray(vao);
-#endif
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	addDrawcallStat();
 
 	// Switch to 2D
 	glDisable(GL_CULL_FACE);
@@ -1467,6 +1471,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
 {
+	if (m_pwindow == nullptr) return;
 	glEnable(GL_DEPTH_TEST);
 	m_primitiveBrush3D.INTERNAL_beginDraw(m_windowWidth, m_windowHeight, this);
 	glBindFramebuffer(GL_FRAMEBUFFER, forwardNoLightFb.framebuffer);
@@ -1482,6 +1487,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
 {
+	if (m_pwindow == nullptr) return;
+#ifdef __APPLE__
+	glBindVertexArray(m_defaultVao);
+#endif
 	flipDrawcallStats();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	imguiStartFrame();
@@ -1489,13 +1498,25 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
 	m_color2d = bbe::Color(1, 1, 1, 1);
 	m_color3d = bbe::Color(1, 1, 1, 1);
 	glViewport(0, 0, m_windowWidth, m_windowHeight);
-	glScissor (0, 0, m_windowWidth, m_windowHeight);
+	glScissor(0, 0, m_windowWidth, m_windowHeight);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::postDraw()
 {
+	if (m_pwindow == nullptr) return;
 	flushInstanceData2D();
 	imguiEndFrame();
+
+#ifdef __linux__
+	int fbW = 0;
+	int fbH = 0;
+	glfwGetFramebufferSize(m_pwindow, &fbW, &fbH);
+	if (!glfwWrapper::glfwGetWindowAttrib(m_pwindow, GLFW_VISIBLE) || fbW <= 0 || fbH <= 0)
+	{
+		return;
+	}
+#endif
+
 	glfwSwapBuffers(m_pwindow);
 }
 
@@ -1507,18 +1528,19 @@ void bbe::INTERNAL::openGl::OpenGLManager::waitTillIdle()
 {
 }
 
-bbe::PrimitiveBrush2D& bbe::INTERNAL::openGl::OpenGLManager::getBrush2D()
+bbe::PrimitiveBrush2D &bbe::INTERNAL::openGl::OpenGLManager::getBrush2D()
 {
 	return m_primitiveBrush2D;
 }
 
-bbe::PrimitiveBrush3D& bbe::INTERNAL::openGl::OpenGLManager::getBrush3D()
+bbe::PrimitiveBrush3D &bbe::INTERNAL::openGl::OpenGLManager::getBrush3D()
 {
 	return m_primitiveBrush3D;
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::resize(uint32_t width, uint32_t height)
 {
+	if (m_pwindow == nullptr) return;
 	m_program2d.uniform2f(screenSizePos2d, (float)width, (float)height);
 	m_program2dTex.uniform2f(screenSizePos2dTex, (float)width, (float)height);
 	m_program3dAmbient.uniform2f(screenSizeAmbient, (float)width, (float)height);
@@ -1533,22 +1555,22 @@ void bbe::INTERNAL::openGl::OpenGLManager::resize(uint32_t width, uint32_t heigh
 	glScissor(0, 0, width, height);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::screenshot(const bbe::String& path)
+void bbe::INTERNAL::openGl::OpenGLManager::screenshot(const bbe::String &path)
 {
 	// TODO
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::setVideoRenderingMode(const char* path)
+void bbe::INTERNAL::openGl::OpenGLManager::setVideoRenderingMode(const char *path)
 {
 	// TODO
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::setColor2D(const bbe::Color& color)
+void bbe::INTERNAL::openGl::OpenGLManager::setColor2D(const bbe::Color &color)
 {
 	m_color2d = color;
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader)
+void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle &rect, float rotation, FragmentShader *shader)
 {
 	if (!shader)
 	{
@@ -1557,10 +1579,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 	}
 
 	flushInstanceData2D();
-	bbe::INTERNAL::openGl::OpenGLFragmentShader* fs = nullptr;
+	bbe::INTERNAL::openGl::OpenGLFragmentShader *fs = nullptr;
 	if (shader->m_prendererData != nullptr)
 	{
-		fs = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)shader->m_prendererData.get();
+		fs = (bbe::INTERNAL::openGl::OpenGLFragmentShader *)shader->m_prendererData.get();
 	}
 	else
 	{
@@ -1572,12 +1594,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 	GLint rotationPos = fs->getTwoD().rotationPos;
 
 	glUseProgram(program);
-
-#ifdef __APPLE__
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-#endif
 
 	if (previousDrawCall2d != PreviousDrawCall2D::RECT_SHADER)
 	{
@@ -1594,22 +1610,19 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillRect2D(const Rectangle& rect, flo
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-#ifdef __APPLE__
-	glBindVertexArray(vao);
-#endif
-
 	glUniform2f(fs->getTwoD().screenSizePos, (float)m_windowWidth, (float)m_windowHeight);
 	glUniform4f(scalePosOffsetPos, rect.width, rect.height, rect.x, rect.y);
 	glUniform1f(rotationPos, rotation);
-	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0); addDrawcallStat();
+	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, 0);
+	addDrawcallStat();
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle& circle)
+void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle &circle)
 {
 	addInstancedData2D(PreviousDrawCall2D::CIRCLE, circle.getX(), circle.getY(), circle.getWidth(), circle.getHeight(), 0);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, const Image& image, float rotation)
+void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle &rect, const Image &image, float rotation)
 {
 	// TODO make proper implementation
 	flushInstanceData2D();
@@ -1618,7 +1631,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	previousDrawCall2d = PreviousDrawCall2D::IMAGE;
 	bbe::List<bbe::Vector2> vertices;
 	rect.getVertices(vertices);
-	for (bbe::Vector2& v : vertices)
+	for (bbe::Vector2 &v : vertices)
 	{
 		v = v.rotate(rotation, rect.getCenter());
 	}
@@ -1631,12 +1644,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 	{
 		m_program2dTex.uniform1i(swizzleModePos, 0);
 	}
-
-#ifdef __APPLE__
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-#endif
 
 	GLuint vbo = genBuffer("drawImageVBO", BufferTarget::ARRAY_BUFFER, sizeof(bbe::Vector2) * vertices.getLength(), vertices.getRaw());
 	constexpr uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
@@ -1660,19 +1667,16 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle& rect, co
 
 	glUniform1i(texPos2dTex, 0);
 	glActiveTexture(GL_TEXTURE0);
-	bbe::INTERNAL::openGl::OpenGLImage* ogi = toRendererData(image);
+	bbe::INTERNAL::openGl::OpenGLImage *ogi = toRendererData(image);
 	glBindTexture(GL_TEXTURE_2D, ogi->tex);
-
-#ifdef __APPLE__
-	glBindVertexArray(vao);
-#endif
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	addDrawcallStat();
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDeleteBuffers(1, &vbo);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t* indices, size_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& p, const bbe::Vector2& scale)
+void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t *indices, size_t amountOfIndices, const bbe::Vector2 *vertices, size_t amountOfVertices, const bbe::Vector2 &p, const bbe::Vector2 &scale)
 {
 	flushInstanceData2D();
 	m_program2d.use();
@@ -1694,23 +1698,17 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 
 	GLuint instanceVBO = genBuffer("fillVertexIndexList2DInstanceVBO", BufferTarget::ARRAY_BUFFER, sizeof(InstanceData2D), &instanceData2D);
 
-#ifdef __APPLE__
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-#endif
-
 	GLint pos = 1;
 	glEnableVertexAttribArray(pos);
-	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(0 * sizeof(float)));
+	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void *)(0 * sizeof(float)));
 	glVertexAttribDivisor(pos, 1);
 	pos = 2;
 	glEnableVertexAttribArray(pos);
-	glVertexAttribPointer(pos, 1, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(4 * sizeof(float)));
+	glVertexAttribPointer(pos, 1, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void *)(4 * sizeof(float)));
 	glVertexAttribDivisor(pos, 1);
 	pos = 3;
 	glEnableVertexAttribArray(pos);
-	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void*)(5 * sizeof(float)));
+	glVertexAttribPointer(pos, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData2D), (const void *)(5 * sizeof(float)));
 	glVertexAttribDivisor(pos, 1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1722,24 +1720,15 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t*
 	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glVertexAttribDivisor(positionAttribute, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-#ifdef __APPLE__
-	glBindVertexArray(vao);
-#endif
-
-	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0, 1); addDrawcallStat();
-
-#ifdef __APPLE__
-	glBindVertexArray(0);
-	glDeleteVertexArrays(1, &vao);
-#endif
+	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, 0, 1);
+	addDrawcallStat();
 
 	glDeleteBuffers(1, &instanceVBO);
 	glDeleteBuffers(1, &ibo);
 	glDeleteBuffers(1, &vbo);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::setColor3D(const bbe::Color& color)
+void bbe::INTERNAL::openGl::OpenGLManager::setColor3D(const bbe::Color &color)
 {
 	bbe::Color copy = color;
 	copy.a = 1.f;
@@ -1748,7 +1737,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::setColor3D(const bbe::Color& color)
 	m_color3d = copy;
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos, const bbe::Matrix4& view, const bbe::Matrix4& projection)
+void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3 &cameraPos, const bbe::Matrix4 &view, const bbe::Matrix4 &projection)
 {
 	m_program3dMrt.uniformMatrix4fv(m_program3dMrt.viewPos3dMrt, GL_FALSE, view);
 	m_program3dMrt.uniformMatrix4fv(m_program3dMrt.projectionPos3dMrt, GL_FALSE, projection);
@@ -1760,17 +1749,17 @@ void bbe::INTERNAL::openGl::OpenGLManager::setCamera3D(const Vector3& cameraPos,
 	m_cameraPos = cameraPos;
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube& cube)
+void bbe::INTERNAL::openGl::OpenGLManager::fillCube3D(const Cube &cube)
 {
 	fillInternalMesh(&cube.getTransform()[0], OpenGLCube::getIbo(), OpenGLCube::getVbo(), OpenGLCube::getAmountOfIndices(), nullptr, nullptr, nullptr, nullptr, getModeFramebuffer(), false, bbe::Color::white());
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere& sphere)
+void bbe::INTERNAL::openGl::OpenGLManager::fillSphere3D(const IcoSphere &sphere)
 {
 	fillInternalMesh(&sphere.getTransform()[0], OpenGLSphere::getIbo(), OpenGLSphere::getVbo(), OpenGLSphere::getAmountOfIndices(), nullptr, nullptr, nullptr, nullptr, getModeFramebuffer(), false, bbe::Color::white());
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transform, const Model& model, const Image* albedo, const Image* normals, const Image* emissions, const FragmentShader* shader)
+void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4 &transform, const Model &model, const Image *albedo, const Image *normals, const Image *emissions, const FragmentShader *shader)
 {
 	fillModel(transform, model, albedo, normals, emissions, shader, getModeFramebuffer(), false, bbe::Color::white());
 }
@@ -1778,7 +1767,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4& transfo
 struct OcclusionQuery : public bbe::DataProvider<bool>
 {
 	GLuint id = 0;
-	OcclusionQuery(bbe::INTERNAL::openGl::OpenGLManager* manager, const bbe::Cube& cube)
+	OcclusionQuery(bbe::INTERNAL::openGl::OpenGLManager *manager, const bbe::Cube &cube)
 	{
 		glGenQueries(1, &id);
 		glBeginQuery(GL_ANY_SAMPLES_PASSED, id);
@@ -1811,7 +1800,7 @@ struct OcclusionQuery : public bbe::DataProvider<bool>
 	}
 };
 
-bbe::Future<bool> bbe::INTERNAL::openGl::OpenGLManager::isCubeVisible(const Cube& cube)
+bbe::Future<bool> bbe::INTERNAL::openGl::OpenGLManager::isCubeVisible(const Cube &cube)
 {
 	return bbe::Future<bool>(new OcclusionQuery(this, cube));
 }
@@ -1821,7 +1810,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::setRenderMode(bbe::RenderMode renderM
 	m_renderMode = renderMode;
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3& pos, float lightStrength, const bbe::Color& lightColor, const bbe::Color& specularColor, LightFalloffMode falloffMode)
+void bbe::INTERNAL::openGl::OpenGLManager::addLight(const bbe::Vector3 &pos, float lightStrength, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)
 {
 	bbe::PointLight light(pos);
 	light.lightStrength = lightStrength;
@@ -1846,7 +1835,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStart()
 		bbe::Crash(bbe::Error::IllegalState);
 	}
 
-	ImGuiIO& io = ImGui::GetIO();
+	ImGuiIO &io = ImGui::GetIO();
 	ImFontConfig fontConfig;
 	m_pimguiFontSmall = io.Fonts->AddFontDefault(&fontConfig);
 	fontConfig.SizePixels = 26;
@@ -1871,7 +1860,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStartFrame()
 	// TODO: Still not ideal - what if the scale is anything else than 1 or 2 (e.g. on 8k)
 	float scale = 0;
 	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
-	ImGuiIO& io = ImGui::GetIO();
+	ImGuiIO &io = ImGui::GetIO();
 	if (scale < 1.5f)
 	{
 		io.FontDefault = m_pimguiFontSmall;
@@ -1889,15 +1878,15 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStartFrame()
 void bbe::INTERNAL::openGl::OpenGLManager::imguiEndFrame()
 {
 	ImGui::Render();
-	ImDrawData* drawData = ImGui::GetDrawData();
+	ImDrawData *drawData = ImGui::GetDrawData();
 	ImGui_ImplOpenGL3_RenderDrawData(drawData);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::bakeLightMrt(bbe::LightBaker& lightBaker)
+void bbe::INTERNAL::openGl::OpenGLManager::bakeLightMrt(bbe::LightBaker &lightBaker)
 {
 	if (lightBaker.m_prendererData != nullptr) bbe::Crash(bbe::Error::IllegalState);
 
-	OpenGLLightBaker* ogllb = new OpenGLLightBaker();
+	OpenGLLightBaker *ogllb = new OpenGLLightBaker();
 	lightBaker.m_prendererData = ogllb;
 
 	ogllb->geometryBuffer = getGeometryBuffer("BakeLightsGeometryBuffer", lightBaker.m_resolution.x, lightBaker.m_resolution.y, true);
@@ -1932,11 +1921,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::bakeLightMrt(bbe::LightBaker& lightBa
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::bakeLight(bbe::LightBaker& lightBaker, const bbe::PointLight& light)
+void bbe::INTERNAL::openGl::OpenGLManager::bakeLight(bbe::LightBaker &lightBaker, const bbe::PointLight &light)
 {
 	if (lightBaker.m_prendererData == nullptr) bbe::Crash(bbe::Error::IllegalState);
 
-	OpenGLLightBaker* ogllb = (OpenGLLightBaker*)lightBaker.m_prendererData.get();
+	OpenGLLightBaker *ogllb = (OpenGLLightBaker *)lightBaker.m_prendererData.get();
 
 	glViewport(0, 0, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
 	glScissor(0, 0, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
@@ -1964,11 +1953,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::bakeLight(bbe::LightBaker& lightBaker
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::bakeLightGammaCorrect(bbe::LightBaker& lightBaker)
+void bbe::INTERNAL::openGl::OpenGLManager::bakeLightGammaCorrect(bbe::LightBaker &lightBaker)
 {
 	if (lightBaker.m_prendererData == nullptr) bbe::Crash(bbe::Error::IllegalState);
 
-	OpenGLLightBaker* ogllb = (OpenGLLightBaker*)lightBaker.m_prendererData.get();
+	OpenGLLightBaker *ogllb = (OpenGLLightBaker *)lightBaker.m_prendererData.get();
 
 	glViewport(0, 0, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
 	glScissor(0, 0, lightBaker.m_resolution.x, lightBaker.m_resolution.y);
@@ -1977,21 +1966,13 @@ void bbe::INTERNAL::openGl::OpenGLManager::bakeLightGammaCorrect(bbe::LightBaker
 	m_programBakingGammaCorrection.use();
 	m_programBakingGammaCorrection.uniform2f(screenSizeBakingGammaCorrection, (GLfloat)lightBaker.m_resolution.x, (GLfloat)lightBaker.m_resolution.y);
 	ogllb->colorBuffer.useAsInput();
-
-#ifdef __APPLE__
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-#endif
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIbo);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
-#ifdef __APPLE__
-	glBindVertexArray(vao);
-#endif
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); addDrawcallStat();
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	addDrawcallStat();
 
 	// Read the frambuffer to image
 	glBindTexture(GL_TEXTURE_2D, ogllb->colorBufferGamma.textures[0]);
@@ -2010,11 +1991,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::bakeLightGammaCorrect(bbe::LightBaker
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLightDetach(bbe::LightBaker& lightBaker)
+bbe::Image bbe::INTERNAL::openGl::OpenGLManager::bakeLightDetach(bbe::LightBaker &lightBaker)
 {
 	if (lightBaker.m_prendererData == nullptr) bbe::Crash(bbe::Error::IllegalState);
 
-	OpenGLLightBaker* ogllb = (OpenGLLightBaker*)lightBaker.m_prendererData.get();
+	OpenGLLightBaker *ogllb = (OpenGLLightBaker *)lightBaker.m_prendererData.get();
 	bbe::Image image;
 	image.m_format = bbe::ImageFormat::R8G8B8A8;
 	new OpenGLImage(image, ogllb->colorBufferGamma.textures[0]);
@@ -2033,25 +2014,25 @@ bbe::String bbe::INTERNAL::openGl::UniformVariable::toString() const
 	bbe::String retVal = "uniform ";
 	switch (type)
 	{
-	case(UT::UT_int):
+	case (UT::UT_int):
 		retVal += "int ";
 		break;
-	case(UT::UT_float):
+	case (UT::UT_float):
 		retVal += "float ";
 		break;
-	case(UT::UT_vec2):
+	case (UT::UT_vec2):
 		retVal += "vec2 ";
 		break;
-	case(UT::UT_vec3):
+	case (UT::UT_vec3):
 		retVal += "vec3 ";
 		break;
-	case(UT::UT_vec4):
+	case (UT::UT_vec4):
 		retVal += "vec4 ";
 		break;
-	case(UT::UT_mat4):
+	case (UT::UT_mat4):
 		retVal += "mat4 ";
 		break;
-	case(UT::UT_sampler2D):
+	case (UT::UT_sampler2D):
 		retVal += "sampler2D ";
 		break;
 	default:
@@ -2064,7 +2045,7 @@ bbe::String bbe::INTERNAL::openGl::UniformVariable::toString() const
 	return retVal;
 }
 
-void bbe::INTERNAL::openGl::LightProgram::setLightUniform(const bbe::PointLight& light, const bbe::Matrix4& view)
+void bbe::INTERNAL::openGl::LightProgram::setLightUniform(const bbe::PointLight &light, const bbe::Matrix4 &view)
 {
 	bbe::Vector4 p(light.pos, 1.0f);
 	p = view * p;

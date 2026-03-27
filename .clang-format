@@ -1,0 +1,27 @@
+BasedOnStyle: LLVM
+UseTab: Always
+IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 4
+
+BreakBeforeBraces: Allman
+NamespaceIndentation: All
+AccessModifierOffset: -4
+IndentCaseLabels: false
+
+ColumnLimit: 0
+SortIncludes: Never
+ReflowComments: false
+FixNamespaceComments: false
+
+PointerAlignment: Right
+ReferenceAlignment: Right
+SpaceBeforeParens: ControlStatements
+SpaceAfterTemplateKeyword: false
+
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLoopsOnASingleLine: true
+AlignAfterOpenBracket: Align
+
+BreakConstructorInitializers: BeforeColon
+Cpp11BracedListStyle: false

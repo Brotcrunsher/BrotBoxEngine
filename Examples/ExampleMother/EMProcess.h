@@ -1,4 +1,5 @@
 #pragma once
+#if defined(_WIN32) || defined(__linux__)
 #include "BBE/BrotBoxEngine.h"
 
 struct Process
@@ -12,8 +13,8 @@ struct Process
 	};
 	BBE_SERIALIZABLE_DATA(
 		((bbe::String), title),
-		((int32_t), type)
-	)
+		((int32_t), type),
+		((bbe::String), exePath))
 };
 
 class SubsystemProcess
@@ -21,6 +22,7 @@ class SubsystemProcess
 private:
 	bbe::SerializableList<Process> processes = bbe::SerializableList<Process>("processes.dat", "ParanoiaConfig", bbe::Undoable::YES);
 	bbe::List<bbe::String> foundGames;
+	int32_t motherPorcesses = 0;
 
 public:
 	void update();
@@ -28,4 +30,7 @@ public:
 	bool isGameOn() const;
 
 	void drawGui(float scale);
+
+	bbe::List<bbe::String> getWarnings() const;
 };
+#endif

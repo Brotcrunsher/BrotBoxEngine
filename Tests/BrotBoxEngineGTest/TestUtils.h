@@ -4,7 +4,7 @@ template<typename T>
 class SomeClass
 {
 private:
-	T* m_pdata = nullptr;
+	T *m_pdata = nullptr;
 	size_t m_length = 0;
 
 	void init(size_t length)
@@ -19,7 +19,7 @@ private:
 		m_pdata = new T[m_length]{ 0 };
 	}
 
-	void copyDataFrom(const SomeClass<T>& other)
+	void copyDataFrom(const SomeClass<T> &other)
 	{
 		init(other.m_length);
 		for (size_t i = 0; i < m_length; i++)
@@ -28,7 +28,7 @@ private:
 		}
 	}
 
-	void stealDataFrom(SomeClass<T>&& other)
+	void stealDataFrom(SomeClass<T> &&other)
 	{
 		m_pdata = other.m_pdata;
 		m_length = other.m_length;
@@ -58,56 +58,56 @@ public:
 		init(length);
 	}
 
-	SomeClass(const SomeClass<T>& other)
+	SomeClass(const SomeClass<T> &other)
 	{
 		copyDataFrom(other);
 	}
 
-	SomeClass(SomeClass<T>&& other)
+	SomeClass(SomeClass<T> &&other)
 	{
 		stealDataFrom(std::move(other));
 	}
 
-	SomeClass<T>& operator=(const SomeClass<T>& other)
+	SomeClass<T> &operator=(const SomeClass<T> &other)
 	{
 		cleanup();
 		copyDataFrom(other);
 		return *this;
 	}
 
-	SomeClass<T>& operator=(SomeClass<T>&& other)
+	SomeClass<T> &operator=(SomeClass<T> &&other)
 	{
 		cleanup();
 		stealDataFrom(std::move(other));
 		return *this;
 	}
 
-	bool operator<(const SomeClass<T>& other) const
+	bool operator<(const SomeClass<T> &other) const
 	{
 		return m_length < other.m_length;
 	}
 
-	bool operator>(const SomeClass<T>& other) const
+	bool operator>(const SomeClass<T> &other) const
 	{
 		return m_length > other.m_length;
 	}
 
-	bool operator<=(const SomeClass<T>& other) const
+	bool operator<=(const SomeClass<T> &other) const
 	{
 		return m_length <= other.m_length;
 	}
 
-	bool operator>=(const SomeClass<T>& other) const
+	bool operator>=(const SomeClass<T> &other) const
 	{
 		return m_length >= other.m_length;
 	}
 
-	bool operator==(const SomeClass<T>& other) const
+	bool operator==(const SomeClass<T> &other) const
 	{
 		return m_length == other.m_length;
 	}
 
-	bool operator!=(const SomeClass<T>& other) const
+	bool operator!=(const SomeClass<T> &other) const
 	{
 		return m_length != other.m_length;
 	}

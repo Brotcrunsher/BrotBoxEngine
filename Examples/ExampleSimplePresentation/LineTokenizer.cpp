@@ -1,6 +1,6 @@
 #include "LineTokenizer.h"
 
-void LineTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
+void LineTokenizer::tokenize(const bbe::String &text, const bbe::Font &font)
 {
 	const bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(bbe::Vector2(0, 0), text);
 	const bbe::List<bbe::Vector2> powerPointPositions = font.getRenderPositions(bbe::Vector2(0, 0), text, 0, false);
@@ -32,7 +32,7 @@ void LineTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 	currentToken.submit(tokens);
 }
 
-void LineTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues)
+void LineTokenizer::determineTokenTypes(const bbe::List<bbe::String> &additionalTypes, const bbe::List<bbe::String> &additionalValues)
 {
 	for (size_t i = 0; i < tokens.getLength(); i++)
 	{

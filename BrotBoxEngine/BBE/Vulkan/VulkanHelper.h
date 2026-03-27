@@ -13,16 +13,17 @@ namespace bbe
 	{
 		namespace vulkan
 		{
-			#define ASSERT_VULKAN(val)\
-			if(val != VK_SUCCESS){\
-				bbe::debugBreak();\
-			}
+#define ASSERT_VULKAN(val) \
+	if (val != VK_SUCCESS) \
+	{                      \
+		bbe::debugBreak(); \
+	}
 
 			// I am pretty sure that RetVal can be somehow deducted from Func, but I am too potato to do that.
 			// RetVal is NOT the return value from Func (which is VkResult in most cases) but instead the last
 			// argument to Func without being a pointer.
-			template <typename RetVal, typename Func, typename... Args>
-			bbe::List<RetVal> get_from_function(Func f, Args&&... args)
+			template<typename RetVal, typename Func, typename... Args>
+			bbe::List<RetVal> get_from_function(Func f, Args &&...args)
 			{
 				uint32_t count = 0;
 				if constexpr (std::is_same<decltype(f(std::forward<Args>(args)..., &count, nullptr)), VkResult>::value)
@@ -57,32 +58,32 @@ namespace bbe
 			bool isStencilFormat(VkFormat format);
 
 			void preCreateBuffer(VkDevice device,
-				VkDeviceSize deviceSize,
-				VkBufferUsageFlags bufferUsageFlags,
-				VkBuffer & buffer,
-				VkSharingMode sharingMode,
-				uint32_t queueFamilyIndexCount,
-				const uint32_t* p_queueFamilyIndices);
+								 VkDeviceSize deviceSize,
+								 VkBufferUsageFlags bufferUsageFlags,
+								 VkBuffer &buffer,
+								 VkSharingMode sharingMode,
+								 uint32_t queueFamilyIndexCount,
+								 const uint32_t *p_queueFamilyIndices);
 			void postCreateBuffer(
 				VkDevice device,
 				VkPhysicalDevice physicalDevice,
-				VkBuffer & buffer,
+				VkBuffer &buffer,
 				VkMemoryPropertyFlags memoryPropertyFlags,
-				VkDeviceMemory & deviceMemory,
+				VkDeviceMemory &deviceMemory,
 				VkDeviceMemory parentDeviceMemory,
 				VkDeviceSize offset);
-			void createBuffer(VkDevice device, 
-				VkPhysicalDevice physicalDevice, 
-				VkDeviceSize deviceSize, 
-				VkBufferUsageFlags bufferUsageFlags, 
-				VkBuffer &buffer, 
-				VkMemoryPropertyFlags memoryPropertyFlags, 
-				VkDeviceMemory &deviceMemory, 
-				VkSharingMode sharingMode, 
-				uint32_t queueFamilyIndexCount, 
-				const uint32_t* p_queueFamilyIndices, 
-				VkDeviceMemory parentDeviceMemory = VK_NULL_HANDLE, 
-				VkDeviceSize offset = 0);
+			void createBuffer(VkDevice device,
+							  VkPhysicalDevice physicalDevice,
+							  VkDeviceSize deviceSize,
+							  VkBufferUsageFlags bufferUsageFlags,
+							  VkBuffer &buffer,
+							  VkMemoryPropertyFlags memoryPropertyFlags,
+							  VkDeviceMemory &deviceMemory,
+							  VkSharingMode sharingMode,
+							  uint32_t queueFamilyIndexCount,
+							  const uint32_t *p_queueFamilyIndices,
+							  VkDeviceMemory parentDeviceMemory = VK_NULL_HANDLE,
+							  VkDeviceSize offset = 0);
 
 			VkCommandBuffer startSingleTimeCommandBuffer(VkDevice device, VkCommandPool commandPool);
 
@@ -90,16 +91,16 @@ namespace bbe
 
 			void createImage(VkDevice device, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags, VkImage &image, VkDeviceMemory &imageMemory, int amountOfMipLevels = 1);
 
-			void createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView &imageView, uint32_t mipLevels = 1, 
-				VkComponentSwizzle swizR = VK_COMPONENT_SWIZZLE_IDENTITY, 
-				VkComponentSwizzle swizG = VK_COMPONENT_SWIZZLE_IDENTITY, 
-				VkComponentSwizzle swizB = VK_COMPONENT_SWIZZLE_IDENTITY, 
-				VkComponentSwizzle swizA = VK_COMPONENT_SWIZZLE_IDENTITY);
+			void createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView &imageView, uint32_t mipLevels = 1,
+								 VkComponentSwizzle swizR = VK_COMPONENT_SWIZZLE_IDENTITY,
+								 VkComponentSwizzle swizG = VK_COMPONENT_SWIZZLE_IDENTITY,
+								 VkComponentSwizzle swizB = VK_COMPONENT_SWIZZLE_IDENTITY,
+								 VkComponentSwizzle swizA = VK_COMPONENT_SWIZZLE_IDENTITY);
 
 			void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuffer src, VkBuffer dest, VkDeviceSize size);
 
-			template <typename T>
-			void createAndUploadBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkQueue queue, VkCommandPool commandPool, bbe::List<T> data, VkBufferUsageFlags usage, VkBuffer &buffer, VkDeviceMemory &deviceMemory, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t* p_queueFamilyIndices)
+			template<typename T>
+			void createAndUploadBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkQueue queue, VkCommandPool commandPool, bbe::List<T> data, VkBufferUsageFlags usage, VkBuffer &buffer, VkDeviceMemory &deviceMemory, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t *p_queueFamilyIndices)
 			{
 				VkDeviceSize bufferSize = sizeof(T) * data.getLength();
 

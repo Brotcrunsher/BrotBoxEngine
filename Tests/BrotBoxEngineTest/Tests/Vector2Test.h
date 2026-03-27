@@ -3,7 +3,6 @@
 #include "BBE/Vector2.h"
 #include "BBE/UtilTest.h"
 
-
 namespace bbe
 {
 	namespace test
@@ -121,36 +120,36 @@ namespace bbe
 				Vector2 down2(0, 100);
 				Vector2 backward2(-100, 0);
 
-				assertEquals(forward.isSameDirection(forward2),  true);
-				assertEquals(forward.isSameDirection(up),        false);
-				assertEquals(forward.isSameDirection(down),      false);
-				assertEquals(forward.isSameDirection(backward),  false);
-				assertEquals(forward.isSameDirection(up2),       false);
-				assertEquals(forward.isSameDirection(down2),     false);
+				assertEquals(forward.isSameDirection(forward2), true);
+				assertEquals(forward.isSameDirection(up), false);
+				assertEquals(forward.isSameDirection(down), false);
+				assertEquals(forward.isSameDirection(backward), false);
+				assertEquals(forward.isSameDirection(up2), false);
+				assertEquals(forward.isSameDirection(down2), false);
 				assertEquals(forward.isSameDirection(backward2), false);
 
-				assertEquals(forward.isOppositeDirection(forward2),  false);
-				assertEquals(forward.isOppositeDirection(up),        false);
-				assertEquals(forward.isOppositeDirection(down),      false);
-				assertEquals(forward.isOppositeDirection(backward),  true);
-				assertEquals(forward.isOppositeDirection(up2),       false);
-				assertEquals(forward.isOppositeDirection(down2),     false);
+				assertEquals(forward.isOppositeDirection(forward2), false);
+				assertEquals(forward.isOppositeDirection(up), false);
+				assertEquals(forward.isOppositeDirection(down), false);
+				assertEquals(forward.isOppositeDirection(backward), true);
+				assertEquals(forward.isOppositeDirection(up2), false);
+				assertEquals(forward.isOppositeDirection(down2), false);
 				assertEquals(forward.isOppositeDirection(backward2), true);
 
-				assertEquals(forward.isLeft(forward2),  false);
-				assertEquals(forward.isLeft(up),        true);
-				assertEquals(forward.isLeft(down),      false);
-				assertEquals(forward.isLeft(backward),  false);
-				assertEquals(forward.isLeft(up2),       true);
-				assertEquals(forward.isLeft(down2),     false);
+				assertEquals(forward.isLeft(forward2), false);
+				assertEquals(forward.isLeft(up), true);
+				assertEquals(forward.isLeft(down), false);
+				assertEquals(forward.isLeft(backward), false);
+				assertEquals(forward.isLeft(up2), true);
+				assertEquals(forward.isLeft(down2), false);
 				assertEquals(forward.isLeft(backward2), false);
 
-				assertEquals(forward.isRight(forward2),  false);
-				assertEquals(forward.isRight(up),        false);
-				assertEquals(forward.isRight(down),      true);
-				assertEquals(forward.isRight(backward),  false);
-				assertEquals(forward.isRight(up2),       false);
-				assertEquals(forward.isRight(down2),     true);
+				assertEquals(forward.isRight(forward2), false);
+				assertEquals(forward.isRight(up), false);
+				assertEquals(forward.isRight(down), true);
+				assertEquals(forward.isRight(backward), false);
+				assertEquals(forward.isRight(up2), false);
+				assertEquals(forward.isRight(down2), true);
 				assertEquals(forward.isRight(backward2), false);
 			}
 
@@ -401,7 +400,6 @@ namespace bbe
 				assertEqualsFloat(vec2.getAngle(vec1), Math::PI);
 				assertEqualsFloat(vec1.getAngle(Vector2(-1, 1)), 4.7123);
 				assertEqualsFloat(vec2.getAngle(Vector2(-1, 1)), Math::PI / 2);
-
 			}
 
 			{

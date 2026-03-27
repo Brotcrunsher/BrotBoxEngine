@@ -13,7 +13,7 @@ namespace bbe
 		static constexpr uint64_t MASK_LOWER = (1ull << R) - 1;
 		static constexpr uint64_t MASK_UPPER = (1ull << R);
 
-		uint16_t  m_index;
+		uint16_t m_index;
 		FieldType m_mt[N];
 
 		inline void twistIteration(uint32_t i)
@@ -37,7 +37,7 @@ namespace bbe
 				twistIteration(i);
 			}
 
-			twistIteration(N - 1);	//Helps the compiler to calculate % N
+			twistIteration(N - 1); //Helps the compiler to calculate % N
 
 			m_index = 0;
 		}
@@ -95,7 +95,8 @@ namespace bbe
 			return x;
 		}
 
-		FieldType operator()() {
+		FieldType operator()()
+		{
 			return next();
 		}
 

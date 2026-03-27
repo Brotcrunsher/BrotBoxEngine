@@ -1,6 +1,13 @@
 #include "BBE/Image.h"
 #include "BBE/Error.h"
 #include "BBE/Math.h"
+#if defined(__linux__)
+#include "BBE/WaylandClipboard.h"
+#endif
+#include <cstdlib>
+#include <cstring>
+#include <limits>
+#include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -14,31 +21,77 @@
 #include <Windows.h>
 #endif
 
-void bbe::Image::finishLoad(stbi_uc* pixels)
+namespace
+{
+	bool checkedMultiplySizeT(size_t &value, size_t factor)
+	{
+		if (factor != 0 && value > std::numeric_limits<size_t>::max() / factor)
+		{
+			return false;
+		}
+
+		value *= factor;
+		return true;
+	}
+
+	std::vector<bbe::byte> encodeRawImageAsPng(const bbe::byte *imageData, int width, int height, size_t componentCount, size_t bytesPerChannel)
+	{
+		if (imageData == nullptr || bytesPerChannel != 1)
+		{
+			return {};
+		}
+
+		if (width <= 0 || height <= 0 || (componentCount != 1 && componentCount != 4))
+		{
+			return {};
+		}
+
+		const int componentCountInt = static_cast<int>(componentCount);
+		int pngLength = 0;
+		unsigned char *pngData = stbi_write_png_to_mem(
+			imageData,
+			width * componentCountInt,
+			width,
+			height,
+			componentCountInt,
+			&pngLength);
+		if (pngData == nullptr || pngLength <= 0)
+		{
+			return {};
+		}
+
+		std::vector<bbe::byte> retVal(pngData, pngData + pngLength);
+		std::free(pngData);
+		return retVal;
+	}
+}
+
+bool bbe::Image::finishLoad(stbi_uc *pixels)
 {
 	m_format = ImageFormat::R8G8B8A8; // Is correct, even if texChannels == 3, because stbi is transforming the data for us on the fly.
 
 	if (pixels == nullptr)
 	{
-		bbe::Crash(bbe::Error::IllegalState);
+		return false;
 	}
 
 	m_pdata.resizeCapacityAndLengthUninit(getSizeInBytes());
 	memcpy(m_pdata.getRaw(), pixels, getSizeInBytes());
 
 	stbi_image_free(pixels);
+	return true;
 }
 
 bbe::Image::Image()
 {
 }
 
-bbe::Image::Image(const char * path)
+bbe::Image::Image(const char *path)
 {
 	load(path);
 }
 
-bbe::Image::Image(const bbe::String& path)
+bbe::Image::Image(const bbe::String &path)
 {
 	load(path);
 }
@@ -48,35 +101,35 @@ bbe::Image::Image(int width, int height)
 	load(width, height);
 }
 
-bbe::Image::Image(int width, int height, const Color & c)
+bbe::Image::Image(int width, int height, const Color &c)
 {
 	load(width, height, c);
 }
 
-bbe::Image::Image(int width, int height, const void* data, ImageFormat format)
+bbe::Image::Image(int width, int height, const void *data, ImageFormat format)
 {
 	load(width, height, data, format);
 }
 
-void bbe::Image::loadRaw(const bbe::ByteBuffer& buffer)
+bool bbe::Image::loadRaw(const bbe::ByteBuffer &buffer)
 {
-	loadRaw(buffer.getRaw(), buffer.getLength());
+	return loadRaw(buffer.getRaw(), buffer.getLength());
 }
 
-void bbe::Image::loadRaw(const bbe::List<unsigned char>& rawData)
+bool bbe::Image::loadRaw(const bbe::List<unsigned char> &rawData)
 {
-	loadRaw(rawData.getRaw(), rawData.getLength());
+	return loadRaw(rawData.getRaw(), rawData.getLength());
 }
 
-void bbe::Image::loadRaw(const unsigned char* rawData, size_t dataLength)
+bool bbe::Image::loadRaw(const unsigned char *rawData, size_t dataLength)
 {
 	m_prendererData = nullptr;
 	int texChannels = 0;
-	stbi_uc* pixels = stbi_load_from_memory(rawData, (int)dataLength, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
-	finishLoad(pixels);
+	stbi_uc *pixels = stbi_load_from_memory(rawData, (int)dataLength, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
+	return finishLoad(pixels);
 }
 
-void bbe::Image::load(const char * path)
+void bbe::Image::load(const char *path)
 {
 	m_prendererData = nullptr;
 	int texChannels = 0;
@@ -84,7 +137,7 @@ void bbe::Image::load(const char * path)
 	finishLoad(pixels);
 }
 
-void bbe::Image::load(const bbe::String& path)
+void bbe::Image::load(const bbe::String &path)
 {
 	load(path.getRaw());
 }
@@ -94,7 +147,7 @@ void bbe::Image::load(int width, int height)
 	load(width, height, Color());
 }
 
-void bbe::Image::load(int width, int height, const Color & c)
+void bbe::Image::load(int width, int height, const Color &c)
 {
 	m_width = width;
 	m_height = height;
@@ -103,33 +156,39 @@ void bbe::Image::load(int width, int height, const Color & c)
 
 	const size_t size = getSizeInBytes();
 	m_pdata.resizeCapacityAndLengthUninit(size); //TODO use allocator
-	for (int i = 0; i < size; i+=4)
+	for (size_t i = 0; i < size; i += 4)
 	{
 #ifdef _MSC_VER
 		// MSVC doesn't understand that getSizeInBytes() will always
 		// return a multiple of four, becuase m_format is R8G8B8A8.
-#pragma warning( push )
-#pragma warning( disable : 6386)
+#pragma warning(push)
+#pragma warning(disable : 6386)
 #endif
 		m_pdata[i + 0] = (byte)(c.r * 255);
 		m_pdata[i + 1] = (byte)(c.g * 255);
 		m_pdata[i + 2] = (byte)(c.b * 255);
 		m_pdata[i + 3] = (byte)(c.a * 255);
 #ifdef _MSC_VER
-#pragma warning( pop ) 
+#pragma warning(pop)
 #endif
 	}
 }
 
-void bbe::Image::load(int width, int height, const void* data, ImageFormat format)
+void bbe::Image::load(int width, int height, const void *data, ImageFormat format)
 {
 	m_width = width;
 	m_height = height;
 	m_format = format;
 	m_prendererData = nullptr;
 
-	m_pdata.resizeCapacityAndLengthUninit(getSizeInBytes());
-	memcpy(m_pdata.getRaw(), data, getSizeInBytes());
+	const size_t size = getSizeInBytes();
+	if (size != 0 && data == nullptr)
+	{
+		bbe::Crash(bbe::Error::NullPointer);
+	}
+
+	m_pdata.resizeCapacityAndLengthUninit(size);
+	memcpy(m_pdata.getRaw(), data, size);
 }
 
 int bbe::Image::getWidth() const
@@ -149,7 +208,18 @@ bbe::Vector2i bbe::Image::getDimensions() const
 
 size_t bbe::Image::getSizeInBytes() const
 {
-	return static_cast<size_t>(getWidth() * getHeight() * getAmountOfChannels() * getBytesPerChannel());
+	if (m_width < 0 || m_height < 0)
+	{
+		bbe::Crash(bbe::Error::IllegalArgument, "Image dimensions must not be negative.");
+	}
+
+	size_t size = static_cast<size_t>(m_width);
+	if (!checkedMultiplySizeT(size, static_cast<size_t>(m_height)) || !checkedMultiplySizeT(size, getAmountOfChannels()) || !checkedMultiplySizeT(size, getBytesPerChannel()))
+	{
+		bbe::Crash(bbe::Error::OutOfMemory, "Image dimensions overflow size calculations.");
+	}
+
+	return size;
 }
 
 size_t bbe::Image::getAmountOfChannels() const
@@ -194,7 +264,7 @@ bbe::Colori bbe::Image::getPixel(size_t x, size_t y) const
 	}
 
 	const size_t index = getIndexForRawAccess(x, y);
-	switch(m_format)
+	switch (m_format)
 	{
 	case ImageFormat::R8:
 		return Colori(m_pdata[index], m_pdata[index], m_pdata[index], 255);
@@ -203,15 +273,14 @@ bbe::Colori bbe::Image::getPixel(size_t x, size_t y) const
 	default:
 		bbe::Crash(bbe::Error::FormatNotSupported);
 	}
-	
 }
 
-void bbe::Image::setPixel(const bbe::Vector2i& pos, const bbe::Colori& c)
+void bbe::Image::setPixel(const bbe::Vector2i &pos, const bbe::Colori &c)
 {
 	setPixel(pos.x, pos.y, c);
 }
 
-void bbe::Image::setPixel(size_t x, size_t y, const bbe::Colori& c)
+void bbe::Image::setPixel(size_t x, size_t y, const bbe::Colori &c)
 {
 	if (!isLoadedCpu())
 	{
@@ -222,9 +291,7 @@ void bbe::Image::setPixel(size_t x, size_t y, const bbe::Colori& c)
 	switch (m_format)
 	{
 	case ImageFormat::R8:
-		m_pdata[index + 0] = c.r;
-		m_pdata[index + 1] = c.r;
-		m_pdata[index + 2] = c.r;
+		m_pdata[index] = c.r;
 		break;
 	case ImageFormat::R8G8B8A8:
 		m_pdata[index + 0] = c.r;
@@ -241,7 +308,55 @@ void bbe::Image::setPixel(size_t x, size_t y, const bbe::Colori& c)
 
 size_t bbe::Image::getIndexForRawAccess(size_t x, size_t y) const
 {
-	return (y * m_width + x) * getAmountOfChannels();
+	if (m_width < 0 || m_height < 0)
+	{
+		bbe::Crash(bbe::Error::IllegalArgument, "Image dimensions must not be negative.");
+	}
+
+	const size_t width = static_cast<size_t>(m_width);
+	const size_t height = static_cast<size_t>(m_height);
+	if (x >= width || y >= height)
+	{
+		bbe::Crash(bbe::Error::IllegalArgument, "Image pixel access is out of bounds.");
+	}
+
+	size_t index = y;
+	if (!checkedMultiplySizeT(index, width))
+	{
+		bbe::Crash(bbe::Error::OutOfMemory);
+	}
+	if (index > std::numeric_limits<size_t>::max() - x)
+	{
+		bbe::Crash(bbe::Error::OutOfMemory);
+	}
+	index += x;
+	if (!checkedMultiplySizeT(index, getAmountOfChannels()))
+	{
+		bbe::Crash(bbe::Error::OutOfMemory);
+	}
+
+	return index;
+}
+
+int64_t bbe::Image::distance(const Image &other) const
+{
+	if (other.getWidth() != getWidth() || other.getHeight() != getHeight())
+	{
+		bbe::Crash(bbe::Error::IllegalArgument);
+	}
+
+	int64_t retVal = 0;
+
+	for (size_t i = 0; i < getWidth(); i++)
+	{
+		for (size_t k = 0; k < getHeight(); k++)
+		{
+			auto myColor = getPixel(i, k);
+			auto otherColor = other.getPixel(i, k);
+			retVal += myColor.distance(otherColor);
+		}
+	}
+	return retVal;
 }
 
 bbe::ImageRepeatMode bbe::Image::getRepeatMode() const
@@ -249,7 +364,7 @@ bbe::ImageRepeatMode bbe::Image::getRepeatMode() const
 	return m_repeatMode;
 }
 
-const bbe::Image& bbe::Image::white()
+const bbe::Image &bbe::Image::white()
 {
 	static bbe::Image image;
 	if (!image.isLoadedCpu() && !image.isLoadedGpu())
@@ -260,7 +375,7 @@ const bbe::Image& bbe::Image::white()
 	return image;
 }
 
-const bbe::Image& bbe::Image::black()
+const bbe::Image &bbe::Image::black()
 {
 	static bbe::Image image;
 	if (!image.isLoadedCpu() && !image.isLoadedGpu())
@@ -314,13 +429,78 @@ void bbe::Image::flipHorizontally()
 	for (size_t row = 0; row < getHeight() / 2; row++)
 	{
 		const size_t lowerRow = getHeight() - 1 - row;
-		void* rowPtr      = m_pdata.getRaw() + row      * bytesPerRow;
-		void* rowLowerPtr = m_pdata.getRaw() + lowerRow * bytesPerRow;
-		memcpy(rowBuffer.getRaw(), rowPtr,             bytesPerRow);
-		memcpy(rowPtr,             rowLowerPtr,        bytesPerRow);
-		memcpy(rowLowerPtr,        rowBuffer.getRaw(), bytesPerRow);
+		void *rowPtr = m_pdata.getRaw() + row * bytesPerRow;
+		void *rowLowerPtr = m_pdata.getRaw() + lowerRow * bytesPerRow;
+		memcpy(rowBuffer.getRaw(), rowPtr, bytesPerRow);
+		memcpy(rowPtr, rowLowerPtr, bytesPerRow);
+		memcpy(rowLowerPtr, rowBuffer.getRaw(), bytesPerRow);
 	}
 }
+
+bool bbe::Image::supportsClipboardImages()
+{
+#ifdef _WIN32
+	return true;
+#elif defined(__linux__)
+	return bbe::INTERNAL::waylandClipboard::isSupported();
+#else
+	return false;
+#endif
+}
+
+#ifdef __linux__
+bool bbe::Image::isImageInClipbaord()
+{
+	return bbe::INTERNAL::waylandClipboard::isImageInClipboard();
+}
+
+bbe::Image bbe::Image::getClipboardImage()
+{
+	const bbe::ByteBuffer data = bbe::INTERNAL::waylandClipboard::getClipboardImageData();
+	if (data.getLength() == 0)
+	{
+		return bbe::Image();
+	}
+
+	bbe::Image retVal;
+	if (!retVal.loadRaw(data))
+	{
+		return bbe::Image();
+	}
+
+	return retVal;
+}
+
+void bbe::Image::copyToClipboard() const
+{
+	const std::vector<bbe::byte> pngData = encodeRawImageAsPng(
+		m_pdata.getRaw(),
+		getWidth(),
+		getHeight(),
+		getAmountOfChannels(),
+		getBytesPerChannel());
+	if (pngData.empty())
+	{
+		return;
+	}
+
+	bbe::INTERNAL::waylandClipboard::setClipboardImageData(pngData.data(), pngData.size(), "image/png");
+}
+#elif !defined(_WIN32)
+bool bbe::Image::isImageInClipbaord()
+{
+	return false;
+}
+
+bbe::Image bbe::Image::getClipboardImage()
+{
+	return bbe::Image();
+}
+
+void bbe::Image::copyToClipboard() const
+{
+}
+#endif
 
 #ifdef _WIN32
 bool bbe::Image::isImageInClipbaord()
@@ -332,7 +512,7 @@ bbe::Image bbe::Image::getClipboardImage()
 {
 	if (!isImageInClipbaord()) return bbe::Image();
 	if (!OpenClipboard(0)) return bbe::Image();
-	
+
 	bbe::Image retVal;
 	HBITMAP hBitmap = (HBITMAP)GetClipboardData(CF_BITMAP);
 	if (hBitmap && hBitmap != INVALID_HANDLE_VALUE)
@@ -356,7 +536,7 @@ bbe::Image bbe::Image::getClipboardImage()
 			info.bmiHeader.biCompression = BI_RGB;
 			info.bmiHeader.biSizeImage = bitmap.bmWidth * bitmap.bmHeight * 4;
 
-			bbe::List<byte>& bytes = retVal.m_pdata;
+			bbe::List<byte> &bytes = retVal.m_pdata;
 			GetDIBits(dc, hBitmap, 0, bitmap.bmHeight, bytes.getRaw(), &info, DIB_RGB_COLORS);
 
 			//Windows gives us BGR, but we want RGB, so flip R and B channels:
@@ -399,15 +579,14 @@ HBITMAP bbe::Image::toBitmap() const
 
 	// Create the DIB section with an alpha channel.
 	HDC hdc = GetDC(NULL);
-	void* lpBits;
-	HBITMAP hBitmap = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS,
-		&lpBits, NULL, (DWORD)0);
+	void *lpBits;
+	HBITMAP hBitmap = CreateDIBSection(hdc, (BITMAPINFO *)&bi, DIB_RGB_COLORS,
+									   &lpBits, NULL, (DWORD)0);
 	ReleaseDC(NULL, hdc);
-
 
 	// Set the alpha values for each pixel in the cursor so that
 	// the complete cursor is semi-transparent.
-	DWORD* lpdwPixel = (DWORD*)lpBits;
+	DWORD *lpdwPixel = (DWORD *)lpBits;
 	for (int32_t y = getHeight() - 1; y >= 0; y--)
 	{
 		for (int32_t x = 0; x < getWidth(); x++)
@@ -430,7 +609,7 @@ void bbe::Image::copyToClipboard() const
 {
 	// TODO: Investigate - Why is all this crap even needed... why can't we just put the bitmap into the clipboard directly?
 	HBITMAP hBitmap = toBitmap();
-	HBITMAP hBitmap_copy = CreateBitmap(getWidth(), getHeight(), 1, 32, NULL);  
+	HBITMAP hBitmap_copy = CreateBitmap(getWidth(), getHeight(), 1, 32, NULL);
 	HDC srcDC = CreateCompatibleDC(GetDC(NULL));
 	HDC newDC = CreateCompatibleDC(GetDC(NULL));
 	HBITMAP srcBitmap = (HBITMAP)SelectObject(srcDC, hBitmap);
@@ -467,7 +646,7 @@ HICON bbe::Image::toIcon() const
 }
 #endif
 
-void bbe::Image::writeToFile(const char* path) const
+void bbe::Image::writeToFile(const char *path) const
 {
 	const bbe::String lowerPath = bbe::String(path).toLowerCase();
 	if (lowerPath.endsWith(".png"))
@@ -492,12 +671,12 @@ void bbe::Image::writeToFile(const char* path) const
 	}
 }
 
-void bbe::Image::writeToFile(const bbe::String& path) const
+void bbe::Image::writeToFile(const bbe::String &path) const
 {
 	writeToFile(path.getRaw());
 }
 
-static void floodFillStep(bbe::Image& image, bbe::List<bbe::Vector2i>& posToCheck, bbe::Vector2i /*copy*/ pos, const bbe::Colori& from, const bbe::Colori& to, bool tiled)
+static void floodFillStep(bbe::Image &image, bbe::List<bbe::Vector2i> &posToCheck, bbe::Vector2i /*copy*/ pos, const bbe::Colori &from, const bbe::Colori &to, bool tiled)
 {
 	if (pos.x < 0 || pos.x >= image.getWidth() || pos.y < 0 || pos.y >= image.getHeight())
 	{
@@ -512,7 +691,7 @@ static void floodFillStep(bbe::Image& image, bbe::List<bbe::Vector2i>& posToChec
 	posToCheck.add(pos);
 }
 
-void bbe::Image::floodFill(const bbe::Vector2i& pos, const bbe::Colori& to, bool fillDiagonal, bool tiled)
+void bbe::Image::floodFill(const bbe::Vector2i &pos, const bbe::Colori &to, bool fillDiagonal, bool tiled)
 {
 	const bbe::Colori from = getPixel(pos);
 	if (from == to) return;
@@ -592,7 +771,7 @@ bool bbe::Image::isLoadedCpu() const
 	return m_pdata.getLength() > 0;
 }
 
-bbe::Colori bbe::Image::getPixel(const bbe::Vector2i& pos) const
+bbe::Colori bbe::Image::getPixel(const bbe::Vector2i &pos) const
 {
 	return getPixel(pos.x, pos.y);
 }

@@ -1,0 +1,6 @@
+{
+  "cmake.configureSettings": {
+    "BBE_ADD_EXPERIMENTAL": "ON",
+    "CMAKE_BUILD_TYPE": "Debug"
+  }
+}

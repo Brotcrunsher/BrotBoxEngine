@@ -1,6 +1,5 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
-#include <Windows.h>
 
 // TODO: Proper GUI
 // TODO: Layers
@@ -19,14 +18,14 @@ class MyGame : public bbe::Game
 	bbe::Image workArea;
 	float zoomLevel = 1.f;
 
-	float leftColor[4]  = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float leftColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	float rightColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-	constexpr static int32_t MODE_BRUSH      = 0;
+	constexpr static int32_t MODE_BRUSH = 0;
 	constexpr static int32_t MODE_FLOOD_FILL = 1;
-	constexpr static int32_t MODE_LINE       = 2;
-	constexpr static int32_t MODE_RECTANGLE  = 3;
-	constexpr static int32_t MODE_PIPETTE    = 4;
+	constexpr static int32_t MODE_LINE = 2;
+	constexpr static int32_t MODE_RECTANGLE = 3;
+	constexpr static int32_t MODE_PIPETTE = 4;
 	int32_t mode = MODE_BRUSH;
 
 	int32_t brushWidth = 1;
@@ -83,19 +82,19 @@ class MyGame : public bbe::Game
 		setupCanvas();
 	}
 
-	void newCanvas(const char* path)
+	void newCanvas(const char *path)
 	{
 		canvas.get() = bbe::Image(path);
 		this->path = path;
 		setupCanvas();
 	}
-	
-	bbe::Vector2 screenToCanvas(const bbe::Vector2& pos)
+
+	bbe::Vector2 screenToCanvas(const bbe::Vector2 &pos)
 	{
 		return (pos - offset) / zoomLevel;
 	}
 
-	bool toTiledPos(bbe::Vector2& pos)
+	bool toTiledPos(bbe::Vector2 &pos)
 	{
 		if (tiled)
 		{
@@ -122,7 +121,7 @@ class MyGame : public bbe::Game
 		return isMouseDown(bbe::MouseButton::LEFT) ? bbe::Color(leftColor).asByteColor() : bbe::Color(rightColor).asByteColor();
 	}
 
-	bool touch(const bbe::Vector2& touchPos, bool rectangleShape = false)
+	bool touch(const bbe::Vector2 &touchPos, bool rectangleShape = false)
 	{
 		bool changeRegistered = false;
 		for (int32_t i = -brushWidth; i <= brushWidth; i++)
@@ -160,7 +159,7 @@ class MyGame : public bbe::Game
 		return changeRegistered;
 	}
 
-	bool touchLine(const bbe::Vector2& pos1, const bbe::Vector2& pos2, bool rectangleShape = false)
+	bool touchLine(const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, bool rectangleShape = false)
 	{
 		bool changeRegistered = false;
 		bbe::GridIterator gi(pos1, pos2);
@@ -248,7 +247,7 @@ class MyGame : public bbe::Game
 			if (!drawMode)
 			{
 				counter++;
-				if(counter > 1) clearWorkArea();
+				if (counter > 1) clearWorkArea();
 			}
 			else
 			{
@@ -328,10 +327,10 @@ class MyGame : public bbe::Game
 			}
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		ImGui::BeginDisabled(!canvas.isUndoable());
 		if (ImGui::Button("Undo"))
@@ -347,10 +346,9 @@ class MyGame : public bbe::Game
 		}
 		ImGui::EndDisabled();
 
-
 		ImGui::ColorEdit4("Left Color", leftColor);
 		ImGui::ColorEdit4("Right Color", rightColor);
-		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line" , "Rectangle", "Pipette"}, mode);
+		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line", "Rectangle", "Pipette" }, &mode);
 		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE)
 		{
 			if (ImGui::InputInt("Brush Width", &brushWidth))
@@ -362,13 +360,23 @@ class MyGame : public bbe::Game
 		{
 			ImGui::Checkbox("Round Edges", &roundEdges);
 		}
+		const bool supportsClipboardImages = bbe::Image::supportsClipboardImages();
+		ImGui::BeginDisabled(!supportsClipboardImages);
 		if (ImGui::Button("Copy to Clipboard"))
 		{
 			canvas.get().copyToClipboard();
 		}
-		ImGui::Text(bbe::Image::isImageInClipbaord() ? "Yes" : "No");
+		ImGui::EndDisabled();
+		if (supportsClipboardImages)
+		{
+			ImGui::Text(bbe::Image::isImageInClipbaord() ? "Yes" : "No");
+		}
+		else
+		{
+			ImGui::Text("Image Clipboard not supported on this platform");
+		}
 
-		ImGui::BeginDisabled(!bbe::Image::isImageInClipbaord());
+		ImGui::BeginDisabled(!supportsClipboardImages || !bbe::Image::isImageInClipbaord());
 		if (ImGui::Button("Paste"))
 		{
 			canvas.get() = bbe::Image::getClipboardImage();

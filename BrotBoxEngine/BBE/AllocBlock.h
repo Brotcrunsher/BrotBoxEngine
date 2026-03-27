@@ -9,10 +9,10 @@ namespace bbe
 	}
 	struct AllocBlock
 	{
-		void* data = nullptr;
+		void *data = nullptr;
 		size_t size = 0;
 	};
 
 	AllocBlock allocateBlock(size_t size);
-	void freeBlock(AllocBlock& block);
+	void freeBlock(AllocBlock &block);
 }

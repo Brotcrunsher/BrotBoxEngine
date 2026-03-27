@@ -1,8 +1,8 @@
 #include "AsmTokenizer.h"
 
-void AsmTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
+void AsmTokenizer::tokenize(const bbe::String &text, const bbe::Font &font)
 {
-	const bbe::List<bbe::Vector2> renderPositions     = font.getRenderPositions(bbe::Vector2(0, 0), text);
+	const bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(bbe::Vector2(0, 0), text);
 	const bbe::List<bbe::Vector2> powerPointPositions = font.getRenderPositions(bbe::Vector2(0, 0), text, 0, false);
 	if (renderPositions.getLength() != text.getLength())
 	{
@@ -20,7 +20,7 @@ void AsmTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 		{
 			if (fullLineMode) currentToken.type = TokenType::comment;
 			else if (firstTokenOfLine) currentToken.type = TokenType::function;
-			else if(currentToken.type == TokenType::unknown) currentToken.type = TokenType::value;
+			else if (currentToken.type == TokenType::unknown) currentToken.type = TokenType::value;
 			currentToken.submit(tokens);
 		}
 		if (i == 0 || text[i - 1] == '\n')
@@ -48,7 +48,7 @@ void AsmTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 		{
 			fullLineMode = false;
 		}
-		else if(!fullLineMode)
+		else if (!fullLineMode)
 		{
 			if (currentToken.chars.getLength() > 0)
 			{
@@ -69,7 +69,7 @@ void AsmTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 	currentToken.submit(tokens);
 }
 
-void AsmTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues)
+void AsmTokenizer::determineTokenTypes(const bbe::List<bbe::String> &additionalTypes, const bbe::List<bbe::String> &additionalValues)
 {
 }
 

@@ -15,16 +15,16 @@ struct Task
 	{
 		DT_DYNAMIC = 0,
 		DT_YEARLY = 1,
-		// dt_monthly = 2, // Not implemented
+		DT_MONTHLY = 2,
 	};
 
 	BBE_SERIALIZABLE_DATA(
 		((bbe::String), title),
 		((int32_t), repeatDays, 0),
 		((bbe::TimePoint), previousExecution, bbe::TimePoint::epoch()),
-(private:),
-		((bbe::TimePoint), nextExecution), // Call nextPossibleExecution from the outside! 
-(public:),
+		(private:),
+		((bbe::TimePoint), nextExecution), // Call nextPossibleExecution from the outside!
+		(public:),
 		((bool), canBeSu, true),
 		((int32_t), followUp, 0), // In minutes. When clicking follow up, the task will be rescheduled the same day.
 		((int32_t), internalValue, 0),
@@ -59,8 +59,11 @@ struct Task
 		((bbe::TimePoint), contingentCountingStart, bbe::TimePoint::epoch()),
 		((bbe::TimePoint), previousContingentSubtraction, bbe::TimePoint::epoch()),
 		((bool), contingentRunning, false),
-		((bool), stopContingentWhenLocked, false)
-	)
+		((bool), stopContingentWhenLocked, false),
+		((int32_t), dtMonthlyDay, 1),
+		((int32_t), historyTargetAnchor, -1),
+		((float), historyTargetStartValue, 0.0f),
+		((float), historyTargetChangeValue, 0.0f))
 
 	// Non-Persisted Helper Data below.
 	int32_t inputInt = 0;
@@ -69,9 +72,10 @@ struct Task
 	mutable bool armedToPlaySoundDone = false;
 	bbe::TimePoint execPointBuffer;
 	bbe::TimePoint yearlyBuffer;
+	bool historyViewDirty = false;
 
 private:
-	bool timePointElapsed(const bbe::TimePoint& tp, bool& armed) const;
+	bool timePointElapsed(const bbe::TimePoint &tp, bool &armed) const;
 
 public:
 	bool shouldPlaySoundNewTask() const;
@@ -83,26 +87,33 @@ public:
 	void execMoveToNow();
 	void execAdvance();
 	void execContingentStart();
-	void addContingent();
-	void execContingentStop();
+	void addContingent(const bbe::TimePoint &stopTime);
+	void execContingentStop(const bbe::TimePoint &stopTime);
 
 	void sanity();
 	void nextExecPlusDays(int32_t days);
 	bbe::TimePoint nextPossibleExecution() const;
-	bool isPossibleWeekday(const bbe::TimePoint& tp) const;
-	bbe::TimePoint toPossibleTimePoint(const bbe::TimePoint& tp, bool forwardInTime = true) const;
+	bool isPossibleWeekday(const bbe::TimePoint &tp) const;
+	bbe::TimePoint toPossibleTimePoint(const bbe::TimePoint &tp, bool forwardInTime = true) const;
 	bool isImportantTomorrow() const;
 	bool isImportantToday() const;
 	void setNextExecution(int32_t year, int32_t month, int32_t day);
-	void setNextExecution(const bbe::TimePoint& tp);
+	void setNextExecution(const bbe::TimePoint &tp);
 	int32_t amountPossibleWeekdays() const;
 	bbe::TimePoint getNextYearlyExecution() const;
+	bbe::TimePoint getNextMonthlyExecution() const;
 	bool wasDoneToday() const;
 	bbe::Duration getWorkDurationLeft() const;
 	bool wasStartedToday() const;
 	void execStart();
 
 	bool isRareTask() const;
+};
+
+struct Heartbeat
+{
+	BBE_SERIALIZABLE_DATA(
+		((bbe::TimePoint), time, bbe::TimePoint::epoch()))
 };
 
 class SubsystemTask
@@ -112,23 +123,25 @@ public:
 
 private:
 	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableObject<Heartbeat> heartbeat = bbe::SerializableObject<Heartbeat>("Heartbeat.dat", "ParanoiaConfig");
+#ifdef _WIN32
 	bbe::SessionLockMonitor sessionLockMonitor;
-
-	bool drawContingentButton(Task& t);
-	int32_t drawTable(float scale, const char* title, const std::function<bool(Task&)>& predicate, bool& requiresWrite,
-		bool showMoveToNow,      bool showCountdown,  bool showDone,                bool showFollowUp,
-		bool highlightRareTasks, bool showAdvancable, bool respectIndefinitelyFlag, bool sorted);
+#endif
+	bool drawContingentButton(Task &t);
+	int32_t drawTable(float scale, const char *title, const std::function<bool(Task &)> &predicate, bool &requiresWrite,
+					  bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp,
+					  bool highlightRareTasks, bool showAdvancable, bool respectIndefinitelyFlag, bool sorted);
 
 	bool isLateAdvanceableTime();
-
 
 	bool isWorkTime() const;
 
 public:
+	SubsystemTask();
 
 	void update();
 
-	bool drawEditableTask(Task& t);
+	bool drawEditableTask(Task &t);
 	bbe::Vector2 drawTabViewTasks(float scale);
 	bbe::Vector2 drawTabEditTasks();
 	bbe::Vector2 drawTabHistoryView();
@@ -139,5 +152,8 @@ public:
 	bool hasPotentialTaskComplaint() const;
 	bool isStreakFulfilled() const;
 
-	void addServerTask(const bbe::String& id, const bbe::String& task);
+	void addServerTask(const bbe::String &id, const bbe::String &task);
+
+	bbe::List<bbe::String> getWarnings() const;
+	bbe::TimePoint getHeartbeat() const;
 };

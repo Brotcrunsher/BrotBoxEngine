@@ -16,20 +16,20 @@ namespace bbe
 			std::bitset<blockSize> m_used;
 			bbe::AllocBlock m_data;
 
-			Block* nextBlock = nullptr;
-			Block* previousBlock = nullptr;
+			Block *nextBlock = nullptr;
+			Block *previousBlock = nullptr;
 
-			T* get(size_t i) noexcept
+			T *get(size_t i) noexcept
 			{
-				return reinterpret_cast<T*>(m_data.data) + i;
+				return reinterpret_cast<T *>(m_data.data) + i;
 			}
 
-			const T* get(size_t i) const noexcept
+			const T *get(size_t i) const noexcept
 			{
-				return reinterpret_cast<const T*>(m_data.data) + i;
+				return reinterpret_cast<const T *>(m_data.data) + i;
 			}
 
-			Block() : m_data(bbe::allocateBlock(sizeof(T)* blockSize)) {}
+			Block() : m_data(bbe::allocateBlock(sizeof(T) * blockSize)) {}
 
 			~Block() noexcept
 			{
@@ -37,9 +37,8 @@ namespace bbe
 				bbe::freeBlock(m_data);
 			}
 
-			Block(const Block& other) :
-				m_used(other.m_used),
-				m_data(bbe::allocateBlock(sizeof(T)* blockSize))
+			Block(const Block &other) : m_used(other.m_used),
+										m_data(bbe::allocateBlock(sizeof(T) * blockSize))
 			{
 				for (size_t i = 0; i < blockSize; i++)
 				{
@@ -50,16 +49,15 @@ namespace bbe
 				}
 			}
 
-			Block(Block&& other) noexcept :
-				m_used(std::move(other.m_used)),
-				m_data(std::move(other.m_data))
+			Block(Block &&other) noexcept : m_used(std::move(other.m_used)),
+											m_data(std::move(other.m_data))
 			{
 				other.m_used.reset();
 				other.m_data = {};
 				// NOTE: We do NOT take others next and previous pointers, as we will most likely end up in some other linked list.
 			}
 
-			Block& operator=(const Block& other)
+			Block &operator=(const Block &other)
 			{
 				if (this == &other) return *this;
 				clear();
@@ -74,7 +72,7 @@ namespace bbe
 				return *this;
 			}
 
-			Block& operator=(Block&& other) noexcept
+			Block &operator=(Block &&other) noexcept
 			{
 				if (this == &other) return *this;
 				clear();
@@ -113,12 +111,12 @@ namespace bbe
 			}
 		};
 
-		Block* m_firstBlock = nullptr;
-		Block* m_lastBlock = nullptr;
+		Block *m_firstBlock = nullptr;
+		Block *m_lastBlock = nullptr;
 
 		void addNewBlock()
 		{
-			Block* newBlock = new Block();
+			Block *newBlock = new Block();
 			if (!m_firstBlock)
 			{
 				m_firstBlock = newBlock;
@@ -132,9 +130,9 @@ namespace bbe
 			}
 		}
 
-		void copy(const StableList& other)
+		void copy(const StableList &other)
 		{
-			Block* nextBlock = other.m_firstBlock;
+			Block *nextBlock = other.m_firstBlock;
 			while (nextBlock)
 			{
 				addNewBlock();
@@ -167,19 +165,19 @@ namespace bbe
 
 		public:
 			Iterator() noexcept : list(nullptr), currentBlock(nullptr), index(0) {}
-			Iterator(StableList* list, Block* block, size_t idx) noexcept : list(list), currentBlock(block), index(idx) { advanceToValid(); }
+			Iterator(StableList *list, Block *block, size_t idx) noexcept : list(list), currentBlock(block), index(idx) { advanceToValid(); }
 
-			T& operator*() const noexcept
+			T &operator*() const noexcept
 			{
 				return *(currentBlock->get(index));
 			}
 
-			T* operator->() const noexcept
+			T *operator->() const noexcept
 			{
 				return currentBlock->get(index);
 			}
 
-			Iterator& operator++() noexcept
+			Iterator &operator++() noexcept
 			{
 				++index;
 				advanceToValid();
@@ -193,12 +191,12 @@ namespace bbe
 				return temp;
 			}
 
-			bool operator==(const Iterator& other) const noexcept
+			bool operator==(const Iterator &other) const noexcept
 			{
 				return list == other.list && currentBlock == other.currentBlock && index == other.index;
 			}
 
-			bool operator!=(const Iterator& other) const noexcept
+			bool operator!=(const Iterator &other) const noexcept
 			{
 				return !(*this == other);
 			}
@@ -238,7 +236,7 @@ namespace bbe
 						list->m_lastBlock = currentBlock->previousBlock;
 					}
 
-					Block* deleteBlock = currentBlock;
+					Block *deleteBlock = currentBlock;
 					currentBlock = currentBlock->nextBlock;
 					delete deleteBlock;
 					index = 0;
@@ -250,8 +248,8 @@ namespace bbe
 			}
 
 		private:
-			StableList* list = nullptr;
-			Block* currentBlock = nullptr;
+			StableList *list = nullptr;
+			Block *currentBlock = nullptr;
 			size_t index = 0;
 
 			void advanceToValid() noexcept
@@ -278,20 +276,20 @@ namespace bbe
 
 		public:
 			ConstIterator() noexcept : currentBlock(nullptr), index(0) {}
-			ConstIterator(const Block* block, size_t idx) noexcept : currentBlock(block), index(idx) { advanceToValid(); }
-			ConstIterator(const Iterator& it) noexcept : currentBlock(it.currentBlock), index(it.index) { }
+			ConstIterator(const Block *block, size_t idx) noexcept : currentBlock(block), index(idx) { advanceToValid(); }
+			ConstIterator(const Iterator &it) noexcept : currentBlock(it.currentBlock), index(it.index) {}
 
-			const T& operator*() const noexcept
+			const T &operator*() const noexcept
 			{
 				return *(currentBlock->get(index));
 			}
 
-			const T* operator->() const noexcept
+			const T *operator->() const noexcept
 			{
 				return currentBlock->get(index);
 			}
 
-			ConstIterator& operator++() noexcept
+			ConstIterator &operator++() noexcept
 			{
 				++index;
 				advanceToValid();
@@ -305,18 +303,18 @@ namespace bbe
 				return temp;
 			}
 
-			bool operator==(const ConstIterator& other) const noexcept
+			bool operator==(const ConstIterator &other) const noexcept
 			{
 				return currentBlock == other.currentBlock && index == other.index;
 			}
 
-			bool operator!=(const ConstIterator& other) const noexcept
+			bool operator!=(const ConstIterator &other) const noexcept
 			{
 				return !(*this == other);
 			}
 
 		private:
-			const Block* currentBlock = nullptr;
+			const Block *currentBlock = nullptr;
 			size_t index = 0;
 
 			void advanceToValid() noexcept
@@ -369,20 +367,19 @@ namespace bbe
 
 		StableList() noexcept = default;
 
-		StableList(const StableList& other)
+		StableList(const StableList &other)
 		{
 			copy(other);
 		}
 
-		StableList(StableList&& other) noexcept :
-			m_firstBlock(other.m_firstBlock),
-			m_lastBlock(other.m_lastBlock)
+		StableList(StableList &&other) noexcept : m_firstBlock(other.m_firstBlock),
+												  m_lastBlock(other.m_lastBlock)
 		{
 			other.m_firstBlock = nullptr;
 			other.m_lastBlock = nullptr;
 		}
 
-		StableList& operator=(const StableList& other)
+		StableList &operator=(const StableList &other)
 		{
 			if (this == &other) return *this;
 			clear();
@@ -390,7 +387,7 @@ namespace bbe
 			return *this;
 		}
 
-		StableList& operator=(StableList&& other) noexcept
+		StableList &operator=(StableList &&other) noexcept
 		{
 			if (this == &other) return *this;
 			clear();
@@ -408,10 +405,10 @@ namespace bbe
 
 		void clear() noexcept
 		{
-			Block* nextBlock = m_firstBlock;
+			Block *nextBlock = m_firstBlock;
 			while (nextBlock)
 			{
-				Block* curBlock = nextBlock;
+				Block *curBlock = nextBlock;
 				nextBlock = nextBlock->nextBlock;
 				delete curBlock;
 			}
@@ -420,7 +417,7 @@ namespace bbe
 		}
 
 		template<typename U>
-		void add(U&& t)
+		void add(U &&t)
 		{
 			const int32_t location = getAddLocation();
 			new (m_lastBlock->get(location)) T(std::forward<U>(t));
@@ -429,7 +426,7 @@ namespace bbe
 
 		size_t getAmountOfBlocks() const noexcept
 		{
-			const Block* currentBlock = this->m_firstBlock;
+			const Block *currentBlock = this->m_firstBlock;
 			size_t retVal = 0;
 			while (currentBlock)
 			{

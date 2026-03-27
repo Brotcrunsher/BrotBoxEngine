@@ -7,11 +7,12 @@
 
 namespace bbe
 {
-	template <typename T, int LENGTH>
+	template<typename T, int LENGTH>
 	class Array
 	{
 	private:
 		T m_pdata[LENGTH] = {};
+
 	public:
 		Array()
 		{
@@ -23,13 +24,14 @@ namespace bbe
 			//UNTESTED
 			assert((il.end() - il.begin()) == LENGTH);
 			std::size_t i = 0;
-			for (auto iter = il.begin(); iter != il.end(); iter++) {
+			for (auto iter = il.begin(); iter != il.end(); iter++)
+			{
 				m_pdata[i] = *iter;
 				i++;
 			}
 		}
 
-		Array(const Array<T, LENGTH>& other)
+		Array(const Array<T, LENGTH> &other)
 		{
 			for (std::size_t i = 0; i < LENGTH; i++)
 			{
@@ -37,7 +39,7 @@ namespace bbe
 			}
 		}
 
-		Array(Array<T, LENGTH>&& other)
+		Array(Array<T, LENGTH> &&other)
 		{
 			for (std::size_t i = 0; i < LENGTH; i++)
 			{
@@ -45,7 +47,7 @@ namespace bbe
 			}
 		}
 
-		Array& operator=(const Array<T, LENGTH>& other)
+		Array &operator=(const Array<T, LENGTH> &other)
 		{
 			for (std::size_t i = 0; i < LENGTH; i++)
 			{
@@ -55,7 +57,7 @@ namespace bbe
 			return *this;
 		}
 
-		Array& operator=(Array<T, LENGTH>&& other)
+		Array &operator=(Array<T, LENGTH> &&other)
 		{
 			for (std::size_t i = 0; i < LENGTH; i++)
 			{
@@ -70,12 +72,12 @@ namespace bbe
 			//do nothing
 		}
 
-		T& operator[](std::size_t index)
+		T &operator[](std::size_t index)
 		{
 			return m_pdata[index];
 		}
 
-		const T& operator[](std::size_t index) const
+		const T &operator[](std::size_t index) const
 		{
 			return m_pdata[index];
 		}
@@ -85,35 +87,35 @@ namespace bbe
 			return LENGTH;
 		}
 
-		T* getRaw()
+		T *getRaw()
 		{
 			return m_pdata;
 		}
 
-		const T* getRaw() const
+		const T *getRaw() const
 		{
 			return m_pdata;
 		}
 
-		T* begin()
+		T *begin()
 		{
 			//UNTESTED
 			return &(this->m_pdata[0]);
 		}
 
-		const T* begin() const
+		const T *begin() const
 		{
 			//UNTESTED
 			return &(this->m_pdata[0]);
 		}
 
-		T* end()
+		T *end()
 		{
 			//UNTESTED
 			return &(this->m_pdata[getLength()]);
 		}
 
-		const T* end() const
+		const T *end() const
 		{
 			//UNTESTED
 			return &(this->m_pdata[getLength()]);

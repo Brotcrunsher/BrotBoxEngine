@@ -6,30 +6,30 @@ bbe::BezierCurve2::BezierCurve2()
 	// Do nothing
 }
 
-bbe::BezierCurve2::BezierCurve2(const Vector2& startPoint, const Vector2& endPoint, const bbe::List<Vector2>& controlPoints)
+bbe::BezierCurve2::BezierCurve2(const Vector2 &startPoint, const Vector2 &endPoint, const bbe::List<Vector2> &controlPoints)
 	: startPoint(startPoint),
-	endPoint(endPoint),
-	controlPoints(controlPoints)
+	  endPoint(endPoint),
+	  controlPoints(controlPoints)
 {
 }
 
-bbe::BezierCurve2::BezierCurve2(const Vector2& startPoint, const Vector2& endPoint)
+bbe::BezierCurve2::BezierCurve2(const Vector2 &startPoint, const Vector2 &endPoint)
 	: startPoint(startPoint),
-	endPoint(endPoint)
+	  endPoint(endPoint)
 {
 }
 
-bbe::BezierCurve2::BezierCurve2(const Vector2& startPoint, const Vector2& endPoint, const Vector2& control)
+bbe::BezierCurve2::BezierCurve2(const Vector2 &startPoint, const Vector2 &endPoint, const Vector2 &control)
 	: startPoint(startPoint),
-	endPoint(endPoint),
-	controlPoints({ control })
+	  endPoint(endPoint),
+	  controlPoints({ control })
 {
 }
 
-bbe::BezierCurve2::BezierCurve2(const Vector2& startPoint, const Vector2& endPoint, const Vector2& control1, const Vector2& control2)
+bbe::BezierCurve2::BezierCurve2(const Vector2 &startPoint, const Vector2 &endPoint, const Vector2 &control1, const Vector2 &control2)
 	: startPoint(startPoint),
-	endPoint(endPoint),
-	controlPoints({ control1, control2 })
+	  endPoint(endPoint),
+	  controlPoints({ control1, control2 })
 {
 }
 
@@ -38,7 +38,7 @@ bbe::Vector2 bbe::BezierCurve2::evaluate(float t) const
 	return bbe::Math::interpolateBezier(startPoint, endPoint, t, controlPoints);
 }
 
-void bbe::BezierCurve2::addControlPoint(const Vector2& point)
+void bbe::BezierCurve2::addControlPoint(const Vector2 &point)
 {
 	controlPoints.add(point);
 }
@@ -65,36 +65,34 @@ bbe::List<bbe::Vector2> bbe::BezierCurve2::getIntermediatePoints(float t, unsign
 
 		return retVal;
 	}
-
-
 }
 
-bbe::List<bbe::Vector2>& bbe::BezierCurve2::getControlPoints()
+bbe::List<bbe::Vector2> &bbe::BezierCurve2::getControlPoints()
 {
 	return controlPoints;
 }
 
-bbe::Vector2& bbe::BezierCurve2::getStartPoint()
+bbe::Vector2 &bbe::BezierCurve2::getStartPoint()
 {
 	return startPoint;
 }
 
-bbe::Vector2& bbe::BezierCurve2::getEndPoint()
+bbe::Vector2 &bbe::BezierCurve2::getEndPoint()
 {
 	return endPoint;
 }
 
-const bbe::List<bbe::Vector2>& bbe::BezierCurve2::getControlPoints() const
+const bbe::List<bbe::Vector2> &bbe::BezierCurve2::getControlPoints() const
 {
 	return controlPoints;
 }
 
-const bbe::Vector2& bbe::BezierCurve2::getStartPoint() const
+const bbe::Vector2 &bbe::BezierCurve2::getStartPoint() const
 {
 	return startPoint;
 }
 
-const bbe::Vector2& bbe::BezierCurve2::getEndPoint() const
+const bbe::Vector2 &bbe::BezierCurve2::getEndPoint() const
 {
 	return endPoint;
 }

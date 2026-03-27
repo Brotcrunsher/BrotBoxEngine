@@ -32,19 +32,18 @@ class MyGame : public bbe::Game
 		timePassed += timeSinceLastFrame;
 		currentPos.x = offsetPos.x + bbe::Math::pow(1.5, timePassed);
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 		bbe::Vector3 lightOffset(1, 0.5, 3);
 		bbe::Vector3 cameraOffset(1, 1, 1);
 
 		bbe::Cube cube(currentPos);
 
-
 		brush.addLight(currentPos + lightOffset, 5, bbe::Color(1, 1, 1, 1), bbe::Color(1, 1, 1, 1), bbe::LIGHT_FALLOFF_SQUARED);
 		brush.setCamera(currentPos + cameraOffset, currentPos);
 		brush.fillCube(cube);
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		bbe::String text = "We are now out ";
 		text += currentPos.x;
@@ -64,4 +63,3 @@ int main()
 	delete mg;
 #endif
 }
-

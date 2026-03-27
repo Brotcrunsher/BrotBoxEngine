@@ -14,7 +14,7 @@ namespace bbe
 			{
 			private:
 				VkSemaphore m_semaphore = VK_NULL_HANDLE;
-				VkDevice    m_device    = VK_NULL_HANDLE;
+				VkDevice m_device = VK_NULL_HANDLE;
 
 			public:
 				VulkanSemaphore();

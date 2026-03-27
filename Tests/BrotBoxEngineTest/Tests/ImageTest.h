@@ -38,10 +38,6 @@ namespace bbe
 				assertEquals(c.b, 255);
 				assertEquals(c.a, 255);
 
-
-
-
-
 				c = image.getPixel(image.getWidth() - 1, 0);
 				assertEquals(c.r, 0);
 				assertEquals(c.g, 0);
@@ -66,10 +62,6 @@ namespace bbe
 				assertEquals(c.b, 255);
 				assertEquals(c.a, 255);
 
-
-
-
-
 				c = image.getPixel(image.getWidth() - 1, image.getWidth() - 1);
 				assertEquals(c.r, 0);
 				assertEquals(c.g, 0);
@@ -93,10 +85,6 @@ namespace bbe
 				assertEquals(c.g, 0);
 				assertEquals(c.b, 255);
 				assertEquals(c.a, 255);
-
-
-
-
 
 				c = image.getPixel(0, image.getWidth() - 1);
 				assertEquals(c.r, 0);

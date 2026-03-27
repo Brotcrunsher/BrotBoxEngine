@@ -9,7 +9,7 @@ namespace bbe
 	private:
 		std::chrono::high_resolution_clock::time_point m_start;
 
-		template <typename T>
+		template<typename T>
 		long long getTimeExpired()
 		{
 			std::chrono::high_resolution_clock::time_point current = std::chrono::high_resolution_clock::now();
@@ -58,7 +58,6 @@ namespace bbe
 			//UNTESTED
 			return getTimeExpired<std::chrono::hours>();
 		}
-
 
 		void start()
 		{

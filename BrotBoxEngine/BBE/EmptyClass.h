@@ -2,7 +2,8 @@
 
 namespace bbe
 {
-	class Empty {
+	class Empty
+	{
 		//An empty class, can be used e.g. for conditionals.
 	};
 }

@@ -55,37 +55,155 @@ int32_t mergeHeights(int32_t a, int32_t b)
 	return a > b ? a : b;
 }
 
-Block mergeBlocks(const Block& a, const Block& b)
+Block mergeBlocks(const Block &a, const Block &b)
 {
 	return Block(mergeHeights(a.getHeight(), b.getHeight()));
 }
 
-bbe::List<bbe::Vector2i> path;
+struct PathElement
+{
+	bbe::Vector2i coords;
+	size_t nextElement = 0;
+};
+bbe::List<PathElement> path;
+
+struct TileConnector
+{
+	bbe::Vector2i position;
+	Direction dir = Direction::UNKNOWN;
+	size_t pathIndex = 0;
+};
+// List of Tile connectors that don't have a connected tile yet.
+bbe::List<TileConnector> openTileConnectors;
+
+size_t getClosestOpenTileConnectorIndex(const bbe::Vector2i &pos)
+{
+	size_t retVal = (size_t)-1;
+	int32_t closestDist = 0x7FFFFFFF;
+
+	for (size_t i = 0; i < openTileConnectors.getLength(); i++)
+	{
+		auto relevantPos = openTileConnectors[i].position;
+		if (openTileConnectors[i].dir == Direction::UP) relevantPos.y--;
+		if (openTileConnectors[i].dir == Direction::DOWN) relevantPos.y++;
+		if (openTileConnectors[i].dir == Direction::LEFT) relevantPos.x--;
+		if (openTileConnectors[i].dir == Direction::RIGHT) relevantPos.x++;
+
+		const int32_t dist = pos.getDistanceToManhatten(relevantPos);
+		if (dist < closestDist)
+		{
+			retVal = i;
+			closestDist = dist;
+		}
+	}
+
+	return retVal;
+}
 
 class Tile
 {
-public:
-	struct Entrance
-	{
-		bbe::Vector2i position;
-		Direction dir;
-	};
 public:
 	static constexpr size_t gridSize = 13;
 
 private:
 	bbe::Grid<int32_t> grid;
 
-
-	int32_t getCrossCheck(size_t x, size_t y) const
+	bool isBorderCoord(size_t x, size_t y) const
 	{
-		int32_t retVal = 0;
-		if (grid[x][y] == 0) retVal++;
-		if (x > 0 && grid[x - 1][y] == 0) retVal++;
-		if (y > 0 && grid[x][y - 1] == 0) retVal++;
-		if (x < gridSize - 1 && grid[x + 1][y] == 0) retVal++;
-		if (y < gridSize - 1 && grid[x][y + 1] == 0) retVal++;
-		return retVal;
+		if (x == 0) return true;
+		if (y == 0) return true;
+		if (x == gridSize - 1) return true;
+		if (y == gridSize - 1) return true;
+
+		return false;
+	}
+
+	bool isExitCoord(size_t x, size_t y) const
+	{
+		if (!isBorderCoord(x, y)) return false;
+		if (x == 0 && y == gridSize / 2) return true;
+		if (y == 0 && x == gridSize / 2) return true;
+		if (x == gridSize - 1 && y == gridSize / 2) return true;
+		if (y == gridSize - 1 && x == gridSize / 2) return true;
+		return false;
+	}
+
+	int32_t getPathNeighbors(size_t x, size_t y) const
+	{
+		int32_t neighbors = 0;
+		if (x > 0 && grid[x - 1][y] == 0) neighbors++;
+		if (y > 0 && grid[x][y - 1] == 0) neighbors++;
+		if (x < gridSize - 1 && grid[x + 1][y] == 0) neighbors++;
+		if (y < gridSize - 1 && grid[x][y + 1] == 0) neighbors++;
+		return neighbors;
+	}
+
+	bool isPath(size_t x, size_t y) const
+	{
+		return grid[x][y] == 0;
+	}
+
+	bool isValidCoord(size_t x, size_t y) const
+	{
+		return x < gridSize && y < gridSize;
+	}
+
+	bool isCandidateForPath(size_t x, size_t y) const
+	{
+		if (!isValidCoord(x, y)) return false;
+		if (isPath(x, y)) return false;
+		if (getPathNeighbors(x, y) != 1) return false;
+		if (isExitCoord(x, y)) return true;
+		if (isBorderCoord(x, y)) return false;
+		return true;
+	}
+
+	bool expandPathFrom(bbe::Random &rand, size_t x, size_t y)
+	{
+		bbe::Vector2i walkerPos(x, y);
+		while (true)
+		{
+			grid[walkerPos] = 0;
+			if (isExitCoord(walkerPos.x, walkerPos.y))
+			{
+				// Success!
+				return true;
+			}
+
+			bbe::List<Direction> validDirections;
+			if (isCandidateForPath(walkerPos.x - 1, walkerPos.y)) validDirections.add(Direction::LEFT);
+			if (isCandidateForPath(walkerPos.x + 1, walkerPos.y)) validDirections.add(Direction::RIGHT);
+			if (isCandidateForPath(walkerPos.x, walkerPos.y - 1)) validDirections.add(Direction::UP);
+			if (isCandidateForPath(walkerPos.x, walkerPos.y + 1)) validDirections.add(Direction::DOWN);
+
+			if (validDirections.getLength() == 0)
+			{
+				// We failed. There is nowhere to go from here.
+				return false;
+			}
+
+			const Direction dir = validDirections[rand.randomInt(validDirections.getLength())];
+			if (dir == Direction::UP)
+			{
+				walkerPos.y--;
+			}
+			else if (dir == Direction::DOWN)
+			{
+				walkerPos.y++;
+			}
+			else if (dir == Direction::LEFT)
+			{
+				walkerPos.x--;
+			}
+			else if (dir == Direction::RIGHT)
+			{
+				walkerPos.x++;
+			}
+			else
+			{
+				bbe::Crash(bbe::Error::IllegalState, "Illegal Direction");
+			}
+		}
 	}
 
 public:
@@ -100,72 +218,53 @@ public:
 		grid[gridSize / 2][gridSize / 2] = -1;
 	}
 
-	Tile(bbe::Random& rand)
+	Tile(bbe::Random &rand)
 	{
-		int32_t t = 0;
-		int32_t deepest = 0;
-	start:
-		int32_t depth = 0;
-		t++;
 		grid = bbe::Grid<int32_t>(gridSize, gridSize);
-		grid.fill(1);
-		grid[gridSize / 2][0] = 0;
-		size_t currentX = gridSize / 2;
-		size_t currentY = 1;
-		while (true)
+		while (true) // Keep making new grids until we found a good one.
 		{
-			depth++;
-			if (depth > deepest) deepest = depth;
-			grid[currentX][currentY] = 0;
-			if (currentX == gridSize / 2 && currentY == gridSize - 2)
+			grid.fill(1);
+			grid[gridSize / 2][0] = 0;
+			if (expandPathFrom(rand, gridSize / 2, 1))
 			{
-				grid[currentX][currentY + 1] = 0;
-				goto success;
-			}
-			if (currentX == gridSize - 2 && currentY == gridSize / 2)
-			{
-				grid[currentX + 1][currentY] = 0;
-				goto success;
-			}
-			if (currentX == 1 && currentY == gridSize / 2)
-			{
-				grid[currentX - 1][currentY] = 0;
-				goto success;
-			}
+				bool twoExits = true;
+				if (twoExits)
+				{
+					const auto startingGrid = grid; // Make a copy of the grid we had so far so that we can always roll back.
 
-			bbe::List<Direction> possibleDirections;
-			
-			if (currentX > 1            && getCrossCheck(currentX - 1, currentY) == 1) possibleDirections.add(Direction::LEFT);
-			if (currentX < gridSize - 2 && getCrossCheck(currentX + 1, currentY) == 1) possibleDirections.add(Direction::RIGHT);
-			if (currentY > 1            && getCrossCheck(currentX, currentY - 1) == 1) possibleDirections.add(Direction::UP);
-			if (currentY < gridSize - 2 && getCrossCheck(currentX, currentY + 1) == 1) possibleDirections.add(Direction::DOWN);
+					// Some grids might be so full that we can't put another path, so we only try for a few times before giving up and trying with another tile.
+					for (int32_t breakOut = 0; breakOut < 10; breakOut++)
+					{
+						// Figure out a random starting location that has one neighbor.
+						size_t posX = 0;
+						size_t posY = 0;
+						while (true)
+						{
+							posX = 1 + rand.randomInt(gridSize - 2);
+							posY = 1 + rand.randomInt(gridSize - 2);
+							if (getPathNeighbors(posX, posY) == 1) break;
+						}
 
-			if (possibleDirections.getLength() == 0) goto start;
-
-			const Direction dir = possibleDirections[rand.randomInt(possibleDirections.getLength())];
-			if (dir == Direction::UP)
-			{
-				currentY--;
-			}
-			else if (dir == Direction::DOWN)
-			{
-				currentY++;
-			}
-			else if (dir == Direction::LEFT)
-			{
-				currentX--;
-			}
-			else if (dir == Direction::RIGHT)
-			{
-				currentX++;
-			}
-			else
-			{
-				bbe::Crash(bbe::Error::IllegalState, "Illegal Direction");
+						// Expand from that location.
+						if (expandPathFrom(rand, posX, posY))
+						{
+							// Success!
+							return;
+						}
+						else
+						{
+							// Fail :( Rollback
+							grid = startingGrid;
+						}
+					}
+				}
+				else
+				{
+					// Success!
+					return;
+				}
 			}
 		}
-	success:
-		return;
 	}
 
 	int32_t getHeight(int32_t x, int32_t y) const
@@ -178,24 +277,30 @@ public:
 		return grid.count(0);
 	}
 
-	bool exitsAlign(Entrance& exit)
+	bool exitsAlign(TileConnector exit)
 	{
-		if (exit.dir == Direction::UP)    return grid[gridSize / 2][gridSize - 1] == 0;
-		if (exit.dir == Direction::DOWN)  return grid[gridSize / 2][0] == 0;
-		if (exit.dir == Direction::LEFT)  return grid[gridSize - 1][gridSize / 2] == 0;
+		if (exit.dir == Direction::UP) return grid[gridSize / 2][gridSize - 1] == 0;
+		if (exit.dir == Direction::DOWN) return grid[gridSize / 2][0] == 0;
+		if (exit.dir == Direction::LEFT) return grid[gridSize - 1][gridSize / 2] == 0;
 		if (exit.dir == Direction::RIGHT) return grid[0][gridSize / 2] == 0;
 		bbe::Crash(bbe::Error::IllegalState, "Illegal Direction in exitsAlign");
 	}
 
-	void rotate(Entrance& exit)
+	void rotateIfNecessary(const TileConnector &exit)
 	{
-		do
+		while (!exitsAlign(exit))
 		{
 			grid = grid.rotated();
-		} while (!exitsAlign(exit));
+		}
 	}
 
-	void draw(bbe::PrimitiveBrush2D& brush, const bbe::EndlessGrid<Block>& map, const bbe::Vector2i& tileOffset, float baseX, float baseY)
+	void rotate(const TileConnector &exit)
+	{
+		grid = grid.rotated();
+		rotateIfNecessary(exit);
+	}
+
+	void draw(bbe::PrimitiveBrush2D &brush, const bbe::EndlessGrid<Block> &map, const bbe::Vector2i &tileOffset, float baseX, float baseY)
 	{
 		for (int32_t x = 0; x < Tile::gridSize; x++)
 		{
@@ -207,7 +312,7 @@ public:
 		}
 	}
 
-	static Tile newTile(bbe::Random& rand, int32_t repeats)
+	static Tile newTile(bbe::Random &rand, int32_t repeats)
 	{
 		Tile candidate(rand);
 		for (int32_t i = 0; i < repeats; i++)
@@ -221,41 +326,81 @@ public:
 		return candidate;
 	}
 
-	bbe::Grid<int32_t>& getGrid()
+	bbe::Grid<int32_t> &getGrid()
 	{
 		return grid;
 	}
 
-	Entrance getEntrance(Entrance& exit)
+	TileConnector getEntrance(TileConnector &exit)
 	{
-		if (grid[0           ][gridSize / 2] == 0 && exit.dir != Direction::RIGHT) return Entrance{ {0,            gridSize / 2}, Direction::LEFT };
-		if (grid[gridSize - 1][gridSize / 2] == 0 && exit.dir != Direction::LEFT)  return Entrance{ {gridSize - 1, gridSize / 2}, Direction::RIGHT };
-		if (grid[gridSize / 2][0           ] == 0 && exit.dir != Direction::DOWN)  return Entrance{ {gridSize / 2, 0,          }, Direction::UP };
-		if (grid[gridSize / 2][gridSize - 1] == 0 && exit.dir != Direction::UP)    return Entrance{ {gridSize / 2, gridSize - 1}, Direction::DOWN };
+		if (grid[0][gridSize / 2] == 0 && exit.dir != Direction::RIGHT) return TileConnector{ { 0, gridSize / 2 }, Direction::LEFT };
+		if (grid[gridSize - 1][gridSize / 2] == 0 && exit.dir != Direction::LEFT) return TileConnector{ { gridSize - 1, gridSize / 2 }, Direction::RIGHT };
+		if (grid[gridSize / 2][0] == 0 && exit.dir != Direction::DOWN) return TileConnector{ {
+																								 gridSize / 2,
+																								 0,
+																							 },
+																							 Direction::UP };
+		if (grid[gridSize / 2][gridSize - 1] == 0 && exit.dir != Direction::UP) return TileConnector{ { gridSize / 2, gridSize - 1 }, Direction::DOWN };
 		bbe::Crash(bbe::Error::IllegalState, "Entrance mismatch!");
 	}
 
-	void addToPath(const bbe::Vector2i& base, Entrance& entrance)
+	static Direction coordToDir(const bbe::Vector2i &coord)
 	{
+		const int32_t &x = coord.x;
+		const int32_t &y = coord.y;
+		if (x == 0 && y == gridSize / 2) return Direction::LEFT;
+		if (x == gridSize - 1 && y == gridSize / 2) return Direction::RIGHT;
+		if (x == gridSize / 2 && y == 0) return Direction::UP;
+		if (x == gridSize / 2 && y == gridSize - 1) return Direction::DOWN;
+		return Direction::UNKNOWN;
+	}
+
+	bool _addToPath(bbe::Grid<bool> &visited, const bbe::Vector2i &base, const bbe::Vector2i &coord, size_t parentIndex)
+	{
+		if (coord.x < 0 || coord.x >= gridSize || coord.y < 0 || coord.y >= gridSize) return true;
+		if (visited[coord]) return true;
+		visited[coord] = true;
+		if (grid[coord] > 0) return true;
+
+		PathElement newElement;
+		newElement.coords = coord + base;
+		newElement.nextElement = parentIndex;
+		path.add(newElement);
+
+		const size_t thisIndex = path.getLength() > 0 ? path.getLength() - 1 : 0;
+		bool isEndTile = true;
+		isEndTile &= _addToPath(visited, base, coord + bbe::Vector2i(1, 0), thisIndex);
+		isEndTile &= _addToPath(visited, base, coord + bbe::Vector2i(-1, 0), thisIndex);
+		isEndTile &= _addToPath(visited, base, coord + bbe::Vector2i(0, 1), thisIndex);
+		isEndTile &= _addToPath(visited, base, coord + bbe::Vector2i(0, -1), thisIndex);
+		if (isEndTile)
+		{
+			TileConnector newConnector;
+			newConnector.position = base + coord;
+			newConnector.dir = coordToDir(coord);
+			newConnector.pathIndex = path.getLength() - 1;
+			if (newConnector.dir == Direction::UNKNOWN)
+			{
+				bbe::Crash(bbe::Error::IllegalState, "Unknown end tile direction");
+			}
+			openTileConnectors.add(newConnector);
+		}
+
+		return false;
+	}
+
+	void addToPath(const bbe::Vector2i &base, size_t entranceIndex)
+	{
+		const TileConnector entrance = entranceIndex != (size_t)-1 ? openTileConnectors[entranceIndex] : TileConnector();
 		bbe::Vector2i pos;
 		if (entrance.dir == Direction::UNKNOWN) pos = bbe::Vector2i(gridSize / 2, gridSize / 2);
-		if (entrance.dir == Direction::UP     ) pos = bbe::Vector2i(gridSize / 2, gridSize - 1);
-		if (entrance.dir == Direction::DOWN   ) pos = bbe::Vector2i(gridSize / 2, 0);
-		if (entrance.dir == Direction::RIGHT  ) pos = bbe::Vector2i(0           , gridSize / 2);
-		if (entrance.dir == Direction::LEFT   ) pos = bbe::Vector2i(gridSize - 1, gridSize / 2);
+		if (entrance.dir == Direction::UP) pos = bbe::Vector2i(gridSize / 2, gridSize - 1);
+		if (entrance.dir == Direction::DOWN) pos = bbe::Vector2i(gridSize / 2, 0);
+		if (entrance.dir == Direction::RIGHT) pos = bbe::Vector2i(0, gridSize / 2);
+		if (entrance.dir == Direction::LEFT) pos = bbe::Vector2i(gridSize - 1, gridSize / 2);
 
 		bbe::Grid<bool> visited(gridSize, gridSize);
-		while (true)
-		{
-			visited[pos.x][pos.y] = true;
-			path.add(pos + base);
-
-			     if (pos.x > 0            && grid[pos.x - 1][pos.y] == 0 && !visited[pos.x - 1][pos.y]) pos.x--;
-			else if (pos.x < gridSize - 1 && grid[pos.x + 1][pos.y] == 0 && !visited[pos.x + 1][pos.y]) pos.x++;
-			else if (pos.y > 0            && grid[pos.x][pos.y - 1] == 0 && !visited[pos.x][pos.y - 1]) pos.y--;
-			else if (pos.y < gridSize - 1 && grid[pos.x][pos.y + 1] == 0 && !visited[pos.x][pos.y + 1]) pos.y++;
-			else break;
-		}
+		_addToPath(visited, base, pos, entrance.pathIndex);
 	}
 };
 
@@ -264,39 +409,50 @@ constexpr int32_t UNITS_PER_GRID_TILE = 1000;
 class Enemy
 {
 public:
-	int32_t distanceToGoal = 0;
+	inline static size_t nextOpenConnectorSpawnIndex = 0;
+
+	int32_t currentPathIndex = 0;
+	int32_t pathElementTraveled = 0;
 	int32_t hue = 0;
 
-	Enemy() : distanceToGoal((path.getLength() - 1) * UNITS_PER_GRID_TILE - 1) 
+	Enemy()
 	{
-		static int32_t nextHue = 0;
-		hue = nextHue;
-		nextHue += 90;
+		currentPathIndex = openTileConnectors[nextOpenConnectorSpawnIndex].pathIndex;
+		hue = (nextOpenConnectorSpawnIndex * 71) % 360;
+		nextOpenConnectorSpawnIndex++;
+		if (nextOpenConnectorSpawnIndex >= openTileConnectors.getLength())
+		{
+			nextOpenConnectorSpawnIndex = 0;
+		}
 	}
 
 	bbe::Vector2i getPosition() const
 	{
-		if (distanceToGoal < 0) return path[0];
+		if (currentPathIndex == 0 && pathElementTraveled >= UNITS_PER_GRID_TILE)
+		{
+			return path[0].coords;
+		}
 
-		const int32_t baseIndex = distanceToGoal / UNITS_PER_GRID_TILE;
-		const int32_t subIndex  = UNITS_PER_GRID_TILE - (distanceToGoal - baseIndex * UNITS_PER_GRID_TILE);
+		const bbe::Vector2i p1 = path[currentPathIndex].coords;
+		const bbe::Vector2i p2 = path[path[currentPathIndex].nextElement].coords;
+		const bbe::Vector2i d = p2 - p1;
 
-		const bbe::Vector2i p1 = path[baseIndex];
-		const bbe::Vector2i p2 = path[baseIndex + 1];
-		const bbe::Vector2i d = p1 - p2;
-
-		return p2 * UNITS_PER_GRID_TILE + d * subIndex;
+		return p1 * UNITS_PER_GRID_TILE + d * pathElementTraveled;
 	}
 
 	void tick()
 	{
-		distanceToGoal -= 15;
-		if (distanceToGoal < 0) distanceToGoal = 0;
+		pathElementTraveled += 15;
+		while (currentPathIndex != 0 && pathElementTraveled >= UNITS_PER_GRID_TILE)
+		{
+			currentPathIndex = path[currentPathIndex].nextElement;
+			pathElementTraveled -= UNITS_PER_GRID_TILE;
+		}
 	}
 
 	bool shouldDelete()
 	{
-		return distanceToGoal <= 0;
+		return currentPathIndex == 0 && pathElementTraveled >= UNITS_PER_GRID_TILE;
 	}
 };
 
@@ -306,7 +462,6 @@ class MyGame : public bbe::Game
 	Tile currentTile;
 	bbe::Random rand;
 	bbe::Vector2i tileOffset;
-	Tile::Entrance previousEntrance = Tile::Entrance{ {}, Direction::UNKNOWN };
 	bbe::Vector2 cameraOffset;
 
 	bbe::List<Enemy> enemies;
@@ -315,10 +470,16 @@ class MyGame : public bbe::Game
 	float timeSinceLastTick = 0.0f;
 	int tickMultiplier = 1;
 
+	bbe::Vector2i screenToTileCoord(const bbe::Vector2 &screenCoord) const
+	{
+		const bbe::Vector2 noCam = screenCoord - cameraOffset;
+		return bbe::Vector2i(noCam.x / 25, noCam.y / 25);
+	}
+
 	void tick()
 	{
 		ticksSinceLastEnemySpawn++;
-		if (ticksSinceLastEnemySpawn > 120)
+		if (ticksSinceLastEnemySpawn > 16)
 		{
 			ticksSinceLastEnemySpawn = 0;
 			enemies.add(Enemy());
@@ -339,15 +500,29 @@ class MyGame : public bbe::Game
 		}
 	}
 
+	size_t getMouseConnectorIndex() const
+	{
+		return getClosestOpenTileConnectorIndex(screenToTileCoord(getMouse()));
+	}
+
+	TileConnector getMouseConnector()
+	{
+		const size_t index = getMouseConnectorIndex();
+		if (index == (size_t)-1) return TileConnector();
+		return openTileConnectors[index];
+	}
+
 	void createTile()
 	{
 		currentTile = Tile::newTile(rand, 4);
-		currentTile.rotate(previousEntrance);
+		currentTile.rotate(getMouseConnector());
 	}
 
 	void applyTile()
 	{
-		currentTile.addToPath(tileOffset, previousEntrance);
+		const size_t closestTile = getMouseConnectorIndex();
+
+		currentTile.addToPath(tileOffset, closestTile);
 		for (int32_t x = 0; x < Tile::gridSize; x++)
 		{
 			for (int32_t y = 0; y < Tile::gridSize; y++)
@@ -356,17 +531,13 @@ class MyGame : public bbe::Game
 				map[x + tileOffset.x][y + tileOffset.y] = mergeBlocks(oldValue, Block(currentTile.getGrid()[x][y]));
 			}
 		}
-		previousEntrance = currentTile.getEntrance(previousEntrance);
-		tileOffset += previousEntrance.position;
-		     if (previousEntrance.dir == Direction::RIGHT) { tileOffset.x += 1;                       tileOffset.y += -Tile::gridSize / 2 + 1; }
-		else if (previousEntrance.dir == Direction::LEFT)  { tileOffset.x += -Tile::gridSize;         tileOffset.y += -Tile::gridSize / 2 + 1; }
-		else if (previousEntrance.dir == Direction::DOWN)  { tileOffset.x += -Tile::gridSize / 2 + 1; tileOffset.y += 1; }
-		else if (previousEntrance.dir == Direction::UP)    { tileOffset.x += -Tile::gridSize / 2 + 1; tileOffset.y += -Tile::gridSize; }
-		else { bbe::Crash(bbe::Error::IllegalState, "Illegal Entrance in applyTile"); }
+
+		openTileConnectors.removeIndex(closestTile);
 	}
 
 	virtual void onStart() override
 	{
+		Enemy::nextOpenConnectorSpawnIndex = 0;
 		map.setDefaultValue(Block(-1000));
 		currentTile = Tile();
 		applyTile();
@@ -380,7 +551,7 @@ class MyGame : public bbe::Game
 		while (timeSinceLastTick > tickTime)
 		{
 			timeSinceLastTick -= tickTime;
-			for(int i = 0; i < tickMultiplier; i++) tick();
+			for (int i = 0; i < tickMultiplier; i++) tick();
 		}
 
 		if (isKeyTyped(bbe::Key::SPACE))
@@ -388,9 +559,10 @@ class MyGame : public bbe::Game
 			applyTile();
 			createTile();
 		}
+		auto mouseConnector = getMouseConnector();
 		if (getMouseScrollY() != 0)
 		{
-			currentTile.rotate(previousEntrance);
+			currentTile.rotate(mouseConnector);
 		}
 
 		constexpr float camSpeed = 1000;
@@ -399,31 +571,59 @@ class MyGame : public bbe::Game
 		if (isKeyDown(bbe::Key::S)) cameraOffset.y -= camSpeed * timeSinceLastFrame;
 		if (isKeyDown(bbe::Key::A)) cameraOffset.x += camSpeed * timeSinceLastFrame;
 		if (isKeyDown(bbe::Key::D)) cameraOffset.x -= camSpeed * timeSinceLastFrame;
+
+		tileOffset = mouseConnector.position;
+		if (mouseConnector.dir == Direction::RIGHT)
+		{
+			tileOffset.x += 1;
+			tileOffset.y += -Tile::gridSize / 2 + 1;
+		}
+		else if (mouseConnector.dir == Direction::LEFT)
+		{
+			tileOffset.x += -Tile::gridSize;
+			tileOffset.y += -Tile::gridSize / 2 + 1;
+		}
+		else if (mouseConnector.dir == Direction::DOWN)
+		{
+			tileOffset.x += -Tile::gridSize / 2 + 1;
+			tileOffset.y += 1;
+		}
+		else if (mouseConnector.dir == Direction::UP)
+		{
+			tileOffset.x += -Tile::gridSize / 2 + 1;
+			tileOffset.y += -Tile::gridSize;
+		}
+		currentTile.rotateIfNecessary(mouseConnector);
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		for (int32_t i = -100; i < 100; i++)
 		{
 			for (int32_t k = -100; k < 100; k++)
 			{
-				if (i == 0 && k == 0)
-				{
-					// TODO remove
-					int a = 0;
-				}
 				brush.setColorRGB(heightToColor(map.observe(i, k).getHeight()));
 				brush.fillRect(i * 25 + cameraOffset.x, k * 25 + cameraOffset.y, 25, 25);
 			}
 		}
 		currentTile.draw(brush, map, tileOffset, tileOffset.x * 25 + cameraOffset.x, tileOffset.y * 25 + cameraOffset.y);
 
+		const size_t closestOpenTileConnectorIndex = getMouseConnectorIndex();
+		brush.setColorRGB(0.4f, 0.4f, 0.5f);
+		brush.fillRect(openTileConnectors[closestOpenTileConnectorIndex].position.x * 25 + cameraOffset.x + 3, openTileConnectors[closestOpenTileConnectorIndex].position.y * 25 + cameraOffset.y + 3, 19, 19);
+
+		brush.setColorRGB(0.8f, 0.8f, 1.0f);
+		for (size_t i = 0; i < openTileConnectors.getLength(); i++)
+		{
+			brush.fillRect(openTileConnectors[i].position.x * 25 + cameraOffset.x + 5, openTileConnectors[i].position.y * 25 + cameraOffset.y + 5, 15, 15);
+		}
+
 		brush.setColorRGB(1, 1, 1);
 		for (size_t i = 1; i < path.getLength(); i++)
 		{
-			brush.fillLine(path[i].as<float>() * 25 + cameraOffset + bbe::Vector2(12.5f), path[i - 1].as<float>() * 25 + cameraOffset + bbe::Vector2(12.5f));
+			brush.fillLine(path[i].coords.as<float>() * 25 + cameraOffset + bbe::Vector2(12.5f), path[path[i].nextElement].coords.as<float>() * 25 + cameraOffset + bbe::Vector2(12.5f));
 		}
 
 		for (size_t i = 0; i < enemies.getLength(); i++)

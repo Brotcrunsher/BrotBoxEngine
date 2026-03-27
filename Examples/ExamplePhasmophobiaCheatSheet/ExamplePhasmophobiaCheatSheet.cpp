@@ -17,15 +17,15 @@ enum class Evidence
 	DOTS,
 };
 
-Evidence strToEvidence(const bbe::String& s)
+Evidence strToEvidence(const bbe::String &s)
 {
-	     if (s == "EMF"    ) return Evidence::EMF;
-	else if (s == "ORBS"   ) return Evidence::ORBS;
-	else if (s == "BOOK"   ) return Evidence::BOOK;
-	else if (s == "BOX"	   ) return Evidence::BOX;
-	else if (s == "COLD"   ) return Evidence::COLD;
+	if (s == "EMF") return Evidence::EMF;
+	else if (s == "ORBS") return Evidence::ORBS;
+	else if (s == "BOOK") return Evidence::BOOK;
+	else if (s == "BOX") return Evidence::BOX;
+	else if (s == "COLD") return Evidence::COLD;
 	else if (s == "FINGIES") return Evidence::FINGIES;
-	else if (s == "DOTS"   ) return Evidence::DOTS;
+	else if (s == "DOTS") return Evidence::DOTS;
 	else bbe::Crash(bbe::Error::IllegalArgument);
 }
 
@@ -38,10 +38,10 @@ struct Ghost
 
 namespace ImGui
 {
-	bool CheckBoxTristate(const char* label, int* v_tristate)
+	bool CheckBoxTristate(const char *label, int *v_tristate)
 	{
 		const bool tri = *v_tristate == -1;
-		
+
 		if (tri)
 		{
 			ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, true);
@@ -69,13 +69,13 @@ class MyGame : public bbe::Game
 public:
 	bbe::List<Ghost> allGhosts;
 
-	int emf     = 0;
-	int orbs    = 0;
-	int book    = 0;
-	int box     = 0;
-	int cold    = 0;
+	int emf = 0;
+	int orbs = 0;
+	int book = 0;
+	int box = 0;
+	int cold = 0;
 	int fingies = 0;
-	int dots    = 0;
+	int dots = 0;
 
 	bbe::List<Ghost> getFilteredGhosts() const
 	{
@@ -83,15 +83,15 @@ public:
 
 		for (size_t i = 0; i < allGhosts.getLength(); i++)
 		{
-			const Ghost& g = allGhosts[i];
+			const Ghost &g = allGhosts[i];
 
-			if ((emf     == 1 && !g.evidences.contains(Evidence::EMF    )) || (emf     == -1 && g.evidences.contains(Evidence::EMF    ))) continue;
-			if ((orbs    == 1 && !g.evidences.contains(Evidence::ORBS   )) || (orbs    == -1 && g.evidences.contains(Evidence::ORBS   ))) continue;
-			if ((book    == 1 && !g.evidences.contains(Evidence::BOOK   )) || (book    == -1 && g.evidences.contains(Evidence::BOOK   ))) continue;
-			if ((box     == 1 && !g.evidences.contains(Evidence::BOX    )) || (box     == -1 && g.evidences.contains(Evidence::BOX    ))) continue;
-			if ((cold    == 1 && !g.evidences.contains(Evidence::COLD   )) || (cold    == -1 && g.evidences.contains(Evidence::COLD   ))) continue;
+			if ((emf == 1 && !g.evidences.contains(Evidence::EMF)) || (emf == -1 && g.evidences.contains(Evidence::EMF))) continue;
+			if ((orbs == 1 && !g.evidences.contains(Evidence::ORBS)) || (orbs == -1 && g.evidences.contains(Evidence::ORBS))) continue;
+			if ((book == 1 && !g.evidences.contains(Evidence::BOOK)) || (book == -1 && g.evidences.contains(Evidence::BOOK))) continue;
+			if ((box == 1 && !g.evidences.contains(Evidence::BOX)) || (box == -1 && g.evidences.contains(Evidence::BOX))) continue;
+			if ((cold == 1 && !g.evidences.contains(Evidence::COLD)) || (cold == -1 && g.evidences.contains(Evidence::COLD))) continue;
 			if ((fingies == 1 && !g.evidences.contains(Evidence::FINGIES)) || (fingies == -1 && g.evidences.contains(Evidence::FINGIES))) continue;
-			if ((dots    == 1 && !g.evidences.contains(Evidence::DOTS   )) || (dots    == -1 && g.evidences.contains(Evidence::DOTS   ))) continue;
+			if ((dots == 1 && !g.evidences.contains(Evidence::DOTS)) || (dots == -1 && g.evidences.contains(Evidence::DOTS))) continue;
 
 			retVal.add(g);
 		}
@@ -102,7 +102,7 @@ public:
 	virtual void onStart() override
 	{
 		auto lines = assetStore::CheatSheet()->lines();
-		for (const bbe::String& line : lines)
+		for (const bbe::String &line : lines)
 		{
 			auto tokens = line.split("|");
 			Ghost g;
@@ -120,23 +120,23 @@ public:
 	virtual void update(float timeSinceLastFrame) override
 	{
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
-		ImGui::CheckBoxTristate("emf     ", &emf    );
-		ImGui::CheckBoxTristate("orbs    ", &orbs   );
-		ImGui::CheckBoxTristate("book    ", &book   );
-		ImGui::CheckBoxTristate("box     ", &box    );
-		ImGui::CheckBoxTristate("cold    ", &cold   );
+		ImGui::CheckBoxTristate("emf     ", &emf);
+		ImGui::CheckBoxTristate("orbs    ", &orbs);
+		ImGui::CheckBoxTristate("book    ", &book);
+		ImGui::CheckBoxTristate("box     ", &box);
+		ImGui::CheckBoxTristate("cold    ", &cold);
 		ImGui::CheckBoxTristate("fingies ", &fingies);
-		ImGui::CheckBoxTristate("dots    ", &dots   );
+		ImGui::CheckBoxTristate("dots    ", &dots);
 
 		auto filteredGhosts = getFilteredGhosts();
-		for (size_t i = 0; i< filteredGhosts.getLength(); i++)
+		for (size_t i = 0; i < filteredGhosts.getLength(); i++)
 		{
-			const Ghost& g = filteredGhosts[i];
+			const Ghost &g = filteredGhosts[i];
 
 			brush.fillText(100, 20 + i * 30, g.name);
 

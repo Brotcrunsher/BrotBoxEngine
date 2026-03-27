@@ -34,21 +34,22 @@ namespace bbe
 			class VulkanDescriptorSet
 			{
 			private:
-				VkDescriptorSet m_descriptorSet   = VK_NULL_HANDLE;
-				VkDevice m_device                 = VK_NULL_HANDLE;
+				VkDescriptorSet m_descriptorSet = VK_NULL_HANDLE;
+				VkDevice m_device = VK_NULL_HANDLE;
 				VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
 
 				List<AdvancedDescriptorBufferInfo> m_descriptorBufferInfos;
 				List<AdvancedDescriptorImageInfo> m_descriptorImageInfos;
+
 			public:
 				void addUniformBuffer(const VulkanBuffer &buffer, VkDeviceSize offset, uint32_t binding);
-				void addCombinedImageSampler(const Image& image, uint32_t binding);
+				void addCombinedImageSampler(const Image &image, uint32_t binding);
 				void create(const VulkanDevice &device, const VulkanDescriptorPool &descriptorPool, const VulkanDescriptorSetLayout &setLayout);
 				void destroy();
 				void update(const VulkanDevice &device);
 
 				VkDescriptorSet getDescriptorSet() const;
-				const VkDescriptorSet* getPDescriptorSet() const;
+				const VkDescriptorSet *getPDescriptorSet() const;
 			};
 		}
 	}

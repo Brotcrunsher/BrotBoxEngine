@@ -33,7 +33,7 @@ void bbe::INTERNAL::vulkan::ViewFrustum::updatePlanes(const bbe::Matrix4 &mvpMat
 	}
 }
 
-bbe::Vector4 * bbe::INTERNAL::vulkan::ViewFrustum::getPlanes()
+bbe::Vector4 *bbe::INTERNAL::vulkan::ViewFrustum::getPlanes()
 {
 	return planes;
 }

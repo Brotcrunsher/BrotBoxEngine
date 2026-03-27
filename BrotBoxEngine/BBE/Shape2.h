@@ -14,8 +14,9 @@ namespace bbe
 			float start;
 			float stop;
 		};
+
 	protected:
-		static float projectionsPenetration(const ProjectionResult& pr1, const ProjectionResult& pr2)
+		static float projectionsPenetration(const ProjectionResult &pr1, const ProjectionResult &pr2)
 		{
 			const float midPr1 = (pr1.start + pr1.stop) / 2.f;
 			const float midPr2 = (pr2.start + pr2.stop) / 2.f;
@@ -23,16 +24,17 @@ namespace bbe
 			const float lengthPr1 = pr1.stop - pr1.start;
 			const float lengthPr2 = pr2.stop - pr2.start;
 			const float lengthAvg = (lengthPr1 + lengthPr2) / 2.f;
-			
+
 			if (bbe::Math::abs(midDist) >= bbe::Math::abs(lengthAvg)) return 0.f;
 
 			return lengthAvg - midDist;
 		}
 
-		static bool projectionsIntersect(const ProjectionResult& pr1, const ProjectionResult& pr2)
+		static bool projectionsIntersect(const ProjectionResult &pr1, const ProjectionResult &pr2)
 		{
 			return projectionsPenetration(pr1, pr2) != 0;
 		}
+
 	public:
 		virtual Vec getCenter() const = 0;
 
@@ -43,13 +45,13 @@ namespace bbe
 			return retVal;
 		}
 
-		virtual void getVertices(bbe::List<Vec>& outVertices) const = 0;
+		virtual void getVertices(bbe::List<Vec> &outVertices) const = 0;
 
 		virtual bbe::List<Vec> getNormals() const = 0;
 
-		virtual void translate(const Vec& translation) = 0;
+		virtual void translate(const Vec &translation) = 0;
 
-		virtual ProjectionResult project(const Vec& projection) const
+		virtual ProjectionResult project(const Vec &projection) const
 		{
 			const bbe::List<Vec> vertices = getVertices();
 			const bbe::List<Vec> projections = bbe::Math::project(vertices, projection);
@@ -73,19 +75,19 @@ namespace bbe
 			return retVal;
 		}
 
-		virtual bool intersects(const Shape<Vec>& other) const
+		virtual bool intersects(const Shape<Vec> &other) const
 		{
 			auto normalsThis = getNormals();
 			auto normalsOther = other.getNormals();
 
-			for (const Vec& normal : normalsThis)
+			for (const Vec &normal : normalsThis)
 			{
 				auto p1 = project(normal);
 				auto p2 = other.project(normal);
 				if (!projectionsIntersect(p1, p2)) return false;
 			}
 
-			for (const Vec& normal : normalsOther)
+			for (const Vec &normal : normalsOther)
 			{
 				auto p1 = project(normal);
 				auto p2 = other.project(normal);
@@ -122,7 +124,7 @@ namespace bbe
 			return retVal;
 		}
 
-		virtual bool resolveIntersection(const Shape<Vec>& other)
+		virtual bool resolveIntersection(const Shape<Vec> &other)
 		{
 			auto normalsThis = getNormals();
 			auto normalsOther = other.getNormals();
@@ -130,7 +132,7 @@ namespace bbe
 			float minPenetration = bbe::Math::INFINITY_POSITIVE;
 			Vec resolveAxis;
 
-			for (const Vec& normal : normalsThis)
+			for (const Vec &normal : normalsThis)
 			{
 				auto p1 = Shape<Vec>::project(normal);
 				auto p2 = other.project(normal);
@@ -143,7 +145,7 @@ namespace bbe
 				}
 			}
 
-			for (const Vec& normal : normalsOther)
+			for (const Vec &normal : normalsOther)
 			{
 				auto p1 = Shape<Vec>::project(normal);
 				auto p2 = other.project(normal);
@@ -165,7 +167,7 @@ namespace bbe
 	class Shape3 : public Shape<bbe::Vector3>
 	{
 	public:
-		virtual bool intersects(const Shape<bbe::Vector3>& other) const override
+		virtual bool intersects(const Shape<bbe::Vector3> &other) const override
 		{
 			if (!Shape<bbe::Vector3>::intersects(other)) return false;
 
@@ -173,9 +175,9 @@ namespace bbe
 			auto normalsThis = getNormals();
 			auto normalsOther = other.getNormals();
 
-			for (const bbe::Vector3& normalThis : normalsThis)
+			for (const bbe::Vector3 &normalThis : normalsThis)
 			{
-				for (const bbe::Vector3& normalOther : normalsOther)
+				for (const bbe::Vector3 &normalOther : normalsOther)
 				{
 					const bbe::Vector3 cross = normalThis.cross(normalOther);
 					auto p1 = project(cross);

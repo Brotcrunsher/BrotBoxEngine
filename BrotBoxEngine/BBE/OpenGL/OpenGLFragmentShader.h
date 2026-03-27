@@ -49,23 +49,24 @@ namespace bbe
 				ThreeD threeD;
 				ThreeD threeDForwardNoLight;
 				ThreeD threeDBake;
+
 			public:
-				TwoD& getTwoD();
-				ThreeD& getThreeD();
-				ThreeD& getThreeDForwardNoLight();
-				ThreeD& getThreeDBake();
+				TwoD &getTwoD();
+				ThreeD &getThreeD();
+				ThreeD &getThreeDForwardNoLight();
+				ThreeD &getThreeDBake();
 
 				bool hasTwoD() const;
 				bool hasThreeD() const;
 				bool hasThreeDBake() const;
 
-				explicit OpenGLFragmentShader(const bbe::FragmentShader& shader);
+				explicit OpenGLFragmentShader(const bbe::FragmentShader &shader);
 				~OpenGLFragmentShader() override;
 
-				OpenGLFragmentShader(const OpenGLFragmentShader&) = delete;
-				OpenGLFragmentShader(OpenGLFragmentShader&&) = delete;
-				OpenGLFragmentShader& operator =(const OpenGLFragmentShader&) = delete;
-				OpenGLFragmentShader&& operator ==(const OpenGLFragmentShader&&) = delete;
+				OpenGLFragmentShader(const OpenGLFragmentShader &) = delete;
+				OpenGLFragmentShader(OpenGLFragmentShader &&) = delete;
+				OpenGLFragmentShader &operator=(const OpenGLFragmentShader &) = delete;
+				OpenGLFragmentShader &&operator==(const OpenGLFragmentShader &&) = delete;
 			};
 		}
 	}

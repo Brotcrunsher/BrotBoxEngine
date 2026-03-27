@@ -13,26 +13,34 @@ enum class State
 	restarting,
 };
 
-State& operator++(State& s)
+State &operator++(State &s)
 {
 	switch (s)
 	{
-	case State::physics:    return s = State::slow_down;
-	case State::slow_down:  return s = State::freeze;
-	case State::freeze:     return s = State::restarting;
-	case State::restarting: return s = State::physics;
+	case State::physics:
+		return s = State::slow_down;
+	case State::slow_down:
+		return s = State::freeze;
+	case State::freeze:
+		return s = State::restarting;
+	case State::restarting:
+		return s = State::physics;
 	}
 	bbe::Crash(bbe::Error::IllegalArgument);
 }
 
-float getStateDuration(State& s)
+float getStateDuration(State &s)
 {
 	switch (s)
 	{
-	case State::physics:    return 60.f;
-	case State::slow_down:  return 1.f;
-	case State::freeze:		return 1.f;
-	case State::restarting: return 3.f;
+	case State::physics:
+		return 60.f;
+	case State::slow_down:
+		return 1.f;
+	case State::freeze:
+		return 1.f;
+	case State::restarting:
+		return 3.f;
 	}
 	bbe::Crash(bbe::Error::IllegalArgument);
 }
@@ -70,19 +78,16 @@ class MyGame : public bbe::Game
 		DoublePendulum(double omega1, double omega2, double velo1, double velo2)
 			: omega1(omega1), omega2(omega2), velo1(velo1), velo2(velo2)
 		{
-
 		}
 
 		void tick()
 		{
 			const double accel1 =
-				(-g * (2. * m1 + m2) * sin(omega1) - m2 * g * sin(omega1 - 2. * omega2) - 2. * sin(omega1 - omega2) * m2 * (velo2 * velo2 * L2 + velo1 * velo1 * L1 * cos(omega1 - omega2)))
-				/
+				(-g * (2. * m1 + m2) * sin(omega1) - m2 * g * sin(omega1 - 2. * omega2) - 2. * sin(omega1 - omega2) * m2 * (velo2 * velo2 * L2 + velo1 * velo1 * L1 * cos(omega1 - omega2))) /
 				(L1 * (2 * m1 + m2 - m2 * cos(2. * omega1 - 2. * omega2)));
 
 			const double accel2 =
-				(2. * sin(omega1 - omega2) * (velo1 * velo1 * L1 * (m1 + m2) + g * (m1 + m2) * cos(omega1) + velo2 * velo2 * L2 * m2 * cos(omega1 - omega2)))
-				/
+				(2. * sin(omega1 - omega2) * (velo1 * velo1 * L1 * (m1 + m2) + g * (m1 + m2) * cos(omega1) + velo2 * velo2 * L2 * m2 * cos(omega1 - omega2))) /
 				(L2 * (2 * m1 + m2 - m2 * cos(2. * omega1 - 2. * omega2)));
 
 			velo1 += accel1 * tickTime;
@@ -97,7 +102,7 @@ class MyGame : public bbe::Game
 			if (omega2 < -bbe::Math::PI) omega2 += bbe::Math::PI * 2.;
 		}
 
-		void draw(bbe::PrimitiveBrush2D& brush, DrawMode drawMode)
+		void draw(bbe::PrimitiveBrush2D &brush, DrawMode drawMode)
 		{
 			const bbe::Vector2 offset = { WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 };
 
@@ -122,8 +127,7 @@ class MyGame : public bbe::Game
 				bbe::Math::TAU * percentage,
 				bbe::Math::TAU * percentage,
 				-bbe::Math::PI / 2,
-				-bbe::Math::PI / 2
-			));
+				-bbe::Math::PI / 2));
 		}
 	}
 
@@ -137,7 +141,7 @@ class MyGame : public bbe::Game
 			}
 		}
 	}
-	
+
 	virtual void update(float timeSinceLastFrame) override
 	{
 		static float stateTime = 0;
@@ -145,8 +149,7 @@ class MyGame : public bbe::Game
 		float statePercentage = stateTime / getStateDuration(state);
 		if (statePercentage > 1) statePercentage = 1;
 
-		if (state == State::physics
-			|| state == State::slow_down)
+		if (state == State::physics || state == State::slow_down)
 		{
 			static float timeSinceLastTick = 0;
 			timeSinceLastTick += timeSinceLastFrame;
@@ -154,7 +157,8 @@ class MyGame : public bbe::Game
 			size_t ticks = timeSinceLastTick / DoublePendulum::tickTime;
 			if (ticks > 0)
 			{
-				timeSinceLastTick -= ticks * DoublePendulum::tickTime; timeSinceLastTick -= DoublePendulum::tickTime;
+				timeSinceLastTick -= ticks * DoublePendulum::tickTime;
+				timeSinceLastTick -= DoublePendulum::tickTime;
 
 				if (state == State::slow_down)
 				{
@@ -210,10 +214,10 @@ class MyGame : public bbe::Game
 			}
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		for (size_t k = 0; k < pendulums.getLength(); k++)
 		{

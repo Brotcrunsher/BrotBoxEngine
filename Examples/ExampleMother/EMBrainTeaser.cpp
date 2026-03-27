@@ -1,17 +1,19 @@
 #include "EMBrainTeaser.h"
 #include "EMTab.h"
 
-SubsystemBrainTeaser::SubsystemBrainTeaser(bbe::Game* game) : m_game(game)
+SubsystemBrainTeaser::SubsystemBrainTeaser(bbe::Game *game) : m_game(game)
 {
 }
 
-bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeasers(bbe::PrimitiveBrush2D& brush)
+bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeasers(bbe::PrimitiveBrush2D &brush)
 {
-	static bbe::List<Tab> tabs =
-	{
-		Tab{"Digit Memory", "", [&]() { return drawTabBrainTeaserDigitMemory(brush); }},
-		Tab{"Alphabet"    , "", [&]() { return drawTabBrainTeaserAlphabet(brush);    }},
-		Tab{"Add"         , "", [&]() { return drawTabBrainTeaserAdd(brush);         }},
+	static bbe::List<Tab> tabs = {
+		Tab{ "Digit Memory", "", [&]()
+			 { return drawTabBrainTeaserDigitMemory(brush); } },
+		Tab{ "Alphabet", "", [&]()
+			 { return drawTabBrainTeaserAlphabet(brush); } },
+		Tab{ "Add", "", [&]()
+			 { return drawTabBrainTeaserAdd(brush); } },
 	};
 	static size_t previouslyShown = 0;
 	bool dummy = false;
@@ -19,13 +21,13 @@ bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeasers(bbe::PrimitiveBrush2D& br
 	return retVal;
 }
 
-void SubsystemBrainTeaser::newAddPair(int32_t& left, int32_t& right)
+void SubsystemBrainTeaser::newAddPair(int32_t &left, int32_t &right)
 {
 	left = rand.randomInt(10000);
 	right = rand.randomInt(10000);
 }
 
-bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserAdd(bbe::PrimitiveBrush2D& brush)
+bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserAdd(bbe::PrimitiveBrush2D &brush)
 
 {
 	enum class BTState
@@ -66,7 +68,6 @@ bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserAdd(bbe::PrimitiveBrush2D& 
 			nextState = BTState::endscreen;
 			reason = "Timeup";
 		}
-
 
 		ImGui::SetKeyboardFocusHere();
 		if (ImGui::InputText("Your answer", inputBuf, sizeof(inputBuf), ImGuiInputTextFlags_EnterReturnsTrue))
@@ -140,7 +141,7 @@ bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserAdd(bbe::PrimitiveBrush2D& 
 	return size;
 }
 
-void SubsystemBrainTeaser::newAlphabetPair(char& left, char& right)
+void SubsystemBrainTeaser::newAlphabetPair(char &left, char &right)
 {
 	left = 'A' + rand.randomInt(26);
 	do
@@ -149,7 +150,7 @@ void SubsystemBrainTeaser::newAlphabetPair(char& left, char& right)
 	} while (left == right);
 }
 
-bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserAlphabet(bbe::PrimitiveBrush2D& brush)
+bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserAlphabet(bbe::PrimitiveBrush2D &brush)
 {
 	enum class BTState
 	{
@@ -266,7 +267,7 @@ bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserAlphabet(bbe::PrimitiveBrus
 	return size;
 }
 
-bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserDigitMemory(bbe::PrimitiveBrush2D& brush)
+bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserDigitMemory(bbe::PrimitiveBrush2D &brush)
 {
 	enum class BTState
 	{
@@ -308,7 +309,7 @@ bbe::Vector2 SubsystemBrainTeaser::drawTabBrainTeaserDigitMemory(bbe::PrimitiveB
 	}
 	else if (state == BTState::waiting)
 	{
-		ImGui::Text((nextStateAt - bbe::TimePoint()).toString().getRaw());
+		ImGui::Text("%s", (nextStateAt - bbe::TimePoint()).toString().getRaw());
 		if (nextStateAt.hasPassed())
 		{
 			nextState = BTState::entering;

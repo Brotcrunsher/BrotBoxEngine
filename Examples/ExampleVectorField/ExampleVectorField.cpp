@@ -4,7 +4,7 @@
 class MyGame : public bbe::Game
 {
 	bbe::Vector2 vectorField[128][72];
-	
+
 	float gravX = 0;
 	float gravY = 5;
 	float distanceToMiddle = 20;
@@ -31,10 +31,10 @@ class MyGame : public bbe::Game
 			}
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		ImGui::SliderFloat("GravX", &gravX, -10, +10);
 		ImGui::SliderFloat("GravY", &gravY, -10, +10);
@@ -46,7 +46,7 @@ class MyGame : public bbe::Game
 		{
 			for (int k = 0; k < 72; k++)
 			{
-				bbe::Vector2 pos = { i * 10.f + 5.f, k * 10.f + 5.f};
+				bbe::Vector2 pos = { i * 10.f + 5.f, k * 10.f + 5.f };
 				brush.fillLine(pos, pos + vectorField[i][k]);
 			}
 		}
@@ -64,4 +64,3 @@ int main()
 	delete mg;
 #endif
 }
-

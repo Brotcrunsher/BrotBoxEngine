@@ -48,7 +48,7 @@ class MyGame : public bbe::Game
 		}
 		ccnc.update(timeSinceLastFrame * 0.01f);
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 		light.pos = ccnc.getCameraPos();
 		brush.addLight(light);
@@ -57,7 +57,7 @@ class MyGame : public bbe::Game
 		brush.fillCube(c1);
 		brush.fillCube(c2);
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 	}
 	virtual void onEnd() override
@@ -67,7 +67,7 @@ class MyGame : public bbe::Game
 
 int main()
 {
-	MyGame* mg = new MyGame();
+	MyGame *mg = new MyGame();
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "Rotating Cubes!");
 #ifndef __EMSCRIPTEN__
 	delete mg;

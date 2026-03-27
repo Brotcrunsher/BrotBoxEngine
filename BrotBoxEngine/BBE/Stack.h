@@ -6,7 +6,7 @@
 
 namespace bbe
 {
-	template <typename T>
+	template<typename T>
 	class Stack
 	{
 	private:

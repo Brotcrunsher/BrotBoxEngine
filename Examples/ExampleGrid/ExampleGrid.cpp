@@ -7,12 +7,11 @@ class MyGame : public bbe::Game
 
 	virtual void onStart() override
 	{
-		booleanGrid =
-		{
-			{true , false, true , false, false},
-			{false, false, false, true , false},
-			{true , false, true , false, false},
-			{true , false, false, false, true },
+		booleanGrid = {
+			{ true, false, true, false, false },
+			{ false, false, false, true, false },
+			{ true, false, true, false, false },
+			{ true, false, false, false, true },
 		};
 	}
 	virtual void update(float timeSinceLastFrame) override
@@ -21,8 +20,7 @@ class MyGame : public bbe::Game
 		bbe::Vector2i mousei = bbe::Vector2i{ (int32_t)mouse.x, (int32_t)mouse.y };
 		bbe::Vector2i gridIndex = (mousei - bbe::Vector2i(10, 10)) / 10;
 
-		if (   gridIndex.x >= 0 && gridIndex.x < booleanGrid.getWidth()
-			&& gridIndex.y >= 0 && gridIndex.y < booleanGrid.getHeight())
+		if (gridIndex.x >= 0 && gridIndex.x < booleanGrid.getWidth() && gridIndex.y >= 0 && gridIndex.y < booleanGrid.getHeight())
 		{
 			if (isMouseDown(bbe::MouseButton::LEFT))
 			{
@@ -34,10 +32,10 @@ class MyGame : public bbe::Game
 			}
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		for (size_t i = 0; i < booleanGrid.getWidth(); i++)
 		{
@@ -73,4 +71,3 @@ int main()
 	delete mg;
 #endif
 }
-

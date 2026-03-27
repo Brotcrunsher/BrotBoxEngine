@@ -1,6 +1,6 @@
 #include "BBE/OpenGL/OpenGLImage.h"
 
-bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image)
+bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image &image)
 {
 	if (!image.isLoadedCpu())
 	{
@@ -33,7 +33,6 @@ bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image)
 		bbe::Crash(bbe::Error::IllegalState);
 	}
 
-	
 	// TODO This might break if the image decoder has a different row alignment than 1.
 	//      Check if this could ever be the case with stb image.
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -47,7 +46,7 @@ bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image)
 	}
 }
 
-bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image& image, GLuint tex)
+bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image &image, GLuint tex)
 {
 	if (image.m_prendererData != nullptr)
 	{
@@ -67,40 +66,52 @@ bbe::INTERNAL::openGl::OpenGLImage::~OpenGLImage()
 	}
 }
 
-GLint bbe::INTERNAL::openGl::OpenGLImage::internalFormat(const bbe::Image& image)
+GLint bbe::INTERNAL::openGl::OpenGLImage::internalFormat(const bbe::Image &image)
 {
 	switch (image.m_format)
 	{
-	case (ImageFormat::R8G8B8A8         ): return GL_RGBA8;
-	case (ImageFormat::R8               ): return GL_R8;
-	case (ImageFormat::R32FLOAT         ): return GL_R32F;
-	case (ImageFormat::R32G32B32A32FLOAT): return GL_RGBA32F;
+	case (ImageFormat::R8G8B8A8):
+		return GL_RGBA8;
+	case (ImageFormat::R8):
+		return GL_R8;
+	case (ImageFormat::R32FLOAT):
+		return GL_R32F;
+	case (ImageFormat::R32G32B32A32FLOAT):
+		return GL_RGBA32F;
 	}
 
 	bbe::Crash(bbe::Error::IllegalArgument);
 }
 
-GLenum bbe::INTERNAL::openGl::OpenGLImage::format(const bbe::Image& image)
+GLenum bbe::INTERNAL::openGl::OpenGLImage::format(const bbe::Image &image)
 {
 	switch (image.m_format)
 	{
-	case (ImageFormat::R8G8B8A8         ): return GL_RGBA;
-	case (ImageFormat::R8               ): return GL_RED;
-	case (ImageFormat::R32FLOAT         ): return GL_RED;
-	case (ImageFormat::R32G32B32A32FLOAT): return GL_RGBA;
+	case (ImageFormat::R8G8B8A8):
+		return GL_RGBA;
+	case (ImageFormat::R8):
+		return GL_RED;
+	case (ImageFormat::R32FLOAT):
+		return GL_RED;
+	case (ImageFormat::R32G32B32A32FLOAT):
+		return GL_RGBA;
 	}
 
 	bbe::Crash(bbe::Error::IllegalArgument);
 }
 
-GLenum bbe::INTERNAL::openGl::OpenGLImage::type(const bbe::Image& image)
+GLenum bbe::INTERNAL::openGl::OpenGLImage::type(const bbe::Image &image)
 {
 	switch (image.m_format)
 	{
-	case (ImageFormat::R8G8B8A8         ): return GL_UNSIGNED_BYTE;
-	case (ImageFormat::R8               ): return GL_UNSIGNED_BYTE;
-	case (ImageFormat::R32FLOAT         ): return GL_FLOAT;
-	case (ImageFormat::R32G32B32A32FLOAT): return GL_FLOAT;
+	case (ImageFormat::R8G8B8A8):
+		return GL_UNSIGNED_BYTE;
+	case (ImageFormat::R8):
+		return GL_UNSIGNED_BYTE;
+	case (ImageFormat::R32FLOAT):
+		return GL_FLOAT;
+	case (ImageFormat::R32G32B32A32FLOAT):
+		return GL_FLOAT;
 	}
 
 	bbe::Crash(bbe::Error::IllegalArgument);

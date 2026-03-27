@@ -68,14 +68,16 @@ public:
 	void waitForWork()
 	{
 		std::unique_lock<std::mutex> lock(workerMutex);
-		workerConditional.wait(lock, [this] { return startSignals > 0; });
+		workerConditional.wait(lock, [this]
+							   { return startSignals > 0; });
 		startSignals--;
 	}
 
 	void waitForWorkers()
 	{
 		std::unique_lock<std::mutex> lock(workerMutex);
-		managerConditional.wait(lock, [this] { return stopSignals == numThreads; });
+		managerConditional.wait(lock, [this]
+								{ return stopSignals == numThreads; });
 	}
 
 	void work(int id)
@@ -170,7 +172,7 @@ public:
 			rangeX *= 0.8;
 			rangeY *= 0.8;
 		}
-		else if(getMouseScrollY() < 0)
+		else if (getMouseScrollY() < 0)
 		{
 			rangeX /= 0.8;
 			rangeY /= 0.8;
@@ -179,22 +181,22 @@ public:
 		startWorkers();
 		waitForWorkers();
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		bbe::List<float> floats;
 		floats.resizeCapacityAndLength(WINDOW_WIDTH * WINDOW_HEIGHT);
-		float* dataArr = floats.getRaw();
+		float *dataArr = floats.getRaw();
 
 		for (int32_t k = 0; k < WINDOW_HEIGHT; k++)
 		{
 			for (int32_t i = 0; i < WINDOW_WIDTH; i++)
 			{
 				const bbe::Color color = bbe::Color::HSVtoRGB(-picData[i][k] * 360 + 240, 1, 1 - picData[i][k]);
-				float* p = dataArr + k * WINDOW_WIDTH + i;
-				unsigned char* pc = (unsigned char*)p;
+				float *p = dataArr + k * WINDOW_WIDTH + i;
+				unsigned char *pc = (unsigned char *)p;
 				pc[0] = bbe::Math::clamp(color.r * 255, 0.f, 255.f);
 				pc[1] = bbe::Math::clamp(color.g * 255, 0.f, 255.f);
 				pc[2] = bbe::Math::clamp(color.b * 255, 0.f, 255.f);
@@ -203,7 +205,7 @@ public:
 		}
 
 		bbe::Image image;
-		image.load(WINDOW_WIDTH, WINDOW_HEIGHT, (bbe::byte*)dataArr, bbe::ImageFormat::R8G8B8A8);
+		image.load(WINDOW_WIDTH, WINDOW_HEIGHT, (bbe::byte *)dataArr, bbe::ImageFormat::R8G8B8A8);
 		brush.drawImage(0, 0, image);
 	}
 	virtual void onEnd() override

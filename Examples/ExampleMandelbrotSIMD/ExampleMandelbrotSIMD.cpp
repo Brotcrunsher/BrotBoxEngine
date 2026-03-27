@@ -63,20 +63,22 @@ public:
 	void waitForWork()
 	{
 		std::unique_lock<std::mutex> lock(workerMutex);
-		workerConditional.wait(lock, [this] { return startSignals > 0; });
+		workerConditional.wait(lock, [this]
+							   { return startSignals > 0; });
 		startSignals--;
 	}
 
 	void waitForWorkers()
 	{
 		std::unique_lock<std::mutex> lock(workerMutex);
-		managerConditional.wait(lock, [this] { return stopSignals == numThreads; });
+		managerConditional.wait(lock, [this]
+								{ return stopSignals == numThreads; });
 	}
 
 	void work(int id)
 	{
-		__m256i one  = _mm256_set1_epi64x(1);
-		__m256d two  = _mm256_set1_pd(2.0);
+		__m256i one = _mm256_set1_epi64x(1);
+		__m256d two = _mm256_set1_pd(2.0);
 		__m256d four = _mm256_set1_pd(4.0);
 		while (!isShutdown())
 		{
@@ -85,7 +87,7 @@ public:
 			for (int x = id; x < WINDOW_WIDTH; x += numThreads)
 			{
 				__m256d x0 = _mm256_set1_pd((double)x / (double)WINDOW_WIDTH * rangeX + middleX - rangeX / 2);
-				for (int y = 0; y < WINDOW_HEIGHT; y+=4)
+				for (int y = 0; y < WINDOW_HEIGHT; y += 4)
 				{
 					__m256d y0 = _mm256_set_pd(
 						(double)(y + 0) / (double)WINDOW_HEIGHT * rangeY + middleY - rangeY / 2,
@@ -98,7 +100,7 @@ public:
 
 					__m256i iteration = _mm256_setzero_si256();
 					__m256i mask;
-					do 
+					do
 					{
 						__m256d realSq = _mm256_mul_pd(real, real);
 						__m256d imaginarySq = _mm256_mul_pd(imaginary, imaginary);
@@ -108,9 +110,8 @@ public:
 
 						__m256d sqSum = _mm256_add_pd(realSq, imaginarySq);
 						mask = _mm256_and_si256(
-							_mm256_castpd_si256(_mm256_cmp_pd(sqSum, four, _CMP_LT_OQ)), 
-							_mm256_cmpgt_epi64(iMaxIterations, iteration)
-						);
+							_mm256_castpd_si256(_mm256_cmp_pd(sqSum, four, _CMP_LT_OQ)),
+							_mm256_cmpgt_epi64(iMaxIterations, iteration));
 
 						__m256i addMask = _mm256_and_si256(one, mask);
 
@@ -119,7 +120,7 @@ public:
 
 					for (int i = 0; i < 4; i++)
 					{
-						int64_t* iter = (int64_t*)&iteration;
+						int64_t *iter = (int64_t *)&iteration;
 						double colorVal = (double)iter[i] / max_iteration;
 
 						picData[x][y + 3 - i] = colorVal;
@@ -189,7 +190,7 @@ public:
 			rangeX *= 0.8;
 			rangeY *= 0.8;
 		}
-		else if(getMouseScrollY() < 0)
+		else if (getMouseScrollY() < 0)
 		{
 			rangeX /= 0.8;
 			rangeY /= 0.8;
@@ -198,22 +199,22 @@ public:
 		startWorkers();
 		waitForWorkers();
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		bbe::List<float> floats;
 		floats.resizeCapacityAndLength(WINDOW_WIDTH * WINDOW_HEIGHT);
-		float* dataArr = floats.getRaw();
+		float *dataArr = floats.getRaw();
 
 		for (int32_t k = 0; k < WINDOW_HEIGHT; k++)
 		{
 			for (int32_t i = 0; i < WINDOW_WIDTH; i++)
 			{
 				const bbe::Color color = bbe::Color::HSVtoRGB(-picData[i][k] * 360 + 240, 1, 1 - picData[i][k]);
-				float* p = dataArr + k * WINDOW_WIDTH + i;
-				unsigned char* pc = (unsigned char*)p;
+				float *p = dataArr + k * WINDOW_WIDTH + i;
+				unsigned char *pc = (unsigned char *)p;
 				pc[0] = bbe::Math::clamp(color.r * 255, 0.f, 255.f);
 				pc[1] = bbe::Math::clamp(color.g * 255, 0.f, 255.f);
 				pc[2] = bbe::Math::clamp(color.b * 255, 0.f, 255.f);
@@ -222,7 +223,7 @@ public:
 		}
 
 		bbe::Image image;
-		image.load(WINDOW_WIDTH, WINDOW_HEIGHT, (bbe::byte*)dataArr, bbe::ImageFormat::R8G8B8A8);
+		image.load(WINDOW_WIDTH, WINDOW_HEIGHT, (bbe::byte *)dataArr, bbe::ImageFormat::R8G8B8A8);
 		brush.drawImage(0, 0, image);
 	}
 	virtual void onEnd() override

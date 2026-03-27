@@ -1,0 +1,5 @@
+EGL_QNX_platform_screen
+https://www.khronos.org/registry/egl/specs/eglspec.1.5.pdf
+EGL_QNX_platform_screen
+
+	EGL_PLATFORM_SCREEN_QNX 0x3550

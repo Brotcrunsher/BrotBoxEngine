@@ -20,7 +20,6 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::init(VulkanShader vertexShader, Vulk
 	m_shaderStageCreateInfoVert.pName = "main";
 	m_shaderStageCreateInfoVert.pSpecializationInfo = nullptr;
 
-
 	m_shaderStageCreateInfoFrag.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	m_shaderStageCreateInfoFrag.pNext = nullptr;
 	m_shaderStageCreateInfoFrag.flags = 0;
@@ -52,7 +51,6 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::init(VulkanShader vertexShader, Vulk
 	m_viewportStateCreateInfo.pViewports = &m_viewport;
 	m_viewportStateCreateInfo.scissorCount = 1;
 	m_viewportStateCreateInfo.pScissors = &m_scissor;
-
 
 	m_rasterizationCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	m_rasterizationCreateInfo.pNext = nullptr;
@@ -178,16 +176,14 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 	if (m_spezializationData != nullptr)
 	{
 		spezializationData.mapEntryCount = static_cast<uint32_t>(m_specializationEntries.getLength());
-		spezializationData.pMapEntries   = m_specializationEntries.getRaw();
-		spezializationData.dataSize      = m_spezializationSize;
-		spezializationData.pData         = m_spezializationData;
+		spezializationData.pMapEntries = m_specializationEntries.getRaw();
+		spezializationData.dataSize = m_spezializationSize;
+		spezializationData.pData = m_spezializationData;
 		for (std::size_t i = 0; i < shaderStages.getLength(); i++)
 		{
 			shaderStages[i].pSpecializationInfo = &spezializationData;
 		}
 	}
-
-	
 
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo;
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -200,7 +196,6 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::create(VkDevice device, VkRenderPass
 
 	VkResult result = vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout);
 	ASSERT_VULKAN(result);
-
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo;
 	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -267,7 +262,7 @@ VkPipeline bbe::INTERNAL::vulkan::VulkanPipeline::getPipeline(FillMode fm) const
 	{
 		throw std::logic_error("Pipeline was not created!");
 	}
-	
+
 	switch (fm)
 	{
 	case FillMode::SOLID:
@@ -304,7 +299,7 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::setTessellationShader(VkShaderModule
 	m_tessellationStateCreateInfo.flags = 0;
 	m_tessellationStateCreateInfo.patchControlPoints = patchControlPoints;
 
-	m_tessellationShaderControl    = control;
+	m_tessellationShaderControl = control;
 	m_tessellationShaderEvaluation = evaluation;
 
 	m_useTessellation = true;
@@ -395,12 +390,12 @@ void bbe::INTERNAL::vulkan::VulkanPipeline::addSpezializationConstant(uint32_t c
 {
 	VkSpecializationMapEntry sme = {};
 	sme.constantID = constantID;
-	sme.offset     = offset;
-	sme.size       = size;
+	sme.offset = offset;
+	sme.size = size;
 	addSpezializationConstant(sme);
 }
 
-void bbe::INTERNAL::vulkan::VulkanPipeline::setSpezializationData(size_t size, const void * data)
+void bbe::INTERNAL::vulkan::VulkanPipeline::setSpezializationData(size_t size, const void *data)
 {
 	m_spezializationSize = size;
 	m_spezializationData = data;

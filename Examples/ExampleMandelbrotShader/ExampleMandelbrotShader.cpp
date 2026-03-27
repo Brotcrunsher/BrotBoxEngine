@@ -69,21 +69,21 @@ public:
 			rangeX *= 0.8;
 			rangeY *= 0.8;
 		}
-		else if(getMouseScrollY() < 0)
+		else if (getMouseScrollY() < 0)
 		{
 			rangeX /= 0.8;
 			rangeY /= 0.8;
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 #ifdef BBE_RENDERER_VULKAN
-		assetStore::Mandelbrot()->setPushConstant( 80, 8, &middleX);
-		assetStore::Mandelbrot()->setPushConstant( 88, 8, &middleY);
-		assetStore::Mandelbrot()->setPushConstant( 96, 8, &rangeX);
+		assetStore::Mandelbrot()->setPushConstant(80, 8, &middleX);
+		assetStore::Mandelbrot()->setPushConstant(88, 8, &middleY);
+		assetStore::Mandelbrot()->setPushConstant(96, 8, &rangeX);
 		assetStore::Mandelbrot()->setPushConstant(104, 8, &rangeY);
 		assetStore::Mandelbrot()->setPushConstant(112, 4, &max_iteration);
 #elif defined(BBE_RENDERER_OPENGL)

@@ -2,8 +2,8 @@
 #include <iostream>
 #include <set>
 
-constexpr int WINDOW_WIDTH  = 1280;
-constexpr int WINDOW_HEIGHT =  720;
+constexpr int WINDOW_WIDTH = 1280;
+constexpr int WINDOW_HEIGHT = 720;
 
 class MyGame : public bbe::Game
 {
@@ -11,7 +11,7 @@ class MyGame : public bbe::Game
 	bbe::List<bbe::PhysCircle> bodiesCircle;
 	bbe::List<bbe::PhysRectangle> statics;
 
-	bbe::PhysRectangle createStatic(const bbe::Rectangle& rect, float angle)
+	bbe::PhysRectangle createStatic(const bbe::Rectangle &rect, float angle)
 	{
 		bbe::PhysRectangle retVal(this, rect, angle);
 		retVal.freeze();
@@ -51,10 +51,10 @@ class MyGame : public bbe::Game
 	virtual void update(float timeSinceLastFrame) override
 	{
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		brush.setColorRGB(0, 1, 0);
 		brush.fillLine(bodiesCircle[1].getCenterOfMass(), statics[3].getCenterOfMass());
@@ -62,18 +62,18 @@ class MyGame : public bbe::Game
 		brush.setColorRGB(0, 0, 1);
 		brush.setOutlineRGB(1, 0, 0);
 		brush.setOutlineWidth(1);
-		for (const bbe::PhysRectangle& r : bodiesRect)
+		for (const bbe::PhysRectangle &r : bodiesRect)
 		{
 			brush.fillRect(r);
 		}
-		for (const bbe::PhysCircle& c : bodiesCircle)
+		for (const bbe::PhysCircle &c : bodiesCircle)
 		{
 			brush.fillCircle(c);
 		}
 
 		brush.setColorRGB(1, 1, 1);
 		brush.setOutlineWidth(0);
-		for (const bbe::PhysRectangle& r : statics)
+		for (const bbe::PhysRectangle &r : statics)
 		{
 			brush.fillRect(r);
 		}
@@ -91,4 +91,3 @@ int main()
 	delete mg;
 #endif
 }
-

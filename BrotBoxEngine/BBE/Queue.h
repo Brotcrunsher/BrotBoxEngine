@@ -4,7 +4,7 @@
 
 namespace bbe
 {
-	template <typename T>
+	template<typename T>
 	class Queue
 	{
 	private:
@@ -19,7 +19,7 @@ namespace bbe
 			data.resizeCapacityAndLength(4);
 		}
 
-		void add(const T& t)
+		void add(const T &t)
 		{
 			if (length == data.getLength())
 			{
@@ -35,7 +35,7 @@ namespace bbe
 			}
 			data[writePointer] = t;
 			writePointer++;
-			if(writePointer == data.getLength()) writePointer = 0;
+			if (writePointer == data.getLength()) writePointer = 0;
 			length++;
 		}
 
@@ -49,7 +49,7 @@ namespace bbe
 			return retVal;
 		}
 
-		const T& peek()
+		const T &peek()
 		{
 			if (isEmpty()) bbe::Crash(bbe::Error::IllegalState);
 			return data[readPointer];

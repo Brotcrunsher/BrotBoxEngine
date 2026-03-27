@@ -6,6 +6,7 @@
 #include "../BBE/AllocBlock.h"
 #include <type_traits>
 #include <stddef.h>
+#include <limits>
 #include <initializer_list>
 
 namespace bbe
@@ -15,18 +16,36 @@ namespace bbe
 
 	// TODO: I think Dynamic Array should be removed. The only advantage compared to a List is that it has no capacity. The disadvantage is that code gets more messy when
 	//       parts take a list and parts take a dynamic array.
-	template <typename T>
+	template<typename T>
 	class DynamicArray
 	{
 	private:
-		T*         m_pdata;
-		size_t     m_length;
+		T *m_pdata;
+		size_t m_length;
 		AllocBlock m_allocBlock;
+
+		static size_t checkedAllocationSize(std::size_t size)
+		{
+			if (size > std::numeric_limits<size_t>::max() / sizeof(T))
+			{
+				bbe::Crash(bbe::Error::OutOfMemory, "DynamicArray allocation size overflow.");
+			}
+
+			return sizeof(T) * size;
+		}
 
 		void createArray(std::size_t size)
 		{
+			if (size == 0)
+			{
+				m_length = 0;
+				m_allocBlock = {};
+				m_pdata = nullptr;
+				return;
+			}
+
 			m_length = size;
-			m_allocBlock = bbe::allocateBlock(sizeof(T) * size);
+			m_allocBlock = bbe::allocateBlock(checkedAllocationSize(size));
 			m_pdata = new (m_allocBlock.data) T[size];
 		}
 
@@ -41,11 +60,9 @@ namespace bbe
 		}
 
 	public:
-		DynamicArray() :
-			m_pdata(nullptr),
-			m_length(0)
+		DynamicArray() : m_pdata(nullptr),
+						 m_length(0)
 		{
-
 		}
 
 		DynamicArray(std::size_t size)
@@ -54,7 +71,7 @@ namespace bbe
 			createArray(size);
 		}
 
-		template <typename U, int size>
+		template<typename U, int size>
 		DynamicArray(const Array<U, size> &arr)
 			: m_length(size)
 		{
@@ -79,7 +96,8 @@ namespace bbe
 		{
 			createArray(il.end() - il.begin());
 			std::size_t i = 0;
-			for (auto iter = il.begin(); iter != il.end(); iter++) {
+			for (auto iter = il.begin(); iter != il.end(); iter++)
+			{
 				m_pdata[i] = *iter;
 				i++;
 			}
@@ -90,7 +108,7 @@ namespace bbe
 			deleteArray();
 		}
 
-		DynamicArray(const DynamicArray&  other) //Copy Constructor
+		DynamicArray(const DynamicArray &other) //Copy Constructor
 			: m_length(other.m_length)
 		{
 			createArray(other.m_length);
@@ -99,7 +117,7 @@ namespace bbe
 				m_pdata[i] = other[i];
 			}
 		}
-		DynamicArray(DynamicArray&& other) noexcept //Move Constructor
+		DynamicArray(DynamicArray &&other) noexcept //Move Constructor
 			: m_pdata(other.m_pdata)
 		{
 			m_length = other.m_length;
@@ -108,7 +126,7 @@ namespace bbe
 			other.m_length = 0;
 			other.m_allocBlock = {};
 		}
-		DynamicArray& operator=(const DynamicArray&  other)  //Copy Assignment
+		DynamicArray &operator=(const DynamicArray &other) //Copy Assignment
 		{
 			deleteArray();
 
@@ -120,7 +138,7 @@ namespace bbe
 
 			return *this;
 		}
-		DynamicArray& operator=(DynamicArray&& other) noexcept //Move Assignment
+		DynamicArray &operator=(DynamicArray &&other) noexcept //Move Assignment
 		{
 			deleteArray();
 
@@ -134,7 +152,7 @@ namespace bbe
 			return *this;
 		}
 
-		T& operator[](std::size_t index)
+		T &operator[](std::size_t index)
 		{
 			if (index < 0 || index >= m_length)
 			{
@@ -143,7 +161,7 @@ namespace bbe
 			return m_pdata[index];
 		}
 
-		const T& operator[](std::size_t index) const
+		const T &operator[](std::size_t index) const
 		{
 			if (index < 0 || index >= m_length)
 			{
@@ -157,40 +175,42 @@ namespace bbe
 			return m_length;
 		}
 
-		T* getRaw()
+		T *getRaw()
 		{
 			return m_pdata;
 		}
 
-		const T* getRaw() const
+		const T *getRaw() const
 		{
 			return m_pdata;
 		}
 
-		T* begin() { return m_pdata; };
-		const T* begin() const { return m_pdata; };
-		T* end() { return &m_pdata[m_length]; };
-		const T* end() const { return &m_pdata[m_length]; };
+		T *begin() { return m_pdata; };
+		const T *begin() const { return m_pdata; };
+		T *end() { return &m_pdata[m_length]; };
+		const T *end() const { return &m_pdata[m_length]; };
 
-
-
-		T& first()
+		T &first()
 		{
+			if (m_length == 0) bbe::Crash(bbe::Error::ContainerEmpty);
 			return (m_pdata[0]);
 		}
 
-		const T& first() const
+		const T &first() const
 		{
+			if (m_length == 0) bbe::Crash(bbe::Error::ContainerEmpty);
 			return (m_pdata[0]);
 		}
 
-		T& last()
+		T &last()
 		{
+			if (m_length == 0) bbe::Crash(bbe::Error::ContainerEmpty);
 			return (m_pdata[m_length - 1]);
 		}
 
-		const T& last() const
+		const T &last() const
 		{
+			if (m_length == 0) bbe::Crash(bbe::Error::ContainerEmpty);
 			return (m_pdata[m_length - 1]);
 		}
 	};

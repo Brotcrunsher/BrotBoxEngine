@@ -1,8 +1,5 @@
 #pragma once
 
-
-#ifdef WIN32
-
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -17,9 +14,14 @@ namespace bbe
 		std::mutex mutex;
 		std::condition_variable gate;
 		std::thread thread;
-		bbe::List<float> targetBrightness = { };
-		bbe::List<float> currentBrightness = { };
+		bbe::List<float> targetBrightness = {};
+		bbe::List<float> currentBrightness = {};
 		std::atomic_bool stopRequested = false;
+#ifdef __linux__
+		bbe::List<int> linuxDisplays = {};
+		bool linuxDisplaysInitialized = false;
+		bool linuxBackendReportedUnavailable = false;
+#endif
 
 		void threadMain();
 
@@ -27,10 +29,9 @@ namespace bbe
 		Monitor();
 		~Monitor();
 
-		Monitor& operator=(Monitor&) = delete;
-		Monitor(Monitor&) = delete;
+		Monitor &operator=(Monitor &) = delete;
+		Monitor(Monitor &) = delete;
 
-		void setBrightness(const bbe::List<float>& brightnessPercentag);
+		void setBrightness(const bbe::List<float> &brightnessPercentag);
 	};
 }
-#endif

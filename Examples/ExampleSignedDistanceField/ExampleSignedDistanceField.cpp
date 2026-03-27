@@ -24,10 +24,10 @@ public:
 		//ccnc.setCameraForward({ 1, 0, 0 });
 	}
 
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		bbe::Vector3 camPos = ccnc.getCameraPos();
 		camPos.z *= -1;
@@ -45,8 +45,8 @@ public:
 		bbe::Vector3 forward = ccnc.getCameraForward();
 		forward.z *= -1;
 #ifdef BBE_RENDERER_VULKAN
-		assetStore::sdf()->setPushConstant( 92, sizeof(float), &forward.x);
-		assetStore::sdf()->setPushConstant( 96, sizeof(float), &forward.z);
+		assetStore::sdf()->setPushConstant(92, sizeof(float), &forward.x);
+		assetStore::sdf()->setPushConstant(96, sizeof(float), &forward.z);
 		assetStore::sdf()->setPushConstant(100, sizeof(float), &forward.y);
 #elif defined(BBE_RENDERER_OPENGL)
 		// TODO: There is some foul play here. OpenGL has to switch y and z. Why? Left-/Right-Handedness?

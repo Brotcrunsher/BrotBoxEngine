@@ -34,7 +34,7 @@ bool bbe::simpleProcess::isRunAsAdmin()
 	return isRunAsAdmin;
 }
 
-bool bbe::simpleProcess::relaunchAsAdmin(bbe::Game* game)
+bool bbe::simpleProcess::relaunchAsAdmin(bbe::Game *game)
 {
 	TCHAR lpFilename[MAX_PATH];
 	if (GetModuleFileName(nullptr, lpFilename, MAX_PATH))
@@ -62,14 +62,14 @@ bool bbe::simpleProcess::relaunchAsAdmin(bbe::Game* game)
 	return false;
 }
 
-bool bbe::simpleProcess::ensureAdmin(bbe::Game* game)
+bool bbe::simpleProcess::ensureAdmin(bbe::Game *game)
 {
 	if (isRunAsAdmin()) return true;
 	relaunchAsAdmin(game);
 	return false;
 }
 
-bool bbe::simpleProcess::drawElevationButton(bbe::Game* game)
+bool bbe::simpleProcess::drawElevationButton(bbe::Game *game)
 {
 	ImGui::BeginDisabled(isRunAsAdmin());
 	bool retVal = false;

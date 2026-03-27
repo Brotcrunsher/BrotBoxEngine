@@ -2,10 +2,10 @@
 
 #include "../BBE/MouseButtons.h"
 
-
 namespace bbe
 {
-	template<typename T> class Vector2_t;
+	template<typename T>
+	class Vector2_t;
 	using Vector2 = Vector2_t<float>;
 
 	class Mouse
@@ -14,20 +14,20 @@ namespace bbe
 		friend class Game;
 
 	private:
-		float m_mouseNextFrameX          = 0;
-		float m_mouseNextFrameY          = 0;
-		float m_mouseCurrentFrameX       = 0;
-		float m_mouseCurrentFrameY       = 0;
-		float m_mouseLastFrameX          = 0;
-		float m_mouseLastFrameY          = 0;
+		float m_mouseNextFrameX = 0;
+		float m_mouseNextFrameY = 0;
+		float m_mouseCurrentFrameX = 0;
+		float m_mouseCurrentFrameY = 0;
+		float m_mouseLastFrameX = 0;
+		float m_mouseLastFrameY = 0;
 		float m_mouseCurrentFrameXGlobal = 0;
 		float m_mouseCurrentFrameYGlobal = 0;
-		float m_mouseLastFrameXGlobal    = 0;
-		float m_mouseLastFrameYGlobal    = 0;
-		float m_mouseScrollX             = 0;
-		float m_mouseScrollY             = 0;
-		float m_mouseScrollXNext         = 0;
-		float m_mouseScrollYNext         = 0;
+		float m_mouseLastFrameXGlobal = 0;
+		float m_mouseLastFrameYGlobal = 0;
+		float m_mouseScrollX = 0;
+		float m_mouseScrollY = 0;
+		float m_mouseScrollXNext = 0;
+		float m_mouseScrollYNext = 0;
 		bool m_pButtonsNextFrame[(int)MouseButton::LAST + 1];
 		bool m_pButtonsThisFrame[(int)MouseButton::LAST + 1];
 		bool m_pButtonsLastFrame[(int)MouseButton::LAST + 1];
@@ -36,7 +36,6 @@ namespace bbe
 
 	public:
 		Mouse();
-
 
 		float getMouseX() const;
 		float getMouseY() const;

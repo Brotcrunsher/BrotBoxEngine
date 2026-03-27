@@ -16,7 +16,7 @@ namespace bbe
 
 			public:
 				void updatePlanes(const bbe::Matrix4 &mvpMatrix);
-				bbe::Vector4* getPlanes();
+				bbe::Vector4 *getPlanes();
 			};
 		}
 	}

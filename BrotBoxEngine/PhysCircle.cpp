@@ -11,20 +11,19 @@
 #include "BBE/PhysRectangle.h"
 #include "BBE/PhysCircle.h"
 
-
-bbe::PhysCircle::PhysCircle(Game* context, float x, float y, float radius, float angle)
+bbe::PhysCircle::PhysCircle(Game *context, float x, float y, float radius, float angle)
 	: PhysShape(context)
 {
 	init(context, x, y, radius, angle);
 }
 
-bbe::PhysCircle::PhysCircle(Game* context, const Vector2& vec, float radius, float angle)
+bbe::PhysCircle::PhysCircle(Game *context, const Vector2 &vec, float radius, float angle)
 	: PhysShape(context)
 {
 	init(context, vec.x, vec.y, radius, angle);
 }
 
-void bbe::PhysCircle::init(Game* context, float x, float y, float radius, float angle)
+void bbe::PhysCircle::init(Game *context, float x, float y, float radius, float angle)
 {
 	b2BodyDef bodyDef;
 	bodyDef.type = b2_dynamicBody;

@@ -15,9 +15,9 @@ namespace bbe
 	public:
 		MeshBuilder() = default;
 
-		void addCube(const bbe::Cube& cube, FaceFlag ff = FaceFlag::ALL);
-		void addCubes(const bbe::List<Cube>& cubes);
-		void addRectangle(const bbe::Matrix4& transform);
+		void addCube(const bbe::Cube &cube, FaceFlag ff = FaceFlag::ALL);
+		void addCubes(const bbe::List<Cube> &cubes);
+		void addRectangle(const bbe::Matrix4 &transform);
 
 		struct ModelUvDimensionsPair
 		{

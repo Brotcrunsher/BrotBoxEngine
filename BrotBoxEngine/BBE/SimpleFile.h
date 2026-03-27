@@ -19,49 +19,56 @@ namespace bbe
 				bool hasOpenIO();
 				void stopIoThread();
 
-				void writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
-				void createDirectory(const bbe::String& path);
-				void appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
+				void writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer);
+				void createDirectory(const bbe::String &path);
+				void appendBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer);
 			}
-			void setBackupPath(const bbe::String& path);
+			void setBackupPath(const bbe::String &path);
 			bool isBackupPathSet();
-			bbe::String backupFullPath(const bbe::String& path);
-			
-			void writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
-			void createDirectory(const bbe::String& path);
-			void appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
+			bbe::String backupFullPath(const bbe::String &path);
+
+			void writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer);
+			void createDirectory(const bbe::String &path);
+			void appendBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer);
 		}
 
 		bbe::ByteBuffer readBinaryFile(const bbe::String &filepath);
-		bool readBinaryFileIfChanged(const bbe::String& filepath, bbe::ByteBuffer& outContents, std::filesystem::file_time_type& inOutPreviousModify);
+		bool readBinaryFileIfChanged(const bbe::String &filepath, bbe::ByteBuffer &outContents, std::filesystem::file_time_type &inOutPreviousModify);
 
-		bbe::List<float> readFloatArrFromFile(const bbe::String& filePath);
+		bbe::List<float> readFloatArrFromFile(const bbe::String &filePath);
 		void writeFloatArrToFile(const bbe::String &filePath, const float *arr, size_t size);
-		void writeFloatArrToFile(const bbe::String& filePath, const bbe::List<float>& data);
-		void writeStringToFile(const bbe::String& filePath, const bbe::String& stringToWrite);
-		void writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
-		void appendStringToFile(const bbe::String& filePath, const bbe::String& stringToAppend);
-		void appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer);
-		bool doesFileExist(const bbe::String& filePath);
-		void createDirectory(const bbe::String& path);
-		bool deleteFile(const bbe::String& path);
-		bbe::String readFile(const bbe::String& filePath);
-		bbe::List<bbe::String> readLines(const bbe::String& filePath);
-		std::optional<bbe::TimePoint> getLastModifyTime(const bbe::String& filePath);
+		void writeFloatArrToFile(const bbe::String &filePath, const bbe::List<float> &data);
+		void writeStringToFile(const bbe::String &filePath, const bbe::String &stringToWrite);
+		void writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer);
+		void appendStringToFile(const bbe::String &filePath, const bbe::String &stringToAppend);
+		void appendBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer);
+		bool doesFileExist(const bbe::String &filePath);
+		void createDirectory(const bbe::String &path);
+		bool deleteFile(const bbe::String &path);
+		bbe::String readFile(const bbe::String &filePath);
+		bbe::List<bbe::String> readLines(const bbe::String &filePath);
+		std::optional<bbe::TimePoint> getLastModifyTime(const bbe::String &filePath);
+
+		bbe::TimePoint getLastIo();
+		size_t getTotalIoCalls();
 
 #ifndef __EMSCRIPTEN__
-		void forEachFile(const bbe::String& filePath, const std::function<void(const bbe::String&)>& func);
+		void forEachFile(const bbe::String &filePath, const std::function<void(const bbe::String &)> &func);
 #endif
 
+#if defined(WIN32) || defined(__linux__)
 #ifdef WIN32
 		bbe::String getUserName();
+#endif
 		bbe::String getAutoStartDirectory();
 		bbe::String getExecutablePath();
 		bbe::String getWorkingDirectory();
-		void createLink(const bbe::String& from, const bbe::String& to, const bbe::String& workDir = "");
-		void executeBatchFile(const bbe::String& path);
-		bool showOpenDialog(bbe::String& outPath);
-		bool showSaveDialog(bbe::String& outPath, const bbe::String& defaultExtension);
+		void createLink(const bbe::String &from, const bbe::String &to, const bbe::String &workDir = "");
+		bool showOpenDialog(bbe::String &outPath);
+		bool showSaveDialog(bbe::String &outPath, const bbe::String &defaultExtension);
+#ifdef WIN32
+		void executeBatchFile(const bbe::String &path);
+#endif
 #endif
 	}
 }

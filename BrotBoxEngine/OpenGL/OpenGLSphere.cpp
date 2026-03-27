@@ -11,32 +11,72 @@ static GLuint ibo = 0;
 //      and remove the redundant code. Same applies to the OpenGLCube implementation.
 
 static bbe::List<uint32_t> indices = {
-	5,  11, 0,
-	1,  5,  0,
-	7,  1,  0,
-	10, 7,  0,
-	11, 10, 0,
+	5,
+	11,
+	0,
+	1,
+	5,
+	0,
+	7,
+	1,
+	0,
+	10,
+	7,
+	0,
+	11,
+	10,
+	0,
 
-	9, 5,  1,
-	4, 11, 5,
-	2, 10, 11,
-	6, 7,  10,
-	8, 1,  7,
+	9,
+	5,
+	1,
+	4,
+	11,
+	5,
+	2,
+	10,
+	11,
+	6,
+	7,
+	10,
+	8,
+	1,
+	7,
 
-	4, 9, 3,
-	2, 4, 3,
-	6, 2, 3,
-	8, 6, 3,
-	9, 8, 3,
+	4,
+	9,
+	3,
+	2,
+	4,
+	3,
+	6,
+	2,
+	3,
+	8,
+	6,
+	3,
+	9,
+	8,
+	3,
 
-	5,  9, 4,
-	11, 4, 2,
-	10, 2, 6,
-	7,  6, 8,
-	1,  8, 9,
+	5,
+	9,
+	4,
+	11,
+	4,
+	2,
+	10,
+	2,
+	6,
+	7,
+	6,
+	8,
+	1,
+	8,
+	9,
 };
 
-static uint32_t getHalfPointIndex(bbe::List<bbe::Vector3>& vertices, const bbe::Vector3& a, const bbe::Vector3& b)
+static uint32_t getHalfPointIndex(bbe::List<bbe::Vector3> &vertices, const bbe::Vector3 &a, const bbe::Vector3 &b)
 {
 	bbe::Vector3 halfPoint = (a + b).normalize() / 2;
 	for (uint32_t i = 0; i < vertices.getLength(); i++)
@@ -55,20 +95,20 @@ void bbe::INTERNAL::openGl::OpenGLSphere::init()
 {
 	float x = (1 + bbe::Math::sqrt(5)) / 4;
 	bbe::List<bbe::Vector3> positions = {
-		bbe::Vector3(-0.5,  x,  0).normalize() / 2,
-		bbe::Vector3(0.5,  x,  0).normalize() / 2,
-		bbe::Vector3(-0.5, -x,  0).normalize() / 2,
-		bbe::Vector3(0.5, -x,  0).normalize() / 2,
+		bbe::Vector3(-0.5, x, 0).normalize() / 2,
+		bbe::Vector3(0.5, x, 0).normalize() / 2,
+		bbe::Vector3(-0.5, -x, 0).normalize() / 2,
+		bbe::Vector3(0.5, -x, 0).normalize() / 2,
 
-		bbe::Vector3(0, -0.5,  x).normalize() / 2,
-		bbe::Vector3(0,  0.5,  x).normalize() / 2,
+		bbe::Vector3(0, -0.5, x).normalize() / 2,
+		bbe::Vector3(0, 0.5, x).normalize() / 2,
 		bbe::Vector3(0, -0.5, -x).normalize() / 2,
-		bbe::Vector3(0,  0.5, -x).normalize() / 2,
+		bbe::Vector3(0, 0.5, -x).normalize() / 2,
 
-		bbe::Vector3(x,  0, -0.5).normalize() / 2,
-		bbe::Vector3(x,  0,  0.5).normalize() / 2,
+		bbe::Vector3(x, 0, -0.5).normalize() / 2,
+		bbe::Vector3(x, 0, 0.5).normalize() / 2,
 		bbe::Vector3(-x, 0, -0.5).normalize() / 2,
-		bbe::Vector3(-x, 0,  0.5).normalize() / 2,
+		bbe::Vector3(-x, 0, 0.5).normalize() / 2,
 	};
 
 	constexpr int iterations = 2;
@@ -86,17 +126,16 @@ void bbe::INTERNAL::openGl::OpenGLSphere::init()
 				c, a, indices[k + 0],
 				a, b, indices[k + 1],
 				b, c, indices[k + 2],
-				c, b, a
-			);
+				c, b, a);
 		}
 
 		indices = std::move(newIndices);
 	}
 
 	bbe::List<PosNormalPair> vertexData;
-	for (const bbe::Vector3& pos : positions)
+	for (const bbe::Vector3 &pos : positions)
 	{
-		vertexData.add(PosNormalPair{pos, pos});
+		vertexData.add(PosNormalPair{ pos, pos });
 	}
 
 	glGenBuffers(1, &vbo);

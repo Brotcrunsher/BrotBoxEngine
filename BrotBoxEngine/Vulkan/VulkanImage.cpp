@@ -7,7 +7,7 @@
 #include "BBE/Error.h"
 #include "BBE/Image.h"
 
-bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image& image, const INTERNAL::vulkan::VulkanDevice& device, const INTERNAL::vulkan::VulkanCommandPool& commandPool, const INTERNAL::vulkan::VulkanDescriptorPool& descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout& setLayout)
+bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image &image, const INTERNAL::vulkan::VulkanDevice &device, const INTERNAL::vulkan::VulkanCommandPool &commandPool, const INTERNAL::vulkan::VulkanDescriptorPool &descriptorPool, const INTERNAL::vulkan::VulkanDescriptorSetLayout &setLayout)
 {
 	if (!image.isLoadedCpu())
 	{
@@ -26,7 +26,6 @@ bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image& image, const I
 	m_height = image.getHeight();
 	m_pCorrectDescriptorSet = &m_descriptorSet;
 
-
 	m_device = device.getDevice();
 	const int amountOfMips = Math::max<int>(1, Math::log2Floor(Math::min(image.getWidth(), image.getHeight())));
 	m_imageLayout = std::make_unique<VkImageLayout[]>(amountOfMips); //TODO use allocator
@@ -40,10 +39,9 @@ bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image& image, const I
 	INTERNAL::vulkan::VulkanBuffer stagingBuffer;
 	stagingBuffer.create(device, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
-	void* data = stagingBuffer.map();
+	void *data = stagingBuffer.map();
 	memcpy(data, image.m_pdata.getRaw(), imageSize);
 	stagingBuffer.unmap();
-
 
 	INTERNAL::vulkan::createImage(
 		m_device,
@@ -196,7 +194,7 @@ VkImageLayout bbe::INTERNAL::vulkan::VulkanImage::getImageLayout() const
 	return m_imageLayout[0];
 }
 
-bbe::INTERNAL::vulkan::VulkanDescriptorSet& bbe::INTERNAL::vulkan::VulkanImage::getDescriptorSet() const
+bbe::INTERNAL::vulkan::VulkanDescriptorSet &bbe::INTERNAL::vulkan::VulkanImage::getDescriptorSet() const
 {
 	return *m_pCorrectDescriptorSet;
 }

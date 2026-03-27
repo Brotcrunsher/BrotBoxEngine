@@ -26,7 +26,7 @@ void bbe::PhysShape::destroy()
 	m_pcontext->getPhysWorld()->getRaw()->DestroyBody(m_pbody);
 }
 
-void bbe::PhysShape::addJointRope(PhysShape& other, float maxLength)
+void bbe::PhysShape::addJointRope(PhysShape &other, float maxLength)
 {
 	b2RopeJointDef ropeJoint;
 	ropeJoint.bodyA = this->getRawBody();
@@ -35,16 +35,16 @@ void bbe::PhysShape::addJointRope(PhysShape& other, float maxLength)
 	m_pcontext->getPhysWorld()->getRaw()->CreateJoint(&ropeJoint);
 }
 
-void bbe::PhysShape::addJointRevolute(PhysShape& other, const bbe::Vector2& anchor)
+void bbe::PhysShape::addJointRevolute(PhysShape &other, const bbe::Vector2 &anchor)
 {
 	const float scale = m_pcontext->getPhysWorld()->getPhysicsScale();
 	b2RevoluteJointDef revoltJoint;
-	revoltJoint.Initialize(this->getRawBody(), other.getRawBody(), { anchor.x / scale, anchor.y / scale});
+	revoltJoint.Initialize(this->getRawBody(), other.getRawBody(), { anchor.x / scale, anchor.y / scale });
 	m_pcontext->getPhysWorld()->getRaw()->CreateJoint(&revoltJoint);
 }
 
-bbe::PhysShape::PhysShape(Game* context)
-	:m_pcontext(context)
+bbe::PhysShape::PhysShape(Game *context)
+	: m_pcontext(context)
 {
 }
 
@@ -53,7 +53,7 @@ bbe::Vector2 bbe::PhysShape::getPos() const
 	return Vector2(getX(), getY());
 }
 
-b2Body* bbe::PhysShape::getRawBody()
+b2Body *bbe::PhysShape::getRawBody()
 {
 	return m_pbody;
 }
@@ -78,17 +78,14 @@ float bbe::PhysShape::getAngularSpeed() const
 	return m_pbody->GetAngularVelocity();
 }
 
-void bbe::PhysShape::setSpeed(const bbe::Vector2& speed)
+void bbe::PhysShape::setSpeed(const bbe::Vector2 &speed)
 {
 	m_pbody->SetLinearVelocity(
-		{
-			speed.x / m_pcontext->getPhysWorld()->getPhysicsScale(),
-			speed.y / m_pcontext->getPhysWorld()->getPhysicsScale()
-		}
-	);
+		{ speed.x / m_pcontext->getPhysWorld()->getPhysicsScale(),
+		  speed.y / m_pcontext->getPhysWorld()->getPhysicsScale() });
 }
 
-void bbe::PhysShape::addSpeed(const bbe::Vector2& speed)
+void bbe::PhysShape::addSpeed(const bbe::Vector2 &speed)
 {
 	setSpeed(getSpeed() + speed);
 }

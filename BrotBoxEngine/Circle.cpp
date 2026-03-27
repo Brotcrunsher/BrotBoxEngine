@@ -17,19 +17,19 @@ bbe::Circle::Circle(float x, float y, float width, float height)
 	//UNTESTED
 }
 
-bbe::Circle::Circle(const Vector2 & vec, float width, float height)
+bbe::Circle::Circle(const Vector2 &vec, float width, float height)
 	: m_x(vec.x), m_y(vec.y), m_width(width), m_height(height)
 {
 	//UNTESTED
 }
 
-bbe::Circle::Circle(float x, float y, const Vector2 & dim)
+bbe::Circle::Circle(float x, float y, const Vector2 &dim)
 	: m_x(x), m_y(y), m_width(dim.x), m_height(dim.y)
 {
 	//UNTESTED
 }
 
-bbe::Circle::Circle(const Vector2 & vec, const Vector2 & dim)
+bbe::Circle::Circle(const Vector2 &vec, const Vector2 &dim)
 	: m_x(vec.x), m_y(vec.y), m_width(dim.x), m_height(dim.y)
 {
 	//UNTESTED
@@ -76,17 +76,16 @@ bbe::Vector2 bbe::Circle::getDim() const
 	return bbe::Vector2(m_width, m_height);
 }
 
-bbe::Circle bbe::Circle::offset(const Vector2& off) const
+bbe::Circle bbe::Circle::offset(const Vector2 &off) const
 {
 	return Circle(
 		m_x + off.x,
 		m_y + off.y,
 		m_width,
-		m_height
-	);
+		m_height);
 }
 
-void bbe::Circle::getVertices(bbe::List<bbe::Vector2>& outVertices) const
+void bbe::Circle::getVertices(bbe::List<bbe::Vector2> &outVertices) const
 {
 	outVertices.clear();
 
@@ -127,7 +126,7 @@ void bbe::Circle::setPos(float x, float y)
 	m_y = y;
 }
 
-void bbe::Circle::setPos(const Vector2 & vec)
+void bbe::Circle::setPos(const Vector2 &vec)
 {
 	//UNTESTED
 	m_x = vec.x;
@@ -153,7 +152,7 @@ void bbe::Circle::setDim(float width, float height)
 	m_height = height;
 }
 
-void bbe::Circle::setDim(const Vector2 & vec)
+void bbe::Circle::setDim(const Vector2 &vec)
 {
 	//UNTESTED
 	m_width = vec.x;
@@ -183,8 +182,7 @@ bbe::Circle bbe::Circle::shrinked(float val) const
 		m_x + val,
 		m_y + val,
 		m_width - val * 2,
-		m_height - val * 2
-	);
+		m_height - val * 2);
 }
 
 bbe::Circle bbe::Circle::stretchedSpace(float x, float y) const
@@ -193,8 +191,7 @@ bbe::Circle bbe::Circle::stretchedSpace(float x, float y) const
 		m_x * x,
 		m_y * y,
 		m_width * x,
-		m_height * y
-	);
+		m_height * y);
 }
 
 void bbe::Circle::translate(float x, float y)
@@ -204,13 +201,13 @@ void bbe::Circle::translate(float x, float y)
 	m_y += y;
 }
 
-void bbe::Circle::translate(const Vector2 & vec)
+void bbe::Circle::translate(const Vector2 &vec)
 {
 	//UNTESTED
 	translate(vec.x, vec.y);
 }
 
-bool bbe::Circle::intersects(const Circle& other) const
+bool bbe::Circle::intersects(const Circle &other) const
 {
 	if (getWidth() != getHeight() || other.getWidth() != other.getHeight())
 	{
@@ -223,12 +220,12 @@ bool bbe::Circle::intersects(const Circle& other) const
 	return distance < (getWidth() + other.getWidth()) / 2;
 }
 
-bool bbe::Circle::intersects(const Rectangle& other) const
+bool bbe::Circle::intersects(const Rectangle &other) const
 {
 	return other.intersects(*this);
 }
 
-bool bbe::Circle::resolveIntersection(Circle& other, float massThis, float massOther)
+bool bbe::Circle::resolveIntersection(Circle &other, float massThis, float massOther)
 {
 	if (this == &other)
 	{
@@ -242,16 +239,16 @@ bool bbe::Circle::resolveIntersection(Circle& other, float massThis, float massO
 		return false;
 	}
 
-	const Vector2 midThis  =       getMiddle();
+	const Vector2 midThis = getMiddle();
 	const Vector2 midOther = other.getMiddle();
 
 	const Vector2 direction = midThis - midOther;
 	const Vector2 normalizedDirection = direction.normalize();
 
 	const float massSum = massThis + massOther;
-	
-	const Vector2 moveVectorThis  =  normalizedDirection * (massOther / massSum);
-	const Vector2 moveVectorOther = -normalizedDirection * (massThis  / massSum);
+
+	const Vector2 moveVectorThis = normalizedDirection * (massOther / massSum);
+	const Vector2 moveVectorOther = -normalizedDirection * (massThis / massSum);
 
 	this->setPos(this->getPos() + moveVectorThis);
 	other.setPos(other.getPos() + moveVectorOther);

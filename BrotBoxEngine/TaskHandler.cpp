@@ -1,8 +1,9 @@
 #include "BBE/TaskHandler.h"
 #include "BBE/BrotTime.h"
+#include "BBE/SimpleThread.h"
 #include <mutex>
 
-void bbe::TaskHandler::threadMain(double targetExecDurSeconds, std::function<void(std::atomic_bool&)>&& func)
+void bbe::TaskHandler::threadMain(double targetExecDurSeconds, std::function<void(std::atomic_bool &)> &&func)
 {
 	// Unfortunately atomics don't have a wait_for yet :(
 	std::mutex dummyMutex;
@@ -24,10 +25,11 @@ void bbe::TaskHandler::threadMain(double targetExecDurSeconds, std::function<voi
 		else
 		{
 			stopCondition.wait_for(
-				dummyLock, 
-				std::chrono::duration<double, std::milli>(fastBonus), 
-				[&] { 
-					return stopRequested.load(); 
+				dummyLock,
+				std::chrono::duration<double, std::milli>(fastBonus),
+				[&]
+				{
+					return stopRequested.load();
 				});
 		}
 	}
@@ -50,7 +52,8 @@ void bbe::TaskHandler::stop()
 	stopRequested = false;
 }
 
-void bbe::TaskHandler::addTask(double targetExecDurSeconds, std::function<void(std::atomic_bool&)>&& func)
+void bbe::TaskHandler::addTask(double targetExecDurSeconds, std::function<void(std::atomic_bool &)> &&func)
 {
 	threads.emplace_back(std::thread(&TaskHandler::threadMain, this, targetExecDurSeconds, func));
+	bbe::simpleThread::setName(threads[threads.size() - 1], "BBE TaskHandler");
 }

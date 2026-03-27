@@ -8,10 +8,10 @@
 #ifndef _WINDEF_
 // Forward declare it to avoid including the whole windows header everywhere.
 class HINSTANCE__;
-typedef HINSTANCE__* HINSTANCE;
+typedef HINSTANCE__ *HINSTANCE;
 typedef HINSTANCE HMODULE;
 class HHOOK__;
-typedef HHOOK__* HHOOK;
+typedef HHOOK__ *HHOOK;
 #endif
 
 namespace bbe
@@ -21,7 +21,7 @@ namespace bbe
 	private:
 		HMODULE hmod = nullptr;
 		HHOOK hook = nullptr;
-		void* getNextEvent = nullptr;
+		void *getNextEvent = nullptr;
 		bool hooked = false;
 
 	public:
@@ -32,10 +32,10 @@ namespace bbe
 		void uninit();
 		bool isInit() const;
 
-		GlobalKeyboard(const GlobalKeyboard&) = delete;
-		GlobalKeyboard(GlobalKeyboard&&) = delete;
-		GlobalKeyboard& operator=(const GlobalKeyboard&) = delete;
-		GlobalKeyboard& operator=(GlobalKeyboard&&) = delete;
+		GlobalKeyboard(const GlobalKeyboard &) = delete;
+		GlobalKeyboard(GlobalKeyboard &&) = delete;
+		GlobalKeyboard &operator=(const GlobalKeyboard &) = delete;
+		GlobalKeyboard &operator=(GlobalKeyboard &&) = delete;
 
 		void update();
 	};

@@ -18,18 +18,18 @@ namespace bbe
 
 			struct VulkanFragmentShader : public AutoRefCountable
 			{
-				INTERNAL::vulkan::VulkanShader   m_shader;
+				INTERNAL::vulkan::VulkanShader m_shader;
 				INTERNAL::vulkan::VulkanPipeline m_pipeline;
 
-				VulkanFragmentShader(const bbe::FragmentShader& shader);
+				VulkanFragmentShader(const bbe::FragmentShader &shader);
 				~VulkanFragmentShader();
 
-				VulkanFragmentShader(const VulkanFragmentShader&) = delete;
-				VulkanFragmentShader(VulkanFragmentShader&&) = delete;
-				VulkanFragmentShader& operator =(const VulkanFragmentShader&) = delete;
-				VulkanFragmentShader&& operator ==(const VulkanFragmentShader&&) = delete;
+				VulkanFragmentShader(const VulkanFragmentShader &) = delete;
+				VulkanFragmentShader(VulkanFragmentShader &&) = delete;
+				VulkanFragmentShader &operator=(const VulkanFragmentShader &) = delete;
+				VulkanFragmentShader &&operator==(const VulkanFragmentShader &&) = delete;
 
-				void init(const bbe::List<unsigned char>& code);
+				void init(const bbe::List<unsigned char> &code);
 			};
 		}
 	}

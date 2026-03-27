@@ -12,34 +12,33 @@ bbe::RectangleRotated::RectangleRotated(float x, float y, float width, float hei
 {
 }
 
-bbe::RectangleRotated::RectangleRotated(const Vector2& vec, float width, float height, float rotation)
+bbe::RectangleRotated::RectangleRotated(const Vector2 &vec, float width, float height, float rotation)
 	: m_x(vec.x), m_y(vec.y), m_width(width), m_height(height), m_rotation(rotation)
 {
 }
 
-bbe::RectangleRotated::RectangleRotated(float x, float y, const Vector2& dim, float rotation)
+bbe::RectangleRotated::RectangleRotated(float x, float y, const Vector2 &dim, float rotation)
 	: m_x(x), m_y(y), m_width(dim.x), m_height(dim.y), m_rotation(rotation)
 {
 }
 
-bbe::RectangleRotated::RectangleRotated(const Vector2& vec, const Vector2& dim, float rotation)
+bbe::RectangleRotated::RectangleRotated(const Vector2 &vec, const Vector2 &dim, float rotation)
 	: m_x(vec.x), m_y(vec.y), m_width(dim.x), m_height(dim.y), m_rotation(rotation)
 {
 }
 
-bbe::RectangleRotated::RectangleRotated(const Rectangle& rect, float rotation)
+bbe::RectangleRotated::RectangleRotated(const Rectangle &rect, float rotation)
 	: m_x(rect.x), m_y(rect.y), m_width(rect.width), m_height(rect.height), m_rotation(rotation)
 {
 }
 
-bool bbe::RectangleRotated::operator==(const RectangleRotated& other) const
+bool bbe::RectangleRotated::operator==(const RectangleRotated &other) const
 {
-	return
-		m_x        == other.m_x &&
-		m_y        == other.m_y &&
-		m_width    == other.m_width &&
-		m_height   == other.m_height &&
-		m_rotation == other.m_rotation;
+	return m_x == other.m_x &&
+		   m_y == other.m_y &&
+		   m_width == other.m_width &&
+		   m_height == other.m_height &&
+		   m_rotation == other.m_rotation;
 }
 
 float bbe::RectangleRotated::getX() const
@@ -102,7 +101,7 @@ void bbe::RectangleRotated::setRotation(float rotation)
 	m_rotation = rotation;
 }
 
-void bbe::RectangleRotated::translate(const Vector2& vec)
+void bbe::RectangleRotated::translate(const Vector2 &vec)
 {
 	setX(getX() + vec.x);
 	setY(getY() + vec.y);
@@ -111,19 +110,19 @@ void bbe::RectangleRotated::translate(const Vector2& vec)
 bbe::Vector2 bbe::RectangleRotated::getCenter() const
 {
 	return bbe::Vector2(
-		m_x + m_width /2.0f, 
-		m_y + m_height/2.0f);
+		m_x + m_width / 2.0f,
+		m_y + m_height / 2.0f);
 }
 
-void bbe::RectangleRotated::getVertices(bbe::List<bbe::Vector2>& outVertices) const
+void bbe::RectangleRotated::getVertices(bbe::List<bbe::Vector2> &outVertices) const
 {
 	outVertices.clear();
 
 	// Unrotated points
-	const bbe::Vector2 p1 = { m_x,           m_y };
-	const bbe::Vector2 p2 = { m_x,           m_y + m_height};
-	const bbe::Vector2 p3 = { m_x + m_width, m_y + m_height};
-	const bbe::Vector2 p4 = { m_x + m_width, m_y};
+	const bbe::Vector2 p1 = { m_x, m_y };
+	const bbe::Vector2 p2 = { m_x, m_y + m_height };
+	const bbe::Vector2 p3 = { m_x + m_width, m_y + m_height };
+	const bbe::Vector2 p4 = { m_x + m_width, m_y };
 
 	const bbe::Vector2 center = getCenter();
 	// Rotated points

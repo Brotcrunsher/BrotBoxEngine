@@ -30,7 +30,7 @@ struct LSystem
 			return retVal;
 		}
 
-		char constant [2] = {};
+		char constant[2] = {};
 		// Type == 0 forward
 		// Type == 1 rotate
 		int type = 0;
@@ -41,7 +41,7 @@ struct LSystem
 	bbe::List<Rule> rules;
 	bbe::List<RenderConstant> renderConstants;
 
-	bbe::List<bbe::Vector2d> generate(const bbe::String& axiom, int depth)
+	bbe::List<bbe::Vector2d> generate(const bbe::String &axiom, int depth)
 	{
 		auto string = generateString(axiom, depth);
 		bbe::Vector2d currentPos = bbe::Vector2d(0, 0);
@@ -53,7 +53,7 @@ struct LSystem
 			auto cp = it.getCodepoint();
 			for (size_t i = 0; i < renderConstants.getLength(); i++)
 			{
-				const RenderConstant& rc = renderConstants[i];
+				const RenderConstant &rc = renderConstants[i];
 				if ((char)cp == rc.constant[0])
 				{
 					if (rc.type == 0)
@@ -71,7 +71,7 @@ struct LSystem
 		return retVal;
 	}
 
-	bbe::String generateString(const bbe::String& axiom, int depth)
+	bbe::String generateString(const bbe::String &axiom, int depth)
 	{
 		if (depth <= 0) return axiom;
 
@@ -114,7 +114,7 @@ class MyGame : public bbe::Game
 
 		sys.renderConstants.add(LSystem::RenderConstant::forwarder('A', 1.0));
 		sys.renderConstants.add(LSystem::RenderConstant::forwarder('B', 1.0));
-		sys.renderConstants.add(LSystem::RenderConstant::rotator('+',  60.0));
+		sys.renderConstants.add(LSystem::RenderConstant::rotator('+', 60.0));
 		sys.renderConstants.add(LSystem::RenderConstant::rotator('-', -60.0));
 	}
 	virtual void update(float timeSinceLastFrame) override
@@ -128,10 +128,10 @@ class MyGame : public bbe::Game
 			else zoomFactor /= 0.95f;
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		static bool first = true;
 		bool changed = first;
@@ -161,7 +161,7 @@ class MyGame : public bbe::Game
 		{
 			ImGui::PushItemWidth(100);
 			ImGui::PushID(i);
-			changed |= ImGui::bbe::combo("Type", { "Forward", "Rotate" }, sys.renderConstants[i].type);
+			changed |= ImGui::bbe::combo("Type", { "Forward", "Rotate" }, &sys.renderConstants[i].type);
 			ImGui::SameLine();
 			changed |= ImGui::InputText("Constant", sys.renderConstants[i].constant, sizeof(sys.renderConstants[i].constant));
 			ImGui::SameLine();
@@ -192,7 +192,7 @@ class MyGame : public bbe::Game
 		{
 			lSystemPoints = sys.generate(axiom, depth);
 		}
-		if(changed || renderConfigChanged)
+		if (changed || renderConfigChanged)
 		{
 			renderPoints = lSystemPoints;
 			const bbe::Vector2d center = bbe::Math::average(renderPoints);
@@ -200,7 +200,7 @@ class MyGame : public bbe::Game
 			// Scaling
 			for (size_t i = 0; i < renderPoints.getLength(); i++)
 			{
-				bbe::Vector2d& p = renderPoints[i];
+				bbe::Vector2d &p = renderPoints[i];
 				p -= center;
 				p *= zoomFactor;
 				p.x += getWindowWidth() / 2;

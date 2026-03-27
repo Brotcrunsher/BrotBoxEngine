@@ -9,7 +9,8 @@ class MyGame : public bbe::Game
 {
 private:
 	static inline bbe::Random random = bbe::Random();
-	struct Balloon {
+	struct Balloon
+	{
 		static constexpr float WIDTH = 40;
 		static constexpr float HEIGHT = 60;
 		float x = random.randomFloat(WINDOW_WIDTH - Balloon::WIDTH);
@@ -17,23 +18,24 @@ private:
 		float hue = random.randomFloat(360.f);
 	};
 
-
 	bool gameover = false;
 	int score = 0;
 
 	bbe::List<Balloon> balloons;
 
-	void addBalloon() {
+	void addBalloon()
+	{
 		balloons.add(Balloon());
 	}
 
-	bool checkGameOver(const Balloon& b) {
+	bool checkGameOver(const Balloon &b)
+	{
 		return (b.y <= 140);
 	}
 
-	bool checkMousePosition(const Balloon& b) {
-		return (getMouseX() < b.x + Balloon::WIDTH  && getMouseX() > b.x)
-		    && (getMouseY() < b.y + Balloon::HEIGHT && getMouseY() > b.y);
+	bool checkMousePosition(const Balloon &b)
+	{
+		return (getMouseX() < b.x + Balloon::WIDTH && getMouseX() > b.x) && (getMouseY() < b.y + Balloon::HEIGHT && getMouseY() > b.y);
 	}
 
 public:
@@ -48,32 +50,37 @@ public:
 
 		size_t amountOfBalloonsToAdd = 0;
 		bool balloonClickedThisFrame = false;
-		for (Balloon& b : balloons) {
-			if (checkGameOver(b)) {
+		for (Balloon &b : balloons)
+		{
+			if (checkGameOver(b))
+			{
 				gameover = true;
 			}
 
-			if (checkMousePosition(b) && isMousePressed(bbe::MouseButton::LEFT) && !balloonClickedThisFrame) {
+			if (checkMousePosition(b) && isMousePressed(bbe::MouseButton::LEFT) && !balloonClickedThisFrame)
+			{
 				b = Balloon();
 				score++;
 				balloonClickedThisFrame = true;
-				if (random.randomFloat()<0.2) {
+				if (random.randomFloat() < 0.2)
+				{
 					amountOfBalloonsToAdd++;
 				}
 			}
 
-			b.y-=timeSinceLastFrame*60;
+			b.y -= timeSinceLastFrame * 60;
 		}
-		for (size_t i = 0; i < amountOfBalloonsToAdd; i++) {
+		for (size_t i = 0; i < amountOfBalloonsToAdd; i++)
+		{
 			addBalloon();
 		}
 	}
 
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
 
-	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		brush.setColorRGB(1, 1, 1);
 		brush.fillRect(bbe::Rectangle(0, 0, WINDOW_WIDTH, 140));
@@ -89,15 +96,16 @@ public:
 		brush.setColorRGB(1, 1, 1);
 		brush.drawImage(bbe::Rectangle(0, 140, WINDOW_WIDTH, assetStore::sky()->getHeight()), *assetStore::sky());
 
-		for (Balloon& b : balloons) {
+		for (Balloon &b : balloons)
+		{
 			brush.setColorHSV(b.hue, 1, 1);
 			brush.fillCircle(b.x, b.y, Balloon::WIDTH, Balloon::HEIGHT);
 		}
-		
-		if (gameover){
-			brush.setColorRGB(1, 0, 0);
-			brush.fillText(10, WINDOW_HEIGHT/2, "Game Over!", 100);
 
+		if (gameover)
+		{
+			brush.setColorRGB(1, 0, 0);
+			brush.fillText(10, WINDOW_HEIGHT / 2, "Game Over!", 100);
 		}
 	}
 

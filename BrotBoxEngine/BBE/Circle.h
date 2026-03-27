@@ -14,13 +14,15 @@ namespace bbe
 		}
 	}
 
-	template<typename Vec> class Rectangle_t;
+	template<typename Vec>
+	class Rectangle_t;
 	using Rectangle = Rectangle_t<bbe::Vector2>;
 
 	class Circle
 	{
 		friend class PrimitiveBrush2D;
 		friend class INTERNAL::vulkan::VulkanManager;
+
 	private:
 		float m_x;
 		float m_y;
@@ -41,9 +43,9 @@ namespace bbe
 		float getWidth() const;
 		float getHeight() const;
 		Vector2 getDim() const;
-		Circle offset(const Vector2& off) const;
+		Circle offset(const Vector2 &off) const;
 
-		void getVertices(bbe::List<bbe::Vector2>& outVertices) const;
+		void getVertices(bbe::List<bbe::Vector2> &outVertices) const;
 
 		void setX(float x);
 		void setY(float y);
@@ -61,8 +63,8 @@ namespace bbe
 		void translate(float x, float y);
 		void translate(const Vector2 &vec);
 
-		bool intersects(const Circle& other) const;
-		bool intersects(const Rectangle& other) const;
-		bool resolveIntersection(Circle& other, float massThis = 1, float massOther = 1);
+		bool intersects(const Circle &other) const;
+		bool intersects(const Rectangle &other) const;
+		bool resolveIntersection(Circle &other, float massThis = 1, float massOther = 1);
 	};
 }

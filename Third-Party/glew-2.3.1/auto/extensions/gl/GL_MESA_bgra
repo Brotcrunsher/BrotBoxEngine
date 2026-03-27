@@ -1,0 +1,6 @@
+GL_MESA_bgra
+https://www.khronos.org/registry/OpenGL/extensions/MESA/MESA_bgra.txt
+GL_MESA_bgra
+
+	GL_BGR_EXT 0x80E0
+	GL_BGRA_EXT 0x80E1

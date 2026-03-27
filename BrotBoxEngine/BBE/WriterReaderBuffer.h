@@ -4,17 +4,19 @@
 
 namespace bbe
 {
-	template<typename T, size_t N>	class WriterReaderBuffer;
+	template<typename T, size_t N>
+	class WriterReaderBuffer;
 
 	template<typename T, size_t N>
 	class ReaderAccess
 	{
 		friend class WriterReaderBuffer<T, N>;
+
 	private:
-		WriterReaderBuffer<T, N>& buffer;
+		WriterReaderBuffer<T, N> &buffer;
 		size_t readHead;
 
-		explicit ReaderAccess(WriterReaderBuffer<T, N>& buffer) : buffer(buffer), readHead(buffer.writeHead.load()) {};
+		explicit ReaderAccess(WriterReaderBuffer<T, N> &buffer) : buffer(buffer), readHead(buffer.writeHead.load()) {};
 
 	public:
 		bool hasNext()
@@ -22,11 +24,11 @@ namespace bbe
 			return readHead != buffer.writeHead.load();
 		}
 
-		const T& next()
+		const T &next()
 		{
 			if (!hasNext()) bbe::Crash(bbe::Error::IllegalState);
 
-			const T& retVal = buffer.data[readHead];
+			const T &retVal = buffer.data[readHead];
 			readHead++;
 			if (readHead >= N) readHead = 0;
 			return retVal;
@@ -37,6 +39,7 @@ namespace bbe
 	class WriterReaderBuffer
 	{
 		friend class ReaderAccess<T, N>;
+
 	private:
 		T data[N] = {};
 		std::atomic<size_t> writeHead;
@@ -50,12 +53,12 @@ namespace bbe
 		}
 
 	public:
-		void add(T&& t)
+		void add(T &&t)
 		{
 			data[writeHead.load()] = std::move(t);
 			incWriteHead();
 		}
-		void add(const T& t)
+		void add(const T &t)
 		{
 			data[writeHead.load()] = t;
 			incWriteHead();

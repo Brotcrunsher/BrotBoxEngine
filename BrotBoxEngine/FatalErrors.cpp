@@ -13,7 +13,7 @@ void bbe::INTERNAL::triggerFatalError(const bbe::String &msg)
 	triggerFatalError(msg.getRaw());
 }
 
-void bbe::INTERNAL::triggerFatalError(const char * msg)
+void bbe::INTERNAL::triggerFatalError(const char *msg)
 {
 	// TODO: This whole triggerFatalError stuff is kinda obsolete from the introduction of bbe::Crash.
 	BBELOGLN("FATAL ERROR: " << msg);

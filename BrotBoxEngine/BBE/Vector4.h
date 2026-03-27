@@ -1,9 +1,9 @@
 #pragma once
 
-
 namespace bbe
 {
-	template<typename T> class Vector2_t;
+	template<typename T>
+	class Vector2_t;
 	using Vector2 = Vector2_t<float>;
 	class Vector3;
 
@@ -26,10 +26,10 @@ namespace bbe
 		Vector4(const Vector3 &xyz, float w);
 		Vector4(float x, const Vector3 &yzw);
 
-		Vector4& operator+=(const Vector4& other);
-		Vector4& operator-=(const Vector4& other);
-		Vector4& operator*=(const Vector4& other);
-		Vector4& operator/=(const Vector4& other);
+		Vector4 &operator+=(const Vector4 &other);
+		Vector4 &operator-=(const Vector4 &other);
+		Vector4 &operator*=(const Vector4 &other);
+		Vector4 &operator/=(const Vector4 &other);
 
 		Vector4 operator+(const Vector4 &other) const;
 		Vector4 operator-(const Vector4 &other) const;
@@ -38,8 +38,8 @@ namespace bbe
 		Vector4 operator*(float scalar) const;
 		Vector4 operator/(float scalar) const;
 
-		float& operator[](int index);
-		const float& operator[](int index) const;
+		float &operator[](int index);
+		const float &operator[](int index) const;
 
 		Vector4 normalizeXYZ() const;
 
@@ -382,6 +382,5 @@ namespace bbe
 		Vector4 wwwy() const;
 		Vector4 wwwz() const;
 		Vector4 wwww() const;
-
 	};
 }

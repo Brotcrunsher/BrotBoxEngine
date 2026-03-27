@@ -17,7 +17,7 @@ constexpr int WINDOW_HEIGHT = 720;
 // TODO: Emscripten
 // TODO: Proper Emscripten page
 // TODO: Different humming frequencies for lights
-// 
+//
 // Nice to have (I guess?)
 // TODO: VAO buffers?
 // TODO: Experiments with Shadow Maps (first experiments indicate that they are waaaay too slow. Can we do better? Heavily reduced the lights that need to be taken into account, maybe it's better now)
@@ -152,6 +152,7 @@ namespace br
 
 		BackgroundHum backgroundHum;
 		LightBuzz lightBuzz;
+
 	public:
 		void newRooms()
 		{
@@ -233,7 +234,7 @@ namespace br
 
 			{
 				// Baking tests
-				const Room& r = rooms.rooms[0];
+				const Room &r = rooms.rooms[0];
 				//debugBake = bakeLights(bbe::Matrix4(), r.wallsModel, nullptr, nullptr, nullptr, assetStore::Wall(), { 1, 1, 1, 1 }, { 256, 256 }, r.lights);
 			}
 
@@ -259,7 +260,7 @@ namespace br
 
 		void drawImgui()
 		{
-			const char* const modes[] = {"2D", "3D"};
+			const char *const modes[] = { "2D", "3D" };
 			ImGui::Combo("Render Mode", &renderMode, modes, 2, 10);
 			if (renderMode == 0)
 			{
@@ -302,7 +303,7 @@ namespace br
 			}
 		}
 
-		virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
+		virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 		{
 			if (renderMode != 1) return;
 			brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
@@ -312,7 +313,7 @@ namespace br
 			rooms.drawAt(ccnc.getCameraPos(), brush, assetStore::Floor(), assetStore::Wall(), assetStore::Ceiling(), assetStore::SkirtingBoard(), drawFloor, drawWalls, drawSkirtingBoard, drawCeiling, drawLights);
 		}
 
-		virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
+		virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 		{
 			drawImgui();
 			//brush.drawImage(0, 0, debugBake);
@@ -343,7 +344,7 @@ namespace br
 			}
 
 			bbe::Rectanglei cameraRect((int32_t)cameraPos.x, (int32_t)cameraPos.y, WINDOW_WIDTH, WINDOW_HEIGHT);
-			for (const Room& r : rooms.rooms)
+			for (const Room &r : rooms.rooms)
 			{
 				if (cameraRect.intersects(r.boundingBox))
 				{
@@ -357,7 +358,7 @@ namespace br
 							hue++;
 						}
 						else
-						{ 
+						{
 							brush.setColorHSV(r.hue, r.saturation, r.value, roomAlpha);
 						}
 						brush.fillRect(r.boundingBox.x - cameraPos.x, r.boundingBox.y - cameraPos.y, r.boundingBox.width, r.boundingBox.height);
@@ -365,11 +366,11 @@ namespace br
 
 					if (gateAlpha > 0)
 					{
-						for (const Neighbor& n : r.neighbors)
+						for (const Neighbor &n : r.neighbors)
 						{
-							const Room& neighborRoom = rooms.rooms[n.neighborId];
+							const Room &neighborRoom = rooms.rooms[n.neighborId];
 							brush.setColorHSV(neighborRoom.hue, neighborRoom.saturation, neighborRoom.value, gateAlpha);
-							for (const Gate& g : n.gates)
+							for (const Gate &g : n.gates)
 							{
 								brush.fillRect(g.ownGatePos.x - cameraPos.x, g.ownGatePos.y - cameraPos.y, 1, 1);
 							}
@@ -395,14 +396,14 @@ namespace br
 
 			if (hoveredRoom >= 0)
 			{
-				const Room& room = rooms.rooms[hoveredRoom];
+				const Room &room = rooms.rooms[hoveredRoom];
 				brush.setColorRGB(1, 1, 1, 0.2f);
 				brush.fillRect(room.boundingBox.x - cameraPos.x, room.boundingBox.y - cameraPos.y, room.boundingBox.width, room.boundingBox.height);
 
 				brush.setColorRGB(0, 0, 0, 0.5f);
-				for (const Neighbor& n : room.neighbors)
+				for (const Neighbor &n : room.neighbors)
 				{
-					const Room& neighborRoom = rooms.rooms[n.neighborId];
+					const Room &neighborRoom = rooms.rooms[n.neighborId];
 					auto myCenter = room.boundingBox.getCenter();
 					bbe::Vector2 myCenterf = bbe::Vector2(myCenter.x, myCenter.y);
 					auto otherCenter = neighborRoom.boundingBox.getCenter();
@@ -410,7 +411,6 @@ namespace br
 					brush.fillLine(myCenterf - cameraPos, otherCenterf - cameraPos);
 				}
 			}
-
 		}
 
 		virtual void onEnd() override

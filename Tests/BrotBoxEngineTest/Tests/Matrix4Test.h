@@ -46,8 +46,7 @@ namespace bbe
 					}
 				}
 
-
-				float* data = reinterpret_cast<float*>(&mat);
+				float *data = reinterpret_cast<float *>(&mat);
 
 				assertEquals(data[0], 1);
 				assertEquals(data[1], 0);
@@ -206,17 +205,17 @@ namespace bbe
 				assertEquals(m4.get(1, 0), 0);
 				assertEquals(m4.get(2, 0), 0);
 				assertEquals(m4.get(3, 0), 0);
-							  
+
 				assertEquals(m4.get(0, 1), 0);
 				assertEquals(m4.get(1, 1), 6);
 				assertEquals(m4.get(2, 1), 0);
 				assertEquals(m4.get(3, 1), 0);
-							  
+
 				assertEquals(m4.get(0, 2), 0);
 				assertEquals(m4.get(1, 2), 0);
 				assertEquals(m4.get(2, 2), 7);
 				assertEquals(m4.get(3, 2), 0);
-							  
+
 				assertEquals(m4.get(0, 3), 2);
 				assertEquals(m4.get(1, 3), 3);
 				assertEquals(m4.get(2, 3), 4);

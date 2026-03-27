@@ -12,7 +12,7 @@ void bbe::PhysWorld::destroy()
 	}
 }
 
-void bbe::PhysWorld::init(const bbe::Vector2& gravity)
+void bbe::PhysWorld::init(const bbe::Vector2 &gravity)
 {
 	destroy();
 	m_pworld = new b2World(b2Vec2(gravity.x, -gravity.y));
@@ -23,12 +23,12 @@ bbe::PhysWorld::PhysWorld()
 	init({ 0, 0 });
 }
 
-bbe::PhysWorld::PhysWorld(const bbe::Vector2& gravity)
+bbe::PhysWorld::PhysWorld(const bbe::Vector2 &gravity)
 {
 	init(gravity);
 }
 
-bbe::PhysWorld::PhysWorld(PhysWorld&& other)
+bbe::PhysWorld::PhysWorld(PhysWorld &&other)
 {
 	m_pworld = other.m_pworld;
 	timeSinceLastStep = other.timeSinceLastStep;
@@ -36,7 +36,7 @@ bbe::PhysWorld::PhysWorld(PhysWorld&& other)
 	other.m_pworld = nullptr;
 }
 
-bbe::PhysWorld& bbe::PhysWorld::operator=(PhysWorld&& other)
+bbe::PhysWorld &bbe::PhysWorld::operator=(PhysWorld &&other)
 {
 	destroy();
 	m_pworld = other.m_pworld;
@@ -51,12 +51,12 @@ bbe::PhysWorld::~PhysWorld()
 	destroy();
 }
 
-b2World* bbe::PhysWorld::getRaw()
+b2World *bbe::PhysWorld::getRaw()
 {
 	return m_pworld;
 }
 
-const b2World* bbe::PhysWorld::getRaw() const
+const b2World *bbe::PhysWorld::getRaw() const
 {
 	return m_pworld;
 }
@@ -67,7 +67,7 @@ bbe::Vector2 bbe::PhysWorld::getGravity() const
 	return bbe::Vector2(gravity.x, gravity.y);
 }
 
-void bbe::PhysWorld::setGravity(const bbe::Vector2& gravity)
+void bbe::PhysWorld::setGravity(const bbe::Vector2 &gravity)
 {
 	m_pworld->SetGravity(b2Vec2(gravity.x, gravity.y));
 }

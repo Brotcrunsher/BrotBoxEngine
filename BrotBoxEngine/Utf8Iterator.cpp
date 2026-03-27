@@ -6,12 +6,12 @@ bbe::Utf8Iterator::Utf8Iterator()
 {
 }
 
-bbe::Utf8Iterator::Utf8Iterator(const char* ptr)
+bbe::Utf8Iterator::Utf8Iterator(const char *ptr)
 	: m_pdata(ptr)
 {
 }
 
-bbe::Utf8Iterator& bbe::Utf8Iterator::operator++()
+bbe::Utf8Iterator &bbe::Utf8Iterator::operator++()
 {
 	m_pdata = bbe::utf8GetNextChar(m_pdata);
 	return *this;
@@ -24,7 +24,7 @@ bbe::Utf8Iterator bbe::Utf8Iterator::operator++(int)
 	return copy;
 }
 
-bbe::Utf8Iterator& bbe::Utf8Iterator::operator--()
+bbe::Utf8Iterator &bbe::Utf8Iterator::operator--()
 {
 	m_pdata--;
 	m_pdata = bbe::utf8GetStartAddrOfCodePoint(m_pdata);
@@ -49,7 +49,7 @@ bbe::Utf8Iterator bbe::Utf8Iterator::operator+(int32_t advancement) const
 	return retVal;
 }
 
-bbe::Utf8Iterator& bbe::Utf8Iterator::operator+=(int32_t advancement)
+bbe::Utf8Iterator &bbe::Utf8Iterator::operator+=(int32_t advancement)
 {
 	if (advancement < 0) return operator-=(-advancement);
 	for (int32_t i = 0; i < advancement; i++)
@@ -70,7 +70,7 @@ bbe::Utf8Iterator bbe::Utf8Iterator::operator-(int32_t advancement) const
 	return retVal;
 }
 
-bbe::Utf8Iterator& bbe::Utf8Iterator::operator-=(int32_t advancement)
+bbe::Utf8Iterator &bbe::Utf8Iterator::operator-=(int32_t advancement)
 {
 	if (advancement < 0) return operator+=(-advancement);
 	for (int32_t i = 0; i < advancement; i++)
@@ -80,7 +80,7 @@ bbe::Utf8Iterator& bbe::Utf8Iterator::operator-=(int32_t advancement)
 	return *this;
 }
 
-int32_t bbe::Utf8Iterator::operator-(const bbe::Utf8Iterator& other) const
+int32_t bbe::Utf8Iterator::operator-(const bbe::Utf8Iterator &other) const
 {
 	if (m_pdata > other.m_pdata)
 	{
@@ -107,72 +107,72 @@ bool bbe::Utf8Iterator::valid() const
 	return getCodepoint() != 0;
 }
 
-bool bbe::Utf8Iterator::operator==(const bbe::Utf8Iterator& other) const
+bool bbe::Utf8Iterator::operator==(const bbe::Utf8Iterator &other) const
 {
 	return m_pdata == other.m_pdata;
 }
 
-bool bbe::Utf8Iterator::operator!=(const bbe::Utf8Iterator& other) const
+bool bbe::Utf8Iterator::operator!=(const bbe::Utf8Iterator &other) const
 {
 	return m_pdata != other.m_pdata;
 }
 
-bool bbe::Utf8Iterator::operator<=(const bbe::Utf8Iterator& other) const
+bool bbe::Utf8Iterator::operator<=(const bbe::Utf8Iterator &other) const
 {
 	return m_pdata <= other.m_pdata;
 }
 
-bool bbe::Utf8Iterator::operator>=(const bbe::Utf8Iterator& other) const
+bool bbe::Utf8Iterator::operator>=(const bbe::Utf8Iterator &other) const
 {
 	return m_pdata >= other.m_pdata;
 }
 
-bool bbe::Utf8Iterator::operator<(const bbe::Utf8Iterator& other) const
+bool bbe::Utf8Iterator::operator<(const bbe::Utf8Iterator &other) const
 {
 	return m_pdata < other.m_pdata;
 }
 
-bool bbe::Utf8Iterator::operator>(const bbe::Utf8Iterator& other) const
+bool bbe::Utf8Iterator::operator>(const bbe::Utf8Iterator &other) const
 {
 	return m_pdata > other.m_pdata;
 }
 
-bbe::Utf8Iterator::operator const char* () const
+bbe::Utf8Iterator::operator const char *() const
 {
 	return m_pdata;
 }
 
-bool bbe::Utf8Iterator::operator==(const char* other) const
+bool bbe::Utf8Iterator::operator==(const char *other) const
 {
 	return m_pdata == other;
 }
 
-bool bbe::Utf8Iterator::operator!=(const char* other) const
+bool bbe::Utf8Iterator::operator!=(const char *other) const
 {
 	return m_pdata != other;
 }
 
-bool bbe::Utf8Iterator::operator<=(const char* other) const
+bool bbe::Utf8Iterator::operator<=(const char *other) const
 {
 	return m_pdata <= other;
 }
 
-bool bbe::Utf8Iterator::operator>=(const char* other) const
+bool bbe::Utf8Iterator::operator>=(const char *other) const
 {
 	return m_pdata >= other;
 }
 
-bool bbe::Utf8Iterator::operator<(const char* other) const
+bool bbe::Utf8Iterator::operator<(const char *other) const
 {
 	return m_pdata < other;
 }
 
-bool bbe::Utf8Iterator::operator>(const char* other) const
+bool bbe::Utf8Iterator::operator>(const char *other) const
 {
 	return m_pdata > other;
 }
 
-const char& bbe::Utf8Iterator::operator*() const
+const char &bbe::Utf8Iterator::operator*() const
 {
 	return *m_pdata;
 }

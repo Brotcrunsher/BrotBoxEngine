@@ -1,11 +1,14 @@
 #include "BBE/Vulkan/VulkanHelper.h"
 #include "BBE/Math.h"
 
-uint32_t bbe::INTERNAL::vulkan::findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+uint32_t bbe::INTERNAL::vulkan::findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
 	VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;
 	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &physicalDeviceMemoryProperties);
-	for (uint32_t i = 0; i < physicalDeviceMemoryProperties.memoryTypeCount; i++) {
-		if ((typeFilter & (1 << i))) {
+	for (uint32_t i = 0; i < physicalDeviceMemoryProperties.memoryTypeCount; i++)
+	{
+		if ((typeFilter & (1 << i)))
+		{
 			if ((physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
 			{
 				return i;
@@ -31,10 +34,9 @@ bool bbe::INTERNAL::vulkan::isFormatSupported(VkPhysicalDevice physicalDevice, V
 	}
 
 	return false;
-
 }
 
-VkFormat bbe::INTERNAL::vulkan::findSupportedFormat(VkPhysicalDevice physicalDevice, const bbe::List<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags)
+VkFormat bbe::INTERNAL::vulkan::findSupportedFormat(VkPhysicalDevice physicalDevice, const bbe::List<VkFormat> &formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags)
 {
 	for (VkFormat format : formats)
 	{
@@ -52,7 +54,7 @@ bool bbe::INTERNAL::vulkan::isStencilFormat(VkFormat format)
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void bbe::INTERNAL::vulkan::preCreateBuffer(VkDevice device, VkDeviceSize deviceSize, VkBufferUsageFlags bufferUsageFlags, VkBuffer & buffer, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t * p_queueFamilyIndices)
+void bbe::INTERNAL::vulkan::preCreateBuffer(VkDevice device, VkDeviceSize deviceSize, VkBufferUsageFlags bufferUsageFlags, VkBuffer &buffer, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t *p_queueFamilyIndices)
 {
 	VkBufferCreateInfo bufferCreateInfo;
 	bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -68,7 +70,7 @@ void bbe::INTERNAL::vulkan::preCreateBuffer(VkDevice device, VkDeviceSize device
 	ASSERT_VULKAN(result);
 }
 
-void bbe::INTERNAL::vulkan::postCreateBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkBuffer & buffer, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceMemory & deviceMemory, VkDeviceMemory parentDeviceMemory, VkDeviceSize offset)
+void bbe::INTERNAL::vulkan::postCreateBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkBuffer &buffer, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceMemory &deviceMemory, VkDeviceMemory parentDeviceMemory, VkDeviceSize offset)
 {
 	if (parentDeviceMemory == VK_NULL_HANDLE)
 	{
@@ -91,21 +93,19 @@ void bbe::INTERNAL::vulkan::postCreateBuffer(VkDevice device, VkPhysicalDevice p
 	}
 }
 
-void bbe::INTERNAL::vulkan::createBuffer
-	(
-		VkDevice device, 
-		VkPhysicalDevice physicalDevice, 
-		VkDeviceSize deviceSize, 
-		VkBufferUsageFlags bufferUsageFlags, 
-		VkBuffer & buffer, 
-		VkMemoryPropertyFlags memoryPropertyFlags, 
-		VkDeviceMemory & deviceMemory, 
-		VkSharingMode sharingMode, 
-		uint32_t queueFamilyIndexCount, 
-		const uint32_t* p_queueFamilyIndices, 
-		VkDeviceMemory parentDeviceMemory, 
-		VkDeviceSize offset
-	)
+void bbe::INTERNAL::vulkan::createBuffer(
+	VkDevice device,
+	VkPhysicalDevice physicalDevice,
+	VkDeviceSize deviceSize,
+	VkBufferUsageFlags bufferUsageFlags,
+	VkBuffer &buffer,
+	VkMemoryPropertyFlags memoryPropertyFlags,
+	VkDeviceMemory &deviceMemory,
+	VkSharingMode sharingMode,
+	uint32_t queueFamilyIndexCount,
+	const uint32_t *p_queueFamilyIndices,
+	VkDeviceMemory parentDeviceMemory,
+	VkDeviceSize offset)
 {
 	preCreateBuffer(device, deviceSize, bufferUsageFlags, buffer, sharingMode, queueFamilyIndexCount, p_queueFamilyIndices);
 	postCreateBuffer(device, physicalDevice, buffer, memoryPropertyFlags, deviceMemory, parentDeviceMemory, offset);
@@ -162,7 +162,7 @@ void bbe::INTERNAL::vulkan::endSingleTimeCommandBuffer(VkDevice device, VkQueue 
 	commandBuffer = VK_NULL_HANDLE;
 }
 
-void bbe::INTERNAL::vulkan::createImage(VkDevice device, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags, VkImage & image, VkDeviceMemory & imageMemory, int amountOfMipLevels)
+void bbe::INTERNAL::vulkan::createImage(VkDevice device, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags, VkImage &image, VkDeviceMemory &imageMemory, int amountOfMipLevels)
 {
 	VkImageCreateInfo imageCreateInfo;
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -201,7 +201,7 @@ void bbe::INTERNAL::vulkan::createImage(VkDevice device, VkPhysicalDevice physic
 	vkBindImageMemory(device, image, imageMemory, 0);
 }
 
-void bbe::INTERNAL::vulkan::createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView & imageView, uint32_t mipLevels, VkComponentSwizzle swizR, VkComponentSwizzle swizG, VkComponentSwizzle swizB, VkComponentSwizzle swizA)
+void bbe::INTERNAL::vulkan::createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView &imageView, uint32_t mipLevels, VkComponentSwizzle swizR, VkComponentSwizzle swizG, VkComponentSwizzle swizB, VkComponentSwizzle swizA)
 {
 	VkImageViewCreateInfo imageViewCreateInfo;
 	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -241,7 +241,7 @@ void bbe::INTERNAL::vulkan::changeImageLayout(VkDevice device, VkCommandPool com
 {
 	VkCommandBuffer commandBuffer = startSingleTimeCommandBuffer(device, commandPool);
 
-	VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;	//see: https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html#synchronization-access-types-supported
+	VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT; //see: https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html#synchronization-access-types-supported
 	VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
 	VkImageMemoryBarrier imageMemoryBarrier;

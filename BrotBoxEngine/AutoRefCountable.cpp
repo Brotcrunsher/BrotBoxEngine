@@ -27,15 +27,13 @@ void bbe::AutoRef::decRef()
 	}
 }
 
-bbe::AutoRef::AutoRef() :
-	countable(nullptr)
+bbe::AutoRef::AutoRef() : countable(nullptr)
 {
 }
 
-bbe::AutoRef::AutoRef(AutoRefCountable* countable) :
-	countable(countable)
+bbe::AutoRef::AutoRef(AutoRefCountable *countable) : countable(countable)
 {
-	if(countable) countable->refCount++;
+	if (countable) countable->refCount++;
 }
 
 bbe::AutoRef::~AutoRef()
@@ -43,19 +41,19 @@ bbe::AutoRef::~AutoRef()
 	decRef();
 }
 
-bbe::AutoRef::AutoRef(const AutoRef& other)
+bbe::AutoRef::AutoRef(const AutoRef &other)
 {
 	countable = other.countable;
 	incRef();
 }
 
-bbe::AutoRef::AutoRef(AutoRef&& other) noexcept
+bbe::AutoRef::AutoRef(AutoRef &&other) noexcept
 {
 	countable = other.countable;
 	other.countable = nullptr;
 }
 
-bbe::AutoRef& bbe::AutoRef::operator=(const AutoRef& other)
+bbe::AutoRef &bbe::AutoRef::operator=(const AutoRef &other)
 {
 	if (countable == other.countable) return *this;
 	decRef();
@@ -64,7 +62,7 @@ bbe::AutoRef& bbe::AutoRef::operator=(const AutoRef& other)
 	return *this;
 }
 
-bbe::AutoRef& bbe::AutoRef::operator=(AutoRef&& other) noexcept
+bbe::AutoRef &bbe::AutoRef::operator=(AutoRef &&other) noexcept
 {
 	if (countable == other.countable)
 	{
@@ -80,7 +78,7 @@ bbe::AutoRef& bbe::AutoRef::operator=(AutoRef&& other) noexcept
 	return *this;
 }
 
-bbe::AutoRef& bbe::AutoRef::operator=(AutoRefCountable* countable)
+bbe::AutoRef &bbe::AutoRef::operator=(AutoRefCountable *countable)
 {
 	if (countable == this->countable) return *this;
 
@@ -90,17 +88,17 @@ bbe::AutoRef& bbe::AutoRef::operator=(AutoRefCountable* countable)
 	return *this;
 }
 
-bool bbe::AutoRef::operator==(const void* ptr) const
+bool bbe::AutoRef::operator==(const void *ptr) const
 {
 	return countable == ptr;
 }
 
-bool bbe::AutoRef::operator!=(const void* ptr) const
+bool bbe::AutoRef::operator!=(const void *ptr) const
 {
 	return countable != ptr;
 }
 
-bbe::AutoRefCountable* bbe::AutoRef::get() const
+bbe::AutoRefCountable *bbe::AutoRef::get() const
 {
 	return countable;
 }

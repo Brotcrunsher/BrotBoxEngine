@@ -8,8 +8,8 @@ constexpr int32_t WINDOW_HEIGHT = 720;
 // Inspired from: https://mikeash.com/pyblog/fluid-simulation-for-dummies.html
 // Thank you Mike Ash!
 
-
-class FluidSquare {
+class FluidSquare
+{
 private:
 	constexpr static int32_t iter = 4;
 
@@ -78,10 +78,10 @@ public:
 		densityR.resizeCapacityAndLength(width * height);
 		densityG.resizeCapacityAndLength(width * height);
 		densityB.resizeCapacityAndLength(width * height);
-		Vx      .resizeCapacityAndLength(width * height); 
-		Vy      .resizeCapacityAndLength(width * height); 
-		Vx0     .resizeCapacityAndLength(width * height);
-		Vy0     .resizeCapacityAndLength(width * height);
+		Vx.resizeCapacityAndLength(width * height);
+		Vy.resizeCapacityAndLength(width * height);
+		Vx0.resizeCapacityAndLength(width * height);
+		Vy0.resizeCapacityAndLength(width * height);
 	}
 
 	void addDensityR(int32_t x, int32_t y, float amount)
@@ -116,47 +116,47 @@ public:
 
 	void setBound(BoundBehaviour b, bbe::List<float> &x)
 	{
-		for (size_t i = 1; i < getWidth() - 1; i++) {
-			x[coordToIndex(i, 0)]               = b == BoundBehaviour::Y_SPEED ? -x[coordToIndex(i, 1)]               : x[coordToIndex(i, 1)];
+		for (size_t i = 1; i < getWidth() - 1; i++)
+		{
+			x[coordToIndex(i, 0)] = b == BoundBehaviour::Y_SPEED ? -x[coordToIndex(i, 1)] : x[coordToIndex(i, 1)];
 			x[coordToIndex(i, getHeight() - 1)] = b == BoundBehaviour::Y_SPEED ? -x[coordToIndex(i, getHeight() - 2)] : x[coordToIndex(i, getHeight() - 2)];
 		}
-		for (size_t i = 1; i < getHeight() - 1; i++) {
-			x[coordToIndex(0, i)]              = b == BoundBehaviour::X_SPEED ? -x[coordToIndex(1, i)]              : x[coordToIndex(1, i)];
+		for (size_t i = 1; i < getHeight() - 1; i++)
+		{
+			x[coordToIndex(0, i)] = b == BoundBehaviour::X_SPEED ? -x[coordToIndex(1, i)] : x[coordToIndex(1, i)];
 			x[coordToIndex(getWidth() - 1, i)] = b == BoundBehaviour::X_SPEED ? -x[coordToIndex(getWidth() - 2, i)] : x[coordToIndex(getWidth() - 2, i)];
 		}
 
-		x[coordToIndex(0             , 0)]               = 0.5f * (x[coordToIndex(1, 0)]                            + x[coordToIndex(0, 1)]);
-		x[coordToIndex(0             , getHeight() - 1)] = 0.5f * (x[coordToIndex(1, getHeight() - 1)]              + x[coordToIndex(0, getHeight() - 2)]);
-		x[coordToIndex(getWidth() - 1, 0)]               = 0.5f * (x[coordToIndex(getWidth() - 2, 0)]               + x[coordToIndex(getWidth() - 1, 1)]);
+		x[coordToIndex(0, 0)] = 0.5f * (x[coordToIndex(1, 0)] + x[coordToIndex(0, 1)]);
+		x[coordToIndex(0, getHeight() - 1)] = 0.5f * (x[coordToIndex(1, getHeight() - 1)] + x[coordToIndex(0, getHeight() - 2)]);
+		x[coordToIndex(getWidth() - 1, 0)] = 0.5f * (x[coordToIndex(getWidth() - 2, 0)] + x[coordToIndex(getWidth() - 1, 1)]);
 		x[coordToIndex(getWidth() - 1, getHeight() - 1)] = 0.5f * (x[coordToIndex(getWidth() - 2, getHeight() - 1)] + x[coordToIndex(getWidth() - 1, getHeight() - 2)]);
 	}
 
-	static void linearSolveThread(size_t start, size_t end, size_t width, size_t height, bbe::List<float>* x, const bbe::List<float>* x0, float a, float cReciprocal)
+	static void linearSolveThread(size_t start, size_t end, size_t width, size_t height, bbe::List<float> *x, const bbe::List<float> *x0, float a, float cReciprocal)
 	{
 		// See: Gauss-Seidel
-		for (size_t i = start; i < end && i < width - 1; i++) {
-			for (size_t j = 1; j < height - 1; j++) {
+		for (size_t i = start; i < end && i < width - 1; i++)
+		{
+			for (size_t j = 1; j < height - 1; j++)
+			{
 				(*x)[coordToIndex(i, j, width)] =
-					((*x0)[coordToIndex(i, j, width)]
-						+ a * ((*x)[coordToIndex(i + 1, j, width)]
-							 + (*x)[coordToIndex(i - 1, j, width)]
-							 + (*x)[coordToIndex(i, j + 1, width)]
-							 + (*x)[coordToIndex(i, j - 1, width)]
-							)) * cReciprocal;
+					((*x0)[coordToIndex(i, j, width)] + a * ((*x)[coordToIndex(i + 1, j, width)] + (*x)[coordToIndex(i - 1, j, width)] + (*x)[coordToIndex(i, j + 1, width)] + (*x)[coordToIndex(i, j - 1, width)])) * cReciprocal;
 			}
 		}
 	}
 
-	void linearSolve(BoundBehaviour b, bbe::List<float>& x, const bbe::List<float>& x0, float a, float c)
+	void linearSolve(BoundBehaviour b, bbe::List<float> &x, const bbe::List<float> &x0, float a, float c)
 	{
 		constexpr size_t amountOfThreads = 10;
 		const float cReciprocal = 1.0 / c;
-		for (int32_t k = 0; k < iter; k++) {
+		for (int32_t k = 0; k < iter; k++)
+		{
 			bbe::List<std::future<void>> futures;
 			for (size_t i = 0; i < amountOfThreads; i++)
 			{
 				size_t start = 1 + (getWidth() * i / amountOfThreads);
-				size_t end  = 1 + (getWidth() * (i + 1) / amountOfThreads);
+				size_t end = 1 + (getWidth() * (i + 1) / amountOfThreads);
 				futures.add(bbe::async(&FluidSquare::linearSolveThread, start, end, getWidth(), getHeight(), &x, &x0, a, cReciprocal));
 			}
 			for (size_t i = 0; i < amountOfThreads; i++)
@@ -167,23 +167,20 @@ public:
 		}
 	}
 
-	void diffuse(BoundBehaviour b, bbe::List<float>& x, const bbe::List<float>& x0, float diff, float dt)
+	void diffuse(BoundBehaviour b, bbe::List<float> &x, const bbe::List<float> &x0, float diff, float dt)
 	{
 		const float a = dt * diff * (getWidth() - 2) * (getHeight() - 2);
 		linearSolve(b, x, x0, a, 1 + 4 * a);
 	}
 
-	void clearDivergence(bbe::List<float>& velocX, bbe::List<float>& velocY, bbe::List<float>& p, bbe::List<float>& divergence)
+	void clearDivergence(bbe::List<float> &velocX, bbe::List<float> &velocY, bbe::List<float> &p, bbe::List<float> &divergence)
 	{
 		// See Helmholtz Decomposition
-		for (size_t i = 1; i < getWidth() - 1; i++) {
-			for (size_t j = 1; j < getHeight() - 1; j++) {
-				divergence[coordToIndex(i, j)] = -0.5f * (
-					velocX[coordToIndex(i + 1, j)]
-					- velocX[coordToIndex(i - 1, j)]
-					+ velocY[coordToIndex(i, j + 1)]
-					- velocY[coordToIndex(i, j - 1)]
-					);
+		for (size_t i = 1; i < getWidth() - 1; i++)
+		{
+			for (size_t j = 1; j < getHeight() - 1; j++)
+			{
+				divergence[coordToIndex(i, j)] = -0.5f * (velocX[coordToIndex(i + 1, j)] - velocX[coordToIndex(i - 1, j)] + velocY[coordToIndex(i, j + 1)] - velocY[coordToIndex(i, j - 1)]);
 			}
 		}
 		for (size_t i = 0; i < getWidth() * getHeight(); i++)
@@ -193,25 +190,27 @@ public:
 		setBound(BoundBehaviour::DENSITY, divergence);
 		linearSolve(BoundBehaviour::DENSITY, p, divergence, 1, 4);
 
-		for (size_t i = 1; i < getWidth() - 1; i++) {
-			for (size_t j = 1; j < getHeight() - 1; j++) {
-				velocX[coordToIndex(i, j)] -= 0.5f * (p[coordToIndex(i + 1, j)]
-					- p[coordToIndex(i - 1, j)]);
-				velocY[coordToIndex(i, j)] -= 0.5f * (p[coordToIndex(i, j + 1)]
-					- p[coordToIndex(i, j - 1)]);
+		for (size_t i = 1; i < getWidth() - 1; i++)
+		{
+			for (size_t j = 1; j < getHeight() - 1; j++)
+			{
+				velocX[coordToIndex(i, j)] -= 0.5f * (p[coordToIndex(i + 1, j)] - p[coordToIndex(i - 1, j)]);
+				velocY[coordToIndex(i, j)] -= 0.5f * (p[coordToIndex(i, j + 1)] - p[coordToIndex(i, j - 1)]);
 			}
 		}
 		setBound(BoundBehaviour::X_SPEED, velocX);
 		setBound(BoundBehaviour::Y_SPEED, velocY);
 	}
 
-	void advect(BoundBehaviour b, bbe::List<float>& d, const bbe::List<float>& d0, const bbe::List<float>& velocX, const bbe::List<float>& velocY, float dt)
+	void advect(BoundBehaviour b, bbe::List<float> &d, const bbe::List<float> &d0, const bbe::List<float> &velocX, const bbe::List<float> &velocY, float dt)
 	{
 		const float NfloatX = getWidth();
 		const float NfloatY = getHeight();
 
-		for (size_t i = 1; i < getWidth() - 1; i++) {
-			for (size_t j = 1; j < getHeight() - 1; j++) {
+		for (size_t i = 1; i < getWidth() - 1; i++)
+		{
+			for (size_t j = 1; j < getHeight() - 1; j++)
+			{
 				const float x = bbe::Math::clamp(i - dt * velocX[coordToIndex(i, j)], 0.f, getWidth() - 1.1f);
 				const float y = bbe::Math::clamp(j - dt * velocY[coordToIndex(i, j)], 0.f, getHeight() - 1.1f);
 
@@ -226,21 +225,18 @@ public:
 				const float t0 = 1.0f - t1;
 
 				d[coordToIndex(i, j)] =
-					  s0 * (t0 * d0[coordToIndex(i0, j0)]
-						 + (t1 * d0[coordToIndex(i0, j1)]))
-					+ s1 * (t0 * d0[coordToIndex(i1, j0)]
-						 + (t1 * d0[coordToIndex(i1, j1)]));
+					s0 * (t0 * d0[coordToIndex(i0, j0)] + (t1 * d0[coordToIndex(i0, j1)])) + s1 * (t0 * d0[coordToIndex(i1, j0)] + (t1 * d0[coordToIndex(i1, j1)]));
 			}
 		}
 		setBound(b, d);
 	}
 
-	void densityStep(bbe::List<float>* list, float dt)
+	void densityStep(bbe::List<float> *list, float dt)
 	{
 		bbe::List<float> s;
 		s.resizeCapacityAndLength(getWidth() * getHeight());
 		diffuse(BoundBehaviour::DENSITY, s, *list, diff, dt);
-		advect (BoundBehaviour::DENSITY, *list, s, Vx, Vy, dt);
+		advect(BoundBehaviour::DENSITY, *list, s, Vx, Vy, dt);
 	}
 
 	void step(float dt)
@@ -293,7 +289,7 @@ public:
 		BBELOGLN("FPS: " << (1.f / timeSinceLastFrame));
 
 		timeSinceStart += timeSinceLastFrame;
-		timeSinceStep  += timeSinceLastFrame;
+		timeSinceStep += timeSinceLastFrame;
 
 		if (timeSinceStep > stepTime)
 		{
@@ -332,11 +328,11 @@ public:
 		}
 	}
 
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
 
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		bbe::List<float> data;
 		data.resizeCapacityAndLength(square.getWidth() * square.getHeight());
@@ -348,14 +344,14 @@ public:
 				const float valR = square.getDensityR(i, k);
 				const float valG = square.getDensityG(i, k);
 				const float valB = square.getDensityB(i, k);
-				char* c = (char*)&data[index];
-				c[0] = 255 * bbe::Math::min(valR, 1.f);
-				c[1] = 255 * bbe::Math::min(valG, 1.f);
-				c[2] = 255 * bbe::Math::min(valB, 1.f);
+				bbe::byte *c = reinterpret_cast<bbe::byte *>(&data[index]);
+				c[0] = static_cast<bbe::byte>(255 * bbe::Math::min(valR, 1.f));
+				c[1] = static_cast<bbe::byte>(255 * bbe::Math::min(valG, 1.f));
+				c[2] = static_cast<bbe::byte>(255 * bbe::Math::min(valB, 1.f));
 				c[3] = 255;
 			}
 		}
-		bbe::Image image = bbe::Image(square.getWidth(), square.getHeight(), (bbe::byte*)data.getRaw(), bbe::ImageFormat::R8G8B8A8);
+		bbe::Image image = bbe::Image(square.getWidth(), square.getHeight(), (bbe::byte *)data.getRaw(), bbe::ImageFormat::R8G8B8A8);
 		brush.drawImage(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, image, 0);
 	}
 

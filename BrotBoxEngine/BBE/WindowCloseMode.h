@@ -4,6 +4,7 @@ namespace bbe
 {
 	enum WindowCloseMode
 	{
-		CLOSE, HIDE,
+		CLOSE,
+		HIDE,
 	};
 }

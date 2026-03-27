@@ -2,8 +2,8 @@
 #include <iostream>
 #include <set>
 
-constexpr int WINDOW_WIDTH  = 1280;
-constexpr int WINDOW_HEIGHT =  720;
+constexpr int WINDOW_WIDTH = 1280;
+constexpr int WINDOW_HEIGHT = 720;
 
 class MyGame : public bbe::Game
 {
@@ -19,25 +19,24 @@ class MyGame : public bbe::Game
 	virtual void onStart() override
 	{
 		constexpr float blockerWidth = 20;
-		bbe::PhysRectangle topBlocker    = bbe::PhysRectangle(this, -blockerWidth, -blockerWidth, WINDOW_WIDTH + blockerWidth * 2, blockerWidth);
+		bbe::PhysRectangle topBlocker = bbe::PhysRectangle(this, -blockerWidth, -blockerWidth, WINDOW_WIDTH + blockerWidth * 2, blockerWidth);
 		bbe::PhysRectangle bottomBlocker = bbe::PhysRectangle(this, -blockerWidth, WINDOW_HEIGHT, WINDOW_WIDTH + blockerWidth * 2, blockerWidth);
-		bbe::PhysRectangle leftBlocker   = bbe::PhysRectangle(this, -blockerWidth, -blockerWidth, blockerWidth, WINDOW_HEIGHT + blockerWidth * 2);
-		bbe::PhysRectangle rightBlocker  = bbe::PhysRectangle(this, WINDOW_WIDTH , -blockerWidth, blockerWidth, WINDOW_HEIGHT + blockerWidth * 2);
-		topBlocker   .freeze();
+		bbe::PhysRectangle leftBlocker = bbe::PhysRectangle(this, -blockerWidth, -blockerWidth, blockerWidth, WINDOW_HEIGHT + blockerWidth * 2);
+		bbe::PhysRectangle rightBlocker = bbe::PhysRectangle(this, WINDOW_WIDTH, -blockerWidth, blockerWidth, WINDOW_HEIGHT + blockerWidth * 2);
+		topBlocker.freeze();
 		bottomBlocker.freeze();
-		leftBlocker  .freeze();
-		rightBlocker .freeze();
+		leftBlocker.freeze();
+		rightBlocker.freeze();
 
 		getPhysWorld()->setGravity({ 0, 10 });
 
-
 		constexpr float playerRadius = 40;
-		circles.add({0, 0, bbe::PhysCircle{
-			this,
-			rand.randomFloat(WINDOW_WIDTH - playerRadius * 2),
-			rand.randomFloat(WINDOW_HEIGHT - playerRadius * 2),
-			playerRadius,
-		}});
+		circles.add({ 0, 0, bbe::PhysCircle{
+								this,
+								rand.randomFloat(WINDOW_WIDTH - playerRadius * 2),
+								rand.randomFloat(WINDOW_HEIGHT - playerRadius * 2),
+								playerRadius,
+							} });
 		circles.last().circle.setFriction(0.1f);
 		circles.last().circle.setDensity(1000);
 		for (uint32_t i = 0; i < 1024 * 2; i++)
@@ -91,15 +90,15 @@ class MyGame : public bbe::Game
 			}
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		brush.setColorRGB(1, 1, 1);
 		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-		for (const CircleWithExtraData& c : circles)
+		for (const CircleWithExtraData &c : circles)
 		{
 			brush.setColorHSV(c.hue, 1, c.value);
 			brush.fillCircle(c.circle);
@@ -118,4 +117,3 @@ int main()
 	delete mg;
 #endif
 }
-

@@ -1,0 +1,5 @@
+EGL_ANDROID_telemetry_hint
+https://www.khronos.org/registry/egl/specs/eglspec.1.5.pdf
+EGL_ANDROID_telemetry_hint
+
+	EGL_TELEMETRY_HINT_ANDROID 0x3570

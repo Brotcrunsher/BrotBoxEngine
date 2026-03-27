@@ -3,10 +3,13 @@
 #include "BBE/UniquePointer.h"
 #include "BBE/UtilTest.h"
 
-namespace bbe {
-	namespace test {
-		void testUniquePointer() {
-			Person::checkIfAllPersonsWereDestroyed();	//if this triggers then another test made a bubu!
+namespace bbe
+{
+	namespace test
+	{
+		void testUniquePointer()
+		{
+			Person::checkIfAllPersonsWereDestroyed(); //if this triggers then another test made a bubu!
 
 			{
 				UniquePointer<Person> up(new Person("My Name", "My Address", -182));
@@ -30,7 +33,7 @@ namespace bbe {
 				assertEquals(up2->name, "New Name");
 				assertEquals(up2->age, 2910);
 			}
-			
+
 			Person::checkIfAllPersonsWereDestroyed();
 		}
 	}

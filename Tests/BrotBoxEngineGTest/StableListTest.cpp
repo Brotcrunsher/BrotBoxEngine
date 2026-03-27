@@ -4,651 +4,717 @@
 #include <vector>
 #include <random>
 
+namespace bbe
+{
+	class Trackable
+	{
+	public:
+		static inline int constructorCount = 0;
+		static inline int destructorCount = 0;
 
-namespace bbe {
-    class Trackable {
-    public:
-        static inline int constructorCount = 0;
-        static inline int destructorCount = 0;
+		int value;
 
-        int value;
+		Trackable(int val = 0) : value(val) { ++constructorCount; }
+		Trackable(const Trackable &other) : value(other.value) { ++constructorCount; }
+		Trackable(Trackable &&other) noexcept : value(other.value) { ++constructorCount; }
+		~Trackable() { ++destructorCount; }
 
-        Trackable(int val = 0) : value(val) { ++constructorCount; }
-        Trackable(const Trackable& other) : value(other.value) { ++constructorCount; }
-        Trackable(Trackable&& other) noexcept : value(other.value) { ++constructorCount; }
-        ~Trackable() { ++destructorCount; }
+		Trackable &operator=(const Trackable &other)
+		{
+			if (this != &other)
+			{
+				value = other.value;
+			}
+			return *this;
+		}
 
-        Trackable& operator=(const Trackable& other) {
-            if (this != &other) {
-                value = other.value;
-            }
-            return *this;
-        }
+		Trackable &operator=(Trackable &&other) noexcept
+		{
+			if (this != &other)
+			{
+				value = other.value;
+			}
+			return *this;
+		}
 
-        Trackable& operator=(Trackable&& other) noexcept {
-            if (this != &other) {
-                value = other.value;
-            }
-            return *this;
-        }
-
-        bool operator==(const Trackable& other) const {
-            return value == other.value;
-        }
-    };
+		bool operator==(const Trackable &other) const
+		{
+			return value == other.value;
+		}
+	};
 }
 
-class StableListTest : public ::testing::Test {
+class StableListTest : public ::testing::Test
+{
 protected:
-    void SetUp() override {
-        bbe::Trackable::constructorCount = 0;
-        bbe::Trackable::destructorCount = 0;
-    }
+	void SetUp() override
+	{
+		bbe::Trackable::constructorCount = 0;
+		bbe::Trackable::destructorCount = 0;
+	}
 
-    void TearDown() override {
-        ASSERT_EQ(bbe::Trackable::constructorCount, bbe::Trackable::destructorCount);
-    }
+	void TearDown() override
+	{
+		ASSERT_EQ(bbe::Trackable::constructorCount, bbe::Trackable::destructorCount);
+	}
 };
 
-TEST_F(StableListTest, AddElementsCopy) {
-    bbe::StableList<int> list;
+TEST_F(StableListTest, AddElementsCopy)
+{
+	bbe::StableList<int> list;
 
-    list.add(10);
-    list.add(20);
-    list.add(30);
+	list.add(10);
+	list.add(20);
+	list.add(30);
 
-    EXPECT_EQ(*list.begin(), 10);
-    auto it = list.begin();
-    ++it;
-    EXPECT_EQ(*it, 20);
-    ++it;
-    EXPECT_EQ(*it, 30);
-    ++it;
-    EXPECT_EQ(it, list.end());
+	EXPECT_EQ(*list.begin(), 10);
+	auto it = list.begin();
+	++it;
+	EXPECT_EQ(*it, 20);
+	++it;
+	EXPECT_EQ(*it, 30);
+	++it;
+	EXPECT_EQ(it, list.end());
 }
 
 // Test adding elements using move semantics
-TEST_F(StableListTest, AddElementsMove) {
-    bbe::StableList<std::string> list;
+TEST_F(StableListTest, AddElementsMove)
+{
+	bbe::StableList<std::string> list;
 
-    std::string str1 = "Hello";
-    std::string str2 = "World";
+	std::string str1 = "Hello";
+	std::string str2 = "World";
 
-    list.add(std::move(str1));
-    list.add(std::move(str2));
+	list.add(std::move(str1));
+	list.add(std::move(str2));
 
-    EXPECT_EQ(*list.begin(), "Hello");
-    auto it = list.begin();
-    ++it;
-    EXPECT_EQ(*it, "World");
-    ++it;
-    EXPECT_EQ(it, list.end());
+	EXPECT_EQ(*list.begin(), "Hello");
+	auto it = list.begin();
+	++it;
+	EXPECT_EQ(*it, "World");
+	++it;
+	EXPECT_EQ(it, list.end());
 
-    // Ensure original strings have been moved from
-    EXPECT_TRUE(str1.empty());
-    EXPECT_TRUE(str2.empty());
+	// Ensure original strings have been moved from
+	EXPECT_TRUE(str1.empty());
+	EXPECT_TRUE(str2.empty());
 }
 
 // Test iteration using Iterator
-TEST_F(StableListTest, IterateUsingIterator) {
-    bbe::StableList<int> list;
+TEST_F(StableListTest, IterateUsingIterator)
+{
+	bbe::StableList<int> list;
 
-    for (int i = 1; i <= 5; ++i) {
-        list.add(i * 10);
-    }
+	for (int i = 1; i <= 5; ++i)
+	{
+		list.add(i * 10);
+	}
 
-    int expected = 10;
-    for (auto it = list.begin(); it != list.end(); ++it, expected += 10) {
-        EXPECT_EQ(*it, expected);
-    }
+	int expected = 10;
+	for (auto it = list.begin(); it != list.end(); ++it, expected += 10)
+	{
+		EXPECT_EQ(*it, expected);
+	}
 }
 
 // Test iteration using ConstIterator
-TEST_F(StableListTest, IterateUsingConstIterator) {
-    const bbe::StableList<int> list = []() {
-        bbe::StableList<int> temp;
-        for (int i = 1; i <= 5; ++i) {
-            temp.add(i * 100);
-        }
-        return temp;
-        }();
+TEST_F(StableListTest, IterateUsingConstIterator)
+{
+	const bbe::StableList<int> list = []()
+	{
+		bbe::StableList<int> temp;
+		for (int i = 1; i <= 5; ++i)
+		{
+			temp.add(i * 100);
+		}
+		return temp;
+	}();
 
-    int expected = 100;
-    for (auto it = list.begin(); it != list.end(); ++it, expected += 100) {
-        EXPECT_EQ(*it, expected);
-    }
+	int expected = 100;
+	for (auto it = list.begin(); it != list.end(); ++it, expected += 100)
+	{
+		EXPECT_EQ(*it, expected);
+	}
 }
 
 // Test range-based for loop with Iterator
-TEST_F(StableListTest, RangeBasedForLoopIterator) {
-    bbe::StableList<int> list;
+TEST_F(StableListTest, RangeBasedForLoopIterator)
+{
+	bbe::StableList<int> list;
 
-    for (int i = 1; i <= 3; ++i) {
-        list.add(i);
-    }
+	for (int i = 1; i <= 3; ++i)
+	{
+		list.add(i);
+	}
 
-    int expected = 1;
-    for (const auto& value : list) {
-        EXPECT_EQ(value, expected++);
-    }
+	int expected = 1;
+	for (const auto &value : list)
+	{
+		EXPECT_EQ(value, expected++);
+	}
 }
 
 // Test removing elements using Iterator::remove
-TEST_F(StableListTest, RemoveElements) {
-    bbe::StableList<int> list;
+TEST_F(StableListTest, RemoveElements)
+{
+	bbe::StableList<int> list;
 
-    list.add(1);
-    list.add(2);
-    list.add(3);
-    list.add(4);
-    list.add(5);
+	list.add(1);
+	list.add(2);
+	list.add(3);
+	list.add(4);
+	list.add(5);
 
-    // Remove the third element (value 3)
-    auto it = list.begin();
-    ++it;
-    ++it; // Points to 3
-    it.remove();
+	// Remove the third element (value 3)
+	auto it = list.begin();
+	++it;
+	++it; // Points to 3
+	it.remove();
 
-    // Expected list: 1, 2, 4, 5
-    std::vector<int> expected = { 1, 2, 4, 5 };
-    std::vector<int> actual;
-    for (auto itr = list.begin(); itr != list.end(); ++itr) {
-        actual.push_back(*itr);
-    }
+	// Expected list: 1, 2, 4, 5
+	std::vector<int> expected = { 1, 2, 4, 5 };
+	std::vector<int> actual;
+	for (auto itr = list.begin(); itr != list.end(); ++itr)
+	{
+		actual.push_back(*itr);
+	}
 
-    EXPECT_EQ(actual, expected);
+	EXPECT_EQ(actual, expected);
 }
 
 // Test removing first and last elements
-TEST_F(StableListTest, RemoveFirstAndLastElements) {
-    bbe::StableList<int> list;
+TEST_F(StableListTest, RemoveFirstAndLastElements)
+{
+	bbe::StableList<int> list;
 
-    list.add(100);
-    list.add(200);
-    list.add(300);
+	list.add(100);
+	list.add(200);
+	list.add(300);
 
-    // Remove first element
-    auto it = list.begin();
-    it.remove();
+	// Remove first element
+	auto it = list.begin();
+	it.remove();
 
-    // Remove last element
-    it = list.begin();
-    ++it; // Now points to 300
-    it.remove();
+	// Remove last element
+	it = list.begin();
+	++it; // Now points to 300
+	it.remove();
 
-    // Expected list: 200
-    std::vector<int> expected = { 200 };
-    std::vector<int> actual;
-    for (auto itr = list.begin(); itr != list.end(); ++itr) {
-        actual.push_back(*itr);
-    }
+	// Expected list: 200
+	std::vector<int> expected = { 200 };
+	std::vector<int> actual;
+	for (auto itr = list.begin(); itr != list.end(); ++itr)
+	{
+		actual.push_back(*itr);
+	}
 
-    EXPECT_EQ(actual, expected);
+	EXPECT_EQ(actual, expected);
 }
 
 // Test removing elements using Trackable class to verify destructor calls
-TEST_F(StableListTest, RemoveElementsTrackable) {
-    bbe::StableList<bbe::Trackable> list;
+TEST_F(StableListTest, RemoveElementsTrackable)
+{
+	bbe::StableList<bbe::Trackable> list;
 
-    // Pre-construct Trackable objects
-    bbe::Trackable t1(1);
-    bbe::Trackable t2(2);
-    bbe::Trackable t3(3);
+	// Pre-construct Trackable objects
+	bbe::Trackable t1(1);
+	bbe::Trackable t2(2);
+	bbe::Trackable t3(3);
 
-    // Add them to the list using copy semantics
-    list.add(t1);
-    list.add(t2);
-    list.add(t3);
+	// Add them to the list using copy semantics
+	list.add(t1);
+	list.add(t2);
+	list.add(t3);
 
-    // At this point:
-    // - 3 constructors (for t1, t2, t3)
-    // - 3 copy constructors (from list.add)
-    // - No destructors yet (temporaries are not used)
+	// At this point:
+	// - 3 constructors (for t1, t2, t3)
+	// - 3 copy constructors (from list.add)
+	// - No destructors yet (temporaries are not used)
 
-    EXPECT_EQ(bbe::Trackable::constructorCount, 6); // 3 original + 3 copies
-    EXPECT_EQ(bbe::Trackable::destructorCount, 0);
+	EXPECT_EQ(bbe::Trackable::constructorCount, 6); // 3 original + 3 copies
+	EXPECT_EQ(bbe::Trackable::destructorCount, 0);
 
-    // Remove the second element (t2)
-    auto it = list.begin();
-    ++it; // Points to t2
-    it.remove();
+	// Remove the second element (t2)
+	auto it = list.begin();
+	++it; // Points to t2
+	it.remove();
 
-    // After removal:
-    // - 1 destructor (for t2)
+	// After removal:
+	// - 1 destructor (for t2)
 
-    EXPECT_EQ(bbe::Trackable::destructorCount, 1);
+	EXPECT_EQ(bbe::Trackable::destructorCount, 1);
 
-    // Clear the list, which should destruct the remaining elements (t1 and t3)
-    list.clear();
+	// Clear the list, which should destruct the remaining elements (t1 and t3)
+	list.clear();
 
-    // After clearing:
-    // - 2 destructors (for t1 and t3)
+	// After clearing:
+	// - 2 destructors (for t1 and t3)
 
-    EXPECT_EQ(bbe::Trackable::destructorCount, 3);
+	EXPECT_EQ(bbe::Trackable::destructorCount, 3);
 }
 
-
 // Test copy constructor
-TEST_F(StableListTest, CopyConstructor) {
-    bbe::StableList<int> original;
-    original.add(10);
-    original.add(20);
-    original.add(30);
+TEST_F(StableListTest, CopyConstructor)
+{
+	bbe::StableList<int> original;
+	original.add(10);
+	original.add(20);
+	original.add(30);
 
-    bbe::StableList<int> copy = original;
+	bbe::StableList<int> copy = original;
 
-    // Verify elements in the copy
-    std::vector<int> expected = { 10, 20, 30 };
-    std::vector<int> actual;
-    for (auto it = copy.begin(); it != copy.end(); ++it) {
-        actual.push_back(*it);
-    }
+	// Verify elements in the copy
+	std::vector<int> expected = { 10, 20, 30 };
+	std::vector<int> actual;
+	for (auto it = copy.begin(); it != copy.end(); ++it)
+	{
+		actual.push_back(*it);
+	}
 
-    EXPECT_EQ(actual, expected);
+	EXPECT_EQ(actual, expected);
 
-    // Modify original and ensure copy remains unchanged
-    original.add(40);
-    expected = { 10, 20, 30 };
-    actual.clear();
-    for (auto it = copy.begin(); it != copy.end(); ++it) {
-        actual.push_back(*it);
-    }
+	// Modify original and ensure copy remains unchanged
+	original.add(40);
+	expected = { 10, 20, 30 };
+	actual.clear();
+	for (auto it = copy.begin(); it != copy.end(); ++it)
+	{
+		actual.push_back(*it);
+	}
 
-    EXPECT_EQ(actual, expected);
+	EXPECT_EQ(actual, expected);
 }
 
 // Test copy assignment
-TEST_F(StableListTest, CopyAssignment) {
-    bbe::StableList<int> original;
-    original.add(5);
-    original.add(15);
+TEST_F(StableListTest, CopyAssignment)
+{
+	bbe::StableList<int> original;
+	original.add(5);
+	original.add(15);
 
-    bbe::StableList<int> copy;
-    copy = original;
+	bbe::StableList<int> copy;
+	copy = original;
 
-    // Verify elements in the copy
-    std::vector<int> expected = { 5, 15 };
-    std::vector<int> actual;
-    for (auto it = copy.begin(); it != copy.end(); ++it) {
-        actual.push_back(*it);
-    }
+	// Verify elements in the copy
+	std::vector<int> expected = { 5, 15 };
+	std::vector<int> actual;
+	for (auto it = copy.begin(); it != copy.end(); ++it)
+	{
+		actual.push_back(*it);
+	}
 
-    EXPECT_EQ(actual, expected);
+	EXPECT_EQ(actual, expected);
 
-    // Modify original and ensure copy remains unchanged
-    original.add(25);
-    expected = { 5, 15 };
-    actual.clear();
-    for (auto it = copy.begin(); it != copy.end(); ++it) {
-        actual.push_back(*it);
-    }
+	// Modify original and ensure copy remains unchanged
+	original.add(25);
+	expected = { 5, 15 };
+	actual.clear();
+	for (auto it = copy.begin(); it != copy.end(); ++it)
+	{
+		actual.push_back(*it);
+	}
 
-    EXPECT_EQ(actual, expected);
+	EXPECT_EQ(actual, expected);
 }
 
 // Test move constructor
-TEST_F(StableListTest, MoveConstructor) {
-    bbe::StableList<int> original;
-    original.add(100);
-    original.add(200);
+TEST_F(StableListTest, MoveConstructor)
+{
+	bbe::StableList<int> original;
+	original.add(100);
+	original.add(200);
 
-    bbe::StableList<int> moved = std::move(original);
+	bbe::StableList<int> moved = std::move(original);
 
-    // Original should be empty
-    EXPECT_EQ(original.begin(), original.end());
+	// Original should be empty
+	EXPECT_EQ(original.begin(), original.end());
 
-    // Moved list should contain the elements
-    std::vector<int> expected = { 100, 200 };
-    std::vector<int> actual;
-    for (auto it = moved.begin(); it != moved.end(); ++it) {
-        actual.push_back(*it);
-    }
+	// Moved list should contain the elements
+	std::vector<int> expected = { 100, 200 };
+	std::vector<int> actual;
+	for (auto it = moved.begin(); it != moved.end(); ++it)
+	{
+		actual.push_back(*it);
+	}
 
-    EXPECT_EQ(actual, expected);
+	EXPECT_EQ(actual, expected);
 }
 
 // Test move assignment
-TEST_F(StableListTest, MoveAssignment) {
-    bbe::StableList<int> original;
-    original.add(50);
-    original.add(60);
+TEST_F(StableListTest, MoveAssignment)
+{
+	bbe::StableList<int> original;
+	original.add(50);
+	original.add(60);
 
-    bbe::StableList<int> moved;
-    moved = std::move(original);
+	bbe::StableList<int> moved;
+	moved = std::move(original);
 
-    // Original should be empty
-    EXPECT_EQ(original.begin(), original.end());
+	// Original should be empty
+	EXPECT_EQ(original.begin(), original.end());
 
-    // Moved list should contain the elements
-    std::vector<int> expected = { 50, 60 };
-    std::vector<int> actual;
-    for (auto it = moved.begin(); it != moved.end(); ++it) {
-        actual.push_back(*it);
-    }
+	// Moved list should contain the elements
+	std::vector<int> expected = { 50, 60 };
+	std::vector<int> actual;
+	for (auto it = moved.begin(); it != moved.end(); ++it)
+	{
+		actual.push_back(*it);
+	}
 
-    EXPECT_EQ(actual, expected);
+	EXPECT_EQ(actual, expected);
 }
 
 // Test pointer stability
-TEST_F(StableListTest, PointerStability) {
-    bbe::StableList<int> list;
-    list.add(1);
-    list.add(2);
-    list.add(3);
+TEST_F(StableListTest, PointerStability)
+{
+	bbe::StableList<int> list;
+	list.add(1);
+	list.add(2);
+	list.add(3);
 
-    // Store pointers
-    auto it = list.begin();
-    auto ptrA = it++;
-    auto ptrB = it++;
-    auto ptrC = it++;
+	// Store pointers
+	auto it = list.begin();
+	auto ptrA = it++;
+	auto ptrB = it++;
+	auto ptrC = it++;
 
-    // Add more elements
-    for(int32_t i = 0; i<1024; i++) list.add(4);
+	// Add more elements
+	for (int32_t i = 0; i < 1024; i++) list.add(4);
 
-    // Ensure original pointers are still valid
-    EXPECT_EQ(*ptrA, 1);
-    EXPECT_EQ(*ptrB, 2);
-    EXPECT_EQ(*ptrC, 3);
+	// Ensure original pointers are still valid
+	EXPECT_EQ(*ptrA, 1);
+	EXPECT_EQ(*ptrB, 2);
+	EXPECT_EQ(*ptrC, 3);
 
-    // Remove an element and check pointer stability
-    it = list.begin();
-    it.remove(); // Remove '1'
+	// Remove an element and check pointer stability
+	it = list.begin();
+	it.remove(); // Remove '1'
 
-    EXPECT_EQ(*it, 2);
-    EXPECT_EQ(*ptrB, 2);
-    EXPECT_EQ(*ptrC, 3);
+	EXPECT_EQ(*it, 2);
+	EXPECT_EQ(*ptrB, 2);
+	EXPECT_EQ(*ptrC, 3);
 }
 
 // Test behavior with an empty list
-TEST_F(StableListTest, EmptyList) {
-    bbe::StableList<int> list;
+TEST_F(StableListTest, EmptyList)
+{
+	bbe::StableList<int> list;
 
-    EXPECT_EQ(list.begin(), list.end());
+	EXPECT_EQ(list.begin(), list.end());
 }
 
 // Test adding and removing elements across block boundaries
-TEST_F(StableListTest, BlockBoundary) {
-    constexpr size_t blockSize = 4; // For testing purposes, use a small block size
-    using TestList = bbe::StableList<int, blockSize>;
-    TestList list;
+TEST_F(StableListTest, BlockBoundary)
+{
+	constexpr size_t blockSize = 4; // For testing purposes, use a small block size
+	using TestList = bbe::StableList<int, blockSize>;
+	TestList list;
 
-    // Add elements to fill the first block
-    for (int i = 1; i <= blockSize; ++i) {
-        list.add(i);
-    }
+	// Add elements to fill the first block
+	for (int i = 1; i <= blockSize; ++i)
+	{
+		list.add(i);
+	}
 
-    // Add elements to create a new block
-    list.add(blockSize + 1);
-    list.add(blockSize + 2);
+	// Add elements to create a new block
+	list.add(blockSize + 1);
+	list.add(blockSize + 2);
 
-    // Verify all elements
-    std::vector<int> expected = { 1, 2, 3, 4, 5, 6 };
-    std::vector<int> actual;
-    for (auto it = list.begin(); it != list.end(); ++it) {
-        actual.push_back(*it);
-    }
-    EXPECT_EQ(actual, expected);
+	// Verify all elements
+	std::vector<int> expected = { 1, 2, 3, 4, 5, 6 };
+	std::vector<int> actual;
+	for (auto it = list.begin(); it != list.end(); ++it)
+	{
+		actual.push_back(*it);
+	}
+	EXPECT_EQ(actual, expected);
 
-    // Remove elements from both blocks
-    auto it = list.begin();
-    it.remove(); // Remove 1
-    ++it; ++it; ++it; // Points to 5
-    it.remove(); // Remove 5
+	// Remove elements from both blocks
+	auto it = list.begin();
+	it.remove(); // Remove 1
+	++it;
+	++it;
+	++it;		 // Points to 5
+	it.remove(); // Remove 5
 
-    // Expected list: 2, 3, 4, 6
-    expected = { 2, 3, 4, 6 };
-    actual.clear();
-    for (auto itr = list.begin(); itr != list.end(); ++itr) {
-        actual.push_back(*itr);
-    }
-    EXPECT_EQ(actual, expected);
+	// Expected list: 2, 3, 4, 6
+	expected = { 2, 3, 4, 6 };
+	actual.clear();
+	for (auto itr = list.begin(); itr != list.end(); ++itr)
+	{
+		actual.push_back(*itr);
+	}
+	EXPECT_EQ(actual, expected);
 
-    // Add more elements to fill freed slots
-    list.add(7);
-    list.add(8);
+	// Add more elements to fill freed slots
+	list.add(7);
+	list.add(8);
 
-    // Expected list: 2, 3, 4, 6, 7, 8
-    expected = { 2, 3, 4, 6, 7, 8 };
-    actual.clear();
-    for (auto itr = list.begin(); itr != list.end(); ++itr) {
-        actual.push_back(*itr);
-    }
-    EXPECT_EQ(actual, expected);
+	// Expected list: 2, 3, 4, 6, 7, 8
+	expected = { 2, 3, 4, 6, 7, 8 };
+	actual.clear();
+	for (auto itr = list.begin(); itr != list.end(); ++itr)
+	{
+		actual.push_back(*itr);
+	}
+	EXPECT_EQ(actual, expected);
 }
 
 // Test clear function
-TEST_F(StableListTest, ClearFunction) {
-    bbe::StableList<int> list;
+TEST_F(StableListTest, ClearFunction)
+{
+	bbe::StableList<int> list;
 
-    list.add(100);
-    list.add(200);
-    list.add(300);
+	list.add(100);
+	list.add(200);
+	list.add(300);
 
-    EXPECT_NE(list.begin(), list.end());
+	EXPECT_NE(list.begin(), list.end());
 
-    list.clear();
+	list.clear();
 
-    EXPECT_EQ(list.begin(), list.end());
+	EXPECT_EQ(list.begin(), list.end());
 
-    // Ensure no elements remain
-    std::vector<int> actual;
-    for (auto it = list.begin(); it != list.end(); ++it) {
-        actual.push_back(*it);
-    }
-    EXPECT_TRUE(actual.empty());
+	// Ensure no elements remain
+	std::vector<int> actual;
+	for (auto it = list.begin(); it != list.end(); ++it)
+	{
+		actual.push_back(*it);
+	}
+	EXPECT_TRUE(actual.empty());
 }
 
 // Test adding after removals to ensure slots are reused
-TEST_F(StableListTest, AddAfterRemove) {
-    bbe::StableList<int> list;
+TEST_F(StableListTest, AddAfterRemove)
+{
+	bbe::StableList<int> list;
 
-    list.add(1);
-    list.add(2);
-    list.add(3);
-    list.add(4);
+	list.add(1);
+	list.add(2);
+	list.add(3);
+	list.add(4);
 
-    // Remove second and third elements
-    auto it = list.begin();
-    ++it;
-    it.remove(); // Remove 2
-    ++it;
-    it.remove(); // Remove 4
+	// Remove second and third elements
+	auto it = list.begin();
+	++it;
+	it.remove(); // Remove 2
+	++it;
+	it.remove(); // Remove 4
 
-    // Expected list: 1, 3
-    std::vector<int> expected = { 1, 3 };
-    std::vector<int> actual;
-    for (auto itr = list.begin(); itr != list.end(); ++itr) {
-        actual.push_back(*itr);
-    }
-    EXPECT_EQ(actual, expected);
+	// Expected list: 1, 3
+	std::vector<int> expected = { 1, 3 };
+	std::vector<int> actual;
+	for (auto itr = list.begin(); itr != list.end(); ++itr)
+	{
+		actual.push_back(*itr);
+	}
+	EXPECT_EQ(actual, expected);
 
-    // Add new elements, should reuse freed slots
-    list.add(5);
-    list.add(6);
+	// Add new elements, should reuse freed slots
+	list.add(5);
+	list.add(6);
 
-    // Expected list: 1, 3, 5, 6
-    expected = { 1, 3, 5, 6 };
-    actual.clear();
-    for (auto itr = list.begin(); itr != list.end(); ++itr) {
-        actual.push_back(*itr);
-    }
-    EXPECT_EQ(actual, expected);
+	// Expected list: 1, 3, 5, 6
+	expected = { 1, 3, 5, 6 };
+	actual.clear();
+	for (auto itr = list.begin(); itr != list.end(); ++itr)
+	{
+		actual.push_back(*itr);
+	}
+	EXPECT_EQ(actual, expected);
 }
 
 // Test multiple removals and additions
-TEST_F(StableListTest, MultipleRemovalsAndAdditions) {
-    bbe::StableList<int> list;
+TEST_F(StableListTest, MultipleRemovalsAndAdditions)
+{
+	bbe::StableList<int> list;
 
-    // Add 10 elements
-    for (int i = 1; i <= 10; ++i) {
-        list.add(i);
-    }
+	// Add 10 elements
+	for (int i = 1; i <= 10; ++i)
+	{
+		list.add(i);
+	}
 
-    // Remove even numbers
-    for (auto it = list.begin(); it != list.end(); ) {
-        if (*it % 2 == 0) {
-            it.remove();
-        }
-        else {
-            ++it;
-        }
-    }
+	// Remove even numbers
+	for (auto it = list.begin(); it != list.end();)
+	{
+		if (*it % 2 == 0)
+		{
+			it.remove();
+		}
+		else
+		{
+			++it;
+		}
+	}
 
-    // Expected list: 1, 3, 5, 7, 9
-    std::vector<int> expected = { 1, 3, 5, 7, 9 };
-    std::vector<int> actual;
-    for (auto itr = list.begin(); itr != list.end(); ++itr) {
-        actual.push_back(*itr);
-    }
-    EXPECT_EQ(actual, expected);
+	// Expected list: 1, 3, 5, 7, 9
+	std::vector<int> expected = { 1, 3, 5, 7, 9 };
+	std::vector<int> actual;
+	for (auto itr = list.begin(); itr != list.end(); ++itr)
+	{
+		actual.push_back(*itr);
+	}
+	EXPECT_EQ(actual, expected);
 
-    // Add more elements
-    for (int i = 11; i <= 15; ++i) {
-        list.add(i);
-    }
+	// Add more elements
+	for (int i = 11; i <= 15; ++i)
+	{
+		list.add(i);
+	}
 
-    // Expected list: 1, 3, 5, 7, 9, 11, 12, 13, 14, 15
-    expected = { 1, 3, 5, 7, 9, 11, 12, 13, 14, 15 };
-    actual.clear();
-    for (auto itr = list.begin(); itr != list.end(); ++itr) {
-        actual.push_back(*itr);
-    }
-    EXPECT_EQ(actual, expected);
+	// Expected list: 1, 3, 5, 7, 9, 11, 12, 13, 14, 15
+	expected = { 1, 3, 5, 7, 9, 11, 12, 13, 14, 15 };
+	actual.clear();
+	for (auto itr = list.begin(); itr != list.end(); ++itr)
+	{
+		actual.push_back(*itr);
+	}
+	EXPECT_EQ(actual, expected);
 }
 
 // Test adding and removing objects to ensure proper constructor/destructor calls
-TEST_F(StableListTest, ConstructorDestructorTracking) {
-    bbe::StableList<bbe::Trackable> list;
+TEST_F(StableListTest, ConstructorDestructorTracking)
+{
+	bbe::StableList<bbe::Trackable> list;
 
-    list.add(bbe::Trackable(10));
-    list.add(bbe::Trackable(20));
-    list.add(bbe::Trackable(30));
+	list.add(bbe::Trackable(10));
+	list.add(bbe::Trackable(20));
+	list.add(bbe::Trackable(30));
 
-    EXPECT_EQ(bbe::Trackable::constructorCount, 6);
-    EXPECT_EQ(bbe::Trackable::destructorCount, 3);
+	EXPECT_EQ(bbe::Trackable::constructorCount, 6);
+	EXPECT_EQ(bbe::Trackable::destructorCount, 3);
 
-    // Remove the second element
-    auto it = list.begin();
-    ++it;
-    it.remove();
+	// Remove the second element
+	auto it = list.begin();
+	++it;
+	it.remove();
 
-    EXPECT_EQ(bbe::Trackable::destructorCount, 4);
+	EXPECT_EQ(bbe::Trackable::destructorCount, 4);
 
-    // Add another element
-    list.add(bbe::Trackable(40));
-    EXPECT_EQ(bbe::Trackable::constructorCount, 8);
+	// Add another element
+	list.add(bbe::Trackable(40));
+	EXPECT_EQ(bbe::Trackable::constructorCount, 8);
 
-    // Clear the list
-    list.clear();
-    EXPECT_EQ(bbe::Trackable::destructorCount, 8);
+	// Clear the list
+	list.clear();
+	EXPECT_EQ(bbe::Trackable::destructorCount, 8);
 }
 
 // Test adding nullptrs in StableList<int*> and removing them
-TEST_F(StableListTest, AddAndRemoveNullptrs) {
-    bbe::StableList<int*> list;
+TEST_F(StableListTest, AddAndRemoveNullptrs)
+{
+	bbe::StableList<int *> list;
 
-    list.add(nullptr);
-    int a = 5;
-    list.add(&a);
-    list.add(nullptr);
+	list.add(nullptr);
+	int a = 5;
+	list.add(&a);
+	list.add(nullptr);
 
-    // Verify elements
-    auto it = list.begin();
-    EXPECT_EQ(*it, nullptr);
-    ++it;
-    EXPECT_EQ(**it, 5);
-    ++it;
-    EXPECT_EQ(*it, nullptr);
+	// Verify elements
+	auto it = list.begin();
+	EXPECT_EQ(*it, nullptr);
+	++it;
+	EXPECT_EQ(**it, 5);
+	++it;
+	EXPECT_EQ(*it, nullptr);
 
-    // Remove first nullptr
-    it = list.begin();
-    it.remove();
+	// Remove first nullptr
+	it = list.begin();
+	it.remove();
 
-    std::vector<int*> expected = { &a, nullptr };
-    std::vector<int*> actual;
-    for (auto itr = list.begin(); itr != list.end(); ++itr) {
-        actual.push_back(*itr);
-    }
-    EXPECT_EQ(actual, expected);
+	std::vector<int *> expected = { &a, nullptr };
+	std::vector<int *> actual;
+	for (auto itr = list.begin(); itr != list.end(); ++itr)
+	{
+		actual.push_back(*itr);
+	}
+	EXPECT_EQ(actual, expected);
 
-    // Remove second element (nullptr)
-    it = list.begin();
-    ++it;
-    it.remove();
+	// Remove second element (nullptr)
+	it = list.begin();
+	++it;
+	it.remove();
 
-    // Expected list: nullptr
-    expected = { &a };
-    actual.clear();
-    for (auto itr = list.begin(); itr != list.end(); ++itr) {
-        actual.push_back(*itr);
-    }
-    EXPECT_EQ(actual, expected);
+	// Expected list: nullptr
+	expected = { &a };
+	actual.clear();
+	for (auto itr = list.begin(); itr != list.end(); ++itr)
+	{
+		actual.push_back(*itr);
+	}
+	EXPECT_EQ(actual, expected);
 }
 
 // Test Random Insertions and Removals to Stress-Test StableList
-TEST_F(StableListTest, RandomInsertRemove) {
-    bbe::StableList<int> list;               // Initialize StableList of integers
-    std::vector<int> expectedList;           // Parallel vector to track expected content
+TEST_F(StableListTest, RandomInsertRemove)
+{
+	bbe::StableList<int> list;	   // Initialize StableList of integers
+	std::vector<int> expectedList; // Parallel vector to track expected content
 
-    // Random number generator setup with a fixed seed for reproducibility
-    std::mt19937 rng(42);                    // Mersenne Twister RNG
-    std::uniform_int_distribution<int> opDist(0, 1); // 0: Insert, 1: Remove
-    std::uniform_int_distribution<int> valueDist(1, 10000); // Values to insert
+	// Random number generator setup with a fixed seed for reproducibility
+	std::mt19937 rng(42);									// Mersenne Twister RNG
+	std::uniform_int_distribution<int> opDist(0, 1);		// 0: Insert, 1: Remove
+	std::uniform_int_distribution<int> valueDist(1, 10000); // Values to insert
 
-    // Define the number of random operations to perform
-    const int numOperations = 1000;
+	// Define the number of random operations to perform
+	const int numOperations = 1000;
 
-    // Counter to ensure unique values if desired (optional)
-    int uniqueValue = 1;
+	// Counter to ensure unique values if desired (optional)
+	int uniqueValue = 1;
 
-    for (int i = 0; i < numOperations; ++i) {
-        //if (i % 10000 == 0) std::cout << "Iteration: " << i << " Size: " << expectedList.size() << " Blocks: " << list.getAmountOfBlocks() << std::endl;
-        int operation = opDist(rng); // Randomly decide to Insert (0) or Remove (1)
+	for (int i = 0; i < numOperations; ++i)
+	{
+		//if (i % 10000 == 0) std::cout << "Iteration: " << i << " Size: " << expectedList.size() << " Blocks: " << list.getAmountOfBlocks() << std::endl;
+		int operation = opDist(rng); // Randomly decide to Insert (0) or Remove (1)
 
-        if (operation == 0 || expectedList.empty()) {
-            // **Insert Operation**
+		if (operation == 0 || expectedList.empty())
+		{
+			// **Insert Operation**
 
-            // Generate a random value to insert
-            int value = valueDist(rng);
-            // Alternatively, use uniqueValue++ to ensure uniqueness
-            // int value = uniqueValue++;
+			// Generate a random value to insert
+			int value = valueDist(rng);
+			// Alternatively, use uniqueValue++ to ensure uniqueness
+			// int value = uniqueValue++;
 
-            // Insert the value into the StableList
-            list.add(value);
-            // Append the value to the expected list
-            expectedList.push_back(value);
-        }
-        else {
-            // **Remove Operation**
+			// Insert the value into the StableList
+			list.add(value);
+			// Append the value to the expected list
+			expectedList.push_back(value);
+		}
+		else
+		{
+			// **Remove Operation**
 
-            // Ensure there are elements to remove
-            if (!expectedList.empty()) {
-                // Generate a random index to remove
-                std::uniform_int_distribution<size_t> removeDist(0, expectedList.size() - 1);
-                size_t removeIndex = removeDist(rng);
+			// Ensure there are elements to remove
+			if (!expectedList.empty())
+			{
+				// Generate a random index to remove
+				std::uniform_int_distribution<size_t> removeDist(0, expectedList.size() - 1);
+				size_t removeIndex = removeDist(rng);
 
-                // Obtain an iterator to the element to remove in StableList
-                auto it = list.begin();
-                for (int i = 0; i < removeIndex; i++) ++it; // Advance iterator to removeIndex
-                it.remove();                   // Remove the element via iterator
+				// Obtain an iterator to the element to remove in StableList
+				auto it = list.begin();
+				for (int i = 0; i < removeIndex; i++) ++it; // Advance iterator to removeIndex
+				it.remove();								// Remove the element via iterator
 
-                // Remove the element from the expected list
-                expectedList.erase(expectedList.begin() + removeIndex);
-            }
-        }
+				// Remove the element from the expected list
+				expectedList.erase(expectedList.begin() + removeIndex);
+			}
+		}
 
-        // Check that list and expectedList are the same after every iteration.
-        // Iterate through both lists and compare each element
-        auto listIt = list.begin();
-        auto expectedIt = expectedList.begin();
+		// Check that list and expectedList are the same after every iteration.
+		// Iterate through both lists and compare each element
+		auto listIt = list.begin();
+		auto expectedIt = expectedList.begin();
 
-        for (; listIt != list.end() && expectedIt != expectedList.end(); ++listIt, ++expectedIt) {
-            EXPECT_EQ(*listIt, *expectedIt) << "Element mismatch at verification.";
-        }
+		for (; listIt != list.end() && expectedIt != expectedList.end(); ++listIt, ++expectedIt)
+		{
+			EXPECT_EQ(*listIt, *expectedIt) << "Element mismatch at verification.";
+		}
 
-        // Ensure both iterators have reached the end
-        EXPECT_EQ(listIt, list.end()) << "StableList has extra elements.";
-        EXPECT_EQ(expectedIt, expectedList.end()) << "Expected list has extra elements.";
-    }
+		// Ensure both iterators have reached the end
+		EXPECT_EQ(listIt, list.end()) << "StableList has extra elements.";
+		EXPECT_EQ(expectedIt, expectedList.end()) << "Expected list has extra elements.";
+	}
 }
-

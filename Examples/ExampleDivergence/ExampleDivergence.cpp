@@ -22,11 +22,11 @@ class MyGame : public bbe::Game
 			if (vals[i] > vals.getLength()) vals[i] -= vals.getLength();
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
 
-	void draw(bbe::PrimitiveBrush2D& brush, bool inverted, const bbe::Vector2 &offset)
+	void draw(bbe::PrimitiveBrush2D &brush, bool inverted, const bbe::Vector2 &offset)
 	{
 		for (size_t i = 0; i < vals.getLength(); i++)
 		{
@@ -47,7 +47,7 @@ class MyGame : public bbe::Game
 			}
 		}
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		bbe::Vector2 offset = { 300.f, WINDOW_HEIGHT / 2 };
 		draw(brush, false, offset);

@@ -6,18 +6,18 @@ constexpr int WINDOW_HEIGHT = 720;
 
 class MyGame : public bbe::Game
 {
-	bbe::BezierCurve2 bezierCurve = { {100, 500}, {500, 100}, { {100, 100}, {100, 100}, {100, 100} } };
+	bbe::BezierCurve2 bezierCurve = { { 100, 500 }, { 500, 100 }, { { 100, 100 }, { 100, 100 }, { 100, 100 } } };
 
-	bbe::Array<bbe::Vector2, 4> hermitePoints = { {600, 500}, {1100, 100}, {600, 400}, {1100, 200} };
+	bbe::Array<bbe::Vector2, 4> hermitePoints = { { 600, 500 }, { 1100, 100 }, { 600, 400 }, { 1100, 200 } };
 
-	bbe::List<bbe::Vector2*> allPoints;
+	bbe::List<bbe::Vector2 *> allPoints;
 
-	bbe::Vector2* getClosest(const bbe::Vector2& pos)
+	bbe::Vector2 *getClosest(const bbe::Vector2 &pos)
 	{
-		bbe::Vector2* closest = nullptr;
+		bbe::Vector2 *closest = nullptr;
 		float minDist = std::numeric_limits<float>::infinity();
 
-		for (bbe::Vector2* p : allPoints)
+		for (bbe::Vector2 *p : allPoints)
 		{
 			const float dist = pos.getDistanceTo(*p);
 			if (dist < minDist)
@@ -33,13 +33,13 @@ class MyGame : public bbe::Game
 	virtual void onStart() override
 	{
 		allPoints.add(&bezierCurve.getStartPoint());
-		for (bbe::Vector2& p : bezierCurve.getControlPoints())
+		for (bbe::Vector2 &p : bezierCurve.getControlPoints())
 		{
 			allPoints.add(&p);
 		}
 		allPoints.add(&bezierCurve.getEndPoint());
 
-		for (bbe::Vector2& p : hermitePoints)
+		for (bbe::Vector2 &p : hermitePoints)
 		{
 			allPoints.add(&p);
 		}
@@ -49,7 +49,7 @@ class MyGame : public bbe::Game
 		if (isMouseDown(bbe::MouseButton::LEFT))
 		{
 			bbe::Vector2 mousePosition = getMouse();
-			bbe::Vector2* selected = getClosest(mousePosition);
+			bbe::Vector2 *selected = getClosest(mousePosition);
 			if (selected != nullptr)
 			{
 				*selected = mousePosition;
@@ -66,14 +66,14 @@ class MyGame : public bbe::Game
 
 		BBELOGLN("FPS: " << (1 / timeSinceLastFrame));
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		brush.setColorRGB(1, 0.3, 0.7);
 		constexpr float circleSize = 10;
-		for (bbe::Vector2* p : allPoints)
+		for (bbe::Vector2 *p : allPoints)
 		{
 			brush.fillCircle(p->x - circleSize / 2, p->y - circleSize / 2, circleSize, circleSize);
 		}
@@ -89,12 +89,11 @@ class MyGame : public bbe::Game
 			{
 				brush.fillLine(intermediatePoints[i], intermediatePoints[i + 1]);
 			}
-			for (const bbe::Vector2& p : intermediatePoints)
+			for (const bbe::Vector2 &p : intermediatePoints)
 			{
 				brush.fillCircle(p.x - circleSize / 2, p.y - circleSize / 2, circleSize, circleSize);
 			}
 		}
-
 
 		bbe::Vector2 previousPoint = hermitePoints[0];
 		for (float t = 0; t <= 1; t += 0.01)

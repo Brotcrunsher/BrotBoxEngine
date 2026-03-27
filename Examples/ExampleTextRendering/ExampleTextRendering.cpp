@@ -12,10 +12,10 @@ class MyGame : public bbe::Game
 	virtual void update(float timeSinceLastFrame) override
 	{
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		brush.setColorRGB(1, 0, 0);
 		brush.fillRect(10, 10, 200, 50);
@@ -31,7 +31,7 @@ class MyGame : public bbe::Game
 
 int main()
 {
-	MyGame* mg = new MyGame();
+	MyGame *mg = new MyGame();
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "ExampleTextRendering!");
 #ifndef __EMSCRIPTEN__
 	delete mg;

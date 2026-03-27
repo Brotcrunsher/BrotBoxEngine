@@ -11,48 +11,50 @@
 #pragma warning("Stacktrace lib is not present!")
 #endif
 
-const char* bbe::toString(Error err)
+const char *bbe::toString(Error err)
 {
-#define TO_STR(x) if(err == Error::x) return #x;
-	TO_STR(AlreadyCreated       );
-	TO_STR(AlreadyStarted       );
-	TO_STR(AlreadyUploaded      );
-	TO_STR(NotInitialized       );
-	TO_STR(NoSuchKeycode        );
-	TO_STR(NoSuchMouseButton    );
-	TO_STR(IllegalState         );
-	TO_STR(OutOfMemory          );
-	TO_STR(KeyAlreadyUsed       );
-	TO_STR(IllegalArgument      );
-	TO_STR(ContainerEmpty       );
-	TO_STR(IllegalIndex         );
-	TO_STR(NotImplemented       );
-	TO_STR(Decode               );
-	TO_STR(Unknown              );
-	TO_STR(FormatNotSupported   );
-	TO_STR(NotStartOfUtf8       );
-	TO_STR(NullPointer          );
+#define TO_STR(x) \
+	if (err == Error::x) return #x;
+	TO_STR(AlreadyCreated);
+	TO_STR(AlreadyStarted);
+	TO_STR(AlreadyUploaded);
+	TO_STR(NotInitialized);
+	TO_STR(NoSuchKeycode);
+	TO_STR(NoSuchMouseButton);
+	TO_STR(IllegalState);
+	TO_STR(OutOfMemory);
+	TO_STR(KeyAlreadyUsed);
+	TO_STR(IllegalArgument);
+	TO_STR(ContainerEmpty);
+	TO_STR(IllegalIndex);
+	TO_STR(NotImplemented);
+	TO_STR(Decode);
+	TO_STR(Unknown);
+	TO_STR(FormatNotSupported);
+	TO_STR(NotStartOfUtf8);
+	TO_STR(NullPointer);
 	TO_STR(UnexpectedEndOfString);
-	TO_STR(NotAUtf8Char         );
-	TO_STR(FatalError           );
-	TO_STR(Segfault             );
-	TO_STR(UnhandledException   );
-	TO_STR(VectoredException    );
-	TO_STR(DebugBreakInRelease  );
+	TO_STR(NotAUtf8Char);
+	TO_STR(FatalError);
+	TO_STR(Segfault);
+	TO_STR(UnhandledException);
+	TO_STR(VectoredException);
+	TO_STR(DebugBreakInRelease);
+	TO_STR(Terminate);
 #undef TO_STR
 
 	return "Missing translation";
 }
 
-[[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, const char* function, Error error, bool callDebugBreak)
+[[noreturn]] void bbe::CrashImpl(const char *file, int32_t line, const char *function, Error error, bool callDebugBreak)
 {
 	CrashImpl(file, line, function, error, "no message", callDebugBreak);
 }
 
-[[noreturn]] void bbe::CrashImpl(const char* file, int32_t line, const char* function, Error error, const char* msg, bool callDebugBreak)
+[[noreturn]] void bbe::CrashImpl(const char *file, int32_t line, const char *function, Error error, const char *msg, bool callDebugBreak)
 {
 #ifndef NDEBUG
-	if(callDebugBreak) debugBreak();
+	if (callDebugBreak) debugBreak();
 #endif
 
 	const bbe::String time = bbe::TimePoint().toString();
@@ -80,7 +82,7 @@ const char* bbe::toString(Error err)
 
 	string += "\n\nLog:\n";
 
-	const bbe::ConcurrentList<bbe::String>& log = bbe::logging::getLog();
+	const bbe::ConcurrentList<bbe::String> &log = bbe::logging::getLog();
 	log.lock(); // No lock_guard to keep stuff around this crash handler as simple as possible. We might be in a very vulnerable and unreliable state here.
 	for (size_t i = 0; i < log.getLength(); i++)
 	{
@@ -94,7 +96,6 @@ const char* bbe::toString(Error err)
 #else
 	std::cout << string.getRaw() << std::endl;
 #endif
-
 
 	std::abort();
 }

@@ -12,15 +12,15 @@ namespace bbe
 			class VulkanQueryPool
 			{
 			private:
-				VkDevice                      m_device    = VK_NULL_HANDLE;
-				VkQueryPool                   m_queryPool = VK_NULL_HANDLE;
-				VkQueryType                   m_type;
-				uint32_t                      m_count;
+				VkDevice m_device = VK_NULL_HANDLE;
+				VkQueryPool m_queryPool = VK_NULL_HANDLE;
+				VkQueryType m_type;
+				uint32_t m_count;
 				VkQueryPipelineStatisticFlags m_statisticFlags;
 
 				bool m_wasCreated = false;
 				uint32_t m_currentQueryIndex = 0;
-				uint64_t* m_presultArray = nullptr;
+				uint64_t *m_presultArray = nullptr;
 
 				bool getResultsWasCalled = false;
 

@@ -4,12 +4,12 @@
 
 TEST(String, TotalStringTest)
 {
-	ASSERT_EQ((int)bbe::utf8len(""), 0);					//Simple!
-	ASSERT_EQ((int)bbe::utf8len("a"), 1);					//A bit harder!
-	ASSERT_EQ((int)bbe::utf8len("BrotBoxEngine!"), 14);	//Still normal...
-	ASSERT_EQ((int)bbe::utf8len("αβγδ"), 4);				//Okay...
-	ASSERT_EQ((int)bbe::utf8len("Großmütterchäään"), 16);	//Get ready!
-	ASSERT_EQ((int)bbe::utf8len("💣🍣💃"), 3);			//God damn, I bet this line will break a few compilers... or git! 🤣
+	ASSERT_EQ((int)bbe::utf8len(""), 0);				  //Simple!
+	ASSERT_EQ((int)bbe::utf8len("a"), 1);				  //A bit harder!
+	ASSERT_EQ((int)bbe::utf8len("BrotBoxEngine!"), 14);	  //Still normal...
+	ASSERT_EQ((int)bbe::utf8len("αβγδ"), 4);			  //Okay...
+	ASSERT_EQ((int)bbe::utf8len("Großmütterchäään"), 16); //Get ready!
+	ASSERT_EQ((int)bbe::utf8len("💣🍣💃"), 3);			  //God damn, I bet this line will break a few compilers... or git! 🤣
 
 	ASSERT_EQ((int)bbe::utf8charlen(""), 1);
 	ASSERT_EQ((int)bbe::utf8charlen("a"), 1);
@@ -62,7 +62,6 @@ TEST(String, TotalStringTest)
 	ASSERT_EQ(true, bbe::utf8IsWhitespace("\n"));
 	ASSERT_EQ(true, bbe::utf8IsWhitespace("\uFEFF"));
 	ASSERT_EQ(false, bbe::utf8IsWhitespace("a"));
-
 
 	//TODO add non SSO Tests
 	bbe::String emptyString;
@@ -250,8 +249,6 @@ TEST(String, TotalStringTest)
 		ASSERT_EQ(splitSpace[4], "");
 		ASSERT_EQ(splitSpace[5], "splitted!");
 		ASSERT_EQ(splitSpace.getLength(), 6);
-
-
 
 		auto splitTwoChar = splitter.split(" s");
 		ASSERT_EQ(splitTwoChar[0], "This");
@@ -565,14 +562,14 @@ TEST(String, TotalStringTest)
 		bbe::String s4 = "bbb";
 
 		ASSERT_FALSE(s1 < s2);
-		ASSERT_TRUE (s1 < s3);
-		ASSERT_TRUE (s1 < s4);
+		ASSERT_TRUE(s1 < s3);
+		ASSERT_TRUE(s1 < s4);
 		ASSERT_FALSE(s2 < s1);
-		ASSERT_TRUE (s2 < s3);
-		ASSERT_TRUE (s2 < s4);
+		ASSERT_TRUE(s2 < s3);
+		ASSERT_TRUE(s2 < s4);
 		ASSERT_FALSE(s3 < s1);
 		ASSERT_FALSE(s3 < s2);
-		ASSERT_TRUE (s3 < s4);
+		ASSERT_TRUE(s3 < s4);
 		ASSERT_FALSE(s4 < s1);
 		ASSERT_FALSE(s4 < s2);
 		ASSERT_FALSE(s4 < s3);
@@ -583,12 +580,127 @@ TEST(String, TotalStringTest)
 		bbe::String s2 = "aa";
 
 		ASSERT_FALSE(s1 < s2);
-		ASSERT_TRUE (s2 < s1);
+		ASSERT_TRUE(s2 < s1);
+	}
+}
+
+TEST(String, AssignmentWithDifferentCapacities)
+{
+	bbe::String assignmentSource;
+	assignmentSource += "THIS STRING ";
+	assignmentSource += "WILL SWITCH ";
+	assignmentSource += "BETWEEN LOWER ";
+	assignmentSource += "AND UPPER CASE!";
+	ASSERT_EQ(assignmentSource.getCapacity(), 64u);
+
+	bbe::String assignmentDestination("short");
+	assignmentDestination.resizeCapacity(60);
+	ASSERT_EQ(assignmentDestination.getCapacity(), 60u);
+
+	assignmentDestination = assignmentSource;
+	ASSERT_EQ(assignmentDestination, assignmentSource);
+}
+
+TEST(String, Utf8SearchAndSubstring)
+{
+	bbe::String utf8("äöüß");
+
+	ASSERT_TRUE(utf8.startsWith("äö"));
+	ASSERT_TRUE(utf8.endsWith("üß"));
+	ASSERT_TRUE(utf8.contains("öü"));
+	ASSERT_EQ(utf8.search("öü"), 1);
+	ASSERT_EQ(utf8.searchLast("öü"), 1);
+	ASSERT_EQ(utf8.substring(1, 3), "öü");
+}
+
+TEST(String, Utf8CountSplitTrimAndContainsAny)
+{
+	{
+		bbe::String empty;
+		empty.trimInPlace();
+		ASSERT_EQ(empty, "");
+	}
+
+	{
+		bbe::String trim("\u00A0äöü\u00A0");
+		trim.trimInPlace();
+		ASSERT_EQ(trim, "äöü");
+	}
+
+	{
+		bbe::String countSource("äöäöä");
+		ASSERT_EQ(countSource.count("ä"), 3);
+		ASSERT_EQ(countSource.count("öä"), 2);
+	}
+
+	{
+		bbe::String splitSource("einsäzweiädrei");
+		auto split = splitSource.split("ä");
+		ASSERT_EQ(split.getLength(), 3);
+		ASSERT_EQ(split[0], "eins");
+		ASSERT_EQ(split[1], "zwei");
+		ASSERT_EQ(split[2], "drei");
+	}
+
+	{
+		bbe::String containsAnySource("Fröhlich");
+		ASSERT_TRUE(containsAnySource.containsAny("üö"));
+		ASSERT_FALSE(containsAnySource.containsAny("ß"));
+	}
+}
+
+TEST(String, WesternLatinCaseMapping)
+{
+	const bbe::String lower("äöüáàâãåæçéèêëíìîïñóòôõøúùûüýÿœšžłß");
+	const bbe::String upper("ÄÖÜÁÀÂÃÅÆÇÉÈÊËÍÌÎÏÑÓÒÔÕØÚÙÛÜÝŸŒŠŽŁẞ");
+
+	ASSERT_EQ(lower.toUpperCase(), upper);
+	ASSERT_EQ(upper.toLowerCase(), lower);
+
+	bbe::String mixed("Ärger & œuvre & Straße");
+	mixed.toLowerCaseInPlace();
+	ASSERT_EQ(mixed, "ärger & œuvre & straße");
+	mixed.toUpperCaseInPlace();
+	ASSERT_EQ(mixed, "ÄRGER & ŒUVRE & STRAẞE");
+}
+
+TEST(String, Utf8ContainsIgnoreCase)
+{
+	ASSERT_TRUE(bbe::String("Fröhliche Grüße").containsIgnoreCase("FRÖHLICHE"));
+	ASSERT_TRUE(bbe::String("Œuvre").containsIgnoreCase("œUV"));
+	ASSERT_TRUE(bbe::String("Straẞe").containsIgnoreCase("straße"));
+	ASSERT_FALSE(bbe::String("Straẞe").containsIgnoreCase("strasse"));
+}
+
+TEST(String, Utf8HardBreakEvery)
+{
+	ASSERT_EQ(bbe::String("äöüß").hardBreakEvery(2), "äö\nüß");
+}
+
+TEST(String, Utf8AppendAliasing)
+{
+	{
+		bbe::String value("äö");
+		value.append(value);
+		ASSERT_EQ(value, "äöäö");
+	}
+
+	{
+		bbe::String value("äöü");
+		value.append(&value[1]);
+		ASSERT_EQ(value, "äöüöü");
+	}
+
+	{
+		bbe::String value("äöü");
+		value.append(value.substringView(1, 3));
+		ASSERT_EQ(value, "äöüöü");
 	}
 }
 
 // Test appending another Utf8String
-TEST(String, AppendUtf8String) {
+TEST(String, AppendUtf8String)
+{
 	bbe::String str1("Hello");
 	bbe::String str2(", World!");
 	str1.append(str2);
@@ -596,7 +708,8 @@ TEST(String, AppendUtf8String) {
 }
 
 // Test appending a substring of another Utf8String
-TEST(String, AppendUtf8String_Substring) {
+TEST(String, AppendUtf8String_Substring)
+{
 	bbe::String str1("Hello");
 	bbe::String str2(", Wonderful World!");
 	// Append "Wonderful" starting from position 2, count 9
@@ -605,24 +718,27 @@ TEST(String, AppendUtf8String_Substring) {
 }
 
 // Test appending a C-style null-terminated string
-TEST(String, AppendCStr) {
+TEST(String, AppendCStr)
+{
 	bbe::String str1("Hello");
-	const char* toAppend = ", World!";
+	const char *toAppend = ", World!";
 	str1.append(toAppend);
 	ASSERT_EQ(str1, "Hello, World!");
 }
 
 // Test appending a specific number of characters from a C-style string
-TEST(String, AppendCStr_WithCount) {
+TEST(String, AppendCStr_WithCount)
+{
 	bbe::String str1("Hello");
-	const char* toAppend = ", Wonderful World!";
+	const char *toAppend = ", Wonderful World!";
 	// Append first 10 characters: ", Wonderfu"
 	str1.append(toAppend, 10);
 	ASSERT_EQ(str1, "Hello, Wonderfu");
 }
 
 // Test appending a Utf8StringView
-TEST(String, AppendUtf8StringView) {
+TEST(String, AppendUtf8StringView)
+{
 	bbe::String str1("Hello");
 	bbe::String str2(", Wonderful World!");
 	bbe::Utf8StringView view = str2.substringView(2, 11); // "Wonderful"
@@ -631,7 +747,8 @@ TEST(String, AppendUtf8StringView) {
 }
 
 // Test appending an empty Utf8String
-TEST(String, AppendEmptyUtf8String) {
+TEST(String, AppendEmptyUtf8String)
+{
 	bbe::String str1("Hello");
 	bbe::String empty;
 	str1.append(empty);
@@ -639,15 +756,17 @@ TEST(String, AppendEmptyUtf8String) {
 }
 
 // Test appending from an empty C-style string
-TEST(String, AppendEmptyCStr) {
+TEST(String, AppendEmptyCStr)
+{
 	bbe::String str1("Hello");
-	const char* empty = "";
+	const char *empty = "";
 	str1.append(empty);
 	ASSERT_EQ(str1, "Hello");
 }
 
 // Test appending an empty Utf8StringView
-TEST(String, AppendEmptyUtf8StringView) {
+TEST(String, AppendEmptyUtf8StringView)
+{
 	bbe::String str1("Hello");
 	bbe::String empty;
 	bbe::Utf8StringView view = empty.substringView(0, 0);
@@ -670,7 +789,8 @@ TEST(String, AppendUtf8String_Substring_PosOutOfRange) {
 */
 
 // Test appending with count exceeding the string length
-TEST(String, AppendUtf8String_Substring_CountExceeds) {
+TEST(String, AppendUtf8String_Substring_CountExceeds)
+{
 	bbe::String str1("Hello");
 	bbe::String str2(", World!");
 	// str2 length is 8, pos=2, count=100 (should append from pos=2 to end)
@@ -679,7 +799,8 @@ TEST(String, AppendUtf8String_Substring_CountExceeds) {
 }
 
 // Test appending UTF-8 multi-byte characters
-TEST(String, AppendUtf8String_MultiByte) {
+TEST(String, AppendUtf8String_MultiByte)
+{
 	bbe::String str1("Hello");
 	bbe::String str2(" 🌍"); // Earth emoji (multi-byte)
 	str1.append(str2);
@@ -687,7 +808,8 @@ TEST(String, AppendUtf8String_MultiByte) {
 }
 
 // Test appending multiple UTF-8 multi-byte characters
-TEST(String, AppendUtf8String_MultiByteMultiple) {
+TEST(String, AppendUtf8String_MultiByteMultiple)
+{
 	bbe::String str1("🚀"); // Rocket emoji
 	bbe::String str2("🌟✨");
 	str1.append(str2);
@@ -695,7 +817,8 @@ TEST(String, AppendUtf8String_MultiByteMultiple) {
 }
 
 // Test appending after multiple appends
-TEST(String, AppendMultipleTimes) {
+TEST(String, AppendMultipleTimes)
+{
 	bbe::String str1("Hello");
 	str1.append(", ");
 	str1.append("World");
@@ -704,7 +827,8 @@ TEST(String, AppendMultipleTimes) {
 }
 
 // Test appending overlapping substrings
-TEST(String, AppendOverlappingSubstrings) {
+TEST(String, AppendOverlappingSubstrings)
+{
 	bbe::String str1("abc");
 	bbe::String str2("abcd");
 	// Append substring "abc" from str2
@@ -713,23 +837,25 @@ TEST(String, AppendOverlappingSubstrings) {
 }
 
 // Test appending using all existing overloads together
-TEST(String, AppendUsingAllOverloads) {
+TEST(String, AppendUsingAllOverloads)
+{
 	bbe::String str1("Start");
 	bbe::String str2(" Middle ");
-	const char* cstr = "End";
+	const char *cstr = "End";
 	bbe::Utf8StringView view = str2.substringView(1, 4); // "Mid"
 
-	str1.append(str2);                   // "Start Middle "
-	str1.append(view);                   // "Start Middle Mid"
-	str1.append(cstr);                   // "Start Middle MidEnd"
-	str1.append(cstr, 2);                // "Start Middle MidEndEn"
+	str1.append(str2);	  // "Start Middle "
+	str1.append(view);	  // "Start Middle Mid"
+	str1.append(cstr);	  // "Start Middle MidEnd"
+	str1.append(cstr, 2); // "Start Middle MidEndEn"
 	// Note: There is no append overload that takes (int), so we skip appending an int
 
 	ASSERT_EQ(str1, "Start Middle MidEndEn");
 }
 
 // Test appending an empty string multiple times
-TEST(String, AppendEmptyMultipleTimes) {
+TEST(String, AppendEmptyMultipleTimes)
+{
 	bbe::String str1("Hello");
 	bbe::String empty;
 	str1.append(empty);
@@ -738,7 +864,8 @@ TEST(String, AppendEmptyMultipleTimes) {
 }
 
 // Test appending special characters and whitespace
-TEST(String, AppendSpecialCharacters) {
+TEST(String, AppendSpecialCharacters)
+{
 	bbe::String str1("Hello");
 	bbe::String str2(" \t\n💣🍣💃");
 	str1.append(str2);
@@ -746,7 +873,8 @@ TEST(String, AppendSpecialCharacters) {
 }
 
 // Test appending after trimming
-TEST(String, AppendAfterTrim) {
+TEST(String, AppendAfterTrim)
+{
 	bbe::String str1("  Hello  ");
 	str1.trimInPlace(); // "Hello"
 	bbe::String str2(", World!");
@@ -755,7 +883,8 @@ TEST(String, AppendAfterTrim) {
 }
 
 // Test appending to an empty string
-TEST(String, AppendToEmptyString) {
+TEST(String, AppendToEmptyString)
+{
 	bbe::String str1("");
 	bbe::String str2("Hello");
 	str1.append(str2);
@@ -763,18 +892,20 @@ TEST(String, AppendToEmptyString) {
 }
 
 // Test appending multiple varying inputs using existing overloads
-TEST(String, AppendMultipleVaryingInputs) {
+TEST(String, AppendMultipleVaryingInputs)
+{
 	bbe::String str1("Start");
 	str1.append(" Middle "); // append(const char*)
-	str1.append("End", 2);   // append(const char*, size_t)
+	str1.append("End", 2);	 // append(const char*, size_t)
 	// No append overload for int, so we skip appending an int
 	bbe::Utf8StringView view = str1.substringView(0, 5); // "Start"
-	str1.append(view);       // append(Utf8StringView)
+	str1.append(view);									 // append(Utf8StringView)
 	ASSERT_EQ(str1, "Start Middle EnStart");
 }
 
 // Test appending with overlapping and non-overlapping patterns
-TEST(String, AppendOverlappingAndNonOverlapping) {
+TEST(String, AppendOverlappingAndNonOverlapping)
+{
 	bbe::String str1("aaa");
 	bbe::String str2("aaab");
 	str1.append(str2, 0, 3); // Append "aaa"
@@ -786,7 +917,8 @@ TEST(String, AppendOverlappingAndNonOverlapping) {
 }
 
 // Test appending with large number of characters to trigger buffer growth
-TEST(String, AppendLargeNumberOfCharacters) {
+TEST(String, AppendLargeNumberOfCharacters)
+{
 	bbe::String str1("Start");
 	std::string largeAppend(1000, 'a'); // 1000 'a's
 	str1.append(largeAppend.c_str(), largeAppend.size());
@@ -796,7 +928,8 @@ TEST(String, AppendLargeNumberOfCharacters) {
 }
 
 // Test appending multiple multi-byte characters
-TEST(String, AppendMultipleMultiByteCharacters) {
+TEST(String, AppendMultipleMultiByteCharacters)
+{
 	bbe::String str1("🔥");
 	bbe::String str2("🚀🌟✨💫");
 	str1.append(str2);
@@ -804,9 +937,10 @@ TEST(String, AppendMultipleMultiByteCharacters) {
 }
 
 // Test appending strings with different UTF-8 encodings
-TEST(String, AppendDifferentUtf8Encodings) {
+TEST(String, AppendDifferentUtf8Encodings)
+{
 	bbe::String str1("こんにちは"); // Japanese for "Hello"
-	bbe::String str2("世界");       // Japanese for "World"
+	bbe::String str2("世界");		// Japanese for "World"
 	str1.append(str2);
 	ASSERT_EQ(str1, "こんにちは世界");
 }

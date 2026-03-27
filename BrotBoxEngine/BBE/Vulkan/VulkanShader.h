@@ -4,7 +4,6 @@
 #include "../BBE/String.h"
 #include "../BBE/ByteBuffer.h"
 
-
 namespace bbe
 {
 	namespace INTERNAL
@@ -17,12 +16,12 @@ namespace bbe
 			{
 			private:
 				VkShaderModule m_shaderModule = VK_NULL_HANDLE;
-				VkDevice       m_device       = VK_NULL_HANDLE;
+				VkDevice m_device = VK_NULL_HANDLE;
 
 			public:
 				VulkanShader();
 
-				void init(const bbe::String& path);
+				void init(const bbe::String &path);
 				void init(const VulkanDevice &device, const bbe::String &path);
 				void init(const VulkanDevice &device, const bbe::ByteBuffer &code);
 

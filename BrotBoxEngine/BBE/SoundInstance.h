@@ -17,6 +17,7 @@ namespace bbe
 	{
 		friend class Sound;
 		friend class bbe::INTERNAL::SoundManager;
+
 	private:
 		uint64_t m_index = 0;
 
@@ -24,14 +25,14 @@ namespace bbe
 
 	public:
 		SoundInstance() = default;
-		SoundInstance           (const SoundInstance& ) = default;
-		SoundInstance           (      SoundInstance&&) = default;
-		SoundInstance& operator=(const SoundInstance& ) = default;
-		SoundInstance& operator=(      SoundInstance&&) = default;
+		SoundInstance(const SoundInstance &) = default;
+		SoundInstance(SoundInstance &&) = default;
+		SoundInstance &operator=(const SoundInstance &) = default;
+		SoundInstance &operator=(SoundInstance &&) = default;
 
 		void stop();
 
-		void setPosition(const bbe::Vector3& pos);
+		void setPosition(const bbe::Vector3 &pos);
 
 		bool isPlaying();
 	};

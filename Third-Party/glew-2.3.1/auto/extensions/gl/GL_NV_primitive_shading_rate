@@ -1,0 +1,6 @@
+GL_NV_primitive_shading_rate
+https://www.khronos.org/registry/OpenGL/extensions/NV/NV_primitive_shading_rate.txt
+GL_NV_primitive_shading_rate
+
+	GL_SHADING_RATE_IMAGE_PER_PRIMITIVE_NV 0x95B1
+	GL_SHADING_RATE_IMAGE_PALETTE_COUNT_NV 0x95B2

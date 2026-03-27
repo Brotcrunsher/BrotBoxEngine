@@ -26,6 +26,7 @@
 [Bb]uildPortaudio/
 [Bb]uildLinuxNull/
 [Bb]uildVulkan/
+[Bb]uild-gcc/
 bld/
 [Bb]in/
 [Oo]bj/

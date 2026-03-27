@@ -7,13 +7,14 @@
 #include "../BBE/Vector3.h"
 #include "../BBE/Vector4.h"
 
-namespace bbe {
+namespace bbe
+{
 	class Random
 	{
 	private:
 		std::random_device m_ranDev;
-		std::mt19937       m_mt;
-		
+		std::mt19937 m_mt;
+
 		template<typename T>
 		T randomInteger_()
 		{
@@ -118,6 +119,11 @@ namespace bbe {
 			}
 		}
 
+		Vector2 randomVector2OnUnitSphere()
+		{
+			return Vector2(1, 0).rotate(randomFloat() * bbe::Math::TAU);
+		}
+
 		Vector4 randomVector4()
 		{
 			//UNTESTED
@@ -219,7 +225,7 @@ namespace bbe {
 			//UNTESTED
 			return randomInteger_<unsigned long>(max);
 		}
-		
+
 		float randomFloat()
 		{
 			//UNTESTED
@@ -256,7 +262,7 @@ namespace bbe {
 		}
 
 		template<typename Container>
-		auto sampleContainer(Container& container)
+		auto sampleContainer(Container &container)
 		{
 			return container[randomInt(container.getLength())];
 		}
@@ -268,7 +274,7 @@ namespace bbe {
 			uint32_t amountOfBallsInBag = 0;
 		};
 		template<typename Container>
-		auto sampleContainerWithBag(Container& container)
+		auto sampleContainerWithBag(Container &container)
 		{
 			uint32_t totalBalls = 0;
 			for (size_t i = 0; i < container.getLength(); i++)

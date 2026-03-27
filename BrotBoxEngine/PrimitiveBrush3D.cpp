@@ -22,7 +22,7 @@ void bbe::PrimitiveBrush3D::INTERNAL_setColor(float r, float g, float b, float a
 
 void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 	int width, int height,
-	bbe::RenderManager* renderManager)
+	bbe::RenderManager *renderManager)
 {
 	m_screenWidth = width;
 	m_screenHeight = height;
@@ -35,80 +35,102 @@ void bbe::PrimitiveBrush3D::INTERNAL_beginDraw(
 bbe::PrimitiveBrush3D::PrimitiveBrush3D()
 {
 	m_rectangle = bbe::Model(
-		{ 
-			bbe::PosNormalPair{bbe::Vector3(-0.5, -0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(0, 0)},
-			bbe::PosNormalPair{bbe::Vector3(-0.5,  0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(0, 1)},
-			bbe::PosNormalPair{bbe::Vector3( 0.5, -0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(1, 0)},
-			bbe::PosNormalPair{bbe::Vector3( 0.5,  0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(1, 1)},
+		{
+			bbe::PosNormalPair{ bbe::Vector3(-0.5, -0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(0, 0) },
+			bbe::PosNormalPair{ bbe::Vector3(-0.5, 0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(0, 1) },
+			bbe::PosNormalPair{ bbe::Vector3(0.5, -0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(1, 0) },
+			bbe::PosNormalPair{ bbe::Vector3(0.5, 0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(1, 1) },
 		},
-		{0, 1, 2, 2, 1, 3}
-	);
+		{ 0, 1, 2, 2, 1, 3 });
 
 	m_cube = bbe::Model(
 		{
-			PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, 0, -1), bbe::Vector2(1, 0)},
-			PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0, 0, -1), bbe::Vector2(1, 1)},
-			PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0, 0, -1), bbe::Vector2(0, 1)},
-			PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, 0, -1), bbe::Vector2(0, 0)},
+			PosNormalPair{ Vector3(0.5, -0.5, -0.5), Vector3(0, 0, -1), bbe::Vector2(1, 0) },
+			PosNormalPair{ Vector3(0.5, 0.5, -0.5), Vector3(0, 0, -1), bbe::Vector2(1, 1) },
+			PosNormalPair{ Vector3(-0.5, 0.5, -0.5), Vector3(0, 0, -1), bbe::Vector2(0, 1) },
+			PosNormalPair{ Vector3(-0.5, -0.5, -0.5), Vector3(0, 0, -1), bbe::Vector2(0, 0) },
 
-			PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, 0,  1), bbe::Vector2(1, 0)},
-			PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0, 0,  1), bbe::Vector2(1, 1)},
-			PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0, 0,  1), bbe::Vector2(0, 1)},
-			PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, 0,  1), bbe::Vector2(0, 0)},
+			PosNormalPair{ Vector3(0.5, -0.5, 0.5), Vector3(0, 0, 1), bbe::Vector2(1, 0) },
+			PosNormalPair{ Vector3(0.5, 0.5, 0.5), Vector3(0, 0, 1), bbe::Vector2(1, 1) },
+			PosNormalPair{ Vector3(-0.5, 0.5, 0.5), Vector3(0, 0, 1), bbe::Vector2(0, 1) },
+			PosNormalPair{ Vector3(-0.5, -0.5, 0.5), Vector3(0, 0, 1), bbe::Vector2(0, 0) },
 
-			PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3(0, -1, 0), bbe::Vector2(1, 0)},
-			PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3(0, -1, 0), bbe::Vector2(1, 1)},
-			PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(0, -1, 0), bbe::Vector2(0, 1)},
-			PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(0, -1, 0), bbe::Vector2(0, 0)},
+			PosNormalPair{ Vector3(0.5, -0.5, -0.5), Vector3(0, -1, 0), bbe::Vector2(1, 0) },
+			PosNormalPair{ Vector3(0.5, -0.5, 0.5), Vector3(0, -1, 0), bbe::Vector2(1, 1) },
+			PosNormalPair{ Vector3(-0.5, -0.5, 0.5), Vector3(0, -1, 0), bbe::Vector2(0, 1) },
+			PosNormalPair{ Vector3(-0.5, -0.5, -0.5), Vector3(0, -1, 0), bbe::Vector2(0, 0) },
 
-			PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3(0,  1, 0), bbe::Vector2(1, 0)},
-			PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3(0,  1, 0), bbe::Vector2(1, 1)},
-			PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(0,  1, 0), bbe::Vector2(0, 1)},
-			PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(0,  1, 0), bbe::Vector2(0, 0)},
+			PosNormalPair{ Vector3(0.5, 0.5, -0.5), Vector3(0, 1, 0), bbe::Vector2(1, 0) },
+			PosNormalPair{ Vector3(0.5, 0.5, 0.5), Vector3(0, 1, 0), bbe::Vector2(1, 1) },
+			PosNormalPair{ Vector3(-0.5, 0.5, 0.5), Vector3(0, 1, 0), bbe::Vector2(0, 1) },
+			PosNormalPair{ Vector3(-0.5, 0.5, -0.5), Vector3(0, 1, 0), bbe::Vector2(0, 0) },
 
-			PosNormalPair{Vector3(-0.5,  0.5, -0.5), Vector3(-1, 0, 0), bbe::Vector2(1, 0)},
-			PosNormalPair{Vector3(-0.5,  0.5,  0.5), Vector3(-1, 0, 0), bbe::Vector2(1, 1)},
-			PosNormalPair{Vector3(-0.5, -0.5,  0.5), Vector3(-1, 0, 0), bbe::Vector2(0, 1)},
-			PosNormalPair{Vector3(-0.5, -0.5, -0.5), Vector3(-1, 0, 0), bbe::Vector2(0, 0)},
+			PosNormalPair{ Vector3(-0.5, 0.5, -0.5), Vector3(-1, 0, 0), bbe::Vector2(1, 0) },
+			PosNormalPair{ Vector3(-0.5, 0.5, 0.5), Vector3(-1, 0, 0), bbe::Vector2(1, 1) },
+			PosNormalPair{ Vector3(-0.5, -0.5, 0.5), Vector3(-1, 0, 0), bbe::Vector2(0, 1) },
+			PosNormalPair{ Vector3(-0.5, -0.5, -0.5), Vector3(-1, 0, 0), bbe::Vector2(0, 0) },
 
-			PosNormalPair{Vector3( 0.5,  0.5, -0.5), Vector3( 1, 0, 0), bbe::Vector2(1, 0)},
-			PosNormalPair{Vector3( 0.5,  0.5,  0.5), Vector3( 1, 0, 0), bbe::Vector2(1, 1)},
-			PosNormalPair{Vector3( 0.5, -0.5,  0.5), Vector3( 1, 0, 0), bbe::Vector2(0, 1)},
-			PosNormalPair{Vector3( 0.5, -0.5, -0.5), Vector3( 1, 0, 0), bbe::Vector2(0, 0)},
+			PosNormalPair{ Vector3(0.5, 0.5, -0.5), Vector3(1, 0, 0), bbe::Vector2(1, 0) },
+			PosNormalPair{ Vector3(0.5, 0.5, 0.5), Vector3(1, 0, 0), bbe::Vector2(1, 1) },
+			PosNormalPair{ Vector3(0.5, -0.5, 0.5), Vector3(1, 0, 0), bbe::Vector2(0, 1) },
+			PosNormalPair{ Vector3(0.5, -0.5, -0.5), Vector3(1, 0, 0), bbe::Vector2(0, 0) },
 		},
 		{
-		     0,  1,  3,	//Bottom
-			 1,  2,  3,
-			 5,  4,  7,	//Top
-			 6,  5,  7,
-			 9,  8, 11,	//Left
-			10,  9, 11,
-			12, 13, 15,	//Right
-			13, 14, 15,
-			16, 17, 19,	//Front
-			17, 18, 19,
-			21, 20, 23,	//Back
-			22, 21, 23,
-		}
-	);
+			0,
+			1,
+			3, //Bottom
+			1,
+			2,
+			3,
+			5,
+			4,
+			7, //Top
+			6,
+			5,
+			7,
+			9,
+			8,
+			11, //Left
+			10,
+			9,
+			11,
+			12,
+			13,
+			15, //Right
+			13,
+			14,
+			15,
+			16,
+			17,
+			19, //Front
+			17,
+			18,
+			19,
+			21,
+			20,
+			23, //Back
+			22,
+			21,
+			23,
+		});
 }
 
-void bbe::PrimitiveBrush3D::fillCube(const bbe::Vector3& pos)
+void bbe::PrimitiveBrush3D::fillCube(const bbe::Vector3 &pos)
 {
 	fillCube(bbe::Cube(pos));
 }
 
-void bbe::PrimitiveBrush3D::fillCube(const Cube & cube)
+void bbe::PrimitiveBrush3D::fillCube(const Cube &cube)
 {
 	m_prenderManager->fillCube3D(cube);
 }
 
-void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere & sphere)
+void bbe::PrimitiveBrush3D::fillIcoSphere(const IcoSphere &sphere)
 {
 	m_prenderManager->fillSphere3D(sphere);
 }
 
-void bbe::PrimitiveBrush3D::fillLine(const bbe::Vector3& a, const bbe::Vector3& b, float lineWidth)
+void bbe::PrimitiveBrush3D::fillLine(const bbe::Vector3 &a, const bbe::Vector3 &b, float lineWidth)
 {
 	bbe::Vector3 aToB = b - a;
 	const bbe::Vector3 mid = (a + b) / 2;
@@ -119,63 +141,63 @@ void bbe::PrimitiveBrush3D::fillLine(const bbe::Vector3& a, const bbe::Vector3& 
 	fillCube(cube);
 }
 
-void bbe::PrimitiveBrush3D::addLight(const bbe::Vector3& pos, float lightStrength, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)
+void bbe::PrimitiveBrush3D::addLight(const bbe::Vector3 &pos, float lightStrength, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)
 {
 	m_prenderManager->addLight(pos, lightStrength, lightColor, specularColor, falloffMode);
 }
 
-void bbe::PrimitiveBrush3D::addLight(const bbe::PointLight& light)
+void bbe::PrimitiveBrush3D::addLight(const bbe::PointLight &light)
 {
 	addLight(light.pos, light.lightStrength, light.lightColor, light.specularColor, light.falloffMode);
 }
 
 #ifdef BBE_RENDERER_OPENGL
-bbe::Future<bool> bbe::PrimitiveBrush3D::isCubeVisible(const Cube& cube)
+bbe::Future<bool> bbe::PrimitiveBrush3D::isCubeVisible(const Cube &cube)
 {
-	return ((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->isCubeVisible(cube);
+	return ((bbe::INTERNAL::openGl::OpenGLManager *)m_prenderManager)->isCubeVisible(cube);
 }
 
-void bbe::PrimitiveBrush3D::fillRectangle(const bbe::Matrix4& transform, const Image* albedo, const Image* normals, const Image* emissions, const bbe::FragmentShader* shader)
+void bbe::PrimitiveBrush3D::fillRectangle(const bbe::Matrix4 &transform, const Image *albedo, const Image *normals, const Image *emissions, const bbe::FragmentShader *shader)
 {
 	fillModel(transform, m_rectangle, albedo, normals, emissions, shader);
 }
 
-void bbe::PrimitiveBrush3D::fillCube(const Cube& cube, const Image* albedo, const Image* normals, const Image* emissions, const bbe::FragmentShader* shader)
+void bbe::PrimitiveBrush3D::fillCube(const Cube &cube, const Image *albedo, const Image *normals, const Image *emissions, const bbe::FragmentShader *shader)
 {
 	fillModel(cube.getTransform(), m_cube, albedo, normals, emissions, shader);
 }
 
-void bbe::PrimitiveBrush3D::fillModel(const bbe::Matrix4& transform, const bbe::Model& model, const Image* albedo, const Image* normals, const Image* emissions, const bbe::FragmentShader* shader)
+void bbe::PrimitiveBrush3D::fillModel(const bbe::Matrix4 &transform, const bbe::Model &model, const Image *albedo, const Image *normals, const Image *emissions, const bbe::FragmentShader *shader)
 {
-	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->fillModel(transform, model, albedo, normals, emissions, shader);
+	((bbe::INTERNAL::openGl::OpenGLManager *)m_prenderManager)->fillModel(transform, model, albedo, normals, emissions, shader);
 }
 
 void bbe::PrimitiveBrush3D::setRenderMode(bbe::RenderMode renderMode)
 {
-	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->setRenderMode(renderMode);
+	((bbe::INTERNAL::openGl::OpenGLManager *)m_prenderManager)->setRenderMode(renderMode);
 }
-void bbe::PrimitiveBrush3D::bakeLightMrt(bbe::LightBaker& lightBaker)
+void bbe::PrimitiveBrush3D::bakeLightMrt(bbe::LightBaker &lightBaker)
 {
 	if (lightBaker.getState() != bbe::LightBaker::State::INIT) bbe::Crash(bbe::Error::IllegalArgument);
 	lightBaker.m_state = bbe::LightBaker::State::MRT_DONE;
-	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->bakeLightMrt(lightBaker);
+	((bbe::INTERNAL::openGl::OpenGLManager *)m_prenderManager)->bakeLightMrt(lightBaker);
 }
-void bbe::PrimitiveBrush3D::bakeLight(bbe::LightBaker& lightBaker, const bbe::PointLight& light)
+void bbe::PrimitiveBrush3D::bakeLight(bbe::LightBaker &lightBaker, const bbe::PointLight &light)
 {
 	if (lightBaker.getState() != bbe::LightBaker::State::MRT_DONE) bbe::Crash(bbe::Error::IllegalArgument);
-	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->bakeLight(lightBaker, light);
+	((bbe::INTERNAL::openGl::OpenGLManager *)m_prenderManager)->bakeLight(lightBaker, light);
 }
-void bbe::PrimitiveBrush3D::bakeLightGammaCorrect(bbe::LightBaker& lightBaker)
+void bbe::PrimitiveBrush3D::bakeLightGammaCorrect(bbe::LightBaker &lightBaker)
 {
 	if (lightBaker.getState() != bbe::LightBaker::State::MRT_DONE) bbe::Crash(bbe::Error::IllegalArgument);
 	lightBaker.m_state = bbe::LightBaker::State::GAMMA_CORRECTED;
-	((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->bakeLightGammaCorrect(lightBaker);
+	((bbe::INTERNAL::openGl::OpenGLManager *)m_prenderManager)->bakeLightGammaCorrect(lightBaker);
 }
-bbe::Image bbe::PrimitiveBrush3D::bakeLightDetach(bbe::LightBaker& lightBaker)
+bbe::Image bbe::PrimitiveBrush3D::bakeLightDetach(bbe::LightBaker &lightBaker)
 {
 	if (lightBaker.getState() != bbe::LightBaker::State::GAMMA_CORRECTED) bbe::Crash(bbe::Error::IllegalArgument);
 	lightBaker.m_state = bbe::LightBaker::State::DETACHED;
-	bbe::Image retVal = ((bbe::INTERNAL::openGl::OpenGLManager*)m_prenderManager)->bakeLightDetach(lightBaker);
+	bbe::Image retVal = ((bbe::INTERNAL::openGl::OpenGLManager *)m_prenderManager)->bakeLightDetach(lightBaker);
 
 	lightBaker.m_transform = bbe::Matrix4();
 	lightBaker.m_model = bbe::Model();
@@ -200,7 +222,7 @@ void bbe::PrimitiveBrush3D::setColor(float r, float g, float b)
 	INTERNAL_setColor(r, g, b, 1.0f, false);
 }
 
-void bbe::PrimitiveBrush3D::setColor(const Color & c)
+void bbe::PrimitiveBrush3D::setColor(const Color &c)
 {
 	INTERNAL_setColor(c.r, c.g, c.b, c.a, false);
 }
@@ -211,7 +233,7 @@ void bbe::PrimitiveBrush3D::setColorHSV(float h, float s, float v)
 	setColor(rgb.r, rgb.g, rgb.b, 1.0);
 }
 
-void bbe::PrimitiveBrush3D::setCamera(const Vector3 & cameraPos, const Vector3 & cameraTarget, const Vector3 & cameraUpVector)
+void bbe::PrimitiveBrush3D::setCamera(const Vector3 &cameraPos, const Vector3 &cameraTarget, const Vector3 &cameraUpVector)
 {
 	m_view = Matrix4::createViewMatrix(cameraPos, cameraTarget, cameraUpVector);
 	m_projection = Matrix4::createPerspectiveMatrix(Math::toRadians(60.0f), (float)m_screenWidth / (float)m_screenHeight, 0.01f, 20000.0f);

@@ -4,6 +4,8 @@ namespace bbe
 {
 	enum CursorMode
 	{
-		DISABLED, HIDDEN, NORMAL
+		DISABLED,
+		HIDDEN,
+		NORMAL
 	};
 }

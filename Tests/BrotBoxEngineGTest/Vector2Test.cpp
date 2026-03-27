@@ -209,29 +209,65 @@ TEST(Vector2, OperatorComparison)
 	const bbe::Vector2 c(2, 100);
 	const bbe::Vector2 d(1, 101);
 
-	ASSERT_TRUE (a == a); ASSERT_TRUE (a == b); ASSERT_FALSE(a == c); ASSERT_FALSE(a == d);
-	ASSERT_TRUE (b == a); ASSERT_TRUE (b == b); ASSERT_FALSE(b == c); ASSERT_FALSE(b == d);
-	ASSERT_FALSE(c == a); ASSERT_FALSE(c == b); ASSERT_TRUE (c == c); ASSERT_FALSE(c == d);
-	ASSERT_FALSE(d == a); ASSERT_FALSE(d == b); ASSERT_FALSE(d == c); ASSERT_TRUE (d == d);
+	ASSERT_TRUE(a == a);
+	ASSERT_TRUE(a == b);
+	ASSERT_FALSE(a == c);
+	ASSERT_FALSE(a == d);
+	ASSERT_TRUE(b == a);
+	ASSERT_TRUE(b == b);
+	ASSERT_FALSE(b == c);
+	ASSERT_FALSE(b == d);
+	ASSERT_FALSE(c == a);
+	ASSERT_FALSE(c == b);
+	ASSERT_TRUE(c == c);
+	ASSERT_FALSE(c == d);
+	ASSERT_FALSE(d == a);
+	ASSERT_FALSE(d == b);
+	ASSERT_FALSE(d == c);
+	ASSERT_TRUE(d == d);
 
-	ASSERT_FALSE(a != a); ASSERT_FALSE(a != b); ASSERT_TRUE (a != c); ASSERT_TRUE (a != d);
-	ASSERT_FALSE(b != a); ASSERT_FALSE(b != b); ASSERT_TRUE (b != c); ASSERT_TRUE (b != d);
-	ASSERT_TRUE (c != a); ASSERT_TRUE (c != b); ASSERT_FALSE(c != c); ASSERT_TRUE (c != d);
-	ASSERT_TRUE (d != a); ASSERT_TRUE (d != b); ASSERT_TRUE (d != c); ASSERT_FALSE(d != d);
+	ASSERT_FALSE(a != a);
+	ASSERT_FALSE(a != b);
+	ASSERT_TRUE(a != c);
+	ASSERT_TRUE(a != d);
+	ASSERT_FALSE(b != a);
+	ASSERT_FALSE(b != b);
+	ASSERT_TRUE(b != c);
+	ASSERT_TRUE(b != d);
+	ASSERT_TRUE(c != a);
+	ASSERT_TRUE(c != b);
+	ASSERT_FALSE(c != c);
+	ASSERT_TRUE(c != d);
+	ASSERT_TRUE(d != a);
+	ASSERT_TRUE(d != b);
+	ASSERT_TRUE(d != c);
+	ASSERT_FALSE(d != d);
 }
 
 TEST(Vector2, TestEquals)
 {
 	{
-		const bbe::Vector2 a(1,      100);
-		const bbe::Vector2 b(1,      100);
-		const bbe::Vector2 c(1.01f,  100);
+		const bbe::Vector2 a(1, 100);
+		const bbe::Vector2 b(1, 100);
+		const bbe::Vector2 c(1.01f, 100);
 		const bbe::Vector2 d(1.105f, 100);
 
-		ASSERT_TRUE (a.equals(a, 0.1f)); ASSERT_TRUE (a.equals(b, 0.1f)); ASSERT_TRUE (a.equals(c, 0.1f)); ASSERT_FALSE(a.equals(d, 0.1f));
-		ASSERT_TRUE (b.equals(a, 0.1f)); ASSERT_TRUE (b.equals(b, 0.1f)); ASSERT_TRUE (b.equals(c, 0.1f)); ASSERT_FALSE(b.equals(d, 0.1f));
-		ASSERT_TRUE (c.equals(a, 0.1f)); ASSERT_TRUE (c.equals(b, 0.1f)); ASSERT_TRUE (c.equals(c, 0.1f)); ASSERT_TRUE (c.equals(d, 0.1f));
-		ASSERT_FALSE(d.equals(a, 0.1f)); ASSERT_FALSE(d.equals(b, 0.1f)); ASSERT_TRUE (d.equals(c, 0.1f)); ASSERT_TRUE (d.equals(d, 0.1f));
+		ASSERT_TRUE(a.equals(a, 0.1f));
+		ASSERT_TRUE(a.equals(b, 0.1f));
+		ASSERT_TRUE(a.equals(c, 0.1f));
+		ASSERT_FALSE(a.equals(d, 0.1f));
+		ASSERT_TRUE(b.equals(a, 0.1f));
+		ASSERT_TRUE(b.equals(b, 0.1f));
+		ASSERT_TRUE(b.equals(c, 0.1f));
+		ASSERT_FALSE(b.equals(d, 0.1f));
+		ASSERT_TRUE(c.equals(a, 0.1f));
+		ASSERT_TRUE(c.equals(b, 0.1f));
+		ASSERT_TRUE(c.equals(c, 0.1f));
+		ASSERT_TRUE(c.equals(d, 0.1f));
+		ASSERT_FALSE(d.equals(a, 0.1f));
+		ASSERT_FALSE(d.equals(b, 0.1f));
+		ASSERT_TRUE(d.equals(c, 0.1f));
+		ASSERT_TRUE(d.equals(d, 0.1f));
 	}
 	{
 		//Same as above but coordinates have been flipped.
@@ -240,10 +276,22 @@ TEST(Vector2, TestEquals)
 		const bbe::Vector2 c(100, 1.01f);
 		const bbe::Vector2 d(100, 1.105f);
 
-		ASSERT_TRUE (a.equals(a, 0.1f)); ASSERT_TRUE (a.equals(b, 0.1f)); ASSERT_TRUE (a.equals(c, 0.1f)); ASSERT_FALSE(a.equals(d, 0.1f));
-		ASSERT_TRUE (b.equals(a, 0.1f)); ASSERT_TRUE (b.equals(b, 0.1f)); ASSERT_TRUE (b.equals(c, 0.1f)); ASSERT_FALSE(b.equals(d, 0.1f));
-		ASSERT_TRUE (c.equals(a, 0.1f)); ASSERT_TRUE (c.equals(b, 0.1f)); ASSERT_TRUE (c.equals(c, 0.1f)); ASSERT_TRUE (c.equals(d, 0.1f));
-		ASSERT_FALSE(d.equals(a, 0.1f)); ASSERT_FALSE(d.equals(b, 0.1f)); ASSERT_TRUE (d.equals(c, 0.1f)); ASSERT_TRUE (d.equals(d, 0.1f));
+		ASSERT_TRUE(a.equals(a, 0.1f));
+		ASSERT_TRUE(a.equals(b, 0.1f));
+		ASSERT_TRUE(a.equals(c, 0.1f));
+		ASSERT_FALSE(a.equals(d, 0.1f));
+		ASSERT_TRUE(b.equals(a, 0.1f));
+		ASSERT_TRUE(b.equals(b, 0.1f));
+		ASSERT_TRUE(b.equals(c, 0.1f));
+		ASSERT_FALSE(b.equals(d, 0.1f));
+		ASSERT_TRUE(c.equals(a, 0.1f));
+		ASSERT_TRUE(c.equals(b, 0.1f));
+		ASSERT_TRUE(c.equals(c, 0.1f));
+		ASSERT_TRUE(c.equals(d, 0.1f));
+		ASSERT_FALSE(d.equals(a, 0.1f));
+		ASSERT_FALSE(d.equals(b, 0.1f));
+		ASSERT_TRUE(d.equals(c, 0.1f));
+		ASSERT_TRUE(d.equals(d, 0.1f));
 	}
 }
 
@@ -286,18 +334,18 @@ TEST(Vector2, TestLeftRight)
 	const bbe::Vector2 c(-1, -1);
 
 	ASSERT_FALSE(a.isLeft(a));
-	ASSERT_TRUE (a.isLeft(b));
+	ASSERT_TRUE(a.isLeft(b));
 	ASSERT_FALSE(a.isLeft(c));
 	ASSERT_FALSE(b.isLeft(a));
-	ASSERT_TRUE (b.isLeft(c));
+	ASSERT_TRUE(b.isLeft(c));
 	ASSERT_FALSE(c.isLeft(b));
 
 	ASSERT_FALSE(a.isRight(a));
 	ASSERT_FALSE(a.isRight(b));
 	ASSERT_FALSE(a.isRight(c));
-	ASSERT_TRUE (b.isRight(a));
+	ASSERT_TRUE(b.isRight(a));
 	ASSERT_FALSE(b.isRight(c));
-	ASSERT_TRUE (c.isRight(b));
+	ASSERT_TRUE(c.isRight(b));
 }
 
 TEST(Vector2, TestContainingNaN)
@@ -314,28 +362,28 @@ TEST(Vector2, TestContainingNaN)
 
 TEST(Vector2, TestContainingInfinity)
 {
-	const bbe::Vector2 a0 (bbe::Math::NaN, 1);
-	const bbe::Vector2 a1 (1, 1);
-	const bbe::Vector2 a2 (bbe::Math::INFINITY_POSITIVE, 1);
-	const bbe::Vector2 a3 (bbe::Math::INFINITY_POSITIVE, bbe::Math::NaN);
-	const bbe::Vector2 a4 (bbe::Math::INFINITY_NEGATIVE, 1);
-	const bbe::Vector2 a5 (1, bbe::Math::INFINITY_POSITIVE);
-	const bbe::Vector2 a6 (1, bbe::Math::INFINITY_NEGATIVE);
-	const bbe::Vector2 a7 (bbe::Math::INFINITY_POSITIVE, bbe::Math::INFINITY_POSITIVE);
-	const bbe::Vector2 a8 (bbe::Math::INFINITY_NEGATIVE, bbe::Math::INFINITY_POSITIVE);
-	const bbe::Vector2 a9 (bbe::Math::INFINITY_POSITIVE, bbe::Math::INFINITY_NEGATIVE);
+	const bbe::Vector2 a0(bbe::Math::NaN, 1);
+	const bbe::Vector2 a1(1, 1);
+	const bbe::Vector2 a2(bbe::Math::INFINITY_POSITIVE, 1);
+	const bbe::Vector2 a3(bbe::Math::INFINITY_POSITIVE, bbe::Math::NaN);
+	const bbe::Vector2 a4(bbe::Math::INFINITY_NEGATIVE, 1);
+	const bbe::Vector2 a5(1, bbe::Math::INFINITY_POSITIVE);
+	const bbe::Vector2 a6(1, bbe::Math::INFINITY_NEGATIVE);
+	const bbe::Vector2 a7(bbe::Math::INFINITY_POSITIVE, bbe::Math::INFINITY_POSITIVE);
+	const bbe::Vector2 a8(bbe::Math::INFINITY_NEGATIVE, bbe::Math::INFINITY_POSITIVE);
+	const bbe::Vector2 a9(bbe::Math::INFINITY_POSITIVE, bbe::Math::INFINITY_NEGATIVE);
 	const bbe::Vector2 a10(bbe::Math::INFINITY_NEGATIVE, bbe::Math::INFINITY_NEGATIVE);
-	ASSERT_FALSE(a0 .isContainingInfinity());
-	ASSERT_FALSE(a1 .isContainingInfinity());
-	ASSERT_TRUE (a2 .isContainingInfinity());
-	ASSERT_TRUE (a3 .isContainingInfinity());
-	ASSERT_TRUE (a4 .isContainingInfinity());
-	ASSERT_TRUE (a5 .isContainingInfinity());
-	ASSERT_TRUE (a6 .isContainingInfinity());
-	ASSERT_TRUE (a7 .isContainingInfinity());
-	ASSERT_TRUE (a8 .isContainingInfinity());
-	ASSERT_TRUE (a9 .isContainingInfinity());
-	ASSERT_TRUE (a10.isContainingInfinity());
+	ASSERT_FALSE(a0.isContainingInfinity());
+	ASSERT_FALSE(a1.isContainingInfinity());
+	ASSERT_TRUE(a2.isContainingInfinity());
+	ASSERT_TRUE(a3.isContainingInfinity());
+	ASSERT_TRUE(a4.isContainingInfinity());
+	ASSERT_TRUE(a5.isContainingInfinity());
+	ASSERT_TRUE(a6.isContainingInfinity());
+	ASSERT_TRUE(a7.isContainingInfinity());
+	ASSERT_TRUE(a8.isContainingInfinity());
+	ASSERT_TRUE(a9.isContainingInfinity());
+	ASSERT_TRUE(a10.isContainingInfinity());
 }
 
 TEST(Vector2, TestIsUnit)
@@ -454,7 +502,6 @@ TEST(Vector2, TestNormalize)
 	const bbe::Vector2 normalized2 = zero.normalize(bbe::Vector2(100, 50));
 	ASSERT_EQ(normalized2.x, 100);
 	ASSERT_EQ(normalized2.y, 50);
-
 
 	for (float rad = 0.001f; rad < bbe::Math::PI * 2; rad += 0.001f)
 	{

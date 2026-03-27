@@ -1,0 +1,6 @@
+GL_QCOM_ycbcr_degamma
+https://www.khronos.org/registry/OpenGL/extensions/QCOM/QCOM_ycbcr_degamma.txt
+GL_QCOM_ycbcr_degamma
+
+	GL_TEXTURE_Y_DEGAMMA_QCOM 0x9710
+	GL_TEXTURE_CBCR_DEGAMMA_QCOM 0x9711

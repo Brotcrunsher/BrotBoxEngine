@@ -11,26 +11,28 @@ namespace bbe
 	{
 		namespace INTERNAL
 		{
-			void partialLog(const char* c);
-			void fullLog(const char* c);
+			void partialLog(const char *c);
+			void fullLog(const char *c);
 		}
 
-		const bbe::ConcurrentList<bbe::String>& getLog();
+		const bbe::ConcurrentList<bbe::String> &getLog();
 	}
 }
 
-#define BBELOG(out) \
-	do { \
-		std::stringstream stream; \
-		stream << out; \
-		std::cout << stream.str(); \
+#define BBELOG(out)                                               \
+	do                                                            \
+	{                                                             \
+		std::stringstream stream;                                 \
+		stream << out;                                            \
+		std::cout << stream.str();                                \
 		bbe::logging::INTERNAL::partialLog(stream.str().c_str()); \
-	} while(false)
+	} while (false)
 
-#define BBELOGLN(out) \
-	do { \
-		std::stringstream stream; \
-		stream << out; \
-		std::cout << stream.str() << std::endl; \
+#define BBELOGLN(out)                                          \
+	do                                                         \
+	{                                                          \
+		std::stringstream stream;                              \
+		stream << out;                                         \
+		std::cout << stream.str() << std::endl;                \
 		bbe::logging::INTERNAL::fullLog(stream.str().c_str()); \
-	} while(false)
+	} while (false)

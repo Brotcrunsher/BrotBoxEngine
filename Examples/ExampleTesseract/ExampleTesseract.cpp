@@ -20,14 +20,14 @@ class MyGame : public bbe::Game
 		bbe::Vector2 speed;
 	};
 
-	void addBulletWithSpeed(const bbe::Vector2& speed)
+	void addBulletWithSpeed(const bbe::Vector2 &speed)
 	{
 		bullets.add({ bbe::Rectangle(player.shape.getPos() + (bbe::Vector2(Player::SIZE, Player::SIZE) * 0.5) - (bbe::Vector2(Bullet::SIZE, Bullet::SIZE) * 0.5), bbe::Vector2(Bullet::SIZE, Bullet::SIZE)), speed + player.speed });
 	}
 
-	bool collidesWithAnyBarricade(const bbe::Rectangle& shape)
+	bool collidesWithAnyBarricade(const bbe::Rectangle &shape)
 	{
-		for (const Barricade& b : barricades)
+		for (const Barricade &b : barricades)
 		{
 			if (b.shape.intersects(shape)) return true;
 		}
@@ -37,7 +37,7 @@ class MyGame : public bbe::Game
 	void moveShape(bbe::Rectangle &shape, const bbe::Vector2 &speed, float timeSinceLastFrame)
 	{
 		shape.x = bbe::Math::clamp(shape.x + speed.x * timeSinceLastFrame, 0.f, WINDOW_WIDTH - shape.width);
-		for (const Barricade& b : barricades)
+		for (const Barricade &b : barricades)
 		{
 			if (b.shape.intersects(shape))
 			{
@@ -52,7 +52,7 @@ class MyGame : public bbe::Game
 			}
 		}
 		shape.y = bbe::Math::clamp(shape.y + speed.y * timeSinceLastFrame, 0.f, WINDOW_HEIGHT - shape.height);
-		for (const Barricade& b : barricades)
+		for (const Barricade &b : barricades)
 		{
 			if (b.shape.intersects(shape))
 			{
@@ -78,7 +78,7 @@ class MyGame : public bbe::Game
 		bool dead = false;
 		uint32_t score = 0;
 
-		void calculateSpeed(MyGame* context)
+		void calculateSpeed(MyGame *context)
 		{
 			if (dead) return;
 
@@ -106,13 +106,13 @@ class MyGame : public bbe::Game
 			speed *= ACCELERATION;
 		}
 
-		void move(float timeSinceLastFrame, MyGame* context)
+		void move(float timeSinceLastFrame, MyGame *context)
 		{
 			if (dead) return;
 			context->moveShape(shape, speed, timeSinceLastFrame);
 		}
-		
-		void checkBulletSpawn(float timeSinceLastFrame, MyGame* context)
+
+		void checkBulletSpawn(float timeSinceLastFrame, MyGame *context)
 		{
 			if (dead) return;
 
@@ -154,15 +154,14 @@ class MyGame : public bbe::Game
 		constexpr static float DEATH_TIME = 2;
 		float timeSinceLastHit = 0;
 
-		Enemy(const bbe::Rectangle& shape)
+		Enemy(const bbe::Rectangle &shape)
 		{
 			this->shape = shape;
 		}
 
-		void update(float timeSinceLastFrame, const bbe::Vector2& targetPos, MyGame* context)
+		void update(float timeSinceLastFrame, const bbe::Vector2 &targetPos, MyGame *context)
 		{
 			if (timeSinceLastFrame > 1) return;
-
 
 			timeSinceLastHit += timeSinceLastFrame;
 			if (isDead()) return;
@@ -219,7 +218,7 @@ class MyGame : public bbe::Game
 		float timeSinceLastNewPosition = 0;
 		float timeAlive = 0;
 
-		void update(float timeSinceLastFrame, MyGame* context)
+		void update(float timeSinceLastFrame, MyGame *context)
 		{
 			timeAlive += timeSinceLastFrame;
 			if (context->player.dead) return;
@@ -233,7 +232,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		void newRandomPosition(MyGame* context)
+		void newRandomPosition(MyGame *context)
 		{
 			while (true)
 			{
@@ -253,7 +252,7 @@ class MyGame : public bbe::Game
 
 	void moveBullets(float timeSinceLastFrame)
 	{
-		for (Bullet& b : bullets)
+		for (Bullet &b : bullets)
 		{
 			b.shape.x = b.shape.x + b.speed.x * timeSinceLastFrame;
 			b.shape.y = b.shape.y + b.speed.y * timeSinceLastFrame;
@@ -262,19 +261,15 @@ class MyGame : public bbe::Game
 
 	void removeBulletsThatCollideWithBarricadesOrExitArena()
 	{
-		bullets.removeAll([this](const Bullet& s) {
-			return !s.shape.intersects(arena);
-		});
-		bullets.removeAll([this](const Bullet& s) {
-			return collidesWithAnyBarricade(s.shape);
-		});
+		bullets.removeAll([this](const Bullet &s)
+						  { return !s.shape.intersects(arena); });
+		bullets.removeAll([this](const Bullet &s)
+						  { return collidesWithAnyBarricade(s.shape); });
 	}
-
-
 
 	virtual void onStart() override
 	{
-		barricades.add({bbe::Rectangle(350, 300, 100, 200)});
+		barricades.add({ bbe::Rectangle(350, 300, 100, 200) });
 		tesseract.newRandomPosition(this);
 	}
 
@@ -289,15 +284,15 @@ class MyGame : public bbe::Game
 		player.checkBulletSpawn(timeSinceLastFrame, this);
 		tesseract.update(timeSinceLastFrame, this);
 
-		for (Enemy& e : enemies)
+		for (Enemy &e : enemies)
 		{
 			e.update(timeSinceLastFrame, player.shape.getPos(), this);
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		brush.setColorRGB(1, 0, 0);
 		bbe::String scoreText = "Score: ";
@@ -305,28 +300,28 @@ class MyGame : public bbe::Game
 		brush.fillText(10, 40, scoreText.getRaw(), 50);
 
 		brush.setColorRGB(0, 0, 1);
-		for (const Barricade& b : barricades)
+		for (const Barricade &b : barricades)
 		{
 			brush.fillRect(b.shape);
 		}
 
 		brush.setColorRGB(1, 1, 1);
-		const bbe::Vector2 outerTopLeft     = tesseract.shape.getPos();
-		const bbe::Vector2 outerTopRight    = tesseract.shape.getPos() + bbe::Vector2(tesseract.shape.width, 0);
-		const bbe::Vector2 outerBottomLeft  = tesseract.shape.getPos() + bbe::Vector2(0, tesseract.shape.height);
+		const bbe::Vector2 outerTopLeft = tesseract.shape.getPos();
+		const bbe::Vector2 outerTopRight = tesseract.shape.getPos() + bbe::Vector2(tesseract.shape.width, 0);
+		const bbe::Vector2 outerBottomLeft = tesseract.shape.getPos() + bbe::Vector2(0, tesseract.shape.height);
 		const bbe::Vector2 outerBottomRight = tesseract.shape.getPos() + tesseract.shape.getDim();
-		brush.fillLine(outerTopLeft,     outerTopRight);
-		brush.fillLine(outerTopLeft,     outerBottomLeft);
+		brush.fillLine(outerTopLeft, outerTopRight);
+		brush.fillLine(outerTopLeft, outerBottomLeft);
 		brush.fillLine(outerBottomRight, outerTopRight);
 		brush.fillLine(outerBottomRight, outerBottomLeft);
 		const bbe::Vector2 middle = tesseract.shape.getPos() + tesseract.shape.getDim() * 0.5f;
 		const float t = (bbe::Math::cos(tesseract.timeAlive * 10) + 1) * 0.6f;
-		const bbe::Vector2 innerTopLeft     = bbe::Math::interpolateLinear(middle, outerTopLeft    , t);
-		const bbe::Vector2 innerTopRight    = bbe::Math::interpolateLinear(middle, outerTopRight   , t);
-		const bbe::Vector2 innerBottomLeft  = bbe::Math::interpolateLinear(middle, outerBottomLeft , t);
+		const bbe::Vector2 innerTopLeft = bbe::Math::interpolateLinear(middle, outerTopLeft, t);
+		const bbe::Vector2 innerTopRight = bbe::Math::interpolateLinear(middle, outerTopRight, t);
+		const bbe::Vector2 innerBottomLeft = bbe::Math::interpolateLinear(middle, outerBottomLeft, t);
 		const bbe::Vector2 innerBottomRight = bbe::Math::interpolateLinear(middle, outerBottomRight, t);
-		brush.fillLine(innerTopLeft,     innerTopRight);
-		brush.fillLine(innerTopLeft,     innerBottomLeft);
+		brush.fillLine(innerTopLeft, innerTopRight);
+		brush.fillLine(innerTopLeft, innerBottomLeft);
 		brush.fillLine(innerBottomRight, innerTopRight);
 		brush.fillLine(innerBottomRight, innerBottomLeft);
 		brush.fillLine(outerTopLeft, innerTopLeft);
@@ -334,14 +329,14 @@ class MyGame : public bbe::Game
 		brush.fillLine(outerBottomLeft, innerBottomLeft);
 		brush.fillLine(outerBottomRight, innerBottomRight);
 
-		for (const Enemy& e : enemies)
+		for (const Enemy &e : enemies)
 		{
 			brush.setColorRGB(e.getColor());
 			brush.fillRect(e.shape);
 		}
 
 		brush.setColorRGB(1, 1, 0);
-		for (const Bullet& b : bullets)
+		for (const Bullet &b : bullets)
 		{
 			brush.fillRect(b.shape);
 		}

@@ -36,12 +36,12 @@ bbe::INTERNAL::vulkan::VulkanManager *bbe::INTERNAL::vulkan::VulkanManager::s_pi
 
 bbe::INTERNAL::vulkan::VulkanManager::VulkanManager()
 {
-	m_screenWidth  = -1;
+	m_screenWidth = -1;
 	m_screenHeight = -1;
-	m_imageIndex   = -1;
+	m_imageIndex = -1;
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow * window, uint32_t initialWindowWidth, uint32_t initialWindowHeight)
+void bbe::INTERNAL::vulkan::VulkanManager::init(const char *appName, uint32_t major, uint32_t minor, uint32_t patch, GLFWwindow *window, uint32_t initialWindowWidth, uint32_t initialWindowHeight)
 {
 	if (s_pinstance != nullptr)
 	{
@@ -82,24 +82,23 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 
 	std::cout << "Vulkan Manager: creating 3DBrush" << std::endl;
 	m_primitiveBrushes3D.resizeCapacityAndLength(m_swapchain.getAmountOfImages());
-	m_uboMatrices       .resizeCapacityAndLength(m_swapchain.getAmountOfImages());
+	m_uboMatrices.resizeCapacityAndLength(m_swapchain.getAmountOfImages());
 	for (uint32_t i = 0; i < m_swapchain.getAmountOfImages(); i++)
 	{
 		Matrix4 mat;
 		m_uboMatrices[i].create(m_device, sizeof(Matrix4) * 2, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 		{
-			void* data = m_uboMatrices[i].map();
+			void *data = m_uboMatrices[i].map();
 			memcpy(data, &mat, sizeof(Matrix4));
-			memcpy((char*)data + sizeof(Matrix4), &mat, sizeof(Matrix4));
+			memcpy((char *)data + sizeof(Matrix4), &mat, sizeof(Matrix4));
 			m_uboMatrices[i].unmap();
 		}
 	}
 	bbe::INTERNAL::vulkan::VulkanLight::s_init(m_device.getDevice(), m_device.getPhysicalDevice());
 	bbe::INTERNAL::vulkan::VulkanRectangle::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
-	bbe::INTERNAL::vulkan::VulkanCircle   ::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
-	bbe::INTERNAL::vulkan::VulkanCube     ::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
-	bbe::INTERNAL::vulkan::VulkanSphere   ::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
-
+	bbe::INTERNAL::vulkan::VulkanCircle ::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
+	bbe::INTERNAL::vulkan::VulkanCube ::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
+	bbe::INTERNAL::vulkan::VulkanSphere ::s_init(m_device.getDevice(), m_device.getPhysicalDevice(), m_commandPool, m_device.getQueue());
 
 	std::cout << "Vulkan Manager: Setting Bindings" << std::endl;
 	m_setLayoutVertexLight.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
@@ -114,10 +113,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 	m_setLayoutSampler.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
 	m_setLayoutSampler.create(m_device);
 
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutVertexLight                   , 1);
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutFragmentLight                 , 1);
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutViewProjectionMatrix          , 4);
-	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutSampler                       , 1024);
+	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutVertexLight, 1);
+	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutFragmentLight, 1);
+	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutViewProjectionMatrix, 4);
+	m_descriptorPool.addVulkanDescriptorSetLayout(m_setLayoutSampler, 1024);
 	m_descriptorPool.create(m_device);
 
 	m_setViewProjectionMatrixLights.resizeCapacityAndLength(m_swapchain.getAmountOfImages());
@@ -126,17 +125,17 @@ void bbe::INTERNAL::vulkan::VulkanManager::init(const char * appName, uint32_t m
 		m_setViewProjectionMatrixLights[i].addUniformBuffer(m_uboMatrices[i], 0, 0);
 		m_setViewProjectionMatrixLights[i].create(m_device, m_descriptorPool, m_setLayoutViewProjectionMatrix);
 	}
-	m_setVertexLight              .addUniformBuffer(bbe::INTERNAL::vulkan::VulkanLight::getVertexBuffer()  , 0, 0);
-	m_setFragmentLight            .addUniformBuffer(bbe::INTERNAL::vulkan::VulkanLight::getFragmentBuffer(), 0, 0);
-	m_setVertexLight              .create(m_device, m_descriptorPool, m_setLayoutVertexLight);
-	m_setFragmentLight            .create(m_device, m_descriptorPool, m_setLayoutFragmentLight);
+	m_setVertexLight.addUniformBuffer(bbe::INTERNAL::vulkan::VulkanLight::getVertexBuffer(), 0, 0);
+	m_setFragmentLight.addUniformBuffer(bbe::INTERNAL::vulkan::VulkanLight::getFragmentBuffer(), 0, 0);
+	m_setVertexLight.create(m_device, m_descriptorPool, m_setLayoutVertexLight);
+	m_setFragmentLight.create(m_device, m_descriptorPool, m_setLayoutFragmentLight);
 
 	std::cout << "Vulkan Manager: Loading Shaders" << std::endl;
-	m_vertexShader2DPrimitive           .init(m_device, vert2DPrimitive);
-	m_fragmentShader2DPrimitive         .init(m_device, frag2DPrimitive);
-	m_fragmentShader2DImage             .init(m_device, frag2DImage);
-	m_vertexShader3DPrimitive           .init(m_device, vert3DPrimitive);
-	m_fragmentShader3DPrimitive         .init(m_device, frag3DPrimitive);
+	m_vertexShader2DPrimitive.init(m_device, vert2DPrimitive);
+	m_fragmentShader2DPrimitive.init(m_device, frag2DPrimitive);
+	m_fragmentShader2DImage.init(m_device, frag2DImage);
+	m_vertexShader3DPrimitive.init(m_device, vert3DPrimitive);
+	m_fragmentShader3DPrimitive.init(m_device, frag3DPrimitive);
 
 	std::cout << "Vulkan Manager: creating pipeline" << std::endl;
 	createPipelines();
@@ -169,7 +168,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 
 	vkDeviceWaitIdle(m_device.getDevice());
 	s_pinstance = nullptr;
-	
+
 	m_primitiveBrush2D.INTERNAL_destroy();
 
 	for (size_t i = 0; i < m_delayedBufferDeletes.getLength(); i++)
@@ -185,12 +184,12 @@ void bbe::INTERNAL::vulkan::VulkanManager::destroy()
 	imguiStop();
 
 	//m_renderPassStopWatch.destroy();
-	
-	bbe::INTERNAL::vulkan::VulkanCube     ::s_destroy();
-	bbe::INTERNAL::vulkan::VulkanCircle   ::s_destroy();
+
+	bbe::INTERNAL::vulkan::VulkanCube ::s_destroy();
+	bbe::INTERNAL::vulkan::VulkanCircle ::s_destroy();
 	bbe::INTERNAL::vulkan::VulkanRectangle::s_destroy();
-	bbe::INTERNAL::vulkan::VulkanLight    ::s_destroy();
-	bbe::INTERNAL::vulkan::VulkanSphere   ::s_destroy();
+	bbe::INTERNAL::vulkan::VulkanLight ::s_destroy();
+	bbe::INTERNAL::vulkan::VulkanSphere ::s_destroy();
 
 	m_presentFence1.destroy();
 	m_presentFence2.destroy();
@@ -278,13 +277,11 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 
 	*m_currentFrameDrawCommandBuffer = m_commandPool.getCommandBuffer();
 
-
 	VkCommandBufferBeginInfo cbbi;
 	cbbi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	cbbi.pNext = nullptr;
 	cbbi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 	cbbi.pInheritanceInfo = nullptr;
-
 
 	VkResult result = vkBeginCommandBuffer(*m_currentFrameDrawCommandBuffer, &cbbi);
 	ASSERT_VULKAN(result);
@@ -302,7 +299,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	//VkClearValue clearValue = { 1.0f, 20.f/255.f, 147.f/255.f, 1.0f };
 	VkClearValue depthClearValue = { 1.0f, 0 };
 
-	bbe::List<VkClearValue> clearValues = { 
+	bbe::List<VkClearValue> clearValues = {
 		clearValue,
 		depthClearValue
 	};
@@ -310,9 +307,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::preDraw()
 	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.getLength());
 	renderPassBeginInfo.pClearValues = clearValues.getRaw();
 
-
 	vkCmdBeginRenderPass(*m_currentFrameDrawCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-	
 
 	VkViewport viewport;
 	viewport.x = 0.0f;
@@ -370,8 +365,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::postDraw()
 	pi.pImageIndices = &m_imageIndex;
 	pi.pResults = nullptr;
 
-	
-
 	result = vkQueuePresentKHR(m_device.getQueue(), &pi);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
@@ -417,12 +410,12 @@ bool bbe::INTERNAL::vulkan::VulkanManager::isReadyToDraw() const
 	return m_swapchain.isInit();
 }
 
-bbe::PrimitiveBrush2D& bbe::INTERNAL::vulkan::VulkanManager::getBrush2D()
+bbe::PrimitiveBrush2D &bbe::INTERNAL::vulkan::VulkanManager::getBrush2D()
 {
 	return m_primitiveBrush2D;
 }
 
-bbe::PrimitiveBrush3D& bbe::INTERNAL::vulkan::VulkanManager::getBrush3D()
+bbe::PrimitiveBrush3D &bbe::INTERNAL::vulkan::VulkanManager::getBrush3D()
 {
 	return m_primitiveBrushes3D[m_imageIndex];
 }
@@ -443,7 +436,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::createPipelines()
 	m_pipeline2DImage.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 64, 64);
 	m_pipeline2DImage.addDescriptorSetLayout(m_setLayoutSampler.getDescriptorSetLayout());
 	m_pipeline2DImage.create(m_device.getDevice(), m_renderPass.getRenderPass());
-
 
 	m_pipeline3DPrimitive.init(m_vertexShader3DPrimitive, m_fragmentShader3DPrimitive, m_screenWidth, m_screenHeight);
 	m_pipeline3DPrimitive.addVertexBinding(0, sizeof(VertexWithNormal), VK_VERTEX_INPUT_RATE_VERTEX);
@@ -471,7 +463,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::resize(uint32_t width, uint32_t heigh
 
 	if (width == 0 || height == 0) return; //Do nothing!
 
-
 	m_screenWidth = width;
 	m_screenHeight = height;
 
@@ -481,18 +472,18 @@ void bbe::INTERNAL::vulkan::VulkanManager::resize(uint32_t width, uint32_t heigh
 void bbe::INTERNAL::vulkan::VulkanManager::recreateSwapchain()
 {
 	m_device.waitIdle();
-//	if (useIconifyRestoreWorkaround)
-//	{
-//		//This is very hacky. It can happen sometimes that some commands like vkQueuePresentKHR return
-//		//VK_ERROR_OUT_OF_DATE_KHR. Such behavior was observed when the window that is created is bigger
-//		//than the resolution of the monitor on which the window is displayed. In such a case it is not
-//		//sufficient to just recreate the swap chain but we also have to quickly iconify and restore the
-//		//window or else it is just completely white. It would be much better if another solution were
-//		//found to avoid this issue. Unfortunately, I don't know if this is a bug in GLFW or BBE (probably
-//		//the later).
-//		glfwIconifyWindow(m_pwindow);
-//		glfwRestoreWindow(m_pwindow);
-//	}
+	//	if (useIconifyRestoreWorkaround)
+	//	{
+	//		//This is very hacky. It can happen sometimes that some commands like vkQueuePresentKHR return
+	//		//VK_ERROR_OUT_OF_DATE_KHR. Such behavior was observed when the window that is created is bigger
+	//		//than the resolution of the monitor on which the window is displayed. In such a case it is not
+	//		//sufficient to just recreate the swap chain but we also have to quickly iconify and restore the
+	//		//window or else it is just completely white. It would be much better if another solution were
+	//		//found to avoid this issue. Unfortunately, I don't know if this is a bug in GLFW or BBE (probably
+	//		//the later).
+	//		glfwIconifyWindow(m_pwindow);
+	//		glfwRestoreWindow(m_pwindow);
+	//	}
 
 	m_pipeline2DPrimitive.destroy();
 	m_pipeline2DImage.destroy();
@@ -517,17 +508,17 @@ void bbe::INTERNAL::vulkan::VulkanManager::recreateSwapchain()
 	}
 }
 
-bbe::INTERNAL::vulkan::VulkanDevice& bbe::INTERNAL::vulkan::VulkanManager::getVulkanDevice()
+bbe::INTERNAL::vulkan::VulkanDevice &bbe::INTERNAL::vulkan::VulkanManager::getVulkanDevice()
 {
 	return m_device;
 }
 
-bbe::INTERNAL::vulkan::VulkanRenderPass& bbe::INTERNAL::vulkan::VulkanManager::getVulkanRenderPass()
+bbe::INTERNAL::vulkan::VulkanRenderPass &bbe::INTERNAL::vulkan::VulkanManager::getVulkanRenderPass()
 {
 	return m_renderPass;
 }
 
-bbe::INTERNAL::vulkan::VulkanShader& bbe::INTERNAL::vulkan::VulkanManager::getVertexShader2DPrimitive()
+bbe::INTERNAL::vulkan::VulkanShader &bbe::INTERNAL::vulkan::VulkanManager::getVertexShader2DPrimitive()
 {
 	return m_vertexShader2DPrimitive;
 }
@@ -648,7 +639,6 @@ bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage bbe::INTERNAL::vulkan
 		VK_PIPELINE_STAGE_TRANSFER_BIT,
 		VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
 
-
 	VkImageCopy imageCopyRegion{};
 	imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	imageCopyRegion.srcSubresource.layerCount = 1;
@@ -698,10 +688,10 @@ bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage bbe::INTERNAL::vulkan
 static void writeThreadScreenshot(const bbe::String /*copy*/ path, bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage screenshotFirstStage)
 {
 	bool requiresSwizzle = false;
-	unsigned char* rawScreenshot = screenshotFirstStage.toPixelData(&requiresSwizzle);
+	unsigned char *rawScreenshot = screenshotFirstStage.toPixelData(&requiresSwizzle);
 	if (requiresSwizzle)
 	{
-		unsigned char* swizzleHead = rawScreenshot;
+		unsigned char *swizzleHead = rawScreenshot;
 		for (size_t i = 0; i < screenshotFirstStage.width * screenshotFirstStage.height; i++)
 		{
 			unsigned char temp = swizzleHead[0];
@@ -712,7 +702,7 @@ static void writeThreadScreenshot(const bbe::String /*copy*/ path, bbe::INTERNAL
 		}
 	}
 
-	unsigned char* alphaHead = rawScreenshot;
+	unsigned char *alphaHead = rawScreenshot;
 	for (size_t i = 0; i < screenshotFirstStage.width * screenshotFirstStage.height; i++)
 	{
 		alphaHead[3] = 255;
@@ -723,7 +713,7 @@ static void writeThreadScreenshot(const bbe::String /*copy*/ path, bbe::INTERNAL
 	delete[] rawScreenshot;
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::screenshot(const bbe::String& path)
+void bbe::INTERNAL::vulkan::VulkanManager::screenshot(const bbe::String &path)
 {
 	while (screenshotFutures.getLength() > 16)
 	{
@@ -741,10 +731,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::screenshot(const bbe::String& path)
 static void writeThreadVideo(bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage screenshotFirstStage, FILE *videoFile, std::shared_future<void> previousFrameFuture)
 {
 	bool requiresSwizzle = false;
-	const unsigned char* rawScreenshot = screenshotFirstStage.toPixelData(&requiresSwizzle);
+	const unsigned char *rawScreenshot = screenshotFirstStage.toPixelData(&requiresSwizzle);
 
 	constexpr size_t bufferSize = 1024 * 1024 * 64;
-	char* buffer = new char[bufferSize];
+	char *buffer = new char[bufferSize];
 	size_t amount = 0;
 	jo_write_mpeg(buffer, bufferSize, amount, rawScreenshot, screenshotFirstStage.width, screenshotFirstStage.height, 60, requiresSwizzle);
 	delete[] rawScreenshot;
@@ -781,7 +771,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::saveVideoFrame()
 	previousFrameFuture = currentFrameFuture;
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::setVideoRenderingMode(const char* path)
+void bbe::INTERNAL::vulkan::VulkanManager::setVideoRenderingMode(const char *path)
 {
 	stopRecording();
 	videoFile = fopen(path, "wb");
@@ -821,16 +811,16 @@ void bbe::INTERNAL::vulkan::VulkanManager::bindPipelinePrimitive3D()
 	}
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::setColor2D(const bbe::Color& color)
+void bbe::INTERNAL::vulkan::VulkanManager::setColor2D(const bbe::Color &color)
 {
 	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline2DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof(Color), &color);
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::fillRect2D(const Rectangle& rect, float rotation, FragmentShader* shader)
+void bbe::INTERNAL::vulkan::VulkanManager::fillRect2D(const Rectangle &rect, float rotation, FragmentShader *shader)
 {
 	if (shader != nullptr)
 	{
-		bbe::INTERNAL::vulkan::VulkanFragmentShader* vfs = nullptr;
+		bbe::INTERNAL::vulkan::VulkanFragmentShader *vfs = nullptr;
 		if (shader->m_prendererData == nullptr)
 		{
 			// The FragmentShader is cleaning up this VulkanFragmentShader
@@ -838,7 +828,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillRect2D(const Rectangle& rect, flo
 		}
 		else
 		{
-			vfs = (bbe::INTERNAL::vulkan::VulkanFragmentShader*)shader->m_prendererData.get();
+			vfs = (bbe::INTERNAL::vulkan::VulkanFragmentShader *)shader->m_prendererData.get();
 		}
 
 		vkCmdBindPipeline(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vfs->m_pipeline.getPipeline(getFillMode2D()));
@@ -864,7 +854,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillRect2D(const Rectangle& rect, flo
 	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, 6, 1, 0, 0, 0);
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::fillCircle2D(const Circle& circle)
+void bbe::INTERNAL::vulkan::VulkanManager::fillCircle2D(const Circle &circle)
 {
 	if (m_pipelineRecord2D != PipelineRecord2D::PRIMITIVE)
 	{
@@ -891,7 +881,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillCircle2D(const Circle& circle)
 	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, (INTERNAL::vulkan::VulkanCircle::AMOUNTOFVERTICES - 2) * 3, 1, 0, 0, 0);
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, const Image& image, float rotation)
+void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle &rect, const Image &image, float rotation)
 {
 	if (m_pipelineRecord2D != PipelineRecord2D::IMAGE)
 	{
@@ -899,7 +889,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, co
 		m_pipelineRecord2D = PipelineRecord2D::IMAGE;
 	}
 
-	bbe::INTERNAL::vulkan::VulkanImage* vi = nullptr;
+	bbe::INTERNAL::vulkan::VulkanImage *vi = nullptr;
 	if (image.m_prendererData == nullptr)
 	{
 		// The image is cleaning up this VulkanImage
@@ -907,7 +897,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, co
 	}
 	else
 	{
-		vi = (bbe::INTERNAL::vulkan::VulkanImage*)image.m_prendererData.get();
+		vi = (bbe::INTERNAL::vulkan::VulkanImage *)image.m_prendererData.get();
 	}
 
 	vkCmdBindDescriptorSets(*m_currentFrameDrawCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline2DImage.getLayout(), 0, 1, vi->getDescriptorSet().getPDescriptorSet(), 0, nullptr);
@@ -928,7 +918,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::drawImage2D(const Rectangle& rect, co
 	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, 6, 1, 0, 0, 0);
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::fillVertexIndexList2D(const uint32_t* indices, size_t amountOfIndices, const bbe::Vector2* vertices, size_t amountOfVertices, const bbe::Vector2& pos, const bbe::Vector2& scale)
+void bbe::INTERNAL::vulkan::VulkanManager::fillVertexIndexList2D(const uint32_t *indices, size_t amountOfIndices, const bbe::Vector2 *vertices, size_t amountOfVertices, const bbe::Vector2 &pos, const bbe::Vector2 &scale)
 {
 	// These two asserts make sure that we can cast the vertices array to a float array.
 	static_assert(alignof(bbe::Vector2) == alignof(float));
@@ -938,13 +928,13 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillVertexIndexList2D(const uint32_t*
 	bbe::INTERNAL::vulkan::VulkanBuffer vertexBuffer;
 	indexBuffer.create(m_device.getDevice(), m_device.getPhysicalDevice(), sizeof(uint32_t) * amountOfIndices, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-	void* indexDataBuf = indexBuffer.map();
+	void *indexDataBuf = indexBuffer.map();
 	memcpy(indexDataBuf, indices, sizeof(uint32_t) * amountOfIndices);
 	indexBuffer.unmap();
 
 	vertexBuffer.create(m_device.getDevice(), m_device.getPhysicalDevice(), sizeof(Vector2) * amountOfVertices, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-	void* vertexDataBuf = vertexBuffer.map();
-	memcpy(vertexDataBuf, (float*)vertices, sizeof(Vector2) * amountOfVertices);
+	void *vertexDataBuf = vertexBuffer.map();
+	memcpy(vertexDataBuf, (float *)vertices, sizeof(Vector2) * amountOfVertices);
 	vertexBuffer.unmap();
 
 	if (m_pipelineRecord2D != PipelineRecord2D::PRIMITIVE)
@@ -975,20 +965,20 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillVertexIndexList2D(const uint32_t*
 	m_delayedBufferDeletes[m_imageIndex].add({ vertexBuffer.getBuffer(), vertexBuffer.getMemory() });
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::setColor3D(const bbe::Color& color)
+void bbe::INTERNAL::vulkan::VulkanManager::setColor3D(const bbe::Color &color)
 {
 	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Color), &color);
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::setCamera3D(const bbe::Vector3& cameraPos, const bbe::Matrix4& m_view, const bbe::Matrix4& m_projection)
+void bbe::INTERNAL::vulkan::VulkanManager::setCamera3D(const bbe::Vector3 &cameraPos, const bbe::Matrix4 &m_view, const bbe::Matrix4 &m_projection)
 {
-	void* data = m_uboMatrices[m_imageIndex].map();
-	memcpy((char*)data, &m_view, sizeof(Matrix4));
-	memcpy((char*)data + sizeof(Matrix4), &m_projection, sizeof(Matrix4));
+	void *data = m_uboMatrices[m_imageIndex].map();
+	memcpy((char *)data, &m_view, sizeof(Matrix4));
+	memcpy((char *)data + sizeof(Matrix4), &m_projection, sizeof(Matrix4));
 	m_uboMatrices[m_imageIndex].unmap();
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::fillCube3D(const Cube& cube)
+void bbe::INTERNAL::vulkan::VulkanManager::fillCube3D(const Cube &cube)
 {
 	bindPipelinePrimitive3D();
 	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &cube.getTransform());
@@ -1005,11 +995,10 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillCube3D(const Cube& cube)
 		m_lastDraw3D = DrawRecord::CUBE;
 	}
 
-
 	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, VulkanCube::amountOfIndices, 1, 0, 0, 0);
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::fillSphere3D(const bbe::IcoSphere& sphere)
+void bbe::INTERNAL::vulkan::VulkanManager::fillSphere3D(const bbe::IcoSphere &sphere)
 {
 	bindPipelinePrimitive3D();
 	vkCmdPushConstants(*m_currentFrameDrawCommandBuffer, m_pipeline3DPrimitive.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 4, sizeof(Matrix4), &sphere.m_transform);
@@ -1025,7 +1014,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::fillSphere3D(const bbe::IcoSphere& sp
 
 		m_lastDraw3D = DrawRecord::ICOSPHERE;
 	}
-
 
 	vkCmdDrawIndexed(*m_currentFrameDrawCommandBuffer, VulkanSphere::amountOfIndices, 1, 0, 0, 0);
 }
@@ -1062,7 +1050,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiStart()
 		bbe::Crash(bbe::Error::NotInitialized);
 	}
 
-	ImGuiIO& io = ImGui::GetIO();
+	ImGuiIO &io = ImGui::GetIO();
 	ImFontConfig fontConfig;
 	imguiFontSmall = io.Fonts->AddFontDefault(&fontConfig);
 	fontConfig.SizePixels = 26;
@@ -1085,7 +1073,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiStartFrame()
 	// TODO: Still not ideal - what if the scale is anything else than 1 or 2 (e.g. on 8k)
 	float scale = 0;
 	glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
-	ImGuiIO& io = ImGui::GetIO();
+	ImGuiIO &io = ImGui::GetIO();
 	if (scale < 1.5f)
 	{
 		io.FontDefault = imguiFontSmall;
@@ -1103,16 +1091,16 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiStartFrame()
 void bbe::INTERNAL::vulkan::VulkanManager::imguiEndFrame()
 {
 	ImGui::Render();
-	ImDrawData* drawData = ImGui::GetDrawData();
+	ImDrawData *drawData = ImGui::GetDrawData();
 	ImGui_ImplVulkan_RenderDrawData(drawData, *m_currentFrameDrawCommandBuffer);
 }
 
-void bbe::INTERNAL::vulkan::VulkanManager::addLight(const bbe::Vector3& pos, float lightStrenght, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)
+void bbe::INTERNAL::vulkan::VulkanManager::addLight(const bbe::Vector3 &pos, float lightStrenght, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)
 {
 	bbe::INTERNAL::vulkan::VulkanLight::addLight(pos, lightStrenght, lightColor, specularColor, falloffMode);
 }
 
-unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData(bool* outRequiresSwizzle)
+unsigned char *bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPixelData(bool *outRequiresSwizzle)
 {
 	if (subResourceLayout.rowPitch != width * 4u)
 	{
@@ -1122,16 +1110,16 @@ unsigned char* bbe::INTERNAL::vulkan::VulkanManager::ScreenshotFirstStage::toPix
 		std::cout << "VIDEO PIXEL PANIC!" << std::endl;
 		exit(1);
 	}
-	unsigned char* data;
-	vkMapMemory(device, dstImageMemory, 0, VK_WHOLE_SIZE, 0, (void**)&data);
+	unsigned char *data;
+	vkMapMemory(device, dstImageMemory, 0, VK_WHOLE_SIZE, 0, (void **)&data);
 	data += subResourceLayout.offset;
 
-	unsigned char* retVal = new unsigned char[height * width * 4u];
+	unsigned char *retVal = new unsigned char[height * width * 4u];
 	memcpy(retVal, data, height * width * 4u);
 
 	std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
 	bool colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), format) != formatsBGR.end());
-	
+
 	if (outRequiresSwizzle) *outRequiresSwizzle = colorSwizzle;
 
 	vkUnmapMemory(device, dstImageMemory);

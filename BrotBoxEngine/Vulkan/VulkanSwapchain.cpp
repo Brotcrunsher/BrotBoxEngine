@@ -16,17 +16,19 @@ void bbe::INTERNAL::vulkan::VulkanSwapchain::destroy()
 		{
 			vkDestroyFramebuffer(m_device, frameBuffers[i], nullptr);
 		}
-		
 
-		for (uint32_t i = 0; i < m_amountOfImages; i++) {
+		for (uint32_t i = 0; i < m_amountOfImages; i++)
+		{
 			vkDestroyImageView(m_device, m_pimageViews[i], nullptr);
 		}
 
-		if (m_pimageViews != nullptr) {
+		if (m_pimageViews != nullptr)
+		{
 			delete[] m_pimageViews;
 			m_pimageViews = nullptr;
 		}
-		if (m_pswapchainImages != nullptr) {
+		if (m_pswapchainImages != nullptr)
+		{
 			delete[] m_pswapchainImages;
 			m_pswapchainImages = nullptr;
 		}
@@ -43,15 +45,14 @@ void bbe::INTERNAL::vulkan::VulkanSwapchain::destroy()
 		m_width = 0;
 		m_height = 0;
 	}
-	
 }
 
-void bbe::INTERNAL::vulkan::VulkanSwapchain::init(const VulkanSurface & surface, const VulkanDevice & device, uint32_t width, uint32_t height, VulkanSwapchain * oldSwapchain)
+void bbe::INTERNAL::vulkan::VulkanSwapchain::init(const VulkanSurface &surface, const VulkanDevice &device, uint32_t width, uint32_t height, VulkanSwapchain *oldSwapchain)
 {
 	VkSurfaceCapabilitiesKHR surfaceCapabilities;
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.getPhysicalDevice(), surface.getSurface(), &surfaceCapabilities);
 
-	if (width  > surfaceCapabilities.maxImageExtent.width)  width  = surfaceCapabilities.maxImageExtent.width;
+	if (width > surfaceCapabilities.maxImageExtent.width) width = surfaceCapabilities.maxImageExtent.width;
 	if (height > surfaceCapabilities.maxImageExtent.height) height = surfaceCapabilities.maxImageExtent.height;
 
 	m_device = device.getDevice();
@@ -90,11 +91,11 @@ void bbe::INTERNAL::vulkan::VulkanSwapchain::init(const VulkanSurface & surface,
 	createImageViews(device.getFormat());
 }
 
-void bbe::INTERNAL::vulkan::VulkanSwapchain::createFramebuffers(const VWDepthImage & depthImage, const VulkanRenderPass & renderPass)
+void bbe::INTERNAL::vulkan::VulkanSwapchain::createFramebuffers(const VWDepthImage &depthImage, const VulkanRenderPass &renderPass)
 {
 	for (uint32_t i = 0; i < m_amountOfImages; i++)
 	{
-		bbe::List<VkImageView> attachmentViews = { 
+		bbe::List<VkImageView> attachmentViews = {
 			m_pimageViews[i],
 			depthImage.getImageView()
 		};
@@ -156,7 +157,8 @@ void bbe::INTERNAL::vulkan::VulkanSwapchain::createImageViews(VkFormat deviceFor
 	ASSERT_VULKAN(result);
 
 	m_pimageViews = new VkImageView[m_amountOfImages];
-	for (uint32_t i = 0; i < m_amountOfImages; i++) {
+	for (uint32_t i = 0; i < m_amountOfImages; i++)
+	{
 		createImageView(m_device, m_pswapchainImages[i], deviceFormat, VK_IMAGE_ASPECT_COLOR_BIT, m_pimageViews[i]);
 	}
 }

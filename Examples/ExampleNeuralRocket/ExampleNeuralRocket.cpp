@@ -1,7 +1,6 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
 
-
 constexpr int32_t WINDOW_WIDTH = 1280;
 constexpr int32_t WINDOW_HEIGHT = 720;
 
@@ -30,12 +29,12 @@ class MyGame : public bbe::Game
 	{
 	public:
 		float val = 0;
-		const bbe::List<Neuron>* previousLayer = nullptr;
+		const bbe::List<Neuron> *previousLayer = nullptr;
 		bbe::List<float> weights;
 		float bias = 0;
 		bbe::Vector2 renderPos;
 
-		void setPreviousLayer(const bbe::List<Neuron>& pl)
+		void setPreviousLayer(const bbe::List<Neuron> &pl)
 		{
 			previousLayer = &pl;
 			weights.resizeCapacityAndLength(pl.getLength());
@@ -79,7 +78,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		void draw(bbe::PrimitiveBrush2D& brush, float valueMult)
+		void draw(bbe::PrimitiveBrush2D &brush, float valueMult)
 		{
 			constexpr float alpha = 0.5f;
 			constexpr float neuronSize = 25.f;
@@ -92,7 +91,7 @@ class MyGame : public bbe::Game
 					const float connectionValue = weights[i] * (*previousLayer)[i].val;
 					const float connectionAlpha = alpha * bbe::Math::abs(connectionValue);
 					if (connectionValue < 0) brush.setColorRGB(1, 0, 0, connectionAlpha);
-					else                     brush.setColorRGB(0, 1, 0, connectionAlpha);
+					else brush.setColorRGB(0, 1, 0, connectionAlpha);
 					brush.fillLine(renderPos, (*previousLayer)[i].renderPos, bbe::Math::abs(weights[i]));
 				}
 			}
@@ -100,7 +99,7 @@ class MyGame : public bbe::Game
 			brush.setColorRGB(1, 1, 1, alpha);
 			brush.fillCircle(renderPos - bbe::Vector2(neuronSize / 2, neuronSize / 2), bbe::Vector2(neuronSize, neuronSize));
 			if (val < 0) brush.setColorRGB(1, 0, 0, alpha);
-			else         brush.setColorRGB(0, 1, 0, alpha);
+			else brush.setColorRGB(0, 1, 0, alpha);
 			const float valAbs = bbe::Math::abs(val) * valueMult;
 			brush.fillCircle(renderPos - bbe::Vector2(neuronSize / 2, neuronSize / 2) * valAbs, bbe::Vector2(neuronSize, neuronSize) * valAbs);
 		}
@@ -125,7 +124,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		void copyWeightsAndBiases(bbe::List<Neuron>& dest, const bbe::List<Neuron>& src)
+		void copyWeightsAndBiases(bbe::List<Neuron> &dest, const bbe::List<Neuron> &src)
 		{
 			assert(dest.getLength() == src.getLength());
 			for (size_t i = 0; i < dest.getLength(); i++)
@@ -135,7 +134,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		void randomizeLayer(bbe::List<Neuron>& layer)
+		void randomizeLayer(bbe::List<Neuron> &layer)
 		{
 			for (size_t i = 0; i < layer.getLength(); i++)
 			{
@@ -143,7 +142,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		void mutateLayer(bbe::List<Neuron>& layer)
+		void mutateLayer(bbe::List<Neuron> &layer)
 		{
 			for (size_t i = 0; i < layer.getLength(); i++)
 			{
@@ -151,7 +150,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		void updateRenderPos(bbe::List<Neuron>& layer, float xOffset, float minY, float maxY, float maxDistance)
+		void updateRenderPos(bbe::List<Neuron> &layer, float xOffset, float minY, float maxY, float maxDistance)
 		{
 			float yRange = maxY - minY;
 			const float requiredYRange = layer.getLength() * maxDistance;
@@ -171,7 +170,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		void drawLayer(bbe::List<Neuron>& layer, bbe::PrimitiveBrush2D &brush, float valueMult)
+		void drawLayer(bbe::List<Neuron> &layer, bbe::PrimitiveBrush2D &brush, float valueMult)
 		{
 			for (size_t i = 0; i < layer.getLength(); i++)
 			{
@@ -194,7 +193,7 @@ class MyGame : public bbe::Game
 			linkLayers(hidden, output);
 		}
 
-		NeuralNetwork(const NeuralNetwork& other)
+		NeuralNetwork(const NeuralNetwork &other)
 		{
 			input.resizeCapacityAndLength(other.input.getLength());
 			hidden.resizeCapacityAndLength(other.hidden.getLength());
@@ -207,13 +206,13 @@ class MyGame : public bbe::Game
 			copyWeightsAndBiases(hidden, other.hidden);
 			copyWeightsAndBiases(output, other.output);
 		}
-		NeuralNetwork(NeuralNetwork&&) = delete;
-		NeuralNetwork& operator=(const NeuralNetwork& other)
+		NeuralNetwork(NeuralNetwork &&) = delete;
+		NeuralNetwork &operator=(const NeuralNetwork &other)
 		{
 			input.clear();
 			hidden.clear();
 			output.clear();
-			
+
 			input.resizeCapacityAndLength(other.input.getLength());
 			hidden.resizeCapacityAndLength(other.hidden.getLength());
 			output.resizeCapacityAndLength(other.output.getLength());
@@ -226,7 +225,7 @@ class MyGame : public bbe::Game
 
 			return *this;
 		};
-		NeuralNetwork& operator=(NeuralNetwork&&) = delete;
+		NeuralNetwork &operator=(NeuralNetwork &&) = delete;
 
 		void calculate()
 		{
@@ -246,12 +245,12 @@ class MyGame : public bbe::Game
 			mutateLayer(output);
 		}
 
-		void draw(bbe::PrimitiveBrush2D& brush)
+		void draw(bbe::PrimitiveBrush2D &brush)
 		{
 			const float minY = 50;
 			const float maxY = WINDOW_HEIGHT - 50;
 			const float maxDistance = 30.f;
-			updateRenderPos(input,  110, minY, maxY, maxDistance);
+			updateRenderPos(input, 110, minY, maxY, maxDistance);
 			updateRenderPos(hidden, 350, minY, maxY, maxDistance);
 			updateRenderPos(output, 590, minY, maxY, maxDistance);
 
@@ -270,18 +269,18 @@ class MyGame : public bbe::Game
 		float angle = 0;
 		float currentRenderPush = 0;
 		NeuralNetwork brain;
-		MyGame* game;
+		MyGame *game;
 		float closestDistance = 1000000;
 		int32_t reachedInTick = 0;
 
 		Rocket() {};
 
-		Rocket(MyGame* game, const bbe::Vector2 &pos) : game(game)
+		Rocket(MyGame *game, const bbe::Vector2 &pos) : game(game)
 		{
 			reset(pos);
 		}
 
-		bool operator<(const Rocket& other) const
+		bool operator<(const Rocket &other) const
 		{
 			if (closestDistance > other.closestDistance)
 			{
@@ -328,8 +327,7 @@ class MyGame : public bbe::Game
 					for (float approach = 0; approach <= 1; approach += 0.01f)
 					{
 						bbe::Vector2 checkPos = add * approach + pos;
-						if (game->isBlocked(checkPos.x, checkPos.y)
-							|| checkPos.getDistanceTo(game->target) < targetHitDistance)
+						if (game->isBlocked(checkPos.x, checkPos.y) || checkPos.getDistanceTo(game->target) < targetHitDistance)
 						{
 							add = checkPos - pos;
 							break;
@@ -358,7 +356,7 @@ class MyGame : public bbe::Game
 
 			if (angle > +bbe::Math::PI) angle -= bbe::Math::PI * 2;
 			if (angle < -bbe::Math::PI) angle += bbe::Math::PI * 2;
-			
+
 			speed += bbe::Vector2(200 * push, 0).rotate(angle) * tickTime;
 			pos += speed * tickTime;
 
@@ -395,11 +393,11 @@ class MyGame : public bbe::Game
 			control(brain.output[0].val, brain.output[1].val, tick);
 		}
 
-		void draw(bbe::PrimitiveBrush2D& brush, bool best)
+		void draw(bbe::PrimitiveBrush2D &brush, bool best)
 		{
-			bbe::Vector2 p1 = bbe::Vector2(20,   0).rotate(angle) + pos;
-			bbe::Vector2 p2 = bbe::Vector2( 0, +10).rotate(angle) + pos;
-			bbe::Vector2 p3 = bbe::Vector2( 0, -10).rotate(angle) + pos;
+			bbe::Vector2 p1 = bbe::Vector2(20, 0).rotate(angle) + pos;
+			bbe::Vector2 p2 = bbe::Vector2(0, +10).rotate(angle) + pos;
+			bbe::Vector2 p3 = bbe::Vector2(0, -10).rotate(angle) + pos;
 
 			brush.setColorRGB(1, 0.5, 0, 1);
 			brush.fillCircle(pos - bbe::Vector2{ 8, 8 } * currentRenderPush, 16 * currentRenderPush, 16 * currentRenderPush);
@@ -500,8 +498,8 @@ class MyGame : public bbe::Game
 		while (openList.getLength() != 0)
 		{
 			const coords current = openList[0];
-			const int32_t& x = current.x;
-			const int32_t& y = current.y;
+			const int32_t &x = current.x;
+			const int32_t &y = current.y;
 			openList.removeIndex(0);
 
 			const int32_t neightborCosts = distanceToTarget[x][y] + 1;
@@ -525,7 +523,6 @@ class MyGame : public bbe::Game
 				distanceToTarget[x][y + 1] = neightborCosts;
 				openList.add({ x, y + 1 });
 			}
-
 		}
 
 		distanceMapClean = true;
@@ -553,8 +550,8 @@ class MyGame : public bbe::Game
 		{
 			for (int32_t i = 0; i < WINDOW_WIDTH; i++)
 			{
-				float* p = dataArr + k * WINDOW_WIDTH + i;
-				unsigned char* pc = (unsigned char*)p;
+				float *p = dataArr + k * WINDOW_WIDTH + i;
+				unsigned char *pc = (unsigned char *)p;
 				unsigned char val = 0;
 				if (isB[i][k]) val = 255;
 				else if (distanceMapClean) val = 255.f * (float)distanceToTarget[i][k] / (float)maxDist;
@@ -565,7 +562,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		mapImage.load(WINDOW_WIDTH, WINDOW_HEIGHT, (bbe::byte*)dataArr, bbe::ImageFormat::R8G8B8A8);
+		mapImage.load(WINDOW_WIDTH, WINDOW_HEIGHT, (bbe::byte *)dataArr, bbe::ImageFormat::R8G8B8A8);
 	}
 
 	void clearMap()
@@ -649,7 +646,6 @@ class MyGame : public bbe::Game
 
 		constexpr int32_t brushSize = 10;
 
-
 		if ((isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT)) && editMode)
 		{
 			bool setTo = true;
@@ -676,7 +672,7 @@ class MyGame : public bbe::Game
 					}
 				}
 			}
-			
+
 			requiresImageUpdate = true;
 			distanceMapClean = false;
 		}
@@ -688,14 +684,14 @@ class MyGame : public bbe::Game
 
 		editModeLastFrame = editMode;
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		ImGui::InputFloat("Mutation Rate: ", &mutationRate);
-		ImGui::InputInt  ("Amount of Mutations: ", &amountOfMutations);
-		ImGui::InputInt  ("Max Tick:      ", &maxTick, 1000);
+		ImGui::InputInt("Amount of Mutations: ", &amountOfMutations);
+		ImGui::InputInt("Max Tick:      ", &maxTick, 1000);
 		ImGui::Checkbox("Edit Mode", &editMode);
 		ImGui::Checkbox("Render Sensors", &renderSensors);
 		ImGui::Checkbox("Unlimited Frames", &unlimitedFrames);
@@ -703,18 +699,18 @@ class MyGame : public bbe::Game
 		ImGui::Checkbox("Highlight previous best", &highlightPreviousBest);
 		ImGui::Text("Min Dist:     %f", minDist);
 		ImGui::Text("Generation:   %d", generation);
-		
+
 		if (ImGui::Button("Clear Map"))
 		{
 			clearMap();
 		}
-		
+
 		brush.setColorRGB(1, 1, 1, 1);
 		brush.drawImage(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, mapImage);
-		
+
 		brush.setColorRGB(1, 0, 0, 1);
 		brush.fillCircle(target - bbe::Vector2{ targetHitDistance, targetHitDistance }, bbe::Vector2{ targetHitDistance * 2, targetHitDistance * 2 });
-		
+
 		brush.setColorRGB(1, 1, 0, 1);
 		brush.fillRect(startPos - bbe::Vector2{ 1, 1 }, bbe::Vector2{ 3, 3 });
 
@@ -743,4 +739,3 @@ int main()
 	delete mg;
 #endif
 }
-

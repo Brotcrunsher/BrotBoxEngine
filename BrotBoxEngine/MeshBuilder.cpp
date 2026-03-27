@@ -1,7 +1,7 @@
 #include "BBE/MeshBuilder.h"
 #include "BBE/Rectangle.h"
 
-void bbe::MeshBuilder::addCube(const bbe::Cube& cube, FaceFlag ff)
+void bbe::MeshBuilder::addCube(const bbe::Cube &cube, FaceFlag ff)
 {
 	const bbe::Matrix4 t = bbe::Matrix4::createTranslationMatrix(bbe::Vector3(0, 0, 0.5));
 	if ((int)ff & (int)FaceFlag::BOTTOM)
@@ -30,15 +30,15 @@ void bbe::MeshBuilder::addCube(const bbe::Cube& cube, FaceFlag ff)
 	}
 }
 
-void bbe::MeshBuilder::addCubes(const bbe::List<Cube>& cubes)
+void bbe::MeshBuilder::addCubes(const bbe::List<Cube> &cubes)
 {
-	for (const Cube& c : cubes)
+	for (const Cube &c : cubes)
 	{
 		addCube(c);
 	}
 }
 
-void bbe::MeshBuilder::addRectangle(const bbe::Matrix4& transform)
+void bbe::MeshBuilder::addRectangle(const bbe::Matrix4 &transform)
 {
 	quads.add(transform);
 }
@@ -53,8 +53,7 @@ bbe::MeshBuilder::ModelUvDimensionsPair bbe::MeshBuilder::getModel(uint32_t pixe
 		rects.add(bbe::Rectanglei(
 			0, 0,
 			(int32_t)bbe::Math::max(1.0f, scale.x * (float)pixelsPerUnit),
-			(int32_t)bbe::Math::max(1.0f, scale.y * (float)pixelsPerUnit)
-		));
+			(int32_t)bbe::Math::max(1.0f, scale.y * (float)pixelsPerUnit)));
 	}
 	if (rects.getLength() == 0)
 	{
@@ -68,28 +67,28 @@ bbe::MeshBuilder::ModelUvDimensionsPair bbe::MeshBuilder::getModel(uint32_t pixe
 
 	for (size_t i = 0; i < quads.getLength(); i++)
 	{
-		const bbe::Matrix4& quad = quads[i];
-		const bbe::Rectanglei& uvRect = rects[i];
+		const bbe::Matrix4 &quad = quads[i];
+		const bbe::Rectanglei &uvRect = rects[i];
 
-		bbe::List<PosNormalPair> vertices =
-		{
-			bbe::PosNormalPair{bbe::Vector3(-0.5, -0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(uvRect.getLeft()  + 0.5f, uvRect.getTop()    + 0.5f)},
-			bbe::PosNormalPair{bbe::Vector3(-0.5,  0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(uvRect.getLeft()  + 0.5f, uvRect.getBottom() - 0.5f)},
-			bbe::PosNormalPair{bbe::Vector3( 0.5, -0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(uvRect.getRight() - 0.5f, uvRect.getTop()    + 0.5f)},
-			bbe::PosNormalPair{bbe::Vector3( 0.5,  0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(uvRect.getRight() - 0.5f, uvRect.getBottom() - 0.5f)},
+		bbe::List<PosNormalPair> vertices = {
+			bbe::PosNormalPair{ bbe::Vector3(-0.5, -0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(uvRect.getLeft() + 0.5f, uvRect.getTop() + 0.5f) },
+			bbe::PosNormalPair{ bbe::Vector3(-0.5, 0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(uvRect.getLeft() + 0.5f, uvRect.getBottom() - 0.5f) },
+			bbe::PosNormalPair{ bbe::Vector3(0.5, -0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(uvRect.getRight() - 0.5f, uvRect.getTop() + 0.5f) },
+			bbe::PosNormalPair{ bbe::Vector3(0.5, 0.5, 0), bbe::Vector3(0, 0, 1), bbe::Vector2(uvRect.getRight() - 0.5f, uvRect.getBottom() - 0.5f) },
 		};
-		retVal.model.m_bakingUvs.add(bbe::Vector2((float)uvRect.getLeft() , (float)uvRect.getTop()   ));
-		retVal.model.m_bakingUvs.add(bbe::Vector2((float)uvRect.getLeft() , (float)uvRect.getBottom()));
-		retVal.model.m_bakingUvs.add(bbe::Vector2((float)uvRect.getRight(), (float)uvRect.getTop()   ));
+		retVal.model.m_bakingUvs.add(bbe::Vector2((float)uvRect.getLeft(), (float)uvRect.getTop()));
+		retVal.model.m_bakingUvs.add(bbe::Vector2((float)uvRect.getLeft(), (float)uvRect.getBottom()));
+		retVal.model.m_bakingUvs.add(bbe::Vector2((float)uvRect.getRight(), (float)uvRect.getTop()));
 		retVal.model.m_bakingUvs.add(bbe::Vector2((float)uvRect.getRight(), (float)uvRect.getBottom()));
 		bbe::PosNormalPair::transform(vertices, quad);
-		const bbe::List<uint32_t> indices = { 
+		const bbe::List<uint32_t> indices = {
 			0 + 4 * (uint32_t)i,
 			1 + 4 * (uint32_t)i,
 			2 + 4 * (uint32_t)i,
 			2 + 4 * (uint32_t)i,
 			1 + 4 * (uint32_t)i,
-			3 + 4 * (uint32_t)i };
+			3 + 4 * (uint32_t)i
+		};
 
 		retVal.model.add(vertices, indices);
 	}

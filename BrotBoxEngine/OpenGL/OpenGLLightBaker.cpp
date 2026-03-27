@@ -2,7 +2,7 @@
 
 bbe::INTERNAL::openGl::OpenGLLightBaker::~OpenGLLightBaker()
 {
-	geometryBuffer  .destroy();
-	colorBuffer     .destroy();
+	geometryBuffer.destroy();
+	colorBuffer.destroy();
 	colorBufferGamma.destroy();
 }

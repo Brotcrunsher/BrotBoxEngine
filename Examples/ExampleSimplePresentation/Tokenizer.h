@@ -78,23 +78,25 @@ struct MoveAnimation
 
 struct RenderObject
 {
-	RenderObject(const bbe::String& name, RenderType rt, StartAnimation startAnim, float x, float y, float width, float height, float outlineWidth, const bbe::String& text, const bbe::Font* font);
+	RenderObject(const bbe::String &name, RenderType rt, StartAnimation startAnim, float x, float y, float width, float height, float outlineWidth, const bbe::String &text, const bbe::Font *font);
 
 	bbe::String name;
 	RenderType rt;
 	float x;
 	float y;
-	union {
+	union
+	{
 		float width;
 		float x2;
 	};
-	union {
+	union
+	{
 		float height;
 		float y2;
 	};
 	float outlineWidth;
 	bbe::String text;
-	const bbe::Font* font;
+	const bbe::Font *font;
 	bbe::Rectangle textBoundingBox;
 	std::shared_ptr<bbe::Image> image;
 
@@ -129,17 +131,18 @@ struct Token
 
 	virtual ~Token();
 
-	void submit(bbe::List<Token>& tokens);
-	bbe::List<size_t> getRenderObjectIndices(const bbe::List<bbe::String>& names) const;
+	void submit(bbe::List<Token> &tokens);
+	bbe::List<size_t> getRenderObjectIndices(const bbe::List<bbe::String> &names) const;
 };
 
 class Tokenizer
 {
 public:
 	bbe::List<Token> tokens;
+	virtual ~Tokenizer() = default;
 
-	virtual void tokenize(const bbe::String& text, const bbe::Font& font) = 0;
-	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues) = 0;
+	virtual void tokenize(const bbe::String &text, const bbe::Font &font) = 0;
+	virtual void determineTokenTypes(const bbe::List<bbe::String> &additionalTypes, const bbe::List<bbe::String> &additionalValues) = 0;
 	virtual void animateTokens() = 0;
 	virtual bool hasFinalBrightState() = 0;
 	virtual bool isTextBased() { return true; }

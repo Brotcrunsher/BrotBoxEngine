@@ -1,0 +1,5 @@
+GLX_EXT_get_drawable_type
+https://www.khronos.org/registry/egl/specs/eglspec.1.5.pdf
+GLX_EXT_get_drawable_type
+
+	GLX_DRAWABLE_TYPE 0x8010

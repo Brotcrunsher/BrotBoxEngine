@@ -9,40 +9,46 @@
 #include <string>
 #include <vector>
 
-namespace bbe {
-	namespace test {
-		void someTest(const wchar_t* arr, size_t size) {
-
+namespace bbe
+{
+	namespace test
+	{
+		void someTest(const wchar_t *arr, size_t size)
+		{
 		}
 
-		void stringSpeedAddition() {
+		void stringSpeedAddition()
+		{
 			double total = 0;
 			int numRuns = 0;
-			while (true) {
+			while (true)
+			{
 				CPUWatch allocationWatch;
 				bbe::String a(L"Hallo ");
 				bbe::String b(L"Welt");
-				for (int i = 0; i < 10000000; i++) {
+				for (int i = 0; i < 10000000; i++)
+				{
 					a += b;
 				}
 
 				total += allocationWatch.getTimeExpiredSeconds();
 				numRuns++;
 
-
-
-				BBELOGLN(total/numRuns);
+				BBELOGLN(total / numRuns);
 			}
 		}
 
-		void stringSpeedCreation() {
+		void stringSpeedCreation()
+		{
 			//char c = 0;
 			//std::vector<std::wstring> vec;
 			//std::vector<bbe::String> vec;
 			//std::cin >> c;
-			while (true) {
+			while (true)
+			{
 				CPUWatch allocationWatch;
-				for (int i = 0; i < 10000000; i++) {
+				for (int i = 0; i < 10000000; i++)
+				{
 					std::wstring ape(L"Hallooooooooooooooooooooo!");
 					//bbe::String ape(L"Hallooooooooooooooooooooo!");
 
@@ -52,7 +58,6 @@ namespace bbe {
 				BBELOGLN(allocationWatch.getTimeExpiredSeconds());
 				//vec.clear();
 			}
-
 		}
 	}
 }

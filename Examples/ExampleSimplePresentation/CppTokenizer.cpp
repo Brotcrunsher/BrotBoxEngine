@@ -1,7 +1,7 @@
 #include "CppTokenizer.h"
 #include "BBE/Vector2.h"
 
-void CppTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
+void CppTokenizer::tokenize(const bbe::String &text, const bbe::Font &font)
 {
 	bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(bbe::Vector2(0, 0), text);
 	const bbe::List<bbe::Vector2> powerPointPositions = font.getRenderPositions(bbe::Vector2(0, 0), text, 0, false);
@@ -84,7 +84,7 @@ void CppTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 	}
 }
 
-void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues)
+void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String> &additionalTypes, const bbe::List<bbe::String> &additionalValues)
 {
 	const bbe::List<bbe::String> keywords = { "constexpr", "class", "public", "private", "protected", "public:", "private:", "protected:", "virtual", "override", "if", "else", "alignas", "alignof", "delete", "operator", "sizeof", "template", "typename", "struct", "return", "noexcept", "this", "void", "int", "float", "double", "co_yield", "co_return", "co_await", "true", "false", "auto", "char", "int64_t", "const", "mutable", "while", "for", "do", "noexcept", "static", "volatile", "throw", "decltype", "typeof" };
 	const bbe::List<bbe::String> preprocessor = { "#include", "#define", "#ifdef", "#endif" };
@@ -127,8 +127,7 @@ void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalT
 			}
 
 			bool didChangeThisToken = true;
-			if (tokens[i].text.startsWith("//")
-				|| tokens[i].text.startsWith("/*"))
+			if (tokens[i].text.startsWith("//") || tokens[i].text.startsWith("/*"))
 			{
 				tokens[i].type = TokenType::comment;
 			}
@@ -149,9 +148,7 @@ void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalT
 			{
 				tokens[i].type = TokenType::keyword;
 			}
-			else if (tokens[i].text.isNumber()
-				|| (tokens[i].text == "." && i > 0 && tokens[i - 1].type == TokenType::number)
-				|| (tokens[i].text.endsWith("f") && i > 0 && tokens[i - 1].type == TokenType::number))
+			else if (tokens[i].text.isNumber() || (tokens[i].text == "." && i > 0 && tokens[i - 1].type == TokenType::number) || (tokens[i].text.endsWith("f") && i > 0 && tokens[i - 1].type == TokenType::number))
 			{
 				tokens[i].type = TokenType::number;
 			}
@@ -175,23 +172,12 @@ void CppTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalT
 			{
 				tokens[i].type = TokenType::punctuation;
 			}
-			else if ((i > 0 && (tokens[i - 1].text == "struct"
-				|| tokens[i - 1].text == "typename"
-				|| tokens[i - 1].text == "class"
-				|| tokens[i - 1].text == "::"))
-				|| types.contains(tokens[i].text))
+			else if ((i > 0 && (tokens[i - 1].text == "struct" || tokens[i - 1].text == "typename" || tokens[i - 1].text == "class" || tokens[i - 1].text == "::")) || types.contains(tokens[i].text))
 			{
 				tokens[i].type = TokenType::type;
 				if (!types.contains(tokens[i].text)) types.add(tokens[i].text);
 			}
-			else if ((i > 0 && tokens[i - 1].type == TokenType::type)
-				|| (i > 0 && types.contains(tokens[i - 1].text))
-				|| (i > 0 && tokens[i - 1].text == "=")
-				|| (i > 0 && tokens[i - 1].text == "return")
-				|| (i < tokens.getLength() - 1 && tokens[i + 1].text == "=")
-				|| (i < tokens.getLength() - 1 && tokens[i + 1].text == ")")
-				|| (values.contains(tokens[i].text))
-				|| (i > 1 && tokens[i - 2].type == TokenType::type && (tokens[i - 1].text == "*" || tokens[i - 1].text == "&")))
+			else if ((i > 0 && tokens[i - 1].type == TokenType::type) || (i > 0 && types.contains(tokens[i - 1].text)) || (i > 0 && tokens[i - 1].text == "=") || (i > 0 && tokens[i - 1].text == "return") || (i < tokens.getLength() - 1 && tokens[i + 1].text == "=") || (i < tokens.getLength() - 1 && tokens[i + 1].text == ")") || (values.contains(tokens[i].text)) || (i > 1 && tokens[i - 2].type == TokenType::type && (tokens[i - 1].text == "*" || tokens[i - 1].text == "&")))
 			{
 				tokens[i].type = TokenType::value;
 				if (!values.contains(tokens[i].text)) values.add(tokens[i].text);

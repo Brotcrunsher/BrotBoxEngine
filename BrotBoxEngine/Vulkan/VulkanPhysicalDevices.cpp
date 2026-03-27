@@ -4,7 +4,7 @@
 #include "BBE/Vulkan/VulkanHelper.h"
 #include "BBE/List.h"
 
-bbe::INTERNAL::vulkan::VulkanPhysicalDevice::VulkanPhysicalDevice(const VkPhysicalDevice & device, const VulkanSurface & surface)
+bbe::INTERNAL::vulkan::VulkanPhysicalDevice::VulkanPhysicalDevice(const VkPhysicalDevice &device, const VulkanSurface &surface)
 	: m_device(device)
 {
 	vkGetPhysicalDeviceProperties(device, &m_properties);
@@ -21,7 +21,7 @@ bbe::INTERNAL::vulkan::VulkanPhysicalDevice::VulkanPhysicalDevice(const VkPhysic
 uint32_t bbe::INTERNAL::vulkan::VulkanPhysicalDevice::findBestCompleteQueueIndex() const
 {
 	return 0; //TODO find best queue index which is complete
-	          //TODO check if VK_QUEUE_GRAPHICS_BIT is supported via vkGetPhysicalDeviceQueueFamilyProperties
+			  //TODO check if VK_QUEUE_GRAPHICS_BIT is supported via vkGetPhysicalDeviceQueueFamilyProperties
 }
 
 uint32_t bbe::INTERNAL::vulkan::VulkanPhysicalDevice::getMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags memoryPropertyFlags) const
@@ -52,17 +52,17 @@ bbe::INTERNAL::vulkan::PhysicalDeviceContainer::PhysicalDeviceContainer()
 	//do nothing
 }
 
-void bbe::INTERNAL::vulkan::PhysicalDeviceContainer::init(const VulkanInstance & instance, const VulkanSurface & surface)
+void bbe::INTERNAL::vulkan::PhysicalDeviceContainer::init(const VulkanInstance &instance, const VulkanSurface &surface)
 {
 	bbe::List<VkPhysicalDevice> physicalDevices = get_from_function<VkPhysicalDevice>(vkEnumeratePhysicalDevices, instance.getInstance());
-	
+
 	for (size_t i = 0; i < physicalDevices.getLength(); i++)
 	{
 		m_devices.add(VulkanPhysicalDevice(physicalDevices[i], surface));
 	}
 }
 
-const bbe::INTERNAL::vulkan::VulkanPhysicalDevice & bbe::INTERNAL::vulkan::PhysicalDeviceContainer::findBestDevice(const VulkanSurface & surface) const
+const bbe::INTERNAL::vulkan::VulkanPhysicalDevice &bbe::INTERNAL::vulkan::PhysicalDeviceContainer::findBestDevice(const VulkanSurface &surface) const
 {
 	for (size_t i = 0; i < m_devices.getLength(); i++)
 	{
@@ -73,6 +73,6 @@ const bbe::INTERNAL::vulkan::VulkanPhysicalDevice & bbe::INTERNAL::vulkan::Physi
 			return m_devices[i];
 		}
 	}
-	return m_devices[0];	//TODO find best device!
-							//Checken ob SurfaceSupport vorhanden ist via vkGetPhysicalDeviceSurfaceSupportKHR
+	return m_devices[0]; //TODO find best device!
+						 //Checken ob SurfaceSupport vorhanden ist via vkGetPhysicalDeviceSurfaceSupportKHR
 }

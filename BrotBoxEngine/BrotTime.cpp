@@ -3,22 +3,22 @@
 #include <sstream>
 #include <iomanip>
 
-static bbe::String convertFormatString(const bbe::String& format)
+static bbe::String convertFormatString(const bbe::String &format)
 {
 	bbe::String result = format;
 	result = result.replace("yyyy", "%Y");
 	result = result.replace("yy", "%y");
 	result = result.replace("MM", "%m");
 	result = result.replace("dd", "%d");
-	result = result.replace("HH", "%H");  // 24-hour format
-	result = result.replace("hh", "%I");  // 12-hour format
+	result = result.replace("HH", "%H"); // 24-hour format
+	result = result.replace("hh", "%I"); // 12-hour format
 	result = result.replace("mm", "%M");
 	result = result.replace("ss", "%S");
-	result = result.replace("a", "%p");   // AM/PM
+	result = result.replace("a", "%p"); // AM/PM
 	return result;
 }
 
-bbe::TimePoint bbe::TimePoint::fromString(const bbe::String& s, const bbe::String& format)
+bbe::TimePoint bbe::TimePoint::fromString(const bbe::String &s, const bbe::String &format)
 {
 	bbe::String strptimeFormat = convertFormatString(format);
 	std::tm tm = {};
@@ -45,7 +45,7 @@ static ::tm localtime_rs(std::time_t t)
 	return retVal;
 }
 
-static bbe::String ctime_rs(const std::time_t* t)
+static bbe::String ctime_rs(const std::time_t *t)
 {
 	char buffer[1024] = "ERROR";
 #ifdef WIN32
@@ -63,18 +63,15 @@ static bbe::String ctime_rs(const std::time_t* t)
 	return retVal;
 }
 
-bbe::TimePoint::TimePoint() :
-	m_time(std::chrono::system_clock::now())
+bbe::TimePoint::TimePoint() : m_time(std::chrono::system_clock::now())
 {
 }
 
-bbe::TimePoint::TimePoint(const std::chrono::system_clock::time_point &time) :
-	m_time(time)
+bbe::TimePoint::TimePoint(const std::chrono::system_clock::time_point &time) : m_time(time)
 {
 }
 
-bbe::TimePoint::TimePoint(std::time_t time) :
-	m_time(std::chrono::system_clock::from_time_t(time))
+bbe::TimePoint::TimePoint(std::time_t time) : m_time(std::chrono::system_clock::from_time_t(time))
 {
 }
 
@@ -150,7 +147,7 @@ int32_t bbe::TimePoint::isLeapYear(int32_t year)
 {
 	if (year % 400 == 0) return true;
 	if (year % 100 == 0) return false;
-	if (year %   4 == 0) return true;
+	if (year % 4 == 0) return true;
 	return false;
 }
 
@@ -158,19 +155,32 @@ int32_t bbe::TimePoint::getDaysInMonth(int32_t year, Month month)
 {
 	switch (month)
 	{
-	case Month::JANUARY  : return 31;
-	case Month::FEBRUARY : return isLeapYear(year) ? 29 : 28;
-	case Month::MARCH    : return 31;
-	case Month::APRIL    : return 30;
-	case Month::MAY      : return 31;
-	case Month::JUNE     : return 30;
-	case Month::JULY     : return 31;
-	case Month::AUGUST   : return 31;
-	case Month::SEPTEMBER: return 30;
-	case Month::OCTOBER  : return 31;
-	case Month::NOVEMBER : return 30;
-	case Month::DECEMBER : return 31;
-	default: throw std::runtime_error("Illegal Argument");
+	case Month::JANUARY:
+		return 31;
+	case Month::FEBRUARY:
+		return isLeapYear(year) ? 29 : 28;
+	case Month::MARCH:
+		return 31;
+	case Month::APRIL:
+		return 30;
+	case Month::MAY:
+		return 31;
+	case Month::JUNE:
+		return 30;
+	case Month::JULY:
+		return 31;
+	case Month::AUGUST:
+		return 31;
+	case Month::SEPTEMBER:
+		return 30;
+	case Month::OCTOBER:
+		return 31;
+	case Month::NOVEMBER:
+		return 30;
+	case Month::DECEMBER:
+		return 31;
+	default:
+		throw std::runtime_error("Illegal Argument");
 	}
 	return 0;
 }
@@ -246,27 +256,27 @@ bbe::TimePoint bbe::TimePoint::plusMilliseconds(int64_t ms) const
 	return bbe::TimePoint(m_time + 1ms * ms);
 }
 
-bbe::Duration bbe::TimePoint::operator-(const bbe::TimePoint& other) const
+bbe::Duration bbe::TimePoint::operator-(const bbe::TimePoint &other) const
 {
 	return bbe::Duration(m_time - other.m_time);
 }
 
-bool bbe::TimePoint::operator<(const bbe::TimePoint& other) const
+bool bbe::TimePoint::operator<(const bbe::TimePoint &other) const
 {
 	return m_time < other.m_time;
 }
 
-bool bbe::TimePoint::operator>(const bbe::TimePoint& other) const
+bool bbe::TimePoint::operator>(const bbe::TimePoint &other) const
 {
 	return m_time > other.m_time;
 }
 
-bool bbe::TimePoint::operator==(const bbe::TimePoint& other) const
+bool bbe::TimePoint::operator==(const bbe::TimePoint &other) const
 {
 	return m_time == other.m_time;
 }
 
-bool bbe::TimePoint::operator!=(const bbe::TimePoint& other) const
+bool bbe::TimePoint::operator!=(const bbe::TimePoint &other) const
 {
 	return m_time != other.m_time;
 }
@@ -297,7 +307,7 @@ bool bbe::TimePoint::isNight(int64_t fromHour, int64_t toHour) const
 	}
 }
 
-static int getWDay(const std::chrono::system_clock::time_point& tp)
+static int getWDay(const std::chrono::system_clock::time_point &tp)
 {
 	std::time_t t = std::chrono::system_clock::to_time_t(tp);
 	::tm timeinfo = localtime_rs(t);
@@ -309,14 +319,22 @@ bbe::Weekday bbe::TimePoint::getWeekday() const
 	int wday = getWDay(m_time);
 	switch (wday)
 	{
-	case 0: return bbe::Weekday::SUNDAY;
-	case 1: return bbe::Weekday::MONDAY;
-	case 2: return bbe::Weekday::TUESDAY;
-	case 3: return bbe::Weekday::WEDNESDAY;
-	case 4: return bbe::Weekday::THURSDAY;
-	case 5: return bbe::Weekday::FRIDAY;
-	case 6: return bbe::Weekday::SATURDAY;
-	default: throw std::runtime_error("Illegal wday");
+	case 0:
+		return bbe::Weekday::SUNDAY;
+	case 1:
+		return bbe::Weekday::MONDAY;
+	case 2:
+		return bbe::Weekday::TUESDAY;
+	case 3:
+		return bbe::Weekday::WEDNESDAY;
+	case 4:
+		return bbe::Weekday::THURSDAY;
+	case 5:
+		return bbe::Weekday::FRIDAY;
+	case 6:
+		return bbe::Weekday::SATURDAY;
+	default:
+		throw std::runtime_error("Illegal wday");
 	}
 }
 
@@ -363,11 +381,9 @@ bool bbe::TimePoint::isToday() const
 	return thisTimeinfo.tm_year == nowTimeinfo.tm_year && thisTimeinfo.tm_yday == nowTimeinfo.tm_yday;
 }
 
-bool bbe::TimePoint::isSameDay(const bbe::TimePoint& other) const
+bool bbe::TimePoint::isSameDay(const bbe::TimePoint &other) const
 {
-	return getYear()  == other.getYear() 
-		&& getMonth() == other.getMonth() 
-		&& getDay()   == other.getDay();
+	return getYear() == other.getYear() && getMonth() == other.getMonth() && getDay() == other.getDay();
 }
 
 bbe::String bbe::TimePoint::toString() const
@@ -376,13 +392,13 @@ bbe::String bbe::TimePoint::toString() const
 	return ctime_rs(&t);
 }
 
-void bbe::TimePoint::serialize(bbe::ByteBuffer& buffer) const
+void bbe::TimePoint::serialize(bbe::ByteBuffer &buffer) const
 {
 	int64_t val = (int64_t)std::chrono::system_clock::to_time_t(m_time);
 	buffer.write(val);
 }
 
-bbe::TimePoint bbe::TimePoint::deserialize(bbe::ByteBufferSpan& buffer)
+bbe::TimePoint bbe::TimePoint::deserialize(bbe::ByteBufferSpan &buffer)
 {
 	int64_t val;
 	buffer.read(val);
@@ -430,8 +446,7 @@ bbe::Duration::Duration()
 {
 }
 
-bbe::Duration::Duration(const std::chrono::system_clock::duration& duration) :
-	m_duration(duration)
+bbe::Duration::Duration(const std::chrono::system_clock::duration &duration) : m_duration(duration)
 {
 }
 
@@ -442,16 +457,16 @@ bbe::Duration bbe::Duration::fromMilliseconds(int64_t millis)
 
 bbe::String bbe::Duration::toString(bool showMillis) const
 {
-	const int64_t millis  = toMillis() % 1000;
+	const int64_t millis = toMillis() % 1000;
 	const int64_t seconds = toSeconds() % 60;
 	const int64_t minutes = toMinutes() % 60;
-	const int64_t hours   = toHours() % 24;
-	const int64_t days    = toDays();
+	const int64_t hours = toHours() % 24;
+	const int64_t days = toDays();
 
-	if(showMillis)
+	if (showMillis)
 	{
-		if(days == 0)
-			if(hours == 0)
+		if (days == 0)
+			if (hours == 0)
 				return bbe::String::format("%.2lld:%.2lld:%.3lld", minutes, seconds, millis);
 			else
 				return bbe::String::format("%.2lld:%.2lld:%.2lld:%.3lld", hours, minutes, seconds, millis);
@@ -460,8 +475,8 @@ bbe::String bbe::Duration::toString(bool showMillis) const
 	}
 	else
 	{
-		if(days == 0)
-			if(hours == 0)
+		if (days == 0)
+			if (hours == 0)
 				return bbe::String::format("%.2lld:%.2lld", minutes, seconds);
 			else
 				return bbe::String::format("%.2lld:%.2lld:%.2lld", hours, minutes, seconds);

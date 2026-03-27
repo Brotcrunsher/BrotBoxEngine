@@ -40,8 +40,7 @@ TEST(Rectangle, packing)
 				rand.randomInt(100),
 				rand.randomInt(100),
 				rand.randomInt(100),
-				rand.randomInt(100)
-			));
+				rand.randomInt(100)));
 		}
 		bbe::Vector2i boundingBox = bbe::Rectanglei::pack(rects);
 

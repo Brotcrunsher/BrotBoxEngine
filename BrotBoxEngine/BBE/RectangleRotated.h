@@ -4,7 +4,8 @@
 
 namespace bbe
 {
-	template<typename Vec> class Rectangle_t;
+	template<typename Vec>
+	class Rectangle_t;
 	using Rectangle = Rectangle_t<bbe::Vector2>;
 
 	class RectangleRotated : public bbe::Shape2<bbe::Vector2>
@@ -24,9 +25,9 @@ namespace bbe
 		RectangleRotated(const Vector2 &vec, float width, float height, float rotation);
 		RectangleRotated(float x, float y, const Vector2 &dim, float rotation);
 		RectangleRotated(const Vector2 &vec, const Vector2 &dim, float rotation);
-		RectangleRotated(const Rectangle& rect, float rotation);
+		RectangleRotated(const Rectangle &rect, float rotation);
 
-		bool operator==(const RectangleRotated& other) const;
+		bool operator==(const RectangleRotated &other) const;
 
 		float getX() const;
 		float getY() const;
@@ -41,11 +42,11 @@ namespace bbe
 		void setWidth(float width);
 		void setHeight(float height);
 		void setRotation(float rotation);
-		virtual void translate(const Vector2& vec) override;
+		virtual void translate(const Vector2 &vec) override;
 
 		virtual bbe::Vector2 getCenter() const override;
 
 		using Shape2<Vector2>::getVertices;
-		virtual void getVertices(bbe::List<bbe::Vector2>& outVertices) const override;
+		virtual void getVertices(bbe::List<bbe::Vector2> &outVertices) const override;
 	};
 }

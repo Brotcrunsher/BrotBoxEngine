@@ -5,22 +5,23 @@
 
 namespace bbe
 {
-	template<typename T> class EndlessGrid;
-
+	template<typename T>
+	class EndlessGrid;
 
 	template<typename T>
 	class EndlessGridColProxy
 	{
 	private:
-		bbe::EndlessGrid<T>& m_parent;
+		bbe::EndlessGrid<T> &m_parent;
 		int64_t m_col = 0;
 
 	public:
-		EndlessGridColProxy(bbe::EndlessGrid<T>& parent, int64_t col)
+		EndlessGridColProxy(bbe::EndlessGrid<T> &parent, int64_t col)
 			: m_parent(parent), m_col(col)
-		{}
+		{
+		}
 
-		T& operator[](int64_t y)
+		T &operator[](int64_t y)
 		{
 			return m_parent.get(m_col, y);
 		}
@@ -34,12 +35,9 @@ namespace bbe
 		bbe::Grid<T> m_grid;
 		T m_defaultValue = {};
 
-		bool isValidIndex(const bbe::Vector2i64& pos) const
+		bool isValidIndex(const bbe::Vector2i64 &pos) const
 		{
-			if(    pos.x >= 0 
-				&& pos.y >= 0 
-				&& pos.x < m_grid.getWidth() 
-				&& pos.y < m_grid.getHeight())
+			if (pos.x >= 0 && pos.y >= 0 && pos.x < m_grid.getWidth() && pos.y < m_grid.getHeight())
 			{
 				return true;
 			}
@@ -49,13 +47,13 @@ namespace bbe
 		void growIfNeeded(int64_t x_, int64_t y_)
 		{
 			const auto startCoord = toNativeCoord(x_, y_);
-			if(isValidIndex(startCoord))
+			if (isValidIndex(startCoord))
 			{
 				// No need to grow!
 				return;
 			}
 			// TODO: Double size to minimize allocations. Careful though! It should extend the range in the negative indizes roughly (or exactly?) equally.
-			const int64_t growWidth  = bbe::Math::distanceToRange<int64_t>(0, m_grid.getWidth (), startCoord.x);
+			const int64_t growWidth = bbe::Math::distanceToRange<int64_t>(0, m_grid.getWidth(), startCoord.x);
 			const int64_t growHeight = bbe::Math::distanceToRange<int64_t>(0, m_grid.getHeight(), startCoord.y);
 
 			const int64_t newGridOffsetX = startCoord.x < 0 ? startCoord.x : 0;
@@ -84,7 +82,7 @@ namespace bbe
 	public:
 		EndlessGrid() = default;
 
-		const T& observe(int64_t x, int64_t y, const T& t) const
+		const T &observe(int64_t x, int64_t y, const T &t) const
 		{
 			auto index = toNativeCoord(x, y);
 			if (!isValidIndex(index))
@@ -97,12 +95,12 @@ namespace bbe
 			}
 		}
 
-		const T& observe(int64_t x, int64_t y) const
+		const T &observe(int64_t x, int64_t y) const
 		{
 			return observe(x, y, m_defaultValue);
 		}
 
-		T& get(int64_t x, int64_t y)
+		T &get(int64_t x, int64_t y)
 		{
 			growIfNeeded(x, y);
 			auto index = toNativeCoord(x, y);
@@ -124,7 +122,7 @@ namespace bbe
 			return m_grid.getHeight();
 		}
 
-		void setDefaultValue(const T& t)
+		void setDefaultValue(const T &t)
 		{
 			m_defaultValue = t;
 		}

@@ -5,6 +5,7 @@
 #include "../BBE/Span.h"
 #include "../BBE/Rectangle.h"
 #include "../BBE/Vector2.h"
+#include <limits>
 
 namespace bbe
 {
@@ -17,7 +18,7 @@ namespace bbe
 		bool hasMore = true;
 
 	public:
-		GridIterator_t(const bbe::Vector2& current, const bbe::Vector2& end) : current(current), end(end) {}
+		GridIterator_t(const bbe::Vector2 &current, const bbe::Vector2 &end) : current(current), end(end) {}
 
 		bool hasNext() const
 		{
@@ -55,35 +56,60 @@ namespace bbe
 		size_t m_height;
 		bbe::List<T> m_pdata;
 
+		static size_t checkedArea(size_t width, size_t height)
+		{
+			if (height != 0 && width > std::numeric_limits<size_t>::max() / height)
+			{
+				bbe::Crash(bbe::Error::OutOfMemory, "Grid dimensions overflow.");
+			}
+
+			return width * height;
+		}
+
+		void initializeStorage(size_t width, size_t height)
+		{
+			m_width = width;
+			m_height = height;
+			m_pdata.resizeCapacityAndLength(checkedArea(m_width, m_height));
+		}
 
 	public:
-		Grid() :
-			m_width(0),
-			m_height(0),
-			m_pdata()
-		{}
-
-		Grid(size_t width, size_t height) :
-			m_width(width),
-			m_height(height),
-			m_pdata()
+		Grid() : m_width(0),
+				 m_height(0),
+				 m_pdata()
 		{
-			m_pdata.resizeCapacityAndLength(m_width * m_height);
 		}
 
-		explicit Grid(const bbe::Vector2i& dim) :
-			m_width(dim.x),
-			m_height(dim.y),
-			m_pdata()
+		Grid(size_t width, size_t height) : m_width(0),
+											m_height(0),
+											m_pdata()
 		{
-			m_pdata.resizeCapacityAndLength(m_width * m_height);
+			initializeStorage(width, height);
 		}
 
-		/*nonexplicit*/ Grid(const std::initializer_list<std::initializer_list<T>>& il)
+		explicit Grid(const bbe::Vector2i &dim) : m_width(0),
+												  m_height(0),
+												  m_pdata()
 		{
+			if (dim.x < 0 || dim.y < 0)
+			{
+				bbe::Crash(bbe::Error::IllegalArgument, "Grid dimensions must not be negative.");
+			}
+
+			initializeStorage(static_cast<size_t>(dim.x), static_cast<size_t>(dim.y));
+		}
+
+		/*nonexplicit*/ Grid(const std::initializer_list<std::initializer_list<T>> &il)
+		{
+			if (il.size() == 0)
+			{
+				m_width = 0;
+				m_height = 0;
+				return;
+			}
 			m_width = il.begin()->size();
 			m_height = il.size();
-			m_pdata.resizeCapacityAndLength(m_width * m_height);
+			m_pdata.resizeCapacityAndLength(checkedArea(m_width, m_height));
 
 			size_t x = 0;
 			size_t y = 0;
@@ -121,14 +147,19 @@ namespace bbe
 			return bbe::Span(m_pdata.getRaw() + x * m_height, m_height);
 		}
 
-		T& operator[](const bbe::Vector2i& access)
+		T &operator[](const bbe::Vector2i &access)
 		{
 			return operator[](access.x)[access.y];
 		}
 
-		const T& operator[](const bbe::Vector2i& access) const
+		const T &operator[](const bbe::Vector2i &access) const
 		{
 			return operator[](access.x)[access.y];
+		}
+
+		bool isValidIndex(const bbe::Vector2i &access) const
+		{
+			return access.x >= 0 && access.x < getWidth() && access.y >= 0 && access.y < getHeight();
 		}
 
 		size_t getWidth() const
@@ -141,12 +172,12 @@ namespace bbe
 			return m_height;
 		}
 
-		T* getRaw()
+		T *getRaw()
 		{
 			return m_pdata;
 		}
 
-		const T* getRaw() const
+		const T *getRaw() const
 		{
 			return m_pdata;
 		}
@@ -198,7 +229,7 @@ namespace bbe
 			return retVal;
 		}
 
-		bbe::Rectanglei getBiggestRect(const T& value) const
+		bbe::Rectanglei getBiggestRect(const T &value) const
 		{
 			bbe::Rectanglei retVal;
 			bbe::List<size_t> histogram;
@@ -256,7 +287,7 @@ namespace bbe
 						{
 							retVal.x = i - histogram[k] + 1;
 							retVal.y = up;
-							retVal.width  = histogram[k];
+							retVal.width = histogram[k];
 							retVal.height = width;
 						}
 					}
@@ -266,7 +297,7 @@ namespace bbe
 			return retVal;
 		}
 
-		bbe::List<bbe::Rectanglei> getAllBiggestRects(const T& value) const
+		bbe::List<bbe::Rectanglei> getAllBiggestRects(const T &value) const
 		{
 			Grid<T> copy = *this;
 			bbe::List<bbe::Rectanglei> retVal;
@@ -312,16 +343,16 @@ namespace bbe
 			return retVal;
 		}
 
-		void setAll(const T& t)
+		void setAll(const T &t)
 		{
 			for (size_t i = 0; i < m_pdata.getLength(); i++)
 			{
 				m_pdata[i] = t;
 			}
 		}
-	public:
 
-		void floodFill(const bbe::Vector2i& pos, const T& to, bool fillDiagonal)
+	public:
+		void floodFill(const bbe::Vector2i &pos, const T &to, bool fillDiagonal)
 		{
 			const T from = operator[](pos);
 			if (from == to) return;
@@ -336,16 +367,16 @@ namespace bbe
 				{
 					operator[](pos) = to;
 
-					posToCheck.add( bbe::Vector2i(pos.x + 1, pos.y ));
-					posToCheck.add( bbe::Vector2i(pos.x - 1, pos.y ));
-					posToCheck.add( bbe::Vector2i(pos.x, pos.y + 1 ));
-					posToCheck.add( bbe::Vector2i(pos.x, pos.y - 1 ));
+					posToCheck.add(bbe::Vector2i(pos.x + 1, pos.y));
+					posToCheck.add(bbe::Vector2i(pos.x - 1, pos.y));
+					posToCheck.add(bbe::Vector2i(pos.x, pos.y + 1));
+					posToCheck.add(bbe::Vector2i(pos.x, pos.y - 1));
 					if (fillDiagonal)
 					{
-						posToCheck.add( bbe::Vector2i(pos.x + 1, pos.y + 1 ));
-						posToCheck.add( bbe::Vector2i(pos.x - 1, pos.y + 1 ));
-						posToCheck.add( bbe::Vector2i(pos.x + 1, pos.y - 1 ));
-						posToCheck.add( bbe::Vector2i(pos.x - 1, pos.y - 1 ));
+						posToCheck.add(bbe::Vector2i(pos.x + 1, pos.y + 1));
+						posToCheck.add(bbe::Vector2i(pos.x - 1, pos.y + 1));
+						posToCheck.add(bbe::Vector2i(pos.x + 1, pos.y - 1));
+						posToCheck.add(bbe::Vector2i(pos.x - 1, pos.y - 1));
 					}
 				}
 			}

@@ -10,9 +10,9 @@
 #ifndef _WINDEF_
 // Forward declare it to avoid including the whole windows header everywhere.
 class HICON__;
-typedef HICON__* HICON;
+typedef HICON__ *HICON;
 class HBITMAP__;
-typedef HBITMAP__* HBITMAP;
+typedef HBITMAP__ *HBITMAP;
 #endif
 #endif
 
@@ -39,24 +39,24 @@ namespace bbe
 
 	enum class ImageFormat
 	{
-		R8G8B8A8          =  37, //VK_FORMAT_R8G8B8A8_UNORM
-		R8                =   9, //VK_FORMAT_R8_UNORM
-		R32FLOAT          = 100, //VK_FORMAT_R32_SFLOAT
+		R8G8B8A8 = 37,			 //VK_FORMAT_R8G8B8A8_UNORM
+		R8 = 9,					 //VK_FORMAT_R8_UNORM
+		R32FLOAT = 100,			 //VK_FORMAT_R32_SFLOAT
 		R32G32B32A32FLOAT = 109, //VK_FORMAT_R32G32B32A32_SFLOAT
 	};
 
 	enum class ImageRepeatMode
 	{
-		REPEAT               = 0, //VK_SAMPLER_ADDRESS_MODE_REPEAT
-		MIRRORED_REPEAT      = 1, //VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT
-		CLAMP_TO_EDGE        = 2, //VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
-		CLAMP_TO_BORDER      = 3, //VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER
+		REPEAT = 0,				  //VK_SAMPLER_ADDRESS_MODE_REPEAT
+		MIRRORED_REPEAT = 1,	  //VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT
+		CLAMP_TO_EDGE = 2,		  //VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+		CLAMP_TO_BORDER = 3,	  //VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER
 		MIRROR_CLAMP_TO_EDGE = 4, //VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE
 	};
 
 	enum class ImageFilterMode
 	{
-		LINEAR  = 1, //VK_FILTER_LINEAR
+		LINEAR = 1,	 //VK_FILTER_LINEAR
 		NEAREST = 0, //VK_FILTER_NEAREST
 	};
 
@@ -69,43 +69,44 @@ namespace bbe
 		friend class INTERNAL::openGl::OpenGLManager;
 		friend class PrimitiveBrush2D;
 		friend class PrimitiveBrush3D;
+
 	private:
 		mutable bbe::List<byte> m_pdata;
-		int             m_width  = 0;
-		int             m_height = 0;
-		ImageFormat     m_format = ImageFormat::R8G8B8A8;
+		int m_width = 0;
+		int m_height = 0;
+		ImageFormat m_format = ImageFormat::R8G8B8A8;
 		ImageRepeatMode m_repeatMode = ImageRepeatMode::REPEAT;
 		ImageFilterMode m_filterMode = ImageFilterMode::LINEAR;
 		bool keep = false;
 
 		mutable bbe::AutoRef m_prendererData;
 
-		void finishLoad(stbi_uc* pixels);
+		bool finishLoad(stbi_uc *pixels);
 
 	public:
-		static const Image& white();
-		static const Image& black();
-		
+		static const Image &white();
+		static const Image &black();
+
 		Image();
-		explicit Image(const char* path);
-		explicit Image(const bbe::String& path);
+		explicit Image(const char *path);
+		explicit Image(const bbe::String &path);
 		Image(int width, int height);
 		Image(int width, int height, const Color &c);
-		Image(int width, int height, const void* data, ImageFormat format);
-		
-		Image(const Image& other) = default; //Copy Constructor
-		Image(Image&& other) noexcept = default; //Move Constructor
-		Image& operator=(const Image& other) = default; //Copy Assignment
-		Image& operator=(Image&& other) noexcept = default; //Move Assignment
-		
-		void loadRaw(const bbe::ByteBuffer& buffer);
-		void loadRaw(const bbe::List<unsigned char>& rawData);
-		void loadRaw(const unsigned char* rawData, size_t dataLength);
-		void load(const char* path);
-		void load(const bbe::String& path);
+		Image(int width, int height, const void *data, ImageFormat format);
+
+		Image(const Image &other) = default;				//Copy Constructor
+		Image(Image &&other) noexcept = default;			//Move Constructor
+		Image &operator=(const Image &other) = default;		//Copy Assignment
+		Image &operator=(Image &&other) noexcept = default; //Move Assignment
+
+		bool loadRaw(const bbe::ByteBuffer &buffer);
+		bool loadRaw(const bbe::List<unsigned char> &rawData);
+		bool loadRaw(const unsigned char *rawData, size_t dataLength);
+		void load(const char *path);
+		void load(const bbe::String &path);
 		void load(int width, int height);
 		void load(int width, int height, const Color &c);
-		void load(int width, int height, const void* data, ImageFormat format);
+		void load(int width, int height, const void *data, ImageFormat format);
 
 		int getWidth() const;
 		int getHeight() const;
@@ -114,11 +115,13 @@ namespace bbe
 		size_t getAmountOfChannels() const;
 		size_t getBytesPerChannel() const;
 		size_t getBytesPerPixel() const;
-		Colori getPixel(const bbe::Vector2i& pos) const;
+		Colori getPixel(const bbe::Vector2i &pos) const;
 		Colori getPixel(size_t x, size_t y) const;
-		void setPixel(const bbe::Vector2i& pos, const bbe::Colori& c);
-		void setPixel(size_t x, size_t y, const Colori& c);
+		void setPixel(const bbe::Vector2i &pos, const bbe::Colori &c);
+		void setPixel(size_t x, size_t y, const Colori &c);
 		size_t getIndexForRawAccess(size_t x, size_t y) const;
+
+		int64_t distance(const Image &other) const;
 
 		ImageRepeatMode getRepeatMode() const;
 		void setRepeatMode(ImageRepeatMode irm);
@@ -130,19 +133,21 @@ namespace bbe
 		bool isLoadedGpu() const;
 		void keepAfterUpload();
 
-		void floodFill(const bbe::Vector2i& pos, const bbe::Colori& to, bool fillDiagonal = false, bool tiled = false);
+		void floodFill(const bbe::Vector2i &pos, const bbe::Colori &to, bool fillDiagonal = false, bool tiled = false);
 
-		void writeToFile(const bbe::String& path) const;
-		void writeToFile(const char* path) const;
+		void writeToFile(const bbe::String &path) const;
+		void writeToFile(const char *path) const;
 
 		void flipHorizontally();
 
-#ifdef _WIN32
+		static bool supportsClipboardImages();
 		static bool isImageInClipbaord();
 		static bbe::Image getClipboardImage();
+		void copyToClipboard() const;
+
+#ifdef _WIN32
 		HBITMAP toBitmap() const;
 		HICON toIcon() const;
-		void copyToClipboard() const;
 		static Image screenshot(int x, int y, int width, int height);
 #endif
 	};

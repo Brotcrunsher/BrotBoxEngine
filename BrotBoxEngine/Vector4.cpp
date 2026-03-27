@@ -63,7 +63,7 @@ bbe::Vector4::Vector4(float x, const bbe::Vector3 &yzw)
 	//UNTESTED
 }
 
-bbe::Vector4 & bbe::Vector4::operator+=(const Vector4 & other)
+bbe::Vector4 &bbe::Vector4::operator+=(const Vector4 &other)
 {
 	//UNTESTED
 	this->x += other.x;
@@ -73,7 +73,7 @@ bbe::Vector4 & bbe::Vector4::operator+=(const Vector4 & other)
 	return *this;
 }
 
-bbe::Vector4 & bbe::Vector4::operator-=(const Vector4 & other)
+bbe::Vector4 &bbe::Vector4::operator-=(const Vector4 &other)
 {
 	//UNTESTED
 	this->x -= other.x;
@@ -83,7 +83,7 @@ bbe::Vector4 & bbe::Vector4::operator-=(const Vector4 & other)
 	return *this;
 }
 
-bbe::Vector4 & bbe::Vector4::operator*=(const Vector4 & other)
+bbe::Vector4 &bbe::Vector4::operator*=(const Vector4 &other)
 {
 	//UNTESTED
 	this->x *= other.x;
@@ -93,7 +93,7 @@ bbe::Vector4 & bbe::Vector4::operator*=(const Vector4 & other)
 	return *this;
 }
 
-bbe::Vector4 & bbe::Vector4::operator/=(const Vector4 & other)
+bbe::Vector4 &bbe::Vector4::operator/=(const Vector4 &other)
 {
 	//UNTESTED
 	this->x /= other.x;
@@ -103,13 +103,13 @@ bbe::Vector4 & bbe::Vector4::operator/=(const Vector4 & other)
 	return *this;
 }
 
-bbe::Vector4 bbe::Vector4::operator+(const bbe::Vector4 & other) const
+bbe::Vector4 bbe::Vector4::operator+(const bbe::Vector4 &other) const
 {
 	//UNTESTED
 	return Vector4(x + other.x, y + other.y, z + other.z, w + other.w);
 }
 
-bbe::Vector4 bbe::Vector4::operator-(const Vector4 & other) const
+bbe::Vector4 bbe::Vector4::operator-(const Vector4 &other) const
 {
 	//UNTESTED
 	return Vector4(x - other.x, y - other.y, z - other.z, w - other.w);
@@ -132,7 +132,7 @@ bbe::Vector4 bbe::Vector4::operator/(float scalar) const
 	return Vector4(x / scalar, y / scalar, z / scalar, w / scalar);
 }
 
-float& bbe::Vector4::operator[](int index)
+float &bbe::Vector4::operator[](int index)
 {
 	//UNTESTED
 	switch (index)
@@ -150,7 +150,7 @@ float& bbe::Vector4::operator[](int index)
 	}
 }
 
-const float& bbe::Vector4::operator[](int index) const
+const float &bbe::Vector4::operator[](int index) const
 {
 	//UNTESTED
 	switch (index)
@@ -173,7 +173,6 @@ bbe::Vector4 bbe::Vector4::normalizeXYZ() const
 	float length = bbe::Math::sqrt(x * x + y * y + z * z);
 	return Vector4(x / length, y / length, z / length, w / length);
 }
-
 
 //Start Swizzles
 bbe::Vector2 bbe::Vector4::xx() const
