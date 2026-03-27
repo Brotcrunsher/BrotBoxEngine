@@ -464,6 +464,11 @@ private:
 	}
 
 public:
+	MyGame()
+	{
+		setReactiveRendering(true);
+	}
+
 #if defined(_WIN32) || defined(__linux__)
 	bbe::TrayIcon::IconHandle createTrayIcon(uint32_t offset, int redGreenBlue)
 	{

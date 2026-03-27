@@ -317,7 +317,15 @@ void bbe::Game::frame(bool dragging)
 		showWindow();
 	}
 	frameUpdate();
-	frameDraw(dragging);
+	bool shouldDraw = true;
+	if (m_reactiveRendering && videoRenderingPath == nullptr && screenshotRenderingPath == nullptr)
+	{
+		shouldDraw = m_pwindow->hasPendingRenderRequest();
+	}
+	if (shouldDraw)
+	{
+		frameDraw(dragging);
+	}
 	if (m_targetFrameTime > 0)
 	{
 		const auto expired = sw.getTimeExpiredMicroseconds();
@@ -377,6 +385,7 @@ void bbe::Game::frameDraw(bool dragging)
 	{
 		return;
 	}
+	m_pwindow->consumeRenderRequest();
 
 	beginMeasure("INTERNAL - Pre Draw 3D");
 	m_pwindow->preDraw();
@@ -423,6 +432,28 @@ void bbe::Game::setExternallyManaged(bool managed)
 bool bbe::Game::isExternallyManaged() const
 {
 	return m_externallyManaged;
+}
+
+void bbe::Game::setReactiveRendering(bool reactiveRendering)
+{
+	m_reactiveRendering = reactiveRendering;
+	if (reactiveRendering)
+	{
+		requestRedraw();
+	}
+}
+
+bool bbe::Game::isReactiveRendering() const
+{
+	return m_reactiveRendering;
+}
+
+void bbe::Game::requestRedraw()
+{
+	if (m_pwindow != nullptr)
+	{
+		m_pwindow->requestRender();
+	}
 }
 
 bool bbe::Game::isKeyDown(bbe::Key key)
@@ -861,4 +892,3 @@ bbe::Window* bbe::Game::getWindow()
 {
 	return m_pwindow;
 }
-

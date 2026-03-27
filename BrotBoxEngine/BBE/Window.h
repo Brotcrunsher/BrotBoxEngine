@@ -30,6 +30,7 @@ namespace bbe
 		std::unique_ptr<bbe::RenderManager> m_renderManager;
 		bbe::List<std::function<void()>>    m_closeListeners;
 		bbe::List<std::function<void()>>    m_frameStartListeners;
+		bool                                m_hasPendingRenderRequest = true;
 
 		int                                 m_width;
 		int                                 m_height;
@@ -107,6 +108,9 @@ namespace bbe
 		void registerFrameStartListener(const std::function<void()>& listener);
 		void executeFrameStartListeneres();
 		void update();
+		void requestRender();
+		bool hasPendingRenderRequest() const;
+		void consumeRenderRequest();
 
 		void* getNativeHandle();
 

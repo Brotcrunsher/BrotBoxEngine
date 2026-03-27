@@ -359,6 +359,7 @@ void bbe::Window::setSize(const Vector2i& size)
 	auto& recreateState = g_windowRecreateStates[this];
 	recreateState.lastWindowSize = size;
 	recreateState.hasPlacement = true;
+	requestRender();
 	if (m_pwindow != nullptr)
 	{
 		glfwWrapper::glfwSetWindowSize(m_pwindow, size.x, size.y);
@@ -379,6 +380,7 @@ void bbe::Window::maximize()
 {
 	auto& recreateState = g_windowRecreateStates[this];
 	recreateState.lastWindowMaximized = true;
+	requestRender();
 	if (m_pwindow != nullptr)
 	{
 		glfwWrapper::glfwMaximizeWindow(m_pwindow);
@@ -403,6 +405,7 @@ void bbe::Window::setPos(const Vector2i& pos)
 	auto& recreateState = g_windowRecreateStates[this];
 	recreateState.lastWindowPos = pos;
 	recreateState.hasPlacement = true;
+	requestRender();
 	if (m_pwindow != nullptr)
 	{
 		glfwWrapper::glfwSetWindowPos(m_pwindow, pos.x, pos.y);
@@ -524,10 +527,12 @@ void bbe::Window::showWindow()
 	glfwWrapper::glfwFocusWindow(m_pwindow);
 	glfwWrapper::glfwRestoreWindow(m_pwindow);
 #endif
+	requestRender();
 }
 
 void bbe::Window::hideWindow()
 {
+	requestRender();
 	if (m_pwindow == nullptr) return;
 #ifdef __linux__
 	auto& recreateState = g_windowRecreateStates[this];
@@ -574,6 +579,7 @@ void bbe::Window::INTERNAL_resize(int width, int height)
 	if (m_pwindow == nullptr) return;
 	m_width = width;
 	m_height = height;
+	requestRender();
 
 	int framebufferWidth = 0;
 	int framebufferHeight = 0;
@@ -592,11 +598,13 @@ void bbe::Window::INTERNAL_resizeFramebuffer(int width, int height)
 	{
 		return;
 	}
+	requestRender();
 	m_renderManager->resize(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 }
 
 void bbe::Window::INTERNAL_onRefresh()
 {
+	requestRender();
 	m_pgame->frame(true);
 }
 
@@ -664,6 +672,21 @@ void bbe::Window::update()
 	}
 }
 
+void bbe::Window::requestRender()
+{
+	m_hasPendingRenderRequest = true;
+}
+
+bool bbe::Window::hasPendingRenderRequest() const
+{
+	return m_hasPendingRenderRequest;
+}
+
+void bbe::Window::consumeRenderRequest()
+{
+	m_hasPendingRenderRequest = false;
+}
+
 void* bbe::Window::getNativeHandle()
 {
 	if (m_pwindow == nullptr) return nullptr;
@@ -691,6 +714,7 @@ void bbe::INTERNAL_keyCallback(GLFWwindow* window, int keyCode, int scanCode, in
 		// As we don't care about that key, we just drop the event.
 		return;
 	}
+	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
 	keyCode = ImGui_ImplGlfw_TranslateUntranslatedKey(keyCode, scanCode);
 	ImGui_ImplGlfw_KeyCallback(window, keyCode, scanCode, action, mods);
 	if (ImGui::GetIO().WantCaptureKeyboard) return;
@@ -707,6 +731,7 @@ void bbe::INTERNAL_keyCallback(GLFWwindow* window, int keyCode, int scanCode, in
 
 void bbe::INTERNAL_charCallback(GLFWwindow* window, unsigned int c)
 {
+	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
 #ifndef BBE_RENDERER_NULL
 	ImGui_ImplGlfw_CharCallback(window, c);
 #endif
@@ -714,6 +739,7 @@ void bbe::INTERNAL_charCallback(GLFWwindow* window, unsigned int c)
 
 void bbe::INTERNAL_cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 {
+	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
 #ifdef BBE_RENDERER_VULKAN
 	if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
@@ -732,6 +758,7 @@ void bbe::INTERNAL_framebufferResizeCallback(GLFWwindow* window, int width, int 
 
 void bbe::INTERNAL_mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
+	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
 #ifndef BBE_RENDERER_NULL
 	ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
 	if (ImGui::GetIO().WantCaptureMouse) return;
@@ -749,6 +776,7 @@ void bbe::INTERNAL_mouseButtonCallback(GLFWwindow* window, int button, int actio
 
 void bbe::INTERNAL_mouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
+	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
 #ifndef BBE_RENDERER_NULL
 	ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
 	// TODO: This lead to issues in the MOTHER console. We need to have scroll events there, even though a ImGui Window is in the foreground. Fix me.
@@ -759,6 +787,7 @@ void bbe::INTERNAL_mouseScrollCallback(GLFWwindow* window, double xoffset, doubl
 
 void bbe::INTERNAL_windowCloseCallback(GLFWwindow* window)
 {
+	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
 	switch (((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->getWindowCloseMode())
 	{
 	case bbe::WindowCloseMode::CLOSE:

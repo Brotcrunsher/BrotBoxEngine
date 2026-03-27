@@ -67,6 +67,7 @@ namespace bbe
 
 		bool m_requestShowWindow = false;
 		bool m_requestShutdown = false;
+		bool m_reactiveRendering = false;
 
 		void innerStart(int windowWidth, int windowHeight, const char* title);
 
@@ -94,6 +95,9 @@ namespace bbe
 
 		void setExternallyManaged(bool managed);
 		bool isExternallyManaged() const;
+		void setReactiveRendering(bool reactiveRendering);
+		bool isReactiveRendering() const;
+		void requestRedraw();
 
 		bool isKeyDown(bbe::Key key);
 		bool isKeyUp(bbe::Key key);
