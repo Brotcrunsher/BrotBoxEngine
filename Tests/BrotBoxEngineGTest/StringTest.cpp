@@ -604,6 +604,103 @@ TEST(String, AssignmentWithDifferentCapacities)
 	ASSERT_EQ(assignmentDestination, assignmentSource);
 }
 
+TEST(String, Utf8SearchAndSubstring)
+{
+	bbe::String utf8("äöüß");
+
+	ASSERT_TRUE(utf8.startsWith("äö"));
+	ASSERT_TRUE(utf8.endsWith("üß"));
+	ASSERT_TRUE(utf8.contains("öü"));
+	ASSERT_EQ(utf8.search("öü"), 1);
+	ASSERT_EQ(utf8.searchLast("öü"), 1);
+	ASSERT_EQ(utf8.substring(1, 3), "öü");
+}
+
+TEST(String, Utf8CountSplitTrimAndContainsAny)
+{
+	{
+		bbe::String empty;
+		empty.trimInPlace();
+		ASSERT_EQ(empty, "");
+	}
+
+	{
+		bbe::String trim("\u00A0äöü\u00A0");
+		trim.trimInPlace();
+		ASSERT_EQ(trim, "äöü");
+	}
+
+	{
+		bbe::String countSource("äöäöä");
+		ASSERT_EQ(countSource.count("ä"), 3);
+		ASSERT_EQ(countSource.count("öä"), 2);
+	}
+
+	{
+		bbe::String splitSource("einsäzweiädrei");
+		auto split = splitSource.split("ä");
+		ASSERT_EQ(split.getLength(), 3);
+		ASSERT_EQ(split[0], "eins");
+		ASSERT_EQ(split[1], "zwei");
+		ASSERT_EQ(split[2], "drei");
+	}
+
+	{
+		bbe::String containsAnySource("Fröhlich");
+		ASSERT_TRUE(containsAnySource.containsAny("üö"));
+		ASSERT_FALSE(containsAnySource.containsAny("ß"));
+	}
+}
+
+TEST(String, WesternLatinCaseMapping)
+{
+	const bbe::String lower("äöüáàâãåæçéèêëíìîïñóòôõøúùûüýÿœšžłß");
+	const bbe::String upper("ÄÖÜÁÀÂÃÅÆÇÉÈÊËÍÌÎÏÑÓÒÔÕØÚÙÛÜÝŸŒŠŽŁẞ");
+
+	ASSERT_EQ(lower.toUpperCase(), upper);
+	ASSERT_EQ(upper.toLowerCase(), lower);
+
+	bbe::String mixed("Ärger & œuvre & Straße");
+	mixed.toLowerCaseInPlace();
+	ASSERT_EQ(mixed, "ärger & œuvre & straße");
+	mixed.toUpperCaseInPlace();
+	ASSERT_EQ(mixed, "ÄRGER & ŒUVRE & STRAẞE");
+}
+
+TEST(String, Utf8ContainsIgnoreCase)
+{
+	ASSERT_TRUE(bbe::String("Fröhliche Grüße").containsIgnoreCase("FRÖHLICHE"));
+	ASSERT_TRUE(bbe::String("Œuvre").containsIgnoreCase("œUV"));
+	ASSERT_TRUE(bbe::String("Straẞe").containsIgnoreCase("straße"));
+	ASSERT_FALSE(bbe::String("Straẞe").containsIgnoreCase("strasse"));
+}
+
+TEST(String, Utf8HardBreakEvery)
+{
+	ASSERT_EQ(bbe::String("äöüß").hardBreakEvery(2), "äö\nüß");
+}
+
+TEST(String, Utf8AppendAliasing)
+{
+	{
+		bbe::String value("äö");
+		value.append(value);
+		ASSERT_EQ(value, "äöäö");
+	}
+
+	{
+		bbe::String value("äöü");
+		value.append(&value[1]);
+		ASSERT_EQ(value, "äöüöü");
+	}
+
+	{
+		bbe::String value("äöü");
+		value.append(value.substringView(1, 3));
+		ASSERT_EQ(value, "äöüöü");
+	}
+}
+
 // Test appending another Utf8String
 TEST(String, AppendUtf8String) {
 	bbe::String str1("Hello");

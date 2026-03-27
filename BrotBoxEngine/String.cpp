@@ -2,12 +2,149 @@
 #include "BBE/DataType.h"
 #include "BBE/Error.h"
 #include "BBE/Math.h"
+#include <algorithm>
 #include <string>
 #include <codecvt>
 #include <locale>
 #include <sstream>
 #include "stdarg.h"
 #include "BBE/Utf8Helpers.h"
+
+namespace
+{
+	struct WesternLatinCasePair
+	{
+		int32_t upper;
+		int32_t lower;
+	};
+
+	constexpr WesternLatinCasePair WESTERN_LATIN_CASE_PAIRS[] =
+	{
+		{ 0x0100, 0x0101 }, // Ā/ā A with macron
+		{ 0x0102, 0x0103 }, // Ă/ă A with breve
+		{ 0x0104, 0x0105 }, // Ą/ą A with ogonek
+		{ 0x0106, 0x0107 }, // Ć/ć C with acute
+		{ 0x0108, 0x0109 }, // Ĉ/ĉ C with circumflex
+		{ 0x010A, 0x010B }, // Ċ/ċ C with dot above
+		{ 0x010C, 0x010D }, // Č/č C with caron
+		{ 0x010E, 0x010F }, // Ď/ď D with caron
+		{ 0x0110, 0x0111 }, // Đ/đ D with stroke
+		{ 0x0112, 0x0113 }, // Ē/ē E with macron
+		{ 0x0114, 0x0115 }, // Ĕ/ĕ E with breve
+		{ 0x0116, 0x0117 }, // Ė/ė E with dot above
+		{ 0x0118, 0x0119 }, // Ę/ę E with ogonek
+		{ 0x011A, 0x011B }, // Ě/ě E with caron
+		{ 0x011C, 0x011D }, // Ĝ/ĝ G with circumflex
+		{ 0x011E, 0x011F }, // Ğ/ğ G with breve
+		{ 0x0120, 0x0121 }, // Ġ/ġ G with dot above
+		{ 0x0122, 0x0123 }, // Ģ/ģ G with cedilla
+		{ 0x0124, 0x0125 }, // Ĥ/ĥ H with circumflex
+		{ 0x0126, 0x0127 }, // Ħ/ħ H with stroke
+		{ 0x0128, 0x0129 }, // Ĩ/ĩ I with tilde
+		{ 0x012A, 0x012B }, // Ī/ī I with macron
+		{ 0x012C, 0x012D }, // Ĭ/ĭ I with breve
+		{ 0x012E, 0x012F }, // Į/į I with ogonek
+		{ 0x0132, 0x0133 }, // Ĳ/ĳ IJ ligature
+		{ 0x0134, 0x0135 }, // Ĵ/ĵ J with circumflex
+		{ 0x0136, 0x0137 }, // Ķ/ķ K with cedilla
+		{ 0x0139, 0x013A }, // Ĺ/ĺ L with acute
+		{ 0x013B, 0x013C }, // Ļ/ļ L with cedilla
+		{ 0x013D, 0x013E }, // Ľ/ľ L with caron
+		{ 0x013F, 0x0140 }, // Ŀ/ŀ L with middle dot
+		{ 0x0141, 0x0142 }, // Ł/ł L with stroke
+		{ 0x0143, 0x0144 }, // Ń/ń N with acute
+		{ 0x0145, 0x0146 }, // Ņ/ņ N with cedilla
+		{ 0x0147, 0x0148 }, // Ň/ň N with caron
+		{ 0x014A, 0x014B }, // Ŋ/ŋ Eng
+		{ 0x014C, 0x014D }, // Ō/ō O with macron
+		{ 0x014E, 0x014F }, // Ŏ/ŏ O with breve
+		{ 0x0150, 0x0151 }, // Ő/ő O with double acute
+		{ 0x0152, 0x0153 }, // Œ/œ OE ligature
+		{ 0x0154, 0x0155 }, // Ŕ/ŕ R with acute
+		{ 0x0156, 0x0157 }, // Ŗ/ŗ R with cedilla
+		{ 0x0158, 0x0159 }, // Ř/ř R with caron
+		{ 0x015A, 0x015B }, // Ś/ś S with acute
+		{ 0x015C, 0x015D }, // Ŝ/ŝ S with circumflex
+		{ 0x015E, 0x015F }, // Ş/ş S with cedilla
+		{ 0x0160, 0x0161 }, // Š/š S with caron
+		{ 0x0162, 0x0163 }, // Ţ/ţ T with cedilla
+		{ 0x0164, 0x0165 }, // Ť/ť T with caron
+		{ 0x0166, 0x0167 }, // Ŧ/ŧ T with stroke
+		{ 0x0168, 0x0169 }, // Ũ/ũ U with tilde
+		{ 0x016A, 0x016B }, // Ū/ū U with macron
+		{ 0x016C, 0x016D }, // Ŭ/ŭ U with breve
+		{ 0x016E, 0x016F }, // Ů/ů U with ring above
+		{ 0x0170, 0x0171 }, // Ű/ű U with double acute
+		{ 0x0172, 0x0173 }, // Ų/ų U with ogonek
+		{ 0x0174, 0x0175 }, // Ŵ/ŵ W with circumflex
+		{ 0x0176, 0x0177 }, // Ŷ/ŷ Y with circumflex
+		{ 0x0179, 0x017A }, // Ź/ź Z with acute
+		{ 0x017B, 0x017C }, // Ż/ż Z with dot above
+		{ 0x017D, 0x017E }, // Ž/ž Z with caron
+		{ 0x0218, 0x0219 }, // Ș/ș S with comma below
+		{ 0x021A, 0x021B }, // Ț/ț T with comma below
+	};
+
+	const char* utf8PointerAtIndexOrNull(const char* text, std::size_t index)
+	{
+		const char* ptr = text;
+		for (std::size_t i = 0; i < index; i++)
+		{
+			if (*ptr == '\0')
+			{
+				return nullptr;
+			}
+			ptr = bbe::utf8GetNextChar(ptr);
+		}
+		return ptr;
+	}
+
+	const char* utf8PointerAtIndex(const char* text, std::size_t index)
+	{
+		const char* ptr = utf8PointerAtIndexOrNull(text, index);
+		if (ptr == nullptr)
+		{
+			bbe::Crash(bbe::Error::IllegalIndex);
+		}
+		return ptr;
+	}
+
+	int32_t mapWesternLatinCase(int32_t codepoint, bool toUpper)
+	{
+		if (toUpper)
+		{
+			if (codepoint >= 'a' && codepoint <= 'z') return codepoint - ('a' - 'A');
+			if ((codepoint >= 0x00E0 && codepoint <= 0x00F6) || (codepoint >= 0x00F8 && codepoint <= 0x00FE))
+			{
+				return codepoint - 0x20;
+			}
+			if (codepoint == 0x00FF) return 0x0178; // y diaeresis
+			if (codepoint == 0x00DF) return 0x1E9E; // sharp s
+
+			for (const WesternLatinCasePair& pair : WESTERN_LATIN_CASE_PAIRS)
+			{
+				if (pair.lower == codepoint) return pair.upper;
+			}
+		}
+		else
+		{
+			if (codepoint >= 'A' && codepoint <= 'Z') return codepoint + ('a' - 'A');
+			if ((codepoint >= 0x00C0 && codepoint <= 0x00D6) || (codepoint >= 0x00D8 && codepoint <= 0x00DE))
+			{
+				return codepoint + 0x20;
+			}
+			if (codepoint == 0x0178) return 0x00FF; // Y diaeresis
+			if (codepoint == 0x1E9E) return 0x00DF; // capital sharp s
+
+			for (const WesternLatinCasePair& pair : WESTERN_LATIN_CASE_PAIRS)
+			{
+				if (pair.upper == codepoint) return pair.lower;
+			}
+		}
+
+		return codepoint;
+	}
+}
 
 void bbe::Utf8String::initializeFromCharArr(const char* data)
 {
@@ -241,10 +378,13 @@ bbe::Utf8StringView::Utf8StringView()
 bbe::Utf8StringView::Utf8StringView(const Utf8String& string, std::size_t start, std::size_t end)
 	:m_pstring(&string), m_start(start), m_end(end)
 {
-	if (m_end == (size_t)-1)
+	const std::size_t length = utf8len(m_pstring->getRaw());
+	if (m_start > length)
 	{
-		m_end = utf8len(m_pstring->getRaw());
+		bbe::Crash(bbe::Error::IllegalIndex);
 	}
+	if (m_end == (size_t)-1 || m_end > length) m_end = length;
+	if (m_end < m_start) m_end = m_start;
 }
 std::size_t bbe::Utf8StringView::getEnd() const
 {
@@ -436,11 +576,10 @@ bbe::Utf8String bbe::Utf8String::operator*(int32_t mult) const
 
 bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8String& other)
 {
-	//UNTESTED
-	const size_t totalLength = getLengthBytes() + other.getLengthBytes();
 	const size_t oldLength = getLengthBytes();
+	const size_t totalLength = oldLength + other.getLengthBytes();
 	m_data.growIfNeeded(totalLength + 1);
-	memcpy(getRaw() + oldLength, other.getRaw(), other.getLengthBytes());
+	memmove(getRaw() + oldLength, other.getRaw(), other.getLengthBytes());
 	getRaw()[totalLength] = 0;
 
 	return *this;
@@ -448,12 +587,12 @@ bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8String& other)
 
 bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8StringView& other)
 {
-	//UNTESTED
 	const size_t oldLength = getLengthBytes();
 	const size_t otherLength = other.getLengthBytes();
 	const size_t totalLength = oldLength + otherLength;
 	m_data.growIfNeeded(totalLength + 1);
-	memcpy(getRaw() + oldLength, &((*other.m_pstring)[other.m_start]), otherLength);
+	const char* otherRaw = utf8PointerAtIndex(other.m_pstring->getRaw(), other.m_start);
+	memmove(getRaw() + oldLength, otherRaw, otherLength);
 	getRaw()[totalLength] = 0;
 
 	return *this;
@@ -550,21 +689,28 @@ bbe::Utf8String bbe::Utf8String::trim() const
 
 void bbe::Utf8String::trimInPlace()
 {
-	//UNTESTED
-	size_t start = 0;
-	size_t end = utf8len(m_data.get()) - 1;
-	if (end == 0) return;
+	const size_t length = utf8len(m_data.get());
+	if (length == 0) return;
 
-	while (utf8IsWhitespace(&(*this)[start]) && start != end - 1)
+	size_t start = 0;
+	while (start < length && utf8IsWhitespace(utf8PointerAtIndex(m_data.get(), start)))
 	{
 		start++;
 	}
-	while (utf8IsWhitespace(&(*this)[end]) && end != 0)
+
+	if (start == length)
+	{
+		m_data.get()[0] = 0;
+		return;
+	}
+
+	size_t end = length;
+	while (end > start && utf8IsWhitespace(utf8PointerAtIndex(m_data.get(), end - 1)))
 	{
 		end--;
 	}
 
-	substringInPlace(start, end + 1);
+	substringInPlace(start, end);
 }
 
 bbe::Utf8String bbe::Utf8String::substring(std::size_t start, std::size_t end) const
@@ -577,27 +723,19 @@ bbe::Utf8String bbe::Utf8String::substring(std::size_t start, std::size_t end) c
 
 void bbe::Utf8String::substringInPlace(size_t start, size_t end)
 {
-	//UNTESTED
-	if(end == (size_t)-1)
+	const std::size_t length = utf8len(m_data.get());
+	if (start > length)
 	{
-		end = utf8len(m_data.get());
+		bbe::Crash(bbe::Error::IllegalIndex);
 	}
+	if (end == (size_t)-1 || end > length) end = length;
+	if (end < start) end = start;
 
-	std::size_t startByteOffset = 0;
-	std::size_t sizeOfSubstringInByte = 0;
-	auto it = getIterator();
-	for (size_t i = 0; i < start; i++)
-	{
-		startByteOffset += utf8codePointLen(it.getCodepoint());
-		++it;
-	}
-	for(std::size_t i = start; i<end; i++)
-	{
-		sizeOfSubstringInByte += utf8codePointLen(it.getCodepoint());
-		++it;
-	}
+	const char* startPtr = utf8PointerAtIndex(m_data.get(), start);
+	const char* endPtr = utf8PointerAtIndex(m_data.get(), end);
+	const std::size_t sizeOfSubstringInByte = static_cast<std::size_t>(endPtr - startPtr);
 	auto raw = m_data.get();
-	memmove(raw, &raw[startByteOffset], sizeOfSubstringInByte);
+	memmove(raw, startPtr, sizeOfSubstringInByte);
 	raw[sizeOfSubstringInByte] = 0;
 }
 
@@ -608,9 +746,8 @@ bbe::Utf8StringView bbe::Utf8String::substringView(std::size_t start, std::size_
 
 size_t bbe::Utf8String::count(const Utf8String& countand) const
 {
-	//UNTESTED
-	size_t countandLength = utf8len(countand.getRaw());
-	if (countandLength == 0)
+	const size_t countandLengthBytes = countand.getLengthBytes();
+	if (countandLengthBytes == 0)
 	{
 		return 0;
 	}
@@ -620,7 +757,7 @@ size_t bbe::Utf8String::count(const Utf8String& countand) const
 	while ((readHead = strstr(readHead, countand.getRaw())) != nullptr)
 	{
 		amount++;
-		readHead += countandLength;
+		readHead += countandLengthBytes;
 	}
 	return amount;
 }
@@ -720,16 +857,16 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::lines(bool addEmpty) const
 
 bool bbe::Utf8String::containsAny(const char* string) const
 {
+	if (string == nullptr) bbe::Crash(bbe::Error::NullPointer);
+
 	for (auto it = getIterator(); it.valid(); ++it)
 	{
-		const char* s = string;
-		while (*s)
+		for (const char* s = string; *s; s = utf8GetNextChar(s))
 		{
-			if (it.getCodepoint() == *s)
+			if (it.getCodepoint() == utf8CharToCodePoint(s))
 			{
 				return true;
 			}
-			s++;
 		}
 	}
 	return false;
@@ -747,24 +884,9 @@ bool bbe::Utf8String::contains(const Utf8String &string) const
 	return contains(string.getRaw());
 }
 
-#ifdef _MSC_VER
-#include <shlwapi.h>
-#include <AtlBase.h>
-#else
-#endif
-
-static bool platformIndependentStrStrI(const char* haystack, const char* needle)
-{
-#ifdef _MSC_VER
-	return StrStrIA(haystack, needle) != nullptr;
-#else
-	return strcasestr(haystack, needle) != nullptr;
-#endif
-}
-
 bool bbe::Utf8String::containsIgnoreCase(const char* string) const
 {
-	return platformIndependentStrStrI(getRaw(), string);
+	return toLowerCase().contains(bbe::Utf8String(string).toLowerCase());
 }
 
 bool bbe::Utf8String::containsIgnoreCase(const Utf8String& string) const
@@ -790,10 +912,7 @@ bbe::Utf8String bbe::Utf8String::hardBreakEvery(int32_t x) const
 			column = 0;
 		}
 		column++;
-		char buff[sizeof(int32_t) + 1] = {};
-		auto cp = it.getCodepoint();
-		memcpy(buff, &cp, sizeof(cp));
-		retVal += buff;
+		retVal += fromCodePoint(it.getCodepoint());
 	}
 
 	return retVal;
@@ -801,15 +920,21 @@ bbe::Utf8String bbe::Utf8String::hardBreakEvery(int32_t x) const
 
 bool bbe::Utf8String::isTextAtLocation(const char* string, size_t index) const
 {
-	while (*string)
+	if (string == nullptr) bbe::Crash(bbe::Error::NullPointer);
+
+	const char* location = utf8PointerAtIndexOrNull(getRaw(), index);
+	if (location == nullptr) return false;
+
+	const std::size_t searchBytes = strlen(string);
+	const std::size_t remainingBytes = static_cast<std::size_t>((getRaw() + getLengthBytes()) - location);
+	if (searchBytes > remainingBytes) return false;
+
+	for (std::size_t i = 0; i < searchBytes; i++)
 	{
-		// TODO:                           VVVVVVVVVVVVVVVVVVVVVVVVVV Not UTF8!
-		if (index >= utf8len(getRaw()) || *string != operator[](index))
+		if (location[i] != string[i])
 		{
 			return false;
 		}
-		index++;
-		string++;
 	}
 	return true;
 }
@@ -827,17 +952,28 @@ bool bbe::Utf8String::startsWith(const bbe::String& string) const
 bool bbe::Utf8String::endsWith(const char* string) const
 {
 	const size_t sLen = strlen(string);
-	if (sLen > utf8len(getRaw()))
+	const size_t thisLen = getLengthBytes();
+	if (sLen > thisLen)
 	{
 		return false;
 	}
-	return isTextAtLocation(string, utf8len(getRaw()) - sLen);
+	return memcmp(getRaw() + thisLen - sLen, string, sLen) == 0;
 }
 
 int64_t bbe::Utf8String::search(const char* string, int64_t startIndex) const
 {
-	//UNTESTED
-	const char* firstOcc = strstr(&this->operator[](startIndex), string);
+	if (startIndex < 0)
+	{
+		return -1;
+	}
+
+	const char* startPtr = utf8PointerAtIndexOrNull(getRaw(), static_cast<std::size_t>(startIndex));
+	if (startPtr == nullptr)
+	{
+		return -1;
+	}
+
+	const char* firstOcc = strstr(startPtr, string);
 	if(firstOcc == nullptr)
 	{
 		return -1;
@@ -853,23 +989,25 @@ int64_t bbe::Utf8String::search(const Utf8String &string, int64_t startIndex) co
 
 int64_t bbe::Utf8String::searchLast(const char* string) const
 {
-	// TODO quite inefficient, use Knuth-Morris-Pratt!
+	const size_t needleLengthBytes = strlen(string);
+	const size_t thisLengthBytes = getLengthBytes();
+	if (needleLengthBytes == 0 || needleLengthBytes > thisLengthBytes) return -1;
 
-	const size_t sLen = strlen(string);
-
-	if (sLen > utf8len(getRaw()) || sLen == 0) return -1;
-
-	for (size_t i = utf8len(getRaw()) - sLen; i != (size_t)-1; i--)
+	const char* lastMatch = nullptr;
+	for (const char* ptr = getRaw(); *ptr != '\0'; ptr = utf8GetNextChar(ptr))
 	{
-		// TODO Urghs ... also inefficient, use iterators once we have them...
-		const bbe::String temp = bbe::String(&operator[](i));
-		if (temp.startsWith(string))
+		if (static_cast<size_t>((getRaw() + thisLengthBytes) - ptr) < needleLengthBytes)
 		{
-			return i;
+			break;
+		}
+		if (memcmp(ptr, string, needleLengthBytes) == 0)
+		{
+			lastMatch = ptr;
 		}
 	}
 
-	return -1;
+	if (lastMatch == nullptr) return -1;
+	return utf8Distance(getRaw(), lastMatch);
 }
 
 bool bbe::Utf8String::isNumber() const
@@ -922,20 +1060,7 @@ float bbe::Utf8String::toFloat() const
 
 const char& bbe::Utf8String::operator[](std::size_t index) const
 {
-	if(index > utf8len(getRaw()))
-	{
-		bbe::Crash(bbe::Error::IllegalIndex);
-	}
-	else if (index == utf8len(getRaw()))
-	{
-		return *""; // Woah...
-	}
-	const char* ptr = getRaw();
-	for(size_t i = 0; i<index; i++)
-	{
-		ptr = bbe::utf8GetNextChar(ptr);
-	}
-	return *ptr;
+	return *utf8PointerAtIndex(getRaw(), index);
 }
 
 bool bbe::Utf8String::operator<(const bbe::Utf8String& other) const
@@ -983,7 +1108,7 @@ bbe::Utf8String bbe::Utf8String::replace(const Utf8String& searchString, const U
 
 	bbe::Utf8String retVal = "";
 	const size_t searchStringOccurences = count(searchString);
-	retVal.m_data.growIfNeeded(getLengthBytes() + (replaceString.getLengthBytes() - searchString.getLengthBytes()) * searchStringOccurences );
+	retVal.m_data.growIfNeeded(getLengthBytes() + (replaceString.getLengthBytes() - searchString.getLengthBytes()) * searchStringOccurences + 1);
 	uint64_t currentFoundIndex = 0;
 	uint64_t lastFoundIndex = 0;
 	while ((currentFoundIndex = search(searchString, currentFoundIndex)) != (uint64_t)-1)
@@ -1019,15 +1144,7 @@ void bbe::Utf8String::toUpperCaseInPlace()
 	bbe::Utf8String result;
 	for (auto it = getIterator(); it.valid(); ++it)
 	{
-		int32_t codepoint = it.getCodepoint();
-		if (codepoint >= 'a' && codepoint <= 'z')
-		{
-			result += fromCodePoint(codepoint - 32);
-		}
-		else
-		{
-			result += fromCodePoint(codepoint);
-		}
+		result += fromCodePoint(mapWesternLatinCase(it.getCodepoint(), true));
 	}
 	*this = result;
 }
@@ -1037,15 +1154,7 @@ void bbe::Utf8String::toLowerCaseInPlace()
 	bbe::Utf8String result;
 	for (auto it = getIterator(); it.valid(); ++it)
 	{
-		int32_t codepoint = it.getCodepoint();
-		if (codepoint >= 'A' && codepoint <= 'Z')
-		{
-			result += fromCodePoint(codepoint + 32);
-		}
-		else
-		{
-			result += fromCodePoint(codepoint);
-		}
+		result += fromCodePoint(mapWesternLatinCase(it.getCodepoint(), false));
 	}
 	*this = result;
 }
@@ -1087,9 +1196,10 @@ bbe::Utf8String bbe::Utf8String::leftFill(char c, size_t length)
 
 bbe::Utf8String& bbe::Utf8String::append(const bbe::Utf8String& other)
 {
-	size_t totalLength = getLengthBytes() + other.getLengthBytes();
+	const size_t oldLength = getLengthBytes();
+	size_t totalLength = oldLength + other.getLengthBytes();
 	m_data.growIfNeeded(totalLength + 1); // +1 for null terminator
-	memcpy(getRaw() + getLengthBytes(), other.getRaw(), other.getLengthBytes());
+	memmove(getRaw() + oldLength, other.getRaw(), other.getLengthBytes());
 	getRaw()[totalLength] = '\0';
 	return *this;
 }
@@ -1109,21 +1219,41 @@ bbe::Utf8String& bbe::Utf8String::append(const bbe::Utf8String& other, size_t po
 
 bbe::Utf8String& bbe::Utf8String::append(const char* s)
 {
+	if (s == nullptr) bbe::Crash(bbe::Error::NullPointer);
+
 	size_t sLengthBytes = strlen(s);
-	size_t totalLength = getLengthBytes() + sLengthBytes;
+	const char* oldRaw = getRaw();
+	const size_t oldLength = getLengthBytes();
+	const bool aliasesSelf = s >= oldRaw && s <= oldRaw + oldLength;
+	const size_t sourceOffset = aliasesSelf ? static_cast<size_t>(s - oldRaw) : 0;
+	size_t totalLength = oldLength + sLengthBytes;
 	m_data.growIfNeeded(totalLength + 1); // +1 for null terminator
-	memcpy(getRaw() + getLengthBytes(), s, sLengthBytes);
+	if (aliasesSelf)
+	{
+		s = getRaw() + sourceOffset;
+	}
+	memmove(getRaw() + oldLength, s, sLengthBytes);
 	getRaw()[totalLength] = '\0';
 	return *this;
 }
 
 bbe::Utf8String& bbe::Utf8String::append(const char* s, size_t count)
 {
+	if (s == nullptr) bbe::Crash(bbe::Error::NullPointer);
+
 	size_t sLengthBytes = strlen(s);
 	size_t actualCount = std::min(count, sLengthBytes);
-	size_t totalLength = getLengthBytes() + actualCount;
+	const char* oldRaw = getRaw();
+	const size_t oldLength = getLengthBytes();
+	const bool aliasesSelf = s >= oldRaw && s <= oldRaw + oldLength;
+	const size_t sourceOffset = aliasesSelf ? static_cast<size_t>(s - oldRaw) : 0;
+	size_t totalLength = oldLength + actualCount;
 	m_data.growIfNeeded(totalLength + 1); // +1 for null terminator
-	memcpy(getRaw() + getLengthBytes(), s, actualCount);
+	if (aliasesSelf)
+	{
+		s = getRaw() + sourceOffset;
+	}
+	memmove(getRaw() + oldLength, s, actualCount);
 	getRaw()[totalLength] = '\0';
 	return *this;
 }
@@ -1140,9 +1270,11 @@ bbe::Utf8String& bbe::Utf8String::append(size_t count, char c)
 bbe::Utf8String& bbe::Utf8String::append(const bbe::Utf8StringView& view)
 {
 	size_t otherLengthBytes = view.getLengthBytes();
-	size_t totalLength = getLengthBytes() + otherLengthBytes;
+	const size_t oldLength = getLengthBytes();
+	size_t totalLength = oldLength + otherLengthBytes;
 	m_data.growIfNeeded(totalLength + 1); // +1 for null terminator
-	memcpy(getRaw() + getLengthBytes(), &((*view.m_pstring)[view.m_start]), otherLengthBytes);
+	const char* otherRaw = utf8PointerAtIndex(view.m_pstring->getRaw(), view.m_start);
+	memmove(getRaw() + oldLength, otherRaw, otherLengthBytes);
 	getRaw()[totalLength] = '\0';
 	return *this;
 }
@@ -1178,7 +1310,7 @@ uint32_t bbe::hash(const bbe::String & t)
 
 	for (size_t i = 0; i < length; i++)
 	{
-		_hash = ((_hash << 5) + _hash) + t[i];
+		_hash = ((_hash << 5) + _hash) + static_cast<uint32_t>(t.getCodepoint(i));
 	}
 
 	return _hash;
