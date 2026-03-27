@@ -719,6 +719,11 @@ public:
 
 	virtual void update(float timeSinceLastFrame) override
 	{
+		EVERY_SECONDS(1)
+		{
+			requestRedraw();
+		}
+
 #ifdef _WIN32
 		beginMeasure("Server Stuff");
 		{
