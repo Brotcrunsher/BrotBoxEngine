@@ -1,8 +1,7 @@
 #include "BBE/Microphone.h"
-#include <AL/al.h>
+#include "BBE/SimpleThread.h"
 #include <AL/alc.h>
 #include <AL/alext.h>
-#include "BBE/SimpleThread.h"
 
 void bbe::Microphone::recordingMain()
 {

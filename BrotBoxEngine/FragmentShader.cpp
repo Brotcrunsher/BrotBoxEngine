@@ -1,7 +1,7 @@
 #include "BBE/FragmentShader.h"
+#include "BBE/PrimitiveBrush2D.h"
 #include "BBE/SimpleFile.h"
 #include "BBE/Window.h"
-#include "BBE/PrimitiveBrush2D.h"
 #ifdef BBE_RENDERER_VULKAN
 #include "BBE/Vulkan/VulkanManager.h"
 #endif

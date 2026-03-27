@@ -1,7 +1,6 @@
 #include "BBE/OpenGL/OpenGLRectangle.h"
-#include "BBE/OpenGL/OpenGLManager.h"
 #include "BBE/List.h"
-#include "BBE/Vector3.h"
+#include "BBE/Vector2.h"
 
 static GLuint vbo = 0;
 static GLuint ibo = 0;

@@ -1,7 +1,7 @@
 #include "EMTask.h"
+#include "AssetStore.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "AssetStore.h"
 
 bool Task::timePointElapsed(const bbe::TimePoint &tp, bool &armed) const
 {

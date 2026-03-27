@@ -1,5 +1,4 @@
 #include "BBE/OpenGL/OpenGLFragmentShader.h"
-#include "BBE/FatalErrors.h"
 #include "BBE/Logging.h"
 
 static GLuint getShader(GLenum shaderType, const char *src)

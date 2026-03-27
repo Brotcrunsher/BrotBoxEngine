@@ -1,4 +1,5 @@
-#include "BBE/BrotBoxEngine.h"
+
+#include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 
 class Particle;
 
@@ -155,7 +156,6 @@ class MyGame : public bbe::Game
 	}
 };
 
-#include <iostream>
 int main()
 {
 	MyGame game;

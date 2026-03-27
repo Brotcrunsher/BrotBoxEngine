@@ -1,4 +1,4 @@
-#include "BBE/BrotBoxEngine.h"
+#include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 #include <iostream>
 
 constexpr int WINDOW_WIDTH = 1280;

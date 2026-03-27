@@ -1,7 +1,5 @@
 #include "BBE/IcoSphere.h"
 #include "BBE/Math.h"
-#include "BBE/List.h"
-#include <string.h>
 
 bbe::IcoSphere::IcoSphere()
 {

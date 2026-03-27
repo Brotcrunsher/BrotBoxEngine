@@ -1,8 +1,8 @@
-#include <gtest/gtest.h>
 #include "../BBE/StableList.h"
+#include <gtest/gtest.h>
+#include <random>
 #include <string>
 #include <vector>
-#include <random>
 
 namespace bbe
 {

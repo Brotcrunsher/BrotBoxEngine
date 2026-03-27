@@ -1,5 +1,4 @@
 ﻿#include "gtest/gtest.h"
-#include "TestUtils.h"
 #include "BBE/EndlessGrid.h"
 #include "BBE/Random.h"
 

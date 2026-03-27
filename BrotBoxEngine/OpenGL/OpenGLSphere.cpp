@@ -1,8 +1,8 @@
 #include "BBE/OpenGL/OpenGLSphere.h"
-#include "BBE/OpenGL/OpenGLManager.h"
 #include "BBE/List.h"
-#include "BBE/Vector3.h"
 #include "BBE/Math.h"
+#include "BBE/PosNormalPair.h"
+#include "BBE/Vector3.h"
 
 static GLuint vbo = 0;
 static GLuint ibo = 0;

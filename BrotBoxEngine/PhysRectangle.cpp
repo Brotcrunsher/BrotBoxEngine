@@ -1,14 +1,14 @@
 #include "BBE/PhysWorld.h"
-#include "BBE/Math.h"
 #include "BBE/Game.h"
-#include "BBE/Vector2.h"
+#include "BBE/Math.h"
 #include "BBE/Rectangle.h"
+#include "BBE/Vector2.h"
 
-#include "box2d/b2_world.h"
-#include "box2d/b2_body.h"
-#include "box2d/b2_polygon_shape.h"
-#include "box2d/b2_fixture.h"
 #include "BBE/PhysRectangle.h"
+#include "box2d/b2_body.h"
+#include "box2d/b2_fixture.h"
+#include "box2d/b2_polygon_shape.h"
+#include "box2d/b2_world.h"
 
 void bbe::PhysRectangle::init(Game *context, float x, float y, float width, float height, float angle)
 {

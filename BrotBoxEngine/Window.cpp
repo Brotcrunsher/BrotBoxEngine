@@ -1,11 +1,10 @@
 #include "BBE/Window.h"
+#include "BBE/FatalErrors.h"
+#include "BBE/ImGuiExtensions.h"
+#include "BBE/Logging.h"
+#include "BBE/MouseButtons.h"
 #include "BBE/PrimitiveBrush2D.h"
 #include "BBE/PrimitiveBrush3D.h"
-#include "BBE/ImGuiExtensions.h"
-#include <iostream>
-#include "BBE/MouseButtons.h"
-#include "BBE/FatalErrors.h"
-#include "BBE/Logging.h"
 #include <cstdlib>
 #include <cstring>
 #include <memory>

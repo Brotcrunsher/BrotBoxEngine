@@ -1,7 +1,7 @@
 #include "BBE/Utf8Helpers.h"
-#include "BBE/Utf8Iterator.h"
-#include "BBE/Error.h"
 #include "BBE/DataType.h"
+#include "BBE/Error.h"
+#include "BBE/Utf8Iterator.h"
 
 int32_t bbe::utf8CharToCodePoint(const char *ptr)
 {

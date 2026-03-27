@@ -1,7 +1,7 @@
 #include "BBE/Model.h"
 #include "BBE/DynamicArray.h"
-#include "BBE/List.h"
 #include "BBE/HashMap.h"
+#include "BBE/List.h"
 #include "BBE/Logging.h"
 
 bbe::Model::Model()

@@ -1,12 +1,11 @@
 #include "BBE/Font.h"
 #define STBTT_RASTERIZER_VERSION 1
 #define STB_TRUETYPE_IMPLEMENTATION
-#include <stb_truetype.h>
-#include <filesystem>
-#include <iostream>
+#include "BBE/Logging.h"
 #include "BBE/SimpleFile.h"
 #include "EmbeddedFonts.h"
-#include "BBE/Logging.h"
+#include <filesystem>
+#include <stb_truetype.h>
 
 const bbe::Font::CharData &bbe::Font::loadCharData(const int32_t codePoint, float scale_) const
 {

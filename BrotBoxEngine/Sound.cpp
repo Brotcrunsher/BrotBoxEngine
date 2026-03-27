@@ -1,7 +1,7 @@
 #include "BBE/Sound.h"
-#include "BBE/SoundManager.h"
 #include "BBE/Error.h"
 #include "BBE/SimpleFile.h"
+#include "BBE/SoundManager.h"
 #define MINIMP3_IMPLEMENTATION
 #ifndef BBE_NO_AUDIO
 

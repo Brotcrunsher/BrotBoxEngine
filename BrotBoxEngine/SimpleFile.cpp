@@ -1,23 +1,22 @@
 #include "BBE/SimpleFile.h"
 #include "BBE/SimpleThread.h"
+#include <atomic>
+#include <condition_variable>
+#include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <mutex>
 #include <stdlib.h>
 #include <string>
-#include <sstream>
-#include <filesystem>
-#include <mutex>
-#include <atomic>
 #include <thread>
-#include <condition_variable>
-#include <memory>
-#include <cstring>
 
 #ifdef __linux__
-#include <dbus/dbus.h>
-#include <unistd.h>
-#include <limits.h>
 #include <cstdlib>
+#include <dbus/dbus.h>
+#include <limits.h>
+#include <unistd.h>
 #endif
 
 static std::mutex backupPathMutex;

@@ -7,8 +7,8 @@ Checks: >
   ,modernize-use-nullptr
   ,modernize-use-nodiscard
   ,cppcoreguidelines-owning-memory
-  ,-misc-include-cleaner
-  ,-llvm-include-order
+  ,misc-include-cleaner
+  ,llvm-include-order
   ,-performance-noexcept-move-constructor
   ,-readability-identifier-length
   ,-modernize-use-trailing-return-type
@@ -16,3 +16,12 @@ Checks: >
 WarningsAsErrors: ''
 HeaderFilterRegex: '^(BrotBoxEngine|Examples|Tests)/'
 FormatStyle: file
+CheckOptions:
+  - key: misc-include-cleaner.DeduplicateFindings
+    value: 'true'
+  - key: misc-include-cleaner.IgnoreHeaders
+    value: '.*Python\\.h;.*python.*/.*;.*sodium\\.h;.*curl/.*;.*GLFW/.*;.*glfwWrapper\\.h;.*BrotBoxEngine\\.h'
+  - key: misc-include-cleaner.MissingIncludes
+    value: 'false'
+  - key: misc-include-cleaner.UnusedIncludes
+    value: 'true'

@@ -1,8 +1,7 @@
-#include "BBE/BrotBoxEngine.h"
-#include "BBE/SimpleUrlRequest.h"
+#include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 #include "AssetStore.h"
+#include "BBE/SimpleUrlRequest.h"
 #include "nlohmann/json.hpp"
-#include <iostream>
 
 class MyGame : public bbe::Game
 {

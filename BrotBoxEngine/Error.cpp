@@ -1,12 +1,11 @@
 #include "../BBE/Error.h"
-#include "../BBE/UtilDebug.h"
 #include "../BBE/BrotTime.h"
 #include "../BBE/Logging.h"
 #include "../BBE/SimpleFile.h"
 #include "../BBE/String.h"
+#include "../BBE/UtilDebug.h"
 #include <cstdlib>
 #if __has_include(<stacktrace>)
-#include <stacktrace>
 #else
 #pragma warning("Stacktrace lib is not present!")
 #endif

@@ -1,6 +1,6 @@
 #include "Rooms.h"
-#include "BBE/Random.h"
 #include "BBE/MeshBuilder.h"
+#include "BBE/Random.h"
 
 constexpr uint32_t wallSpaceScale = 4;
 constexpr uint32_t lightmapResolution = 4;

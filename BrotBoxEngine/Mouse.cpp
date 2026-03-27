@@ -1,6 +1,6 @@
 #include "BBE/Mouse.h"
-#include "BBE/Vector2.h"
 #include "BBE/Error.h"
+#include "BBE/Vector2.h"
 
 bool bbe::Mouse::isButtonDown(bbe::MouseButton button) const
 {

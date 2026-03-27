@@ -1,9 +1,8 @@
 #include "BBE/Circle.h"
-#include "BBE/Rectangle.h"
-#include "BBE/Vector2.h"
 #include "BBE/List.h"
 #include "BBE/Math.h"
-#include <cstring>
+#include "BBE/Rectangle.h"
+#include "BBE/Vector2.h"
 
 bbe::Circle::Circle()
 	: m_x(0), m_y(0), m_width(0), m_height(0)

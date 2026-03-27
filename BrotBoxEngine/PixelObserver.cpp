@@ -1,6 +1,6 @@
 #include "BBE/PixelObserver.h"
-#include "BBE/Vector2.h"
 #include "BBE/Error.h"
+#include "BBE/Vector2.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN

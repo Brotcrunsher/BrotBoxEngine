@@ -1,7 +1,7 @@
 #include "BBE/BrotTime.h"
-#include <time.h>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
+#include <time.h>
 
 static bbe::String convertFormatString(const bbe::String &format)
 {

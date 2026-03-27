@@ -1,14 +1,13 @@
 #include "BBE/String.h"
-#include "BBE/DataType.h"
 #include "BBE/Error.h"
 #include "BBE/Math.h"
+#include "BBE/Utf8Helpers.h"
+#include "stdarg.h"
 #include <algorithm>
-#include <string>
 #include <codecvt>
 #include <locale>
 #include <sstream>
-#include "stdarg.h"
-#include "BBE/Utf8Helpers.h"
+#include <string>
 
 namespace
 {

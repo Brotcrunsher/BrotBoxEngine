@@ -1,8 +1,8 @@
 #include "BBE/Math.h"
-#include "BBE/Vector3.h"
-#include "BBE/Vector2.h"
-#include "BBE/Matrix4.h"
 #include "BBE/Error.h"
+#include "BBE/Matrix4.h"
+#include "BBE/Vector2.h"
+#include "BBE/Vector3.h"
 
 bbe::Vector3::Vector3()
 	: x(0), y(0), z(0)

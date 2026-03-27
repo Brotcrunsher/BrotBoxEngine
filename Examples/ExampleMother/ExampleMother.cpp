@@ -1,16 +1,14 @@
+#include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 #include "tinyxml2.h"
-#include "BBE/BrotBoxEngine.h"
-#include "BBE/SimpleProcess.h"
 #ifdef ACTIVATE_ADA
 #include "BBE/AdafruitMacroPadRP2040.h"
 #endif
-#include <sodium/crypto_pwhash_argon2id.h>
 #include <cstddef>
-#include <iostream>
 #include <cstdint>
-#include <mutex>
-#include <cmath>
 #include <cstring>
+#include <iostream>
+#include <mutex>
+#include <sodium/crypto_pwhash_argon2id.h>
 #include <vector>
 #ifdef __linux__
 #include <sys/wait.h>
@@ -27,16 +25,14 @@
 #include "GlobalKeyboard.h"
 #endif
 #include "AssetStore.h"
-#include "imgui_internal.h"
-#include "EMTask.h"
-#include "EMProcess.h"
-#include "EMUrl.h"
-#include "EMTab.h"
-#include "EMBrainTeaser.h"
 #include "BBE/ChatGPTComm.h"
 #include "BBE/Microphone.h"
 #include "BBE/SoundGenerator.h"
 #include "BBE/SoundManager.h"
+#include "EMProcess.h"
+#include "EMTab.h"
+#include "EMTask.h"
+#include "imgui_internal.h"
 
 // TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //       Careful when doing this ^^^^^^ - Audio Restart on device change?

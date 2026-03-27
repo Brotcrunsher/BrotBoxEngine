@@ -1,8 +1,7 @@
 #include "BBE/PrimitiveBrush3D.h"
 #include "BBE/Math.h"
-#include "BBE/Vector2.h"
 #include "BBE/Matrix4.h"
-#include "BBE/Rectangle.h"
+#include "BBE/Vector2.h"
 #ifdef BBE_RENDERER_VULKAN
 #include "BBE/Vulkan/VulkanManager.h"
 #endif

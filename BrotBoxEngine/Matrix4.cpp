@@ -1,6 +1,6 @@
 #include "BBE/Matrix4.h"
-#include "BBE/Math.h"
 #include "BBE/Error.h"
+#include "BBE/Math.h"
 
 bbe::Matrix4::Matrix4()
 {

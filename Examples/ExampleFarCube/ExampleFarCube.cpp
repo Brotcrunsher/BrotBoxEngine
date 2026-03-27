@@ -1,5 +1,5 @@
-#include "BBE/BrotBoxEngine.h"
-#include <iostream>
+
+#include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 
 // Debugging Example!
 // A cube, a camera, and a light are placed into the Scene. All three of them are moving with a very high speed in some direction.

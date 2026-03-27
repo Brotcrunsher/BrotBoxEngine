@@ -1,7 +1,6 @@
-#include "BBE/BrotBoxEngine.h"
-#include <iostream>
-#include <vector>
+#include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 #include <future>
+#include <vector>
 
 class MyGame;
 class MyGame : public bbe::Game

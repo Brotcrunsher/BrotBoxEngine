@@ -1,8 +1,7 @@
 #include "BBE/OpenGL/OpenGLCircle.h"
-#include "BBE/OpenGL/OpenGLManager.h"
+#include "BBE/Circle.h"
 #include "BBE/List.h"
 #include "BBE/Vector3.h"
-#include "BBE/Circle.h"
 
 static GLuint vbo = 0;
 static GLuint ibo = 0;

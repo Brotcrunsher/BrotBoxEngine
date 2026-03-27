@@ -1,7 +1,6 @@
-#include "BBE/BrotBoxEngine.h"
-#include <iostream>
-#include <ctime>
+#include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 #include <chrono>
+#include <ctime>
 
 class MyGame : public bbe::Game
 {

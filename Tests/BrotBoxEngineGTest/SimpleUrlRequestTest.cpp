@@ -1,8 +1,8 @@
+#include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): tests intentionally use the engine umbrella.
 #include "gtest/gtest.h"
-#include "BBE/BrotBoxEngine.h"
 
 #ifdef BBE_ADD_CURL
-#include <sodium.h>
+#include <sodium.h> // NOLINT(misc-include-cleaner): libsodium constants are used in this test.
 
 TEST(SimpleUrlRequest, DecryptXChaChaRejectsTooShortCiphertext)
 {

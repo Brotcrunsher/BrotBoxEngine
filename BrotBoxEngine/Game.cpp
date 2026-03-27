@@ -1,17 +1,13 @@
 #include "BBE/Game.h"
-#include "BBE/Window.h"
 #include "BBE/Error.h"
-#include "BBE/PrimitiveBrush2D.h"
-#include "BBE/PrimitiveBrush3D.h"
-#include "BBE/Math.h"
-#include "BBE/StopWatch.h"
-#include "BBE/SimpleFile.h"
-#include <iostream>
-#include <exception>
-#include "implot.h"
+#include "BBE/Error.h"
 #include "BBE/ImGuiExtensions.h"
 #include "BBE/Logging.h"
-#include "BBE/Error.h"
+#include "BBE/Math.h"
+#include "BBE/SimpleFile.h"
+#include "BBE/StopWatch.h"
+#include "BBE/Window.h"
+#include <exception>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -19,7 +15,6 @@
 
 #include <signal.h>
 #if __has_include(<stacktrace>)
-#include <stacktrace>
 #else
 #pragma warning("Stacktrace lib is not present!")
 #endif

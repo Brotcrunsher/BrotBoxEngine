@@ -1,7 +1,7 @@
 #include "BBE/SimplePythonInterpreter.h"
-#include "BBE/SimpleFile.h"
-#include "BBE/Logging.h"
 #include "BBE/Async.h"
+#include "BBE/Logging.h"
+#include "BBE/SimpleFile.h"
 #include <Python.h>
 
 void bbe::simplePython::interpret(const bbe::String &code)

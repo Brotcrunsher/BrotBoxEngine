@@ -1,9 +1,8 @@
 #include "BBE/CameraControlNoClip.h"
 #include "BBE/Game.h"
+#include "BBE/KeyboardKeys.h"
 #include "BBE/Math.h"
 #include "BBE/Matrix4.h"
-#include "BBE/KeyboardKeys.h"
-#include "BBE/Vector2.h"
 
 bbe::CameraControlNoClip::CameraControlNoClip(Game *game)
 	: m_pgame(game)

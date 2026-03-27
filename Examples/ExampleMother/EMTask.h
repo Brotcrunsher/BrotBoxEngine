@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BBE/BrotBoxEngine.h"
+#include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 #include "BBE/SessionLockMonitor.h"
 
 struct Task

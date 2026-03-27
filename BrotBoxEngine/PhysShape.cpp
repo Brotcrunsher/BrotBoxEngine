@@ -1,19 +1,16 @@
 #include "BBE/PhysWorld.h"
-#include "BBE/Math.h"
 #include "BBE/Game.h"
+#include "BBE/Math.h"
 #include "BBE/Vector2.h"
-#include "BBE/Rectangle.h"
 
-#include "box2d/b2_world.h"
 #include "box2d/b2_body.h"
-#include "box2d/b2_circle_shape.h"
 #include "box2d/b2_fixture.h"
-#include "box2d/b2_rope_joint.h"
 #include "box2d/b2_revolute_joint.h"
-#include "box2d/b2_friction_joint.h"
+#include "box2d/b2_rope_joint.h"
+#include "box2d/b2_world.h"
 
-#include "BBE/PhysRectangle.h"
 #include "BBE/PhysCircle.h"
+#include "BBE/PhysRectangle.h"
 #include "BBE/PhysShape.h"
 
 void bbe::PhysShape::freeze()

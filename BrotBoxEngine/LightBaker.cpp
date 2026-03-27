@@ -1,9 +1,7 @@
 #ifdef BBE_RENDERER_OPENGL
 #include "BBE/LightBaker.h"
-#include "BBE/PrimitiveBrush3D.h"
-#include "BBE/Image.h"
 #include "BBE/FragmentShader.h"
-#include "BBE/PointLight.h"
+#include "BBE/Image.h"
 
 bbe::LightBaker::LightBaker()
 {

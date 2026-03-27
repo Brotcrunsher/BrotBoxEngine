@@ -1,9 +1,9 @@
 #include "BBE/Vector2.h"
+#include "BBE/Error.h"
+#include "BBE/Math.h"
 #include "BBE/Vector3.h"
 #include "BBE/Vector4.h"
-#include "BBE/Error.h"
 #include "BBE/Vector4.h"
-#include "BBE/Math.h"
 
 bbe::Vector4::Vector4()
 	: x(0), y(0), z(0), w(0)

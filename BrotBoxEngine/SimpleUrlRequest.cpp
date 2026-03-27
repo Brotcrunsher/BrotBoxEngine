@@ -1,11 +1,8 @@
 #include "BBE/SimpleUrlRequest.h"
-#include "BBE/SimpleProcess.h"
 #include "BBE/Error.h"
 #include "BBE/List.h"
-#include "sodium.h"
-#include "BBE/SimpleFile.h"
-#include "BBE/Socket.h"
 #include "BBE/Logging.h"
+#include "sodium.h" // NOLINT(misc-include-cleaner): libsodium declarations are used below.
 
 #ifdef BBE_ADD_CURL
 #include "curl/curl.h"

@@ -1,15 +1,14 @@
 #include "BBE/PhysWorld.h"
-#include "BBE/Math.h"
 #include "BBE/Game.h"
+#include "BBE/Math.h"
 #include "BBE/Vector2.h"
-#include "BBE/Rectangle.h"
 
-#include "box2d/b2_world.h"
+#include "BBE/PhysCircle.h"
+#include "BBE/PhysRectangle.h"
 #include "box2d/b2_body.h"
 #include "box2d/b2_circle_shape.h"
 #include "box2d/b2_fixture.h"
-#include "BBE/PhysRectangle.h"
-#include "BBE/PhysCircle.h"
+#include "box2d/b2_world.h"
 
 bbe::PhysCircle::PhysCircle(Game *context, float x, float y, float radius, float angle)
 	: PhysShape(context)

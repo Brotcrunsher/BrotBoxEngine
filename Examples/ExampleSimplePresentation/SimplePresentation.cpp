@@ -1,10 +1,10 @@
-#include "BBE/BrotBoxEngine.h"
-#include "SimplePresentation.h"
+#include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
+#include "AsmTokenizer.h"
+#include "BrotDownTokenizer.h"
 #include "CppTokenizer.h"
 #include "LineTokenizer.h"
-#include "BrotDownTokenizer.h"
-#include "AsmTokenizer.h"
 #include "PngTokenizer.h"
+#include "SimplePresentation.h"
 #include "Tokenizer.h"
 
 static int32_t fontsLoaded = 0;

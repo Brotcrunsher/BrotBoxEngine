@@ -1,6 +1,6 @@
 #pragma once
 #if defined(_WIN32) || defined(__linux__)
-#include "BBE/BrotBoxEngine.h"
+#include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 
 struct Process
 {

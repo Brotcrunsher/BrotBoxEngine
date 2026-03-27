@@ -1,7 +1,6 @@
 #include "BBE/Cube.h"
 #include "BBE/List.h"
 #include "BBE/Math.h"
-#include "string.h"
 
 bbe::Cube::Cube()
 {

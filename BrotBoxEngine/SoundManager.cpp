@@ -3,12 +3,10 @@
 #include "BBE/SoundManager.h"
 #include "BBE/Error.h"
 #include "BBE/Logging.h"
-#include "BBE/WriterReaderBuffer.h"
 #include "BBE/SimpleThread.h"
-#include <algorithm>
-#include <iostream>
-#include <mutex>
+#include "BBE/WriterReaderBuffer.h"
 #include <chrono>
+#include <iostream>
 
 #include "AL/al.h"
 #include "AL/alc.h"

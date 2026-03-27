@@ -1,12 +1,11 @@
 #include "BBE/ChatGPTComm.h"
-#include "BBE/Logging.h"
 #include "BBE/Async.h"
+#include "BBE/Logging.h"
 
 #include <iostream>
 #include <map>
 
 #ifdef BBE_ADD_CURL
-#include "BBE/SimpleFile.h"
 #include "BBE/SimpleUrlRequest.h"
 
 static bbe::List<char> sendRequestBinary(const std::string &url, const bbe::String &key, const std::string &jsonInput)
