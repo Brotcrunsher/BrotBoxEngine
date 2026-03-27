@@ -48,6 +48,60 @@ static void build(bbe::INTERNAL::openGl::OpenGLFragmentShader::ShaderProgramTrip
 	prog.determinePositions();
 }
 
+static bbe::String getShaderHeader()
+{
+#ifdef __APPLE__
+	return "#version 150\n";
+#else
+	return "#version 300 es\nprecision highp float;";
+#endif
+}
+
+static bbe::String normalizeFragmentShaderSource(const bbe::String &source)
+{
+#ifdef __APPLE__
+	bbe::String normalized = source.replace("#version 300 es", "#version 150");
+	normalized = normalized.replace("precision highp float;", "");
+	normalized = normalized.replace("precision highp int;", "");
+	normalized = normalized.replace("precision mediump float;", "");
+	normalized = normalized.replace("precision mediump int;", "");
+	normalized = normalized.replace("precision lowp float;", "");
+	normalized = normalized.replace("precision lowp int;", "");
+	return normalized;
+#else
+	return source;
+#endif
+}
+
+static bbe::String getVertexShader3dSource()
+{
+	bbe::String vertexShader3dSource = getShaderHeader();
+	vertexShader3dSource +=
+		"uniform mat4 view;"
+		"uniform mat4 projection;"
+		"uniform mat4 model;"
+		"in vec3 inPos;"
+		"in vec3 inNormal;"
+		"in vec2 inUvCoord;"
+		"out vec4 passPos;"
+		"out vec4 passWorldPos;"
+		"out vec4 passNormal;"
+		"out vec2 passUvCoord;"
+		"out vec3 worldNormal;"
+		"out vec3 upViewSpace;"
+		"void main()"
+		"{"
+		"   passWorldPos = model * vec4(inPos, 1.0);"
+		"   gl_Position = projection * view * passWorldPos * vec4(1.0, -1.0, 1.0, 1.0);"
+		"   passPos = view * passWorldPos;"
+		"   passNormal = view * model * vec4(inNormal, 0.0);"
+		"   worldNormal = (model * vec4(inNormal, 0.0)).xyz;"
+		"   passUvCoord = inUvCoord;"
+		"   upViewSpace = (view * vec4(0.0, 0.0, 1.0, 0.0)).xyz;"
+		"}";
+	return vertexShader3dSource;
+}
+
 bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::FragmentShader &shader)
 {
 	if (shader.m_prendererData != nullptr)
@@ -56,17 +110,16 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::Fra
 	}
 	shader.m_prendererData = this;
 
-	code.resizeCapacityAndLengthUninit(shader.m_rawData.getLength() + 1);
-	memcpy(code.getRaw(), shader.m_rawData.getRaw(), shader.m_rawData.getLength());
+	bbe::String normalizedSource = normalizeFragmentShaderSource(reinterpret_cast<const char *>(shader.m_rawData.getRaw()));
+	code.resizeCapacityAndLengthUninit(normalizedSource.getLengthBytes() + 1);
+	memcpy(code.getRaw(), normalizedSource.getRaw(), normalizedSource.getLengthBytes());
 	code.last() = '\0';
 }
 
 bbe::INTERNAL::openGl::OpenGLFragmentShader::TwoD &bbe::INTERNAL::openGl::OpenGLFragmentShader::getTwoD()
 {
-	char const *vertexShader2dSource =
-		"#version 300 es\n"
-		"precision highp float;"
-		""
+	bbe::String vertexShader2dSource = getShaderHeader();
+	vertexShader2dSource +=
 		"uniform vec2 screenSize;"
 		"uniform vec4 scalePosOffset;"
 		"uniform float rotation;"
@@ -85,40 +138,16 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::TwoD &bbe::INTERNAL::openGl::OpenGL
 		"	gl_Position = vec4(pos, 0.0, 1.0);"
 		"}";
 	char const *fragmentShaderSource = code.getRaw();
-	build(twoD, vertexShader2dSource, fragmentShaderSource);
+	build(twoD, vertexShader2dSource.getRaw(), fragmentShaderSource);
 
 	return twoD;
 }
 
-static char const *vertexShader3dSource =
-	"#version 300 es\n"
-	"precision highp float;"
-	"uniform mat4 view;"
-	"uniform mat4 projection;"
-	"uniform mat4 model;"
-	"in vec3 inPos;"
-	"in vec3 inNormal;"
-	"in vec2 inUvCoord;"
-	"out vec4 passPos;"
-	"out vec4 passWorldPos;"
-	"out vec4 passNormal;"
-	"out vec2 passUvCoord;"
-	"out vec3 worldNormal;"
-	"out vec3 upViewSpace;"
-	"void main()"
-	"{"
-	"   passWorldPos = model * vec4(inPos, 1.0);"
-	"   gl_Position = projection * view * passWorldPos * vec4(1.0, -1.0, 1.0, 1.0);"
-	"   passPos = view * passWorldPos;"
-	"   passNormal = view * model * vec4(inNormal, 0.0);"
-	"   worldNormal = (model * vec4(inNormal, 0.0)).xyz;"
-	"   passUvCoord = inUvCoord;"
-	"   upViewSpace = (view * vec4(0.0, 0.0, 1.0, 0.0)).xyz;"
-	"}";
 bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD &bbe::INTERNAL::openGl::OpenGLFragmentShader::getThreeD()
 {
+	bbe::String vertexShader3dSource = getVertexShader3dSource();
 	char const *fragmentShaderSource = code.getRaw();
-	build(threeD, vertexShader3dSource, fragmentShaderSource);
+	build(threeD, vertexShader3dSource.getRaw(), fragmentShaderSource);
 
 	return threeD;
 }
@@ -139,7 +168,8 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD &bbe::INTERNAL::openGl::Open
 			newString += lines[i];
 		}
 		char const *fragmentShaderSource = newString.getRaw();
-		build(threeDForwardNoLight, vertexShader3dSource, fragmentShaderSource);
+		bbe::String vertexShader3dSource = getVertexShader3dSource();
+		build(threeDForwardNoLight, vertexShader3dSource.getRaw(), fragmentShaderSource);
 	}
 
 	return threeDForwardNoLight;
@@ -147,9 +177,8 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD &bbe::INTERNAL::openGl::Open
 
 bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD &bbe::INTERNAL::openGl::OpenGLFragmentShader::getThreeDBake()
 {
-	char const *vertexShader3dBakeSource =
-		"#version 300 es\n"
-		"precision highp float;"
+	bbe::String vertexShader3dBakeSource = getShaderHeader();
+	vertexShader3dBakeSource +=
 		"uniform mat4 view;"
 		"uniform mat4 projection;"
 		"uniform mat4 model;"
@@ -170,7 +199,7 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD &bbe::INTERNAL::openGl::Open
 		"}";
 
 	char const *fragmentShaderSource = code.getRaw();
-	build(threeDBake, vertexShader3dBakeSource, fragmentShaderSource);
+	build(threeDBake, vertexShader3dBakeSource.getRaw(), fragmentShaderSource);
 	return threeDBake;
 }
 

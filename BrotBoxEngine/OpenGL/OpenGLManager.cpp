@@ -170,10 +170,16 @@ void bbe::INTERNAL::openGl::Program::addFragmentShader(const bbe::String &label,
 
 bbe::String bbe::INTERNAL::openGl::Program::getHeader(const bbe::List<UniformVariable> &uniformVariables)
 {
-	bbe::String retVal =
+	bbe::String retVal;
+#ifdef __APPLE__
+	retVal =
+		"#version 150\n";
+#else
+	retVal =
 		"#version 300 es\n"
 		"precision highp float;\n"
 		"precision highp int;\n"; // Actually required! Intel Drivers seem to have different default precisions of int between vertex and frament shaders, leading to linker issues.
+#endif
 	for (const UniformVariable &uv : uniformVariables)
 	{
 		retVal += uv.toString();
@@ -1368,11 +1374,22 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char *appName, uint32_t ma
 
 	const uint32_t indices[] = { 0, 3, 1, 1, 3, 2 };
 	quadIbo = genBuffer("quadIbo", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
+#ifdef __APPLE__
+	glGenVertexArrays(1, &m_defaultVao);
+	glBindVertexArray(m_defaultVao);
+#endif
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 {
 	if (m_pwindow == nullptr) return;
+#ifdef __APPLE__
+	if (m_defaultVao != 0)
+	{
+		glDeleteVertexArrays(1, &m_defaultVao);
+		m_defaultVao = 0;
+	}
+#endif
 	glDeleteBuffers(1, &quadIbo);
 	imguiStop();
 
@@ -1472,6 +1489,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
 {
 	if (m_pwindow == nullptr) return;
+#ifdef __APPLE__
+	glBindVertexArray(m_defaultVao);
+#endif
 	flipDrawcallStats();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	imguiStartFrame();
@@ -1650,7 +1670,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle &rect, co
 	glActiveTexture(GL_TEXTURE0);
 	bbe::INTERNAL::openGl::OpenGLImage *ogi = toRendererData(image);
 	glBindTexture(GL_TEXTURE_2D, ogi->tex);
-
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 	addDrawcallStat();
 
@@ -1702,7 +1721,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t 
 	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 	glVertexAttribDivisor(positionAttribute, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)amountOfIndices, GL_UNSIGNED_INT, nullptr, 1);
 	addDrawcallStat();
 

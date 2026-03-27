@@ -154,6 +154,7 @@ namespace bbe
 				Framebuffer postProcessingFb;
 
 				GLuint m_imageUvBuffer = 0;
+				GLuint m_defaultVao = 0;
 
 				uint32_t m_windowWidth = 0;
 				uint32_t m_windowHeight = 0;
