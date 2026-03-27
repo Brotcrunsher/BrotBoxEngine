@@ -89,6 +89,15 @@ GLFWwindowsizefun bbe::glfwWrapper::glfwSetWindowSizeCallback(GLFWwindow* handle
 #endif
 }
 
+GLFWframebuffersizefun bbe::glfwWrapper::glfwSetFramebufferSizeCallback(GLFWwindow* handle, GLFWframebuffersizefun cbfun)
+{
+#ifndef BBE_RENDERER_NULL
+	return ::glfwSetFramebufferSizeCallback(handle, cbfun);
+#else
+	return cbfun;
+#endif
+}
+
 GLFWscrollfun bbe::glfwWrapper::glfwSetScrollCallback(GLFWwindow* handle, GLFWscrollfun cbfun)
 {
 #ifndef BBE_RENDERER_NULL
@@ -281,6 +290,13 @@ void bbe::glfwWrapper::glfwGetWindowSize(GLFWwindow* window, int* width, int* he
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwGetWindowSize(window, width, height);
+#endif
+}
+
+void bbe::glfwWrapper::glfwGetFramebufferSize(GLFWwindow* window, int* width, int* height)
+{
+#ifndef BBE_RENDERER_NULL
+	::glfwGetFramebufferSize(window, width, height);
 #endif
 }
 

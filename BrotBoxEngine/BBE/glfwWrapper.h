@@ -21,6 +21,7 @@ namespace bbe
 		GLFWcursorposfun glfwSetCursorPosCallback(GLFWwindow* handle, GLFWcursorposfun cbfun);
 		GLFWmousebuttonfun glfwSetMouseButtonCallback(GLFWwindow* handle, GLFWmousebuttonfun cbfun);
 		GLFWwindowsizefun glfwSetWindowSizeCallback(GLFWwindow* handle, GLFWwindowsizefun cbfun);
+		GLFWframebuffersizefun glfwSetFramebufferSizeCallback(GLFWwindow* handle, GLFWframebuffersizefun cbfun);
 		GLFWscrollfun glfwSetScrollCallback(GLFWwindow* handle, GLFWscrollfun cbfun);
 		GLFWwindowclosefun glfwSetWindowCloseCallback(GLFWwindow* handle, GLFWwindowclosefun cbfun);
 		GLFWwindowrefreshfun glfwSetWindowRefreshCallback(GLFWwindow* handle, GLFWwindowrefreshfun cbfun);
@@ -46,6 +47,7 @@ namespace bbe
 		void* glfwGetWindowUserPointer(GLFWwindow* window);
 		void glfwSetWindowSize(GLFWwindow* window, int width, int height);
 		void glfwGetWindowSize(GLFWwindow* window, int* width, int* height);
+		void glfwGetFramebufferSize(GLFWwindow* window, int* width, int* height);
 		void glfwMaximizeWindow(GLFWwindow* window);
 		void glfwSetWindowPos(GLFWwindow* window, int x, int y);
 	}

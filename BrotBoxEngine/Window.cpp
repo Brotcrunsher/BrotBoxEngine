@@ -149,7 +149,15 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 	float windowXScale = 0;
 	float windowYScale = 0;
 	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
-	m_renderManager->init(title, major, minor, patch, m_pwindow, static_cast<uint32_t>(width * windowXScale), static_cast<uint32_t>(height * windowYScale));
+	int framebufferWidth = 0;
+	int framebufferHeight = 0;
+	glfwWrapper::glfwGetFramebufferSize(m_pwindow, &framebufferWidth, &framebufferHeight);
+	if (framebufferWidth <= 0 || framebufferHeight <= 0)
+	{
+		framebufferWidth = static_cast<int>(width * windowXScale);
+		framebufferHeight = static_cast<int>(height * windowYScale);
+	}
+	m_renderManager->init(title, major, minor, patch, m_pwindow, static_cast<uint32_t>(framebufferWidth), static_cast<uint32_t>(framebufferHeight));
 
 	BBELOGLN("Setting glfw callbacks");
 	glfwWrapper::glfwSetKeyCallback(m_pwindow, INTERNAL_keyCallback);
@@ -157,6 +165,7 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 	glfwWrapper::glfwSetCursorPosCallback(m_pwindow, INTERNAL_cursorPosCallback);
 	glfwWrapper::glfwSetMouseButtonCallback(m_pwindow, INTERNAL_mouseButtonCallback);
 	glfwWrapper::glfwSetWindowSizeCallback(m_pwindow, INTERNAL_windowResizeCallback);
+	glfwWrapper::glfwSetFramebufferSizeCallback(m_pwindow, INTERNAL_framebufferResizeCallback);
 	glfwWrapper::glfwSetScrollCallback(m_pwindow, INTERNAL_mouseScrollCallback);
 	glfwWrapper::glfwSetWindowCloseCallback(m_pwindow, INTERNAL_windowCloseCallback);
 	glfwWrapper::glfwSetWindowRefreshCallback(m_pwindow, INTERNAL_windowRefreshCallback);
@@ -304,9 +313,9 @@ int bbe::Window::getWidth() const
 int bbe::Window::getScaledWidth() const
 {
 	if (m_pwindow == nullptr) return getWidth();
-	float scale = 0;
-	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
-	return static_cast<int>(getWidth() * scale);
+	int framebufferWidth = 0;
+	glfwWrapper::glfwGetFramebufferSize(m_pwindow, &framebufferWidth, nullptr);
+	return framebufferWidth > 0 ? framebufferWidth : getWidth();
 }
 
 int bbe::Window::getHeight() const
@@ -317,9 +326,9 @@ int bbe::Window::getHeight() const
 int bbe::Window::getScaledHeight() const
 {
 	if (m_pwindow == nullptr) return getHeight();
-	float scale = 0;
-	glfwWrapper::glfwGetWindowContentScale(m_pwindow, nullptr, &scale);
-	return static_cast<int>(getHeight() * scale);
+	int framebufferHeight = 0;
+	glfwWrapper::glfwGetFramebufferSize(m_pwindow, nullptr, &framebufferHeight);
+	return framebufferHeight > 0 ? framebufferHeight : getHeight();
 }
 
 float bbe::Window::getScale() const
@@ -466,13 +475,22 @@ void bbe::Window::showWindow()
 		float windowXScale = 0;
 		float windowYScale = 0;
 		glfwWrapper::glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
-		m_renderManager->init(recreateState.title.c_str(), recreateState.major, recreateState.minor, recreateState.patch, m_pwindow, static_cast<uint32_t>(recreateWidth * windowXScale), static_cast<uint32_t>(recreateHeight * windowYScale));
+		int framebufferWidth = 0;
+		int framebufferHeight = 0;
+		glfwWrapper::glfwGetFramebufferSize(m_pwindow, &framebufferWidth, &framebufferHeight);
+		if (framebufferWidth <= 0 || framebufferHeight <= 0)
+		{
+			framebufferWidth = static_cast<int>(recreateWidth * windowXScale);
+			framebufferHeight = static_cast<int>(recreateHeight * windowYScale);
+		}
+		m_renderManager->init(recreateState.title.c_str(), recreateState.major, recreateState.minor, recreateState.patch, m_pwindow, static_cast<uint32_t>(framebufferWidth), static_cast<uint32_t>(framebufferHeight));
 
 		glfwWrapper::glfwSetKeyCallback(m_pwindow, INTERNAL_keyCallback);
 		glfwWrapper::glfwSetCharCallback(m_pwindow, INTERNAL_charCallback);
 		glfwWrapper::glfwSetCursorPosCallback(m_pwindow, INTERNAL_cursorPosCallback);
 		glfwWrapper::glfwSetMouseButtonCallback(m_pwindow, INTERNAL_mouseButtonCallback);
 		glfwWrapper::glfwSetWindowSizeCallback(m_pwindow, INTERNAL_windowResizeCallback);
+		glfwWrapper::glfwSetFramebufferSizeCallback(m_pwindow, INTERNAL_framebufferResizeCallback);
 		glfwWrapper::glfwSetScrollCallback(m_pwindow, INTERNAL_mouseScrollCallback);
 		glfwWrapper::glfwSetWindowCloseCallback(m_pwindow, INTERNAL_windowCloseCallback);
 		glfwWrapper::glfwSetWindowRefreshCallback(m_pwindow, INTERNAL_windowRefreshCallback);
@@ -554,14 +572,27 @@ bbe::PrimitiveBrush3D& bbe::Window::getBrush3D()
 void bbe::Window::INTERNAL_resize(int width, int height)
 {
 	if (m_pwindow == nullptr) return;
-	float windowXScale = 0;
-	float windowYScale = 0;
-	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &windowXScale, &windowYScale);
+	m_width = width;
+	m_height = height;
 
-	m_width = int(width / windowXScale);
-	m_height = int(height / windowYScale);
+	int framebufferWidth = 0;
+	int framebufferHeight = 0;
+	glfwWrapper::glfwGetFramebufferSize(m_pwindow, &framebufferWidth, &framebufferHeight);
+	if (framebufferWidth > 0 && framebufferHeight > 0)
+	{
+		m_renderManager->resize(static_cast<uint32_t>(framebufferWidth), static_cast<uint32_t>(framebufferHeight));
+	}
+}
 
-	m_renderManager->resize(width, height);
+void bbe::Window::INTERNAL_resizeFramebuffer(int width, int height)
+{
+	if (m_pwindow == nullptr) return;
+	glfwWrapper::glfwGetWindowSize(m_pwindow, &m_width, &m_height);
+	if (width <= 0 || height <= 0)
+	{
+		return;
+	}
+	m_renderManager->resize(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 }
 
 void bbe::Window::INTERNAL_onRefresh()
@@ -686,15 +717,17 @@ void bbe::INTERNAL_cursorPosCallback(GLFWwindow* window, double xpos, double ypo
 #ifdef BBE_RENDERER_VULKAN
 	if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
-	float windowXScale = 0;
-	float windowYScale = 0;
-	glfwWrapper::glfwGetWindowContentScale(window, &windowXScale, &windowYScale);
-	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_moveMouse((float)(xpos / windowXScale), (float)(ypos / windowYScale));
+	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_moveMouse(static_cast<float>(xpos), static_cast<float>(ypos));
 }
 
 void bbe::INTERNAL_windowResizeCallback(GLFWwindow* window, int width, int height)
 {
 	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_resize(width, height);
+}
+
+void bbe::INTERNAL_framebufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_resizeFramebuffer(width, height);
 }
 
 void bbe::INTERNAL_mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)

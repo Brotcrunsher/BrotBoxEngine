@@ -94,6 +94,7 @@ namespace bbe
 		Keyboard INTERNAL_keyboard;
 		Mouse INTERNAL_mouse;
 		void INTERNAL_resize(int width, int height);
+		void INTERNAL_resizeFramebuffer(int width, int height);
 
 		void INTERNAL_onRefresh();
 
@@ -120,6 +121,7 @@ namespace bbe
 	void INTERNAL_charCallback(GLFWwindow* window, unsigned int c);
 	void INTERNAL_cursorPosCallback(GLFWwindow *window, double xpos, double ypos);
 	void INTERNAL_windowResizeCallback(GLFWwindow *window, int width, int height);
+	void INTERNAL_framebufferResizeCallback(GLFWwindow* window, int width, int height);
 	void INTERNAL_mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 	void INTERNAL_mouseScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 	void INTERNAL_windowCloseCallback(GLFWwindow* window);
