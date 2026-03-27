@@ -1,8 +1,5 @@
 #pragma once
 
-
-#ifdef WIN32
-
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -20,6 +17,11 @@ namespace bbe
 		bbe::List<float> targetBrightness = { };
 		bbe::List<float> currentBrightness = { };
 		std::atomic_bool stopRequested = false;
+#ifdef __linux__
+		bbe::List<int> linuxDisplays = { };
+		bool linuxDisplaysInitialized = false;
+		bool linuxBackendReportedUnavailable = false;
+#endif
 
 		void threadMain();
 
@@ -33,4 +35,3 @@ namespace bbe
 		void setBrightness(const bbe::List<float>& brightnessPercentag);
 	};
 }
-#endif

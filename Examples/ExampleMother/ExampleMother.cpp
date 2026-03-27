@@ -369,7 +369,7 @@ private:
 	bbe::TimePoint lastServerReach = bbe::TimePoint::epoch();
 	bool serverUnreachableSilenced = false;
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 	bbe::Monitor monitor;
 	float monitorBrightness = 1.0f;
 	bool monitorBrightnessOverwrite = false;
@@ -1085,7 +1085,7 @@ public:
 			}
 		}
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 		beginMeasure("Monitor Dim");
 		if (!monitorBrightnessOverwrite)
 		{
@@ -3046,7 +3046,7 @@ public:
 				ImGui::Checkbox("Silence Bitcoin Ath", &silenceBitcoinAth);
 				ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 				ImGui::Checkbox("Overwrite Monitor Brightness", &monitorBrightnessOverwrite);
 				ImGui::BeginDisabled(!monitorBrightnessOverwrite);
 				ImGui::SameLine();
