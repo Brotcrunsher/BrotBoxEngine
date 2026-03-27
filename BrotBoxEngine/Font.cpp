@@ -290,6 +290,11 @@ bbe::Vector2 bbe::Font::getSize(const bbe::String& text) const
 
 bbe::FittedFont bbe::Font::getBestFittingFont(const bbe::List<Font>& fonts, const bbe::String& string, bbe::Vector2 maxSize)
 {
+	if (fonts.isEmpty())
+	{
+		return {};
+	}
+
 	auto splits = string.split(" ");
 	size_t spaces = 0;
 	for (size_t i = 0; i < splits.getLength(); i++)

@@ -176,21 +176,25 @@ namespace bbe
 
 		T& first()
 		{
+			if (m_length == 0) bbe::Crash(bbe::Error::ContainerEmpty);
 			return (m_pdata[0]);
 		}
 
 		const T& first() const
 		{
+			if (m_length == 0) bbe::Crash(bbe::Error::ContainerEmpty);
 			return (m_pdata[0]);
 		}
 
 		T& last()
 		{
+			if (m_length == 0) bbe::Crash(bbe::Error::ContainerEmpty);
 			return (m_pdata[m_length - 1]);
 		}
 
 		const T& last() const
 		{
+			if (m_length == 0) bbe::Crash(bbe::Error::ContainerEmpty);
 			return (m_pdata[m_length - 1]);
 		}
 	};

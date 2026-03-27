@@ -6,6 +6,7 @@
 #endif
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -22,6 +23,17 @@
 
 namespace
 {
+	bool checkedMultiplySizeT(size_t& value, size_t factor)
+	{
+		if (factor != 0 && value > std::numeric_limits<size_t>::max() / factor)
+		{
+			return false;
+		}
+
+		value *= factor;
+		return true;
+	}
+
 	std::vector<bbe::byte> encodeRawImageAsPng(const bbe::byte* imageData, int width, int height, size_t componentCount, size_t bytesPerChannel)
 	{
 		if (imageData == nullptr || bytesPerChannel != 1)
@@ -144,7 +156,7 @@ void bbe::Image::load(int width, int height, const Color& c)
 
 	const size_t size = getSizeInBytes();
 	m_pdata.resizeCapacityAndLengthUninit(size); //TODO use allocator
-	for (int i = 0; i < size; i += 4)
+	for (size_t i = 0; i < size; i += 4)
 	{
 #ifdef _MSC_VER
 		// MSVC doesn't understand that getSizeInBytes() will always
@@ -169,8 +181,14 @@ void bbe::Image::load(int width, int height, const void* data, ImageFormat forma
 	m_format = format;
 	m_prendererData = nullptr;
 
-	m_pdata.resizeCapacityAndLengthUninit(getSizeInBytes());
-	memcpy(m_pdata.getRaw(), data, getSizeInBytes());
+	const size_t size = getSizeInBytes();
+	if (size != 0 && data == nullptr)
+	{
+		bbe::Crash(bbe::Error::NullPointer);
+	}
+
+	m_pdata.resizeCapacityAndLengthUninit(size);
+	memcpy(m_pdata.getRaw(), data, size);
 }
 
 int bbe::Image::getWidth() const
@@ -190,7 +208,20 @@ bbe::Vector2i bbe::Image::getDimensions() const
 
 size_t bbe::Image::getSizeInBytes() const
 {
-	return static_cast<size_t>(getWidth() * getHeight() * getAmountOfChannels() * getBytesPerChannel());
+	if (m_width < 0 || m_height < 0)
+	{
+		bbe::Crash(bbe::Error::IllegalArgument, "Image dimensions must not be negative.");
+	}
+
+	size_t size = static_cast<size_t>(m_width);
+	if (!checkedMultiplySizeT(size, static_cast<size_t>(m_height))
+		|| !checkedMultiplySizeT(size, getAmountOfChannels())
+		|| !checkedMultiplySizeT(size, getBytesPerChannel()))
+	{
+		bbe::Crash(bbe::Error::OutOfMemory, "Image dimensions overflow size calculations.");
+	}
+
+	return size;
 }
 
 size_t bbe::Image::getAmountOfChannels() const
@@ -263,9 +294,7 @@ void bbe::Image::setPixel(size_t x, size_t y, const bbe::Colori& c)
 	switch (m_format)
 	{
 	case ImageFormat::R8:
-		m_pdata[index + 0] = c.r;
-		m_pdata[index + 1] = c.r;
-		m_pdata[index + 2] = c.r;
+		m_pdata[index] = c.r;
 		break;
 	case ImageFormat::R8G8B8A8:
 		m_pdata[index + 0] = c.r;
@@ -282,7 +311,34 @@ void bbe::Image::setPixel(size_t x, size_t y, const bbe::Colori& c)
 
 size_t bbe::Image::getIndexForRawAccess(size_t x, size_t y) const
 {
-	return (y * m_width + x) * getAmountOfChannels();
+	if (m_width < 0 || m_height < 0)
+	{
+		bbe::Crash(bbe::Error::IllegalArgument, "Image dimensions must not be negative.");
+	}
+
+	const size_t width = static_cast<size_t>(m_width);
+	const size_t height = static_cast<size_t>(m_height);
+	if (x >= width || y >= height)
+	{
+		bbe::Crash(bbe::Error::IllegalArgument, "Image pixel access is out of bounds.");
+	}
+
+	size_t index = y;
+	if (!checkedMultiplySizeT(index, width))
+	{
+		bbe::Crash(bbe::Error::OutOfMemory);
+	}
+	if (index > std::numeric_limits<size_t>::max() - x)
+	{
+		bbe::Crash(bbe::Error::OutOfMemory);
+	}
+	index += x;
+	if (!checkedMultiplySizeT(index, getAmountOfChannels()))
+	{
+		bbe::Crash(bbe::Error::OutOfMemory);
+	}
+
+	return index;
 }
 
 int64_t bbe::Image::distance(const Image& other) const

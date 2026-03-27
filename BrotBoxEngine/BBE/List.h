@@ -108,6 +108,8 @@ namespace bbe
 
 		List& operator=(const List<T>& other)
 		{
+			if (this == &other) return *this;
+
 			clear();
 
 			bbe::freeBlock(m_allocBlock);
@@ -661,49 +663,45 @@ namespace bbe
 		T& first()
 		{
 			//UNTESTED
-			T* d = getRaw();
-			if (!d)
+			if (m_length == 0)
 			{
 				bbe::Crash(bbe::Error::ContainerEmpty);
 			}
 
-			return *d;
+			return *getRaw();
 		}
 
 		const T& first() const
 		{
 			//UNTESTED
-			const T* d = getRaw();
-			if (!d)
+			if (m_length == 0)
 			{
 				bbe::Crash(bbe::Error::ContainerEmpty);
 			}
 
-			return *d;
+			return *getRaw();
 		}
 
 		T& last()
 		{
 			//UNTESTED
-			T* d = getRaw();
-			if (!d)
+			if (m_length == 0)
 			{
 				bbe::Crash(bbe::Error::ContainerEmpty);
 			}
 
-			return *(d + getLength() - 1);
+			return *(getRaw() + getLength() - 1);
 		}
 
 		const T& last() const
 		{
 			//UNTESTED
-			const T* d = getRaw();
-			if (!d)
+			if (m_length == 0)
 			{
 				bbe::Crash(bbe::Error::ContainerEmpty);
 			}
 
-			return *(d + getLength() - 1);
+			return *(getRaw() + getLength() - 1);
 		}
 
 		T* find(const T& t)
@@ -739,6 +737,11 @@ namespace bbe
 
 		T* findLast(std::function<bool(const T&)> predicate)
 		{
+			if (m_length == 0)
+			{
+				return nullptr;
+			}
+
 			T* d = getRaw();
 			for (size_t i = m_length - 1; i != std::numeric_limits<size_t>::max(); i--)
 			{

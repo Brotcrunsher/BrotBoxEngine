@@ -230,6 +230,10 @@ std::optional<bbe::List<char>> bbe::simpleUrlRequest::decryptXChaCha(const bbe::
 	const unsigned char* nonce = (const unsigned char*)data.getRaw();
 	const unsigned char* ciphertext = nonce + crypto_aead_xchacha20poly1305_ietf_NPUBBYTES;
 	const size_t ciphertextLenght = data.getLength() - crypto_aead_xchacha20poly1305_ietf_NPUBBYTES;
+	if (ciphertextLenght < crypto_aead_xchacha20poly1305_ietf_ABYTES)
+	{
+		return std::nullopt;
+	}
 
 	bbe::List<char> message;
 	message.resizeCapacityAndLengthUninit(ciphertextLenght - crypto_aead_xchacha20poly1305_ietf_ABYTES);

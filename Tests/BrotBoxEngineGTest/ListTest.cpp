@@ -117,6 +117,23 @@ TEST(List, OperatorAssignment)
 	}
 }
 
+TEST(List, OperatorAssignmentSelf)
+{
+	bbe::List<SomeClass<int>> list(17, 100);
+	const auto originalCapacity = list.getCapacity();
+	const auto originalRaw = list.getRaw();
+
+	list = list;
+
+	ASSERT_EQ(list.getLength(), 17);
+	ASSERT_EQ(list.getCapacity(), originalCapacity);
+	ASSERT_EQ(list.getRaw(), originalRaw);
+	for (size_t i = 0; i < list.getLength(); i++)
+	{
+		ASSERT_EQ(list[i].getLength(), 100);
+	}
+}
+
 TEST(List, OperatorMove)
 {
 	bbe::List<SomeClass<int>> list1(17, 100);
@@ -133,6 +150,24 @@ TEST(List, OperatorMove)
 	{
 		ASSERT_EQ(list1[i].getLength(), 1000);
 	}
+}
+
+TEST(List, FindLastOnEmptyReservedList)
+{
+	bbe::List<int> list(8);
+	ASSERT_EQ(list.findLast(42), nullptr);
+}
+
+TEST(List, FirstOnEmptyReservedListDies)
+{
+	bbe::List<int> list(8);
+	ASSERT_DEATH((void)list.first(), ".*");
+}
+
+TEST(List, LastOnEmptyReservedListDies)
+{
+	bbe::List<int> list(8);
+	ASSERT_DEATH((void)list.last(), ".*");
 }
 
 TEST(List, RecursiveList)
