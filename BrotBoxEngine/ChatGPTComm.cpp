@@ -1,9 +1,11 @@
-#ifdef WIN32
 #include "BBE/ChatGPTComm.h"
 #include "BBE/Logging.h"
 #include "BBE/SimpleUrlRequest.h"
 #include "BBE/SimpleFile.h"
 #include "BBE/Async.h"
+
+#include <iostream>
+#include <map>
 
 static bbe::List<char> sendRequestBinary(const std::string& url, const bbe::String& key, const std::string& jsonInput) {
 	auto response = bbe::simpleUrlRequest::urlRequest(
@@ -210,7 +212,7 @@ bbe::String bbe::ChatGPTComm::describeImage(const bbe::String& url)
 			{
 				{"role", "user"},
 				{"content", {
-					{{"type", "text"}, {"text", "What’s in this image?"}},
+					{{"type", "text"}, {"text", "What's in this image?"}},
 					{
 						{"type", "image_url"},
 						{"image_url", {{"url", url.getRaw()}}}
@@ -273,4 +275,3 @@ bbe::List<bbe::String> bbe::ChatGPTComm::getAvailableModels() const
 
 	return models;
 }
-#endif

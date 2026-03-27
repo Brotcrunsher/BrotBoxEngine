@@ -1,6 +1,4 @@
-#ifdef _WIN32
 #include "tinyxml2.h"
-#endif
 #include "BBE/BrotBoxEngine.h"
 #include "BBE/SimpleProcess.h"
 #ifdef ACTIVATE_ADA
@@ -13,6 +11,10 @@
 #include <cmath>
 #include <cstring>
 #include <vector>
+#ifdef __linux__
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 #ifdef _WIN32
 #define NOMINMAX
 // Need to link with Ws2_32.lib
@@ -264,6 +266,40 @@ namespace
 		"Super Adaptive Window: 0",
 		"Super Adaptive Window: 1",
 	};
+
+	bbe::String normalizeExternalUrl(const bbe::String& url)
+	{
+		if (url.startsWith("www."))
+		{
+			return "https://" + url;
+		}
+		return url;
+	}
+
+	void openExternalUrl(const bbe::String& url)
+	{
+		const bbe::String normalizedUrl = normalizeExternalUrl(url);
+#ifdef _WIN32
+		ShellExecuteA(nullptr, "open", normalizedUrl.getRaw(), nullptr, nullptr, SW_SHOWNORMAL);
+#elif defined(__linux__)
+		const pid_t firstChild = fork();
+		if (firstChild == 0)
+		{
+			const pid_t secondChild = fork();
+			if (secondChild == 0)
+			{
+				execlp("xdg-open", "xdg-open", normalizedUrl.getRaw(), static_cast<char*>(nullptr));
+				_exit(127);
+			}
+			_exit(secondChild < 0 ? 127 : 0);
+		}
+		if (firstChild > 0)
+		{
+			int status = 0;
+			waitpid(firstChild, &status, 0);
+		}
+#endif
+	}
 }
 
 class MyGame : public bbe::Game
@@ -298,8 +334,8 @@ private:
 	bbe::SerializableObject<PasswordManager> passwordManager = bbe::SerializableObject<PasswordManager>("PasswordManager.dat", "ParanoiaConfig");
 	bbe::SerializableList<ConsoleWarningIgnoreElement> cwiList = bbe::SerializableList<ConsoleWarningIgnoreElement>("CWIList.dat", "ParanoiaConfig");
 
-#ifdef _WIN32
 	bbe::ChatGPTComm chatGPTComm;						  // ChatGPT communication object
+#ifdef _WIN32
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
 #endif
 	std::future<bbe::Sound> chatGPTTTSFuture; // Future for TTS
@@ -417,10 +453,8 @@ private:
 #endif
 // mainTabs.add(Tab{"Mic", "Microphone Test", [this]() { return drawMicrophoneTest(); }});
 // mainTabs.add(Tab{"Ada", "AdafruitMacroPadRP2040", [this]() { return drawAdafruitMacroPadRP2040(*activeBrush); }});
-#ifdef _WIN32
 		mainTabs.add(Tab{"ENews", "Edit News", [this]()
 			{ return drawNewsConfig(); }});
-#endif
 #ifdef _WIN32
 		mainTabs.add(Tab{"MW", "Mouse Walls", [this]()
 			{ return drawMouseWallsConfig(); }});
@@ -438,10 +472,8 @@ private:
 			{ return drawBitcoin(); }});
 		adaptiveTabs.add(Tab{"Wthr", "Weather", [this]()
 			{ return drawWeather(*activeBrush, weatherOffset); }});
-#ifdef _WIN32
 		adaptiveTabs.add(Tab{"VNews", "View News", [this]()
 			{ return drawNews(); }});
-#endif
 
 		superAdaptiveTabs.add(Tab{"Hstry", "History", [this]()
 			{ return tasks.drawTabHistoryView(); }});
@@ -591,13 +623,11 @@ public:
 
 		bbe::simpleFile::backup::setBackupPath(generalConfig->backupPath);
 
-#ifdef _WIN32
 		// Initialize ChatGPTComm with the API key if available
 		if (!chatGPTConfig->apiKey.isEmpty())
 		{
 			chatGPTComm.key = chatGPTConfig->apiKey;
 		}
-#endif
 
 		if (generalConfig->windowSet)
 		{
@@ -909,7 +939,6 @@ public:
 		}
 #endif
 
-#ifdef _WIN32
 		beginMeasure("Reading News");
 		{
 			if (chatGPTComm.isKeySet() && readingNews)
@@ -942,7 +971,6 @@ public:
 				}
 			}
 		}
-#endif
 
 		beginMeasure("Basic Controls");
 #if defined(_WIN32) || defined(__linux__)
@@ -1496,11 +1524,9 @@ public:
 
 	bool isValidUrl(const bbe::String &url)
 	{
-		if (url.containsAny("&|;><"))
+		if (url.containsAny(" \t\r\n"))
 		{
-			// Naughty characters that could be used to execute other stuff
-			// in ShellExecute. Technically & is a legal url char, but none
-			// of the RSS feeds I observed contained it. So let's ignore it.
+			// Whitespace should never appear in RSS URLs.
 			return false;
 		}
 		if (url.startsWith("http://") ||
@@ -1516,6 +1542,14 @@ public:
 	{
 		bool requiresWrite = false;
 		static NewsConfig newNewsConfig;
+#ifdef __linux__
+		if (ImGui::bbe::InputText("Read-aloud API Key", chatGPTConfig->apiKey, ImGuiInputTextFlags_Password))
+		{
+			chatGPTConfig.writeToFile();
+			chatGPTComm.key = chatGPTConfig->apiKey;
+		}
+		ImGui::Separator();
+#endif
 		ImGui::bbe::InputText("Url", newNewsConfig.url);
 		ImGui::bbe::InputText("Iteration Path", newNewsConfig.iterationPath);
 		ImGui::bbe::InputText("Title Path", newNewsConfig.titlePath);
@@ -1641,7 +1675,6 @@ public:
 
 		return bbe::Vector2(1);
 	}
-#ifdef _WIN32
 	bbe::String extractInfoFromXmlElement(const tinyxml2::XMLElement *element, const bbe::String &path)
 	{
 		const size_t ats = path.count("@");
@@ -1671,13 +1704,17 @@ public:
 			return "";
 		return val;
 	}
-#endif
 
-#ifdef _WIN32
 	bbe::Vector2 drawNews()
 	{
 		ImGui::Checkbox("Reading news", &readingNews);
 		ImGui::Checkbox("Show read news", &showReadNews);
+#ifdef __linux__
+		if (!chatGPTComm.isKeySet())
+		{
+			ImGui::TextWrapped("Set a read-aloud API key in Edit News to enable spoken playback.");
+		}
+#endif
 
 		if (nextNewsQuery.hasPassed())
 		{
@@ -1786,7 +1823,7 @@ public:
 				{
 					if (ImGui::Selectable(newsConfig[i].newsEntries[k].link.getRaw()))
 					{
-						ShellExecuteA(nullptr, "open", newsConfig[i].newsEntries[k].link.getRaw(), nullptr, nullptr, SW_SHOWNORMAL);
+						openExternalUrl(newsConfig[i].newsEntries[k].link);
 					}
 				}
 				ImGui::PopStyleColor();
@@ -1796,7 +1833,6 @@ public:
 
 		return bbe::Vector2(1);
 	}
-#endif
 
 	bbe::List<bbe::String> getConsoleWarnings()
 	{

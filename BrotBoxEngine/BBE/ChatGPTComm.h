@@ -1,8 +1,7 @@
 #pragma once
-#ifdef WIN32
 #include <future>
-#include <vector>
 #include <mutex>
+#include <vector>
 
 #include "../BBE/String.h"
 #include "../BBE/List.h"
@@ -66,4 +65,3 @@ namespace bbe
 		bbe::List<bbe::String> getAvailableModels() const;
 	};
 }
-#endif
