@@ -388,10 +388,8 @@ private:
 		mainTabs.add(Tab{"Clpbrd", "Clipboard", [this]()
 			{ return drawTabClipboard(); }});
 // mainTabs.add(Tab{"Brn-T", "Brain-Teaser", [this]() { return brainTeasers.drawTabBrainTeasers(*activeBrush); }});
-#ifdef _WIN32
 		mainTabs.add(Tab{"Stpwtch", "Stopwatch", [this]()
 			{ return drawTabStopwatch(); }});
-#endif
 #ifdef _WIN32
 		mainTabs.add(Tab{"MsTrck", "Mouse Track", [this]()
 			{ return drawTabMouseTracking(*activeBrush); }});
