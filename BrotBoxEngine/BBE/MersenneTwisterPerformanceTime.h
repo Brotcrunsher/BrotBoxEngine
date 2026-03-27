@@ -35,7 +35,6 @@ namespace bbe
 				val += dist(mt);
 			}
 			BBELOGLN("Mersenne Twister STL Time: " << watch.getTimeExpiredSeconds());
-
 		}
 	}
 }

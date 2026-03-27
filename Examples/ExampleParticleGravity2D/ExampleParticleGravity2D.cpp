@@ -19,7 +19,7 @@ class MyGame : public bbe::Game
 		return 1.0f / distanceHalfSq;
 	}
 
-	static void solveAttraction(const bbe::Vector2& pos1, const bbe::Vector2& pos2, bbe::Vector2& speed, int32_t mass)
+	static void solveAttraction(const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, bbe::Vector2 &speed, int32_t mass)
 	{
 		const auto distanceSq = pos1.getDistanceToSq(pos2) * 100.0f;
 		const auto force = attractionForce(distanceSq);
@@ -63,7 +63,7 @@ class MyGame : public bbe::Game
 	int numThreads = 23;
 	float fps = 0.0;
 
-	bbe::Vector2i posToGridIndex(const bbe::Vector2& pos) const
+	bbe::Vector2i posToGridIndex(const bbe::Vector2 &pos) const
 	{
 		int32_t x = pos.x / (getWindowWidth() / particleGrid.getWidth());
 		int32_t y = pos.y / (getWindowHeight() / particleGrid.getHeight());
@@ -119,7 +119,7 @@ class MyGame : public bbe::Game
 
 	void updateParticle(size_t index)
 	{
-		Particle& p = particles[index];
+		Particle &p = particles[index];
 		const auto gridPos = posToGridIndex(p.pos);
 		for (int32_t offsetX = -2; offsetX <= 2; offsetX++)
 		{
@@ -127,12 +127,12 @@ class MyGame : public bbe::Game
 			{
 				const auto gridPos2 = gridPos + bbe::Vector2i(offsetX, offsetY);
 				if (!particleGrid.isValidIndex(gridPos2)) continue;
-				auto& cell = particleGrid[gridPos2];
+				auto &cell = particleGrid[gridPos2];
 				for (size_t i = 0; i < cell.particleIds.getLength(); i++)
 				{
 					auto otherIndex = cell.particleIds[i];
 					if (index == otherIndex) continue;
-					auto& otherParticle = particles[otherIndex];
+					auto &otherParticle = particles[otherIndex];
 					solveAttraction(p.pos, otherParticle.pos, p.speed, 1);
 				}
 			}
@@ -143,7 +143,7 @@ class MyGame : public bbe::Game
 			for (int32_t k = 0; k < (int32_t)particleGrid.getHeight(); k++)
 			{
 				if (i >= gridPos.x - 2 && i <= gridPos.x - 2 && k >= gridPos.y - 2 && k <= gridPos.y - 2) continue;
-				auto& cell = particleGrid[i][k];
+				auto &cell = particleGrid[i][k];
 				if (cell.particleIds.getLength() == 0) continue;
 				solveAttraction(p.pos, cell.centerOfMass, p.speed, cell.particleIds.getLength());
 			}
@@ -180,7 +180,7 @@ class MyGame : public bbe::Game
 			futures[i].get();
 		}
 	}
-	
+
 	void updatePositions()
 	{
 		for (size_t i = 0; i < particles.getLength(); i++)
@@ -224,10 +224,10 @@ class MyGame : public bbe::Game
 		beginMeasure("updatePositions");
 		updatePositions();
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		beginMeasure("Render");
 #if 0 // Attraction Plot
@@ -247,7 +247,6 @@ class MyGame : public bbe::Game
 		}
 #endif
 
-
 		brush.setColorRGB(1, 1, 1, 0.3f);
 		for (size_t i = 0; i < particles.getLength(); i++)
 		{
@@ -266,7 +265,6 @@ class MyGame : public bbe::Game
 				}
 			}
 		}
-
 
 		ImGui::Checkbox("autoParticleManagement", &autoParticleManagement);
 		if (ImGui::Button("+100") || (autoParticleManagement && fps > 31))

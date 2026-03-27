@@ -23,7 +23,7 @@
 
 namespace
 {
-	bool checkedMultiplySizeT(size_t& value, size_t factor)
+	bool checkedMultiplySizeT(size_t &value, size_t factor)
 	{
 		if (factor != 0 && value > std::numeric_limits<size_t>::max() / factor)
 		{
@@ -34,7 +34,7 @@ namespace
 		return true;
 	}
 
-	std::vector<bbe::byte> encodeRawImageAsPng(const bbe::byte* imageData, int width, int height, size_t componentCount, size_t bytesPerChannel)
+	std::vector<bbe::byte> encodeRawImageAsPng(const bbe::byte *imageData, int width, int height, size_t componentCount, size_t bytesPerChannel)
 	{
 		if (imageData == nullptr || bytesPerChannel != 1)
 		{
@@ -48,7 +48,7 @@ namespace
 
 		const int componentCountInt = static_cast<int>(componentCount);
 		int pngLength = 0;
-		unsigned char* pngData = stbi_write_png_to_mem(
+		unsigned char *pngData = stbi_write_png_to_mem(
 			imageData,
 			width * componentCountInt,
 			width,
@@ -66,7 +66,7 @@ namespace
 	}
 }
 
-bool bbe::Image::finishLoad(stbi_uc* pixels)
+bool bbe::Image::finishLoad(stbi_uc *pixels)
 {
 	m_format = ImageFormat::R8G8B8A8; // Is correct, even if texChannels == 3, because stbi is transforming the data for us on the fly.
 
@@ -86,12 +86,12 @@ bbe::Image::Image()
 {
 }
 
-bbe::Image::Image(const char* path)
+bbe::Image::Image(const char *path)
 {
 	load(path);
 }
 
-bbe::Image::Image(const bbe::String& path)
+bbe::Image::Image(const bbe::String &path)
 {
 	load(path);
 }
@@ -101,43 +101,43 @@ bbe::Image::Image(int width, int height)
 	load(width, height);
 }
 
-bbe::Image::Image(int width, int height, const Color& c)
+bbe::Image::Image(int width, int height, const Color &c)
 {
 	load(width, height, c);
 }
 
-bbe::Image::Image(int width, int height, const void* data, ImageFormat format)
+bbe::Image::Image(int width, int height, const void *data, ImageFormat format)
 {
 	load(width, height, data, format);
 }
 
-bool bbe::Image::loadRaw(const bbe::ByteBuffer& buffer)
+bool bbe::Image::loadRaw(const bbe::ByteBuffer &buffer)
 {
 	return loadRaw(buffer.getRaw(), buffer.getLength());
 }
 
-bool bbe::Image::loadRaw(const bbe::List<unsigned char>& rawData)
+bool bbe::Image::loadRaw(const bbe::List<unsigned char> &rawData)
 {
 	return loadRaw(rawData.getRaw(), rawData.getLength());
 }
 
-bool bbe::Image::loadRaw(const unsigned char* rawData, size_t dataLength)
+bool bbe::Image::loadRaw(const unsigned char *rawData, size_t dataLength)
 {
 	m_prendererData = nullptr;
 	int texChannels = 0;
-	stbi_uc* pixels = stbi_load_from_memory(rawData, (int)dataLength, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
+	stbi_uc *pixels = stbi_load_from_memory(rawData, (int)dataLength, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
 	return finishLoad(pixels);
 }
 
-void bbe::Image::load(const char* path)
+void bbe::Image::load(const char *path)
 {
 	m_prendererData = nullptr;
 	int texChannels = 0;
-	stbi_uc* pixels = stbi_load(path, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
+	stbi_uc *pixels = stbi_load(path, &m_width, &m_height, &texChannels, STBI_rgb_alpha);
 	finishLoad(pixels);
 }
 
-void bbe::Image::load(const bbe::String& path)
+void bbe::Image::load(const bbe::String &path)
 {
 	load(path.getRaw());
 }
@@ -147,7 +147,7 @@ void bbe::Image::load(int width, int height)
 	load(width, height, Color());
 }
 
-void bbe::Image::load(int width, int height, const Color& c)
+void bbe::Image::load(int width, int height, const Color &c)
 {
 	m_width = width;
 	m_height = height;
@@ -161,20 +161,20 @@ void bbe::Image::load(int width, int height, const Color& c)
 #ifdef _MSC_VER
 		// MSVC doesn't understand that getSizeInBytes() will always
 		// return a multiple of four, becuase m_format is R8G8B8A8.
-#pragma warning( push )
-#pragma warning( disable : 6386)
+#pragma warning(push)
+#pragma warning(disable : 6386)
 #endif
 		m_pdata[i + 0] = (byte)(c.r * 255);
 		m_pdata[i + 1] = (byte)(c.g * 255);
 		m_pdata[i + 2] = (byte)(c.b * 255);
 		m_pdata[i + 3] = (byte)(c.a * 255);
 #ifdef _MSC_VER
-#pragma warning( pop ) 
+#pragma warning(pop)
 #endif
 	}
 }
 
-void bbe::Image::load(int width, int height, const void* data, ImageFormat format)
+void bbe::Image::load(int width, int height, const void *data, ImageFormat format)
 {
 	m_width = width;
 	m_height = height;
@@ -214,9 +214,7 @@ size_t bbe::Image::getSizeInBytes() const
 	}
 
 	size_t size = static_cast<size_t>(m_width);
-	if (!checkedMultiplySizeT(size, static_cast<size_t>(m_height))
-		|| !checkedMultiplySizeT(size, getAmountOfChannels())
-		|| !checkedMultiplySizeT(size, getBytesPerChannel()))
+	if (!checkedMultiplySizeT(size, static_cast<size_t>(m_height)) || !checkedMultiplySizeT(size, getAmountOfChannels()) || !checkedMultiplySizeT(size, getBytesPerChannel()))
 	{
 		bbe::Crash(bbe::Error::OutOfMemory, "Image dimensions overflow size calculations.");
 	}
@@ -275,15 +273,14 @@ bbe::Colori bbe::Image::getPixel(size_t x, size_t y) const
 	default:
 		bbe::Crash(bbe::Error::FormatNotSupported);
 	}
-
 }
 
-void bbe::Image::setPixel(const bbe::Vector2i& pos, const bbe::Colori& c)
+void bbe::Image::setPixel(const bbe::Vector2i &pos, const bbe::Colori &c)
 {
 	setPixel(pos.x, pos.y, c);
 }
 
-void bbe::Image::setPixel(size_t x, size_t y, const bbe::Colori& c)
+void bbe::Image::setPixel(size_t x, size_t y, const bbe::Colori &c)
 {
 	if (!isLoadedCpu())
 	{
@@ -341,7 +338,7 @@ size_t bbe::Image::getIndexForRawAccess(size_t x, size_t y) const
 	return index;
 }
 
-int64_t bbe::Image::distance(const Image& other) const
+int64_t bbe::Image::distance(const Image &other) const
 {
 	if (other.getWidth() != getWidth() || other.getHeight() != getHeight())
 	{
@@ -367,7 +364,7 @@ bbe::ImageRepeatMode bbe::Image::getRepeatMode() const
 	return m_repeatMode;
 }
 
-const bbe::Image& bbe::Image::white()
+const bbe::Image &bbe::Image::white()
 {
 	static bbe::Image image;
 	if (!image.isLoadedCpu() && !image.isLoadedGpu())
@@ -378,7 +375,7 @@ const bbe::Image& bbe::Image::white()
 	return image;
 }
 
-const bbe::Image& bbe::Image::black()
+const bbe::Image &bbe::Image::black()
 {
 	static bbe::Image image;
 	if (!image.isLoadedCpu() && !image.isLoadedGpu())
@@ -432,8 +429,8 @@ void bbe::Image::flipHorizontally()
 	for (size_t row = 0; row < getHeight() / 2; row++)
 	{
 		const size_t lowerRow = getHeight() - 1 - row;
-		void* rowPtr = m_pdata.getRaw() + row * bytesPerRow;
-		void* rowLowerPtr = m_pdata.getRaw() + lowerRow * bytesPerRow;
+		void *rowPtr = m_pdata.getRaw() + row * bytesPerRow;
+		void *rowLowerPtr = m_pdata.getRaw() + lowerRow * bytesPerRow;
 		memcpy(rowBuffer.getRaw(), rowPtr, bytesPerRow);
 		memcpy(rowPtr, rowLowerPtr, bytesPerRow);
 		memcpy(rowLowerPtr, rowBuffer.getRaw(), bytesPerRow);
@@ -539,7 +536,7 @@ bbe::Image bbe::Image::getClipboardImage()
 			info.bmiHeader.biCompression = BI_RGB;
 			info.bmiHeader.biSizeImage = bitmap.bmWidth * bitmap.bmHeight * 4;
 
-			bbe::List<byte>& bytes = retVal.m_pdata;
+			bbe::List<byte> &bytes = retVal.m_pdata;
 			GetDIBits(dc, hBitmap, 0, bitmap.bmHeight, bytes.getRaw(), &info, DIB_RGB_COLORS);
 
 			//Windows gives us BGR, but we want RGB, so flip R and B channels:
@@ -582,15 +579,14 @@ HBITMAP bbe::Image::toBitmap() const
 
 	// Create the DIB section with an alpha channel.
 	HDC hdc = GetDC(NULL);
-	void* lpBits;
-	HBITMAP hBitmap = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS,
-		&lpBits, NULL, (DWORD)0);
+	void *lpBits;
+	HBITMAP hBitmap = CreateDIBSection(hdc, (BITMAPINFO *)&bi, DIB_RGB_COLORS,
+									   &lpBits, NULL, (DWORD)0);
 	ReleaseDC(NULL, hdc);
-
 
 	// Set the alpha values for each pixel in the cursor so that
 	// the complete cursor is semi-transparent.
-	DWORD* lpdwPixel = (DWORD*)lpBits;
+	DWORD *lpdwPixel = (DWORD *)lpBits;
 	for (int32_t y = getHeight() - 1; y >= 0; y--)
 	{
 		for (int32_t x = 0; x < getWidth(); x++)
@@ -650,7 +646,7 @@ HICON bbe::Image::toIcon() const
 }
 #endif
 
-void bbe::Image::writeToFile(const char* path) const
+void bbe::Image::writeToFile(const char *path) const
 {
 	const bbe::String lowerPath = bbe::String(path).toLowerCase();
 	if (lowerPath.endsWith(".png"))
@@ -675,12 +671,12 @@ void bbe::Image::writeToFile(const char* path) const
 	}
 }
 
-void bbe::Image::writeToFile(const bbe::String& path) const
+void bbe::Image::writeToFile(const bbe::String &path) const
 {
 	writeToFile(path.getRaw());
 }
 
-static void floodFillStep(bbe::Image& image, bbe::List<bbe::Vector2i>& posToCheck, bbe::Vector2i /*copy*/ pos, const bbe::Colori& from, const bbe::Colori& to, bool tiled)
+static void floodFillStep(bbe::Image &image, bbe::List<bbe::Vector2i> &posToCheck, bbe::Vector2i /*copy*/ pos, const bbe::Colori &from, const bbe::Colori &to, bool tiled)
 {
 	if (pos.x < 0 || pos.x >= image.getWidth() || pos.y < 0 || pos.y >= image.getHeight())
 	{
@@ -695,7 +691,7 @@ static void floodFillStep(bbe::Image& image, bbe::List<bbe::Vector2i>& posToChec
 	posToCheck.add(pos);
 }
 
-void bbe::Image::floodFill(const bbe::Vector2i& pos, const bbe::Colori& to, bool fillDiagonal, bool tiled)
+void bbe::Image::floodFill(const bbe::Vector2i &pos, const bbe::Colori &to, bool fillDiagonal, bool tiled)
 {
 	const bbe::Colori from = getPixel(pos);
 	if (from == to) return;
@@ -775,7 +771,7 @@ bool bbe::Image::isLoadedCpu() const
 	return m_pdata.getLength() > 0;
 }
 
-bbe::Colori bbe::Image::getPixel(const bbe::Vector2i& pos) const
+bbe::Colori bbe::Image::getPixel(const bbe::Vector2i &pos) const
 {
 	return getPixel(pos.x, pos.y);
 }

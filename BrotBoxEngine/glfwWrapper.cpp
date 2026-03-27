@@ -25,16 +25,16 @@ void bbe::glfwWrapper::glfwWindowHint(int hint, int value)
 #endif
 }
 
-GLFWwindow* bbe::glfwWrapper::glfwCreateWindow(int width, int height, const char* title, GLFWmonitor* monitor, GLFWwindow* share)
+GLFWwindow *bbe::glfwWrapper::glfwCreateWindow(int width, int height, const char *title, GLFWmonitor *monitor, GLFWwindow *share)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwCreateWindow(width, height, title, monitor, share);
 #else
-	return (GLFWwindow*)new int;
+	return (GLFWwindow *)new int;
 #endif
 }
 
-void bbe::glfwWrapper::glfwGetWindowContentScale(GLFWwindow* window, float* xscale, float* yscale)
+void bbe::glfwWrapper::glfwGetWindowContentScale(GLFWwindow *window, float *xscale, float *yscale)
 {
 #if defined(__EMSCRIPTEN__) || defined(BBE_RENDERER_NULL)
 	if (xscale) *xscale = 1;
@@ -44,7 +44,7 @@ void bbe::glfwWrapper::glfwGetWindowContentScale(GLFWwindow* window, float* xsca
 #endif
 }
 
-GLFWkeyfun bbe::glfwWrapper::glfwSetKeyCallback(GLFWwindow* window, GLFWkeyfun callback)
+GLFWkeyfun bbe::glfwWrapper::glfwSetKeyCallback(GLFWwindow *window, GLFWkeyfun callback)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwSetKeyCallback(window, callback);
@@ -53,7 +53,7 @@ GLFWkeyfun bbe::glfwWrapper::glfwSetKeyCallback(GLFWwindow* window, GLFWkeyfun c
 #endif
 }
 
-GLFWcharfun bbe::glfwWrapper::glfwSetCharCallback(GLFWwindow* handle, GLFWcharfun cbfun)
+GLFWcharfun bbe::glfwWrapper::glfwSetCharCallback(GLFWwindow *handle, GLFWcharfun cbfun)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwSetCharCallback(handle, cbfun);
@@ -62,7 +62,7 @@ GLFWcharfun bbe::glfwWrapper::glfwSetCharCallback(GLFWwindow* handle, GLFWcharfu
 #endif
 }
 
-GLFWcursorposfun bbe::glfwWrapper::glfwSetCursorPosCallback(GLFWwindow* handle, GLFWcursorposfun cbfun)
+GLFWcursorposfun bbe::glfwWrapper::glfwSetCursorPosCallback(GLFWwindow *handle, GLFWcursorposfun cbfun)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwSetCursorPosCallback(handle, cbfun);
@@ -71,7 +71,7 @@ GLFWcursorposfun bbe::glfwWrapper::glfwSetCursorPosCallback(GLFWwindow* handle, 
 #endif
 }
 
-GLFWmousebuttonfun bbe::glfwWrapper::glfwSetMouseButtonCallback(GLFWwindow* handle, GLFWmousebuttonfun cbfun)
+GLFWmousebuttonfun bbe::glfwWrapper::glfwSetMouseButtonCallback(GLFWwindow *handle, GLFWmousebuttonfun cbfun)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwSetMouseButtonCallback(handle, cbfun);
@@ -80,7 +80,7 @@ GLFWmousebuttonfun bbe::glfwWrapper::glfwSetMouseButtonCallback(GLFWwindow* hand
 #endif
 }
 
-GLFWwindowsizefun bbe::glfwWrapper::glfwSetWindowSizeCallback(GLFWwindow* handle, GLFWwindowsizefun cbfun)
+GLFWwindowsizefun bbe::glfwWrapper::glfwSetWindowSizeCallback(GLFWwindow *handle, GLFWwindowsizefun cbfun)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwSetWindowSizeCallback(handle, cbfun);
@@ -89,7 +89,7 @@ GLFWwindowsizefun bbe::glfwWrapper::glfwSetWindowSizeCallback(GLFWwindow* handle
 #endif
 }
 
-GLFWframebuffersizefun bbe::glfwWrapper::glfwSetFramebufferSizeCallback(GLFWwindow* handle, GLFWframebuffersizefun cbfun)
+GLFWframebuffersizefun bbe::glfwWrapper::glfwSetFramebufferSizeCallback(GLFWwindow *handle, GLFWframebuffersizefun cbfun)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwSetFramebufferSizeCallback(handle, cbfun);
@@ -98,7 +98,7 @@ GLFWframebuffersizefun bbe::glfwWrapper::glfwSetFramebufferSizeCallback(GLFWwind
 #endif
 }
 
-GLFWscrollfun bbe::glfwWrapper::glfwSetScrollCallback(GLFWwindow* handle, GLFWscrollfun cbfun)
+GLFWscrollfun bbe::glfwWrapper::glfwSetScrollCallback(GLFWwindow *handle, GLFWscrollfun cbfun)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwSetScrollCallback(handle, cbfun);
@@ -107,7 +107,7 @@ GLFWscrollfun bbe::glfwWrapper::glfwSetScrollCallback(GLFWwindow* handle, GLFWsc
 #endif
 }
 
-GLFWwindowclosefun bbe::glfwWrapper::glfwSetWindowCloseCallback(GLFWwindow* handle, GLFWwindowclosefun cbfun)
+GLFWwindowclosefun bbe::glfwWrapper::glfwSetWindowCloseCallback(GLFWwindow *handle, GLFWwindowclosefun cbfun)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwSetWindowCloseCallback(handle, cbfun);
@@ -116,7 +116,7 @@ GLFWwindowclosefun bbe::glfwWrapper::glfwSetWindowCloseCallback(GLFWwindow* hand
 #endif
 }
 
-GLFWwindowrefreshfun bbe::glfwWrapper::glfwSetWindowRefreshCallback(GLFWwindow* handle, GLFWwindowrefreshfun cbfun)
+GLFWwindowrefreshfun bbe::glfwWrapper::glfwSetWindowRefreshCallback(GLFWwindow *handle, GLFWwindowrefreshfun cbfun)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwSetWindowRefreshCallback(handle, cbfun);
@@ -125,7 +125,7 @@ GLFWwindowrefreshfun bbe::glfwWrapper::glfwSetWindowRefreshCallback(GLFWwindow* 
 #endif
 }
 
-GLFWwindowposfun bbe::glfwWrapper::glfwSetWindowPosCallback(GLFWwindow* handle, GLFWwindowposfun cbfun)
+GLFWwindowposfun bbe::glfwWrapper::glfwSetWindowPosCallback(GLFWwindow *handle, GLFWwindowposfun cbfun)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwSetWindowPosCallback(handle, cbfun);
@@ -134,7 +134,7 @@ GLFWwindowposfun bbe::glfwWrapper::glfwSetWindowPosCallback(GLFWwindow* handle, 
 #endif
 }
 
-void bbe::glfwWrapper::glfwGetCursorPos(GLFWwindow* handle, double* xpos, double* ypos)
+void bbe::glfwWrapper::glfwGetCursorPos(GLFWwindow *handle, double *xpos, double *ypos)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwGetCursorPos(handle, xpos, ypos);
@@ -148,7 +148,7 @@ void bbe::glfwWrapper::glfwSwapInterval(int interval)
 #endif
 }
 
-int bbe::glfwWrapper::glfwWindowShouldClose(GLFWwindow* handle)
+int bbe::glfwWrapper::glfwWindowShouldClose(GLFWwindow *handle)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwWindowShouldClose(handle);
@@ -173,14 +173,14 @@ void bbe::glfwWrapper::glFinish(void)
 #endif
 }
 
-void bbe::glfwWrapper::glfwSetInputMode(GLFWwindow* handle, int mode, int value)
+void bbe::glfwWrapper::glfwSetInputMode(GLFWwindow *handle, int mode, int value)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwSetInputMode(handle, mode, value);
 #endif
 }
 
-void bbe::glfwWrapper::glfwDestroyWindow(GLFWwindow* handle)
+void bbe::glfwWrapper::glfwDestroyWindow(GLFWwindow *handle)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwDestroyWindow(handle);
@@ -196,14 +196,14 @@ void bbe::glfwWrapper::glfwTerminate(void)
 #endif
 }
 
-void bbe::glfwWrapper::glfwGetWindowPos(GLFWwindow* handle, int* xpos, int* ypos)
+void bbe::glfwWrapper::glfwGetWindowPos(GLFWwindow *handle, int *xpos, int *ypos)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwGetWindowPos(handle, xpos, ypos);
 #endif
 }
 
-const char* bbe::glfwWrapper::glfwGetClipboardString(GLFWwindow* handle)
+const char *bbe::glfwWrapper::glfwGetClipboardString(GLFWwindow *handle)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwGetClipboardString(handle);
@@ -212,49 +212,49 @@ const char* bbe::glfwWrapper::glfwGetClipboardString(GLFWwindow* handle)
 #endif
 }
 
-void bbe::glfwWrapper::glfwSetClipboardString(GLFWwindow* handle, const char* string)
+void bbe::glfwWrapper::glfwSetClipboardString(GLFWwindow *handle, const char *string)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwSetClipboardString(handle, string);
 #endif
 }
 
-void bbe::glfwWrapper::glfwSetWindowShouldClose(GLFWwindow* window, int value)
+void bbe::glfwWrapper::glfwSetWindowShouldClose(GLFWwindow *window, int value)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwSetWindowShouldClose(window, value);
 #endif
 }
 
-void bbe::glfwWrapper::glfwShowWindow(GLFWwindow* window)
+void bbe::glfwWrapper::glfwShowWindow(GLFWwindow *window)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwShowWindow(window);
 #endif
 }
 
-void bbe::glfwWrapper::glfwHideWindow(GLFWwindow* window)
+void bbe::glfwWrapper::glfwHideWindow(GLFWwindow *window)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwHideWindow(window);
 #endif
 }
 
-void bbe::glfwWrapper::glfwFocusWindow(GLFWwindow* window)
+void bbe::glfwWrapper::glfwFocusWindow(GLFWwindow *window)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwFocusWindow(window);
 #endif
 }
 
-void bbe::glfwWrapper::glfwRestoreWindow(GLFWwindow* window)
+void bbe::glfwWrapper::glfwRestoreWindow(GLFWwindow *window)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwRestoreWindow(window);
 #endif
 }
 
-int bbe::glfwWrapper::glfwGetWindowAttrib(GLFWwindow* window, int attrib)
+int bbe::glfwWrapper::glfwGetWindowAttrib(GLFWwindow *window, int attrib)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwGetWindowAttrib(window, attrib);
@@ -263,14 +263,14 @@ int bbe::glfwWrapper::glfwGetWindowAttrib(GLFWwindow* window, int attrib)
 #endif
 }
 
-void bbe::glfwWrapper::glfwSetWindowUserPointer(GLFWwindow* window, void* pointer)
+void bbe::glfwWrapper::glfwSetWindowUserPointer(GLFWwindow *window, void *pointer)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwSetWindowUserPointer(window, pointer);
 #endif
 }
 
-void* bbe::glfwWrapper::glfwGetWindowUserPointer(GLFWwindow* window)
+void *bbe::glfwWrapper::glfwGetWindowUserPointer(GLFWwindow *window)
 {
 #ifndef BBE_RENDERER_NULL
 	return ::glfwGetWindowUserPointer(window);
@@ -279,35 +279,35 @@ void* bbe::glfwWrapper::glfwGetWindowUserPointer(GLFWwindow* window)
 #endif
 }
 
-void bbe::glfwWrapper::glfwSetWindowSize(GLFWwindow* window, int width, int height)
+void bbe::glfwWrapper::glfwSetWindowSize(GLFWwindow *window, int width, int height)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwSetWindowSize(window, width, height);
 #endif
 }
 
-void bbe::glfwWrapper::glfwGetWindowSize(GLFWwindow* window, int* width, int* height)
+void bbe::glfwWrapper::glfwGetWindowSize(GLFWwindow *window, int *width, int *height)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwGetWindowSize(window, width, height);
 #endif
 }
 
-void bbe::glfwWrapper::glfwGetFramebufferSize(GLFWwindow* window, int* width, int* height)
+void bbe::glfwWrapper::glfwGetFramebufferSize(GLFWwindow *window, int *width, int *height)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwGetFramebufferSize(window, width, height);
 #endif
 }
 
-void bbe::glfwWrapper::glfwMaximizeWindow(GLFWwindow* window)
+void bbe::glfwWrapper::glfwMaximizeWindow(GLFWwindow *window)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwMaximizeWindow(window);
 #endif
 }
 
-void bbe::glfwWrapper::glfwSetWindowPos(GLFWwindow* window, int x, int y)
+void bbe::glfwWrapper::glfwSetWindowPos(GLFWwindow *window, int x, int y)
 {
 #ifndef BBE_RENDERER_NULL
 	::glfwSetWindowPos(window, x, y);

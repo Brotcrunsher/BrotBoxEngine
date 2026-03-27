@@ -20,7 +20,7 @@
 
 namespace bbe
 {
-	template <typename T>
+	template<typename T>
 	class List
 	{
 	public:
@@ -60,7 +60,7 @@ namespace bbe
 			return requiredCapacity;
 		}
 
-		bool pointsIntoStorage(const T* ptr) const
+		bool pointsIntoStorage(const T *ptr) const
 		{
 			if (ptr == nullptr || m_length == 0 || getRaw() == nullptr)
 			{
@@ -74,7 +74,7 @@ namespace bbe
 			return ptrValue >= begin && ptrValue < end;
 		}
 
-		bool overlapsStorage(const T* ptr, size_t count) const
+		bool overlapsStorage(const T *ptr, size_t count) const
 		{
 			if (ptr == nullptr || count == 0 || m_length == 0 || getRaw() == nullptr)
 			{
@@ -104,8 +104,8 @@ namespace bbe
 				const size_t newCapacity = growCapacity(getCapacity(), requiredCapacity);
 
 				bbe::AllocBlock newData = bbe::allocateBlock(checkedAllocationSize(newCapacity));
-				T* newDataPtr = (T*)newData.data;
-				T* oldDataPtr = getRaw();
+				T *newDataPtr = (T *)newData.data;
+				T *oldDataPtr = getRaw();
 
 				for (size_t i = 0; i < m_length; i++)
 				{
@@ -132,8 +132,8 @@ namespace bbe
 			growIfNeeded(amountOfData);
 		}
 
-		template <typename... arguments>
-		List(size_t amountOfObjects, arguments&&... args)
+		template<typename... arguments>
+		List(size_t amountOfObjects, arguments &&...args)
 		{
 			growIfNeeded(amountOfObjects);
 			m_length = amountOfObjects;
@@ -144,7 +144,7 @@ namespace bbe
 			}
 		}
 
-		List(const List<T>& other)
+		List(const List<T> &other)
 		{
 			growIfNeeded(other.m_length);
 			m_length = other.m_length;
@@ -154,7 +154,7 @@ namespace bbe
 			}
 		}
 
-		List(List<T>&& other) noexcept
+		List(List<T> &&other) noexcept
 			: m_length(other.m_length), m_allocBlock(std::move(other.m_allocBlock))
 		{
 			other.m_length = 0;
@@ -164,12 +164,13 @@ namespace bbe
 		/*nonexplicit*/ List(const std::initializer_list<T> &il)
 		{
 			growIfNeeded(il.size());
-			for (auto iter = il.begin(); iter != il.end(); iter++) {
+			for (auto iter = il.begin(); iter != il.end(); iter++)
+			{
 				add(*iter);
 			}
 		}
 
-		List& operator=(const List<T>& other)
+		List &operator=(const List<T> &other)
 		{
 			if (this == &other) return *this;
 
@@ -188,7 +189,7 @@ namespace bbe
 			return *this;
 		}
 
-		List& operator=(List<T>&& other) noexcept
+		List &operator=(List<T> &&other) noexcept
 		{
 			clear();
 
@@ -221,20 +222,20 @@ namespace bbe
 			return m_length;
 		}
 
-		T* getRaw()
+		T *getRaw()
 		{
-			return reinterpret_cast<T*>(m_allocBlock.data);
+			return reinterpret_cast<T *>(m_allocBlock.data);
 		}
 
-		const T* getRaw() const
+		const T *getRaw() const
 		{
 			//UNTESTED
-			return reinterpret_cast<const T*>(m_allocBlock.data);
+			return reinterpret_cast<const T *>(m_allocBlock.data);
 		}
 
-		void* getVoidRaw()
+		void *getVoidRaw()
 		{
-			return (void*)getRaw();
+			return (void *)getRaw();
 		}
 
 		bool isEmpty() const
@@ -242,7 +243,7 @@ namespace bbe
 			return m_length == 0;
 		}
 
-		T& operator[](size_t index)
+		T &operator[](size_t index)
 		{
 			if (index >= m_length)
 			{
@@ -251,7 +252,7 @@ namespace bbe
 			return getRaw()[index];
 		}
 
-		const T& operator[](size_t index) const
+		const T &operator[](size_t index) const
 		{
 			if (index >= m_length)
 			{
@@ -260,7 +261,7 @@ namespace bbe
 			return getRaw()[index];
 		}
 
-		List<T>& operator+=(const List<T>& other)
+		List<T> &operator+=(const List<T> &other)
 		{
 			const size_t originalLength = other.m_length;
 			for (size_t i = 0; i < originalLength; i++)
@@ -270,11 +271,11 @@ namespace bbe
 			return *this;
 		}
 
-		void add(const T& val, size_t amount = 1)
+		void add(const T &val, size_t amount = 1)
 		{
 			const bool aliasesSelf = pointsIntoStorage(&val);
 			bbe::INTERNAL::Unconstructed<T> stableValue;
-			const T* source = &val;
+			const T *source = &val;
 			if (aliasesSelf)
 			{
 				new (bbe::addressOf(stableValue.m_value)) T(val);
@@ -282,7 +283,7 @@ namespace bbe
 			}
 
 			auto delVal = growIfNeeded(amount);
-			T* d = getRaw();
+			T *d = getRaw();
 			for (size_t i = 0; i < amount; i++)
 			{
 				new (bbe::addressOf(d[m_length + i])) T(*source);
@@ -295,7 +296,7 @@ namespace bbe
 			}
 		}
 
-		void add(T&& val, size_t amount)
+		void add(T &&val, size_t amount)
 		{
 			const bool aliasesSelf = pointsIntoStorage(&val);
 			bbe::INTERNAL::Unconstructed<T> stableValue;
@@ -305,7 +306,7 @@ namespace bbe
 			}
 
 			auto delVal = growIfNeeded(amount);
-			T* d = getRaw();
+			T *d = getRaw();
 			if (amount == 1)
 			{
 				new (bbe::addressOf(d[m_length])) T(aliasesSelf ? std::move(stableValue.m_value) : std::move(val));
@@ -326,7 +327,7 @@ namespace bbe
 			}
 		}
 
-		void add(T&& val)
+		void add(T &&val)
 		{
 			const bool aliasesSelf = pointsIntoStorage(&val);
 			bbe::INTERNAL::Unconstructed<T> stableValue;
@@ -346,7 +347,7 @@ namespace bbe
 			}
 		}
 
-		bool addUnique(const T& val)
+		bool addUnique(const T &val)
 		{
 			if (!contains(val))
 			{
@@ -359,7 +360,7 @@ namespace bbe
 			}
 		}
 
-		void addAt(size_t index, const T& val)
+		void addAt(size_t index, const T &val)
 		{
 			if (index > getLength())
 			{
@@ -373,13 +374,13 @@ namespace bbe
 			(*this)[index] = val;
 		}
 
-		template <typename U>
-		void addAll(U&& t)
+		template<typename U>
+		void addAll(U &&t)
 		{
 			add(std::forward<U>(t));
 		}
-		
-		void addList(const List<T>& other)
+
+		void addList(const List<T> &other)
 		{
 			const size_t len = other.getLength();
 			for (size_t i = 0; i < len; i++)
@@ -389,13 +390,13 @@ namespace bbe
 		}
 
 		template<typename U, typename... arguments>
-		void addAll(U&& t, arguments&&... args)
+		void addAll(U &&t, arguments &&...args)
 		{
 			add(std::forward<U>(t));
 			addAll(std::forward<arguments>(args)...);
 		}
 
-		void addArray(const T* data, size_t size)
+		void addArray(const T *data, size_t size)
 		{
 			if (overlapsStorage(data, size))
 			{
@@ -416,15 +417,15 @@ namespace bbe
 		}
 
 		template<int size>
-		void addArray(Array<T, size>& arr)
+		void addArray(Array<T, size> &arr)
 		{
 			addArray(arr.getRaw(), size);
 		}
 
-		T* addRaw(size_t size)
+		T *addRaw(size_t size)
 		{
 			auto delVal = growIfNeeded(size);
-			T* retVal = getRaw() + m_length;
+			T *retVal = getRaw() + m_length;
 			for (size_t i = 0; i < size; i++)
 			{
 				new (bbe::addressOf(getRaw()[m_length])) T();
@@ -461,7 +462,7 @@ namespace bbe
 		{
 			if (!std::is_trivially_destructible_v<T>)
 			{
-				T* d = getRaw();
+				T *d = getRaw();
 				for (size_t i = 0; i < m_length; i++)
 				{
 					d[i].~T();
@@ -470,9 +471,9 @@ namespace bbe
 			m_length = 0;
 		}
 
-		template <typename dummyT = T>
+		template<typename dummyT = T>
 		typename std::enable_if<std::is_fundamental<dummyT>::value || std::is_pointer<dummyT>::value, void>::type
-			resizeCapacityAndLengthUninit(size_t newCapacity)
+		resizeCapacityAndLengthUninit(size_t newCapacity)
 		{
 			//UNTESTED
 			static_assert(std::is_same<dummyT, T>::value, "Do not specify dummyT!");
@@ -487,9 +488,9 @@ namespace bbe
 			m_length = newCapacity;
 		}
 
-		template <typename dummyT = T>
+		template<typename dummyT = T>
 		typename std::enable_if<std::is_default_constructible<dummyT>::value, void>::type
-			resizeCapacityAndLength(size_t newCapacity)
+		resizeCapacityAndLength(size_t newCapacity)
 		{
 			//UNTESTED
 			static_assert(std::is_same<dummyT, T>::value, "Do not specify dummyT!");
@@ -515,19 +516,19 @@ namespace bbe
 			bbe::freeBlock(delVal);
 		}
 
-		size_t removeAll(const T& remover)
+		size_t removeAll(const T &remover)
 		{
 			return removeAll(
-				[&](const T& other)
-				{ 
+				[&](const T &other)
+				{
 					return other == remover;
 				});
 		}
 
-		size_t removeAll(std::function<bool(const T&)> predicate)
+		size_t removeAll(std::function<bool(const T &)> predicate)
 		{
 			size_t moveRange = 0;
-			T* d = getRaw();
+			T *d = getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
 				if (predicate(d[i]))
@@ -544,12 +545,14 @@ namespace bbe
 			return moveRange;
 		}
 
-		bool removeIndex(size_t index) {
-			if (index >= m_length) {
+		bool removeIndex(size_t index)
+		{
+			if (index >= m_length)
+			{
 				return false;
 			}
 
-			T* d = getRaw();
+			T *d = getRaw();
 			for (size_t i = index; i < m_length - 1; i++)
 			{
 				d[i] = std::move(d[i + 1]);
@@ -560,20 +563,20 @@ namespace bbe
 			return true;
 		}
 
-		bool removeSingle(const T& remover)
+		bool removeSingle(const T &remover)
 		{
 			return removeSingle(
-				[&](const T& t)
+				[&](const T &t)
 				{
 					return remover == t;
 				});
 		}
 
-		bool removeSingle(std::function<bool(const T&)> predicate)
+		bool removeSingle(std::function<bool(const T &)> predicate)
 		{
 			size_t index = 0;
 			bool found = false;
-			T* d = getRaw();
+			T *d = getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
 				if (predicate(d[i]))
@@ -593,7 +596,7 @@ namespace bbe
 			if (start + length >= m_length) bbe::Crash(bbe::Error::IllegalArgument);
 			if (length == 0) return;
 
-			T* d = getRaw();
+			T *d = getRaw();
 			for (size_t i = start; i < m_length - length; i++)
 			{
 				d[i] = d[i + length];
@@ -607,19 +610,19 @@ namespace bbe
 			m_length -= length;
 		}
 
-		size_t containsAmount(const T& t) const
+		size_t containsAmount(const T &t) const
 		{
 			return containsAmount(
-				[&](const T& other)
+				[&](const T &other)
 				{
 					return t == other;
 				});
 		}
 
-		size_t containsAmount(std::function<bool(const T&)> predicate) const
+		size_t containsAmount(std::function<bool(const T &)> predicate) const
 		{
 			size_t amount = 0;
-			const T* d = getRaw();
+			const T *d = getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
 				if (predicate(d[i]))
@@ -673,18 +676,18 @@ namespace bbe
 			return true;
 		}
 
-		bool contains(const T& t) const
+		bool contains(const T &t) const
 		{
 			return contains(
-				[&](const T& other)
+				[&](const T &other)
 				{
 					return t == other;
 				});
 		}
 
-		bool contains(std::function<bool(const T&)> predicate) const
+		bool contains(std::function<bool(const T &)> predicate) const
 		{
-			const T* d = getRaw();
+			const T *d = getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
 				if (predicate(d[i]))
@@ -695,24 +698,24 @@ namespace bbe
 			return false;
 		}
 
-		bool containsUnique(const T& t) const
+		bool containsUnique(const T &t) const
 		{
 			return containsAmount(t) == 1;
 		}
 
-		bool containsUnique(std::function<bool(const T&)> predicate) const
+		bool containsUnique(std::function<bool(const T &)> predicate) const
 		{
 			return containsAmount(predicate) == 1;
 		}
 
-		bool any(std::function<bool(const T&)> predicate) const
+		bool any(std::function<bool(const T &)> predicate) const
 		{
 			return contains(predicate);
 		}
 
-		bool all(std::function<bool(const T&)> predicate) const
+		bool all(std::function<bool(const T &)> predicate) const
 		{
-			const T* d = getRaw();
+			const T *d = getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
 				if (!predicate(d[i]))
@@ -723,25 +726,25 @@ namespace bbe
 			return true;
 		}
 
-		T* begin()
+		T *begin()
 		{
 			if (!m_length) return nullptr;
 			return getRaw();
 		}
 
-		const T* begin() const
+		const T *begin() const
 		{
 			if (!m_length) return nullptr;
 			return getRaw();
 		}
 
-		T* end()
+		T *end()
 		{
 			if (!m_length) return nullptr;
 			return getRaw() + getLength();
 		}
 
-		const T* end() const
+		const T *end() const
 		{
 			if (!m_length) return nullptr;
 			return getRaw() + getLength();
@@ -752,12 +755,12 @@ namespace bbe
 			sortSTL(begin(), end());
 		}
 
-		void sort(std::function<bool(const T&, const T&)> predicate)
+		void sort(std::function<bool(const T &, const T &)> predicate)
 		{
 			sortSTL(begin(), end(), predicate);
 		}
 
-		void partition(std::function<bool(const T&)> predicate)
+		void partition(std::function<bool(const T &)> predicate)
 		{
 			std::partition(begin(), end(), predicate);
 		}
@@ -774,7 +777,7 @@ namespace bbe
 			std::shuffle(begin(), end(), twister);
 		}
 
-		T& first()
+		T &first()
 		{
 			//UNTESTED
 			if (m_length == 0)
@@ -785,7 +788,7 @@ namespace bbe
 			return *getRaw();
 		}
 
-		const T& first() const
+		const T &first() const
 		{
 			//UNTESTED
 			if (m_length == 0)
@@ -796,7 +799,7 @@ namespace bbe
 			return *getRaw();
 		}
 
-		T& last()
+		T &last()
 		{
 			//UNTESTED
 			if (m_length == 0)
@@ -807,7 +810,7 @@ namespace bbe
 			return *(getRaw() + getLength() - 1);
 		}
 
-		const T& last() const
+		const T &last() const
 		{
 			//UNTESTED
 			if (m_length == 0)
@@ -818,18 +821,18 @@ namespace bbe
 			return *(getRaw() + getLength() - 1);
 		}
 
-		T* find(const T& t)
+		T *find(const T &t)
 		{
 			return find(
-				[&](const T& other)
+				[&](const T &other)
 				{
 					return t == other;
 				});
 		}
 
-		T* find(std::function<bool(const T&)> predicate)
+		T *find(std::function<bool(const T &)> predicate)
 		{
-			T* d = getRaw();
+			T *d = getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
 				if (predicate(d[i]))
@@ -840,23 +843,23 @@ namespace bbe
 			return nullptr;
 		}
 
-		T* findLast(const T& t)
+		T *findLast(const T &t)
 		{
 			return findLast(
-				[&t](const T& other)
+				[&t](const T &other)
 				{
 					return t == other;
 				});
 		}
 
-		T* findLast(std::function<bool(const T&)> predicate)
+		T *findLast(std::function<bool(const T &)> predicate)
 		{
 			if (m_length == 0)
 			{
 				return nullptr;
 			}
 
-			T* d = getRaw();
+			T *d = getRaw();
 			for (size_t i = m_length - 1; i != std::numeric_limits<size_t>::max(); i--)
 			{
 				if (predicate(d[i]))
@@ -867,15 +870,15 @@ namespace bbe
 			return nullptr;
 		}
 
-		bool operator==(const List<T>& other) const
+		bool operator==(const List<T> &other) const
 		{
 			if (m_length != other.m_length)
 			{
 				return false;
 			}
 
-			const T* d = getRaw();
-			const T* t = other.getRaw();
+			const T *d = getRaw();
+			const T *t = other.getRaw();
 			for (size_t i = 0; i < m_length; i++)
 			{
 				if (d[i] != t[i])
@@ -887,12 +890,10 @@ namespace bbe
 			return true;
 		}
 
-		bool operator!=(const List<T>& other) const
+		bool operator!=(const List<T> &other) const
 		{
 			return !(operator==(other));
 		}
-
-
 	};
 
 	template<typename T>
@@ -903,7 +904,7 @@ namespace bbe
 		mutable std::recursive_mutex m_mutex;
 		mutable int64_t m_lockCount = 0;
 
-		void enforceLocked(const char* msg) const
+		void enforceLocked(const char *msg) const
 		{
 			if (m_lockCount == 0)
 			{
@@ -917,39 +918,39 @@ namespace bbe
 
 	public:
 		ConcurrentList() = default;
-		/*nonexplicit*/ ConcurrentList(const std::initializer_list<T>& il) :
-			m_data(il)
-		{}
+		/*nonexplicit*/ ConcurrentList(const std::initializer_list<T> &il) : m_data(il)
+		{
+		}
 
-		T& operator[](size_t index)
+		T &operator[](size_t index)
 		{
 			enforceLocked("ConcurrentList: operator[]");
 			return m_data[index];
 		}
 
-		const T& operator[](size_t index) const
+		const T &operator[](size_t index) const
 		{
 			enforceLocked("ConcurrentList: operator[] const");
 			return m_data[index];
 		}
 
-		T& getUnprotected(size_t index)
+		T &getUnprotected(size_t index)
 		{
 			return m_data[index];
 		}
 
-		const T& getUnprotected(size_t index) const
+		const T &getUnprotected(size_t index) const
 		{
 			return m_data[index];
 		}
 
-		void add(const T& t)
+		void add(const T &t)
 		{
 			std::lock_guard lg(m_mutex);
 			m_data.add(t);
 		}
 
-		void add(T&& t)
+		void add(T &&t)
 		{
 			std::lock_guard lg(m_mutex);
 			m_data.add(t);
@@ -973,7 +974,7 @@ namespace bbe
 			m_mutex.unlock();
 		}
 
-		bbe::List<T>& getUnderlying()
+		bbe::List<T> &getUnderlying()
 		{
 			enforceLocked("ConcurrentList: getUnderlying");
 			return m_data;
@@ -1007,8 +1008,12 @@ namespace bbe
 	}
 
 	template<typename>
-	struct IsList : std::false_type {};
+	struct IsList : std::false_type
+	{
+	};
 
 	template<typename T>
-	struct IsList<bbe::List<T>> : std::true_type {};
+	struct IsList<bbe::List<T>> : std::true_type
+	{
+	};
 }

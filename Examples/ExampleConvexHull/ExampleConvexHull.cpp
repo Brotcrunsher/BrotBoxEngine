@@ -23,7 +23,7 @@ class MyGame : public bbe::Game
 		const bbe::Vector2 mousePos = getMouse();
 		if (isMouseDown(bbe::MouseButton::LEFT))
 		{
-			bbe::Vector2* moveVec = bbe::Math::getClosest(mousePos, points);
+			bbe::Vector2 *moveVec = bbe::Math::getClosest(mousePos, points);
 			if (moveVec)
 			{
 				*moveVec = mousePos;
@@ -35,17 +35,17 @@ class MyGame : public bbe::Game
 			points.add(mousePos);
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		brush.setColorRGB(1, 1, 1);
 		auto hull = bbe::Math::getConvexHull(points);
 		brush.fillLineStrip(hull, true);
 
 		brush.setColorRGB(1, 0, 1);
-		for (const bbe::Vector2& p : points)
+		for (const bbe::Vector2 &p : points)
 		{
 			brush.fillCircle(p - bbe::Vector2{ 5, 5 }, { 11, 11 });
 		}

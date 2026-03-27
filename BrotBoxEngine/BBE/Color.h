@@ -19,35 +19,40 @@ namespace bbe
 
 		constexpr Color_t()
 			: r(0), g(0), b(0), a(maxValue)
-		{}
+		{
+		}
 		explicit constexpr Color_t(T rgb)
 			: r(rgb), g(rgb), b(rgb), a(maxValue)
-		{}
+		{
+		}
 		constexpr Color_t(T r, T g, T b)
 			: r(r), g(g), b(b), a(maxValue)
-		{}
+		{
+		}
 		constexpr Color_t(T r, T g, T b, T a)
 			: r(r), g(g), b(b), a(a)
-		{}
-		explicit constexpr Color_t(const T* arr)
+		{
+		}
+		explicit constexpr Color_t(const T *arr)
 			: r(arr[0]), g(arr[1]), b(arr[2]), a(arr[3])
-		{}
+		{
+		}
 
 		static Color_t white()
 		{
 			return Color_t(maxValue, maxValue, maxValue, maxValue);
 		}
 
-		bool operator== (const bbe::Color_t<T, maxValue>& other) const
+		bool operator==(const bbe::Color_t<T, maxValue> &other) const
 		{
 			return r == other.r && g == other.g && b == other.b && a == other.a;
 		}
-		bool operator!= (const bbe::Color_t<T, maxValue>& other) const
+		bool operator!=(const bbe::Color_t<T, maxValue> &other) const
 		{
 			return !(*this == other);
 		}
 
-		float distance(const bbe::Color_t<T, maxValue>& other) const
+		float distance(const bbe::Color_t<T, maxValue> &other) const
 		{
 			float retVal = 0.f;
 
@@ -59,11 +64,11 @@ namespace bbe
 
 			if (b > other.b) retVal += b - other.b;
 			else retVal += other.b - b;
-			
+
 			return retVal;
 		}
 
-		bbe::Color_t<T, maxValue> blendTo(const bbe::Color_t<T, maxValue>& other, float t) const
+		bbe::Color_t<T, maxValue> blendTo(const bbe::Color_t<T, maxValue> &other, float t) const
 		{
 			if (t < 0.f) return *this;
 			if (t > 1.f) return other;
@@ -72,11 +77,10 @@ namespace bbe
 				bbe::Math::interpolateLinear(r, other.r, t),
 				bbe::Math::interpolateLinear(g, other.g, t),
 				bbe::Math::interpolateLinear(b, other.b, t),
-				bbe::Math::interpolateLinear(a, other.a, t)
-			);
+				bbe::Math::interpolateLinear(a, other.a, t));
 		}
 
-		bbe::Color_t<T, maxValue> blendTo(const bbe::Color_t<T, maxValue>& other) const
+		bbe::Color_t<T, maxValue> blendTo(const bbe::Color_t<T, maxValue> &other) const
 		{
 			const float t = other.a / float(maxValue);
 			if (t < 0.f) return *this;
@@ -90,36 +94,34 @@ namespace bbe
 			);
 		}
 
-		bbe::Color_t<T, maxValue> operator* (float scalar) const
+		bbe::Color_t<T, maxValue> operator*(float scalar) const
 		{
 			return bbe::Color_t<T, maxValue>(r * scalar, g * scalar, b * scalar, a * scalar);
 		}
-		bbe::Color_t<T, maxValue> operator/ (float scalar) const
+		bbe::Color_t<T, maxValue> operator/(float scalar) const
 		{
 			return bbe::Color_t<T, maxValue>(r / scalar, g / scalar, b / scalar, a / scalar);
 		}
 
-		bbe::Color_t<T, maxValue> operator-(const bbe::Color_t<T, maxValue>& other) const
+		bbe::Color_t<T, maxValue> operator-(const bbe::Color_t<T, maxValue> &other) const
 		{
 			return bbe::Color_t<T, maxValue>(
 				r - other.r,
 				g - other.g,
 				b - other.b,
-				a - other.a
-			);
+				a - other.a);
 		}
 
-		bbe::Color_t<T, maxValue> operator+(const bbe::Color_t<T, maxValue>& other) const
+		bbe::Color_t<T, maxValue> operator+(const bbe::Color_t<T, maxValue> &other) const
 		{
 			return bbe::Color_t<T, maxValue>(
 				r + other.r,
 				g + other.g,
 				b + other.b,
-				a + other.a
-			);
+				a + other.a);
 		}
 
-		bbe::Color_t<T, maxValue>& operator*= (float scalar)
+		bbe::Color_t<T, maxValue> &operator*=(float scalar)
 		{
 			r *= scalar;
 			g *= scalar;
@@ -127,7 +129,7 @@ namespace bbe
 			a *= scalar;
 			return *this;
 		}
-		bbe::Color_t<T, maxValue>& operator/= (float scalar)
+		bbe::Color_t<T, maxValue> &operator/=(float scalar)
 		{
 			r /= scalar;
 			g /= scalar;
@@ -202,8 +204,7 @@ namespace bbe
 					bbe::Math::clamp01(this->r) * 255,
 					bbe::Math::clamp01(this->g) * 255,
 					bbe::Math::clamp01(this->b) * 255,
-					bbe::Math::clamp01(this->a) * 255
-				);
+					bbe::Math::clamp01(this->a) * 255);
 			}
 			else if constexpr (std::is_same_v<T, bbe::byte>)
 			{

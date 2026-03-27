@@ -10,7 +10,7 @@ bbe::INTERNAL::vulkan::VulkanShader::VulkanShader()
 {
 }
 
-void bbe::INTERNAL::vulkan::VulkanShader::init(const bbe::String& path)
+void bbe::INTERNAL::vulkan::VulkanShader::init(const bbe::String &path)
 {
 	if (VulkanManager::s_pinstance == nullptr)
 	{
@@ -19,13 +19,13 @@ void bbe::INTERNAL::vulkan::VulkanShader::init(const bbe::String& path)
 	init(VulkanManager::s_pinstance->getVulkanDevice(), path);
 }
 
-void bbe::INTERNAL::vulkan::VulkanShader::init(const VulkanDevice & device, const bbe::String & path)
+void bbe::INTERNAL::vulkan::VulkanShader::init(const VulkanDevice &device, const bbe::String &path)
 {
 	auto data = simpleFile::readBinaryFile(path);
 	init(device, data);
 }
 
-void bbe::INTERNAL::vulkan::VulkanShader::init(const VulkanDevice & device, const bbe::ByteBuffer& code)
+void bbe::INTERNAL::vulkan::VulkanShader::init(const VulkanDevice &device, const bbe::ByteBuffer &code)
 {
 	m_device = device.getDevice();
 
@@ -34,7 +34,7 @@ void bbe::INTERNAL::vulkan::VulkanShader::init(const VulkanDevice & device, cons
 	shaderCreateInfo.pNext = nullptr;
 	shaderCreateInfo.flags = 0;
 	shaderCreateInfo.codeSize = code.getLength();
-	shaderCreateInfo.pCode = (uint32_t*)code.getRaw();
+	shaderCreateInfo.pCode = (uint32_t *)code.getRaw();
 
 	VkResult result = vkCreateShaderModule(m_device, &shaderCreateInfo, nullptr, &m_shaderModule);
 	ASSERT_VULKAN(result);
@@ -46,7 +46,7 @@ void bbe::INTERNAL::vulkan::VulkanShader::destroy()
 	{
 		vkDestroyShaderModule(m_device, m_shaderModule, nullptr);
 		m_shaderModule = VK_NULL_HANDLE;
-		m_device       = VK_NULL_HANDLE;
+		m_device = VK_NULL_HANDLE;
 	}
 }
 

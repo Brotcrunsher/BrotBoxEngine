@@ -10,31 +10,31 @@
 #define BBE_SERIALIZABLE_DATA_IMPL_EXPAND(x) x
 #define BBE_SERIALIZABLE_DATA_IMPL_CAT(a, ...) BBE_SERIALIZABLE_DATA_IMPL_CAT_2(a, __VA_ARGS__)
 #define BBE_SERIALIZABLE_DATA_IMPL_CAT_2(a, ...) a##__VA_ARGS__
-#define BBE_SERIALIZABLE_DATA_IMPL_SEQ() \
-100, 99, 98, 97, 96, 95, 94, 93, 92, 91, \
- 90, 89, 88, 87, 86, 85, 84, 83, 82, 81, \
- 80, 79, 78, 77, 76, 75, 74, 73, 72, 71, \
- 70, 69, 68, 67, 66, 65, 64, 63, 62, 61, \
- 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, \
- 50, 49, 48, 47, 46, 45, 44, 43, 42, 41, \
- 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, \
- 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, \
- 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, \
- 10,  9,  8,  7,  6,  5,  4,  3,  2,  1, \
-  0
+#define BBE_SERIALIZABLE_DATA_IMPL_SEQ()        \
+	100, 99, 98, 97, 96, 95, 94, 93, 92, 91,    \
+		90, 89, 88, 87, 86, 85, 84, 83, 82, 81, \
+		80, 79, 78, 77, 76, 75, 74, 73, 72, 71, \
+		70, 69, 68, 67, 66, 65, 64, 63, 62, 61, \
+		60, 59, 58, 57, 56, 55, 54, 53, 52, 51, \
+		50, 49, 48, 47, 46, 45, 44, 43, 42, 41, \
+		40, 39, 38, 37, 36, 35, 34, 33, 32, 31, \
+		30, 29, 28, 27, 26, 25, 24, 23, 22, 21, \
+		20, 19, 18, 17, 16, 15, 14, 13, 12, 11, \
+		10, 9, 8, 7, 6, 5, 4, 3, 2, 1,          \
+		0
 
-#define BBE_SERIALIZABLE_DATA_IMPL_ARG_FILL( \
- a1,  a2,  a3,  a4,  a5,  a6,  a7,  a8,  a9, a10, \
-a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, \
-a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, \
-a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, \
-a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, \
-a51, a52, a53, a54, a55, a56, a57, a58, a59, a60, \
-a61, a62, a63, a64, a65, a66, a67, a68, a69, a70, \
-a71, a72, a73, a74, a75, a76, a77, a78, a79, a80, \
-a81, a82, a83, a84, a85, a86, a87, a88, a89, a90, \
-a91, a92, a93, a94, a95, a96, a97, a98, a99, a100,\
-N, ...) N
+#define BBE_SERIALIZABLE_DATA_IMPL_ARG_FILL(           \
+	a1, a2, a3, a4, a5, a6, a7, a8, a9, a10,           \
+	a11, a12, a13, a14, a15, a16, a17, a18, a19, a20,  \
+	a21, a22, a23, a24, a25, a26, a27, a28, a29, a30,  \
+	a31, a32, a33, a34, a35, a36, a37, a38, a39, a40,  \
+	a41, a42, a43, a44, a45, a46, a47, a48, a49, a50,  \
+	a51, a52, a53, a54, a55, a56, a57, a58, a59, a60,  \
+	a61, a62, a63, a64, a65, a66, a67, a68, a69, a70,  \
+	a71, a72, a73, a74, a75, a76, a77, a78, a79, a80,  \
+	a81, a82, a83, a84, a85, a86, a87, a88, a89, a90,  \
+	a91, a92, a93, a94, a95, a96, a97, a98, a99, a100, \
+	N, ...) N
 
 #define BBE_SERIALIZABLE_DATA_IMPL_NARG(...) BBE_SERIALIZABLE_DATA_IMPL_NARG_2(__VA_ARGS__, BBE_SERIALIZABLE_DATA_IMPL_SEQ())
 #define BBE_SERIALIZABLE_DATA_IMPL_NARG_2(...) BBE_SERIALIZABLE_DATA_IMPL_EXPAND(BBE_SERIALIZABLE_DATA_IMPL_ARG_FILL(__VA_ARGS__))
@@ -154,11 +154,11 @@ N, ...) N
 #define BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR_SINGLE(...) BBE_SERIALIZABLE_DATA_IMPL_EXPAND(BBE_SERIALIZABLE_DATA_IMPL_CAT(BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR_SINGLE_ARG_, BBE_SERIALIZABLE_DATA_IMPL_NARG(__VA_ARGS__))(__VA_ARGS__))
 #define BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR_SINGLE_EXPAND(x) BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR_SINGLE x
 #define BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR_2(LOOP, ...) BBE_SERIALIZABLE_DATA_IMPL_EXPAND(LOOP(BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR_SINGLE_EXPAND, __VA_ARGS__))
-#define BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR(NARGS, ...) \
-void serialDescription(bbe::SerializedDescription& desc) \
-{ \
-    BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR_2(BBE_SERIALIZABLE_DATA_IMPL_CAT(BBE_SERIALIZABLE_DATA_IMPL_LOOP_, NARGS), __VA_ARGS__) \
-}
+#define BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR(NARGS, ...)                                                                             \
+	void serialDescription(bbe::SerializedDescription &desc)                                                                          \
+	{                                                                                                                                 \
+		BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR_2(BBE_SERIALIZABLE_DATA_IMPL_CAT(BBE_SERIALIZABLE_DATA_IMPL_LOOP_, NARGS), __VA_ARGS__) \
+	}
 
 #define BBE_SERIALIZABLE_DATA_IMPL(NARGS, ...) BBE_SERIALIZABLE_DATA_IMPL_MEMBERS(NARGS, __VA_ARGS__) BBE_SERIALIZABLE_DATA_IMPL_DESCRIPTOR(NARGS, __VA_ARGS__)
 #define BBE_SERIALIZABLE_DATA(...) BBE_SERIALIZABLE_DATA_IMPL(BBE_SERIALIZABLE_DATA_IMPL_NARG(__VA_ARGS__), __VA_ARGS__)
@@ -171,7 +171,7 @@ namespace bbe
 		YES,
 	};
 
-	template <typename T>
+	template<typename T>
 	class SerializableObject
 	{
 	private:
@@ -179,7 +179,7 @@ namespace bbe
 		bbe::String paranoiaPath;
 		T data;
 
-		constexpr static bool hasSerialDescription = requires(T & t, bbe::SerializedDescription & desc) {
+		constexpr static bool hasSerialDescription = requires(T &t, bbe::SerializedDescription &desc) {
 			t.serialDescription(desc);
 		};
 
@@ -208,19 +208,18 @@ namespace bbe
 		}
 
 	public:
-		explicit SerializableObject(const bbe::String& path, const bbe::String& paranoiaPath = "") :
-			path(path),
-			paranoiaPath(paranoiaPath)
+		explicit SerializableObject(const bbe::String &path, const bbe::String &paranoiaPath = "") : path(path),
+																									 paranoiaPath(paranoiaPath)
 		{
 			load();
 		}
 
-		T* operator->()
+		T *operator->()
 		{
 			return &data;
 		}
 
-		const T* operator->() const
+		const T *operator->() const
 		{
 			return &data;
 		}
@@ -241,7 +240,7 @@ namespace bbe
 		}
 	};
 
-	template <typename T>
+	template<typename T>
 	class SerializableList
 	{
 	private:
@@ -251,11 +250,11 @@ namespace bbe
 
 		Undoable undoable = Undoable::NO;
 
-		constexpr static bool hasSerialDescription = requires(T & t, bbe::SerializedDescription & desc) {
+		constexpr static bool hasSerialDescription = requires(T &t, bbe::SerializedDescription &desc) {
 			t.serialDescription(desc);
 		};
 
-		void load(const bbe::String& path, const bbe::List<T>& data)
+		void load(const bbe::String &path, const bbe::List<T> &data)
 		{
 			this->path = path;
 			if (bbe::simpleFile::doesFileExist(path))
@@ -310,14 +309,13 @@ namespace bbe
 		}
 
 	public:
-		explicit SerializableList(const bbe::String& path, const bbe::String& paranoiaPath = "", Undoable undoable = Undoable::NO) :
-			paranoiaPath(paranoiaPath),
-			undoable(undoable)
+		explicit SerializableList(const bbe::String &path, const bbe::String &paranoiaPath = "", Undoable undoable = Undoable::NO) : paranoiaPath(paranoiaPath),
+																																	 undoable(undoable)
 		{
 			load(path, {});
 		}
 
-		static SerializableList withDefault(const bbe::String& path, const bbe::List<T>& data, const bbe::String& paranoiaPath = "", Undoable undoable = Undoable::NO)
+		static SerializableList withDefault(const bbe::String &path, const bbe::List<T> &data, const bbe::String &paranoiaPath = "", Undoable undoable = Undoable::NO)
 		{
 			SerializableList sl;
 			sl.paranoiaPath = paranoiaPath;
@@ -350,7 +348,7 @@ namespace bbe
 		bool swap(size_t a, size_t b)
 		{
 			bool retVal = data.get().swap(a, b);
-			if(retVal) writeToFile();
+			if (retVal) writeToFile();
 			return retVal;
 		}
 
@@ -359,12 +357,12 @@ namespace bbe
 			return data.get().getLength();
 		}
 
-		T& operator[](size_t index)
+		T &operator[](size_t index)
 		{
 			return data.get()[index];
 		}
 
-		const T& operator[](size_t index) const
+		const T &operator[](size_t index) const
 		{
 			return data.get()[index];
 		}
@@ -386,8 +384,8 @@ namespace bbe
 				bbe::simpleFile::backup::async::createDirectory(paranoiaPath);
 				bbe::simpleFile::backup::async::writeBinaryToFile(paranoiaPath + "/" + path + t + ".bak", buffer);
 			}
-			
-			if(updateHistory) pushUndoable();
+
+			if (updateHistory) pushUndoable();
 		}
 
 		bool canUndo() const
@@ -412,12 +410,12 @@ namespace bbe
 			writeToFile(false);
 		}
 
-		const bbe::List<T>& getList() const
+		const bbe::List<T> &getList() const
 		{
 			return data.get();
 		}
 
-		bbe::List<T>& getList()
+		bbe::List<T> &getList()
 		{
 			return data.get();
 		}

@@ -8,7 +8,7 @@ bbe::INTERNAL::vulkan::VulkanFence::VulkanFence()
 	//DO NOTHING
 }
 
-void bbe::INTERNAL::vulkan::VulkanFence::init(const VulkanDevice & vulkanDevice)
+void bbe::INTERNAL::vulkan::VulkanFence::init(const VulkanDevice &vulkanDevice)
 {
 	m_device = vulkanDevice.getDevice();
 
@@ -36,11 +36,10 @@ void bbe::INTERNAL::vulkan::VulkanFence::waitForFence(uint64_t timeout)
 	{
 		bbe::Crash(bbe::Error::NotInitialized);
 	}
-	
 
 	VkResult result = vkWaitForFences(m_device, 1, &m_fence, VK_TRUE, timeout);
 	ASSERT_VULKAN(result);
-	
+
 	result = vkResetFences(m_device, 1, &m_fence);
 	ASSERT_VULKAN(result);
 }

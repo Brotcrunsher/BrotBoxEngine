@@ -2,7 +2,6 @@
 
 #include "../BBE/List.h"
 
-
 namespace bbe
 {
 	template<typename T>
@@ -18,7 +17,7 @@ namespace bbe
 		{
 			clearHistory();
 		}
-		explicit UndoableObject(const T& val) : current(val)
+		explicit UndoableObject(const T &val) : current(val)
 		{
 			clearHistory();
 		}
@@ -70,12 +69,12 @@ namespace bbe
 			return historyIndex + 1 < (int64_t)history.getLength();
 		}
 
-		T& get()
+		T &get()
 		{
 			return current;
 		}
 
-		const T& get() const
+		const T &get() const
 		{
 			return current;
 		}

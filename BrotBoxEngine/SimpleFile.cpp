@@ -33,7 +33,7 @@ static void updateIoStats()
 	totalIoCalls++;
 }
 
-void bbe::simpleFile::backup::setBackupPath(const bbe::String& path)
+void bbe::simpleFile::backup::setBackupPath(const bbe::String &path)
 {
 	std::lock_guard lg(backupPathMutex);
 	if (path.isEmpty())
@@ -55,13 +55,13 @@ bool bbe::simpleFile::backup::isBackupPathSet()
 	return !backupPath.isEmpty();
 }
 
-bbe::String bbe::simpleFile::backup::backupFullPath(const bbe::String& path)
+bbe::String bbe::simpleFile::backup::backupFullPath(const bbe::String &path)
 {
 	std::lock_guard lg(backupPathMutex);
 	return backupPath + path;
 }
 
-void bbe::simpleFile::backup::writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
+void bbe::simpleFile::backup::writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer)
 {
 	bbe::simpleFile::writeBinaryToFile(filePath, buffer);
 	if (isBackupPathSet())
@@ -70,7 +70,7 @@ void bbe::simpleFile::backup::writeBinaryToFile(const bbe::String& filePath, con
 	}
 }
 
-void bbe::simpleFile::backup::createDirectory(const bbe::String& path)
+void bbe::simpleFile::backup::createDirectory(const bbe::String &path)
 {
 	bbe::simpleFile::createDirectory(path);
 	if (isBackupPathSet())
@@ -79,7 +79,7 @@ void bbe::simpleFile::backup::createDirectory(const bbe::String& path)
 	}
 }
 
-void bbe::simpleFile::backup::appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
+void bbe::simpleFile::backup::appendBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer)
 {
 	bbe::simpleFile::appendBinaryToFile(filePath, buffer);
 	if (isBackupPathSet())
@@ -88,7 +88,7 @@ void bbe::simpleFile::backup::appendBinaryToFile(const bbe::String& filePath, co
 	}
 }
 
-bbe::ByteBuffer bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
+bbe::ByteBuffer bbe::simpleFile::readBinaryFile(const bbe::String &filepath)
 {
 	updateIoStats();
 	if (std::filesystem::is_directory(filepath.getRaw()))
@@ -97,7 +97,7 @@ bbe::ByteBuffer bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 	}
 
 	std::ifstream file(filepath.getRaw(), std::ios::binary | std::ios::ate);
-	
+
 	if (file)
 	{
 		size_t fileSize = (size_t)file.tellg();
@@ -108,7 +108,7 @@ bbe::ByteBuffer bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 		bbe::List<unsigned char> fileBuffer;
 		fileBuffer.resizeCapacityAndLength(fileSize);
 		file.seekg(0);
-		file.read((char*)fileBuffer.getRaw(), fileSize);
+		file.read((char *)fileBuffer.getRaw(), fileSize);
 		file.close();
 		return bbe::ByteBuffer(std::move(fileBuffer));
 	}
@@ -118,7 +118,7 @@ bbe::ByteBuffer bbe::simpleFile::readBinaryFile(const bbe::String & filepath)
 	}
 }
 
-bool bbe::simpleFile::readBinaryFileIfChanged(const bbe::String& filepath, bbe::ByteBuffer& outContents, std::filesystem::file_time_type& inOutPreviousModify)
+bool bbe::simpleFile::readBinaryFileIfChanged(const bbe::String &filepath, bbe::ByteBuffer &outContents, std::filesystem::file_time_type &inOutPreviousModify)
 {
 	updateIoStats();
 	if (std::filesystem::is_directory(filepath.getRaw()))
@@ -131,17 +131,18 @@ bool bbe::simpleFile::readBinaryFileIfChanged(const bbe::String& filepath, bbe::
 	{
 		currentModifyTime = std::filesystem::last_write_time(filepath.getRaw());
 	}
-	catch (std::filesystem::filesystem_error&)
+	catch (std::filesystem::filesystem_error &)
 	{
 		// Probably the file is still in the write process, so we just report that nothing changed.
 		return false;
 	}
 	if (currentModifyTime <= inOutPreviousModify && inOutPreviousModify != std::filesystem::file_time_type()) return false;
 
-	try {
+	try
+	{
 		outContents = readBinaryFile(filepath);
 	}
-	catch (std::runtime_error&)
+	catch (std::runtime_error &)
 	{
 		// Probably the file is still in the write process, so we just report that nothing changed.
 		return false;
@@ -151,7 +152,7 @@ bool bbe::simpleFile::readBinaryFileIfChanged(const bbe::String& filepath, bbe::
 	return true;
 }
 
-bbe::List<float> bbe::simpleFile::readFloatArrFromFile(const bbe::String& filePath)
+bbe::List<float> bbe::simpleFile::readFloatArrFromFile(const bbe::String &filePath)
 {
 	bbe::ByteBuffer bb = readBinaryFile(filePath);
 	auto bbs = bb.getSpan();
@@ -165,75 +166,80 @@ bbe::List<float> bbe::simpleFile::readFloatArrFromFile(const bbe::String& filePa
 	return retVal;
 }
 
-void bbe::simpleFile::writeFloatArrToFile(const bbe::String & filePath, const float * arr, size_t size)
+void bbe::simpleFile::writeFloatArrToFile(const bbe::String &filePath, const float *arr, size_t size)
 {
 	updateIoStats();
 	std::ofstream file(filePath.getRaw(), std::ios_base::binary);
-	if (!file.is_open()) {
+	if (!file.is_open())
+	{
 		throw std::runtime_error("Could not open file!");
 	}
-	const char* carr = (const char*)arr;
+	const char *carr = (const char *)arr;
 	std::copy(carr, carr + (sizeof(float) * size), std::ostreambuf_iterator<char>(file));
 	file.close();
 }
 
-void bbe::simpleFile::writeFloatArrToFile(const bbe::String& filePath, const bbe::List<float>& data)
+void bbe::simpleFile::writeFloatArrToFile(const bbe::String &filePath, const bbe::List<float> &data)
 {
 	writeFloatArrToFile(filePath, data.getRaw(), data.getLength());
 }
 
-void bbe::simpleFile::writeStringToFile(const bbe::String& filePath, const bbe::String& stringToWrite)
+void bbe::simpleFile::writeStringToFile(const bbe::String &filePath, const bbe::String &stringToWrite)
 {
 	updateIoStats();
 	std::ofstream file(filePath.getRaw());
-	if (!file.is_open()) {
+	if (!file.is_open())
+	{
 		throw std::runtime_error("Could not open file!");
 	}
 	file << stringToWrite.getRaw();
 	file.close();
 }
 
-void bbe::simpleFile::writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
+void bbe::simpleFile::writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer)
 {
 	updateIoStats();
 	std::ofstream file(filePath.getRaw(), std::ios_base::binary);
-	if (!file.is_open()) {
+	if (!file.is_open())
+	{
 		throw std::runtime_error("Could not open file!");
 	}
 	std::copy(buffer.getRaw(), buffer.getRaw() + buffer.getLength(), std::ostreambuf_iterator<char>(file));
 	file.close();
 }
 
-void bbe::simpleFile::appendStringToFile(const bbe::String& filePath, const bbe::String& stringToAppend)
+void bbe::simpleFile::appendStringToFile(const bbe::String &filePath, const bbe::String &stringToAppend)
 {
 	updateIoStats();
 	std::ofstream file(filePath.getRaw(), std::ofstream::app);
-	if (!file.is_open()) {
+	if (!file.is_open())
+	{
 		throw std::runtime_error("Could not open file!");
 	}
 	file << stringToAppend.getRaw();
 	file.close();
 }
 
-void bbe::simpleFile::appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
+void bbe::simpleFile::appendBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer)
 {
 	updateIoStats();
 	std::ofstream file(filePath.getRaw(), std::ios::binary | std::ofstream::app);
-	if (!file.is_open()) {
+	if (!file.is_open())
+	{
 		throw std::runtime_error("Could not open file!");
 	}
 	std::copy(buffer.getRaw(), buffer.getRaw() + buffer.getLength(), std::ostreambuf_iterator<char>(file));
 	file.close();
 }
 
-bool bbe::simpleFile::doesFileExist(const bbe::String& filePath)
+bool bbe::simpleFile::doesFileExist(const bbe::String &filePath)
 {
 	updateIoStats();
 	std::ifstream f(filePath.getRaw());
 	return (bool)f;
 }
 
-void bbe::simpleFile::createDirectory(const bbe::String& path)
+void bbe::simpleFile::createDirectory(const bbe::String &path)
 {
 	updateIoStats();
 	if (!std::filesystem::is_directory(path.getRaw()) || !std::filesystem::exists(path.getRaw()))
@@ -242,24 +248,25 @@ void bbe::simpleFile::createDirectory(const bbe::String& path)
 	}
 }
 
-bool bbe::simpleFile::deleteFile(const bbe::String& path)
+bool bbe::simpleFile::deleteFile(const bbe::String &path)
 {
 	updateIoStats();
 	return std::filesystem::remove(path.getRaw());
 }
 
-bbe::String bbe::simpleFile::readFile(const bbe::String& filePath)
+bbe::String bbe::simpleFile::readFile(const bbe::String &filePath)
 {
 	updateIoStats();
 	std::ifstream f(filePath.getRaw());
-	if (!f.is_open()) {
+	if (!f.is_open())
+	{
 		throw std::runtime_error("Could not open file!");
 	}
 	std::string str((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
 	return bbe::String(str.data());
 }
 
-bbe::List<bbe::String> bbe::simpleFile::readLines(const bbe::String& filePath)
+bbe::List<bbe::String> bbe::simpleFile::readLines(const bbe::String &filePath)
 {
 	updateIoStats();
 	std::ifstream file(filePath.getRaw());
@@ -273,7 +280,7 @@ bbe::List<bbe::String> bbe::simpleFile::readLines(const bbe::String& filePath)
 	return retVal;
 }
 
-std::optional<bbe::TimePoint> bbe::simpleFile::getLastModifyTime(const bbe::String& filePath)
+std::optional<bbe::TimePoint> bbe::simpleFile::getLastModifyTime(const bbe::String &filePath)
 {
 	updateIoStats();
 	std::error_code ec;
@@ -283,12 +290,10 @@ std::optional<bbe::TimePoint> bbe::simpleFile::getLastModifyTime(const bbe::Stri
 		return std::nullopt;
 	}
 	// Madness :)
-	const std::time_t t = 
+	const std::time_t t =
 		std::chrono::system_clock::to_time_t(
 			std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-				mod - std::chrono::file_clock::now() + std::chrono::system_clock::now()
-			)
-		);
+				mod - std::chrono::file_clock::now() + std::chrono::system_clock::now()));
 	return bbe::TimePoint(t);
 }
 
@@ -305,10 +310,10 @@ size_t bbe::simpleFile::getTotalIoCalls()
 }
 
 #ifndef __EMSCRIPTEN__
-void bbe::simpleFile::forEachFile(const bbe::String& filePath, const std::function<void(const bbe::String&)>& func)
+void bbe::simpleFile::forEachFile(const bbe::String &filePath, const std::function<void(const bbe::String &)> &func)
 {
 	updateIoStats();
-	for (const auto& f : std::filesystem::directory_iterator(filePath.getRaw()))
+	for (const auto &f : std::filesystem::directory_iterator(filePath.getRaw()))
 	{
 		func(f.path().c_str());
 	}
@@ -316,9 +321,9 @@ void bbe::simpleFile::forEachFile(const bbe::String& filePath, const std::functi
 #endif
 
 #ifdef __linux__
-static std::string getLinuxAbsoluteEnv(const char* name)
+static std::string getLinuxAbsoluteEnv(const char *name)
 {
-	const char* value = std::getenv(name);
+	const char *value = std::getenv(name);
 	if (value == nullptr || value[0] != '/')
 	{
 		return "";
@@ -342,10 +347,10 @@ static std::string getLinuxConfigHome()
 	return home + "/.config";
 }
 
-static std::string escapeDesktopEntryString(const char* input)
+static std::string escapeDesktopEntryString(const char *input)
 {
 	std::string escaped;
-	for (const char* c = input; *c != '\0'; ++c)
+	for (const char *c = input; *c != '\0'; ++c)
 	{
 		if (*c == '\\')
 		{
@@ -363,7 +368,7 @@ static std::string escapeDesktopEntryString(const char* input)
 	return escaped;
 }
 
-static bool needsDesktopExecQuoting(const std::string& s)
+static bool needsDesktopExecQuoting(const std::string &s)
 {
 	for (char c : s)
 	{
@@ -396,7 +401,7 @@ static bool needsDesktopExecQuoting(const std::string& s)
 	return false;
 }
 
-static std::string quoteDesktopExecArg(const char* input)
+static std::string quoteDesktopExecArg(const char *input)
 {
 	std::string raw = input;
 	if (!needsDesktopExecQuoting(raw))
@@ -449,7 +454,7 @@ struct ScopedDBusError
 		}
 	}
 
-	DBusError* get()
+	DBusError *get()
 	{
 		return &error;
 	}
@@ -457,7 +462,7 @@ struct ScopedDBusError
 
 struct DBusConnectionDeleter
 {
-	void operator()(DBusConnection* connection) const
+	void operator()(DBusConnection *connection) const
 	{
 		if (connection)
 		{
@@ -469,7 +474,7 @@ struct DBusConnectionDeleter
 
 struct DBusMessageDeleter
 {
-	void operator()(DBusMessage* message) const
+	void operator()(DBusMessage *message) const
 	{
 		if (message)
 		{
@@ -484,7 +489,7 @@ using ScopedDBusMessage = std::unique_ptr<DBusMessage, DBusMessageDeleter>;
 static ScopedDBusConnection getPrivateSessionBus()
 {
 	ScopedDBusError error;
-	DBusConnection* connection = dbus_bus_get_private(DBUS_BUS_SESSION, error.get());
+	DBusConnection *connection = dbus_bus_get_private(DBUS_BUS_SESSION, error.get());
 	if (connection == nullptr)
 	{
 		return ScopedDBusConnection(nullptr);
@@ -493,22 +498,22 @@ static ScopedDBusConnection getPrivateSessionBus()
 	return ScopedDBusConnection(connection);
 }
 
-static bool linuxPortalIsAvailable(DBusConnection* connection)
+static bool linuxPortalIsAvailable(DBusConnection *connection)
 {
 	ScopedDBusError error;
 	const dbus_bool_t hasPortal = dbus_bus_name_has_owner(connection, "org.freedesktop.portal.Desktop", error.get());
 	return hasPortal == TRUE && !dbus_error_is_set(error.get());
 }
 
-static std::string makePortalHandleToken(const char* prefix)
+static std::string makePortalHandleToken(const char *prefix)
 {
 	static std::atomic_uint64_t counter = 0;
 	return std::string(prefix) + "_" + std::to_string(::getpid()) + "_" + std::to_string(++counter);
 }
 
-static std::string makePortalExpectedRequestPath(DBusConnection* connection, const std::string& token)
+static std::string makePortalExpectedRequestPath(DBusConnection *connection, const std::string &token)
 {
-	const char* uniqueName = dbus_bus_get_unique_name(connection);
+	const char *uniqueName = dbus_bus_get_unique_name(connection);
 	if (uniqueName == nullptr || uniqueName[0] == '\0')
 	{
 		return "";
@@ -519,7 +524,7 @@ static std::string makePortalExpectedRequestPath(DBusConnection* connection, con
 	{
 		sender.erase(sender.begin());
 	}
-	for (char& c : sender)
+	for (char &c : sender)
 	{
 		if (c == '.')
 		{
@@ -529,7 +534,7 @@ static std::string makePortalExpectedRequestPath(DBusConnection* connection, con
 	return "/org/freedesktop/portal/desktop/request/" + sender + "/" + token;
 }
 
-static bool addPortalResponseMatch(DBusConnection* connection, const std::string& requestPath)
+static bool addPortalResponseMatch(DBusConnection *connection, const std::string &requestPath)
 {
 	if (requestPath.empty())
 	{
@@ -544,7 +549,7 @@ static bool addPortalResponseMatch(DBusConnection* connection, const std::string
 	return !dbus_error_is_set(error.get());
 }
 
-static void removePortalResponseMatch(DBusConnection* connection, const std::string& requestPath)
+static void removePortalResponseMatch(DBusConnection *connection, const std::string &requestPath)
 {
 	if (requestPath.empty())
 	{
@@ -558,7 +563,7 @@ static void removePortalResponseMatch(DBusConnection* connection, const std::str
 	dbus_connection_flush(connection);
 }
 
-static bool appendStringOption(DBusMessageIter* optionsIter, const char* key, const char* value)
+static bool appendStringOption(DBusMessageIter *optionsIter, const char *key, const char *value)
 {
 	DBusMessageIter entryIter;
 	DBusMessageIter variantIter;
@@ -570,7 +575,7 @@ static bool appendStringOption(DBusMessageIter* optionsIter, const char* key, co
 	return dbus_message_iter_close_container(optionsIter, &entryIter) == TRUE;
 }
 
-static bool appendBoolOption(DBusMessageIter* optionsIter, const char* key, bool value)
+static bool appendBoolOption(DBusMessageIter *optionsIter, const char *key, bool value)
 {
 	DBusMessageIter entryIter;
 	DBusMessageIter variantIter;
@@ -583,7 +588,7 @@ static bool appendBoolOption(DBusMessageIter* optionsIter, const char* key, bool
 	return dbus_message_iter_close_container(optionsIter, &entryIter) == TRUE;
 }
 
-static bool appendByteArrayOption(DBusMessageIter* optionsIter, const char* key, const std::string& value)
+static bool appendByteArrayOption(DBusMessageIter *optionsIter, const char *key, const std::string &value)
 {
 	DBusMessageIter entryIter;
 	DBusMessageIter variantIter;
@@ -598,7 +603,7 @@ static bool appendByteArrayOption(DBusMessageIter* optionsIter, const char* key,
 	bytes.push_back('\0');
 	if (!bytes.empty())
 	{
-		const unsigned char* data = bytes.data();
+		const unsigned char *data = bytes.data();
 		if (!dbus_message_iter_append_fixed_array(&arrayIter, DBUS_TYPE_BYTE, &data, static_cast<int>(bytes.size()))) return false;
 	}
 
@@ -615,9 +620,9 @@ static int hexDigitToInt(char c)
 	return -1;
 }
 
-static bbe::String decodeFileUri(const char* uri)
+static bbe::String decodeFileUri(const char *uri)
 {
-	constexpr const char* prefix = "file://";
+	constexpr const char *prefix = "file://";
 	if (std::strncmp(uri, prefix, std::strlen(prefix)) != 0)
 	{
 		return "";
@@ -653,7 +658,7 @@ static bbe::String decodeFileUri(const char* uri)
 	return bbe::String(decoded.c_str());
 }
 
-static bool extractFirstUriFromResponse(DBusMessage* responseMessage, bbe::String& outPath)
+static bool extractFirstUriFromResponse(DBusMessage *responseMessage, bbe::String &outPath)
 {
 	DBusMessageIter iter;
 	if (!dbus_message_iter_init(responseMessage, &iter)) return false;
@@ -674,7 +679,7 @@ static bool extractFirstUriFromResponse(DBusMessage* responseMessage, bbe::Strin
 		dbus_message_iter_recurse(&dictIter, &entryIter);
 		if (dbus_message_iter_get_arg_type(&entryIter) == DBUS_TYPE_STRING)
 		{
-			const char* key = nullptr;
+			const char *key = nullptr;
 			dbus_message_iter_get_basic(&entryIter, &key);
 			if (std::strcmp(key, "uris") == 0 && dbus_message_iter_next(&entryIter) && dbus_message_iter_get_arg_type(&entryIter) == DBUS_TYPE_VARIANT)
 			{
@@ -686,7 +691,7 @@ static bool extractFirstUriFromResponse(DBusMessage* responseMessage, bbe::Strin
 					dbus_message_iter_recurse(&variantIter, &uriIter);
 					if (dbus_message_iter_get_arg_type(&uriIter) == DBUS_TYPE_STRING)
 					{
-						const char* uri = nullptr;
+						const char *uri = nullptr;
 						dbus_message_iter_get_basic(&uriIter, &uri);
 						outPath = decodeFileUri(uri);
 						return !outPath.isEmpty();
@@ -700,7 +705,7 @@ static bool extractFirstUriFromResponse(DBusMessage* responseMessage, bbe::Strin
 	return false;
 }
 
-static bool waitForPortalResponse(DBusConnection* connection, const std::string& requestPath, bbe::String& outPath)
+static bool waitForPortalResponse(DBusConnection *connection, const std::string &requestPath, bbe::String &outPath)
 {
 	while (true)
 	{
@@ -715,7 +720,7 @@ static bool waitForPortalResponse(DBusConnection* connection, const std::string&
 			continue;
 		}
 
-		const char* path = dbus_message_get_path(message.get());
+		const char *path = dbus_message_get_path(message.get());
 		if (path == nullptr || requestPath != path)
 		{
 			continue;
@@ -728,7 +733,7 @@ static bool waitForPortalResponse(DBusConnection* connection, const std::string&
 	}
 }
 
-static bool linuxPortalFileChooser(const char* methodName, const char* title, bbe::String& inOutPath, const bbe::String& defaultExtension)
+static bool linuxPortalFileChooser(const char *methodName, const char *title, bbe::String &inOutPath, const bbe::String &defaultExtension)
 {
 	ScopedDBusConnection connection = getPrivateSessionBus();
 	if (!connection || !linuxPortalIsAvailable(connection.get()))
@@ -756,7 +761,7 @@ static bool linuxPortalFileChooser(const char* methodName, const char* title, bb
 
 	DBusMessageIter iter;
 	dbus_message_iter_init_append(message.get(), &iter);
-	const char* parentWindow = "";
+	const char *parentWindow = "";
 	if (!dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &parentWindow))
 	{
 		removePortalResponseMatch(connection.get(), expectedPath);
@@ -776,8 +781,7 @@ static bool linuxPortalFileChooser(const char* methodName, const char* title, bb
 	}
 
 	const bool isSaveDialog = std::strcmp(methodName, "SaveFile") == 0;
-	bool optionsOk = appendStringOption(&optionsIter, "handle_token", handleToken.c_str())
-		&& appendBoolOption(&optionsIter, "modal", true);
+	bool optionsOk = appendStringOption(&optionsIter, "handle_token", handleToken.c_str()) && appendBoolOption(&optionsIter, "modal", true);
 
 	if (isSaveDialog)
 	{
@@ -831,7 +835,7 @@ static bool linuxPortalFileChooser(const char* methodName, const char* title, bb
 		return false;
 	}
 
-	const char* returnedHandle = nullptr;
+	const char *returnedHandle = nullptr;
 	if (!dbus_message_get_args(reply.get(), error.get(), DBUS_TYPE_OBJECT_PATH, &returnedHandle, DBUS_TYPE_INVALID) || returnedHandle == nullptr)
 	{
 		removePortalResponseMatch(connection.get(), expectedPath);
@@ -909,21 +913,21 @@ bbe::String bbe::simpleFile::getWorkingDirectory()
 	return bbe::String(buffer);
 }
 
-void bbe::simpleFile::createLink(const bbe::String& from, const bbe::String& to, const bbe::String& workDir)
+void bbe::simpleFile::createLink(const bbe::String &from, const bbe::String &to, const bbe::String &workDir)
 {
 	updateIoStats();
 	// More or less from the microsoft examples, adjusted to use BBE Types and coding style.
 	// See: https://learn.microsoft.com/en-us/windows/win32/shell/links
 
-	IShellLink* psl;
-	HRESULT hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&psl);
+	IShellLink *psl;
+	HRESULT hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID *)&psl);
 	if (SUCCEEDED(hres))
 	{
 		psl->SetPath(to.getRaw());
-		if(!workDir.isEmpty()) psl->SetWorkingDirectory(workDir.getRaw());
+		if (!workDir.isEmpty()) psl->SetWorkingDirectory(workDir.getRaw());
 
-		IPersistFile* ppf;
-		hres = psl->QueryInterface(IID_IPersistFile, (LPVOID*)&ppf);
+		IPersistFile *ppf;
+		hres = psl->QueryInterface(IID_IPersistFile, (LPVOID *)&ppf);
 		if (SUCCEEDED(hres))
 		{
 			WCHAR wsz[1024];
@@ -938,7 +942,7 @@ void bbe::simpleFile::createLink(const bbe::String& from, const bbe::String& to,
 		throw std::runtime_error("Failed to create link.");
 	}
 }
-void bbe::simpleFile::executeBatchFile(const bbe::String& path)
+void bbe::simpleFile::executeBatchFile(const bbe::String &path)
 {
 	updateIoStats();
 
@@ -965,16 +969,16 @@ void bbe::simpleFile::executeBatchFile(const bbe::String& path)
 	si.cb = sizeof(si);
 	PROCESS_INFORMATION pi = {};
 	if (!CreateProcessW(
-		cmdPath.c_str(),
-		mutableCommandLine.data(),
-		nullptr,
-		nullptr,
-		FALSE,
-		0,
-		nullptr,
-		nullptr,
-		&si,
-		&pi))
+			cmdPath.c_str(),
+			mutableCommandLine.data(),
+			nullptr,
+			nullptr,
+			FALSE,
+			0,
+			nullptr,
+			nullptr,
+			&si,
+			&pi))
 	{
 		throw std::runtime_error("Failed to execute batch file.");
 	}
@@ -983,7 +987,7 @@ void bbe::simpleFile::executeBatchFile(const bbe::String& path)
 	CloseHandle(pi.hThread);
 }
 
-bool bbe::simpleFile::showOpenDialog(bbe::String& outPath)
+bool bbe::simpleFile::showOpenDialog(bbe::String &outPath)
 {
 	updateIoStats();
 	OPENFILENAME ofn;
@@ -1006,7 +1010,7 @@ bool bbe::simpleFile::showOpenDialog(bbe::String& outPath)
 	}
 	return false;
 }
-bool bbe::simpleFile::showSaveDialog(bbe::String& outPath, const bbe::String& defaultExtension)
+bool bbe::simpleFile::showSaveDialog(bbe::String &outPath, const bbe::String &defaultExtension)
 {
 	updateIoStats();
 	OPENFILENAME ofn;
@@ -1058,7 +1062,7 @@ bbe::String bbe::simpleFile::getWorkingDirectory()
 	return bbe::String(std::filesystem::current_path().string().c_str());
 }
 
-void bbe::simpleFile::createLink(const bbe::String& from, const bbe::String& to, const bbe::String& workDir)
+void bbe::simpleFile::createLink(const bbe::String &from, const bbe::String &to, const bbe::String &workDir)
 {
 	updateIoStats();
 
@@ -1097,29 +1101,27 @@ void bbe::simpleFile::createLink(const bbe::String& from, const bbe::String& to,
 	std::filesystem::permissions(
 		desktopFilePath,
 		std::filesystem::perms::owner_read |
-		std::filesystem::perms::owner_write |
-		std::filesystem::perms::owner_exec |
-		std::filesystem::perms::group_read |
-		std::filesystem::perms::group_exec |
-		std::filesystem::perms::others_read |
-		std::filesystem::perms::others_exec,
-		std::filesystem::perm_options::replace
-	);
+			std::filesystem::perms::owner_write |
+			std::filesystem::perms::owner_exec |
+			std::filesystem::perms::group_read |
+			std::filesystem::perms::group_exec |
+			std::filesystem::perms::others_read |
+			std::filesystem::perms::others_exec,
+		std::filesystem::perm_options::replace);
 }
 
-bool bbe::simpleFile::showOpenDialog(bbe::String& outPath)
+bool bbe::simpleFile::showOpenDialog(bbe::String &outPath)
 {
 	updateIoStats();
 	return linuxPortalFileChooser("OpenFile", "Open File", outPath, "");
 }
 
-bool bbe::simpleFile::showSaveDialog(bbe::String& outPath, const bbe::String& defaultExtension)
+bool bbe::simpleFile::showSaveDialog(bbe::String &outPath, const bbe::String &defaultExtension)
 {
 	updateIoStats();
 	return linuxPortalFileChooser("SaveFile", "Save File", outPath, defaultExtension);
 }
 #endif
-
 
 #ifndef __EMSCRIPTEN__
 enum class AsyncJobType
@@ -1166,9 +1168,8 @@ static void innerIoThreadMain()
 		if (jobs.getLength() == 0 && ioThreadRunning)
 		{
 			std::unique_lock ul(jobs);
-			conditional.wait(ul, [] {
-				return jobs.getLength() > 0 || !ioThreadRunning;
-				});
+			conditional.wait(ul, []
+							 { return jobs.getLength() > 0 || !ioThreadRunning; });
 		}
 	}
 }
@@ -1215,7 +1216,7 @@ void bbe::simpleFile::backup::async::stopIoThread()
 #endif
 }
 
-void bbe::simpleFile::backup::async::writeBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
+void bbe::simpleFile::backup::async::writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer)
 {
 	updateIoStats();
 #ifdef __EMSCRIPTEN__
@@ -1226,7 +1227,7 @@ void bbe::simpleFile::backup::async::writeBinaryToFile(const bbe::String& filePa
 #endif
 }
 
-void bbe::simpleFile::backup::async::createDirectory(const bbe::String& path)
+void bbe::simpleFile::backup::async::createDirectory(const bbe::String &path)
 {
 	updateIoStats();
 #ifdef __EMSCRIPTEN__
@@ -1237,7 +1238,7 @@ void bbe::simpleFile::backup::async::createDirectory(const bbe::String& path)
 #endif
 }
 
-void bbe::simpleFile::backup::async::appendBinaryToFile(const bbe::String& filePath, const bbe::ByteBuffer& buffer)
+void bbe::simpleFile::backup::async::appendBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer)
 {
 	updateIoStats();
 #ifdef __EMSCRIPTEN__

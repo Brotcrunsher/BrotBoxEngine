@@ -2,7 +2,7 @@
 #include "BBE/Vulkan/VulkanManager.h"
 #include "BBE/Window.h"
 
-bbe::INTERNAL::vulkan::VulkanFragmentShader::VulkanFragmentShader(const bbe::FragmentShader& shader)
+bbe::INTERNAL::vulkan::VulkanFragmentShader::VulkanFragmentShader(const bbe::FragmentShader &shader)
 {
 	if (shader.m_prendererData != nullptr)
 	{

@@ -13,21 +13,20 @@ namespace bbe
 			class VulkanSurface
 			{
 			private:
-				VkSurfaceKHR    m_surface  = VK_NULL_HANDLE;
+				VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 				VulkanInstance *m_pinstance = nullptr;
 
 			public:
 				VulkanSurface();
 
-
 				void destroy();
 
 				void init(VulkanInstance &instance, GLFWwindow *window);
 
-				VulkanSurface(const VulkanSurface& other) = delete;
-				VulkanSurface(VulkanSurface&& other) = delete;
-				VulkanSurface& operator=(const VulkanSurface& other) = delete;
-				VulkanSurface& operator=(VulkanSurface&& other) = delete;
+				VulkanSurface(const VulkanSurface &other) = delete;
+				VulkanSurface(VulkanSurface &&other) = delete;
+				VulkanSurface &operator=(const VulkanSurface &other) = delete;
+				VulkanSurface &operator=(VulkanSurface &&other) = delete;
 
 				VkSurfaceKHR getSurface() const;
 			};

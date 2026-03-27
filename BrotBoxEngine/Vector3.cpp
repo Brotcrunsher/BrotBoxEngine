@@ -11,7 +11,7 @@ bbe::Vector3::Vector3()
 }
 
 bbe::Vector3::Vector3(float xyz)
-	:x(xyz), y(xyz), z(xyz)
+	: x(xyz), y(xyz), z(xyz)
 {
 }
 
@@ -33,9 +33,7 @@ bbe::Vector3::Vector3(const Vector2 &xy, float z)
 	//UNTESTED
 }
 
-
-
-bbe::Vector3 & bbe::Vector3::operator+=(const Vector3 & other)
+bbe::Vector3 &bbe::Vector3::operator+=(const Vector3 &other)
 {
 	//UNTESTED
 	this->x += other.x;
@@ -44,7 +42,7 @@ bbe::Vector3 & bbe::Vector3::operator+=(const Vector3 & other)
 	return *this;
 }
 
-bbe::Vector3 & bbe::Vector3::operator-=(const Vector3 & other)
+bbe::Vector3 &bbe::Vector3::operator-=(const Vector3 &other)
 {
 	//UNTESTED
 	this->x -= other.x;
@@ -53,7 +51,7 @@ bbe::Vector3 & bbe::Vector3::operator-=(const Vector3 & other)
 	return *this;
 }
 
-bbe::Vector3 & bbe::Vector3::operator*=(const Vector3 & other)
+bbe::Vector3 &bbe::Vector3::operator*=(const Vector3 &other)
 {
 	//UNTESTED
 	this->x *= other.x;
@@ -62,7 +60,7 @@ bbe::Vector3 & bbe::Vector3::operator*=(const Vector3 & other)
 	return *this;
 }
 
-bbe::Vector3 & bbe::Vector3::operator/=(const Vector3 & other)
+bbe::Vector3 &bbe::Vector3::operator/=(const Vector3 &other)
 {
 	//UNTESTED
 	this->x /= other.x;
@@ -71,7 +69,7 @@ bbe::Vector3 & bbe::Vector3::operator/=(const Vector3 & other)
 	return *this;
 }
 
-bbe::Vector3& bbe::Vector3::operator*=(const float scalar)
+bbe::Vector3 &bbe::Vector3::operator*=(const float scalar)
 {
 	this->x *= scalar;
 	this->y *= scalar;
@@ -79,7 +77,7 @@ bbe::Vector3& bbe::Vector3::operator*=(const float scalar)
 	return *this;
 }
 
-bbe::Vector3& bbe::Vector3::operator/=(const float scalar)
+bbe::Vector3 &bbe::Vector3::operator/=(const float scalar)
 {
 	this->x /= scalar;
 	this->y /= scalar;
@@ -87,13 +85,13 @@ bbe::Vector3& bbe::Vector3::operator/=(const float scalar)
 	return *this;
 }
 
-bbe::Vector3 bbe::Vector3::operator+(const Vector3 & other) const
+bbe::Vector3 bbe::Vector3::operator+(const Vector3 &other) const
 {
 	//UNTESTED
 	return Vector3(x + other.x, y + other.y, z + other.z);
 }
 
-bbe::Vector3 bbe::Vector3::operator-(const Vector3 & other) const
+bbe::Vector3 bbe::Vector3::operator-(const Vector3 &other) const
 {
 	//UNTESTED
 	return Vector3(x - other.x, y - other.y, z - other.z);
@@ -116,13 +114,13 @@ bbe::Vector3 bbe::Vector3::operator/(float scalar) const
 	return Vector3(x / scalar, y / scalar, z / scalar);
 }
 
-float bbe::Vector3::operator*(const Vector3 & other) const
+float bbe::Vector3::operator*(const Vector3 &other) const
 {
 	//UNTESTED
 	return x * other.x + y * other.y + z * other.z;
 }
 
-float & bbe::Vector3::operator[](int index)
+float &bbe::Vector3::operator[](int index)
 {
 	//UNTESTED
 	switch (index)
@@ -138,7 +136,7 @@ float & bbe::Vector3::operator[](int index)
 	}
 }
 
-const float & bbe::Vector3::operator[](int index) const
+const float &bbe::Vector3::operator[](int index) const
 {
 	//UNTESTED
 	switch (index)
@@ -154,19 +152,19 @@ const float & bbe::Vector3::operator[](int index) const
 	}
 }
 
-bool bbe::Vector3::operator==(const Vector3 & other) const
+bool bbe::Vector3::operator==(const Vector3 &other) const
 {
 	//UNTESTED
 	return x == other.x && y == other.y && z == other.z;
 }
 
-bool bbe::Vector3::operator!=(const Vector3 & other) const
+bool bbe::Vector3::operator!=(const Vector3 &other) const
 {
 	//UNTESTED
 	return !operator==(other);
 }
 
-bool bbe::Vector3::operator>(const Vector3 & other) const
+bool bbe::Vector3::operator>(const Vector3 &other) const
 {
 	if (x > other.x) return true;
 	if (x < other.x) return false;
@@ -175,7 +173,7 @@ bool bbe::Vector3::operator>(const Vector3 & other) const
 	return z > other.z;
 }
 
-bool bbe::Vector3::operator>=(const Vector3 & other) const
+bool bbe::Vector3::operator>=(const Vector3 &other) const
 {
 	if (x > other.x) return true;
 	if (x < other.x) return false;
@@ -184,7 +182,7 @@ bool bbe::Vector3::operator>=(const Vector3 & other) const
 	return z >= other.z;
 }
 
-bool bbe::Vector3::operator<(const Vector3 & other) const
+bool bbe::Vector3::operator<(const Vector3 &other) const
 {
 	if (x < other.x) return true;
 	if (x > other.x) return false;
@@ -193,7 +191,7 @@ bool bbe::Vector3::operator<(const Vector3 & other) const
 	return z < other.z;
 }
 
-bool bbe::Vector3::operator<=(const Vector3 & other) const
+bool bbe::Vector3::operator<=(const Vector3 &other) const
 {
 	if (x < other.x) return true;
 	if (x > other.x) return false;
@@ -202,38 +200,36 @@ bool bbe::Vector3::operator<=(const Vector3 & other) const
 	return z <= other.z;
 }
 
-bool bbe::Vector3::equals(const Vector3 & other, float epsilon) const
+bool bbe::Vector3::equals(const Vector3 &other, float epsilon) const
 {
 	//UNTESTED
-	return Math::floatEquals(x, other.x, epsilon)
-		&& Math::floatEquals(y, other.y, epsilon)
-		&& Math::floatEquals(z, other.z, epsilon);
+	return Math::floatEquals(x, other.x, epsilon) && Math::floatEquals(y, other.y, epsilon) && Math::floatEquals(z, other.z, epsilon);
 }
 
-bool bbe::Vector3::isSameLength(const Vector3 & other, float epsilon) const
+bool bbe::Vector3::isSameLength(const Vector3 &other, float epsilon) const
 {
 	//UNTESTED
 	return Math::floatEquals(getLength(), other.getLength(), epsilon);
 }
 
-bool bbe::Vector3::isSameDirection(const Vector3 & other) const
+bool bbe::Vector3::isSameDirection(const Vector3 &other) const
 {
 	//UNTESTED
 	return operator*(other) > 0;
 }
 
-bool bbe::Vector3::isOppositeDirection(const Vector3 & other) const
+bool bbe::Vector3::isOppositeDirection(const Vector3 &other) const
 {
 	//UNTESTED
 	return operator*(other) < 0;
 }
 
-bool bbe::Vector3::isLeft(const Vector3 & other) const
+bool bbe::Vector3::isLeft(const Vector3 &other) const
 {
 	return (other.y * x - other.x * y) > 0;
 }
 
-bool bbe::Vector3::isRight(const Vector3 & other) const
+bool bbe::Vector3::isRight(const Vector3 &other) const
 {
 	return (-other.y * x + other.x * y) > 0;
 }
@@ -241,17 +237,13 @@ bool bbe::Vector3::isRight(const Vector3 & other) const
 bool bbe::Vector3::isContainingNaN() const
 {
 	//UNTESTED
-	return Math::isNaN(x)
-		|| Math::isNaN(y)
-		|| Math::isNaN(z);
+	return Math::isNaN(x) || Math::isNaN(y) || Math::isNaN(z);
 }
 
 bool bbe::Vector3::isContainingInfinity() const
 {
 	//UNTESTED
-	return Math::isInfinity(x)
-		|| Math::isInfinity(y)
-		|| Math::isInfinity(z);
+	return Math::isInfinity(x) || Math::isInfinity(y) || Math::isInfinity(z);
 }
 
 bool bbe::Vector3::isUnit(float epsilon) const
@@ -260,7 +252,7 @@ bool bbe::Vector3::isUnit(float epsilon) const
 	return Math::floatEquals(getLength(), 1.0f, epsilon);
 }
 
-bool bbe::Vector3::isCloseTo(const Vector3 & other, float maxDistance) const
+bool bbe::Vector3::isCloseTo(const Vector3 &other, float maxDistance) const
 {
 	//UNTESTED
 	return operator-(other).getLengthSq() <= maxDistance * maxDistance;
@@ -272,12 +264,12 @@ bool bbe::Vector3::isZero() const
 	return x == 0 && y == 0 && z == 0;
 }
 
-bbe::Vector3 bbe::Vector3::rotate(float radians, const Vector3 & axisOfRotation) const
+bbe::Vector3 bbe::Vector3::rotate(float radians, const Vector3 &axisOfRotation) const
 {
 	return Matrix4::createRotationMatrix(radians, axisOfRotation) * (*this);
 }
 
-bbe::Vector3 bbe::Vector3::rotate(float radians, const Vector3 & axisOfRotation, const Vector3 & center) const
+bbe::Vector3 bbe::Vector3::rotate(float radians, const Vector3 &axisOfRotation, const Vector3 &center) const
 {
 	Vector3 rotVec = operator-(center);
 	rotVec = rotVec.rotate(radians, axisOfRotation);
@@ -313,30 +305,28 @@ bbe::Vector3 bbe::Vector3::clampComponents(float min, float max) const
 	return Vector3(
 		Math::clamp(x, min, max),
 		Math::clamp(y, min, max),
-		Math::clamp(z, min, max)
-	);
+		Math::clamp(z, min, max));
 }
 
-bbe::Vector3 bbe::Vector3::project(const Vector3 & other) const
+bbe::Vector3 bbe::Vector3::project(const Vector3 &other) const
 {
 	float scalar = operator*(other);
 	scalar /= other.getLengthSq();
 	return other * scalar;
 }
 
-bbe::Vector3 bbe::Vector3::reflect(const Vector3 & normal) const
+bbe::Vector3 bbe::Vector3::reflect(const Vector3 &normal) const
 {
 	Vector3 normalized = normal.normalize();
 	return operator-(normalized * 2 * (operator*(normalized)));
 }
 
-bbe::Vector3 bbe::Vector3::cross(const Vector3 & other) const
+bbe::Vector3 bbe::Vector3::cross(const Vector3 &other) const
 {
 	return Vector3(
 		y * other.z - other.y * z,
 		z * other.x - other.z * x,
-		x * other.y - other.x * y
-	);
+		x * other.y - other.x * y);
 }
 
 float bbe::Vector3::getLength() const
@@ -356,7 +346,7 @@ float bbe::Vector3::getLengthSqSigned() const
 	return bbe::Math::abs(x) * x + bbe::Math::abs(y) * y + bbe::Math::abs(z) * z;
 }
 
-float bbe::Vector3::getDistanceTo(const Vector3 & other) const
+float bbe::Vector3::getDistanceTo(const Vector3 &other) const
 {
 	//UNTESTED
 	return operator-(other).getLength();
@@ -405,7 +395,7 @@ float bbe::Vector3::getAngle() const
 	}
 }
 
-float bbe::Vector3::getAngle(const Vector3 & other) const
+float bbe::Vector3::getAngle(const Vector3 &other) const
 {
 	float angle = Math::acos(operator*(other) / getLength() / other.getLength());
 	if (isLeft(other))
@@ -417,7 +407,6 @@ float bbe::Vector3::getAngle(const Vector3 & other) const
 		return Math::TAU - angle;
 	}
 }
-
 
 //Begin Swizzles
 bbe::Vector2 bbe::Vector3::xx() const

@@ -5,7 +5,7 @@
 #include "BBE/Vulkan/VulkanCommandPool.h"
 #include "BBE/Vulkan/VulkanManager.h"
 
-void bbe::INTERNAL::vulkan::VulkanBuffer::preCreate(const VulkanDevice & vulkanDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t * p_queueFamilyIndices)
+void bbe::INTERNAL::vulkan::VulkanBuffer::preCreate(const VulkanDevice &vulkanDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t *p_queueFamilyIndices)
 {
 	m_bufferSize = sizeInBytes;
 	m_device = vulkanDevice.getDevice();
@@ -15,12 +15,12 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::preCreate(const VulkanDevice & vulkanD
 	m_wasPreCreated = true;
 }
 
-void bbe::INTERNAL::vulkan::VulkanBuffer::create(const VulkanDevice &vulkanDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t* p_queueFamilyIndices, VkMemoryPropertyFlags memoryPropertyFlags)
+void bbe::INTERNAL::vulkan::VulkanBuffer::create(const VulkanDevice &vulkanDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t *p_queueFamilyIndices, VkMemoryPropertyFlags memoryPropertyFlags)
 {
 	create(vulkanDevice.getDevice(), vulkanDevice.getPhysicalDevice(), sizeInBytes, usage, sharingMode, queueFamilyIndexCount, p_queueFamilyIndices, memoryPropertyFlags);
 }
 
-void bbe::INTERNAL::vulkan::VulkanBuffer::create(VkDevice vulkanDevice, VkPhysicalDevice physicalDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t * p_queueFamilyIndices, VkMemoryPropertyFlags memoryPropertyFlags)
+void bbe::INTERNAL::vulkan::VulkanBuffer::create(VkDevice vulkanDevice, VkPhysicalDevice physicalDevice, size_t sizeInBytes, VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t *p_queueFamilyIndices, VkMemoryPropertyFlags memoryPropertyFlags)
 {
 	if (sizeInBytes == 0)
 	{
@@ -54,7 +54,7 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::create(VkDevice vulkanDevice, VkPhysic
 	m_wasCreated = true;
 }
 
-void bbe::INTERNAL::vulkan::VulkanBuffer::upload(const VulkanCommandPool &commandPool, VkQueue queue, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t* p_queueFamilyIndices)
+void bbe::INTERNAL::vulkan::VulkanBuffer::upload(const VulkanCommandPool &commandPool, VkQueue queue, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t *p_queueFamilyIndices)
 {
 	if ((m_usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT) == 0)
 	{
@@ -89,7 +89,7 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::upload(const VulkanCommandPool &comman
 	m_wasUploaded = true;
 }
 
-void bbe::INTERNAL::vulkan::VulkanBuffer::upload(const VulkanCommandPool & commandPool, VkQueue queue, const VulkanBuffer & parentBuffer, VkDeviceSize offset, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t * p_queueFamilyIndices)
+void bbe::INTERNAL::vulkan::VulkanBuffer::upload(const VulkanCommandPool &commandPool, VkQueue queue, const VulkanBuffer &parentBuffer, VkDeviceSize offset, VkSharingMode sharingMode, uint32_t queueFamilyIndexCount, const uint32_t *p_queueFamilyIndices)
 {
 	if ((m_usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT) == 0)
 	{
@@ -145,7 +145,7 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::destroy()
 	}
 }
 
-void * bbe::INTERNAL::vulkan::VulkanBuffer::map()
+void *bbe::INTERNAL::vulkan::VulkanBuffer::map()
 {
 	if (m_wasUploaded)
 	{
@@ -160,7 +160,7 @@ void * bbe::INTERNAL::vulkan::VulkanBuffer::map()
 		bbe::Crash(bbe::Error::IllegalState);
 	}
 
-	void* data;
+	void *data;
 	vkMapMemory(m_device, m_memory, 0, m_bufferSize, 0, &data);
 	m_isMapped = true;
 
@@ -188,7 +188,6 @@ void bbe::INTERNAL::vulkan::VulkanBuffer::copy(const VulkanBuffer &other, VkComm
 	{
 		bbe::Crash(bbe::Error::IllegalState);
 	}
-
 
 	copyBuffer(m_device, commandPool, queue, other.m_buffer, m_buffer, m_bufferSize);
 }

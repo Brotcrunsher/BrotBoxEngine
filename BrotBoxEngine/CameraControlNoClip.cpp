@@ -5,7 +5,7 @@
 #include "BBE/KeyboardKeys.h"
 #include "BBE/Vector2.h"
 
-bbe::CameraControlNoClip::CameraControlNoClip(Game * game)
+bbe::CameraControlNoClip::CameraControlNoClip(Game *game)
 	: m_pgame(game)
 {
 }
@@ -49,17 +49,20 @@ void bbe::CameraControlNoClip::update(float timeSinceLastFrame)
 		m_timeSinceShiftPress += timeSinceLastFrame;
 		switch (m_speedBuildUp)
 		{
-		case(SpeedBuildUp::QUADRATIC): speedFactor = 10 * m_timeSinceShiftPress * m_timeSinceShiftPress; break;
-		case(SpeedBuildUp::EXPONENTIAL): speedFactor = (float)(10 * bbe::Math::pow(2, m_timeSinceShiftPress - 1.0)); break;
-		default: bbe::Crash(bbe::Error::IllegalState);
+		case (SpeedBuildUp::QUADRATIC):
+			speedFactor = 10 * m_timeSinceShiftPress * m_timeSinceShiftPress;
+			break;
+		case (SpeedBuildUp::EXPONENTIAL):
+			speedFactor = (float)(10 * bbe::Math::pow(2, m_timeSinceShiftPress - 1.0));
+			break;
+		default:
+			bbe::Crash(bbe::Error::IllegalState);
 		}
-		
 	}
 	else
 	{
 		m_timeSinceShiftPress = 1;
 	}
-
 
 	bbe::Vector3 movementForward = m_forward;
 	if (m_isZPosConstrained)
@@ -143,7 +146,7 @@ void bbe::CameraControlNoClip::setCameraForward(float x, float y, float z)
 	setCameraForward({ x, y, z });
 }
 
-void bbe::CameraControlNoClip::setCameraForward(const Vector3& forward)
+void bbe::CameraControlNoClip::setCameraForward(const Vector3 &forward)
 {
 	m_forward = forward;
 }

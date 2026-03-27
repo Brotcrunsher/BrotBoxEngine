@@ -10,10 +10,11 @@ namespace bbe
 	class SOOBlock
 	{
 		static_assert(std::is_trivially_destructible_v<T>, "T is assumed to be trivially destructible! Currently does not call Destructors.");
+
 	private:
 		union
 		{
-			T* m_pdata;
+			T *m_pdata;
 			T m_sooData[sooSize];
 		};
 		size_t m_capacity = sooSize;
@@ -49,16 +50,16 @@ namespace bbe
 		}
 
 	public:
-		SOOBlock() 
+		SOOBlock()
 		{
 			m_sooData[0] = 0;
 		}
 
-		SOOBlock(const SOOBlock& other)
+		SOOBlock(const SOOBlock &other)
 		{
 			growIfNeeded(other.m_capacity, 0);
-			T* thisPtr = get();
-			const T* otherPtr = other.get();
+			T *thisPtr = get();
+			const T *otherPtr = other.get();
 			for (size_t i = 0; i < other.m_capacity; i++)
 			{
 				thisPtr[i] = otherPtr[i];
@@ -69,13 +70,13 @@ namespace bbe
 			}
 		}
 
-		SOOBlock(SOOBlock&& other) noexcept
+		SOOBlock(SOOBlock &&other) noexcept
 		{
 			m_capacity = other.m_capacity;
 			if (isUsingSoo())
 			{
-				T* thisPtr = get();
-				const T* otherPtr = other.get();
+				T *thisPtr = get();
+				const T *otherPtr = other.get();
 				for (size_t i = 0; i < m_capacity; i++)
 				{
 					thisPtr[i] = std::move(otherPtr[i]);
@@ -89,7 +90,7 @@ namespace bbe
 			}
 		}
 
-		SOOBlock& operator=(const SOOBlock& other)
+		SOOBlock &operator=(const SOOBlock &other)
 		{
 			if (this == &other)
 			{
@@ -97,8 +98,8 @@ namespace bbe
 			}
 
 			growIfNeeded(other.m_capacity, 0);
-			T* thisPtr = get();
-			const T* otherPtr = other.get();
+			T *thisPtr = get();
+			const T *otherPtr = other.get();
 			for (size_t i = 0; i < other.m_capacity; i++)
 			{
 				thisPtr[i] = otherPtr[i];
@@ -110,7 +111,7 @@ namespace bbe
 			return *this;
 		}
 
-		SOOBlock& operator=(SOOBlock&& other) noexcept
+		SOOBlock &operator=(SOOBlock &&other) noexcept
 		{
 			if (!isUsingSoo())
 			{
@@ -119,8 +120,8 @@ namespace bbe
 			m_capacity = other.m_capacity;
 			if (isUsingSoo())
 			{
-				T* thisPtr = get();
-				const T* otherPtr = other.get();
+				T *thisPtr = get();
+				const T *otherPtr = other.get();
 				for (size_t i = 0; i < m_capacity; i++)
 				{
 					thisPtr[i] = std::move(otherPtr[i]);
@@ -143,13 +144,13 @@ namespace bbe
 			}
 		}
 
-		T* get()
+		T *get()
 		{
 			if (isUsingSoo()) return m_sooData;
 			return m_pdata;
 		}
 
-		const T* get() const
+		const T *get() const
 		{
 			if (isUsingSoo()) return m_sooData;
 			return m_pdata;
@@ -173,7 +174,7 @@ namespace bbe
 				if (copyUntil == (size_t)-1) copyUntil = m_capacity;
 
 				AllocBlock ab = bbe::allocateBlock(checkedAllocationSize(newCapacity));
-				T* newData = reinterpret_cast<T*>(ab.data);
+				T *newData = reinterpret_cast<T *>(ab.data);
 				for (size_t i = 0; i < newCapacity; i++)
 				{
 					// Placement new for each element individually.
@@ -181,7 +182,7 @@ namespace bbe
 					// See: https://stackoverflow.com/questions/15254/can-placement-new-for-arrays-be-used-in-a-portable-way
 					new (newData + i) T();
 				}
-				T* oldData = get();
+				T *oldData = get();
 				for (size_t i = 0; i < copyUntil; i++)
 				{
 					newData[i] = std::move(oldData[i]);

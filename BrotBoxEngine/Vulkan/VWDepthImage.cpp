@@ -5,7 +5,7 @@ bbe::INTERNAL::vulkan::VWDepthImage::VWDepthImage()
 {
 }
 
-void bbe::INTERNAL::vulkan::VWDepthImage::create(const VulkanDevice & device, const VulkanCommandPool & commandPool, uint32_t width, uint32_t height)
+void bbe::INTERNAL::vulkan::VWDepthImage::create(const VulkanDevice &device, const VulkanCommandPool &commandPool, uint32_t width, uint32_t height)
 {
 	if (m_created)
 	{

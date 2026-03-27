@@ -8,7 +8,7 @@ namespace
 	{
 		bbe::List<int32_t> values;
 
-		void serialDescription(bbe::SerializedDescription& desc)
+		void serialDescription(bbe::SerializedDescription &desc)
 		{
 			desc.describe(values);
 		}

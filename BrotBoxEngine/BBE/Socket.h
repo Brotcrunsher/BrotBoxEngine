@@ -15,12 +15,13 @@ namespace bbe
 	{
 	private:
 		SOCKET nativeSocket = INVALID_SOCKET;
+
 	public:
 		Socket(bbe::String /*copy*/ url, uint16_t port);
 		~Socket();
 
-		Socket(const Socket&) = delete;
-		Socket(Socket&&) = delete;
+		Socket(const Socket &) = delete;
+		Socket(Socket &&) = delete;
 
 		bool established() const;
 

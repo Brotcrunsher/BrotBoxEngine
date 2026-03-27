@@ -8,7 +8,7 @@ bbe::INTERNAL::vulkan::VulkanSemaphore::VulkanSemaphore()
 	//DO NOTHING
 }
 
-void bbe::INTERNAL::vulkan::VulkanSemaphore::init(const VulkanDevice & device)
+void bbe::INTERNAL::vulkan::VulkanSemaphore::init(const VulkanDevice &device)
 {
 	if (m_semaphore != VK_NULL_HANDLE)
 	{

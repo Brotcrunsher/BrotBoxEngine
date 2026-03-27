@@ -4,7 +4,7 @@
 #include "BBE/Async.h"
 #include <Python.h>
 
-void bbe::simplePython::interpret(const bbe::String& code)
+void bbe::simplePython::interpret(const bbe::String &code)
 {
 	static bool initRequired = true;
 	if (initRequired)
@@ -18,7 +18,7 @@ void bbe::simplePython::interpret(const bbe::String& code)
 	PyGILState_Release(state);
 }
 
-bbe::Sound bbe::simplePython::gtts(const bbe::String& text, const bbe::String& lang)
+bbe::Sound bbe::simplePython::gtts(const bbe::String &text, const bbe::String &lang)
 {
 	const bbe::String temp = "temporaryGTTSFile.mp3";
 	bbe::simpleFile::deleteFile(temp);
@@ -27,7 +27,7 @@ bbe::Sound bbe::simplePython::gtts(const bbe::String& text, const bbe::String& l
 	code += "text = '" + text.replace("'", "\'") + "'\n";
 	code += "tts = gTTS(text=text, lang='" + lang + "')\n";
 	code += "tts.save('" + temp + "')\n";
-	
+
 	interpret(code);
 
 	if (!simpleFile::doesFileExist(temp))
@@ -36,13 +36,13 @@ bbe::Sound bbe::simplePython::gtts(const bbe::String& text, const bbe::String& l
 	}
 
 	bbe::Sound retVal(temp);
-	
+
 	bbe::simpleFile::deleteFile(temp);
 
 	return retVal;
 }
 
-std::future<bbe::Sound> bbe::simplePython::gttsAsync(const bbe::String& text, const bbe::String& lang)
+std::future<bbe::Sound> bbe::simplePython::gttsAsync(const bbe::String &text, const bbe::String &lang)
 {
 	return bbe::async(&gtts, text, lang);
 }

@@ -27,10 +27,10 @@ class MyGame : public bbe::Game
 			projectionsPoint = getMouse().normalize();
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		brush.setColorRGB(1, 1, 1);
 		brush.fillRect(rr);
@@ -74,7 +74,7 @@ class MyGame : public bbe::Game
 
 int main()
 {
-	MyGame* mg = new MyGame();
+	MyGame *mg = new MyGame();
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "Rotating Rectangles!");
 #ifndef __EMSCRIPTEN__
 	delete mg;

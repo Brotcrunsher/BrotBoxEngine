@@ -18,8 +18,7 @@ namespace
 		int32_t lower;
 	};
 
-	constexpr WesternLatinCasePair WESTERN_LATIN_CASE_PAIRS[] =
-	{
+	constexpr WesternLatinCasePair WESTERN_LATIN_CASE_PAIRS[] = {
 		{ 0x0100, 0x0101 }, // Ā/ā A with macron
 		{ 0x0102, 0x0103 }, // Ă/ă A with breve
 		{ 0x0104, 0x0105 }, // Ą/ą A with ogonek
@@ -85,9 +84,9 @@ namespace
 		{ 0x021A, 0x021B }, // Ț/ț T with comma below
 	};
 
-	const char* utf8PointerAtIndexOrNull(const char* text, std::size_t index)
+	const char *utf8PointerAtIndexOrNull(const char *text, std::size_t index)
 	{
-		const char* ptr = text;
+		const char *ptr = text;
 		for (std::size_t i = 0; i < index; i++)
 		{
 			if (*ptr == '\0')
@@ -99,9 +98,9 @@ namespace
 		return ptr;
 	}
 
-	const char* utf8PointerAtIndex(const char* text, std::size_t index)
+	const char *utf8PointerAtIndex(const char *text, std::size_t index)
 	{
-		const char* ptr = utf8PointerAtIndexOrNull(text, index);
+		const char *ptr = utf8PointerAtIndexOrNull(text, index);
 		if (ptr == nullptr)
 		{
 			bbe::Crash(bbe::Error::IllegalIndex);
@@ -121,7 +120,7 @@ namespace
 			if (codepoint == 0x00FF) return 0x0178; // y diaeresis
 			if (codepoint == 0x00DF) return 0x1E9E; // sharp s
 
-			for (const WesternLatinCasePair& pair : WESTERN_LATIN_CASE_PAIRS)
+			for (const WesternLatinCasePair &pair : WESTERN_LATIN_CASE_PAIRS)
 			{
 				if (pair.lower == codepoint) return pair.upper;
 			}
@@ -136,7 +135,7 @@ namespace
 			if (codepoint == 0x0178) return 0x00FF; // Y diaeresis
 			if (codepoint == 0x1E9E) return 0x00DF; // capital sharp s
 
-			for (const WesternLatinCasePair& pair : WESTERN_LATIN_CASE_PAIRS)
+			for (const WesternLatinCasePair &pair : WESTERN_LATIN_CASE_PAIRS)
 			{
 				if (pair.upper == codepoint) return pair.lower;
 			}
@@ -146,7 +145,7 @@ namespace
 	}
 }
 
-void bbe::Utf8String::initializeFromCharArr(const char* data)
+void bbe::Utf8String::initializeFromCharArr(const char *data)
 {
 	auto amountOfByte = strlen(data);
 	m_data.growIfNeeded(amountOfByte + 1);
@@ -159,13 +158,13 @@ bbe::Utf8String::Utf8String()
 	initializeFromCharArr("");
 }
 
-bbe::Utf8String::Utf8String(const char* data)
+bbe::Utf8String::Utf8String(const char *data)
 {
 	//UNTESTED
 	initializeFromCharArr(data);
 }
 
-bbe::Utf8String::Utf8String(const wchar_t* data)
+bbe::Utf8String::Utf8String(const wchar_t *data)
 {
 	std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
 	initializeFromCharArr(conv.to_bytes(data).c_str());
@@ -237,12 +236,12 @@ bbe::Utf8String::Utf8String(unsigned int number)
 	initializeFromCharArr(std::to_string(number).c_str());
 }
 
-bbe::Utf8String::Utf8String(const std::string& data)
+bbe::Utf8String::Utf8String(const std::string &data)
 {
 	initializeFromCharArr(data.c_str());
 }
 
-bbe::Utf8String::Utf8String(const std::initializer_list<char>& il)
+bbe::Utf8String::Utf8String(const std::initializer_list<char> &il)
 {
 	if (il.size() == 0)
 	{
@@ -258,7 +257,7 @@ bbe::Utf8String::Utf8String(const std::initializer_list<char>& il)
 	}
 }
 
-bbe::Utf8String bbe::Utf8String::format(const char* format, ...)
+bbe::Utf8String bbe::Utf8String::format(const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
@@ -268,7 +267,7 @@ bbe::Utf8String bbe::Utf8String::format(const char* format, ...)
 	return retVal;
 }
 
-bbe::Utf8String bbe::Utf8String::formatVa(const char* format, va_list va)
+bbe::Utf8String bbe::Utf8String::formatVa(const char *format, va_list va)
 {
 	va_list va2;
 	va_copy(va2, va);
@@ -283,12 +282,12 @@ bbe::Utf8String bbe::Utf8String::formatVa(const char* format, va_list va)
 	return retVal;
 }
 
-void bbe::Utf8String::serialize(bbe::ByteBuffer& buffer) const
+void bbe::Utf8String::serialize(bbe::ByteBuffer &buffer) const
 {
 	buffer.writeNullString(getRaw());
 }
 
-bbe::Utf8String bbe::Utf8String::deserialize(bbe::ByteBufferSpan& buffer)
+bbe::Utf8String bbe::Utf8String::deserialize(bbe::ByteBufferSpan &buffer)
 {
 	return bbe::Utf8String(buffer.readNullString());
 }
@@ -310,28 +309,27 @@ bbe::Utf8String bbe::Utf8String::fromCodePoint(int32_t codePoint)
 	else if (codePoint <= 0x7FF)
 	{
 		// 2-byte: 110xxxxx 10xxxxxx
-		c[0] = static_cast<char>((codePoint >> 6)         | 0b11000000);
+		c[0] = static_cast<char>((codePoint >> 6) | 0b11000000);
 		c[1] = static_cast<char>((codePoint & 0b00111111) | 0b10000000);
 	}
 	else if (codePoint <= 0xFFFF)
 	{
 		// 3-byte: 1110xxxx 10xxxxxx 10xxxxxx
-		c[0] = static_cast<char>(( codePoint >> 12)               | 0b11100000);
-		c[1] = static_cast<char>(((codePoint >>  6) & 0b00111111) | 0b10000000);
-		c[2] = static_cast<char>(( codePoint        & 0b00111111) | 0b10000000);
+		c[0] = static_cast<char>((codePoint >> 12) | 0b11100000);
+		c[1] = static_cast<char>(((codePoint >> 6) & 0b00111111) | 0b10000000);
+		c[2] = static_cast<char>((codePoint & 0b00111111) | 0b10000000);
 	}
 	else
 	{
 		// 4-byte: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-		c[0] = static_cast<char>(( codePoint >> 18)               | 0b11110000);
+		c[0] = static_cast<char>((codePoint >> 18) | 0b11110000);
 		c[1] = static_cast<char>(((codePoint >> 12) & 0b00111111) | 0b10000000);
-		c[2] = static_cast<char>(((codePoint >>  6) & 0b00111111) | 0b10000000);
-		c[3] = static_cast<char>(( codePoint        & 0b00111111) | 0b10000000);
+		c[2] = static_cast<char>(((codePoint >> 6) & 0b00111111) | 0b10000000);
+		c[3] = static_cast<char>((codePoint & 0b00111111) | 0b10000000);
 	}
 
 	return bbe::Utf8String(c);
 }
-
 
 bbe::Utf8String bbe::Utf8String::toHex(uint32_t value)
 {
@@ -339,7 +337,7 @@ bbe::Utf8String bbe::Utf8String::toHex(uint32_t value)
 	// TODO this implementation is probably quite wasteful.
 	bbe::Utf8String retVal = "";
 
-	constexpr const char* hexDigits = "0123456789ABCDEF";
+	constexpr const char *hexDigits = "0123456789ABCDEF";
 
 	if (value == 0)
 	{
@@ -356,17 +354,17 @@ bbe::Utf8String bbe::Utf8String::toHex(uint32_t value)
 	return retVal;
 }
 
-bool bbe::Utf8String::operator==(const Utf8String& other) const
+bool bbe::Utf8String::operator==(const Utf8String &other) const
 {
 	return strcmp(getRaw(), other.getRaw()) == 0;
 }
-bool bbe::Utf8String::operator==(const char*       other) const
+bool bbe::Utf8String::operator==(const char *other) const
 {
 	return strcmp(getRaw(), other) == 0;
 }
 namespace bbe
 {
-	bool operator==(const char* arr, const bbe::Utf8String& string)
+	bool operator==(const char *arr, const bbe::Utf8String &string)
 	{
 		return strcmp(arr, string.getRaw()) == 0;
 	}
@@ -375,8 +373,8 @@ namespace bbe
 bbe::Utf8StringView::Utf8StringView()
 {
 }
-bbe::Utf8StringView::Utf8StringView(const Utf8String& string, std::size_t start, std::size_t end)
-	:m_pstring(&string), m_start(start), m_end(end)
+bbe::Utf8StringView::Utf8StringView(const Utf8String &string, std::size_t start, std::size_t end)
+	: m_pstring(&string), m_start(start), m_end(end)
 {
 	const std::size_t length = utf8len(m_pstring->getRaw());
 	if (m_start > length)
@@ -400,7 +398,7 @@ std::size_t bbe::Utf8StringView::getLengthBytes() const
 {
 	const std::size_t end = getEnd();
 	std::size_t retVal = 0;
-	const char* cPtr = &(*m_pstring)[m_start];
+	const char *cPtr = &(*m_pstring)[m_start];
 	for (size_t i = m_start; i < end; i++)
 	{
 		// TODO: Use iterator.
@@ -411,29 +409,31 @@ std::size_t bbe::Utf8StringView::getLengthBytes() const
 	return retVal;
 }
 
-bool bbe::Utf8String::operator!=(const Utf8String& other) const
+bool bbe::Utf8String::operator!=(const Utf8String &other) const
 {
 	return strcmp(getRaw(), other.getRaw()) != 0;
 }
-bool bbe::Utf8String::operator!=(const char*       other) const
+bool bbe::Utf8String::operator!=(const char *other) const
 {
 	return strcmp(getRaw(), other) != 0;
 }
-namespace bbe{
-	bool operator!=(const char* arr, const bbe::Utf8String& string)
+namespace bbe
+{
+	bool operator!=(const char *arr, const bbe::Utf8String &string)
 	{
 		return strcmp(arr, string.getRaw()) != 0;
 	}
 }
 
-namespace bbe{
-	std::ostream& operator<<(std::ostream &os, const bbe::Utf8String &string)
+namespace bbe
+{
+	std::ostream &operator<<(std::ostream &os, const bbe::Utf8String &string)
 	{
 		return os << string.getRaw();
 	}
 }
 
-bbe::Utf8String bbe::Utf8String::operator+(const Utf8String& other) const
+bbe::Utf8String bbe::Utf8String::operator+(const Utf8String &other) const
 {
 	//UNTESTED
 	Utf8String retVal = *this;
@@ -441,7 +441,7 @@ bbe::Utf8String bbe::Utf8String::operator+(const Utf8String& other) const
 	return retVal;
 }
 
-bbe::Utf8String bbe::Utf8String::operator+(const char* other) const
+bbe::Utf8String bbe::Utf8String::operator+(const char *other) const
 {
 	//UNTESTED
 	return operator+(Utf8String(other));
@@ -501,62 +501,63 @@ bbe::Utf8String bbe::Utf8String::operator+(unsigned int number) const
 	return operator+(Utf8String(number));
 }
 
-namespace bbe{
-	bbe::Utf8String operator+(const char* other, const bbe::Utf8String& string)
+namespace bbe
+{
+	bbe::Utf8String operator+(const char *other, const bbe::Utf8String &string)
 	{
 		//UNTESTED
 		return bbe::Utf8String(other) + string;
 	}
 
-	bbe::Utf8String operator+(double number, const bbe::Utf8String& string)
+	bbe::Utf8String operator+(double number, const bbe::Utf8String &string)
 	{
 		//UNTESTED
 		return bbe::Utf8String(number) + string;
 	}
 
-	bbe::Utf8String operator+(int number, const bbe::Utf8String& string)
+	bbe::Utf8String operator+(int number, const bbe::Utf8String &string)
 	{
 		//UNTESTED
 		return bbe::Utf8String(number) + string;
 	}
 
-	bbe::Utf8String operator+(long long number, const bbe::Utf8String& string)
+	bbe::Utf8String operator+(long long number, const bbe::Utf8String &string)
 	{
 		//UNTESTED
 		return bbe::Utf8String(number) + string;
 	}
 
-	bbe::Utf8String operator+(long double number, const bbe::Utf8String& string)
+	bbe::Utf8String operator+(long double number, const bbe::Utf8String &string)
 	{
 		//UNTESTED
 		return bbe::Utf8String(number) + string;
 	}
 
-	bbe::Utf8String operator+(float number, const bbe::Utf8String& string)
+	bbe::Utf8String operator+(float number, const bbe::Utf8String &string)
 	{
 		//UNTESTED
 		return bbe::Utf8String(number) + string;
 	}
 
-	bbe::Utf8String operator+(unsigned long long number, const bbe::Utf8String& string)
+	bbe::Utf8String operator+(unsigned long long number, const bbe::Utf8String &string)
 	{
 		//UNTESTED
 		return bbe::Utf8String(number) + string;
 	}
 
-	bbe::Utf8String operator+(unsigned long number, const bbe::Utf8String& string)
+	bbe::Utf8String operator+(unsigned long number, const bbe::Utf8String &string)
 	{
 		//UNTESTED
 		return bbe::Utf8String(number) + string;
 	}
 
-	bbe::Utf8String operator+(long number, const bbe::Utf8String& string)
+	bbe::Utf8String operator+(long number, const bbe::Utf8String &string)
 	{
 		//UNTESTED
 		return bbe::Utf8String(number) + string;
 	}
 
-	bbe::Utf8String operator+(unsigned int number, const bbe::Utf8String& string)
+	bbe::Utf8String operator+(unsigned int number, const bbe::Utf8String &string)
 	{
 		//UNTESTED
 		return bbe::Utf8String(number) + string;
@@ -574,7 +575,7 @@ bbe::Utf8String bbe::Utf8String::operator*(int32_t mult) const
 	return retVal;
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8String& other)
+bbe::Utf8String &bbe::Utf8String::operator+=(const bbe::Utf8String &other)
 {
 	const size_t oldLength = getLengthBytes();
 	const size_t totalLength = oldLength + other.getLengthBytes();
@@ -585,85 +586,85 @@ bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8String& other)
 	return *this;
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(const bbe::Utf8StringView& other)
+bbe::Utf8String &bbe::Utf8String::operator+=(const bbe::Utf8StringView &other)
 {
 	const size_t oldLength = getLengthBytes();
 	const size_t otherLength = other.getLengthBytes();
 	const size_t totalLength = oldLength + otherLength;
 	m_data.growIfNeeded(totalLength + 1);
-	const char* otherRaw = utf8PointerAtIndex(other.m_pstring->getRaw(), other.m_start);
+	const char *otherRaw = utf8PointerAtIndex(other.m_pstring->getRaw(), other.m_start);
 	memmove(getRaw() + oldLength, otherRaw, otherLength);
 	getRaw()[totalLength] = 0;
 
 	return *this;
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(const std::string& other)
+bbe::Utf8String &bbe::Utf8String::operator+=(const std::string &other)
 {
 	return operator+=(bbe::Utf8String(other));
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(const char* other)
+bbe::Utf8String &bbe::Utf8String::operator+=(const char *other)
 {
 	//UNTESTED
 	return operator+=(bbe::Utf8String(other));
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(char c)
+bbe::Utf8String &bbe::Utf8String::operator+=(char c)
 {
 	//UNTESTED
 	return operator+=(bbe::Utf8String(c));
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(double number)
+bbe::Utf8String &bbe::Utf8String::operator+=(double number)
 {
 	//UNTESTED
 	return operator+=(bbe::Utf8String(number));
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(int number)
+bbe::Utf8String &bbe::Utf8String::operator+=(int number)
 {
 	//UNTESTED
 	return operator+=(bbe::Utf8String(number));
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(long long number)
+bbe::Utf8String &bbe::Utf8String::operator+=(long long number)
 {
 	//UNTESTED
 	return operator+=(bbe::Utf8String(number));
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(long double number)
+bbe::Utf8String &bbe::Utf8String::operator+=(long double number)
 {
 	//UNTESTED
 	return operator+=(bbe::Utf8String(number));
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(float number)
+bbe::Utf8String &bbe::Utf8String::operator+=(float number)
 {
 	//UNTESTED
 	return operator+=(bbe::Utf8String(number));
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(unsigned long long number)
+bbe::Utf8String &bbe::Utf8String::operator+=(unsigned long long number)
 {
 	//UNTESTED
 	return operator+=(bbe::Utf8String(number));
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(unsigned long number)
+bbe::Utf8String &bbe::Utf8String::operator+=(unsigned long number)
 {
 	//UNTESTED
 	return operator+=(bbe::Utf8String(number));
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(long number)
+bbe::Utf8String &bbe::Utf8String::operator+=(long number)
 {
 	//UNTESTED
 	return operator+=(bbe::Utf8String(number));
 }
 
-bbe::Utf8String& bbe::Utf8String::operator+=(unsigned int number)
+bbe::Utf8String &bbe::Utf8String::operator+=(unsigned int number)
 {
 	//UNTESTED
 	return operator+=(bbe::Utf8String(number));
@@ -731,8 +732,8 @@ void bbe::Utf8String::substringInPlace(size_t start, size_t end)
 	if (end == (size_t)-1 || end > length) end = length;
 	if (end < start) end = start;
 
-	const char* startPtr = utf8PointerAtIndex(m_data.get(), start);
-	const char* endPtr = utf8PointerAtIndex(m_data.get(), end);
+	const char *startPtr = utf8PointerAtIndex(m_data.get(), start);
+	const char *endPtr = utf8PointerAtIndex(m_data.get(), end);
 	const std::size_t sizeOfSubstringInByte = static_cast<std::size_t>(endPtr - startPtr);
 	auto raw = m_data.get();
 	memmove(raw, startPtr, sizeOfSubstringInByte);
@@ -744,7 +745,7 @@ bbe::Utf8StringView bbe::Utf8String::substringView(std::size_t start, std::size_
 	return bbe::Utf8StringView(*this, start, end);
 }
 
-size_t bbe::Utf8String::count(const Utf8String& countand) const
+size_t bbe::Utf8String::count(const Utf8String &countand) const
 {
 	const size_t countandLengthBytes = countand.getLengthBytes();
 	if (countandLengthBytes == 0)
@@ -762,13 +763,13 @@ size_t bbe::Utf8String::count(const Utf8String& countand) const
 	return amount;
 }
 
-size_t bbe::Utf8String::count(const char* countand) const
+size_t bbe::Utf8String::count(const char *countand) const
 {
 	//UNTESTED
 	return count(bbe::Utf8String(countand));
 }
 
-bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String& splitAt, bool addEmpty) const
+bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String &splitAt, bool addEmpty) const
 {
 	//UNTESTED
 	//TODO this method is a little mess. Clean it up!
@@ -776,7 +777,7 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String&
 	{
 		auto splitWith = split(splitAt, true);
 		size_t empties = 0;
-		for (const bbe::String& s : splitWith)
+		for (const bbe::String &s : splitWith)
 		{
 			if (s == "") empties++;
 		}
@@ -784,7 +785,7 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String&
 
 		DynamicArray<Utf8String> retVal(splitWith.getLength() - empties);
 		size_t accessIndex = 0;
-		for (const bbe::String& s : splitWith)
+		for (const bbe::String &s : splitWith)
 		{
 			if (s != "")
 			{
@@ -835,7 +836,7 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const bbe::Utf8String&
 	return retVal;
 }
 
-bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const char* splitAt, bool addEmpty) const
+bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::split(const char *splitAt, bool addEmpty) const
 {
 	//UNTESTED
 	return split(bbe::Utf8String(splitAt), addEmpty);
@@ -855,13 +856,13 @@ bbe::DynamicArray<bbe::Utf8String> bbe::Utf8String::lines(bool addEmpty) const
 	return lines;
 }
 
-bool bbe::Utf8String::containsAny(const char* string) const
+bool bbe::Utf8String::containsAny(const char *string) const
 {
 	if (string == nullptr) bbe::Crash(bbe::Error::NullPointer);
 
 	for (auto it = getIterator(); it.valid(); ++it)
 	{
-		for (const char* s = string; *s; s = utf8GetNextChar(s))
+		for (const char *s = string; *s; s = utf8GetNextChar(s))
 		{
 			if (it.getCodepoint() == utf8CharToCodePoint(s))
 			{
@@ -872,7 +873,7 @@ bool bbe::Utf8String::containsAny(const char* string) const
 	return false;
 }
 
-bool bbe::Utf8String::contains(const char* string) const
+bool bbe::Utf8String::contains(const char *string) const
 {
 	//UNTESTED
 	return strstr(getRaw(), string) != nullptr;
@@ -884,12 +885,12 @@ bool bbe::Utf8String::contains(const Utf8String &string) const
 	return contains(string.getRaw());
 }
 
-bool bbe::Utf8String::containsIgnoreCase(const char* string) const
+bool bbe::Utf8String::containsIgnoreCase(const char *string) const
 {
 	return toLowerCase().contains(bbe::Utf8String(string).toLowerCase());
 }
 
-bool bbe::Utf8String::containsIgnoreCase(const Utf8String& string) const
+bool bbe::Utf8String::containsIgnoreCase(const Utf8String &string) const
 {
 	return containsIgnoreCase(string.getRaw());
 }
@@ -918,11 +919,11 @@ bbe::Utf8String bbe::Utf8String::hardBreakEvery(int32_t x) const
 	return retVal;
 }
 
-bool bbe::Utf8String::isTextAtLocation(const char* string, size_t index) const
+bool bbe::Utf8String::isTextAtLocation(const char *string, size_t index) const
 {
 	if (string == nullptr) bbe::Crash(bbe::Error::NullPointer);
 
-	const char* location = utf8PointerAtIndexOrNull(getRaw(), index);
+	const char *location = utf8PointerAtIndexOrNull(getRaw(), index);
 	if (location == nullptr) return false;
 
 	const std::size_t searchBytes = strlen(string);
@@ -939,17 +940,17 @@ bool bbe::Utf8String::isTextAtLocation(const char* string, size_t index) const
 	return true;
 }
 
-bool bbe::Utf8String::startsWith(const char* string) const
+bool bbe::Utf8String::startsWith(const char *string) const
 {
 	return isTextAtLocation(string, 0);
 }
 
-bool bbe::Utf8String::startsWith(const bbe::String& string) const
+bool bbe::Utf8String::startsWith(const bbe::String &string) const
 {
 	return startsWith(string.getRaw());
 }
 
-bool bbe::Utf8String::endsWith(const char* string) const
+bool bbe::Utf8String::endsWith(const char *string) const
 {
 	const size_t sLen = strlen(string);
 	const size_t thisLen = getLengthBytes();
@@ -960,21 +961,21 @@ bool bbe::Utf8String::endsWith(const char* string) const
 	return memcmp(getRaw() + thisLen - sLen, string, sLen) == 0;
 }
 
-int64_t bbe::Utf8String::search(const char* string, int64_t startIndex) const
+int64_t bbe::Utf8String::search(const char *string, int64_t startIndex) const
 {
 	if (startIndex < 0)
 	{
 		return -1;
 	}
 
-	const char* startPtr = utf8PointerAtIndexOrNull(getRaw(), static_cast<std::size_t>(startIndex));
+	const char *startPtr = utf8PointerAtIndexOrNull(getRaw(), static_cast<std::size_t>(startIndex));
 	if (startPtr == nullptr)
 	{
 		return -1;
 	}
 
-	const char* firstOcc = strstr(startPtr, string);
-	if(firstOcc == nullptr)
+	const char *firstOcc = strstr(startPtr, string);
+	if (firstOcc == nullptr)
 	{
 		return -1;
 	}
@@ -987,14 +988,14 @@ int64_t bbe::Utf8String::search(const Utf8String &string, int64_t startIndex) co
 	return bbe::Utf8String::search(string.getRaw(), startIndex);
 }
 
-int64_t bbe::Utf8String::searchLast(const char* string) const
+int64_t bbe::Utf8String::searchLast(const char *string) const
 {
 	const size_t needleLengthBytes = strlen(string);
 	const size_t thisLengthBytes = getLengthBytes();
 	if (needleLengthBytes == 0 || needleLengthBytes > thisLengthBytes) return -1;
 
-	const char* lastMatch = nullptr;
-	for (const char* ptr = getRaw(); *ptr != '\0'; ptr = utf8GetNextChar(ptr))
+	const char *lastMatch = nullptr;
+	for (const char *ptr = getRaw(); *ptr != '\0'; ptr = utf8GetNextChar(ptr))
 	{
 		if (static_cast<size_t>((getRaw() + thisLengthBytes) - ptr) < needleLengthBytes)
 		{
@@ -1020,7 +1021,7 @@ bool bbe::Utf8String::isNumber() const
 	bool dotFound = false;
 	for (; i < utf8len(getRaw()); i++)
 	{
-		const char& c = operator[](i);
+		const char &c = operator[](i);
 		if (c == '.')
 		{
 			if (dotFound) return false;
@@ -1058,19 +1059,17 @@ float bbe::Utf8String::toFloat() const
 	return strtof(getRaw(), nullptr);
 }
 
-const char& bbe::Utf8String::operator[](std::size_t index) const
+const char &bbe::Utf8String::operator[](std::size_t index) const
 {
 	return *utf8PointerAtIndex(getRaw(), index);
 }
 
-bool bbe::Utf8String::operator<(const bbe::Utf8String& other) const
+bool bbe::Utf8String::operator<(const bbe::Utf8String &other) const
 {
 	auto thisIterator = getIterator();
 	auto otherIterator = other.getIterator();
 
-	while (thisIterator.getCodepoint() == otherIterator.getCodepoint()
-		&& *thisIterator != '\0'
-		&& *otherIterator != '\0')
+	while (thisIterator.getCodepoint() == otherIterator.getCodepoint() && *thisIterator != '\0' && *otherIterator != '\0')
 	{
 		++thisIterator;
 		++otherIterator;
@@ -1084,13 +1083,13 @@ int32_t bbe::Utf8String::getCodepoint(size_t index) const
 	return utf8CharToCodePoint(&operator[](index));
 }
 
-char* bbe::Utf8String::getRaw()
+char *bbe::Utf8String::getRaw()
 {
 	//UNTESTED
 	return m_data.get();
 }
 
-const char* bbe::Utf8String::getRaw() const
+const char *bbe::Utf8String::getRaw() const
 {
 	//UNTESTED
 	return m_data.get();
@@ -1101,7 +1100,7 @@ bbe::Utf8Iterator bbe::Utf8String::getIterator() const
 	return Utf8Iterator(getRaw());
 }
 
-bbe::Utf8String bbe::Utf8String::replace(const Utf8String& searchString, const Utf8String& replaceString) const
+bbe::Utf8String bbe::Utf8String::replace(const Utf8String &searchString, const Utf8String &replaceString) const
 {
 	if (searchString == "") return *this;
 	if (searchString == replaceString) return *this;
@@ -1115,7 +1114,7 @@ bbe::Utf8String bbe::Utf8String::replace(const Utf8String& searchString, const U
 	{
 		retVal += substringView(lastFoundIndex, currentFoundIndex);
 		retVal += replaceString;
-		
+
 		currentFoundIndex += utf8len(searchString.getRaw());
 		lastFoundIndex = currentFoundIndex;
 	}
@@ -1194,7 +1193,7 @@ bbe::Utf8String bbe::Utf8String::leftFill(char c, size_t length)
 	return retVal;
 }
 
-bbe::Utf8String& bbe::Utf8String::append(const bbe::Utf8String& other)
+bbe::Utf8String &bbe::Utf8String::append(const bbe::Utf8String &other)
 {
 	const size_t oldLength = getLengthBytes();
 	size_t totalLength = oldLength + other.getLengthBytes();
@@ -1204,7 +1203,7 @@ bbe::Utf8String& bbe::Utf8String::append(const bbe::Utf8String& other)
 	return *this;
 }
 
-bbe::Utf8String& bbe::Utf8String::append(const bbe::Utf8String& other, size_t pos, size_t count)
+bbe::Utf8String &bbe::Utf8String::append(const bbe::Utf8String &other, size_t pos, size_t count)
 {
 	if (pos > other.getLength())
 	{
@@ -1217,12 +1216,12 @@ bbe::Utf8String& bbe::Utf8String::append(const bbe::Utf8String& other, size_t po
 	return append(view);
 }
 
-bbe::Utf8String& bbe::Utf8String::append(const char* s)
+bbe::Utf8String &bbe::Utf8String::append(const char *s)
 {
 	if (s == nullptr) bbe::Crash(bbe::Error::NullPointer);
 
 	size_t sLengthBytes = strlen(s);
-	const char* oldRaw = getRaw();
+	const char *oldRaw = getRaw();
 	const size_t oldLength = getLengthBytes();
 	const bool aliasesSelf = s >= oldRaw && s <= oldRaw + oldLength;
 	const size_t sourceOffset = aliasesSelf ? static_cast<size_t>(s - oldRaw) : 0;
@@ -1237,13 +1236,13 @@ bbe::Utf8String& bbe::Utf8String::append(const char* s)
 	return *this;
 }
 
-bbe::Utf8String& bbe::Utf8String::append(const char* s, size_t count)
+bbe::Utf8String &bbe::Utf8String::append(const char *s, size_t count)
 {
 	if (s == nullptr) bbe::Crash(bbe::Error::NullPointer);
 
 	size_t sLengthBytes = strlen(s);
 	size_t actualCount = std::min(count, sLengthBytes);
-	const char* oldRaw = getRaw();
+	const char *oldRaw = getRaw();
 	const size_t oldLength = getLengthBytes();
 	const bool aliasesSelf = s >= oldRaw && s <= oldRaw + oldLength;
 	const size_t sourceOffset = aliasesSelf ? static_cast<size_t>(s - oldRaw) : 0;
@@ -1258,7 +1257,7 @@ bbe::Utf8String& bbe::Utf8String::append(const char* s, size_t count)
 	return *this;
 }
 
-bbe::Utf8String& bbe::Utf8String::append(size_t count, char c)
+bbe::Utf8String &bbe::Utf8String::append(size_t count, char c)
 {
 	size_t totalLength = getLengthBytes() + count;
 	m_data.growIfNeeded(totalLength + 1); // +1 for null terminator
@@ -1267,13 +1266,13 @@ bbe::Utf8String& bbe::Utf8String::append(size_t count, char c)
 	return *this;
 }
 
-bbe::Utf8String& bbe::Utf8String::append(const bbe::Utf8StringView& view)
+bbe::Utf8String &bbe::Utf8String::append(const bbe::Utf8StringView &view)
 {
 	size_t otherLengthBytes = view.getLengthBytes();
 	const size_t oldLength = getLengthBytes();
 	size_t totalLength = oldLength + otherLengthBytes;
 	m_data.growIfNeeded(totalLength + 1); // +1 for null terminator
-	const char* otherRaw = utf8PointerAtIndex(view.m_pstring->getRaw(), view.m_start);
+	const char *otherRaw = utf8PointerAtIndex(view.m_pstring->getRaw(), view.m_start);
 	memmove(getRaw() + oldLength, otherRaw, otherLengthBytes);
 	getRaw()[totalLength] = '\0';
 	return *this;
@@ -1290,9 +1289,8 @@ std::wstring bbe::Utf8String::toStdWString() const
 	return converter.from_bytes(getRaw());
 }
 
-
 template<>
-uint32_t bbe::hash(const bbe::String & t)
+uint32_t bbe::hash(const bbe::String &t)
 {
 	//UNTESTED
 	//This function is based on the djb2 hashing algorithm by Dan Bernstein

@@ -3,10 +3,9 @@
 
 extern bbe::List<bbe::Font> fonts;
 
-BrotDownTokenizer::BrotDownTokenizer(const bbe::String& parentPath)
+BrotDownTokenizer::BrotDownTokenizer(const bbe::String &parentPath)
 	: parentPath(parentPath)
 {
-
 }
 
 struct Array
@@ -15,15 +14,15 @@ struct Array
 	bbe::List<bbe::String> targets;
 };
 
-bbe::List<size_t> getValidIndices(const bbe::List<Array>& arrays, const Token& token, const bbe::String& identifier)
+bbe::List<size_t> getValidIndices(const bbe::List<Array> &arrays, const Token &token, const bbe::String &identifier)
 {
 	bbe::List<size_t> retVal;
 
-	for (const Array& arr : arrays)
+	for (const Array &arr : arrays)
 	{
 		if (identifier == arr.name)
 		{
-			for (const bbe::String& target : arr.targets)
+			for (const bbe::String &target : arr.targets)
 			{
 				retVal.addList(token.getRenderObjectIndices({ target }));
 			}
@@ -36,9 +35,9 @@ bbe::List<size_t> getValidIndices(const bbe::List<Array>& arrays, const Token& t
 }
 
 #define ForEachValidIdentifiers(identifier) \
-for(size_t index : getValidIndices(arrays, currentToken, (identifier)))
+	for (size_t index : getValidIndices(arrays, currentToken, (identifier)))
 
-void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
+void BrotDownTokenizer::tokenize(const bbe::String &text, const bbe::Font &font)
 {
 	const bbe::String noTilde = text.replace("~", "");
 	const bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(bbe::Vector2(0, 0), noTilde);
@@ -97,7 +96,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 			BBELOGLN("COMMAND: " << command);
 
 			const auto commandTokens = command.split(" ", false);
-			for (const bbe::String& token : commandTokens)
+			for (const bbe::String &token : commandTokens)
 			{
 				BBELOGLN("\t" << token);
 			}
@@ -173,8 +172,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 								commandTokens[4].toFloat(),
 								commandTokens[5].toFloat(),
 								commandTokens[6].toFloat(),
-								commandTokens[7].toFloat()
-							));
+								commandTokens[7].toFloat()));
 						}
 						else
 						{
@@ -182,8 +180,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 								commandTokens[2].toFloat(),
 								commandTokens[3].toFloat(),
 								commandTokens[4].toFloat(),
-								commandTokens[5].toFloat()
-							));
+								commandTokens[5].toFloat()));
 						}
 					}
 					commandRecognized = true;
@@ -194,14 +191,13 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 					{
 						currentToken.renderObjects[index].animations.add(MoveAnimation(
 							currentToken.renderObjects[index].x + commandTokens[2].toFloat(),
-							currentToken.renderObjects[index].y + commandTokens[3].toFloat()
-						));
+							currentToken.renderObjects[index].y + commandTokens[3].toFloat()));
 					}
 					commandRecognized = true;
 				}
 				else if (commandTokens[0] == "StartAnim")
 				{
-					if (commandTokens[1] == "None")   startAnim = StartAnimation::NONE;
+					if (commandTokens[1] == "None") startAnim = StartAnimation::NONE;
 					else if (commandTokens[1] == "ZoomIn") startAnim = StartAnimation::ZOOM_IN;
 					else bbe::Crash(bbe::Error::IllegalArgument);
 
@@ -230,8 +226,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 						currentToken.renderObjects[index].fillColor = bbe::Color(
 							commandTokens[2].toFloat(),
 							commandTokens[3].toFloat(),
-							commandTokens[4].toFloat()
-						);
+							commandTokens[4].toFloat());
 					}
 					commandRecognized = true;
 				}
@@ -242,8 +237,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 						currentToken.renderObjects[index].outlineColor = bbe::Color(
 							commandTokens[2].toFloat(),
 							commandTokens[3].toFloat(),
-							commandTokens[4].toFloat()
-						);
+							commandTokens[4].toFloat());
 					}
 					commandRecognized = true;
 				}
@@ -260,8 +254,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 							currentToken.renderObjects[index].textColor = bbe::Color(
 								commandTokens[2].toFloat(),
 								commandTokens[3].toFloat(),
-								commandTokens[4].toFloat()
-							);
+								commandTokens[4].toFloat());
 						}
 					}
 					commandRecognized = true;
@@ -280,13 +273,11 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 					bbe::Vector3 c1 = bbe::Vector3(
 						commandTokens[2].toFloat(),
 						commandTokens[3].toFloat(),
-						commandTokens[4].toFloat()
-					);
+						commandTokens[4].toFloat());
 					bbe::Vector3 c2 = bbe::Vector3(
 						commandTokens[5].toFloat(),
 						commandTokens[6].toFloat(),
-						commandTokens[7].toFloat()
-					);
+						commandTokens[7].toFloat());
 					ForEachValidIdentifiers(commandTokens[1])
 					{
 						float val = currentToken.renderObjects[index].text.toFloat();
@@ -330,9 +321,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 					currentToken.animationMultiplier = commandTokens[1].toFloat();
 					commandRecognized = true;
 				}
-				else if (commandTokens[0] == "Sort"
-					|| commandTokens[0] == "Shuffle"
-					|| commandTokens[0] == "Partition")
+				else if (commandTokens[0] == "Sort" || commandTokens[0] == "Shuffle" || commandTokens[0] == "Partition")
 				{
 					bbe::List<size_t> indices = getValidIndices(arrays, currentToken, commandTokens[1]);
 					const bbe::List<size_t> unsortedIndices = indices;
@@ -341,9 +330,8 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 					const bbe::Vector2 diffPos = endPos - startPos;
 					if (commandTokens[0] == "Sort")
 					{
-						indices.sort([&](const size_t& a, const size_t& b) {
-							return currentToken.renderObjects[a].text.toFloat() < currentToken.renderObjects[b].text.toFloat();
-							});
+						indices.sort([&](const size_t &a, const size_t &b)
+									 { return currentToken.renderObjects[a].text.toFloat() < currentToken.renderObjects[b].text.toFloat(); });
 					}
 					else if (commandTokens[0] == "Shuffle")
 					{
@@ -351,9 +339,8 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 					}
 					else if (commandTokens[0] == "Partition")
 					{
-						indices.partition([&](const size_t& i) {
-							return currentToken.renderObjects[i].text.toLong() % 2 == 0;
-							});
+						indices.partition([&](const size_t &i)
+										  { return currentToken.renderObjects[i].text.toLong() % 2 == 0; });
 					}
 
 					for (size_t index = 0; index < indices.getLength(); index++)
@@ -377,22 +364,15 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 				}
 				if (!commandRecognized &&
 					commandTokens.getLength() > accessIndex &&
-					(
-						commandTokens[accessIndex] == "Box"
-						|| commandTokens[accessIndex] == "Circle"
-						|| commandTokens[accessIndex] == "Text"
-						|| commandTokens[accessIndex] == "Line"
-						|| commandTokens[accessIndex] == "Arrow"
-						|| commandTokens[accessIndex] == "Image"
-						))
+					(commandTokens[accessIndex] == "Box" || commandTokens[accessIndex] == "Circle" || commandTokens[accessIndex] == "Text" || commandTokens[accessIndex] == "Line" || commandTokens[accessIndex] == "Arrow" || commandTokens[accessIndex] == "Image"))
 				{
 					RenderType rt = RenderType::UNKNOWN;
-					if (commandTokens[accessIndex] == "Box")    rt = RenderType::BOX;
+					if (commandTokens[accessIndex] == "Box") rt = RenderType::BOX;
 					else if (commandTokens[accessIndex] == "Circle") rt = RenderType::CIRCLE;
-					else if (commandTokens[accessIndex] == "Text")   rt = RenderType::TEXT;
-					else if (commandTokens[accessIndex] == "Line")   rt = RenderType::LINE;
-					else if (commandTokens[accessIndex] == "Arrow")  rt = RenderType::ARROW;
-					else if (commandTokens[accessIndex] == "Image")  rt = RenderType::IMAGE;
+					else if (commandTokens[accessIndex] == "Text") rt = RenderType::TEXT;
+					else if (commandTokens[accessIndex] == "Line") rt = RenderType::LINE;
+					else if (commandTokens[accessIndex] == "Arrow") rt = RenderType::ARROW;
+					else if (commandTokens[accessIndex] == "Image") rt = RenderType::IMAGE;
 					else bbe::Crash(bbe::Error::IllegalArgument);
 
 					accessIndex++;
@@ -435,9 +415,10 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 						accessIndex++;
 					}
 
-					for (const bbe::String& autoArr : autoArrs)
+					for (const bbe::String &autoArr : autoArrs)
 					{
-						Array* arr = arrays.find([&](const Array& arr) { return arr.name == autoArr; });
+						Array *arr = arrays.find([&](const Array &arr)
+												 { return arr.name == autoArr; });
 						if (arr)
 						{
 							arr->targets.add(name);
@@ -541,7 +522,7 @@ void BrotDownTokenizer::tokenize(const bbe::String& text, const bbe::Font& font)
 	currentToken.submit(tokens);
 }
 
-void BrotDownTokenizer::determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues)
+void BrotDownTokenizer::determineTokenTypes(const bbe::List<bbe::String> &additionalTypes, const bbe::List<bbe::String> &additionalValues)
 {
 	for (size_t i = 0; i < tokens.getLength(); i++)
 	{

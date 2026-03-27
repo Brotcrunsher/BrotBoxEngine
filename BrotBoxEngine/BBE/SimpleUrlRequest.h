@@ -25,34 +25,34 @@ namespace bbe
 			long responseCode;
 		};
 
-		UrlRequestResult urlRequest(const bbe::String& url, const bbe::List<bbe::String>& headerFields = {}, const bbe::String& postData = "", bool addTrailingNul = true, bool verbose = false);
-		std::future<UrlRequestResult> urlRequestAsync(const bbe::String& url, const bbe::List<bbe::String>& headerFields = {}, const bbe::String& postData = "", bool addTrailingNul = true, bool verbose = false);
+		UrlRequestResult urlRequest(const bbe::String &url, const bbe::List<bbe::String> &headerFields = {}, const bbe::String &postData = "", bool addTrailingNul = true, bool verbose = false);
+		std::future<UrlRequestResult> urlRequestAsync(const bbe::String &url, const bbe::List<bbe::String> &headerFields = {}, const bbe::String &postData = "", bool addTrailingNul = true, bool verbose = false);
 
 		bbe::simpleUrlRequest::UrlRequestResult urlFile(
-			const bbe::String& url,
-			const bbe::List<bbe::String>& headerFields = {},
-			const std::map<bbe::String, bbe::String>& formFields = {},
-			const bbe::ByteBuffer* fileData = nullptr,
-			const bbe::String& fileFieldName = "",
-			const bbe::String& fileName = "",
+			const bbe::String &url,
+			const bbe::List<bbe::String> &headerFields = {},
+			const std::map<bbe::String, bbe::String> &formFields = {},
+			const bbe::ByteBuffer *fileData = nullptr,
+			const bbe::String &fileFieldName = "",
+			const bbe::String &fileName = "",
 			bool addTrailingNul = true,
 			bool verbose = false);
 		std::future<UrlRequestResult> urlFileAsync(
-			const bbe::String& url,
-			const bbe::List<bbe::String>& headerFields = {},
-			const std::map<bbe::String, bbe::String>& formFields = {},
-			const bbe::ByteBuffer* fileData = nullptr,
-			const bbe::String& fileFieldName = "",
-			const bbe::String& fileName = "",
+			const bbe::String &url,
+			const bbe::List<bbe::String> &headerFields = {},
+			const std::map<bbe::String, bbe::String> &formFields = {},
+			const bbe::ByteBuffer *fileData = nullptr,
+			const bbe::String &fileFieldName = "",
+			const bbe::String &fileName = "",
 			bool addTrailingNul = true,
 			bool verbose = false);
-		
-		std::optional<bbe::List<char>> decryptXChaCha(const bbe::List<char>& data, const bbe::ByteBuffer& key, bool addTrailingNul = true);
+
+		std::optional<bbe::List<char>> decryptXChaCha(const bbe::List<char> &data, const bbe::ByteBuffer &key, bool addTrailingNul = true);
 
 		template<typename T>
-		void jsonElement(T* value, const nlohmann::json& json, const char* jsonPath, int32_t depth = 0)
+		void jsonElement(T *value, const nlohmann::json &json, const char *jsonPath, int32_t depth = 0)
 		{
-			const char* nextSlash = strstr(jsonPath, "/");
+			const char *nextSlash = strstr(jsonPath, "/");
 			bbe::String token;
 			if (!nextSlash) token = jsonPath;
 			else token.append(jsonPath, nextSlash - jsonPath);
@@ -83,7 +83,6 @@ namespace bbe
 				}
 			}
 
-
 			if (!nextSlash)
 			{
 				try
@@ -111,7 +110,7 @@ namespace bbe
 						}
 					}
 				}
-				catch (std::exception& e)
+				catch (std::exception &e)
 				{
 					BBELOGLN("Failed to get Value in jsonElement: " << e.what());
 				}
@@ -133,7 +132,7 @@ namespace bbe
 		}
 
 		template<typename... Pairs>
-		void urlRequestJsonElements(const bbe::String& url, std::mutex* mutex, std::function<void()> andThen, Pairs&&... pairs)
+		void urlRequestJsonElements(const bbe::String &url, std::mutex *mutex, std::function<void()> andThen, Pairs &&...pairs)
 		{
 			auto request = urlRequest(url);
 			if (request.responseCode == 200)
@@ -143,27 +142,28 @@ namespace bbe
 				{
 					json = nlohmann::json::parse(request.dataContainer.getRaw());
 				}
-				catch (std::exception& e)
+				catch (std::exception &e)
 				{
 					BBELOGLN("Failed to parse json in urlRequestJsonElement: " << e.what());
 					return;
 				}
 
 				// We do all the calculations on local copies first so that we can hold the lock as briefly as possible.
-				auto computeLocalCopies = [&](auto&& pair)
-					{
-						using T = std::remove_pointer_t<decltype(pair.first)>;
-						T local;
-						jsonElement(&local, json, pair.second);
-						return std::make_pair(pair.first, std::move(local)); // Pair of where to write the value later, and the value itself.
-					};
+				auto computeLocalCopies = [&](auto &&pair)
+				{
+					using T = std::remove_pointer_t<decltype(pair.first)>;
+					T local;
+					jsonElement(&local, json, pair.second);
+					return std::make_pair(pair.first, std::move(local)); // Pair of where to write the value later, and the value itself.
+				};
 				// Invoke that monster for all pairs...
 				auto localValues = std::make_tuple(computeLocalCopies(pairs)...);
 
 				std::unique_lock<std::mutex> ul;
 				if (mutex) ul = std::unique_lock(*mutex);
 				// I can feel the insanity rising...
-				std::apply([](auto&&... p) { ((*(p.first) = std::move(p.second)), ...); }, localValues);
+				std::apply([](auto &&...p)
+						   { ((*(p.first) = std::move(p.second)), ...); }, localValues);
 
 				if (andThen)
 				{
@@ -177,7 +177,7 @@ namespace bbe
 		}
 
 		template<typename... Pairs>
-		std::future<void> urlRequestJsonElementsAsync(const bbe::String& url, std::mutex* mutex, std::function<void()> andThen, Pairs&&... pairs)
+		std::future<void> urlRequestJsonElementsAsync(const bbe::String &url, std::mutex *mutex, std::function<void()> andThen, Pairs &&...pairs)
 		{
 			return bbe::async(&urlRequestJsonElements<Pairs...>, url, mutex, andThen, pairs...);
 		}
@@ -194,13 +194,13 @@ namespace bbe
 			SocketRequestXChaChaCode code = SocketRequestXChaChaCode::SUCCESS;
 			bbe::List<char> dataContainer;
 		};
-		SocketRequestXChaChaRet socketRequestXChaCha(const bbe::String& url, uint16_t port, const bbe::ByteBuffer& key, bool addTrailingNul = true, bool verbose = false);
-		std::future<SocketRequestXChaChaRet> socketRequestXChaChaAsync(bbe::String /*copy*/ url, uint16_t port, const bbe::ByteBuffer& key, bool addTrailingNul = true, bool verbose = false);
-		
-		bbe::List<bbe::String> resolveDomain(const bbe::String& domain);
-		bbe::List<bbe::String> resolveDomains(const bbe::List<bbe::String>& domains);
-		bbe::String firewallBlockString(const bbe::List<bbe::String>& domains);
-		void firewallBlockDomains(const bbe::String& ruleName, const bbe::List<bbe::String>& domains);
+		SocketRequestXChaChaRet socketRequestXChaCha(const bbe::String &url, uint16_t port, const bbe::ByteBuffer &key, bool addTrailingNul = true, bool verbose = false);
+		std::future<SocketRequestXChaChaRet> socketRequestXChaChaAsync(bbe::String /*copy*/ url, uint16_t port, const bbe::ByteBuffer &key, bool addTrailingNul = true, bool verbose = false);
+
+		bbe::List<bbe::String> resolveDomain(const bbe::String &domain);
+		bbe::List<bbe::String> resolveDomains(const bbe::List<bbe::String> &domains);
+		bbe::String firewallBlockString(const bbe::List<bbe::String> &domains);
+		void firewallBlockDomains(const bbe::String &ruleName, const bbe::List<bbe::String> &domains);
 #endif
 	}
 }

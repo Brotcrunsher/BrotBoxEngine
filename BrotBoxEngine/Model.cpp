@@ -9,13 +9,12 @@ bbe::Model::Model()
 	// Do nothing.
 }
 
-bbe::Model::Model(const bbe::List<bbe::PosNormalPair>& vertices, const bbe::List<uint32_t>& indices) :
-	m_vertices(vertices),
-	m_indices(indices)
+bbe::Model::Model(const bbe::List<bbe::PosNormalPair> &vertices, const bbe::List<uint32_t> &indices) : m_vertices(vertices),
+																									   m_indices(indices)
 {
 }
 
-void bbe::Model::add(const bbe::List<bbe::PosNormalPair>& vertices, const bbe::List<uint32_t>& indices)
+void bbe::Model::add(const bbe::List<bbe::PosNormalPair> &vertices, const bbe::List<uint32_t> &indices)
 {
 	m_vertices.addList(vertices);
 	m_indices.addList(indices);
@@ -31,16 +30,16 @@ size_t bbe::Model::getAmountOfVertices() const
 	return m_vertices.getLength();
 }
 
-bbe::Model bbe::Model::finalize(const bbe::Vector2i& textureDimensions) const
+bbe::Model bbe::Model::finalize(const bbe::Vector2i &textureDimensions) const
 {
 	bbe::Model copy = *this;
-	for (bbe::PosNormalPair& vertex : copy.m_vertices)
+	for (bbe::PosNormalPair &vertex : copy.m_vertices)
 	{
 		vertex.uvCoord.x /= textureDimensions.x;
 		vertex.uvCoord.y /= textureDimensions.y;
 	}
 
-	for (bbe::Vector2& bakingPos : copy.m_bakingUvs)
+	for (bbe::Vector2 &bakingPos : copy.m_bakingUvs)
 	{
 		bakingPos.x /= textureDimensions.x;
 		bakingPos.y /= textureDimensions.y;
@@ -64,7 +63,7 @@ bbe::Model bbe::Model::toBakingModel() const
 	return copy;
 }
 
-bbe::Model bbe::Model::fromObj(const bbe::String& obj)
+bbe::Model bbe::Model::fromObj(const bbe::String &obj)
 {
 	const bbe::DynamicArray<bbe::String> lines = obj.split("\n", false);
 	bbe::List<bbe::Vector3> rawVertices;
@@ -87,8 +86,7 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 			rawVertices.add(bbe::Vector3(
 				tokens[1].toFloat(),
 				tokens[3].toFloat(),
-				tokens[2].toFloat()
-			));
+				tokens[2].toFloat()));
 		}
 		else if (tokens[0] == "vn")
 		{
@@ -96,16 +94,14 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 			rawNormals.add(bbe::Vector3(
 				tokens[1].toFloat(),
 				tokens[3].toFloat(),
-				tokens[2].toFloat()
-			));
+				tokens[2].toFloat()));
 		}
 		else if (tokens[0] == "vt")
 		{
 			if (tokens.getLength() < 3) bbe::Crash(bbe::Error::IllegalState);
 			rawUvCoords.add(bbe::Vector2(
 				tokens[1].toFloat(),
-				tokens[2].toFloat()
-			));
+				tokens[2].toFloat()));
 		}
 		else if (tokens[0] == "f")
 		{
@@ -125,35 +121,33 @@ bbe::Model bbe::Model::fromObj(const bbe::String& obj)
 	bbe::List<uint32_t> indices;
 	bbe::HashMap<bbe::String, int32_t> seenFaceVertices;
 
-	for (const bbe::DynamicArray<bbe::String>& face : rawFaces)
+	for (const bbe::DynamicArray<bbe::String> &face : rawFaces)
 	{
 		// A face with less than 3 (4 with the prefix) tokens doesn't make sense.
 		if (face.getLength() < 4) bbe::Crash(bbe::Error::IllegalState);
 
-		for (size_t i = 1; i<face.getLength(); i++)
+		for (size_t i = 1; i < face.getLength(); i++)
 		{
-			const bbe::String& vertexInfo = face[i];
+			const bbe::String &vertexInfo = face[i];
 			if (i >= 4)
 			{
 				// Prepare a triangle with the previous indices
 				indices.add(indices.last());
 				indices.add(indices[indices.getLength() - 4]);
 			}
-			if (int32_t* index = seenFaceVertices.get(vertexInfo))
+			if (int32_t *index = seenFaceVertices.get(vertexInfo))
 			{
 				indices.add(*index);
 			}
 			else
 			{
 				// "7/9/1" => ["7", "9", "1]
-				const DynamicArray<bbe::String>& subTokens = vertexInfo.split("/", true);
+				const DynamicArray<bbe::String> &subTokens = vertexInfo.split("/", true);
 				// TODO: The obj file format also allows fewer indizes, but we don't support them right now.
 				if (subTokens.getLength() < 3) bbe::Crash(bbe::Error::IllegalState);
-				vertices.add({ 
-						rawVertices[subTokens[0].toLong() - 1], 
-						rawNormals [subTokens[2].toLong() - 1],
-						rawUvCoords[subTokens[1].toLong() - 1]
-					});
+				vertices.add({ rawVertices[subTokens[0].toLong() - 1],
+							   rawNormals[subTokens[2].toLong() - 1],
+							   rawUvCoords[subTokens[1].toLong() - 1] });
 				seenFaceVertices.add(vertexInfo, (int32_t)vertices.getLength() - 1);
 				indices.add((uint32_t)vertices.getLength() - 1);
 			}

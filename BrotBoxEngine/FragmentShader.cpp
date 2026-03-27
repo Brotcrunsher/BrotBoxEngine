@@ -13,22 +13,22 @@ bbe::FragmentShader::FragmentShader()
 {
 }
 
-bbe::FragmentShader::FragmentShader(const char* path)
+bbe::FragmentShader::FragmentShader(const char *path)
 {
 	load(path);
 }
 
-bbe::FragmentShader::FragmentShader(const bbe::ByteBuffer& rawData)
+bbe::FragmentShader::FragmentShader(const bbe::ByteBuffer &rawData)
 {
 	load(rawData);
 }
 
-void bbe::FragmentShader::load(const char* path)
+void bbe::FragmentShader::load(const char *path)
 {
 	load(bbe::simpleFile::readBinaryFile(path));
 }
 
-void bbe::FragmentShader::load(const bbe::ByteBuffer& rawData)
+void bbe::FragmentShader::load(const bbe::ByteBuffer &rawData)
 {
 	if (bbe::Window::INTERNAL_firstInstance == nullptr)
 	{
@@ -54,7 +54,7 @@ void bbe::FragmentShader::load(const bbe::ByteBuffer& rawData)
 }
 
 #ifdef BBE_RENDERER_VULKAN
-void bbe::FragmentShader::setPushConstant(uint32_t offset, uint32_t length, const void* data)
+void bbe::FragmentShader::setPushConstant(uint32_t offset, uint32_t length, const void *data)
 {
 	if (offset < PUSHCONST_START_ADDR || offset + length > PUSHCONST_START_ADDR + pushConstants.getLength())
 	{
@@ -66,30 +66,30 @@ void bbe::FragmentShader::setPushConstant(uint32_t offset, uint32_t length, cons
 #endif
 
 #ifdef BBE_RENDERER_OPENGL
-void bbe::FragmentShader::setUniform2fv(const char* name, GLsizei size, const bbe::Vector2* values)
+void bbe::FragmentShader::setUniform2fv(const char *name, GLsizei size, const bbe::Vector2 *values)
 {
 	if (m_prendererData == nullptr) return; // TODO: This leads to the uniforms not having the correct value on the first frame!
-	bbe::INTERNAL::openGl::OpenGLFragmentShader* s = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)m_prendererData.get();
+	bbe::INTERNAL::openGl::OpenGLFragmentShader *s = (bbe::INTERNAL::openGl::OpenGLFragmentShader *)m_prendererData.get();
 	if (s->hasTwoD())
 	{
 		glUseProgram(s->getTwoD().program);
-		glUniform2fv(glGetUniformLocation(s->getTwoD().program, name), size * 2, (float*)values);
+		glUniform2fv(glGetUniformLocation(s->getTwoD().program, name), size * 2, (float *)values);
 	}
 	if (s->hasThreeD())
 	{
 		glUseProgram(s->getThreeD().program);
-		glUniform2fv(glGetUniformLocation(s->getThreeD().program, name), size * 2, (float*)values);
+		glUniform2fv(glGetUniformLocation(s->getThreeD().program, name), size * 2, (float *)values);
 	}
 	if (s->hasThreeDBake())
 	{
 		glUseProgram(s->getThreeDBake().program);
-		glUniform2fv(glGetUniformLocation(s->getThreeDBake().program, name), size * 2, (float*)values);
+		glUniform2fv(glGetUniformLocation(s->getThreeDBake().program, name), size * 2, (float *)values);
 	}
 }
-void bbe::FragmentShader::setUniform1d(const char* name, double value)
+void bbe::FragmentShader::setUniform1d(const char *name, double value)
 {
 	if (m_prendererData == nullptr) return; // TODO: This leads to the uniforms not having the correct value on the first frame!
-	bbe::INTERNAL::openGl::OpenGLFragmentShader* s = (bbe::INTERNAL::openGl::OpenGLFragmentShader *)m_prendererData.get();
+	bbe::INTERNAL::openGl::OpenGLFragmentShader *s = (bbe::INTERNAL::openGl::OpenGLFragmentShader *)m_prendererData.get();
 	if (s->hasTwoD())
 	{
 		glUseProgram(s->getTwoD().program);
@@ -107,10 +107,10 @@ void bbe::FragmentShader::setUniform1d(const char* name, double value)
 	}
 }
 
-void bbe::FragmentShader::setUniform1i(const char* name, GLint value)
+void bbe::FragmentShader::setUniform1i(const char *name, GLint value)
 {
 	if (m_prendererData == nullptr) return; // TODO: This leads to the uniforms not having the correct value on the first frame!
-	bbe::INTERNAL::openGl::OpenGLFragmentShader* s = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)m_prendererData.get();
+	bbe::INTERNAL::openGl::OpenGLFragmentShader *s = (bbe::INTERNAL::openGl::OpenGLFragmentShader *)m_prendererData.get();
 	if (s->hasTwoD())
 	{
 		glUseProgram(s->getTwoD().program);
@@ -128,10 +128,10 @@ void bbe::FragmentShader::setUniform1i(const char* name, GLint value)
 	}
 }
 
-void bbe::FragmentShader::setUniform1f(const char* name, float value)
+void bbe::FragmentShader::setUniform1f(const char *name, float value)
 {
 	if (m_prendererData == nullptr) return; // TODO: This leads to the uniforms not having the correct value on the first frame!
-	bbe::INTERNAL::openGl::OpenGLFragmentShader* s = (bbe::INTERNAL::openGl::OpenGLFragmentShader*)m_prendererData.get();
+	bbe::INTERNAL::openGl::OpenGLFragmentShader *s = (bbe::INTERNAL::openGl::OpenGLFragmentShader *)m_prendererData.get();
 	if (s->hasTwoD())
 	{
 		glUseProgram(s->getTwoD().program);

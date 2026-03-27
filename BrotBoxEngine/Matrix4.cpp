@@ -27,7 +27,7 @@ bbe::Matrix4::Matrix4()
 	m_cols[3].w = 1;
 }
 
-bbe::Matrix4::Matrix4(const Vector4 & col0, const Vector4 & col1, const Vector4 & col2, const Vector4 & col3)
+bbe::Matrix4::Matrix4(const Vector4 &col0, const Vector4 &col1, const Vector4 &col2, const Vector4 &col3)
 {
 	m_cols[0] = col0;
 	m_cols[1] = col1;
@@ -35,7 +35,7 @@ bbe::Matrix4::Matrix4(const Vector4 & col0, const Vector4 & col1, const Vector4 
 	m_cols[3] = col3;
 }
 
-bbe::Matrix4 bbe::Matrix4::createTranslationMatrix(const Vector3 & translation)
+bbe::Matrix4 bbe::Matrix4::createTranslationMatrix(const Vector3 &translation)
 {
 	Matrix4 retVal;
 	retVal.m_cols[3].x = translation.x;
@@ -44,7 +44,7 @@ bbe::Matrix4 bbe::Matrix4::createTranslationMatrix(const Vector3 & translation)
 	return retVal;
 }
 
-bbe::Matrix4 bbe::Matrix4::createRotationMatrix(float radians, const Vector3 & rotationAxis)
+bbe::Matrix4 bbe::Matrix4::createRotationMatrix(float radians, const Vector3 &rotationAxis)
 {
 	if (radians == 0)
 	{
@@ -73,7 +73,7 @@ bbe::Matrix4 bbe::Matrix4::createRotationMatrix(float radians, const Vector3 & r
 	return retVal;
 }
 
-bbe::Matrix4 bbe::Matrix4::createRotationMatrix(const Vector3& from, const Vector3& to)
+bbe::Matrix4 bbe::Matrix4::createRotationMatrix(const Vector3 &from, const Vector3 &to)
 {
 	const Vector3 a = from.normalize();
 	const Vector3 b = to.normalize();
@@ -85,17 +85,17 @@ bbe::Matrix4 bbe::Matrix4::createRotationMatrix(const Vector3& from, const Vecto
 	const float c = a * b;
 
 	bbe::Matrix4 retVal;
-	retVal.m_cols[0].x +=    0;
-	retVal.m_cols[0].y +=  v.z;
+	retVal.m_cols[0].x += 0;
+	retVal.m_cols[0].y += v.z;
 	retVal.m_cols[0].z += -v.y;
 
 	retVal.m_cols[1].x += -v.z;
-	retVal.m_cols[1].y +=    0;
-	retVal.m_cols[1].z +=  v.x;
+	retVal.m_cols[1].y += 0;
+	retVal.m_cols[1].z += v.x;
 
-	retVal.m_cols[2].x +=  v.y;
+	retVal.m_cols[2].x += v.y;
 	retVal.m_cols[2].y += -v.x;
-	retVal.m_cols[2].z +=    0;
+	retVal.m_cols[2].z += 0;
 
 	if (c == -1.0f) return retVal;
 	const float mult = 1.0f / (1.0f + c);
@@ -108,21 +108,21 @@ bbe::Matrix4 bbe::Matrix4::createRotationMatrix(const Vector3& from, const Vecto
 	const float z2 = z * z;
 
 	retVal.m_cols[0].x += (-z2 + -y2) * mult;
-	retVal.m_cols[0].y += ( -x * -y ) * mult;
-	retVal.m_cols[0].z += (  x *  z ) * mult;
+	retVal.m_cols[0].y += (-x * -y) * mult;
+	retVal.m_cols[0].z += (x * z) * mult;
 
-	retVal.m_cols[1].x += (  x *   y) * mult;
+	retVal.m_cols[1].x += (x * y) * mult;
 	retVal.m_cols[1].y += (-z2 + -x2) * mult;
-	retVal.m_cols[1].z += ( -y *  -z) * mult;
+	retVal.m_cols[1].z += (-y * -z) * mult;
 
-	retVal.m_cols[2].x += ( -x *  -z) * mult;
-	retVal.m_cols[2].y += (  y *   z) * mult;
+	retVal.m_cols[2].x += (-x * -z) * mult;
+	retVal.m_cols[2].y += (y * z) * mult;
 	retVal.m_cols[2].z += (-y2 + -x2) * mult;
 
 	return retVal;
 }
 
-bbe::Matrix4 bbe::Matrix4::createScaleMatrix(const Vector3 & scale)
+bbe::Matrix4 bbe::Matrix4::createScaleMatrix(const Vector3 &scale)
 {
 	Matrix4 retVal;
 	retVal.m_cols[0].x = scale.x;
@@ -147,7 +147,7 @@ bbe::Matrix4 bbe::Matrix4::createPerspectiveMatrix(float fieldOfView, float aspe
 	return retVal;
 }
 
-bbe::Matrix4 bbe::Matrix4::createViewMatrix(const Vector3 & cameraPos, const Vector3 & lookTarget, const Vector3 & upDirection)
+bbe::Matrix4 bbe::Matrix4::createViewMatrix(const Vector3 &cameraPos, const Vector3 &lookTarget, const Vector3 &upDirection)
 {
 	Vector3 direction = (lookTarget - cameraPos).normalize();
 	Vector3 right = direction.cross(upDirection).normalize();
@@ -169,11 +169,11 @@ bbe::Matrix4 bbe::Matrix4::createViewMatrix(const Vector3 & cameraPos, const Vec
 	retVal.m_cols[3].x = -(right * cameraPos);
 	retVal.m_cols[3].y = -(down * cameraPos);
 	retVal.m_cols[3].z = direction * cameraPos;
-	
+
 	return retVal;
 }
 
-bbe::Matrix4 bbe::Matrix4::createTransform(const Vector3 & pos, const Vector3 & scale, const Vector3 & rotationVector, float radians)
+bbe::Matrix4 bbe::Matrix4::createTransform(const Vector3 &pos, const Vector3 &scale, const Vector3 &rotationVector, float radians)
 {
 	Matrix4 matTranslation = Matrix4::createTranslationMatrix(pos);
 	Matrix4 matScale = Matrix4::createScaleMatrix(scale);
@@ -228,36 +228,35 @@ void bbe::Matrix4::set(int row, int col, float val)
 	}
 }
 
-float & bbe::Matrix4::operator[](int index)
+float &bbe::Matrix4::operator[](int index)
 {
 	if (index < 0 || index > 15)
 	{
 		bbe::Crash(bbe::Error::IllegalIndex);
 	}
-	float* data = reinterpret_cast<float*>(this);
+	float *data = reinterpret_cast<float *>(this);
 
 	return data[index];
 }
 
-const float & bbe::Matrix4::operator[](int index) const
+const float &bbe::Matrix4::operator[](int index) const
 {
 	if (index < 0 || index > 15)
 	{
 		bbe::Crash(bbe::Error::IllegalIndex);
 	}
-	const float* data = reinterpret_cast<const float*>(this);
+	const float *data = reinterpret_cast<const float *>(this);
 
 	return data[index];
 }
 
-bbe::Vector4 bbe::Matrix4::operator*(const Vector4 & other) const
+bbe::Vector4 bbe::Matrix4::operator*(const Vector4 &other) const
 {
 	return Vector4(
 		m_cols[0].x * other.x + m_cols[1].x * other.y + m_cols[2].x * other.z + m_cols[3].x * other.w,
 		m_cols[0].y * other.x + m_cols[1].y * other.y + m_cols[2].y * other.z + m_cols[3].y * other.w,
 		m_cols[0].z * other.x + m_cols[1].z * other.y + m_cols[2].z * other.z + m_cols[3].z * other.w,
-		m_cols[0].w * other.x + m_cols[1].w * other.y + m_cols[2].w * other.z + m_cols[3].w * other.w
-	);
+		m_cols[0].w * other.x + m_cols[1].w * other.y + m_cols[2].w * other.z + m_cols[3].w * other.w);
 }
 
 bbe::Vector4 bbe::Matrix4::getColumn(int colIndex) const
@@ -289,8 +288,7 @@ bbe::Vector3 bbe::Matrix4::extractScale() const
 	return Vector3(
 		getColumn(0).xyz().getLength(),
 		getColumn(1).xyz().getLength(),
-		getColumn(2).xyz().getLength()
-	);
+		getColumn(2).xyz().getLength());
 }
 
 bbe::Matrix4 bbe::Matrix4::extractRotation() const
@@ -300,8 +298,7 @@ bbe::Matrix4 bbe::Matrix4::extractRotation() const
 		Vector4((getColumn(0) / scale.x).xyz(), 0),
 		Vector4((getColumn(1) / scale.y).xyz(), 0),
 		Vector4((getColumn(2) / scale.z).xyz(), 0),
-		Vector4(0, 0, 0, 1)
-	);
+		Vector4(0, 0, 0, 1));
 }
 
 bbe::Matrix4 bbe::Matrix4::toNormalTransform() const
@@ -321,17 +318,17 @@ bbe::Matrix4 bbe::Matrix4::operator*(const Matrix4 &other) const
 	retVal.m_cols[1].x = m_cols[0].x * other.m_cols[1].x + m_cols[1].x * other.m_cols[1].y + m_cols[2].x * other.m_cols[1].z + m_cols[3].x * other.m_cols[1].w;
 	retVal.m_cols[2].x = m_cols[0].x * other.m_cols[2].x + m_cols[1].x * other.m_cols[2].y + m_cols[2].x * other.m_cols[2].z + m_cols[3].x * other.m_cols[2].w;
 	retVal.m_cols[3].x = m_cols[0].x * other.m_cols[3].x + m_cols[1].x * other.m_cols[3].y + m_cols[2].x * other.m_cols[3].z + m_cols[3].x * other.m_cols[3].w;
-																					 				   				   				 				 
+
 	retVal.m_cols[0].y = m_cols[0].y * other.m_cols[0].x + m_cols[1].y * other.m_cols[0].y + m_cols[2].y * other.m_cols[0].z + m_cols[3].y * other.m_cols[0].w;
 	retVal.m_cols[1].y = m_cols[0].y * other.m_cols[1].x + m_cols[1].y * other.m_cols[1].y + m_cols[2].y * other.m_cols[1].z + m_cols[3].y * other.m_cols[1].w;
 	retVal.m_cols[2].y = m_cols[0].y * other.m_cols[2].x + m_cols[1].y * other.m_cols[2].y + m_cols[2].y * other.m_cols[2].z + m_cols[3].y * other.m_cols[2].w;
 	retVal.m_cols[3].y = m_cols[0].y * other.m_cols[3].x + m_cols[1].y * other.m_cols[3].y + m_cols[2].y * other.m_cols[3].z + m_cols[3].y * other.m_cols[3].w;
-																					 				   				   				 				 
+
 	retVal.m_cols[0].z = m_cols[0].z * other.m_cols[0].x + m_cols[1].z * other.m_cols[0].y + m_cols[2].z * other.m_cols[0].z + m_cols[3].z * other.m_cols[0].w;
 	retVal.m_cols[1].z = m_cols[0].z * other.m_cols[1].x + m_cols[1].z * other.m_cols[1].y + m_cols[2].z * other.m_cols[1].z + m_cols[3].z * other.m_cols[1].w;
 	retVal.m_cols[2].z = m_cols[0].z * other.m_cols[2].x + m_cols[1].z * other.m_cols[2].y + m_cols[2].z * other.m_cols[2].z + m_cols[3].z * other.m_cols[2].w;
 	retVal.m_cols[3].z = m_cols[0].z * other.m_cols[3].x + m_cols[1].z * other.m_cols[3].y + m_cols[2].z * other.m_cols[3].z + m_cols[3].z * other.m_cols[3].w;
-																					 				   				   				 				 
+
 	retVal.m_cols[0].w = m_cols[0].w * other.m_cols[0].x + m_cols[1].w * other.m_cols[0].y + m_cols[2].w * other.m_cols[0].z + m_cols[3].w * other.m_cols[0].w;
 	retVal.m_cols[1].w = m_cols[0].w * other.m_cols[1].x + m_cols[1].w * other.m_cols[1].y + m_cols[2].w * other.m_cols[1].z + m_cols[3].w * other.m_cols[1].w;
 	retVal.m_cols[2].w = m_cols[0].w * other.m_cols[2].x + m_cols[1].w * other.m_cols[2].y + m_cols[2].w * other.m_cols[2].z + m_cols[3].w * other.m_cols[2].w;
@@ -339,7 +336,7 @@ bbe::Matrix4 bbe::Matrix4::operator*(const Matrix4 &other) const
 	return retVal;
 }
 
-bbe::Vector3 bbe::Matrix4::operator*(const Vector3 & other) const
+bbe::Vector3 bbe::Matrix4::operator*(const Vector3 &other) const
 {
 	Vector4 retVal(other, 1);
 	retVal = operator*(retVal);

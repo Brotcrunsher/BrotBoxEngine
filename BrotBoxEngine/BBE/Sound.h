@@ -26,8 +26,7 @@ namespace bbe
 		virtual uint32_t getHz() const = 0;
 
 		SoundInstance play(float volume = 1) const;
-		SoundInstance play(const bbe::Vector3& pos, float volume = 1) const;
-
+		SoundInstance play(const bbe::Vector3 &pos, float volume = 1) const;
 	};
 
 	class SoundDataSourceDynamic : public SoundDataSource
@@ -39,45 +38,44 @@ namespace bbe
 	class SoundDataSourceStatic : public SoundDataSource
 	{
 	private:
-		bool             m_looped = false;
+		bool m_looped = false;
 
 	public:
 		bool isLooped() const;
 		void setLooped(bool looped);
 
-		virtual const bbe::List<float>* getRaw() const = 0;
+		virtual const bbe::List<float> *getRaw() const = 0;
 
 		mutable ALuint INTERNAL_buffer = 0;
 		mutable ALuint INTERNAL_restartCycle = 0;
 	};
 
-	class Sound : 
-		public SoundDataSourceStatic
+	class Sound : public SoundDataSourceStatic
 	{
 	private:
-		bool             m_loaded   = false;
-		bbe::List<float> m_data     = {};
-		uint32_t         m_channels = 0;
-		uint32_t         m_hz       = 0;
+		bool m_loaded = false;
+		bbe::List<float> m_data = {};
+		uint32_t m_channels = 0;
+		uint32_t m_hz = 0;
 
-		void loadMp3(const bbe::ByteBuffer& data);
-		void loadRawMonoFloat44100(const bbe::ByteBuffer& data);
+		void loadMp3(const bbe::ByteBuffer &data);
+		void loadRawMonoFloat44100(const bbe::ByteBuffer &data);
 
 	public:
 		Sound();
-		explicit Sound(const bbe::String& path, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
+		explicit Sound(const bbe::String &path, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
 
-		void load(const bbe::String& path, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
+		void load(const bbe::String &path, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
 		void load(const bbe::ByteBuffer &data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
-		void load(const bbe::List<char>& data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
-		void load(const bbe::List<float>& data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::RAW_MONO_FLOAT_44100);
+		void load(const bbe::List<char> &data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::AUTOMATIC);
+		void load(const bbe::List<float> &data, SoundLoadFormat soundLoadFormat = SoundLoadFormat::RAW_MONO_FLOAT_44100);
 
 		bool isLoaded() const;
 		uint32_t getChannels() const;
 		virtual uint32_t getAmountOfChannels() const override;
 		virtual uint32_t getHz() const override;
 
-		const bbe::List<float>* getRaw() const override;
+		const bbe::List<float> *getRaw() const override;
 
 		bbe::ByteBuffer toWav() const;
 

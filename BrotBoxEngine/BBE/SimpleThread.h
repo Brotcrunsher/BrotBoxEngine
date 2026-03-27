@@ -6,6 +6,6 @@ namespace bbe
 {
 	namespace simpleThread
 	{
-		void setName(std::thread& thread, const char* name);
+		void setName(std::thread &thread, const char *name);
 	}
 }

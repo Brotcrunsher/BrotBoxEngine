@@ -41,7 +41,6 @@ namespace bbe
 					assertEquals(constArr2[i], i + 1000);
 				}
 
-
 				for (size_t i = 0; i < arr.getLength(); i++)
 				{
 					arr[i] = i + 2000;
@@ -121,7 +120,7 @@ namespace bbe
 			}
 
 			{
-				bbe::Array<int, 10> arr{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+				bbe::Array<int, 10> arr{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				assertEquals(arr[0], 0);
 				assertEquals(arr[1], 1);
 				assertEquals(arr[2], 2);
@@ -134,7 +133,6 @@ namespace bbe
 				assertEquals(arr[9], 9);
 				assertEquals(arr.getLength(), 10);
 			}
-
 
 			{
 				bbe::Array<Person, 16> arr;
@@ -150,7 +148,7 @@ namespace bbe
 				{
 					arr[i] = Person("", "", (int)i + 1000);
 				}
-				
+
 				for (size_t i = 0; i < arr.getLength(); i++)
 				{
 					assertEquals(arr[i].age, i + 1000);
@@ -166,7 +164,6 @@ namespace bbe
 				{
 					assertEquals(constArr2[i].age, i + 1000);
 				}
-
 
 				for (size_t i = 0; i < arr.getLength(); i++)
 				{

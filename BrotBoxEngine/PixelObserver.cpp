@@ -21,9 +21,7 @@ namespace bbe
 	}
 }
 
-
-bbe::PixelObserver::PixelObserver() :
-	m_pimpl(new bbe::INTERNAL::PixelObserverPImpl())
+bbe::PixelObserver::PixelObserver() : m_pimpl(new bbe::INTERNAL::PixelObserverPImpl())
 {
 #ifdef _WIN32
 	m_pimpl->m_hdc = GetDC(NULL);
@@ -49,18 +47,17 @@ bbe::Color bbe::PixelObserver::getColor(int32_t x, int32_t y) const
 	const DWORD r = GetRValue(pixel);
 	const DWORD g = GetGValue(pixel);
 	const DWORD b = GetBValue(pixel);
-	
+
 	return bbe::Color(
 		r / 255.f,
 		g / 255.f,
-		b / 255.f
-	);
+		b / 255.f);
 #else
 	bbe::Crash(bbe::Error::NotImplemented);
 #endif
 }
 
-bbe::Color bbe::PixelObserver::getColor(const bbe::Vector2& pos) const
+bbe::Color bbe::PixelObserver::getColor(const bbe::Vector2 &pos) const
 {
 	return getColor((int32_t)pos.x, (int32_t)pos.y);
 }

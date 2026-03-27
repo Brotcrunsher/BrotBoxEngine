@@ -7,24 +7,24 @@ namespace bbe
 	{
 		void testMath()
 		{
-			assertEqualsFloat(Math::cos(0               ), 1);
-			assertEqualsFloat(Math::cos(Math::PI / 2    ), 0);
-			assertEqualsFloat(Math::cos(Math::PI        ), -1);
+			assertEqualsFloat(Math::cos(0), 1);
+			assertEqualsFloat(Math::cos(Math::PI / 2), 0);
+			assertEqualsFloat(Math::cos(Math::PI), -1);
 			assertEqualsFloat(Math::cos(Math::PI * 3 / 2), 0);
-			assertEqualsFloat(Math::cos(-Math::PI / 2    ), 0);
-			assertEqualsFloat(Math::cos(-Math::PI        ), -1);
+			assertEqualsFloat(Math::cos(-Math::PI / 2), 0);
+			assertEqualsFloat(Math::cos(-Math::PI), -1);
 			assertEqualsFloat(Math::cos(-Math::PI * 3 / 2), 0);
 
 			assertEqualsFloat(Math::acos(-1), Math::PI);
 			assertEqualsFloat(Math::acos(0), Math::PI / 2);
 			assertEqualsFloat(Math::acos(1), 0);
 
-			assertEqualsFloat(Math::sin(0               ), 0);
-			assertEqualsFloat(Math::sin(Math::PI / 2    ), 1);
-			assertEqualsFloat(Math::sin(Math::PI        ), 0);
+			assertEqualsFloat(Math::sin(0), 0);
+			assertEqualsFloat(Math::sin(Math::PI / 2), 1);
+			assertEqualsFloat(Math::sin(Math::PI), 0);
 			assertEqualsFloat(Math::sin(Math::PI * 3 / 2), -1);
-			assertEqualsFloat(Math::sin(-Math::PI / 2    ), -1);
-			assertEqualsFloat(Math::sin(-Math::PI        ), 0);
+			assertEqualsFloat(Math::sin(-Math::PI / 2), -1);
+			assertEqualsFloat(Math::sin(-Math::PI), 0);
 			assertEqualsFloat(Math::sin(-Math::PI * 3 / 2), 1);
 
 			assertEqualsFloat(Math::asin(-1), -Math::PI / 2);
@@ -40,7 +40,7 @@ namespace bbe
 
 			assertEqualsFloat(Math::mod(3.5f, 1.7f), 0.1f);
 			assertEqualsFloat(Math::mod(2.f, 1.f), 0.f);
-			
+
 			assertEqualsFloat(Math::pingpong(1.0f, 1.0f), 1.0f);
 			assertEqualsFloat(Math::pingpong(1.5f, 1.0f), 0.5f);
 			assertEqualsFloat(Math::pingpong(2.0f, 1.0f), 0.0f);
@@ -214,21 +214,21 @@ namespace bbe
 			assertEquals(Math::nextMultiple(16, 32), 32);
 			assertEquals(Math::nextMultiple(16, 33), 48);
 
-			assertEquals(Math::isOdd(0 ), false);
+			assertEquals(Math::isOdd(0), false);
 			assertEquals(Math::isOdd(-1), true);
-			assertEquals(Math::isOdd(1 ), true);
+			assertEquals(Math::isOdd(1), true);
 			assertEquals(Math::isOdd(-2), false);
-			assertEquals(Math::isOdd(2 ), false);
+			assertEquals(Math::isOdd(2), false);
 			assertEquals(Math::isOdd(-3), true);
-			assertEquals(Math::isOdd(3 ), true);
+			assertEquals(Math::isOdd(3), true);
 
-			assertEquals(Math::isEven(0 ), true);
+			assertEquals(Math::isEven(0), true);
 			assertEquals(Math::isEven(-1), false);
-			assertEquals(Math::isEven(1 ), false);
+			assertEquals(Math::isEven(1), false);
 			assertEquals(Math::isEven(-2), true);
-			assertEquals(Math::isEven(2 ), true);
+			assertEquals(Math::isEven(2), true);
 			assertEquals(Math::isEven(-3), false);
-			assertEquals(Math::isEven(3 ), false);
+			assertEquals(Math::isEven(3), false);
 		}
 	}
 }

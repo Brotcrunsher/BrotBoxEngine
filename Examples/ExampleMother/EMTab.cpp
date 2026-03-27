@@ -2,24 +2,25 @@
 
 namespace
 {
-	size_t countVisibleTabs(const bbe::List<Tab>& tabs)
+	size_t countVisibleTabs(const bbe::List<Tab> &tabs)
 	{
 		return tabs.getLength();
 	}
 }
 
-DrawTabResult drawTabs(const bbe::List<Tab>& mainTabs,
-					   const bbe::List<Tab>& adaptiveTabs,
-					   const bbe::List<Tab>& superAdaptiveTabs,
+DrawTabResult drawTabs(const bbe::List<Tab> &mainTabs,
+					   const bbe::List<Tab> &adaptiveTabs,
+					   const bbe::List<Tab> &superAdaptiveTabs,
 					   bool showAdaptiveTabsInMainWindow,
 					   bool showSuperAdaptiveTabsInMainWindow,
-					   size_t* previousShownTab,
-					   bool& switchLeft,
-					   bool& switchRight)
+					   size_t *previousShownTab,
+					   bool &switchLeft,
+					   bool &switchRight)
 {
 	bbe::Vector2 sizeMult(1.0f, 1.0f);
-	const Tab* selectedTab = nullptr;
-	if (ImGui::BeginTabBar("MainWindowTabs")) {
+	const Tab *selectedTab = nullptr;
+	if (ImGui::BeginTabBar("MainWindowTabs"))
+	{
 		size_t desiredShownTab = 0;
 		bool programaticTabSwitch = false;
 		size_t visibleTabCount = countVisibleTabs(mainTabs);
@@ -51,11 +52,11 @@ DrawTabResult drawTabs(const bbe::List<Tab>& mainTabs,
 		}
 
 		size_t visibleTabIndex = 0;
-		auto drawTabList = [&](const bbe::List<Tab>& tabs)
+		auto drawTabList = [&](const bbe::List<Tab> &tabs)
 		{
 			for (size_t i = 0; i < tabs.getLength(); i++)
 			{
-				const Tab& t = tabs[i];
+				const Tab &t = tabs[i];
 				const bool tabSelected = ImGui::BeginTabItem(t.title, nullptr, (programaticTabSwitch && visibleTabIndex == desiredShownTab) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None);
 				if (t.tooltip[0])
 				{
@@ -87,10 +88,10 @@ DrawTabResult drawTabs(const bbe::List<Tab>& mainTabs,
 	return { sizeMult, selectedTab };
 }
 
-DrawTabResult drawTabs(const bbe::List<Tab>& tabs,
-					   size_t* previousShownTab,
-					   bool& switchLeft,
-					   bool& switchRight)
+DrawTabResult drawTabs(const bbe::List<Tab> &tabs,
+					   size_t *previousShownTab,
+					   bool &switchLeft,
+					   bool &switchRight)
 {
 	static const bbe::List<Tab> emptyTabs;
 	return drawTabs(tabs, emptyTabs, emptyTabs, false, false, previousShownTab, switchLeft, switchRight);

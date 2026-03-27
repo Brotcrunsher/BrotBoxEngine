@@ -17,7 +17,7 @@
 
 namespace
 {
-	void internalSetBrightnessWindows(bbe::List<float>& brightnessPercentag)
+	void internalSetBrightnessWindows(bbe::List<float> &brightnessPercentag)
 	{
 		// First we have to get all the monitor infos and then sort them so that we later know which brightnessPercentage is for which monitor.
 		// If we don't do this, then the order is rather random, as the order in which EnumDisplayMonitors iterates is not specified and can change
@@ -30,7 +30,7 @@ namespace
 		};
 		MonitorInfos monitorInfos;
 		if (!EnumDisplayMonitors(nullptr, nullptr, [](HMONITOR hMonitor, HDC, LPRECT, LPARAM dwData) -> BOOL
-		{
+								 {
 			MONITORINFOEX monitorInfo;
 			monitorInfo.cbSize = sizeof(MONITORINFOEX);
 			if (!GetMonitorInfo(hMonitor, &monitorInfo))
@@ -42,13 +42,12 @@ namespace
 			std::lock_guard _(mi.m);
 			mi.monitorInfos.add(monitorInfo);
 
-			return true;
-		}, (LPARAM)&monitorInfos))
+			return true; }, (LPARAM)&monitorInfos))
 		{
 			BBELOGLN("Failed to enumerate display monitors for MonitorInfos");
 		}
-		monitorInfos.monitorInfos.sort([](const MONITORINFOEX& a, const MONITORINFOEX& b)
-		{
+		monitorInfos.monitorInfos.sort([](const MONITORINFOEX &a, const MONITORINFOEX &b)
+									   {
 			if (a.rcMonitor.right < b.rcMonitor.right) return true;
 			if (a.rcMonitor.right > b.rcMonitor.right) return false;
 			if (a.rcMonitor.top < b.rcMonitor.top) return true;
@@ -58,8 +57,7 @@ namespace
 			if (a.rcMonitor.right < b.rcMonitor.right) return true;
 			if (a.rcMonitor.right > b.rcMonitor.right) return false;
 
-			return false;
-		});
+			return false; });
 
 		for (size_t i = 0; i < brightnessPercentag.getLength(); i++)
 		{
@@ -69,7 +67,7 @@ namespace
 		}
 
 		if (!EnumDisplayMonitors(nullptr, nullptr, [](HMONITOR hMonitor, HDC, LPRECT, LPARAM dwData) -> BOOL
-		{
+								 {
 			DWORD numPhysicalMonitors = 0;
 
 			if (!GetNumberOfPhysicalMonitorsFromHMONITOR(hMonitor, &numPhysicalMonitors))
@@ -127,8 +125,7 @@ namespace
 			}
 			DestroyPhysicalMonitors(numPhysicalMonitors, physicalMonitors.getRaw());
 
-			return true;
-		}, (LPARAM)&monitorInfos))
+			return true; }, (LPARAM)&monitorInfos))
 		{
 			BBELOGLN("Failed to enumerate display monitors for brightness");
 		}
@@ -154,7 +151,7 @@ namespace
 		std::string output;
 	};
 
-	ProcessResult runCommand(const std::vector<std::string>& args)
+	ProcessResult runCommand(const std::vector<std::string> &args)
 	{
 		ProcessResult result;
 		if (args.empty())
@@ -162,7 +159,7 @@ namespace
 			return result;
 		}
 
-		int pipeFds[2] = {-1, -1};
+		int pipeFds[2] = { -1, -1 };
 		if (::pipe(pipeFds) != 0)
 		{
 			return result;
@@ -176,11 +173,11 @@ namespace
 			close(pipeFds[0]);
 			close(pipeFds[1]);
 
-			std::vector<char*> argv;
+			std::vector<char *> argv;
 			argv.reserve(args.size() + 1);
-			for (const auto& arg : args)
+			for (const auto &arg : args)
 			{
-				argv.push_back(const_cast<char*>(arg.c_str()));
+				argv.push_back(const_cast<char *>(arg.c_str()));
 			}
 			argv.push_back(nullptr);
 
@@ -214,7 +211,7 @@ namespace
 		return result;
 	}
 
-	void reportLinuxMonitorFailureOnce(bool& alreadyReported, const std::string& message, const std::string& details = {})
+	void reportLinuxMonitorFailureOnce(bool &alreadyReported, const std::string &message, const std::string &details = {})
 	{
 		if (alreadyReported)
 		{
@@ -232,10 +229,10 @@ namespace
 		}
 	}
 
-	bbe::List<int> detectLinuxDisplays(bool& backendReportedUnavailable)
+	bbe::List<int> detectLinuxDisplays(bool &backendReportedUnavailable)
 	{
 		bbe::List<int> displays;
-		const auto result = runCommand({"ddcutil", "detect", "--brief"});
+		const auto result = runCommand({ "ddcutil", "detect", "--brief" });
 		if (!result.launched)
 		{
 			reportLinuxMonitorFailureOnce(backendReportedUnavailable, "Linux monitor dimming unavailable, failed to launch ddcutil");
@@ -267,7 +264,7 @@ namespace
 		return displays;
 	}
 
-	void internalSetBrightnessLinux(const bbe::List<float>& brightnessPercentag, const bbe::List<int>& displays, bool& backendReportedUnavailable)
+	void internalSetBrightnessLinux(const bbe::List<float> &brightnessPercentag, const bbe::List<int> &displays, bool &backendReportedUnavailable)
 	{
 		for (size_t i = 0; i < brightnessPercentag.getLength() && i < displays.getLength(); i++)
 		{
@@ -275,7 +272,8 @@ namespace
 			const auto result = runCommand({
 				"ddcutil",
 				"setvcp",
-				"--display", std::to_string(displays[i]),
+				"--display",
+				std::to_string(displays[i]),
 				"10",
 				std::to_string(brightness),
 				"--noverify",
@@ -342,7 +340,7 @@ bbe::Monitor::~Monitor()
 	thread.join();
 }
 
-void bbe::Monitor::setBrightness(const bbe::List<float>& brightnessPercentag)
+void bbe::Monitor::setBrightness(const bbe::List<float> &brightnessPercentag)
 {
 	bbe::List<float> normalizedBrightness = brightnessPercentag;
 	for (size_t i = 0; i < normalizedBrightness.getLength(); i++)

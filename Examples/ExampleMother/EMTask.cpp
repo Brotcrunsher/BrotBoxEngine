@@ -409,7 +409,7 @@ int32_t SubsystemTask::drawTable(float scale, const char *title, const std::func
 				const bbe::String printableTitle = bbe::String::format(modifiedTitle.getRaw(), t.internalValue);
 				if (t.lateTimeTask && isWorkTime())
 				{
-					ImGui::TextColored({0.3f, 0.3f, 0.3f, 1.0f}, printableTitle);
+					ImGui::TextColored({ 0.3f, 0.3f, 0.3f, 1.0f }, printableTitle);
 				}
 				else
 				{
@@ -680,7 +680,7 @@ bool SubsystemTask::drawEditableTask(Task &t)
 {
 	bool taskChanged = false;
 	taskChanged |= ImGui::bbe::InputText("Title", t.title);
-	taskChanged |= ImGui::bbe::combo("Date Type", {"Dynamic", "Yearly", "Monthly"}, &t.dateType);
+	taskChanged |= ImGui::bbe::combo("Date Type", { "Dynamic", "Yearly", "Monthly" }, &t.dateType);
 	if (t.dateType == Task::DT_DYNAMIC)
 	{
 		taskChanged |= ImGui::InputInt("Repeat Days", &t.repeatDays);
@@ -766,7 +766,7 @@ bool SubsystemTask::drawEditableTask(Task &t)
 	ImGui::bbe::tooltip("An internal value that can be printed out in the title via %%d, [SEC], and [MIN].");
 	taskChanged |= ImGui::InputInt("Internal Value Increase", &t.internalValueIncrease);
 	ImGui::bbe::tooltip("Increases the Internal Value on ever Done by this much.");
-	taskChanged |= ImGui::bbe::combo("Input Type", {"None", "Integer", "Float"}, &t.inputType);
+	taskChanged |= ImGui::bbe::combo("Input Type", { "None", "Integer", "Float" }, &t.inputType);
 	if (t.inputType == Task::IT_FLOAT)
 	{
 		taskChanged |= ImGui::InputInt("History Target Anchor", &t.historyTargetAnchor);
@@ -955,7 +955,7 @@ bbe::Vector2 SubsystemTask::drawTabHistoryView()
 
 		bool shouldDrawTargetDifference = false;
 		float lastTargetValue = 0.0f;
-		if (ImPlot::BeginPlot("History", {-1, 250}))
+		if (ImPlot::BeginPlot("History", { -1, 250 }))
 		{
 			ImPlot::SetupAxes("Time", "Value");
 			ImPlot::PlotLine(task.title.getRaw(), time.getRaw(), history.getRaw(), time.getLength());

@@ -38,7 +38,7 @@
 #endif
 
 size_t bbe::Window::windowsAliveCounter = 0;
-bbe::Window* bbe::Window::INTERNAL_firstInstance = nullptr;
+bbe::Window *bbe::Window::INTERNAL_firstInstance = nullptr;
 
 namespace
 {
@@ -55,28 +55,27 @@ namespace
 		bool hasPlacement = false;
 	};
 
-	std::unordered_map<bbe::Window*, WindowRecreateState> g_windowRecreateStates;
+	std::unordered_map<bbe::Window *, WindowRecreateState> g_windowRecreateStates;
 
 #if defined(__linux__) && defined(BBE_USE_WAYLAND_CLIPBOARD)
 	bool shouldPreferWaylandPlatform()
 	{
-		const char* xdgSessionType = std::getenv("XDG_SESSION_TYPE");
+		const char *xdgSessionType = std::getenv("XDG_SESSION_TYPE");
 		if (xdgSessionType != nullptr && std::strcmp(xdgSessionType, "wayland") == 0)
 		{
 			return true;
 		}
 
-		const char* waylandDisplay = std::getenv("WAYLAND_DISPLAY");
+		const char *waylandDisplay = std::getenv("WAYLAND_DISPLAY");
 		return waylandDisplay != nullptr && waylandDisplay[0] != '\0';
 	}
 #endif
 }
 
-
-bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, uint32_t major, uint32_t minor, uint32_t patch)
+bbe::Window::Window(int width, int height, const char *title, bbe::Game *game, uint32_t major, uint32_t minor, uint32_t patch)
 	: m_width(width), m_height(height), m_pgame(game)
 {
-	auto& recreateState = g_windowRecreateStates[this];
+	auto &recreateState = g_windowRecreateStates[this];
 	recreateState.title = title != nullptr ? title : "";
 	recreateState.major = major;
 	recreateState.minor = minor;
@@ -199,7 +198,7 @@ void bbe::Window::preDraw()
 	m_renderManager->setColor3D(bbe::Color(1.0f, 1.0f, 1.0f, 1.0f));
 	ImGui::bbe::SetColor(ImGui::GetColorU32({ 1.0f, 1.0f, 1.0f, 1.0f }));
 #ifdef BBE_RENDERER_OPENGL
-	((bbe::INTERNAL::openGl::OpenGLManager*)m_renderManager.get())->setRenderMode(bbe::RenderMode::DEFERRED);
+	((bbe::INTERNAL::openGl::OpenGLManager *)m_renderManager.get())->setRenderMode(bbe::RenderMode::DEFERRED);
 #endif
 }
 
@@ -276,7 +275,7 @@ void bbe::Window::setCursorMode(bbe::CursorMode cursorMode)
 	}
 }
 
-GLFWwindow* bbe::Window::getRaw()
+GLFWwindow *bbe::Window::getRaw()
 {
 	return m_pwindow;
 }
@@ -343,7 +342,7 @@ bbe::Vector2i bbe::Window::getSize() const
 {
 	if (m_pwindow == nullptr)
 	{
-		auto it = g_windowRecreateStates.find(const_cast<bbe::Window*>(this));
+		auto it = g_windowRecreateStates.find(const_cast<bbe::Window *>(this));
 		if (it != g_windowRecreateStates.end()) return it->second.lastWindowSize;
 		return { m_width, m_height };
 	}
@@ -352,11 +351,11 @@ bbe::Vector2i bbe::Window::getSize() const
 	return retVal;
 }
 
-void bbe::Window::setSize(const Vector2i& size)
+void bbe::Window::setSize(const Vector2i &size)
 {
 	m_width = size.x;
 	m_height = size.y;
-	auto& recreateState = g_windowRecreateStates[this];
+	auto &recreateState = g_windowRecreateStates[this];
 	recreateState.lastWindowSize = size;
 	recreateState.hasPlacement = true;
 	requestRender();
@@ -370,7 +369,7 @@ bool bbe::Window::isMaximized() const
 {
 	if (m_pwindow == nullptr)
 	{
-		auto it = g_windowRecreateStates.find(const_cast<bbe::Window*>(this));
+		auto it = g_windowRecreateStates.find(const_cast<bbe::Window *>(this));
 		return it != g_windowRecreateStates.end() && it->second.lastWindowMaximized;
 	}
 	return glfwWrapper::glfwGetWindowAttrib(m_pwindow, GLFW_MAXIMIZED) != 0;
@@ -378,7 +377,7 @@ bool bbe::Window::isMaximized() const
 
 void bbe::Window::maximize()
 {
-	auto& recreateState = g_windowRecreateStates[this];
+	auto &recreateState = g_windowRecreateStates[this];
 	recreateState.lastWindowMaximized = true;
 	requestRender();
 	if (m_pwindow != nullptr)
@@ -391,7 +390,7 @@ bbe::Vector2i bbe::Window::getPos() const
 {
 	if (m_pwindow == nullptr)
 	{
-		auto it = g_windowRecreateStates.find(const_cast<bbe::Window*>(this));
+		auto it = g_windowRecreateStates.find(const_cast<bbe::Window *>(this));
 		if (it != g_windowRecreateStates.end()) return it->second.lastWindowPos;
 		return { 0, 0 };
 	}
@@ -400,9 +399,9 @@ bbe::Vector2i bbe::Window::getPos() const
 	return retVal;
 }
 
-void bbe::Window::setPos(const Vector2i& pos)
+void bbe::Window::setPos(const Vector2i &pos)
 {
-	auto& recreateState = g_windowRecreateStates[this];
+	auto &recreateState = g_windowRecreateStates[this];
 	recreateState.lastWindowPos = pos;
 	recreateState.hasPlacement = true;
 	requestRender();
@@ -444,7 +443,7 @@ bbe::WindowCloseMode bbe::Window::getWindowCloseMode() const
 
 void bbe::Window::showWindow()
 {
-	auto& recreateState = g_windowRecreateStates[this];
+	auto &recreateState = g_windowRecreateStates[this];
 
 	if (m_pwindow == nullptr)
 	{
@@ -535,7 +534,7 @@ void bbe::Window::hideWindow()
 	requestRender();
 	if (m_pwindow == nullptr) return;
 #ifdef __linux__
-	auto& recreateState = g_windowRecreateStates[this];
+	auto &recreateState = g_windowRecreateStates[this];
 	recreateState.lastWindowSize = getSize();
 	recreateState.lastWindowPos = getPos();
 	recreateState.lastWindowMaximized = isMaximized();
@@ -564,12 +563,12 @@ bool bbe::Window::isHovered() const
 	return hovered;
 }
 
-bbe::PrimitiveBrush2D& bbe::Window::getBrush2D()
+bbe::PrimitiveBrush2D &bbe::Window::getBrush2D()
 {
 	return m_renderManager->getBrush2D();
 }
 
-bbe::PrimitiveBrush3D& bbe::Window::getBrush3D()
+bbe::PrimitiveBrush3D &bbe::Window::getBrush3D()
 {
 	return m_renderManager->getBrush3D();
 }
@@ -608,13 +607,13 @@ void bbe::Window::INTERNAL_onRefresh()
 	m_pgame->frame(true);
 }
 
-void bbe::Window::screenshot(const bbe::String& path)
+void bbe::Window::screenshot(const bbe::String &path)
 {
 	if (m_pwindow == nullptr) return;
 	m_renderManager->screenshot(path);
 }
 
-void bbe::Window::setVideoRenderingMode(const char* path)
+void bbe::Window::setVideoRenderingMode(const char *path)
 {
 	if (m_pwindow == nullptr) return;
 	m_renderManager->setVideoRenderingMode(path);
@@ -626,7 +625,7 @@ void bbe::Window::close()
 	glfwWrapper::glfwSetWindowShouldClose(m_pwindow, GLFW_TRUE);
 }
 
-void bbe::Window::registerCloseListener(const std::function<void()>& listener)
+void bbe::Window::registerCloseListener(const std::function<void()> &listener)
 {
 	m_closeListeners.add(listener);
 }
@@ -639,7 +638,7 @@ void bbe::Window::executeCloseListeners()
 	}
 }
 
-void bbe::Window::registerFrameStartListener(const std::function<void()>& listener)
+void bbe::Window::registerFrameStartListener(const std::function<void()> &listener)
 {
 	m_frameStartListeners.add(listener);
 }
@@ -687,11 +686,11 @@ void bbe::Window::consumeRenderRequest()
 	m_hasPendingRenderRequest = false;
 }
 
-void* bbe::Window::getNativeHandle()
+void *bbe::Window::getNativeHandle()
 {
 	if (m_pwindow == nullptr) return nullptr;
 #ifdef WIN32
-	return (void*)glfwGetWin32Window(m_pwindow);
+	return (void *)glfwGetWin32Window(m_pwindow);
 #else
 	return nullptr;
 #endif
@@ -701,11 +700,11 @@ void* bbe::Window::getNativeHandle()
 uint32_t bbe::Window::getAmountOfDrawcalls() const
 {
 	if (m_pwindow == nullptr) return 0;
-	return ((bbe::INTERNAL::openGl::OpenGLManager*)m_renderManager.get())->getAmountOfDrawcalls();
+	return ((bbe::INTERNAL::openGl::OpenGLManager *)m_renderManager.get())->getAmountOfDrawcalls();
 }
 #endif
 
-void bbe::INTERNAL_keyCallback(GLFWwindow* window, int keyCode, int scanCode, int action, int mods)
+void bbe::INTERNAL_keyCallback(GLFWwindow *window, int keyCode, int scanCode, int action, int mods)
 {
 #ifndef BBE_RENDERER_NULL
 	if (keyCode == GLFW_KEY_UNKNOWN)
@@ -714,51 +713,51 @@ void bbe::INTERNAL_keyCallback(GLFWwindow* window, int keyCode, int scanCode, in
 		// As we don't care about that key, we just drop the event.
 		return;
 	}
-	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
+	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
 	keyCode = ImGui_ImplGlfw_TranslateUntranslatedKey(keyCode, scanCode);
 	ImGui_ImplGlfw_KeyCallback(window, keyCode, scanCode, action, mods);
 	if (ImGui::GetIO().WantCaptureKeyboard) return;
 	if (action == GLFW_PRESS)
 	{
-		((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_press((bbe::Key)keyCode);
+		((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_press((bbe::Key)keyCode);
 	}
 	else if (action == GLFW_RELEASE)
 	{
-		((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_release((bbe::Key)keyCode);
+		((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_release((bbe::Key)keyCode);
 	}
 #endif
 }
 
-void bbe::INTERNAL_charCallback(GLFWwindow* window, unsigned int c)
+void bbe::INTERNAL_charCallback(GLFWwindow *window, unsigned int c)
 {
-	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
+	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
 #ifndef BBE_RENDERER_NULL
 	ImGui_ImplGlfw_CharCallback(window, c);
 #endif
 }
 
-void bbe::INTERNAL_cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
+void bbe::INTERNAL_cursorPosCallback(GLFWwindow *window, double xpos, double ypos)
 {
-	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
+	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
 #ifdef BBE_RENDERER_VULKAN
 	if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
-	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_moveMouse(static_cast<float>(xpos), static_cast<float>(ypos));
+	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_moveMouse(static_cast<float>(xpos), static_cast<float>(ypos));
 }
 
-void bbe::INTERNAL_windowResizeCallback(GLFWwindow* window, int width, int height)
+void bbe::INTERNAL_windowResizeCallback(GLFWwindow *window, int width, int height)
 {
-	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_resize(width, height);
+	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_resize(width, height);
 }
 
-void bbe::INTERNAL_framebufferResizeCallback(GLFWwindow* window, int width, int height)
+void bbe::INTERNAL_framebufferResizeCallback(GLFWwindow *window, int width, int height)
 {
-	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_resizeFramebuffer(width, height);
+	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_resizeFramebuffer(width, height);
 }
 
-void bbe::INTERNAL_mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+void bbe::INTERNAL_mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 {
-	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
+	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
 #ifndef BBE_RENDERER_NULL
 	ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
 	if (ImGui::GetIO().WantCaptureMouse) return;
@@ -766,54 +765,54 @@ void bbe::INTERNAL_mouseButtonCallback(GLFWwindow* window, int button, int actio
 
 	if (action == GLFW_PRESS)
 	{
-		((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_press((bbe::MouseButton)button);
+		((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_press((bbe::MouseButton)button);
 	}
 	else if (action == GLFW_RELEASE)
 	{
-		((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_release((bbe::MouseButton)button);
+		((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_release((bbe::MouseButton)button);
 	}
 }
 
-void bbe::INTERNAL_mouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+void bbe::INTERNAL_mouseScrollCallback(GLFWwindow *window, double xoffset, double yoffset)
 {
-	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
+	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
 #ifndef BBE_RENDERER_NULL
 	ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
 	// TODO: This lead to issues in the MOTHER console. We need to have scroll events there, even though a ImGui Window is in the foreground. Fix me.
 	//if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
-	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_scroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
+	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_mouse.INTERNAL_scroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
 }
 
-void bbe::INTERNAL_windowCloseCallback(GLFWwindow* window)
+void bbe::INTERNAL_windowCloseCallback(GLFWwindow *window)
 {
-	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
-	switch (((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->getWindowCloseMode())
+	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
+	switch (((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->getWindowCloseMode())
 	{
 	case bbe::WindowCloseMode::CLOSE:
 		// Do nothing
 		break;
 	case bbe::WindowCloseMode::HIDE:
 		glfwWrapper::glfwSetWindowShouldClose(window, GLFW_FALSE);
-		((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->hideWindow();
+		((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->hideWindow();
 		break;
 	default:
 		bbe::Crash(bbe::Error::IllegalState);
 	}
 }
 
-void bbe::INTERNAL_windowRefreshCallback(GLFWwindow* window)
+void bbe::INTERNAL_windowRefreshCallback(GLFWwindow *window)
 {
-	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_onRefresh();
+	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_onRefresh();
 }
 
-void bbe::INTERNAL_windowPosCallback(GLFWwindow* window, int, int)
+void bbe::INTERNAL_windowPosCallback(GLFWwindow *window, int, int)
 {
-	((bbe::Window*)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_onRefresh();
+	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_onRefresh();
 }
 
 template<>
-uint32_t bbe::hash(const bbe::Window& t)
+uint32_t bbe::hash(const bbe::Window &t)
 {
 	//UNTESTED
 	return t.getWidth() * 7 + t.getHeight() * 13;

@@ -15,9 +15,9 @@ namespace bbe
 			class VulkanDescriptorPoolSetLayoutContainer
 			{
 			public:
-				VulkanDescriptorPoolSetLayoutContainer(const VulkanDescriptorSetLayout* vulkanDescriptorSetLayout, uint32_t amountOfSets);
+				VulkanDescriptorPoolSetLayoutContainer(const VulkanDescriptorSetLayout *vulkanDescriptorSetLayout, uint32_t amountOfSets);
 
-				const VulkanDescriptorSetLayout* m_pvulkanDescriptorSetLayout;
+				const VulkanDescriptorSetLayout *m_pvulkanDescriptorSetLayout;
 				uint32_t m_amountOfSets;
 			};
 
@@ -25,11 +25,11 @@ namespace bbe
 			{
 			private:
 				VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
-				VkDevice         m_device         = VK_NULL_HANDLE;
+				VkDevice m_device = VK_NULL_HANDLE;
 
 				List<VulkanDescriptorPoolSetLayoutContainer> m_setLayouts;
-			public:
 
+			public:
 				void addVulkanDescriptorSetLayout(const VulkanDescriptorSetLayout &dsl, uint32_t amountOfSets);
 
 				void create(const VulkanDevice &device);

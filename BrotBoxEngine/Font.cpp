@@ -8,7 +8,7 @@
 #include "EmbeddedFonts.h"
 #include "BBE/Logging.h"
 
-const bbe::Font::CharData& bbe::Font::loadCharData(const int32_t codePoint, float scale_) const
+const bbe::Font::CharData &bbe::Font::loadCharData(const int32_t codePoint, float scale_) const
 {
 	if (!isInit) bbe::Crash(bbe::Error::NotInitialized);
 
@@ -30,7 +30,7 @@ const bbe::Font::CharData& bbe::Font::loadCharData(const int32_t codePoint, floa
 	int height = 0;
 	int xoff = 0;
 	int yoff = 0;
-	unsigned char* bitmap = stbtt_GetCodepointBitmap(&fontInfo, 0, scale, codePoint, &width, &height, &xoff, &yoff);
+	unsigned char *bitmap = stbtt_GetCodepointBitmap(&fontInfo, 0, scale, codePoint, &width, &height, &xoff, &yoff);
 	if (bitmap == nullptr) bbe::Crash(bbe::Error::NullPointer);
 
 	//TODO: Currently this is a very wasteful approach to rendering text as we create a separate image for every distinct
@@ -38,11 +38,11 @@ const bbe::Font::CharData& bbe::Font::loadCharData(const int32_t codePoint, floa
 	cd.charImage = bbe::Image(width, height, bitmap, bbe::ImageFormat::R8);
 	stbtt_FreeBitmap(bitmap, nullptr);
 	cd.charImage.setRepeatMode(bbe::ImageRepeatMode::CLAMP_TO_EDGE);
-	charDatas[{codePoint, scale_}] = std::move(cd);
-	return charDatas[{codePoint, scale_}];
+	charDatas[{ codePoint, scale_ }] = std::move(cd);
+	return charDatas[{ codePoint, scale_ }];
 }
 
-const bbe::Font::CharData& bbe::Font::getCharData(int32_t c, float scale) const
+const bbe::Font::CharData &bbe::Font::getCharData(int32_t c, float scale) const
 {
 	if (c == ' ' || c == '\n') scale = 1.0f;
 	auto keyVal = charDatas.find({ c, scale });
@@ -59,12 +59,12 @@ bbe::Font::Font()
 	// Do nothing.
 }
 
-bbe::Font::Font(const bbe::String& fontPath, unsigned fontSize)
+bbe::Font::Font(const bbe::String &fontPath, unsigned fontSize)
 {
 	load(fontPath, fontSize);
 }
 
-void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
+void bbe::Font::load(const bbe::String &fontPath, unsigned fontSize)
 {
 	if (isInit)
 	{
@@ -82,7 +82,7 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 #elif defined(unix) || defined(linux)
 		static const bbe::List<bbe::String> platformDependentFontDirectories = { "/usr/share/fonts/truetype/", "~/.fonts" };
 #else
-		static const bbe::List<bbe::String> platformDependentFontDirectories = { };
+		static const bbe::List<bbe::String> platformDependentFontDirectories = {};
 #endif
 		BBELOGLN("Looking for Font " << fontPath);
 		if (std::filesystem::exists(fontPath.getRaw()))
@@ -93,7 +93,7 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 		else
 		{
 			bool found = false;
-			for (const bbe::String & platformDep : platformDependentFontDirectories)
+			for (const bbe::String &platformDep : platformDependentFontDirectories)
 			{
 				const bbe::String currCheckPath = platformDep + fontPath;
 				if (std::filesystem::exists(currCheckPath.getRaw()))
@@ -110,11 +110,11 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 				bbe::Crash(bbe::Error::NullPointer);
 			}
 		}
-		
+
 		font = bbe::simpleFile::readBinaryFile(this->fontPath);
 	}
 
-	this->fontSize   = fontSize;
+	this->fontSize = fontSize;
 
 	stbtt_InitFont(&fontInfo, font.getRaw(), stbtt_GetFontOffsetForIndex(font.getRaw(), 0));
 	const float scale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(fontSize));
@@ -133,18 +133,18 @@ void bbe::Font::load(const bbe::String& fontPath, unsigned fontSize)
 		CharData space;
 		space.advanceWidth = static_cast<int>(spaceAdvance * scale);
 		space.leftSideBearing = static_cast<int>(spaceLeftSideBearing * scale);
-		charDatas[{' ', 1.0f}] = std::move(space);
+		charDatas[{ ' ', 1.0f }] = std::move(space);
 	}
 
 	{
 		CharData empty;
-		charDatas[{'\n', 1.0f}] = std::move(empty);
+		charDatas[{ '\n', 1.0f }] = std::move(empty);
 	}
 
 	isInit = true;
 }
 
-const bbe::String& bbe::Font::getFontPath() const
+const bbe::String &bbe::Font::getFontPath() const
 {
 	if (!isInit) bbe::Crash(bbe::Error::NotInitialized);
 	return fontPath;
@@ -162,7 +162,7 @@ int32_t bbe::Font::getPixelsFromLineToLine() const
 	return pixelsFromLineToLine;
 }
 
-const bbe::Image& bbe::Font::getImage(int32_t c, float scale) const
+const bbe::Image &bbe::Font::getImage(int32_t c, float scale) const
 {
 	return getCharData(c, scale).charImage;
 }
@@ -214,7 +214,7 @@ int32_t bbe::Font::getFixedWidth() const
 	return fixedWidth;
 }
 
-bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const char* text, float rotation, bool verticalCorrection) const
+bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2 &p, const char *text, float rotation, bool verticalCorrection) const
 {
 	bbe::List<bbe::Vector2> retVal;
 
@@ -240,7 +240,7 @@ bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const ch
 		else
 		{
 			currentPosition.x += getLeftSideBearing(codePoint);
-			const bbe::Image& charImage = getImage(codePoint, 1.0f);
+			const bbe::Image &charImage = getImage(codePoint, 1.0f);
 			if (verticalCorrection)
 			{
 				retVal.add((bbe::Vector2(currentPosition.x, currentPosition.y + getVerticalOffset(codePoint)) + charImage.getDimensions().as<float>() / 2).rotate(rotation, p) - charImage.getDimensions().as<float>() / 2);
@@ -256,12 +256,12 @@ bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const ch
 	return retVal;
 }
 
-bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2& p, const bbe::String& text, float rotation, bool verticalCorrection) const
+bbe::List<bbe::Vector2> bbe::Font::getRenderPositions(const Vector2 &p, const bbe::String &text, float rotation, bool verticalCorrection) const
 {
 	return getRenderPositions(p, text.getRaw(), rotation, verticalCorrection);
 }
 
-bbe::Rectangle bbe::Font::getBoundingBox(const bbe::String& text) const
+bbe::Rectangle bbe::Font::getBoundingBox(const bbe::String &text) const
 {
 	if (text.isEmpty()) return bbe::Rectangle();
 
@@ -282,13 +282,13 @@ bbe::Rectangle bbe::Font::getBoundingBox(const bbe::String& text) const
 	return retVal;
 }
 
-bbe::Vector2 bbe::Font::getSize(const bbe::String& text) const
+bbe::Vector2 bbe::Font::getSize(const bbe::String &text) const
 {
 	const bbe::Rectangle size = getBoundingBox(text);
 	return size.getDim() - size.getPos();
 }
 
-bbe::FittedFont bbe::Font::getBestFittingFont(const bbe::List<Font>& fonts, const bbe::String& string, bbe::Vector2 maxSize)
+bbe::FittedFont bbe::Font::getBestFittingFont(const bbe::List<Font> &fonts, const bbe::String &string, bbe::Vector2 maxSize)
 {
 	if (fonts.isEmpty())
 	{

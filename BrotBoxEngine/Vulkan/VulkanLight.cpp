@@ -4,17 +4,17 @@
 
 static size_t lightAmount = 0;
 static bbe::INTERNAL::vulkan::VulkanBuffer s_bufferVertexData;
-static bbe::INTERNAL::vulkan::VulkanLight::PointLightVertexData* s_dataVertex;
+static bbe::INTERNAL::vulkan::VulkanLight::PointLightVertexData *s_dataVertex;
 static bbe::INTERNAL::vulkan::VulkanBuffer s_bufferFragmentData;
-static bbe::INTERNAL::vulkan::VulkanLight::PointLightFragmentData* s_dataFragment;
+static bbe::INTERNAL::vulkan::VulkanLight::PointLightFragmentData *s_dataFragment;
 
 void bbe::INTERNAL::vulkan::VulkanLight::s_init(VkDevice device, VkPhysicalDevice physicalDevice)
 {
 	s_bufferVertexData.create(device, physicalDevice, sizeof(PointLightVertexData) * Settings::getAmountOfLightSources(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-	s_dataVertex = (PointLightVertexData*)s_bufferVertexData.map();
+	s_dataVertex = (PointLightVertexData *)s_bufferVertexData.map();
 
 	s_bufferFragmentData.create(device, physicalDevice, sizeof(PointLightFragmentData) * Settings::getAmountOfLightSources(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-	s_dataFragment = (PointLightFragmentData*)s_bufferFragmentData.map();
+	s_dataFragment = (PointLightFragmentData *)s_bufferFragmentData.map();
 
 	memset(s_dataVertex, 0, sizeof(PointLightVertexData) * Settings::getAmountOfLightSources());
 
@@ -36,7 +36,7 @@ void bbe::INTERNAL::vulkan::VulkanLight::beginDraw()
 	}
 }
 
-void bbe::INTERNAL::vulkan::VulkanLight::addLight(const bbe::Vector3& pos, float lightStrenght, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)
+void bbe::INTERNAL::vulkan::VulkanLight::addLight(const bbe::Vector3 &pos, float lightStrenght, const bbe::Color &lightColor, const bbe::Color &specularColor, LightFalloffMode falloffMode)
 {
 	lightAmount++;
 	if (lightAmount >= Settings::getAmountOfLightSources())
@@ -46,7 +46,6 @@ void bbe::INTERNAL::vulkan::VulkanLight::addLight(const bbe::Vector3& pos, float
 
 	s_dataVertex[lightAmount].m_position = pos;
 	s_dataVertex[lightAmount].m_used = 1.0f;
-
 
 	s_dataFragment[lightAmount].m_lightStrength = lightStrenght;
 	s_dataFragment[lightAmount].m_lightFallOffMode = falloffMode;
@@ -65,12 +64,12 @@ void bbe::INTERNAL::vulkan::VulkanLight::s_destroy()
 	s_bufferFragmentData.destroy();
 }
 
-bbe::INTERNAL::vulkan::VulkanBuffer& bbe::INTERNAL::vulkan::VulkanLight::getVertexBuffer()
+bbe::INTERNAL::vulkan::VulkanBuffer &bbe::INTERNAL::vulkan::VulkanLight::getVertexBuffer()
 {
 	return s_bufferVertexData;
 }
 
-bbe::INTERNAL::vulkan::VulkanBuffer& bbe::INTERNAL::vulkan::VulkanLight::getFragmentBuffer()
+bbe::INTERNAL::vulkan::VulkanBuffer &bbe::INTERNAL::vulkan::VulkanLight::getFragmentBuffer()
 {
 	return s_bufferFragmentData;
 }

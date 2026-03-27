@@ -13,7 +13,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::addVulkanDescriptorSetLayout(c
 	m_setLayouts.add(VulkanDescriptorPoolSetLayoutContainer(&dsl, amountOfSets));
 }
 
-void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(const VulkanDevice & device)
+void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(const VulkanDevice &device)
 {
 	m_device = device.getDevice();
 	uint32_t amountOfUniformBuffer = 0;
@@ -28,13 +28,13 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(const VulkanDevice & de
 			switch (m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings[k].descriptorType)
 			{
 			case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-				amountOfUniformBuffer        += m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings[k].descriptorCount * m_setLayouts[i].m_amountOfSets;
+				amountOfUniformBuffer += m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings[k].descriptorCount * m_setLayouts[i].m_amountOfSets;
 				break;
 			case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
 				amountOfCombinedImageSampler += m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings[k].descriptorCount * m_setLayouts[i].m_amountOfSets;
 				break;
 			case VK_DESCRIPTOR_TYPE_SAMPLER:
-				amountOfSampler              += m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings[k].descriptorCount * m_setLayouts[i].m_amountOfSets;
+				amountOfSampler += m_setLayouts[i].m_pvulkanDescriptorSetLayout->m_bindings[k].descriptorCount * m_setLayouts[i].m_amountOfSets;
 				break;
 			default:
 				bbe::Crash(bbe::Error::NotImplemented);
@@ -50,17 +50,17 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::create(const VulkanDevice & de
 	constexpr uint32_t additionalSizes = 1000;
 
 	List<VkDescriptorPoolSize> poolSizes;
-	poolSizes.add({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         amountOfUniformBuffer        + additionalSizes});
-	poolSizes.add({ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, amountOfCombinedImageSampler + additionalSizes});
-	poolSizes.add({ VK_DESCRIPTOR_TYPE_SAMPLER,                amountOfSampler              + additionalSizes});
-	poolSizes.add({ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          0                            + additionalSizes});
-	poolSizes.add({ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          0                            + additionalSizes});
-	poolSizes.add({ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,   0                            + additionalSizes});
-	poolSizes.add({ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,   0                            + additionalSizes});
-	poolSizes.add({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         0                            + additionalSizes});
-	poolSizes.add({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0                            + additionalSizes});
-	poolSizes.add({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 0                            + additionalSizes});
-	poolSizes.add({ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       0                            + additionalSizes});
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, amountOfUniformBuffer + additionalSizes });
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, amountOfCombinedImageSampler + additionalSizes });
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_SAMPLER, amountOfSampler + additionalSizes });
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 0 + additionalSizes });
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0 + additionalSizes });
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 0 + additionalSizes });
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 0 + additionalSizes });
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0 + additionalSizes });
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0 + additionalSizes });
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 0 + additionalSizes });
+	poolSizes.add({ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 0 + additionalSizes });
 
 	VkDescriptorPoolCreateInfo dpci = {};
 	dpci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -80,7 +80,7 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorPool::destroy()
 	{
 		vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 		m_descriptorPool = VK_NULL_HANDLE;
-		m_device         = VK_NULL_HANDLE;
+		m_device = VK_NULL_HANDLE;
 		m_setLayouts.clear();
 	}
 }
@@ -90,7 +90,7 @@ VkDescriptorPool bbe::INTERNAL::vulkan::VulkanDescriptorPool::getDescriptorPool(
 	return m_descriptorPool;
 }
 
-bbe::INTERNAL::vulkan::VulkanDescriptorPoolSetLayoutContainer::VulkanDescriptorPoolSetLayoutContainer(const VulkanDescriptorSetLayout * vulkanDescriptorSetLayout, uint32_t amountOfSets)
+bbe::INTERNAL::vulkan::VulkanDescriptorPoolSetLayoutContainer::VulkanDescriptorPoolSetLayoutContainer(const VulkanDescriptorSetLayout *vulkanDescriptorSetLayout, uint32_t amountOfSets)
 {
 	m_pvulkanDescriptorSetLayout = vulkanDescriptorSetLayout;
 	m_amountOfSets = amountOfSets;

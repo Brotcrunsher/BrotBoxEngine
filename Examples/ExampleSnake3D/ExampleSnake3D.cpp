@@ -3,7 +3,12 @@
 
 enum class Direction
 {
-	UP, DOWN, LEFT, RIGHT, FRONT, BACK
+	UP,
+	DOWN,
+	LEFT,
+	RIGHT,
+	FRONT,
+	BACK
 };
 
 struct BodyPart
@@ -126,7 +131,6 @@ public:
 			bodyParts[0].z = 0;
 		}
 
-
 		if (bodyParts[0].x == food.x && bodyParts[0].y == food.y && bodyParts[0].z == food.z)
 		{
 			bodyParts.add({ -1, -1 });
@@ -177,7 +181,7 @@ public:
 
 	void placeFood()
 	{
-		start:
+	start:
 		int randX = rand.randomInt(GRIDDIMENSIONSIZE);
 		int randY = rand.randomInt(GRIDDIMENSIONSIZE);
 		int randZ = rand.randomInt(GRIDDIMENSIONSIZE);
@@ -193,21 +197,20 @@ public:
 		food.z = randZ;
 	}
 
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
-
 	}
 
 	virtual void onEnd() override
 	{
 	}
 
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 		brush.addLight(light);
 		brush.setCamera(camPos, bbe::Vector3(GRIDDIMENSIONSIZE / 2, GRIDDIMENSIONSIZE / 2, GRIDDIMENSIONSIZE / 2));
 		brush.setColor(1, 1, 1, 0.5f); //TODO: Alpha has no effect.
-		for (const BodyPart& bp : bodyParts)
+		for (const BodyPart &bp : bodyParts)
 		{
 			if (bp.x != -1 && bp.y != -1 && bp.z != -1)
 			{
@@ -220,7 +223,6 @@ public:
 	}
 };
 
-
 int main()
 {
 	MyGame mg;
@@ -228,4 +230,3 @@ int main()
 
 	return 0;
 }
-

@@ -14,7 +14,6 @@ public:
 	bbe::Vector3 speed;
 	bbe::IcoSphere m_sphere;
 
-
 	explicit Particle()
 		: pos(s_random.randomVector3InUnitSphere() * 100.0f)
 	{
@@ -44,7 +43,6 @@ public:
 			}
 		}
 
-		
 		speed = speed * 0.99f;
 	}
 
@@ -61,7 +59,6 @@ public:
 		brush.fillIcoSphere(m_sphere);
 	}
 };
-
 
 class MyGame : public bbe::Game
 {
@@ -110,7 +107,6 @@ class MyGame : public bbe::Game
 			}
 		}
 
-
 		for (int iterations = 0; iterations < 20; iterations++)
 		{
 			for (Particle &p : particles)
@@ -136,7 +132,7 @@ class MyGame : public bbe::Game
 			wireframe = !wireframe;
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 		brush.setFillMode(wireframe ? bbe::FillMode::WIREFRAME : bbe::FillMode::SOLID);
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
@@ -151,7 +147,7 @@ class MyGame : public bbe::Game
 			p.draw(brush);
 		}
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 	}
 	virtual void onEnd() override
@@ -165,4 +161,3 @@ int main()
 	MyGame game;
 	game.start(1280, 720, "Particle Gravity");
 }
-

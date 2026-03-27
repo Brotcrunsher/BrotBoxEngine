@@ -36,35 +36,35 @@ namespace bbe
 			return Vector2(x, y);
 		}
 
-		Vector2_t& operator+=(const Vector2_t<T>& other)
+		Vector2_t &operator+=(const Vector2_t<T> &other)
 		{
 			this->x += other.x;
 			this->y += other.y;
 			return *this;
 		}
 
-		Vector2_t& operator-=(const Vector2_t<T>& other)
+		Vector2_t &operator-=(const Vector2_t<T> &other)
 		{
 			this->x -= other.x;
 			this->y -= other.y;
 			return *this;
 		}
 
-		Vector2_t& operator*=(const Vector2_t<T>& other)
+		Vector2_t &operator*=(const Vector2_t<T> &other)
 		{
 			this->x *= other.x;
 			this->y *= other.y;
 			return *this;
 		}
 
-		Vector2_t& operator/=(const Vector2_t<T>& other)
+		Vector2_t &operator/=(const Vector2_t<T> &other)
 		{
 			this->x /= other.x;
 			this->y /= other.y;
 			return *this;
 		}
 
-		Vector2_t& operator*=(T scalar)
+		Vector2_t &operator*=(T scalar)
 		{
 			//UNTESTED
 			this->x *= scalar;
@@ -72,7 +72,7 @@ namespace bbe
 			return *this;
 		}
 
-		Vector2_t& operator/=(T scalar)
+		Vector2_t &operator/=(T scalar)
 		{
 			//UNTESTED
 			this->x /= scalar;
@@ -95,7 +95,7 @@ namespace bbe
 			return x * other.x + y * other.y;
 		}
 
-		Vector2_t operator/(const Vector2_t<T>& other) const
+		Vector2_t operator/(const Vector2_t<T> &other) const
 		{
 			return Vector2_t<T>(x / other.x, y / other.y);
 		}
@@ -115,7 +115,7 @@ namespace bbe
 			return Vector2_t<T>(-x, -y);
 		}
 
-		T& operator[](int index)
+		T &operator[](int index)
 		{
 			switch (index)
 			{
@@ -128,7 +128,7 @@ namespace bbe
 			}
 		}
 
-		const T& operator[](int index) const
+		const T &operator[](int index) const
 		{
 			switch (index)
 			{
@@ -149,7 +149,7 @@ namespace bbe
 		{
 			return !(operator==(other));
 		}
-		bool operator> (const Vector2_t<T> &other) const
+		bool operator>(const Vector2_t<T> &other) const
 		{
 			if (x > other.x) return true;
 			if (x < other.x) return false;
@@ -161,7 +161,7 @@ namespace bbe
 			if (x < other.x) return false;
 			return y >= other.y;
 		}
-		bool operator< (const Vector2_t<T> &other) const
+		bool operator<(const Vector2_t<T> &other) const
 		{
 			if (x < other.x) return true;
 			if (x > other.x) return false;
@@ -176,8 +176,7 @@ namespace bbe
 
 		bool equals(const Vector2_t<T> &other, T epsilon = 0.001f) const
 		{
-			return Math::floatEquals(x, other.x, epsilon)
-				&& Math::floatEquals(y, other.y, epsilon);
+			return Math::floatEquals(x, other.x, epsilon) && Math::floatEquals(y, other.y, epsilon);
 		}
 		bool isSameLength(const Vector2_t<T> &other, T epsilon = 0.001f) const
 		{
@@ -221,7 +220,7 @@ namespace bbe
 			return x == 0 && y == 0;
 		}
 
-		T cross(const Vector2_t& other) const
+		T cross(const Vector2_t &other) const
 		{
 			return this->x * other.y - this->y * other.x;
 		}
@@ -233,8 +232,7 @@ namespace bbe
 
 			return Vector2_t<T>(
 				x * cos - y * sin,
-				x * sin + y * cos
-			);
+				x * sin + y * cos);
 		}
 		Vector2_t rotate(T radians, const Vector2_t<T> &center) const
 		{
@@ -254,7 +252,7 @@ namespace bbe
 		{
 			return normalize() * length;
 		}
-		Vector2_t normalize(const bbe::Vector2_t<T>& zeroBehavior = bbe::Vector2_t<T>(1, 0)) const
+		Vector2_t normalize(const bbe::Vector2_t<T> &zeroBehavior = bbe::Vector2_t<T>(1, 0)) const
 		{
 			T length = getLength();
 			if (length == 0)
@@ -277,18 +275,17 @@ namespace bbe
 			scalar /= other.getLengthSq();
 			return other * scalar;
 		}
-		Vector2_t reflect(const Vector2_t<T>&normal) const
+		Vector2_t reflect(const Vector2_t<T> &normal) const
 		{
 			Vector2_t<T> normalized = normal.normalize();
 			return operator-(normalized * 2 * (operator*(normalized)));
 		}
 
-		Vector2_t maxVector(const Vector2_t<T>& other) const
+		Vector2_t maxVector(const Vector2_t<T> &other) const
 		{
 			return Vector2_t<T>(
 				bbe::Math::max(x, other.x),
-				bbe::Math::max(y, other.y)
-				);
+				bbe::Math::max(y, other.y));
 		}
 
 		T getLength() const
@@ -303,11 +300,11 @@ namespace bbe
 		{
 			return bbe::Math::abs(x) * x + bbe::Math::abs(y) * y;
 		}
-		T getDistanceTo(const Vector2_t<T>& other) const
+		T getDistanceTo(const Vector2_t<T> &other) const
 		{
 			return (operator-(other)).getLength();
 		}
-		T getDistanceToSq(const Vector2_t<T>& other) const
+		T getDistanceToSq(const Vector2_t<T> &other) const
 		{
 			return (operator-(other)).getLengthSq();
 		}
@@ -315,7 +312,7 @@ namespace bbe
 		{
 			return getDistanceTo(Vector2_t<T>(x, y));
 		}
-		T getDistanceToManhatten(const Vector2_t<T>& other) const
+		T getDistanceToManhatten(const Vector2_t<T> &other) const
 		{
 			return getDistanceToManhatten(other.x, other.y);
 		}
@@ -397,15 +394,15 @@ namespace bbe
 		}
 	};
 
-	using Vector2  = Vector2_t<float>;
+	using Vector2 = Vector2_t<float>;
 	using Vector2d = Vector2_t<double>;
 	using Vector2i = Vector2_t<int32_t>;
 	using Vector2i64 = Vector2_t<int64_t>;
 
 	template<>
-	uint32_t hash(const Vector2i& t);
+	uint32_t hash(const Vector2i &t);
 	template<>
-	uint32_t hash(const Vector2& t);
+	uint32_t hash(const Vector2 &t);
 
 	class LineIterator
 	{
@@ -417,11 +414,11 @@ namespace bbe
 		int32_t error = 0;
 		bool moreAvailable = true;
 
-		void init(const bbe::Vector2i& a, const bbe::Vector2i& b);
+		void init(const bbe::Vector2i &a, const bbe::Vector2i &b);
 
 	public:
 		LineIterator();
-		LineIterator(const bbe::Vector2i& a, const bbe::Vector2i& b);
+		LineIterator(const bbe::Vector2i &a, const bbe::Vector2i &b);
 
 		bool hasNext() const;
 		bbe::Vector2i next();

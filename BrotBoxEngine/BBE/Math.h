@@ -7,7 +7,8 @@
 
 namespace bbe
 {
-	template<typename T> class Vector2_t;
+	template<typename T>
+	class Vector2_t;
 	using Vector2 = Vector2_t<float>;
 	using Vector2i = Vector2_t<int32_t>;
 	using Vector2i64 = Vector2_t<int64_t>;
@@ -16,22 +17,21 @@ namespace bbe
 
 	namespace Math
 	{
-		constexpr  int32_t BIGGEST_PRIME_32_SIGNED   = 2147483647;
+		constexpr int32_t BIGGEST_PRIME_32_SIGNED = 2147483647;
 		constexpr uint32_t BIGGEST_PRIME_32_UNSIGNED = 4294967295;
 
-
-		constexpr double PI_d             = 3.1415926535897932384626433832795028841;
-		constexpr double TAU_d            = 6.2831853071795864769252867665590057682;
-		constexpr double GOLDEN_RATIO_d   = 1.6180339887498948482045868343656381177;
-		constexpr float PI                = (float)PI_d;
-		constexpr float TAU               = (float)TAU_d;
-		constexpr float GOLDEN_RATIO      = (float)GOLDEN_RATIO_d;
-		constexpr float E                 = 2.71828182845f;
-		constexpr float SQRT2             = 1.41421356237f;
-		constexpr float SQRT2INV          = 0.70710678118f;
+		constexpr double PI_d = 3.1415926535897932384626433832795028841;
+		constexpr double TAU_d = 6.2831853071795864769252867665590057682;
+		constexpr double GOLDEN_RATIO_d = 1.6180339887498948482045868343656381177;
+		constexpr float PI = (float)PI_d;
+		constexpr float TAU = (float)TAU_d;
+		constexpr float GOLDEN_RATIO = (float)GOLDEN_RATIO_d;
+		constexpr float E = 2.71828182845f;
+		constexpr float SQRT2 = 1.41421356237f;
+		constexpr float SQRT2INV = 0.70710678118f;
 		constexpr float INFINITY_POSITIVE = std::numeric_limits<float>::infinity();
 		constexpr float INFINITY_NEGATIVE = -std::numeric_limits<float>::infinity();
-		constexpr float NaN               = std::numeric_limits<float>::quiet_NaN();
+		constexpr float NaN = std::numeric_limits<float>::quiet_NaN();
 
 		double pow(double base, double expo);
 
@@ -79,49 +79,49 @@ namespace bbe
 		float ceil(float val);
 		float round(float val);
 		float square(float val);
-		template <typename T>
+		template<typename T>
 		T clamp(T val, T min, T max)
 		{
 			return val < min ? min : (val > max ? max : val);
 		}
 		float clamp01(float val);
 		float normalDist(float x, float u, float o);
-		bool  isInRange(float val, float min, float max);
-		bool  isInRangeStrict(float val, float min, float max);
-		bool  isInRange01(float val);
-		bool  isInRange01Strict(float val);
-		template <typename T>
+		bool isInRange(float val, float min, float max);
+		bool isInRangeStrict(float val, float min, float max);
+		bool isInRange01(float val);
+		bool isInRange01Strict(float val);
+		template<typename T>
 		T abs(T val)
 		{
 			return val < 0 ? -val : val;
 		}
-		template <typename T>
+		template<typename T>
 		T max(T val1, T val2)
 		{
 			return val1 > val2 ? val1 : val2;
 		}
 		float max(float val1, float val2, float val3);
 		float max(float val1, float val2, float val3, float val4);
-		template <typename T>
+		template<typename T>
 		T min(T val1, T val2)
 		{
 			return val1 < val2 ? val1 : val2;
 		}
 		float min(float val1, float val2, float val3);
 		float min(float val1, float val2, float val3, float val4);
-		template <typename T>
+		template<typename T>
 		T maxAbs(T val1, T val2)
 		{
 			return max(abs(val1), abs(val2));
 		}
 		float maxAbs(float val1, float val2, float val3);
-		template <typename T>
+		template<typename T>
 		T minAbs(T val1, T val2)
 		{
 			return min(abs(val1), abs(val2));
 		}
 		float minAbs(float val1, float val2, float val3);
-		template <typename T>
+		template<typename T>
 		T maxAbsKeepSign(T val1, T val2)
 		{
 			if (abs(val1) > abs(val2))
@@ -134,7 +134,7 @@ namespace bbe
 			}
 		}
 		float maxAbsKeepSign(float val1, float val2, float val3);
-		template <typename T>
+		template<typename T>
 		T minAbsKeepSign(T val1, T val2)
 		{
 			if (abs(val1) < abs(val2))
@@ -147,7 +147,7 @@ namespace bbe
 			}
 		}
 		float minAbsKeepSign(float val1, float val2, float val3);
-		template <typename T>
+		template<typename T>
 		bool floatEquals(T val1, T val2, T epsilon)
 		{
 			return (val1 - val2) > epsilon ? false : ((val1 - val2) < -epsilon ? false : true);
@@ -200,17 +200,17 @@ namespace bbe
 		float interpolateHermite(float a, float b, float t, float tangent1, float tangent2);
 
 		template<typename T>
-		T multiLerp(const bbe::List<std::pair<float, T>>& lerpValues, float t)
+		T multiLerp(const bbe::List<std::pair<float, T>> &lerpValues, float t)
 		{
 			if (t <= lerpValues.first().first) return lerpValues.first().second;
-			if (t >= lerpValues.last() .first) return lerpValues.last() .second;
+			if (t >= lerpValues.last().first) return lerpValues.last().second;
 
 			for (size_t i = 1; i < lerpValues.getLength(); i++)
 			{
 				if (t <= lerpValues[i].first)
 				{
-					const T& a = lerpValues[i - 1].second;
-					const T& b = lerpValues[i].second;
+					const T &a = lerpValues[i - 1].second;
+					const T &b = lerpValues[i].second;
 					const float dist = lerpValues[i].first - lerpValues[i - 1].first;
 					const float lt = (t - lerpValues[i - 1].first) / dist;
 
@@ -222,13 +222,13 @@ namespace bbe
 			bbe::Crash(bbe::Error::IllegalArgument);
 		}
 
-		bool isLeftTurn(const bbe::Vector2& a, const bbe::Vector2& b, const bbe::Vector2& c);
-		bbe::List<bbe::Vector2> getConvexHull(const bbe::List<bbe::Vector2>& points);
-		const bbe::Vector2* getClosest(const bbe::Vector2& pos, const bbe::List<bbe::Vector2>& points);
-		      bbe::Vector2* getClosest(const bbe::Vector2& pos,       bbe::List<bbe::Vector2>& points);
-		
+		bool isLeftTurn(const bbe::Vector2 &a, const bbe::Vector2 &b, const bbe::Vector2 &c);
+		bbe::List<bbe::Vector2> getConvexHull(const bbe::List<bbe::Vector2> &points);
+		const bbe::Vector2 *getClosest(const bbe::Vector2 &pos, const bbe::List<bbe::Vector2> &points);
+		bbe::Vector2 *getClosest(const bbe::Vector2 &pos, bbe::List<bbe::Vector2> &points);
+
 		template<typename Vec>
-		bbe::List<Vec> project(const bbe::List<Vec>& points, const Vec& projection)
+		bbe::List<Vec> project(const bbe::List<Vec> &points, const Vec &projection)
 		{
 			bbe::List<Vec> retVal;
 			retVal.resizeCapacityAndLength(points.getLength());
@@ -257,23 +257,24 @@ namespace bbe
 		Vector2 interpolateBezier(Vector2 a, Vector2 b, float t, const bbe::List<Vector2> &controlPoints);
 		Vector2 interpolateHermite(Vector2 a, Vector2 b, float t, Vector2 tangent1, Vector2 tangent2);
 
-		Vector2 minComponent(const bbe::List<Vector2>& vectors);
-		Vector2 maxComponent(const bbe::List<Vector2>& vectors);
-		Vector2 minAbsComponent(const bbe::List<Vector2>& vectors);
-		Vector2 maxAbsComponent(const bbe::List<Vector2>& vectors);
+		Vector2 minComponent(const bbe::List<Vector2> &vectors);
+		Vector2 maxComponent(const bbe::List<Vector2> &vectors);
+		Vector2 minAbsComponent(const bbe::List<Vector2> &vectors);
+		Vector2 maxAbsComponent(const bbe::List<Vector2> &vectors);
 		template<typename T>
-		Vector2_t<T> average(const bbe::List<Vector2_t<T>>& vectors)
+		Vector2_t<T> average(const bbe::List<Vector2_t<T>> &vectors)
 		{
 			bbe::Vector2_t<T> retVal = bbe::Vector2_t<T>();
 
-			for (const bbe::Vector2_t<T>& v : vectors)
+			for (const bbe::Vector2_t<T> &v : vectors)
 			{
 				retVal += v;
 			}
 
-			return retVal / (double)vectors.getLength();;
+			return retVal / (double)vectors.getLength();
+			;
 		}
-		Vector2 medianComponent(const bbe::List<Vector2>& vectors);
+		Vector2 medianComponent(const bbe::List<Vector2> &vectors);
 
 		// An integer space filling curve that returns elements in this order:
 		// 0149
@@ -281,9 +282,9 @@ namespace bbe
 		// 786
 		Vector2i squareCantor(uint32_t index);
 
-		Vector3 minComponent(const bbe::List<Vector3>& vectors);
-		Vector3 maxComponent(const bbe::List<Vector3>& vectors);
-		Vector3 average(const bbe::List<Vector3>& vectors);
+		Vector3 minComponent(const bbe::List<Vector3> &vectors);
+		Vector3 maxComponent(const bbe::List<Vector3> &vectors);
+		Vector3 average(const bbe::List<Vector3> &vectors);
 
 		// TODO: Why are these pass by value?
 		Vector3 interpolateLinear(Vector3 a, Vector3 b, float t);
@@ -299,7 +300,6 @@ namespace bbe
 		Vector4 interpolateCubic(Vector4 preA, Vector4 a, Vector4 b, Vector4 postB, float t);
 		Vector4 interpolateBezier(Vector4 a, Vector4 b, float t, Vector4 control);
 		Vector4 interpolateHermite(Vector4 a, Vector4 b, float t, Vector4 tangent1, Vector4 tangent2);
-
 
 	}
 }

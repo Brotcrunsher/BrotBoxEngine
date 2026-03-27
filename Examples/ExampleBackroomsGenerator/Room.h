@@ -21,7 +21,7 @@ namespace br
 		bbe::Vector2i ownGatePos;
 		bbe::Vector2i neighborGatePos;
 
-		bool operator==(const Gate& other) const;
+		bool operator==(const Gate &other) const;
 		Gate flipped() const;
 	};
 
@@ -78,8 +78,8 @@ namespace br
 		bbe::List<bbe::PointLight> neighboringLights;
 
 		bbe::List<bbe::Vector2i> getHashGridPositions() const;
-		static bbe::List<bbe::Vector2i> getHashGridPositions(const bbe::Rectanglei& rect);
-		static bbe::Vector2i getHashGridPosition(const bbe::Vector2i& pos);
+		static bbe::List<bbe::Vector2i> getHashGridPositions(const bbe::Rectanglei &rect);
+		static bbe::Vector2i getHashGridPosition(const bbe::Vector2i &pos);
 
 		bbe::Vector3 getBoundingCubePos() const;
 		bbe::Vector3 getBoundingCubeScale() const;

@@ -1,11 +1,13 @@
 #include "../BBE/SoundGenerator.h"
 #include <cmath>
 
-bbe::SoundGenerator::SoundGenerator(const bbe::Duration& duration) : duration(duration)
-{}
+bbe::SoundGenerator::SoundGenerator(const bbe::Duration &duration) : duration(duration)
+{
+}
 
 bbe::SoundGenerator::SoundGenerator(double durationMilliseconds) : duration(bbe::Duration::fromMilliseconds(durationMilliseconds))
-{}
+{
+}
 
 int64_t bbe::SoundGenerator::getAmountOfSamples() const
 {
@@ -85,14 +87,14 @@ void bbe::SoundGenerator::addRecipeEcho(double offset, double mult, double delay
 	recipes.add(Recipe(offset, mult, RecipeEcho{ delayTime, decayFactor }));
 }
 
-void bbe::SoundGenerator::applyRecipes(bbe::List<double>& signal) const
+void bbe::SoundGenerator::applyRecipes(bbe::List<double> &signal) const
 {
 	for (size_t i = 0; i < recipes.getLength(); i++)
 	{
-		const Recipe& r = recipes[i];
+		const Recipe &r = recipes[i];
 
-		std::visit([&](auto&& arg)
-			{
+		std::visit([&](auto &&arg)
+				   {
 				using T = std::decay_t<decltype(arg)>;
 				if constexpr (std::is_same_v<T, RecipeSine>)
 				{
@@ -145,12 +147,11 @@ void bbe::SoundGenerator::applyRecipes(bbe::List<double>& signal) const
 				else
 				{
 					bbe::Crash(bbe::Error::IllegalArgument, "Illegal Recipe");
-				}
-			}, r.details);
+				} }, r.details);
 	}
 }
 
-void bbe::SoundGenerator::applyRecipeSineWave(bbe::List<double>& signal, double offset, double mult, double frequency) const
+void bbe::SoundGenerator::applyRecipeSineWave(bbe::List<double> &signal, double offset, double mult, double frequency) const
 {
 	for (size_t i = 0; i < signal.getLength(); i++)
 	{
@@ -158,7 +159,7 @@ void bbe::SoundGenerator::applyRecipeSineWave(bbe::List<double>& signal, double 
 	}
 }
 
-void bbe::SoundGenerator::applyRecipeSquareWave(bbe::List<double>& signal, double offset, double mult, double highDur, double lowDur, double highValue, double lowValue) const
+void bbe::SoundGenerator::applyRecipeSquareWave(bbe::List<double> &signal, double offset, double mult, double highDur, double lowDur, double highValue, double lowValue) const
 {
 	const double totalDur = highDur + lowDur;
 	for (size_t i = 0; i < signal.getLength(); i++)
@@ -175,7 +176,7 @@ void bbe::SoundGenerator::applyRecipeSquareWave(bbe::List<double>& signal, doubl
 	}
 }
 
-void bbe::SoundGenerator::applyRecipeSawtoothWave(bbe::List<double>& signal, double offset, double mult, double period) const
+void bbe::SoundGenerator::applyRecipeSawtoothWave(bbe::List<double> &signal, double offset, double mult, double period) const
 {
 	for (size_t i = 0; i < signal.getLength(); i++)
 	{
@@ -185,7 +186,7 @@ void bbe::SoundGenerator::applyRecipeSawtoothWave(bbe::List<double>& signal, dou
 	}
 }
 
-void bbe::SoundGenerator::applyRecipeTriangleWave(bbe::List<double>& signal, double offset, double mult, double raiseDur, double fallDur, double upDur, double downDur) const
+void bbe::SoundGenerator::applyRecipeTriangleWave(bbe::List<double> &signal, double offset, double mult, double raiseDur, double fallDur, double upDur, double downDur) const
 {
 	const double totalDur = raiseDur + fallDur;
 	for (size_t i = 0; i < signal.getLength(); i++)
@@ -204,7 +205,7 @@ void bbe::SoundGenerator::applyRecipeTriangleWave(bbe::List<double>& signal, dou
 	}
 }
 
-void bbe::SoundGenerator::applyRecipeADSR(bbe::List<double>& signal, double attackDur, double decayDur, double sustainLevel, double releaseDur) const
+void bbe::SoundGenerator::applyRecipeADSR(bbe::List<double> &signal, double attackDur, double decayDur, double sustainLevel, double releaseDur) const
 {
 	size_t attackSamples = (size_t)(attackDur * hz);
 	size_t decaySamples = (size_t)(decayDur * hz);
@@ -233,7 +234,7 @@ void bbe::SoundGenerator::applyRecipeADSR(bbe::List<double>& signal, double atta
 	}
 }
 
-void bbe::SoundGenerator::applyRecipeNormalization(bbe::List<double>& signal) const
+void bbe::SoundGenerator::applyRecipeNormalization(bbe::List<double> &signal) const
 {
 	double maxAmplitude = 0.0;
 	// Find the maximum absolute amplitude
@@ -254,7 +255,7 @@ void bbe::SoundGenerator::applyRecipeNormalization(bbe::List<double>& signal) co
 	}
 }
 
-void bbe::SoundGenerator::applyRecipeRingModulation(bbe::List<double>& signal, double offset, double mult, double frequency, double modDepth) const
+void bbe::SoundGenerator::applyRecipeRingModulation(bbe::List<double> &signal, double offset, double mult, double frequency, double modDepth) const
 {
 	for (size_t i = 0; i < signal.getLength(); i++)
 	{
@@ -263,7 +264,7 @@ void bbe::SoundGenerator::applyRecipeRingModulation(bbe::List<double>& signal, d
 	}
 }
 
-void bbe::SoundGenerator::applyRecipeChorusEffect(bbe::List<double>& signal, double offset, double mult, double delayTime, double depth, double rate) const
+void bbe::SoundGenerator::applyRecipeChorusEffect(bbe::List<double> &signal, double offset, double mult, double delayTime, double depth, double rate) const
 {
 	size_t delaySamples = (size_t)(delayTime * hz);
 	for (size_t i = delaySamples; i < signal.getLength(); i++)
@@ -277,7 +278,7 @@ void bbe::SoundGenerator::applyRecipeChorusEffect(bbe::List<double>& signal, dou
 	}
 }
 
-void bbe::SoundGenerator::applyRecipeLowPassFilter(bbe::List<double>& signal, double offset, double mult, double cutoffFrequency) const
+void bbe::SoundGenerator::applyRecipeLowPassFilter(bbe::List<double> &signal, double offset, double mult, double cutoffFrequency) const
 {
 	double RC = 1.0 / (cutoffFrequency * 2 * bbe::Math::PI);
 	double dt = 1.0 / hz;
@@ -291,7 +292,7 @@ void bbe::SoundGenerator::applyRecipeLowPassFilter(bbe::List<double>& signal, do
 	}
 }
 
-void bbe::SoundGenerator::applyRecipeBitcrusher(bbe::List<double>& signal, double offset, double mult, int bitDepth) const
+void bbe::SoundGenerator::applyRecipeBitcrusher(bbe::List<double> &signal, double offset, double mult, int bitDepth) const
 {
 	double maxValue = (1 << (bitDepth - 1)) - 1;
 	for (size_t i = 0; i < signal.getLength(); i++)
@@ -300,7 +301,7 @@ void bbe::SoundGenerator::applyRecipeBitcrusher(bbe::List<double>& signal, doubl
 	}
 }
 
-void bbe::SoundGenerator::applyRecipeFrequencyShifter(bbe::List<double>& signal, double offset, double mult, double frequencyShift) const
+void bbe::SoundGenerator::applyRecipeFrequencyShifter(bbe::List<double> &signal, double offset, double mult, double frequencyShift) const
 {
 	for (size_t i = 0; i < signal.getLength(); i++)
 	{
@@ -308,7 +309,7 @@ void bbe::SoundGenerator::applyRecipeFrequencyShifter(bbe::List<double>& signal,
 	}
 }
 
-void bbe::SoundGenerator::applyRecipeEcho(bbe::List<double>& signal, double offset, double mult, double delayTime, double decayFactor) const
+void bbe::SoundGenerator::applyRecipeEcho(bbe::List<double> &signal, double offset, double mult, double delayTime, double decayFactor) const
 {
 	size_t delaySamples = (size_t)(delayTime * hz);
 	for (size_t i = delaySamples; i < signal.getLength(); i++)

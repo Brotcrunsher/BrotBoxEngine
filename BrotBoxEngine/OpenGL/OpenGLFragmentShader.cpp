@@ -2,7 +2,7 @@
 #include "BBE/FatalErrors.h"
 #include "BBE/Logging.h"
 
-static GLuint getShader(GLenum shaderType, const char* src)
+static GLuint getShader(GLenum shaderType, const char *src)
 {
 	GLuint shader = glCreateShader(shaderType);
 	glShaderSource(shader, 1, &src, NULL);
@@ -22,7 +22,7 @@ static GLuint getShader(GLenum shaderType, const char* src)
 	return shader;
 }
 
-static void build(bbe::INTERNAL::openGl::OpenGLFragmentShader::ShaderProgramTripple& prog, const char* vertexShaderSource, const char* fragmentShaderSource)
+static void build(bbe::INTERNAL::openGl::OpenGLFragmentShader::ShaderProgramTripple &prog, const char *vertexShaderSource, const char *fragmentShaderSource)
 {
 	if (prog.built) return;
 	prog.built = true;
@@ -49,7 +49,7 @@ static void build(bbe::INTERNAL::openGl::OpenGLFragmentShader::ShaderProgramTrip
 	prog.determinePositions();
 }
 
-bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::FragmentShader& shader)
+bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::FragmentShader &shader)
 {
 	if (shader.m_prendererData != nullptr)
 	{
@@ -62,9 +62,9 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::Fra
 	code.last() = '\0';
 }
 
-bbe::INTERNAL::openGl::OpenGLFragmentShader::TwoD& bbe::INTERNAL::openGl::OpenGLFragmentShader::getTwoD()
+bbe::INTERNAL::openGl::OpenGLFragmentShader::TwoD &bbe::INTERNAL::openGl::OpenGLFragmentShader::getTwoD()
 {
-	char const* vertexShader2dSource =
+	char const *vertexShader2dSource =
 		"#version 300 es\n"
 		"precision highp float;"
 		""
@@ -85,13 +85,13 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::TwoD& bbe::INTERNAL::openGl::OpenGL
 		"   passPosition = position;"
 		"	gl_Position = vec4(pos, 0.0, 1.0);"
 		"}";
-	char const* fragmentShaderSource = code.getRaw();
+	char const *fragmentShaderSource = code.getRaw();
 	build(twoD, vertexShader2dSource, fragmentShaderSource);
 
 	return twoD;
 }
 
-static char const* vertexShader3dSource =
+static char const *vertexShader3dSource =
 	"#version 300 es\n"
 	"precision highp float;"
 	"uniform mat4 view;"
@@ -116,15 +116,15 @@ static char const* vertexShader3dSource =
 	"   passUvCoord = inUvCoord;"
 	"   upViewSpace = (view * vec4(0.0, 0.0, 1.0, 0.0)).xyz;"
 	"}";
-bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD& bbe::INTERNAL::openGl::OpenGLFragmentShader::getThreeD()
+bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD &bbe::INTERNAL::openGl::OpenGLFragmentShader::getThreeD()
 {
-	char const* fragmentShaderSource = code.getRaw();
+	char const *fragmentShaderSource = code.getRaw();
 	build(threeD, vertexShader3dSource, fragmentShaderSource);
 
 	return threeD;
 }
 
-bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD& bbe::INTERNAL::openGl::OpenGLFragmentShader::getThreeDForwardNoLight()
+bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD &bbe::INTERNAL::openGl::OpenGLFragmentShader::getThreeDForwardNoLight()
 {
 	if (!threeDForwardNoLight.built)
 	{
@@ -139,16 +139,16 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD& bbe::INTERNAL::openGl::Open
 			newString += "\n";
 			newString += lines[i];
 		}
-		char const* fragmentShaderSource = newString.getRaw();
+		char const *fragmentShaderSource = newString.getRaw();
 		build(threeDForwardNoLight, vertexShader3dSource, fragmentShaderSource);
 	}
 
 	return threeDForwardNoLight;
 }
 
-bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD& bbe::INTERNAL::openGl::OpenGLFragmentShader::getThreeDBake()
+bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD &bbe::INTERNAL::openGl::OpenGLFragmentShader::getThreeDBake()
 {
-	char const* vertexShader3dBakeSource =
+	char const *vertexShader3dBakeSource =
 		"#version 300 es\n"
 		"precision highp float;"
 		"uniform mat4 view;"
@@ -170,7 +170,7 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD& bbe::INTERNAL::openGl::Open
 		"   passUvCoord = inUvCoord;"
 		"}";
 
-	char const* fragmentShaderSource = code.getRaw();
+	char const *fragmentShaderSource = code.getRaw();
 	build(threeDBake, vertexShader3dBakeSource, fragmentShaderSource);
 	return threeDBake;
 }
@@ -199,22 +199,22 @@ void bbe::INTERNAL::openGl::OpenGLFragmentShader::ShaderProgramTripple::destroy(
 
 void bbe::INTERNAL::openGl::OpenGLFragmentShader::TwoD::determinePositions()
 {
-	screenSizePos     = glGetUniformLocation(program, "screenSize");
+	screenSizePos = glGetUniformLocation(program, "screenSize");
 	scalePosOffsetPos = glGetUniformLocation(program, "scalePosOffset");
-	rotationPos       = glGetUniformLocation(program, "rotation");
+	rotationPos = glGetUniformLocation(program, "rotation");
 }
 
 void bbe::INTERNAL::openGl::OpenGLFragmentShader::ThreeD::determinePositions()
 {
-	viewPos       = glGetUniformLocation(program, "view");
+	viewPos = glGetUniformLocation(program, "view");
 	projectionPos = glGetUniformLocation(program, "projection");
-	modelPos      = glGetUniformLocation(program, "model");
-	color3DPos    = glGetUniformLocation(program, "inColor");
+	modelPos = glGetUniformLocation(program, "model");
+	color3DPos = glGetUniformLocation(program, "inColor");
 }
 
 bbe::INTERNAL::openGl::OpenGLFragmentShader::~OpenGLFragmentShader()
 {
-	twoD      .destroy();
-	threeD    .destroy();
+	twoD.destroy();
+	threeD.destroy();
 	threeDBake.destroy();
 }

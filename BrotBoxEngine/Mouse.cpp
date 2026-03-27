@@ -88,7 +88,6 @@ void bbe::Mouse::INTERNAL_scroll(float x, float y)
 	m_mouseScrollYNext = y;
 }
 
-
 void bbe::Mouse::update(float globalMousePosX, float globalMousePosY)
 {
 	m_mouseLastFrameX = m_mouseCurrentFrameX;
@@ -171,8 +170,7 @@ bbe::Vector2 bbe::Mouse::getScroll()
 {
 	return Vector2(
 		getScrollX(),
-		getScrollY()
-	);
+		getScrollY());
 }
 
 float bbe::Mouse::getMouseXDelta()

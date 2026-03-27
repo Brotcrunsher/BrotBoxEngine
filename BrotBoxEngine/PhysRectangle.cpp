@@ -10,7 +10,7 @@
 #include "box2d/b2_fixture.h"
 #include "BBE/PhysRectangle.h"
 
-void bbe::PhysRectangle::init(Game* context, float x, float y, float width, float height, float angle)
+void bbe::PhysRectangle::init(Game *context, float x, float y, float width, float height, float angle)
 {
 	b2BodyDef bodyDef;
 	bodyDef.type = b2_dynamicBody;
@@ -32,31 +32,31 @@ void bbe::PhysRectangle::init(Game* context, float x, float y, float width, floa
 	m_height = height;
 }
 
-bbe::PhysRectangle::PhysRectangle(Game* context, float x, float y, float width, float height, float angle)
+bbe::PhysRectangle::PhysRectangle(Game *context, float x, float y, float width, float height, float angle)
 	: PhysShape(context)
 {
 	init(context, x, y, width, height, angle);
 }
 
-bbe::PhysRectangle::PhysRectangle(Game* context, const Vector2& vec, float width, float height, float angle)
+bbe::PhysRectangle::PhysRectangle(Game *context, const Vector2 &vec, float width, float height, float angle)
 	: PhysShape(context)
 {
 	init(context, vec.x, vec.y, width, height, angle);
 }
 
-bbe::PhysRectangle::PhysRectangle(Game* context, float x, float y, const Vector2& dim, float angle)
+bbe::PhysRectangle::PhysRectangle(Game *context, float x, float y, const Vector2 &dim, float angle)
 	: PhysShape(context)
 {
 	init(context, x, y, dim.x, dim.y, angle);
 }
 
-bbe::PhysRectangle::PhysRectangle(Game* context, const Vector2& vec, const Vector2& dim, float angle)
+bbe::PhysRectangle::PhysRectangle(Game *context, const Vector2 &vec, const Vector2 &dim, float angle)
 	: PhysShape(context)
 {
 	init(context, vec.x, vec.y, dim.x, dim.y, angle);
 }
 
-bbe::PhysRectangle::PhysRectangle(Game* context, const Rectangle& rect, float angle)
+bbe::PhysRectangle::PhysRectangle(Game *context, const Rectangle &rect, float angle)
 	: PhysShape(context)
 {
 	init(context, rect.x, rect.y, rect.width, rect.height, angle);

@@ -9,7 +9,7 @@
 #ifndef _WINDEF_
 // Forward declare it to avoid including the whole windows header everywhere.
 class HICON__;
-typedef HICON__* HICON;
+typedef HICON__ *HICON;
 #endif
 #endif
 
@@ -21,15 +21,15 @@ namespace bbe
 		using IconHandle = HICON;
 #elif defined(__linux__)
 		struct LinuxIconHandle;
-		using IconHandle = LinuxIconHandle*;
+		using IconHandle = LinuxIconHandle *;
 
-		IconHandle createIcon(int width, int height, const uint32_t* argbPixels, size_t pixelCount);
+		IconHandle createIcon(int width, int height, const uint32_t *argbPixels, size_t pixelCount);
 #else
-		using IconHandle = void*;
+		using IconHandle = void *;
 #endif
 
-		void init(bbe::Game* game, const char* tooltip, IconHandle icon);
-		void addPopupItem(const char* title, std::function<void()> callback);
+		void init(bbe::Game *game, const char *tooltip, IconHandle icon);
+		void addPopupItem(const char *title, std::function<void()> callback);
 		bool isVisible();
 		void setIcon(IconHandle icon);
 		void update();

@@ -7,7 +7,7 @@
 #include "BBE/Vulkan/VulkanImage.h"
 #include "BBE/Image.h"
 
-void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addUniformBuffer(const VulkanBuffer & buffer, VkDeviceSize offset, uint32_t binding)
+void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addUniformBuffer(const VulkanBuffer &buffer, VkDeviceSize offset, uint32_t binding)
 {
 	if (m_descriptorSet != VK_NULL_HANDLE)
 	{
@@ -22,10 +22,10 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addUniformBuffer(const VulkanBu
 	m_descriptorBufferInfos.add(AdvancedDescriptorBufferInfo(dbi, binding));
 }
 
-void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addCombinedImageSampler(const Image& image, uint32_t binding)
+void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addCombinedImageSampler(const Image &image, uint32_t binding)
 {
 	VkDescriptorImageInfo dii = {};
-	VulkanImage* vi = (VulkanImage*)image.m_prendererData.get();
+	VulkanImage *vi = (VulkanImage *)image.m_prendererData.get();
 	if (!vi)
 	{
 		bbe::Crash(bbe::Error::NullPointer);
@@ -33,12 +33,11 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::addCombinedImageSampler(const I
 	dii.sampler = vi->getSampler();
 	dii.imageView = vi->getImageView();
 	dii.imageLayout = vi->getImageLayout();
-	
 
 	m_descriptorImageInfos.add(AdvancedDescriptorImageInfo(dii, binding));
 }
 
-void bbe::INTERNAL::vulkan::VulkanDescriptorSet::create(const VulkanDevice &device, const VulkanDescriptorPool & descriptorPool, const VulkanDescriptorSetLayout & setLayout)
+void bbe::INTERNAL::vulkan::VulkanDescriptorSet::create(const VulkanDevice &device, const VulkanDescriptorPool &descriptorPool, const VulkanDescriptorSetLayout &setLayout)
 {
 	m_device = device.getDevice();
 	m_descriptorPool = descriptorPool.getDescriptorPool();
@@ -62,13 +61,13 @@ void bbe::INTERNAL::vulkan::VulkanDescriptorSet::destroy()
 	{
 		vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_descriptorSet);
 
-		m_descriptorSet  = VK_NULL_HANDLE;
-		m_device         = VK_NULL_HANDLE;
+		m_descriptorSet = VK_NULL_HANDLE;
+		m_device = VK_NULL_HANDLE;
 		m_descriptorPool = VK_NULL_HANDLE;
 	}
 }
 
-void bbe::INTERNAL::vulkan::VulkanDescriptorSet::update(const VulkanDevice & device)
+void bbe::INTERNAL::vulkan::VulkanDescriptorSet::update(const VulkanDevice &device)
 {
 	List<VkDescriptorImageInfo> imageInfos;
 	for (std::size_t i = 0; i < m_descriptorImageInfos.getLength(); i++)
@@ -134,7 +133,7 @@ VkDescriptorSet bbe::INTERNAL::vulkan::VulkanDescriptorSet::getDescriptorSet() c
 	return m_descriptorSet;
 }
 
-const VkDescriptorSet * bbe::INTERNAL::vulkan::VulkanDescriptorSet::getPDescriptorSet() const
+const VkDescriptorSet *bbe::INTERNAL::vulkan::VulkanDescriptorSet::getPDescriptorSet() const
 {
 	return &m_descriptorSet;
 }

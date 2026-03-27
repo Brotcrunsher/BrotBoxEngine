@@ -24,10 +24,10 @@ class MyGame : public bbe::Game
 			latestSoundInstance.stop();
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		brush.fillText(100, 100, "Click the mouse!", 20);
 		if (latestSoundInstance.isPlaying())
@@ -42,7 +42,7 @@ class MyGame : public bbe::Game
 
 int main()
 {
-	MyGame* mg = new MyGame();
+	MyGame *mg = new MyGame();
 	mg->start(WINDOW_WIDTH, WINDOW_HEIGHT, "ExampleSound!");
 #ifndef __EMSCRIPTEN__
 	delete mg;

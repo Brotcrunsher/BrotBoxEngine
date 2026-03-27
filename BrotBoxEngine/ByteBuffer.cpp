@@ -5,7 +5,7 @@
 
 namespace
 {
-	bool getMinSerializedByteSize(const std::type_index& type, size_t& outSize)
+	bool getMinSerializedByteSize(const std::type_index &type, size_t &outSize)
 	{
 		if (type == typeid(uint8_t) || type == typeid(int8_t) || type == typeid(bool))
 		{
@@ -36,7 +36,7 @@ namespace
 		return false;
 	}
 
-	bool isReasonableSerializedElementCount(const bbe::ByteBufferSpan& span, int64_t elementLength, size_t minSerializedSize)
+	bool isReasonableSerializedElementCount(const bbe::ByteBufferSpan &span, int64_t elementLength, size_t minSerializedSize)
 	{
 		if (elementLength < 0 || minSerializedSize == 0)
 		{
@@ -47,7 +47,7 @@ namespace
 	}
 }
 
-void bbe::ByteBufferSpan::read(bbe::byte* bytes, const bbe::byte* default_, size_t length)
+void bbe::ByteBufferSpan::read(bbe::byte *bytes, const bbe::byte *default_, size_t length)
 {
 	if (getLength() < length)
 	{
@@ -70,17 +70,15 @@ void bbe::ByteBufferSpan::read(bbe::byte* bytes, const bbe::byte* default_, size
 	m_start += length;
 }
 
-bbe::ByteBufferSpan::ByteBufferSpan(bbe::List<bbe::byte>& bytes) :
-	m_bytes(&bytes),
-	m_start(0),
-	m_end(bytes.getLength())
+bbe::ByteBufferSpan::ByteBufferSpan(bbe::List<bbe::byte> &bytes) : m_bytes(&bytes),
+																   m_start(0),
+																   m_end(bytes.getLength())
 {
 }
 
-bbe::ByteBufferSpan::ByteBufferSpan(bbe::List<bbe::byte>& bytes, size_t start, size_t end) :
-	m_bytes(&bytes),
-	m_start(start),
-	m_end(end)
+bbe::ByteBufferSpan::ByteBufferSpan(bbe::List<bbe::byte> &bytes, size_t start, size_t end) : m_bytes(&bytes),
+																							 m_start(start),
+																							 m_end(end)
 {
 }
 
@@ -102,10 +100,10 @@ bbe::ByteBufferSpan bbe::ByteBufferSpan::readSpan(size_t size)
 	return span;
 }
 
-const char* bbe::ByteBufferSpan::readNullString()
+const char *bbe::ByteBufferSpan::readNullString()
 {
 	if (m_start == m_end) return "";
-	const char* retVal = (const char*)m_bytes->getRaw() + m_start;
+	const char *retVal = (const char *)m_bytes->getRaw() + m_start;
 	while ((*m_bytes)[m_start])
 	{
 		if (m_start == m_end - 1)
@@ -151,8 +149,7 @@ void bbe::ByteBufferSpan::flipEndianness()
 	m_endiannessFlipped = !m_endiannessFlipped;
 }
 
-
-void bbe::ByteBuffer::write(const bbe::byte* bytes, size_t length)
+void bbe::ByteBuffer::write(const bbe::byte *bytes, size_t length)
 {
 	for (size_t i = 0; i < length; i++)
 	{
@@ -164,37 +161,35 @@ bbe::ByteBuffer::ByteBuffer()
 {
 }
 
-bbe::ByteBuffer::ByteBuffer(const bbe::byte* data, size_t size)
+bbe::ByteBuffer::ByteBuffer(const bbe::byte *data, size_t size)
 {
 	m_bytes.addArray(data, size);
 }
 
-bbe::ByteBuffer::ByteBuffer(bbe::List<bbe::byte>&& bytes) :
-	m_bytes(bytes)
+bbe::ByteBuffer::ByteBuffer(bbe::List<bbe::byte> &&bytes) : m_bytes(bytes)
 {
 }
 
-bbe::ByteBuffer::ByteBuffer(const std::initializer_list<bbe::byte>& il)	:
-	m_bytes(il)
+bbe::ByteBuffer::ByteBuffer(const std::initializer_list<bbe::byte> &il) : m_bytes(il)
 {
 }
 
-void bbe::ByteBuffer::writeNullString(const char* string, bool addNull)
+void bbe::ByteBuffer::writeNullString(const char *string, bool addNull)
 {
 	while (char c = *string)
 	{
 		m_bytes.add((bbe::byte)c);
 		string++;
 	}
-	if(addNull) m_bytes.add((bbe::byte)0);
+	if (addNull) m_bytes.add((bbe::byte)0);
 }
 
-bbe::byte* bbe::ByteBuffer::getRaw()
+bbe::byte *bbe::ByteBuffer::getRaw()
 {
 	return m_bytes.getRaw();
 }
 
-const bbe::byte* bbe::ByteBuffer::getRaw() const
+const bbe::byte *bbe::ByteBuffer::getRaw() const
 {
 	return m_bytes.getRaw();
 }
@@ -232,17 +227,56 @@ bbe::List<bbe::byte> bbe::ByteBuffer::asList() const
 	return m_bytes;
 }
 
-uint8_t  bbe::ByteBufferSpan::readU8()  { uint8_t  val; read(val); return val; }
-uint16_t bbe::ByteBufferSpan::readU16() { uint16_t val; read(val); return val; }
-uint32_t bbe::ByteBufferSpan::readU32() { uint32_t val; read(val); return val; }
-uint64_t bbe::ByteBufferSpan::readU64() { uint64_t val; read(val); return val; }
- int8_t  bbe::ByteBufferSpan::readI8()  {  int8_t  val; read(val); return val; }
- int16_t bbe::ByteBufferSpan::readI16() {  int16_t val; read(val); return val; }
- int32_t bbe::ByteBufferSpan::readI32() {  int32_t val; read(val); return val; }
- int64_t bbe::ByteBufferSpan::readI64() {  int64_t val; read(val); return val; }
+uint8_t bbe::ByteBufferSpan::readU8()
+{
+	uint8_t val;
+	read(val);
+	return val;
+}
+uint16_t bbe::ByteBufferSpan::readU16()
+{
+	uint16_t val;
+	read(val);
+	return val;
+}
+uint32_t bbe::ByteBufferSpan::readU32()
+{
+	uint32_t val;
+	read(val);
+	return val;
+}
+uint64_t bbe::ByteBufferSpan::readU64()
+{
+	uint64_t val;
+	read(val);
+	return val;
+}
+int8_t bbe::ByteBufferSpan::readI8()
+{
+	int8_t val;
+	read(val);
+	return val;
+}
+int16_t bbe::ByteBufferSpan::readI16()
+{
+	int16_t val;
+	read(val);
+	return val;
+}
+int32_t bbe::ByteBufferSpan::readI32()
+{
+	int32_t val;
+	read(val);
+	return val;
+}
+int64_t bbe::ByteBufferSpan::readI64()
+{
+	int64_t val;
+	read(val);
+	return val;
+}
 
-
-void bbe::SerializedDescription::toByteBuffer(bbe::ByteBuffer& buffer) const
+void bbe::SerializedDescription::toByteBuffer(bbe::ByteBuffer &buffer) const
 {
 	for (size_t i = 0; i < descriptors.getLength(); i++)
 	{
@@ -255,35 +289,34 @@ void bbe::SerializedDescription::toByteBuffer(bbe::ByteBuffer& buffer) const
 
 		for (int64_t k = 0; k < elementLength; k++)
 		{
-			     if (descriptors[i].type == typeid(uint8_t))  buffer.write(*((uint8_t*) descriptors[i].addr + k));
-			else if (descriptors[i].type == typeid(uint16_t)) buffer.write(*((uint16_t*)descriptors[i].addr + k));
-			else if (descriptors[i].type == typeid(uint32_t)) buffer.write(*((uint32_t*)descriptors[i].addr + k));
-			else if (descriptors[i].type == typeid(uint64_t)) buffer.write(*((uint64_t*)descriptors[i].addr + k));
-			else if (descriptors[i].type == typeid(int8_t))   buffer.write(*((int8_t*)  descriptors[i].addr + k));
-			else if (descriptors[i].type == typeid(int16_t))  buffer.write(*((int16_t*) descriptors[i].addr + k));
-			else if (descriptors[i].type == typeid(int32_t))  buffer.write(*((int32_t*) descriptors[i].addr + k));
-			else if (descriptors[i].type == typeid(int64_t))  buffer.write(*((int64_t*) descriptors[i].addr + k));
-			else if (descriptors[i].type == typeid(float))    buffer.write(*((float*)   descriptors[i].addr + k));
-			else if (descriptors[i].type == typeid(bool))     buffer.write(*((bool*)    descriptors[i].addr + k));
-			else if (descriptors[i].type == typeid(bbe::String)) ((bbe::String*)descriptors[i].addr + k)->serialize(buffer);
-			else if (descriptors[i].type == typeid(bbe::TimePoint)) ((bbe::TimePoint*)descriptors[i].addr + k)->serialize(buffer);
+			if (descriptors[i].type == typeid(uint8_t)) buffer.write(*((uint8_t *)descriptors[i].addr + k));
+			else if (descriptors[i].type == typeid(uint16_t)) buffer.write(*((uint16_t *)descriptors[i].addr + k));
+			else if (descriptors[i].type == typeid(uint32_t)) buffer.write(*((uint32_t *)descriptors[i].addr + k));
+			else if (descriptors[i].type == typeid(uint64_t)) buffer.write(*((uint64_t *)descriptors[i].addr + k));
+			else if (descriptors[i].type == typeid(int8_t)) buffer.write(*((int8_t *)descriptors[i].addr + k));
+			else if (descriptors[i].type == typeid(int16_t)) buffer.write(*((int16_t *)descriptors[i].addr + k));
+			else if (descriptors[i].type == typeid(int32_t)) buffer.write(*((int32_t *)descriptors[i].addr + k));
+			else if (descriptors[i].type == typeid(int64_t)) buffer.write(*((int64_t *)descriptors[i].addr + k));
+			else if (descriptors[i].type == typeid(float)) buffer.write(*((float *)descriptors[i].addr + k));
+			else if (descriptors[i].type == typeid(bool)) buffer.write(*((bool *)descriptors[i].addr + k));
+			else if (descriptors[i].type == typeid(bbe::String)) ((bbe::String *)descriptors[i].addr + k)->serialize(buffer);
+			else if (descriptors[i].type == typeid(bbe::TimePoint)) ((bbe::TimePoint *)descriptors[i].addr + k)->serialize(buffer);
 			else bbe::Crash(bbe::Error::IllegalArgument);
 		}
 	}
 }
 
-void bbe::SerializedDescription::writeFromSpan(bbe::ByteBufferSpan& span) const
+void bbe::SerializedDescription::writeFromSpan(bbe::ByteBufferSpan &span) const
 {
 	for (size_t i = 0; i < descriptors.getLength(); i++)
 	{
 		int64_t elementLength = 1;
-		const void* addr = descriptors[i].addr;
+		const void *addr = descriptors[i].addr;
 		if (descriptors[i].getRawVoid)
 		{
 			span.read(elementLength);
 			size_t minSerializedSize = 0;
-			if (!getMinSerializedByteSize(descriptors[i].type, minSerializedSize)
-				|| !isReasonableSerializedElementCount(span, elementLength, minSerializedSize))
+			if (!getMinSerializedByteSize(descriptors[i].type, minSerializedSize) || !isReasonableSerializedElementCount(span, elementLength, minSerializedSize))
 			{
 				descriptors[i].resize(0);
 				span.skipBytes(span.getLength());
@@ -293,24 +326,68 @@ void bbe::SerializedDescription::writeFromSpan(bbe::ByteBufferSpan& span) const
 			addr = descriptors[i].getRawVoid();
 		}
 
-		for(int64_t k = 0; k < elementLength; k++)
+		for (int64_t k = 0; k < elementLength; k++)
 		{
 			bool defaultValueAccepted = false;
-			     if (descriptors[i].type == typeid(uint8_t )) { span.read(*((uint8_t* )addr + k), *(uint8_t* )&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
-			else if (descriptors[i].type == typeid(uint16_t)) { span.read(*((uint16_t*)addr + k), *(uint16_t*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
-			else if (descriptors[i].type == typeid(uint32_t)) { span.read(*((uint32_t*)addr + k), *(uint32_t*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
-			else if (descriptors[i].type == typeid(uint64_t)) { span.read(*((uint64_t*)addr + k), *(uint64_t*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
-			else if (descriptors[i].type == typeid( int8_t )) { span.read(*(( int8_t* )addr + k), *( int8_t* )&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
-			else if (descriptors[i].type == typeid( int16_t)) { span.read(*(( int16_t*)addr + k), *( int16_t*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
-			else if (descriptors[i].type == typeid( int32_t)) { span.read(*(( int32_t*)addr + k), *( int32_t*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
-			else if (descriptors[i].type == typeid( int64_t)) { span.read(*(( int64_t*)addr + k), *( int64_t*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
-			else if (descriptors[i].type == typeid( float  )) { span.read(*(( float*  )addr + k), *( float*  )&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
-			else if (descriptors[i].type == typeid( bool   )) { span.read(*(( bool*   )addr + k), *( bool*   )&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
-			else if (descriptors[i].type == typeid(bbe::String)) span.read(*((bbe::String*)addr + k));
-			else if (descriptors[i].type == typeid(bbe::TimePoint)) { span.read(*((bbe::TimePoint*)addr + k), *(bbe::TimePoint*)&descriptors[i].defaultValueStorage); defaultValueAccepted = true; }
+			if (descriptors[i].type == typeid(uint8_t))
+			{
+				span.read(*((uint8_t *)addr + k), *(uint8_t *)&descriptors[i].defaultValueStorage);
+				defaultValueAccepted = true;
+			}
+			else if (descriptors[i].type == typeid(uint16_t))
+			{
+				span.read(*((uint16_t *)addr + k), *(uint16_t *)&descriptors[i].defaultValueStorage);
+				defaultValueAccepted = true;
+			}
+			else if (descriptors[i].type == typeid(uint32_t))
+			{
+				span.read(*((uint32_t *)addr + k), *(uint32_t *)&descriptors[i].defaultValueStorage);
+				defaultValueAccepted = true;
+			}
+			else if (descriptors[i].type == typeid(uint64_t))
+			{
+				span.read(*((uint64_t *)addr + k), *(uint64_t *)&descriptors[i].defaultValueStorage);
+				defaultValueAccepted = true;
+			}
+			else if (descriptors[i].type == typeid(int8_t))
+			{
+				span.read(*((int8_t *)addr + k), *(int8_t *)&descriptors[i].defaultValueStorage);
+				defaultValueAccepted = true;
+			}
+			else if (descriptors[i].type == typeid(int16_t))
+			{
+				span.read(*((int16_t *)addr + k), *(int16_t *)&descriptors[i].defaultValueStorage);
+				defaultValueAccepted = true;
+			}
+			else if (descriptors[i].type == typeid(int32_t))
+			{
+				span.read(*((int32_t *)addr + k), *(int32_t *)&descriptors[i].defaultValueStorage);
+				defaultValueAccepted = true;
+			}
+			else if (descriptors[i].type == typeid(int64_t))
+			{
+				span.read(*((int64_t *)addr + k), *(int64_t *)&descriptors[i].defaultValueStorage);
+				defaultValueAccepted = true;
+			}
+			else if (descriptors[i].type == typeid(float))
+			{
+				span.read(*((float *)addr + k), *(float *)&descriptors[i].defaultValueStorage);
+				defaultValueAccepted = true;
+			}
+			else if (descriptors[i].type == typeid(bool))
+			{
+				span.read(*((bool *)addr + k), *(bool *)&descriptors[i].defaultValueStorage);
+				defaultValueAccepted = true;
+			}
+			else if (descriptors[i].type == typeid(bbe::String)) span.read(*((bbe::String *)addr + k));
+			else if (descriptors[i].type == typeid(bbe::TimePoint))
+			{
+				span.read(*((bbe::TimePoint *)addr + k), *(bbe::TimePoint *)&descriptors[i].defaultValueStorage);
+				defaultValueAccepted = true;
+			}
 			else bbe::Crash(bbe::Error::IllegalArgument);
-			
-			if((!defaultValueAccepted || descriptors[i].getRawVoid) && descriptors[i].defaultValueStorage != 0)
+
+			if ((!defaultValueAccepted || descriptors[i].getRawVoid) && descriptors[i].defaultValueStorage != 0)
 			{
 				// This type does not suppoert default values (yet).
 				bbe::Crash(bbe::Error::IllegalArgument);

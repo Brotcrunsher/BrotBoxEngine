@@ -167,7 +167,7 @@ bool bbe::Math::isPowerOfTwo(uint64_t val)
 uint32_t bbe::Math::log2Floor(uint32_t val)
 {
 	//UNTESTED
-	//Should be the fastest possible way to calculate a floored log 2 of a number. 
+	//Should be the fastest possible way to calculate a floored log 2 of a number.
 	//Inspired by https://graphics.stanford.edu/~seander/bithacks.html#IntegerLog
 	uint32_t retVal = 0;
 	if (val & 0xFFFF0000)
@@ -308,8 +308,6 @@ float bbe::Math::maxAbs(float val1, float val2, float val3)
 	return val1;
 }
 
-
-
 float bbe::Math::interpolateLinear(float a, float b, float t)
 {
 	//UNTESTED
@@ -341,7 +339,7 @@ float bbe::Math::interpolateCubic(float preA, float a, float b, float postB, flo
 	float w2 = b - preA;
 	float w3 = a;
 
-	return (w0*t*t2 + w1*t2 + w2*t + w3);
+	return (w0 * t * t2 + w1 * t2 + w2 * t + w3);
 }
 
 float bbe::Math::interpolateBezier(float a, float b, float t, float control)
@@ -349,7 +347,7 @@ float bbe::Math::interpolateBezier(float a, float b, float t, float control)
 	//UNTESTED
 	if (a == b && a == control) return a;
 	float t2 = t * t;
-	return b*t2 + 2 * control * t - 2 * control*t2 + a - 2 * a*t + a*t2;
+	return b * t2 + 2 * control * t - 2 * control * t2 + a - 2 * a * t + a * t2;
 }
 
 float bbe::Math::interpolateHermite(float a, float b, float t, float tangent1, float tangent2)
@@ -359,33 +357,29 @@ float bbe::Math::interpolateHermite(float a, float b, float t, float tangent1, f
 	const float tm = t - 1;
 	const float tm2 = tm * tm;
 
-	return (1 - 3 * t2 + 2 * t3) * a
-		+ t2 * (3 - 2 * t) * b
-		+ t * tm2 * tangent1
-		+ t2 * tm * tangent2;
+	return (1 - 3 * t2 + 2 * t3) * a + t2 * (3 - 2 * t) * b + t * tm2 * tangent1 + t2 * tm * tangent2;
 }
 
-bool bbe::Math::isLeftTurn(const bbe::Vector2& a, const bbe::Vector2& b, const bbe::Vector2& c)
+bool bbe::Math::isLeftTurn(const bbe::Vector2 &a, const bbe::Vector2 &b, const bbe::Vector2 &c)
 {
 	const bbe::Vector2 aToB = b - a;
 	const bbe::Vector2 bToC = c - b;
 	return aToB.isLeft(bToC);
 }
 
-bbe::List<bbe::Vector2> bbe::Math::getConvexHull(const bbe::List<bbe::Vector2>& points)
+bbe::List<bbe::Vector2> bbe::Math::getConvexHull(const bbe::List<bbe::Vector2> &points)
 {
 	if (points.getLength() < 3) return {};
 
 	auto copy = points;
-	copy.sort([](const bbe::Vector2& a, const bbe::Vector2& b)
-		{
+	copy.sort([](const bbe::Vector2 &a, const bbe::Vector2 &b)
+			  {
 			if (a.x < b.x) return true;
 			else if (a.x > b.x) return false;
 			else
 			{
 				return a.y < b.y;
-			}
-		});
+			} });
 
 	bbe::List<bbe::Vector2> retVal;
 	retVal.add(copy[0]);
@@ -419,12 +413,12 @@ bbe::List<bbe::Vector2> bbe::Math::getConvexHull(const bbe::List<bbe::Vector2>& 
 	return retVal;
 }
 
-const bbe::Vector2* bbe::Math::getClosest(const bbe::Vector2& pos, const bbe::List<bbe::Vector2>& points)
+const bbe::Vector2 *bbe::Math::getClosest(const bbe::Vector2 &pos, const bbe::List<bbe::Vector2> &points)
 {
 	if (points.getLength() == 0) return nullptr;
 
 	float minDist = pos.getDistanceTo(points[0]);
-	const bbe::Vector2* minVec = &points[0];
+	const bbe::Vector2 *minVec = &points[0];
 
 	for (size_t i = 1; i < points.getLength(); i++)
 	{
@@ -438,51 +432,46 @@ const bbe::Vector2* bbe::Math::getClosest(const bbe::Vector2& pos, const bbe::Li
 	return minVec;
 }
 
-bbe::Vector2* bbe::Math::getClosest(const bbe::Vector2& pos, bbe::List<bbe::Vector2>& points)
+bbe::Vector2 *bbe::Math::getClosest(const bbe::Vector2 &pos, bbe::List<bbe::Vector2> &points)
 {
-	const bbe::List<bbe::Vector2>& cPoints = points;
-	const bbe::Vector2* minVec = getClosest(pos, cPoints);
-	return const_cast<bbe::Vector2*>(minVec);
+	const bbe::List<bbe::Vector2> &cPoints = points;
+	const bbe::Vector2 *minVec = getClosest(pos, cPoints);
+	return const_cast<bbe::Vector2 *>(minVec);
 }
 
 bbe::Vector2 bbe::Math::interpolateLinear(Vector2 a, Vector2 b, float t)
 {
 	return Vector2(
 		interpolateLinear(a.x, b.x, t),
-		interpolateLinear(a.y, b.y, t)
-	);
+		interpolateLinear(a.y, b.y, t));
 }
 
 bbe::Vector2 bbe::Math::interpolateBool(Vector2 a, Vector2 b, float t)
 {
 	return Vector2(
 		interpolateBool(a.x, b.x, t),
-		interpolateBool(a.y, b.y, t)
-	);
+		interpolateBool(a.y, b.y, t));
 }
 
 bbe::Vector2 bbe::Math::interpolateCosine(Vector2 a, Vector2 b, float t)
 {
 	return Vector2(
 		interpolateCosine(a.x, b.x, t),
-		interpolateCosine(a.y, b.y, t)
-	);
+		interpolateCosine(a.y, b.y, t));
 }
 
 bbe::Vector2 bbe::Math::interpolateCubic(Vector2 preA, Vector2 a, Vector2 b, Vector2 postB, float t)
 {
 	return Vector2(
 		interpolateCubic(preA.x, a.x, b.x, postB.x, t),
-		interpolateCubic(preA.y, a.y, b.y, postB.y, t)
-	);
+		interpolateCubic(preA.y, a.y, b.y, postB.y, t));
 }
 
 bbe::Vector2 bbe::Math::interpolateBezier(Vector2 a, Vector2 b, float t, Vector2 control)
 {
 	return Vector2(
 		interpolateBezier(a.x, b.x, t, control.x),
-		interpolateBezier(a.y, b.y, t, control.y)
-	);
+		interpolateBezier(a.y, b.y, t, control.y));
 }
 
 bbe::Vector2 bbe::Math::interpolateBezier(Vector2 a, Vector2 b, float t, const bbe::List<Vector2> &controlPoints)
@@ -512,15 +501,14 @@ bbe::Vector2 bbe::Math::interpolateHermite(Vector2 a, Vector2 b, float t, Vector
 {
 	return Vector2(
 		interpolateHermite(a.x, b.x, t, tangent1.x, tangent2.x),
-		interpolateHermite(a.y, b.y, t, tangent1.y, tangent2.y)
-	);
+		interpolateHermite(a.y, b.y, t, tangent1.y, tangent2.y));
 }
 
-bbe::Vector2 bbe::Math::minComponent(const bbe::List<Vector2>& vectors)
+bbe::Vector2 bbe::Math::minComponent(const bbe::List<Vector2> &vectors)
 {
 	bbe::Vector2 retVal(INFINITY_POSITIVE, INFINITY_POSITIVE);
 
-	for (const Vector2& vec : vectors)
+	for (const Vector2 &vec : vectors)
 	{
 		if (vec.x < retVal.x) retVal.x = vec.x;
 		if (vec.y < retVal.y) retVal.y = vec.y;
@@ -533,8 +521,8 @@ bbe::Vector2i bbe::Math::squareCantor(uint32_t index)
 {
 	if (index == 0) return bbe::Vector2i(0, 0);
 	const uint32_t sqrt = (uint32_t)bbe::Math::sqrt((float)index); // 2
-	const uint32_t sq = sqrt * sqrt; // 1
-	const uint32_t distOnHull = index - sq; // 2
+	const uint32_t sq = sqrt * sqrt;							   // 1
+	const uint32_t distOnHull = index - sq;						   // 2
 
 	if (distOnHull <= sqrt) // 2 <= 3
 	{
@@ -546,11 +534,11 @@ bbe::Vector2i bbe::Math::squareCantor(uint32_t index)
 	}
 }
 
-bbe::Vector3 bbe::Math::minComponent(const bbe::List<Vector3>& vectors)
+bbe::Vector3 bbe::Math::minComponent(const bbe::List<Vector3> &vectors)
 {
 	bbe::Vector3 retVal(INFINITY_POSITIVE, INFINITY_POSITIVE, INFINITY_POSITIVE);
 
-	for (const Vector3& vec : vectors)
+	for (const Vector3 &vec : vectors)
 	{
 		if (vec.x < retVal.x) retVal.x = vec.x;
 		if (vec.y < retVal.y) retVal.y = vec.y;
@@ -560,11 +548,11 @@ bbe::Vector3 bbe::Math::minComponent(const bbe::List<Vector3>& vectors)
 	return retVal;
 }
 
-bbe::Vector2 bbe::Math::maxComponent(const bbe::List<Vector2>& vectors)
+bbe::Vector2 bbe::Math::maxComponent(const bbe::List<Vector2> &vectors)
 {
 	bbe::Vector2 retVal(INFINITY_NEGATIVE, INFINITY_NEGATIVE);
 
-	for (const Vector2& vec : vectors)
+	for (const Vector2 &vec : vectors)
 	{
 		if (vec.x > retVal.x) retVal.x = vec.x;
 		if (vec.y > retVal.y) retVal.y = vec.y;
@@ -573,11 +561,11 @@ bbe::Vector2 bbe::Math::maxComponent(const bbe::List<Vector2>& vectors)
 	return retVal;
 }
 
-bbe::Vector3 bbe::Math::maxComponent(const bbe::List<Vector3>& vectors)
+bbe::Vector3 bbe::Math::maxComponent(const bbe::List<Vector3> &vectors)
 {
 	bbe::Vector3 retVal(INFINITY_NEGATIVE, INFINITY_NEGATIVE, INFINITY_NEGATIVE);
 
-	for (const Vector3& vec : vectors)
+	for (const Vector3 &vec : vectors)
 	{
 		if (vec.x > retVal.x) retVal.x = vec.x;
 		if (vec.y > retVal.y) retVal.y = vec.y;
@@ -587,11 +575,11 @@ bbe::Vector3 bbe::Math::maxComponent(const bbe::List<Vector3>& vectors)
 	return retVal;
 }
 
-bbe::Vector2 bbe::Math::minAbsComponent(const bbe::List<Vector2>& vectors)
+bbe::Vector2 bbe::Math::minAbsComponent(const bbe::List<Vector2> &vectors)
 {
 	bbe::Vector2 retVal(INFINITY_POSITIVE, INFINITY_POSITIVE);
 
-	for (const Vector2& vec : vectors)
+	for (const Vector2 &vec : vectors)
 	{
 		if (vec.x < abs(retVal.x)) retVal.x = abs(vec.x);
 		if (vec.y < abs(retVal.y)) retVal.y = abs(vec.y);
@@ -600,11 +588,11 @@ bbe::Vector2 bbe::Math::minAbsComponent(const bbe::List<Vector2>& vectors)
 	return retVal;
 }
 
-bbe::Vector2 bbe::Math::maxAbsComponent(const bbe::List<Vector2>& vectors)
+bbe::Vector2 bbe::Math::maxAbsComponent(const bbe::List<Vector2> &vectors)
 {
 	bbe::Vector2 retVal(INFINITY_NEGATIVE, INFINITY_NEGATIVE);
 
-	for (const Vector2& vec : vectors)
+	for (const Vector2 &vec : vectors)
 	{
 		if (vec.x > abs(retVal.x)) retVal.x = abs(vec.x);
 		if (vec.y > abs(retVal.y)) retVal.y = abs(vec.y);
@@ -613,11 +601,11 @@ bbe::Vector2 bbe::Math::maxAbsComponent(const bbe::List<Vector2>& vectors)
 	return retVal;
 }
 
-bbe::Vector3 bbe::Math::average(const bbe::List<Vector3>& vectors)
+bbe::Vector3 bbe::Math::average(const bbe::List<Vector3> &vectors)
 {
 	bbe::Vector3 retVal = bbe::Vector3();
 
-	for (const bbe::Vector3& v : vectors)
+	for (const bbe::Vector3 &v : vectors)
 	{
 		retVal += v;
 	}
@@ -625,12 +613,12 @@ bbe::Vector3 bbe::Math::average(const bbe::List<Vector3>& vectors)
 	return retVal / static_cast<float>(vectors.getLength());
 }
 
-bbe::Vector2 bbe::Math::medianComponent(const bbe::List<Vector2>& vectors)
+bbe::Vector2 bbe::Math::medianComponent(const bbe::List<Vector2> &vectors)
 {
 	bbe::List<float> xs;
 	bbe::List<float> ys;
 
-	for (const bbe::Vector2& v : vectors)
+	for (const bbe::Vector2 &v : vectors)
 	{
 		if (!isNaN(v.x)) xs.add(v.x);
 		if (!isNaN(v.y)) ys.add(v.y);
@@ -651,8 +639,7 @@ bbe::Vector3 bbe::Math::interpolateLinear(Vector3 a, Vector3 b, float t)
 	return Vector3(
 		interpolateLinear(a.x, b.x, t),
 		interpolateLinear(a.y, b.y, t),
-		interpolateLinear(a.z, b.z, t)
-	);
+		interpolateLinear(a.z, b.z, t));
 }
 
 bbe::Vector3 bbe::Math::interpolateBool(Vector3 a, Vector3 b, float t)
@@ -660,8 +647,7 @@ bbe::Vector3 bbe::Math::interpolateBool(Vector3 a, Vector3 b, float t)
 	return Vector3(
 		interpolateBool(a.x, b.x, t),
 		interpolateBool(a.y, b.y, t),
-		interpolateBool(a.z, b.z, t)
-	);
+		interpolateBool(a.z, b.z, t));
 }
 
 bbe::Vector3 bbe::Math::interpolateCosine(Vector3 a, Vector3 b, float t)
@@ -669,8 +655,7 @@ bbe::Vector3 bbe::Math::interpolateCosine(Vector3 a, Vector3 b, float t)
 	return Vector3(
 		interpolateCosine(a.x, b.x, t),
 		interpolateCosine(a.y, b.y, t),
-		interpolateCosine(a.z, b.z, t)
-	);
+		interpolateCosine(a.z, b.z, t));
 }
 
 bbe::Vector3 bbe::Math::interpolateCubic(Vector3 preA, Vector3 a, Vector3 b, Vector3 postB, float t)
@@ -678,8 +663,7 @@ bbe::Vector3 bbe::Math::interpolateCubic(Vector3 preA, Vector3 a, Vector3 b, Vec
 	return Vector3(
 		interpolateCubic(preA.x, a.x, b.x, postB.x, t),
 		interpolateCubic(preA.y, a.y, b.y, postB.y, t),
-		interpolateCubic(preA.z, a.z, b.z, postB.z, t)
-	);
+		interpolateCubic(preA.z, a.z, b.z, postB.z, t));
 }
 
 bbe::Vector3 bbe::Math::interpolateBezier(Vector3 a, Vector3 b, float t, Vector3 control)
@@ -687,8 +671,7 @@ bbe::Vector3 bbe::Math::interpolateBezier(Vector3 a, Vector3 b, float t, Vector3
 	return Vector3(
 		interpolateBezier(a.x, b.x, t, control.x),
 		interpolateBezier(a.y, b.y, t, control.y),
-		interpolateBezier(a.z, b.z, t, control.z)
-	);
+		interpolateBezier(a.z, b.z, t, control.z));
 }
 
 bbe::Vector3 bbe::Math::interpolateHermite(Vector3 a, Vector3 b, float t, Vector3 tangent1, Vector3 tangent2)
@@ -696,8 +679,7 @@ bbe::Vector3 bbe::Math::interpolateHermite(Vector3 a, Vector3 b, float t, Vector
 	return Vector3(
 		interpolateHermite(a.x, b.x, t, tangent1.x, tangent2.x),
 		interpolateHermite(a.y, b.y, t, tangent1.y, tangent2.y),
-		interpolateHermite(a.z, b.z, t, tangent1.z, tangent2.z)
-	);
+		interpolateHermite(a.z, b.z, t, tangent1.z, tangent2.z));
 }
 
 bbe::Vector4 bbe::Math::interpolateLinear(Vector4 a, Vector4 b, float t)
@@ -706,8 +688,7 @@ bbe::Vector4 bbe::Math::interpolateLinear(Vector4 a, Vector4 b, float t)
 		interpolateLinear(a.x, b.x, t),
 		interpolateLinear(a.y, b.y, t),
 		interpolateLinear(a.z, b.z, t),
-		interpolateLinear(a.w, b.w, t)
-	);
+		interpolateLinear(a.w, b.w, t));
 }
 
 bbe::Vector4 bbe::Math::interpolateBool(Vector4 a, Vector4 b, float t)
@@ -716,8 +697,7 @@ bbe::Vector4 bbe::Math::interpolateBool(Vector4 a, Vector4 b, float t)
 		interpolateBool(a.x, b.x, t),
 		interpolateBool(a.y, b.y, t),
 		interpolateBool(a.z, b.z, t),
-		interpolateBool(a.w, b.w, t)
-	);
+		interpolateBool(a.w, b.w, t));
 }
 
 bbe::Vector4 bbe::Math::interpolateCosine(Vector4 a, Vector4 b, float t)
@@ -726,8 +706,7 @@ bbe::Vector4 bbe::Math::interpolateCosine(Vector4 a, Vector4 b, float t)
 		interpolateCosine(a.x, b.x, t),
 		interpolateCosine(a.y, b.y, t),
 		interpolateCosine(a.z, b.z, t),
-		interpolateCosine(a.w, b.w, t)
-	);
+		interpolateCosine(a.w, b.w, t));
 }
 
 bbe::Vector4 bbe::Math::interpolateCubic(Vector4 preA, Vector4 a, Vector4 b, Vector4 postB, float t)
@@ -736,8 +715,7 @@ bbe::Vector4 bbe::Math::interpolateCubic(Vector4 preA, Vector4 a, Vector4 b, Vec
 		interpolateCubic(preA.x, a.x, b.x, postB.x, t),
 		interpolateCubic(preA.y, a.y, b.y, postB.y, t),
 		interpolateCubic(preA.z, a.z, b.z, postB.z, t),
-		interpolateCubic(preA.w, a.w, b.w, postB.w, t)
-	);
+		interpolateCubic(preA.w, a.w, b.w, postB.w, t));
 }
 
 bbe::Vector4 bbe::Math::interpolateBezier(Vector4 a, Vector4 b, float t, Vector4 control)
@@ -746,8 +724,7 @@ bbe::Vector4 bbe::Math::interpolateBezier(Vector4 a, Vector4 b, float t, Vector4
 		interpolateBezier(a.x, b.x, t, control.x),
 		interpolateBezier(a.y, b.y, t, control.y),
 		interpolateBezier(a.z, b.z, t, control.z),
-		interpolateBezier(a.w, b.w, t, control.w)
-	);
+		interpolateBezier(a.w, b.w, t, control.w));
 }
 
 bbe::Vector4 bbe::Math::interpolateHermite(Vector4 a, Vector4 b, float t, Vector4 tangent1, Vector4 tangent2)
@@ -756,6 +733,5 @@ bbe::Vector4 bbe::Math::interpolateHermite(Vector4 a, Vector4 b, float t, Vector
 		interpolateHermite(a.x, b.x, t, tangent1.x, tangent2.x),
 		interpolateHermite(a.y, b.y, t, tangent1.y, tangent2.y),
 		interpolateHermite(a.z, b.z, t, tangent1.z, tangent2.z),
-		interpolateHermite(a.w, b.w, t, tangent1.w, tangent2.w)
-	);
+		interpolateHermite(a.w, b.w, t, tangent1.w, tangent2.w));
 }

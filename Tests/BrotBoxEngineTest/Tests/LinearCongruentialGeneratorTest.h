@@ -3,7 +3,6 @@
 #include "BBE/LinearCongruentialGenerator.h"
 #include <iostream>
 
-
 namespace bbe
 {
 	namespace test
@@ -17,7 +16,6 @@ namespace bbe
 
 			lcg.setSeed(seed1);
 			lcg.setSeed(seed2);
-
 
 			for (int i = 0; i < 16; i++)
 			{

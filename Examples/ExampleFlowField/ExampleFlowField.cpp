@@ -2,8 +2,8 @@
 #include <iostream>
 #include <set>
 
-constexpr float WINDOW_WIDTH  = 1280.f;
-constexpr float WINDOW_HEIGHT =  720.f;
+constexpr float WINDOW_WIDTH = 1280.f;
+constexpr float WINDOW_HEIGHT = 720.f;
 
 class MyGame : public bbe::Game
 {
@@ -42,17 +42,17 @@ class MyGame : public bbe::Game
 			return bbe::Vector2(x * gridSize + gridSize / 2, y * gridSize + gridSize / 2);
 		}
 
-		void addElement(const bbe::Vector2& start, const bbe::Vector2& dir)
+		void addElement(const bbe::Vector2 &start, const bbe::Vector2 &dir)
 		{
 			const bbe::Vector2 normDir = dir.normalize();
 			const int64_t locationX = (int64_t)locationToGridX(start.x);
 			const int64_t locationY = (int64_t)locationToGridY(start.y);
 
 			const int64_t fromX = bbe::Math::clamp<int64_t>(locationX - 10, 0, gridWidth - 1);
-			const int64_t toX   = bbe::Math::clamp<int64_t>(locationX + 10, 0, gridWidth - 1);
-			
+			const int64_t toX = bbe::Math::clamp<int64_t>(locationX + 10, 0, gridWidth - 1);
+
 			const int64_t fromY = bbe::Math::clamp<int64_t>(locationY - 10, 0, gridHeight - 1);
-			const int64_t toY   = bbe::Math::clamp<int64_t>(locationY + 10, 0, gridHeight - 1);
+			const int64_t toY = bbe::Math::clamp<int64_t>(locationY + 10, 0, gridHeight - 1);
 
 			for (auto i = fromX; i <= toX; i++)
 			{
@@ -72,7 +72,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		void draw(bbe::PrimitiveBrush2D& brush)
+		void draw(bbe::PrimitiveBrush2D &brush)
 		{
 			for (size_t i = 0; i < gridWidth; i++)
 			{
@@ -92,17 +92,17 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		bbe::Vector2 getFlow(const bbe::Vector2& pos, const bbe::Vector2& dir)
+		bbe::Vector2 getFlow(const bbe::Vector2 &pos, const bbe::Vector2 &dir)
 		{
 			const bbe::Vector2 normDir = dir.normalize();
 			const int64_t locationX = (int64_t)locationToGridX(pos.x);
 			const int64_t locationY = (int64_t)locationToGridY(pos.y);
 
 			const int64_t fromX = bbe::Math::clamp<int64_t>(locationX - 5, 0, gridWidth - 1);
-			const int64_t toX   = bbe::Math::clamp<int64_t>(locationX + 5, 0, gridWidth - 1);
+			const int64_t toX = bbe::Math::clamp<int64_t>(locationX + 5, 0, gridWidth - 1);
 
 			const int64_t fromY = bbe::Math::clamp<int64_t>(locationY - 5, 0, gridHeight - 1);
-			const int64_t toY   = bbe::Math::clamp<int64_t>(locationY + 5, 0, gridHeight - 1);
+			const int64_t toY = bbe::Math::clamp<int64_t>(locationY + 5, 0, gridHeight - 1);
 
 			bool flowFieldContradictsMovement = false;
 			for (auto i = fromX; i <= toX; i++)
@@ -151,12 +151,12 @@ class MyGame : public bbe::Game
 
 	void reinitialize()
 	{
-		for (bbe::PhysCircle& c : leftToRightCircles)
+		for (bbe::PhysCircle &c : leftToRightCircles)
 		{
 			c.destroy();
 		}
 		leftToRightCircles.clear();
-		for (bbe::PhysCircle& c : rightToLeftCircles)
+		for (bbe::PhysCircle &c : rightToLeftCircles)
 		{
 			c.destroy();
 		}
@@ -172,14 +172,14 @@ class MyGame : public bbe::Game
 	virtual void onStart() override
 	{
 		constexpr float blockerWidth = 20;
-		bbe::PhysRectangle topBlocker    = bbe::PhysRectangle(this, -blockerWidth, -blockerWidth, WINDOW_WIDTH + blockerWidth * 2, blockerWidth);
+		bbe::PhysRectangle topBlocker = bbe::PhysRectangle(this, -blockerWidth, -blockerWidth, WINDOW_WIDTH + blockerWidth * 2, blockerWidth);
 		bbe::PhysRectangle bottomBlocker = bbe::PhysRectangle(this, -blockerWidth, WINDOW_HEIGHT, WINDOW_WIDTH + blockerWidth * 2, blockerWidth);
-		bbe::PhysRectangle leftBlocker   = bbe::PhysRectangle(this, -blockerWidth, -blockerWidth, blockerWidth, WINDOW_HEIGHT + blockerWidth * 2);
-		bbe::PhysRectangle rightBlocker  = bbe::PhysRectangle(this, WINDOW_WIDTH , -blockerWidth, blockerWidth, WINDOW_HEIGHT + blockerWidth * 2);
-		topBlocker   .freeze();
+		bbe::PhysRectangle leftBlocker = bbe::PhysRectangle(this, -blockerWidth, -blockerWidth, blockerWidth, WINDOW_HEIGHT + blockerWidth * 2);
+		bbe::PhysRectangle rightBlocker = bbe::PhysRectangle(this, WINDOW_WIDTH, -blockerWidth, blockerWidth, WINDOW_HEIGHT + blockerWidth * 2);
+		topBlocker.freeze();
 		bottomBlocker.freeze();
-		leftBlocker  .freeze();
-		rightBlocker .freeze();
+		leftBlocker.freeze();
+		rightBlocker.freeze();
 
 		getPhysWorld()->setGravity({ 0, 0 });
 
@@ -193,44 +193,44 @@ class MyGame : public bbe::Game
 			reinitialize();
 		}
 		flowField.reset();
-		for (bbe::PhysCircle& c : leftToRightCircles)
+		for (bbe::PhysCircle &c : leftToRightCircles)
 		{
 			flowField.addElement(c.getPos() + bbe::Vector2(c.getRadius(), c.getRadius()) / 2, { 1, 0 });
 		}
-		for (bbe::PhysCircle& c : rightToLeftCircles)
+		for (bbe::PhysCircle &c : rightToLeftCircles)
 		{
 			flowField.addElement(c.getPos() + bbe::Vector2(c.getRadius(), c.getRadius()) / 2, { -1, 0 });
 		}
 
 		constexpr float flowFieldObedience = 1.0;
-		for (bbe::PhysCircle& c : leftToRightCircles)
+		for (bbe::PhysCircle &c : leftToRightCircles)
 		{
 			auto speed = bbe::Vector2(100 * (1 - flowFieldObedience), 0) + flowField.getFlow(c.getPos() + bbe::Vector2(c.getRadius(), c.getRadius()) / 2, { 1, 0 }) * 100 * flowFieldObedience;
 			speed = speed.normalize() * 100;
 			c.setSpeed(speed);
 		}
-		for (bbe::PhysCircle& c : rightToLeftCircles)
+		for (bbe::PhysCircle &c : rightToLeftCircles)
 		{
 			auto speed = bbe::Vector2(-100 * (1 - flowFieldObedience), 0) + flowField.getFlow(c.getPos() + bbe::Vector2(c.getRadius(), c.getRadius()) / 2, { -1, 0 }) * 100 * flowFieldObedience;
 			speed = speed.normalize() * 100;
 			c.setSpeed(speed);
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		brush.setColorRGB(1, 1, 1);
 		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
 		brush.setColorRGB(1, 0, 0);
-		for (const bbe::PhysCircle& c : leftToRightCircles)
+		for (const bbe::PhysCircle &c : leftToRightCircles)
 		{
 			brush.fillCircle(c);
 		}
 		brush.setColorRGB(0, 0, 1);
-		for (const bbe::PhysCircle& c : rightToLeftCircles)
+		for (const bbe::PhysCircle &c : rightToLeftCircles)
 		{
 			brush.fillCircle(c);
 		}
@@ -251,4 +251,3 @@ int main()
 	delete mg;
 #endif
 }
-

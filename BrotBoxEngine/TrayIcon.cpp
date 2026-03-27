@@ -1191,7 +1191,7 @@ void bbe::TrayIcon::init(bbe::Game *game, const char *tooltip, IconHandle icon)
 
 void bbe::TrayIcon::addPopupItem(const char *title, std::function<void()> callback)
 {
-	g_menuItems.push_back(MenuItem{title ? title : "", std::move(callback)});
+	g_menuItems.push_back(MenuItem{ title ? title : "", std::move(callback) });
 	++g_menuRevision;
 	emitLayoutUpdatedSignal();
 }

@@ -63,7 +63,7 @@ static std::atomic_int64_t heartbeat;
 struct PlayRequest
 {
 	uint64_t index = 0;
-	const bbe::SoundDataSource* sound = nullptr;
+	const bbe::SoundDataSource *sound = nullptr;
 	bool posAvailable = false;
 	bbe::Vector3 pos;
 	float volume = 0.0f;
@@ -72,28 +72,28 @@ static bbe::WriterReaderBuffer<PlayRequest, 1024> playRequests;
 static auto playRequestsReader = playRequests.reader();
 
 static ALuint mainSource = 0;
-ALCdevice* device = nullptr;
+ALCdevice *device = nullptr;
 static bool previouslyDied = false;
 
 static bool usingDynamicSounds = false;
 
 namespace eh /* = error handled */
 {
-	void buildErrorString(const bbe::String& s)
+	void buildErrorString(const bbe::String &s)
 	{
 		// Do nothing
 	}
 
-	template <typename T, typename... Types>
-	void buildErrorString(bbe::String& s, T t1, Types... ts)
+	template<typename T, typename... Types>
+	void buildErrorString(bbe::String &s, T t1, Types... ts)
 	{
 		s += t1;
 		s += " ";
 		buildErrorString(s, ts...);
 	}
 
-	template <typename... Types>
-	void handleErrors(const char* funcName, Types... ts)
+	template<typename... Types>
+	void handleErrors(const char *funcName, Types... ts)
 	{
 		ALenum err = ::alGetError();
 		if (err != AL_NO_ERROR)
@@ -108,49 +108,49 @@ namespace eh /* = error handled */
 		}
 	}
 
-	void alGenBuffers(ALsizei n, ALuint* buffers)
+	void alGenBuffers(ALsizei n, ALuint *buffers)
 	{
 		::alGenBuffers(n, buffers);
 		handleErrors("alGenBuffers", n, (size_t)buffers);
 	}
 
-	void alDeleteBuffers(ALsizei n, const ALuint* buffers)
+	void alDeleteBuffers(ALsizei n, const ALuint *buffers)
 	{
 		::alDeleteBuffers(n, buffers);
 		handleErrors("alDeleteBuffers", n, (size_t)buffers);
 	}
 
-	void alGenSources(ALsizei n, ALuint* sources)
+	void alGenSources(ALsizei n, ALuint *sources)
 	{
 		::alGenSources(n, sources);
 		handleErrors("alGenSources", n, (size_t)sources);
 	}
 
-	void alDeleteSources(ALsizei n, const ALuint* sources)
+	void alDeleteSources(ALsizei n, const ALuint *sources)
 	{
 		::alDeleteSources(n, sources);
 		handleErrors("alDeleteSources", n, (size_t)sources);
 	}
 
-	void alGetSourcei(ALuint source, ALenum param, ALint* value)
+	void alGetSourcei(ALuint source, ALenum param, ALint *value)
 	{
 		::alGetSourcei(source, param, value);
 		handleErrors("alGetSourcei", source, param, (size_t)value);
 	}
 
-	void alSourceUnqueueBuffers(ALuint src, ALsizei nb, ALuint* buffers)
+	void alSourceUnqueueBuffers(ALuint src, ALsizei nb, ALuint *buffers)
 	{
 		::alSourceUnqueueBuffers(src, nb, buffers);
 		handleErrors("alSourceUnqueueBuffers", src, nb, (size_t)buffers);
 	}
 
-	void alBufferData(ALuint buffer, ALenum format, const ALvoid* data, ALsizei size, ALsizei freq)
+	void alBufferData(ALuint buffer, ALenum format, const ALvoid *data, ALsizei size, ALsizei freq)
 	{
 		::alBufferData(buffer, format, data, size, freq);
 		handleErrors("alBufferData", buffer, format, (size_t)data, size, freq);
 	}
 
-	void alSourceQueueBuffers(ALuint src, ALsizei nb, const ALuint* buffers)
+	void alSourceQueueBuffers(ALuint src, ALsizei nb, const ALuint *buffers)
 	{
 		::alSourceQueueBuffers(src, nb, buffers);
 		handleErrors("alSourceQueueBuffers", src, nb, (size_t)buffers);
@@ -190,7 +190,7 @@ static void freeStaticSource(ALuint source)
 struct SoundInstanceData
 {
 	uint64_t m_samples_loaded = 0;
-	const bbe::SoundDataSource* m_psound = nullptr;
+	const bbe::SoundDataSource *m_psound = nullptr;
 	float m_volume = 1.0f;
 	bool posAvailable = false;
 	bbe::Vector3 pos;
@@ -200,7 +200,7 @@ struct SoundInstanceData
 	bool readyForDelete = false;
 	ALuint source = 0;
 
-	void loadDynamicBuffer(const bbe::SoundDataSourceDynamic* sdsd, bbe::Vector2* samples, size_t numSamples)
+	void loadDynamicBuffer(const bbe::SoundDataSourceDynamic *sdsd, bbe::Vector2 *samples, size_t numSamples)
 	{
 		const uint32_t channels = sdsd->getAmountOfChannels();
 		for (size_t i = 0; i < numSamples; i++)
@@ -274,11 +274,11 @@ struct SoundInstanceData
 
 	bool isPlaying() const
 	{
-		if (dynamic_cast<const bbe::SoundDataSourceDynamic*>(m_psound))
+		if (dynamic_cast<const bbe::SoundDataSourceDynamic *>(m_psound))
 		{
 			return true;
 		}
-		else if (dynamic_cast<const bbe::SoundDataSourceStatic*>(m_psound))
+		else if (dynamic_cast<const bbe::SoundDataSourceStatic *>(m_psound))
 		{
 			ALint state = 0;
 			eh::alGetSourcei(source, AL_SOURCE_STATE, &state);
@@ -299,7 +299,7 @@ static void destroySoundSystem()
 		eh::alDeleteSources(1, &mainSource);
 		mainSource = 0;
 	}
-	for (const auto& sound : playingSounds)
+	for (const auto &sound : playingSounds)
 	{
 		removedIds.add(sound.first);
 	}
@@ -309,10 +309,10 @@ static void destroySoundSystem()
 		freeStaticSource(source);
 	}
 	staticSources.clear();
-	ALCcontext* context = alcGetCurrentContext();
+	ALCcontext *context = alcGetCurrentContext();
 	if (!context) return;
 
-	ALCdevice* device = alcGetContextsDevice(context);
+	ALCdevice *device = alcGetContextsDevice(context);
 	alcMakeContextCurrent(nullptr);
 	alcDestroyContext(context);
 	alcCloseDevice(device);
@@ -343,8 +343,8 @@ static void loadAllBuffers()
 
 	for (auto it = playingSounds.begin(); it != playingSounds.end(); ++it)
 	{
-		SoundInstanceData& sid = it->second;
-		if (const bbe::SoundDataSourceDynamic* sdsd = dynamic_cast<const bbe::SoundDataSourceDynamic*>(sid.m_psound))
+		SoundInstanceData &sid = it->second;
+		if (const bbe::SoundDataSourceDynamic *sdsd = dynamic_cast<const bbe::SoundDataSourceDynamic *>(sid.m_psound))
 		{
 			sid.loadDynamicBuffer(sdsd, samples.getRaw(), samples.getLength());
 			if (sid.m_psound->getHz() != 44100)
@@ -398,10 +398,10 @@ static bool initSoundSystem(bool logErrors)
 	device = alcOpenDevice(nullptr);
 	if (!device)
 	{
-		if(logErrors) BBELOGLN("Could not init Sound Manager! Device was null.");
+		if (logErrors) BBELOGLN("Could not init Sound Manager! Device was null.");
 		return false;
 	}
-	ALCcontext* context = alcCreateContext(device, nullptr);
+	ALCcontext *context = alcCreateContext(device, nullptr);
 	if (!context || !alcMakeContextCurrent(context))
 	{
 		if (context) alcDestroyContext(context);
@@ -419,7 +419,7 @@ static bool initSoundSystem(bool logErrors)
 
 	eh::alGenSources(1, &mainSource);
 	{
-		for(size_t i = 0; i<10; i++) loadAllBuffers();
+		for (size_t i = 0; i < 10; i++) loadAllBuffers();
 	}
 	eh::alSourcePlay(mainSource);
 	ALenum err = alGetError();
@@ -437,9 +437,9 @@ static void updateSoundSystem()
 	heartbeat++;
 
 	{
-		while(setPositionRequestsReader.hasNext())
+		while (setPositionRequestsReader.hasNext())
 		{
-			const SetPositionRequest& spr = setPositionRequestsReader.next();
+			const SetPositionRequest &spr = setPositionRequestsReader.next();
 			auto it = playingSounds.find(spr.index);
 			if (it != playingSounds.end())
 			{
@@ -449,21 +449,21 @@ static void updateSoundSystem()
 	}
 
 	{
-		while(playRequestsReader.hasNext())
+		while (playRequestsReader.hasNext())
 		{
-			const PlayRequest& pr = playRequestsReader.next();
+			const PlayRequest &pr = playRequestsReader.next();
 			SoundInstanceData sid;
 			sid.m_psound = pr.sound;
 			sid.m_volume = pr.volume;
 			sid.pos = pr.pos;
 			sid.posAvailable = pr.posAvailable;
 
-			if (const bbe::SoundDataSourceStatic* SDSS = dynamic_cast<const bbe::SoundDataSourceStatic*>(pr.sound))
+			if (const bbe::SoundDataSourceStatic *SDSS = dynamic_cast<const bbe::SoundDataSourceStatic *>(pr.sound))
 			{
 				if (!SDSS->INTERNAL_buffer || SDSS->INTERNAL_restartCycle != restartCycle)
 				{
 					eh::alGenBuffers(1, &SDSS->INTERNAL_buffer);
-					const bbe::List<float>* samples = SDSS->getRaw();
+					const bbe::List<float> *samples = SDSS->getRaw();
 					ALenum format;
 					switch (SDSS->getAmountOfChannels())
 					{
@@ -486,7 +486,7 @@ static void updateSoundSystem()
 				eh::alSourcePlay(source);
 				sid.source = source;
 			}
-			else if (dynamic_cast<const bbe::SoundDataSourceDynamic*>(pr.sound))
+			else if (dynamic_cast<const bbe::SoundDataSourceDynamic *>(pr.sound))
 			{
 				usingDynamicSounds = true;
 			}
@@ -515,7 +515,7 @@ static void updateSoundSystem()
 	{
 		while (stopRequestsReader.hasNext())
 		{
-			const int64_t& index = stopRequestsReader.next();
+			const int64_t &index = stopRequestsReader.next();
 			auto it = playingSounds.find(index);
 			if (it != playingSounds.end())
 			{
@@ -610,7 +610,7 @@ static void innerSoundSystemMain()
 				LPALCREOPENDEVICESOFT alcReopenDeviceSOFT = (LPALCREOPENDEVICESOFT)alcGetProcAddress(device, "alcReopenDeviceSOFT");
 				success = alcReopenDeviceSOFT(device, nullptr, nullptr);
 			}
-			if(!success)
+			if (!success)
 			{
 				BBELOGLN("Failed to reopen device. Destroy and reinit instead.");
 				destroySoundSystem();
@@ -630,7 +630,7 @@ static void soundSystemMain()
 	BBE_CATCH_RELEASE(Sound Thread)
 }
 
-static bbe::INTERNAL::SoundManager* m_pinstance = nullptr;
+static bbe::INTERNAL::SoundManager *m_pinstance = nullptr;
 
 // ***************************************************************************************************************
 // ***                                                                                                         ***
@@ -660,7 +660,6 @@ bool testScheduledRestart()
 	return false;
 }
 
-
 class CMMNotificationClient : public IMMNotificationClient
 {
 private:
@@ -682,7 +681,7 @@ public:
 		return ulRef;
 	}
 	HRESULT STDMETHODCALLTYPE QueryInterface(
-		REFIID riid, VOID** ppvInterface)
+		REFIID riid, VOID **ppvInterface)
 	{
 		return E_NOINTERFACE;
 	}
@@ -727,7 +726,7 @@ public:
 
 static bbe::List<uint64_t> playingIds;
 
-bbe::INTERNAL::SoundManager* bbe::INTERNAL::SoundManager::getInstance()
+bbe::INTERNAL::SoundManager *bbe::INTERNAL::SoundManager::getInstance()
 {
 	return m_pinstance;
 }
@@ -760,15 +759,14 @@ bool bbe::INTERNAL::SoundManager::isSoundWithIndexPlaying(uint64_t index)
 	return playingIds.contains(index);
 }
 
-void bbe::INTERNAL::SoundManager::setPosition(uint64_t index, const bbe::Vector3& pos)
+void bbe::INTERNAL::SoundManager::setPosition(uint64_t index, const bbe::Vector3 &pos)
 {
 	setPositionRequests.add(SetPositionRequest{
 		index,
-		pos
-		});
+		pos });
 }
 
-void bbe::INTERNAL::SoundManager::setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection)
+void bbe::INTERNAL::SoundManager::setSoundListener(const bbe::Vector3 &pos, const bbe::Vector3 &lookDirection)
 {
 	newListenerData.add({ pos, lookDirection });
 }
@@ -803,7 +801,7 @@ void bbe::INTERNAL::SoundManager::update()
 }
 
 #ifdef WIN32
-static void checkHr(HRESULT hr, const char* location)
+static void checkHr(HRESULT hr, const char *location)
 {
 	if (hr != S_OK)
 	{
@@ -831,12 +829,12 @@ void bbe::INTERNAL::SoundManager::init()
 		debugBreak();
 	}
 
-	IMMDeviceEnumerator* _pEnumerator;
+	IMMDeviceEnumerator *_pEnumerator;
 	HRESULT hr = S_OK;
 	hr = CoCreateInstance(__uuidof(MMDeviceEnumerator),
-		NULL, CLSCTX_INPROC_SERVER,
-		__uuidof(IMMDeviceEnumerator),
-		(void**)&_pEnumerator);
+						  NULL, CLSCTX_INPROC_SERVER,
+						  __uuidof(IMMDeviceEnumerator),
+						  (void **)&_pEnumerator);
 	checkHr(hr, "CoCreateInstance");
 	hr = _pEnumerator->RegisterEndpointNotificationCallback(new CMMNotificationClient());
 	checkHr(hr, "RegisterEndpointNotificationCallback");
@@ -861,7 +859,7 @@ void bbe::INTERNAL::SoundManager::restart()
 	restartRequest = true;
 }
 
-bbe::SoundInstance bbe::INTERNAL::SoundManager::play(const SoundDataSource& sound, const bbe::Vector3* pos, float volume)
+bbe::SoundInstance bbe::INTERNAL::SoundManager::play(const SoundDataSource &sound, const bbe::Vector3 *pos, float volume)
 {
 	uint64_t index = getNextIndex();
 
@@ -870,8 +868,7 @@ bbe::SoundInstance bbe::INTERNAL::SoundManager::play(const SoundDataSource& soun
 		&sound,
 		pos != nullptr,
 		pos != nullptr ? *pos : bbe::Vector3(),
-		volume
-		});
+		volume });
 
 	playingIds.add(index);
 

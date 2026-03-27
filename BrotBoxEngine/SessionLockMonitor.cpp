@@ -3,7 +3,8 @@
 #include "BBE/SimpleThread.h"
 
 bbe::SessionLockMonitor::SessionLockMonitor() : HiddenMessageLoop("BBE: Session Lock Monitor")
-{}
+{
+}
 
 void bbe::SessionLockMonitor::messageLoopStart(HWND hwnd)
 {
@@ -20,12 +21,15 @@ void bbe::SessionLockMonitor::messageLoopStop(HWND hwnd)
 
 LRESULT bbe::SessionLockMonitor::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	switch (uMsg) {
+	switch (uMsg)
+	{
 	case WM_WTSSESSION_CHANGE:
-		if (wParam == WTS_SESSION_LOCK) {
+		if (wParam == WTS_SESSION_LOCK)
+		{
 			isLocked = true;
 		}
-		else if (wParam == WTS_SESSION_UNLOCK) {
+		else if (wParam == WTS_SESSION_UNLOCK)
+		{
 			isLocked = false;
 		}
 		break;

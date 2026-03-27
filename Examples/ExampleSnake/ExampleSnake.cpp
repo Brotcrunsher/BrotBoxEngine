@@ -3,7 +3,10 @@
 
 enum class Direction
 {
-	UP, DOWN, LEFT, RIGHT
+	UP,
+	DOWN,
+	LEFT,
+	RIGHT
 };
 
 struct BodyPart
@@ -20,15 +23,15 @@ struct BodyPart
 class MyGame : public bbe::Game
 {
 public:
-	constexpr static int GRIDWIDTH  = 20;
+	constexpr static int GRIDWIDTH = 20;
 	constexpr static int GRIDHEIGHT = 20;
-	constexpr static int CELLSIZE   = 10;
+	constexpr static int CELLSIZE = 10;
 	constexpr static float TICKTIME = 0.25f;
 
 	bbe::Cube cube;
 	bbe::PointLight light;
 
-	Direction dir     = Direction::LEFT;
+	Direction dir = Direction::LEFT;
 	Direction nextDir = Direction::LEFT;
 
 	bbe::List<BodyPart> bodyParts;
@@ -116,7 +119,6 @@ public:
 			bodyParts[0].y = 0;
 		}
 
-
 		if (bodyParts[0].x == food.x && bodyParts[0].y == food.y)
 		{
 			bodyParts.add({ -1, -1 });
@@ -165,7 +167,7 @@ public:
 
 	void placeFood()
 	{
-		start:
+	start:
 		int randX = rand.randomInt(GRIDWIDTH);
 		int randY = rand.randomInt(GRIDHEIGHT);
 		for (BodyPart bp : bodyParts)
@@ -179,7 +181,7 @@ public:
 		food.y = randY;
 	}
 
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		brush.setColorRGB(1, 1, 1, 0.5f);
 		for (BodyPart bp : bodyParts)
@@ -195,7 +197,7 @@ public:
 	{
 	}
 
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 		brush.addLight(light);
 
@@ -205,12 +207,10 @@ public:
 	}
 };
 
-
 int main()
 {
 	MyGame mg;
 	mg.start(mg.CELLSIZE * mg.GRIDWIDTH, mg.CELLSIZE * mg.GRIDHEIGHT, "Snake!");
 
-    return 0;
+	return 0;
 }
-

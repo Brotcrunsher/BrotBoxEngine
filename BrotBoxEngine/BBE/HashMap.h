@@ -13,13 +13,14 @@ namespace bbe
 		class HashMapNode
 		{
 			friend class HashMap<Key, Value>;
+
 		public:
 			HashMapNode() = default;
-		private:
-			Key      m_key = {};
-			Value    m_value = {};
-			uint32_t m_hash = 0;
 
+		private:
+			Key m_key = {};
+			Value m_value = {};
+			uint32_t m_hash = 0;
 
 			HashMapNode(const Key &key, const Value &value, const uint32_t _hash)
 				: m_key(key), m_value(value), m_hash(_hash)
@@ -35,10 +36,10 @@ namespace bbe
 			m_buckets.resizeCapacityAndLength(1 << 4);
 		}
 
-		HashMap(const HashMap&)                = default;
-		HashMap(HashMap&&) noexcept            = default;
-		HashMap& operator=(const HashMap&)     = default;
-		HashMap& operator=(HashMap&&) noexcept = default;
+		HashMap(const HashMap &) = default;
+		HashMap(HashMap &&) noexcept = default;
+		HashMap &operator=(const HashMap &) = default;
+		HashMap &operator=(HashMap &&) noexcept = default;
 
 		void clear()
 		{
@@ -90,7 +91,7 @@ namespace bbe
 			return get(key) != nullptr;
 		}
 
-		const Value* get(const Key &key) const
+		const Value *get(const Key &key) const
 		{
 			uint32_t _hash = hash(key);
 			uint32_t index = _hash % getAmountOfBuckets();
@@ -105,7 +106,7 @@ namespace bbe
 			return nullptr;
 		}
 
-		Value* get(const Key& key)
+		Value *get(const Key &key)
 		{
 			uint32_t _hash = hash(key);
 			uint32_t index = _hash % getAmountOfBuckets();

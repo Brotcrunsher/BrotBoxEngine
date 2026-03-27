@@ -5,7 +5,7 @@
 namespace bbe
 {
 	template<typename... Args>
-	auto async(Args&&... args)
+	auto async(Args &&...args)
 	{
 		return std::async(
 #ifdef __EMSCRIPTEN__

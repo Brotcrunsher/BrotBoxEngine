@@ -9,11 +9,11 @@ bbe::LightBaker::LightBaker()
 {
 }
 
-bbe::LightBaker::LightBaker(const bbe::Matrix4& transform, const Model& model, const Image* normals, const FragmentShader* shader, const bbe::Vector2i& resolution)
+bbe::LightBaker::LightBaker(const bbe::Matrix4 &transform, const Model &model, const Image *normals, const FragmentShader *shader, const bbe::Vector2i &resolution)
 {
 	init(transform, model, normals, shader, resolution);
 }
-void bbe::LightBaker::init(const bbe::Matrix4& transform, const Model& model, const Image* normals, const FragmentShader* shader, const bbe::Vector2i& resolution)
+void bbe::LightBaker::init(const bbe::Matrix4 &transform, const Model &model, const Image *normals, const FragmentShader *shader, const bbe::Vector2i &resolution)
 {
 	if (m_state != State::UNINIT) bbe::Crash(bbe::Error::IllegalState);
 	m_state = State::INIT;
@@ -22,7 +22,6 @@ void bbe::LightBaker::init(const bbe::Matrix4& transform, const Model& model, co
 	m_pnormals = normals;
 	m_pfragementShader = shader;
 	m_resolution = resolution;
-
 
 	// Subtract the transforms position from itself and all the lights. This way
 	// all the coordinates stay closer to the origin where they have a higher

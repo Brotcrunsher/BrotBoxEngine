@@ -14,8 +14,7 @@ struct Process
 	BBE_SERIALIZABLE_DATA(
 		((bbe::String), title),
 		((int32_t), type),
-		((bbe::String), exePath)
-	)
+		((bbe::String), exePath))
 };
 
 class SubsystemProcess

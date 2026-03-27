@@ -45,7 +45,8 @@ namespace bbe
 		};
 
 		struct RecipeNormalization
-		{};
+		{
+		};
 
 		struct RecipeRingModulation
 		{
@@ -94,7 +95,7 @@ namespace bbe
 		constexpr static int64_t hz = 44100;
 
 		SoundGenerator() = default;
-		SoundGenerator(const bbe::Duration& duration);
+		SoundGenerator(const bbe::Duration &duration);
 		SoundGenerator(double durationMilliseconds);
 
 		int64_t getAmountOfSamples() const;
@@ -114,18 +115,18 @@ namespace bbe
 		void addRecipeEcho(double offset = 0.0, double mult = 1.0, double delayTime = 0.3, double decayFactor = 0.5);
 
 	private:
-		void applyRecipes(bbe::List<double>& signal) const;
-		void applyRecipeSineWave(bbe::List<double>& signal, double offset, double mult, double frequency) const;
-		void applyRecipeSquareWave(bbe::List<double>& signal, double offset, double mult, double highDur, double lowDur, double highValue, double lowValue) const;
-		void applyRecipeSawtoothWave(bbe::List<double>& signal, double offset, double mult, double period) const;
-		void applyRecipeTriangleWave(bbe::List<double>& signal, double offset, double mult, double raiseDur, double fallDur, double upDur, double downDur) const;
-		void applyRecipeADSR(bbe::List<double>& signal, double attackDur, double decayDur, double sustainLevel, double releaseDur) const;
-		void applyRecipeNormalization(bbe::List<double>& signal) const;
-		void applyRecipeRingModulation(bbe::List<double>& signal, double offset, double mult, double frequency, double modDepth) const;
-		void applyRecipeChorusEffect(bbe::List<double>& signal, double offset, double mult, double delayTime, double depth, double rate) const;
-		void applyRecipeLowPassFilter(bbe::List<double>& signal, double offset, double mult, double cutoffFrequency) const;
-		void applyRecipeBitcrusher(bbe::List<double>& signal, double offset, double mult, int bitDepth) const;
-		void applyRecipeFrequencyShifter(bbe::List<double>& signal, double offset, double mult, double frequencyShift) const;
-		void applyRecipeEcho(bbe::List<double>& signal, double offset, double mult, double delayTime, double decayFactor) const;
+		void applyRecipes(bbe::List<double> &signal) const;
+		void applyRecipeSineWave(bbe::List<double> &signal, double offset, double mult, double frequency) const;
+		void applyRecipeSquareWave(bbe::List<double> &signal, double offset, double mult, double highDur, double lowDur, double highValue, double lowValue) const;
+		void applyRecipeSawtoothWave(bbe::List<double> &signal, double offset, double mult, double period) const;
+		void applyRecipeTriangleWave(bbe::List<double> &signal, double offset, double mult, double raiseDur, double fallDur, double upDur, double downDur) const;
+		void applyRecipeADSR(bbe::List<double> &signal, double attackDur, double decayDur, double sustainLevel, double releaseDur) const;
+		void applyRecipeNormalization(bbe::List<double> &signal) const;
+		void applyRecipeRingModulation(bbe::List<double> &signal, double offset, double mult, double frequency, double modDepth) const;
+		void applyRecipeChorusEffect(bbe::List<double> &signal, double offset, double mult, double delayTime, double depth, double rate) const;
+		void applyRecipeLowPassFilter(bbe::List<double> &signal, double offset, double mult, double cutoffFrequency) const;
+		void applyRecipeBitcrusher(bbe::List<double> &signal, double offset, double mult, int bitDepth) const;
+		void applyRecipeFrequencyShifter(bbe::List<double> &signal, double offset, double mult, double frequencyShift) const;
+		void applyRecipeEcho(bbe::List<double> &signal, double offset, double mult, double delayTime, double decayFactor) const;
 	};
 }

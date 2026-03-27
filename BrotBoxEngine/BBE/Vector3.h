@@ -1,9 +1,9 @@
 #pragma once
 
-
 namespace bbe
 {
-	template<typename T> class Vector2_t;
+	template<typename T>
+	class Vector2_t;
 	using Vector2 = Vector2_t<float>;
 
 	class Vector3
@@ -19,12 +19,12 @@ namespace bbe
 		Vector3(float x, const Vector2 &yz);
 		Vector3(const Vector2 &xy, float z);
 
-		Vector3& operator+=(const Vector3& other);
-		Vector3& operator-=(const Vector3& other);
-		Vector3& operator*=(const Vector3& other);
-		Vector3& operator/=(const Vector3& other);
-		Vector3& operator*=(const float scalar);
-		Vector3& operator/=(const float scalar);
+		Vector3 &operator+=(const Vector3 &other);
+		Vector3 &operator-=(const Vector3 &other);
+		Vector3 &operator*=(const Vector3 &other);
+		Vector3 &operator/=(const Vector3 &other);
+		Vector3 &operator*=(const float scalar);
+		Vector3 &operator/=(const float scalar);
 
 		Vector3 operator*(float scalar) const;
 		Vector3 operator/(float scalar) const;
@@ -32,14 +32,14 @@ namespace bbe
 		Vector3 operator+(const Vector3 &other) const;
 		Vector3 operator-(const Vector3 &other) const;
 		Vector3 operator-() const;
-		float& operator[](int index);
-		const float& operator[](int index) const;
+		float &operator[](int index);
+		const float &operator[](int index) const;
 
 		bool operator==(const Vector3 &other) const;
 		bool operator!=(const Vector3 &other) const;
-		bool operator> (const Vector3 &other) const;
+		bool operator>(const Vector3 &other) const;
 		bool operator>=(const Vector3 &other) const;
-		bool operator< (const Vector3 &other) const;
+		bool operator<(const Vector3 &other) const;
 		bool operator<=(const Vector3 &other) const;
 
 		bool equals(const Vector3 &other, float epsilon = 0.001f) const;
@@ -76,7 +76,6 @@ namespace bbe
 		float getMinAbsKeepSign() const;
 		float getAngle() const;
 		float getAngle(const Vector3 &other) const;
-
 
 		//Begin Swizzles
 		Vector2 xx() const;

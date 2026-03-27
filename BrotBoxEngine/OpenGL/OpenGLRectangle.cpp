@@ -11,10 +11,10 @@ static const bbe::List<uint32_t> indices = { 0, 1, 3, 2 };
 void bbe::INTERNAL::openGl::OpenGLRectangle::init()
 {
 	const bbe::List<Vector2> vertices = {
-		{0, 0},
-		{0, 1},
-		{1, 1},
-		{1, 0},
+		{ 0, 0 },
+		{ 0, 1 },
+		{ 1, 1 },
+		{ 1, 0 },
 	};
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);

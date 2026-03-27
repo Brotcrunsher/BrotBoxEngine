@@ -4,7 +4,7 @@
 class MyGame : public bbe::Game
 {
 	bbe::CameraControlNoClip ccnc = bbe::CameraControlNoClip(this);
-	bbe::Vector3 p1 = bbe::Vector3(0,  0, 0);
+	bbe::Vector3 p1 = bbe::Vector3(0, 0, 0);
 	bbe::Vector3 p2 = bbe::Vector3(0, -20, 0);
 
 	virtual void onStart() override
@@ -24,7 +24,7 @@ class MyGame : public bbe::Game
 		if (isKeyDown(bbe::Key::E)) p2 = ccnc.getCameraPos();
 	}
 
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 		brush.addLight(bbe::PointLight(ccnc.getCameraPos()));
 		brush.setCamera(ccnc.getCameraPos(), ccnc.getCameraTarget());
@@ -40,7 +40,7 @@ class MyGame : public bbe::Game
 		brush.setColor(0, 0, 1);
 		brush.fillLine({ 0, 0, 0 }, { 0, 0, 4 });
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 	}
 	virtual void onEnd() override
@@ -56,4 +56,3 @@ int main()
 	delete mg;
 #endif
 }
-

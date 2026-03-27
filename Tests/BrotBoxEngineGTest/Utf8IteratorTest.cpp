@@ -38,7 +38,7 @@ TEST(StringIteratorTest, simpleIncrementPre)
 
 TEST(StringIteratorTest, simpleDecrementPost)
 {
-	const char* str = "1234";
+	const char *str = "1234";
 	bbe::Utf8Iterator iter(str + 4);
 	ASSERT_TRUE(0 == strcmp(iter, ""));
 	iter--;
@@ -53,7 +53,7 @@ TEST(StringIteratorTest, simpleDecrementPost)
 
 TEST(StringIteratorTest, simpleDecrementPre)
 {
-	const char* str = "1234";
+	const char *str = "1234";
 	bbe::Utf8Iterator iter(str + 4);
 	ASSERT_TRUE(0 == strcmp(iter, ""));
 	--iter;
@@ -96,7 +96,7 @@ TEST(StringIteratorTest, utf8Increment)
 
 TEST(StringIteratorTest, ut8fDecrement)
 {
-	const char* str = "💣1🍣💃";
+	const char *str = "💣1🍣💃";
 	bbe::Utf8Iterator iter(str + ::strlen(str));
 	ASSERT_TRUE(0 == strcmp(iter, ""));
 	iter--;
@@ -144,5 +144,5 @@ TEST(StringIteratorTest, distance)
 	bbe::Utf8Iterator iter("💣1🍣💃");
 	bbe::Utf8Iterator iter2 = iter + 2;
 	ASSERT_EQ(iter - iter2, -2);
-	ASSERT_EQ(iter2 - iter,  2);
+	ASSERT_EQ(iter2 - iter, 2);
 }

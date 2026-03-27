@@ -37,7 +37,6 @@ class MyGame : public bbe::Game
 			cubeEntities[i].cube.set(position, bbe::Vector3(1), cubeEntities[i].rotationAxis, cubeEntities[i].rotation);
 			cubeEntities[i].color = bbe::Color(rand.randomFloat(), rand.randomFloat(), rand.randomFloat());
 		}
-		
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
@@ -67,9 +66,9 @@ class MyGame : public bbe::Game
 		}
 #endif
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
-		for (const bbe::PointLight& light : lights)
+		for (const bbe::PointLight &light : lights)
 		{
 			brush.addLight(light);
 		}
@@ -80,7 +79,7 @@ class MyGame : public bbe::Game
 			brush.fillCube(cubeEntities[i].cube);
 		}
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 	}
 	virtual void onEnd() override
@@ -96,4 +95,3 @@ int main()
 	delete mg;
 #endif
 }
-

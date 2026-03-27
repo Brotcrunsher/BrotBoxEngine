@@ -30,15 +30,15 @@ bool bbe::isMouseButtonValid(MouseButton button)
 {
 	switch (button)
 	{
-		case MouseButton::LEFT  :
-		case MouseButton::RIGHT :
-		case MouseButton::MIDDLE:
-		case MouseButton::_4	   :
-		case MouseButton::_5    :
-		case MouseButton::_6    :
-		case MouseButton::_7    :
-		case MouseButton::_8    :
-			return true;
+	case MouseButton::LEFT:
+	case MouseButton::RIGHT:
+	case MouseButton::MIDDLE:
+	case MouseButton::_4:
+	case MouseButton::_5:
+	case MouseButton::_6:
+	case MouseButton::_7:
+	case MouseButton::_8:
+		return true;
 	}
 	return false;
 }

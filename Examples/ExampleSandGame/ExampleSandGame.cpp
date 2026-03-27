@@ -13,7 +13,7 @@ constexpr int32_t GRID_HEIGHT = WINDOW_HEIGHT / CELL_SIZE;
 
 enum class CellBehaviour
 {
-	AIR  = 0,
+	AIR = 0,
 	ROCK = 1,
 	SAND = 2,
 };
@@ -34,7 +34,7 @@ public:
 	void slideRight();
 	void slideStop();
 
-	const bbe::Color& getColor() const;
+	const bbe::Color &getColor() const;
 	CellBehaviour getBehaviour() const;
 	bool isSlidingLeft() const;
 	bool isSlidingRight() const;
@@ -69,14 +69,14 @@ class Button
 private:
 	bbe::Vector2 pos;
 	bbe::Vector2 dimension;
-	std::function<void(bbe::Game& context, const bbe::Vector2& pos, const bbe::Vector2& dimension, bool leftClick, bool rightClick, bool middleClick)> clickCallback;
-	std::function<void(bbe::PrimitiveBrush2D&, const bbe::Vector2& pos, const bbe::Vector2& dimension)> drawCallback;
+	std::function<void(bbe::Game &context, const bbe::Vector2 &pos, const bbe::Vector2 &dimension, bool leftClick, bool rightClick, bool middleClick)> clickCallback;
+	std::function<void(bbe::PrimitiveBrush2D &, const bbe::Vector2 &pos, const bbe::Vector2 &dimension)> drawCallback;
 
 public:
-	Button(const bbe::Vector2& pos, const bbe::Vector2& dimension, std::function<void(bbe::Game& context, const bbe::Vector2& pos, const bbe::Vector2& dimension, bool leftClick, bool rightClick, bool middleClick)> leftClickCallback, std::function<void(bbe::PrimitiveBrush2D&, const bbe::Vector2& pos, const bbe::Vector2& dimension)> drawCallback);
+	Button(const bbe::Vector2 &pos, const bbe::Vector2 &dimension, std::function<void(bbe::Game &context, const bbe::Vector2 &pos, const bbe::Vector2 &dimension, bool leftClick, bool rightClick, bool middleClick)> leftClickCallback, std::function<void(bbe::PrimitiveBrush2D &, const bbe::Vector2 &pos, const bbe::Vector2 &dimension)> drawCallback);
 
-	void update(bbe::Game& context);
-	void draw(bbe::PrimitiveBrush2D& brush);
+	void update(bbe::Game &context);
+	void draw(bbe::PrimitiveBrush2D &brush);
 };
 
 class SandGame : public bbe::Game
@@ -85,13 +85,13 @@ class SandGame : public bbe::Game
 	bbe::Vector2 prevMouse;
 	bbe::List<Button> buttons;
 
-	CellBehaviour leftClickBehaviour   = CellBehaviour::SAND;
+	CellBehaviour leftClickBehaviour = CellBehaviour::SAND;
 	CellBehaviour middleClickBehaviour = CellBehaviour::ROCK;
-	CellBehaviour rightClickBehaviour  = CellBehaviour::AIR;
+	CellBehaviour rightClickBehaviour = CellBehaviour::AIR;
 
-	int32_t leftClickRadius   = 3;
+	int32_t leftClickRadius = 3;
 	int32_t middleClickRadius = 3;
-	int32_t rightClickRadius  = 3;
+	int32_t rightClickRadius = 3;
 
 	virtual void onStart() override
 	{
@@ -101,12 +101,14 @@ class SandGame : public bbe::Game
 			buttons.add(Button(
 				bbe::Vector2(10, 10 + i * 45),
 				bbe::Vector2(35, 35),
-				[this, currentBehaviour](bbe::Game& context, const bbe::Vector2& pos, const bbe::Vector2& dimension, bool leftClick, bool rightClick, bool middleClick) {
-					if (leftClick)   leftClickBehaviour = currentBehaviour;
-					if (rightClick)  rightClickBehaviour = currentBehaviour;
+				[this, currentBehaviour](bbe::Game &context, const bbe::Vector2 &pos, const bbe::Vector2 &dimension, bool leftClick, bool rightClick, bool middleClick)
+				{
+					if (leftClick) leftClickBehaviour = currentBehaviour;
+					if (rightClick) rightClickBehaviour = currentBehaviour;
 					if (middleClick) middleClickBehaviour = currentBehaviour;
 				},
-				[this, currentBehaviour](bbe::PrimitiveBrush2D& brush, const bbe::Vector2& pos, const bbe::Vector2& dimension) {
+				[this, currentBehaviour](bbe::PrimitiveBrush2D &brush, const bbe::Vector2 &pos, const bbe::Vector2 &dimension)
+				{
 					brush.setColorRGB(0, 0, 0, 1);
 					if (leftClickBehaviour == currentBehaviour)
 					{
@@ -121,14 +123,13 @@ class SandGame : public bbe::Game
 						brush.fillRect(pos.x + dimension.x * 2 / 3, pos.y - 2, dimension.x / 3 + 2, dimension.y + 4);
 					}
 
-					if (currentBehaviour == CellBehaviour::AIR)  brush.setColorRGB(1.0, 1.0, 1.0);
+					if (currentBehaviour == CellBehaviour::AIR) brush.setColorRGB(1.0, 1.0, 1.0);
 					else if (currentBehaviour == CellBehaviour::ROCK) brush.setColorRGB(0.3, 0.3, 0.3);
 					else if (currentBehaviour == CellBehaviour::SAND) brush.setColorRGB(1.0, 1.0, 0.0);
 					else brush.setColorRGB(0, 1, 1);
 
 					brush.fillRect(pos.x + 1, pos.y + 1, dimension.x - 2, dimension.y - 2);
-				}
-				));
+				}));
 		}
 
 		for (int32_t i = 0; i < 9; i++)
@@ -136,12 +137,14 @@ class SandGame : public bbe::Game
 			buttons.add(Button(
 				bbe::Vector2(55, 10 + i * 45),
 				bbe::Vector2(35, 35),
-				[this, i](bbe::Game& context, const bbe::Vector2& pos, const bbe::Vector2& dimension, bool leftClick, bool rightClick, bool middleClick) {
-					if (leftClick)   leftClickRadius   = i + 1;
-					if (rightClick)  rightClickRadius  = i + 1;
+				[this, i](bbe::Game &context, const bbe::Vector2 &pos, const bbe::Vector2 &dimension, bool leftClick, bool rightClick, bool middleClick)
+				{
+					if (leftClick) leftClickRadius = i + 1;
+					if (rightClick) rightClickRadius = i + 1;
 					if (middleClick) middleClickRadius = i + 1;
 				},
-				[this, i](bbe::PrimitiveBrush2D& brush, const bbe::Vector2& pos, const bbe::Vector2& dimension) {
+				[this, i](bbe::PrimitiveBrush2D &brush, const bbe::Vector2 &pos, const bbe::Vector2 &dimension)
+				{
 					brush.setColorRGB(0, 0, 0, 1);
 					if (leftClickRadius == i + 1)
 					{
@@ -163,8 +166,7 @@ class SandGame : public bbe::Game
 					bbe::String s = "";
 					s += (i + 1);
 					brush.fillText(pos + bbe::Vector2(12, 22), s.getRaw());
-				}
-				));
+				}));
 		}
 	}
 	virtual void update(float timeSinceLastFrame) override
@@ -201,15 +203,15 @@ class SandGame : public bbe::Game
 
 		prevMouse = getMouse();
 
-		for (Button& b : buttons)
+		for (Button &b : buttons)
 		{
 			b.update(*this);
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		brush.setColorRGB(0.8, 0.8, 0.8);
 		brush.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -231,7 +233,7 @@ class SandGame : public bbe::Game
 			}
 		}
 
-		for (Button& b : buttons)
+		for (Button &b : buttons)
 		{
 			b.draw(brush);
 		}
@@ -268,17 +270,17 @@ void GridCell::setBehaviour(CellBehaviour behaviour)
 		setColor(bbe::Color(0, 0, 0, 0));
 		break;
 	case CellBehaviour::ROCK:
-		{
-			const float tint = 0.2f + myRand.randomFloat(0.2f);
-			setColor(bbe::Color(tint, tint, tint, 1.0f));
-		}
-		break;
+	{
+		const float tint = 0.2f + myRand.randomFloat(0.2f);
+		setColor(bbe::Color(tint, tint, tint, 1.0f));
+	}
+	break;
 	case CellBehaviour::SAND:
-		{
-			const float tint = 0.9f + myRand.randomFloat(0.1f);
-			setColor(bbe::Color(tint, tint, 0.0f, 1.0f));
-		}
-		break;
+	{
+		const float tint = 0.9f + myRand.randomFloat(0.1f);
+		setColor(bbe::Color(tint, tint, 0.0f, 1.0f));
+	}
+	break;
 	}
 }
 
@@ -298,7 +300,7 @@ void GridCell::slideStop()
 	if (slide < 0) slide++;
 }
 
-const bbe::Color& GridCell::getColor() const
+const bbe::Color &GridCell::getColor() const
 {
 	return color;
 }
@@ -325,7 +327,7 @@ bool Grid::isCoordValid(int32_t x, int32_t y) const
 
 void Grid::swap(int32_t x1, int32_t y1, int32_t x2, int32_t y2)
 {
-	const bool firstValid  = isCoordValid(x1, y1);
+	const bool firstValid = isCoordValid(x1, y1);
 	const bool secondValid = isCoordValid(x2, y2);
 	if (firstValid && secondValid)
 	{
@@ -406,7 +408,7 @@ void Grid::step()
 		{
 			if (getBehaviour(x, y) == CellBehaviour::AIR)
 			{
-				const bool isLeftDiagonalPathPossible  = getBehaviour(x - 1, y - 1) == CellBehaviour::SAND && getBehaviour(x - 1, y) != CellBehaviour::AIR && getBehaviour(x, y - 1) == CellBehaviour::AIR;
+				const bool isLeftDiagonalPathPossible = getBehaviour(x - 1, y - 1) == CellBehaviour::SAND && getBehaviour(x - 1, y) != CellBehaviour::AIR && getBehaviour(x, y - 1) == CellBehaviour::AIR;
 				const bool isRightDiagonalPathPossible = getBehaviour(x + 1, y - 1) == CellBehaviour::SAND && getBehaviour(x + 1, y) != CellBehaviour::AIR && getBehaviour(x, y - 1) == CellBehaviour::AIR;
 				// Direct fall down
 				if (getBehaviour(x, y - 1) == CellBehaviour::SAND)
@@ -458,7 +460,8 @@ CellBehaviour Grid::getBehaviour(int32_t x, int32_t y) const
 bool Grid::isSlidingLeft(int32_t x, int32_t y) const
 {
 	if (!isCoordValid(x, y)) return false;
-	return grid[x][y].isSlidingLeft();;
+	return grid[x][y].isSlidingLeft();
+	;
 }
 
 bool Grid::isSlidingRight(int32_t x, int32_t y) const
@@ -484,7 +487,7 @@ void Grid::setCircleBehaviour(CellBehaviour behaviour, int32_t x_, int32_t y_, i
 void Grid::setLineBehaviour(CellBehaviour behaviour, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t radius)
 {
 	const bbe::Vector2 start = bbe::Vector2(x1, y1);
-	const bbe::Vector2 end   = bbe::Vector2(x2, y2);
+	const bbe::Vector2 end = bbe::Vector2(x2, y2);
 	for (float delta = 0; delta <= 1; delta += 0.01f)
 	{
 		const bbe::Vector2 v = bbe::Math::interpolateLinear(start, end, delta);
@@ -492,15 +495,15 @@ void Grid::setLineBehaviour(CellBehaviour behaviour, int32_t x1, int32_t y1, int
 	}
 }
 
-Button::Button(const bbe::Vector2& pos, const bbe::Vector2& dimension, std::function<void(bbe::Game&, const bbe::Vector2&, const bbe::Vector2&, bool, bool, bool)> leftClickCallback, std::function<void(bbe::PrimitiveBrush2D&, const bbe::Vector2&, const bbe::Vector2&)> drawCallback)
+Button::Button(const bbe::Vector2 &pos, const bbe::Vector2 &dimension, std::function<void(bbe::Game &, const bbe::Vector2 &, const bbe::Vector2 &, bool, bool, bool)> leftClickCallback, std::function<void(bbe::PrimitiveBrush2D &, const bbe::Vector2 &, const bbe::Vector2 &)> drawCallback)
 {
-	this->pos            = pos;
-	this->dimension      = dimension;
-	this->clickCallback  = leftClickCallback;
-	this->drawCallback   = drawCallback;
+	this->pos = pos;
+	this->dimension = dimension;
+	this->clickCallback = leftClickCallback;
+	this->drawCallback = drawCallback;
 }
 
-void Button::update(bbe::Game& context)
+void Button::update(bbe::Game &context)
 {
 	if (context.getMouseX() >= pos.x && context.getMouseY() >= pos.y && context.getMouseX() < pos.x + dimension.x && context.getMouseY() < pos.y + dimension.y)
 	{
@@ -511,7 +514,7 @@ void Button::update(bbe::Game& context)
 	}
 }
 
-void Button::draw(bbe::PrimitiveBrush2D& brush)
+void Button::draw(bbe::PrimitiveBrush2D &brush)
 {
 	brush.setColorRGB(0, 0, 0, 1);
 	brush.fillRect(pos, dimension);

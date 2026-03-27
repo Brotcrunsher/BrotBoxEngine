@@ -8,9 +8,11 @@ class b2Fixture;
 namespace bbe
 {
 	class Game;
-	template<typename T> class Vector2_t;
+	template<typename T>
+	class Vector2_t;
 	using Vector2 = Vector2_t<float>;
-	template<typename Vec> class Rectangle_t;
+	template<typename Vec>
+	class Rectangle_t;
 	using Rectangle = Rectangle_t<bbe::Vector2>;
 
 	class PhysRectangle : public PhysShape
@@ -19,15 +21,14 @@ namespace bbe
 		float m_width = 0;
 		float m_height = 0;
 
-		void init(Game* context, float x, float y, float width, float height, float angle);
+		void init(Game *context, float x, float y, float width, float height, float angle);
 
 	public:
-
-		PhysRectangle(Game* context, float x, float y, float width, float height, float angle = 0);
-		PhysRectangle(Game* context, const Vector2& vec, float width, float height, float angle = 0);
-		PhysRectangle(Game* context, float x, float y, const Vector2& dim, float angle = 0);
-		PhysRectangle(Game* context, const Vector2& vec, const Vector2& dim, float angle = 0);
-		PhysRectangle(Game* context, const Rectangle &rect, float angle = 0);
+		PhysRectangle(Game *context, float x, float y, float width, float height, float angle = 0);
+		PhysRectangle(Game *context, const Vector2 &vec, float width, float height, float angle = 0);
+		PhysRectangle(Game *context, float x, float y, const Vector2 &dim, float angle = 0);
+		PhysRectangle(Game *context, const Vector2 &vec, const Vector2 &dim, float angle = 0);
+		PhysRectangle(Game *context, const Rectangle &rect, float angle = 0);
 
 		float getX() const override;
 		float getY() const override;

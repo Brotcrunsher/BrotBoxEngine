@@ -14,7 +14,6 @@ public:
 	mutable float masterVolume = 1;
 	static constexpr uint32_t hz = 44100;
 
-
 	virtual float getSample(size_t i, uint32_t channel) const override
 	{
 		// TODO: This has a race condition! Manipulating the sound source and playing the sound happens on two different threads.
@@ -79,17 +78,17 @@ class MyGame : public bbe::Game
 	virtual void update(float timeSinceLastFrame) override
 	{
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		const bbe::Vector2 mouse = getMouseGlobal();
 
 		ImGui::SetNextWindowSize({ (float)getScaledWindowWidth(), (float)getScaledWindowHeight() });
 		ImGui::SetNextWindowPos({ 0, 0 });
 		ImGui::Begin("Settings");
-		
+
 		if (ImGui::Button("Restart Sound"))
 		{
 			soundInstance.stop();
@@ -179,6 +178,5 @@ int main()
 {
 	MyGame game;
 	game.start(1280, 720, "Sound Data Source");
-    return 0;
+	return 0;
 }
-

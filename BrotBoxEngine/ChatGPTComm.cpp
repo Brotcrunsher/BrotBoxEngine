@@ -9,22 +9,23 @@
 #include "BBE/SimpleFile.h"
 #include "BBE/SimpleUrlRequest.h"
 
-static bbe::List<char> sendRequestBinary(const std::string& url, const bbe::String& key, const std::string& jsonInput) {
+static bbe::List<char> sendRequestBinary(const std::string &url, const bbe::String &key, const std::string &jsonInput)
+{
 	auto response = bbe::simpleUrlRequest::urlRequest(
 		url.c_str(),
 		{ "Authorization: Bearer " + key, "Content-Type: application/json" },
-		jsonInput.c_str()
-	);
+		jsonInput.c_str());
 
 	return response.dataContainer;
 }
 
-static std::string sendRequest(const std::string& url, const bbe::String& key, const std::string& jsonInput) {
+static std::string sendRequest(const std::string &url, const bbe::String &key, const std::string &jsonInput)
+{
 	return sendRequestBinary(url, key, jsonInput).getRaw();
 }
 #endif
 
-bbe::ChatGPTComm::ChatGPTComm(const bbe::String& key) : key(key)
+bbe::ChatGPTComm::ChatGPTComm(const bbe::String &key) : key(key)
 {
 }
 
@@ -34,15 +35,15 @@ bool bbe::ChatGPTComm::isKeySet() const
 	return key.isEmpty() == false;
 }
 
-bbe::ChatGPTQueryResponse bbe::ChatGPTComm::query(const bbe::String& msg)
+bbe::ChatGPTQueryResponse bbe::ChatGPTComm::query(const bbe::String &msg)
 {
 #ifdef BBE_ADD_CURL
 	std::unique_lock ul(mutex);
 	// Add user's message to the conversation
-	history.push_back({ {"role", "user"}, {"content", msg.getRaw()} });
+	history.push_back({ { "role", "user" }, { "content", msg.getRaw() } });
 
 	std::vector<nlohmann::json> sendMessages = {
-		{{"role", "system"}, {"content", role.getRaw()}}
+		{ { "role", "system" }, { "content", role.getRaw() } }
 	};
 	for (size_t i = 0; i < history.size(); i++)
 	{
@@ -51,8 +52,8 @@ bbe::ChatGPTQueryResponse bbe::ChatGPTComm::query(const bbe::String& msg)
 
 	// Prepare the JSON data for the request
 	nlohmann::json jsonData = {
-		{"model", model.getRaw()},
-		{"messages", sendMessages}
+		{ "model", model.getRaw() },
+		{ "messages", sendMessages }
 	};
 
 	// Send the request
@@ -62,7 +63,8 @@ bbe::ChatGPTQueryResponse bbe::ChatGPTComm::query(const bbe::String& msg)
 	ul.lock();
 
 	// Parse and display the response
-	try {
+	try
+	{
 		ChatGPTQueryResponse retVal;
 		auto jsonResponse = nlohmann::json::parse(response);
 		retVal.message = jsonResponse["choices"][0]["message"]["content"].get<std::string>().c_str();
@@ -73,10 +75,11 @@ bbe::ChatGPTQueryResponse bbe::ChatGPTComm::query(const bbe::String& msg)
 		totalTokens += retVal.totalTokens;
 
 		// Add assistant's message to the conversation
-		history.push_back({ {"role", "assistant"}, {"content", retVal.message.getRaw()} });
+		history.push_back({ { "role", "assistant" }, { "content", retVal.message.getRaw() } });
 		return retVal;
 	}
-	catch (const std::exception& e) {
+	catch (const std::exception &e)
+	{
 		BBELOGLN("Error parsing API response: " << e.what());
 	}
 
@@ -88,20 +91,20 @@ bbe::ChatGPTQueryResponse bbe::ChatGPTComm::query(const bbe::String& msg)
 #endif
 }
 
-std::future<bbe::ChatGPTQueryResponse> bbe::ChatGPTComm::queryAsync(const bbe::String& msg)
+std::future<bbe::ChatGPTQueryResponse> bbe::ChatGPTComm::queryAsync(const bbe::String &msg)
 {
 	return bbe::async(&bbe::ChatGPTComm::query, this, msg);
 }
 
-bbe::Sound bbe::ChatGPTComm::synthesizeSpeech(const bbe::String& text)
+bbe::Sound bbe::ChatGPTComm::synthesizeSpeech(const bbe::String &text)
 {
 #ifdef BBE_ADD_CURL
 	std::unique_lock ul(mutex);
 
 	nlohmann::json jsonData = {
-		{"model", ttsModel.getRaw()},
-		{"input", text.getRaw()},
-		{"voice", voice.getRaw()}
+		{ "model", ttsModel.getRaw() },
+		{ "input", text.getRaw() },
+		{ "voice", voice.getRaw() }
 	};
 
 	bbe::String keyCopy = key;
@@ -118,16 +121,16 @@ bbe::Sound bbe::ChatGPTComm::synthesizeSpeech(const bbe::String& text)
 #endif
 }
 
-std::future<bbe::Sound> bbe::ChatGPTComm::synthesizeSpeechAsync(const bbe::String& text)
+std::future<bbe::Sound> bbe::ChatGPTComm::synthesizeSpeechAsync(const bbe::String &text)
 {
 	return bbe::async(&bbe::ChatGPTComm::synthesizeSpeech, this, text);
 }
 
-bbe::String bbe::ChatGPTComm::transcribe(const bbe::Sound& sound)
+bbe::String bbe::ChatGPTComm::transcribe(const bbe::Sound &sound)
 {
 #ifdef BBE_ADD_CURL
 	std::map<bbe::String, bbe::String> formFields = {
-		{"model", "whisper-1"}
+		{ "model", "whisper-1" }
 	};
 
 	const bbe::ByteBuffer file = sound.toWav();
@@ -140,10 +143,9 @@ bbe::String bbe::ChatGPTComm::transcribe(const bbe::Sound& sound)
 		"file",
 		"audio.wav",
 		true,
-		false
-	);
+		false);
 
-	return bbe::String(reinterpret_cast<const char*>(response.dataContainer.getRaw()));
+	return bbe::String(reinterpret_cast<const char *>(response.dataContainer.getRaw()));
 #else
 	(void)sound;
 	BBELOGLN("ChatGPTComm::transcribe unavailable because BrotBoxEngine was built without curl support.");
@@ -151,22 +153,21 @@ bbe::String bbe::ChatGPTComm::transcribe(const bbe::Sound& sound)
 #endif
 }
 
-
-std::future<bbe::String> bbe::ChatGPTComm::transcribeAsync(const bbe::Sound& sound)
+std::future<bbe::String> bbe::ChatGPTComm::transcribeAsync(const bbe::Sound &sound)
 {
 	return bbe::async(&bbe::ChatGPTComm::transcribe, this, sound);
 }
 
-bbe::ChatGPTCreateImageResponse bbe::ChatGPTComm::createImage(const bbe::String& prompt, const bbe::Vector2i& size)
+bbe::ChatGPTCreateImageResponse bbe::ChatGPTComm::createImage(const bbe::String &prompt, const bbe::Vector2i &size)
 {
 #ifdef BBE_ADD_CURL
 	std::unique_lock ul(mutex);
 
 	nlohmann::json jsonData = {
-		{"model", "dall-e-3"},
-		{"prompt", prompt.getRaw()},
-		{"n", 1},
-		{"size", (size.x + bbe::String("x") + size.y).getRaw()}
+		{ "model", "dall-e-3" },
+		{ "prompt", prompt.getRaw() },
+		{ "n", 1 },
+		{ "size", (size.x + bbe::String("x") + size.y).getRaw() }
 	};
 
 	bbe::String keyCopy = key;
@@ -197,7 +198,7 @@ bbe::ChatGPTCreateImageResponse bbe::ChatGPTComm::createImage(const bbe::String&
 	}
 
 	bbe::Image retVal;
-	retVal.loadRaw((bbe::byte*)imageData.dataContainer.getRaw(), imageData.dataContainer.getLength());
+	retVal.loadRaw((bbe::byte *)imageData.dataContainer.getRaw(), imageData.dataContainer.getLength());
 
 	return { retVal, imageUrl.c_str() };
 #else
@@ -208,12 +209,12 @@ bbe::ChatGPTCreateImageResponse bbe::ChatGPTComm::createImage(const bbe::String&
 #endif
 }
 
-std::future<bbe::ChatGPTCreateImageResponse> bbe::ChatGPTComm::createImageAsync(const bbe::String& prompt, const bbe::Vector2i& size)
+std::future<bbe::ChatGPTCreateImageResponse> bbe::ChatGPTComm::createImageAsync(const bbe::String &prompt, const bbe::Vector2i &size)
 {
 	return bbe::async(&bbe::ChatGPTComm::createImage, this, prompt, size);
 }
 
-bbe::String bbe::ChatGPTComm::describeImage(const nlohmann::json& requestJson)
+bbe::String bbe::ChatGPTComm::describeImage(const nlohmann::json &requestJson)
 {
 #ifdef BBE_ADD_CURL
 	std::unique_lock ul(mutex);
@@ -238,42 +239,29 @@ bbe::String bbe::ChatGPTComm::describeImage(const nlohmann::json& requestJson)
 #endif
 }
 
-bbe::String bbe::ChatGPTComm::describeImage(const bbe::String& url)
+bbe::String bbe::ChatGPTComm::describeImage(const bbe::String &url)
 {
 	nlohmann::json json = {
-		{"model", "gpt-4o-mini"},
-		{"messages", {
-			{
-				{"role", "user"},
-				{"content", {
-					{{"type", "text"}, {"text", "What's in this image?"}},
-					{
-						{"type", "image_url"},
-						{"image_url", {{"url", url.getRaw()}}}
-					}
-				}}
-			}
-		}}
+		{ "model", "gpt-4o-mini" },
+		{ "messages", { { { "role", "user" }, { "content", { { { "type", "text" }, { "text", "What's in this image?" } }, { { "type", "image_url" }, { "image_url", { { "url", url.getRaw() } } } } } } } } }
 	};
 	return describeImage(json);
 }
 
-std::future<bbe::String> bbe::ChatGPTComm::describeImageAsync(const nlohmann::json& requestJson)
+std::future<bbe::String> bbe::ChatGPTComm::describeImageAsync(const nlohmann::json &requestJson)
 {
 	return bbe::async(
-		static_cast<bbe::String(bbe::ChatGPTComm::*)(const nlohmann::json&)>(&bbe::ChatGPTComm::describeImage),
+		static_cast<bbe::String (bbe::ChatGPTComm::*)(const nlohmann::json &)>(&bbe::ChatGPTComm::describeImage),
 		this,
-		requestJson
-	);
+		requestJson);
 }
 
-std::future<bbe::String> bbe::ChatGPTComm::describeImageAsync(const bbe::String& url)
+std::future<bbe::String> bbe::ChatGPTComm::describeImageAsync(const bbe::String &url)
 {
 	return bbe::async(
-		static_cast<bbe::String(bbe::ChatGPTComm::*)(const bbe::String&)>(&bbe::ChatGPTComm::describeImage),
+		static_cast<bbe::String (bbe::ChatGPTComm::*)(const bbe::String &)>(&bbe::ChatGPTComm::describeImage),
 		this,
-		url
-	);
+		url);
 }
 
 void bbe::ChatGPTComm::purgeMemory()
@@ -294,17 +282,21 @@ bbe::List<bbe::String> bbe::ChatGPTComm::getAvailableModels() const
 	ul.unlock();
 
 	bbe::List<bbe::String> models;
-	try {
+	try
+	{
 		auto jsonResponse = nlohmann::json::parse(response);
-		for (const auto& model : jsonResponse["data"]) {
+		for (const auto &model : jsonResponse["data"])
+		{
 			models.add(model["id"].get<std::string>().c_str());
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::exception &e)
+	{
 		std::cerr << "Error parsing JSON response: " << e.what() << std::endl;
 	}
 
-	if (models.isEmpty()) {
+	if (models.isEmpty())
+	{
 		bbe::Crash(bbe::Error::IllegalState, "No models available or failed to retrieve models.");
 	}
 

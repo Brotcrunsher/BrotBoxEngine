@@ -23,27 +23,27 @@ namespace bbe
 			uint64_t getNextIndex();
 
 		public:
-			static SoundManager* getInstance();
+			static SoundManager *getInstance();
 
 			SoundManager();
 			~SoundManager();
 
-			SoundManager           (const SoundManager& ) = delete;
-			SoundManager           (      SoundManager&&) = delete;
-			SoundManager& operator=(const SoundManager& ) = delete;
-			SoundManager& operator=(      SoundManager&&) = delete;
+			SoundManager(const SoundManager &) = delete;
+			SoundManager(SoundManager &&) = delete;
+			SoundManager &operator=(const SoundManager &) = delete;
+			SoundManager &operator=(SoundManager &&) = delete;
 
 			void update();
 			void init();
 			void destroy();
 			void restart();
-			SoundInstance play(const SoundDataSource& sound, const bbe::Vector3* pos, float volume);
+			SoundInstance play(const SoundDataSource &sound, const bbe::Vector3 *pos, float volume);
 
 			void stopSoundWithIndex(uint64_t index);
 			bool isSoundWithIndexPlaying(uint64_t index);
-			void setPosition(uint64_t index, const bbe::Vector3& pos);
+			void setPosition(uint64_t index, const bbe::Vector3 &pos);
 
-			void setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection);
+			void setSoundListener(const bbe::Vector3 &pos, const bbe::Vector3 &lookDirection);
 
 			size_t getAmountOfPlayingSounds() const;
 

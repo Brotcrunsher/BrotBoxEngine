@@ -5,7 +5,7 @@
 TEST(List, ConstructorDefault)
 {
 	bbe::List<SomeClass<int>> list;
-	bbe::List<SomeClass<int>> const * pList = &list;
+	bbe::List<SomeClass<int>> const *pList = &list;
 	ASSERT_EQ(list.getCapacity(), 0);
 	ASSERT_EQ(list.getLength(), 0);
 	ASSERT_EQ(list.getRaw(), nullptr);
@@ -16,7 +16,7 @@ TEST(List, ConstructorDefault)
 TEST(List, ConstructorAmountOfData)
 {
 	bbe::List<SomeClass<int>> list(17);
-	bbe::List<SomeClass<int>> const* pList = &list;
+	bbe::List<SomeClass<int>> const *pList = &list;
 	ASSERT_GE(list.getCapacity(), 17);
 	ASSERT_EQ(list.getLength(), 0);
 	ASSERT_NE(list.getRaw(), nullptr);
@@ -28,7 +28,7 @@ TEST(List, ConstructorAmountOfData)
 TEST(List, ConstructorWithData)
 {
 	bbe::List<SomeClass<int>> list(17, 1337);
-	bbe::List<SomeClass<int>> const* pList = &list;
+	bbe::List<SomeClass<int>> const *pList = &list;
 	ASSERT_GE(list.getCapacity(), 17);
 	ASSERT_EQ(list.getLength(), 17);
 	ASSERT_NE(list.getRaw(), nullptr);
@@ -90,7 +90,8 @@ TEST(List, ConstructorInitializer)
 
 namespace bbe
 {
-	void aaa(const bbe::test::Person& a) {
+	void aaa(const bbe::test::Person &a)
+	{
 		BBELOG(a);
 	}
 }
@@ -205,7 +206,7 @@ TEST(List, RecursiveList)
 	{
 		for (size_t k = 0; k < layer2_1[i].getLength(); k++)
 		{
-			if(i == 1 && k == 6)
+			if (i == 1 && k == 6)
 				ASSERT_EQ(layer2_1[i][k].getLength(), 1000);
 			else
 				ASSERT_EQ(layer2_1[i][k].getLength(), 18);
@@ -354,7 +355,8 @@ TEST(List, removeAllByPredicate)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(4) };
 	ASSERT_EQ(list.getLength(), 6);
-	list.removeAll([](const SomeClass<int>& s) { return s.getLength() % 2 == 0; });
+	list.removeAll([](const SomeClass<int> &s)
+				   { return s.getLength() % 2 == 0; });
 	ASSERT_EQ(list.getLength(), 2);
 	ASSERT_EQ(list[0].getLength(), 1);
 	ASSERT_EQ(list[1].getLength(), 3);
@@ -377,7 +379,8 @@ TEST(List, removeSingleByPredicate)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(4) };
 	ASSERT_EQ(list.getLength(), 6);
-	list.removeSingle([](const SomeClass<int>& s) { return s.getLength() % 2 == 0; });
+	list.removeSingle([](const SomeClass<int> &s)
+					  { return s.getLength() % 2 == 0; });
 	ASSERT_EQ(list.getLength(), 5);
 	ASSERT_EQ(list[0].getLength(), 1);
 	ASSERT_EQ(list[1].getLength(), 3);
@@ -425,9 +428,15 @@ TEST(List, containsAmountByPredicate)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(4) };
 	ASSERT_EQ(list.getLength(), 6);
-	ASSERT_EQ(list.containsAmount([](const SomeClass<int> s) { return s.getLength() % 2 == 0;  }), 4);
-	ASSERT_EQ(list.containsAmount([](const SomeClass<int> s) { return s.getLength() % 2 == 1;  }), 2);
-	ASSERT_EQ(list.containsAmount([](const SomeClass<int> s) { return s.getLength() == 10000;  }), 0);
+	ASSERT_EQ(list.containsAmount([](const SomeClass<int> s)
+								  { return s.getLength() % 2 == 0; }),
+			  4);
+	ASSERT_EQ(list.containsAmount([](const SomeClass<int> s)
+								  { return s.getLength() % 2 == 1; }),
+			  2);
+	ASSERT_EQ(list.containsAmount([](const SomeClass<int> s)
+								  { return s.getLength() == 10000; }),
+			  0);
 }
 
 TEST(List, containsByExample)
@@ -445,9 +454,15 @@ TEST(List, containsByPredicate)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(4) };
 	ASSERT_EQ(list.getLength(), 6);
-	ASSERT_EQ(list.contains([](const SomeClass<int> s) { return s.getLength() % 2 == 0;  }), true);
-	ASSERT_EQ(list.contains([](const SomeClass<int> s) { return s.getLength() % 2 == 1;  }), true);
-	ASSERT_EQ(list.contains([](const SomeClass<int> s) { return s.getLength() == 10000;  }), false);
+	ASSERT_EQ(list.contains([](const SomeClass<int> s)
+							{ return s.getLength() % 2 == 0; }),
+			  true);
+	ASSERT_EQ(list.contains([](const SomeClass<int> s)
+							{ return s.getLength() % 2 == 1; }),
+			  true);
+	ASSERT_EQ(list.contains([](const SomeClass<int> s)
+							{ return s.getLength() == 10000; }),
+			  false);
 }
 
 TEST(List, containsUniqueByExample)
@@ -465,10 +480,18 @@ TEST(List, containsUniqueByPredicate)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(1), SomeClass<int>(2), SomeClass<int>(3), SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(4) };
 	ASSERT_EQ(list.getLength(), 6);
-	ASSERT_EQ(list.containsUnique([](const SomeClass<int> s) { return s.getLength() % 2 == 0;  }), false);
-	ASSERT_EQ(list.containsUnique([](const SomeClass<int> s) { return s.getLength() % 2 == 1;  }), false);
-	ASSERT_EQ(list.containsUnique([](const SomeClass<int> s) { return s.getLength() == 10000;  }), false);
-	ASSERT_EQ(list.containsUnique([](const SomeClass<int> s) { return s.getLength() == 3;      }), true);
+	ASSERT_EQ(list.containsUnique([](const SomeClass<int> s)
+								  { return s.getLength() % 2 == 0; }),
+			  false);
+	ASSERT_EQ(list.containsUnique([](const SomeClass<int> s)
+								  { return s.getLength() % 2 == 1; }),
+			  false);
+	ASSERT_EQ(list.containsUnique([](const SomeClass<int> s)
+								  { return s.getLength() == 10000; }),
+			  false);
+	ASSERT_EQ(list.containsUnique([](const SomeClass<int> s)
+								  { return s.getLength() == 3; }),
+			  true);
 }
 
 TEST(List, beginEnd)
@@ -480,7 +503,7 @@ TEST(List, beginEnd)
 		ASSERT_EQ(it->getLength(), i);
 	}
 
-	const bbe::List<SomeClass<int>>& con = list;
+	const bbe::List<SomeClass<int>> &con = list;
 	i = 1;
 	for (auto it = con.begin(); it != con.end(); it++, i++)
 	{
@@ -501,7 +524,8 @@ TEST(List, sort)
 	ASSERT_EQ(list[4].getLength(), 4);
 	ASSERT_EQ(list[5].getLength(), 7);
 
-	list.sort([](const SomeClass<int> a, const SomeClass<int> b) { return a > b; });
+	list.sort([](const SomeClass<int> a, const SomeClass<int> b)
+			  { return a > b; });
 	ASSERT_EQ(list[0].getLength(), 7);
 	ASSERT_EQ(list[1].getLength(), 4);
 	ASSERT_EQ(list[2].getLength(), 4);
@@ -528,7 +552,7 @@ TEST(List, findByExample)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(3) };
 
-	SomeClass<int>* ptr = list.find(SomeClass<int>(4));
+	SomeClass<int> *ptr = list.find(SomeClass<int>(4));
 	ASSERT_EQ(ptr, &list[0]);
 	ptr = list.find(SomeClass<int>(2));
 	ASSERT_EQ(ptr, &list[1]);
@@ -546,17 +570,23 @@ TEST(List, findByPredicate)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(3) };
 
-	SomeClass<int>* ptr = list.find([](const SomeClass<int>& s) { return s.getLength() == 4; });
+	SomeClass<int> *ptr = list.find([](const SomeClass<int> &s)
+									{ return s.getLength() == 4; });
 	ASSERT_EQ(ptr, &list[0]);
-	ptr = list.find([](const SomeClass<int>& s) { return s.getLength() == 2; });
+	ptr = list.find([](const SomeClass<int> &s)
+					{ return s.getLength() == 2; });
 	ASSERT_EQ(ptr, &list[1]);
-	ptr = list.find([](const SomeClass<int>& s) { return s.getLength() == 1; });
+	ptr = list.find([](const SomeClass<int> &s)
+					{ return s.getLength() == 1; });
 	ASSERT_EQ(ptr, &list[2]);
-	ptr = list.find([](const SomeClass<int>& s) { return s.getLength() == 7; });
+	ptr = list.find([](const SomeClass<int> &s)
+					{ return s.getLength() == 7; });
 	ASSERT_EQ(ptr, &list[4]);
-	ptr = list.find([](const SomeClass<int>& s) { return s.getLength() == 3; });
+	ptr = list.find([](const SomeClass<int> &s)
+					{ return s.getLength() == 3; });
 	ASSERT_EQ(ptr, &list[5]);
-	ptr = list.find([](const SomeClass<int>& s) { return s.getLength() == 100; });
+	ptr = list.find([](const SomeClass<int> &s)
+					{ return s.getLength() == 100; });
 	ASSERT_EQ(ptr, nullptr);
 }
 
@@ -564,7 +594,7 @@ TEST(List, findLastByExample)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(3) };
 
-	SomeClass<int>* ptr = list.findLast(SomeClass<int>(4));
+	SomeClass<int> *ptr = list.findLast(SomeClass<int>(4));
 	ASSERT_EQ(ptr, &list[3]);
 	ptr = list.findLast(SomeClass<int>(2));
 	ASSERT_EQ(ptr, &list[1]);
@@ -582,17 +612,23 @@ TEST(List, findLastByPredicate)
 {
 	bbe::List<SomeClass<int>> list = { SomeClass<int>(4), SomeClass<int>(2), SomeClass<int>(1), SomeClass<int>(4), SomeClass<int>(7), SomeClass<int>(3) };
 
-	SomeClass<int>* ptr = list.findLast([](const SomeClass<int>& s) { return s.getLength() == 4; });
+	SomeClass<int> *ptr = list.findLast([](const SomeClass<int> &s)
+										{ return s.getLength() == 4; });
 	ASSERT_EQ(ptr, &list[3]);
-	ptr = list.findLast([](const SomeClass<int>& s) { return s.getLength() == 2; });
+	ptr = list.findLast([](const SomeClass<int> &s)
+						{ return s.getLength() == 2; });
 	ASSERT_EQ(ptr, &list[1]);
-	ptr = list.findLast([](const SomeClass<int>& s) { return s.getLength() == 1; });
+	ptr = list.findLast([](const SomeClass<int> &s)
+						{ return s.getLength() == 1; });
 	ASSERT_EQ(ptr, &list[2]);
-	ptr = list.findLast([](const SomeClass<int>& s) { return s.getLength() == 7; });
+	ptr = list.findLast([](const SomeClass<int> &s)
+						{ return s.getLength() == 7; });
 	ASSERT_EQ(ptr, &list[4]);
-	ptr = list.findLast([](const SomeClass<int>& s) { return s.getLength() == 3; });
+	ptr = list.findLast([](const SomeClass<int> &s)
+						{ return s.getLength() == 3; });
 	ASSERT_EQ(ptr, &list[5]);
-	ptr = list.findLast([](const SomeClass<int>& s) { return s.getLength() == 100; });
+	ptr = list.findLast([](const SomeClass<int> &s)
+						{ return s.getLength() == 100; });
 	ASSERT_EQ(ptr, nullptr);
 }
 
@@ -659,16 +695,16 @@ TEST(List, CombineUnorderedLists)
 	ASSERT_EQ(list2[5].getLength(), 2);
 
 	list1 += list2;
-	ASSERT_EQ(list1[ 0].getLength(), 17);
-	ASSERT_EQ(list1[ 1].getLength(), 13);
-	ASSERT_EQ(list1[ 2].getLength(), 1337);
-	ASSERT_EQ(list1[ 3].getLength(), 2);
-	ASSERT_EQ(list1[ 4].getLength(), 4);
-	ASSERT_EQ(list1[ 5].getLength(), 2);
-	ASSERT_EQ(list1[ 6].getLength(), 18);
-	ASSERT_EQ(list1[ 7].getLength(), 4);
-	ASSERT_EQ(list1[ 8].getLength(), 100);
-	ASSERT_EQ(list1[ 9].getLength(), 1);
+	ASSERT_EQ(list1[0].getLength(), 17);
+	ASSERT_EQ(list1[1].getLength(), 13);
+	ASSERT_EQ(list1[2].getLength(), 1337);
+	ASSERT_EQ(list1[3].getLength(), 2);
+	ASSERT_EQ(list1[4].getLength(), 4);
+	ASSERT_EQ(list1[5].getLength(), 2);
+	ASSERT_EQ(list1[6].getLength(), 18);
+	ASSERT_EQ(list1[7].getLength(), 4);
+	ASSERT_EQ(list1[8].getLength(), 100);
+	ASSERT_EQ(list1[9].getLength(), 1);
 	ASSERT_EQ(list1[10].getLength(), 1);
 	ASSERT_EQ(list1[11].getLength(), 2);
 }
@@ -678,7 +714,7 @@ TEST(List, SelfAdd)
 	bbe::List<int> l;
 	l.add(0);
 	// Just make sure the sanatizer doesn't find an illegal access here.
-	for(int i = 0; i < 1024; i++) l.add(l[0]);
+	for (int i = 0; i < 1024; i++) l.add(l[0]);
 }
 
 TEST(List, SelfAppendList)
@@ -721,7 +757,6 @@ TEST(Queue, TestQueue)
 		uint32_t nextAdd = 0;
 		bbe::Random rand;
 		rand.setSeed((uint32_t)seed);
-
 
 		for (size_t i = 0; i < 1000; i++)
 		{

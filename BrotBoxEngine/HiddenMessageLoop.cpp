@@ -2,7 +2,7 @@
 #include "BBE/HiddenMessageLoop.h"
 #include "BBE/SimpleThread.h"
 
-bbe::HiddenMessageLoop::HiddenMessageLoop(const bbe::String& className)
+bbe::HiddenMessageLoop::HiddenMessageLoop(const bbe::String &className)
 {
 	start(className);
 }
@@ -12,7 +12,7 @@ bbe::HiddenMessageLoop::~HiddenMessageLoop()
 	stop();
 }
 
-void bbe::HiddenMessageLoop::start(const bbe::String& className)
+void bbe::HiddenMessageLoop::start(const bbe::String &className)
 {
 	if (!running)
 	{
@@ -26,20 +26,21 @@ void bbe::HiddenMessageLoop::stop()
 {
 	if (running)
 	{
-		running = false;  // Signal the thread to stop
+		running = false; // Signal the thread to stop
 		{
 			std::lock_guard<std::mutex> _(hwndMutex);
-			PostMessage(hwnd, WM_QUIT, 0, 0);  // Quit the message loop
+			PostMessage(hwnd, WM_QUIT, 0, 0); // Quit the message loop
 		}
-		if (messageThread.joinable()) {
-			messageThread.join();  // Wait for the thread to finish
+		if (messageThread.joinable())
+		{
+			messageThread.join(); // Wait for the thread to finish
 		}
 	}
 }
 
 LRESULT bbe::HiddenMessageLoop::WindowProcc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	HiddenMessageLoop* loop = reinterpret_cast<HiddenMessageLoop*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+	HiddenMessageLoop *loop = reinterpret_cast<HiddenMessageLoop *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 	if (loop)
 	{
 		return loop->WindowProc(hwnd, uMsg, wParam, lParam);
@@ -50,9 +51,9 @@ LRESULT bbe::HiddenMessageLoop::WindowProcc(HWND hwnd, UINT uMsg, WPARAM wParam,
 	}
 }
 
-void bbe::HiddenMessageLoop::messageLoop(const bbe::String& className)
+void bbe::HiddenMessageLoop::messageLoop(const bbe::String &className)
 {
-	WNDCLASS wc = { };
+	WNDCLASS wc = {};
 
 	wc.lpfnWndProc = WindowProcc;
 	wc.hInstance = GetModuleHandle(NULL);
@@ -65,10 +66,10 @@ void bbe::HiddenMessageLoop::messageLoop(const bbe::String& className)
 		hwnd = CreateWindowEx(
 			0, className.getRaw(), "Hidden Session Lock Monitor", 0,
 			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-			NULL, NULL, GetModuleHandle(NULL), NULL
-		);
+			NULL, NULL, GetModuleHandle(NULL), NULL);
 
-		if (hwnd == NULL) {
+		if (hwnd == NULL)
+		{
 			std::cerr << "Failed to create window!" << std::endl;
 			return;
 		}
@@ -79,8 +80,10 @@ void bbe::HiddenMessageLoop::messageLoop(const bbe::String& className)
 
 	// Message loop
 	MSG msg;
-	while (running) {
-		if (GetMessage(&msg, NULL, 0, 0)) {
+	while (running)
+	{
+		if (GetMessage(&msg, NULL, 0, 0))
+		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}

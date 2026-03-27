@@ -1,11 +1,9 @@
 #pragma once
 
-
 #include "BBE/Hash.h"
 #include "BBE/HashMap.h"
 #include "BBE/UtilTest.h"
 #include "BBE/UtilDebug.h"
-
 
 namespace bbe
 {
@@ -21,7 +19,7 @@ namespace bbe
 				{
 					assertEquals(hashMap.get(i), nullptr);
 				}
-				
+
 				hashMap.add(1, Person("Peter", "AStr", 40));
 				assertEquals(hashMap.get(1)->name, "Peter");
 				assertEquals(hashMap.get(1)->address, "AStr");
@@ -52,7 +50,6 @@ namespace bbe
 					}
 				}
 			}
-			
 		}
 	}
 }

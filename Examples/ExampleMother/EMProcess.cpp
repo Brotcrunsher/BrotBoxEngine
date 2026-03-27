@@ -15,7 +15,7 @@
 
 namespace
 {
-	bool isMotherProcess(const bbe::String& scannedProcessName, const bbe::String& exePath)
+	bool isMotherProcess(const bbe::String &scannedProcessName, const bbe::String &exePath)
 	{
 		if (scannedProcessName == "ExampleMother.exe" || scannedProcessName == "ExampleMother")
 		{
@@ -31,20 +31,17 @@ namespace
 		return false;
 	}
 
-	bool shouldIgnoreProcess(const bbe::String& scannedProcessName)
+	bool shouldIgnoreProcess(const bbe::String &scannedProcessName)
 	{
-		return scannedProcessName.startsWith("AM_Delta_Patch_")
-			|| scannedProcessName.endsWith("_chrome_updater.exe")
-			|| scannedProcessName.startsWith("MicrosoftEdge_")
-			|| scannedProcessName.startsWith("kworker/");
+		return scannedProcessName.startsWith("AM_Delta_Patch_") || scannedProcessName.endsWith("_chrome_updater.exe") || scannedProcessName.startsWith("MicrosoftEdge_") || scannedProcessName.startsWith("kworker/");
 	}
 
-	void handleScannedProcess(const bbe::String& scannedProcessName,
-							  const bbe::String& exePath,
-							  std::unordered_map<std::string, int32_t>& knownProcessTypes,
-							  bbe::SerializableList<Process>& processes,
-							  bbe::List<bbe::String>& foundGames,
-							  int32_t& motherPorcesses)
+	void handleScannedProcess(const bbe::String &scannedProcessName,
+							  const bbe::String &exePath,
+							  std::unordered_map<std::string, int32_t> &knownProcessTypes,
+							  bbe::SerializableList<Process> &processes,
+							  bbe::List<bbe::String> &foundGames,
+							  int32_t &motherPorcesses)
 	{
 		if (isMotherProcess(scannedProcessName, exePath))
 		{
@@ -74,7 +71,7 @@ namespace
 	}
 
 #ifdef __linux__
-	bool isNumericDirectoryName(const std::string& name)
+	bool isNumericDirectoryName(const std::string &name)
 	{
 		if (name.empty())
 		{
@@ -92,7 +89,7 @@ namespace
 		return true;
 	}
 
-	bbe::String readLinuxProcessName(const std::filesystem::path& procPath)
+	bbe::String readLinuxProcessName(const std::filesystem::path &procPath)
 	{
 		std::ifstream file(procPath / "comm");
 		if (!file.is_open())
@@ -105,7 +102,7 @@ namespace
 		return bbe::String(line.c_str());
 	}
 
-	bbe::String readLinuxExePath(const std::filesystem::path& procPath)
+	bbe::String readLinuxExePath(const std::filesystem::path &procPath)
 	{
 		std::error_code ec;
 		const auto exePath = std::filesystem::read_symlink(procPath / "exe", ec);
@@ -161,7 +158,7 @@ void SubsystemProcess::update()
 		CloseHandle(snapshot);
 #elif defined(__linux__)
 		std::error_code ec;
-		for (const auto& entry : std::filesystem::directory_iterator("/proc", ec))
+		for (const auto &entry : std::filesystem::directory_iterator("/proc", ec))
 		{
 			if (ec)
 			{
@@ -221,7 +218,7 @@ void SubsystemProcess::drawGui(float scale)
 		bool processChanged = false;
 		for (size_t i = 0; i < processes.getLength(); i++)
 		{
-			Process& p = processes[i];
+			Process &p = processes[i];
 			if (p.type == Process::TYPE_SYSTEM && !showSystem) continue;
 			if (p.type == Process::TYPE_OTHER && !showOther) continue;
 			if (p.type == Process::TYPE_GAME && !showGames) continue;
@@ -230,7 +227,7 @@ void SubsystemProcess::drawGui(float scale)
 			ImGui::TableSetColumnIndex(0);
 			ImGui::Text(p.title);
 			ImGui::bbe::tooltip(p.exePath);
-	
+
 			ImGui::TableSetColumnIndex(1);
 			if (ImGui::Button("S"))
 			{

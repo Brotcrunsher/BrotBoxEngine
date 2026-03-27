@@ -4,7 +4,7 @@
 
 bbe::INTERNAL::vulkan::VulkanQueryPool::VulkanQueryPool()
 {
-	m_type  = VK_QUERY_TYPE_MAX_ENUM;
+	m_type = VK_QUERY_TYPE_MAX_ENUM;
 	m_count = -1;
 }
 
@@ -28,7 +28,6 @@ void bbe::INTERNAL::vulkan::VulkanQueryPool::create(VulkanDevice &device, VkQuer
 
 	VkResult result = vkCreateQueryPool(m_device, &qpci, nullptr, &m_queryPool);
 	ASSERT_VULKAN(result);
-
 
 	m_currentQueryIndex = 0;
 	m_presultArray = new uint64_t[count]; //TODO use allocator

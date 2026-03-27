@@ -11,7 +11,7 @@ bbe::INTERNAL::vulkan::VulkanInstance::VulkanInstance()
 void bbe::INTERNAL::vulkan::VulkanInstance::destroy()
 {
 #ifdef _DEBUG
-	if (validationLayerPresent && debugUtilsExtensionPresent) 
+	if (validationLayerPresent && debugUtilsExtensionPresent)
 	{
 		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
 		if (func != nullptr)
@@ -34,12 +34,13 @@ void bbe::INTERNAL::vulkan::VulkanInstance::destroy()
 static VKAPI_ATTR VkBool32 VKAPI_CALL validationCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT severity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
-	const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
-	void* userData)
+	const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
+	void *userData)
 {
 	if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 	{
-		std::cout << callbackData->pMessage << std::endl << std::endl;
+		std::cout << callbackData->pMessage << std::endl
+				  << std::endl;
 		if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 		{
 			bbe::debugBreak();
@@ -48,7 +49,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL validationCallback(
 	return VK_FALSE;
 }
 
-void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t major, uint32_t minor, uint32_t patch)
+void bbe::INTERNAL::vulkan::VulkanInstance::init(const char *appName, uint32_t major, uint32_t minor, uint32_t patch)
 {
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -58,14 +59,12 @@ void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t 
 	appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
 	appInfo.apiVersion = VK_API_VERSION_1_0;
 
-	bbe::List<const char*> validationLayers;
+	bbe::List<const char *> validationLayers;
 #ifdef _DEBUG
 	bbe::List<VkLayerProperties> layerProperties = get_from_function<VkLayerProperties>(vkEnumerateInstanceLayerProperties);
 #define BBE_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"
-	validationLayerPresent = layerProperties.contains([](const VkLayerProperties& p)
-		{
-			return p.layerName == bbe::String(BBE_VALIDATION_LAYER_NAME);
-		});
+	validationLayerPresent = layerProperties.contains([](const VkLayerProperties &p)
+													  { return p.layerName == bbe::String(BBE_VALIDATION_LAYER_NAME); });
 
 	if (validationLayerPresent)
 	{
@@ -79,16 +78,14 @@ void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t 
 #endif
 #ifdef _DEBUG
 	bbe::List<VkExtensionProperties> extensionsProperties = get_from_function<VkExtensionProperties>(vkEnumerateInstanceExtensionProperties, nullptr);
-	debugUtilsExtensionPresent = extensionsProperties.contains([](const VkExtensionProperties& p)
-		{ 
-			return p.extensionName == bbe::String(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-		});
+	debugUtilsExtensionPresent = extensionsProperties.contains([](const VkExtensionProperties &p)
+															   { return p.extensionName == bbe::String(VK_EXT_DEBUG_UTILS_EXTENSION_NAME); });
 #endif
 
 	uint32_t amountOfGlfwExtensions = 0;
 	auto glfwExtensions = glfwGetRequiredInstanceExtensions(&amountOfGlfwExtensions);
 
-	bbe::List<const char*> extensions;
+	bbe::List<const char *> extensions;
 	for (uint32_t i = 0; i < amountOfGlfwExtensions; i++)
 	{
 		extensions.add(glfwExtensions[i]);
@@ -115,7 +112,8 @@ void bbe::INTERNAL::vulkan::VulkanInstance::init(const char * appName, uint32_t 
 	instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	instanceInfo.pApplicationInfo = &appInfo;
 	instanceInfo.enabledLayerCount = (uint32_t)validationLayers.getLength();
-	instanceInfo.ppEnabledLayerNames = validationLayers.getRaw();;
+	instanceInfo.ppEnabledLayerNames = validationLayers.getRaw();
+	;
 	instanceInfo.enabledExtensionCount = extensions.getLength();
 	instanceInfo.ppEnabledExtensionNames = extensions.getRaw();
 #ifdef _DEBUG

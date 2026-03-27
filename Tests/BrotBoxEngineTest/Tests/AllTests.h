@@ -15,9 +15,12 @@
 #include "LinearCongruentialGeneratorTest.h"
 #include "ImageTest.h"
 
-namespace bbe {
-	namespace test {
-		void runAllTests() {
+namespace bbe
+{
+	namespace test
+	{
+		void runAllTests()
+		{
 			BBELOGLN("Starting Tests!");
 
 			Person::checkIfAllPersonsWereDestroyed();
@@ -69,7 +72,6 @@ namespace bbe {
 			BBELOGLN("Testing Image");
 			bbe::test::testImage();
 			Person::checkIfAllPersonsWereDestroyed();
-
 
 			BBELOGLN("All Tests complete!");
 		}

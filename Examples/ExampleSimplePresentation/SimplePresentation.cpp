@@ -14,19 +14,32 @@ bbe::Color Slide::tokenTypeToColor(TokenType type)
 {
 	switch (type)
 	{
-	case TokenType::unknown     : return bbe::Color(1  , 0 ,  1);
-	case TokenType::comment     : return bbe::Color( 87.f / 255.f, 162.f / 255.f,  71.f / 255.f);
-	case TokenType::string      : return bbe::Color(214.f / 255.f, 157.f / 255.f, 133.f / 255.f);
-	case TokenType::keyword     : return bbe::Color( 86.f / 255.f, 156.f / 255.f, 214.f / 255.f);
-	case TokenType::number      : return bbe::Color(181.f / 255.f, 206.f / 255.f, 164.f / 255.f);
-	case TokenType::punctuation : return bbe::Color(200.f / 255.f, 200.f / 255.f, 200.f / 255.f);
-	case TokenType::function    : return bbe::Color(220.f / 255.f, 220.f / 255.f, 170.f / 255.f);
-	case TokenType::namespace_  : return bbe::Color(200.f / 255.f, 200.f / 255.f, 200.f / 255.f);
-	case TokenType::type        : return bbe::Color( 78.f / 255.f, 201.f / 255.f, 176.f / 255.f);
-	case TokenType::value       : return bbe::Color(200.f / 255.f, 200.f / 255.f, 200.f / 255.f);
-	case TokenType::preprocessor: return bbe::Color(155.f / 255.f, 155.f / 255.f, 155.f / 255.f);
-	case TokenType::include_path: return bbe::Color(214.f / 255.f, 157.f / 255.f, 133.f / 255.f);
-	case TokenType::text        : return bbe::Color(200.f / 255.f, 200.f / 255.f, 200.f / 255.f);
+	case TokenType::unknown:
+		return bbe::Color(1, 0, 1);
+	case TokenType::comment:
+		return bbe::Color(87.f / 255.f, 162.f / 255.f, 71.f / 255.f);
+	case TokenType::string:
+		return bbe::Color(214.f / 255.f, 157.f / 255.f, 133.f / 255.f);
+	case TokenType::keyword:
+		return bbe::Color(86.f / 255.f, 156.f / 255.f, 214.f / 255.f);
+	case TokenType::number:
+		return bbe::Color(181.f / 255.f, 206.f / 255.f, 164.f / 255.f);
+	case TokenType::punctuation:
+		return bbe::Color(200.f / 255.f, 200.f / 255.f, 200.f / 255.f);
+	case TokenType::function:
+		return bbe::Color(220.f / 255.f, 220.f / 255.f, 170.f / 255.f);
+	case TokenType::namespace_:
+		return bbe::Color(200.f / 255.f, 200.f / 255.f, 200.f / 255.f);
+	case TokenType::type:
+		return bbe::Color(78.f / 255.f, 201.f / 255.f, 176.f / 255.f);
+	case TokenType::value:
+		return bbe::Color(200.f / 255.f, 200.f / 255.f, 200.f / 255.f);
+	case TokenType::preprocessor:
+		return bbe::Color(155.f / 255.f, 155.f / 255.f, 155.f / 255.f);
+	case TokenType::include_path:
+		return bbe::Color(214.f / 255.f, 157.f / 255.f, 133.f / 255.f);
+	case TokenType::text:
+		return bbe::Color(200.f / 255.f, 200.f / 255.f, 200.f / 255.f);
 	}
 
 	bbe::Crash(bbe::Error::IllegalArgument);
@@ -62,7 +75,7 @@ bbe::Vector2 MoveAnimation::animate(float startX, float startY, float t) const
 		bbe::Crash(bbe::Error::IllegalState);
 }
 
-RenderObject::RenderObject(const bbe::String& name, RenderType rt, StartAnimation startAnim, float x, float y, float width, float height, float outlineWidth, const bbe::String& text, const bbe::Font* font)
+RenderObject::RenderObject(const bbe::String &name, RenderType rt, StartAnimation startAnim, float x, float y, float width, float height, float outlineWidth, const bbe::String &text, const bbe::Font *font)
 	: name(name), rt(rt), startAnim(startAnim), x(x), y(y), width(width), height(height), outlineWidth(outlineWidth), text(text), font(font)
 {
 }
@@ -79,7 +92,7 @@ bbe::Vector2 RenderObject::getPos(float t) const
 	}
 	else if (startAnim == StartAnimation::ZOOM_IN)
 	{
-		startAnimOffsetX += width  * 0.5 * (1.f - t);
+		startAnimOffsetX += width * 0.5 * (1.f - t);
 		startAnimOffsetY += height * 0.5 * (1.f - t);
 		if (rt == RenderType::LINE || rt == RenderType::ARROW)
 		{
@@ -160,8 +173,6 @@ void RenderObject::exhaustAnimations()
 		width = dim.x;
 		height = dim.y;
 
-
-
 		animations.clear();
 	}
 }
@@ -176,14 +187,14 @@ Slide::Slide()
 	loadFonts();
 }
 
-Slide::Slide(Tokenizer* tokenizer)
+Slide::Slide(Tokenizer *tokenizer)
 {
 	this->tokenizer.reset(tokenizer);
 
 	loadFonts();
 }
 
-Slide::Slide(const char* path)
+Slide::Slide(const char *path)
 {
 	bbe::String ppath = path;
 
@@ -206,7 +217,7 @@ Slide::Slide(const char* path)
 	}
 	else if (ppath.endsWith(".png"))
 	{
-		PngTokenizer* t = new PngTokenizer();
+		PngTokenizer *t = new PngTokenizer();
 		t->loadImage(ppath);
 		tokenizer.reset(t);
 	}
@@ -215,7 +226,7 @@ Slide::Slide(const char* path)
 		bbe::Crash(bbe::Error::IllegalArgument);
 	}
 
-	if(tokenizer->isTextBased()) addText(bbe::simpleFile::readFile(ppath).getRaw());
+	if (tokenizer->isTextBased()) addText(bbe::simpleFile::readFile(ppath).getRaw());
 
 	loadFonts();
 }
@@ -223,24 +234,24 @@ Slide::Slide(const char* path)
 Slide::~Slide()
 {
 	fontsLoaded--;
-	if(fontsLoaded == 0) fonts.clear();
+	if (fontsLoaded == 0) fonts.clear();
 }
 
-Slide::Slide(Slide&& other)
+Slide::Slide(Slide &&other)
 {
 	moveFrom(std::move(other));
 
 	fontsLoaded++;
 }
 
-Slide::Slide(const Slide& other)
+Slide::Slide(const Slide &other)
 {
 	copyFrom(other);
 
 	fontsLoaded++;
 }
 
-Slide& Slide::operator=(Slide&& other)
+Slide &Slide::operator=(Slide &&other)
 {
 	moveFrom(std::move(other));
 	fontsLoaded++;
@@ -262,21 +273,21 @@ void Slide::loadFonts()
 	fontsLoaded++;
 }
 
-void Slide::addText(const char* txt)
+void Slide::addText(const char *txt)
 {
 	dirty = true;
 
 	text += bbe::String(txt).replace("\t", "    ");
 }
 
-void Slide::setScreenPosition(const bbe::Rectangle& rect)
+void Slide::setScreenPosition(const bbe::Rectangle &rect)
 {
 	screenPosition = rect;
 }
 
 bool Slide::hasFinalBrightState() const
 {
-	if (brightStateOverride == BrightStateOverride::OVERRIDE_ON)  return true;
+	if (brightStateOverride == BrightStateOverride::OVERRIDE_ON) return true;
 	if (brightStateOverride == BrightStateOverride::OVERRIDE_OFF) return false;
 
 	return tokenizer->hasFinalBrightState();
@@ -319,7 +330,7 @@ void Slide::update(PresentationControl pc, float scrollValue, float timeSinceLas
 	}
 
 	float animMult = 1.0f;
-	for (const Token& t : tokenizer->tokens)
+	for (const Token &t : tokenizer->tokens)
 	{
 		if (t.animationMultiplier != 1.0f)
 		{
@@ -330,11 +341,11 @@ void Slide::update(PresentationControl pc, float scrollValue, float timeSinceLas
 	animationTime += timeSinceLastFrame * animMult;
 
 	bool hasAnyAnimation = false;
-	for (const Token& t : tokenizer->tokens)
+	for (const Token &t : tokenizer->tokens)
 	{
 		if (t.showIndex == currentEntry)
 		{
-			for (const RenderObject& to : t.renderObjects)
+			for (const RenderObject &to : t.renderObjects)
 			{
 				if (to.hasAnyAnimation())
 				{
@@ -346,7 +357,7 @@ void Slide::update(PresentationControl pc, float scrollValue, float timeSinceLas
 
 	if (animationTime > 1.0f || !hasAnyAnimation)
 	{
-		for (const Token& t : tokenizer->tokens)
+		for (const Token &t : tokenizer->tokens)
 		{
 			if (t.showIndex == currentEntry && t.autoNext)
 			{
@@ -398,7 +409,7 @@ void Slide::setComplete(bool complete_)
 	complete = complete_;
 }
 
-void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
+void Slide::draw(bbe::PrimitiveBrush2D &brush, const bbe::Color &bgColor)
 {
 	if (dirty)
 	{
@@ -411,7 +422,7 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 	brush.setColorRGB(1, 1, 1);
 	for (size_t i = 0; i < tokenizer->tokens.getLength(); i++)
 	{
-		for (bbe::Image& img : tokenizer->tokens[i].images)
+		for (bbe::Image &img : tokenizer->tokens[i].images)
 		{
 			brush.drawImage(0, 0, img);
 		}
@@ -424,7 +435,7 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 	for (size_t i = 0; i < tokenizer->tokens.getLength(); i++)
 	{
 		if (tokenizer->tokens[i].showIndex > currentEntry) continue;
-		const Token& token = tokenizer->tokens[i];
+		const Token &token = tokenizer->tokens[i];
 		//brush.setColorRGB(1, 1, 0);
 		//brush.sketchRect(textAabb.offset(bbe::Vector2{0, 100}));
 		if (tokenizer->tokens[i].showIndex == currentEntry || (currentEntry == getAmountOfEntries() && hasFinalBrightState()))
@@ -442,29 +453,30 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 		}
 
 		brush.setColorRGB(tokenTypeToColor(TokenType::text));
-		for (const bbe::Line2& line : tokenizer->tokens[i].lines)
+		for (const bbe::Line2 &line : tokenizer->tokens[i].lines)
 		{
 			brush.fillLine(line + offset, 3);
 		}
 		if (tokenizer->tokens[i].showIndex == currentEntry)
 		{
-			for (const RenderObject& ro : tokenizer->tokens[i].renderObjects)
+			for (const RenderObject &ro : tokenizer->tokens[i].renderObjects)
 			{
 				brush.setColorRGB(ro.outlineWidth > 0 ? ro.outlineColor : ro.fillColor);
 				const bbe::Vector2 pos = ro.getPos(animationTime);
 				const bbe::Vector2 dim = ro.getDim(animationTime);
 				if (ro.rt == RenderType::BOX)
-					brush.fillRect  (pos.x, pos.y, dim.x, dim.y);
+					brush.fillRect(pos.x, pos.y, dim.x, dim.y);
 				else if (ro.rt == RenderType::CIRCLE)
 					brush.fillCircle(pos.x, pos.y, dim.x, dim.y);
 				else if (ro.rt == RenderType::TEXT)
-					{ /*Do nothing*/ }
+				{ /*Do nothing*/
+				}
 				else if (ro.rt == RenderType::LINE || ro.rt == RenderType::ARROW)
 				{
 					brush.setColorRGB(ro.outlineColor);
-					if(ro.rt == RenderType::LINE)
+					if (ro.rt == RenderType::LINE)
 						brush.fillLine(pos.x, pos.y, dim.x, dim.y, ro.outlineWidth);
-					else if(ro.rt == RenderType::ARROW)
+					else if (ro.rt == RenderType::ARROW)
 						brush.fillArrow(pos.x, pos.y, dim.x, dim.y, ro.outlineWidth);
 				}
 				else if (ro.rt == RenderType::IMAGE)
@@ -478,26 +490,28 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 				{
 					brush.setColorRGB(ro.fillColor);
 					if (ro.rt == RenderType::BOX)
-						brush.fillRect  (pos.x + ro.outlineWidth, pos.y + ro.outlineWidth, dim.x - ro.outlineWidth * 2, dim.y - ro.outlineWidth * 2);
+						brush.fillRect(pos.x + ro.outlineWidth, pos.y + ro.outlineWidth, dim.x - ro.outlineWidth * 2, dim.y - ro.outlineWidth * 2);
 					else if (ro.rt == RenderType::CIRCLE)
 						brush.fillCircle(pos.x + ro.outlineWidth, pos.y + ro.outlineWidth, dim.x - ro.outlineWidth * 2, dim.y - ro.outlineWidth * 2);
 					else if (ro.rt == RenderType::TEXT)
-						{ /*Do nothing*/ }
+					{ /*Do nothing*/
+					}
 					else if (ro.rt == RenderType::LINE)
-						{ /*Do nothing*/ }
+					{ /*Do nothing*/
+					}
 					else if (ro.rt == RenderType::ARROW)
-						{ /*Do nothing*/ }
+					{ /*Do nothing*/
+					}
 					else if (ro.rt == RenderType::IMAGE)
-						{ /*Do nothing*/ }
+					{ /*Do nothing*/
+					}
 					else
 						bbe::Crash(bbe::Error::IllegalArgument);
 				}
 				if (ro.text.getLength() > 0 && ro.font && ro.showText && ro.rt != RenderType::IMAGE)
 				{
 					brush.setColorRGB(ro.textColor);
-					brush.fillText(pos.x + textMargin + ro.outlineWidth - ro.textBoundingBox.x - ro.textBoundingBox.width  / 2 + (dim.x - textMargin * 2 - ro.outlineWidth * 2) / 2
-						         , pos.y + textMargin + ro.outlineWidth - ro.textBoundingBox.y - ro.textBoundingBox.height / 2 + (dim.y - textMargin * 2 - ro.outlineWidth * 2) / 2
-						         , ro.text, bbe::Anchor::BOTTOM_LEFT, *ro.font);
+					brush.fillText(pos.x + textMargin + ro.outlineWidth - ro.textBoundingBox.x - ro.textBoundingBox.width / 2 + (dim.x - textMargin * 2 - ro.outlineWidth * 2) / 2, pos.y + textMargin + ro.outlineWidth - ro.textBoundingBox.y - ro.textBoundingBox.height / 2 + (dim.y - textMargin * 2 - ro.outlineWidth * 2) / 2, ro.text, bbe::Anchor::BOTTOM_LEFT, *ro.font);
 				}
 			}
 			//for (const RenderObject& ro : tokenizer->tokens[i].renderObjects)
@@ -523,12 +537,12 @@ void Slide::draw(bbe::PrimitiveBrush2D& brush, const bbe::Color& bgColor)
 	}
 }
 
-void Slide::addType(const bbe::String& type)
+void Slide::addType(const bbe::String &type)
 {
 	additionalTypes.add(type);
 }
 
-void Slide::addValue(const bbe::String& value)
+void Slide::addValue(const bbe::String &value)
 {
 	additionalValues.add(value);
 }
@@ -633,7 +647,6 @@ void Slide::compile()
 		}
 	}
 
-
 	int32_t highestShowIndex = 0;
 	for (size_t i = 0; i < tokenizer->tokens.getLength(); i++)
 	{
@@ -657,7 +670,7 @@ bbe::String Slide::getPowerPointContent(int32_t index)
 	for (size_t i = 0; i < tokenizer->tokens.getLength(); i++)
 	{
 		if (tokenizer->tokens[i].showIndex > index) continue;
-		for(size_t k = 0; k<tokenizer->tokens[i].chars.getLength(); k++)
+		for (size_t k = 0; k < tokenizer->tokens[i].chars.getLength(); k++)
 		{
 			id++;
 			const bbe::Vector2 offset = -textAabb.getPos() - textAabb.getDim() * 0.5f + bbe::Vector2(1280, 720) * 0.5f - bbe::Vector2(0, getFont().getPixelsFromLineToLine());
@@ -671,9 +684,9 @@ bbe::String Slide::getPowerPointContent(int32_t index)
 			constexpr uint32_t stbToPowerPointFontSize = 79;
 
 			const bbe::String text = bbe::String::fromCodePoint(tokenizer->tokens[i].chars[k].c)
-				.replace("&", "&amp;")
-				.replace("<", "&lt;")
-				.replace(">", "&gt;");
+										 .replace("&", "&amp;")
+										 .replace("<", "&lt;")
+										 .replace(">", "&gt;");
 
 			bbe::Color color = tokenTypeToColor(tokenizer->tokens[i].type);
 			if (!(tokenizer->tokens[i].showIndex == index || (index == getAmountOfEntries() && hasFinalBrightState())))
@@ -682,19 +695,19 @@ bbe::String Slide::getPowerPointContent(int32_t index)
 			}
 
 			retVal += templateContent
-				.replace("%%%XPOS%%%", bbe::String((int32_t)(powerPointSpace.x)))
-				.replace("%%%YPOS%%%", bbe::String((int32_t)(powerPointSpace.y)))
-				.replace("%%%TEXT%%%", text)
-				.replace("%%%ID%%%", bbe::String(id))
-				.replace("%%%SIZE%%%", bbe::String(getFont().getFontSize() * stbToPowerPointFontSize))
-				.replace("%%%COLOR%%%", color.toHex());
+						  .replace("%%%XPOS%%%", bbe::String((int32_t)(powerPointSpace.x)))
+						  .replace("%%%YPOS%%%", bbe::String((int32_t)(powerPointSpace.y)))
+						  .replace("%%%TEXT%%%", text)
+						  .replace("%%%ID%%%", bbe::String(id))
+						  .replace("%%%SIZE%%%", bbe::String(getFont().getFontSize() * stbToPowerPointFontSize))
+						  .replace("%%%COLOR%%%", color.toHex());
 		}
 	}
 
 	return retVal;
 }
 
-bbe::Font& Slide::getFont()
+bbe::Font &Slide::getFont()
 {
 	if (selectedFont == nullptr)
 	{
@@ -716,7 +729,7 @@ bbe::Font& Slide::getFont()
 			{
 				textAabb = textAabb.combine(bbe::Rectangle(renderPositions[k], getFont().getDimensions(text.getCodepoint(k)).as<float>()));
 			}
-			
+
 			if (i == 0)
 			{
 				// Make sure we have an Aabb, even if it is large.
@@ -741,49 +754,49 @@ bbe::Font& Slide::getFont()
 	return *selectedFont;
 }
 
-void Slide::moveFrom(Slide&& other)
+void Slide::moveFrom(Slide &&other)
 {
-	currentEntry        = std::move(other.currentEntry);
-	amountOfEntries     = std::move(other.amountOfEntries);
-	dirty               = std::move(other.dirty);
-	selectedFont        = std::move(other.selectedFont);
-	forcedFontSize      = std::move(other.forcedFontSize);
-	additionalTypes     = std::move(other.additionalTypes);
-	additionalValues    = std::move(other.additionalValues);
-	textAabb            = std::move(other.textAabb);
-	text                = std::move(other.text);
-	tokenizer           = std::move(other.tokenizer);
-	scrollValue         = std::move(other.scrollValue);
-	scrollingAllowed    = std::move(other.scrollingAllowed);
-	complete            = std::move(other.complete);
-	screenPosition      = std::move(other.screenPosition);
-	childSlides         = std::move(other.childSlides);
+	currentEntry = std::move(other.currentEntry);
+	amountOfEntries = std::move(other.amountOfEntries);
+	dirty = std::move(other.dirty);
+	selectedFont = std::move(other.selectedFont);
+	forcedFontSize = std::move(other.forcedFontSize);
+	additionalTypes = std::move(other.additionalTypes);
+	additionalValues = std::move(other.additionalValues);
+	textAabb = std::move(other.textAabb);
+	text = std::move(other.text);
+	tokenizer = std::move(other.tokenizer);
+	scrollValue = std::move(other.scrollValue);
+	scrollingAllowed = std::move(other.scrollingAllowed);
+	complete = std::move(other.complete);
+	screenPosition = std::move(other.screenPosition);
+	childSlides = std::move(other.childSlides);
 	brightStateOverride = std::move(other.brightStateOverride);
 }
 
-void Slide::copyFrom(const Slide& other)
+void Slide::copyFrom(const Slide &other)
 {
-	currentEntry        = other.currentEntry;
-	amountOfEntries     = other.amountOfEntries;
-	dirty               = other.dirty;
-	selectedFont        = other.selectedFont;
-	forcedFontSize      = other.forcedFontSize;
-	additionalTypes     = other.additionalTypes;
-	additionalValues    = other.additionalValues;
-	textAabb            = other.textAabb;
-	text                = other.text;
-	tokenizer           = other.tokenizer;
-	scrollValue         = other.scrollValue;
-	scrollingAllowed    = other.scrollingAllowed;
-	complete            = other.complete;
-	screenPosition      = other.screenPosition;
-	childSlides         = other.childSlides;
+	currentEntry = other.currentEntry;
+	amountOfEntries = other.amountOfEntries;
+	dirty = other.dirty;
+	selectedFont = other.selectedFont;
+	forcedFontSize = other.forcedFontSize;
+	additionalTypes = other.additionalTypes;
+	additionalValues = other.additionalValues;
+	textAabb = other.textAabb;
+	text = other.text;
+	tokenizer = other.tokenizer;
+	scrollValue = other.scrollValue;
+	scrollingAllowed = other.scrollingAllowed;
+	complete = other.complete;
+	screenPosition = other.screenPosition;
+	childSlides = other.childSlides;
 	brightStateOverride = other.brightStateOverride;
 }
 
 bool Slide::isEntryAutoNext(int32_t entry) const
 {
-	for (const Token& t : tokenizer->tokens)
+	for (const Token &t : tokenizer->tokens)
 	{
 		if (t.showIndex == entry && t.autoNext) return true;
 	}
@@ -795,7 +808,7 @@ Token::~Token()
 	// Do nothing.
 }
 
-void Token::submit(bbe::List<Token>& tokens)
+void Token::submit(bbe::List<Token> &tokens)
 {
 	decltype(this->renderObjects) ros;
 	const float animationMult = animationMultiplier;
@@ -806,18 +819,18 @@ void Token::submit(bbe::List<Token>& tokens)
 	}
 	*this = Token();
 	this->renderObjects = ros;
-	for (RenderObject& ro : renderObjects)
+	for (RenderObject &ro : renderObjects)
 	{
 		ro.exhaustAnimations();
 	}
-	for (RenderObject& ro : renderObjects)
+	for (RenderObject &ro : renderObjects)
 	{
 		ro.startAnim = StartAnimation::NONE;
 	}
 	animationMultiplier = animationMult;
 }
 
-bbe::List<size_t> Token::getRenderObjectIndices(const bbe::List<bbe::String>& names) const
+bbe::List<size_t> Token::getRenderObjectIndices(const bbe::List<bbe::String> &names) const
 {
 	bbe::List<size_t> indices;
 	for (size_t i = 0; i < renderObjects.getLength(); i++)
@@ -891,12 +904,12 @@ void SlideShow::update(PresentationControl pc, float scrollValue, float timeSinc
 	}
 }
 
-void SlideShow::draw(bbe::PrimitiveBrush2D& brush)
+void SlideShow::draw(bbe::PrimitiveBrush2D &brush)
 {
 	slides[currentSlide].draw(brush, bgColor);
 }
 
-void SlideShow::addType(const bbe::String& type)
+void SlideShow::addType(const bbe::String &type)
 {
 	for (size_t i = 0; i < slides.getLength(); i++)
 	{
@@ -904,12 +917,12 @@ void SlideShow::addType(const bbe::String& type)
 	}
 }
 
-void SlideShow::addSlide(const char* path)
+void SlideShow::addSlide(const char *path)
 {
 	addSlide(Slide(path));
 }
 
-void SlideShow::addSlide(const bbe::String& path)
+void SlideShow::addSlide(const bbe::String &path)
 {
 	addSlide(path.getRaw());
 }
@@ -919,7 +932,7 @@ void SlideShow::addSlide(Slide &&slide)
 	slides.add(std::move(slide));
 }
 
-void SlideShow::addManifest(const char* inPath)
+void SlideShow::addManifest(const char *inPath)
 {
 	const bbe::String path = bbe::String(inPath).replace("\\", "/");
 	const bbe::String parentPath = path.substring(0, path.searchLast("/")) + "/";
@@ -936,8 +949,7 @@ void SlideShow::addManifest(const char* inPath)
 		if (tokens[0].getLength() == 0) continue;
 		if (tokens[0].startsWith("//")) continue;
 
-		if (   tokens[0] == "SLIDE:" 
-			|| tokens[0] == "SLIDETEXT:")
+		if (tokens[0] == "SLIDE:" || tokens[0] == "SLIDETEXT:")
 		{
 			Slide slide;
 
@@ -1056,7 +1068,7 @@ void SlideShow::forceFontSize(uint32_t fontSize, uint32_t slide)
 	slides[slide].forceFontSize(fontSize);
 }
 
-void SlideShow::writeAsPowerPoint(const bbe::String& path)
+void SlideShow::writeAsPowerPoint(const bbe::String &path)
 {
 	for (size_t i = 0; i < slides.getLength(); i++)
 	{
@@ -1091,20 +1103,19 @@ void SlideShow::writeAsPowerPoint(const bbe::String& path)
 			const bbe::String powerPointContent = this->slides[i].getPowerPointContent(entry);
 
 			slides += templateSlides.replace("%%%ID%%%", stringId)
-				.replace("%%%BG_COLOR%%%", bgColor.toHex())
-				.replace("%%%CONTENT%%%", powerPointContent);
-			slideRels     += templateSlideRel     .replace("%%%ID%%%", stringId);
-			slideIdList   += templateSlideIdList  .replace("%%%ID%%%", stringId);
+						  .replace("%%%BG_COLOR%%%", bgColor.toHex())
+						  .replace("%%%CONTENT%%%", powerPointContent);
+			slideRels += templateSlideRel.replace("%%%ID%%%", stringId);
+			slideIdList += templateSlideIdList.replace("%%%ID%%%", stringId);
 			relationships += templateRelationships.replace("%%%ID%%%", stringId);
 		}
 	}
 
-
 	bbe::String output = templateOverall
-		.replace("%%%SLIDES_TEMPLATE%%%", slides)
-		.replace("%%%SLIDE_ID_LIST%%%", slideIdList)
-		.replace("%%%SLIDE_RELATIONSHIPS%%%", relationships)
-		.replace("%%%SLIDE_REL_TEMPLATE%%%", slideRels);
+							 .replace("%%%SLIDES_TEMPLATE%%%", slides)
+							 .replace("%%%SLIDE_ID_LIST%%%", slideIdList)
+							 .replace("%%%SLIDE_RELATIONSHIPS%%%", relationships)
+							 .replace("%%%SLIDE_REL_TEMPLATE%%%", slideRels);
 
 	bbe::simpleFile::writeStringToFile(path, output);
 }
@@ -1114,14 +1125,14 @@ bbe::Rectangle SlideShow::getTextAabb(uint32_t slide) const
 	return slides[slide].textAabb;
 }
 
-void SlideShow::setTextAabb(uint32_t slide, const bbe::Rectangle& value)
+void SlideShow::setTextAabb(uint32_t slide, const bbe::Rectangle &value)
 {
 	slides[slide].textAabb = value;
 }
 
-Slide& SlideShow::getLastSlide()
+Slide &SlideShow::getLastSlide()
 {
-	Slide* candidate = &slides.last();
+	Slide *candidate = &slides.last();
 	while (candidate->childSlides.getLength() > 0)
 	{
 		candidate = &candidate->childSlides.last();
@@ -1129,7 +1140,7 @@ Slide& SlideShow::getLastSlide()
 	return *candidate;
 }
 
-void SlideShow::addSlidesToList(Slide* slide, bbe::List<Slide*> &list)
+void SlideShow::addSlidesToList(Slide *slide, bbe::List<Slide *> &list)
 {
 	list.add(slide);
 	for (size_t i = 0; i < slide->childSlides.getLength(); i++)
@@ -1138,11 +1149,11 @@ void SlideShow::addSlidesToList(Slide* slide, bbe::List<Slide*> &list)
 	}
 }
 
-Slide& SlideShow::getSecondToLastSlide()
+Slide &SlideShow::getSecondToLastSlide()
 {
 	//TODO this implementation is dumb and slow and dumb, fix plz
 
-	bbe::List<Slide*> slides;
+	bbe::List<Slide *> slides;
 	for (size_t i = 0; i < this->slides.getLength(); i++)
 	{
 		addSlidesToList(&(this->slides[i]), slides);

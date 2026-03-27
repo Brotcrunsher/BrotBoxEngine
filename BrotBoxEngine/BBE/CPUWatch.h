@@ -40,7 +40,6 @@ namespace bbe
 			return (std::clock() - m_start) / (double)CLOCKS_PER_SEC;
 		}
 
-
 		void start()
 		{
 			//UNTESTED

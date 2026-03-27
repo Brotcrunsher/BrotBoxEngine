@@ -29,25 +29,26 @@ namespace bbe
 	class Game
 	{
 		friend class Window;
+
 	private:
-		const char* videoRenderingPath      = nullptr;
-		const char* screenshotRenderingPath = nullptr;
-		Window*     m_pwindow               = nullptr;
-		bool        m_started               = false;
-		bool        m_externallyManaged     = false;
-		uint64_t    m_frameNumber = 0;
-		uint64_t    m_maxFrameNumber = 0;
-		GameTime    m_gameTime;
-		PhysWorld   m_physWorld = PhysWorld({ 0, -20 });
-		float       m_targetFrameTime = 0;
-		float       m_fixedFrameTime = 0;
-		float       m_frameTimeRunningAverage = 0;
-		size_t      m_frameTimeHistoryWritePointer = 0;
+		const char *videoRenderingPath = nullptr;
+		const char *screenshotRenderingPath = nullptr;
+		Window *m_pwindow = nullptr;
+		bool m_started = false;
+		bool m_externallyManaged = false;
+		uint64_t m_frameNumber = 0;
+		uint64_t m_maxFrameNumber = 0;
+		GameTime m_gameTime;
+		PhysWorld m_physWorld = PhysWorld({ 0, -20 });
+		float m_targetFrameTime = 0;
+		float m_fixedFrameTime = 0;
+		float m_frameTimeRunningAverage = 0;
+		size_t m_frameTimeHistoryWritePointer = 0;
 		bbe::Array<float, 256> m_frameTimeHistory;
 #ifndef BBE_NO_AUDIO
 		bbe::INTERNAL::SoundManager m_soundManager;
 #endif
-		const char* m_pcurrentPerformanceMeasurementTag = nullptr;
+		const char *m_pcurrentPerformanceMeasurementTag = nullptr;
 		bbe::StopWatch m_performanceMeasurement;
 		struct PerformanceMeasurement
 		{
@@ -69,29 +70,29 @@ namespace bbe
 		bool m_requestShutdown = false;
 		bool m_reactiveRendering = false;
 
-		void innerStart(int windowWidth, int windowHeight, const char* title);
+		void innerStart(int windowWidth, int windowHeight, const char *title);
 
 	public:
 		Game();
 		virtual ~Game();
 
-		Game(const Game&)            = delete;
-		Game(Game&&)                 = delete;
-		Game& operator=(const Game&) = delete;
-		Game& operator=(Game&&)      = delete;
+		Game(const Game &) = delete;
+		Game(Game &&) = delete;
+		Game &operator=(const Game &) = delete;
+		Game &operator=(Game &&) = delete;
 
-		void start(int windowWidth, int windowHeight, const char* title);
+		void start(int windowWidth, int windowHeight, const char *title);
 		bool keepAlive();
 		void frame(bool dragging);
 		void frameUpdate();
 		void frameDraw(bool dragging);
 		void shutdown();
 
-		virtual void onStart()                            = 0;
-		virtual void update(float timeSinceLastFrame)     = 0;
+		virtual void onStart() = 0;
+		virtual void update(float timeSinceLastFrame) = 0;
 		virtual void draw3D(bbe::PrimitiveBrush3D &brush) = 0;
 		virtual void draw2D(bbe::PrimitiveBrush2D &brush) = 0;
-		virtual void onEnd()                              = 0;
+		virtual void onEnd() = 0;
 
 		void setExternallyManaged(bool managed);
 		bool isExternallyManaged() const;
@@ -133,7 +134,7 @@ namespace bbe
 		Vector2 getMouseScroll();
 
 		float getTimeSinceStartSeconds();
-		float getTimeSinceStartMilliseconds(); 
+		float getTimeSinceStartMilliseconds();
 
 		int getWindowWidth() const;
 		int getScaledWindowWidth() const;
@@ -149,18 +150,18 @@ namespace bbe
 		void setWindowCloseMode(bbe::WindowCloseMode wcm);
 		bbe::WindowCloseMode getWindowCloseMode() const;
 
-		PhysWorld* getPhysWorld();
+		PhysWorld *getPhysWorld();
 
-		void screenshot(const bbe::String& path);
-		void setVideoRenderingMode(const char* path);
-		void setScreenshotRecordingMode(const char* path = "images/img");
+		void screenshot(const bbe::String &path);
+		void setVideoRenderingMode(const char *path);
+		void setScreenshotRecordingMode(const char *path = "images/img");
 		void setMaxFrame(uint64_t maxFrame);
 		void setFixedFrametime(float time);
 		void setTargetFrametime(float time);
 		float getTargetFrametime() const;
 
 		bbe::String getClipboard() const;
-		void setClipboard(const bbe::String& string);
+		void setClipboard(const bbe::String &string);
 
 		void mainLoop();
 
@@ -171,18 +172,18 @@ namespace bbe
 		bool isWindowShow() const;
 
 		void endMeasure();
-		void beginMeasure(const char* tag, bool force = false);
+		void beginMeasure(const char *tag, bool force = false);
 		bbe::String getMeasuresString();
 		void drawMeasurement();
 
 		size_t getAmountOfPlayingSounds() const;
 
-		void* getNativeWindowHandle();
+		void *getNativeWindowHandle();
 
-		Window* getWindow();
+		Window *getWindow();
 
 #ifndef BBE_NO_AUDIO
-		void setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection);
+		void setSoundListener(const bbe::Vector3 &pos, const bbe::Vector3 &lookDirection);
 		void restartSoundSystem();
 #endif
 #ifdef BBE_RENDERER_OPENGL

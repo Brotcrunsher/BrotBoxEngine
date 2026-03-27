@@ -36,10 +36,10 @@ class MyGame : public bbe::Game
 		_270 = 3,
 	};
 
-	TileGrid applyMirroring(const TileGrid& tileGrid, mirroring mir) const
+	TileGrid applyMirroring(const TileGrid &tileGrid, mirroring mir) const
 	{
 		TileGrid retVal = tileGrid;
-		
+
 		if (mir == mirroring::horizontal)
 		{
 			for (size_t i = 0; i < tileGrid.getLength(); i++)
@@ -80,7 +80,7 @@ class MyGame : public bbe::Game
 		return retVal;
 	}
 
-	TileGrid applyRotation(const TileGrid& tileGrid, rotation rot) const
+	TileGrid applyRotation(const TileGrid &tileGrid, rotation rot) const
 	{
 		TileGrid retVal = tileGrid;
 		if (rot == rotation::_90 || rot == rotation::_270)
@@ -155,7 +155,7 @@ class MyGame : public bbe::Game
 		}
 	}
 
-	TileGrid getKernel(const TileGrid& tileGrid, int32_t x, int32_t y)
+	TileGrid getKernel(const TileGrid &tileGrid, int32_t x, int32_t y)
 	{
 		bbe::List<bbe::List<int32_t>> kernel = initTileGrid(kernelSize);
 		for (int32_t i = 0; i < kernelSize; i++)
@@ -163,14 +163,14 @@ class MyGame : public bbe::Game
 			for (int32_t k = 0; k < kernelSize; k++)
 			{
 				kernel[i][k] = tileGrid
-					[bbe::Math::mod<int32_t>(i + x - kernelSize/2, tileGrid.getLength())]
-					[bbe::Math::mod<int32_t>(k + y - kernelSize/2, tileGrid.getLength())];
+					[bbe::Math::mod<int32_t>(i + x - kernelSize / 2, tileGrid.getLength())]
+					[bbe::Math::mod<int32_t>(k + y - kernelSize / 2, tileGrid.getLength())];
 			}
 		}
 		return kernel;
 	}
 
-	bbe::List<TileGrid> getKernels(const TileGrid& tileGrid)
+	bbe::List<TileGrid> getKernels(const TileGrid &tileGrid)
 	{
 		bbe::List<TileGrid> retVal;
 
@@ -203,7 +203,7 @@ class MyGame : public bbe::Game
 	{
 		auto tileGrids = getAllTransformations();
 		bbe::List<TileGrid> retVal;
-		for (const TileGrid& tg : tileGrids)
+		for (const TileGrid &tg : tileGrids)
 		{
 			auto kernels = getKernels(tg);
 			for (size_t i = 0; i < kernels.getLength(); i++)
@@ -229,7 +229,7 @@ class MyGame : public bbe::Game
 		return retVal;
 	}
 
-	void debugDrawTileGrid(bbe::PrimitiveBrush2D& brush, const TileGrid& tg, const bbe::Vector2& pos)
+	void debugDrawTileGrid(bbe::PrimitiveBrush2D &brush, const TileGrid &tg, const bbe::Vector2 &pos)
 	{
 		brush.setColorRGB(1, 1, 1);
 		brush.fillRect(pos - bbe::Vector2(10, 10), 10 * (tg.getLength() + 2), 10 * (tg.getLength() + 2));
@@ -289,12 +289,12 @@ class MyGame : public bbe::Game
 		size_t local;
 		size_t neighborhood;
 
-		bool operator==(const CollapseSize& other) const
+		bool operator==(const CollapseSize &other) const
 		{
 			return local == other.local && neighborhood == other.neighborhood;
 		}
 
-		bool operator<(const CollapseSize& other) const
+		bool operator<(const CollapseSize &other) const
 		{
 			if (local < other.local) return true;
 			else if (local == other.local && neighborhood < other.neighborhood) return true;
@@ -348,7 +348,7 @@ class MyGame : public bbe::Game
 		return candidates[rand.randomInt(candidates.getLength())];
 	}
 
-	void printKernel(const TileGrid& tg)
+	void printKernel(const TileGrid &tg)
 	{
 		for (size_t i = 0; i < kernelSize; i++)
 		{
@@ -377,7 +377,7 @@ class MyGame : public bbe::Game
 	//	}
 	//}
 
-	void markNeighborsOfForDeepClear(const bbe::Vector2i& pos)
+	void markNeighborsOfForDeepClear(const bbe::Vector2i &pos)
 	{
 		for (int32_t i = 0; i < kernelSize; i++)
 		{
@@ -387,14 +387,14 @@ class MyGame : public bbe::Game
 			{
 				const int32_t y = k - kernelSize / 2;
 				if (y < 0 || y >= OUTPUT_SIZE) continue;
-				markedForDeepClear.add({x, y});
+				markedForDeepClear.add({ x, y });
 			}
 		}
 	}
 
-	void deepClear(const bbe::Vector2i& pos)
+	void deepClear(const bbe::Vector2i &pos)
 	{
-		bbe::List<int32_t>& indices = outputTiles[pos.x][pos.y];
+		bbe::List<int32_t> &indices = outputTiles[pos.x][pos.y];
 		if (indices.getLength() == 1)
 		{
 			return;
@@ -414,7 +414,7 @@ class MyGame : public bbe::Game
 					const int32_t yAcc = pos.y + yOff;
 					if (yAcc < 0 || yAcc >= OUTPUT_SIZE) continue;
 
-					const bbe::List<int32_t>& otherIndices = outputTiles[xAcc][yAcc];
+					const bbe::List<int32_t> &otherIndices = outputTiles[xAcc][yAcc];
 					if (!isKernelCompatibleWithAny(kernels[indices[i]], pos, otherIndices, { xAcc, yAcc }))
 					{
 						//printKernel(kernels[indices[i]]);
@@ -485,7 +485,7 @@ class MyGame : public bbe::Game
 		}
 	}
 
-	bool areKernelsCompatible(const TileGrid& kernel1, const bbe::Vector2i& pos1, const TileGrid& kernel2, const bbe::Vector2i& pos2)
+	bool areKernelsCompatible(const TileGrid &kernel1, const bbe::Vector2i &pos1, const TileGrid &kernel2, const bbe::Vector2i &pos2)
 	{
 		const bbe::Vector2i diff = pos2 - pos1;
 		for (int32_t x = 0; x < kernelSize; x++)
@@ -496,18 +496,18 @@ class MyGame : public bbe::Game
 			{
 				const int32_t k2AccessY = y - diff.y;
 				if (k2AccessY < 0 || k2AccessY >= kernelSize) continue;
-		
+
 				if (kernel1[x][y] != kernel2[k2AccessX][k2AccessY])
 				{
 					return false;
 				}
 			}
 		}
-		
+
 		return true;
 	}
 
-	bool isKernelCompatibleWithAny(const TileGrid& kernel, const bbe::Vector2i& pos1, const bbe::List<int32_t>& kernelIndices, const bbe::Vector2i& pos2)
+	bool isKernelCompatibleWithAny(const TileGrid &kernel, const bbe::Vector2i &pos1, const bbe::List<int32_t> &kernelIndices, const bbe::Vector2i &pos2)
 	{
 		for (size_t i = 0; i < kernelIndices.getLength(); i++)
 		{
@@ -519,18 +519,18 @@ class MyGame : public bbe::Game
 		return false;
 	}
 
-	void filterKernels(const bbe::Vector2i& pos, const bbe::Vector2i& otherPos)
+	void filterKernels(const bbe::Vector2i &pos, const bbe::Vector2i &otherPos)
 	{
-		bbe::List<int32_t>& indices = outputTiles[pos.x][pos.y];
+		bbe::List<int32_t> &indices = outputTiles[pos.x][pos.y];
 		if (indices.getLength() == 1) return;
 
-		const bbe::List<int32_t>& otherIndices = outputTiles[otherPos.x][otherPos.y];
+		const bbe::List<int32_t> &otherIndices = outputTiles[otherPos.x][otherPos.y];
 		if (otherIndices.getLength() != 1)
 		{
 			bbe::Crash(bbe::Error::IllegalArgument);
 		}
 
-		const TileGrid& compareKernel = kernels[otherIndices[0]];
+		const TileGrid &compareKernel = kernels[otherIndices[0]];
 
 		for (size_t i = 0; i < indices.getLength(); i++)
 		{
@@ -566,7 +566,7 @@ class MyGame : public bbe::Game
 		}
 	}
 
-	bool isValidValue(const bbe::Vector2i& position, int32_t value)
+	bool isValidValue(const bbe::Vector2i &position, int32_t value)
 	{
 		for (size_t i = 0; i < kernels.getLength(); i++)
 		{
@@ -579,9 +579,8 @@ class MyGame : public bbe::Game
 					if (x == kernelSize / 2 && y == kernelSize / 2) continue;
 					bbe::Vector2i outputAccess = position + bbe::Vector2i(x, y) - bbe::Vector2i(kernelSize / 2, kernelSize / 2);
 					outputAccess = outputAccess.clampComponents(0, OUTPUT_SIZE - 1);
-					const bbe::List<int32_t>& wave = outputTiles[outputAccess.x][outputAccess.y];
-					if (wave.getLength() > 0
-						&& !wave.contains(kernels[i][x][y]))
+					const bbe::List<int32_t> &wave = outputTiles[outputAccess.x][outputAccess.y];
+					if (wave.getLength() > 0 && !wave.contains(kernels[i][x][y]))
 					{
 						match = false;
 						goto out;
@@ -589,7 +588,7 @@ class MyGame : public bbe::Game
 				}
 			}
 		out:
-			if(match) return true;
+			if (match) return true;
 		}
 		return false;
 	}
@@ -636,10 +635,10 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		if(collapse) iteration();
+		if (collapse) iteration();
 	}
 
-	void drawOutputTiles(bbe::PrimitiveBrush2D& brush, const bbe::Vector2& pos)
+	void drawOutputTiles(bbe::PrimitiveBrush2D &brush, const bbe::Vector2 &pos)
 	{
 		for (size_t i = 0; i < OUTPUT_SIZE; i++)
 		{
@@ -648,7 +647,7 @@ class MyGame : public bbe::Game
 				bbe::Vector3 color = { 0, 0, 0 };
 				for (size_t m = 0; m < outputTiles[i][k].getLength(); m++)
 				{
-					color += tileToColor(kernels[outputTiles[i][k][m]][kernelSize/2][kernelSize/2]);
+					color += tileToColor(kernels[outputTiles[i][k][m]][kernelSize / 2][kernelSize / 2]);
 				}
 				if (outputTiles[i][k].getLength() > 0)
 				{
@@ -681,10 +680,10 @@ class MyGame : public bbe::Game
 	virtual void update(float timeSinceLastFrame) override
 	{
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D& brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D& brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		brush.setColorRGB(1, 1, 1, 1);
 		brush.fillRect(0, 0, 10000, 10000);
@@ -738,7 +737,7 @@ class MyGame : public bbe::Game
 			brush.fillLine(100, 260 + distancePerTile * i, 300, 260 + distancePerTile * i);
 		}
 
-		drawOutputTiles(brush, {500, 100});
+		drawOutputTiles(brush, { 500, 100 });
 
 		if (renderKernels)
 		{
@@ -751,8 +750,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		if(collapse) iteration();
-
+		if (collapse) iteration();
 
 		ImGui::Begin("Settings");
 		bool rot = false; // Reset Output Tiles
@@ -792,4 +790,3 @@ int main()
 	game.start(1280, 720, "Example Wave Function Collapse");
 	return 0;
 }
-

@@ -2,7 +2,6 @@
 
 #include "../BBE/DataType.h"
 
-
 namespace bbe
 {
 	class ColorByte

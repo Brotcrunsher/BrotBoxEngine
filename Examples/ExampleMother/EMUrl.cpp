@@ -184,7 +184,7 @@ bbe::List<bbe::String> SubsystemUrl::getDomains()
 				continue;
 			// ^^^^--- This is the actual reason why we do this cache stuff!
 			//         Highly expensive operation to call FindFirst.
-			editsCache[hwnd] = {edit, redGreen};
+			editsCache[hwnd] = { edit, redGreen };
 		}
 	}
 

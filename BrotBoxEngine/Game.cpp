@@ -41,7 +41,7 @@ void bbe::Game::mainLoop()
 }
 
 #ifndef BBE_NO_AUDIO
-void bbe::Game::setSoundListener(const bbe::Vector3& pos, const bbe::Vector3& lookDirection)
+void bbe::Game::setSoundListener(const bbe::Vector3 &pos, const bbe::Vector3 &lookDirection)
 {
 	m_soundManager.setSoundListener(pos, lookDirection);
 }
@@ -61,9 +61,9 @@ uint32_t bbe::Game::getAmountOfDrawcalls() const
 }
 #endif
 
-static void staticMainLoop(void* gamePtr)
+static void staticMainLoop(void *gamePtr)
 {
-	((bbe::Game*)gamePtr)->mainLoop();
+	((bbe::Game *)gamePtr)->mainLoop();
 }
 
 bbe::Game::Game()
@@ -85,7 +85,7 @@ static void segvHandler(int sig)
 	bbe::Crash(bbe::Error::Segfault);
 }
 
-void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
+void bbe::Game::start(int windowWidth, int windowHeight, const char *title)
 {
 	BBE_TRY_RELEASE
 	{
@@ -95,98 +95,98 @@ void bbe::Game::start(int windowWidth, int windowHeight, const char* title)
 }
 
 #ifdef _WIN32
-const char* vecExToString(DWORD ex)
+const char *vecExToString(DWORD ex)
 {
-	if(ex == EXCEPTION_ACCESS_VIOLATION        ) return "EXCEPTION_ACCESS_VIOLATION       ";
-	if(ex == EXCEPTION_DATATYPE_MISALIGNMENT   ) return "EXCEPTION_DATATYPE_MISALIGNMENT  ";
-	if(ex == EXCEPTION_BREAKPOINT              ) return "EXCEPTION_BREAKPOINT             ";
-	if(ex == EXCEPTION_SINGLE_STEP             ) return "EXCEPTION_SINGLE_STEP            ";
-	if(ex == EXCEPTION_ARRAY_BOUNDS_EXCEEDED   ) return "EXCEPTION_ARRAY_BOUNDS_EXCEEDED  ";
-	if(ex == EXCEPTION_FLT_DENORMAL_OPERAND    ) return "EXCEPTION_FLT_DENORMAL_OPERAND   ";
-	if(ex == EXCEPTION_FLT_DIVIDE_BY_ZERO      ) return "EXCEPTION_FLT_DIVIDE_BY_ZERO     ";
-	if(ex == EXCEPTION_FLT_INEXACT_RESULT      ) return "EXCEPTION_FLT_INEXACT_RESULT     ";
-	if(ex == EXCEPTION_FLT_INVALID_OPERATION   ) return "EXCEPTION_FLT_INVALID_OPERATION  ";
-	if(ex == EXCEPTION_FLT_OVERFLOW            ) return "EXCEPTION_FLT_OVERFLOW           ";
-	if(ex == EXCEPTION_FLT_STACK_CHECK         ) return "EXCEPTION_FLT_STACK_CHECK        ";
-	if(ex == EXCEPTION_FLT_UNDERFLOW           ) return "EXCEPTION_FLT_UNDERFLOW          ";
-	if(ex == EXCEPTION_INT_DIVIDE_BY_ZERO      ) return "EXCEPTION_INT_DIVIDE_BY_ZERO     ";
-	if(ex == EXCEPTION_INT_OVERFLOW            ) return "EXCEPTION_INT_OVERFLOW           ";
-	if(ex == EXCEPTION_PRIV_INSTRUCTION        ) return "EXCEPTION_PRIV_INSTRUCTION       ";
-	if(ex == EXCEPTION_IN_PAGE_ERROR           ) return "EXCEPTION_IN_PAGE_ERROR          ";
-	if(ex == EXCEPTION_ILLEGAL_INSTRUCTION     ) return "EXCEPTION_ILLEGAL_INSTRUCTION    ";
-	if(ex == EXCEPTION_NONCONTINUABLE_EXCEPTION) return "EXCEPTION_NONCONTINUABLE_EXCEPTIO";
-	if(ex == EXCEPTION_STACK_OVERFLOW          ) return "EXCEPTION_STACK_OVERFLOW         ";
-	if(ex == EXCEPTION_INVALID_DISPOSITION     ) return "EXCEPTION_INVALID_DISPOSITION    ";
-	if(ex == EXCEPTION_GUARD_PAGE              ) return "EXCEPTION_GUARD_PAGE             ";
-	if(ex == EXCEPTION_INVALID_HANDLE          ) return "EXCEPTION_INVALID_HANDLE         ";
+	if (ex == EXCEPTION_ACCESS_VIOLATION) return "EXCEPTION_ACCESS_VIOLATION       ";
+	if (ex == EXCEPTION_DATATYPE_MISALIGNMENT) return "EXCEPTION_DATATYPE_MISALIGNMENT  ";
+	if (ex == EXCEPTION_BREAKPOINT) return "EXCEPTION_BREAKPOINT             ";
+	if (ex == EXCEPTION_SINGLE_STEP) return "EXCEPTION_SINGLE_STEP            ";
+	if (ex == EXCEPTION_ARRAY_BOUNDS_EXCEEDED) return "EXCEPTION_ARRAY_BOUNDS_EXCEEDED  ";
+	if (ex == EXCEPTION_FLT_DENORMAL_OPERAND) return "EXCEPTION_FLT_DENORMAL_OPERAND   ";
+	if (ex == EXCEPTION_FLT_DIVIDE_BY_ZERO) return "EXCEPTION_FLT_DIVIDE_BY_ZERO     ";
+	if (ex == EXCEPTION_FLT_INEXACT_RESULT) return "EXCEPTION_FLT_INEXACT_RESULT     ";
+	if (ex == EXCEPTION_FLT_INVALID_OPERATION) return "EXCEPTION_FLT_INVALID_OPERATION  ";
+	if (ex == EXCEPTION_FLT_OVERFLOW) return "EXCEPTION_FLT_OVERFLOW           ";
+	if (ex == EXCEPTION_FLT_STACK_CHECK) return "EXCEPTION_FLT_STACK_CHECK        ";
+	if (ex == EXCEPTION_FLT_UNDERFLOW) return "EXCEPTION_FLT_UNDERFLOW          ";
+	if (ex == EXCEPTION_INT_DIVIDE_BY_ZERO) return "EXCEPTION_INT_DIVIDE_BY_ZERO     ";
+	if (ex == EXCEPTION_INT_OVERFLOW) return "EXCEPTION_INT_OVERFLOW           ";
+	if (ex == EXCEPTION_PRIV_INSTRUCTION) return "EXCEPTION_PRIV_INSTRUCTION       ";
+	if (ex == EXCEPTION_IN_PAGE_ERROR) return "EXCEPTION_IN_PAGE_ERROR          ";
+	if (ex == EXCEPTION_ILLEGAL_INSTRUCTION) return "EXCEPTION_ILLEGAL_INSTRUCTION    ";
+	if (ex == EXCEPTION_NONCONTINUABLE_EXCEPTION) return "EXCEPTION_NONCONTINUABLE_EXCEPTIO";
+	if (ex == EXCEPTION_STACK_OVERFLOW) return "EXCEPTION_STACK_OVERFLOW         ";
+	if (ex == EXCEPTION_INVALID_DISPOSITION) return "EXCEPTION_INVALID_DISPOSITION    ";
+	if (ex == EXCEPTION_GUARD_PAGE) return "EXCEPTION_GUARD_PAGE             ";
+	if (ex == EXCEPTION_INVALID_HANDLE) return "EXCEPTION_INVALID_HANDLE         ";
 
-	if(ex == STATUS_WAIT_0                    ) return "STATUS_WAIT_0                    ";
-	if(ex == STATUS_ABANDONED_WAIT_0          ) return "STATUS_ABANDONED_WAIT_0          ";
-	if(ex == STATUS_USER_APC                  ) return "STATUS_USER_APC                  ";
-	if(ex == STATUS_TIMEOUT                   ) return "STATUS_TIMEOUT                   ";
-	if(ex == STATUS_PENDING                   ) return "STATUS_PENDING                   ";
-	if(ex == DBG_EXCEPTION_HANDLED            ) return "DBG_EXCEPTION_HANDLED            ";
-	if(ex == DBG_CONTINUE                     ) return "DBG_CONTINUE                     ";
-	if(ex == STATUS_SEGMENT_NOTIFICATION      ) return "STATUS_SEGMENT_NOTIFICATION      ";
-	if(ex == STATUS_FATAL_APP_EXIT            ) return "STATUS_FATAL_APP_EXIT            ";
-	if(ex == DBG_REPLY_LATER                  ) return "DBG_REPLY_LATER                  ";
-	if(ex == DBG_TERMINATE_THREAD             ) return "DBG_TERMINATE_THREAD             ";
-	if(ex == DBG_TERMINATE_PROCESS            ) return "DBG_TERMINATE_PROCESS            ";
-	if(ex == DBG_CONTROL_C                    ) return "DBG_CONTROL_C                    ";
-	if(ex == DBG_PRINTEXCEPTION_C             ) return "DBG_PRINTEXCEPTION_C             ";
-	if(ex == DBG_RIPEXCEPTION                 ) return "DBG_RIPEXCEPTION                 ";
-	if(ex == DBG_CONTROL_BREAK                ) return "DBG_CONTROL_BREAK                ";
-	if(ex == DBG_COMMAND_EXCEPTION            ) return "DBG_COMMAND_EXCEPTION            ";
-	if(ex == DBG_PRINTEXCEPTION_WIDE_C        ) return "DBG_PRINTEXCEPTION_WIDE_C        ";
-	if(ex == STATUS_GUARD_PAGE_VIOLATION      ) return "STATUS_GUARD_PAGE_VIOLATION      ";
-	if(ex == STATUS_DATATYPE_MISALIGNMENT     ) return "STATUS_DATATYPE_MISALIGNMENT     ";
-	if(ex == STATUS_BREAKPOINT                ) return "STATUS_BREAKPOINT                ";
-	if(ex == STATUS_SINGLE_STEP               ) return "STATUS_SINGLE_STEP               ";
-	if(ex == STATUS_LONGJUMP                  ) return "STATUS_LONGJUMP                  ";
-	if(ex == STATUS_UNWIND_CONSOLIDATE        ) return "STATUS_UNWIND_CONSOLIDATE        ";
-	if(ex == DBG_EXCEPTION_NOT_HANDLED        ) return "DBG_EXCEPTION_NOT_HANDLED        ";
-	if(ex == STATUS_ACCESS_VIOLATION          ) return "STATUS_ACCESS_VIOLATION          ";
-	if(ex == STATUS_IN_PAGE_ERROR             ) return "STATUS_IN_PAGE_ERROR             ";
-	if(ex == STATUS_INVALID_HANDLE            ) return "STATUS_INVALID_HANDLE            ";
-	if(ex == STATUS_INVALID_PARAMETER         ) return "STATUS_INVALID_PARAMETER         ";
-	if(ex == STATUS_NO_MEMORY                 ) return "STATUS_NO_MEMORY                 ";
-	if(ex == STATUS_ILLEGAL_INSTRUCTION       ) return "STATUS_ILLEGAL_INSTRUCTION       ";
-	if(ex == STATUS_NONCONTINUABLE_EXCEPTION  ) return "STATUS_NONCONTINUABLE_EXCEPTION  ";
-	if(ex == STATUS_INVALID_DISPOSITION       ) return "STATUS_INVALID_DISPOSITION       ";
-	if(ex == STATUS_ARRAY_BOUNDS_EXCEEDED     ) return "STATUS_ARRAY_BOUNDS_EXCEEDED     ";
-	if(ex == STATUS_FLOAT_DENORMAL_OPERAND    ) return "STATUS_FLOAT_DENORMAL_OPERAND    ";
-	if(ex == STATUS_FLOAT_DIVIDE_BY_ZERO      ) return "STATUS_FLOAT_DIVIDE_BY_ZERO      ";
-	if(ex == STATUS_FLOAT_INEXACT_RESULT      ) return "STATUS_FLOAT_INEXACT_RESULT      ";
-	if(ex == STATUS_FLOAT_INVALID_OPERATION   ) return "STATUS_FLOAT_INVALID_OPERATION   ";
-	if(ex == STATUS_FLOAT_OVERFLOW            ) return "STATUS_FLOAT_OVERFLOW            ";
-	if(ex == STATUS_FLOAT_STACK_CHECK         ) return "STATUS_FLOAT_STACK_CHECK         ";
-	if(ex == STATUS_FLOAT_UNDERFLOW           ) return "STATUS_FLOAT_UNDERFLOW           ";
-	if(ex == STATUS_INTEGER_DIVIDE_BY_ZERO    ) return "STATUS_INTEGER_DIVIDE_BY_ZERO    ";
-	if(ex == STATUS_INTEGER_OVERFLOW          ) return "STATUS_INTEGER_OVERFLOW          ";
-	if(ex == STATUS_PRIVILEGED_INSTRUCTION    ) return "STATUS_PRIVILEGED_INSTRUCTION    ";
-	if(ex == STATUS_STACK_OVERFLOW            ) return "STATUS_STACK_OVERFLOW            ";
-	if(ex == STATUS_DLL_NOT_FOUND             ) return "STATUS_DLL_NOT_FOUND             ";
-	if(ex == STATUS_ORDINAL_NOT_FOUND         ) return "STATUS_ORDINAL_NOT_FOUND         ";
-	if(ex == STATUS_ENTRYPOINT_NOT_FOUND      ) return "STATUS_ENTRYPOINT_NOT_FOUND      ";
-	if(ex == STATUS_CONTROL_C_EXIT            ) return "STATUS_CONTROL_C_EXIT            ";
-	if(ex == STATUS_DLL_INIT_FAILED           ) return "STATUS_DLL_INIT_FAILED           ";
-	if(ex == STATUS_CONTROL_STACK_VIOLATION   ) return "STATUS_CONTROL_STACK_VIOLATION   ";
-	if(ex == STATUS_FLOAT_MULTIPLE_FAULTS     ) return "STATUS_FLOAT_MULTIPLE_FAULTS     ";
-	if(ex == STATUS_FLOAT_MULTIPLE_TRAPS      ) return "STATUS_FLOAT_MULTIPLE_TRAPS      ";
-	if(ex == STATUS_REG_NAT_CONSUMPTION       ) return "STATUS_REG_NAT_CONSUMPTION       ";
-	if(ex == STATUS_HEAP_CORRUPTION           ) return "STATUS_HEAP_CORRUPTION           ";
-	if(ex == STATUS_STACK_BUFFER_OVERRUN      ) return "STATUS_STACK_BUFFER_OVERRUN      ";
-	if(ex == STATUS_INVALID_CRUNTIME_PARAMETER) return "STATUS_INVALID_CRUNTIME_PARAMETER";
-	if(ex == STATUS_ASSERTION_FAILURE         ) return "STATUS_ASSERTION_FAILURE         ";
-	if(ex == STATUS_ENCLAVE_VIOLATION         ) return "STATUS_ENCLAVE_VIOLATION         ";
-	if(ex == STATUS_INTERRUPTED               ) return "STATUS_INTERRUPTED               ";
-	if(ex == STATUS_THREAD_NOT_RUNNING        ) return "STATUS_THREAD_NOT_RUNNING        ";
-	if(ex == STATUS_ALREADY_REGISTERED        ) return "STATUS_ALREADY_REGISTERED        ";
+	if (ex == STATUS_WAIT_0) return "STATUS_WAIT_0                    ";
+	if (ex == STATUS_ABANDONED_WAIT_0) return "STATUS_ABANDONED_WAIT_0          ";
+	if (ex == STATUS_USER_APC) return "STATUS_USER_APC                  ";
+	if (ex == STATUS_TIMEOUT) return "STATUS_TIMEOUT                   ";
+	if (ex == STATUS_PENDING) return "STATUS_PENDING                   ";
+	if (ex == DBG_EXCEPTION_HANDLED) return "DBG_EXCEPTION_HANDLED            ";
+	if (ex == DBG_CONTINUE) return "DBG_CONTINUE                     ";
+	if (ex == STATUS_SEGMENT_NOTIFICATION) return "STATUS_SEGMENT_NOTIFICATION      ";
+	if (ex == STATUS_FATAL_APP_EXIT) return "STATUS_FATAL_APP_EXIT            ";
+	if (ex == DBG_REPLY_LATER) return "DBG_REPLY_LATER                  ";
+	if (ex == DBG_TERMINATE_THREAD) return "DBG_TERMINATE_THREAD             ";
+	if (ex == DBG_TERMINATE_PROCESS) return "DBG_TERMINATE_PROCESS            ";
+	if (ex == DBG_CONTROL_C) return "DBG_CONTROL_C                    ";
+	if (ex == DBG_PRINTEXCEPTION_C) return "DBG_PRINTEXCEPTION_C             ";
+	if (ex == DBG_RIPEXCEPTION) return "DBG_RIPEXCEPTION                 ";
+	if (ex == DBG_CONTROL_BREAK) return "DBG_CONTROL_BREAK                ";
+	if (ex == DBG_COMMAND_EXCEPTION) return "DBG_COMMAND_EXCEPTION            ";
+	if (ex == DBG_PRINTEXCEPTION_WIDE_C) return "DBG_PRINTEXCEPTION_WIDE_C        ";
+	if (ex == STATUS_GUARD_PAGE_VIOLATION) return "STATUS_GUARD_PAGE_VIOLATION      ";
+	if (ex == STATUS_DATATYPE_MISALIGNMENT) return "STATUS_DATATYPE_MISALIGNMENT     ";
+	if (ex == STATUS_BREAKPOINT) return "STATUS_BREAKPOINT                ";
+	if (ex == STATUS_SINGLE_STEP) return "STATUS_SINGLE_STEP               ";
+	if (ex == STATUS_LONGJUMP) return "STATUS_LONGJUMP                  ";
+	if (ex == STATUS_UNWIND_CONSOLIDATE) return "STATUS_UNWIND_CONSOLIDATE        ";
+	if (ex == DBG_EXCEPTION_NOT_HANDLED) return "DBG_EXCEPTION_NOT_HANDLED        ";
+	if (ex == STATUS_ACCESS_VIOLATION) return "STATUS_ACCESS_VIOLATION          ";
+	if (ex == STATUS_IN_PAGE_ERROR) return "STATUS_IN_PAGE_ERROR             ";
+	if (ex == STATUS_INVALID_HANDLE) return "STATUS_INVALID_HANDLE            ";
+	if (ex == STATUS_INVALID_PARAMETER) return "STATUS_INVALID_PARAMETER         ";
+	if (ex == STATUS_NO_MEMORY) return "STATUS_NO_MEMORY                 ";
+	if (ex == STATUS_ILLEGAL_INSTRUCTION) return "STATUS_ILLEGAL_INSTRUCTION       ";
+	if (ex == STATUS_NONCONTINUABLE_EXCEPTION) return "STATUS_NONCONTINUABLE_EXCEPTION  ";
+	if (ex == STATUS_INVALID_DISPOSITION) return "STATUS_INVALID_DISPOSITION       ";
+	if (ex == STATUS_ARRAY_BOUNDS_EXCEEDED) return "STATUS_ARRAY_BOUNDS_EXCEEDED     ";
+	if (ex == STATUS_FLOAT_DENORMAL_OPERAND) return "STATUS_FLOAT_DENORMAL_OPERAND    ";
+	if (ex == STATUS_FLOAT_DIVIDE_BY_ZERO) return "STATUS_FLOAT_DIVIDE_BY_ZERO      ";
+	if (ex == STATUS_FLOAT_INEXACT_RESULT) return "STATUS_FLOAT_INEXACT_RESULT      ";
+	if (ex == STATUS_FLOAT_INVALID_OPERATION) return "STATUS_FLOAT_INVALID_OPERATION   ";
+	if (ex == STATUS_FLOAT_OVERFLOW) return "STATUS_FLOAT_OVERFLOW            ";
+	if (ex == STATUS_FLOAT_STACK_CHECK) return "STATUS_FLOAT_STACK_CHECK         ";
+	if (ex == STATUS_FLOAT_UNDERFLOW) return "STATUS_FLOAT_UNDERFLOW           ";
+	if (ex == STATUS_INTEGER_DIVIDE_BY_ZERO) return "STATUS_INTEGER_DIVIDE_BY_ZERO    ";
+	if (ex == STATUS_INTEGER_OVERFLOW) return "STATUS_INTEGER_OVERFLOW          ";
+	if (ex == STATUS_PRIVILEGED_INSTRUCTION) return "STATUS_PRIVILEGED_INSTRUCTION    ";
+	if (ex == STATUS_STACK_OVERFLOW) return "STATUS_STACK_OVERFLOW            ";
+	if (ex == STATUS_DLL_NOT_FOUND) return "STATUS_DLL_NOT_FOUND             ";
+	if (ex == STATUS_ORDINAL_NOT_FOUND) return "STATUS_ORDINAL_NOT_FOUND         ";
+	if (ex == STATUS_ENTRYPOINT_NOT_FOUND) return "STATUS_ENTRYPOINT_NOT_FOUND      ";
+	if (ex == STATUS_CONTROL_C_EXIT) return "STATUS_CONTROL_C_EXIT            ";
+	if (ex == STATUS_DLL_INIT_FAILED) return "STATUS_DLL_INIT_FAILED           ";
+	if (ex == STATUS_CONTROL_STACK_VIOLATION) return "STATUS_CONTROL_STACK_VIOLATION   ";
+	if (ex == STATUS_FLOAT_MULTIPLE_FAULTS) return "STATUS_FLOAT_MULTIPLE_FAULTS     ";
+	if (ex == STATUS_FLOAT_MULTIPLE_TRAPS) return "STATUS_FLOAT_MULTIPLE_TRAPS      ";
+	if (ex == STATUS_REG_NAT_CONSUMPTION) return "STATUS_REG_NAT_CONSUMPTION       ";
+	if (ex == STATUS_HEAP_CORRUPTION) return "STATUS_HEAP_CORRUPTION           ";
+	if (ex == STATUS_STACK_BUFFER_OVERRUN) return "STATUS_STACK_BUFFER_OVERRUN      ";
+	if (ex == STATUS_INVALID_CRUNTIME_PARAMETER) return "STATUS_INVALID_CRUNTIME_PARAMETER";
+	if (ex == STATUS_ASSERTION_FAILURE) return "STATUS_ASSERTION_FAILURE         ";
+	if (ex == STATUS_ENCLAVE_VIOLATION) return "STATUS_ENCLAVE_VIOLATION         ";
+	if (ex == STATUS_INTERRUPTED) return "STATUS_INTERRUPTED               ";
+	if (ex == STATUS_THREAD_NOT_RUNNING) return "STATUS_THREAD_NOT_RUNNING        ";
+	if (ex == STATUS_ALREADY_REGISTERED) return "STATUS_ALREADY_REGISTERED        ";
 
 	return "EXCEPTION_UNKNOWN";
 }
 
-LONG WINAPI UnhandledVectoredExceptionHandler(EXCEPTION_POINTERS* exceptionPointers)
+LONG WINAPI UnhandledVectoredExceptionHandler(EXCEPTION_POINTERS *exceptionPointers)
 {
 	// 0x406d1388 is not a "real exception" but instead a hack that is commonly used to set the name of a thread so that
 	// it's visible within the debugger. When such an exception is raised, we do not want to crash.
@@ -202,7 +202,6 @@ LONG WINAPI UnhandledVectoredExceptionHandler(EXCEPTION_POINTERS* exceptionPoint
 
 	// 0xE06D7363 stands for a C++ Exception. Such are handled with try/catch blocks and should not necessarily cause a crash.
 	if (exceptionPointers->ExceptionRecord->ExceptionCode == 0xE06D7363) return EXCEPTION_CONTINUE_SEARCH;
-
 
 	bbe::String msg = "Exception Code: ";
 	msg += vecExToString(exceptionPointers->ExceptionRecord->ExceptionCode);
@@ -222,7 +221,7 @@ static void terminateHandler()
 	bbe::Crash(bbe::Error::Terminate);
 }
 
-void bbe::Game::innerStart(int windowWidth, int windowHeight, const char* title)
+void bbe::Game::innerStart(int windowWidth, int windowHeight, const char *title)
 {
 #ifdef _WIN32
 	AddVectoredExceptionHandler(1, UnhandledVectoredExceptionHandler);
@@ -276,7 +275,7 @@ void bbe::Game::innerStart(int windowWidth, int windowHeight, const char* title)
 #ifdef __EMSCRIPTEN__
 		emscripten_set_main_loop_arg(staticMainLoop, this, 0, true);
 #else
-		while((m_maxFrameNumber == 0 || m_frameNumber < m_maxFrameNumber))
+		while ((m_maxFrameNumber == 0 || m_frameNumber < m_maxFrameNumber))
 		{
 			beginMeasure("INTERNAL - Keep Alive");
 			bool kA = keepAlive();
@@ -311,7 +310,7 @@ bool bbe::Game::keepAlive()
 void bbe::Game::frame(bool dragging)
 {
 	StopWatch sw;
-	if(m_requestShowWindow)
+	if (m_requestShowWindow)
 	{
 		m_requestShowWindow = false;
 		showWindow();
@@ -343,7 +342,7 @@ void bbe::Game::frameUpdate()
 	m_pwindow->update();
 	float timeSinceLastFrame = m_gameTime.tick();
 	if (m_fixedFrameTime != 0.f) timeSinceLastFrame = m_fixedFrameTime;
-	
+
 	if (m_frameNumber < 100) m_frameTimeRunningAverage = timeSinceLastFrame;
 	else m_frameTimeRunningAverage = 0.99f * m_frameTimeRunningAverage + 0.01f * timeSinceLastFrame;
 
@@ -367,7 +366,7 @@ void bbe::Game::frameUpdate()
 		nextMinuteMaxMove = bbe::TimePoint().plusMinutes(1);
 		for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
 		{
-			PerformanceMeasurement& pm = *it;
+			PerformanceMeasurement &pm = *it;
 			pm.minuteMax2 = pm.minuteMax1;
 			pm.minuteMax1 = 0.0;
 		}
@@ -666,7 +665,7 @@ bbe::WindowCloseMode bbe::Game::getWindowCloseMode() const
 	return m_pwindow->getWindowCloseMode();
 }
 
-bbe::PhysWorld* bbe::Game::getPhysWorld()
+bbe::PhysWorld *bbe::Game::getPhysWorld()
 {
 	return &m_physWorld;
 }
@@ -676,7 +675,7 @@ void bbe::Game::screenshot(const bbe::String &path)
 	m_pwindow->screenshot(path);
 }
 
-void bbe::Game::setVideoRenderingMode(const char* path)
+void bbe::Game::setVideoRenderingMode(const char *path)
 {
 	if (m_started)
 	{
@@ -687,11 +686,11 @@ void bbe::Game::setVideoRenderingMode(const char* path)
 	setFixedFrametime(1.f / 60.f);
 }
 
-void bbe::Game::setScreenshotRecordingMode(const char* path)
+void bbe::Game::setScreenshotRecordingMode(const char *path)
 {
 	// If you want to make a movie out of these screenshots,
 	// you can use ffmpeg with the following command:
-	// 
+	//
 	// ffmpeg -framerate 60 -f image2 -i 'img%d.png' out.mp4
 	if (m_started)
 	{
@@ -727,7 +726,7 @@ bbe::String bbe::Game::getClipboard() const
 	return bbe::String(glfwWrapper::glfwGetClipboardString(m_pwindow->m_pwindow));
 }
 
-void bbe::Game::setClipboard(const bbe::String& string)
+void bbe::Game::setClipboard(const bbe::String &string)
 {
 	glfwWrapper::glfwSetClipboardString(m_pwindow->m_pwindow, string.getRaw());
 }
@@ -767,9 +766,8 @@ void bbe::Game::endMeasure()
 	if (m_pcurrentPerformanceMeasurementTag)
 	{
 		auto passedTimeSeconds = m_performanceMeasurement.getTimeExpiredNanoseconds() / 1000.0 / 1000.0 / 1000.0;
-		PerformanceMeasurement* pm = m_performanceMeasurements.find([&](const PerformanceMeasurement& pm) {
-			return pm.name == m_pcurrentPerformanceMeasurementTag;
-		});
+		PerformanceMeasurement *pm = m_performanceMeasurements.find([&](const PerformanceMeasurement &pm)
+																	{ return pm.name == m_pcurrentPerformanceMeasurementTag; });
 		if (!pm)
 		{
 			PerformanceMeasurement newPm;
@@ -793,7 +791,7 @@ void bbe::Game::endMeasure()
 	m_pcurrentPerformanceMeasurementTag = nullptr;
 }
 
-void bbe::Game::beginMeasure(const char* tag, bool force)
+void bbe::Game::beginMeasure(const char *tag, bool force)
 {
 	endMeasure();
 	m_pcurrentPerformanceMeasurementTag = tag;
@@ -816,7 +814,7 @@ bbe::String bbe::Game::getMeasuresString()
 	{
 		if (it != m_performanceMeasurements.begin()) retVal += "\n";
 
-		const PerformanceMeasurement& pm = *it;
+		const PerformanceMeasurement &pm = *it;
 		int32_t padding = maxLen - (int32_t)pm.name.getLength();
 		retVal += pm.name;
 		retVal += ": ";
@@ -858,23 +856,32 @@ void bbe::Game::drawMeasurement()
 
 	for (auto it = m_performanceMeasurements.begin(); it != m_performanceMeasurements.end(); it++)
 	{
-		const PerformanceMeasurement& pm = *it;
+		const PerformanceMeasurement &pm = *it;
 		int32_t padding = maxLen - (int32_t)it->name.getLength();
 		ImGui::Text(it->name);
-		ImGui::SameLine(0.0f, 0.0f); ImGui::Text(": ");
-		ImGui::SameLine(0.0f, 0.0f); ImGui::Text(bbe::String(" ") * padding);
+		ImGui::SameLine(0.0f, 0.0f);
+		ImGui::Text(": ");
+		ImGui::SameLine(0.0f, 0.0f);
+		ImGui::Text(bbe::String(" ") * padding);
 
 		const double maxPercentage = pm.max / maxMax;
-		ImGui::SameLine(0.0f, 0.0f); ImGui::TextColored(ImVec4(1.0f, 1.0f - maxPercentage, 1.0f - maxPercentage, 1.0f), bbe::String(pm.max));
-		ImGui::SameLine(0.0f, 0.0f); ImGui::Text(" ");
+		ImGui::SameLine(0.0f, 0.0f);
+		ImGui::TextColored(ImVec4(1.0f, 1.0f - maxPercentage, 1.0f - maxPercentage, 1.0f), bbe::String(pm.max));
+		ImGui::SameLine(0.0f, 0.0f);
+		ImGui::Text(" ");
 		const double avgPercentage = pm.avg / maxAvg;
-		ImGui::SameLine(0.0f, 0.0f); ImGui::TextColored(ImVec4(1.0f, 1.0f - avgPercentage, 1.0f - avgPercentage, 1.0f), bbe::String(pm.avg));
-		ImGui::SameLine(0.0f, 0.0f); ImGui::Text(" ");
+		ImGui::SameLine(0.0f, 0.0f);
+		ImGui::TextColored(ImVec4(1.0f, 1.0f - avgPercentage, 1.0f - avgPercentage, 1.0f), bbe::String(pm.avg));
+		ImGui::SameLine(0.0f, 0.0f);
+		ImGui::Text(" ");
 		const double nowPercentage = pm.now / maxNow;
-		ImGui::SameLine(0.0f, 0.0f); ImGui::TextColored(ImVec4(1.0f, 1.0f - nowPercentage, 1.0f - nowPercentage, 1.0f), bbe::String(pm.now));
-		ImGui::SameLine(0.0f, 0.0f); ImGui::Text(" ");
+		ImGui::SameLine(0.0f, 0.0f);
+		ImGui::TextColored(ImVec4(1.0f, 1.0f - nowPercentage, 1.0f - nowPercentage, 1.0f), bbe::String(pm.now));
+		ImGui::SameLine(0.0f, 0.0f);
+		ImGui::Text(" ");
 		const double minuteMaxPercentage = bbe::Math::max(pm.minuteMax1, pm.minuteMax2) / maxMinuteMax;
-		ImGui::SameLine(0.0f, 0.0f); ImGui::TextColored(ImVec4(1.0f, 1.0f - minuteMaxPercentage, 1.0f - minuteMaxPercentage, 1.0f), bbe::String(bbe::Math::max(pm.minuteMax1, pm.minuteMax2)));
+		ImGui::SameLine(0.0f, 0.0f);
+		ImGui::TextColored(ImVec4(1.0f, 1.0f - minuteMaxPercentage, 1.0f - minuteMaxPercentage, 1.0f), bbe::String(bbe::Math::max(pm.minuteMax1, pm.minuteMax2)));
 	}
 }
 
@@ -883,12 +890,12 @@ size_t bbe::Game::getAmountOfPlayingSounds() const
 	return m_soundManager.getAmountOfPlayingSounds();
 }
 
-void* bbe::Game::getNativeWindowHandle()
+void *bbe::Game::getNativeWindowHandle()
 {
 	return m_pwindow->getNativeHandle();
 }
 
-bbe::Window* bbe::Game::getWindow()
+bbe::Window *bbe::Game::getWindow()
 {
 	return m_pwindow;
 }

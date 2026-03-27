@@ -10,7 +10,7 @@ bbe::INTERNAL::vulkan::VulkanCommandPool::VulkanCommandPool()
 {
 }
 
-void bbe::INTERNAL::vulkan::VulkanCommandPool::init(const VulkanDevice & device)
+void bbe::INTERNAL::vulkan::VulkanCommandPool::init(const VulkanDevice &device)
 {
 	m_device = device.getDevice();
 

@@ -5,6 +5,5 @@ int main()
 	bbe::test::runAllTests();
 
 	bbe::INTERNAL::allocCleanup();
-    return 0;
+	return 0;
 }
-

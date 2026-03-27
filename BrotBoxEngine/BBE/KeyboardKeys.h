@@ -132,7 +132,6 @@ namespace bbe
 
 		INVALID = -1,
 	};
-	
 
 	bbe::String keyCodeToString(Key key);
 	bool isKeyCodeValid(Key key);

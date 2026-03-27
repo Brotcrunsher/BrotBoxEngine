@@ -17,7 +17,7 @@ namespace bbe
 				stack.push(0);
 				assertEquals(stack.dataLeft(), 1);
 				assertEquals(stack.hasDataLeft(), true);
-				
+
 				assertEquals(stack.peek(), 0);
 				assertEquals(stack.dataLeft(), 1);
 				assertEquals(stack.hasDataLeft(), true);
@@ -134,7 +134,7 @@ namespace bbe
 				assertEquals(stack.peek().address, "AStr");
 				assertEquals(stack.peek().age, 18);
 
-				stack.peek().name = "DPerson";	//This does not change anything! The change to name does not affect the next peek() call.
+				stack.peek().name = "DPerson"; //This does not change anything! The change to name does not affect the next peek() call.
 
 				assertEquals(p.name, "BPerson");
 				assertEquals(p.address, "BStr");

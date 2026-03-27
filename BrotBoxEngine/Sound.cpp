@@ -7,7 +7,7 @@
 
 #include "minimp3_ex.h"
 
-void bbe::Sound::loadMp3(const bbe::ByteBuffer& data)
+void bbe::Sound::loadMp3(const bbe::ByteBuffer &data)
 {
 	mp3dec_t mp3d = {};
 	mp3dec_file_info_t info = {};
@@ -50,7 +50,7 @@ void bbe::Sound::loadMp3(const bbe::ByteBuffer& data)
 	free(info.buffer);
 }
 
-void bbe::Sound::loadRawMonoFloat44100(const bbe::ByteBuffer& data)
+void bbe::Sound::loadRawMonoFloat44100(const bbe::ByteBuffer &data)
 {
 	if (data.getLength() % sizeof(float) != 0) bbe::Crash(bbe::Error::IllegalArgument, "Not a multiple of float!");
 
@@ -66,18 +66,18 @@ bbe::Sound::Sound()
 	// do nothing
 }
 
-bbe::Sound::Sound(const bbe::String& path, SoundLoadFormat soundLoadFormat)
+bbe::Sound::Sound(const bbe::String &path, SoundLoadFormat soundLoadFormat)
 {
 	load(path, soundLoadFormat);
 }
 
-void bbe::Sound::load(const bbe::String& path, SoundLoadFormat soundLoadFormat)
+void bbe::Sound::load(const bbe::String &path, SoundLoadFormat soundLoadFormat)
 {
 	bbe::ByteBuffer data = bbe::simpleFile::readBinaryFile(path);
 	load(data, soundLoadFormat);
 }
 
-void bbe::Sound::load(const bbe::ByteBuffer& data, SoundLoadFormat soundLoadFormat)
+void bbe::Sound::load(const bbe::ByteBuffer &data, SoundLoadFormat soundLoadFormat)
 {
 	if (isLoaded())
 	{
@@ -105,17 +105,16 @@ void bbe::Sound::load(const bbe::ByteBuffer& data, SoundLoadFormat soundLoadForm
 	m_loaded = true;
 }
 
-void bbe::Sound::load(const bbe::List<char>& data, SoundLoadFormat soundLoadFormat)
+void bbe::Sound::load(const bbe::List<char> &data, SoundLoadFormat soundLoadFormat)
 {
-	bbe::ByteBuffer buffer((bbe::byte*)data.getRaw(), data.getLength());
+	bbe::ByteBuffer buffer((bbe::byte *)data.getRaw(), data.getLength());
 	load(buffer, soundLoadFormat);
 }
 
-
-void bbe::Sound::load(const bbe::List<float>& data, SoundLoadFormat soundLoadFormat)
+void bbe::Sound::load(const bbe::List<float> &data, SoundLoadFormat soundLoadFormat)
 {
 	if (soundLoadFormat != SoundLoadFormat::RAW_MONO_FLOAT_44100) bbe::Crash(bbe::Error::IllegalArgument, "Only RAW_MONO_FLOAT_44100 currently supported!");
-	bbe::ByteBuffer buffer((bbe::byte*)data.getRaw(), data.getLength() * sizeof(float));
+	bbe::ByteBuffer buffer((bbe::byte *)data.getRaw(), data.getLength() * sizeof(float));
 	load(buffer, soundLoadFormat);
 }
 
@@ -145,7 +144,7 @@ uint32_t bbe::Sound::getHz() const
 	return m_hz;
 }
 
-const bbe::List<float>* bbe::Sound::getRaw() const
+const bbe::List<float> *bbe::Sound::getRaw() const
 {
 	return &m_data;
 }
@@ -156,7 +155,7 @@ bbe::ByteBuffer bbe::Sound::toWav() const
 
 	int32_t byteRate = m_hz * 2 * m_channels;
 	int32_t dataSize = m_data.getLength() * 2;
-	
+
 	// Write the header
 	buffer.writeNullString("RIFF", false);
 	int32_t chunkSize = 36 + dataSize;
@@ -178,9 +177,10 @@ bbe::ByteBuffer bbe::Sound::toWav() const
 	buffer.write(bitsPerSample);
 	buffer.writeNullString("data", false);
 	buffer.write(dataSize);
-	
+
 	// Write the data
-	for (float sample : m_data) {
+	for (float sample : m_data)
+	{
 		int16_t pcm_value = static_cast<int16_t>(sample * 32767.0f);
 		buffer.write(pcm_value);
 	}
@@ -203,7 +203,7 @@ bbe::SoundInstance bbe::SoundDataSource::play(float volume) const
 	return bbe::INTERNAL::SoundManager::getInstance()->play(*this, nullptr, volume);
 }
 
-bbe::SoundInstance bbe::SoundDataSource::play(const bbe::Vector3& pos, float volume) const
+bbe::SoundInstance bbe::SoundDataSource::play(const bbe::Vector3 &pos, float volume) const
 {
 	return bbe::INTERNAL::SoundManager::getInstance()->play(*this, &pos, volume);
 }

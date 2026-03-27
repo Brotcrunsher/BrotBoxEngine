@@ -44,7 +44,7 @@ namespace bbe
 				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
 				assertEquals(0, Person::s_amountOfParameterConstructorCalls);
 				listEmpty.add(Person("Peter", "AStr", 18));
-				
+
 				assertEquals(listEmpty.getLength(), 1);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty[0].name, "Peter");
@@ -103,9 +103,9 @@ namespace bbe
 				assertEquals(listEmpty[3].address, "EStr");
 				assertEquals(listEmpty[3].age, 22);
 
-				assertEquals( 4, Person::s_amountOfPersons);
-				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
-				assertEquals( 5, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(4, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(5, Person::s_amountOfParameterConstructorCalls);
 
 				listEmpty.popBack();
 				assertEquals(listEmpty.getLength(), 3);
@@ -121,9 +121,9 @@ namespace bbe
 				assertEquals(listEmpty[2].address, "DStr");
 				assertEquals(listEmpty[2].age, 21);
 
-				assertEquals( 3, Person::s_amountOfPersons);
-				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
-				assertEquals( 5, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(3, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(5, Person::s_amountOfParameterConstructorCalls);
 
 				listEmpty.add(Person("Zebramensch", "FStr", 23));
 				assertEquals(listEmpty.getLength(), 4);
@@ -142,18 +142,18 @@ namespace bbe
 				assertEquals(listEmpty[3].address, "FStr");
 				assertEquals(listEmpty[3].age, 23);
 
-				assertEquals( 4, Person::s_amountOfPersons);
-				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
-				assertEquals( 6, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(4, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(6, Person::s_amountOfParameterConstructorCalls);
 
 				listEmpty.clear();
 				assertEquals(listEmpty.getLength(), 0);
 				assertUnequals(listEmpty.getRaw(), nullptr);
 				assertEquals(listEmpty.isEmpty(), true);
 
-				assertEquals( 0, Person::s_amountOfPersons);
-				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
-				assertEquals( 6, Person::s_amountOfParameterConstructorCalls);
+				assertEquals(0, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(6, Person::s_amountOfParameterConstructorCalls);
 
 				listEmpty.add(Person("IDontKnow", "GStr", 24));
 				listEmpty.add(Person("Jesus", "HStr", 25));
@@ -179,8 +179,8 @@ namespace bbe
 				assertEquals(listEmpty[4].address, "KStr");
 				assertEquals(listEmpty[4].age, 28);
 
-				assertEquals( 5, Person::s_amountOfPersons);
-				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(5, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
 				assertEquals(11, Person::s_amountOfParameterConstructorCalls);
 
 				assertEquals(listEmpty.getLength(), 5);
@@ -202,8 +202,8 @@ namespace bbe
 				assertEquals(listEmpty[4].address, "KStr");
 				assertEquals(listEmpty[4].age, 28);
 
-				assertEquals( 5, Person::s_amountOfPersons);
-				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(5, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
 				assertEquals(11, Person::s_amountOfParameterConstructorCalls);
 
 				Person outerPerson("Outlander", "OutStr", 99);
@@ -234,8 +234,8 @@ namespace bbe
 				assertEquals(outerPerson.address, "OutStr");
 				assertEquals(outerPerson.age, 99);
 
-				assertEquals( 7, Person::s_amountOfPersons);
-				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(7, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
 				assertEquals(12, Person::s_amountOfParameterConstructorCalls);
 
 				outerPerson.name = "newName";
@@ -268,8 +268,8 @@ namespace bbe
 				assertEquals(outerPerson.address, "OtherStreet");
 				assertEquals(outerPerson.age, 100);
 
-				assertEquals( 7, Person::s_amountOfPersons);
-				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(7, Person::s_amountOfPersons);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
 				assertEquals(12, Person::s_amountOfParameterConstructorCalls);
 
 				listEmpty.add(Person("CopyMan!", "CopyStr!", -7), 3);
@@ -305,7 +305,7 @@ namespace bbe
 				assertEquals(listEmpty[8].age, -7);
 
 				assertEquals(10, Person::s_amountOfPersons);
-				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
 				assertEquals(13, Person::s_amountOfParameterConstructorCalls);
 
 				listEmpty[7].name = "Changeling";
@@ -344,7 +344,7 @@ namespace bbe
 				assertEquals(listEmpty[8].age, -7);
 
 				assertEquals(10, Person::s_amountOfPersons);
-				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
 				assertEquals(13, Person::s_amountOfParameterConstructorCalls);
 
 				List<Person> otherList;
@@ -353,7 +353,7 @@ namespace bbe
 				otherList.add(Person("Invader #3", "InvasionStr #3", 32));
 
 				assertEquals(13, Person::s_amountOfPersons);
-				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
 				assertEquals(16, Person::s_amountOfParameterConstructorCalls);
 
 				listEmpty += otherList;
@@ -398,7 +398,7 @@ namespace bbe
 				assertEquals(listEmpty[11].age, 32);
 
 				assertEquals(16, Person::s_amountOfPersons);
-				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
 				assertEquals(16, Person::s_amountOfParameterConstructorCalls);
 
 				otherList[0].name = "Hide #1";
@@ -452,7 +452,7 @@ namespace bbe
 				assertEquals(listEmpty[11].age, 32);
 
 				assertEquals(16, Person::s_amountOfPersons);
-				assertEquals( 0, Person::s_amountOfDefaulConstructorCalls);
+				assertEquals(0, Person::s_amountOfDefaulConstructorCalls);
 				assertEquals(16, Person::s_amountOfParameterConstructorCalls);
 			}
 
@@ -675,7 +675,7 @@ namespace bbe
 				assertEquals(size_tList[5], 6);
 
 				removedVals = size_tList.removeAll(
-					[](const size_t& t)
+					[](const size_t &t)
 					{
 						return t % 2 == 0;
 					});
@@ -705,7 +705,7 @@ namespace bbe
 				assertEquals(size_tList[5], 11);
 
 				removedVals = size_tList.removeAll(
-					[](const size_t& t)
+					[](const size_t &t)
 					{
 						return false;
 					});
@@ -748,7 +748,7 @@ namespace bbe
 				assertEquals(size_tList[5], 13);
 
 				didRemove = size_tList.removeSingle(
-					[](const size_t& val)
+					[](const size_t &val)
 					{
 						return val == 13;
 					});
@@ -765,7 +765,7 @@ namespace bbe
 				assertEquals(size_tList[5], 15);
 
 				didRemove = size_tList.removeSingle(
-					[](const size_t& val)
+					[](const size_t &val)
 					{
 						return val == 13;
 					});
@@ -781,7 +781,7 @@ namespace bbe
 				assertEquals(size_tList[4], 11);
 				assertEquals(size_tList[5], 15);
 			}
-			
+
 			Person::checkIfAllPersonsWereDestroyed();
 			Person::resetTestStatistics();
 
@@ -795,13 +795,11 @@ namespace bbe
 					Person("C", "CStr", 19),
 					Person("D", "DStr", 20),
 					Person("E", "EStr", 21),
-					Person("F", "FStr", 22)
-				);
+					Person("F", "FStr", 22));
 
 				assertEquals(pushBackAllList.getLength(), 7);
 				assertUnequals(pushBackAllList.getRaw(), nullptr);
 				assertEquals(pushBackAllList.isEmpty(), false);
-
 
 				assertEquals(pushBackAllList[0].name, "A");
 				assertEquals(pushBackAllList[0].address, "AStr");
@@ -839,13 +837,27 @@ namespace bbe
 				assertEquals(containsList.contains(4), false);
 				assertEquals(containsList.contains(8), false);
 				assertEquals(containsList.contains(10), false);
-				assertEquals(containsList.contains([](const int& val) {return val == 2; }), true);
-				assertEquals(containsList.contains([](const int& val) {return val == 1; }), true);
-				assertEquals(containsList.contains([](const int& val) {return val == 5; }), true);
-				assertEquals(containsList.contains([](const int& val) {return val == 7; }), true);
-				assertEquals(containsList.contains([](const int& val) {return val == 4; }), false);
-				assertEquals(containsList.contains([](const int& val) {return val == 8; }), false);
-				assertEquals(containsList.contains([](const int& val) {return val == 10; }), false);
+				assertEquals(containsList.contains([](const int &val)
+												   { return val == 2; }),
+							 true);
+				assertEquals(containsList.contains([](const int &val)
+												   { return val == 1; }),
+							 true);
+				assertEquals(containsList.contains([](const int &val)
+												   { return val == 5; }),
+							 true);
+				assertEquals(containsList.contains([](const int &val)
+												   { return val == 7; }),
+							 true);
+				assertEquals(containsList.contains([](const int &val)
+												   { return val == 4; }),
+							 false);
+				assertEquals(containsList.contains([](const int &val)
+												   { return val == 8; }),
+							 false);
+				assertEquals(containsList.contains([](const int &val)
+												   { return val == 10; }),
+							 false);
 
 				assertEquals(containsList.containsUnique(2), false);
 				assertEquals(containsList.containsUnique(1), false);
@@ -854,13 +866,27 @@ namespace bbe
 				assertEquals(containsList.containsUnique(4), false);
 				assertEquals(containsList.containsUnique(8), false);
 				assertEquals(containsList.containsUnique(10), false);
-				assertEquals(containsList.containsUnique([](const int& val) {return val == 2; }), false);
-				assertEquals(containsList.containsUnique([](const int& val) {return val == 1; }), false);
-				assertEquals(containsList.containsUnique([](const int& val) {return val == 5; }), true);
-				assertEquals(containsList.containsUnique([](const int& val) {return val == 7; }), true);
-				assertEquals(containsList.containsUnique([](const int& val) {return val == 4; }), false);
-				assertEquals(containsList.containsUnique([](const int& val) {return val == 8; }), false);
-				assertEquals(containsList.containsUnique([](const int& val) {return val == 10; }), false);
+				assertEquals(containsList.containsUnique([](const int &val)
+														 { return val == 2; }),
+							 false);
+				assertEquals(containsList.containsUnique([](const int &val)
+														 { return val == 1; }),
+							 false);
+				assertEquals(containsList.containsUnique([](const int &val)
+														 { return val == 5; }),
+							 true);
+				assertEquals(containsList.containsUnique([](const int &val)
+														 { return val == 7; }),
+							 true);
+				assertEquals(containsList.containsUnique([](const int &val)
+														 { return val == 4; }),
+							 false);
+				assertEquals(containsList.containsUnique([](const int &val)
+														 { return val == 8; }),
+							 false);
+				assertEquals(containsList.containsUnique([](const int &val)
+														 { return val == 10; }),
+							 false);
 
 				assertEquals(containsList.containsAmount(2), 2);
 				assertEquals(containsList.containsAmount(1), 2);
@@ -869,13 +895,27 @@ namespace bbe
 				assertEquals(containsList.containsAmount(4), 0);
 				assertEquals(containsList.containsAmount(8), 0);
 				assertEquals(containsList.containsAmount(10), 0);
-				assertEquals(containsList.containsAmount([](const int& val) {return val == 2; }), 2);
-				assertEquals(containsList.containsAmount([](const int& val) {return val == 1; }), 2);
-				assertEquals(containsList.containsAmount([](const int& val) {return val == 5; }), 1);
-				assertEquals(containsList.containsAmount([](const int& val) {return val == 7; }), 1);
-				assertEquals(containsList.containsAmount([](const int& val) {return val == 4; }), 0);
-				assertEquals(containsList.containsAmount([](const int& val) {return val == 8; }), 0);
-				assertEquals(containsList.containsAmount([](const int& val) {return val == 10; }), 0);
+				assertEquals(containsList.containsAmount([](const int &val)
+														 { return val == 2; }),
+							 2);
+				assertEquals(containsList.containsAmount([](const int &val)
+														 { return val == 1; }),
+							 2);
+				assertEquals(containsList.containsAmount([](const int &val)
+														 { return val == 5; }),
+							 1);
+				assertEquals(containsList.containsAmount([](const int &val)
+														 { return val == 7; }),
+							 1);
+				assertEquals(containsList.containsAmount([](const int &val)
+														 { return val == 4; }),
+							 0);
+				assertEquals(containsList.containsAmount([](const int &val)
+														 { return val == 8; }),
+							 0);
+				assertEquals(containsList.containsAmount([](const int &val)
+														 { return val == 10; }),
+							 0);
 
 				assertEquals(containsList.getLength(), 11);
 				assertUnequals(containsList.getRaw(), nullptr);
@@ -915,13 +955,10 @@ namespace bbe
 					Person("0 year", "0 Street", 0),
 					Person("10 year", "10 Street", 10),
 					Person("49 year", "49 Street", 49),
-					Person("2 year", "2 Street", 2)
-				);
+					Person("2 year", "2 Street", 2));
 
-				sortPersonList.sort([](const Person& a, const Person& b)
-				{
-					return a.age < b.age;
-				});
+				sortPersonList.sort([](const Person &a, const Person &b)
+									{ return a.age < b.age; });
 
 				assertEquals(sortPersonList[0].name, "0 year");
 				assertEquals(sortPersonList[0].address, "0 Street");
@@ -962,11 +999,10 @@ namespace bbe
 					Person("0 year", "0 Street", 0),
 					Person("10 year", "10 Street", 10),
 					Person("49 year", "49 Street", 49),
-					Person("2 year", "2 Street", 2)
-				);
+					Person("2 year", "2 Street", 2));
 
-				Person* find = findList.find(Person("0 year", "0 Street", 0));
-				BBELOGLN((long long) find);
+				Person *find = findList.find(Person("0 year", "0 Street", 0));
+				BBELOGLN((long long)find);
 				assertUnequals(find, nullptr);
 				assertEquals(find->name, "0 year");
 				assertEquals(find->address, "0 Street");
@@ -1014,10 +1050,9 @@ namespace bbe
 					Person("0 year", "0 Street", 0),
 					Person("10 year", "10 Street", 10),
 					Person("49 year", "49 Street", 49),
-					Person("2 year", "2 Street", 2)
-				);
+					Person("2 year", "2 Street", 2));
 
-				Person* find = findList.findLast(Person("0 year", "0 Street", 0));
+				Person *find = findList.findLast(Person("0 year", "0 Street", 0));
 				assertUnequals(find, nullptr);
 				assertEquals(find->name, "0 year");
 				assertEquals(find->address, "0 Street");
@@ -1065,10 +1100,10 @@ namespace bbe
 					Person("0 year", "0 Street", 0),
 					Person("10 year", "10 Street", 10),
 					Person("49 year", "49 Street", 49),
-					Person("2 year", "2 Street", 2)
-				);
+					Person("2 year", "2 Street", 2));
 
-				Person* find = findList.find([](const Person& p) {return p.age == 0; });
+				Person *find = findList.find([](const Person &p)
+											 { return p.age == 0; });
 				assertUnequals(find, nullptr);
 				assertEquals(find->name, "0 year");
 				assertEquals(find->address, "0 Street");
@@ -1084,7 +1119,8 @@ namespace bbe
 				assertEquals(findList[3].address, "Changed adress");
 				assertEquals(findList[3].age, -1);
 
-				find = findList.find([](const Person& p) {return p.age == 2; });
+				find = findList.find([](const Person &p)
+									 { return p.age == 2; });
 				assertUnequals(find, nullptr);
 				assertEquals(find->name, "2 year");
 				assertEquals(find->address, "2 Street");
@@ -1100,7 +1136,8 @@ namespace bbe
 				assertEquals(findList[1].address, "Changed adress2");
 				assertEquals(findList[1].age, -2);
 
-				find = findList.find([](const Person& p) {return p.age == 13483; });
+				find = findList.find([](const Person &p)
+									 { return p.age == 13483; });
 				assertEquals(find, nullptr);
 			}
 
@@ -1116,10 +1153,10 @@ namespace bbe
 					Person("0 year", "0 Street", 0),
 					Person("10 year", "10 Street", 10),
 					Person("49 year", "49 Street", 49),
-					Person("2 year", "2 Street", 2)
-				);
+					Person("2 year", "2 Street", 2));
 
-				Person* find = findList.findLast([](const Person& p) {return p.age == 0; });
+				Person *find = findList.findLast([](const Person &p)
+												 { return p.age == 0; });
 				assertUnequals(find, nullptr);
 				assertEquals(find->name, "0 year");
 				assertEquals(find->address, "0 Street");
@@ -1135,7 +1172,8 @@ namespace bbe
 				assertEquals(findList[3].address, "Changed adress");
 				assertEquals(findList[3].age, -1);
 
-				find = findList.findLast([](const Person& p) {return p.age == 2; });
+				find = findList.findLast([](const Person &p)
+										 { return p.age == 2; });
 				assertUnequals(find, nullptr);
 				assertEquals(find->name, "2 year");
 				assertEquals(find->address, "2 Street");
@@ -1151,7 +1189,8 @@ namespace bbe
 				assertEquals(findList[6].address, "Changed adress2");
 				assertEquals(findList[6].age, -2);
 
-				find = findList.findLast([](const Person& p) {return p.age == 13483; });
+				find = findList.findLast([](const Person &p)
+										 { return p.age == 13483; });
 				assertEquals(find, nullptr);
 			}
 
@@ -1170,8 +1209,7 @@ namespace bbe
 						Person("0 year", "0 Street", 0),
 						Person("10 year", "10 Street", 10),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					l2.addAll(
 						Person("9 year", "9 Street", 9),
@@ -1180,8 +1218,7 @@ namespace bbe
 						Person("0 year", "0 Street", 0),
 						Person("10 year", "10 Street", 10),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					assertEquals(l1 == l2, true);
 				}
@@ -1197,8 +1234,7 @@ namespace bbe
 						Person("10 year", "10 Street", 10),
 						Person("0 year", "0 Street", 0),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					l2.addAll(
 						Person("9 year", "9 Street", 9),
@@ -1207,8 +1243,7 @@ namespace bbe
 						Person("0 year", "0 Street", 0),
 						Person("10 year", "10 Street", 10),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					assertEquals(l1 == l2, false);
 				}
@@ -1223,8 +1258,7 @@ namespace bbe
 						Person("1 year", "1 Street", 1),
 						Person("0 year", "0 Street", 0),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					l2.addAll(
 						Person("9 year", "9 Street", 9),
@@ -1233,13 +1267,12 @@ namespace bbe
 						Person("0 year", "0 Street", 0),
 						Person("10 year", "10 Street", 10),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					assertEquals(l1 == l2, false);
 				}
 
-								{
+				{
 					List<Person> l1;
 					List<Person> l2;
 
@@ -1250,8 +1283,7 @@ namespace bbe
 						Person("0 year", "0 Street", 0),
 						Person("10 year", "10 Street", 10),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					l2.addAll(
 						Person("9 year", "9 Street", 9),
@@ -1260,8 +1292,7 @@ namespace bbe
 						Person("0 year", "0 Street", 0),
 						Person("10 year", "10 Street", 10),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					assertEquals(l1 == l2, true);
 				}
@@ -1277,8 +1308,7 @@ namespace bbe
 						Person("10 year", "10 Street", 10),
 						Person("0 year", "0 Street", 0),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					l2.addAll(
 						Person("9 year", "9 Street", 9),
@@ -1287,8 +1317,7 @@ namespace bbe
 						Person("0 year", "0 Street", 0),
 						Person("10 year", "10 Street", 10),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					assertEquals(l1 == l2, false);
 				}
@@ -1303,8 +1332,7 @@ namespace bbe
 						Person("1 year", "1 Street", 1),
 						Person("0 year", "0 Street", 0),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					l2.addAll(
 						Person("9 year", "9 Street", 9),
@@ -1313,8 +1341,7 @@ namespace bbe
 						Person("0 year", "0 Street", 0),
 						Person("10 year", "10 Street", 10),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					assertEquals(l1 == l2, false);
 				}
@@ -1330,8 +1357,7 @@ namespace bbe
 						Person("0 year", "0 Street", 0),
 						Person("10 year", "10 Street", 10),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					l2.addAll(
 						Person("9 year", "9 Street", 9),
@@ -1340,8 +1366,7 @@ namespace bbe
 						Person("0 year", "0 Street", 0),
 						Person("10 year", "10 Street", 10),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					assertEquals(l1 != l2, false);
 				}
@@ -1357,8 +1382,7 @@ namespace bbe
 						Person("10 year", "10 Street", 10),
 						Person("0 year", "0 Street", 0),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					l2.addAll(
 						Person("9 year", "9 Street", 9),
@@ -1367,8 +1391,7 @@ namespace bbe
 						Person("0 year", "0 Street", 0),
 						Person("10 year", "10 Street", 10),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					assertEquals(l1 != l2, true);
 				}
@@ -1383,8 +1406,7 @@ namespace bbe
 						Person("1 year", "1 Street", 1),
 						Person("0 year", "0 Street", 0),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					l2.addAll(
 						Person("9 year", "9 Street", 9),
@@ -1393,14 +1415,12 @@ namespace bbe
 						Person("0 year", "0 Street", 0),
 						Person("10 year", "10 Street", 10),
 						Person("49 year", "49 Street", 49),
-						Person("2 year", "2 Street", 2)
-					);
+						Person("2 year", "2 Street", 2));
 
 					assertEquals(l1 != l2, true);
 				}
 
 				Person::checkIfAllPersonsWereDestroyed();
-				
 
 				{
 					List<Person> list;
@@ -1539,7 +1559,6 @@ namespace bbe
 				}
 
 				Person::checkIfAllPersonsWereDestroyed();
-
 			}
 		}
 	}

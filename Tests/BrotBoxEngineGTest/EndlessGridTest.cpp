@@ -9,24 +9,24 @@ TEST(EndlessGrid, SimpleChecks)
 	ASSERT_EQ(grid[0][0], 0);
 	grid[0][0] = 1;
 	ASSERT_EQ(grid[0][0], 1);
-	grid[ 1][ 0] = 2;
-	grid[ 1][ 1] = 3;
-	grid[ 0][ 1] = 4;
-	grid[-1][ 1] = 5;
-	grid[-1][ 0] = 6;
+	grid[1][0] = 2;
+	grid[1][1] = 3;
+	grid[0][1] = 4;
+	grid[-1][1] = 5;
+	grid[-1][0] = 6;
 	grid[-1][-1] = 7;
-	grid[ 0][-1] = 8;
-	grid[ 1][-1] = 9;
+	grid[0][-1] = 8;
+	grid[1][-1] = 9;
 
-	ASSERT_EQ(grid[ 0][ 0], 1);
-	ASSERT_EQ(grid[ 1][ 0], 2);
-	ASSERT_EQ(grid[ 1][ 1], 3);
-	ASSERT_EQ(grid[ 0][ 1], 4);
-	ASSERT_EQ(grid[-1][ 1], 5);
-	ASSERT_EQ(grid[-1][ 0], 6);
+	ASSERT_EQ(grid[0][0], 1);
+	ASSERT_EQ(grid[1][0], 2);
+	ASSERT_EQ(grid[1][1], 3);
+	ASSERT_EQ(grid[0][1], 4);
+	ASSERT_EQ(grid[-1][1], 5);
+	ASSERT_EQ(grid[-1][0], 6);
 	ASSERT_EQ(grid[-1][-1], 7);
-	ASSERT_EQ(grid[ 0][-1], 8);
-	ASSERT_EQ(grid[ 1][-1], 9);
+	ASSERT_EQ(grid[0][-1], 8);
+	ASSERT_EQ(grid[1][-1], 9);
 }
 
 TEST(EndlessGrid, RandomChecks)

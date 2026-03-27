@@ -15,18 +15,18 @@ namespace bbe
 		std::vector<std::thread> threads;
 		std::condition_variable stopCondition;
 
-		void threadMain(double targetExecDurSeconds, std::function<void(std::atomic_bool&)>&& func);
+		void threadMain(double targetExecDurSeconds, std::function<void(std::atomic_bool &)> &&func);
 
 	public:
 		TaskHandler() = default;
 		~TaskHandler();
 
-		TaskHandler(const TaskHandler&) = delete;
-		TaskHandler(TaskHandler&&) = delete;
-		TaskHandler& operator=(const TaskHandler&) = delete;
-		TaskHandler& operator=(TaskHandler&&) = delete;
+		TaskHandler(const TaskHandler &) = delete;
+		TaskHandler(TaskHandler &&) = delete;
+		TaskHandler &operator=(const TaskHandler &) = delete;
+		TaskHandler &operator=(TaskHandler &&) = delete;
 
 		void stop();
-		void addTask(double targetExecDurSeconds, std::function<void(std::atomic_bool&)>&& func);
+		void addTask(double targetExecDurSeconds, std::function<void(std::atomic_bool &)> &&func);
 	};
 }

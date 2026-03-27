@@ -25,14 +25,14 @@ public:
 		if (isMouseDown(bbe::MouseButton::LEFT))
 		{
 			bbe::Vector2 mousePos = getMouse();
-			bbe::Vector2* closest = bbe::Math::getClosest(mousePos, magnets);
+			bbe::Vector2 *closest = bbe::Math::getClosest(mousePos, magnets);
 			*closest = mousePos;
 		}
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		static float magnetDistance = 50;
 		static int32_t maxIter = 255;
@@ -45,7 +45,7 @@ public:
 		ImGui::DragFloat("Power: ", &power, 0.0001f);
 		ImGui::DragFloat("MagnetStrength: ", &magnetStrength, 100);
 #ifdef BBE_RENDERER_VULKAN
-		assetStore::PCS()->setPushConstant( 80, sizeof(bbe::Vector2) * magnets.getLength(), magnets.getRaw());
+		assetStore::PCS()->setPushConstant(80, sizeof(bbe::Vector2) * magnets.getLength(), magnets.getRaw());
 		assetStore::PCS()->setPushConstant(104, sizeof(float), &magnetDistance);
 		assetStore::PCS()->setPushConstant(108, sizeof(int32_t), &maxIter);
 		assetStore::PCS()->setPushConstant(112, sizeof(float), &tickTime);

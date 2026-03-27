@@ -5,7 +5,8 @@
 #include "BBE/Error.h"
 #include "BBE/EngineSettings.h"
 
-void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & physicalDevices, const VulkanSurface & surface) {
+void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer &physicalDevices, const VulkanSurface &surface)
+{
 	VulkanPhysicalDevice pd = physicalDevices.findBestDevice(surface);
 	m_physicalDevice = pd.getDevice();
 	queueFamilyIndex = pd.findBestCompleteQueueIndex();
@@ -15,7 +16,7 @@ void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & p
 	deviceQueueCreateInfo.pNext = nullptr;
 	deviceQueueCreateInfo.flags = 0;
 	deviceQueueCreateInfo.queueFamilyIndex = queueFamilyIndex;
-	deviceQueueCreateInfo.queueCount = 1;	//TODO Check if this amount is valid
+	deviceQueueCreateInfo.queueCount = 1; //TODO Check if this amount is valid
 	List<float> queuePriorities;
 	for (uint32_t i = 0; i < deviceQueueCreateInfo.queueCount; i++)
 	{
@@ -30,7 +31,7 @@ void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & p
 	// Surprisingly, even some brand new (2022) GPUs don't support this feature.
 	usedFeatures.shaderFloat64 = bbe::Settings::getShaderDoublesAllowed() ? VK_TRUE : VK_FALSE;
 
-	const List<const char*> deviceExtensions = {
+	const List<const char *> deviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		"VK_KHR_sampler_mirror_clamp_to_edge"
 	};
@@ -51,7 +52,6 @@ void bbe::INTERNAL::vulkan::VulkanDevice::init(const PhysicalDeviceContainer & p
 	ASSERT_VULKAN(result);
 
 	vkGetDeviceQueue(m_device, queueFamilyIndex, 0, &m_queue);
-
 
 	uint32_t amountOfFormats = 0;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(m_physicalDevice, surface.getSurface(), &amountOfFormats, nullptr);

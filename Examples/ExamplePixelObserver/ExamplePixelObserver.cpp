@@ -6,7 +6,6 @@
 * given pixel changes the color, a sound is played with the bbe::SoundDataSource.
 */
 
-
 class MySoundSource : public bbe::SoundDataSourceDynamic
 {
 public:
@@ -54,10 +53,10 @@ class MyGame : public bbe::Game
 	virtual void update(float timeSinceLastFrame) override
 	{
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D & brush) override
+	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D & brush) override
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
 		const bbe::Vector2 mouse = getMouseGlobal();
 
@@ -68,7 +67,7 @@ class MyGame : public bbe::Game
 		auto mouseColor = pixelObserver.getColor(mouse);
 		ImGui::Text("Mouse Color: ");
 		ImGui::SameLine();
-		ImGui::ColorEdit4("mouseColor", (float*)&mouseColor, ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+		ImGui::ColorEdit4("mouseColor", (float *)&mouseColor, ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 
 		static int x = 0;
 		ImGui::InputInt("x pos", &x);
@@ -77,7 +76,7 @@ class MyGame : public bbe::Game
 		auto selectedColor = pixelObserver.getColor(bbe::Vector2(x, y));
 		ImGui::Text("Selected Color: ");
 		ImGui::SameLine();
-		ImGui::ColorEdit4("selectedColor", (float*)&selectedColor, ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+		ImGui::ColorEdit4("selectedColor", (float *)&selectedColor, ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 
 		ImGui::Checkbox("Armed", &armed);
 
@@ -87,7 +86,7 @@ class MyGame : public bbe::Game
 		}
 		if (armed && protectionColor != selectedColor)
 		{
-			if(!soundInstance.isPlaying()) soundInstance = mySound.play();
+			if (!soundInstance.isPlaying()) soundInstance = mySound.play();
 		}
 		if (armed && protectionColor == selectedColor)
 		{
@@ -100,7 +99,6 @@ class MyGame : public bbe::Game
 		{
 			soundInstance.stop();
 		}
-
 
 		armedLastFrame = armed;
 
@@ -115,6 +113,5 @@ int main()
 {
 	MyGame game;
 	game.start(1280, 720, "Pixel Observer");
-    return 0;
+	return 0;
 }
-

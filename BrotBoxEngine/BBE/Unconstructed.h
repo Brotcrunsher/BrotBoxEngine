@@ -1,11 +1,10 @@
 #pragma once
 
-
 namespace bbe
 {
 	namespace INTERNAL
 	{
-		template <typename T>
+		template<typename T>
 		union Unconstructed
 		{
 			//this little hack prevents the constructor of T to be called

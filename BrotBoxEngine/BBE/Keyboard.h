@@ -10,12 +10,13 @@ namespace bbe
 	{
 		friend class Window;
 		friend class Game;
+
 	protected:
 		struct KeyState
 		{
-			bool down    = false;
+			bool down = false;
 			bool pressed = false;
-			bool typed   = false;
+			bool typed = false;
 			bbe::TimePoint nextTypedTime;
 		};
 		std::array<KeyState, (int)Key::LAST + 1> m_pkeysNextFrame = {};

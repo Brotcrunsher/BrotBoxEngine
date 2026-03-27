@@ -14,7 +14,7 @@ void bbe::INTERNAL::vulkan::VulkanRenderPass::destroy()
 	}
 }
 
-void bbe::INTERNAL::vulkan::VulkanRenderPass::init(const VulkanDevice & device)
+void bbe::INTERNAL::vulkan::VulkanRenderPass::init(const VulkanDevice &device)
 {
 	m_device = device.getDevice();
 
@@ -74,7 +74,6 @@ void bbe::INTERNAL::vulkan::VulkanRenderPass::init(const VulkanDevice & device)
 	renderPassCreateInfo.pSubpasses = &subpassDescription;
 	renderPassCreateInfo.dependencyCount = 1;
 	renderPassCreateInfo.pDependencies = &subpassDependency;
-
 
 	VkResult result = vkCreateRenderPass(m_device, &renderPassCreateInfo, nullptr, &m_renderPass);
 	ASSERT_VULKAN(result);

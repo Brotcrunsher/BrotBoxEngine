@@ -8,7 +8,7 @@ bbe::INTERNAL::vulkan::VulkanBuffer bbe::INTERNAL::vulkan::VulkanSphere::s_verte
 uint32_t bbe::INTERNAL::vulkan::VulkanSphere::amountOfVertices = 0;
 uint32_t bbe::INTERNAL::vulkan::VulkanSphere::amountOfIndices = 0;
 
-static uint32_t getHalfPointIndex(bbe::List<bbe::Vector3>& vertices, bbe::Vector3& a, bbe::Vector3& b)
+static uint32_t getHalfPointIndex(bbe::List<bbe::Vector3> &vertices, bbe::Vector3 &a, bbe::Vector3 &b)
 {
 	bbe::Vector3 halfPoint = (a + b).normalize() / 2;
 	for (uint32_t i = 0; i < vertices.getLength(); i++)
@@ -23,54 +23,93 @@ static uint32_t getHalfPointIndex(bbe::List<bbe::Vector3>& vertices, bbe::Vector
 	return static_cast<uint32_t>(vertices.getLength() - 1);
 }
 
-static void createIcoSphereMesh(bbe::List<uint32_t>& indices, bbe::List<bbe::INTERNAL::VertexWithNormal>& vertices, int iterations)
+static void createIcoSphereMesh(bbe::List<uint32_t> &indices, bbe::List<bbe::INTERNAL::VertexWithNormal> &vertices, int iterations)
 {
 	indices.clear();
 	vertices.clear();
 
 	float x = (1 + bbe::Math::sqrt(5)) / 4;
 	bbe::List<bbe::Vector3> simpleVertices = {
-		bbe::Vector3(-0.5,  x,  0).normalize() / 2,
-		bbe::Vector3(0.5,  x,  0).normalize() / 2,
-		bbe::Vector3(-0.5, -x,  0).normalize() / 2,
-		bbe::Vector3(0.5, -x,  0).normalize() / 2,
+		bbe::Vector3(-0.5, x, 0).normalize() / 2,
+		bbe::Vector3(0.5, x, 0).normalize() / 2,
+		bbe::Vector3(-0.5, -x, 0).normalize() / 2,
+		bbe::Vector3(0.5, -x, 0).normalize() / 2,
 
-		bbe::Vector3(0, -0.5,  x).normalize() / 2,
-		bbe::Vector3(0,  0.5,  x).normalize() / 2,
+		bbe::Vector3(0, -0.5, x).normalize() / 2,
+		bbe::Vector3(0, 0.5, x).normalize() / 2,
 		bbe::Vector3(0, -0.5, -x).normalize() / 2,
-		bbe::Vector3(0,  0.5, -x).normalize() / 2,
+		bbe::Vector3(0, 0.5, -x).normalize() / 2,
 
-		bbe::Vector3(x,  0, -0.5).normalize() / 2,
-		bbe::Vector3(x,  0,  0.5).normalize() / 2,
+		bbe::Vector3(x, 0, -0.5).normalize() / 2,
+		bbe::Vector3(x, 0, 0.5).normalize() / 2,
 		bbe::Vector3(-x, 0, -0.5).normalize() / 2,
-		bbe::Vector3(-x, 0,  0.5).normalize() / 2,
+		bbe::Vector3(-x, 0, 0.5).normalize() / 2,
 	};
 
-
 	indices = {
-		5,  11, 0,
-		1,  5,  0,
-		7,  1,  0,
-		10, 7,  0,
-		11, 10, 0,
+		5,
+		11,
+		0,
+		1,
+		5,
+		0,
+		7,
+		1,
+		0,
+		10,
+		7,
+		0,
+		11,
+		10,
+		0,
 
-		9, 5,  1,
-		4, 11, 5,
-		2, 10, 11,
-		6, 7,  10,
-		8, 1,  7,
+		9,
+		5,
+		1,
+		4,
+		11,
+		5,
+		2,
+		10,
+		11,
+		6,
+		7,
+		10,
+		8,
+		1,
+		7,
 
-		4, 9, 3,
-		2, 4, 3,
-		6, 2, 3,
-		8, 6, 3,
-		9, 8, 3,
+		4,
+		9,
+		3,
+		2,
+		4,
+		3,
+		6,
+		2,
+		3,
+		8,
+		6,
+		3,
+		9,
+		8,
+		3,
 
-		5,  9, 4,
-		11, 4, 2,
-		10, 2, 6,
-		7,  6, 8,
-		1,  8, 9,
+		5,
+		9,
+		4,
+		11,
+		4,
+		2,
+		10,
+		2,
+		6,
+		7,
+		6,
+		8,
+		1,
+		8,
+		9,
 	};
 
 	for (int i = 0; i < iterations; i++)
@@ -89,8 +128,7 @@ static void createIcoSphereMesh(bbe::List<uint32_t>& indices, bbe::List<bbe::INT
 					c, a, indices[k + 0],
 					a, b, indices[k + 1],
 					b, c, indices[k + 2],
-					c, b, a
-				);
+					c, b, a);
 			}
 			else
 			{
@@ -98,8 +136,7 @@ static void createIcoSphereMesh(bbe::List<uint32_t>& indices, bbe::List<bbe::INT
 					a, c, indices[k + 0],
 					b, a, indices[k + 1],
 					c, b, indices[k + 2],
-					b, c, a
-				);
+					b, c, a);
 			}
 		}
 
@@ -112,7 +149,7 @@ static void createIcoSphereMesh(bbe::List<uint32_t>& indices, bbe::List<bbe::INT
 	}
 }
 
-void bbe::INTERNAL::vulkan::VulkanSphere::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool& commandPool, VkQueue queue)
+void bbe::INTERNAL::vulkan::VulkanSphere::s_init(VkDevice device, VkPhysicalDevice physicalDevice, INTERNAL::vulkan::VulkanCommandPool &commandPool, VkQueue queue)
 {
 	bbe::List<uint32_t> indices;
 	bbe::List<bbe::INTERNAL::VertexWithNormal> vertices;
@@ -122,7 +159,7 @@ void bbe::INTERNAL::vulkan::VulkanSphere::s_init(VkDevice device, VkPhysicalDevi
 	amountOfIndices = static_cast<uint32_t>(indices.getLength());
 	s_indexBuffer.create(device, physicalDevice, sizeof(uint32_t) * amountOfIndices, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-	void* dataBuf = s_indexBuffer.map();
+	void *dataBuf = s_indexBuffer.map();
 	memcpy(dataBuf, indices.getRaw(), sizeof(uint32_t) * amountOfIndices);
 	s_indexBuffer.unmap();
 
