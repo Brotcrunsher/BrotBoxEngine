@@ -1,11 +1,13 @@
 #include "BBE/ChatGPTComm.h"
 #include "BBE/Logging.h"
-#include "BBE/SimpleUrlRequest.h"
-#include "BBE/SimpleFile.h"
 #include "BBE/Async.h"
 
 #include <iostream>
 #include <map>
+
+#ifdef BBE_ADD_CURL
+#include "BBE/SimpleFile.h"
+#include "BBE/SimpleUrlRequest.h"
 
 static bbe::List<char> sendRequestBinary(const std::string& url, const bbe::String& key, const std::string& jsonInput) {
 	auto response = bbe::simpleUrlRequest::urlRequest(
@@ -20,6 +22,7 @@ static bbe::List<char> sendRequestBinary(const std::string& url, const bbe::Stri
 static std::string sendRequest(const std::string& url, const bbe::String& key, const std::string& jsonInput) {
 	return sendRequestBinary(url, key, jsonInput).getRaw();
 }
+#endif
 
 bbe::ChatGPTComm::ChatGPTComm(const bbe::String& key) : key(key)
 {
@@ -33,6 +36,7 @@ bool bbe::ChatGPTComm::isKeySet() const
 
 bbe::ChatGPTQueryResponse bbe::ChatGPTComm::query(const bbe::String& msg)
 {
+#ifdef BBE_ADD_CURL
 	std::unique_lock ul(mutex);
 	// Add user's message to the conversation
 	history.push_back({ {"role", "user"}, {"content", msg.getRaw()} });
@@ -77,6 +81,11 @@ bbe::ChatGPTQueryResponse bbe::ChatGPTComm::query(const bbe::String& msg)
 	}
 
 	bbe::Crash(bbe::Error::IllegalState, "Error parsing API response");
+#else
+	(void)msg;
+	BBELOGLN("ChatGPTComm::query unavailable because BrotBoxEngine was built without curl support.");
+	return {};
+#endif
 }
 
 std::future<bbe::ChatGPTQueryResponse> bbe::ChatGPTComm::queryAsync(const bbe::String& msg)
@@ -86,6 +95,7 @@ std::future<bbe::ChatGPTQueryResponse> bbe::ChatGPTComm::queryAsync(const bbe::S
 
 bbe::Sound bbe::ChatGPTComm::synthesizeSpeech(const bbe::String& text)
 {
+#ifdef BBE_ADD_CURL
 	std::unique_lock ul(mutex);
 
 	nlohmann::json jsonData = {
@@ -101,6 +111,11 @@ bbe::Sound bbe::ChatGPTComm::synthesizeSpeech(const bbe::String& text)
 	bbe::Sound sound;
 	sound.load(soundData, bbe::SoundLoadFormat::MP3);
 	return sound;
+#else
+	(void)text;
+	BBELOGLN("ChatGPTComm::synthesizeSpeech unavailable because BrotBoxEngine was built without curl support.");
+	return {};
+#endif
 }
 
 std::future<bbe::Sound> bbe::ChatGPTComm::synthesizeSpeechAsync(const bbe::String& text)
@@ -110,6 +125,7 @@ std::future<bbe::Sound> bbe::ChatGPTComm::synthesizeSpeechAsync(const bbe::Strin
 
 bbe::String bbe::ChatGPTComm::transcribe(const bbe::Sound& sound)
 {
+#ifdef BBE_ADD_CURL
 	std::map<bbe::String, bbe::String> formFields = {
 		{"model", "whisper-1"}
 	};
@@ -128,6 +144,11 @@ bbe::String bbe::ChatGPTComm::transcribe(const bbe::Sound& sound)
 	);
 
 	return bbe::String(reinterpret_cast<const char*>(response.dataContainer.getRaw()));
+#else
+	(void)sound;
+	BBELOGLN("ChatGPTComm::transcribe unavailable because BrotBoxEngine was built without curl support.");
+	return {};
+#endif
 }
 
 
@@ -138,6 +159,7 @@ std::future<bbe::String> bbe::ChatGPTComm::transcribeAsync(const bbe::Sound& sou
 
 bbe::ChatGPTCreateImageResponse bbe::ChatGPTComm::createImage(const bbe::String& prompt, const bbe::Vector2i& size)
 {
+#ifdef BBE_ADD_CURL
 	std::unique_lock ul(mutex);
 
 	nlohmann::json jsonData = {
@@ -178,6 +200,12 @@ bbe::ChatGPTCreateImageResponse bbe::ChatGPTComm::createImage(const bbe::String&
 	retVal.loadRaw((bbe::byte*)imageData.dataContainer.getRaw(), imageData.dataContainer.getLength());
 
 	return { retVal, imageUrl.c_str() };
+#else
+	(void)prompt;
+	(void)size;
+	BBELOGLN("ChatGPTComm::createImage unavailable because BrotBoxEngine was built without curl support.");
+	return {};
+#endif
 }
 
 std::future<bbe::ChatGPTCreateImageResponse> bbe::ChatGPTComm::createImageAsync(const bbe::String& prompt, const bbe::Vector2i& size)
@@ -187,6 +215,7 @@ std::future<bbe::ChatGPTCreateImageResponse> bbe::ChatGPTComm::createImageAsync(
 
 bbe::String bbe::ChatGPTComm::describeImage(const nlohmann::json& requestJson)
 {
+#ifdef BBE_ADD_CURL
 	std::unique_lock ul(mutex);
 	bbe::String keyCopy = key;
 	ul.unlock(); // Making the actual sendRequest call outside the lock. This is what actually hangs and we shouldn't hold the lock longer than needed.
@@ -202,6 +231,11 @@ bbe::String bbe::ChatGPTComm::describeImage(const nlohmann::json& requestJson)
 		BBELOGLN(description.c_str());
 		bbe::Crash(bbe::Error::IllegalArgument, "See log msg");
 	}
+#else
+	(void)requestJson;
+	BBELOGLN("ChatGPTComm::describeImage unavailable because BrotBoxEngine was built without curl support.");
+	return {};
+#endif
 }
 
 bbe::String bbe::ChatGPTComm::describeImage(const bbe::String& url)
@@ -250,6 +284,7 @@ void bbe::ChatGPTComm::purgeMemory()
 
 bbe::List<bbe::String> bbe::ChatGPTComm::getAvailableModels() const
 {
+#ifdef BBE_ADD_CURL
 	std::unique_lock ul(mutex);
 	std::string url = "https://api.openai.com/v1/models";
 
@@ -274,4 +309,8 @@ bbe::List<bbe::String> bbe::ChatGPTComm::getAvailableModels() const
 	}
 
 	return models;
+#else
+	BBELOGLN("ChatGPTComm::getAvailableModels unavailable because BrotBoxEngine was built without curl support.");
+	return {};
+#endif
 }
