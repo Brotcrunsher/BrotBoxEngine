@@ -281,9 +281,7 @@ private:
 	SubsystemBrainTeaser brainTeasers = SubsystemBrainTeaser(this);
 #endif
 
-#ifdef _WIN32
 	bbe::SerializableList<ClipboardContent> clipboardContent = bbe::SerializableList<ClipboardContent>("Clipboard.dat", "ParanoiaConfig", bbe::Undoable::YES);
-#endif
 	bbe::SerializableObject<GeneralConfig> generalConfig = bbe::SerializableObject<GeneralConfig>("generalConfig.dat", "ParanoiaConfig");
 	bbe::SerializableList<Stopwatch> stopwatches = bbe::SerializableList<Stopwatch>("stopwatches.dat", "ParanoiaConfig");
 	bbe::SerializableList<RememberList> rememberLists = bbe::SerializableList<RememberList>("RememberLists.dat", "ParanoiaConfig");
@@ -387,10 +385,8 @@ private:
 			{ return tasks.drawTabViewTasks(getWindow()->getScale()); }});
 		mainTabs.add(Tab{"ETasks", "Edit Tasks", [this]()
 			{ return tasks.drawTabEditTasks(); }});
-#ifdef _WIN32
 		mainTabs.add(Tab{"Clpbrd", "Clipboard", [this]()
 			{ return drawTabClipboard(); }});
-#endif
 // mainTabs.add(Tab{"Brn-T", "Brain-Teaser", [this]() { return brainTeasers.drawTabBrainTeasers(*activeBrush); }});
 #ifdef _WIN32
 		mainTabs.add(Tab{"Stpwtch", "Stopwatch", [this]()
@@ -640,7 +636,6 @@ public:
 		}
 	}
 
-#ifdef _WIN32
 	void adaClipboardKey(int32_t key)
 	{
 		for (size_t i = 0; i < clipboardContent.getLength(); i++)
@@ -652,7 +647,6 @@ public:
 			}
 		}
 	}
-#endif
 
 	bbe::TimePoint getNightStart() const
 	{
@@ -1108,7 +1102,6 @@ public:
 #endif
 	}
 
-#ifdef _WIN32
 	bbe::Vector2 drawTabClipboard()
 	{
 		static ClipboardContent newContent;
@@ -1175,7 +1168,6 @@ public:
 		}
 		return bbe::Vector2(1);
 	}
-#endif
 
 	struct WeatherEntry
 	{
