@@ -254,8 +254,10 @@ class MyGame : public bbe::Game
 {
 private:
 	SubsystemTask tasks;
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 	SubsystemProcess processes;
+#endif
+#ifdef _WIN32
 	SubsystemUrl urls;
 #endif
 
@@ -915,7 +917,7 @@ public:
 			assetStore::AlmostNightTime()->play();
 		}
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 		beginMeasure("Process Stuff");
 		processes.update();
 #endif
@@ -951,7 +953,7 @@ public:
 			 monitorBrightness * generalConfig->baseMonitorBrightness2,
 			 monitorBrightness * generalConfig->baseMonitorBrightness3});
 #endif
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 		beginMeasure("Working Hours");
 		if (tasks.hasPotentialTaskComplaint())
 		{
@@ -963,7 +965,9 @@ public:
 			bool shouldPlayOpenTasks = !openTasksSilenced && processes.isGameOn();
 
 			// ... because urls.
+#ifdef _WIN32
 			shouldPlayOpenTasks |= !openTasksSilenced && urls.timeWasterFound();
+#endif
 			if (shouldPlayOpenTasks)
 			{
 				EVERY_MINUTES(15)
@@ -1710,7 +1714,7 @@ public:
 	bbe::Vector2 drawWarnings()
 	{
 		bbe::List<bbe::String> warnings = tasks.getWarnings();
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 		warnings.addList(processes.getWarnings());
 #endif
 		warnings.addList(getConsoleWarnings());
@@ -2886,7 +2890,7 @@ public:
 			}
 			ImGui::End();
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 			beginMeasure("Draw process window");
 			infoViewport.WorkPos.y = infoViewport.WorkSize.y;
 			ImGui::SetNextWindowPos(infoViewport.WorkPos);
@@ -2964,7 +2968,7 @@ public:
 				Tab{"Hstry", "History", [&]()
 					{ return tasks.drawTabHistoryView(); }},
 #endif
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 				Tab{"Wrns", "Warnings", [&]()
 					{ return drawWarnings(); }},
 #endif

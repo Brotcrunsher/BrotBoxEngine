@@ -1,70 +1,188 @@
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 #include "EMProcess.h"
+#include "BBE/ImGuiExtensions.h"
+
+#include <filesystem>
+
+#ifdef _WIN32
 #include <Windows.h>
 #include <tlhelp32.h>
 #include <psapi.h>
-#include "BBE/ImGuiExtensions.h"
+#elif defined(__linux__)
+#include <fstream>
+#endif
+
+namespace
+{
+	bool isMotherProcess(const bbe::String& scannedProcessName, const bbe::String& exePath)
+	{
+		if (scannedProcessName == "ExampleMother.exe" || scannedProcessName == "ExampleMother")
+		{
+			return true;
+		}
+
+		if (!exePath.isEmpty())
+		{
+			const bbe::String exeName = std::filesystem::path(exePath.getRaw()).filename().string().c_str();
+			return exeName == "ExampleMother.exe" || exeName == "ExampleMother";
+		}
+
+		return false;
+	}
+
+	bool shouldIgnoreProcess(const bbe::String& scannedProcessName)
+	{
+		return scannedProcessName.startsWith("AM_Delta_Patch_")
+			|| scannedProcessName.endsWith("_chrome_updater.exe")
+			|| scannedProcessName.startsWith("MicrosoftEdge_")
+			|| scannedProcessName.startsWith("kworker/");
+	}
+
+	void handleScannedProcess(const bbe::String& scannedProcessName,
+							  const bbe::String& exePath,
+							  bbe::SerializableList<Process>& processes,
+							  bbe::List<bbe::String>& foundGames,
+							  int32_t& motherPorcesses)
+	{
+		if (isMotherProcess(scannedProcessName, exePath))
+		{
+			motherPorcesses++;
+		}
+
+		if (shouldIgnoreProcess(scannedProcessName))
+		{
+			return;
+		}
+
+		for (size_t i = 0; i < processes.getLength(); i++)
+		{
+			if (processes[i].title == scannedProcessName)
+			{
+				if (processes[i].type == Process::TYPE_GAME)
+				{
+					foundGames.add(processes[i].title);
+				}
+				return;
+			}
+		}
+
+		Process newProcess;
+		newProcess.title = scannedProcessName;
+		newProcess.exePath = exePath;
+		processes.add(newProcess);
+	}
+
+#ifdef __linux__
+	bool isNumericDirectoryName(const std::string& name)
+	{
+		if (name.empty())
+		{
+			return false;
+		}
+
+		for (char c : name)
+		{
+			if (c < '0' || c > '9')
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bbe::String readLinuxProcessName(const std::filesystem::path& procPath)
+	{
+		std::ifstream file(procPath / "comm");
+		if (!file.is_open())
+		{
+			return "";
+		}
+
+		std::string line;
+		std::getline(file, line);
+		return bbe::String(line.c_str());
+	}
+
+	bbe::String readLinuxExePath(const std::filesystem::path& procPath)
+	{
+		std::error_code ec;
+		const auto exePath = std::filesystem::read_symlink(procPath / "exe", ec);
+		if (ec)
+		{
+			return "Failed to read /proc/<pid>/exe";
+		}
+		return bbe::String(exePath.string().c_str());
+	}
+#endif
+}
 
 void SubsystemProcess::update()
 {
 	EVERY_SECONDS(10)
 	{
 		motherPorcesses = 0;
+		foundGames.clear();
+#ifdef _WIN32
 		HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
 		PROCESSENTRY32 entry;
 		entry.dwSize = sizeof(entry);
 		BOOL hasEntry = Process32First(snapshot, &entry);
-		foundGames.clear();
 		while (hasEntry)
 		{
 			const bbe::String scannedProcessName = entry.szExeFile;
-			if (scannedProcessName == "ExampleMother.exe")
+			bbe::String exePath = "Failed to OpenProcess";
+			constexpr int32_t MAX_EXE_PATH_LENGTH = 1024;
+			char exePathBuffer[MAX_EXE_PATH_LENGTH];
+			auto entryHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, entry.th32ProcessID);
+			if (entryHandle)
 			{
-				motherPorcesses++;
+				if (GetModuleFileNameEx(entryHandle, 0, exePathBuffer, MAX_EXE_PATH_LENGTH))
+				{
+					exePath = exePathBuffer;
+				}
+				else
+				{
+					exePath = "Failed to GetModuleFileNameEx";
+				}
+				CloseHandle(entryHandle);
 			}
 
-			if (!scannedProcessName.startsWith("AM_Delta_Patch_") // Microsoft Anti-Malware Signature Delta Update Package
-				&& !scannedProcessName.endsWith("_chrome_updater.exe")
-				&& !scannedProcessName.startsWith("MicrosoftEdge_")
-				) 
-			{
-				bool found = false;
-				for (size_t i = 0; i < processes.getLength(); i++)
-				{
-					if (processes[i].title == entry.szExeFile)
-					{
-						if (processes[i].type == Process::TYPE_GAME) foundGames.add(processes[i].title);
-						found = true;
-					}
-				}
-				if (!found)
-				{
-					Process newProcess;
-					newProcess.title = entry.szExeFile;
-					constexpr int32_t MAX_EXE_PATH_LENGTH = 1024;
-					char exePathBuffer[MAX_EXE_PATH_LENGTH];
-					auto entryHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, entry.th32ProcessID);
-					if (entryHandle)
-					{
-						if (GetModuleFileNameEx(entryHandle, 0, exePathBuffer, MAX_EXE_PATH_LENGTH))
-						{
-							newProcess.exePath = exePathBuffer;
-						}
-						else
-						{
-							newProcess.exePath = "Failed to GetModuleFileNameEx";
-						}
-					}
-					else
-					{
-						newProcess.exePath = "Failed to OpenProcess";
-					}
-					processes.add(newProcess);
-				}
-			}
+			handleScannedProcess(scannedProcessName, exePath, processes, foundGames, motherPorcesses);
 			hasEntry = Process32Next(snapshot, &entry);
 		}
 		CloseHandle(snapshot);
+#elif defined(__linux__)
+		std::error_code ec;
+		for (const auto& entry : std::filesystem::directory_iterator("/proc", ec))
+		{
+			if (ec)
+			{
+				break;
+			}
+
+			if (!entry.is_directory(ec))
+			{
+				ec.clear();
+				continue;
+			}
+
+			const std::string directoryName = entry.path().filename().string();
+			if (!isNumericDirectoryName(directoryName))
+			{
+				continue;
+			}
+
+			const bbe::String scannedProcessName = readLinuxProcessName(entry.path());
+			if (scannedProcessName.isEmpty())
+			{
+				continue;
+			}
+
+			const bbe::String exePath = readLinuxExePath(entry.path());
+			handleScannedProcess(scannedProcessName, exePath, processes, foundGames, motherPorcesses);
+		}
+#endif
 	}
 }
 
@@ -86,7 +204,7 @@ void SubsystemProcess::drawGui(float scale)
 
 	for (size_t i = 0; i < foundGames.getLength(); i++)
 	{
-		ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), foundGames[i].getRaw());
+		ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "%s", foundGames[i].getRaw());
 	}
 
 	if (ImGui::BeginTable("tableProcesses", 2, ImGuiTableFlags_RowBg))
