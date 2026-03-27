@@ -28,9 +28,13 @@ namespace bbe
 			growIfNeeded(other.m_capacity, 0);
 			T* thisPtr = get();
 			const T* otherPtr = other.get();
-			for (size_t i = 0; i < m_capacity; i++)
+			for (size_t i = 0; i < other.m_capacity; i++)
 			{
 				thisPtr[i] = otherPtr[i];
+			}
+			for (size_t i = other.m_capacity; i < m_capacity; i++)
+			{
+				thisPtr[i] = T();
 			}
 		}
 
@@ -56,12 +60,21 @@ namespace bbe
 
 		SOOBlock& operator=(const SOOBlock& other)
 		{
+			if (this == &other)
+			{
+				return *this;
+			}
+
 			growIfNeeded(other.m_capacity, 0);
 			T* thisPtr = get();
 			const T* otherPtr = other.get();
-			for (size_t i = 0; i < m_capacity; i++)
+			for (size_t i = 0; i < other.m_capacity; i++)
 			{
 				thisPtr[i] = otherPtr[i];
+			}
+			for (size_t i = other.m_capacity; i < m_capacity; i++)
+			{
+				thisPtr[i] = T();
 			}
 			return *this;
 		}

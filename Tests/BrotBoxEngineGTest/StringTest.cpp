@@ -587,6 +587,23 @@ TEST(String, TotalStringTest)
 	}
 }
 
+TEST(String, AssignmentWithDifferentCapacities)
+{
+	bbe::String assignmentSource;
+	assignmentSource += "THIS STRING ";
+	assignmentSource += "WILL SWITCH ";
+	assignmentSource += "BETWEEN LOWER ";
+	assignmentSource += "AND UPPER CASE!";
+	ASSERT_EQ(assignmentSource.getCapacity(), 64u);
+
+	bbe::String assignmentDestination("short");
+	assignmentDestination.resizeCapacity(60);
+	ASSERT_EQ(assignmentDestination.getCapacity(), 60u);
+
+	assignmentDestination = assignmentSource;
+	ASSERT_EQ(assignmentDestination, assignmentSource);
+}
+
 // Test appending another Utf8String
 TEST(String, AppendUtf8String) {
 	bbe::String str1("Hello");
