@@ -1,5 +1,7 @@
 #include "BBE/BrotBoxEngine.h"
+#include "BBE/SimpleUrlRequest.h"
 #include "AssetStore.h"
+#include "nlohmann/json.hpp"
 #include <iostream>
 
 class MyGame : public bbe::Game
@@ -194,4 +196,3 @@ int main()
 	delete mg;
 #endif
 }
-
