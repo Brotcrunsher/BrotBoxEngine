@@ -2,119 +2,165 @@ name: CMake
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
+
+permissions:
+  contents: read
 
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
 
 jobs:
   build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runs_on }}
     strategy:
+      fail-fast: false
       matrix:
-        renderer: [Vulkan, OpenGL, NullRenderer]
         include:
-          - renderer: NullRenderer
-            execDryRuns: 1
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-latest
+          - name: Linux / Vulkan
+            runs_on: ubuntu-24.04
+            renderer: Vulkan
+          - name: Linux / OpenGL
+            runs_on: ubuntu-24.04
+            renderer: OpenGL
+          - name: Linux / NullRenderer
+            runs_on: ubuntu-24.04
+            renderer: NullRenderer
+            run_dry_runs: true
+          - name: Windows / OpenGL
+            runs_on: windows-2025
+            renderer: OpenGL
+          - name: Windows / NullRenderer
+            runs_on: windows-2025
+            renderer: NullRenderer
+            run_dry_runs: true
+          - name: macOS / OpenGL
+            runs_on: macos-15
+            renderer: OpenGL
+          - name: macOS / NullRenderer
+            runs_on: macos-15
+            renderer: NullRenderer
+            run_dry_runs: true
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Install Dependencies
-      run: sudo sed -i 's/azure\.//' /etc/apt/sources.list 
-           && sudo apt-get update 
-           && sudo apt-get install --fix-missing -y 
-               libxinerama-dev 
-               freeglut3-dev 
-               libvulkan-dev 
-               libdbus-1-dev
-               libdmx-dev 
-               xorg-dev
-               openssl
-               libssl-dev
-     
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBBE_RENDER_MODE=${{matrix.renderer}} -DGLFW_BUILD_WAYLAND=OFF
+      - uses: actions/checkout@v4
 
-    - name: Build
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-    - name: Test
-      working-directory: ${{github.workspace}}/build/bin
-      run: ASAN_OPTIONS=fast_unwind_on_malloc=0 ./BrotBoxEngineGTest && ./BrotBoxEngineTest
-      
-    - name: DryRuns
-      if: ${{ matrix.execDryRuns }}
-      working-directory: ${{github.workspace}}/build/bin
-      run: |
-           ./Example2DPhysicsBallPit
-           ./Example2DPhysicsChainReaction
-           ./Example3D
-           ./ExampleBalloonGame
-           ./ExampleConvexHull
-           ./ExampleCurves
-           ./ExampleDivergence
-           ./ExampleDoublePendulum
-           ./ExampleFlowField
-           ./ExampleMandelbrot
-           ./ExampleNeuralRocket
-           ./ExampleParticleGravity
-           ./ExampleParticleLife
-           ./ExamplePhasmophobiaCheatSheet
-           ./ExampleRotatingCubeIntersections
-           ./ExampleRotatingRectangleIntersections
-           ./ExampleSandGame
-           ./ExampleSnake
-           ./ExampleSnake3D
-           ./ExampleSound
-           ./ExampleSoundDataSource
-           ./ExampleTemplate
-           ./ExampleTesseract
-           ./ExampleTextRendering
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --fix-missing -y \
+            freeglut3-dev \
+            libdbus-1-dev \
+            libdmx-dev \
+            libssl-dev \
+            libvulkan-dev \
+            libxinerama-dev \
+            pkg-config \
+            python3-dev \
+            xorg-dev
 
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+            -DBBE_RENDER_MODE="${{ matrix.renderer }}" \
+            -DGLFW_BUILD_WAYLAND=OFF
+
+      - name: Build
+        run: cmake --build build --config "${BUILD_TYPE}" --parallel
+
+      - name: Test
+        run: |
+          if [ "${RUNNER_OS}" = "Linux" ]; then
+            export ASAN_OPTIONS=fast_unwind_on_malloc=0
+          fi
+
+          ctest --test-dir build -C "${BUILD_TYPE}" --output-on-failure
+
+      - name: DryRuns
+        if: ${{ matrix.run_dry_runs }}
+        run: |
+          bin_dir="build/bin"
+          if [ -d "${bin_dir}/${BUILD_TYPE}" ]; then
+            bin_dir="${bin_dir}/${BUILD_TYPE}"
+          fi
+
+          exe_suffix=""
+          if [ "${RUNNER_OS}" = "Windows" ]; then
+            exe_suffix=".exe"
+          fi
+
+          while IFS= read -r example; do
+            "${bin_dir}/${example}${exe_suffix}"
+          done <<'EOF'
+          Example2DPhysicsBallPit
+          Example2DPhysicsChainReaction
+          Example3D
+          ExampleBalloonGame
+          ExampleConvexHull
+          ExampleCurves
+          ExampleDivergence
+          ExampleDoublePendulum
+          ExampleFlowField
+          ExampleMandelbrot
+          ExampleNeuralRocket
+          ExampleParticleGravity
+          ExampleParticleLife
+          ExamplePhasmophobiaCheatSheet
+          ExampleRotatingCubeIntersections
+          ExampleRotatingRectangleIntersections
+          ExampleSandGame
+          ExampleSnake
+          ExampleSnake3D
+          ExampleSound
+          ExampleSoundDataSource
+          ExampleTemplate
+          ExampleTesseract
+          ExampleTextRendering
+          EOF
 
   build_emscripten:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-latest
+    name: Linux / Emscripten
+    runs-on: ubuntu-24.04
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Install Dependencies
-      run: sudo sed -i 's/azure\.//' /etc/apt/sources.list 
-           && sudo apt-get update 
-           && sudo apt-get install --fix-missing -y 
-               libxinerama-dev 
-               freeglut3-dev 
-               libvulkan-dev 
-               libdbus-1-dev
-               libdmx-dev 
-               xorg-dev
-               openssl
-               libssl-dev
-              python3
-              git
-              cmake
-    
-    - name: Install Emscripten
-      run: |
-           git clone https://github.com/emscripten-core/emsdk.git
-           cd emsdk
-           git pull
-           ./emsdk install latest
-           ./emsdk activate latest
-           source ./emsdk_env.sh
-           cd ..
-           emcmake cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Emscripten dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --fix-missing -y \
+            cmake \
+            git
+
+      - name: Install Emscripten SDK
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git
+          pushd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          source ./emsdk_env.sh
+          popd
+
+          emcmake cmake -S . -B build -DCMAKE_BUILD_TYPE="${BUILD_TYPE}"
+          cmake --build build --config "${BUILD_TYPE}" --parallel
