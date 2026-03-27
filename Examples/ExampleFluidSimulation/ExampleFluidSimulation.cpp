@@ -348,10 +348,10 @@ public:
 				const float valR = square.getDensityR(i, k);
 				const float valG = square.getDensityG(i, k);
 				const float valB = square.getDensityB(i, k);
-				char* c = (char*)&data[index];
-				c[0] = 255 * bbe::Math::min(valR, 1.f);
-				c[1] = 255 * bbe::Math::min(valG, 1.f);
-				c[2] = 255 * bbe::Math::min(valB, 1.f);
+				bbe::byte* c = reinterpret_cast<bbe::byte*>(&data[index]);
+				c[0] = static_cast<bbe::byte>(255 * bbe::Math::min(valR, 1.f));
+				c[1] = static_cast<bbe::byte>(255 * bbe::Math::min(valG, 1.f));
+				c[2] = static_cast<bbe::byte>(255 * bbe::Math::min(valB, 1.f));
 				c[3] = 255;
 			}
 		}

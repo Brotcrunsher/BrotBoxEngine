@@ -101,12 +101,12 @@ class SandGame : public bbe::Game
 			buttons.add(Button(
 				bbe::Vector2(10, 10 + i * 45),
 				bbe::Vector2(35, 35),
-				[=](bbe::Game& context, const bbe::Vector2& pos, const bbe::Vector2& dimension, bool leftClick, bool rightClick, bool middleClick) {
+				[this, currentBehaviour](bbe::Game& context, const bbe::Vector2& pos, const bbe::Vector2& dimension, bool leftClick, bool rightClick, bool middleClick) {
 					if (leftClick)   leftClickBehaviour = currentBehaviour;
 					if (rightClick)  rightClickBehaviour = currentBehaviour;
 					if (middleClick) middleClickBehaviour = currentBehaviour;
 				},
-				[=](bbe::PrimitiveBrush2D& brush, const bbe::Vector2& pos, const bbe::Vector2& dimension) {
+				[this, currentBehaviour](bbe::PrimitiveBrush2D& brush, const bbe::Vector2& pos, const bbe::Vector2& dimension) {
 					brush.setColorRGB(0, 0, 0, 1);
 					if (leftClickBehaviour == currentBehaviour)
 					{
@@ -136,12 +136,12 @@ class SandGame : public bbe::Game
 			buttons.add(Button(
 				bbe::Vector2(55, 10 + i * 45),
 				bbe::Vector2(35, 35),
-				[=](bbe::Game& context, const bbe::Vector2& pos, const bbe::Vector2& dimension, bool leftClick, bool rightClick, bool middleClick) {
+				[this, i](bbe::Game& context, const bbe::Vector2& pos, const bbe::Vector2& dimension, bool leftClick, bool rightClick, bool middleClick) {
 					if (leftClick)   leftClickRadius   = i + 1;
 					if (rightClick)  rightClickRadius  = i + 1;
 					if (middleClick) middleClickRadius = i + 1;
 				},
-				[=](bbe::PrimitiveBrush2D& brush, const bbe::Vector2& pos, const bbe::Vector2& dimension) {
+				[this, i](bbe::PrimitiveBrush2D& brush, const bbe::Vector2& pos, const bbe::Vector2& dimension) {
 					brush.setColorRGB(0, 0, 0, 1);
 					if (leftClickRadius == i + 1)
 					{

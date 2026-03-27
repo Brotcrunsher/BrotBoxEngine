@@ -137,6 +137,7 @@ class Tokenizer
 {
 public:
 	bbe::List<Token> tokens;
+	virtual ~Tokenizer() = default;
 
 	virtual void tokenize(const bbe::String& text, const bbe::Font& font) = 0;
 	virtual void determineTokenTypes(const bbe::List<bbe::String>& additionalTypes, const bbe::List<bbe::String>& additionalValues) = 0;

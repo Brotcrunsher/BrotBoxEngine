@@ -8,6 +8,7 @@
 #endif
 #include <sodium/crypto_pwhash_argon2id.h>
 #include <iostream>
+#include <cstdint>
 #include <mutex>
 #include <cmath>
 #include <vector>
@@ -93,7 +94,7 @@ struct SeenServerTaskId
 	BBE_SERIALIZABLE_DATA(
 		((bbe::String), id))
 
-	auto operator<=>(const SeenServerTaskId &) const = default;
+	bool operator==(const SeenServerTaskId &) const = default;
 };
 
 struct Stopwatch
@@ -443,6 +444,8 @@ public:
 	{
 		switch (getTrayIconCategory())
 		{
+		case IconCategory::NONE:
+			return trayIconsGreen;
 		case IconCategory::RED:
 			return trayIconsRed;
 		case IconCategory::GREEN:
@@ -2690,11 +2693,11 @@ public:
 				ImGui::Text(bbe::simpleFile::backup::async::hasOpenIO() ? "Saving" : "Done");
 				{
 					bbe::String s = "Night Start in: " + (getNightStart() - bbe::TimePoint()).toString();
-					ImGui::Text(s.getRaw());
+					ImGui::Text("%s", s.getRaw());
 				}
 				{
 					bbe::String s = "Task Heartbeat: " + tasks.getHeartbeat().toString();
-					ImGui::Text(s.getRaw());
+					ImGui::Text("%s", s.getRaw());
 				}
 				{
 					bbe::String s = "Last IO: " + bbe::simpleFile::getLastIo().toString();
@@ -2820,7 +2823,8 @@ public:
 				ImGui::SameLine();
 				if (ImGui::Button("Free Illegal!"))
 				{
-					free((void *)0x12345678);
+					volatile std::uintptr_t illegalPtrValue = 0x12345678u;
+					free(reinterpret_cast<void*>(static_cast<std::uintptr_t>(illegalPtrValue)));
 				}
 				ImGui::EndDisabled();
 
@@ -2885,7 +2889,7 @@ public:
 #endif
 
 				ImGui::NewLine();
-				ImGui::Text("Playing sounds: %d, Heartbeat: %lld", (int)getAmountOfPlayingSounds(), bbe::INTERNAL::SoundManager::getHeartbeatSignal());
+				ImGui::Text("Playing sounds: %d, Heartbeat: %lld", (int)getAmountOfPlayingSounds(), static_cast<long long>(bbe::INTERNAL::SoundManager::getHeartbeatSignal()));
 				drawMeasurement();
 			}
 			ImGui::End();

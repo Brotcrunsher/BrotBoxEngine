@@ -1,6 +1,5 @@
 #include "BBE/BrotBoxEngine.h"
 #include <iostream>
-#include <Windows.h>
 
 // TODO: Proper GUI
 // TODO: Layers

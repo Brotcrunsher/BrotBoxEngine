@@ -324,7 +324,7 @@ bool SubsystemTask::drawContingentButton(Task &t)
 int32_t SubsystemTask::drawTable(float scale, const char *title, const std::function<bool(Task &)> &predicate, bool &requiresWrite, bool showMoveToNow, bool showCountdown, bool showDone, bool showFollowUp, bool highlightRareTasks, bool showAdvancable, bool respectIndefinitelyFlag, bool sorted)
 {
 	int32_t amountDrawn = 0;
-	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), title);
+	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%s", title);
 	if (ImGui::BeginTable("table2", 7, ImGuiTableFlags_RowBg))
 	{
 		ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 200 * scale);
@@ -439,7 +439,7 @@ int32_t SubsystemTask::drawTable(float scale, const char *title, const std::func
 				const char *c = s.getRaw();
 				ImGui::SetCursorPosX(
 					+ImGui::GetCursorPosX() + ImGui::GetColumnWidth() - ImGui::CalcTextSize(c).x - ImGui::GetScrollX() - 10 * ImGui::GetStyle().ItemSpacing.x);
-				ImGui::Text(c);
+				ImGui::Text("%s", c);
 				ImGui::bbe::tooltip(t.nextPossibleExecution().toString());
 			}
 			ImGui::TableSetColumnIndex(column++);
@@ -464,7 +464,8 @@ int32_t SubsystemTask::drawTable(float scale, const char *title, const std::func
 							}
 							else if (!dur.isNegative())
 							{
-								ImGui::Text(dur.toString().getRaw());
+								const bbe::String durationString = dur.toString();
+								ImGui::Text("%s", durationString.getRaw());
 								showDoneButton = false;
 							}
 						}

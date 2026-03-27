@@ -22,87 +22,53 @@ public:
     virtual void onStart() override
     {
         // Initialize the list of available recipes
-        availableRecipes.add({ "Sine Wave", []() {
-            bbe::SoundGenerator::Recipe recipe;
-            recipe.offset = 0.0;
-            recipe.mult = 1.0;
-            recipe.details = bbe::SoundGenerator::RecipeSine{ 440.0 };
-            return recipe;
-        } });
+		availableRecipes.add(AvailableRecipe{ "Sine Wave", []() {
+			return bbe::SoundGenerator::Recipe(0.0, 1.0, bbe::SoundGenerator::RecipeSine{ 440.0 });
+		} });
 
-        availableRecipes.add({ "Square Wave", []() {
-            bbe::SoundGenerator::Recipe recipe;
-            recipe.offset = 0.0;
-            recipe.mult = 1.0;
-            recipe.details = bbe::SoundGenerator::RecipeSquare{ 0.01, 0.01, 1.0, -1.0 };
-            return recipe;
-        } });
+		availableRecipes.add(AvailableRecipe{ "Square Wave", []() {
+			return bbe::SoundGenerator::Recipe(0.0, 1.0, bbe::SoundGenerator::RecipeSquare{ 0.01, 0.01, 1.0, -1.0 });
+		} });
 
-        availableRecipes.add({ "Sawtooth Wave", []() {
-            bbe::SoundGenerator::Recipe recipe;
-            recipe.offset = 0.0;
-            recipe.mult = 1.0;
-            recipe.details = bbe::SoundGenerator::RecipeSawtooth{ 0.01 };
-            return recipe;
-        } });
+		availableRecipes.add(AvailableRecipe{ "Sawtooth Wave", []() {
+			return bbe::SoundGenerator::Recipe(0.0, 1.0, bbe::SoundGenerator::RecipeSawtooth{ 0.01 });
+		} });
 
-        availableRecipes.add({ "Triangle Wave", []() {
-            bbe::SoundGenerator::Recipe recipe;
-            recipe.offset = 0.0;
-            recipe.mult = 1.0;
-            recipe.details = bbe::SoundGenerator::RecipeTriangle{ 0.01, 0.01, 0.02, 0.02 };
-            return recipe;
-        } });
+		availableRecipes.add(AvailableRecipe{ "Triangle Wave", []() {
+			return bbe::SoundGenerator::Recipe(0.0, 1.0, bbe::SoundGenerator::RecipeTriangle{ 0.01, 0.01, 0.02, 0.02 });
+		} });
 
-        availableRecipes.add({ "ADSR Envelope", []() {
-            bbe::SoundGenerator::Recipe recipe;
-            recipe.offset = 0.0;
-            recipe.mult = 1.0;
-            recipe.details = bbe::SoundGenerator::RecipeADSR{ 0.1, 0.1, 0.7, 0.2 };
-            return recipe;
-        } });
+		availableRecipes.add(AvailableRecipe{ "ADSR Envelope", []() {
+			return bbe::SoundGenerator::Recipe(0.0, 0.0, bbe::SoundGenerator::RecipeADSR{ 0.1, 0.1, 0.7, 0.2 });
+		} });
 
-        availableRecipes.add({ "Normalization", []() {
-            bbe::SoundGenerator::Recipe recipe;
-            recipe.details = bbe::SoundGenerator::RecipeNormalization{};
-            return recipe;
-        } });
+		availableRecipes.add(AvailableRecipe{ "Normalization", []() {
+			return bbe::SoundGenerator::Recipe(0.0, 0.0, bbe::SoundGenerator::RecipeNormalization{});
+		} });
 
-        availableRecipes.add({ "Ring Modulation", []() {
-            bbe::SoundGenerator::Recipe recipe;
-            recipe.details = bbe::SoundGenerator::RecipeRingModulation{ 30.0, 0.5 };
-            return recipe;
-        } });
+		availableRecipes.add(AvailableRecipe{ "Ring Modulation", []() {
+			return bbe::SoundGenerator::Recipe(0.0, 1.0, bbe::SoundGenerator::RecipeRingModulation{ 30.0, 0.5 });
+		} });
 
-        availableRecipes.add({ "Chorus Effect", []() {
-            bbe::SoundGenerator::Recipe recipe;
-            recipe.details = bbe::SoundGenerator::RecipeChorusEffect{ 0.03, 0.003, 1.5 };
-            return recipe;
-        } });
+		availableRecipes.add(AvailableRecipe{ "Chorus Effect", []() {
+			return bbe::SoundGenerator::Recipe(0.0, 1.0, bbe::SoundGenerator::RecipeChorusEffect{ 0.03, 0.003, 1.5 });
+		} });
 
-        availableRecipes.add({ "Low Pass Filter", []() {
-            bbe::SoundGenerator::Recipe recipe;
-            recipe.details = bbe::SoundGenerator::RecipeLowPassFilter{ 1000.0 };
-            return recipe;
-        } });
+		availableRecipes.add(AvailableRecipe{ "Low Pass Filter", []() {
+			return bbe::SoundGenerator::Recipe(0.0, 1.0, bbe::SoundGenerator::RecipeLowPassFilter{ 1000.0 });
+		} });
 
-        availableRecipes.add({ "Bitcrusher", []() {
-            bbe::SoundGenerator::Recipe recipe;
-            recipe.details = bbe::SoundGenerator::RecipeBitcrusher{ 8 };
-            return recipe;
-        } });
+		availableRecipes.add(AvailableRecipe{ "Bitcrusher", []() {
+			return bbe::SoundGenerator::Recipe(0.0, 1.0, bbe::SoundGenerator::RecipeBitcrusher{ 8 });
+		} });
 
-        availableRecipes.add({ "Frequency Shifter", []() {
-            bbe::SoundGenerator::Recipe recipe;
-            recipe.details = bbe::SoundGenerator::RecipeFrequencyShifter{ 100.0 };
-            return recipe;
-        } });
+		availableRecipes.add(AvailableRecipe{ "Frequency Shifter", []() {
+			return bbe::SoundGenerator::Recipe(0.0, 1.0, bbe::SoundGenerator::RecipeFrequencyShifter{ 100.0 });
+		} });
 
-        availableRecipes.add({ "Echo", []() {
-            bbe::SoundGenerator::Recipe recipe;
-            recipe.details = bbe::SoundGenerator::RecipeEcho{ 0.3, 0.5 };
-            return recipe;
-        } });
+		availableRecipes.add(AvailableRecipe{ "Echo", []() {
+			return bbe::SoundGenerator::Recipe(0.0, 1.0, bbe::SoundGenerator::RecipeEcho{ 0.3, 0.5 });
+		} });
     }
 
     virtual void update(float timeSinceLastFrame) override
