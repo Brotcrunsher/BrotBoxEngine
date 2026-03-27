@@ -335,9 +335,7 @@ private:
 	bbe::SerializableList<ConsoleWarningIgnoreElement> cwiList = bbe::SerializableList<ConsoleWarningIgnoreElement>("CWIList.dat", "ParanoiaConfig");
 
 	bbe::ChatGPTComm chatGPTComm;						  // ChatGPT communication object
-#ifdef _WIN32
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
-#endif
 	std::future<bbe::Sound> chatGPTTTSFuture; // Future for TTS
 	bbe::Sound currentTTSSound;
 	bool ttsSoundSet = false;
@@ -443,16 +441,16 @@ private:
 			{ return drawTabRememberLists(); }});
 		mainTabs.add(Tab{"PW", "Password Manager", [this]()
 			{ return drawPasswordManager(); }});
-#ifdef _WIN32
 		mainTabs.add(Tab{"GPT", "ChatGPT", [this]()
 			{ return drawTabChatGPT(); }});
-#endif
 		mainTabs.add(Tab{"DE", "DALL E", [this]()
 			{ return drawTabDallE(*activeBrush); }});
 // mainTabs.add(Tab{"Mic", "Microphone Test", [this]() { return drawMicrophoneTest(); }});
 // mainTabs.add(Tab{"Ada", "AdafruitMacroPadRP2040", [this]() { return drawAdafruitMacroPadRP2040(*activeBrush); }});
 		mainTabs.add(Tab{"ENews", "Edit News", [this]()
 			{ return drawNewsConfig(); }});
+		// Intentionally Windows-only: this feature relies on desktop-global cursor confinement.
+		// That is not possible to implement properly on Linux/Wayland for an arbitrary screen-space rectangle.
 #ifdef _WIN32
 		mainTabs.add(Tab{"MW", "Mouse Walls", [this]()
 			{ return drawMouseWallsConfig(); }});
@@ -797,6 +795,8 @@ public:
 		}
 #endif
 
+		// Intentionally Windows-only: this needs desktop-global cursor confinement.
+		// Linux/Wayland does not allow this to be implemented properly for an arbitrary global rectangle.
 #ifdef _WIN32
 		beginMeasure("Mouse Wall");
 		if (mouseWallConfig->active && (!processes.isGameOn() || !mouseWallConfig->deactivateOnGame))
@@ -1611,6 +1611,8 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	// Intentionally Windows-only: this config drives Mouse Walls, which depends on desktop-global
+	// cursor confinement and therefore cannot be implemented properly on Linux/Wayland.
 #ifdef _WIN32
 	bbe::Vector2 drawMouseWallsConfig()
 	{
@@ -2590,7 +2592,6 @@ public:
 
 		return bbe::Vector2(1);
 	}
-#ifdef _WIN32
 	bbe::Vector2 drawTabChatGPT()
 	{
 		if (ImGui::bbe::InputText("API Key", chatGPTConfig->apiKey, ImGuiInputTextFlags_Password))
@@ -2720,7 +2721,6 @@ public:
 
 		return bbe::Vector2(1);
 	}
-#endif
 	bbe::Vector2 drawTabDallE(bbe::PrimitiveBrush2D &brush)
 	{
 		static std::future<bbe::ChatGPTCreateImageResponse> imageFuture;
