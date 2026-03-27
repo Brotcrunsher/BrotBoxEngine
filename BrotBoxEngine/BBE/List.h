@@ -527,22 +527,29 @@ namespace bbe
 
 		size_t removeAll(std::function<bool(const T &)> predicate)
 		{
-			size_t moveRange = 0;
+			size_t writeIndex = 0;
+			size_t removed = 0;
 			T *d = getRaw();
-			for (size_t i = 0; i < m_length; i++)
+			for (size_t readIndex = 0; readIndex < m_length; readIndex++)
 			{
-				if (predicate(d[i]))
+				if (predicate(d[readIndex]))
 				{
-					d[i].~T();
-					moveRange++;
+					d[readIndex].~T();
+					removed++;
 				}
-				else if (moveRange != 0)
+				else if (writeIndex != readIndex)
 				{
-					d[i - moveRange] = std::move(d[i]);
+					new (bbe::addressOf(d[writeIndex])) T(std::move(d[readIndex]));
+					d[readIndex].~T();
+					writeIndex++;
+				}
+				else
+				{
+					writeIndex++;
 				}
 			}
-			m_length -= moveRange;
-			return moveRange;
+			m_length = writeIndex;
+			return removed;
 		}
 
 		bool removeIndex(size_t index)

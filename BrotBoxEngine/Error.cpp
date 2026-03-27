@@ -5,9 +5,15 @@
 #include "../BBE/String.h"
 #include "../BBE/UtilDebug.h"
 #include <cstdlib>
+#include <sstream>
 #if __has_include(<stacktrace>)
+#include <stacktrace>
+#define BBE_HAS_STD_STACKTRACE 1
 #else
+#define BBE_HAS_STD_STACKTRACE 0
+#ifdef _MSC_VER
 #pragma warning("Stacktrace lib is not present!")
+#endif
 #endif
 
 const char *bbe::toString(Error err)
@@ -73,8 +79,10 @@ const char *bbe::toString(Error err)
 	string += "Where: " + bbe::String(file) + "(" + line + ")\n";
 	string += "       @" + bbe::String(function) + "\n\n";
 	string += "Stacktrace:\n";
-#ifdef WIN32 // TODO: GCC14 does support this! But it's currently hard to find a stable, easy to install version of it on debian and ubuntu...
-	string += std::to_string(std::stacktrace::current());
+#if defined(WIN32) && BBE_HAS_STD_STACKTRACE // TODO: GCC14 does support this! But it's currently hard to find a stable, easy to install version of it on debian and ubuntu...
+	std::ostringstream stacktraceStream;
+	stacktraceStream << std::stacktrace::current();
+	string += stacktraceStream.str();
 #else
 	string += "Stacktrace lib is not present!";
 #endif
