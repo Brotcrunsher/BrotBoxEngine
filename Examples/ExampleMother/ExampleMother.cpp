@@ -447,10 +447,8 @@ private:
 		mainTabs.add(Tab{"GPT", "ChatGPT", [this]()
 			{ return drawTabChatGPT(); }});
 #endif
-#ifdef _WIN32
 		mainTabs.add(Tab{"DE", "DALL E", [this]()
 			{ return drawTabDallE(*activeBrush); }});
-#endif
 // mainTabs.add(Tab{"Mic", "Microphone Test", [this]() { return drawMicrophoneTest(); }});
 // mainTabs.add(Tab{"Ada", "AdafruitMacroPadRP2040", [this]() { return drawAdafruitMacroPadRP2040(*activeBrush); }});
 		mainTabs.add(Tab{"ENews", "Edit News", [this]()
@@ -2723,7 +2721,6 @@ public:
 		return bbe::Vector2(1);
 	}
 #endif
-#ifdef _WIN32
 	bbe::Vector2 drawTabDallE(bbe::PrimitiveBrush2D &brush)
 	{
 		static std::future<bbe::ChatGPTCreateImageResponse> imageFuture;
@@ -2734,12 +2731,35 @@ public:
 		static float offsetY = 110;
 		static float sizeMult = 0.87f;
 		static bool chainMode = false;
+		static bbe::String errorString;
+
+#ifdef __linux__
+		if (ImGui::bbe::InputText("API Key", chatGPTConfig->apiKey, ImGuiInputTextFlags_Password))
+		{
+			chatGPTConfig.writeToFile();
+			chatGPTComm.key = chatGPTConfig->apiKey;
+			errorString = "";
+		}
+		if (!chatGPTComm.isKeySet())
+		{
+			ImGui::TextWrapped("Set an API key to generate images.");
+		}
+#endif
 
 		if (ImGui::bbe::InputText("prompt", dallEConfig->prompt, ImGuiInputTextFlags_EnterReturnsTrue))
 		{
-			imageFuture = chatGPTComm.createImageAsync(dallEConfig->prompt, {1792, 1024});
-			dallEConfig.writeToFile();
+			if (chatGPTComm.isKeySet())
+			{
+				errorString = "";
+				imageFuture = chatGPTComm.createImageAsync(dallEConfig->prompt, {1792, 1024});
+				dallEConfig.writeToFile();
+			}
+			else
+			{
+				errorString = "Please set the API key.";
+			}
 		}
+		ImGui::Text(errorString);
 		if (descriptionFuture.valid() && descriptionFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 		{
 			bbe::String description = descriptionFuture.get();
@@ -2797,7 +2817,6 @@ public:
 
 		return bbe::Vector2(101, 100.1f);
 	}
-#endif
 
 #ifdef ACTIVATE_ADA
 	bbe::Vector2 drawAdafruitMacroPadRP2040(bbe::PrimitiveBrush2D &brush)
