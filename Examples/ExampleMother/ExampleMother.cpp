@@ -443,10 +443,8 @@ private:
 			{ return drawNews(); }});
 #endif
 
-#ifdef _WIN32
 		superAdaptiveTabs.add(Tab{"Hstry", "History", [this]()
 			{ return tasks.drawTabHistoryView(); }});
-#endif
 #if defined(_WIN32) || defined(__linux__)
 		superAdaptiveTabs.add(Tab{"Wrns", "Warnings", [this]()
 			{ return drawWarnings(); }});
