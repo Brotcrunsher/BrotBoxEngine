@@ -95,6 +95,7 @@ std::future<bbe::ChatGPTQueryResponse> bbe::ChatGPTComm::queryAsync(const bbe::S
 	return bbe::async(&bbe::ChatGPTComm::query, this, msg);
 }
 
+#ifndef BBE_NO_AUDIO
 bbe::Sound bbe::ChatGPTComm::synthesizeSpeech(const bbe::String &text)
 {
 #ifdef BBE_ADD_CURL
@@ -156,6 +157,7 @@ std::future<bbe::String> bbe::ChatGPTComm::transcribeAsync(const bbe::Sound &sou
 {
 	return bbe::async(&bbe::ChatGPTComm::transcribe, this, sound);
 }
+#endif
 
 bbe::ChatGPTCreateImageResponse bbe::ChatGPTComm::createImage(const bbe::String &prompt, const bbe::Vector2i &size)
 {

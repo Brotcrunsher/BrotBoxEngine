@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef BBE_NO_AUDIO
+
 #include <thread>
 #include <mutex>
 
@@ -33,3 +35,5 @@ namespace bbe
 		bool isRecording() const;
 	};
 }
+
+#endif

@@ -8,6 +8,7 @@
 #include "BBE/StopWatch.h"
 #include "BBE/Window.h"
 #include <exception>
+#include <thread>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -882,7 +883,11 @@ void bbe::Game::drawMeasurement()
 
 size_t bbe::Game::getAmountOfPlayingSounds() const
 {
+#ifndef BBE_NO_AUDIO
 	return m_soundManager.getAmountOfPlayingSounds();
+#else
+	return 0;
+#endif
 }
 
 void *bbe::Game::getNativeWindowHandle()

@@ -5,9 +5,12 @@
 
 #include "../BBE/String.h"
 #include "../BBE/List.h"
-#include "../BBE/Sound.h"
 #include "../BBE/Image.h"
 #include "nlohmann/json.hpp"
+
+#ifndef BBE_NO_AUDIO
+#include "../BBE/Sound.h"
+#endif
 
 namespace bbe
 {
@@ -45,11 +48,13 @@ namespace bbe
 		ChatGPTQueryResponse query(const bbe::String &msg);
 		std::future<ChatGPTQueryResponse> queryAsync(const bbe::String &msg);
 
+#ifndef BBE_NO_AUDIO
 		bbe::Sound synthesizeSpeech(const bbe::String &text);
 		std::future<bbe::Sound> synthesizeSpeechAsync(const bbe::String &text);
 
 		bbe::String transcribe(const bbe::Sound &sound);
 		std::future<bbe::String> transcribeAsync(const bbe::Sound &sound);
+#endif
 
 		ChatGPTCreateImageResponse createImage(const bbe::String &prompt, const bbe::Vector2i &size);
 		std::future<ChatGPTCreateImageResponse> createImageAsync(const bbe::String &prompt, const bbe::Vector2i &size);

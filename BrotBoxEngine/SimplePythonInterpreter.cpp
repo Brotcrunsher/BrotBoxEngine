@@ -18,6 +18,7 @@ void bbe::simplePython::interpret(const bbe::String &code)
 	PyGILState_Release(state);
 }
 
+#ifndef BBE_NO_AUDIO
 bbe::Sound bbe::simplePython::gtts(const bbe::String &text, const bbe::String &lang)
 {
 	const bbe::String temp = "temporaryGTTSFile.mp3";
@@ -46,3 +47,4 @@ std::future<bbe::Sound> bbe::simplePython::gttsAsync(const bbe::String &text, co
 {
 	return bbe::async(&gtts, text, lang);
 }
+#endif

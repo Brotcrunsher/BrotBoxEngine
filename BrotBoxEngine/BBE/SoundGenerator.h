@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef BBE_NO_AUDIO
+
 #include <variant>
 #include "../BBE/BrotTime.h"
 #include "../BBE/Sound.h"
@@ -130,3 +132,5 @@ namespace bbe
 		void applyRecipeEcho(bbe::List<double> &signal, double offset, double mult, double delayTime, double decayFactor) const;
 	};
 }
+
+#endif
