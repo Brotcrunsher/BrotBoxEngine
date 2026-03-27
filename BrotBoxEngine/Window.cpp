@@ -6,6 +6,8 @@
 #include "BBE/MouseButtons.h"
 #include "BBE/FatalErrors.h"
 #include "BBE/Logging.h"
+#include <cstdlib>
+#include <cstring>
 #include <string>
 #include <unordered_map>
 #ifndef BBE_RENDERER_NULL
@@ -54,6 +56,20 @@ namespace
 	};
 
 	std::unordered_map<bbe::Window*, WindowRecreateState> g_windowRecreateStates;
+
+#if defined(__linux__) && defined(BBE_USE_WAYLAND_CLIPBOARD)
+	bool shouldPreferWaylandPlatform()
+	{
+		const char* xdgSessionType = std::getenv("XDG_SESSION_TYPE");
+		if (xdgSessionType != nullptr && std::strcmp(xdgSessionType, "wayland") == 0)
+		{
+			return true;
+		}
+
+		const char* waylandDisplay = std::getenv("WAYLAND_DISPLAY");
+		return waylandDisplay != nullptr && waylandDisplay[0] != '\0';
+	}
+#endif
 }
 
 
@@ -88,6 +104,12 @@ bbe::Window::Window(int width, int height, const char* title, bbe::Game* game, u
 	if (windowsAliveCounter == 0)
 	{
 		BBELOGLN("GLFWInit");
+#if defined(__linux__) && defined(BBE_USE_WAYLAND_CLIPBOARD)
+		if (shouldPreferWaylandPlatform())
+		{
+			glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
+		}
+#endif
 		if (glfwWrapper::glfwInit() == GLFW_FALSE)
 		{
 			bbe::INTERNAL::triggerFatalError("An error occurred while initializing GLFW.");

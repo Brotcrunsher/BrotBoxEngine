@@ -1,6 +1,12 @@
 #include "BBE/Image.h"
 #include "BBE/Error.h"
 #include "BBE/Math.h"
+#if defined(__linux__)
+#include "BBE/WaylandClipboard.h"
+#endif
+#include <cstdlib>
+#include <cstring>
+#include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -13,6 +19,40 @@
 #define NOMINMAX
 #include <Windows.h>
 #endif
+
+namespace
+{
+	std::vector<bbe::byte> encodeRawImageAsPng(const bbe::byte* imageData, int width, int height, size_t componentCount, size_t bytesPerChannel)
+	{
+		if (imageData == nullptr || bytesPerChannel != 1)
+		{
+			return {};
+		}
+
+		if (width <= 0 || height <= 0 || (componentCount != 1 && componentCount != 4))
+		{
+			return {};
+		}
+
+		const int componentCountInt = static_cast<int>(componentCount);
+		int pngLength = 0;
+		unsigned char* pngData = stbi_write_png_to_mem(
+			imageData,
+			width * componentCountInt,
+			width,
+			height,
+			componentCountInt,
+			&pngLength);
+		if (pngData == nullptr || pngLength <= 0)
+		{
+			return {};
+		}
+
+		std::vector<bbe::byte> retVal(pngData, pngData + pngLength);
+		std::free(pngData);
+		return retVal;
+	}
+}
 
 bool bbe::Image::finishLoad(stbi_uc* pixels)
 {
@@ -348,12 +388,52 @@ bool bbe::Image::supportsClipboardImages()
 {
 #ifdef _WIN32
 	return true;
+#elif defined(__linux__)
+	return bbe::INTERNAL::waylandClipboard::isSupported();
 #else
 	return false;
 #endif
 }
 
-#ifndef _WIN32
+#ifdef __linux__
+bool bbe::Image::isImageInClipbaord()
+{
+	return bbe::INTERNAL::waylandClipboard::isImageInClipboard();
+}
+
+bbe::Image bbe::Image::getClipboardImage()
+{
+	const bbe::ByteBuffer data = bbe::INTERNAL::waylandClipboard::getClipboardImageData();
+	if (data.getLength() == 0)
+	{
+		return bbe::Image();
+	}
+
+	bbe::Image retVal;
+	if (!retVal.loadRaw(data))
+	{
+		return bbe::Image();
+	}
+
+	return retVal;
+}
+
+void bbe::Image::copyToClipboard() const
+{
+	const std::vector<bbe::byte> pngData = encodeRawImageAsPng(
+		m_pdata.getRaw(),
+		getWidth(),
+		getHeight(),
+		getAmountOfChannels(),
+		getBytesPerChannel());
+	if (pngData.empty())
+	{
+		return;
+	}
+
+	bbe::INTERNAL::waylandClipboard::setClipboardImageData(pngData.data(), pngData.size(), "image/png");
+}
+#elif !defined(_WIN32)
 bool bbe::Image::isImageInClipbaord()
 {
 	return false;
