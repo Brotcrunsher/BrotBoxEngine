@@ -240,15 +240,23 @@ class MyGame : public bbe::Game
 		return lowerPath.endsWith(".png") || lowerPath.endsWith(LAYERED_FILE_EXTENSION);
 	}
 
-	void blendImageOntoImage(bbe::Image &target, const bbe::Image &image, const bbe::Vector2i &pos) const
+	void blendImageOntoImage(bbe::Image &target, const bbe::Image &image, const bbe::Vector2i &pos, bool repeated = false) const
 	{
 		for (int32_t x = 0; x < image.getWidth(); x++)
 		{
 			for (int32_t y = 0; y < image.getHeight(); y++)
 			{
-				const int32_t targetX = pos.x + x;
-				const int32_t targetY = pos.y + y;
-				if (targetX < 0 || targetY < 0 || targetX >= target.getWidth() || targetY >= target.getHeight()) continue;
+				int32_t targetX = pos.x + x;
+				int32_t targetY = pos.y + y;
+				if (repeated)
+				{
+					targetX = bbe::Math::mod<int32_t>(targetX, target.getWidth());
+					targetY = bbe::Math::mod<int32_t>(targetY, target.getHeight());
+				}
+				else
+				{
+					if (targetX < 0 || targetY < 0 || targetX >= target.getWidth() || targetY >= target.getHeight()) continue;
+				}
 
 				const bbe::Colori sourceColor = image.getPixel((size_t)x, (size_t)y);
 				if (sourceColor.a == 0) continue;
@@ -341,6 +349,13 @@ class MyGame : public bbe::Game
 	bbe::Vector2i toCanvasPixel(const bbe::Vector2 &pos) const
 	{
 		return bbe::Vector2i((int32_t)bbe::Math::floor(pos.x), (int32_t)bbe::Math::floor(pos.y));
+	}
+
+	bbe::Vector2i toTiledCanvasPixel(const bbe::Vector2 &pos)
+	{
+		bbe::Vector2 p = pos;
+		toTiledPos(p);
+		return toCanvasPixel(p);
 	}
 
 	bool clampRectToCanvas(const bbe::Rectanglei &rect, bbe::Rectanglei &outRect) const
@@ -470,7 +485,7 @@ class MyGame : public bbe::Game
 
 	void blendImageOntoCanvas(const bbe::Image &image, const bbe::Vector2i &pos)
 	{
-		blendImageOntoImage(getActiveLayerImage(), image, pos);
+		blendImageOntoImage(getActiveLayerImage(), image, pos, tiled);
 	}
 
 	void storeSelectionInClipboard()
@@ -559,8 +574,15 @@ class MyGame : public bbe::Game
 		blendImageOntoCanvas(selectionFloatingImage, selectionRect.getPos());
 		canvas.submit();
 
+		bbe::Vector2i displayPos = selectionRect.getPos();
+		if (tiled)
+		{
+			displayPos.x = bbe::Math::mod<int32_t>(displayPos.x, getCanvasWidth());
+			displayPos.y = bbe::Math::mod<int32_t>(displayPos.y, getCanvasHeight());
+		}
+
 		bbe::Rectanglei clampedRect;
-		if (!clampRectToCanvas(bbe::Rectanglei(selectionRect.x, selectionRect.y, selectionFloatingImage.getWidth(), selectionFloatingImage.getHeight()), clampedRect))
+		if (!clampRectToCanvas(bbe::Rectanglei(displayPos.x, displayPos.y, selectionFloatingImage.getWidth(), selectionFloatingImage.getHeight()), clampedRect))
 		{
 			clearSelectionState();
 			return;
@@ -571,6 +593,8 @@ class MyGame : public bbe::Game
 		selectionFloatingImage = {};
 		rectangleDraftActive = false;
 		rectangleDraftUsesRightColor = false;
+		circleDraftActive = false;
+		circleDraftUsesRightColor = false;
 	}
 
 	bool toImagePos(bbe::Vector2 &pos, int32_t width, int32_t height, bool repeated) const
@@ -686,7 +710,16 @@ class MyGame : public bbe::Game
 	bool buildRectangleDraftRect(const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect) const
 	{
 		bbe::Rectanglei baseRect;
-		if (!buildSelectionRect(pos1, pos2, baseRect))
+		if (tiled)
+		{
+			baseRect = buildRawRect(pos1, pos2);
+			if (baseRect.width <= 0 || baseRect.height <= 0)
+			{
+				outRect = {};
+				return false;
+			}
+		}
+		else if (!buildSelectionRect(pos1, pos2, baseRect))
 		{
 			outRect = {};
 			return false;
@@ -861,7 +894,12 @@ class MyGame : public bbe::Game
 		const bool shiftDown = isKeyDown(bbe::Key::LEFT_SHIFT) || isKeyDown(bbe::Key::RIGHT_SHIFT);
 		const bbe::Vector2i constrainedPixel = shiftDown ? constrainToSquare(circleDragStart, mousePixel) : mousePixel;
 		bbe::Rectanglei draftRect;
-		if (!buildSelectionRect(circleDragStart, constrainedPixel, draftRect))
+		if (tiled)
+		{
+			draftRect = buildRawRect(circleDragStart, constrainedPixel);
+		}
+		if ((!tiled && !buildSelectionRect(circleDragStart, constrainedPixel, draftRect))
+			|| draftRect.width <= 0 || draftRect.height <= 0)
 		{
 			circleDragPreviewRect = {};
 			circleDragPreviewImage = {};
@@ -896,7 +934,17 @@ class MyGame : public bbe::Game
 	{
 		const bool shiftDown = isKeyDown(bbe::Key::LEFT_SHIFT) || isKeyDown(bbe::Key::RIGHT_SHIFT);
 		const bbe::Vector2i constrainedPixel = shiftDown ? constrainToSquare(circleDragStart, mousePixel) : mousePixel;
-		if (!buildSelectionRect(circleDragStart, constrainedPixel, circleDragPreviewRect))
+		if (tiled)
+		{
+			circleDragPreviewRect = buildRawRect(circleDragStart, constrainedPixel);
+			if (circleDragPreviewRect.width <= 0 || circleDragPreviewRect.height <= 0)
+			{
+				circleDragPreviewRect = {};
+				circleDragPreviewImage = {};
+				return;
+			}
+		}
+		else if (!buildSelectionRect(circleDragStart, constrainedPixel, circleDragPreviewRect))
 		{
 			circleDragPreviewRect = {};
 			circleDragPreviewImage = {};
