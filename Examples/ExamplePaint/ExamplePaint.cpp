@@ -67,8 +67,31 @@ class MyGame : public bbe::Game
 	bbe::Vector2i selectionDragStart;
 	bool selectionMoveActive = false;
 	bbe::Vector2i selectionMoveOffset;
+	enum class SelectionHitZone
+	{
+		NONE,
+		INSIDE,
+		LEFT,
+		RIGHT,
+		TOP,
+		BOTTOM,
+		TOP_LEFT,
+		TOP_RIGHT,
+		BOTTOM_LEFT,
+		BOTTOM_RIGHT,
+	};
+	bool selectionResizeActive = false;
+	SelectionHitZone selectionResizeZone = SelectionHitZone::NONE;
+	bbe::Rectanglei selectionInteractionStartRect;
 	bbe::Rectanglei selectionPreviewRect;
 	bbe::Image selectionPreviewImage;
+	bool rectangleDraftActive = false;
+	bool rectangleDraftUsesRightColor = false;
+	bool rectangleDragActive = false;
+	bool rectangleDragUsesRightColor = false;
+	bbe::Vector2i rectangleDragStart;
+	bbe::Rectanglei rectangleDragPreviewRect;
+	bbe::Image rectangleDragPreviewImage;
 
 	void prepareImageForCanvas(bbe::Image &image) const
 	{
@@ -87,8 +110,18 @@ class MyGame : public bbe::Game
 		selectionDragStart = {};
 		selectionMoveActive = false;
 		selectionMoveOffset = {};
+		selectionResizeActive = false;
+		selectionResizeZone = SelectionHitZone::NONE;
+		selectionInteractionStartRect = {};
 		selectionPreviewRect = {};
 		selectionPreviewImage = {};
+		rectangleDraftActive = false;
+		rectangleDraftUsesRightColor = false;
+		rectangleDragActive = false;
+		rectangleDragUsesRightColor = false;
+		rectangleDragStart = {};
+		rectangleDragPreviewRect = {};
+		rectangleDragPreviewImage = {};
 	}
 
 	void selectWholeLayer()
@@ -99,17 +132,10 @@ class MyGame : public bbe::Game
 		}
 		if (getCanvasWidth() <= 0 || getCanvasHeight() <= 0) return;
 
+		clearSelectionState();
 		mode = MODE_SELECTION;
 		hasSelection = true;
 		selectionRect = bbe::Rectanglei(0, 0, getCanvasWidth(), getCanvasHeight());
-		selectionFloating = false;
-		selectionFloatingImage = {};
-		selectionDragActive = false;
-		selectionDragStart = {};
-		selectionMoveActive = false;
-		selectionMoveOffset = {};
-		selectionPreviewRect = {};
-		selectionPreviewImage = {};
 	}
 
 	int32_t getCanvasWidth() const
@@ -327,9 +353,53 @@ class MyGame : public bbe::Game
 		return clampRectToCanvas(bbe::Rectanglei(left, top, right - left + 1, bottom - top + 1), outRect);
 	}
 
+	bbe::Rectanglei buildRawRect(const bbe::Vector2i &pos1, const bbe::Vector2i &pos2) const
+	{
+		const int32_t left = bbe::Math::min(pos1.x, pos2.x);
+		const int32_t top = bbe::Math::min(pos1.y, pos2.y);
+		const int32_t right = bbe::Math::max(pos1.x, pos2.x);
+		const int32_t bottom = bbe::Math::max(pos1.y, pos2.y);
+		return bbe::Rectanglei(left, top, right - left + 1, bottom - top + 1);
+	}
+
 	bool isPointInSelection(const bbe::Vector2i &point) const
 	{
 		return hasSelection && selectionRect.isPointInRectangle(point, true);
+	}
+
+	bool isSelectionResizeHit(const SelectionHitZone hitZone) const
+	{
+		return hitZone != SelectionHitZone::NONE && hitZone != SelectionHitZone::INSIDE;
+	}
+
+	SelectionHitZone getSelectionHitZone(const bbe::Vector2i &point) const
+	{
+		if (!hasSelection || selectionRect.width <= 0 || selectionRect.height <= 0)
+		{
+			return SelectionHitZone::NONE;
+		}
+
+		const int32_t left = selectionRect.x;
+		const int32_t top = selectionRect.y;
+		const int32_t right = selectionRect.x + selectionRect.width - 1;
+		const int32_t bottom = selectionRect.y + selectionRect.height - 1;
+		const int32_t padding = bbe::Math::max<int32_t>(1, (int32_t)bbe::Math::ceil(6.0f / zoomLevel));
+
+		const bool nearLeft = point.x >= left - padding && point.x <= left + padding && point.y >= top - padding && point.y <= bottom + padding;
+		const bool nearRight = point.x >= right - padding && point.x <= right + padding && point.y >= top - padding && point.y <= bottom + padding;
+		const bool nearTop = point.y >= top - padding && point.y <= top + padding && point.x >= left - padding && point.x <= right + padding;
+		const bool nearBottom = point.y >= bottom - padding && point.y <= bottom + padding && point.x >= left - padding && point.x <= right + padding;
+
+		if (nearLeft && nearTop) return SelectionHitZone::TOP_LEFT;
+		if (nearRight && nearTop) return SelectionHitZone::TOP_RIGHT;
+		if (nearLeft && nearBottom) return SelectionHitZone::BOTTOM_LEFT;
+		if (nearRight && nearBottom) return SelectionHitZone::BOTTOM_RIGHT;
+		if (nearLeft) return SelectionHitZone::LEFT;
+		if (nearRight) return SelectionHitZone::RIGHT;
+		if (nearTop) return SelectionHitZone::TOP;
+		if (nearBottom) return SelectionHitZone::BOTTOM;
+		if (isPointInSelection(point)) return SelectionHitZone::INSIDE;
+		return SelectionHitZone::NONE;
 	}
 
 		bool isWholeLayerSelection(const bbe::Rectanglei &rect) const
@@ -447,7 +517,10 @@ class MyGame : public bbe::Game
 		selectionFloating = true;
 		selectionFloatingImage = image;
 		selectionRect = bbe::Rectanglei(pos.x, pos.y, image.getWidth(), image.getHeight());
+		rectangleDraftActive = false;
+		rectangleDraftUsesRightColor = false;
 		selectionMoveActive = false;
+		selectionResizeActive = false;
 		selectionDragActive = false;
 		selectionPreviewRect = {};
 		selectionPreviewImage = {};
@@ -470,33 +543,332 @@ class MyGame : public bbe::Game
 		selectionRect = clampedRect;
 		selectionFloating = false;
 		selectionFloatingImage = {};
+		rectangleDraftActive = false;
+		rectangleDraftUsesRightColor = false;
 	}
 
-	void applySelectionMove()
+	bool toImagePos(bbe::Vector2 &pos, int32_t width, int32_t height, bool repeated) const
 	{
-		if (!selectionMoveActive) return;
-
-		if (selectionFloating)
+		if (repeated)
 		{
-			selectionRect = selectionPreviewRect;
-			selectionMoveActive = false;
-			selectionPreviewRect = {};
-			selectionPreviewImage = {};
+			pos.x = bbe::Math::mod<float>(pos.x, width);
+			pos.y = bbe::Math::mod<float>(pos.y, height);
+			return true;
+		}
+
+		return pos.x >= 0 && pos.y >= 0 && pos.x < width && pos.y < height;
+	}
+
+	bool touchImage(bbe::Image &image, const bbe::Vector2 &touchPos, const bbe::Colori &color, int32_t toolBrushWidth, bool rectangleShape, bool repeated) const
+	{
+		bool changeRegistered = false;
+		for (int32_t i = -toolBrushWidth; i <= toolBrushWidth; i++)
+		{
+			for (int32_t k = -toolBrushWidth; k <= toolBrushWidth; k++)
+			{
+				float pencilStrength = bbe::Math::clamp01(toolBrushWidth - bbe::Math::sqrt(i * i + k * k));
+				if (rectangleShape)
+				{
+					if (i != -toolBrushWidth && i != toolBrushWidth && k != -toolBrushWidth && k != toolBrushWidth)
+					{
+						pencilStrength = 1.0f;
+					}
+					else
+					{
+						pencilStrength = 0.0f;
+					}
+				}
+				if (pencilStrength <= 0.f) continue;
+
+				bbe::Vector2 coord = touchPos + bbe::Vector2(i, k);
+				if (toImagePos(coord, image.getWidth(), image.getHeight(), repeated))
+				{
+					bbe::Colori newColor = color;
+					newColor.a = newColor.MAXIMUM_VALUE * pencilStrength;
+					const int32_t pixelX = (int32_t)coord.x;
+					const int32_t pixelY = (int32_t)coord.y;
+					bbe::Colori oldColor = image.getPixel((size_t)pixelX, (size_t)pixelY);
+					if (newColor.a > oldColor.a)
+					{
+						image.setPixel((size_t)pixelX, (size_t)pixelY, newColor);
+						changeRegistered = true;
+					}
+				}
+			}
+		}
+		return changeRegistered;
+	}
+
+	bool touchLineImage(bbe::Image &image, const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, const bbe::Colori &color, int32_t toolBrushWidth, bool rectangleShape, bool repeated) const
+	{
+		bool changeRegistered = false;
+		bbe::GridIterator gi(pos1, pos2);
+		while (gi.hasNext())
+		{
+			const bbe::Vector2 coordBase = gi.next().as<float>();
+			changeRegistered |= touchImage(image, coordBase, color, toolBrushWidth, rectangleShape, repeated);
+		}
+		return changeRegistered;
+	}
+
+	bbe::Image scaleImageNearest(const bbe::Image &image, int32_t width, int32_t height) const
+	{
+		if (width <= 0 || height <= 0) return {};
+		if (image.getWidth() == width && image.getHeight() == height) return image;
+
+		bbe::Image scaled(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
+		prepareImageForCanvas(scaled);
+		for (int32_t x = 0; x < width; x++)
+		{
+			for (int32_t y = 0; y < height; y++)
+			{
+				int32_t sourceX = (int32_t)((int64_t)x * image.getWidth() / width);
+				int32_t sourceY = (int32_t)((int64_t)y * image.getHeight() / height);
+				if (sourceX >= image.getWidth()) sourceX = image.getWidth() - 1;
+				if (sourceY >= image.getHeight()) sourceY = image.getHeight() - 1;
+				scaled.setPixel((size_t)x, (size_t)y, image.getPixel((size_t)sourceX, (size_t)sourceY));
+			}
+		}
+		return scaled;
+	}
+
+	bbe::Colori getRectangleDraftColor() const
+	{
+		return rectangleDraftUsesRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor();
+	}
+
+	bbe::Colori getRectangleDragColor() const
+	{
+		return rectangleDragUsesRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor();
+	}
+
+	int32_t getRectangleDraftPadding() const
+	{
+		return bbe::Math::max<int32_t>(brushWidth - 1, 0);
+	}
+
+	bbe::Rectanglei expandRectangleRect(const bbe::Rectanglei &rect) const
+	{
+		const int32_t padding = getRectangleDraftPadding();
+		return bbe::Rectanglei(
+			rect.x - padding,
+			rect.y - padding,
+			rect.width + padding * 2,
+			rect.height + padding * 2);
+	}
+
+	bool buildRectangleDraftRect(const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect) const
+	{
+		bbe::Rectanglei baseRect;
+		if (!buildSelectionRect(pos1, pos2, baseRect))
+		{
+			outRect = {};
+			return false;
+		}
+
+		outRect = expandRectangleRect(baseRect);
+		return true;
+	}
+
+	bbe::Image createRectangleImage(int32_t width, int32_t height, const bbe::Colori &color) const
+	{
+		if (width <= 0 || height <= 0) return {};
+
+		bbe::Image image(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
+		prepareImageForCanvas(image);
+
+		const int32_t padding = getRectangleDraftPadding();
+		const int32_t left = bbe::Math::min<int32_t>(padding, width - 1);
+		const int32_t top = bbe::Math::min<int32_t>(padding, height - 1);
+		const int32_t right = bbe::Math::max<int32_t>(left, width - padding - 1);
+		const int32_t bottom = bbe::Math::max<int32_t>(top, height - padding - 1);
+
+		const bbe::Vector2 topLeft((float)left, (float)top);
+		const bbe::Vector2 topRight((float)right, (float)top);
+		const bbe::Vector2 bottomLeft((float)left, (float)bottom);
+		const bbe::Vector2 bottomRight((float)right, (float)bottom);
+
+		touchLineImage(image, topLeft, topRight, color, brushWidth, !roundEdges, false);
+		touchLineImage(image, topRight, bottomRight, color, brushWidth, !roundEdges, false);
+		touchLineImage(image, bottomRight, bottomLeft, color, brushWidth, !roundEdges, false);
+		touchLineImage(image, bottomLeft, topLeft, color, brushWidth, !roundEdges, false);
+		return image;
+	}
+
+	bbe::Image createRectangleDraftImage(int32_t width, int32_t height) const
+	{
+		return createRectangleImage(width, height, getRectangleDraftColor());
+	}
+
+	bbe::Image createRectangleDragPreviewImage(int32_t width, int32_t height) const
+	{
+		return createRectangleImage(width, height, getRectangleDragColor());
+	}
+
+	void refreshActiveRectangleDraftImage()
+	{
+		if (!rectangleDraftActive) return;
+
+		if (selectionMoveActive || selectionResizeActive)
+		{
+			if (selectionPreviewRect.width > 0 && selectionPreviewRect.height > 0)
+			{
+				selectionPreviewImage = createRectangleDraftImage(selectionPreviewRect.width, selectionPreviewRect.height);
+			}
 			return;
 		}
 
-		if (selectionPreviewRect.x != selectionRect.x || selectionPreviewRect.y != selectionRect.y)
+		if (selectionRect.width > 0 && selectionRect.height > 0)
+		{
+			selectionFloatingImage = createRectangleDraftImage(selectionRect.width, selectionRect.height);
+		}
+	}
+
+	void beginSelectionMove(const bbe::Vector2i &mousePixel)
+	{
+		selectionMoveActive = true;
+		selectionMoveOffset = mousePixel - selectionRect.getPos();
+		selectionInteractionStartRect = selectionRect;
+		selectionPreviewRect = selectionRect;
+		selectionPreviewImage = selectionFloating ? selectionFloatingImage : copyCanvasRect(selectionRect);
+	}
+
+	void updateSelectionMovePreview(const bbe::Vector2i &mousePixel)
+	{
+		selectionPreviewRect = bbe::Rectanglei(
+			mousePixel.x - selectionMoveOffset.x,
+			mousePixel.y - selectionMoveOffset.y,
+			selectionPreviewImage.getWidth(),
+			selectionPreviewImage.getHeight());
+	}
+
+	void beginSelectionResize(const SelectionHitZone hitZone)
+	{
+		selectionResizeActive = true;
+		selectionResizeZone = hitZone;
+		selectionInteractionStartRect = selectionRect;
+		selectionPreviewRect = selectionRect;
+		selectionPreviewImage = selectionFloating ? selectionFloatingImage : copyCanvasRect(selectionRect);
+	}
+
+	void updateSelectionResizePreview(const bbe::Vector2i &mousePixel)
+	{
+		const int32_t originalLeft = selectionInteractionStartRect.x;
+		const int32_t originalTop = selectionInteractionStartRect.y;
+		const int32_t originalRight = selectionInteractionStartRect.x + selectionInteractionStartRect.width - 1;
+		const int32_t originalBottom = selectionInteractionStartRect.y + selectionInteractionStartRect.height - 1;
+
+		int32_t left = originalLeft;
+		int32_t top = originalTop;
+		int32_t right = originalRight;
+		int32_t bottom = originalBottom;
+
+		switch (selectionResizeZone)
+		{
+		case SelectionHitZone::LEFT:
+		case SelectionHitZone::TOP_LEFT:
+		case SelectionHitZone::BOTTOM_LEFT:
+			left = mousePixel.x;
+			break;
+		default:
+			break;
+		}
+		switch (selectionResizeZone)
+		{
+		case SelectionHitZone::RIGHT:
+		case SelectionHitZone::TOP_RIGHT:
+		case SelectionHitZone::BOTTOM_RIGHT:
+			right = mousePixel.x;
+			break;
+		default:
+			break;
+		}
+		switch (selectionResizeZone)
+		{
+		case SelectionHitZone::TOP:
+		case SelectionHitZone::TOP_LEFT:
+		case SelectionHitZone::TOP_RIGHT:
+			top = mousePixel.y;
+			break;
+		default:
+			break;
+		}
+		switch (selectionResizeZone)
+		{
+		case SelectionHitZone::BOTTOM:
+		case SelectionHitZone::BOTTOM_LEFT:
+		case SelectionHitZone::BOTTOM_RIGHT:
+			bottom = mousePixel.y;
+			break;
+		default:
+			break;
+		}
+
+		selectionPreviewRect = buildRawRect({ left, top }, { right, bottom });
+		if (rectangleDraftActive)
+		{
+			refreshActiveRectangleDraftImage();
+		}
+	}
+
+	bbe::Image buildSelectionPreviewResultImage() const
+	{
+		if (rectangleDraftActive)
+		{
+			return createRectangleDraftImage(selectionPreviewRect.width, selectionPreviewRect.height);
+		}
+
+		if (selectionPreviewRect.width != selectionPreviewImage.getWidth() || selectionPreviewRect.height != selectionPreviewImage.getHeight())
+		{
+			return scaleImageNearest(selectionPreviewImage, selectionPreviewRect.width, selectionPreviewRect.height);
+		}
+
+		return selectionPreviewImage;
+	}
+
+	void clearSelectionInteractionState()
+	{
+		selectionMoveActive = false;
+		selectionMoveOffset = {};
+		selectionResizeActive = false;
+		selectionResizeZone = SelectionHitZone::NONE;
+		selectionInteractionStartRect = {};
+		selectionPreviewRect = {};
+		selectionPreviewImage = {};
+	}
+
+	void applySelectionTransform()
+	{
+		if (!selectionMoveActive && !selectionResizeActive) return;
+
+		const bool rectChanged = selectionPreviewRect.x != selectionRect.x
+			|| selectionPreviewRect.y != selectionRect.y
+			|| selectionPreviewRect.width != selectionRect.width
+			|| selectionPreviewRect.height != selectionRect.height;
+
+		if (selectionFloating)
+		{
+			if (rectChanged)
+			{
+				selectionRect = selectionPreviewRect;
+				selectionFloatingImage = buildSelectionPreviewResultImage();
+			}
+			clearSelectionInteractionState();
+			return;
+		}
+
+		if (rectChanged)
 		{
 			clearCanvasRect(selectionRect);
 			selectionRect = selectionPreviewRect;
 			selectionFloating = true;
-			selectionFloatingImage = selectionPreviewImage;
+			selectionFloatingImage = buildSelectionPreviewResultImage();
+			rectangleDraftActive = false;
+			rectangleDraftUsesRightColor = false;
 			hasSelection = true;
 		}
 
-		selectionMoveActive = false;
-		selectionPreviewRect = {};
-		selectionPreviewImage = {};
+		clearSelectionInteractionState();
 	}
 
 	void updateSelectionTool(const bbe::Vector2 &currMousePos)
@@ -505,12 +877,14 @@ class MyGame : public bbe::Game
 
 		if (isMousePressed(bbe::MouseButton::LEFT))
 		{
-			if (isPointInSelection(mousePixel))
+			const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
+			if (isSelectionResizeHit(hitZone))
 			{
-				selectionMoveActive = true;
-				selectionMoveOffset = mousePixel - selectionRect.getPos();
-				selectionPreviewRect = selectionRect;
-				selectionPreviewImage = selectionFloating ? selectionFloatingImage : copyCanvasRect(selectionRect);
+				beginSelectionResize(hitZone);
+			}
+			else if (hitZone == SelectionHitZone::INSIDE)
+			{
+				beginSelectionMove(mousePixel);
 			}
 			else
 			{
@@ -534,11 +908,11 @@ class MyGame : public bbe::Game
 			}
 			if (selectionMoveActive)
 			{
-				selectionPreviewRect = bbe::Rectanglei(
-					mousePixel.x - selectionMoveOffset.x,
-					mousePixel.y - selectionMoveOffset.y,
-					selectionPreviewImage.getWidth(),
-					selectionPreviewImage.getHeight());
+				updateSelectionMovePreview(mousePixel);
+			}
+			if (selectionResizeActive)
+			{
+				updateSelectionResizePreview(mousePixel);
 			}
 		}
 
@@ -551,10 +925,129 @@ class MyGame : public bbe::Game
 				selectionPreviewRect = {};
 			}
 
-			if (selectionMoveActive)
+			if (selectionMoveActive || selectionResizeActive)
 			{
-				applySelectionMove();
+				applySelectionTransform();
 			}
+		}
+	}
+
+	void finalizeRectangleDrag(const bbe::Vector2i &mousePixel)
+	{
+		const bool useRightColor = rectangleDragUsesRightColor;
+		rectangleDragActive = false;
+
+		if (!buildRectangleDraftRect(rectangleDragStart, mousePixel, rectangleDragPreviewRect))
+		{
+			rectangleDragPreviewRect = {};
+			rectangleDragPreviewImage = {};
+			return;
+		}
+
+		const bbe::Rectanglei draftRect = rectangleDragPreviewRect;
+		const bbe::Image draftImage = rectangleDragPreviewImage.getWidth() > 0 && rectangleDragPreviewImage.getHeight() > 0
+			? rectangleDragPreviewImage
+			: createRectangleImage(draftRect.width, draftRect.height, useRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor());
+
+		clearSelectionState();
+		hasSelection = true;
+		selectionFloating = true;
+		selectionRect = draftRect;
+		rectangleDraftActive = true;
+		rectangleDraftUsesRightColor = useRightColor;
+		selectionFloatingImage = draftImage;
+		rectangleDragPreviewRect = {};
+		rectangleDragPreviewImage = {};
+	}
+
+	void beginRectangleDrag(const bbe::Vector2i &mousePixel, bool useRightColor)
+	{
+		rectangleDragActive = true;
+		rectangleDragUsesRightColor = useRightColor;
+		rectangleDragStart = mousePixel;
+		rectangleDragPreviewRect = {};
+		rectangleDragPreviewImage = {};
+	}
+
+	void updateRectangleDragPreview(const bbe::Vector2i &mousePixel)
+	{
+		if (!buildRectangleDraftRect(rectangleDragStart, mousePixel, rectangleDragPreviewRect))
+		{
+			rectangleDragPreviewRect = {};
+			rectangleDragPreviewImage = {};
+			return;
+		}
+
+		rectangleDragPreviewImage = createRectangleDragPreviewImage(rectangleDragPreviewRect.width, rectangleDragPreviewRect.height);
+	}
+
+	void updateRectangleTool(const bbe::Vector2 &currMousePos)
+	{
+		const bbe::Vector2i mousePixel = toCanvasPixel(currMousePos);
+		bool handledMousePress = false;
+
+		if (rectangleDraftActive)
+		{
+			if (isMousePressed(bbe::MouseButton::LEFT))
+			{
+				const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
+				if (isSelectionResizeHit(hitZone))
+				{
+					beginSelectionResize(hitZone);
+				}
+				else if (hitZone == SelectionHitZone::INSIDE)
+				{
+					beginSelectionMove(mousePixel);
+				}
+					else
+					{
+						commitFloatingSelection();
+						clearSelectionState();
+					}
+					handledMousePress = true;
+				}
+				if (!handledMousePress && isMousePressed(bbe::MouseButton::RIGHT))
+				{
+					commitFloatingSelection();
+					clearSelectionState();
+					handledMousePress = true;
+				}
+			}
+
+		if (!handledMousePress && !rectangleDraftActive)
+		{
+			if (isMousePressed(bbe::MouseButton::LEFT))
+			{
+				beginRectangleDrag(mousePixel, false);
+			}
+			else if (isMousePressed(bbe::MouseButton::RIGHT))
+			{
+				beginRectangleDrag(mousePixel, true);
+			}
+		}
+
+		if (selectionMoveActive && isMouseDown(bbe::MouseButton::LEFT))
+		{
+			updateSelectionMovePreview(mousePixel);
+		}
+		if (selectionResizeActive && isMouseDown(bbe::MouseButton::LEFT))
+		{
+			updateSelectionResizePreview(mousePixel);
+		}
+		if ((selectionMoveActive || selectionResizeActive) && isMouseReleased(bbe::MouseButton::LEFT))
+		{
+			applySelectionTransform();
+		}
+
+		if (!rectangleDragActive) return;
+		updateRectangleDragPreview(mousePixel);
+
+		const bool dragReleased = rectangleDragUsesRightColor
+			? isMouseReleased(bbe::MouseButton::RIGHT)
+			: isMouseReleased(bbe::MouseButton::LEFT);
+		if (dragReleased)
+		{
+			finalizeRectangleDrag(mousePixel);
 		}
 	}
 
@@ -990,52 +1483,12 @@ class MyGame : public bbe::Game
 
 	bool touch(const bbe::Vector2 &touchPos, bool rectangleShape = false)
 	{
-		bool changeRegistered = false;
-		for (int32_t i = -brushWidth; i <= brushWidth; i++)
-		{
-			for (int32_t k = -brushWidth; k <= brushWidth; k++)
-			{
-				float pencilStrength = bbe::Math::clamp01(brushWidth - bbe::Math::sqrt(i * i + k * k));
-				if (rectangleShape)
-				{
-					if (i != -brushWidth && i != brushWidth && k != -brushWidth && k != brushWidth)
-					{
-						pencilStrength = 1.0f;
-					}
-					else
-					{
-						pencilStrength = 0.0f;
-					}
-				}
-				if (pencilStrength <= 0.f) continue;
-
-				bbe::Vector2 coord = touchPos + bbe::Vector2(i, k);
-				if (toTiledPos(coord))
-				{
-					bbe::Colori newColor = getMouseColor();
-					newColor.a = newColor.MAXIMUM_VALUE * pencilStrength;
-					bbe::Colori oldWorkColor = workArea.getPixel(coord.x, coord.y);
-					if (newColor.a > oldWorkColor.a)
-					{
-						workArea.setPixel(coord.x, coord.y, newColor);
-						changeRegistered = true;
-					}
-				}
-			}
-		}
-		return changeRegistered;
+		return touchImage(workArea, touchPos, getMouseColor(), brushWidth, rectangleShape, tiled);
 	}
 
 	bool touchLine(const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, bool rectangleShape = false)
 	{
-		bool changeRegistered = false;
-		bbe::GridIterator gi(pos1, pos2);
-		while (gi.hasNext())
-		{
-			const bbe::Vector2 coordBase = gi.next().as<float>();
-			changeRegistered |= touch(coordBase, rectangleShape);
-		}
-		return changeRegistered;
+		return touchLineImage(workArea, pos1, pos2, getMouseColor(), brushWidth, rectangleShape, tiled);
 	}
 
 	virtual void onStart() override
@@ -1055,6 +1508,7 @@ class MyGame : public bbe::Game
 	{
 		const bbe::Vector2 prevMousePos = screenToCanvas(getMousePrevious());
 		const bool ctrlDown = isKeyDown(bbe::Key::LEFT_CONTROL) || isKeyDown(bbe::Key::RIGHT_CONTROL);
+		bool refreshRectangleDraft = false;
 		if (isKeyPressed(bbe::Key::SPACE))
 		{
 			resetCamera();
@@ -1131,6 +1585,7 @@ class MyGame : public bbe::Game
 		if (!ctrlDown && isKeyPressed(bbe::Key::X))
 		{
 			swapColors();
+			refreshRectangleDraft = rectangleDraftActive;
 		}
 		const bool increaseToolSize = isKeyTyped(bbe::Key::EQUAL)
 			|| isKeyTyped(bbe::Key::KP_ADD)
@@ -1138,9 +1593,14 @@ class MyGame : public bbe::Game
 		const bool decreaseToolSize = isKeyTyped(bbe::Key::MINUS) || isKeyTyped(bbe::Key::KP_SUBTRACT);
 		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE)
 		{
+			const int32_t previousBrushWidth = brushWidth;
 			if (increaseToolSize) brushWidth++;
 			if (decreaseToolSize) brushWidth--;
 			clampBrushWidth();
+			if (rectangleDraftActive && brushWidth != previousBrushWidth)
+			{
+				refreshRectangleDraft = true;
+			}
 		}
 		else if (mode == MODE_TEXT)
 		{
@@ -1172,6 +1632,7 @@ class MyGame : public bbe::Game
 			if (isKeyPressed(bbe::Key::D))
 			{
 				resetColorsToDefault();
+				refreshRectangleDraft = rectangleDraftActive;
 			}
 			if (isKeyPressed(bbe::Key::A))
 			{
@@ -1190,7 +1651,11 @@ class MyGame : public bbe::Game
 				pasteSelectionAt(toCanvasPixel(currMousePos));
 			}
 		}
-		if (selectionFloating && mode != MODE_SELECTION)
+		if (refreshRectangleDraft)
+		{
+			refreshActiveRectangleDraftImage();
+		}
+		if (selectionFloating && mode != MODE_SELECTION && !(mode == MODE_RECTANGLE && rectangleDraftActive))
 		{
 			commitFloatingSelection();
 		}
@@ -1209,6 +1674,10 @@ class MyGame : public bbe::Game
 		{
 			updateSelectionTool(currMousePos);
 		}
+		if (mode == MODE_RECTANGLE)
+		{
+			updateRectangleTool(currMousePos);
+		}
 		if (mode == MODE_TEXT && (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT)))
 		{
 			bbe::Vector2 pos = currMousePos;
@@ -1220,7 +1689,10 @@ class MyGame : public bbe::Game
 
 		// TODO: Would be nice if we had a constexpr list
 		const bbe::List<decltype(mode)> shadowDrawModes = { MODE_BRUSH };
-		const bool drawMode = mode != MODE_SELECTION && mode != MODE_TEXT && (isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT));
+		const bool drawMode = mode != MODE_SELECTION
+			&& mode != MODE_TEXT
+			&& mode != MODE_RECTANGLE
+			&& (isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT));
 
 		if (drawMode || shadowDrawModes.contains(mode))
 		{
@@ -1254,18 +1726,6 @@ class MyGame : public bbe::Game
 			{
 				clearWorkArea();
 				changeRegistered |= touchLine(currMousePos, startMousePos);
-			}
-			else if (mode == MODE_RECTANGLE)
-			{
-				clearWorkArea();
-				const bbe::Vector2 topLeft = startMousePos;
-				const bbe::Vector2 topRight = bbe::Vector2(currMousePos.x, startMousePos.y);
-				const bbe::Vector2 bottomLeft = bbe::Vector2(startMousePos.x, currMousePos.y);
-				const bbe::Vector2 bottomRight = currMousePos;
-				changeRegistered |= touchLine(topLeft, topRight, !roundEdges);
-				changeRegistered |= touchLine(topRight, bottomRight, !roundEdges);
-				changeRegistered |= touchLine(bottomRight, bottomLeft, !roundEdges);
-				changeRegistered |= touchLine(bottomLeft, topLeft, !roundEdges);
 			}
 			else if (mode == MODE_PIPETTE)
 			{
@@ -1335,19 +1795,38 @@ class MyGame : public bbe::Game
 		}
 		ImGui::EndDisabled();
 
-		ImGui::ColorEdit4("Left Color", leftColor);
-		ImGui::ColorEdit4("Right Color", rightColor);
+		const bool leftColorChanged = ImGui::ColorEdit4("Left Color", leftColor);
+		const bool rightColorChanged = ImGui::ColorEdit4("Right Color", rightColor);
+		if (rectangleDraftActive && ((leftColorChanged && !rectangleDraftUsesRightColor) || (rightColorChanged && rectangleDraftUsesRightColor)))
+		{
+			refreshActiveRectangleDraftImage();
+		}
 		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line", "Rectangle", "Selection", "Text", "Pipette" }, &mode);
 		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE)
 		{
 			if (ImGui::InputInt("Brush Width", &brushWidth))
 			{
 				clampBrushWidth();
+				if (rectangleDraftActive)
+				{
+					refreshActiveRectangleDraftImage();
+				}
 			}
 		}
 		if (mode == MODE_RECTANGLE)
 		{
-			ImGui::Checkbox("Round Edges", &roundEdges);
+			if (ImGui::Checkbox("Round Edges", &roundEdges) && rectangleDraftActive)
+			{
+				refreshActiveRectangleDraftImage();
+			}
+			if (rectangleDraftActive)
+			{
+				ImGui::Text("Click outside to place. Drag inside to move, on the border to resize.");
+			}
+			else
+			{
+				ImGui::Text("Drag to create a rectangle. The next click places it.");
+			}
 		}
 		if (mode == MODE_TEXT)
 		{
@@ -1493,9 +1972,15 @@ class MyGame : public bbe::Game
 				brush.fillLine(0, i, getWindowWidth(), i);
 			}
 		}
-		if (selectionMoveActive)
+		if (rectangleDragActive && rectangleDragPreviewRect.width > 0 && rectangleDragPreviewRect.height > 0)
 		{
-			brush.drawImage(selectionRectToScreen(selectionPreviewRect), selectionPreviewImage);
+			brush.drawImage(selectionRectToScreen(rectangleDragPreviewRect), rectangleDragPreviewImage);
+			drawSelectionOutline(brush, rectangleDragPreviewRect);
+		}
+		else if (selectionMoveActive || selectionResizeActive)
+		{
+			const bbe::Image previewImage = selectionResizeActive ? buildSelectionPreviewResultImage() : selectionPreviewImage;
+			brush.drawImage(selectionRectToScreen(selectionPreviewRect), previewImage);
 			drawSelectionOutline(brush, selectionPreviewRect);
 		}
 		else if (selectionFloating)
@@ -1633,6 +2118,8 @@ class MyGame : public bbe::Game
 				ImGui::SeparatorText("Selection");
 				ImGui::BulletText("Drag to create a rectangular selection");
 				ImGui::BulletText("Drag inside a selection to move it");
+				ImGui::BulletText("Drag the selection border to resize it");
+				ImGui::BulletText("Rectangle creates a floating selection first; click outside to place it");
 				ImGui::BulletText("Ctrl+A selects the whole active layer");
 				ImGui::BulletText("Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste");
 
