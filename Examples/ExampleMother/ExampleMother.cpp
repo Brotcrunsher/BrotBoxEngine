@@ -341,6 +341,7 @@ private:
 	bool openTasksSilencedIndefinitely = false;
 	bbe::TimePoint openTasksSilencedEnd = bbe::TimePoint::epoch();
 	bool showDebugStuff = false;
+	bool renderWhether = true;
 	bool ignoreNight = false;
 	bool tabSwitchRequestedLeft = false;
 	bool tabSwitchRequestedRight = false;
@@ -1237,6 +1238,10 @@ public:
 
 	void drawWeatherEntry(bbe::PrimitiveBrush2D &brush, const bbe::Vector2 &offset, const WeatherEntry &entry)
 	{
+		if (!renderWhether)
+		{
+			return;
+		}
 		constexpr signed fontSize = 15;
 		const bbe::List<std::pair<float, bbe::Color>> colorLerps = {
 			{ -10.0f, bbe::Color(0.8f, 0.8f, 1.0f) },
@@ -3062,6 +3067,7 @@ public:
 				ImGui::Checkbox(serverUnreachableString.getRaw(), &serverUnreachableSilenced);
 				ImGui::Checkbox("Silence Bitcoin Ath", &silenceBitcoinAth);
 				ImGui::Checkbox("Show Debug Stuff", &showDebugStuff);
+				ImGui::Checkbox("Render Whether", &renderWhether);
 
 #if defined(_WIN32) || defined(__linux__)
 				ImGui::Checkbox("Overwrite Monitor Brightness", &monitorBrightnessOverwrite);

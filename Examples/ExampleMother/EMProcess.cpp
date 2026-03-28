@@ -33,7 +33,7 @@ namespace
 
 	bool shouldIgnoreProcess(const bbe::String &scannedProcessName)
 	{
-		return scannedProcessName.startsWith("AM_Delta_Patch_") || scannedProcessName.endsWith("_chrome_updater.exe") || scannedProcessName.startsWith("MicrosoftEdge_") || scannedProcessName.startsWith("kworker/");
+		return scannedProcessName.startsWith("AM_Delta_Patch_") || scannedProcessName.endsWith("_chrome_updater.exe") || scannedProcessName.startsWith("MicrosoftEdge_") || scannedProcessName.startsWith("kworker/") || scannedProcessName.startsWith("nvidia-drm/timeline-");
 	}
 
 	void handleScannedProcess(const bbe::String &scannedProcessName,
