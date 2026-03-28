@@ -2,19 +2,41 @@
 #include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 
 // TODO: Proper GUI
-// TODO: Layers
 // TODO: Drag and Drop image files into paint
 // TODO: Circle tool
 // TODO: Flood fill with edges of brush tool kinda bad.
 // TODO: Bug: right click has weird behaviour with shadow
 
+struct PaintLayer
+{
+	bbe::String name = "";
+	bool visible = true;
+	bbe::Image image;
+};
+
+struct PaintDocument
+{
+	bbe::List<PaintLayer> layers;
+};
+
 class MyGame : public bbe::Game
 {
 	bbe::Vector2 offset;
 	bbe::String path;
-	bbe::UndoableObject<bbe::Image> canvas;
+	bbe::UndoableObject<PaintDocument> canvas;
+	int32_t activeLayerIndex = 0;
 	bbe::Image workArea;
 	float zoomLevel = 1.f;
+	bool openSaveChoicePopup = false;
+
+	enum class SaveFormat
+	{
+		PNG,
+		LAYERED,
+	};
+
+	static constexpr const char *LAYERED_FILE_MAGIC = "ExamplePaintLayeredV1";
+	static constexpr const char *LAYERED_FILE_EXTENSION = ".bbepaint";
 
 	float leftColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	float rightColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -69,6 +91,205 @@ class MyGame : public bbe::Game
 		selectionPreviewImage = {};
 	}
 
+	void selectWholeLayer()
+	{
+		if (selectionFloating)
+		{
+			commitFloatingSelection();
+		}
+		if (getCanvasWidth() <= 0 || getCanvasHeight() <= 0) return;
+
+		mode = MODE_SELECTION;
+		hasSelection = true;
+		selectionRect = bbe::Rectanglei(0, 0, getCanvasWidth(), getCanvasHeight());
+		selectionFloating = false;
+		selectionFloatingImage = {};
+		selectionDragActive = false;
+		selectionDragStart = {};
+		selectionMoveActive = false;
+		selectionMoveOffset = {};
+		selectionPreviewRect = {};
+		selectionPreviewImage = {};
+	}
+
+	int32_t getCanvasWidth() const
+	{
+		if (canvas.get().layers.isEmpty()) return 0;
+		return canvas.get().layers[0].image.getWidth();
+	}
+
+	int32_t getCanvasHeight() const
+	{
+		if (canvas.get().layers.isEmpty()) return 0;
+		return canvas.get().layers[0].image.getHeight();
+	}
+
+	void clampActiveLayerIndex()
+	{
+		if (canvas.get().layers.isEmpty())
+		{
+			activeLayerIndex = 0;
+			return;
+		}
+		activeLayerIndex = bbe::Math::clamp(activeLayerIndex, 0, (int32_t)canvas.get().layers.getLength() - 1);
+	}
+
+	PaintLayer &getActiveLayer()
+	{
+		clampActiveLayerIndex();
+		return canvas.get().layers[(size_t)activeLayerIndex];
+	}
+
+	const PaintLayer &getActiveLayer() const
+	{
+		if (canvas.get().layers.isEmpty()) bbe::Crash(bbe::Error::IllegalState);
+		const int32_t clampedIndex = bbe::Math::clamp(activeLayerIndex, 0, (int32_t)canvas.get().layers.getLength() - 1);
+		return canvas.get().layers[(size_t)clampedIndex];
+	}
+
+	bbe::Image &getActiveLayerImage()
+	{
+		return getActiveLayer().image;
+	}
+
+	const bbe::Image &getActiveLayerImage() const
+	{
+		return getActiveLayer().image;
+	}
+
+	void prepareLayer(PaintLayer &layer) const
+	{
+		prepareImageForCanvas(layer.image);
+	}
+
+	PaintLayer makeLayer(const bbe::String &name, int32_t width, int32_t height, const bbe::Color &color = bbe::Color(0.0f, 0.0f, 0.0f, 0.0f)) const
+	{
+		PaintLayer layer;
+		layer.name = name;
+		layer.visible = true;
+		layer.image = bbe::Image(width, height, color);
+		prepareLayer(layer);
+		return layer;
+	}
+
+	void prepareDocumentImages()
+	{
+		for (size_t i = 0; i < canvas.get().layers.getLength(); i++)
+		{
+			prepareLayer(canvas.get().layers[i]);
+		}
+	}
+
+	void prepareForLayerTargetChange()
+	{
+		commitFloatingSelection();
+		clearSelectionState();
+		clearWorkArea();
+	}
+
+	bool isLayeredDocumentPath(const bbe::String &filePath) const
+	{
+		return filePath.toLowerCase().endsWith(LAYERED_FILE_EXTENSION);
+	}
+
+	void blendImageOntoImage(bbe::Image &target, const bbe::Image &image, const bbe::Vector2i &pos) const
+	{
+		for (int32_t x = 0; x < image.getWidth(); x++)
+		{
+			for (int32_t y = 0; y < image.getHeight(); y++)
+			{
+				const int32_t targetX = pos.x + x;
+				const int32_t targetY = pos.y + y;
+				if (targetX < 0 || targetY < 0 || targetX >= target.getWidth() || targetY >= target.getHeight()) continue;
+
+				const bbe::Colori sourceColor = image.getPixel((size_t)x, (size_t)y);
+				if (sourceColor.a == 0) continue;
+
+				const bbe::Colori oldColor = target.getPixel((size_t)targetX, (size_t)targetY);
+				target.setPixel((size_t)targetX, (size_t)targetY, oldColor.blendTo(sourceColor));
+			}
+		}
+	}
+
+	bbe::Image flattenVisibleLayers() const
+	{
+		bbe::Image flattened(getCanvasWidth(), getCanvasHeight(), bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
+		prepareImageForCanvas(flattened);
+		for (size_t i = 0; i < canvas.get().layers.getLength(); i++)
+		{
+			const PaintLayer &layer = canvas.get().layers[i];
+			if (!layer.visible) continue;
+			blendImageOntoImage(flattened, layer.image, { 0, 0 });
+		}
+		return flattened;
+	}
+
+	bbe::Colori getVisiblePixel(size_t x, size_t y) const
+	{
+		bbe::Colori color(0, 0, 0, 0);
+		bool hasColor = false;
+		for (size_t i = 0; i < canvas.get().layers.getLength(); i++)
+		{
+			const PaintLayer &layer = canvas.get().layers[i];
+			if (!layer.visible) continue;
+
+			const bbe::Colori sourceColor = layer.image.getPixel(x, y);
+			if (sourceColor.a == 0) continue;
+
+			color = hasColor ? color.blendTo(sourceColor) : sourceColor;
+			hasColor = true;
+		}
+		return color;
+	}
+
+	bbe::String makeLayerName() const
+	{
+		return bbe::String("Layer ") + (canvas.get().layers.getLength() + 1);
+	}
+
+	void addLayer()
+	{
+		prepareForLayerTargetChange();
+		canvas.get().layers.add(makeLayer(makeLayerName(), getCanvasWidth(), getCanvasHeight()));
+		activeLayerIndex = (int32_t)canvas.get().layers.getLength() - 1;
+		canvas.submit();
+	}
+
+	void deleteActiveLayer()
+	{
+		if (canvas.get().layers.getLength() <= 1) return;
+		prepareForLayerTargetChange();
+		canvas.get().layers.removeIndex((size_t)activeLayerIndex);
+		clampActiveLayerIndex();
+		canvas.submit();
+	}
+
+	void moveActiveLayerUp()
+	{
+		if ((size_t)activeLayerIndex + 1 >= canvas.get().layers.getLength()) return;
+		prepareForLayerTargetChange();
+		canvas.get().layers.swap((size_t)activeLayerIndex, (size_t)activeLayerIndex + 1);
+		activeLayerIndex++;
+		canvas.submit();
+	}
+
+	void moveActiveLayerDown()
+	{
+		if (activeLayerIndex <= 0) return;
+		prepareForLayerTargetChange();
+		canvas.get().layers.swap((size_t)activeLayerIndex, (size_t)activeLayerIndex - 1);
+		activeLayerIndex--;
+		canvas.submit();
+	}
+
+	void setActiveLayerIndex(int32_t newIndex)
+	{
+		if (newIndex == activeLayerIndex) return;
+		prepareForLayerTargetChange();
+		activeLayerIndex = newIndex;
+		clampActiveLayerIndex();
+	}
+
 	bbe::Vector2i toCanvasPixel(const bbe::Vector2 &pos) const
 	{
 		return bbe::Vector2i((int32_t)bbe::Math::floor(pos.x), (int32_t)bbe::Math::floor(pos.y));
@@ -78,8 +299,8 @@ class MyGame : public bbe::Game
 	{
 		const int32_t left = bbe::Math::max<int32_t>(rect.x, 0);
 		const int32_t top = bbe::Math::max<int32_t>(rect.y, 0);
-		const int32_t right = bbe::Math::min<int32_t>(rect.x + rect.width - 1, canvas.get().getWidth() - 1);
-		const int32_t bottom = bbe::Math::min<int32_t>(rect.y + rect.height - 1, canvas.get().getHeight() - 1);
+		const int32_t right = bbe::Math::min<int32_t>(rect.x + rect.width - 1, getCanvasWidth() - 1);
+		const int32_t bottom = bbe::Math::min<int32_t>(rect.y + rect.height - 1, getCanvasHeight() - 1);
 
 		if (left > right || top > bottom)
 		{
@@ -113,7 +334,7 @@ class MyGame : public bbe::Game
 		{
 			for (int32_t y = 0; y < rect.height; y++)
 			{
-				copied.setPixel((size_t)x, (size_t)y, canvas.get().getPixel((size_t)(rect.x + x), (size_t)(rect.y + y)));
+				copied.setPixel((size_t)x, (size_t)y, getActiveLayerImage().getPixel((size_t)(rect.x + x), (size_t)(rect.y + y)));
 			}
 		}
 		return copied;
@@ -126,28 +347,14 @@ class MyGame : public bbe::Game
 		{
 			for (int32_t y = 0; y < rect.height; y++)
 			{
-				canvas.get().setPixel((size_t)(rect.x + x), (size_t)(rect.y + y), backgroundColor);
+				getActiveLayerImage().setPixel((size_t)(rect.x + x), (size_t)(rect.y + y), backgroundColor);
 			}
 		}
 	}
 
 	void blendImageOntoCanvas(const bbe::Image &image, const bbe::Vector2i &pos)
 	{
-		for (int32_t x = 0; x < image.getWidth(); x++)
-		{
-			for (int32_t y = 0; y < image.getHeight(); y++)
-			{
-				const int32_t targetX = pos.x + x;
-				const int32_t targetY = pos.y + y;
-				if (targetX < 0 || targetY < 0 || targetX >= canvas.get().getWidth() || targetY >= canvas.get().getHeight()) continue;
-
-				const bbe::Colori sourceColor = image.getPixel((size_t)x, (size_t)y);
-				if (sourceColor.a == 0) continue;
-
-				const bbe::Colori oldColor = canvas.get().getPixel((size_t)targetX, (size_t)targetY);
-				canvas.get().setPixel((size_t)targetX, (size_t)targetY, oldColor.blendTo(sourceColor));
-			}
-		}
+		blendImageOntoImage(getActiveLayerImage(), image, pos);
 	}
 
 	void storeSelectionInClipboard()
@@ -264,7 +471,7 @@ class MyGame : public bbe::Game
 			blendImageOntoCanvas(selectionPreviewImage, selectionPreviewRect.getPos());
 			canvas.submit();
 
-			if (!clampRectToCanvas(bbe::Rectanglei(selectionPreviewRect.x, selectionPreviewRect.y, selectionPreviewImage.getWidth(), selectionPreviewImage.getHeight()), selectionRect))
+				if (!clampRectToCanvas(bbe::Rectanglei(selectionPreviewRect.x, selectionPreviewRect.y, selectionPreviewImage.getWidth(), selectionPreviewImage.getHeight()), selectionRect))
 			{
 				clearSelectionState();
 				return;
@@ -411,7 +618,7 @@ class MyGame : public bbe::Game
 			{
 				const int32_t targetX = pos.x + x;
 				const int32_t targetY = pos.y + y;
-				if (targetX < 0 || targetY < 0 || targetX >= canvas.get().getWidth() || targetY >= canvas.get().getHeight()) continue;
+				if (targetX < 0 || targetY < 0 || targetX >= getCanvasWidth() || targetY >= getCanvasHeight()) continue;
 
 				const bbe::Colori glyphColor = glyph.getPixel((size_t)x, (size_t)y);
 				if (glyphColor.r == 0) continue;
@@ -419,8 +626,8 @@ class MyGame : public bbe::Game
 				bbe::Colori sourceColor = color;
 				sourceColor.a = static_cast<bbe::byte>((uint32_t(color.a) * uint32_t(glyphColor.r)) / 255u);
 
-				const bbe::Colori oldColor = canvas.get().getPixel((size_t)targetX, (size_t)targetY);
-				canvas.get().setPixel((size_t)targetX, (size_t)targetY, oldColor.blendTo(sourceColor));
+				const bbe::Colori oldColor = getActiveLayerImage().getPixel((size_t)targetX, (size_t)targetY);
+				getActiveLayerImage().setPixel((size_t)targetX, (size_t)targetY, oldColor.blendTo(sourceColor));
 			}
 		}
 	}
@@ -511,28 +718,170 @@ class MyGame : public bbe::Game
 		rightColor[3] = 1.0f;
 	}
 
-	void saveCanvas()
+	void serializeLayerImage(const bbe::Image &image, bbe::ByteBuffer &buffer) const
+	{
+		for (int32_t y = 0; y < image.getHeight(); y++)
+		{
+			for (int32_t x = 0; x < image.getWidth(); x++)
+			{
+				const bbe::Colori color = image.getPixel((size_t)x, (size_t)y);
+				uint8_t r = color.r;
+				uint8_t g = color.g;
+				uint8_t b = color.b;
+				uint8_t a = color.a;
+				buffer.write(r);
+				buffer.write(g);
+				buffer.write(b);
+				buffer.write(a);
+			}
+		}
+	}
+
+	bool deserializeLayerImage(bbe::ByteBufferSpan &span, int32_t width, int32_t height, bbe::Image &outImage) const
+	{
+		if (width <= 0 || height <= 0) return false;
+		outImage = bbe::Image(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
+		prepareImageForCanvas(outImage);
+
+		for (int32_t y = 0; y < height; y++)
+		{
+			for (int32_t x = 0; x < width; x++)
+			{
+				uint8_t r = 0;
+				uint8_t g = 0;
+				uint8_t b = 0;
+				uint8_t a = 0;
+				span.read(r);
+				span.read(g);
+				span.read(b);
+				span.read(a);
+				outImage.setPixel((size_t)x, (size_t)y, bbe::Colori(r, g, b, a));
+			}
+		}
+
+		return true;
+	}
+
+	bool saveLayeredDocument(const bbe::String &filePath)
 	{
 		commitFloatingSelection();
-		if (path.isEmpty())
+
+		bbe::ByteBuffer buffer;
+		buffer.writeNullString(LAYERED_FILE_MAGIC);
+
+		int32_t width = getCanvasWidth();
+		int32_t height = getCanvasHeight();
+		uint32_t layerCount = (uint32_t)canvas.get().layers.getLength();
+		int32_t storedActiveLayerIndex = activeLayerIndex;
+		buffer.write(width);
+		buffer.write(height);
+		buffer.write(layerCount);
+		buffer.write(storedActiveLayerIndex);
+
+		for (size_t i = 0; i < canvas.get().layers.getLength(); i++)
 		{
-			bbe::simpleFile::showSaveDialog(path, "png");
+			PaintLayer &layer = canvas.get().layers[i];
+			buffer.write(layer.visible);
+			buffer.write(layer.name);
+			serializeLayerImage(layer.image, buffer);
 		}
+
+		bbe::simpleFile::writeBinaryToFile(filePath, buffer);
+		return true;
+	}
+
+	bool loadLayeredDocument(const bbe::String &filePath)
+	{
+		bbe::ByteBuffer buffer = bbe::simpleFile::readBinaryFile(filePath);
+		if (buffer.getLength() == 0) return false;
+
+		bbe::ByteBufferSpan span = buffer.getSpan();
+		const bbe::String magic = span.readNullString();
+		if (magic != LAYERED_FILE_MAGIC) return false;
+
+		int32_t width = 0;
+		int32_t height = 0;
+		uint32_t layerCount = 0;
+		int32_t storedActiveLayerIndex = 0;
+		span.read(width);
+		span.read(height);
+		span.read(layerCount);
+		span.read(storedActiveLayerIndex);
+		if (width <= 0 || height <= 0 || layerCount == 0) return false;
+
+		PaintDocument document;
+		for (uint32_t i = 0; i < layerCount; i++)
+		{
+			PaintLayer layer;
+			span.read(layer.visible);
+			span.read(layer.name);
+			if (!deserializeLayerImage(span, width, height, layer.image))
+			{
+				return false;
+			}
+			document.layers.add(std::move(layer));
+		}
+
+		canvas.get() = std::move(document);
+		activeLayerIndex = storedActiveLayerIndex;
+		this->path = filePath;
+		setupCanvas();
+		clampActiveLayerIndex();
+		return true;
+	}
+
+	bool saveFlattenedPng(const bbe::String &filePath)
+	{
+		commitFloatingSelection();
+		flattenVisibleLayers().writeToFile(filePath);
+		return true;
+	}
+
+	bool saveDocumentToPath(const bbe::String &filePath)
+	{
+		if (isLayeredDocumentPath(filePath))
+		{
+			return saveLayeredDocument(filePath);
+		}
+		return saveFlattenedPng(filePath);
+	}
+
+	void saveDocumentAs(SaveFormat format)
+	{
+		bbe::String newPath = path;
+		const bbe::String defaultExtension = format == SaveFormat::PNG ? "png" : "bbepaint";
+		if (bbe::simpleFile::showSaveDialog(newPath, defaultExtension))
+		{
+			path = newPath;
+			saveDocumentToPath(path);
+		}
+	}
+
+	void requestSave()
+	{
 		if (!path.isEmpty())
 		{
-			canvas.get().writeToFile(path);
+			saveDocumentToPath(path);
+			return;
 		}
+
+		openSaveChoicePopup = true;
+	}
+
+	void saveCanvas()
+	{
+		requestSave();
 	}
 
 	void resetCamera()
 	{
-		offset = bbe::Vector2(getWindowWidth() / 2 - canvas.get().getWidth() / 2, getWindowHeight() / 2 - canvas.get().getHeight() / 2);
+		offset = bbe::Vector2(getWindowWidth() / 2 - getCanvasWidth() / 2, getWindowHeight() / 2 - getCanvasHeight() / 2);
 		zoomLevel = 1.f;
 	}
 
 	void clearWorkArea()
 	{
-		workArea = bbe::Image(canvas.get().getWidth(), canvas.get().getHeight(), bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
+		workArea = bbe::Image(getCanvasWidth(), getCanvasHeight(), bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
 		workArea.keepAfterUpload();
 		workArea.setFilterMode(bbe::ImageFilterMode::NEAREST);
 	}
@@ -547,9 +896,9 @@ class MyGame : public bbe::Game
 				const bbe::Colori c = workArea.getPixel(i, k);
 				if (c.a == 0) continue;
 
-				const bbe::Colori oldColor = canvas.get().getPixel(i, k);
+				const bbe::Colori oldColor = getActiveLayerImage().getPixel(i, k);
 				const bbe::Colori newColor = oldColor.blendTo(c);
-				canvas.get().setPixel(i, k, newColor);
+				getActiveLayerImage().setPixel(i, k, newColor);
 			}
 		}
 		clearWorkArea();
@@ -557,26 +906,40 @@ class MyGame : public bbe::Game
 
 	void setupCanvas()
 	{
-		canvas.get().keepAfterUpload();
-		canvas.get().setFilterMode(bbe::ImageFilterMode::NEAREST);
+		prepareDocumentImages();
 		clearWorkArea();
 		resetCamera();
 		clearSelectionState();
+		clampActiveLayerIndex();
 		canvas.clearHistory();
 	}
 
 	void newCanvas(uint32_t width, uint32_t height)
 	{
-		canvas.get() = bbe::Image(width, height, bbe::Color::white());
+		canvas.get().layers.clear();
+		canvas.get().layers.add(makeLayer("Layer 1", (int32_t)width, (int32_t)height, bbe::Color::white()));
+		activeLayerIndex = 0;
 		this->path = "";
 		setupCanvas();
 	}
 
-	void newCanvas(const char *path)
+	bool newCanvas(const char *path)
 	{
-		canvas.get() = bbe::Image(path);
+		if (isLayeredDocumentPath(path))
+		{
+			if (loadLayeredDocument(path))
+			{
+				return true;
+			}
+			return false;
+		}
+
+		canvas.get().layers.clear();
+		canvas.get().layers.add(PaintLayer{ "Layer 1", true, bbe::Image(path) });
+		activeLayerIndex = 0;
 		this->path = path;
 		setupCanvas();
+		return true;
 	}
 
 	bbe::Vector2 screenToCanvas(const bbe::Vector2 &pos)
@@ -588,13 +951,13 @@ class MyGame : public bbe::Game
 	{
 		if (tiled)
 		{
-			pos.x = bbe::Math::mod<float>(pos.x, canvas.get().getWidth());
-			pos.y = bbe::Math::mod<float>(pos.y, canvas.get().getHeight());
+			pos.x = bbe::Math::mod<float>(pos.x, getCanvasWidth());
+			pos.y = bbe::Math::mod<float>(pos.y, getCanvasHeight());
 			return true; // If we are tiled, then any position is always within the canvas.
 		}
 
 		// If we are not tiled, then we have to check if the pos is actually part of the canvas.
-		return pos.x >= 0 && pos.y >= 0 && pos.x < canvas.get().getWidth() && pos.y < canvas.get().getHeight();
+		return pos.x >= 0 && pos.y >= 0 && pos.x < getCanvasWidth() && pos.y < getCanvasHeight();
 	}
 
 	void changeZoom(float val)
@@ -697,10 +1060,10 @@ class MyGame : public bbe::Game
 			offset += getMouseDelta();
 			if (tiled)
 			{
-				if (offset.x < 0) offset.x += canvas.get().getWidth() * zoomLevel;
-				if (offset.y < 0) offset.y += canvas.get().getHeight() * zoomLevel;
-				if (offset.x > canvas.get().getWidth() * zoomLevel) offset.x -= canvas.get().getWidth() * zoomLevel;
-				if (offset.y > canvas.get().getHeight() * zoomLevel) offset.y -= canvas.get().getHeight() * zoomLevel;
+				if (offset.x < 0) offset.x += getCanvasWidth() * zoomLevel;
+				if (offset.y < 0) offset.y += getCanvasHeight() * zoomLevel;
+				if (offset.x > getCanvasWidth() * zoomLevel) offset.x -= getCanvasWidth() * zoomLevel;
+				if (offset.y > getCanvasHeight() * zoomLevel) offset.y -= getCanvasHeight() * zoomLevel;
 			}
 		}
 
@@ -765,8 +1128,20 @@ class MyGame : public bbe::Game
 
 		if (ctrlDown)
 		{
-			if (isKeyTyped(bbe::Key::Z) && canvas.isUndoable()) canvas.undo();
-			if (isKeyTyped(bbe::Key::Y) && canvas.isRedoable()) canvas.redo();
+			if (isKeyTyped(bbe::Key::Z) && canvas.isUndoable())
+			{
+				canvas.undo();
+				clampActiveLayerIndex();
+				clearSelectionState();
+				clearWorkArea();
+			}
+			if (isKeyTyped(bbe::Key::Y) && canvas.isRedoable())
+			{
+				canvas.redo();
+				clampActiveLayerIndex();
+				clearSelectionState();
+				clearWorkArea();
+			}
 			if (isKeyPressed(bbe::Key::S))
 			{
 				saveCanvas();
@@ -774,6 +1149,10 @@ class MyGame : public bbe::Game
 			if (isKeyPressed(bbe::Key::D))
 			{
 				resetColorsToDefault();
+			}
+			if (isKeyPressed(bbe::Key::A))
+			{
+				selectWholeLayer();
 			}
 			if (isKeyPressed(bbe::Key::C))
 			{
@@ -844,7 +1223,7 @@ class MyGame : public bbe::Game
 				bbe::Vector2 pos = screenToCanvas(getMouse());
 				if (toTiledPos(pos))
 				{
-					canvas.get().floodFill(pos.as<int32_t>(), getMouseColor(), false, tiled);
+					getActiveLayerImage().floodFill(pos.as<int32_t>(), getMouseColor(), false, tiled);
 					changeRegistered = true;
 				}
 			}
@@ -872,7 +1251,7 @@ class MyGame : public bbe::Game
 				{
 					const size_t x = (size_t)pos.x;
 					const size_t y = (size_t)pos.y;
-					const bbe::Colori color = canvas.get().getPixel(x, y);
+					const bbe::Colori color = getVisiblePixel(x, y);
 					if (isMouseDown(bbe::MouseButton::LEFT))
 					{
 						leftColor[0] = color.r / 255.f;
@@ -917,6 +1296,9 @@ class MyGame : public bbe::Game
 		if (ImGui::Button("Undo"))
 		{
 			canvas.undo();
+			clampActiveLayerIndex();
+			clearSelectionState();
+			clearWorkArea();
 		}
 		ImGui::EndDisabled();
 		ImGui::SameLine();
@@ -924,6 +1306,9 @@ class MyGame : public bbe::Game
 		if (ImGui::Button("Redo"))
 		{
 			canvas.redo();
+			clampActiveLayerIndex();
+			clearSelectionState();
+			clearWorkArea();
 		}
 		ImGui::EndDisabled();
 
@@ -954,7 +1339,7 @@ class MyGame : public bbe::Game
 		ImGui::BeginDisabled(!supportsClipboardImages);
 		if (ImGui::Button("Copy to Clipboard"))
 		{
-			canvas.get().copyToClipboard();
+			flattenVisibleLayers().copyToClipboard();
 		}
 		ImGui::EndDisabled();
 		if (supportsClipboardImages)
@@ -969,7 +1354,9 @@ class MyGame : public bbe::Game
 		ImGui::BeginDisabled(!supportsClipboardImages || !bbe::Image::isImageInClipbaord());
 		if (ImGui::Button("Paste"))
 		{
-			canvas.get() = bbe::Image::getClipboardImage();
+			canvas.get().layers.clear();
+			canvas.get().layers.add(PaintLayer{ "Layer 1", true, bbe::Image::getClipboardImage() });
+			path = "";
 			setupCanvas();
 		}
 		ImGui::EndDisabled();
@@ -1003,6 +1390,59 @@ class MyGame : public bbe::Game
 			}
 		}
 
+		ImGui::SeparatorText("Layers");
+		ImGui::BeginDisabled(canvas.get().layers.getLength() <= 1);
+		if (ImGui::Button("Delete Layer"))
+		{
+			deleteActiveLayer();
+		}
+		ImGui::EndDisabled();
+		ImGui::SameLine();
+		if (ImGui::Button("New Layer"))
+		{
+			addLayer();
+		}
+		ImGui::SameLine();
+		ImGui::BeginDisabled((size_t)activeLayerIndex + 1 >= canvas.get().layers.getLength());
+		if (ImGui::Button("Up"))
+		{
+			moveActiveLayerUp();
+		}
+		ImGui::EndDisabled();
+		ImGui::SameLine();
+		ImGui::BeginDisabled(activeLayerIndex <= 0);
+		if (ImGui::Button("Down"))
+		{
+			moveActiveLayerDown();
+		}
+		ImGui::EndDisabled();
+
+		if (!canvas.get().layers.isEmpty())
+		{
+			if (ImGui::bbe::InputText("Layer Name", getActiveLayer().name))
+			{
+				canvas.submit();
+			}
+		}
+
+		for (int32_t layerIndex = (int32_t)canvas.get().layers.getLength() - 1; layerIndex >= 0; layerIndex--)
+		{
+			PaintLayer &layer = canvas.get().layers[(size_t)layerIndex];
+			ImGui::PushID(layerIndex);
+			bool visible = layer.visible;
+			if (ImGui::Checkbox("##visible", &visible))
+			{
+				layer.visible = visible;
+				canvas.submit();
+			}
+			ImGui::SameLine();
+			if (ImGui::Selectable(layer.name.getRaw(), activeLayerIndex == layerIndex))
+			{
+				setActiveLayerIndex(layerIndex);
+			}
+			ImGui::PopID();
+		}
+
 		ImGui::SeparatorText("Shortcuts");
 		ImGui::Text("1 Brush | 2 Fill | 3 Line | 4 Rectangle | 5 Selection | 6 Text | 7 Pipette");
 		ImGui::Text("+/- Brush/Text Size | X Swap Colors | Ctrl+D Default Colors");
@@ -1014,8 +1454,13 @@ class MyGame : public bbe::Game
 		{
 			for (int32_t k = -repeats; k <= repeats; k++)
 			{
-				brush.drawImage(offset.x + i * canvas.get().getWidth() * zoomLevel, offset.y + k * canvas.get().getHeight() * zoomLevel, canvas.get().getWidth() * zoomLevel, canvas.get().getHeight() * zoomLevel, canvas.get());
-				brush.drawImage(offset.x + i * canvas.get().getWidth() * zoomLevel, offset.y + k * canvas.get().getHeight() * zoomLevel, canvas.get().getWidth() * zoomLevel, canvas.get().getHeight() * zoomLevel, workArea);
+				for (size_t layerIndex = 0; layerIndex < canvas.get().layers.getLength(); layerIndex++)
+				{
+					const PaintLayer &layer = canvas.get().layers[layerIndex];
+					if (!layer.visible) continue;
+					brush.drawImage(offset.x + i * getCanvasWidth() * zoomLevel, offset.y + k * getCanvasHeight() * zoomLevel, getCanvasWidth() * zoomLevel, getCanvasHeight() * zoomLevel, layer.image);
+				}
+				brush.drawImage(offset.x + i * getCanvasWidth() * zoomLevel, offset.y + k * getCanvasHeight() * zoomLevel, getCanvasWidth() * zoomLevel, getCanvasHeight() * zoomLevel, workArea);
 			}
 		}
 		if (zoomLevel > 3 && drawGridLines)
@@ -1070,24 +1515,23 @@ class MyGame : public bbe::Game
 				}
 				if (ImGui::MenuItem("Open..."))
 				{
-					if (bbe::simpleFile::showOpenDialog(path))
+					bbe::String newPath = path;
+					if (bbe::simpleFile::showOpenDialog(newPath))
 					{
-						newCanvas(path.getRaw());
+						newCanvas(newPath.getRaw());
 					}
 				}
 				if (ImGui::MenuItem("Save"))
 				{
 					saveCanvas();
 				}
-				if (ImGui::MenuItem("Save As..."))
+				if (ImGui::MenuItem("Save As PNG..."))
 				{
-					bbe::String newPath = path;
-					if (bbe::simpleFile::showSaveDialog(newPath, "png"))
-					{
-						path = newPath;
-						commitFloatingSelection();
-						canvas.get().writeToFile(path);
-					}
+					saveDocumentAs(SaveFormat::PNG);
+				}
+				if (ImGui::MenuItem("Save As Layered..."))
+				{
+					saveDocumentAs(SaveFormat::LAYERED);
 				}
 				ImGui::EndMenu();
 			}
@@ -1107,6 +1551,33 @@ class MyGame : public bbe::Game
 			ImGui::EndMainMenuBar();
 		}
 
+		if (openSaveChoicePopup)
+		{
+			ImGui::OpenPopup("Save Document");
+			openSaveChoicePopup = false;
+		}
+		if (ImGui::BeginPopupModal("Save Document", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Choose a save format for this document.");
+			if (ImGui::Button("PNG", ImVec2(120, 0)))
+			{
+				saveDocumentAs(SaveFormat::PNG);
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Layered", ImVec2(120, 0)))
+			{
+				saveDocumentAs(SaveFormat::LAYERED);
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
 		// Always center this window when appearing
 		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
@@ -1116,8 +1587,8 @@ class MyGame : public bbe::Game
 		if (openNewCanvas)
 		{
 			ImGui::OpenPopup("New Canvas");
-			newWidth = canvas.get().getWidth();
-			newHeight = canvas.get().getHeight();
+			newWidth = getCanvasWidth();
+			newHeight = getCanvasHeight();
 		}
 		if (ImGui::BeginPopupModal("New Canvas", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
