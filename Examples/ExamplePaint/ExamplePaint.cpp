@@ -1,7 +1,6 @@
 
 #include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 
-// TODO: Proper GUI
 // TODO: Circle tool
 // TODO: Flood fill with edges of brush tool kinda bad.
 // TODO: Bug: right click has weird behaviour with shadow
@@ -1831,8 +1830,18 @@ class MyGame : public bbe::Game
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
+		constexpr float PANEL_WIDTH = 260.f;
+		ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetFrameHeight()), ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(PANEL_WIDTH, (float)getWindowHeight() - ImGui::GetFrameHeight()), ImGuiCond_Always);
+		ImGui::Begin("##panel", nullptr,
+			ImGuiWindowFlags_NoTitleBar |
+			ImGuiWindowFlags_NoResize |
+			ImGuiWindowFlags_NoMove);
+
+		// --- Undo / Redo ---
+		const float halfW = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
 		ImGui::BeginDisabled(!canvas.isUndoable());
-		if (ImGui::Button("Undo"))
+		if (ImGui::Button("Undo", ImVec2(halfW, 0)))
 		{
 			canvas.undo();
 			clampActiveLayerIndex();
@@ -1842,7 +1851,7 @@ class MyGame : public bbe::Game
 		ImGui::EndDisabled();
 		ImGui::SameLine();
 		ImGui::BeginDisabled(!canvas.isRedoable());
-		if (ImGui::Button("Redo"))
+		if (ImGui::Button("Redo", ImVec2(halfW, 0)))
 		{
 			canvas.redo();
 			clampActiveLayerIndex();
@@ -1851,22 +1860,46 @@ class MyGame : public bbe::Game
 		}
 		ImGui::EndDisabled();
 
-		const bool leftColorChanged = ImGui::ColorEdit4("Left Color", leftColor);
-		const bool rightColorChanged = ImGui::ColorEdit4("Right Color", rightColor);
+		// --- Colors ---
+		ImGui::SeparatorText("Colors");
+		const bool leftColorChanged  = ImGui::ColorEdit4("Primary",   leftColor);
+		const bool rightColorChanged = ImGui::ColorEdit4("Secondary", rightColor);
 		if (rectangleDraftActive && ((leftColorChanged && !rectangleDraftUsesRightColor) || (rightColorChanged && rectangleDraftUsesRightColor)))
 		{
 			refreshActiveRectangleDraftImage();
 		}
-		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line", "Rectangle", "Selection", "Text", "Pipette" }, &mode);
+
+		// --- Tool ---
+		ImGui::SeparatorText("Tool");
+		{
+			const float w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+			auto toolBtn = [&](const char* label, int32_t toolMode)
+			{
+				const bool active = (mode == toolMode);
+				if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+				if (ImGui::Button(label, ImVec2(w, 0))) mode = toolMode;
+				if (active) ImGui::PopStyleColor();
+			};
+			toolBtn("Brush",     MODE_BRUSH);      ImGui::SameLine();
+			toolBtn("Fill",      MODE_FLOOD_FILL);
+			toolBtn("Line",      MODE_LINE);        ImGui::SameLine();
+			toolBtn("Rectangle", MODE_RECTANGLE);
+			toolBtn("Selection", MODE_SELECTION);   ImGui::SameLine();
+			toolBtn("Text",      MODE_TEXT);
+			toolBtn("Pipette",   MODE_PIPETTE);
+		}
+
+		// --- Tool options ---
+		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_TEXT)
+		{
+			ImGui::SeparatorText("Options");
+		}
 		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE)
 		{
-			if (ImGui::InputInt("Brush Width", &brushWidth))
+			if (ImGui::InputInt("Width", &brushWidth))
 			{
 				clampBrushWidth();
-				if (rectangleDraftActive)
-				{
-					refreshActiveRectangleDraftImage();
-				}
+				if (rectangleDraftActive) refreshActiveRectangleDraftImage();
 			}
 		}
 		if (mode == MODE_RECTANGLE)
@@ -1875,14 +1908,9 @@ class MyGame : public bbe::Game
 			{
 				refreshActiveRectangleDraftImage();
 			}
-			if (rectangleDraftActive)
-			{
-				ImGui::Text("Click outside to place. Drag inside to move, on the border to resize.");
-			}
-			else
-			{
-				ImGui::Text("Drag to create a rectangle. The next click places it.");
-			}
+			ImGui::TextDisabled(rectangleDraftActive
+				? "Drag inside/border to move/resize.\nClick outside to place."
+				: "Drag to draw. Click outside to place.");
 		}
 		if (mode == MODE_TEXT)
 		{
@@ -1890,27 +1918,36 @@ class MyGame : public bbe::Game
 			{
 				clampTextFontSize();
 			}
-			ImGui::InputTextMultiline("Text", textBuffer, sizeof(textBuffer), ImVec2(0, ImGui::GetTextLineHeight() * 5.0f));
-			ImGui::Text("Left/Right click places text with the active color.");
+			ImGui::InputTextMultiline("##text", textBuffer, sizeof(textBuffer), ImVec2(-1, ImGui::GetTextLineHeight() * 4.0f));
+			ImGui::TextDisabled("L/R click places text.");
 		}
+
+		// --- Selection actions ---
+		if (mode == MODE_SELECTION)
+		{
+			ImGui::SeparatorText("Selection");
+			ImGui::BeginDisabled(!hasSelection);
+			if (ImGui::Button("Copy",   ImVec2(-1, 0))) storeSelectionInClipboard();
+			if (ImGui::Button("Cut",    ImVec2(-1, 0))) cutSelection();
+			if (ImGui::Button("Delete", ImVec2(-1, 0))) deleteSelection();
+			ImGui::EndDisabled();
+			if (hasSelection)
+				ImGui::Text("%d x %d px", selectionRect.width, selectionRect.height);
+			else
+				ImGui::TextDisabled("No selection");
+		}
+
+		// --- Clipboard ---
 		const bool supportsClipboardImages = bbe::Image::supportsClipboardImages();
+		ImGui::SeparatorText("Clipboard");
 		ImGui::BeginDisabled(!supportsClipboardImages);
-		if (ImGui::Button("Copy to Clipboard"))
+		if (ImGui::Button("Copy Canvas to Clipboard", ImVec2(-1, 0)))
 		{
 			flattenVisibleLayers().copyToClipboard();
 		}
 		ImGui::EndDisabled();
-		if (supportsClipboardImages)
-		{
-			ImGui::Text(bbe::Image::isImageInClipbaord() ? "Yes" : "No");
-		}
-		else
-		{
-			ImGui::Text("Image Clipboard not supported on this platform");
-		}
-
 		ImGui::BeginDisabled(!supportsClipboardImages || !bbe::Image::isImageInClipbaord());
-		if (ImGui::Button("Paste"))
+		if (ImGui::Button("Paste as New Canvas", ImVec2(-1, 0)))
 		{
 			canvas.get().layers.clear();
 			canvas.get().layers.add(PaintLayer{ "Layer 1", true, bbe::Image::getClipboardImage() });
@@ -1918,88 +1955,57 @@ class MyGame : public bbe::Game
 			setupCanvas();
 		}
 		ImGui::EndDisabled();
+		if (!supportsClipboardImages)
+			ImGui::TextDisabled("Not supported on this platform");
 
-		if (mode == MODE_SELECTION)
-		{
-			ImGui::BeginDisabled(!hasSelection);
-			if (ImGui::Button("Copy Selection"))
-			{
-				storeSelectionInClipboard();
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Cut Selection"))
-			{
-				cutSelection();
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Delete Selection"))
-			{
-				deleteSelection();
-			}
-			ImGui::EndDisabled();
-
-			if (hasSelection)
-			{
-				ImGui::Text("Selection: %d x %d", selectionRect.width, selectionRect.height);
-			}
-			else
-			{
-				ImGui::Text("Selection: none");
-			}
-		}
-
+		// --- Layers ---
 		ImGui::SeparatorText("Layers");
-		ImGui::BeginDisabled(canvas.get().layers.getLength() <= 1);
-		if (ImGui::Button("Delete Layer"))
 		{
-			deleteActiveLayer();
+			const float btnW = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 3) * 0.25f;
+			if (ImGui::Button("+ New", ImVec2(btnW * 1.5f, 0))) addLayer();
+			ImGui::SameLine();
+			ImGui::BeginDisabled(canvas.get().layers.getLength() <= 1);
+			if (ImGui::Button("- Del", ImVec2(btnW * 1.5f, 0))) deleteActiveLayer();
+			ImGui::EndDisabled();
+			ImGui::SameLine();
+			ImGui::BeginDisabled((size_t)activeLayerIndex + 1 >= canvas.get().layers.getLength());
+			if (ImGui::Button("Up", ImVec2(btnW, 0))) moveActiveLayerUp();
+			ImGui::EndDisabled();
+			ImGui::SameLine();
+			ImGui::BeginDisabled(activeLayerIndex <= 0);
+			if (ImGui::Button("Dn", ImVec2(btnW, 0))) moveActiveLayerDown();
+			ImGui::EndDisabled();
 		}
-		ImGui::EndDisabled();
-		ImGui::SameLine();
-		if (ImGui::Button("New Layer"))
-		{
-			addLayer();
-		}
-		ImGui::SameLine();
-		ImGui::BeginDisabled((size_t)activeLayerIndex + 1 >= canvas.get().layers.getLength());
-		if (ImGui::Button("Up"))
-		{
-			moveActiveLayerUp();
-		}
-		ImGui::EndDisabled();
-		ImGui::SameLine();
-		ImGui::BeginDisabled(activeLayerIndex <= 0);
-		if (ImGui::Button("Down"))
-		{
-			moveActiveLayerDown();
-		}
-		ImGui::EndDisabled();
-
 		if (!canvas.get().layers.isEmpty())
 		{
-			if (ImGui::bbe::InputText("Layer Name", getActiveLayer().name))
+			if (ImGui::bbe::InputText("Name##layerName", getActiveLayer().name))
 			{
 				canvas.submit();
 			}
 		}
-
-		for (int32_t layerIndex = (int32_t)canvas.get().layers.getLength() - 1; layerIndex >= 0; layerIndex--)
+		if (ImGui::BeginChild("##layerList", ImVec2(-1, ImGui::GetContentRegionAvail().y), true))
 		{
-			PaintLayer &layer = canvas.get().layers[(size_t)layerIndex];
-			ImGui::PushID(layerIndex);
-			bool visible = layer.visible;
-			if (ImGui::Checkbox("##visible", &visible))
+			for (int32_t layerIndex = (int32_t)canvas.get().layers.getLength() - 1; layerIndex >= 0; layerIndex--)
 			{
-				layer.visible = visible;
-				canvas.submit();
+				PaintLayer &layer = canvas.get().layers[(size_t)layerIndex];
+				ImGui::PushID(layerIndex);
+				bool visible = layer.visible;
+				if (ImGui::Checkbox("##vis", &visible))
+				{
+					layer.visible = visible;
+					canvas.submit();
+				}
+				ImGui::SameLine();
+				if (ImGui::Selectable(layer.name.getRaw(), activeLayerIndex == layerIndex))
+				{
+					setActiveLayerIndex(layerIndex);
+				}
+				ImGui::PopID();
 			}
-			ImGui::SameLine();
-			if (ImGui::Selectable(layer.name.getRaw(), activeLayerIndex == layerIndex))
-			{
-				setActiveLayerIndex(layerIndex);
-			}
-			ImGui::PopID();
 		}
+		ImGui::EndChild();
+
+		ImGui::End();
 
 		const int32_t repeats = tiled ? 20 : 0;
 		for (int32_t i = -repeats; i <= repeats; i++)
