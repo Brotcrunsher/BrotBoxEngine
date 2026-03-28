@@ -1,7 +1,6 @@
 
 #include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 
-// TODO: Circle tool
 // TODO: Flood fill with edges of brush tool kinda bad.
 // TODO: Bug: right click has weird behaviour with shadow
 
@@ -48,6 +47,7 @@ class MyGame : public bbe::Game
 	constexpr static int32_t MODE_SELECTION = 4;
 	constexpr static int32_t MODE_TEXT = 5;
 	constexpr static int32_t MODE_PIPETTE = 6;
+	constexpr static int32_t MODE_CIRCLE  = 7;
 	int32_t mode = MODE_BRUSH;
 
 	int32_t brushWidth = 1;
@@ -93,6 +93,14 @@ class MyGame : public bbe::Game
 	bbe::Rectanglei rectangleDragPreviewRect;
 	bbe::Image rectangleDragPreviewImage;
 
+	bool circleDraftActive = false;
+	bool circleDraftUsesRightColor = false;
+	bool circleDragActive = false;
+	bool circleDragUsesRightColor = false;
+	bbe::Vector2i circleDragStart;
+	bbe::Rectanglei circleDragPreviewRect;
+	bbe::Image circleDragPreviewImage;
+
 	void prepareImageForCanvas(bbe::Image &image) const
 	{
 		if (image.getWidth() <= 0 || image.getHeight() <= 0) return;
@@ -122,6 +130,13 @@ class MyGame : public bbe::Game
 		rectangleDragStart = {};
 		rectangleDragPreviewRect = {};
 		rectangleDragPreviewImage = {};
+		circleDraftActive = false;
+		circleDraftUsesRightColor = false;
+		circleDragActive = false;
+		circleDragUsesRightColor = false;
+		circleDragStart = {};
+		circleDragPreviewRect = {};
+		circleDragPreviewImage = {};
 	}
 
 	void selectWholeLayer()
@@ -737,6 +752,212 @@ class MyGame : public bbe::Game
 		if (selectionRect.width > 0 && selectionRect.height > 0)
 		{
 			selectionFloatingImage = createRectangleDraftImage(selectionRect.width, selectionRect.height);
+		}
+	}
+
+	bbe::Colori getCircleDraftColor() const
+	{
+		return circleDraftUsesRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor();
+	}
+
+	bbe::Colori getCircleDragColor() const
+	{
+		return circleDragUsesRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor();
+	}
+
+	bbe::Image createCircleImage(int32_t width, int32_t height, const bbe::Colori &color) const
+	{
+		if (width <= 0 || height <= 0) return {};
+
+		bbe::Image image(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
+		prepareImageForCanvas(image);
+
+		const float rx_outer = width  * 0.5f;
+		const float ry_outer = height * 0.5f;
+		const float rx_inner = rx_outer - (float)brushWidth;
+		const float ry_inner = ry_outer - (float)brushWidth;
+		const float minRadius_outer = rx_outer < ry_outer ? rx_outer : ry_outer;
+
+		for (int32_t y = 0; y < height; y++)
+		{
+			for (int32_t x = 0; x < width; x++)
+			{
+				const float px = x - rx_outer + 0.5f;
+				const float py = y - ry_outer + 0.5f;
+
+				const float nx_o = px / rx_outer;
+				const float ny_o = py / ry_outer;
+				const float d_outer = bbe::Math::sqrt(nx_o * nx_o + ny_o * ny_o);
+				const float alpha_outer = bbe::Math::clamp01((1.f - d_outer) * minRadius_outer + 0.5f);
+				if (alpha_outer <= 0.f) continue;
+
+				float alpha_inner = 1.f;
+				if (rx_inner > 0.f && ry_inner > 0.f)
+				{
+					const float nx_i = px / rx_inner;
+					const float ny_i = py / ry_inner;
+					const float d_inner = bbe::Math::sqrt(nx_i * nx_i + ny_i * ny_i);
+					const float minRadius_inner = rx_inner < ry_inner ? rx_inner : ry_inner;
+					alpha_inner = bbe::Math::clamp01((d_inner - 1.f) * minRadius_inner + 0.5f);
+				}
+
+				const float alpha = alpha_outer < alpha_inner ? alpha_outer : alpha_inner;
+				if (alpha <= 0.f) continue;
+
+				bbe::Colori c = color;
+				c.a = (bbe::byte)(c.a * alpha);
+				image.setPixel((size_t)x, (size_t)y, c);
+			}
+		}
+
+		return image;
+	}
+
+	bbe::Image createCircleDraftImage(int32_t width, int32_t height) const
+	{
+		return createCircleImage(width, height, getCircleDraftColor());
+	}
+
+	bbe::Image createCircleDragPreviewImage(int32_t width, int32_t height) const
+	{
+		return createCircleImage(width, height, getCircleDragColor());
+	}
+
+	void refreshActiveCircleDraftImage()
+	{
+		if (!circleDraftActive) return;
+
+		if (selectionMoveActive || selectionResizeActive)
+		{
+			if (selectionPreviewRect.width > 0 && selectionPreviewRect.height > 0)
+			{
+				selectionPreviewImage = createCircleDraftImage(selectionPreviewRect.width, selectionPreviewRect.height);
+			}
+			return;
+		}
+
+		if (selectionRect.width > 0 && selectionRect.height > 0)
+		{
+			selectionFloatingImage = createCircleDraftImage(selectionRect.width, selectionRect.height);
+		}
+	}
+
+	void finalizeCircleDrag(const bbe::Vector2i &mousePixel)
+	{
+		const bool useRightColor = circleDragUsesRightColor;
+		circleDragActive = false;
+
+		bbe::Rectanglei draftRect;
+		if (!buildSelectionRect(circleDragStart, mousePixel, draftRect))
+		{
+			circleDragPreviewRect = {};
+			circleDragPreviewImage = {};
+			return;
+		}
+
+		const bbe::Image draftImage = circleDragPreviewImage.getWidth() > 0 && circleDragPreviewImage.getHeight() > 0
+			? circleDragPreviewImage
+			: createCircleImage(draftRect.width, draftRect.height, useRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor());
+
+		clearSelectionState();
+		hasSelection = true;
+		selectionFloating = true;
+		selectionRect = draftRect;
+		circleDraftActive = true;
+		circleDraftUsesRightColor = useRightColor;
+		selectionFloatingImage = draftImage;
+		circleDragPreviewRect = {};
+		circleDragPreviewImage = {};
+	}
+
+	void beginCircleDrag(const bbe::Vector2i &mousePixel, bool useRightColor)
+	{
+		circleDragActive = true;
+		circleDragUsesRightColor = useRightColor;
+		circleDragStart = mousePixel;
+		circleDragPreviewRect = {};
+		circleDragPreviewImage = {};
+	}
+
+	void updateCircleDragPreview(const bbe::Vector2i &mousePixel)
+	{
+		if (!buildSelectionRect(circleDragStart, mousePixel, circleDragPreviewRect))
+		{
+			circleDragPreviewRect = {};
+			circleDragPreviewImage = {};
+			return;
+		}
+
+		circleDragPreviewImage = createCircleDragPreviewImage(circleDragPreviewRect.width, circleDragPreviewRect.height);
+	}
+
+	void updateCircleTool(const bbe::Vector2 &currMousePos)
+	{
+		const bbe::Vector2i mousePixel = toCanvasPixel(currMousePos);
+		bool handledMousePress = false;
+
+		if (circleDraftActive)
+		{
+			if (isMousePressed(bbe::MouseButton::LEFT))
+			{
+				const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
+				if (isSelectionResizeHit(hitZone))
+				{
+					beginSelectionResize(hitZone);
+				}
+				else if (hitZone == SelectionHitZone::INSIDE)
+				{
+					beginSelectionMove(mousePixel);
+				}
+				else
+				{
+					commitFloatingSelection();
+					clearSelectionState();
+				}
+				handledMousePress = true;
+			}
+			if (!handledMousePress && isMousePressed(bbe::MouseButton::RIGHT))
+			{
+				commitFloatingSelection();
+				clearSelectionState();
+				handledMousePress = true;
+			}
+		}
+
+		if (!handledMousePress && !circleDraftActive)
+		{
+			if (isMousePressed(bbe::MouseButton::LEFT))
+			{
+				beginCircleDrag(mousePixel, false);
+			}
+			else if (isMousePressed(bbe::MouseButton::RIGHT))
+			{
+				beginCircleDrag(mousePixel, true);
+			}
+		}
+
+		if (selectionMoveActive && isMouseDown(bbe::MouseButton::LEFT))
+		{
+			updateSelectionMovePreview(mousePixel);
+		}
+		if (selectionResizeActive && isMouseDown(bbe::MouseButton::LEFT))
+		{
+			updateSelectionResizePreview(mousePixel);
+		}
+		if ((selectionMoveActive || selectionResizeActive) && isMouseReleased(bbe::MouseButton::LEFT))
+		{
+			applySelectionTransform();
+		}
+
+		if (!circleDragActive) return;
+		updateCircleDragPreview(mousePixel);
+
+		const bool dragReleased = circleDragUsesRightColor
+			? isMouseReleased(bbe::MouseButton::RIGHT)
+			: isMouseReleased(bbe::MouseButton::LEFT);
+		if (dragReleased)
+		{
+			finalizeCircleDrag(mousePixel);
 		}
 	}
 
@@ -1537,6 +1758,11 @@ class MyGame : public bbe::Game
 				commitFloatingSelection();
 				clearSelectionState();
 			}
+			if (previousMode == MODE_CIRCLE && circleDraftActive)
+			{
+				commitFloatingSelection();
+				clearSelectionState();
+			}
 			discardTransientWorkArea();
 		}
 
@@ -1617,16 +1843,22 @@ class MyGame : public bbe::Game
 		{
 			mode = MODE_PIPETTE;
 		}
+		if (isKeyPressed(bbe::Key::_8))
+		{
+			mode = MODE_CIRCLE;
+		}
+		bool refreshCircleDraft = false;
 		if (!ctrlDown && isKeyPressed(bbe::Key::X))
 		{
 			swapColors();
 			refreshRectangleDraft = rectangleDraftActive;
+			refreshCircleDraft = circleDraftActive;
 		}
 		const bool increaseToolSize = isKeyTyped(bbe::Key::EQUAL)
 			|| isKeyTyped(bbe::Key::KP_ADD)
 			|| isKeyTyped(bbe::Key::RIGHT_BRACKET);
 		const bool decreaseToolSize = isKeyTyped(bbe::Key::MINUS) || isKeyTyped(bbe::Key::KP_SUBTRACT);
-		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE)
+		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE)
 		{
 			const int32_t previousBrushWidth = brushWidth;
 			if (increaseToolSize) brushWidth++;
@@ -1635,6 +1867,10 @@ class MyGame : public bbe::Game
 			if (rectangleDraftActive && brushWidth != previousBrushWidth)
 			{
 				refreshRectangleDraft = true;
+			}
+			if (circleDraftActive && brushWidth != previousBrushWidth)
+			{
+				refreshCircleDraft = true;
 			}
 		}
 		else if (mode == MODE_TEXT)
@@ -1668,6 +1904,7 @@ class MyGame : public bbe::Game
 			{
 				resetColorsToDefault();
 				refreshRectangleDraft = rectangleDraftActive;
+				refreshCircleDraft = circleDraftActive;
 			}
 			if (isKeyPressed(bbe::Key::A))
 			{
@@ -1700,6 +1937,11 @@ class MyGame : public bbe::Game
 				commitFloatingSelection();
 				clearSelectionState();
 			}
+			if (modeBeforeInput == MODE_CIRCLE && circleDraftActive)
+			{
+				commitFloatingSelection();
+				clearSelectionState();
+			}
 			discardTransientWorkArea();
 		}
 		previousMode = mode;
@@ -1707,7 +1949,11 @@ class MyGame : public bbe::Game
 		{
 			refreshActiveRectangleDraftImage();
 		}
-		if (selectionFloating && mode != MODE_SELECTION && !(mode == MODE_RECTANGLE && rectangleDraftActive))
+		if (refreshCircleDraft)
+		{
+			refreshActiveCircleDraftImage();
+		}
+		if (selectionFloating && mode != MODE_SELECTION && !(mode == MODE_RECTANGLE && rectangleDraftActive) && !(mode == MODE_CIRCLE && circleDraftActive))
 		{
 			commitFloatingSelection();
 		}
@@ -1729,6 +1975,10 @@ class MyGame : public bbe::Game
 		{
 			updateRectangleTool(currMousePos);
 		}
+		if (mode == MODE_CIRCLE)
+		{
+			updateCircleTool(currMousePos);
+		}
 		if (mode == MODE_TEXT && (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT)))
 		{
 			bbe::Vector2 pos = currMousePos;
@@ -1743,6 +1993,7 @@ class MyGame : public bbe::Game
 		const bool drawMode = mode != MODE_SELECTION
 			&& mode != MODE_TEXT
 			&& mode != MODE_RECTANGLE
+			&& mode != MODE_CIRCLE
 			&& drawButtonDown;
 		const bool shadowDrawMode = shadowDrawModes.contains(mode);
 
@@ -1869,6 +2120,10 @@ class MyGame : public bbe::Game
 		{
 			refreshActiveRectangleDraftImage();
 		}
+		if (circleDraftActive && ((leftColorChanged && !circleDraftUsesRightColor) || (rightColorChanged && circleDraftUsesRightColor)))
+		{
+			refreshActiveCircleDraftImage();
+		}
 
 		// --- Tool ---
 		ImGui::SeparatorText("Tool");
@@ -1885,22 +2140,24 @@ class MyGame : public bbe::Game
 			toolBtn("Fill",      MODE_FLOOD_FILL);
 			toolBtn("Line",      MODE_LINE);        ImGui::SameLine();
 			toolBtn("Rectangle", MODE_RECTANGLE);
-			toolBtn("Selection", MODE_SELECTION);   ImGui::SameLine();
-			toolBtn("Text",      MODE_TEXT);
+			toolBtn("Circle",    MODE_CIRCLE);      ImGui::SameLine();
+			toolBtn("Selection", MODE_SELECTION);
+			toolBtn("Text",      MODE_TEXT);        ImGui::SameLine();
 			toolBtn("Pipette",   MODE_PIPETTE);
 		}
 
 		// --- Tool options ---
-		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_TEXT)
+		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_TEXT)
 		{
 			ImGui::SeparatorText("Options");
 		}
-		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE)
+		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE)
 		{
 			if (ImGui::InputInt("Width", &brushWidth))
 			{
 				clampBrushWidth();
 				if (rectangleDraftActive) refreshActiveRectangleDraftImage();
+				if (circleDraftActive) refreshActiveCircleDraftImage();
 			}
 		}
 		if (mode == MODE_RECTANGLE)
@@ -1910,6 +2167,12 @@ class MyGame : public bbe::Game
 				refreshActiveRectangleDraftImage();
 			}
 			ImGui::TextDisabled(rectangleDraftActive
+				? "Drag inside/border to move/resize.\nClick outside to place."
+				: "Drag to draw. Click outside to place.");
+		}
+		if (mode == MODE_CIRCLE)
+		{
+			ImGui::TextDisabled(circleDraftActive
 				? "Drag inside/border to move/resize.\nClick outside to place."
 				: "Drag to draw. Click outside to place.");
 		}
@@ -2041,6 +2304,11 @@ class MyGame : public bbe::Game
 			brush.drawImage(selectionRectToScreen(rectangleDragPreviewRect), rectangleDragPreviewImage);
 			drawSelectionOutline(brush, rectangleDragPreviewRect);
 		}
+		else if (circleDragActive && circleDragPreviewRect.width > 0 && circleDragPreviewRect.height > 0)
+		{
+			brush.drawImage(selectionRectToScreen(circleDragPreviewRect), circleDragPreviewImage);
+			drawSelectionOutline(brush, circleDragPreviewRect);
+		}
 		else if (selectionMoveActive || selectionResizeActive)
 		{
 			const bbe::Image previewImage = selectionResizeActive ? buildSelectionPreviewResultImage() : selectionPreviewImage;
@@ -2164,6 +2432,7 @@ class MyGame : public bbe::Game
 				ImGui::BulletText("5 Selection");
 				ImGui::BulletText("6 Text");
 				ImGui::BulletText("7 Pipette");
+				ImGui::BulletText("8 Circle");
 
 				ImGui::SeparatorText("General");
 				ImGui::BulletText("+/- changes brush size or text size for the active tool");
