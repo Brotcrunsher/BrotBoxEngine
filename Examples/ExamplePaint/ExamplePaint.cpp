@@ -327,6 +327,14 @@ class MyGame : public bbe::Game
 		return hasSelection && selectionRect.isPointInRectangle(point, true);
 	}
 
+	bool isWholeLayerSelection(const bbe::Rectanglei &rect) const
+	{
+		return rect.x == 0
+			&& rect.y == 0
+			&& rect.width == getCanvasWidth()
+			&& rect.height == getCanvasHeight();
+	}
+
 	bbe::Image copyCanvasRect(const bbe::Rectanglei &rect) const
 	{
 		bbe::Image copied(rect.width, rect.height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
@@ -343,7 +351,7 @@ class MyGame : public bbe::Game
 
 	void clearCanvasRect(const bbe::Rectanglei &rect)
 	{
-		const bbe::Colori backgroundColor = bbe::Color(rightColor).asByteColor();
+		const bbe::Colori backgroundColor = isWholeLayerSelection(rect) ? bbe::Colori(0, 0, 0, 0) : bbe::Color(rightColor).asByteColor();
 		for (int32_t x = 0; x < rect.width; x++)
 		{
 			for (int32_t y = 0; y < rect.height; y++)
