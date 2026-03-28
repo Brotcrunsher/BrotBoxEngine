@@ -5,7 +5,6 @@
 // TODO: Bug: right click has weird behaviour with shadow
 
 // TODO: Bezier curve
-// TODO: Line and Arrow tool need ghost edit mode to change start and end point during creation.
 // TODO: Different fonts in Text Tool
 // TODO: Rotation handle for selections, rectangles and ellipses
 // TODO: Alpha eraser tool - not just recolering pixels but setting their alpha to 0.
@@ -127,6 +126,22 @@ class MyGame : public bbe::Game
 	bool    arrowDoubleHeaded = false;
 	bool    arrowFilledHead   = true;
 
+	bool lineDraftActive = false;
+	bool lineDraftUsesRightColor = false;
+	bbe::Vector2 lineDraftStart;
+	bbe::Vector2 lineDraftEnd;
+	int32_t lineDraftDragEndpoint = 0; // 0=none, 1=start, 2=end
+	bool lineDragInProgress = false;
+	bool lineDragUsesRightColor = false;
+
+	bool arrowDraftActive = false;
+	bool arrowDraftUsesRightColor = false;
+	bbe::Vector2 arrowDraftStart;
+	bbe::Vector2 arrowDraftEnd;
+	int32_t arrowDraftDragEndpoint = 0; // 0=none, 1=start, 2=end
+	bool arrowDragInProgress = false;
+	bool arrowDragUsesRightColor = false;
+
 	void prepareImageForCanvas(bbe::Image &image) const
 	{
 		if (image.getWidth() <= 0 || image.getHeight() <= 0) return;
@@ -163,6 +178,12 @@ class MyGame : public bbe::Game
 		circleDragStart = {};
 		circleDragPreviewRect = {};
 		circleDragPreviewImage = {};
+		lineDraftActive = false;
+		lineDraftDragEndpoint = 0;
+		lineDragInProgress = false;
+		arrowDraftActive = false;
+		arrowDraftDragEndpoint = 0;
+		arrowDragInProgress = false;
 	}
 
 	void selectWholeLayer()
@@ -804,6 +825,206 @@ class MyGame : public bbe::Game
 			{
 				touchLineImage(workArea, tip, left, color, brushWidth, false, tiled);
 				touchLineImage(workArea, tip, right, color, brushWidth, false, tiled);
+			}
+		}
+	}
+
+	bbe::Colori getLineDraftColor() const
+	{
+		return lineDraftUsesRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor();
+	}
+
+	bbe::Colori getArrowDraftColor() const
+	{
+		return arrowDraftUsesRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor();
+	}
+
+	void finalizeLineDraft()
+	{
+		applyWorkArea();
+		canvas.submit();
+		lineDraftActive = false;
+		lineDraftDragEndpoint = 0;
+	}
+
+	void finalizeArrowDraft()
+	{
+		applyWorkArea();
+		canvas.submit();
+		arrowDraftActive = false;
+		arrowDraftDragEndpoint = 0;
+	}
+
+	void updateLineTool(const bbe::Vector2 &currMousePos)
+	{
+		const bbe::Vector2 mouseCanvas = screenToCanvas(getMouse());
+
+		if (lineDraftActive)
+		{
+			bool handledMousePress = false;
+
+			if (isMousePressed(bbe::MouseButton::LEFT))
+			{
+				const float handleRadius = 6.f / zoomLevel;
+				const float distToStart = (mouseCanvas - lineDraftStart).getLength();
+				const float distToEnd   = (mouseCanvas - lineDraftEnd).getLength();
+
+				if (distToStart <= handleRadius && distToStart <= distToEnd)
+				{
+					lineDraftDragEndpoint = 1;
+					handledMousePress = true;
+				}
+				else if (distToEnd <= handleRadius)
+				{
+					lineDraftDragEndpoint = 2;
+					handledMousePress = true;
+				}
+				else
+				{
+					finalizeLineDraft();
+					return;
+				}
+			}
+
+			if (!handledMousePress && isMousePressed(bbe::MouseButton::RIGHT))
+			{
+				finalizeLineDraft();
+				return;
+			}
+
+			if (lineDraftDragEndpoint != 0 && isMouseDown(bbe::MouseButton::LEFT))
+			{
+				if (lineDraftDragEndpoint == 1) lineDraftStart = mouseCanvas;
+				else                            lineDraftEnd   = mouseCanvas;
+			}
+			if (lineDraftDragEndpoint != 0 && isMouseReleased(bbe::MouseButton::LEFT))
+			{
+				lineDraftDragEndpoint = 0;
+			}
+
+			clearWorkArea();
+			touchLineImage(workArea, lineDraftEnd, lineDraftStart, getLineDraftColor(), brushWidth, false, tiled);
+			return;
+		}
+
+		if (!lineDragInProgress)
+		{
+			if (isMousePressed(bbe::MouseButton::LEFT))
+			{
+				lineDragInProgress = true;
+				lineDragUsesRightColor = false;
+				lineDraftStart = mouseCanvas;
+			}
+			else if (isMousePressed(bbe::MouseButton::RIGHT))
+			{
+				lineDragInProgress = true;
+				lineDragUsesRightColor = true;
+				lineDraftStart = mouseCanvas;
+			}
+		}
+
+		if (lineDragInProgress)
+		{
+			clearWorkArea();
+			const bbe::Colori dragColor = lineDragUsesRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor();
+			touchLineImage(workArea, mouseCanvas, lineDraftStart, dragColor, brushWidth, false, tiled);
+
+			const bool released = lineDragUsesRightColor
+				? isMouseReleased(bbe::MouseButton::RIGHT)
+				: isMouseReleased(bbe::MouseButton::LEFT);
+			if (released)
+			{
+				lineDraftActive = true;
+				lineDraftUsesRightColor = lineDragUsesRightColor;
+				lineDraftEnd = mouseCanvas;
+				lineDragInProgress = false;
+			}
+		}
+	}
+
+	void updateArrowTool(const bbe::Vector2 &currMousePos)
+	{
+		const bbe::Vector2 mouseCanvas = screenToCanvas(getMouse());
+
+		if (arrowDraftActive)
+		{
+			bool handledMousePress = false;
+
+			if (isMousePressed(bbe::MouseButton::LEFT))
+			{
+				const float handleRadius = 6.f / zoomLevel;
+				const float distToStart = (mouseCanvas - arrowDraftStart).getLength();
+				const float distToEnd   = (mouseCanvas - arrowDraftEnd).getLength();
+
+				if (distToStart <= handleRadius && distToStart <= distToEnd)
+				{
+					arrowDraftDragEndpoint = 1;
+					handledMousePress = true;
+				}
+				else if (distToEnd <= handleRadius)
+				{
+					arrowDraftDragEndpoint = 2;
+					handledMousePress = true;
+				}
+				else
+				{
+					finalizeArrowDraft();
+					return;
+				}
+			}
+
+			if (!handledMousePress && isMousePressed(bbe::MouseButton::RIGHT))
+			{
+				finalizeArrowDraft();
+				return;
+			}
+
+			if (arrowDraftDragEndpoint != 0 && isMouseDown(bbe::MouseButton::LEFT))
+			{
+				if (arrowDraftDragEndpoint == 1) arrowDraftStart = mouseCanvas;
+				else                             arrowDraftEnd   = mouseCanvas;
+			}
+			if (arrowDraftDragEndpoint != 0 && isMouseReleased(bbe::MouseButton::LEFT))
+			{
+				arrowDraftDragEndpoint = 0;
+			}
+
+			clearWorkArea();
+			drawArrowToWorkArea(arrowDraftStart, arrowDraftEnd, getArrowDraftColor());
+			return;
+		}
+
+		if (!arrowDragInProgress)
+		{
+			if (isMousePressed(bbe::MouseButton::LEFT))
+			{
+				arrowDragInProgress = true;
+				arrowDragUsesRightColor = false;
+				arrowDraftStart = mouseCanvas;
+			}
+			else if (isMousePressed(bbe::MouseButton::RIGHT))
+			{
+				arrowDragInProgress = true;
+				arrowDragUsesRightColor = true;
+				arrowDraftStart = mouseCanvas;
+			}
+		}
+
+		if (arrowDragInProgress)
+		{
+			clearWorkArea();
+			const bbe::Colori dragColor = arrowDragUsesRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor();
+			drawArrowToWorkArea(arrowDraftStart, mouseCanvas, dragColor);
+
+			const bool released = arrowDragUsesRightColor
+				? isMouseReleased(bbe::MouseButton::RIGHT)
+				: isMouseReleased(bbe::MouseButton::LEFT);
+			if (released)
+			{
+				arrowDraftActive = true;
+				arrowDraftUsesRightColor = arrowDragUsesRightColor;
+				arrowDraftEnd = mouseCanvas;
+				arrowDragInProgress = false;
 			}
 		}
 	}
@@ -2020,6 +2241,14 @@ class MyGame : public bbe::Game
 				commitFloatingSelection();
 				clearSelectionState();
 			}
+			if (previousMode == MODE_LINE && lineDraftActive)
+			{
+				finalizeLineDraft();
+			}
+			if (previousMode == MODE_ARROW && arrowDraftActive)
+			{
+				finalizeArrowDraft();
+			}
 			discardTransientWorkArea();
 		}
 
@@ -2203,6 +2432,14 @@ class MyGame : public bbe::Game
 				commitFloatingSelection();
 				clearSelectionState();
 			}
+			if (modeBeforeInput == MODE_LINE && lineDraftActive)
+			{
+				finalizeLineDraft();
+			}
+			if (modeBeforeInput == MODE_ARROW && arrowDraftActive)
+			{
+				finalizeArrowDraft();
+			}
 			discardTransientWorkArea();
 		}
 		previousMode = mode;
@@ -2240,6 +2477,14 @@ class MyGame : public bbe::Game
 		{
 			updateCircleTool(currMousePos);
 		}
+		if (mode == MODE_LINE)
+		{
+			updateLineTool(currMousePos);
+		}
+		if (mode == MODE_ARROW)
+		{
+			updateArrowTool(currMousePos);
+		}
 		if (mode == MODE_TEXT && (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT)))
 		{
 			bbe::Vector2 pos = currMousePos;
@@ -2255,6 +2500,8 @@ class MyGame : public bbe::Game
 			&& mode != MODE_TEXT
 			&& mode != MODE_RECTANGLE
 			&& mode != MODE_CIRCLE
+			&& mode != MODE_LINE
+			&& mode != MODE_ARROW
 			&& drawButtonDown;
 		const bool shadowDrawMode = shadowDrawModes.contains(mode);
 
@@ -2301,17 +2548,6 @@ class MyGame : public bbe::Game
 					getActiveLayerImage().floodFill(pos.as<int32_t>(), getMouseColor(), false, tiled);
 					changeRegistered = true;
 				}
-			}
-			else if (mode == MODE_LINE)
-			{
-				clearWorkArea();
-				changeRegistered |= touchLine(currMousePos, startMousePos);
-			}
-			else if (mode == MODE_ARROW)
-			{
-				clearWorkArea();
-				drawArrowToWorkArea(startMousePos, currMousePos, getMouseColor());
-				changeRegistered = true;
 			}
 			else if (mode == MODE_PIPETTE)
 			{
@@ -2391,6 +2627,16 @@ class MyGame : public bbe::Game
 		{
 			refreshActiveCircleDraftImage();
 		}
+		if (lineDraftActive && ((leftColorChanged && !lineDraftUsesRightColor) || (rightColorChanged && lineDraftUsesRightColor)))
+		{
+			clearWorkArea();
+			touchLineImage(workArea, lineDraftEnd, lineDraftStart, getLineDraftColor(), brushWidth, false, tiled);
+		}
+		if (arrowDraftActive && ((leftColorChanged && !arrowDraftUsesRightColor) || (rightColorChanged && arrowDraftUsesRightColor)))
+		{
+			clearWorkArea();
+			drawArrowToWorkArea(arrowDraftStart, arrowDraftEnd, getArrowDraftColor());
+		}
 
 		// --- Tool ---
 		ImGui::SeparatorText("Tool");
@@ -2426,6 +2672,16 @@ class MyGame : public bbe::Game
 				clampBrushWidth();
 				if (rectangleDraftActive) refreshActiveRectangleDraftImage();
 				if (circleDraftActive) refreshActiveCircleDraftImage();
+				if (lineDraftActive)
+				{
+					clearWorkArea();
+					touchLineImage(workArea, lineDraftEnd, lineDraftStart, getLineDraftColor(), brushWidth, false, tiled);
+				}
+				if (arrowDraftActive)
+				{
+					clearWorkArea();
+					drawArrowToWorkArea(arrowDraftStart, arrowDraftEnd, getArrowDraftColor());
+				}
 			}
 		}
 		if (mode == MODE_RECTANGLE)
@@ -2445,19 +2701,35 @@ class MyGame : public bbe::Game
 				? "Drag inside/border to move/resize.\nClick outside to place."
 				: "Drag to draw. Click outside to place.");
 		}
+		if (mode == MODE_LINE)
+		{
+			ImGui::TextDisabled(lineDraftActive
+				? "Drag endpoints to adjust.\nClick outside or R-click to place."
+				: "Drag to draw.");
+		}
 		if (mode == MODE_ARROW)
 		{
+			bool arrowOptionChanged = false;
 			if (ImGui::InputInt("Head Size", &arrowHeadSize))
 			{
 				if (arrowHeadSize < 1) arrowHeadSize = 1;
+				arrowOptionChanged = true;
 			}
 			if (ImGui::InputInt("Head Width", &arrowHeadWidth))
 			{
 				if (arrowHeadWidth < 1) arrowHeadWidth = 1;
+				arrowOptionChanged = true;
 			}
-			ImGui::Checkbox("Double Headed", &arrowDoubleHeaded);
-			ImGui::Checkbox("Filled Head",   &arrowFilledHead);
-			ImGui::TextDisabled("Drag to draw.");
+			if (ImGui::Checkbox("Double Headed", &arrowDoubleHeaded)) arrowOptionChanged = true;
+			if (ImGui::Checkbox("Filled Head",   &arrowFilledHead))   arrowOptionChanged = true;
+			if (arrowOptionChanged && arrowDraftActive)
+			{
+				clearWorkArea();
+				drawArrowToWorkArea(arrowDraftStart, arrowDraftEnd, getArrowDraftColor());
+			}
+			ImGui::TextDisabled(arrowDraftActive
+				? "Drag endpoints to adjust.\nClick outside or R-click to place."
+				: "Drag to draw.");
 		}
 		if (mode == MODE_TEXT)
 		{
@@ -2646,6 +2918,26 @@ class MyGame : public bbe::Game
 			{
 				drawTextPreview(brush, toCanvasPixel(previewPos));
 			}
+		}
+		auto drawEndpointHandle = [&](const bbe::Vector2 &canvasPos)
+		{
+			const float sx = offset.x + canvasPos.x * zoomLevel;
+			const float sy = offset.y + canvasPos.y * zoomLevel;
+			constexpr float hs = 4.f;
+			brush.setColorRGB(1.f, 1.f, 1.f);
+			brush.fillRect(sx - hs, sy - hs, hs * 2.f, hs * 2.f);
+			brush.setColorRGB(0.f, 0.f, 0.f);
+			brush.sketchRect(bbe::Rectangle(sx - hs, sy - hs, hs * 2.f, hs * 2.f));
+		};
+		if (mode == MODE_LINE && lineDraftActive)
+		{
+			drawEndpointHandle(lineDraftStart);
+			drawEndpointHandle(lineDraftEnd);
+		}
+		if (mode == MODE_ARROW && arrowDraftActive)
+		{
+			drawEndpointHandle(arrowDraftStart);
+			drawEndpointHandle(arrowDraftEnd);
 		}
 
 		// HACK: We can only open popups if we are in the same ID Stack. See: https://github.com/ocornut/imgui/issues/331
