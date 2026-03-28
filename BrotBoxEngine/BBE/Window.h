@@ -35,6 +35,10 @@ namespace bbe
 		int m_width;
 		int m_height;
 
+		bool     m_pendingResize       = false;
+		uint32_t m_pendingResizeWidth  = 0;
+		uint32_t m_pendingResizeHeight = 0;
+
 		bbe::WindowCloseMode m_windowCloseMode = bbe::WindowCloseMode::CLOSE;
 
 	public:

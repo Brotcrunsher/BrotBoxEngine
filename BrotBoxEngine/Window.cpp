@@ -600,7 +600,9 @@ void bbe::Window::INTERNAL_resize(int width, int height)
 	glfwWrapper::glfwGetFramebufferSize(m_pwindow, &framebufferWidth, &framebufferHeight);
 	if (framebufferWidth > 0 && framebufferHeight > 0)
 	{
-		m_renderManager->resize(static_cast<uint32_t>(framebufferWidth), static_cast<uint32_t>(framebufferHeight));
+		m_pendingResize       = true;
+		m_pendingResizeWidth  = static_cast<uint32_t>(framebufferWidth);
+		m_pendingResizeHeight = static_cast<uint32_t>(framebufferHeight);
 	}
 }
 
@@ -613,7 +615,9 @@ void bbe::Window::INTERNAL_resizeFramebuffer(int width, int height)
 		return;
 	}
 	requestRender();
-	m_renderManager->resize(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+	m_pendingResize       = true;
+	m_pendingResizeWidth  = static_cast<uint32_t>(width);
+	m_pendingResizeHeight = static_cast<uint32_t>(height);
 }
 
 void bbe::Window::INTERNAL_onRefresh()
@@ -688,6 +692,11 @@ void bbe::Window::executeFrameStartListeneres()
 
 void bbe::Window::update()
 {
+	if (m_pendingResize)
+	{
+		m_pendingResize = false;
+		m_renderManager->resize(m_pendingResizeWidth, m_pendingResizeHeight);
+	}
 	executeFrameStartListeneres();
 	INTERNAL_keyboard.update();
 	if (m_pwindow == nullptr) return;
