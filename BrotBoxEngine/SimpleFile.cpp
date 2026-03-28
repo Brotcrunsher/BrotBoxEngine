@@ -11,11 +11,15 @@
 #include <stdlib.h>
 #include <string>
 #include <thread>
+#include <vector>
 
 #ifdef __linux__
+#include <cerrno>
 #include <cstdlib>
 #include <dbus/dbus.h>
+#include <fcntl.h>
 #include <limits.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #endif
 
@@ -434,6 +438,181 @@ static std::string quoteDesktopExecArg(const char *input)
 	}
 	escaped += "\"";
 	return escaped;
+}
+
+struct LinuxCommandResult
+{
+	bool launched = false;
+	int exitCode = -1;
+	std::string output;
+};
+
+static LinuxCommandResult runLinuxCommand(const std::vector<std::string> &args)
+{
+	LinuxCommandResult result;
+	if (args.empty())
+	{
+		return result;
+	}
+
+	int pipeFds[2] = { -1, -1 };
+	if (::pipe(pipeFds) != 0)
+	{
+		return result;
+	}
+
+	const pid_t child = fork();
+	if (child == 0)
+	{
+		dup2(pipeFds[1], STDOUT_FILENO);
+		const int devNullFd = open("/dev/null", O_WRONLY);
+		if (devNullFd >= 0)
+		{
+			dup2(devNullFd, STDERR_FILENO);
+			close(devNullFd);
+		}
+		close(pipeFds[0]);
+		close(pipeFds[1]);
+
+		std::vector<char *> argv;
+		argv.reserve(args.size() + 1);
+		for (const auto &arg : args)
+		{
+			argv.push_back(const_cast<char *>(arg.c_str()));
+		}
+		argv.push_back(nullptr);
+
+		execvp(argv[0], argv.data());
+		_exit(errno == ENOENT ? 127 : 126);
+	}
+
+	close(pipeFds[1]);
+
+	if (child < 0)
+	{
+		close(pipeFds[0]);
+		return result;
+	}
+
+	result.launched = true;
+	char buffer[512];
+	ssize_t bytesRead = 0;
+	while ((bytesRead = read(pipeFds[0], buffer, sizeof(buffer))) > 0)
+	{
+		result.output.append(buffer, buffer + bytesRead);
+	}
+	close(pipeFds[0]);
+
+	int status = 0;
+	if (waitpid(child, &status, 0) >= 0 && WIFEXITED(status))
+	{
+		result.exitCode = WEXITSTATUS(status);
+	}
+
+	return result;
+}
+
+static std::string trimLinuxCommandOutput(std::string output)
+{
+	while (!output.empty() && (output.back() == '\n' || output.back() == '\r' || output.back() == '\t' || output.back() == ' '))
+	{
+		output.pop_back();
+	}
+	return output;
+}
+
+static std::string appendDefaultExtensionIfMissing(std::string path, const bbe::String &defaultExtension)
+{
+	if (defaultExtension.isEmpty())
+	{
+		return path;
+	}
+
+	const std::filesystem::path fsPath(path);
+	if (fsPath.has_extension())
+	{
+		return path;
+	}
+
+	path += ".";
+	path += defaultExtension.getRaw();
+	return path;
+}
+
+static std::string getLinuxDialogInitialPath(const bbe::String &inOutPath, const bbe::String &defaultExtension, bool isSaveDialog)
+{
+	if (!inOutPath.isEmpty())
+	{
+		return inOutPath.getRaw();
+	}
+
+	std::string home = getLinuxAbsoluteEnv("HOME");
+	if (home.empty())
+	{
+		return "";
+	}
+
+	if (!isSaveDialog)
+	{
+		return home + "/";
+	}
+
+	std::string initialPath = home + "/untitled";
+	if (!defaultExtension.isEmpty())
+	{
+		initialPath += ".";
+		initialPath += defaultExtension.getRaw();
+	}
+	return initialPath;
+}
+
+enum class LinuxFileChooserStatus
+{
+	UNAVAILABLE,
+	CANCELLED,
+	SUCCESS,
+};
+
+static LinuxFileChooserStatus tryLinuxExternalFileChooser(const char *methodName, const char *title, bbe::String &inOutPath, const bbe::String &defaultExtension)
+{
+	const bool isSaveDialog = std::strcmp(methodName, "SaveFile") == 0;
+	const std::string initialPath = getLinuxDialogInitialPath(inOutPath, defaultExtension, isSaveDialog);
+
+	const std::vector<std::vector<std::string>> commands = isSaveDialog
+		? std::vector<std::vector<std::string>>{
+			{ "zenity", "--file-selection", "--save", "--title", title, "--filename", initialPath },
+			{ "qarma", "--file-selection", "--save", "--title", title, "--filename", initialPath },
+			{ "kdialog", "--getsavefilename", initialPath, "--title", title } }
+		: std::vector<std::vector<std::string>>{
+			{ "zenity", "--file-selection", "--title", title, "--filename", initialPath },
+			{ "qarma", "--file-selection", "--title", title, "--filename", initialPath },
+			{ "kdialog", "--getopenfilename", initialPath, "--title", title } };
+
+	for (const auto &command : commands)
+	{
+		LinuxCommandResult result = runLinuxCommand(command);
+		if (!result.launched || result.exitCode == 127)
+		{
+			continue;
+		}
+
+		if (result.exitCode != 0)
+		{
+			return LinuxFileChooserStatus::CANCELLED;
+		}
+
+		const std::string selectedPath = trimLinuxCommandOutput(result.output);
+		if (selectedPath.empty())
+		{
+			return LinuxFileChooserStatus::CANCELLED;
+		}
+
+		const std::string finalPath = appendDefaultExtensionIfMissing(selectedPath, isSaveDialog ? defaultExtension : "");
+		inOutPath = finalPath.c_str();
+		return LinuxFileChooserStatus::SUCCESS;
+	}
+
+	return LinuxFileChooserStatus::UNAVAILABLE;
 }
 
 struct ScopedDBusError
@@ -1112,12 +1291,30 @@ void bbe::simpleFile::createLink(const bbe::String &from, const bbe::String &to,
 bool bbe::simpleFile::showOpenDialog(bbe::String &outPath)
 {
 	updateIoStats();
+	const LinuxFileChooserStatus chooserStatus = tryLinuxExternalFileChooser("OpenFile", "Open File", outPath, "");
+	if (chooserStatus == LinuxFileChooserStatus::SUCCESS)
+	{
+		return true;
+	}
+	if (chooserStatus == LinuxFileChooserStatus::CANCELLED)
+	{
+		return false;
+	}
 	return linuxPortalFileChooser("OpenFile", "Open File", outPath, "");
 }
 
 bool bbe::simpleFile::showSaveDialog(bbe::String &outPath, const bbe::String &defaultExtension)
 {
 	updateIoStats();
+	const LinuxFileChooserStatus chooserStatus = tryLinuxExternalFileChooser("SaveFile", "Save File", outPath, defaultExtension);
+	if (chooserStatus == LinuxFileChooserStatus::SUCCESS)
+	{
+		return true;
+	}
+	if (chooserStatus == LinuxFileChooserStatus::CANCELLED)
+	{
+		return false;
+	}
 	return linuxPortalFileChooser("SaveFile", "Save File", outPath, defaultExtension);
 }
 #endif

@@ -35,6 +35,44 @@ class MyGame : public bbe::Game
 	bool drawGridLines = true;
 	bool tiled = false;
 
+	void clampBrushWidth()
+	{
+		if (brushWidth < 1) brushWidth = 1;
+	}
+
+	void swapColors()
+	{
+		for (size_t i = 0; i < std::size(leftColor); i++)
+		{
+			std::swap(leftColor[i], rightColor[i]);
+		}
+	}
+
+	void resetColorsToDefault()
+	{
+		leftColor[0] = 0.0f;
+		leftColor[1] = 0.0f;
+		leftColor[2] = 0.0f;
+		leftColor[3] = 1.0f;
+
+		rightColor[0] = 1.0f;
+		rightColor[1] = 1.0f;
+		rightColor[2] = 1.0f;
+		rightColor[3] = 1.0f;
+	}
+
+	void saveCanvas()
+	{
+		if (path.isEmpty())
+		{
+			bbe::simpleFile::showSaveDialog(path, "png");
+		}
+		if (!path.isEmpty())
+		{
+			canvas.get().writeToFile(path);
+		}
+	}
+
 	void resetCamera()
 	{
 		offset = bbe::Vector2(getWindowWidth() / 2 - canvas.get().getWidth() / 2, getWindowHeight() / 2 - canvas.get().getHeight() / 2);
@@ -178,25 +216,26 @@ class MyGame : public bbe::Game
 	virtual void update(float timeSinceLastFrame) override
 	{
 		const bbe::Vector2 prevMousePos = screenToCanvas(getMousePrevious());
+		const bool ctrlDown = isKeyDown(bbe::Key::LEFT_CONTROL) || isKeyDown(bbe::Key::RIGHT_CONTROL);
 		if (isKeyPressed(bbe::Key::SPACE))
 		{
 			resetCamera();
 		}
 
 		constexpr float CAM_WASD_SPEED = 400;
-		if (isKeyDown(bbe::Key::W))
+		if (!ctrlDown && isKeyDown(bbe::Key::W))
 		{
 			offset.y += timeSinceLastFrame * CAM_WASD_SPEED;
 		}
-		if (isKeyDown(bbe::Key::S))
+		if (!ctrlDown && isKeyDown(bbe::Key::S))
 		{
 			offset.y -= timeSinceLastFrame * CAM_WASD_SPEED;
 		}
-		if (isKeyDown(bbe::Key::A))
+		if (!ctrlDown && isKeyDown(bbe::Key::A))
 		{
 			offset.x += timeSinceLastFrame * CAM_WASD_SPEED;
 		}
-		if (isKeyDown(bbe::Key::D))
+		if (!ctrlDown && isKeyDown(bbe::Key::D))
 		{
 			offset.x -= timeSinceLastFrame * CAM_WASD_SPEED;
 		}
@@ -223,10 +262,54 @@ class MyGame : public bbe::Game
 		}
 		const bbe::Vector2 currMousePos = screenToCanvas(getMouse());
 
-		if (isKeyDown(bbe::Key::LEFT_CONTROL))
+		if (isKeyPressed(bbe::Key::_1))
+		{
+			mode = MODE_BRUSH;
+		}
+		if (isKeyPressed(bbe::Key::_2))
+		{
+			mode = MODE_FLOOD_FILL;
+		}
+		if (isKeyPressed(bbe::Key::_3))
+		{
+			mode = MODE_LINE;
+		}
+		if (isKeyPressed(bbe::Key::_4))
+		{
+			mode = MODE_RECTANGLE;
+		}
+		if (isKeyPressed(bbe::Key::_5))
+		{
+			mode = MODE_PIPETTE;
+		}
+		if (isKeyPressed(bbe::Key::X))
+		{
+			swapColors();
+		}
+		if (isKeyTyped(bbe::Key::EQUAL)
+			|| isKeyTyped(bbe::Key::KP_ADD)
+			|| isKeyTyped(bbe::Key::RIGHT_BRACKET))
+		{
+			brushWidth++;
+		}
+		if (isKeyTyped(bbe::Key::MINUS) || isKeyTyped(bbe::Key::KP_SUBTRACT))
+		{
+			brushWidth--;
+		}
+		clampBrushWidth();
+
+		if (ctrlDown)
 		{
 			if (isKeyTyped(bbe::Key::Z) && canvas.isUndoable()) canvas.undo();
 			if (isKeyTyped(bbe::Key::Y) && canvas.isRedoable()) canvas.redo();
+			if (isKeyPressed(bbe::Key::S))
+			{
+				saveCanvas();
+			}
+			if (isKeyPressed(bbe::Key::D))
+			{
+				resetColorsToDefault();
+			}
 		}
 
 		static bool changeRegistered = false;
@@ -353,7 +436,7 @@ class MyGame : public bbe::Game
 		{
 			if (ImGui::InputInt("Brush Width", &brushWidth))
 			{
-				if (brushWidth < 1) brushWidth = 1;
+				clampBrushWidth();
 			}
 		}
 		if (mode == MODE_RECTANGLE)
@@ -383,6 +466,11 @@ class MyGame : public bbe::Game
 			setupCanvas();
 		}
 		ImGui::EndDisabled();
+
+		ImGui::SeparatorText("Shortcuts");
+		ImGui::Text("1 Brush | 2 Fill | 3 Line | 4 Rectangle | 5 Pipette");
+		ImGui::Text("+/- Brush Size | X Swap Colors | Ctrl+D Default Colors");
+		ImGui::Text("Ctrl+S Save | Ctrl+Z Undo | Ctrl+Y Redo | Space Reset Camera");
 
 		const int32_t repeats = tiled ? 20 : 0;
 		for (int32_t i = -repeats; i <= repeats; i++)
@@ -426,14 +514,7 @@ class MyGame : public bbe::Game
 				}
 				if (ImGui::MenuItem("Save"))
 				{
-					if (path.isEmpty())
-					{
-						bbe::simpleFile::showSaveDialog(path, "png");
-					}
-					if (!path.isEmpty())
-					{
-						canvas.get().writeToFile(path);
-					}
+					saveCanvas();
 				}
 				if (ImGui::MenuItem("Save As..."))
 				{
