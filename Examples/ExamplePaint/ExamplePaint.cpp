@@ -1675,7 +1675,14 @@ class MyGame : public bbe::Game
 			}
 			if (isKeyPressed(bbe::Key::C))
 			{
-				storeSelectionInClipboard();
+				if (mode != MODE_SELECTION)
+				{
+					mode = MODE_SELECTION;
+				}
+				else
+				{
+					storeSelectionInClipboard();
+				}
 			}
 			if (isKeyPressed(bbe::Key::X))
 			{
