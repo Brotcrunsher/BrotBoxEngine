@@ -14,7 +14,6 @@
 // TODO: Layer blending modes
 // TODO: Layer duplication
 // TODO: Merge layers
-// TODO: Import image as layer
 // TODO: Resizable canvas
 // TODO: Scaling whole picture/selection up/down
 // TODO: Pixel perfect manipulation with arrow keys
@@ -53,6 +52,8 @@ class MyGame : public bbe::Game
 	bbe::Image workArea;
 	float zoomLevel = 1.f;
 	bool openSaveChoicePopup = false;
+	bool openDropChoicePopup = false;
+	bbe::List<bbe::String> pendingDroppedPaths;
 	bool showHelpWindow = false;
 
 	enum class SaveFormat
@@ -371,6 +372,55 @@ class MyGame : public bbe::Game
 		prepareForLayerTargetChange();
 		canvas.get().layers.add(makeLayer(makeLayerName(), getCanvasWidth(), getCanvasHeight()));
 		activeLayerIndex = (int32_t)canvas.get().layers.getLength() - 1;
+		canvas.submit();
+	}
+
+	void importFileAsLayers(const bbe::List<bbe::String> &paths)
+	{
+		for (size_t i = 0; i < paths.getLength(); i++)
+		{
+			const bbe::String &path = paths[i];
+			if (!isSupportedDroppedDocumentPath(path)) continue;
+
+			if (isLayeredDocumentPath(path))
+			{
+				// Import every layer from the .bbepaint file
+				bbe::ByteBuffer buffer = bbe::simpleFile::readBinaryFile(path);
+				if (buffer.getLength() == 0) continue;
+				bbe::ByteBufferSpan span = buffer.getSpan();
+				const bbe::String magic = span.readNullString();
+				if (magic != LAYERED_FILE_MAGIC) continue;
+				int32_t width = 0, height = 0;
+				uint32_t layerCount = 0;
+				int32_t storedActiveLayerIndex = 0;
+				span.read(width);
+				span.read(height);
+				span.read(layerCount);
+				span.read(storedActiveLayerIndex);
+				if (width <= 0 || height <= 0 || layerCount == 0) continue;
+				for (uint32_t k = 0; k < layerCount; k++)
+				{
+					PaintLayer layer;
+					span.read(layer.visible);
+					span.read(layer.name);
+					if (!deserializeLayerImage(span, width, height, layer.image)) break;
+					prepareForLayerTargetChange();
+					canvas.get().layers.add(std::move(layer));
+					activeLayerIndex = (int32_t)canvas.get().layers.getLength() - 1;
+				}
+			}
+			else
+			{
+				// Import single PNG as a new layer
+				bbe::Image img(path.getRaw());
+				if (img.getWidth() <= 0 || img.getHeight() <= 0) continue;
+				prepareImageForCanvas(img);
+				bbe::String name = std::filesystem::path(path.getRaw()).stem().string().c_str();
+				prepareForLayerTargetChange();
+				canvas.get().layers.add(PaintLayer{ name, true, std::move(img) });
+				activeLayerIndex = (int32_t)canvas.get().layers.getLength() - 1;
+			}
+		}
 		canvas.submit();
 	}
 
@@ -2467,11 +2517,17 @@ class MyGame : public bbe::Game
 	}
 	virtual void onFilesDropped(const bbe::List<bbe::String> &paths) override
 	{
+		pendingDroppedPaths.clear();
 		for (size_t i = 0; i < paths.getLength(); i++)
 		{
-			if (!isSupportedDroppedDocumentPath(paths[i])) continue;
-			newCanvas(paths[i].getRaw());
-			break;
+			if (isSupportedDroppedDocumentPath(paths[i]))
+			{
+				pendingDroppedPaths.add(paths[i]);
+			}
+		}
+		if (!pendingDroppedPaths.isEmpty())
+		{
+			openDropChoicePopup = true;
 		}
 	}
 	virtual void update(float timeSinceLastFrame) override
@@ -3343,6 +3399,11 @@ class MyGame : public bbe::Game
 			ImGui::OpenPopup("Save Document");
 			openSaveChoicePopup = false;
 		}
+		if (openDropChoicePopup)
+		{
+			ImGui::OpenPopup("Dropped File(s)");
+			openDropChoicePopup = false;
+		}
 		if (ImGui::BeginPopupModal("Save Document", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::Text("Choose a save format for this document.");
@@ -3360,6 +3421,42 @@ class MyGame : public bbe::Game
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
+		if (ImGui::BeginPopupModal("Dropped File(s)", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			if (pendingDroppedPaths.getLength() == 1)
+			{
+				ImGui::Text("What would you like to do with \"%s\"?",
+					std::filesystem::path(pendingDroppedPaths[0].getRaw()).filename().string().c_str());
+			}
+			else
+			{
+				ImGui::Text("What would you like to do with %d dropped file(s)?",
+					(int)pendingDroppedPaths.getLength());
+			}
+			ImGui::Spacing();
+			if (ImGui::Button("Open as Document", ImVec2(160, 0)))
+			{
+				// Use only the first valid file as the new document
+				newCanvas(pendingDroppedPaths[0].getRaw());
+				pendingDroppedPaths.clear();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Add as Layer(s)", ImVec2(160, 0)))
+			{
+				importFileAsLayers(pendingDroppedPaths);
+				pendingDroppedPaths.clear();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				pendingDroppedPaths.clear();
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
@@ -3384,7 +3481,7 @@ class MyGame : public bbe::Game
 				ImGui::BulletText("+/- changes brush size or text size for the active tool");
 				ImGui::BulletText("X swaps primary and secondary color");
 				ImGui::BulletText("Ctrl+D resets colors to black/white");
-				ImGui::BulletText("Drag and drop PNG or .bbepaint files into the window to open them");
+				ImGui::BulletText("Drag and drop PNG or .bbepaint files to open as a document or add as a new layer");
 				ImGui::BulletText("Space resets the camera");
 				ImGui::BulletText("Middle mouse pans");
 				ImGui::BulletText("Mouse wheel zooms");
