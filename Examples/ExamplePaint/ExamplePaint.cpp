@@ -1723,10 +1723,21 @@ class MyGame : public bbe::Game
 			&& drawButtonDown;
 		const bool shadowDrawMode = shadowDrawModes.contains(mode);
 
+		if (changeRegistered)
+		{
+			if (isMouseReleased(bbe::MouseButton::LEFT) || isMouseReleased(bbe::MouseButton::RIGHT))
+			{
+				if (!isMouseDown(bbe::MouseButton::LEFT) && !isMouseDown(bbe::MouseButton::RIGHT))
+				{
+					applyWorkArea();
+					canvas.submit(); // <- changeRegistered is for this
+					changeRegistered = false;
+				}
+			}
+		}
+
 		if (drawMode || shadowDrawMode)
 		{
-			// This counter is a bit of a hack. Problem is if we wouldn't have it and immediately call clearWorkArea then the workArea would never get applied.
-			// Applying the work area could be moved before this if, but then we might lose a frame of "work" which might feel odd.
 			static uint32_t counter = 0;
 			if (!drawMode)
 			{
@@ -1735,6 +1746,7 @@ class MyGame : public bbe::Game
 			}
 			else
 			{
+				if (counter > 0) clearWorkArea();
 				counter = 0;
 			}
 
@@ -1790,18 +1802,6 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		if (changeRegistered)
-		{
-			if (isMouseReleased(bbe::MouseButton::LEFT) || isMouseReleased(bbe::MouseButton::RIGHT))
-			{
-				if (!isMouseDown(bbe::MouseButton::LEFT) && !isMouseDown(bbe::MouseButton::RIGHT))
-				{
-					applyWorkArea();
-					canvas.submit(); // <- changeRegistered is for this
-					changeRegistered = false;
-				}
-			}
-		}
 	}
 	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
 	{
