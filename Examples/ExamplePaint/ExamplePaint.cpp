@@ -1506,8 +1506,22 @@ class MyGame : public bbe::Game
 	}
 	virtual void update(float timeSinceLastFrame) override
 	{
+		static bool changeRegistered = false;
+		static int32_t previousMode = mode;
+		const bool drawButtonDown = isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT);
+		auto discardTransientWorkArea = [&]()
+		{
+			clearWorkArea();
+			changeRegistered = false;
+		};
+		if (mode != previousMode && !drawButtonDown)
+		{
+			discardTransientWorkArea();
+		}
+
 		const bbe::Vector2 prevMousePos = screenToCanvas(getMousePrevious());
 		const bool ctrlDown = isKeyDown(bbe::Key::LEFT_CONTROL) || isKeyDown(bbe::Key::RIGHT_CONTROL);
+		const int32_t modeBeforeInput = mode;
 		bool refreshRectangleDraft = false;
 		if (isKeyPressed(bbe::Key::SPACE))
 		{
@@ -1651,6 +1665,11 @@ class MyGame : public bbe::Game
 				pasteSelectionAt(toCanvasPixel(currMousePos));
 			}
 		}
+		if (mode != modeBeforeInput && !drawButtonDown)
+		{
+			discardTransientWorkArea();
+		}
+		previousMode = mode;
 		if (refreshRectangleDraft)
 		{
 			refreshActiveRectangleDraftImage();
@@ -1664,7 +1683,6 @@ class MyGame : public bbe::Game
 			deleteSelection();
 		}
 
-		static bool changeRegistered = false;
 		if (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT))
 		{
 			startMousePos = screenToCanvas(getMouse());
@@ -1692,9 +1710,10 @@ class MyGame : public bbe::Game
 		const bool drawMode = mode != MODE_SELECTION
 			&& mode != MODE_TEXT
 			&& mode != MODE_RECTANGLE
-			&& (isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT));
+			&& drawButtonDown;
+		const bool shadowDrawMode = shadowDrawModes.contains(mode);
 
-		if (drawMode || shadowDrawModes.contains(mode))
+		if (drawMode || shadowDrawMode)
 		{
 			// This counter is a bit of a hack. Problem is if we wouldn't have it and immediately call clearWorkArea then the workArea would never get applied.
 			// Applying the work area could be moved before this if, but then we might lose a frame of "work" which might feel odd.
@@ -1711,7 +1730,11 @@ class MyGame : public bbe::Game
 
 			if (mode == MODE_BRUSH)
 			{
-				changeRegistered |= touchLine(currMousePos, prevMousePos);
+				const bool touched = touchLine(currMousePos, prevMousePos);
+				if (drawMode)
+				{
+					changeRegistered |= touched;
+				}
 			}
 			else if (mode == MODE_FLOOD_FILL)
 			{
