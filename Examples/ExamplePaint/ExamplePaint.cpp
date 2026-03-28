@@ -327,13 +327,18 @@ class MyGame : public bbe::Game
 		return hasSelection && selectionRect.isPointInRectangle(point, true);
 	}
 
-	bool isWholeLayerSelection(const bbe::Rectanglei &rect) const
-	{
-		return rect.x == 0
-			&& rect.y == 0
-			&& rect.width == getCanvasWidth()
-			&& rect.height == getCanvasHeight();
-	}
+		bool isWholeLayerSelection(const bbe::Rectanglei &rect) const
+		{
+			return rect.x == 0
+				&& rect.y == 0
+				&& rect.width == getCanvasWidth()
+				&& rect.height == getCanvasHeight();
+		}
+
+		bool shouldClearWholeLayerSelectionToTransparency() const
+		{
+			return canvas.get().layers.getLength() > 1;
+		}
 
 	bbe::Image copyCanvasRect(const bbe::Rectanglei &rect) const
 	{
@@ -349,13 +354,14 @@ class MyGame : public bbe::Game
 		return copied;
 	}
 
-	void clearCanvasRect(const bbe::Rectanglei &rect)
-	{
-		const bbe::Colori backgroundColor = isWholeLayerSelection(rect) ? bbe::Colori(0, 0, 0, 0) : bbe::Color(rightColor).asByteColor();
-		for (int32_t x = 0; x < rect.width; x++)
+		void clearCanvasRect(const bbe::Rectanglei &rect)
 		{
-			for (int32_t y = 0; y < rect.height; y++)
+			const bool clearToTransparency = isWholeLayerSelection(rect) && shouldClearWholeLayerSelectionToTransparency();
+			const bbe::Colori backgroundColor = clearToTransparency ? bbe::Colori(0, 0, 0, 0) : bbe::Color(rightColor).asByteColor();
+			for (int32_t x = 0; x < rect.width; x++)
 			{
+				for (int32_t y = 0; y < rect.height; y++)
+				{
 				getActiveLayerImage().setPixel((size_t)(rect.x + x), (size_t)(rect.y + y), backgroundColor);
 			}
 		}
