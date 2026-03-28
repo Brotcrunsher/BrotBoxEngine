@@ -468,15 +468,9 @@ class MyGame : public bbe::Game
 		if (selectionPreviewRect.x != selectionRect.x || selectionPreviewRect.y != selectionRect.y)
 		{
 			clearCanvasRect(selectionRect);
-			blendImageOntoCanvas(selectionPreviewImage, selectionPreviewRect.getPos());
-			canvas.submit();
-
-				if (!clampRectToCanvas(bbe::Rectanglei(selectionPreviewRect.x, selectionPreviewRect.y, selectionPreviewImage.getWidth(), selectionPreviewImage.getHeight()), selectionRect))
-			{
-				clearSelectionState();
-				return;
-			}
-
+			selectionRect = selectionPreviewRect;
+			selectionFloating = true;
+			selectionFloatingImage = selectionPreviewImage;
 			hasSelection = true;
 		}
 
