@@ -28,6 +28,7 @@ class MyGame : public bbe::Game
 	bbe::Image workArea;
 	float zoomLevel = 1.f;
 	bool openSaveChoicePopup = false;
+	bool showHelpWindow = false;
 
 	enum class SaveFormat
 	{
@@ -1437,12 +1438,6 @@ class MyGame : public bbe::Game
 			ImGui::PopID();
 		}
 
-		ImGui::SeparatorText("Shortcuts");
-		ImGui::Text("1 Brush | 2 Fill | 3 Line | 4 Rectangle | 5 Selection | 6 Text | 7 Pipette");
-		ImGui::Text("+/- Brush/Text Size | X Swap Colors | Ctrl+D Default Colors");
-		ImGui::Text("Ctrl+S Save | Ctrl+Z Undo | Ctrl+Y Redo | Space Reset Camera");
-		ImGui::Text("Ctrl+C Copy Selection | Ctrl+X Cut | Ctrl+V Paste | Del Delete");
-
 		const int32_t repeats = tiled ? 20 : 0;
 		for (int32_t i = -repeats; i <= repeats; i++)
 		{
@@ -1542,6 +1537,14 @@ class MyGame : public bbe::Game
 				}
 				ImGui::EndMenu();
 			}
+			if (ImGui::BeginMenu("Help"))
+			{
+				if (ImGui::MenuItem("Show Help"))
+				{
+					showHelpWindow = true;
+				}
+				ImGui::EndMenu();
+			}
 			ImGui::EndMainMenuBar();
 		}
 
@@ -1570,6 +1573,47 @@ class MyGame : public bbe::Game
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
+		}
+
+		if (showHelpWindow)
+		{
+			if (ImGui::Begin("ExamplePaint Help", &showHelpWindow))
+			{
+				ImGui::SeparatorText("Tools");
+				ImGui::BulletText("1 Brush");
+				ImGui::BulletText("2 Flood Fill");
+				ImGui::BulletText("3 Line");
+				ImGui::BulletText("4 Rectangle");
+				ImGui::BulletText("5 Selection");
+				ImGui::BulletText("6 Text");
+				ImGui::BulletText("7 Pipette");
+
+				ImGui::SeparatorText("General");
+				ImGui::BulletText("+/- changes brush size or text size for the active tool");
+				ImGui::BulletText("X swaps primary and secondary color");
+				ImGui::BulletText("Ctrl+D resets colors to black/white");
+				ImGui::BulletText("Space resets the camera");
+				ImGui::BulletText("Middle mouse pans");
+				ImGui::BulletText("Mouse wheel zooms");
+
+				ImGui::SeparatorText("Edit");
+				ImGui::BulletText("Ctrl+S saves");
+				ImGui::BulletText("Ctrl+Z / Ctrl+Y undo and redo");
+				ImGui::BulletText("Delete / Backspace deletes the current selection");
+
+				ImGui::SeparatorText("Selection");
+				ImGui::BulletText("Drag to create a rectangular selection");
+				ImGui::BulletText("Drag inside a selection to move it");
+				ImGui::BulletText("Ctrl+A selects the whole active layer");
+				ImGui::BulletText("Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste");
+
+				ImGui::SeparatorText("Layers");
+				ImGui::BulletText("Painting and text placement affect only the active layer");
+				ImGui::BulletText("Visible layers are flattened when saving as PNG");
+				ImGui::BulletText("Save as Layered keeps all layers in .bbepaint");
+				ImGui::BulletText("Opening PNG still works as a normal single-layer document");
+			}
+			ImGui::End();
 		}
 
 		// Always center this window when appearing
