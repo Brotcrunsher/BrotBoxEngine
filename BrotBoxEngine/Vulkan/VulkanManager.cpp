@@ -1070,18 +1070,21 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiStop()
 
 void bbe::INTERNAL::vulkan::VulkanManager::imguiStartFrame()
 {
-	// TODO: Still not ideal - what if the scale is anything else than 1 or 2 (e.g. on 8k)
 	float scale = 0;
 	glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
 	ImGuiIO &io = ImGui::GetIO();
-	if (scale < 1.5f)
+
+	static float lastScale = -1.f;
+	if (scale != lastScale)
 	{
-		io.FontDefault = imguiFontSmall;
+		ImGuiStyle &style = ImGui::GetStyle();
+		style = ImGuiStyle();
+		ImGui::StyleColorsDark();
+		style.ScaleAllSizes(bbe::Math::sqrt(scale));
+		lastScale = scale;
 	}
-	else
-	{
-		io.FontDefault = imguiFontBig;
-	}
+
+	io.FontDefault = scale < 1.5f ? imguiFontSmall : imguiFontBig;
 
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();

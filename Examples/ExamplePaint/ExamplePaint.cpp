@@ -5,6 +5,8 @@
 // TODO: Flood fill with edges of brush tool kinda bad.
 // TODO: Bug: right click has weird behaviour with shadow
 
+// Bug: When clicking "Paste as New Canvas" we can't undo the step
+
 struct PaintLayer
 {
 	bbe::String name = "";
@@ -1830,7 +1832,7 @@ class MyGame : public bbe::Game
 	}
 	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
-		constexpr float PANEL_WIDTH = 260.f;
+		const float PANEL_WIDTH = 260.f * bbe::Math::sqrt(getWindow()->getScale());
 		ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetFrameHeight()), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(PANEL_WIDTH, (float)getWindowHeight() - ImGui::GetFrameHeight()), ImGuiCond_Always);
 		ImGui::Begin("##panel", nullptr,
@@ -2223,8 +2225,6 @@ class MyGame : public bbe::Game
 			}
 			ImGui::EndPopup();
 		}
-
-		ImGui::ShowDemoWindow();
 	}
 
 	virtual void onEnd() override
