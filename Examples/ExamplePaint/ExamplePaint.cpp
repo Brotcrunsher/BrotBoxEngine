@@ -1069,6 +1069,11 @@ class MyGame : public bbe::Game
 			return createRectangleDraftImage(selectionPreviewRect.width, selectionPreviewRect.height);
 		}
 
+		if (circleDraftActive)
+		{
+			return createCircleDraftImage(selectionPreviewRect.width, selectionPreviewRect.height);
+		}
+
 		if (selectionPreviewRect.width != selectionPreviewImage.getWidth() || selectionPreviewRect.height != selectionPreviewImage.getHeight())
 		{
 			return scaleImageNearest(selectionPreviewImage, selectionPreviewRect.width, selectionPreviewRect.height);
@@ -1116,6 +1121,8 @@ class MyGame : public bbe::Game
 			selectionFloatingImage = buildSelectionPreviewResultImage();
 			rectangleDraftActive = false;
 			rectangleDraftUsesRightColor = false;
+			circleDraftActive = false;
+			circleDraftUsesRightColor = false;
 			hasSelection = true;
 		}
 
