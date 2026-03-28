@@ -1,11 +1,13 @@
 
 #include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <vector>
 
 // TODO: Flood fill with edges of brush tool kinda bad.
 // TODO: Bug: right click has weird behaviour with shadow
 
-// TODO: Bezier curve
-// TODO: Different fonts in Text Tool
 // TODO: Rotation handle for selections, rectangles and ellipses
 // TODO: Alpha eraser tool - not just recolering pixels but setting their alpha to 0.
 // TODO: Layer opacity
@@ -23,6 +25,12 @@
 // TODO: Unsaved changes indicator - little star somewhere in the UI when there are unsaved changes.
 // TODO: Mini-Preview / Navigator - small always visible preview of the whole canvas with a rectangle indicating the current view area, allowing to quickly jump to different areas of the canvas by clicking in the preview.
 
+
+struct FontEntry
+{
+	bbe::String displayName;
+	bbe::String path;
+};
 
 struct PaintLayer
 {
@@ -73,7 +81,9 @@ class MyGame : public bbe::Game
 
 	int32_t brushWidth = 1;
 	int32_t textFontSize = 20;
+	int32_t textFontIndex = 0;
 	char textBuffer[512] = "Text";
+	bbe::List<FontEntry> availableFonts;
 	bbe::Vector2 startMousePos;
 	int32_t cornerRadius = 0;
 
@@ -1930,14 +1940,108 @@ class MyGame : public bbe::Game
 		if (textFontSize < 1) textFontSize = 1;
 	}
 
+	void clampTextFontIndex()
+	{
+		if (availableFonts.isEmpty()) { textFontIndex = 0; return; }
+		textFontIndex = bbe::Math::clamp(textFontIndex, 0, (int32_t)availableFonts.getLength() - 1);
+	}
+
+	static bool isFontUsable(const bbe::String &path)
+	{
+		if (path == "OpenSansRegular.ttf") return true;
+
+		// Read raw font bytes
+		std::ifstream file(path.getRaw(), std::ios::binary | std::ios::ate);
+		if (!file) return false;
+		const auto size = file.tellg();
+		if (size <= 0) return false;
+		file.seekg(0);
+		std::vector<unsigned char> data(static_cast<size_t>(size));
+		if (!file.read(reinterpret_cast<char *>(data.data()), size)) return false;
+
+		// Check stb_truetype can initialise the font
+		stbtt_fontinfo info = {};
+		const int offset = stbtt_GetFontOffsetForIndex(data.data(), 0);
+		if (offset < 0) return false;
+		if (!stbtt_InitFont(&info, data.data(), offset)) return false;
+
+		// Require the basic Latin glyphs used by the default "Text" string
+		for (const int c : { 'T', 'e', 'x', 't' })
+		{
+			if (stbtt_FindGlyphIndex(&info, c) == 0) return false;
+		}
+		return true;
+	}
+
+	void buildAvailableFontList()
+	{
+		availableFonts.clear();
+		availableFonts.add({"OpenSansRegular", "OpenSansRegular.ttf"});
+
+		bbe::List<bbe::String> fontDirs;
+#ifdef _WIN32
+		fontDirs.add("C:/Windows/Fonts/");
+#else
+		fontDirs.add("/usr/share/fonts/");
+		fontDirs.add("/usr/local/share/fonts/");
+		{
+			const char *home = std::getenv("HOME");
+			if (home)
+			{
+				fontDirs.add(bbe::String(home) + "/.fonts/");
+				fontDirs.add(bbe::String(home) + "/.local/share/fonts/");
+			}
+		}
+#endif
+
+		for (size_t d = 0; d < fontDirs.getLength(); d++)
+		{
+			const std::string dirStr(fontDirs[d].getRaw());
+			if (!std::filesystem::exists(dirStr)) continue;
+			try
+			{
+				for (const auto &entry : std::filesystem::recursive_directory_iterator(dirStr))
+				{
+					if (!entry.is_regular_file()) continue;
+					std::string ext = entry.path().extension().string();
+					for (char &c : ext) c = (char)std::tolower((unsigned char)c);
+					if (ext != ".ttf" && ext != ".otf") continue;
+
+					FontEntry fe;
+					fe.displayName = entry.path().stem().string().c_str();
+					fe.path        = entry.path().string().c_str();
+					if (!isFontUsable(fe.path)) continue;
+					availableFonts.add(fe);
+				}
+			}
+			catch (...) {}
+		}
+
+		// Sort alphabetically by display name (keep OpenSansRegular at index 0 by sorting from 1)
+		if (availableFonts.getLength() > 2)
+		{
+			// Extract tail, sort, reinsert
+			bbe::List<FontEntry> tail;
+			for (size_t i = 1; i < availableFonts.getLength(); i++) tail.add(availableFonts[i]);
+			tail.sort([](const FontEntry &a, const FontEntry &b) { return a.displayName < b.displayName; });
+			while (availableFonts.getLength() > 1) availableFonts.popBack();
+			for (size_t i = 0; i < tail.getLength(); i++) availableFonts.add(tail[i]);
+		}
+	}
+
 	const bbe::Font &getTextToolFont() const
 	{
-		static std::map<int32_t, bbe::Font> textFonts;
+		using FontKey = std::pair<std::string, int32_t>;
+		static std::map<FontKey, bbe::Font> textFonts;
 		const int32_t clampedSize = bbe::Math::max<int32_t>(textFontSize, 1);
-		auto it = textFonts.find(clampedSize);
+		const bbe::String &fontPath = (textFontIndex >= 0 && textFontIndex < (int32_t)availableFonts.getLength())
+			? availableFonts[(size_t)textFontIndex].path
+			: bbe::String("OpenSansRegular.ttf");
+		const FontKey key = { std::string(fontPath.getRaw()), clampedSize };
+		auto it = textFonts.find(key);
 		if (it == textFonts.end())
 		{
-			it = textFonts.emplace(clampedSize, bbe::Font("OpenSansRegular.ttf", (unsigned)clampedSize)).first;
+			it = textFonts.emplace(key, bbe::Font(fontPath, (unsigned)clampedSize)).first;
 		}
 		return it->second;
 	}
@@ -2358,6 +2462,7 @@ class MyGame : public bbe::Game
 
 	virtual void onStart() override
 	{
+		buildAvailableFontList();
 		newCanvas(400, 300);
 	}
 	virtual void onFilesDropped(const bbe::List<bbe::String> &paths) override
@@ -2925,6 +3030,33 @@ class MyGame : public bbe::Game
 		}
 		if (mode == MODE_TEXT)
 		{
+			// Font picker
+			static char fontFilter[128] = "";
+			ImGui::InputText("Filter##fontFilter", fontFilter, sizeof(fontFilter));
+			clampTextFontIndex();
+			const char *currentFontName = availableFonts.isEmpty() ? "None" : availableFonts[(size_t)textFontIndex].displayName.getRaw();
+			if (ImGui::BeginCombo("Font", currentFontName))
+			{
+				for (size_t i = 0; i < availableFonts.getLength(); i++)
+				{
+					const char *name = availableFonts[i].displayName.getRaw();
+					if (fontFilter[0] != '\0')
+					{
+						std::string nameLower = name;
+						std::string filterLower = fontFilter;
+						for (char &c : nameLower)   c = (char)std::tolower((unsigned char)c);
+						for (char &c : filterLower) c = (char)std::tolower((unsigned char)c);
+						if (nameLower.find(filterLower) == std::string::npos) continue;
+					}
+					const bool selected = (textFontIndex == (int32_t)i);
+					if (ImGui::Selectable(name, selected))
+					{
+						textFontIndex = (int32_t)i;
+					}
+					if (selected) ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
 			if (ImGui::InputInt("Font Size", &textFontSize))
 			{
 				clampTextFontSize();

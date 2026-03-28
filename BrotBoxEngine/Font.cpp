@@ -30,13 +30,16 @@ const bbe::Font::CharData &bbe::Font::loadCharData(const int32_t codePoint, floa
 	int xoff = 0;
 	int yoff = 0;
 	unsigned char *bitmap = stbtt_GetCodepointBitmap(&fontInfo, 0, scale, codePoint, &width, &height, &xoff, &yoff);
-	if (bitmap == nullptr) bbe::Crash(bbe::Error::NullPointer);
 
 	//TODO: Currently this is a very wasteful approach to rendering text as we create a separate image for every distinct
 	//      char. It would be much more efficient to implement some form of texture atlas and use that here instead.
-	cd.charImage = bbe::Image(width, height, bitmap, bbe::ImageFormat::R8);
-	stbtt_FreeBitmap(bitmap, nullptr);
-	cd.charImage.setRepeatMode(bbe::ImageRepeatMode::CLAMP_TO_EDGE);
+	if (bitmap != nullptr && width > 0 && height > 0)
+	{
+		cd.charImage = bbe::Image(width, height, bitmap, bbe::ImageFormat::R8);
+		cd.charImage.setRepeatMode(bbe::ImageRepeatMode::CLAMP_TO_EDGE);
+	}
+	// If bitmap is nullptr the glyph has no visible area; leave charImage empty (handled like space).
+	if (bitmap != nullptr) stbtt_FreeBitmap(bitmap, nullptr);
 	charDatas[{ codePoint, scale_ }] = std::move(cd);
 	return charDatas[{ codePoint, scale_ }];
 }
@@ -115,7 +118,11 @@ void bbe::Font::load(const bbe::String &fontPath, unsigned fontSize)
 
 	this->fontSize = fontSize;
 
-	stbtt_InitFont(&fontInfo, font.getRaw(), stbtt_GetFontOffsetForIndex(font.getRaw(), 0));
+	const int fontOffset = stbtt_GetFontOffsetForIndex(font.getRaw(), 0);
+	if (fontOffset < 0 || !stbtt_InitFont(&fontInfo, font.getRaw(), fontOffset))
+	{
+		bbe::Crash(bbe::Error::NullPointer); // Font format not supported by stb_truetype
+	}
 	const float scale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(fontSize));
 
 	int32_t ascent = 0;
