@@ -1516,6 +1516,11 @@ class MyGame : public bbe::Game
 		};
 		if (mode != previousMode && !drawButtonDown)
 		{
+			if (previousMode == MODE_RECTANGLE && rectangleDraftActive)
+			{
+				commitFloatingSelection();
+				clearSelectionState();
+			}
 			discardTransientWorkArea();
 		}
 
@@ -1667,6 +1672,11 @@ class MyGame : public bbe::Game
 		}
 		if (mode != modeBeforeInput && !drawButtonDown)
 		{
+			if (modeBeforeInput == MODE_RECTANGLE && rectangleDraftActive)
+			{
+				commitFloatingSelection();
+				clearSelectionState();
+			}
 			discardTransientWorkArea();
 		}
 		previousMode = mode;
