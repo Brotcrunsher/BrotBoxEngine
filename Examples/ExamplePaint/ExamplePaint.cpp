@@ -5,7 +5,6 @@
 // TODO: Bug: right click has weird behaviour with shadow
 
 // Todo: Arrow tool
-// TODO: configurable roundness of edges in rectangle tool
 struct PaintLayer
 {
 	bbe::String name = "";
@@ -55,7 +54,7 @@ class MyGame : public bbe::Game
 	int32_t textFontSize = 20;
 	char textBuffer[512] = "Text";
 	bbe::Vector2 startMousePos;
-	bool roundEdges = false;
+	int32_t cornerRadius = 0;
 
 	bool drawGridLines = true;
 	bool tiled = false;
@@ -736,34 +735,53 @@ class MyGame : public bbe::Game
 		bbe::Image image(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
 		prepareImageForCanvas(image);
 
+		// SDF of a rounded rectangle centered at origin.
+		// hw/hh = outer half-extents, r = corner radius.
+		auto sdfRoundRect = [](float px, float py, float hw, float hh, float r) -> float
+		{
+			const float ax  = px < 0.f ? -px : px;
+			const float ay  = py < 0.f ? -py : py;
+			const float qx  = ax - hw + r;
+			const float qy  = ay - hh + r;
+			const float qxp = qx > 0.f ? qx : 0.f;
+			const float qyp = qy > 0.f ? qy : 0.f;
+			const float mx  = qx > qy ? qx : qy;
+			return bbe::Math::sqrt(qxp * qxp + qyp * qyp) + (mx < 0.f ? mx : 0.f) - r;
+		};
+
+		const float R  = (float)bbe::Math::min(cornerRadius, bbe::Math::min(width / 2, height / 2));
+		const float T  = (float)brushWidth;
+		const float hw = width  * 0.5f;
+		const float hh = height * 0.5f;
+		const float hwi = hw - T;
+		const float hhi = hh - T;
+		const float Ri  = R - T > 0.f ? R - T : 0.f;
+
 		for (int32_t y = 0; y < height; y++)
 		{
 			for (int32_t x = 0; x < width; x++)
 			{
-				const bool inTopBorder    = y < brushWidth;
-				const bool inBottomBorder = y >= height - brushWidth;
-				const bool inLeftBorder   = x < brushWidth;
-				const bool inRightBorder  = x >= width - brushWidth;
+				// Pixel center in rectangle-centered coordinates
+				const float px = (x + 0.5f) - hw;
+				const float py = (y + 0.5f) - hh;
 
-				if (!inTopBorder && !inBottomBorder && !inLeftBorder && !inRightBorder) continue;
+				const float dOuter     = sdfRoundRect(px, py, hw, hh, R);
+				const float alphaOuter = bbe::Math::clamp01(-dOuter + 0.5f);
+				if (alphaOuter <= 0.f) continue;
 
-				if (roundEdges)
+				float alphaInner = 1.f;
+				if (hwi > 0.f && hhi > 0.f)
 				{
-					const bool inCorner = (inTopBorder || inBottomBorder) && (inLeftBorder || inRightBorder);
-					if (inCorner)
-					{
-						const float cx = inLeftBorder ? (float)(brushWidth - 1 - x) : (float)(x - (width - brushWidth));
-						const float cy = inTopBorder  ? (float)(brushWidth - 1 - y) : (float)(y - (height - brushWidth));
-						const float strength = bbe::Math::clamp01((float)brushWidth - 0.5f - bbe::Math::sqrt(cx * cx + cy * cy));
-						if (strength <= 0.f) continue;
-						bbe::Colori c = color;
-						c.a = (bbe::byte)(c.a * strength);
-						image.setPixel((size_t)x, (size_t)y, c);
-						continue;
-					}
+					const float dInner = sdfRoundRect(px, py, hwi, hhi, Ri);
+					alphaInner = bbe::Math::clamp01(dInner + 0.5f);
 				}
 
-				image.setPixel((size_t)x, (size_t)y, color);
+				const float alpha = alphaOuter < alphaInner ? alphaOuter : alphaInner;
+				if (alpha <= 0.f) continue;
+
+				bbe::Colori c = color;
+				c.a = (bbe::byte)(c.a * alpha);
+				image.setPixel((size_t)x, (size_t)y, c);
 			}
 		}
 
@@ -2253,9 +2271,10 @@ class MyGame : public bbe::Game
 		}
 		if (mode == MODE_RECTANGLE)
 		{
-			if (ImGui::Checkbox("Round Edges", &roundEdges) && rectangleDraftActive)
+			if (ImGui::InputInt("Corner Radius", &cornerRadius))
 			{
-				refreshActiveRectangleDraftImage();
+				if (cornerRadius < 0) cornerRadius = 0;
+				if (rectangleDraftActive) refreshActiveRectangleDraftImage();
 			}
 			ImGui::TextDisabled(rectangleDraftActive
 				? "Drag inside/border to move/resize.\nClick outside to place."
