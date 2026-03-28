@@ -6,9 +6,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <sodium/crypto_pwhash_argon2id.h>
+#include <string>
 #include <vector>
 #ifdef __linux__
 #include <sys/wait.h>
@@ -297,6 +300,47 @@ namespace
 		}
 #endif
 	}
+
+#ifdef __linux__
+	bool applyLinuxUpdateAndRestart(const bbe::String &updatePath, char **argv)
+	{
+		const bbe::String executablePath = bbe::simpleFile::getExecutablePath();
+		const std::filesystem::path executableFsPath(executablePath.getRaw());
+		const std::filesystem::path tempFsPath = executableFsPath.string() + ".update-" + std::to_string(static_cast<long long>(getpid()));
+
+		std::error_code error;
+		std::filesystem::copy_file(updatePath.getRaw(), tempFsPath, std::filesystem::copy_options::overwrite_existing, error);
+		if (error)
+		{
+			BBELOGLN("Failed to copy Linux update file: " << error.message().c_str());
+			return false;
+		}
+
+		const auto executableStatus = std::filesystem::status(executableFsPath, error);
+		if (!error)
+		{
+			std::filesystem::permissions(tempFsPath, executableStatus.permissions(), std::filesystem::perm_options::replace, error);
+		}
+		if (error)
+		{
+			BBELOGLN("Failed to set Linux update permissions: " << error.message().c_str());
+			std::filesystem::remove(tempFsPath);
+			return false;
+		}
+
+		std::filesystem::rename(tempFsPath, executableFsPath, error);
+		if (error)
+		{
+			BBELOGLN("Failed to replace Linux executable during update: " << error.message().c_str());
+			std::filesystem::remove(tempFsPath);
+			return false;
+		}
+
+		execv(executablePath.getRaw(), argv);
+		BBELOGLN("Failed to restart updated ExampleMother: " << strerror(errno));
+		return false;
+	}
+#endif
 }
 
 class MyGame : public bbe::Game
@@ -402,6 +446,10 @@ private:
 	size_t cachedConsoleWarningIgnoreRevision = (size_t)-1;
 	size_t cachedConsoleWarningLogLength = 0;
 	bool cachedHasUnreadConsoleWarnings = false;
+#ifdef __linux__
+	bool pendingLinuxUpdate = false;
+	bbe::String pendingLinuxUpdateSource;
+#endif
 
 	void initializeTabs()
 	{
@@ -602,6 +650,25 @@ public:
 	{
 		closeWindow();
 	}
+
+#ifdef __linux__
+	void requestLinuxSelfUpdate(const bbe::String &updatePath)
+	{
+		pendingLinuxUpdate = true;
+		pendingLinuxUpdateSource = updatePath;
+		closeWindow();
+	}
+
+	[[nodiscard]] bool shouldApplyLinuxSelfUpdate() const
+	{
+		return pendingLinuxUpdate;
+	}
+
+	[[nodiscard]] const bbe::String &getLinuxSelfUpdateSource() const
+	{
+		return pendingLinuxUpdateSource;
+	}
+#endif
 
 	virtual void onStart() override
 	{
@@ -2916,7 +2983,7 @@ public:
 				ImGui::EndDisabled();
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 				static bool updatePathExists = false;
 				static bool updatePathNewer = false;
 				// Avoiding multiple IO calls.
@@ -2940,6 +3007,7 @@ public:
 				{
 					if (ImGui::Button("Update"))
 					{
+#ifdef _WIN32
 						bbe::String batchFileName = "update.bat";
 						bbe::simpleFile::deleteFile(batchFileName);
 
@@ -2954,6 +3022,9 @@ public:
 						}
 
 						bbe::simpleFile::executeBatchFile("update.bat");
+#else
+						requestLinuxSelfUpdate(generalConfig->updatePath);
+#endif
 					}
 					if (updatePathNewer)
 					{
@@ -3251,14 +3322,25 @@ public:
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 #else
-int main()
+int main(int argc, char **argv)
 #endif
 {
 #ifdef _WIN32
 	_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF); // See: https://stackoverflow.com/questions/30413066/how-do-i-diagnose-heap-corruption-errors-on-windows
+#else
+	(void)argc;
 #endif
 	MyGame *mg = new MyGame();
 	mg->start(1280, 720, "M.O.THE.R - Memory of the repetitive");
+#ifdef __linux__
+	if (mg->shouldApplyLinuxSelfUpdate())
+	{
+		if (applyLinuxUpdateAndRestart(mg->getLinuxSelfUpdateSource(), argv))
+		{
+			return 0;
+		}
+	}
+#endif
 #ifndef __EMSCRIPTEN__
 	delete mg;
 #endif
