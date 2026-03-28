@@ -4,6 +4,27 @@
 // TODO: Flood fill with edges of brush tool kinda bad.
 // TODO: Bug: right click has weird behaviour with shadow
 
+// TODO: Bezier curve
+// TODO: Line and Arrow tool need ghost edit mode to change start and end point during creation.
+// TODO: Different fonts in Text Tool
+// TODO: Rotation handle for selections, rectangles and ellipses
+// TODO: Alpha eraser tool - not just recolering pixels but setting their alpha to 0.
+// TODO: Layer opacity
+// TODO: Layer blending modes
+// TODO: Layer duplication
+// TODO: Merge layers
+// TODO: Import image as layer
+// TODO: Resizable canvas
+// TODO: Scaling whole picture/selection up/down
+// TODO: Pixel perfect manipulation with arrow keys
+// TODO: "Filled with color" option for rectangle/circle tool
+// TODO: Color history
+// TODO: Selection via magic wand / color selection
+// TODO: Symmetry Drawing: Horizontal, vertical, 4-way, radial etc
+// TODO: Unsaved changes indicator - little star somewhere in the UI when there are unsaved changes.
+// TODO: Mini-Preview / Navigator - small always visible preview of the whole canvas with a rectangle indicating the current view area, allowing to quickly jump to different areas of the canvas by clicking in the preview.
+
+
 struct PaintLayer
 {
 	bbe::String name = "";
