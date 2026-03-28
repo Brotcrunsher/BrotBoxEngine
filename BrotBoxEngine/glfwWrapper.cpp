@@ -134,6 +134,15 @@ GLFWwindowposfun bbe::glfwWrapper::glfwSetWindowPosCallback(GLFWwindow *handle, 
 #endif
 }
 
+GLFWdropfun bbe::glfwWrapper::glfwSetDropCallback(GLFWwindow *handle, GLFWdropfun cbfun)
+{
+#ifndef BBE_RENDERER_NULL
+	return ::glfwSetDropCallback(handle, cbfun);
+#else
+	return cbfun;
+#endif
+}
+
 void bbe::glfwWrapper::glfwGetCursorPos(GLFWwindow *handle, double *xpos, double *ypos)
 {
 #ifndef BBE_RENDERER_NULL

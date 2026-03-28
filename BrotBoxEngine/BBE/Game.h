@@ -17,6 +17,7 @@
 #include "../BBE/FragmentShader.h"
 #include "../BBE/Color.h"
 #include "../BBE/List.h"
+#include "../BBE/String.h"
 #include "../BBE/StopWatch.h"
 #include "../BBE/BrotTime.h"
 
@@ -94,6 +95,7 @@ namespace bbe
 		virtual void draw3D(bbe::PrimitiveBrush3D &brush) = 0;
 		virtual void draw2D(bbe::PrimitiveBrush2D &brush) = 0;
 		virtual void onEnd() = 0;
+		virtual void onFilesDropped(const bbe::List<bbe::String> &paths) {}
 
 		void setExternallyManaged(bool managed);
 		bool isExternallyManaged() const;

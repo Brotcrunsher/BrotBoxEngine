@@ -2,7 +2,6 @@
 #include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 
 // TODO: Proper GUI
-// TODO: Drag and Drop image files into paint
 // TODO: Circle tool
 // TODO: Flood fill with edges of brush tool kinda bad.
 // TODO: Bug: right click has weird behaviour with shadow
@@ -191,6 +190,12 @@ class MyGame : public bbe::Game
 	bool isLayeredDocumentPath(const bbe::String &filePath) const
 	{
 		return filePath.toLowerCase().endsWith(LAYERED_FILE_EXTENSION);
+	}
+
+	bool isSupportedDroppedDocumentPath(const bbe::String &filePath) const
+	{
+		const bbe::String lowerPath = filePath.toLowerCase();
+		return lowerPath.endsWith(".png") || lowerPath.endsWith(LAYERED_FILE_EXTENSION);
 	}
 
 	void blendImageOntoImage(bbe::Image &target, const bbe::Image &image, const bbe::Vector2i &pos) const
@@ -1037,6 +1042,15 @@ class MyGame : public bbe::Game
 	{
 		newCanvas(400, 300);
 	}
+	virtual void onFilesDropped(const bbe::List<bbe::String> &paths) override
+	{
+		for (size_t i = 0; i < paths.getLength(); i++)
+		{
+			if (!isSupportedDroppedDocumentPath(paths[i])) continue;
+			newCanvas(paths[i].getRaw());
+			break;
+		}
+	}
 	virtual void update(float timeSinceLastFrame) override
 	{
 		const bbe::Vector2 prevMousePos = screenToCanvas(getMousePrevious());
@@ -1606,6 +1620,7 @@ class MyGame : public bbe::Game
 				ImGui::BulletText("+/- changes brush size or text size for the active tool");
 				ImGui::BulletText("X swaps primary and secondary color");
 				ImGui::BulletText("Ctrl+D resets colors to black/white");
+				ImGui::BulletText("Drag and drop PNG or .bbepaint files into the window to open them");
 				ImGui::BulletText("Space resets the camera");
 				ImGui::BulletText("Middle mouse pans");
 				ImGui::BulletText("Mouse wheel zooms");

@@ -24,6 +24,7 @@ namespace bbe
 		GLFWwindowclosefun glfwSetWindowCloseCallback(GLFWwindow *handle, GLFWwindowclosefun cbfun);
 		GLFWwindowrefreshfun glfwSetWindowRefreshCallback(GLFWwindow *handle, GLFWwindowrefreshfun cbfun);
 		GLFWwindowposfun glfwSetWindowPosCallback(GLFWwindow *handle, GLFWwindowposfun cbfun);
+		GLFWdropfun glfwSetDropCallback(GLFWwindow *handle, GLFWdropfun cbfun);
 		void glfwGetCursorPos(GLFWwindow *handle, double *xpos, double *ypos);
 		void glfwSwapInterval(int interval);
 		int glfwWindowShouldClose(GLFWwindow *handle);

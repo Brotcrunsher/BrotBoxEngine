@@ -97,6 +97,7 @@ namespace bbe
 		void INTERNAL_resizeFramebuffer(int width, int height);
 
 		void INTERNAL_onRefresh();
+		void INTERNAL_onFilesDropped(int pathCount, const char **paths);
 
 		void screenshot(const bbe::String &path);
 		void setVideoRenderingMode(const char *path);
@@ -128,6 +129,7 @@ namespace bbe
 	void INTERNAL_windowCloseCallback(GLFWwindow *window);
 	void INTERNAL_windowRefreshCallback(GLFWwindow *window);
 	void INTERNAL_windowPosCallback(GLFWwindow *window, int, int);
+	void INTERNAL_dropCallback(GLFWwindow *window, int pathCount, const char **paths);
 
 	template<>
 	uint32_t hash(const Window &t);

@@ -182,6 +182,7 @@ bbe::Window::Window(int width, int height, const char *title, bbe::Game *game, u
 	glfwWrapper::glfwSetWindowCloseCallback(m_pwindow, INTERNAL_windowCloseCallback);
 	glfwWrapper::glfwSetWindowRefreshCallback(m_pwindow, INTERNAL_windowRefreshCallback);
 	glfwWrapper::glfwSetWindowPosCallback(m_pwindow, INTERNAL_windowPosCallback);
+	glfwWrapper::glfwSetDropCallback(m_pwindow, INTERNAL_dropCallback);
 	double mX = 0;
 	double mY = 0;
 	glfwWrapper::glfwGetCursorPos(m_pwindow, &mX, &mY);
@@ -510,6 +511,7 @@ void bbe::Window::showWindow()
 		glfwWrapper::glfwSetWindowCloseCallback(m_pwindow, INTERNAL_windowCloseCallback);
 		glfwWrapper::glfwSetWindowRefreshCallback(m_pwindow, INTERNAL_windowRefreshCallback);
 		glfwWrapper::glfwSetWindowPosCallback(m_pwindow, INTERNAL_windowPosCallback);
+		glfwWrapper::glfwSetDropCallback(m_pwindow, INTERNAL_dropCallback);
 		glfwWrapper::glfwSwapInterval(1);
 
 		if (recreateState.hasPlacement)
@@ -618,6 +620,26 @@ void bbe::Window::INTERNAL_onRefresh()
 {
 	requestRender();
 	m_pgame->frame(true);
+}
+
+void bbe::Window::INTERNAL_onFilesDropped(int pathCount, const char **paths)
+{
+	requestRender();
+	if (m_pgame == nullptr || pathCount <= 0 || paths == nullptr)
+	{
+		return;
+	}
+
+	bbe::List<bbe::String> droppedPaths;
+	for (int i = 0; i < pathCount; i++)
+	{
+		if (paths[i] == nullptr) continue;
+		droppedPaths.add(paths[i]);
+	}
+	if (!droppedPaths.isEmpty())
+	{
+		m_pgame->onFilesDropped(droppedPaths);
+	}
 }
 
 void bbe::Window::screenshot(const bbe::String &path)
@@ -822,6 +844,11 @@ void bbe::INTERNAL_windowRefreshCallback(GLFWwindow *window)
 void bbe::INTERNAL_windowPosCallback(GLFWwindow *window, int, int)
 {
 	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_onRefresh();
+}
+
+void bbe::INTERNAL_dropCallback(GLFWwindow *window, int pathCount, const char **paths)
+{
+	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_onFilesDropped(pathCount, paths);
 }
 
 template<>
