@@ -4,7 +4,6 @@
 // TODO: Proper GUI
 // TODO: Layers
 // TODO: Text
-// TODO: Select+Move Tool
 // TODO: Drag and Drop image files into paint
 // TODO: Circle tool
 // TODO: Flood fill with edges of brush tool kinda bad.
@@ -25,7 +24,8 @@ class MyGame : public bbe::Game
 	constexpr static int32_t MODE_FLOOD_FILL = 1;
 	constexpr static int32_t MODE_LINE = 2;
 	constexpr static int32_t MODE_RECTANGLE = 3;
-	constexpr static int32_t MODE_PIPETTE = 4;
+	constexpr static int32_t MODE_SELECTION = 4;
+	constexpr static int32_t MODE_PIPETTE = 5;
 	int32_t mode = MODE_BRUSH;
 
 	int32_t brushWidth = 1;
@@ -34,6 +34,277 @@ class MyGame : public bbe::Game
 
 	bool drawGridLines = true;
 	bool tiled = false;
+	bool hasSelection = false;
+	bbe::Rectanglei selectionRect;
+	bbe::Image selectionClipboard;
+	bool selectionDragActive = false;
+	bbe::Vector2i selectionDragStart;
+	bool selectionMoveActive = false;
+	bbe::Vector2i selectionMoveOffset;
+	bbe::Rectanglei selectionPreviewRect;
+	bbe::Image selectionPreviewImage;
+
+	void prepareImageForCanvas(bbe::Image &image) const
+	{
+		if (image.getWidth() <= 0 || image.getHeight() <= 0) return;
+		image.keepAfterUpload();
+		image.setFilterMode(bbe::ImageFilterMode::NEAREST);
+	}
+
+	void clearSelectionState()
+	{
+		hasSelection = false;
+		selectionRect = {};
+		selectionDragActive = false;
+		selectionDragStart = {};
+		selectionMoveActive = false;
+		selectionMoveOffset = {};
+		selectionPreviewRect = {};
+		selectionPreviewImage = {};
+	}
+
+	bbe::Vector2i toCanvasPixel(const bbe::Vector2 &pos) const
+	{
+		return bbe::Vector2i((int32_t)bbe::Math::floor(pos.x), (int32_t)bbe::Math::floor(pos.y));
+	}
+
+	bool clampRectToCanvas(const bbe::Rectanglei &rect, bbe::Rectanglei &outRect) const
+	{
+		const int32_t left = bbe::Math::max<int32_t>(rect.x, 0);
+		const int32_t top = bbe::Math::max<int32_t>(rect.y, 0);
+		const int32_t right = bbe::Math::min<int32_t>(rect.x + rect.width - 1, canvas.get().getWidth() - 1);
+		const int32_t bottom = bbe::Math::min<int32_t>(rect.y + rect.height - 1, canvas.get().getHeight() - 1);
+
+		if (left > right || top > bottom)
+		{
+			outRect = {};
+			return false;
+		}
+
+		outRect = bbe::Rectanglei(left, top, right - left + 1, bottom - top + 1);
+		return true;
+	}
+
+	bool buildSelectionRect(const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect) const
+	{
+		const int32_t left = bbe::Math::min(pos1.x, pos2.x);
+		const int32_t top = bbe::Math::min(pos1.y, pos2.y);
+		const int32_t right = bbe::Math::max(pos1.x, pos2.x);
+		const int32_t bottom = bbe::Math::max(pos1.y, pos2.y);
+		return clampRectToCanvas(bbe::Rectanglei(left, top, right - left + 1, bottom - top + 1), outRect);
+	}
+
+	bool isPointInSelection(const bbe::Vector2i &point) const
+	{
+		return hasSelection && selectionRect.isPointInRectangle(point, true);
+	}
+
+	bbe::Image copyCanvasRect(const bbe::Rectanglei &rect) const
+	{
+		bbe::Image copied(rect.width, rect.height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
+		prepareImageForCanvas(copied);
+		for (int32_t x = 0; x < rect.width; x++)
+		{
+			for (int32_t y = 0; y < rect.height; y++)
+			{
+				copied.setPixel((size_t)x, (size_t)y, canvas.get().getPixel((size_t)(rect.x + x), (size_t)(rect.y + y)));
+			}
+		}
+		return copied;
+	}
+
+	void clearCanvasRect(const bbe::Rectanglei &rect)
+	{
+		const bbe::Colori backgroundColor = bbe::Color(rightColor).asByteColor();
+		for (int32_t x = 0; x < rect.width; x++)
+		{
+			for (int32_t y = 0; y < rect.height; y++)
+			{
+				canvas.get().setPixel((size_t)(rect.x + x), (size_t)(rect.y + y), backgroundColor);
+			}
+		}
+	}
+
+	void blendImageOntoCanvas(const bbe::Image &image, const bbe::Vector2i &pos)
+	{
+		for (int32_t x = 0; x < image.getWidth(); x++)
+		{
+			for (int32_t y = 0; y < image.getHeight(); y++)
+			{
+				const int32_t targetX = pos.x + x;
+				const int32_t targetY = pos.y + y;
+				if (targetX < 0 || targetY < 0 || targetX >= canvas.get().getWidth() || targetY >= canvas.get().getHeight()) continue;
+
+				const bbe::Colori sourceColor = image.getPixel((size_t)x, (size_t)y);
+				if (sourceColor.a == 0) continue;
+
+				const bbe::Colori oldColor = canvas.get().getPixel((size_t)targetX, (size_t)targetY);
+				canvas.get().setPixel((size_t)targetX, (size_t)targetY, oldColor.blendTo(sourceColor));
+			}
+		}
+	}
+
+	void storeSelectionInClipboard()
+	{
+		if (!hasSelection) return;
+		selectionClipboard = copyCanvasRect(selectionRect);
+		prepareImageForCanvas(selectionClipboard);
+		if (bbe::Image::supportsClipboardImages())
+		{
+			selectionClipboard.copyToClipboard();
+		}
+	}
+
+	void deleteSelection()
+	{
+		if (!hasSelection) return;
+		clearCanvasRect(selectionRect);
+		canvas.submit();
+		clearSelectionState();
+	}
+
+	void cutSelection()
+	{
+		if (!hasSelection) return;
+		storeSelectionInClipboard();
+		deleteSelection();
+	}
+
+	bool getPasteImage(bbe::Image &image)
+	{
+		if (bbe::Image::supportsClipboardImages() && bbe::Image::isImageInClipbaord())
+		{
+			image = bbe::Image::getClipboardImage();
+			prepareImageForCanvas(image);
+			return image.getWidth() > 0 && image.getHeight() > 0;
+		}
+
+		if (selectionClipboard.getWidth() > 0 && selectionClipboard.getHeight() > 0)
+		{
+			image = selectionClipboard;
+			prepareImageForCanvas(image);
+			return true;
+		}
+
+		return false;
+	}
+
+	void pasteSelectionAt(const bbe::Vector2i &pos)
+	{
+		bbe::Image image;
+		if (!getPasteImage(image)) return;
+
+		blendImageOntoCanvas(image, pos);
+		canvas.submit();
+
+		if (!clampRectToCanvas(bbe::Rectanglei(pos.x, pos.y, image.getWidth(), image.getHeight()), selectionRect))
+		{
+			clearSelectionState();
+			return;
+		}
+
+		hasSelection = true;
+	}
+
+	void applySelectionMove()
+	{
+		if (!selectionMoveActive) return;
+
+		if (selectionPreviewRect.x != selectionRect.x || selectionPreviewRect.y != selectionRect.y)
+		{
+			clearCanvasRect(selectionRect);
+			blendImageOntoCanvas(selectionPreviewImage, selectionPreviewRect.getPos());
+			canvas.submit();
+
+			if (!clampRectToCanvas(bbe::Rectanglei(selectionPreviewRect.x, selectionPreviewRect.y, selectionPreviewImage.getWidth(), selectionPreviewImage.getHeight()), selectionRect))
+			{
+				clearSelectionState();
+				return;
+			}
+
+			hasSelection = true;
+		}
+
+		selectionMoveActive = false;
+		selectionPreviewRect = {};
+		selectionPreviewImage = {};
+	}
+
+	void updateSelectionTool(const bbe::Vector2 &currMousePos)
+	{
+		const bbe::Vector2i mousePixel = toCanvasPixel(currMousePos);
+
+		if (isMousePressed(bbe::MouseButton::LEFT))
+		{
+			if (isPointInSelection(mousePixel))
+			{
+				selectionMoveActive = true;
+				selectionMoveOffset = mousePixel - selectionRect.getPos();
+				selectionPreviewRect = selectionRect;
+				selectionPreviewImage = copyCanvasRect(selectionRect);
+			}
+			else
+			{
+				selectionDragActive = true;
+				selectionDragStart = mousePixel;
+				hasSelection = false;
+				selectionRect = {};
+				selectionPreviewRect = {};
+			}
+		}
+
+		if (isMouseDown(bbe::MouseButton::LEFT))
+		{
+			if (selectionDragActive)
+			{
+				buildSelectionRect(selectionDragStart, mousePixel, selectionPreviewRect);
+			}
+			if (selectionMoveActive)
+			{
+				selectionPreviewRect = bbe::Rectanglei(
+					mousePixel.x - selectionMoveOffset.x,
+					mousePixel.y - selectionMoveOffset.y,
+					selectionPreviewImage.getWidth(),
+					selectionPreviewImage.getHeight());
+			}
+		}
+
+		if (isMouseReleased(bbe::MouseButton::LEFT))
+		{
+			if (selectionDragActive)
+			{
+				hasSelection = buildSelectionRect(selectionDragStart, mousePixel, selectionRect);
+				selectionDragActive = false;
+				selectionPreviewRect = {};
+			}
+
+			if (selectionMoveActive)
+			{
+				applySelectionMove();
+			}
+		}
+	}
+
+	bbe::Rectangle selectionRectToScreen(const bbe::Rectanglei &rect) const
+	{
+		return bbe::Rectangle(
+			offset.x + rect.x * zoomLevel,
+			offset.y + rect.y * zoomLevel,
+			rect.width * zoomLevel,
+			rect.height * zoomLevel);
+	}
+
+	void drawSelectionOutline(bbe::PrimitiveBrush2D &brush, const bbe::Rectanglei &rect) const
+	{
+		const bbe::Rectangle screenRect = selectionRectToScreen(rect);
+		brush.setColorRGB(0.0f, 0.0f, 0.0f);
+		brush.sketchRect(screenRect);
+		if (screenRect.width > 2 && screenRect.height > 2)
+		{
+			brush.setColorRGB(1.0f, 1.0f, 1.0f);
+			brush.sketchRect(screenRect.shrinked(1.0f));
+		}
+	}
 
 	void clampBrushWidth()
 	{
@@ -110,6 +381,7 @@ class MyGame : public bbe::Game
 		canvas.get().setFilterMode(bbe::ImageFilterMode::NEAREST);
 		clearWorkArea();
 		resetCamera();
+		clearSelectionState();
 		canvas.clearHistory();
 	}
 
@@ -280,9 +552,13 @@ class MyGame : public bbe::Game
 		}
 		if (isKeyPressed(bbe::Key::_5))
 		{
+			mode = MODE_SELECTION;
+		}
+		if (isKeyPressed(bbe::Key::_6))
+		{
 			mode = MODE_PIPETTE;
 		}
-		if (isKeyPressed(bbe::Key::X))
+		if (!ctrlDown && isKeyPressed(bbe::Key::X))
 		{
 			swapColors();
 		}
@@ -310,6 +586,22 @@ class MyGame : public bbe::Game
 			{
 				resetColorsToDefault();
 			}
+			if (isKeyPressed(bbe::Key::C))
+			{
+				storeSelectionInClipboard();
+			}
+			if (isKeyPressed(bbe::Key::X))
+			{
+				cutSelection();
+			}
+			if (isKeyPressed(bbe::Key::V))
+			{
+				pasteSelectionAt(toCanvasPixel(currMousePos));
+			}
+		}
+		if (isKeyPressed(bbe::Key::DELETE) || isKeyPressed(bbe::Key::BACKSPACE))
+		{
+			deleteSelection();
 		}
 
 		static bool changeRegistered = false;
@@ -318,9 +610,14 @@ class MyGame : public bbe::Game
 			startMousePos = screenToCanvas(getMouse());
 		}
 
+		if (mode == MODE_SELECTION)
+		{
+			updateSelectionTool(currMousePos);
+		}
+
 		// TODO: Would be nice if we had a constexpr list
 		const bbe::List<decltype(mode)> shadowDrawModes = { MODE_BRUSH };
-		const bool drawMode = isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT);
+		const bool drawMode = mode != MODE_SELECTION && (isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT));
 
 		if (drawMode || shadowDrawModes.contains(mode))
 		{
@@ -431,7 +728,7 @@ class MyGame : public bbe::Game
 
 		ImGui::ColorEdit4("Left Color", leftColor);
 		ImGui::ColorEdit4("Right Color", rightColor);
-		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line", "Rectangle", "Pipette" }, &mode);
+		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line", "Rectangle", "Selection", "Pipette" }, &mode);
 		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE)
 		{
 			if (ImGui::InputInt("Brush Width", &brushWidth))
@@ -467,10 +764,40 @@ class MyGame : public bbe::Game
 		}
 		ImGui::EndDisabled();
 
+		if (mode == MODE_SELECTION)
+		{
+			ImGui::BeginDisabled(!hasSelection);
+			if (ImGui::Button("Copy Selection"))
+			{
+				storeSelectionInClipboard();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cut Selection"))
+			{
+				cutSelection();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Delete Selection"))
+			{
+				deleteSelection();
+			}
+			ImGui::EndDisabled();
+
+			if (hasSelection)
+			{
+				ImGui::Text("Selection: %d x %d", selectionRect.width, selectionRect.height);
+			}
+			else
+			{
+				ImGui::Text("Selection: none");
+			}
+		}
+
 		ImGui::SeparatorText("Shortcuts");
-		ImGui::Text("1 Brush | 2 Fill | 3 Line | 4 Rectangle | 5 Pipette");
+		ImGui::Text("1 Brush | 2 Fill | 3 Line | 4 Rectangle | 5 Selection | 6 Pipette");
 		ImGui::Text("+/- Brush Size | X Swap Colors | Ctrl+D Default Colors");
 		ImGui::Text("Ctrl+S Save | Ctrl+Z Undo | Ctrl+Y Redo | Space Reset Camera");
+		ImGui::Text("Ctrl+C Copy Selection | Ctrl+X Cut | Ctrl+V Paste | Del Delete");
 
 		const int32_t repeats = tiled ? 20 : 0;
 		for (int32_t i = -repeats; i <= repeats; i++)
@@ -493,6 +820,19 @@ class MyGame : public bbe::Game
 			{
 				brush.fillLine(0, i, getWindowWidth(), i);
 			}
+		}
+		if (selectionMoveActive)
+		{
+			brush.drawImage(selectionRectToScreen(selectionPreviewRect), selectionPreviewImage);
+			drawSelectionOutline(brush, selectionPreviewRect);
+		}
+		else if (selectionDragActive)
+		{
+			drawSelectionOutline(brush, selectionPreviewRect);
+		}
+		else if (hasSelection)
+		{
+			drawSelectionOutline(brush, selectionRect);
 		}
 
 		// HACK: We can only open popups if we are in the same ID Stack. See: https://github.com/ocornut/imgui/issues/331
