@@ -305,6 +305,28 @@ bool bbe::Game::keepAlive()
 
 void bbe::Game::frame(bool dragging)
 {
+	if (m_isInsideFrame)
+	{
+		if (m_pwindow != nullptr)
+		{
+			m_pwindow->requestRender();
+		}
+		return;
+	}
+
+	struct FrameGuard
+	{
+		bool &flag;
+		explicit FrameGuard(bool &flag) : flag(flag)
+		{
+			flag = true;
+		}
+		~FrameGuard()
+		{
+			flag = false;
+		}
+	} frameGuard(m_isInsideFrame);
+
 	StopWatch sw;
 	if (m_requestShowWindow)
 	{

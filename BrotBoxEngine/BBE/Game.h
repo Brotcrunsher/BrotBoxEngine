@@ -69,6 +69,7 @@ namespace bbe
 		bool m_requestShowWindow = false;
 		bool m_requestShutdown = false;
 		bool m_reactiveRendering = false;
+		bool m_isInsideFrame = false;
 
 		void innerStart(int windowWidth, int windowHeight, const char *title);
 
