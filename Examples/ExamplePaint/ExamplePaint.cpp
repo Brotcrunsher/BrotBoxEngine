@@ -37,6 +37,8 @@ class MyGame : public bbe::Game
 	bool hasSelection = false;
 	bbe::Rectanglei selectionRect;
 	bbe::Image selectionClipboard;
+	bool selectionFloating = false;
+	bbe::Image selectionFloatingImage;
 	bool selectionDragActive = false;
 	bbe::Vector2i selectionDragStart;
 	bool selectionMoveActive = false;
@@ -55,6 +57,8 @@ class MyGame : public bbe::Game
 	{
 		hasSelection = false;
 		selectionRect = {};
+		selectionFloating = false;
+		selectionFloatingImage = {};
 		selectionDragActive = false;
 		selectionDragStart = {};
 		selectionMoveActive = false;
@@ -147,7 +151,7 @@ class MyGame : public bbe::Game
 	void storeSelectionInClipboard()
 	{
 		if (!hasSelection) return;
-		selectionClipboard = copyCanvasRect(selectionRect);
+		selectionClipboard = selectionFloating ? selectionFloatingImage : copyCanvasRect(selectionRect);
 		prepareImageForCanvas(selectionClipboard);
 		if (bbe::Image::supportsClipboardImages())
 		{
@@ -158,6 +162,11 @@ class MyGame : public bbe::Game
 	void deleteSelection()
 	{
 		if (!hasSelection) return;
+		if (selectionFloating)
+		{
+			clearSelectionState();
+			return;
+		}
 		clearCanvasRect(selectionRect);
 		canvas.submit();
 		clearSelectionState();
@@ -167,6 +176,11 @@ class MyGame : public bbe::Game
 	{
 		if (!hasSelection) return;
 		storeSelectionInClipboard();
+		if (selectionFloating)
+		{
+			clearSelectionState();
+			return;
+		}
 		deleteSelection();
 	}
 
@@ -194,21 +208,53 @@ class MyGame : public bbe::Game
 		bbe::Image image;
 		if (!getPasteImage(image)) return;
 
-		blendImageOntoCanvas(image, pos);
+		if (selectionFloating)
+		{
+			commitFloatingSelection();
+		}
+
+		mode = MODE_SELECTION;
+		hasSelection = true;
+		selectionFloating = true;
+		selectionFloatingImage = image;
+		selectionRect = bbe::Rectanglei(pos.x, pos.y, image.getWidth(), image.getHeight());
+		selectionMoveActive = false;
+		selectionDragActive = false;
+		selectionPreviewRect = {};
+		selectionPreviewImage = {};
+	}
+
+	void commitFloatingSelection()
+	{
+		if (!selectionFloating) return;
+
+		blendImageOntoCanvas(selectionFloatingImage, selectionRect.getPos());
 		canvas.submit();
 
-		if (!clampRectToCanvas(bbe::Rectanglei(pos.x, pos.y, image.getWidth(), image.getHeight()), selectionRect))
+		bbe::Rectanglei clampedRect;
+		if (!clampRectToCanvas(bbe::Rectanglei(selectionRect.x, selectionRect.y, selectionFloatingImage.getWidth(), selectionFloatingImage.getHeight()), clampedRect))
 		{
 			clearSelectionState();
 			return;
 		}
 
-		hasSelection = true;
+		selectionRect = clampedRect;
+		selectionFloating = false;
+		selectionFloatingImage = {};
 	}
 
 	void applySelectionMove()
 	{
 		if (!selectionMoveActive) return;
+
+		if (selectionFloating)
+		{
+			selectionRect = selectionPreviewRect;
+			selectionMoveActive = false;
+			selectionPreviewRect = {};
+			selectionPreviewImage = {};
+			return;
+		}
 
 		if (selectionPreviewRect.x != selectionRect.x || selectionPreviewRect.y != selectionRect.y)
 		{
@@ -241,10 +287,14 @@ class MyGame : public bbe::Game
 				selectionMoveActive = true;
 				selectionMoveOffset = mousePixel - selectionRect.getPos();
 				selectionPreviewRect = selectionRect;
-				selectionPreviewImage = copyCanvasRect(selectionRect);
+				selectionPreviewImage = selectionFloating ? selectionFloatingImage : copyCanvasRect(selectionRect);
 			}
 			else
 			{
+				if (selectionFloating)
+				{
+					commitFloatingSelection();
+				}
 				selectionDragActive = true;
 				selectionDragStart = mousePixel;
 				hasSelection = false;
@@ -334,6 +384,7 @@ class MyGame : public bbe::Game
 
 	void saveCanvas()
 	{
+		commitFloatingSelection();
 		if (path.isEmpty())
 		{
 			bbe::simpleFile::showSaveDialog(path, "png");
@@ -599,6 +650,10 @@ class MyGame : public bbe::Game
 				pasteSelectionAt(toCanvasPixel(currMousePos));
 			}
 		}
+		if (selectionFloating && mode != MODE_SELECTION)
+		{
+			commitFloatingSelection();
+		}
 		if (isKeyPressed(bbe::Key::DELETE) || isKeyPressed(bbe::Key::BACKSPACE))
 		{
 			deleteSelection();
@@ -826,6 +881,11 @@ class MyGame : public bbe::Game
 			brush.drawImage(selectionRectToScreen(selectionPreviewRect), selectionPreviewImage);
 			drawSelectionOutline(brush, selectionPreviewRect);
 		}
+		else if (selectionFloating)
+		{
+			brush.drawImage(selectionRectToScreen(selectionRect), selectionFloatingImage);
+			drawSelectionOutline(brush, selectionRect);
+		}
 		else if (selectionDragActive)
 		{
 			drawSelectionOutline(brush, selectionPreviewRect);
@@ -858,8 +918,11 @@ class MyGame : public bbe::Game
 				}
 				if (ImGui::MenuItem("Save As..."))
 				{
-					if (bbe::simpleFile::showSaveDialog(path, "png"))
+					bbe::String newPath = path;
+					if (bbe::simpleFile::showSaveDialog(newPath, "png"))
 					{
+						path = newPath;
+						commitFloatingSelection();
 						canvas.get().writeToFile(path);
 					}
 				}
