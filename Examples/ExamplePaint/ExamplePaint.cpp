@@ -6,7 +6,6 @@
 
 // Todo: Arrow tool
 // TODO: configurable roundness of edges in rectangle tool
-// TODO: Tiled text buggy
 struct PaintLayer
 {
 	bbe::String name = "";
@@ -1435,9 +1434,17 @@ class MyGame : public bbe::Game
 		{
 			for (int32_t y = 0; y < glyph.getHeight(); y++)
 			{
-				const int32_t targetX = pos.x + x;
-				const int32_t targetY = pos.y + y;
-				if (targetX < 0 || targetY < 0 || targetX >= getCanvasWidth() || targetY >= getCanvasHeight()) continue;
+				int32_t targetX = pos.x + x;
+				int32_t targetY = pos.y + y;
+				if (tiled)
+				{
+					targetX = bbe::Math::mod<int32_t>(targetX, getCanvasWidth());
+					targetY = bbe::Math::mod<int32_t>(targetY, getCanvasHeight());
+				}
+				else
+				{
+					if (targetX < 0 || targetY < 0 || targetX >= getCanvasWidth() || targetY >= getCanvasHeight()) continue;
+				}
 
 				const bbe::Colori glyphColor = glyph.getPixel((size_t)x, (size_t)y);
 				if (glyphColor.r == 0) continue;
@@ -1490,30 +1497,39 @@ class MyGame : public bbe::Game
 		const bbe::String text = getTextBufferString();
 		const bbe::Font &font = getTextToolFont();
 		const bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(origin, text);
-		const bbe::Color previewBase = isMouseDown(bbe::MouseButton::RIGHT) ? bbe::Color(rightColor) : bbe::Color(leftColor);
-		const bbe::Color previewColor = previewBase.blendTo(bbe::Color::white(), 0.15f);
-		brush.setColorRGB(previewColor);
+		const bbe::Color previewColor = bbe::Color(leftColor).blendTo(bbe::Color::white(), 0.15f);
 
-		auto it = text.getIterator();
-		for (size_t i = 0; i < renderPositions.getLength() && it.valid(); i++, ++it)
+		const int32_t tileDraw = tiled ? 20 : 0;
+		for (int32_t ti = -tileDraw; ti <= tileDraw; ti++)
 		{
-			const int32_t codePoint = it.getCodepoint();
-			if (codePoint == ' ' || codePoint == '\n' || codePoint == '\r' || codePoint == '\t') continue;
+			for (int32_t tk = -tileDraw; tk <= tileDraw; tk++)
+			{
+				const float tileOffX = ti * getCanvasWidth() * zoomLevel;
+				const float tileOffY = tk * getCanvasHeight() * zoomLevel;
 
-			const bbe::Image &glyph = getTextGlyphImage(font, codePoint);
-			brush.drawImage(
-				offset.x + renderPositions[i].x * zoomLevel,
-				offset.y + renderPositions[i].y * zoomLevel,
-				glyph.getWidth() * zoomLevel,
-				glyph.getHeight() * zoomLevel,
-				glyph);
+				brush.setColorRGB(previewColor);
+				auto it = text.getIterator();
+				for (size_t i = 0; i < renderPositions.getLength() && it.valid(); i++, ++it)
+				{
+					const int32_t codePoint = it.getCodepoint();
+					if (codePoint == ' ' || codePoint == '\n' || codePoint == '\r' || codePoint == '\t') continue;
+
+					const bbe::Image &glyph = getTextGlyphImage(font, codePoint);
+					brush.drawImage(
+						offset.x + tileOffX + renderPositions[i].x * zoomLevel,
+						offset.y + tileOffY + renderPositions[i].y * zoomLevel,
+						glyph.getWidth() * zoomLevel,
+						glyph.getHeight() * zoomLevel,
+						glyph);
+				}
+
+				drawSelectionOutline(brush, bbe::Rectanglei(
+					topLeft.x + ti * getCanvasWidth(),
+					topLeft.y + tk * getCanvasHeight(),
+					(int32_t)bbe::Math::ceil(bounds.width),
+					(int32_t)bbe::Math::ceil(bounds.height)));
+			}
 		}
-
-		drawSelectionOutline(brush, bbe::Rectanglei(
-			topLeft.x,
-			topLeft.y,
-			(int32_t)bbe::Math::ceil(bounds.width),
-			(int32_t)bbe::Math::ceil(bounds.height)));
 	}
 
 	void swapColors()
