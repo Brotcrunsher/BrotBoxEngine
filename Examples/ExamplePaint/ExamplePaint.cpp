@@ -644,7 +644,7 @@ class MyGame : public bbe::Game
 
 	int32_t getRectangleDraftPadding() const
 	{
-		return bbe::Math::max<int32_t>(brushWidth - 1, 0);
+		return 0;
 	}
 
 	bbe::Rectanglei expandRectangleRect(const bbe::Rectanglei &rect) const
@@ -677,21 +677,37 @@ class MyGame : public bbe::Game
 		bbe::Image image(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
 		prepareImageForCanvas(image);
 
-		const int32_t padding = getRectangleDraftPadding();
-		const int32_t left = bbe::Math::min<int32_t>(padding, width - 1);
-		const int32_t top = bbe::Math::min<int32_t>(padding, height - 1);
-		const int32_t right = bbe::Math::max<int32_t>(left, width - padding - 1);
-		const int32_t bottom = bbe::Math::max<int32_t>(top, height - padding - 1);
+		for (int32_t y = 0; y < height; y++)
+		{
+			for (int32_t x = 0; x < width; x++)
+			{
+				const bool inTopBorder    = y < brushWidth;
+				const bool inBottomBorder = y >= height - brushWidth;
+				const bool inLeftBorder   = x < brushWidth;
+				const bool inRightBorder  = x >= width - brushWidth;
 
-		const bbe::Vector2 topLeft((float)left, (float)top);
-		const bbe::Vector2 topRight((float)right, (float)top);
-		const bbe::Vector2 bottomLeft((float)left, (float)bottom);
-		const bbe::Vector2 bottomRight((float)right, (float)bottom);
+				if (!inTopBorder && !inBottomBorder && !inLeftBorder && !inRightBorder) continue;
 
-		touchLineImage(image, topLeft, topRight, color, brushWidth, !roundEdges, false);
-		touchLineImage(image, topRight, bottomRight, color, brushWidth, !roundEdges, false);
-		touchLineImage(image, bottomRight, bottomLeft, color, brushWidth, !roundEdges, false);
-		touchLineImage(image, bottomLeft, topLeft, color, brushWidth, !roundEdges, false);
+				if (roundEdges)
+				{
+					const bool inCorner = (inTopBorder || inBottomBorder) && (inLeftBorder || inRightBorder);
+					if (inCorner)
+					{
+						const float cx = inLeftBorder ? (float)(brushWidth - 1 - x) : (float)(x - (width - brushWidth));
+						const float cy = inTopBorder  ? (float)(brushWidth - 1 - y) : (float)(y - (height - brushWidth));
+						const float strength = bbe::Math::clamp01((float)brushWidth - 0.5f - bbe::Math::sqrt(cx * cx + cy * cy));
+						if (strength <= 0.f) continue;
+						bbe::Colori c = color;
+						c.a = (bbe::byte)(c.a * strength);
+						image.setPixel((size_t)x, (size_t)y, c);
+						continue;
+					}
+				}
+
+				image.setPixel((size_t)x, (size_t)y, color);
+			}
+		}
+
 		return image;
 	}
 
