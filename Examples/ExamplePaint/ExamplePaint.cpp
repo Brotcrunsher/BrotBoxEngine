@@ -4,7 +4,8 @@
 // TODO: Flood fill with edges of brush tool kinda bad.
 // TODO: Bug: right click has weird behaviour with shadow
 
-
+// Todo: Arrow tool
+// TODO: configurable roundness of edges in rectangle tool
 struct PaintLayer
 {
 	bbe::String name = "";
