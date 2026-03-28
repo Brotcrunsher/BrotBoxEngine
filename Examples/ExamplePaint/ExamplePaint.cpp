@@ -4,7 +4,6 @@
 // TODO: Flood fill with edges of brush tool kinda bad.
 // TODO: Bug: right click has weird behaviour with shadow
 
-// Todo: Arrow tool
 struct PaintLayer
 {
 	bbe::String name = "";
@@ -48,6 +47,7 @@ class MyGame : public bbe::Game
 	constexpr static int32_t MODE_TEXT = 5;
 	constexpr static int32_t MODE_PIPETTE = 6;
 	constexpr static int32_t MODE_CIRCLE  = 7;
+	constexpr static int32_t MODE_ARROW   = 8;
 	int32_t mode = MODE_BRUSH;
 
 	int32_t brushWidth = 1;
@@ -100,6 +100,11 @@ class MyGame : public bbe::Game
 	bbe::Vector2i circleDragStart;
 	bbe::Rectanglei circleDragPreviewRect;
 	bbe::Image circleDragPreviewImage;
+
+	int32_t arrowHeadSize    = 15;
+	int32_t arrowHeadWidth   = 12;
+	bool    arrowDoubleHeaded = false;
+	bool    arrowFilledHead   = true;
 
 	void prepareImageForCanvas(bbe::Image &image) const
 	{
@@ -658,6 +663,128 @@ class MyGame : public bbe::Game
 			changeRegistered |= touchImage(image, coordBase, color, toolBrushWidth, rectangleShape, repeated);
 		}
 		return changeRegistered;
+	}
+
+	void fillTriangleOnImage(bbe::Image &image, const bbe::Vector2 &v0, const bbe::Vector2 &v1, const bbe::Vector2 &v2, const bbe::Colori &color) const
+	{
+		auto edgeDist = [](float ax, float ay, float bx, float by, float px, float py) -> float
+		{
+			const float ex = bx - ax, ey = by - ay;
+			const float len = bbe::Math::sqrt(ex * ex + ey * ey);
+			if (len < 1e-6f) return 0.f;
+			return (ex * (py - ay) - ey * (px - ax)) / len;
+		};
+
+		// Ensure CCW winding
+		const float area2 = (v1.x - v0.x) * (v2.y - v0.y) - (v2.x - v0.x) * (v1.y - v0.y);
+		const bbe::Vector2 a = v0;
+		const bbe::Vector2 b = area2 >= 0.f ? v1 : v2;
+		const bbe::Vector2 c = area2 >= 0.f ? v2 : v1;
+
+		const int32_t x0 = (int32_t)bbe::Math::floor(bbe::Math::min(bbe::Math::min(a.x, b.x), c.x) - 1.f);
+		const int32_t x1 = (int32_t)bbe::Math::ceil (bbe::Math::max(bbe::Math::max(a.x, b.x), c.x) + 1.f);
+		const int32_t y0 = (int32_t)bbe::Math::floor(bbe::Math::min(bbe::Math::min(a.y, b.y), c.y) - 1.f);
+		const int32_t y1 = (int32_t)bbe::Math::ceil (bbe::Math::max(bbe::Math::max(a.y, b.y), c.y) + 1.f);
+
+		for (int32_t y = y0; y <= y1; y++)
+		{
+			for (int32_t x = x0; x <= x1; x++)
+			{
+				const float px = x + 0.5f, py = y + 0.5f;
+				const float d0 = edgeDist(a.x, a.y, b.x, b.y, px, py);
+				const float d1 = edgeDist(b.x, b.y, c.x, c.y, px, py);
+				const float d2 = edgeDist(c.x, c.y, a.x, a.y, px, py);
+				const float minD = d0 < d1 ? (d0 < d2 ? d0 : d2) : (d1 < d2 ? d1 : d2);
+				const float alpha = bbe::Math::clamp01(minD + 0.5f);
+				if (alpha <= 0.f) continue;
+
+				int32_t tx = x, ty = y;
+				if (tiled)
+				{
+					tx = bbe::Math::mod<int32_t>(tx, image.getWidth());
+					ty = bbe::Math::mod<int32_t>(ty, image.getHeight());
+				}
+				else
+				{
+					if (tx < 0 || ty < 0 || tx >= image.getWidth() || ty >= image.getHeight()) continue;
+				}
+
+				bbe::Colori pix = color;
+				pix.a = (bbe::byte)(pix.a * alpha);
+				const bbe::Colori old = image.getPixel((size_t)tx, (size_t)ty);
+				if (pix.a > old.a)
+				{
+					image.setPixel((size_t)tx, (size_t)ty, pix);
+				}
+			}
+		}
+	}
+
+	void drawArrowToWorkArea(const bbe::Vector2 &from, const bbe::Vector2 &to, const bbe::Colori &color)
+	{
+		const float dx = to.x - from.x;
+		const float dy = to.y - from.y;
+		const float len = bbe::Math::sqrt(dx * dx + dy * dy);
+		if (len < 1.f) return;
+
+		const float nx = dx / len;
+		const float ny = dy / len;
+		const float px = -ny;
+		const float py =  nx;
+
+		const float headLen   = (float)arrowHeadSize;
+		const float halfWidth = (float)arrowHeadWidth * 0.5f;
+
+		bbe::Vector2 shaftFrom = from;
+		bbe::Vector2 shaftTo   = to;
+
+		if (arrowFilledHead)
+		{
+			shaftTo.x = to.x - nx * headLen;
+			shaftTo.y = to.y - ny * headLen;
+			if (arrowDoubleHeaded)
+			{
+				shaftFrom.x = from.x + nx * headLen;
+				shaftFrom.y = from.y + ny * headLen;
+			}
+		}
+
+		touchLineImage(workArea, shaftFrom, shaftTo, color, brushWidth, false, tiled);
+
+		// Forward head
+		{
+			const bbe::Vector2 tip  = to;
+			const bbe::Vector2 base(to.x - nx * headLen, to.y - ny * headLen);
+			const bbe::Vector2 left (base.x + px * halfWidth, base.y + py * halfWidth);
+			const bbe::Vector2 right(base.x - px * halfWidth, base.y - py * halfWidth);
+			if (arrowFilledHead)
+			{
+				fillTriangleOnImage(workArea, tip, left, right, color);
+			}
+			else
+			{
+				touchLineImage(workArea, tip, left, color, brushWidth, false, tiled);
+				touchLineImage(workArea, tip, right, color, brushWidth, false, tiled);
+			}
+		}
+
+		// Backward head
+		if (arrowDoubleHeaded)
+		{
+			const bbe::Vector2 tip  = from;
+			const bbe::Vector2 base(from.x + nx * headLen, from.y + ny * headLen);
+			const bbe::Vector2 left (base.x + px * halfWidth, base.y + py * halfWidth);
+			const bbe::Vector2 right(base.x - px * halfWidth, base.y - py * halfWidth);
+			if (arrowFilledHead)
+			{
+				fillTriangleOnImage(workArea, tip, left, right, color);
+			}
+			else
+			{
+				touchLineImage(workArea, tip, left, color, brushWidth, false, tiled);
+				touchLineImage(workArea, tip, right, color, brushWidth, false, tiled);
+			}
+		}
 	}
 
 	bbe::Image scaleImageNearest(const bbe::Image &image, int32_t width, int32_t height) const
@@ -1956,6 +2083,10 @@ class MyGame : public bbe::Game
 		{
 			mode = MODE_CIRCLE;
 		}
+		if (isKeyPressed(bbe::Key::_9))
+		{
+			mode = MODE_ARROW;
+		}
 		bool refreshCircleDraft = false;
 		if (!ctrlDown && isKeyPressed(bbe::Key::X))
 		{
@@ -1967,7 +2098,7 @@ class MyGame : public bbe::Game
 			|| isKeyTyped(bbe::Key::KP_ADD)
 			|| isKeyTyped(bbe::Key::RIGHT_BRACKET);
 		const bool decreaseToolSize = isKeyTyped(bbe::Key::MINUS) || isKeyTyped(bbe::Key::KP_SUBTRACT);
-		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE)
+		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_ARROW)
 		{
 			const int32_t previousBrushWidth = brushWidth;
 			if (increaseToolSize) brushWidth++;
@@ -2155,6 +2286,12 @@ class MyGame : public bbe::Game
 				clearWorkArea();
 				changeRegistered |= touchLine(currMousePos, startMousePos);
 			}
+			else if (mode == MODE_ARROW)
+			{
+				clearWorkArea();
+				drawArrowToWorkArea(startMousePos, currMousePos, getMouseColor());
+				changeRegistered = true;
+			}
 			else if (mode == MODE_PIPETTE)
 			{
 				auto pos = screenToCanvas(getMouse());
@@ -2253,14 +2390,15 @@ class MyGame : public bbe::Game
 			toolBtn("Selection", MODE_SELECTION);
 			toolBtn("Text",      MODE_TEXT);        ImGui::SameLine();
 			toolBtn("Pipette",   MODE_PIPETTE);
+			toolBtn("Arrow",     MODE_ARROW);
 		}
 
 		// --- Tool options ---
-		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_TEXT)
+		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_TEXT || mode == MODE_ARROW)
 		{
 			ImGui::SeparatorText("Options");
 		}
-		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE)
+		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_ARROW)
 		{
 			if (ImGui::InputInt("Width", &brushWidth))
 			{
@@ -2285,6 +2423,20 @@ class MyGame : public bbe::Game
 			ImGui::TextDisabled(circleDraftActive
 				? "Drag inside/border to move/resize.\nClick outside to place."
 				: "Drag to draw. Click outside to place.");
+		}
+		if (mode == MODE_ARROW)
+		{
+			if (ImGui::InputInt("Head Size", &arrowHeadSize))
+			{
+				if (arrowHeadSize < 1) arrowHeadSize = 1;
+			}
+			if (ImGui::InputInt("Head Width", &arrowHeadWidth))
+			{
+				if (arrowHeadWidth < 1) arrowHeadWidth = 1;
+			}
+			ImGui::Checkbox("Double Headed", &arrowDoubleHeaded);
+			ImGui::Checkbox("Filled Head",   &arrowFilledHead);
+			ImGui::TextDisabled("Drag to draw.");
 		}
 		if (mode == MODE_TEXT)
 		{
@@ -2571,6 +2723,7 @@ class MyGame : public bbe::Game
 				ImGui::BulletText("6 Text");
 				ImGui::BulletText("7 Pipette");
 				ImGui::BulletText("8 Circle");
+				ImGui::BulletText("9 Arrow");
 
 				ImGui::SeparatorText("General");
 				ImGui::BulletText("+/- changes brush size or text size for the active tool");
