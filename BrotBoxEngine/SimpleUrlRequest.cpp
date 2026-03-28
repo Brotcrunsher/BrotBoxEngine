@@ -5,13 +5,15 @@
 #include "sodium.h" // NOLINT(misc-include-cleaner): libsodium declarations are used below.
 
 #ifdef BBE_ADD_CURL
+#ifdef WIN32
+#define NOMINMAX
+#endif
 #include "curl/curl.h"
 
 #ifdef WIN32
 #include "BBE/SimpleProcess.h"
 #include "BBE/Socket.h"
 #define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>

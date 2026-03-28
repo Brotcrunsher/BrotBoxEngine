@@ -434,6 +434,7 @@ set_target_properties(box2d PROPERTIES FOLDER Deps)
 
 
 if(WIN32)
+  target_compile_definitions(BrotBoxEngine PUBLIC NOMINMAX)
   target_link_libraries(BrotBoxEngine wsock32 ws2_32)
   
   target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/engine.natvis)
