@@ -68,6 +68,7 @@ class MyGame : public bbe::Game
 	constexpr static int32_t MODE_PIPETTE = 6;
 	constexpr static int32_t MODE_CIRCLE  = 7;
 	constexpr static int32_t MODE_ARROW   = 8;
+	constexpr static int32_t MODE_BEZIER  = 9;
 	int32_t mode = MODE_BRUSH;
 
 	int32_t brushWidth = 1;
@@ -142,6 +143,10 @@ class MyGame : public bbe::Game
 	bool arrowDragInProgress = false;
 	bool arrowDragUsesRightColor = false;
 
+	bbe::List<bbe::Vector2> bezierControlPoints;
+	bool bezierUsesRightColor = false;
+	int32_t bezierDragPointIndex = -1;
+
 	void prepareImageForCanvas(bbe::Image &image) const
 	{
 		if (image.getWidth() <= 0 || image.getHeight() <= 0) return;
@@ -184,6 +189,8 @@ class MyGame : public bbe::Game
 		arrowDraftActive = false;
 		arrowDraftDragEndpoint = 0;
 		arrowDragInProgress = false;
+		bezierControlPoints.clear();
+		bezierDragPointIndex = -1;
 	}
 
 	void selectWholeLayer()
@@ -1026,6 +1033,149 @@ class MyGame : public bbe::Game
 				arrowDraftEnd = mouseCanvas;
 				arrowDragInProgress = false;
 			}
+		}
+	}
+
+	bbe::Colori getBezierColor() const
+	{
+		return bezierUsesRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor();
+	}
+
+	bbe::Vector2 evaluateBezier(const bbe::List<bbe::Vector2> &points, float t) const
+	{
+		// De Casteljau's algorithm with a stack buffer (supports up to 64 control points)
+		static bbe::Vector2 work[64];
+		const size_t n = points.getLength();
+		for (size_t i = 0; i < n; i++) work[i] = points[i];
+		for (size_t r = 1; r < n; r++)
+		{
+			for (size_t i = 0; i < n - r; i++)
+			{
+				work[i] = bbe::Vector2(
+					work[i].x * (1.f - t) + work[i + 1].x * t,
+					work[i].y * (1.f - t) + work[i + 1].y * t);
+			}
+		}
+		return work[0];
+	}
+
+	void drawBezierToWorkArea(const bbe::List<bbe::Vector2> &points, const bbe::Colori &color)
+	{
+		if (points.getLength() < 2) return;
+		const int32_t numSamples = bbe::Math::max(200, (int32_t)points.getLength() * 100);
+		bbe::Vector2 prev = evaluateBezier(points, 0.f);
+		for (int32_t i = 1; i <= numSamples; i++)
+		{
+			const float t = (float)i / (float)numSamples;
+			const bbe::Vector2 curr = evaluateBezier(points, t);
+			touchLineImage(workArea, prev, curr, color, brushWidth, false, tiled);
+			prev = curr;
+		}
+	}
+
+	void finalizeBezierDraft()
+	{
+		if (bezierControlPoints.getLength() >= 2)
+		{
+			clearWorkArea();
+			drawBezierToWorkArea(bezierControlPoints, getBezierColor());
+			applyWorkArea();
+			canvas.submit();
+		}
+		else
+		{
+			clearWorkArea();
+		}
+		bezierControlPoints.clear();
+		bezierDragPointIndex = -1;
+	}
+
+	void updateBezierTool(const bbe::Vector2 &currMousePos)
+	{
+		const bbe::Vector2 mouseCanvas = screenToCanvas(getMouse());
+		const float handleRadius = 6.f / zoomLevel;
+
+		// Update dragged control point
+		if (bezierDragPointIndex >= 0)
+		{
+			if (isMouseDown(bbe::MouseButton::LEFT))
+			{
+				bezierControlPoints[(size_t)bezierDragPointIndex] = mouseCanvas;
+			}
+			if (isMouseReleased(bbe::MouseButton::LEFT))
+			{
+				bezierDragPointIndex = -1;
+			}
+		}
+
+		if (bezierDragPointIndex < 0)
+		{
+			if (isMousePressed(bbe::MouseButton::LEFT))
+			{
+				// Check if clicking near an existing control point to drag it
+				int32_t hitIndex = -1;
+				float bestDist = handleRadius;
+				for (size_t i = 0; i < bezierControlPoints.getLength(); i++)
+				{
+					const float dist = (mouseCanvas - bezierControlPoints[i]).getLength();
+					if (dist < bestDist)
+					{
+						bestDist = dist;
+						hitIndex = (int32_t)i;
+					}
+				}
+
+				if (hitIndex >= 0)
+				{
+					bezierDragPointIndex = hitIndex;
+				}
+				else
+				{
+					// Add new control point
+					if (bezierControlPoints.isEmpty()) bezierUsesRightColor = false;
+					bezierControlPoints.add(mouseCanvas);
+				}
+			}
+
+			if (isMousePressed(bbe::MouseButton::RIGHT))
+			{
+				finalizeBezierDraft();
+				return;
+			}
+
+			// Backspace removes the last placed control point
+			if ((isKeyPressed(bbe::Key::BACKSPACE)) && !bezierControlPoints.isEmpty())
+			{
+				bezierControlPoints.popBack();
+			}
+		}
+
+		// Rebuild workArea preview each frame
+		clearWorkArea();
+		if (bezierControlPoints.getLength() >= 2)
+		{
+			// Show a ghost preview with the cursor as a potential next point
+			bool nearExisting = false;
+			for (size_t i = 0; i < bezierControlPoints.getLength(); i++)
+			{
+				if ((mouseCanvas - bezierControlPoints[i]).getLength() < handleRadius)
+				{
+					nearExisting = true;
+					break;
+				}
+			}
+
+			bbe::List<bbe::Vector2> previewPoints = bezierControlPoints;
+			if (!nearExisting && bezierDragPointIndex < 0)
+			{
+				previewPoints.add(mouseCanvas);
+			}
+			drawBezierToWorkArea(previewPoints, getBezierColor());
+		}
+		else if (bezierControlPoints.getLength() == 1)
+		{
+			// Before we have 2 points, just draw a line preview to cursor
+			touchLineImage(workArea, bezierControlPoints[0], mouseCanvas, getBezierColor(), brushWidth, false, tiled);
 		}
 	}
 
@@ -2249,6 +2399,10 @@ class MyGame : public bbe::Game
 			{
 				finalizeArrowDraft();
 			}
+			if (previousMode == MODE_BEZIER && !bezierControlPoints.isEmpty())
+			{
+				finalizeBezierDraft();
+			}
 			discardTransientWorkArea();
 		}
 
@@ -2337,6 +2491,10 @@ class MyGame : public bbe::Game
 		{
 			mode = MODE_ARROW;
 		}
+		if (isKeyPressed(bbe::Key::_0))
+		{
+			mode = MODE_BEZIER;
+		}
 		bool refreshCircleDraft = false;
 		if (!ctrlDown && isKeyPressed(bbe::Key::X))
 		{
@@ -2348,7 +2506,7 @@ class MyGame : public bbe::Game
 			|| isKeyTyped(bbe::Key::KP_ADD)
 			|| isKeyTyped(bbe::Key::RIGHT_BRACKET);
 		const bool decreaseToolSize = isKeyTyped(bbe::Key::MINUS) || isKeyTyped(bbe::Key::KP_SUBTRACT);
-		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_ARROW)
+		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_ARROW || mode == MODE_BEZIER)
 		{
 			const int32_t previousBrushWidth = brushWidth;
 			if (increaseToolSize) brushWidth++;
@@ -2440,6 +2598,10 @@ class MyGame : public bbe::Game
 			{
 				finalizeArrowDraft();
 			}
+			if (modeBeforeInput == MODE_BEZIER && !bezierControlPoints.isEmpty())
+			{
+				finalizeBezierDraft();
+			}
 			discardTransientWorkArea();
 		}
 		previousMode = mode;
@@ -2485,6 +2647,10 @@ class MyGame : public bbe::Game
 		{
 			updateArrowTool(currMousePos);
 		}
+		if (mode == MODE_BEZIER)
+		{
+			updateBezierTool(currMousePos);
+		}
 		if (mode == MODE_TEXT && (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT)))
 		{
 			bbe::Vector2 pos = currMousePos;
@@ -2502,6 +2668,7 @@ class MyGame : public bbe::Game
 			&& mode != MODE_CIRCLE
 			&& mode != MODE_LINE
 			&& mode != MODE_ARROW
+			&& mode != MODE_BEZIER
 			&& drawButtonDown;
 		const bool shadowDrawMode = shadowDrawModes.contains(mode);
 
@@ -2637,6 +2804,11 @@ class MyGame : public bbe::Game
 			clearWorkArea();
 			drawArrowToWorkArea(arrowDraftStart, arrowDraftEnd, getArrowDraftColor());
 		}
+		if (!bezierControlPoints.isEmpty() && ((leftColorChanged && !bezierUsesRightColor) || (rightColorChanged && bezierUsesRightColor)))
+		{
+			clearWorkArea();
+			drawBezierToWorkArea(bezierControlPoints, getBezierColor());
+		}
 
 		// --- Tool ---
 		ImGui::SeparatorText("Tool");
@@ -2657,15 +2829,16 @@ class MyGame : public bbe::Game
 			toolBtn("Selection", MODE_SELECTION);
 			toolBtn("Text",      MODE_TEXT);        ImGui::SameLine();
 			toolBtn("Pipette",   MODE_PIPETTE);
-			toolBtn("Arrow",     MODE_ARROW);
+			toolBtn("Arrow",     MODE_ARROW);       ImGui::SameLine();
+			toolBtn("Bezier",    MODE_BEZIER);
 		}
 
 		// --- Tool options ---
-		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_TEXT || mode == MODE_ARROW)
+		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_TEXT || mode == MODE_ARROW || mode == MODE_BEZIER)
 		{
 			ImGui::SeparatorText("Options");
 		}
-		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_ARROW)
+		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_ARROW || mode == MODE_BEZIER)
 		{
 			if (ImGui::InputInt("Width", &brushWidth))
 			{
@@ -2681,6 +2854,11 @@ class MyGame : public bbe::Game
 				{
 					clearWorkArea();
 					drawArrowToWorkArea(arrowDraftStart, arrowDraftEnd, getArrowDraftColor());
+				}
+				if (!bezierControlPoints.isEmpty())
+				{
+					clearWorkArea();
+					drawBezierToWorkArea(bezierControlPoints, getBezierColor());
 				}
 			}
 		}
@@ -2730,6 +2908,20 @@ class MyGame : public bbe::Game
 			ImGui::TextDisabled(arrowDraftActive
 				? "Drag endpoints to adjust.\nClick outside or R-click to place."
 				: "Drag to draw.");
+		}
+		if (mode == MODE_BEZIER)
+		{
+			ImGui::TextDisabled(bezierControlPoints.isEmpty()
+				? "L-click to place control points.\nR-click to commit curve."
+				: "L-click to add/drag points.\nBackspace removes last point.\nR-click to commit curve.");
+			if (!bezierControlPoints.isEmpty())
+			{
+				ImGui::Text("%d control point(s)", (int)bezierControlPoints.getLength());
+				if (ImGui::Button("Commit", ImVec2(-1, 0)))
+				{
+					finalizeBezierDraft();
+				}
+			}
 		}
 		if (mode == MODE_TEXT)
 		{
@@ -2938,6 +3130,24 @@ class MyGame : public bbe::Game
 		{
 			drawEndpointHandle(arrowDraftStart);
 			drawEndpointHandle(arrowDraftEnd);
+		}
+		if (mode == MODE_BEZIER && !bezierControlPoints.isEmpty())
+		{
+			// Draw the control polygon
+			brush.setColorRGB(0.5f, 0.5f, 0.5f, 0.6f);
+			for (size_t i = 0; i + 1 < bezierControlPoints.getLength(); i++)
+			{
+				const float x0 = offset.x + bezierControlPoints[i    ].x * zoomLevel;
+				const float y0 = offset.y + bezierControlPoints[i    ].y * zoomLevel;
+				const float x1 = offset.x + bezierControlPoints[i + 1].x * zoomLevel;
+				const float y1 = offset.y + bezierControlPoints[i + 1].y * zoomLevel;
+				brush.fillLine(x0, y0, x1, y1);
+			}
+			// Draw handles for each control point
+			for (size_t i = 0; i < bezierControlPoints.getLength(); i++)
+			{
+				drawEndpointHandle(bezierControlPoints[i]);
+			}
 		}
 
 		// HACK: We can only open popups if we are in the same ID Stack. See: https://github.com/ocornut/imgui/issues/331
