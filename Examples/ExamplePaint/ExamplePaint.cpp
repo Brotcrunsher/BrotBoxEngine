@@ -5,7 +5,6 @@
 // TODO: Flood fill with edges of brush tool kinda bad.
 // TODO: Bug: right click has weird behaviour with shadow
 
-// Bug: When clicking "Paste as New Canvas" we can't undo the step
 
 struct PaintLayer
 {
@@ -1428,14 +1427,14 @@ class MyGame : public bbe::Game
 		clearWorkArea();
 	}
 
-	void setupCanvas()
+	void setupCanvas(bool clearHistory = true)
 	{
 		prepareDocumentImages();
 		clearWorkArea();
 		resetCamera();
 		clearSelectionState();
 		clampActiveLayerIndex();
-		canvas.clearHistory();
+		if (clearHistory) canvas.clearHistory();
 	}
 
 	void newCanvas(uint32_t width, uint32_t height)
@@ -1954,7 +1953,8 @@ class MyGame : public bbe::Game
 			canvas.get().layers.clear();
 			canvas.get().layers.add(PaintLayer{ "Layer 1", true, bbe::Image::getClipboardImage() });
 			path = "";
-			setupCanvas();
+			canvas.submit();
+			setupCanvas(false);
 		}
 		ImGui::EndDisabled();
 		if (!supportsClipboardImages)
