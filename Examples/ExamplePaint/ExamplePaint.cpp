@@ -14,7 +14,6 @@
 // TODO: Layer blending modes
 // TODO: Layer duplication
 // TODO: Merge layers
-// TODO: Resizable canvas
 // TODO: Scaling whole picture/selection up/down
 // TODO: Pixel perfect manipulation with arrow keys
 // TODO: "Filled with color" option for rectangle/circle tool
@@ -164,6 +163,10 @@ class MyGame : public bbe::Game
 	bbe::Vector2 rotationDragPivot;
 	float rotationDragStartAngle = 0.f;
 	float rotationDragBaseAngle = 0.f;
+
+	bool canvasResizeActive = false;
+	int32_t canvasResizeHandleIndex = -1;
+	bbe::Rectanglei canvasResizePreviewRect;
 
 	void prepareImageForCanvas(bbe::Image &image) const
 	{
@@ -2153,6 +2156,96 @@ class MyGame : public bbe::Game
 			rect.height * zoomLevel);
 	}
 
+	// Returns the screen-space position of canvas resize handle i (0=TL,1=T,2=TR,3=R,4=BR,5=B,6=BL,7=L).
+	bbe::Vector2 getCanvasHandleScreenPos(int32_t i) const
+	{
+		const float W = getCanvasWidth() * zoomLevel;
+		const float H = getCanvasHeight() * zoomLevel;
+		switch (i)
+		{
+			case 0: return { offset.x,         offset.y         };
+			case 1: return { offset.x + W/2.f,  offset.y         };
+			case 2: return { offset.x + W,      offset.y         };
+			case 3: return { offset.x + W,      offset.y + H/2.f };
+			case 4: return { offset.x + W,      offset.y + H     };
+			case 5: return { offset.x + W/2.f,  offset.y + H     };
+			case 6: return { offset.x,           offset.y + H     };
+			case 7: return { offset.x,           offset.y + H/2.f };
+			default: return offset;
+		}
+	}
+
+	// Returns the index (0-7) of the canvas resize handle the screen-space point is near, or -1.
+	int32_t getCanvasResizeHitHandle(const bbe::Vector2 &screenPos) const
+	{
+		if (getCanvasWidth() <= 0 || getCanvasHeight() <= 0) return -1;
+		constexpr float hitRadius = 6.f;
+		for (int32_t i = 0; i < 8; i++)
+		{
+			const bbe::Vector2 hp = getCanvasHandleScreenPos(i);
+			const float dx = screenPos.x - hp.x;
+			const float dy = screenPos.y - hp.y;
+			if (dx * dx + dy * dy <= hitRadius * hitRadius) return i;
+		}
+		return -1;
+	}
+
+	void updateCanvasResizePreview(const bbe::Vector2 &canvasMousePos)
+	{
+		const int32_t W = getCanvasWidth();
+		const int32_t H = getCanvasHeight();
+		const int32_t mx = (int32_t)std::round(canvasMousePos.x);
+		const int32_t my = (int32_t)std::round(canvasMousePos.y);
+		switch (canvasResizeHandleIndex)
+		{
+			case 0: canvasResizePreviewRect = { mx, my, std::max(1, W - mx), std::max(1, H - my) }; break;
+			case 1: canvasResizePreviewRect = { 0,  my, W,                   std::max(1, H - my) }; break;
+			case 2: canvasResizePreviewRect = { 0,  my, std::max(1, mx),     std::max(1, H - my) }; break;
+			case 3: canvasResizePreviewRect = { 0,  0,  std::max(1, mx),     H                   }; break;
+			case 4: canvasResizePreviewRect = { 0,  0,  std::max(1, mx),     std::max(1, my)     }; break;
+			case 5: canvasResizePreviewRect = { 0,  0,  W,                   std::max(1, my)     }; break;
+			case 6: canvasResizePreviewRect = { mx, 0,  std::max(1, W - mx), std::max(1, my)     }; break;
+			case 7: canvasResizePreviewRect = { mx, 0,  std::max(1, W - mx), H                   }; break;
+			default: break;
+		}
+	}
+
+	void applyCanvasResize(const bbe::Rectanglei &previewRect)
+	{
+		if (previewRect.width <= 0 || previewRect.height <= 0) return;
+		if (canvas.get().layers.isEmpty()) return;
+
+		const bbe::Color fillColor(rightColor[0], rightColor[1], rightColor[2], rightColor[3]);
+		const int32_t oldW = getCanvasWidth();
+		const int32_t oldH = getCanvasHeight();
+
+		for (size_t li = 0; li < canvas.get().layers.getLength(); li++)
+		{
+			bbe::Image newImage(previewRect.width, previewRect.height, fillColor);
+			prepareImageForCanvas(newImage);
+			for (int32_t ny = 0; ny < previewRect.height; ny++)
+			{
+				for (int32_t nx = 0; nx < previewRect.width; nx++)
+				{
+					const int32_t ox = nx + previewRect.x;
+					const int32_t oy = ny + previewRect.y;
+					if (ox < 0 || ox >= oldW || oy < 0 || oy >= oldH) continue;
+					newImage.setPixel((size_t)nx, (size_t)ny,
+						canvas.get().layers[li].image.getPixel((size_t)ox, (size_t)oy));
+				}
+			}
+			canvas.get().layers[li].image = std::move(newImage);
+		}
+
+		// Shift offset so visual position of original content is preserved.
+		offset.x += previewRect.x * zoomLevel;
+		offset.y += previewRect.y * zoomLevel;
+
+		clearSelectionState();
+		clearWorkArea();
+		canvas.submit();
+	}
+
 	void drawSelectionOutline(bbe::PrimitiveBrush2D &brush, const bbe::Rectanglei &rect) const
 	{
 		const bbe::Rectangle screenRect = selectionRectToScreen(rect);
@@ -2994,31 +3087,58 @@ class MyGame : public bbe::Game
 			startMousePos = screenToCanvas(getMouse());
 		}
 
-		if (mode == MODE_SELECTION)
+		// Canvas resize handles — checked before tool handling so they take priority.
+		if (!canvasResizeActive && isMousePressed(bbe::MouseButton::LEFT))
+		{
+			const int32_t hitHandle = getCanvasResizeHitHandle(getMouse());
+			if (hitHandle >= 0)
+			{
+				canvasResizeActive = true;
+				canvasResizeHandleIndex = hitHandle;
+				canvasResizePreviewRect = { 0, 0, getCanvasWidth(), getCanvasHeight() };
+				updateCanvasResizePreview(currMousePos);
+			}
+		}
+		if (canvasResizeActive)
+		{
+			if (isMouseDown(bbe::MouseButton::LEFT))
+			{
+				updateCanvasResizePreview(currMousePos);
+			}
+			if (isMouseReleased(bbe::MouseButton::LEFT))
+			{
+				applyCanvasResize(canvasResizePreviewRect);
+				canvasResizeActive = false;
+				canvasResizeHandleIndex = -1;
+				canvasResizePreviewRect = {};
+			}
+		}
+
+		if (!canvasResizeActive && mode == MODE_SELECTION)
 		{
 			updateSelectionTool(currMousePos);
 		}
-		if (mode == MODE_RECTANGLE)
+		if (!canvasResizeActive && mode == MODE_RECTANGLE)
 		{
 			updateRectangleTool(currMousePos);
 		}
-		if (mode == MODE_CIRCLE)
+		if (!canvasResizeActive && mode == MODE_CIRCLE)
 		{
 			updateCircleTool(currMousePos);
 		}
-		if (mode == MODE_LINE)
+		if (!canvasResizeActive && mode == MODE_LINE)
 		{
 			updateLineTool(currMousePos);
 		}
-		if (mode == MODE_ARROW)
+		if (!canvasResizeActive && mode == MODE_ARROW)
 		{
 			updateArrowTool(currMousePos);
 		}
-		if (mode == MODE_BEZIER)
+		if (!canvasResizeActive && mode == MODE_BEZIER)
 		{
 			updateBezierTool(currMousePos);
 		}
-		if (mode == MODE_TEXT && (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT)))
+		if (!canvasResizeActive && mode == MODE_TEXT && (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT)))
 		{
 			bbe::Vector2 pos = currMousePos;
 			if (toTiledPos(pos))
@@ -3036,6 +3156,7 @@ class MyGame : public bbe::Game
 			&& mode != MODE_LINE
 			&& mode != MODE_ARROW
 			&& mode != MODE_BEZIER
+			&& !canvasResizeActive
 			&& drawButtonDown;
 		const bool shadowDrawMode = shadowDrawModes.contains(mode);
 
@@ -3440,6 +3561,31 @@ class MyGame : public bbe::Game
 				brush.fillLine(0, i, getWindowWidth(), i);
 			}
 		}
+		// Canvas resize handles
+		if (getCanvasWidth() > 0 && getCanvasHeight() > 0 && !tiled)
+		{
+			constexpr float hs = 5.f;
+			for (int32_t i = 0; i < 8; i++)
+			{
+				const bbe::Vector2 hp = getCanvasHandleScreenPos(i);
+				brush.setColorRGB(1.f, 1.f, 1.f);
+				brush.fillRect(hp.x - hs, hp.y - hs, hs * 2.f, hs * 2.f);
+				brush.setColorRGB(0.f, 0.f, 0.f);
+				brush.sketchRect(bbe::Rectangle(hp.x - hs, hp.y - hs, hs * 2.f, hs * 2.f));
+			}
+			if (canvasResizeActive && canvasResizePreviewRect.width > 0 && canvasResizePreviewRect.height > 0)
+			{
+				const bbe::Rectangle previewScreen = selectionRectToScreen(canvasResizePreviewRect);
+				brush.setColorRGB(0.f, 0.f, 0.f);
+				brush.sketchRect(previewScreen);
+				if (previewScreen.width > 2 && previewScreen.height > 2)
+				{
+					brush.setColorRGB(1.f, 1.f, 1.f);
+					brush.sketchRect(previewScreen.shrinked(1.f));
+				}
+			}
+		}
+
 		const int32_t ghostRepeats = tiled ? 20 : 0;
 		auto drawInAllTiles = [&](const bbe::Rectanglei &rect, const bbe::Image &image, float rotation = 0.f)
 		{
