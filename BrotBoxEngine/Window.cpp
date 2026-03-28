@@ -29,7 +29,7 @@
 
 #include "BBE/Game.h"
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(BBE_RENDERER_NULL)
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
@@ -695,8 +695,8 @@ void bbe::Window::consumeRenderRequest()
 void *bbe::Window::getNativeHandle()
 {
 	if (m_pwindow == nullptr) return nullptr;
-#ifdef WIN32
-	return (void *)glfwGetWin32Window(m_pwindow);
+#if defined(_WIN32) && !defined(BBE_RENDERER_NULL)
+	return reinterpret_cast<void *>(glfwGetWin32Window(m_pwindow));
 #else
 	return nullptr;
 #endif
