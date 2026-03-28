@@ -3,7 +3,6 @@
 
 // TODO: Proper GUI
 // TODO: Layers
-// TODO: Text
 // TODO: Drag and Drop image files into paint
 // TODO: Circle tool
 // TODO: Flood fill with edges of brush tool kinda bad.
@@ -25,10 +24,13 @@ class MyGame : public bbe::Game
 	constexpr static int32_t MODE_LINE = 2;
 	constexpr static int32_t MODE_RECTANGLE = 3;
 	constexpr static int32_t MODE_SELECTION = 4;
-	constexpr static int32_t MODE_PIPETTE = 5;
+	constexpr static int32_t MODE_TEXT = 5;
+	constexpr static int32_t MODE_PIPETTE = 6;
 	int32_t mode = MODE_BRUSH;
 
 	int32_t brushWidth = 1;
+	int32_t textFontSize = 20;
+	char textBuffer[512] = "Text";
 	bbe::Vector2 startMousePos;
 	bool roundEdges = false;
 
@@ -361,6 +363,133 @@ class MyGame : public bbe::Game
 		if (brushWidth < 1) brushWidth = 1;
 	}
 
+	void clampTextFontSize()
+	{
+		if (textFontSize < 1) textFontSize = 1;
+	}
+
+	const bbe::Font &getTextToolFont() const
+	{
+		static std::map<int32_t, bbe::Font> textFonts;
+		const int32_t clampedSize = bbe::Math::max<int32_t>(textFontSize, 1);
+		auto it = textFonts.find(clampedSize);
+		if (it == textFonts.end())
+		{
+			it = textFonts.emplace(clampedSize, bbe::Font("OpenSansRegular.ttf", (unsigned)clampedSize)).first;
+		}
+		return it->second;
+	}
+
+	const bbe::Image &getTextGlyphImage(const bbe::Font &font, int32_t codePoint) const
+	{
+		bbe::Image &glyph = const_cast<bbe::Image &>(font.getImage(codePoint, 1.0f));
+		glyph.keepAfterUpload();
+		return glyph;
+	}
+
+	bbe::String getTextBufferString() const
+	{
+		return bbe::String(textBuffer);
+	}
+
+	bool getTextOriginAndBounds(const bbe::Vector2i &topLeft, bbe::Vector2 &outOrigin, bbe::Rectangle &outBounds) const
+	{
+		const bbe::String text = getTextBufferString();
+		if (text.isEmpty()) return false;
+
+		const bbe::Font &font = getTextToolFont();
+		outBounds = font.getBoundingBox(text);
+		outOrigin = topLeft.as<float>() - outBounds.getPos();
+		return true;
+	}
+
+	void blendGlyphOntoCanvas(const bbe::Image &glyph, const bbe::Vector2i &pos, const bbe::Colori &color)
+	{
+		for (int32_t x = 0; x < glyph.getWidth(); x++)
+		{
+			for (int32_t y = 0; y < glyph.getHeight(); y++)
+			{
+				const int32_t targetX = pos.x + x;
+				const int32_t targetY = pos.y + y;
+				if (targetX < 0 || targetY < 0 || targetX >= canvas.get().getWidth() || targetY >= canvas.get().getHeight()) continue;
+
+				const bbe::Colori glyphColor = glyph.getPixel((size_t)x, (size_t)y);
+				if (glyphColor.r == 0) continue;
+
+				bbe::Colori sourceColor = color;
+				sourceColor.a = static_cast<bbe::byte>((uint32_t(color.a) * uint32_t(glyphColor.r)) / 255u);
+
+				const bbe::Colori oldColor = canvas.get().getPixel((size_t)targetX, (size_t)targetY);
+				canvas.get().setPixel((size_t)targetX, (size_t)targetY, oldColor.blendTo(sourceColor));
+			}
+		}
+	}
+
+	void placeTextAt(const bbe::Vector2i &topLeft, const bbe::Colori &color)
+	{
+		bbe::Vector2 origin;
+		bbe::Rectangle bounds;
+		if (!getTextOriginAndBounds(topLeft, origin, bounds)) return;
+
+		const bbe::String text = getTextBufferString();
+		const bbe::Font &font = getTextToolFont();
+		const bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(origin, text);
+
+		bool changed = false;
+		auto it = text.getIterator();
+		for (size_t i = 0; i < renderPositions.getLength() && it.valid(); i++, ++it)
+		{
+			const int32_t codePoint = it.getCodepoint();
+			if (codePoint == ' ' || codePoint == '\n' || codePoint == '\r' || codePoint == '\t') continue;
+
+			const bbe::Vector2i glyphPos(
+				(int32_t)bbe::Math::round(renderPositions[i].x),
+				(int32_t)bbe::Math::round(renderPositions[i].y));
+			blendGlyphOntoCanvas(getTextGlyphImage(font, codePoint), glyphPos, color);
+			changed = true;
+		}
+
+		if (changed)
+		{
+			canvas.submit();
+		}
+	}
+
+	void drawTextPreview(bbe::PrimitiveBrush2D &brush, const bbe::Vector2i &topLeft)
+	{
+		bbe::Vector2 origin;
+		bbe::Rectangle bounds;
+		if (!getTextOriginAndBounds(topLeft, origin, bounds)) return;
+
+		const bbe::String text = getTextBufferString();
+		const bbe::Font &font = getTextToolFont();
+		const bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(origin, text);
+		const bbe::Color previewBase = isMouseDown(bbe::MouseButton::RIGHT) ? bbe::Color(rightColor) : bbe::Color(leftColor);
+		const bbe::Color previewColor = previewBase.blendTo(bbe::Color::white(), 0.15f);
+		brush.setColorRGB(previewColor);
+
+		auto it = text.getIterator();
+		for (size_t i = 0; i < renderPositions.getLength() && it.valid(); i++, ++it)
+		{
+			const int32_t codePoint = it.getCodepoint();
+			if (codePoint == ' ' || codePoint == '\n' || codePoint == '\r' || codePoint == '\t') continue;
+
+			const bbe::Image &glyph = getTextGlyphImage(font, codePoint);
+			brush.drawImage(
+				offset.x + renderPositions[i].x * zoomLevel,
+				offset.y + renderPositions[i].y * zoomLevel,
+				glyph.getWidth() * zoomLevel,
+				glyph.getHeight() * zoomLevel,
+				glyph);
+		}
+
+		drawSelectionOutline(brush, bbe::Rectanglei(
+			topLeft.x,
+			topLeft.y,
+			(int32_t)bbe::Math::ceil(bounds.width),
+			(int32_t)bbe::Math::ceil(bounds.height)));
+	}
+
 	void swapColors()
 	{
 		for (size_t i = 0; i < std::size(leftColor); i++)
@@ -607,23 +736,32 @@ class MyGame : public bbe::Game
 		}
 		if (isKeyPressed(bbe::Key::_6))
 		{
+			mode = MODE_TEXT;
+		}
+		if (isKeyPressed(bbe::Key::_7))
+		{
 			mode = MODE_PIPETTE;
 		}
 		if (!ctrlDown && isKeyPressed(bbe::Key::X))
 		{
 			swapColors();
 		}
-		if (isKeyTyped(bbe::Key::EQUAL)
+		const bool increaseToolSize = isKeyTyped(bbe::Key::EQUAL)
 			|| isKeyTyped(bbe::Key::KP_ADD)
-			|| isKeyTyped(bbe::Key::RIGHT_BRACKET))
+			|| isKeyTyped(bbe::Key::RIGHT_BRACKET);
+		const bool decreaseToolSize = isKeyTyped(bbe::Key::MINUS) || isKeyTyped(bbe::Key::KP_SUBTRACT);
+		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE)
 		{
-			brushWidth++;
+			if (increaseToolSize) brushWidth++;
+			if (decreaseToolSize) brushWidth--;
+			clampBrushWidth();
 		}
-		if (isKeyTyped(bbe::Key::MINUS) || isKeyTyped(bbe::Key::KP_SUBTRACT))
+		else if (mode == MODE_TEXT)
 		{
-			brushWidth--;
+			if (increaseToolSize) textFontSize++;
+			if (decreaseToolSize) textFontSize--;
+			clampTextFontSize();
 		}
-		clampBrushWidth();
 
 		if (ctrlDown)
 		{
@@ -669,10 +807,18 @@ class MyGame : public bbe::Game
 		{
 			updateSelectionTool(currMousePos);
 		}
+		if (mode == MODE_TEXT && (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT)))
+		{
+			bbe::Vector2 pos = currMousePos;
+			if (toTiledPos(pos))
+			{
+				placeTextAt(toCanvasPixel(pos), getMouseColor());
+			}
+		}
 
 		// TODO: Would be nice if we had a constexpr list
 		const bbe::List<decltype(mode)> shadowDrawModes = { MODE_BRUSH };
-		const bool drawMode = mode != MODE_SELECTION && (isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT));
+		const bool drawMode = mode != MODE_SELECTION && mode != MODE_TEXT && (isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT));
 
 		if (drawMode || shadowDrawModes.contains(mode))
 		{
@@ -783,7 +929,7 @@ class MyGame : public bbe::Game
 
 		ImGui::ColorEdit4("Left Color", leftColor);
 		ImGui::ColorEdit4("Right Color", rightColor);
-		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line", "Rectangle", "Selection", "Pipette" }, &mode);
+		ImGui::bbe::combo("Mode", { "Brush", "Flood fill", "Line", "Rectangle", "Selection", "Text", "Pipette" }, &mode);
 		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE)
 		{
 			if (ImGui::InputInt("Brush Width", &brushWidth))
@@ -794,6 +940,15 @@ class MyGame : public bbe::Game
 		if (mode == MODE_RECTANGLE)
 		{
 			ImGui::Checkbox("Round Edges", &roundEdges);
+		}
+		if (mode == MODE_TEXT)
+		{
+			if (ImGui::InputInt("Font Size", &textFontSize))
+			{
+				clampTextFontSize();
+			}
+			ImGui::InputTextMultiline("Text", textBuffer, sizeof(textBuffer), ImVec2(0, ImGui::GetTextLineHeight() * 5.0f));
+			ImGui::Text("Left/Right click places text with the active color.");
 		}
 		const bool supportsClipboardImages = bbe::Image::supportsClipboardImages();
 		ImGui::BeginDisabled(!supportsClipboardImages);
@@ -849,8 +1004,8 @@ class MyGame : public bbe::Game
 		}
 
 		ImGui::SeparatorText("Shortcuts");
-		ImGui::Text("1 Brush | 2 Fill | 3 Line | 4 Rectangle | 5 Selection | 6 Pipette");
-		ImGui::Text("+/- Brush Size | X Swap Colors | Ctrl+D Default Colors");
+		ImGui::Text("1 Brush | 2 Fill | 3 Line | 4 Rectangle | 5 Selection | 6 Text | 7 Pipette");
+		ImGui::Text("+/- Brush/Text Size | X Swap Colors | Ctrl+D Default Colors");
 		ImGui::Text("Ctrl+S Save | Ctrl+Z Undo | Ctrl+Y Redo | Space Reset Camera");
 		ImGui::Text("Ctrl+C Copy Selection | Ctrl+X Cut | Ctrl+V Paste | Del Delete");
 
@@ -893,6 +1048,14 @@ class MyGame : public bbe::Game
 		else if (hasSelection)
 		{
 			drawSelectionOutline(brush, selectionRect);
+		}
+		if (mode == MODE_TEXT)
+		{
+			bbe::Vector2 previewPos = screenToCanvas(getMouse());
+			if (toTiledPos(previewPos))
+			{
+				drawTextPreview(brush, toCanvasPixel(previewPos));
+			}
 		}
 
 		// HACK: We can only open popups if we are in the same ID Stack. See: https://github.com/ocornut/imgui/issues/331
