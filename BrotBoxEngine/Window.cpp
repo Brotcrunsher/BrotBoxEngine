@@ -29,10 +29,17 @@
 
 #include "BBE/Game.h"
 
-#if defined(_WIN32) && !defined(BBE_RENDERER_NULL)
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <Windows.h>
+#endif
+
+#if defined(_WIN32) && !defined(BBE_RENDERER_NULL)
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 #endif
