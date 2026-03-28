@@ -359,6 +359,16 @@ class MyGame : public bbe::Game
 		return true;
 	}
 
+	bbe::Vector2i constrainToSquare(const bbe::Vector2i &start, const bbe::Vector2i &end) const
+	{
+		const int32_t dx = end.x - start.x;
+		const int32_t dy = end.y - start.y;
+		const int32_t size = bbe::Math::min(bbe::Math::abs(dx), bbe::Math::abs(dy));
+		return bbe::Vector2i(
+			start.x + (dx >= 0 ? size : -size),
+			start.y + (dy >= 0 ? size : -size));
+	}
+
 	bool buildSelectionRect(const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect) const
 	{
 		const int32_t left = bbe::Math::min(pos1.x, pos2.x);
@@ -847,8 +857,10 @@ class MyGame : public bbe::Game
 		const bool useRightColor = circleDragUsesRightColor;
 		circleDragActive = false;
 
+		const bool shiftDown = isKeyDown(bbe::Key::LEFT_SHIFT) || isKeyDown(bbe::Key::RIGHT_SHIFT);
+		const bbe::Vector2i constrainedPixel = shiftDown ? constrainToSquare(circleDragStart, mousePixel) : mousePixel;
 		bbe::Rectanglei draftRect;
-		if (!buildSelectionRect(circleDragStart, mousePixel, draftRect))
+		if (!buildSelectionRect(circleDragStart, constrainedPixel, draftRect))
 		{
 			circleDragPreviewRect = {};
 			circleDragPreviewImage = {};
@@ -881,7 +893,9 @@ class MyGame : public bbe::Game
 
 	void updateCircleDragPreview(const bbe::Vector2i &mousePixel)
 	{
-		if (!buildSelectionRect(circleDragStart, mousePixel, circleDragPreviewRect))
+		const bool shiftDown = isKeyDown(bbe::Key::LEFT_SHIFT) || isKeyDown(bbe::Key::RIGHT_SHIFT);
+		const bbe::Vector2i constrainedPixel = shiftDown ? constrainToSquare(circleDragStart, mousePixel) : mousePixel;
+		if (!buildSelectionRect(circleDragStart, constrainedPixel, circleDragPreviewRect))
 		{
 			circleDragPreviewRect = {};
 			circleDragPreviewImage = {};
@@ -1174,7 +1188,9 @@ class MyGame : public bbe::Game
 		const bool useRightColor = rectangleDragUsesRightColor;
 		rectangleDragActive = false;
 
-		if (!buildRectangleDraftRect(rectangleDragStart, mousePixel, rectangleDragPreviewRect))
+		const bool shiftDown = isKeyDown(bbe::Key::LEFT_SHIFT) || isKeyDown(bbe::Key::RIGHT_SHIFT);
+		const bbe::Vector2i constrainedPixel = shiftDown ? constrainToSquare(rectangleDragStart, mousePixel) : mousePixel;
+		if (!buildRectangleDraftRect(rectangleDragStart, constrainedPixel, rectangleDragPreviewRect))
 		{
 			rectangleDragPreviewRect = {};
 			rectangleDragPreviewImage = {};
@@ -1208,7 +1224,9 @@ class MyGame : public bbe::Game
 
 	void updateRectangleDragPreview(const bbe::Vector2i &mousePixel)
 	{
-		if (!buildRectangleDraftRect(rectangleDragStart, mousePixel, rectangleDragPreviewRect))
+		const bool shiftDown = isKeyDown(bbe::Key::LEFT_SHIFT) || isKeyDown(bbe::Key::RIGHT_SHIFT);
+		const bbe::Vector2i constrainedPixel = shiftDown ? constrainToSquare(rectangleDragStart, mousePixel) : mousePixel;
+		if (!buildRectangleDraftRect(rectangleDragStart, constrainedPixel, rectangleDragPreviewRect))
 		{
 			rectangleDragPreviewRect = {};
 			rectangleDragPreviewImage = {};
