@@ -6,6 +6,7 @@
 
 // Todo: Arrow tool
 // TODO: configurable roundness of edges in rectangle tool
+// TODO: Tiled text buggy
 struct PaintLayer
 {
 	bbe::String name = "";
@@ -2373,26 +2374,54 @@ class MyGame : public bbe::Game
 				brush.fillLine(0, i, getWindowWidth(), i);
 			}
 		}
+		const int32_t ghostRepeats = tiled ? 20 : 0;
+		auto drawInAllTiles = [&](const bbe::Rectanglei &rect, const bbe::Image &image)
+		{
+			for (int32_t i = -ghostRepeats; i <= ghostRepeats; i++)
+			{
+				for (int32_t k = -ghostRepeats; k <= ghostRepeats; k++)
+				{
+					const bbe::Rectanglei offsetRect(
+						rect.x + i * getCanvasWidth(),
+						rect.y + k * getCanvasHeight(),
+						rect.width,
+						rect.height);
+					brush.drawImage(selectionRectToScreen(offsetRect), image);
+					drawSelectionOutline(brush, offsetRect);
+				}
+			}
+		};
+
 		if (rectangleDragActive && rectangleDragPreviewRect.width > 0 && rectangleDragPreviewRect.height > 0)
 		{
-			brush.drawImage(selectionRectToScreen(rectangleDragPreviewRect), rectangleDragPreviewImage);
-			drawSelectionOutline(brush, rectangleDragPreviewRect);
+			drawInAllTiles(rectangleDragPreviewRect, rectangleDragPreviewImage);
 		}
 		else if (circleDragActive && circleDragPreviewRect.width > 0 && circleDragPreviewRect.height > 0)
 		{
-			brush.drawImage(selectionRectToScreen(circleDragPreviewRect), circleDragPreviewImage);
-			drawSelectionOutline(brush, circleDragPreviewRect);
+			drawInAllTiles(circleDragPreviewRect, circleDragPreviewImage);
 		}
 		else if (selectionMoveActive || selectionResizeActive)
 		{
 			const bbe::Image previewImage = selectionResizeActive ? buildSelectionPreviewResultImage() : selectionPreviewImage;
-			brush.drawImage(selectionRectToScreen(selectionPreviewRect), previewImage);
-			drawSelectionOutline(brush, selectionPreviewRect);
+			const bool isDraft = rectangleDraftActive || circleDraftActive;
+			if (isDraft)
+				drawInAllTiles(selectionPreviewRect, previewImage);
+			else
+			{
+				brush.drawImage(selectionRectToScreen(selectionPreviewRect), previewImage);
+				drawSelectionOutline(brush, selectionPreviewRect);
+			}
 		}
 		else if (selectionFloating)
 		{
-			brush.drawImage(selectionRectToScreen(selectionRect), selectionFloatingImage);
-			drawSelectionOutline(brush, selectionRect);
+			const bool isDraft = rectangleDraftActive || circleDraftActive;
+			if (isDraft)
+				drawInAllTiles(selectionRect, selectionFloatingImage);
+			else
+			{
+				brush.drawImage(selectionRectToScreen(selectionRect), selectionFloatingImage);
+				drawSelectionOutline(brush, selectionRect);
+			}
 		}
 		else if (selectionDragActive)
 		{
