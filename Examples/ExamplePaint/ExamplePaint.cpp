@@ -1,5 +1,6 @@
 
 #include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
+#include <cmath>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -8,7 +9,6 @@
 // TODO: Flood fill with edges of brush tool kinda bad.
 // TODO: Bug: right click has weird behaviour with shadow
 
-// TODO: Rotation handle for selections, rectangles and ellipses
 // TODO: Alpha eraser tool - not just recolering pixels but setting their alpha to 0.
 // TODO: Layer opacity
 // TODO: Layer blending modes
@@ -111,6 +111,7 @@ class MyGame : public bbe::Game
 		TOP_RIGHT,
 		BOTTOM_LEFT,
 		BOTTOM_RIGHT,
+		ROTATION,
 	};
 	bool selectionResizeActive = false;
 	SelectionHitZone selectionResizeZone = SelectionHitZone::NONE;
@@ -158,6 +159,12 @@ class MyGame : public bbe::Game
 	bool bezierUsesRightColor = false;
 	int32_t bezierDragPointIndex = -1;
 
+	float selectionRotation = 0.f;
+	bool  rotationHandleActive = false;
+	bbe::Vector2 rotationDragPivot;
+	float rotationDragStartAngle = 0.f;
+	float rotationDragBaseAngle = 0.f;
+
 	void prepareImageForCanvas(bbe::Image &image) const
 	{
 		if (image.getWidth() <= 0 || image.getHeight() <= 0) return;
@@ -202,6 +209,8 @@ class MyGame : public bbe::Game
 		arrowDragInProgress = false;
 		bezierControlPoints.clear();
 		bezierDragPointIndex = -1;
+		selectionRotation = 0.f;
+		rotationHandleActive = false;
 	}
 
 	void selectWholeLayer()
@@ -329,6 +338,89 @@ class MyGame : public bbe::Game
 				target.setPixel((size_t)targetX, (size_t)targetY, oldColor.blendTo(sourceColor));
 			}
 		}
+	}
+
+	void blendRotatedImageOntoCanvas(const bbe::Image &image, const bbe::Rectanglei &rect, float rotation)
+	{
+		const float cx = rect.x + rect.width / 2.f;
+		const float cy = rect.y + rect.height / 2.f;
+		const float cosA = std::cos(-rotation);
+		const float sinA = std::sin(-rotation);
+		const float srcCX = image.getWidth() / 2.f;
+		const float srcCY = image.getHeight() / 2.f;
+
+		const float hw = image.getWidth() / 2.f;
+		const float hh = image.getHeight() / 2.f;
+		const float newHW = std::abs(hw * std::cos(rotation)) + std::abs(hh * std::sin(rotation));
+		const float newHH = std::abs(hw * std::sin(rotation)) + std::abs(hh * std::cos(rotation));
+
+		const int32_t x0 = (int32_t)std::floor(cx - newHW);
+		const int32_t x1 = (int32_t)std::ceil(cx + newHW);
+		const int32_t y0 = (int32_t)std::floor(cy - newHH);
+		const int32_t y1 = (int32_t)std::ceil(cy + newHH);
+
+		for (int32_t canvasY = y0; canvasY <= y1; canvasY++)
+		{
+			for (int32_t canvasX = x0; canvasX <= x1; canvasX++)
+			{
+				const float dx = canvasX + 0.5f - cx;
+				const float dy = canvasY + 0.5f - cy;
+				const float srcX = dx * cosA - dy * sinA + srcCX;
+				const float srcY = dx * sinA + dy * cosA + srcCY;
+				if (srcX < 0.f || srcX >= (float)image.getWidth() || srcY < 0.f || srcY >= (float)image.getHeight()) continue;
+				const bbe::Colori srcPixel = image.getPixel((size_t)srcX, (size_t)srcY);
+				if (srcPixel.a == 0) continue;
+
+				int32_t targetX = canvasX;
+				int32_t targetY = canvasY;
+				if (tiled)
+				{
+					targetX = bbe::Math::mod<int32_t>(targetX, getCanvasWidth());
+					targetY = bbe::Math::mod<int32_t>(targetY, getCanvasHeight());
+				}
+				else
+				{
+					if (targetX < 0 || targetX >= getCanvasWidth()) continue;
+					if (targetY < 0 || targetY >= getCanvasHeight()) continue;
+				}
+				const bbe::Colori oldColor = getActiveLayerImage().getPixel((size_t)targetX, (size_t)targetY);
+				getActiveLayerImage().setPixel((size_t)targetX, (size_t)targetY, oldColor.blendTo(srcPixel));
+			}
+		}
+	}
+
+	// Returns a nearest-neighbor rasterized rotation of src, sized to fit the rotated bounding box.
+	bbe::Image createRotatedPreviewImage(const bbe::Image &src, float rotation) const
+	{
+		const float cosA = std::cos(-rotation);
+		const float sinA = std::sin(-rotation);
+		const float srcCX = src.getWidth() / 2.f;
+		const float srcCY = src.getHeight() / 2.f;
+
+		const float hw = src.getWidth() / 2.f;
+		const float hh = src.getHeight() / 2.f;
+		const float newHW = std::abs(hw * std::cos(rotation)) + std::abs(hh * std::sin(rotation));
+		const float newHH = std::abs(hw * std::sin(rotation)) + std::abs(hh * std::cos(rotation));
+
+		const int32_t newW = std::max(1, (int32_t)std::ceil(newHW * 2.f));
+		const int32_t newH = std::max(1, (int32_t)std::ceil(newHH * 2.f));
+
+		bbe::Image result(newW, newH, bbe::Color(0.f, 0.f, 0.f, 0.f));
+		prepareImageForCanvas(result);
+
+		for (int32_t py = 0; py < newH; py++)
+		{
+			for (int32_t px = 0; px < newW; px++)
+			{
+				const float dx = px + 0.5f - newHW;
+				const float dy = py + 0.5f - newHH;
+				const float srcX = dx * cosA - dy * sinA + srcCX;
+				const float srcY = dx * sinA + dy * cosA + srcCY;
+				if (srcX < 0.f || srcX >= (float)src.getWidth() || srcY < 0.f || srcY >= (float)src.getHeight()) continue;
+				result.setPixel((size_t)px, (size_t)py, src.getPixel((size_t)srcX, (size_t)srcY));
+			}
+		}
+		return result;
 	}
 
 	bbe::Image flattenVisibleLayers() const
@@ -523,7 +615,18 @@ class MyGame : public bbe::Game
 
 	bool isSelectionResizeHit(const SelectionHitZone hitZone) const
 	{
-		return hitZone != SelectionHitZone::NONE && hitZone != SelectionHitZone::INSIDE;
+		return hitZone != SelectionHitZone::NONE
+			&& hitZone != SelectionHitZone::INSIDE
+			&& hitZone != SelectionHitZone::ROTATION;
+	}
+
+	bbe::Vector2 getRotationHandleCanvasPos(const bbe::Rectanglei &rect) const
+	{
+		const float stemScreenLen = 30.f;
+		return {
+			rect.x + rect.width / 2.f,
+			rect.y - stemScreenLen / zoomLevel
+		};
 	}
 
 	SelectionHitZone getSelectionHitZone(const bbe::Vector2i &point) const
@@ -552,6 +655,16 @@ class MyGame : public bbe::Game
 		if (nearRight) return SelectionHitZone::RIGHT;
 		if (nearTop) return SelectionHitZone::TOP;
 		if (nearBottom) return SelectionHitZone::BOTTOM;
+
+		if (hasSelection && !selectionDragActive)
+		{
+			const bbe::Vector2 handlePos = getRotationHandleCanvasPos(selectionRect);
+			const float hitRadius = 8.f / zoomLevel;
+			const float dx = point.x - handlePos.x;
+			const float dy = point.y - handlePos.y;
+			if (dx * dx + dy * dy <= hitRadius * hitRadius) return SelectionHitZone::ROTATION;
+		}
+
 		if (isPointInSelection(point)) return SelectionHitZone::INSIDE;
 		return SelectionHitZone::NONE;
 	}
@@ -683,6 +796,14 @@ class MyGame : public bbe::Game
 	void commitFloatingSelection()
 	{
 		if (!selectionFloating) return;
+
+		if (std::abs(selectionRotation) > 0.0001f)
+		{
+			blendRotatedImageOntoCanvas(selectionFloatingImage, selectionRect, selectionRotation);
+			canvas.submit();
+			clearSelectionState();
+			return;
+		}
 
 		blendImageOntoCanvas(selectionFloatingImage, selectionRect.getPos());
 		canvas.submit();
@@ -1561,7 +1682,11 @@ class MyGame : public bbe::Game
 			if (isMousePressed(bbe::MouseButton::LEFT))
 			{
 				const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
-				if (isSelectionResizeHit(hitZone))
+				if (hitZone == SelectionHitZone::ROTATION)
+				{
+					beginRotationDrag(mousePixel);
+				}
+				else if (isSelectionResizeHit(hitZone))
 				{
 					beginSelectionResize(hitZone);
 				}
@@ -1596,6 +1721,10 @@ class MyGame : public bbe::Game
 			}
 		}
 
+		if (rotationHandleActive && isMouseDown(bbe::MouseButton::LEFT))
+		{
+			updateRotationDrag(mousePixel);
+		}
 		if (selectionMoveActive && isMouseDown(bbe::MouseButton::LEFT))
 		{
 			updateSelectionMovePreview(mousePixel);
@@ -1603,6 +1732,10 @@ class MyGame : public bbe::Game
 		if (selectionResizeActive && isMouseDown(bbe::MouseButton::LEFT))
 		{
 			updateSelectionResizePreview(mousePixel);
+		}
+		if (rotationHandleActive && isMouseReleased(bbe::MouseButton::LEFT))
+		{
+			rotationHandleActive = false;
 		}
 		if ((selectionMoveActive || selectionResizeActive) && isMouseReleased(bbe::MouseButton::LEFT))
 		{
@@ -1628,6 +1761,36 @@ class MyGame : public bbe::Game
 		selectionInteractionStartRect = selectionRect;
 		selectionPreviewRect = selectionRect;
 		selectionPreviewImage = selectionFloating ? selectionFloatingImage : copyCanvasRect(selectionRect);
+	}
+
+	void beginRotationDrag(const bbe::Vector2i &mousePixel)
+	{
+		if (!selectionFloating && hasSelection)
+		{
+			selectionFloatingImage = copyCanvasRect(selectionRect);
+			prepareImageForCanvas(selectionFloatingImage);
+			clearCanvasRect(selectionRect);
+			selectionFloating = true;
+			canvas.submit();
+		}
+
+		rotationHandleActive = true;
+		rotationDragPivot = {
+			selectionRect.x + selectionRect.width / 2.f,
+			selectionRect.y + selectionRect.height / 2.f
+		};
+		const bbe::Vector2 toMouse((float)mousePixel.x - rotationDragPivot.x, (float)mousePixel.y - rotationDragPivot.y);
+		rotationDragStartAngle = toMouse.getLength() > 0.001f ? toMouse.getAngle() : 0.f;
+		rotationDragBaseAngle = selectionRotation;
+	}
+
+	void updateRotationDrag(const bbe::Vector2i &mousePixel)
+	{
+		const bbe::Vector2 toMouse((float)mousePixel.x - rotationDragPivot.x, (float)mousePixel.y - rotationDragPivot.y);
+		if (toMouse.getLength() > 0.001f)
+		{
+			selectionRotation = rotationDragBaseAngle + (toMouse.getAngle() - rotationDragStartAngle);
+		}
 	}
 
 	void updateSelectionMovePreview(const bbe::Vector2i &mousePixel)
@@ -1782,7 +1945,11 @@ class MyGame : public bbe::Game
 		if (isMousePressed(bbe::MouseButton::LEFT))
 		{
 			const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
-			if (isSelectionResizeHit(hitZone))
+			if (hitZone == SelectionHitZone::ROTATION && hasSelection)
+			{
+				beginRotationDrag(mousePixel);
+			}
+			else if (isSelectionResizeHit(hitZone))
 			{
 				beginSelectionResize(hitZone);
 			}
@@ -1806,6 +1973,10 @@ class MyGame : public bbe::Game
 
 		if (isMouseDown(bbe::MouseButton::LEFT))
 		{
+			if (rotationHandleActive)
+			{
+				updateRotationDrag(mousePixel);
+			}
 			if (selectionDragActive)
 			{
 				buildSelectionRect(selectionDragStart, mousePixel, selectionPreviewRect);
@@ -1822,6 +1993,8 @@ class MyGame : public bbe::Game
 
 		if (isMouseReleased(bbe::MouseButton::LEFT))
 		{
+			rotationHandleActive = false;
+
 			if (selectionDragActive)
 			{
 				hasSelection = buildSelectionRect(selectionDragStart, mousePixel, selectionRect);
@@ -1899,7 +2072,11 @@ class MyGame : public bbe::Game
 			if (isMousePressed(bbe::MouseButton::LEFT))
 			{
 				const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
-				if (isSelectionResizeHit(hitZone))
+				if (hitZone == SelectionHitZone::ROTATION)
+				{
+					beginRotationDrag(mousePixel);
+				}
+				else if (isSelectionResizeHit(hitZone))
 				{
 					beginSelectionResize(hitZone);
 				}
@@ -1907,20 +2084,20 @@ class MyGame : public bbe::Game
 				{
 					beginSelectionMove(mousePixel);
 				}
-					else
-					{
-						commitFloatingSelection();
-						clearSelectionState();
-					}
-					handledMousePress = true;
-				}
-				if (!handledMousePress && isMousePressed(bbe::MouseButton::RIGHT))
+				else
 				{
 					commitFloatingSelection();
 					clearSelectionState();
-					handledMousePress = true;
 				}
+				handledMousePress = true;
 			}
+			if (!handledMousePress && isMousePressed(bbe::MouseButton::RIGHT))
+			{
+				commitFloatingSelection();
+				clearSelectionState();
+				handledMousePress = true;
+			}
+		}
 
 		if (!handledMousePress && !rectangleDraftActive)
 		{
@@ -1934,6 +2111,10 @@ class MyGame : public bbe::Game
 			}
 		}
 
+		if (rotationHandleActive && isMouseDown(bbe::MouseButton::LEFT))
+		{
+			updateRotationDrag(mousePixel);
+		}
 		if (selectionMoveActive && isMouseDown(bbe::MouseButton::LEFT))
 		{
 			updateSelectionMovePreview(mousePixel);
@@ -1941,6 +2122,10 @@ class MyGame : public bbe::Game
 		if (selectionResizeActive && isMouseDown(bbe::MouseButton::LEFT))
 		{
 			updateSelectionResizePreview(mousePixel);
+		}
+		if (rotationHandleActive && isMouseReleased(bbe::MouseButton::LEFT))
+		{
+			rotationHandleActive = false;
 		}
 		if ((selectionMoveActive || selectionResizeActive) && isMouseReleased(bbe::MouseButton::LEFT))
 		{
@@ -1977,6 +2162,27 @@ class MyGame : public bbe::Game
 		{
 			brush.setColorRGB(1.0f, 1.0f, 1.0f);
 			brush.sketchRect(screenRect.shrinked(1.0f));
+		}
+
+		if (hasSelection && !selectionDragActive)
+		{
+			const float cx = screenRect.x + screenRect.width / 2.f;
+			const float ty = screenRect.y;
+			constexpr float stemLen = 30.f;
+			const float handleY = ty - stemLen;
+			constexpr float handleR = 6.f;
+
+			// Stem line
+			brush.setColorRGB(0.f, 0.f, 0.f);
+			brush.fillLine(cx + 1.f, ty, cx + 1.f, handleY, 1.f);
+			brush.setColorRGB(1.f, 1.f, 1.f);
+			brush.fillLine(cx, ty, cx, handleY, 1.f);
+
+			// Handle circle: black border, white fill
+			brush.setColorRGB(0.f, 0.f, 0.f);
+			brush.fillCircle(cx - handleR - 1.f, handleY - handleR - 1.f, (handleR + 1.f) * 2.f, (handleR + 1.f) * 2.f);
+			brush.setColorRGB(1.f, 1.f, 1.f);
+			brush.fillCircle(cx - handleR, handleY - handleR, handleR * 2.f, handleR * 2.f);
 		}
 	}
 
@@ -3235,19 +3441,41 @@ class MyGame : public bbe::Game
 			}
 		}
 		const int32_t ghostRepeats = tiled ? 20 : 0;
-		auto drawInAllTiles = [&](const bbe::Rectanglei &rect, const bbe::Image &image)
+		auto drawInAllTiles = [&](const bbe::Rectanglei &rect, const bbe::Image &image, float rotation = 0.f)
 		{
+			// Pre-rasterize rotation so the preview matches the committed pixel-grid result.
+			const bool hasRot = std::abs(rotation) > 0.0001f;
+			bbe::Image rotatedImg;
+			bbe::Rectanglei displayRect = rect;
+			const bbe::Image *pImg = &image;
+			if (hasRot)
+			{
+				rotatedImg = createRotatedPreviewImage(image, rotation);
+				pImg = &rotatedImg;
+				const float cx = rect.x + rect.width / 2.f;
+				const float cy = rect.y + rect.height / 2.f;
+				displayRect = bbe::Rectanglei(
+					(int32_t)std::floor(cx - rotatedImg.getWidth() / 2.f),
+					(int32_t)std::floor(cy - rotatedImg.getHeight() / 2.f),
+					rotatedImg.getWidth(),
+					rotatedImg.getHeight());
+			}
 			for (int32_t i = -ghostRepeats; i <= ghostRepeats; i++)
 			{
 				for (int32_t k = -ghostRepeats; k <= ghostRepeats; k++)
 				{
-					const bbe::Rectanglei offsetRect(
+					const bbe::Rectanglei tileDisplay(
+						displayRect.x + i * getCanvasWidth(),
+						displayRect.y + k * getCanvasHeight(),
+						displayRect.width,
+						displayRect.height);
+					brush.drawImage(selectionRectToScreen(tileDisplay), *pImg);
+					const bbe::Rectanglei tileOutline(
 						rect.x + i * getCanvasWidth(),
 						rect.y + k * getCanvasHeight(),
 						rect.width,
 						rect.height);
-					brush.drawImage(selectionRectToScreen(offsetRect), image);
-					drawSelectionOutline(brush, offsetRect);
+					drawSelectionOutline(brush, tileOutline);
 				}
 			}
 		};
@@ -3263,25 +3491,11 @@ class MyGame : public bbe::Game
 		else if (selectionMoveActive || selectionResizeActive)
 		{
 			const bbe::Image previewImage = selectionResizeActive ? buildSelectionPreviewResultImage() : selectionPreviewImage;
-			const bool isDraft = rectangleDraftActive || circleDraftActive;
-			if (isDraft)
-				drawInAllTiles(selectionPreviewRect, previewImage);
-			else
-			{
-				brush.drawImage(selectionRectToScreen(selectionPreviewRect), previewImage);
-				drawSelectionOutline(brush, selectionPreviewRect);
-			}
+			drawInAllTiles(selectionPreviewRect, previewImage, selectionRotation);
 		}
 		else if (selectionFloating)
 		{
-			const bool isDraft = rectangleDraftActive || circleDraftActive;
-			if (isDraft)
-				drawInAllTiles(selectionRect, selectionFloatingImage);
-			else
-			{
-				brush.drawImage(selectionRectToScreen(selectionRect), selectionFloatingImage);
-				drawSelectionOutline(brush, selectionRect);
-			}
+			drawInAllTiles(selectionRect, selectionFloatingImage, selectionRotation);
 		}
 		else if (selectionDragActive)
 		{
