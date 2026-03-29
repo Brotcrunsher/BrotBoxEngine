@@ -15,8 +15,9 @@
 // TODO: "Filled with color" option for rectangle/circle tool
 // TODO: Color history
 // TODO: Selection via magic wand / color selection
-// TODO: Symmetry Drawing: Horizontal, vertical, 4-way, radial etc
 // TODO: Unsaved changes indicator - little star somewhere in the UI when there are unsaved changes.
+// TODO: Radial symmetric drawing has to many blue lines. This seems to divide the area in more sections than there actually are.
+// TODO: Only brush tool works in symmetry modes. All other tools should work, too.
 
 struct FontEntry
 {
@@ -173,6 +174,17 @@ class MyGame : public bbe::Game
 	bool canvasResizeActive = false;
 	int32_t canvasResizeHandleIndex = -1;
 	bbe::Rectanglei canvasResizePreviewRect;
+
+	enum class SymmetryMode
+	{
+		None       = 0,
+		Horizontal = 1,
+		Vertical   = 2,
+		FourWay    = 3,
+		Radial     = 4,
+	};
+	SymmetryMode symmetryMode = SymmetryMode::None;
+	int32_t radialSymmetryCount = 6;
 
 	void prepareImageForCanvas(bbe::Image &image) const
 	{
@@ -2939,14 +2951,58 @@ class MyGame : public bbe::Game
 		return isMouseDown(bbe::MouseButton::LEFT) ? bbe::Color(leftColor).asByteColor() : bbe::Color(rightColor).asByteColor();
 	}
 
+	// Returns all canvas-space positions for the given position under the active symmetry mode.
+	bbe::List<bbe::Vector2> getSymmetryPositions(const bbe::Vector2 &pos) const
+	{
+		bbe::List<bbe::Vector2> result;
+		const bbe::Vector2 center = { getCanvasWidth() * 0.5f, getCanvasHeight() * 0.5f };
+		switch (symmetryMode)
+		{
+		case SymmetryMode::None:
+			result.add(pos);
+			break;
+		case SymmetryMode::Horizontal:
+			result.add(pos);
+			result.add({ pos.x, 2.f * center.y - pos.y });
+			break;
+		case SymmetryMode::Vertical:
+			result.add(pos);
+			result.add({ 2.f * center.x - pos.x, pos.y });
+			break;
+		case SymmetryMode::FourWay:
+			result.add(pos);
+			result.add({ 2.f * center.x - pos.x, pos.y });
+			result.add({ pos.x, 2.f * center.y - pos.y });
+			result.add({ 2.f * center.x - pos.x, 2.f * center.y - pos.y });
+			break;
+		case SymmetryMode::Radial:
+		{
+			const float step = 2.f * bbe::Math::PI / (float)radialSymmetryCount;
+			for (int32_t i = 0; i < radialSymmetryCount; i++)
+				result.add(pos.rotate(step * (float)i, center));
+			break;
+		}
+		}
+		return result;
+	}
+
 	bool touch(const bbe::Vector2 &touchPos, bool rectangleShape = false)
 	{
-		return touchImage(workArea, touchPos, getMouseColor(), brushWidth, rectangleShape, tiled);
+		bool changed = false;
+		const auto positions = getSymmetryPositions(touchPos);
+		for (size_t i = 0; i < positions.getLength(); i++)
+			changed |= touchImage(workArea, positions[i], getMouseColor(), brushWidth, rectangleShape, tiled);
+		return changed;
 	}
 
 	bool touchLine(const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, bool rectangleShape = false)
 	{
-		return touchLineImage(workArea, pos1, pos2, getMouseColor(), brushWidth, rectangleShape, tiled);
+		bool changed = false;
+		const auto starts = getSymmetryPositions(pos1);
+		const auto ends   = getSymmetryPositions(pos2);
+		for (size_t i = 0; i < starts.getLength(); i++)
+			changed |= touchLineImage(workArea, starts[i], ends[i], getMouseColor(), brushWidth, rectangleShape, tiled);
+		return changed;
 	}
 
 	virtual void onStart() override
@@ -3602,6 +3658,32 @@ class MyGame : public bbe::Game
 			ImGui::TextDisabled("L/R click places text.");
 		}
 
+		// --- Symmetry ---
+		ImGui::SeparatorText("Symmetry");
+		{
+			const float w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 4) / 5.f;
+			auto symBtn = [&](const char* label, SymmetryMode sm)
+			{
+				const bool active = (symmetryMode == sm);
+				if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+				if (ImGui::Button(label, ImVec2(w, 0))) symmetryMode = sm;
+				if (active) ImGui::PopStyleColor();
+			};
+			symBtn("Off",  SymmetryMode::None);       ImGui::SameLine();
+			symBtn("H",    SymmetryMode::Horizontal);  ImGui::SameLine();
+			symBtn("V",    SymmetryMode::Vertical);    ImGui::SameLine();
+			symBtn("4W",   SymmetryMode::FourWay);     ImGui::SameLine();
+			symBtn("Rad",  SymmetryMode::Radial);
+			if (symmetryMode == SymmetryMode::Radial)
+			{
+				if (ImGui::InputInt("Spokes##radialCount", &radialSymmetryCount))
+				{
+					if (radialSymmetryCount < 2) radialSymmetryCount = 2;
+					if (radialSymmetryCount > 32) radialSymmetryCount = 32;
+				}
+			}
+		}
+
 		// --- Selection actions ---
 		if (mode == MODE_SELECTION)
 		{
@@ -3899,6 +3981,47 @@ class MyGame : public bbe::Game
 			{
 				drawEndpointHandle(bezierControlPoints[i]);
 			}
+		}
+
+		// Symmetry guide lines
+		if (symmetryMode != SymmetryMode::None && getCanvasWidth() > 0)
+		{
+			const float cw = (float)getCanvasWidth();
+			const float ch = (float)getCanvasHeight();
+			const bbe::Vector2 center = { cw * 0.5f, ch * 0.5f };
+			// Convert canvas coords to screen coords: screen = pos * zoomLevel + offset
+			auto c2s = [&](bbe::Vector2 p) -> bbe::Vector2
+			{
+				return p * zoomLevel + offset;
+			};
+
+			brush.setColorRGB(0.2f, 0.8f, 1.0f, 0.7f);
+			brush.setOutlineWidth(0.f);
+
+			if (symmetryMode == SymmetryMode::Horizontal || symmetryMode == SymmetryMode::FourWay)
+			{
+				const bbe::Vector2 a = c2s({ 0.f,  center.y });
+				const bbe::Vector2 b = c2s({ cw,   center.y });
+				brush.fillLine(a, b, 1.f);
+			}
+			if (symmetryMode == SymmetryMode::Vertical || symmetryMode == SymmetryMode::FourWay)
+			{
+				const bbe::Vector2 a = c2s({ center.x, 0.f });
+				const bbe::Vector2 b = c2s({ center.x, ch  });
+				brush.fillLine(a, b, 1.f);
+			}
+			if (symmetryMode == SymmetryMode::Radial)
+			{
+				const float step = bbe::Math::PI / (float)radialSymmetryCount;
+				const float extent = bbe::Math::sqrt(cw * cw + ch * ch) * 0.5f;
+				for (int32_t i = 0; i < radialSymmetryCount; i++)
+				{
+					const float angle = step * (float)i;
+					const bbe::Vector2 dir = { std::cosf(angle) * extent, std::sinf(angle) * extent };
+					brush.fillLine(c2s(center - dir), c2s(center + dir), 1.f);
+				}
+			}
+			brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 
 		// Navigator
