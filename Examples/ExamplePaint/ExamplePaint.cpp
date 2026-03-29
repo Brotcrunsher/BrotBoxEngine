@@ -18,7 +18,6 @@
 // TODO: Symmetry Drawing: Horizontal, vertical, 4-way, radial etc
 // TODO: Unsaved changes indicator - little star somewhere in the UI when there are unsaved changes.
 // TODO: Mini-Preview / Navigator - small always visible preview of the whole canvas with a rectangle indicating the current view area, allowing to quickly jump to different areas of the canvas by clicking in the preview.
-// TODO: Moving a complete layer that has some color in it makes the shadow preview rendering of that action completely black. It should be the graphics of the layer though.
 
 struct FontEntry
 {
@@ -3783,6 +3782,7 @@ class MyGame : public bbe::Game
 						displayRect.y + k * getCanvasHeight(),
 						displayRect.width,
 						displayRect.height);
+					brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
 					brush.drawImage(selectionRectToScreen(tileDisplay), *pImg);
 					const bbe::Rectanglei tileOutline(
 						rect.x + i * getCanvasWidth(),
