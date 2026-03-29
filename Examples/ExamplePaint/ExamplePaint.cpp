@@ -19,6 +19,9 @@
 // TODO: Radial symmetric drawing should have a degree offset so that I can rotate the zones
 // TODO: All symmetric drawings should have a positional offset that can be configured. Pressing F1 should center on the current mouse location
 
+// TODO: It's possible to enter negative numbers for new canvas size. Leads to a crash. Don't allow negative sizes.
+// TODO: Saving an image always returns success, even if the file couldn't be written. Fix that.
+
 struct FontEntry
 {
 	bbe::String displayName;
