@@ -501,7 +501,20 @@ class MyGame : public bbe::Game
 				const float dy = canvasY + 0.5f - cy;
 				const float srcX = dx * cosA - dy * sinA + srcCX;
 				const float srcY = dx * sinA + dy * cosA + srcCY;
-				const bbe::Colori srcPixel = sampleBilinear(srcX, srcY);
+				bbe::Colori srcPixel;
+				if (antiAliasingEnabled)
+				{
+					srcPixel = sampleBilinear(srcX, srcY);
+				}
+				else
+				{
+					const int32_t isx = (int32_t)std::floor(srcX);
+					const int32_t isy = (int32_t)std::floor(srcY);
+					if (isx < 0 || isy < 0 || isx >= imgW || isy >= imgH) continue;
+					srcPixel = image.getPixel((size_t)isx, (size_t)isy);
+					if (srcPixel.a < 128) srcPixel.a = 0;
+					else srcPixel.a = 255;
+				}
 				if (srcPixel.a == 0) continue;
 
 				int32_t targetX = canvasX;
@@ -4489,6 +4502,23 @@ class MyGame : public bbe::Game
 				if (ImGui::MenuItem("Anti-Aliasing", nullptr, antiAliasingEnabled))
 				{
 					antiAliasingEnabled = !antiAliasingEnabled;
+					if (rectangleDraftActive) refreshActiveRectangleDraftImage();
+					if (circleDraftActive) refreshActiveCircleDraftImage();
+					if (lineDraftActive)
+					{
+						clearWorkArea();
+						touchLineSymmetry(lineDraftEnd, lineDraftStart, getLineDraftColor(), brushWidth);
+					}
+					if (arrowDraftActive)
+					{
+						clearWorkArea();
+						drawArrowSymmetry(arrowDraftStart, arrowDraftEnd, getArrowDraftColor());
+					}
+					if (!bezierControlPoints.isEmpty())
+					{
+						clearWorkArea();
+						drawBezierSymmetry(bezierControlPoints, getBezierColor());
+					}
 				}
 				ImGui::EndMenu();
 			}
