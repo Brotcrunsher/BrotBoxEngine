@@ -18,7 +18,6 @@
 
 // TODO: It's possible to enter negative numbers for new canvas size. Leads to a crash. Don't allow negative sizes.
 // TODO: Saving an image always returns success, even if the file couldn't be written. Fix that.
-// TODO: The quality of anti aliasing should be improved. Most tools should use some sort of SDF.
 
 struct FontEntry
 {
@@ -190,6 +189,8 @@ class MyGame : public bbe::Game
 	int32_t radialSymmetryCount = 6;
 	bool symmetryOffsetCustom = false;
 	bbe::Vector2 symmetryOffset;
+
+	bool antiAliasingEnabled = true;
 
 	void prepareImageForCanvas(bbe::Image &image) const
 	{
@@ -1061,21 +1062,30 @@ class MyGame : public bbe::Game
 	bool touchImage(bbe::Image &image, const bbe::Vector2 &touchPos, const bbe::Colori &color, int32_t toolBrushWidth, bool rectangleShape, bool repeated) const
 	{
 		bool changeRegistered = false;
+		// With AA off, snap to the containing pixel's centre so that distances
+		// are always whole numbers — identical to the original integer-offset
+		// formula, giving clean single-pixel results with no boundary bleed.
+		const float effX = antiAliasingEnabled ? touchPos.x : std::floor(touchPos.x) + 0.5f;
+		const float effY = antiAliasingEnabled ? touchPos.y : std::floor(touchPos.y) + 0.5f;
 		for (int32_t i = -toolBrushWidth; i <= toolBrushWidth; i++)
 		{
 			for (int32_t k = -toolBrushWidth; k <= toolBrushWidth; k++)
 			{
-				float pencilStrength = bbe::Math::clamp01(toolBrushWidth - bbe::Math::sqrt(i * i + k * k));
+				// Pixel centers live at (floor(eff + offset) + 0.5) in canvas space,
+				// so a click at the visual centre of any pixel has distance 0 from that pixel.
+				const float logicalX = std::floor(effX + (float)i) + 0.5f;
+				const float logicalY = std::floor(effY + (float)k) + 0.5f;
+				const float dx = logicalX - effX;
+				const float dy = logicalY - effY;
+				float pencilStrength;
 				if (rectangleShape)
 				{
-					if (i != -toolBrushWidth && i != toolBrushWidth && k != -toolBrushWidth && k != toolBrushWidth)
-					{
-						pencilStrength = 1.0f;
-					}
-					else
-					{
-						pencilStrength = 0.0f;
-					}
+					const float maxD = std::max(std::fabsf(dx), std::fabsf(dy));
+					pencilStrength = bbe::Math::clamp01((float)toolBrushWidth - maxD);
+				}
+				else
+				{
+					pencilStrength = bbe::Math::clamp01((float)toolBrushWidth - bbe::Math::sqrt(dx * dx + dy * dy));
 				}
 				if (pencilStrength <= 0.f) continue;
 
@@ -1084,8 +1094,8 @@ class MyGame : public bbe::Game
 				{
 					bbe::Colori newColor = color;
 					newColor.a = newColor.MAXIMUM_VALUE * pencilStrength;
-					const int32_t pixelX = std::min((int32_t)std::round(coord.x), (int32_t)image.getWidth()  - 1);
-					const int32_t pixelY = std::min((int32_t)std::round(coord.y), (int32_t)image.getHeight() - 1);
+					const int32_t pixelX = std::min((int32_t)std::floor(coord.x), (int32_t)image.getWidth()  - 1);
+					const int32_t pixelY = std::min((int32_t)std::floor(coord.y), (int32_t)image.getHeight() - 1);
 					bbe::Colori oldColor = image.getPixel((size_t)pixelX, (size_t)pixelY);
 					if (newColor.a > oldColor.a)
 					{
@@ -1100,12 +1110,77 @@ class MyGame : public bbe::Game
 
 	bool touchLineImage(bbe::Image &image, const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, const bbe::Colori &color, int32_t toolBrushWidth, bool rectangleShape, bool repeated) const
 	{
-		bool changeRegistered = false;
-		bbe::GridIterator gi(pos1, pos2);
-		while (gi.hasNext())
+		// For tiled/wrapped mode, square brushes, or AA-off fall back to the stamp-based
+		// path. The stamp path uses touchImage which handles AA-off via pixel-centre
+		// snapping, giving clean single-pixel results with no capsule-SDF boundary bleed.
+		if (repeated || rectangleShape || !antiAliasingEnabled)
 		{
-			const bbe::Vector2 coordBase = gi.next().as<float>();
-			changeRegistered |= touchImage(image, coordBase, color, toolBrushWidth, rectangleShape, repeated);
+			bool changeRegistered = false;
+			bbe::GridIterator gi(pos1, pos2);
+			while (gi.hasNext())
+			{
+				const bbe::Vector2 coordBase = gi.next().as<float>();
+				changeRegistered |= touchImage(image, coordBase, color, toolBrushWidth, rectangleShape, repeated);
+			}
+			return changeRegistered;
+		}
+
+		// Capsule SDF rasterizer: for each pixel in the bounding box, compute the
+		// exact distance from the pixel center to the segment and apply SDF-based AA —
+		// the same technique used by the rotated-rectangle and circle tools.
+		const float ax = pos2.x - pos1.x;
+		const float ay = pos2.y - pos1.y;
+		const float lenSq = ax * ax + ay * ay;
+
+		const float margin = (float)toolBrushWidth + 1.f;
+		const int32_t xMin = (int32_t)std::floor(std::min(pos1.x, pos2.x) - margin);
+		const int32_t xMax = (int32_t)std::ceil (std::max(pos1.x, pos2.x) + margin);
+		const int32_t yMin = (int32_t)std::floor(std::min(pos1.y, pos2.y) - margin);
+		const int32_t yMax = (int32_t)std::ceil (std::max(pos1.y, pos2.y) + margin);
+
+		bool changeRegistered = false;
+		for (int32_t y = yMin; y <= yMax; y++)
+		{
+			for (int32_t x = xMin; x <= xMax; x++)
+			{
+				// Use pixel centres (+0.5) so the distance is 0 when the segment
+				// passes through the middle of a pixel, consistent with touchImage.
+				const float pcx = (float)x + 0.5f;
+				const float pcy = (float)y + 0.5f;
+				float dist;
+				if (lenSq < 1e-6f)
+				{
+					const float dx = pcx - pos1.x;
+					const float dy = pcy - pos1.y;
+					dist = bbe::Math::sqrt(dx * dx + dy * dy);
+				}
+				else
+				{
+					const float bx = pcx - pos1.x;
+					const float by = pcy - pos1.y;
+					const float t = bbe::Math::clamp01((bx * ax + by * ay) / lenSq);
+					const float cx = pcx - (pos1.x + t * ax);
+					const float cy = pcy - (pos1.y + t * ay);
+					dist = bbe::Math::sqrt(cx * cx + cy * cy);
+				}
+
+				const float pencilStrength = bbe::Math::clamp01((float)toolBrushWidth - dist);
+				if (pencilStrength <= 0.f) continue;
+
+				bbe::Vector2 coord = { (float)x, (float)y };
+				if (!toImagePos(coord, image.getWidth(), image.getHeight(), repeated)) continue;
+
+				const int32_t pixelX = std::min((int32_t)std::round(coord.x), (int32_t)image.getWidth()  - 1);
+				const int32_t pixelY = std::min((int32_t)std::round(coord.y), (int32_t)image.getHeight() - 1);
+				bbe::Colori newColor = color;
+				newColor.a = newColor.MAXIMUM_VALUE * pencilStrength;
+				const bbe::Colori oldColor = image.getPixel((size_t)pixelX, (size_t)pixelY);
+				if (newColor.a > oldColor.a)
+				{
+					image.setPixel((size_t)pixelX, (size_t)pixelY, newColor);
+					changeRegistered = true;
+				}
+			}
 		}
 		return changeRegistered;
 	}
@@ -1142,6 +1217,8 @@ class MyGame : public bbe::Game
 				const float minD = d0 < d1 ? (d0 < d2 ? d0 : d2) : (d1 < d2 ? d1 : d2);
 				const float alpha = bbe::Math::clamp01(minD + 0.5f);
 				if (alpha <= 0.f) continue;
+				const float finalAlpha = antiAliasingEnabled ? alpha : (alpha > 0.5f ? 1.0f : 0.0f);
+				if (finalAlpha <= 0.f) continue;
 
 				int32_t tx = x, ty = y;
 				if (tiled)
@@ -1155,7 +1232,7 @@ class MyGame : public bbe::Game
 				}
 
 				bbe::Colori pix = color;
-				pix.a = (bbe::byte)(pix.a * alpha);
+				pix.a = (bbe::byte)(pix.a * finalAlpha);
 				const bbe::Colori old = image.getPixel((size_t)tx, (size_t)ty);
 				if (pix.a > old.a)
 				{
@@ -1693,9 +1770,11 @@ class MyGame : public bbe::Game
 
 				const float alpha = alphaOuter < alphaInner ? alphaOuter : alphaInner;
 				if (alpha <= 0.f) continue;
+				const float finalAlpha = antiAliasingEnabled ? alpha : (alpha > 0.5f ? 1.0f : 0.0f);
+				if (finalAlpha <= 0.f) continue;
 
 				bbe::Colori c = color;
-				c.a = (bbe::byte)(c.a * alpha);
+				c.a = (bbe::byte)(c.a * finalAlpha);
 				image.setPixel((size_t)x, (size_t)y, c);
 			}
 		}
@@ -1780,9 +1859,11 @@ class MyGame : public bbe::Game
 
 				const float alpha = alpha_outer < alpha_inner ? alpha_outer : alpha_inner;
 				if (alpha <= 0.f) continue;
+				const float finalAlpha = antiAliasingEnabled ? alpha : (alpha > 0.5f ? 1.0f : 0.0f);
+				if (finalAlpha <= 0.f) continue;
 
 				bbe::Colori c = color;
-				c.a = (bbe::byte)(c.a * alpha);
+				c.a = (bbe::byte)(c.a * finalAlpha);
 				image.setPixel((size_t)x, (size_t)y, c);
 			}
 		}
@@ -4400,6 +4481,14 @@ class MyGame : public bbe::Game
 				if (ImGui::MenuItem("Navigator", nullptr, showNavigator))
 				{
 					showNavigator = !showNavigator;
+				}
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Preferences"))
+			{
+				if (ImGui::MenuItem("Anti-Aliasing", nullptr, antiAliasingEnabled))
+				{
+					antiAliasingEnabled = !antiAliasingEnabled;
 				}
 				ImGui::EndMenu();
 			}
