@@ -16,8 +16,9 @@
 // TODO: Color history
 // TODO: Selection via magic wand / color selection
 // TODO: Unsaved changes indicator - little star somewhere in the UI when there are unsaved changes.
-// TODO: Radial symmetric drawing has to many blue lines. This seems to divide the area in more sections than there actually are.
 // TODO: Only brush tool works in symmetry modes. All other tools should work, too.
+// TODO: Radial symmetric drawing should have a degree offset so that I can rotate the zones
+// TODO: All symmetric drawings should have a positional offset that can be configured. Pressing F1 should center on the current mouse location
 
 struct FontEntry
 {
@@ -4012,13 +4013,13 @@ class MyGame : public bbe::Game
 			}
 			if (symmetryMode == SymmetryMode::Radial)
 			{
-				const float step = bbe::Math::PI / (float)radialSymmetryCount;
+				const float step = 2.f * bbe::Math::PI / (float)radialSymmetryCount;
 				const float extent = bbe::Math::sqrt(cw * cw + ch * ch) * 0.5f;
 				for (int32_t i = 0; i < radialSymmetryCount; i++)
 				{
 					const float angle = step * (float)i;
 					const bbe::Vector2 dir = { std::cosf(angle) * extent, std::sinf(angle) * extent };
-					brush.fillLine(c2s(center - dir), c2s(center + dir), 1.f);
+					brush.fillLine(c2s(center), c2s(center + dir), 1.f);
 				}
 			}
 			brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
