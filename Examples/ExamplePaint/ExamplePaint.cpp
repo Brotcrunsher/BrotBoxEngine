@@ -18,7 +18,6 @@
 // TODO: Only brush tool works in symmetry modes. All other tools should work, too.
 // TODO: Radial symmetric drawing should have a degree offset so that I can rotate the zones
 // TODO: All symmetric drawings should have a positional offset that can be configured. Pressing F1 should center on the current mouse location
-// TODO: "Unsafed changes" indicator should disappear if we undo until the state it was last saved at
 
 struct FontEntry
 {
@@ -61,7 +60,8 @@ class MyGame : public bbe::Game
 	bbe::List<bbe::String> pendingDroppedPaths;
 	bool showHelpWindow = false;
 	bool showNavigator = true;
-	bool hasUnsavedChanges = false;
+	int64_t canvasGeneration = 0;
+	int64_t savedGeneration = 0;
 
 	enum class SaveFormat
 	{
@@ -2802,7 +2802,7 @@ class MyGame : public bbe::Game
 			ok = saveLayeredDocument(filePath);
 		else
 			ok = saveFlattenedPng(filePath);
-		if (ok) hasUnsavedChanges = false;
+		if (ok) savedGeneration = canvasGeneration;
 		return ok;
 	}
 
@@ -2849,7 +2849,7 @@ class MyGame : public bbe::Game
 	void submitCanvas()
 	{
 		canvas.submit();
-		hasUnsavedChanges = true;
+		canvasGeneration++;
 	}
 
 	void applyWorkArea()
@@ -2880,7 +2880,8 @@ class MyGame : public bbe::Game
 		if (clearHistory)
 		{
 			canvas.clearHistory();
-			hasUnsavedChanges = false;
+			canvasGeneration = 0;
+			savedGeneration = 0;
 		}
 	}
 
@@ -3203,6 +3204,7 @@ class MyGame : public bbe::Game
 			if (isKeyTyped(bbe::Key::Z) && canvas.isUndoable())
 			{
 				canvas.undo();
+				canvasGeneration--;
 				clampActiveLayerIndex();
 				clearSelectionState();
 				clearWorkArea();
@@ -3210,6 +3212,7 @@ class MyGame : public bbe::Game
 			if (isKeyTyped(bbe::Key::Y) && canvas.isRedoable())
 			{
 				canvas.redo();
+				canvasGeneration++;
 				clampActiveLayerIndex();
 				clearSelectionState();
 				clearWorkArea();
@@ -3478,6 +3481,7 @@ class MyGame : public bbe::Game
 		if (ImGui::Button("Undo", ImVec2(halfW, 0)))
 		{
 			canvas.undo();
+			canvasGeneration--;
 			clampActiveLayerIndex();
 			clearSelectionState();
 			clearWorkArea();
@@ -3488,6 +3492,7 @@ class MyGame : public bbe::Game
 		if (ImGui::Button("Redo", ImVec2(halfW, 0)))
 		{
 			canvas.redo();
+			canvasGeneration++;
 			clampActiveLayerIndex();
 			clearSelectionState();
 			clearWorkArea();
@@ -4140,7 +4145,7 @@ class MyGame : public bbe::Game
 				}
 				ImGui::EndMenu();
 			}
-			if (hasUnsavedChanges)
+			if (canvasGeneration != savedGeneration)
 			{
 				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.f);
 				ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.0f, 1.0f), "*");
