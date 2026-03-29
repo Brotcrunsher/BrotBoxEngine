@@ -17,7 +17,6 @@
 // TODO: Selection via magic wand / color selection
 // TODO: Symmetry Drawing: Horizontal, vertical, 4-way, radial etc
 // TODO: Unsaved changes indicator - little star somewhere in the UI when there are unsaved changes.
-// TODO: Mini-Preview / Navigator - small always visible preview of the whole canvas with a rectangle indicating the current view area, allowing to quickly jump to different areas of the canvas by clicking in the preview.
 
 struct FontEntry
 {
@@ -59,6 +58,7 @@ class MyGame : public bbe::Game
 	bool openDropChoicePopup = false;
 	bbe::List<bbe::String> pendingDroppedPaths;
 	bool showHelpWindow = false;
+	bool showNavigator = true;
 
 	enum class SaveFormat
 	{
@@ -2891,6 +2891,27 @@ class MyGame : public bbe::Game
 		return (pos - offset) / zoomLevel;
 	}
 
+	bbe::Rectangle getNavigatorRect()
+	{
+		const float canvasW = (float)getCanvasWidth();
+		const float canvasH = (float)getCanvasHeight();
+		if (canvasW <= 0.f || canvasH <= 0.f) return {};
+		const float navMaxSize = 160.f * bbe::Math::sqrt(getWindow()->getScale());
+		float navW, navH;
+		if (canvasW >= canvasH)
+		{
+			navW = navMaxSize;
+			navH = navMaxSize * canvasH / canvasW;
+		}
+		else
+		{
+			navH = navMaxSize;
+			navW = navMaxSize * canvasW / canvasH;
+		}
+		const float margin = 8.f;
+		return bbe::Rectangle(getWindowWidth() - navW - margin, getWindowHeight() - navH - margin, navW, navH);
+	}
+
 	bool toTiledPos(bbe::Vector2 &pos)
 	{
 		if (tiled)
@@ -3201,13 +3222,26 @@ class MyGame : public bbe::Game
 			deleteSelection();
 		}
 
-		if (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT))
+		const bool mouseOnNavigator = showNavigator
+			&& getCanvasWidth() > 0
+			&& getNavigatorRect().isPointInRectangle(getMouse());
+
+		if (mouseOnNavigator && isMouseDown(bbe::MouseButton::LEFT))
+		{
+			const bbe::Rectangle navRect = getNavigatorRect();
+			const float canvasClickX = (getMouse().x - navRect.x) / navRect.width  * getCanvasWidth();
+			const float canvasClickY = (getMouse().y - navRect.y) / navRect.height * getCanvasHeight();
+			offset.x = getWindowWidth()  / 2.f - canvasClickX * zoomLevel;
+			offset.y = getWindowHeight() / 2.f - canvasClickY * zoomLevel;
+		}
+
+		if (!mouseOnNavigator && (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT)))
 		{
 			startMousePos = screenToCanvas(getMouse());
 		}
 
 		// Canvas resize handles — checked before tool handling so they take priority.
-		if (!canvasResizeActive && isMousePressed(bbe::MouseButton::LEFT))
+		if (!mouseOnNavigator && !canvasResizeActive && isMousePressed(bbe::MouseButton::LEFT))
 		{
 			const int32_t hitHandle = getCanvasResizeHitHandle(getMouse());
 			if (hitHandle >= 0)
@@ -3233,31 +3267,31 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		if (!canvasResizeActive && mode == MODE_SELECTION)
+		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_SELECTION)
 		{
 			updateSelectionTool(currMousePos);
 		}
-		if (!canvasResizeActive && mode == MODE_RECTANGLE)
+		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_RECTANGLE)
 		{
 			updateRectangleTool(currMousePos);
 		}
-		if (!canvasResizeActive && mode == MODE_CIRCLE)
+		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_CIRCLE)
 		{
 			updateCircleTool(currMousePos);
 		}
-		if (!canvasResizeActive && mode == MODE_LINE)
+		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_LINE)
 		{
 			updateLineTool(currMousePos);
 		}
-		if (!canvasResizeActive && mode == MODE_ARROW)
+		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_ARROW)
 		{
 			updateArrowTool(currMousePos);
 		}
-		if (!canvasResizeActive && mode == MODE_BEZIER)
+		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_BEZIER)
 		{
 			updateBezierTool(currMousePos);
 		}
-		if (!canvasResizeActive && mode == MODE_TEXT && (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT)))
+		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_TEXT && (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT)))
 		{
 			bbe::Vector2 pos = currMousePos;
 			if (toTiledPos(pos))
@@ -3276,6 +3310,7 @@ class MyGame : public bbe::Game
 			&& mode != MODE_ARROW
 			&& mode != MODE_BEZIER
 			&& !canvasResizeActive
+			&& !mouseOnNavigator
 			&& drawButtonDown;
 		const bool shadowDrawMode = shadowDrawModes.contains(mode);
 
@@ -3866,6 +3901,51 @@ class MyGame : public bbe::Game
 			}
 		}
 
+		// Navigator
+		if (showNavigator && getCanvasWidth() > 0)
+		{
+			const bbe::Rectangle navRect = getNavigatorRect();
+			const float navX = navRect.x;
+			const float navY = navRect.y;
+			const float navW = navRect.width;
+			const float navH = navRect.height;
+
+			// Background
+			brush.setColorRGB(0.08f, 0.08f, 0.08f);
+			brush.fillRect(navX - 2.f, navY - 2.f, navW + 4.f, navH + 4.f);
+
+			// Layers
+			if (anyNonNormalBlendMode)
+			{
+				brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
+				brush.drawImage(navX, navY, navW, navH, blendModePreview);
+			}
+			else
+			{
+				for (size_t layerIndex = 0; layerIndex < canvas.get().layers.getLength(); layerIndex++)
+				{
+					const PaintLayer &layer = canvas.get().layers[layerIndex];
+					if (!layer.visible) continue;
+					brush.setColorRGB(1.0f, 1.0f, 1.0f, layer.opacity);
+					brush.drawImage(navX, navY, navW, navH, layer.image);
+				}
+			}
+			brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
+
+			// Viewport rectangle
+			const float scaleX = navW / getCanvasWidth();
+			const float scaleY = navH / getCanvasHeight();
+			const bbe::Vector2 tlCanvas = screenToCanvas({ 0.f, 0.f });
+			const bbe::Vector2 brCanvas = screenToCanvas({ (float)getWindowWidth(), (float)getWindowHeight() });
+			const float vx = navX + tlCanvas.x * scaleX;
+			const float vy = navY + tlCanvas.y * scaleY;
+			const float vw = (brCanvas.x - tlCanvas.x) * scaleX;
+			const float vh = (brCanvas.y - tlCanvas.y) * scaleY;
+			brush.setColorRGB(1.0f, 1.0f, 0.0f);
+			brush.sketchRect(vx, vy, vw, vh);
+			brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+
 		// HACK: We can only open popups if we are in the same ID Stack. See: https://github.com/ocornut/imgui/issues/331
 		bool openNewCanvas = false;
 		if (ImGui::BeginMainMenuBar())
@@ -3908,6 +3988,10 @@ class MyGame : public bbe::Game
 				if (ImGui::MenuItem("Tiled", nullptr, tiled))
 				{
 					tiled = !tiled;
+				}
+				if (ImGui::MenuItem("Navigator", nullptr, showNavigator))
+				{
+					showNavigator = !showNavigator;
 				}
 				ImGui::EndMenu();
 			}
