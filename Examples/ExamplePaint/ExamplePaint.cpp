@@ -15,10 +15,10 @@
 // TODO: "Filled with color" option for rectangle/circle tool
 // TODO: Color history
 // TODO: Selection via magic wand / color selection
-// TODO: Unsaved changes indicator - little star somewhere in the UI when there are unsaved changes.
 // TODO: Only brush tool works in symmetry modes. All other tools should work, too.
 // TODO: Radial symmetric drawing should have a degree offset so that I can rotate the zones
 // TODO: All symmetric drawings should have a positional offset that can be configured. Pressing F1 should center on the current mouse location
+// TODO: "Unsafed changes" indicator should disappear if we undo until the state it was last saved at
 
 struct FontEntry
 {
@@ -61,6 +61,7 @@ class MyGame : public bbe::Game
 	bbe::List<bbe::String> pendingDroppedPaths;
 	bool showHelpWindow = false;
 	bool showNavigator = true;
+	bool hasUnsavedChanges = false;
 
 	enum class SaveFormat
 	{
@@ -548,7 +549,7 @@ class MyGame : public bbe::Game
 		prepareForLayerTargetChange();
 		canvas.get().layers.add(makeLayer(makeLayerName(), getCanvasWidth(), getCanvasHeight()));
 		activeLayerIndex = (int32_t)canvas.get().layers.getLength() - 1;
-		canvas.submit();
+		submitCanvas();
 	}
 
 	void importFileAsLayers(const bbe::List<bbe::String> &paths)
@@ -606,7 +607,7 @@ class MyGame : public bbe::Game
 				activeLayerIndex = (int32_t)canvas.get().layers.getLength() - 1;
 			}
 		}
-		canvas.submit();
+		submitCanvas();
 	}
 
 	void deleteActiveLayer()
@@ -615,7 +616,7 @@ class MyGame : public bbe::Game
 		prepareForLayerTargetChange();
 		canvas.get().layers.removeIndex((size_t)activeLayerIndex);
 		clampActiveLayerIndex();
-		canvas.submit();
+		submitCanvas();
 	}
 
 	void moveActiveLayerUp()
@@ -624,7 +625,7 @@ class MyGame : public bbe::Game
 		prepareForLayerTargetChange();
 		canvas.get().layers.swap((size_t)activeLayerIndex, (size_t)activeLayerIndex + 1);
 		activeLayerIndex++;
-		canvas.submit();
+		submitCanvas();
 	}
 
 	void moveActiveLayerDown()
@@ -633,7 +634,7 @@ class MyGame : public bbe::Game
 		prepareForLayerTargetChange();
 		canvas.get().layers.swap((size_t)activeLayerIndex, (size_t)activeLayerIndex - 1);
 		activeLayerIndex--;
-		canvas.submit();
+		submitCanvas();
 	}
 
 	void duplicateActiveLayer()
@@ -643,7 +644,7 @@ class MyGame : public bbe::Game
 		dup.name = dup.name + " Copy";
 		canvas.get().layers.addAt((size_t)activeLayerIndex + 1, dup);
 		activeLayerIndex++;
-		canvas.submit();
+		submitCanvas();
 	}
 
 	void mergeActiveLayerDown()
@@ -663,7 +664,7 @@ class MyGame : public bbe::Game
 		}
 		canvas.get().layers.removeIndex((size_t)activeLayerIndex);
 		activeLayerIndex--;
-		canvas.submit();
+		submitCanvas();
 	}
 
 	void setActiveLayerIndex(int32_t newIndex)
@@ -857,7 +858,7 @@ class MyGame : public bbe::Game
 			return;
 		}
 		clearCanvasRect(selectionRect);
-		canvas.submit();
+		submitCanvas();
 		clearSelectionState();
 	}
 
@@ -923,13 +924,13 @@ class MyGame : public bbe::Game
 		if (std::abs(selectionRotation) > 0.0001f)
 		{
 			blendRotatedImageOntoCanvas(selectionFloatingImage, selectionRect, selectionRotation);
-			canvas.submit();
+			submitCanvas();
 			clearSelectionState();
 			return;
 		}
 
 		blendImageOntoCanvas(selectionFloatingImage, selectionRect.getPos());
-		canvas.submit();
+		submitCanvas();
 
 		bbe::Vector2i displayPos = selectionRect.getPos();
 		if (tiled)
@@ -1153,7 +1154,7 @@ class MyGame : public bbe::Game
 	void finalizeLineDraft()
 	{
 		applyWorkArea();
-		canvas.submit();
+		submitCanvas();
 		lineDraftActive = false;
 		lineDraftDragEndpoint = 0;
 	}
@@ -1161,7 +1162,7 @@ class MyGame : public bbe::Game
 	void finalizeArrowDraft()
 	{
 		applyWorkArea();
-		canvas.submit();
+		submitCanvas();
 		arrowDraftActive = false;
 		arrowDraftDragEndpoint = 0;
 	}
@@ -1384,7 +1385,7 @@ class MyGame : public bbe::Game
 			clearWorkArea();
 			drawBezierToWorkArea(bezierControlPoints, getBezierColor());
 			applyWorkArea();
-			canvas.submit();
+			submitCanvas();
 		}
 		else
 		{
@@ -1894,7 +1895,7 @@ class MyGame : public bbe::Game
 			prepareImageForCanvas(selectionFloatingImage);
 			clearCanvasRect(selectionRect);
 			selectionFloating = true;
-			canvas.submit();
+			submitCanvas();
 		}
 
 		rotationHandleActive = true;
@@ -2363,7 +2364,7 @@ class MyGame : public bbe::Game
 
 		clearSelectionState();
 		clearWorkArea();
-		canvas.submit();
+		submitCanvas();
 	}
 
 	void drawSelectionOutline(bbe::PrimitiveBrush2D &brush, const bbe::Rectanglei &rect) const
@@ -2594,7 +2595,7 @@ class MyGame : public bbe::Game
 
 		if (changed)
 		{
-			canvas.submit();
+			submitCanvas();
 		}
 	}
 
@@ -2796,11 +2797,13 @@ class MyGame : public bbe::Game
 
 	bool saveDocumentToPath(const bbe::String &filePath)
 	{
+		bool ok;
 		if (isLayeredDocumentPath(filePath))
-		{
-			return saveLayeredDocument(filePath);
-		}
-		return saveFlattenedPng(filePath);
+			ok = saveLayeredDocument(filePath);
+		else
+			ok = saveFlattenedPng(filePath);
+		if (ok) hasUnsavedChanges = false;
+		return ok;
 	}
 
 	void saveDocumentAs(SaveFormat format)
@@ -2843,6 +2846,12 @@ class MyGame : public bbe::Game
 		workArea.setFilterMode(bbe::ImageFilterMode::NEAREST);
 	}
 
+	void submitCanvas()
+	{
+		canvas.submit();
+		hasUnsavedChanges = true;
+	}
+
 	void applyWorkArea()
 	{
 		// TODO: This should probably be moved to the image class
@@ -2868,7 +2877,11 @@ class MyGame : public bbe::Game
 		resetCamera();
 		clearSelectionState();
 		clampActiveLayerIndex();
-		if (clearHistory) canvas.clearHistory();
+		if (clearHistory)
+		{
+			canvas.clearHistory();
+			hasUnsavedChanges = false;
+		}
 	}
 
 	void newCanvas(uint32_t width, uint32_t height)
@@ -3378,7 +3391,7 @@ class MyGame : public bbe::Game
 				if (!isMouseDown(bbe::MouseButton::LEFT) && !isMouseDown(bbe::MouseButton::RIGHT))
 				{
 					applyWorkArea();
-					canvas.submit(); // <- changeRegistered is for this
+					submitCanvas(); // <- changeRegistered is for this
 					changeRegistered = false;
 				}
 			}
@@ -3715,7 +3728,7 @@ class MyGame : public bbe::Game
 			canvas.get().layers.clear();
 			canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, LayerBlendMode::Normal, bbe::Image::getClipboardImage() });
 			path = "";
-			canvas.submit();
+			submitCanvas();
 			setupCanvas(false);
 		}
 		ImGui::EndDisabled();
@@ -3751,7 +3764,7 @@ class MyGame : public bbe::Game
 		{
 			if (ImGui::bbe::InputText("Name##layerName", getActiveLayer().name))
 			{
-				canvas.submit();
+				submitCanvas();
 			}
 			float opacity = getActiveLayer().opacity;
 			if (ImGui::SliderFloat("Opacity##layerOpacity", &opacity, 0.0f, 1.0f))
@@ -3760,14 +3773,14 @@ class MyGame : public bbe::Game
 			}
 			if (ImGui::IsItemDeactivatedAfterEdit())
 			{
-				canvas.submit();
+				submitCanvas();
 			}
 			const char *blendModeNames[] = { "Normal", "Multiply", "Screen", "Overlay" };
 			int blendModeIdx = (int)getActiveLayer().blendMode;
 			if (ImGui::Combo("Blend##layerBlend", &blendModeIdx, blendModeNames, 4))
 			{
 				getActiveLayer().blendMode = (LayerBlendMode)blendModeIdx;
-				canvas.submit();
+				submitCanvas();
 			}
 		}
 		if (ImGui::BeginChild("##layerList", ImVec2(-1, ImGui::GetContentRegionAvail().y), true))
@@ -3780,7 +3793,7 @@ class MyGame : public bbe::Game
 				if (ImGui::Checkbox("##vis", &visible))
 				{
 					layer.visible = visible;
-					canvas.submit();
+					submitCanvas();
 				}
 				ImGui::SameLine();
 				if (ImGui::Selectable(layer.name.getRaw(), activeLayerIndex == layerIndex))
@@ -4126,6 +4139,12 @@ class MyGame : public bbe::Game
 					showHelpWindow = true;
 				}
 				ImGui::EndMenu();
+			}
+			if (hasUnsavedChanges)
+			{
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.f);
+				ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.0f, 1.0f), "*");
+				if (ImGui::IsItemHovered()) ImGui::SetTooltip("Unsaved changes");
 			}
 			ImGui::EndMainMenuBar();
 		}
