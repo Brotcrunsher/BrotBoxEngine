@@ -15,11 +15,10 @@
 // TODO: "Filled with color" option for rectangle/circle tool
 // TODO: Color history
 // TODO: Selection via magic wand / color selection
-// TODO: Radial symmetric drawing should have a degree offset so that I can rotate the zones
-// TODO: All symmetric drawings should have a positional offset that can be configured. Pressing F1 should center on the current mouse location
 
 // TODO: It's possible to enter negative numbers for new canvas size. Leads to a crash. Don't allow negative sizes.
 // TODO: Saving an image always returns success, even if the file couldn't be written. Fix that.
+// TODO: The quality of anti aliasing should be improved. Most tools should use some sort of SDF.
 
 struct FontEntry
 {
@@ -189,6 +188,8 @@ class MyGame : public bbe::Game
 	};
 	SymmetryMode symmetryMode = SymmetryMode::None;
 	int32_t radialSymmetryCount = 6;
+	bool symmetryOffsetCustom = false;
+	bbe::Vector2 symmetryOffset;
 
 	void prepareImageForCanvas(bbe::Image &image) const
 	{
@@ -3023,6 +3024,7 @@ class MyGame : public bbe::Game
 		resetCamera();
 		clearSelectionState();
 		clampActiveLayerIndex();
+		symmetryOffsetCustom = false;
 		if (clearHistory)
 		{
 			canvas.clearHistory();
@@ -3112,11 +3114,17 @@ class MyGame : public bbe::Game
 		return isMouseDown(bbe::MouseButton::LEFT) ? bbe::Color(leftColor).asByteColor() : bbe::Color(rightColor).asByteColor();
 	}
 
+	bbe::Vector2 getSymmetryCenter() const
+	{
+		if (symmetryOffsetCustom) return symmetryOffset;
+		return { getCanvasWidth() * 0.5f, getCanvasHeight() * 0.5f };
+	}
+
 	// Returns all canvas-space positions for the given position under the active symmetry mode.
 	bbe::List<bbe::Vector2> getSymmetryPositions(const bbe::Vector2 &pos) const
 	{
 		bbe::List<bbe::Vector2> result;
-		const bbe::Vector2 center = { getCanvasWidth() * 0.5f, getCanvasHeight() * 0.5f };
+		const bbe::Vector2 center = getSymmetryCenter();
 		switch (symmetryMode)
 		{
 		case SymmetryMode::None:
@@ -3291,6 +3299,11 @@ class MyGame : public bbe::Game
 		if (isKeyPressed(bbe::Key::SPACE))
 		{
 			resetCamera();
+		}
+		if (isKeyPressed(bbe::Key::F1) && symmetryMode != SymmetryMode::None)
+		{
+			symmetryOffsetCustom = true;
+			symmetryOffset = screenToCanvas(getMouse());
 		}
 
 		constexpr float CAM_WASD_SPEED = 400;
@@ -4260,7 +4273,7 @@ class MyGame : public bbe::Game
 		{
 			const float cw = (float)getCanvasWidth();
 			const float ch = (float)getCanvasHeight();
-			const bbe::Vector2 center = { cw * 0.5f, ch * 0.5f };
+			const bbe::Vector2 center = getSymmetryCenter();
 			// Convert canvas coords to screen coords: screen = pos * zoomLevel + offset
 			auto c2s = [&](bbe::Vector2 p) -> bbe::Vector2
 			{
