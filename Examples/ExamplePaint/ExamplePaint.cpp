@@ -15,7 +15,6 @@
 // TODO: "Filled with color" option for rectangle/circle tool
 // TODO: Color history
 // TODO: Selection via magic wand / color selection
-// TODO: Only brush tool works in symmetry modes. All other tools should work, too.
 // TODO: Radial symmetric drawing should have a degree offset so that I can rotate the zones
 // TODO: All symmetric drawings should have a positional offset that can be configured. Pressing F1 should center on the current mouse location
 
@@ -444,6 +443,50 @@ class MyGame : public bbe::Game
 		const int32_t y0 = (int32_t)std::floor(cy - newHH);
 		const int32_t y1 = (int32_t)std::ceil(cy + newHH);
 
+		const int32_t imgW = (int32_t)image.getWidth();
+		const int32_t imgH = (int32_t)image.getHeight();
+
+		// Bilinear sample using premultiplied alpha — out-of-bounds pixels are fully
+		// transparent. Premultiplied interpolation prevents color fringing and keeps
+		// edge pixels at the correct text colour rather than bleeding toward zero.
+		auto sampleBilinear = [&](float sx, float sy) -> bbe::Colori
+		{
+			const int32_t ix0 = (int32_t)std::floor(sx);
+			const int32_t iy0 = (int32_t)std::floor(sy);
+			const float   fx  = sx - (float)ix0;
+			const float   fy  = sy - (float)iy0;
+			const float   iFx = 1.f - fx;
+			const float   iFy = 1.f - fy;
+
+			auto get = [&](int32_t x, int32_t y) -> bbe::Colori
+			{
+				if (x < 0 || y < 0 || x >= imgW || y >= imgH) return bbe::Colori(0, 0, 0, 0);
+				return image.getPixel((size_t)x, (size_t)y);
+			};
+
+			const bbe::Colori c00 = get(ix0,     iy0);
+			const bbe::Colori c10 = get(ix0 + 1, iy0);
+			const bbe::Colori c01 = get(ix0,     iy0 + 1);
+			const bbe::Colori c11 = get(ix0 + 1, iy0 + 1);
+
+			// Convert straight-alpha pixels to premultiplied for interpolation.
+			const float a00 = c00.a, a10 = c10.a, a01 = c01.a, a11 = c11.a;
+			const float pa = (a00*iFx + a10*fx)*iFy + (a01*iFx + a11*fx)*fy;
+			if (pa < 0.5f) return bbe::Colori(0, 0, 0, 0);
+
+			const float pr = (c00.r*a00*iFx + c10.r*a10*fx)*iFy + (c01.r*a01*iFx + c11.r*a11*fx)*fy;
+			const float pg = (c00.g*a00*iFx + c10.g*a10*fx)*iFy + (c01.g*a01*iFx + c11.g*a11*fx)*fy;
+			const float pb = (c00.b*a00*iFx + c10.b*a10*fx)*iFy + (c01.b*a01*iFx + c11.b*a11*fx)*fy;
+
+			// Convert back to straight alpha.
+			const float invA = 1.f / pa;
+			return bbe::Colori(
+				(bbe::byte)(pr * invA + 0.5f),
+				(bbe::byte)(pg * invA + 0.5f),
+				(bbe::byte)(pb * invA + 0.5f),
+				(bbe::byte)(pa    + 0.5f));
+		};
+
 		for (int32_t canvasY = y0; canvasY <= y1; canvasY++)
 		{
 			for (int32_t canvasX = x0; canvasX <= x1; canvasX++)
@@ -452,8 +495,7 @@ class MyGame : public bbe::Game
 				const float dy = canvasY + 0.5f - cy;
 				const float srcX = dx * cosA - dy * sinA + srcCX;
 				const float srcY = dx * sinA + dy * cosA + srcCY;
-				if (srcX < 0.f || srcX >= (float)image.getWidth() || srcY < 0.f || srcY >= (float)image.getHeight()) continue;
-				const bbe::Colori srcPixel = image.getPixel((size_t)srcX, (size_t)srcY);
+				const bbe::Colori srcPixel = sampleBilinear(srcX, srcY);
 				if (srcPixel.a == 0) continue;
 
 				int32_t targetX = canvasX;
@@ -927,12 +969,53 @@ class MyGame : public bbe::Game
 		if (std::abs(selectionRotation) > 0.0001f)
 		{
 			blendRotatedImageOntoCanvas(selectionFloatingImage, selectionRect, selectionRotation);
+			if (rectangleDraftActive || circleDraftActive)
+			{
+				const bbe::Vector2 center = {
+					selectionRect.x + selectionRect.width  * 0.5f,
+					selectionRect.y + selectionRect.height * 0.5f
+				};
+				const auto symCenters = getSymmetryPositions(center);
+				const auto symAngles  = getSymmetryRotationAngles();
+				for (size_t i = 1; i < symCenters.getLength(); i++)
+				{
+					const bbe::Rectanglei symRect = {
+						(int32_t)(symCenters[i].x - selectionRect.width  * 0.5f),
+						(int32_t)(symCenters[i].y - selectionRect.height * 0.5f),
+						selectionRect.width,
+						selectionRect.height
+					};
+					blendRotatedImageOntoCanvas(selectionFloatingImage, symRect, selectionRotation + symAngles[i]);
+				}
+			}
 			submitCanvas();
 			clearSelectionState();
 			return;
 		}
 
 		blendImageOntoCanvas(selectionFloatingImage, selectionRect.getPos());
+		if (rectangleDraftActive || circleDraftActive)
+		{
+			const bbe::Vector2 center = {
+				selectionRect.x + selectionRect.width  * 0.5f,
+				selectionRect.y + selectionRect.height * 0.5f
+			};
+			const auto symCenters = getSymmetryPositions(center);
+			const auto symAngles  = getSymmetryRotationAngles();
+			for (size_t i = 1; i < symCenters.getLength(); i++)
+			{
+				const bbe::Rectanglei symRect = {
+					(int32_t)(symCenters[i].x - selectionRect.width  * 0.5f),
+					(int32_t)(symCenters[i].y - selectionRect.height * 0.5f),
+					selectionRect.width,
+					selectionRect.height
+				};
+				if (std::abs(symAngles[i]) > 0.0001f)
+					blendRotatedImageOntoCanvas(selectionFloatingImage, symRect, symAngles[i]);
+				else
+					blendImageOntoCanvas(selectionFloatingImage, symRect.getPos());
+			}
+		}
 		submitCanvas();
 
 		bbe::Vector2i displayPos = selectionRect.getPos();
@@ -1218,7 +1301,7 @@ class MyGame : public bbe::Game
 			}
 
 			clearWorkArea();
-			touchLineImage(workArea, lineDraftEnd, lineDraftStart, getLineDraftColor(), brushWidth, false, tiled);
+			touchLineSymmetry(lineDraftEnd, lineDraftStart, getLineDraftColor(), brushWidth);
 			return;
 		}
 
@@ -1242,7 +1325,7 @@ class MyGame : public bbe::Game
 		{
 			clearWorkArea();
 			const bbe::Colori dragColor = lineDragUsesRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor();
-			touchLineImage(workArea, mouseCanvas, lineDraftStart, dragColor, brushWidth, false, tiled);
+			touchLineSymmetry(mouseCanvas, lineDraftStart, dragColor, brushWidth);
 
 			const bool released = lineDragUsesRightColor
 				? isMouseReleased(bbe::MouseButton::RIGHT)
@@ -1305,7 +1388,7 @@ class MyGame : public bbe::Game
 			}
 
 			clearWorkArea();
-			drawArrowToWorkArea(arrowDraftStart, arrowDraftEnd, getArrowDraftColor());
+			drawArrowSymmetry(arrowDraftStart, arrowDraftEnd, getArrowDraftColor());
 			return;
 		}
 
@@ -1329,7 +1412,7 @@ class MyGame : public bbe::Game
 		{
 			clearWorkArea();
 			const bbe::Colori dragColor = arrowDragUsesRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor();
-			drawArrowToWorkArea(arrowDraftStart, mouseCanvas, dragColor);
+			drawArrowSymmetry(arrowDraftStart, mouseCanvas, dragColor);
 
 			const bool released = arrowDragUsesRightColor
 				? isMouseReleased(bbe::MouseButton::RIGHT)
@@ -1386,7 +1469,7 @@ class MyGame : public bbe::Game
 		if (bezierControlPoints.getLength() >= 2)
 		{
 			clearWorkArea();
-			drawBezierToWorkArea(bezierControlPoints, getBezierColor());
+			drawBezierSymmetry(bezierControlPoints, getBezierColor());
 			applyWorkArea();
 			submitCanvas();
 		}
@@ -1478,12 +1561,12 @@ class MyGame : public bbe::Game
 			{
 				previewPoints.add(mouseCanvas);
 			}
-			drawBezierToWorkArea(previewPoints, getBezierColor());
+			drawBezierSymmetry(previewPoints, getBezierColor());
 		}
 		else if (bezierControlPoints.getLength() == 1)
 		{
 			// Before we have 2 points, just draw a line preview to cursor
-			touchLineImage(workArea, bezierControlPoints[0], mouseCanvas, getBezierColor(), brushWidth, false, tiled);
+			touchLineSymmetry(bezierControlPoints[0], mouseCanvas, getBezierColor(), brushWidth);
 		}
 	}
 
@@ -2572,11 +2655,62 @@ class MyGame : public bbe::Game
 		}
 	}
 
-	void placeTextAt(const bbe::Vector2i &topLeft, const bbe::Colori &color)
+	// Renders the text (as it would appear at topLeft) into a standalone image.
+	bbe::Image renderTextToImage(const bbe::Vector2i &topLeft, const bbe::Colori &color) const
 	{
 		bbe::Vector2 origin;
 		bbe::Rectangle bounds;
-		if (!getTextOriginAndBounds(topLeft, origin, bounds)) return;
+		if (!getTextOriginAndBounds(topLeft, origin, bounds)) return {};
+
+		const int32_t imgW = (int32_t)std::ceil(bounds.width);
+		const int32_t imgH = (int32_t)std::ceil(bounds.height);
+		if (imgW <= 0 || imgH <= 0) return {};
+
+		bbe::Image img(imgW, imgH, bbe::Color(0.f, 0.f, 0.f, 0.f));
+		prepareImageForCanvas(img);
+
+		const bbe::String text = getTextBufferString();
+		const bbe::Font &font = getTextToolFont();
+		const bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(origin, text);
+
+		auto it = text.getIterator();
+		for (size_t i = 0; i < renderPositions.getLength() && it.valid(); i++, ++it)
+		{
+			const int32_t codePoint = it.getCodepoint();
+			if (codePoint == ' ' || codePoint == '\n' || codePoint == '\r' || codePoint == '\t') continue;
+
+			const bbe::Image &glyph = getTextGlyphImage(font, codePoint);
+			const int32_t gx = (int32_t)bbe::Math::round(renderPositions[i].x) - topLeft.x;
+			const int32_t gy = (int32_t)bbe::Math::round(renderPositions[i].y) - topLeft.y;
+
+			for (int32_t x = 0; x < glyph.getWidth(); x++)
+			{
+				for (int32_t y = 0; y < glyph.getHeight(); y++)
+				{
+					const int32_t px = gx + x;
+					const int32_t py = gy + y;
+					if (px < 0 || py < 0 || px >= imgW || py >= imgH) continue;
+
+					const bbe::Colori glyphColor = glyph.getPixel((size_t)x, (size_t)y);
+					if (glyphColor.r == 0) continue;
+
+					// Store (textColor, coverage) in straight-alpha format so bilinear
+					// interpolation during rotation preserves correct color at edges.
+					const bbe::byte coverage = static_cast<bbe::byte>((uint32_t(color.a) * uint32_t(glyphColor.r)) / 255u);
+					const bbe::byte existing  = img.getPixel((size_t)px, (size_t)py).a;
+					if (coverage > existing)
+						img.setPixel((size_t)px, (size_t)py, bbe::Colori(color.r, color.g, color.b, coverage));
+				}
+			}
+		}
+		return img;
+	}
+
+	bool drawTextAt(const bbe::Vector2i &topLeft, const bbe::Colori &color)
+	{
+		bbe::Vector2 origin;
+		bbe::Rectangle bounds;
+		if (!getTextOriginAndBounds(topLeft, origin, bounds)) return false;
 
 		const bbe::String text = getTextBufferString();
 		const bbe::Font &font = getTextToolFont();
@@ -2595,7 +2729,12 @@ class MyGame : public bbe::Game
 			blendGlyphOntoCanvas(getTextGlyphImage(font, codePoint), glyphPos, color);
 			changed = true;
 		}
+		return changed;
+	}
 
+	void placeTextAt(const bbe::Vector2i &topLeft, const bbe::Colori &color)
+	{
+		bool changed = drawTextAt(topLeft, color);
 		if (changed)
 		{
 			submitCanvas();
@@ -3004,6 +3143,38 @@ class MyGame : public bbe::Game
 		return result;
 	}
 
+	// Returns the extra rotation angle (radians) for each copy returned by getSymmetryPositions.
+	// Only radial symmetry produces non-zero angles; mirror modes return all zeros.
+	bbe::List<float> getSymmetryRotationAngles() const
+	{
+		bbe::List<float> result;
+		switch (symmetryMode)
+		{
+		case SymmetryMode::None:
+			result.add(0.f);
+			break;
+		case SymmetryMode::Horizontal:
+		case SymmetryMode::Vertical:
+			result.add(0.f);
+			result.add(0.f);
+			break;
+		case SymmetryMode::FourWay:
+			result.add(0.f);
+			result.add(0.f);
+			result.add(0.f);
+			result.add(0.f);
+			break;
+		case SymmetryMode::Radial:
+		{
+			const float step = 2.f * bbe::Math::PI / (float)radialSymmetryCount;
+			for (int32_t i = 0; i < radialSymmetryCount; i++)
+				result.add(step * (float)i);
+			break;
+		}
+		}
+		return result;
+	}
+
 	bool touch(const bbe::Vector2 &touchPos, bool rectangleShape = false)
 	{
 		bool changed = false;
@@ -3021,6 +3192,35 @@ class MyGame : public bbe::Game
 		for (size_t i = 0; i < starts.getLength(); i++)
 			changed |= touchLineImage(workArea, starts[i], ends[i], getMouseColor(), brushWidth, rectangleShape, tiled);
 		return changed;
+	}
+
+	void touchLineSymmetry(const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, const bbe::Colori &color, int32_t width, bool rectShape = false)
+	{
+		const auto starts = getSymmetryPositions(pos1);
+		const auto ends   = getSymmetryPositions(pos2);
+		for (size_t i = 0; i < starts.getLength(); i++)
+			touchLineImage(workArea, starts[i], ends[i], color, width, rectShape, tiled);
+	}
+
+	void drawArrowSymmetry(const bbe::Vector2 &from, const bbe::Vector2 &to, const bbe::Colori &color)
+	{
+		const auto froms = getSymmetryPositions(from);
+		const auto tos   = getSymmetryPositions(to);
+		for (size_t i = 0; i < froms.getLength(); i++)
+			drawArrowToWorkArea(froms[i], tos[i], color);
+	}
+
+	void drawBezierSymmetry(const bbe::List<bbe::Vector2> &points, const bbe::Colori &color)
+	{
+		if (points.isEmpty()) return;
+		const size_t symCount = getSymmetryPositions(points[0]).getLength();
+		for (size_t s = 0; s < symCount; s++)
+		{
+			bbe::List<bbe::Vector2> symPoints;
+			for (size_t p = 0; p < points.getLength(); p++)
+				symPoints.add(getSymmetryPositions(points[p])[s]);
+			drawBezierToWorkArea(symPoints, color);
+		}
 	}
 
 	virtual void onStart() override
@@ -3372,7 +3572,36 @@ class MyGame : public bbe::Game
 			bbe::Vector2 pos = currMousePos;
 			if (toTiledPos(pos))
 			{
-				placeTextAt(toCanvasPixel(pos), getMouseColor());
+				bool textChanged = false;
+				const bbe::Vector2i originalTopLeft = toCanvasPixel(pos);
+				const auto symPositions = getSymmetryPositions(pos);
+				const auto symAngles    = getSymmetryRotationAngles();
+				for (size_t i = 0; i < symPositions.getLength(); i++)
+				{
+					bbe::Vector2 symPos = symPositions[i];
+					if (!toTiledPos(symPos)) continue;
+					const bbe::Vector2i symTopLeft = toCanvasPixel(symPos);
+					if (std::abs(symAngles[i]) > 0.0001f)
+					{
+						const bbe::Image textImg = renderTextToImage(originalTopLeft, getMouseColor());
+						if (textImg.getWidth() > 0 && textImg.getHeight() > 0)
+						{
+							const bbe::Rectanglei symRect = {
+								symTopLeft.x,
+								symTopLeft.y,
+								textImg.getWidth(),
+								textImg.getHeight()
+							};
+							blendRotatedImageOntoCanvas(textImg, symRect, symAngles[i]);
+							textChanged = true;
+						}
+					}
+					else
+					{
+						textChanged |= drawTextAt(symTopLeft, getMouseColor());
+					}
+				}
+				if (textChanged) submitCanvas();
 			}
 		}
 
@@ -3430,7 +3659,13 @@ class MyGame : public bbe::Game
 				bbe::Vector2 pos = screenToCanvas(getMouse());
 				if (toTiledPos(pos))
 				{
-					getActiveLayerImage().floodFill(pos.as<int32_t>(), getMouseColor(), false, tiled);
+					const auto symPositions = getSymmetryPositions(pos);
+					for (size_t i = 0; i < symPositions.getLength(); i++)
+					{
+						bbe::Vector2 symPos = symPositions[i];
+						if (toTiledPos(symPos))
+							getActiveLayerImage().floodFill(symPos.as<int32_t>(), getMouseColor(), false, tiled);
+					}
 					changeRegistered = true;
 				}
 			}
@@ -3517,17 +3752,17 @@ class MyGame : public bbe::Game
 		if (lineDraftActive && ((leftColorChanged && !lineDraftUsesRightColor) || (rightColorChanged && lineDraftUsesRightColor)))
 		{
 			clearWorkArea();
-			touchLineImage(workArea, lineDraftEnd, lineDraftStart, getLineDraftColor(), brushWidth, false, tiled);
+			touchLineSymmetry(lineDraftEnd, lineDraftStart, getLineDraftColor(), brushWidth);
 		}
 		if (arrowDraftActive && ((leftColorChanged && !arrowDraftUsesRightColor) || (rightColorChanged && arrowDraftUsesRightColor)))
 		{
 			clearWorkArea();
-			drawArrowToWorkArea(arrowDraftStart, arrowDraftEnd, getArrowDraftColor());
+			drawArrowSymmetry(arrowDraftStart, arrowDraftEnd, getArrowDraftColor());
 		}
 		if (!bezierControlPoints.isEmpty() && ((leftColorChanged && !bezierUsesRightColor) || (rightColorChanged && bezierUsesRightColor)))
 		{
 			clearWorkArea();
-			drawBezierToWorkArea(bezierControlPoints, getBezierColor());
+			drawBezierSymmetry(bezierControlPoints, getBezierColor());
 		}
 
 		// --- Tool ---
@@ -3568,17 +3803,17 @@ class MyGame : public bbe::Game
 				if (lineDraftActive)
 				{
 					clearWorkArea();
-					touchLineImage(workArea, lineDraftEnd, lineDraftStart, getLineDraftColor(), brushWidth, false, tiled);
+					touchLineSymmetry(lineDraftEnd, lineDraftStart, getLineDraftColor(), brushWidth);
 				}
 				if (arrowDraftActive)
 				{
 					clearWorkArea();
-					drawArrowToWorkArea(arrowDraftStart, arrowDraftEnd, getArrowDraftColor());
+					drawArrowSymmetry(arrowDraftStart, arrowDraftEnd, getArrowDraftColor());
 				}
 				if (!bezierControlPoints.isEmpty())
 				{
 					clearWorkArea();
-					drawBezierToWorkArea(bezierControlPoints, getBezierColor());
+					drawBezierSymmetry(bezierControlPoints, getBezierColor());
 				}
 			}
 		}
