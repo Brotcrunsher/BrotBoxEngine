@@ -3932,17 +3932,17 @@ class MyGame : public bbe::Game
 			}
 			brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
 
-			// Viewport rectangle
+			// Viewport rectangle (clamped to navigator bounds)
 			const float scaleX = navW / getCanvasWidth();
 			const float scaleY = navH / getCanvasHeight();
 			const bbe::Vector2 tlCanvas = screenToCanvas({ 0.f, 0.f });
 			const bbe::Vector2 brCanvas = screenToCanvas({ (float)getWindowWidth(), (float)getWindowHeight() });
-			const float vx = navX + tlCanvas.x * scaleX;
-			const float vy = navY + tlCanvas.y * scaleY;
-			const float vw = (brCanvas.x - tlCanvas.x) * scaleX;
-			const float vh = (brCanvas.y - tlCanvas.y) * scaleY;
+			const float vx1 = bbe::Math::clamp(navX + tlCanvas.x * scaleX, navX, navX + navW);
+			const float vy1 = bbe::Math::clamp(navY + tlCanvas.y * scaleY, navY, navY + navH);
+			const float vx2 = bbe::Math::clamp(navX + brCanvas.x * scaleX, navX, navX + navW);
+			const float vy2 = bbe::Math::clamp(navY + brCanvas.y * scaleY, navY, navY + navH);
 			brush.setColorRGB(1.0f, 1.0f, 0.0f);
-			brush.sketchRect(vx, vy, vw, vh);
+			brush.sketchRect(vx1, vy1, vx2 - vx1, vy2 - vy1);
 			brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 
