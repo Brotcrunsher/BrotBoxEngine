@@ -430,8 +430,12 @@ class MyGame : public bbe::Game
 		const float cy = rect.y + rect.height / 2.f;
 		const float cosA = std::cos(-rotation);
 		const float sinA = std::sin(-rotation);
-		const float srcCX = image.getWidth() / 2.f;
-		const float srcCY = image.getHeight() / 2.f;
+		// Use (size-1)/2 so that canvas pixel (rect.x+k) maps to source pixel k for
+		// 0° rotation: srcX = (canvasX+0.5 - cx) + srcCX = canvasX - rect.x, an integer.
+		// With the simpler imgW/2 the result is non-integer for odd-width images, causing
+		// a 1-px smear at half-intensity via bilinear (the "2px wide" symmetry artifact).
+		const float srcCX = (image.getWidth()  - 1) / 2.f;
+		const float srcCY = (image.getHeight() - 1) / 2.f;
 
 		const float hw = image.getWidth() / 2.f;
 		const float hh = image.getHeight() / 2.f;
@@ -980,8 +984,8 @@ class MyGame : public bbe::Game
 				for (size_t i = 1; i < symCenters.getLength(); i++)
 				{
 					const bbe::Rectanglei symRect = {
-						(int32_t)(symCenters[i].x - selectionRect.width  * 0.5f),
-						(int32_t)(symCenters[i].y - selectionRect.height * 0.5f),
+						(int32_t)std::round(symCenters[i].x - selectionRect.width  * 0.5f),
+						(int32_t)std::round(symCenters[i].y - selectionRect.height * 0.5f),
 						selectionRect.width,
 						selectionRect.height
 					};
@@ -1005,8 +1009,8 @@ class MyGame : public bbe::Game
 			for (size_t i = 1; i < symCenters.getLength(); i++)
 			{
 				const bbe::Rectanglei symRect = {
-					(int32_t)(symCenters[i].x - selectionRect.width  * 0.5f),
-					(int32_t)(symCenters[i].y - selectionRect.height * 0.5f),
+					(int32_t)std::round(symCenters[i].x - selectionRect.width  * 0.5f),
+					(int32_t)std::round(symCenters[i].y - selectionRect.height * 0.5f),
 					selectionRect.width,
 					selectionRect.height
 				};
@@ -1079,8 +1083,8 @@ class MyGame : public bbe::Game
 				{
 					bbe::Colori newColor = color;
 					newColor.a = newColor.MAXIMUM_VALUE * pencilStrength;
-					const int32_t pixelX = (int32_t)coord.x;
-					const int32_t pixelY = (int32_t)coord.y;
+					const int32_t pixelX = std::min((int32_t)std::round(coord.x), (int32_t)image.getWidth()  - 1);
+					const int32_t pixelY = std::min((int32_t)std::round(coord.y), (int32_t)image.getHeight() - 1);
 					bbe::Colori oldColor = image.getPixel((size_t)pixelX, (size_t)pixelY);
 					if (newColor.a > oldColor.a)
 					{
@@ -3576,6 +3580,18 @@ class MyGame : public bbe::Game
 				const bbe::Vector2i originalTopLeft = toCanvasPixel(pos);
 				const auto symPositions = getSymmetryPositions(pos);
 				const auto symAngles    = getSymmetryRotationAngles();
+
+				// Pre-render the text image and compute the symmetric positions of its
+				// canvas-space centre.  blendRotatedImageOntoCanvas rotates around the
+				// centre of the dest rect, so we must derive that rect from the rotated
+				// IMAGE CENTRE — not from the rotated click position (top-left corner).
+				const bbe::Image textImg = renderTextToImage(originalTopLeft, getMouseColor());
+				const bbe::Vector2 imgCenter = {
+					originalTopLeft.x + textImg.getWidth()  * 0.5f,
+					originalTopLeft.y + textImg.getHeight() * 0.5f
+				};
+				const auto imgCenterSymPositions = getSymmetryPositions(imgCenter);
+
 				for (size_t i = 0; i < symPositions.getLength(); i++)
 				{
 					bbe::Vector2 symPos = symPositions[i];
@@ -3583,12 +3599,11 @@ class MyGame : public bbe::Game
 					const bbe::Vector2i symTopLeft = toCanvasPixel(symPos);
 					if (std::abs(symAngles[i]) > 0.0001f)
 					{
-						const bbe::Image textImg = renderTextToImage(originalTopLeft, getMouseColor());
 						if (textImg.getWidth() > 0 && textImg.getHeight() > 0)
 						{
 							const bbe::Rectanglei symRect = {
-								symTopLeft.x,
-								symTopLeft.y,
+								(int32_t)std::round(imgCenterSymPositions[i].x - textImg.getWidth()  * 0.5f),
+								(int32_t)std::round(imgCenterSymPositions[i].y - textImg.getHeight() * 0.5f),
 								textImg.getWidth(),
 								textImg.getHeight()
 							};
