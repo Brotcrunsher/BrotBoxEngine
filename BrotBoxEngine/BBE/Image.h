@@ -149,6 +149,10 @@ namespace bbe
 		// If tiled is true, the destination wraps modulo this image's dimensions.
 		void blendOver(const bbe::Image &src, const bbe::Vector2i &dstPos, bool tiled = false);
 
+		// CPU-side blend of src over this image (same dimensions) using BlendMode and opacity.
+		// This is useful for generic image compositing; caller decides what "layers" mean.
+		void blend(const bbe::Image &src, float opacity = 1.0f, bbe::BlendMode mode = bbe::BlendMode::Normal);
+
 		// CPU-side alpha-over blit of src rotated around the center of dstRect.
 		// Rotation is in radians. Uses bilinear sampling in src pixel coordinates.
 		void blendOverRotated(const bbe::Image &src, const bbe::Rectanglei &dstRect, float rotation, bool tiled = false, bool antiAlias = true);

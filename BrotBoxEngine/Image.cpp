@@ -372,6 +372,40 @@ void bbe::Image::blendOver(const bbe::Image &src, const bbe::Vector2i &dstPos, b
 	}
 }
 
+void bbe::Image::blend(const bbe::Image &src, float opacity, bbe::BlendMode mode)
+{
+	if (!isLoadedCpu() || !src.isLoadedCpu())
+	{
+		bbe::Crash(bbe::Error::NotInitialized);
+	}
+	if (m_format != bbe::ImageFormat::R8G8B8A8 || src.m_format != bbe::ImageFormat::R8G8B8A8)
+	{
+		bbe::Crash(bbe::Error::FormatNotSupported);
+	}
+	if (src.getWidth() != getWidth() || src.getHeight() != getHeight())
+	{
+		bbe::Crash(bbe::Error::IllegalArgument, "blend(): image sizes must match.");
+	}
+
+	const int32_t w = getWidth();
+	const int32_t h = getHeight();
+	if (w <= 0 || h <= 0) return;
+
+	opacity = bbe::Math::clamp01(opacity);
+	if (opacity <= 0.f) return;
+
+	for (int32_t y = 0; y < h; y++)
+	{
+		for (int32_t x = 0; x < w; x++)
+		{
+			const bbe::Colori s = src.getPixel((size_t)x, (size_t)y);
+			if (s.a == 0) continue;
+			const bbe::Colori d = getPixel((size_t)x, (size_t)y);
+			setPixel((size_t)x, (size_t)y, d.blendTo(s, opacity, mode));
+		}
+	}
+}
+
 void bbe::Image::blendOverRotated(const bbe::Image &src, const bbe::Rectanglei &dstRect, float rotation, bool tiled, bool antiAlias)
 {
 	if (!isLoadedCpu() || !src.isLoadedCpu())

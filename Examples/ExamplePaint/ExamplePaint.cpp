@@ -454,18 +454,6 @@ class MyGame : public bbe::Game
 		return lowerPath.endsWith(".png") || lowerPath.endsWith(LAYERED_FILE_EXTENSION);
 	}
 
-	template<typename Fn>
-	void forEachPixel(int32_t width, int32_t height, Fn fn) const
-	{
-		for (int32_t y = 0; y < height; y++)
-		{
-			for (int32_t x = 0; x < width; x++)
-			{
-				fn(x, y);
-			}
-		}
-	}
-
 	// Returns a rasterized rotation of src, sized to fit the rotated bounding box.
 	bbe::Image createRotatedPreviewImage(const bbe::Image &src, float rotation) const
 	{
@@ -514,12 +502,7 @@ class MyGame : public bbe::Game
 		{
 			const PaintLayer &layer = canvas.get().layers[i];
 			if (!layer.visible) continue;
-			forEachPixel((int32_t)layer.image.getWidth(), (int32_t)layer.image.getHeight(), [&](int32_t lx, int32_t ly)
-			{
-				const bbe::Colori src = layer.image.getPixel((size_t)lx, (size_t)ly);
-				const bbe::Colori dst = flattened.getPixel((size_t)lx, (size_t)ly);
-				flattened.setPixel((size_t)lx, (size_t)ly, dst.blendTo(src, layer.opacity, layer.blendMode));
-			});
+			flattened.blend(layer.image, layer.opacity, layer.blendMode);
 		}
 		return flattened;
 	}
@@ -651,12 +634,7 @@ class MyGame : public bbe::Game
 		prepareForLayerTargetChange();
 		PaintLayer &above = canvas.get().layers[(size_t)activeLayerIndex];
 		PaintLayer &below = canvas.get().layers[(size_t)(activeLayerIndex - 1)];
-		forEachPixel((int32_t)above.image.getWidth(), (int32_t)above.image.getHeight(), [&](int32_t x, int32_t y)
-		{
-			const bbe::Colori src = above.image.getPixel((size_t)x, (size_t)y);
-			const bbe::Colori dst = below.image.getPixel((size_t)x, (size_t)y);
-			below.image.setPixel((size_t)x, (size_t)y, dst.blendTo(src, above.opacity, above.blendMode));
-		});
+		below.image.blend(above.image, above.opacity, above.blendMode);
 		canvas.get().layers.removeIndex((size_t)activeLayerIndex);
 		activeLayerIndex--;
 		submitCanvas();
