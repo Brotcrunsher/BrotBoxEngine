@@ -92,7 +92,7 @@ struct PaintEditor
 	int32_t lastModeSnapshot = MODE_BRUSH;
 
 	friend void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, const bbe::Vector2i &topLeft);
-	friend void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor &editor, const bbe::Rectanglei &rect);
+	friend void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor &editor, const bbe::Rectanglei &rect, bool alwaysDrawOutline);
 
 	bbe::Vector2 offset;
 	bbe::String path;
@@ -415,6 +415,9 @@ struct PaintEditor
 	void pasteSelectionAt(const bbe::Vector2i &pos);
 
 	void commitFloatingSelection();
+
+	/// Finalize move/resize/drag, commit floating pixels to the layer, then drop the marquee. Clipboard contents are kept.
+	void applySelectionWhenLeavingTool();
 
 	bool toImagePos(bbe::Vector2 &pos, int32_t width, int32_t height, bool repeated) const;
 

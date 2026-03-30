@@ -963,6 +963,30 @@ void PaintEditor::commitFloatingSelection()
 	circle.draftUsesRightColor = false;
 }
 
+void PaintEditor::applySelectionWhenLeavingTool()
+{
+	bbe::Image savedClipboard = std::move(selection.clipboard);
+
+	if (selection.rotationHandleActive)
+		selection.rotationHandleActive = false;
+	if (selection.moveActive || selection.resizeActive)
+		applySelectionTransform();
+
+	if (selection.dragActive)
+	{
+		if (hasPointerPos)
+			selection.hasSelection = buildSelectionRect(selection.dragStart, toCanvasPixel(lastPointerCanvasPos), selection.rect);
+		selection.dragActive = false;
+		selection.previewRect = {};
+	}
+
+	if (selection.floating)
+		commitFloatingSelection();
+
+	selection = SelectionState{};
+	selection.clipboard = std::move(savedClipboard);
+}
+
 bool PaintEditor::toImagePos(bbe::Vector2 &pos, int32_t width, int32_t height, bool repeated) const
 {
 	if (repeated)

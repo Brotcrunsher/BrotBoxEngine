@@ -6,8 +6,16 @@
 #include <filesystem>
 #include <string>
 
-void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor &editor, const bbe::Rectanglei &rect)
+void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor &editor, const bbe::Rectanglei &rect, bool alwaysDrawOutline)
 {
+	const bool showSelectionChrome =
+		editor.mode == PaintEditor::MODE_SELECTION
+		|| (editor.mode == PaintEditor::MODE_RECTANGLE && (editor.rectangle.draftActive || editor.rectangle.dragActive))
+		|| (editor.mode == PaintEditor::MODE_CIRCLE && (editor.circle.draftActive || editor.circle.dragActive));
+
+	if (!alwaysDrawOutline && !showSelectionChrome)
+		return;
+
 	const bbe::Rectangle screenRect = editor.selectionRectToScreen(rect);
 	brush.setColorRGB(0.0f, 0.0f, 0.0f);
 	brush.sketchRect(screenRect);
@@ -17,10 +25,36 @@ void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor 
 		brush.sketchRect(screenRect.shrinked(1.0f));
 	}
 
-	if (editor.selection.hasSelection && !editor.selection.dragActive)
+	if (showSelectionChrome && editor.selection.hasSelection && !editor.selection.dragActive)
 	{
-		const float cx = screenRect.x + screenRect.width / 2.f;
-		const float ty = screenRect.y;
+		const float sx = screenRect.x;
+		const float sy = screenRect.y;
+		const float w = screenRect.width;
+		const float h = screenRect.height;
+		// Same ordering as canvas resize handles: corners and edge midpoints.
+		const bbe::Vector2 resizeHandles[8] = {
+			{ sx, sy },
+			{ sx + w * 0.5f, sy },
+			{ sx + w, sy },
+			{ sx + w, sy + h * 0.5f },
+			{ sx + w, sy + h },
+			{ sx + w * 0.5f, sy + h },
+			{ sx, sy + h },
+			{ sx, sy + h * 0.5f },
+		};
+		constexpr float hs = 5.f;
+		for (int32_t i = 0; i < 8; i++)
+		{
+			const float hx = resizeHandles[i].x;
+			const float hy = resizeHandles[i].y;
+			brush.setColorRGB(1.f, 1.f, 1.f);
+			brush.fillRect(hx - hs, hy - hs, hs * 2.f, hs * 2.f);
+			brush.setColorRGB(0.f, 0.f, 0.f);
+			brush.sketchRect(bbe::Rectangle(hx - hs, hy - hs, hs * 2.f, hs * 2.f));
+		}
+
+		const float cx = sx + w * 0.5f;
+		const float ty = sy;
 		constexpr float stemLen = 30.f;
 		const float handleY = ty - stemLen;
 		constexpr float handleR = 6.f;
@@ -76,7 +110,8 @@ void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, co
 				topLeft.x + ti * editor.getCanvasWidth(),
 				topLeft.y + tk * editor.getCanvasHeight(),
 				(int32_t)bbe::Math::ceil(bounds.width),
-				(int32_t)bbe::Math::ceil(bounds.height)));
+				(int32_t)bbe::Math::ceil(bounds.height)),
+				true);
 		}
 	}
 }
@@ -502,7 +537,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 						rect.y + k * editor.getCanvasHeight(),
 						rect.width,
 						rect.height);
-					drawSelectionOutlineForGui(brush, editor, tileOutline);
+					drawSelectionOutlineForGui(brush, editor, tileOutline, false);
 				}
 			}
 		};
@@ -544,11 +579,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 		else if (editor.selection.dragActive)
 		{
-			drawSelectionOutlineForGui(brush, editor, editor.selection.previewRect);
+			drawSelectionOutlineForGui(brush, editor, editor.selection.previewRect, false);
 		}
 		else if (editor.selection.hasSelection)
 		{
-			drawSelectionOutlineForGui(brush, editor, editor.selection.rect);
+			drawSelectionOutlineForGui(brush, editor, editor.selection.rect, false);
 		}
 		if (editor.mode == PaintEditor::MODE_TEXT)
 		{
@@ -830,7 +865,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow" });
 				bulletList("General", { "+/- changes brush size or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
 				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection" });
-				bulletList("Selection", { "Drag to create a rectangular selection", "Drag inside a selection to move it", "Drag the selection border to resize it", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
+				bulletList("Selection", { "Drag to create a rectangular selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
 				bulletList("Layers", { "Painting and text placement affect only the active layer", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });
 			}
 			ImGui::End();

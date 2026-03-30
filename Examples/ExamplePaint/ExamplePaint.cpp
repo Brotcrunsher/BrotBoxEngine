@@ -25,6 +25,10 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	};
 	if (editor.mode != editor.lastModeSnapshot && !drawButtonDown)
 	{
+		if (editor.lastModeSnapshot == PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_SELECTION)
+		{
+			editor.applySelectionWhenLeavingTool();
+		}
 		if (editor.lastModeSnapshot == PaintEditor::MODE_RECTANGLE && editor.rectangle.draftActive)
 		{
 			editor.commitFloatingSelection();
@@ -220,6 +224,10 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	}
 	if (editor.mode != modeBeforeInput && !drawButtonDown)
 	{
+		if (modeBeforeInput == PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_SELECTION)
+		{
+			editor.applySelectionWhenLeavingTool();
+		}
 		if (modeBeforeInput == PaintEditor::MODE_RECTANGLE && editor.rectangle.draftActive)
 		{
 			editor.commitFloatingSelection();
