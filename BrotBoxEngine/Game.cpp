@@ -473,22 +473,22 @@ void bbe::Game::requestRedraw()
 	}
 }
 
-bool bbe::Game::isKeyDown(bbe::Key key)
+bool bbe::Game::isKeyDown(bbe::Key key) const
 {
 	return m_pwindow->INTERNAL_keyboard.isKeyDown(key);
 }
 
-bool bbe::Game::isKeyUp(bbe::Key key)
+bool bbe::Game::isKeyUp(bbe::Key key) const
 {
 	return m_pwindow->INTERNAL_keyboard.isKeyUp(key);
 }
 
-bool bbe::Game::isKeyPressed(bbe::Key key)
+bool bbe::Game::isKeyPressed(bbe::Key key) const
 {
 	return m_pwindow->INTERNAL_keyboard.isKeyPressed(key);
 }
 
-bool bbe::Game::isKeyTyped(bbe::Key key)
+bool bbe::Game::isKeyTyped(bbe::Key key) const
 {
 	return m_pwindow->INTERNAL_keyboard.isKeyTyped(key);
 }

@@ -27,10 +27,10 @@ namespace bbe
 	public:
 		Keyboard() = default;
 
-		bool isKeyDown(bbe::Key key, bool checkValid = true);
-		bool isKeyUp(bbe::Key key, bool checkValid = true);
-		bool isKeyPressed(bbe::Key key, bool checkValid = true);
-		bool isKeyTyped(bbe::Key key, bool checkValid = true);
+		bool isKeyDown(bbe::Key key, bool checkValid = true) const;
+		bool isKeyUp(bbe::Key key, bool checkValid = true) const;
+		bool isKeyPressed(bbe::Key key, bool checkValid = true) const;
+		bool isKeyTyped(bbe::Key key, bool checkValid = true) const;
 
 		void INTERNAL_press(bbe::Key key);
 		void INTERNAL_release(bbe::Key key);

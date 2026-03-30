@@ -103,10 +103,10 @@ namespace bbe
 		bool isReactiveRendering() const;
 		void requestRedraw();
 
-		bool isKeyDown(bbe::Key key);
-		bool isKeyUp(bbe::Key key);
-		bool isKeyPressed(bbe::Key key);
-		bool isKeyTyped(bbe::Key key);
+		bool isKeyDown(bbe::Key key) const;
+		bool isKeyUp(bbe::Key key) const;
+		bool isKeyPressed(bbe::Key key) const;
+		bool isKeyTyped(bbe::Key key) const;
 
 		bool isFocused() const;
 		bool isHovered() const;

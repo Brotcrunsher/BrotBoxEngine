@@ -42,7 +42,7 @@ void bbe::Keyboard::update()
 	}
 }
 
-bool bbe::Keyboard::isKeyDown(bbe::Key key, bool checkValid)
+bool bbe::Keyboard::isKeyDown(bbe::Key key, bool checkValid) const
 {
 	if (checkValid && !isKeyCodeValid(key))
 	{
@@ -52,7 +52,7 @@ bool bbe::Keyboard::isKeyDown(bbe::Key key, bool checkValid)
 	return m_pkeysThisFrame[(int)key].down;
 }
 
-bool bbe::Keyboard::isKeyUp(bbe::Key key, bool checkValid)
+bool bbe::Keyboard::isKeyUp(bbe::Key key, bool checkValid) const
 {
 	if (checkValid && !isKeyCodeValid(key))
 	{
@@ -62,7 +62,7 @@ bool bbe::Keyboard::isKeyUp(bbe::Key key, bool checkValid)
 	return !m_pkeysThisFrame[(int)key].down;
 }
 
-bool bbe::Keyboard::isKeyPressed(bbe::Key key, bool checkValid)
+bool bbe::Keyboard::isKeyPressed(bbe::Key key, bool checkValid) const
 {
 	if (checkValid && !isKeyCodeValid(key))
 	{
@@ -72,7 +72,7 @@ bool bbe::Keyboard::isKeyPressed(bbe::Key key, bool checkValid)
 	return m_pkeysThisFrame[(int)key].pressed;
 }
 
-bool bbe::Keyboard::isKeyTyped(bbe::Key key, bool checkValid)
+bool bbe::Keyboard::isKeyTyped(bbe::Key key, bool checkValid) const
 {
 	if (checkValid && !isKeyCodeValid(key))
 	{
