@@ -501,19 +501,12 @@ class MyGame : public bbe::Game
 				const float dy = canvasY + 0.5f - cy;
 				const float srcX = dx * cosA - dy * sinA + srcCX;
 				const float srcY = dx * sinA + dy * cosA + srcCY;
-				bbe::Colori srcPixel;
-				if (antiAliasingEnabled)
+				bbe::Colori srcPixel = sampleBilinear(srcX, srcY);
+				if (!antiAliasingEnabled)
 				{
-					srcPixel = sampleBilinear(srcX, srcY);
-				}
-				else
-				{
-					const int32_t isx = (int32_t)std::floor(srcX);
-					const int32_t isy = (int32_t)std::floor(srcY);
-					if (isx < 0 || isy < 0 || isx >= imgW || isy >= imgH) continue;
-					srcPixel = image.getPixel((size_t)isx, (size_t)isy);
-					if (srcPixel.a < 128) srcPixel.a = 0;
-					else srcPixel.a = 255;
+					// Snap to hard edge: bilinear fills rotation gaps, but alpha is binary.
+					if (srcPixel.a == 0) continue;
+					srcPixel.a = 255;
 				}
 				if (srcPixel.a == 0) continue;
 
@@ -987,6 +980,38 @@ class MyGame : public bbe::Game
 
 		if (std::abs(selectionRotation) > 0.0001f)
 		{
+			// AA-off shapes: re-render directly from SDF with rotation baked in.
+			// This avoids both gaps and thickness changes that image-rotation sampling produces.
+			if (!antiAliasingEnabled && (rectangleDraftActive || circleDraftActive) && std::abs(selectionRotation) > 0.01f)
+			{
+				const bbe::Colori color = rectangleDraftActive ? getRectangleDraftColor() : getCircleDraftColor();
+				const bbe::Vector2 center = {
+					selectionRect.x + selectionRect.width  * 0.5f,
+					selectionRect.y + selectionRect.height * 0.5f
+				};
+
+				auto blitRotated = [&](float rot, const bbe::Vector2 &c)
+				{
+					const bbe::Image img = rectangleDraftActive
+						? createRectangleImage(selectionRect.width, selectionRect.height, color, rot)
+						: createCircleImage(selectionRect.width, selectionRect.height, color, rot);
+					const bbe::Vector2i pos(
+						(int32_t)std::floor(c.x - img.getWidth()  * 0.5f),
+						(int32_t)std::floor(c.y - img.getHeight() * 0.5f));
+					blendImageOntoCanvas(img, pos);
+				};
+
+				blitRotated(selectionRotation, center);
+				const auto symCenters = getSymmetryPositions(center);
+				const auto symAngles  = getSymmetryRotationAngles();
+				for (size_t i = 1; i < symCenters.getLength(); i++)
+					blitRotated(selectionRotation + symAngles[i], symCenters[i]);
+
+				submitCanvas();
+				clearSelectionState();
+				return;
+			}
+
 			blendRotatedImageOntoCanvas(selectionFloatingImage, selectionRect, selectionRotation);
 			if (rectangleDraftActive || circleDraftActive)
 			{
@@ -1733,15 +1758,11 @@ class MyGame : public bbe::Game
 		return true;
 	}
 
-	bbe::Image createRectangleImage(int32_t width, int32_t height, const bbe::Colori &color) const
+	bbe::Image createRectangleImage(int32_t width, int32_t height, const bbe::Colori &color, float rotation = 0.f) const
 	{
 		if (width <= 0 || height <= 0) return {};
 
-		bbe::Image image(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
-		prepareImageForCanvas(image);
-
 		// SDF of a rounded rectangle centered at origin.
-		// hw/hh = outer half-extents, r = corner radius.
 		auto sdfRoundRect = [](float px, float py, float hw, float hh, float r) -> float
 		{
 			const float ax  = px < 0.f ? -px : px;
@@ -1754,13 +1775,51 @@ class MyGame : public bbe::Game
 			return bbe::Math::sqrt(qxp * qxp + qyp * qyp) + (mx < 0.f ? mx : 0.f) - r;
 		};
 
-		const float R  = (float)bbe::Math::min(cornerRadius, bbe::Math::min(width / 2, height / 2));
-		const float T  = (float)brushWidth;
-		const float hw = width  * 0.5f;
-		const float hh = height * 0.5f;
+		const float R   = (float)bbe::Math::min(cornerRadius, bbe::Math::min(width / 2, height / 2));
+		const float T   = (float)brushWidth;
+		const float hw  = width  * 0.5f;
+		const float hh  = height * 0.5f;
 		const float hwi = hw - T;
 		const float hhi = hh - T;
 		const float Ri  = R - T > 0.f ? R - T : 0.f;
+
+		// AA-off with rotation: bake rotation into SDF to avoid gaps and thickness change.
+		// Threshold of 0.01 rad (~0.6°): below this the visual difference is imperceptible
+		// and tiny accidental rotations on non-circular shapes would cause SDF boundary
+		// pixels to flip, producing visible gaps.
+		if (!antiAliasingEnabled && std::abs(rotation) > 0.01f)
+		{
+			const float cosA = std::cos(rotation);
+			const float sinA = std::sin(rotation);
+			const float newHW = std::abs(hw * cosA) + std::abs(hh * sinA);
+			const float newHH = std::abs(hw * sinA) + std::abs(hh * cosA);
+			const int32_t bbW = (int32_t)std::ceil(newHW * 2.f);
+			const int32_t bbH = (int32_t)std::ceil(newHH * 2.f);
+
+			bbe::Image image(bbW, bbH, bbe::Color(0.f, 0.f, 0.f, 0.f));
+			prepareImageForCanvas(image);
+
+			for (int32_t y = 0; y < bbH; y++)
+			{
+				for (int32_t x = 0; x < bbW; x++)
+				{
+					const float bcx = (x + 0.5f) - newHW;
+					const float bcy = (y + 0.5f) - newHH;
+					// Inverse-rotate to shape-local coords
+					const float px =  bcx * cosA + bcy * sinA;
+					const float py = -bcx * sinA + bcy * cosA;
+
+					if (sdfRoundRect(px, py, hw, hh, R) >= 0.f) continue;
+					if (hwi > 0.f && hhi > 0.f && sdfRoundRect(px, py, hwi, hhi, Ri) <= 0.f) continue;
+
+					image.setPixel((size_t)x, (size_t)y, color);
+				}
+			}
+			return image;
+		}
+
+		bbe::Image image(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
+		prepareImageForCanvas(image);
 
 		for (int32_t y = 0; y < height; y++)
 		{
@@ -1834,18 +1893,60 @@ class MyGame : public bbe::Game
 		return circleDragUsesRightColor ? bbe::Color(rightColor).asByteColor() : bbe::Color(leftColor).asByteColor();
 	}
 
-	bbe::Image createCircleImage(int32_t width, int32_t height, const bbe::Colori &color) const
+	bbe::Image createCircleImage(int32_t width, int32_t height, const bbe::Colori &color, float rotation = 0.f) const
 	{
 		if (width <= 0 || height <= 0) return {};
-
-		bbe::Image image(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
-		prepareImageForCanvas(image);
 
 		const float rx_outer = width  * 0.5f;
 		const float ry_outer = height * 0.5f;
 		const float rx_inner = rx_outer - (float)brushWidth;
 		const float ry_inner = ry_outer - (float)brushWidth;
 		const float minRadius_outer = rx_outer < ry_outer ? rx_outer : ry_outer;
+
+		// AA-off with rotation: bake rotation into ellipse SDF.
+		// Threshold of 0.01 rad (~0.6°): below this, tiny accidental rotations would shift
+		// ellipse-SDF boundary pixels and create gaps (ellipse SDF is not rotation-invariant).
+		if (!antiAliasingEnabled && std::abs(rotation) > 0.01f)
+		{
+			const float cosA = std::cos(rotation);
+			const float sinA = std::sin(rotation);
+			const float newHW = std::abs(rx_outer * cosA) + std::abs(ry_outer * sinA);
+			const float newHH = std::abs(rx_outer * sinA) + std::abs(ry_outer * cosA);
+			const int32_t bbW = (int32_t)std::ceil(newHW * 2.f);
+			const int32_t bbH = (int32_t)std::ceil(newHH * 2.f);
+
+			bbe::Image image(bbW, bbH, bbe::Color(0.f, 0.f, 0.f, 0.f));
+			prepareImageForCanvas(image);
+
+			for (int32_t y = 0; y < bbH; y++)
+			{
+				for (int32_t x = 0; x < bbW; x++)
+				{
+					const float bcx = (x + 0.5f) - newHW;
+					const float bcy = (y + 0.5f) - newHH;
+					// Inverse-rotate to ellipse-local coords
+					const float px =  bcx * cosA + bcy * sinA;
+					const float py = -bcx * sinA + bcy * cosA;
+
+					const float nx_o = px / rx_outer;
+					const float ny_o = py / ry_outer;
+					if (bbe::Math::sqrt(nx_o * nx_o + ny_o * ny_o) >= 1.f) continue;
+
+					if (rx_inner > 0.f && ry_inner > 0.f)
+					{
+						const float nx_i = px / rx_inner;
+						const float ny_i = py / ry_inner;
+						if (bbe::Math::sqrt(nx_i * nx_i + ny_i * ny_i) <= 1.f) continue;
+					}
+
+					image.setPixel((size_t)x, (size_t)y, color);
+				}
+			}
+			return image;
+		}
+
+		bbe::Image image(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
+		prepareImageForCanvas(image);
 
 		for (int32_t y = 0; y < height; y++)
 		{
@@ -4305,7 +4406,25 @@ class MyGame : public bbe::Game
 		}
 		else if (selectionFloating)
 		{
-			drawInAllTiles(selectionRect, selectionFloatingImage, selectionRotation);
+			if (!antiAliasingEnabled && std::abs(selectionRotation) > 0.01f && (rectangleDraftActive || circleDraftActive))
+			{
+				// AA-off + rotation: re-render from SDF so preview matches the committed result.
+				const bbe::Colori color = rectangleDraftActive ? getRectangleDraftColor() : getCircleDraftColor();
+				const bbe::Image img = rectangleDraftActive
+					? createRectangleImage(selectionRect.width, selectionRect.height, color, selectionRotation)
+					: createCircleImage(selectionRect.width, selectionRect.height, color, selectionRotation);
+				const float cx = selectionRect.x + selectionRect.width  * 0.5f;
+				const float cy = selectionRect.y + selectionRect.height * 0.5f;
+				const bbe::Rectanglei bbRect(
+					(int32_t)std::floor(cx - img.getWidth()  * 0.5f),
+					(int32_t)std::floor(cy - img.getHeight() * 0.5f),
+					img.getWidth(), img.getHeight());
+				drawInAllTiles(bbRect, img);
+			}
+			else
+			{
+				drawInAllTiles(selectionRect, selectionFloatingImage, selectionRotation);
+			}
 		}
 		else if (selectionDragActive)
 		{
