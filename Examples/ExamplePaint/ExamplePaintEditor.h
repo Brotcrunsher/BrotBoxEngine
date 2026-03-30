@@ -15,9 +15,7 @@
 // TODO: Bug: right click has weird behaviour with shadow
 
 // TODO: Alpha eraser tool - not just recolering pixels but setting their alpha to 0.
-// TODO: Scaling whole picture/selection up/down
 // TODO: Pixel perfect manipulation with arrow keys
-// TODO: "Filled with color" option for rectangle/circle tool
 // TODO: Color history
 // TODO: Selection via magic wand / color selection
 
@@ -161,6 +159,8 @@ struct PaintEditor
 	bbe::List<FontEntry> availableFonts;
 	bbe::Vector2 startMousePos;
 	int32_t cornerRadius = 0;
+	/// When true, rectangle/circle interior uses the opposite mouse color (secondary vs primary) under the stroke.
+	bool shapeFillWithSecondary = false;
 
 	bool drawGridLines = true;
 	bool tiled = false;
@@ -452,7 +452,7 @@ struct PaintEditor
 
 	bool buildRectangleDraftRect(const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect) const;
 
-	bbe::Image createRectangleImage(int32_t width, int32_t height, const bbe::Colori &color, float rotation = 0.f) const;
+	bbe::Image createRectangleImage(int32_t width, int32_t height, const bbe::Colori &strokeColor, float rotation = 0.f, bool strokeUsesRightColor = false) const;
 
 	bbe::Image createRectangleDraftImage(int32_t width, int32_t height) const;
 
@@ -464,7 +464,7 @@ struct PaintEditor
 
 	bbe::Colori getCircleDragColor() const;
 
-	bbe::Image createCircleImage(int32_t width, int32_t height, const bbe::Colori &color, float rotation = 0.f) const;
+	bbe::Image createCircleImage(int32_t width, int32_t height, const bbe::Colori &strokeColor, float rotation = 0.f, bool strokeUsesRightColor = false) const;
 
 	bbe::Image createCircleDraftImage(int32_t width, int32_t height) const;
 

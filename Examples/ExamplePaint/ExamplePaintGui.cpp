@@ -108,11 +108,13 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		ImGui::SeparatorText("Colors");
 		const bool leftColorChanged  = ImGui::ColorEdit4("Primary",   editor.leftColor);
 		const bool rightColorChanged = ImGui::ColorEdit4("Secondary", editor.rightColor);
-		if (editor.rectangle.draftActive && ((leftColorChanged && !editor.rectangle.draftUsesRightColor) || (rightColorChanged && editor.rectangle.draftUsesRightColor)))
+		if (editor.rectangle.draftActive && (editor.shapeFillWithSecondary ? (leftColorChanged || rightColorChanged)
+																			: ((leftColorChanged && !editor.rectangle.draftUsesRightColor) || (rightColorChanged && editor.rectangle.draftUsesRightColor))))
 		{
 			editor.refreshActiveRectangleDraftImage();
 		}
-		if (editor.circle.draftActive && ((leftColorChanged && !editor.circle.draftUsesRightColor) || (rightColorChanged && editor.circle.draftUsesRightColor)))
+		if (editor.circle.draftActive && (editor.shapeFillWithSecondary ? (leftColorChanged || rightColorChanged)
+																		  : ((leftColorChanged && !editor.circle.draftUsesRightColor) || (rightColorChanged && editor.circle.draftUsesRightColor))))
 		{
 			editor.refreshActiveCircleDraftImage();
 		}
@@ -164,6 +166,14 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			ImGui::TextDisabled(editor.circle.draftActive
 				? "Drag inside/border to move/resize.\nClick outside to place."
 				: "Drag to draw. Click outside to place.");
+		}
+		if (editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE)
+		{
+			if (ImGui::Checkbox("Fill with secondary color", &editor.shapeFillWithSecondary))
+			{
+				if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
+				if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
+			}
 		}
 		if (editor.mode == PaintEditor::MODE_LINE)
 		{
@@ -517,8 +527,8 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				// AA-off + rotation: re-render from SDF so preview matches the committed result.
 				const bbe::Colori color = editor.rectangle.draftActive ? editor.getRectangleDraftColor() : editor.getCircleDraftColor();
 				const bbe::Image img = editor.rectangle.draftActive
-					? editor.createRectangleImage(editor.selection.rect.width, editor.selection.rect.height, color, editor.selection.rotation)
-					: editor.createCircleImage(editor.selection.rect.width, editor.selection.rect.height, color, editor.selection.rotation);
+					? editor.createRectangleImage(editor.selection.rect.width, editor.selection.rect.height, color, editor.selection.rotation, editor.rectangle.draftUsesRightColor)
+					: editor.createCircleImage(editor.selection.rect.width, editor.selection.rect.height, color, editor.selection.rotation, editor.circle.draftUsesRightColor);
 				const float cx = editor.selection.rect.x + editor.selection.rect.width  * 0.5f;
 				const float cy = editor.selection.rect.y + editor.selection.rect.height * 0.5f;
 				const bbe::Rectanglei bbRect(

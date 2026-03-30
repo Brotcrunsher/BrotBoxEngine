@@ -871,8 +871,8 @@ void PaintEditor::commitFloatingSelection()
 			auto blitRotated = [&](float rot, const bbe::Vector2 &c)
 			{
 				const bbe::Image img = rectangle.draftActive
-										   ? createRectangleImage(selection.rect.width, selection.rect.height, color, rot)
-										   : createCircleImage(selection.rect.width, selection.rect.height, color, rot);
+										   ? createRectangleImage(selection.rect.width, selection.rect.height, color, rot, rectangle.draftUsesRightColor)
+										   : createCircleImage(selection.rect.width, selection.rect.height, color, rot, circle.draftUsesRightColor);
 				const bbe::Vector2i pos(
 					(int32_t)std::floor(c.x - img.getWidth() * 0.5f),
 					(int32_t)std::floor(c.y - img.getHeight() * 0.5f));
@@ -1086,14 +1086,22 @@ bool PaintEditor::buildRectangleDraftRect(const bbe::Vector2i &pos1, const bbe::
 	return true;
 }
 
-bbe::Image PaintEditor::createRectangleImage(int32_t width, int32_t height, const bbe::Colori &color, float rotation) const
+bbe::Image PaintEditor::createRectangleImage(int32_t width, int32_t height, const bbe::Colori &strokeColor, float rotation, bool strokeUsesRightColor) const
 {
-	return bbe::Image::strokedRoundedRect(width, height, color, brushWidth, cornerRadius, rotation, antiAliasingEnabled);
+	if (shapeFillWithSecondary)
+	{
+		const bbe::Colori fillColor = getColor(!strokeUsesRightColor);
+		bbe::Image img = bbe::Image::strokedRoundedRect(width, height, fillColor, 0, cornerRadius, rotation, antiAliasingEnabled);
+		bbe::Image stroke = bbe::Image::strokedRoundedRect(width, height, strokeColor, brushWidth, cornerRadius, rotation, antiAliasingEnabled);
+		img.blend(stroke, 1.0f, bbe::BlendMode::Normal);
+		return img;
+	}
+	return bbe::Image::strokedRoundedRect(width, height, strokeColor, brushWidth, cornerRadius, rotation, antiAliasingEnabled);
 }
 
-bbe::Image PaintEditor::createRectangleDraftImage(int32_t width, int32_t height) const { return createRectangleImage(width, height, getRectangleDraftColor()); }
+bbe::Image PaintEditor::createRectangleDraftImage(int32_t width, int32_t height) const { return createRectangleImage(width, height, getRectangleDraftColor(), 0.f, rectangle.draftUsesRightColor); }
 
-bbe::Image PaintEditor::createRectangleDragPreviewImage(int32_t width, int32_t height) const { return createRectangleImage(width, height, getRectangleDragColor()); }
+bbe::Image PaintEditor::createRectangleDragPreviewImage(int32_t width, int32_t height) const { return createRectangleImage(width, height, getRectangleDragColor(), 0.f, rectangle.dragUsesRightColor); }
 
 void PaintEditor::refreshActiveRectangleDraftImage()
 {
@@ -1105,14 +1113,22 @@ bbe::Colori PaintEditor::getCircleDraftColor() const { return getColor(circle.dr
 
 bbe::Colori PaintEditor::getCircleDragColor() const { return getColor(circle.dragUsesRightColor); }
 
-bbe::Image PaintEditor::createCircleImage(int32_t width, int32_t height, const bbe::Colori &color, float rotation) const
+bbe::Image PaintEditor::createCircleImage(int32_t width, int32_t height, const bbe::Colori &strokeColor, float rotation, bool strokeUsesRightColor) const
 {
-	return bbe::Image::strokedEllipse(width, height, color, brushWidth, rotation, antiAliasingEnabled);
+	if (shapeFillWithSecondary)
+	{
+		const bbe::Colori fillColor = getColor(!strokeUsesRightColor);
+		bbe::Image img = bbe::Image::strokedEllipse(width, height, fillColor, 0, rotation, antiAliasingEnabled);
+		bbe::Image stroke = bbe::Image::strokedEllipse(width, height, strokeColor, brushWidth, rotation, antiAliasingEnabled);
+		img.blend(stroke, 1.0f, bbe::BlendMode::Normal);
+		return img;
+	}
+	return bbe::Image::strokedEllipse(width, height, strokeColor, brushWidth, rotation, antiAliasingEnabled);
 }
 
-bbe::Image PaintEditor::createCircleDraftImage(int32_t width, int32_t height) const { return createCircleImage(width, height, getCircleDraftColor()); }
+bbe::Image PaintEditor::createCircleDraftImage(int32_t width, int32_t height) const { return createCircleImage(width, height, getCircleDraftColor(), 0.f, circle.draftUsesRightColor); }
 
-bbe::Image PaintEditor::createCircleDragPreviewImage(int32_t width, int32_t height) const { return createCircleImage(width, height, getCircleDragColor()); }
+bbe::Image PaintEditor::createCircleDragPreviewImage(int32_t width, int32_t height) const { return createCircleImage(width, height, getCircleDragColor(), 0.f, circle.dragUsesRightColor); }
 
 void PaintEditor::refreshActiveCircleDraftImage()
 {
@@ -1130,7 +1146,7 @@ void PaintEditor::finalizeCircleDrag(const bbe::Vector2i &mousePixel, bool shift
 				return outRect.width > 0 && outRect.height > 0;
 			}
 			return buildSelectionRect(pos1, pos2, outRect) && outRect.width > 0 && outRect.height > 0; }, [&](int32_t width, int32_t height, const bbe::Colori &color)
-					  { return createCircleImage(width, height, color); });
+					  { return createCircleImage(width, height, color, 0.f, circle.dragUsesRightColor); });
 }
 
 void PaintEditor::beginCircleDrag(const bbe::Vector2i &mousePixel, bool useRightColor)
@@ -1345,7 +1361,7 @@ void PaintEditor::finalizeRectangleDrag(const bbe::Vector2i &mousePixel, bool sh
 {
 	finalizeShapeDrag(rectangle.dragActive, rectangle.draftActive, rectangle.draftUsesRightColor, rectangle.dragUsesRightColor, rectangle.dragStart, mousePixel, rectangle.dragPreviewRect, rectangle.dragPreviewImage, shiftDown, [&](const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect)
 					  { return buildRectangleDraftRect(pos1, pos2, outRect); }, [&](int32_t width, int32_t height, const bbe::Colori &color)
-					  { return createRectangleImage(width, height, color); });
+					  { return createRectangleImage(width, height, color, 0.f, rectangle.dragUsesRightColor); });
 }
 
 void PaintEditor::beginRectangleDrag(const bbe::Vector2i &mousePixel, bool useRightColor)
