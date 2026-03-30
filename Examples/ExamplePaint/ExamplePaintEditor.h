@@ -5,6 +5,7 @@
 #include "BBE/Symmetry2D.h"
 #include <cmath>
 #include <cstdlib>
+#include <functional>
 #include <initializer_list>
 #include <vector>
 
@@ -45,8 +46,38 @@ struct PaintDocument
 
 struct PaintEditor
 {
+	enum class PointerButton
+	{
+		Primary,
+		Secondary,
+		Middle,
+	};
+
 	PaintWindowMetrics viewport{};
 	void setViewportMetrics(const PaintWindowMetrics &w) { viewport = w; }
+
+	struct PlatformCallbacks
+	{
+		// File dialogs / IO
+		std::function<bool(bbe::String &inOutPath)> showOpenDialog;
+		std::function<bool(bbe::String &inOutPath, const bbe::String &defaultExtension)> showSaveDialog;
+		std::function<bbe::ByteBuffer(const bbe::String &path)> readBinaryFile;
+		std::function<bool(const bbe::String &path, const bbe::ByteBuffer &buffer)> writeBinaryFile;
+		std::function<bbe::Image(const bbe::String &path)> loadImageFile;
+		std::function<bool(const bbe::String &path, const bbe::Image &image)> saveImageFile;
+
+		// Clipboard images
+		std::function<bool()> supportsClipboardImages;
+		std::function<bool()> isClipboardImageAvailable;
+		std::function<bbe::Image()> getClipboardImage;
+		std::function<bool(const bbe::Image &image)> setClipboardImage;
+
+		// Fonts (system enumeration)
+		std::function<bbe::List<FontEntry>(const bbe::String &purpose)> findSystemFonts;
+		std::function<const bbe::Font *(const bbe::String &path, int32_t size)> getFont;
+	};
+
+	void setPlatformCallbacks(PlatformCallbacks callbacks) { platform = std::move(callbacks); }
 
 	static constexpr int32_t MODE_BRUSH = 0;
 	static constexpr int32_t MODE_FLOOD_FILL = 1;
@@ -62,7 +93,6 @@ struct PaintEditor
 	bool brushStrokeChangeRegistered = false;
 	int32_t lastModeSnapshot = MODE_BRUSH;
 
-	friend void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, bbe::Game &game);
 	friend void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, const bbe::Vector2i &topLeft);
 	friend void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor &editor, const bbe::Rectanglei &rect);
 
@@ -200,6 +230,21 @@ struct PaintEditor
 	bbe::Vector2 symmetryOffset;
 
 	bool antiAliasingEnabled = true;
+	bool constrainSquareEnabled = false;
+	bool pointerPrimaryDown = false;
+	bool pointerSecondaryDown = false;
+	bool hasPointerPos = false;
+	bbe::Vector2 lastPointerCanvasPos;
+
+	PlatformCallbacks platform{};
+
+	// --- Command API (input-agnostic; driven by ExamplePaint.cpp controller) ---
+	void setMode(int32_t newMode) { mode = newMode; }
+	void setConstrainSquare(bool enabled) { constrainSquareEnabled = enabled; }
+	void pointerDown(PointerButton button, const bbe::Vector2 &canvasPos);
+	void pointerMove(const bbe::Vector2 &canvasPos);
+	void pointerUp(PointerButton button, const bbe::Vector2 &canvasPos);
+	void bezierBackspace();
 
 	bbe::Colori getColor(bool useRight) const;
 
@@ -209,76 +254,28 @@ struct PaintEditor
 		if (!draftActive) return;
 		if (selection.moveActive || selection.resizeActive)
 		{
-			if (selection.previewRect.width > 0 && selection.previewRect.height > 0) selection.previewImage = createImage(selection.previewRect.width, selection.previewRect.height);
+			if (selection.previewRect.width > 0 && selection.previewRect.height > 0)
+			{
+				selection.previewImage = createImage(selection.previewRect.width, selection.previewRect.height);
+				prepareImageForCanvas(selection.previewImage);
+			}
 			return;
 		}
-		if (selection.rect.width > 0 && selection.rect.height > 0) selection.floatingImage = createImage(selection.rect.width, selection.rect.height);
+		if (selection.rect.width > 0 && selection.rect.height > 0)
+		{
+			selection.floatingImage = createImage(selection.rect.width, selection.rect.height);
+			prepareImageForCanvas(selection.floatingImage);
+		}
 	}
 
 	void finalizeEndpointDraft(bool &draftActive, int32_t &draftDragEndpoint);
+	void redrawEndpointDraft(EndpointDraftState &state, bool isArrow);
+	void endpointPointerDown(EndpointDraftState &state, bool isArrow, PointerButton button, const bbe::Vector2 &mouseCanvas);
+	void endpointPointerMove(EndpointDraftState &state, bool isArrow, const bbe::Vector2 &mouseCanvas);
+	void endpointPointerUp(EndpointDraftState &state, PointerButton button, const bbe::Vector2 &mouseCanvas);
 
-	template<typename Draw, typename Finalize>
-	void updateEndpointDraftTool(bbe::Game &g, bool &draftActive, bool &draftUsesRightColor, bbe::Vector2 &draftStart, bbe::Vector2 &draftEnd, int32_t &draftDragEndpoint, bool &dragInProgress, bool &dragUsesRightColor, Draw draw, Finalize finalize)
-	{
-		const bbe::Vector2 mouseCanvas = screenToCanvas(g.getMouse());
-		if (draftActive)
-		{
-			bool handledMousePress = false;
-			if (g.isMousePressed(bbe::MouseButton::LEFT))
-			{
-				const float handleRadius = 6.f / zoomLevel;
-				const float distToStart = (mouseCanvas - draftStart).getLength();
-				const float distToEnd = (mouseCanvas - draftEnd).getLength();
-				if (distToStart <= handleRadius && distToStart <= distToEnd) draftDragEndpoint = 1;
-				else if (distToEnd <= handleRadius) draftDragEndpoint = 2;
-				else
-				{
-					finalize();
-					return;
-				}
-				handledMousePress = true;
-			}
-			if (!handledMousePress && g.isMousePressed(bbe::MouseButton::RIGHT))
-			{
-				finalize();
-				return;
-			}
-			if (draftDragEndpoint != 0 && g.isMouseDown(bbe::MouseButton::LEFT)) (draftDragEndpoint == 1 ? draftStart : draftEnd) = mouseCanvas;
-			if (draftDragEndpoint != 0 && g.isMouseReleased(bbe::MouseButton::LEFT)) draftDragEndpoint = 0;
-			clearWorkArea();
-			draw(draftStart, draftEnd, getColor(draftUsesRightColor));
-			return;
-		}
-		if (!dragInProgress)
-		{
-			if (g.isMousePressed(bbe::MouseButton::LEFT))
-			{
-				dragInProgress = true;
-				dragUsesRightColor = false;
-				draftStart = mouseCanvas;
-			}
-			else if (g.isMousePressed(bbe::MouseButton::RIGHT))
-			{
-				dragInProgress = true;
-				dragUsesRightColor = true;
-				draftStart = mouseCanvas;
-			}
-		}
-		if (!dragInProgress) return;
-		clearWorkArea();
-		draw(draftStart, mouseCanvas, getColor(dragUsesRightColor));
-		if ((dragUsesRightColor ? g.isMouseReleased(bbe::MouseButton::RIGHT) : g.isMouseReleased(bbe::MouseButton::LEFT)))
-		{
-			draftActive = true;
-			draftUsesRightColor = dragUsesRightColor;
-			draftEnd = mouseCanvas;
-			dragInProgress = false;
-		}
-	}
-
-	bool handleFloatingDraftInteraction(bool draftActive, const bbe::Vector2i &mousePixel, bbe::Game &g);
-
-	void updateSelectionTransformInteraction(const bbe::Vector2i &mousePixel, bbe::Game &g);
+	bool handleFloatingDraftInteraction(bool draftActive, const bbe::Vector2i &mousePixel, PointerButton button);
+	void updateSelectionTransformInteraction(const bbe::Vector2i &mousePixel, bool primaryDown);
 
 	template<typename BuildRect, typename CreatePreview>
 	bool updateShapeDragPreview(const bbe::Vector2i &dragStart, const bbe::Vector2i &mousePixel, bbe::Rectanglei &previewRect, bbe::Image &previewImage, bool shiftDown, BuildRect buildRect, CreatePreview createPreview)
@@ -320,21 +317,8 @@ struct PaintEditor
 		previewImage = {};
 	}
 
-	template<typename BeginDrag, typename UpdatePreview, typename FinalizeDrag>
-	void updateFloatingShapeTool(const bbe::Vector2 &currMousePos, bool draftActive, bool &dragActive, bool dragUsesRightColor, bbe::Game &g, bool shiftDown, BeginDrag beginDrag, UpdatePreview updatePreview, FinalizeDrag finalizeDrag)
-	{
-		const bbe::Vector2i mousePixel = toCanvasPixel(currMousePos);
-		const bool handledMousePress = handleFloatingDraftInteraction(draftActive, mousePixel, g);
-		if (!handledMousePress && !draftActive)
-		{
-			if (g.isMousePressed(bbe::MouseButton::LEFT)) beginDrag(mousePixel, false);
-			else if (g.isMousePressed(bbe::MouseButton::RIGHT)) beginDrag(mousePixel, true);
-		}
-		updateSelectionTransformInteraction(mousePixel, g);
-		if (!dragActive) return;
-		updatePreview(mousePixel);
-		if (dragUsesRightColor ? g.isMouseReleased(bbe::MouseButton::RIGHT) : g.isMouseReleased(bbe::MouseButton::LEFT)) finalizeDrag(mousePixel);
-	}
+	void updateFloatingShapePreview(ShapeDragState &shape, bool isCircle, const bbe::Vector2i &mousePixel);
+	void finalizeFloatingShapeDrag(ShapeDragState &shape, bool isCircle, const bbe::Vector2i &mousePixel);
 
 	void prepareImageForCanvas(bbe::Image &image) const;
 
@@ -450,20 +434,13 @@ struct PaintEditor
 	void refreshBrushBasedDrafts();
 
 	void finalizeLineDraft();
-
 	void finalizeArrowDraft();
-
-	void updateLineTool(bbe::Game &g);
-
-	void updateArrowTool(bbe::Game &g);
 
 	bbe::Colori getBezierColor() const;
 
 	void drawBezierToWorkArea(const bbe::List<bbe::Vector2> &points, const bbe::Colori &color);
 
 	void finalizeBezierDraft();
-
-	void updateBezierTool(bbe::Game &g);
 
 	bbe::Colori getRectangleDraftColor() const;
 
@@ -501,7 +478,6 @@ struct PaintEditor
 
 	void updateCircleDragPreview(const bbe::Vector2i &mousePixel, bool shiftDown);
 
-	void updateCircleTool(const bbe::Vector2 &currMousePos, bbe::Game &g, bool shiftDown);
 
 	void beginSelectionMove(const bbe::Vector2i &mousePixel);
 
@@ -521,7 +497,6 @@ struct PaintEditor
 
 	void applySelectionTransform();
 
-	void updateSelectionTool(const bbe::Vector2 &currMousePos, bbe::Game &g);
 
 	void finalizeRectangleDrag(const bbe::Vector2i &mousePixel, bool shiftDown);
 
@@ -529,7 +504,6 @@ struct PaintEditor
 
 	void updateRectangleDragPreview(const bbe::Vector2i &mousePixel, bool shiftDown);
 
-	void updateRectangleTool(const bbe::Vector2 &currMousePos, bbe::Game &g, bool shiftDown);
 
 	bbe::Rectangle selectionRectToScreen(const bbe::Rectanglei &rect) const;
 
@@ -573,6 +547,10 @@ struct PaintEditor
 	void serializeLayerImage(const bbe::Image &image, bbe::ByteBuffer &buffer) const;
 
 	bool deserializeLayerImage(bbe::ByteBufferSpan &span, int32_t width, int32_t height, bbe::Image &outImage) const;
+
+	// Memory-only layered-document serialization (unit-test friendly).
+	bbe::ByteBuffer serializeLayeredDocumentBytes() const;
+	bool deserializeLayeredDocumentBytes(bbe::ByteBufferSpan span, PaintDocument &outDocument, int32_t &outStoredActiveLayerIndex) const;
 
 	bool saveLayeredDocument(const bbe::String &filePath);
 

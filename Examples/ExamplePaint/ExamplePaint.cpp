@@ -1,4 +1,6 @@
 #include <cmath>
+#include <map>
+#include <string>
 
 #include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 #include "ExamplePaintEditor.h"
@@ -15,6 +17,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	const bool ctrlDown = g.isKeyDown(bbe::Key::LEFT_CONTROL) || g.isKeyDown(bbe::Key::RIGHT_CONTROL);
 	const bool shiftDown = g.isKeyDown(bbe::Key::LEFT_SHIFT) || g.isKeyDown(bbe::Key::RIGHT_SHIFT);
 	const bool drawButtonDown = g.isMouseDown(bbe::MouseButton::LEFT) || g.isMouseDown(bbe::MouseButton::RIGHT);
+	editor.setConstrainSquare(shiftDown);
 	auto discardTransientWorkArea = [&]()
 	{
 		editor.clearWorkArea();
@@ -301,29 +304,31 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		}
 	}
 
-	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_SELECTION)
+	if (!mouseOnNavigator && !editor.canvasResizeActive)
 	{
-		editor.updateSelectionTool(currMousePos, g);
-	}
-	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_RECTANGLE)
-	{
-		editor.updateRectangleTool(currMousePos, g, shiftDown);
-	}
-	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_CIRCLE)
-	{
-		editor.updateCircleTool(currMousePos, g, shiftDown);
-	}
-	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_LINE)
-	{
-		editor.updateLineTool(g);
-	}
-	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_ARROW)
-	{
-		editor.updateArrowTool(g);
-	}
-	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_BEZIER)
-	{
-		editor.updateBezierTool(g);
+		// Pointer events are translated into editor commands.
+		if (g.isMousePressed(bbe::MouseButton::LEFT)) editor.pointerDown(PaintEditor::PointerButton::Primary, currMousePos);
+		if (g.isMousePressed(bbe::MouseButton::RIGHT)) editor.pointerDown(PaintEditor::PointerButton::Secondary, currMousePos);
+		if (g.isMouseReleased(bbe::MouseButton::LEFT)) editor.pointerUp(PaintEditor::PointerButton::Primary, currMousePos);
+		if (g.isMouseReleased(bbe::MouseButton::RIGHT)) editor.pointerUp(PaintEditor::PointerButton::Secondary, currMousePos);
+
+		// Drive previews / drags from the controller (no editor update loop).
+		const bool needsPointerMove =
+			editor.pointerPrimaryDown || editor.pointerSecondaryDown ||
+			editor.selection.dragActive || editor.selection.moveActive || editor.selection.resizeActive || editor.selection.rotationHandleActive ||
+			editor.rectangle.dragActive || editor.circle.dragActive ||
+			editor.line.dragInProgress || editor.line.draftActive ||
+			editor.arrow.dragInProgress || editor.arrow.draftActive ||
+			!editor.bezier.controlPoints.isEmpty();
+		if (needsPointerMove)
+		{
+			editor.pointerMove(currMousePos);
+		}
+
+		if (editor.mode == PaintEditor::MODE_BEZIER && g.isKeyPressed(bbe::Key::BACKSPACE))
+		{
+			editor.bezierBackspace();
+		}
 	}
 	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_TEXT && (g.isMousePressed(bbe::MouseButton::LEFT) || g.isMousePressed(bbe::MouseButton::RIGHT)))
 	{
@@ -462,6 +467,68 @@ public:
 
 	void onStart() override
 	{
+		// Platform integration is configured by the host example, not by the editor core.
+		PaintEditor::PlatformCallbacks callbacks;
+		callbacks.showOpenDialog = [](bbe::String &inOutPath)
+		{
+			return bbe::simpleFile::showOpenDialog(inOutPath);
+		};
+		callbacks.showSaveDialog = [](bbe::String &inOutPath, const bbe::String &defaultExtension)
+		{
+			return bbe::simpleFile::showSaveDialog(inOutPath, defaultExtension);
+		};
+		callbacks.readBinaryFile = [](const bbe::String &path)
+		{
+			return bbe::simpleFile::readBinaryFile(path);
+		};
+		callbacks.writeBinaryFile = [](const bbe::String &path, const bbe::ByteBuffer &buffer)
+		{
+			bbe::simpleFile::writeBinaryToFile(path, buffer);
+			return true;
+		};
+		callbacks.loadImageFile = [](const bbe::String &path)
+		{
+			return bbe::Image(path.getRaw());
+		};
+		callbacks.saveImageFile = [](const bbe::String &path, const bbe::Image &image)
+		{
+			image.writeToFile(path);
+			return true;
+		};
+		callbacks.supportsClipboardImages = []() { return bbe::Image::supportsClipboardImages(); };
+		callbacks.isClipboardImageAvailable = []() { return bbe::Image::isImageInClipbaord(); };
+		callbacks.getClipboardImage = []() { return bbe::Image::getClipboardImage(); };
+		callbacks.setClipboardImage = [](const bbe::Image &image)
+		{
+			image.copyToClipboard();
+			return true;
+		};
+		callbacks.findSystemFonts = [](const bbe::String &purpose)
+		{
+			const bbe::List<bbe::FontFileEntry> fonts = bbe::Font::findUsableSystemFonts(purpose);
+			bbe::List<FontEntry> out;
+			for (size_t i = 0; i < fonts.getLength(); i++)
+			{
+				out.add({ fonts[i].displayName, fonts[i].path });
+			}
+			return out;
+		};
+		callbacks.getFont = []([[maybe_unused]] const bbe::String &path, [[maybe_unused]] int32_t size) -> const bbe::Font *
+		{
+			using FontKey = std::pair<std::string, int32_t>;
+			static std::map<FontKey, bbe::Font> cache;
+
+			const int32_t clampedSize = bbe::Math::max<int32_t>(size, 1);
+			const FontKey key = { std::string(path.getRaw()), clampedSize };
+			auto it = cache.find(key);
+			if (it == cache.end())
+			{
+				it = cache.emplace(key, bbe::Font(path, (unsigned)clampedSize)).first;
+			}
+			return &it->second;
+		};
+		editor.setPlatformCallbacks(std::move(callbacks));
+
 		PaintWindowMetrics w{};
 		w.width = getWindowWidth();
 		w.height = getWindowHeight();
@@ -485,7 +552,7 @@ public:
 
 	void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
-		drawExamplePaintGui(editor, brush, *this);
+		drawExamplePaintGui(editor, brush, getMouse());
 	}
 
 	void onEnd() override

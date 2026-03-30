@@ -3,12 +3,269 @@
 #include <cstddef>
 #include <filesystem>
 
-#include <map>
 #include <string>
 
 bbe::Colori PaintEditor::getColor(bool useRight) const
 {
 	return bbe::Color(useRight ? rightColor : leftColor).asByteColor();
+}
+
+void PaintEditor::pointerDown(PointerButton button, const bbe::Vector2 &canvasPos)
+{
+	hasPointerPos = true;
+	lastPointerCanvasPos = canvasPos;
+
+	if (button == PointerButton::Primary) pointerPrimaryDown = true;
+	if (button == PointerButton::Secondary) pointerSecondaryDown = true;
+
+	const bbe::Vector2i mousePixel = toCanvasPixel(canvasPos);
+
+	switch (mode)
+	{
+	case MODE_SELECTION:
+	{
+		if (button != PointerButton::Primary) break;
+		const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
+		if (hitZone == SelectionHitZone::ROTATION && selection.hasSelection)
+		{
+			beginRotationDrag(mousePixel);
+		}
+		else if (isSelectionResizeHit(hitZone))
+		{
+			beginSelectionResize(hitZone);
+		}
+		else if (hitZone == SelectionHitZone::INSIDE)
+		{
+			beginSelectionMove(mousePixel);
+		}
+		else
+		{
+			if (selection.floating)
+			{
+				commitFloatingSelection();
+			}
+			selection.dragActive = true;
+			selection.dragStart = mousePixel;
+			selection.hasSelection = false;
+			selection.rect = {};
+			selection.previewRect = {};
+		}
+		break;
+	}
+	case MODE_RECTANGLE:
+	case MODE_CIRCLE:
+	{
+		ShapeDragState &shape = (mode == MODE_CIRCLE) ? circle : rectangle;
+		const bool isCircle = (mode == MODE_CIRCLE);
+		const bool handled = handleFloatingDraftInteraction(shape.draftActive, mousePixel, button);
+		if (!handled && !shape.draftActive && (button == PointerButton::Primary || button == PointerButton::Secondary))
+		{
+			shape.dragActive = true;
+			shape.dragUsesRightColor = (button == PointerButton::Secondary);
+			shape.dragStart = mousePixel;
+			shape.dragPreviewRect = {};
+			shape.dragPreviewImage = {};
+			(void)isCircle;
+		}
+		break;
+	}
+	case MODE_LINE:
+		endpointPointerDown(line, false, button, canvasPos);
+		break;
+	case MODE_ARROW:
+		endpointPointerDown(arrow, true, button, canvasPos);
+		break;
+	case MODE_BEZIER:
+	{
+		if (button == PointerButton::Primary)
+		{
+			const float handleRadius = 6.f / zoomLevel;
+			int32_t hitIndex = -1;
+			float bestDist = handleRadius;
+			for (size_t i = 0; i < bezier.controlPoints.getLength(); i++)
+			{
+				const float dist = (canvasPos - bezier.controlPoints[i]).getLength();
+				if (dist < bestDist)
+				{
+					bestDist = dist;
+					hitIndex = (int32_t)i;
+				}
+			}
+			if (hitIndex >= 0)
+			{
+				bezier.dragPointIndex = hitIndex;
+			}
+			else
+			{
+				if (bezier.controlPoints.isEmpty()) bezier.usesRightColor = false;
+				bezier.controlPoints.add(canvasPos);
+			}
+			// Rebuild preview immediately
+			pointerMove(canvasPos);
+		}
+		else if (button == PointerButton::Secondary)
+		{
+			finalizeBezierDraft();
+		}
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+void PaintEditor::pointerMove(const bbe::Vector2 &canvasPos)
+{
+	hasPointerPos = true;
+	lastPointerCanvasPos = canvasPos;
+
+	const bbe::Vector2i mousePixel = toCanvasPixel(canvasPos);
+
+	// Selection transform interactions can be active in multiple modes (selection, rectangle, circle).
+	updateSelectionTransformInteraction(mousePixel, pointerPrimaryDown);
+
+	switch (mode)
+	{
+	case MODE_SELECTION:
+	{
+		if (!pointerPrimaryDown) break;
+		if (selection.rotationHandleActive)
+		{
+			updateRotationDrag(mousePixel);
+		}
+		if (selection.dragActive)
+		{
+			buildSelectionRect(selection.dragStart, mousePixel, selection.previewRect);
+		}
+		if (selection.moveActive)
+		{
+			updateSelectionMovePreview(mousePixel);
+		}
+		if (selection.resizeActive)
+		{
+			updateSelectionResizePreview(mousePixel);
+		}
+		break;
+	}
+	case MODE_RECTANGLE:
+	case MODE_CIRCLE:
+	{
+		ShapeDragState &shape = (mode == MODE_CIRCLE) ? circle : rectangle;
+		const bool isCircle = (mode == MODE_CIRCLE);
+		if (!shape.dragActive) break;
+		updateFloatingShapePreview(shape, isCircle, mousePixel);
+		break;
+	}
+	case MODE_LINE:
+		endpointPointerMove(line, false, canvasPos);
+		break;
+	case MODE_ARROW:
+		endpointPointerMove(arrow, true, canvasPos);
+		break;
+	case MODE_BEZIER:
+	{
+		// Update dragged control point
+		if (bezier.dragPointIndex >= 0 && pointerPrimaryDown)
+		{
+			bezier.controlPoints[(size_t)bezier.dragPointIndex] = canvasPos;
+		}
+
+		// Rebuild workArea preview
+		clearWorkArea();
+		if (bezier.controlPoints.getLength() >= 2)
+		{
+			const float handleRadius = 6.f / zoomLevel;
+			bool nearExisting = false;
+			for (size_t i = 0; i < bezier.controlPoints.getLength(); i++)
+			{
+				if ((canvasPos - bezier.controlPoints[i]).getLength() < handleRadius)
+				{
+					nearExisting = true;
+					break;
+				}
+			}
+			bbe::List<bbe::Vector2> previewPoints = bezier.controlPoints;
+			if (!nearExisting && bezier.dragPointIndex < 0)
+			{
+				previewPoints.add(canvasPos);
+			}
+			drawBezierSymmetry(previewPoints, getBezierColor());
+		}
+		else if (bezier.controlPoints.getLength() == 1)
+		{
+			touchLineSymmetry(bezier.controlPoints[0], canvasPos, getBezierColor(), brushWidth);
+		}
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+void PaintEditor::pointerUp(PointerButton button, const bbe::Vector2 &canvasPos)
+{
+	hasPointerPos = true;
+	lastPointerCanvasPos = canvasPos;
+
+	if (button == PointerButton::Primary) pointerPrimaryDown = false;
+	if (button == PointerButton::Secondary) pointerSecondaryDown = false;
+
+	const bbe::Vector2i mousePixel = toCanvasPixel(canvasPos);
+
+	// Finish selection transforms on primary release.
+	if (button == PointerButton::Primary)
+	{
+		if (selection.rotationHandleActive) selection.rotationHandleActive = false;
+		if (selection.moveActive || selection.resizeActive) applySelectionTransform();
+	}
+
+	switch (mode)
+	{
+	case MODE_SELECTION:
+	{
+		if (button != PointerButton::Primary) break;
+		if (selection.dragActive)
+		{
+			selection.hasSelection = buildSelectionRect(selection.dragStart, mousePixel, selection.rect);
+			selection.dragActive = false;
+			selection.previewRect = {};
+		}
+		break;
+	}
+	case MODE_RECTANGLE:
+	case MODE_CIRCLE:
+	{
+		ShapeDragState &shape = (mode == MODE_CIRCLE) ? circle : rectangle;
+		const bool isCircle = (mode == MODE_CIRCLE);
+		if (!shape.dragActive) break;
+		const bool releaseMatches = (shape.dragUsesRightColor && button == PointerButton::Secondary) || (!shape.dragUsesRightColor && button == PointerButton::Primary);
+		if (releaseMatches)
+		{
+			finalizeFloatingShapeDrag(shape, isCircle, mousePixel);
+		}
+		break;
+	}
+	case MODE_LINE:
+		endpointPointerUp(line, button, canvasPos);
+		break;
+	case MODE_ARROW:
+		endpointPointerUp(arrow, button, canvasPos);
+		break;
+	case MODE_BEZIER:
+		if (button == PointerButton::Primary) bezier.dragPointIndex = -1;
+		break;
+	default:
+		break;
+	}
+}
+
+void PaintEditor::bezierBackspace()
+{
+	if (bezier.controlPoints.isEmpty()) return;
+	bezier.controlPoints.popBack();
+	bezier.dragPointIndex = -1;
+	if (hasPointerPos) pointerMove(lastPointerCanvasPos);
+	else redrawBezierDraft();
 }
 
 void PaintEditor::finalizeEndpointDraft(bool &draftActive, int32_t &draftDragEndpoint)
@@ -19,10 +276,94 @@ void PaintEditor::finalizeEndpointDraft(bool &draftActive, int32_t &draftDragEnd
 	draftDragEndpoint = 0;
 }
 
-bool PaintEditor::handleFloatingDraftInteraction(bool draftActive, const bbe::Vector2i &mousePixel, bbe::Game &g)
+void PaintEditor::redrawEndpointDraft(EndpointDraftState &state, bool isArrow)
+{
+	if (!state.draftActive) return;
+	clearWorkArea();
+	if (isArrow) drawArrowSymmetry(state.start, state.end, getColor(state.draftUsesRightColor));
+	else touchLineSymmetry(state.end, state.start, getColor(state.draftUsesRightColor), brushWidth);
+}
+
+void PaintEditor::endpointPointerDown(EndpointDraftState &state, bool isArrow, PointerButton button, const bbe::Vector2 &mouseCanvas)
+{
+	// Adjust active draft by dragging endpoints or commit/cancel.
+	if (state.draftActive)
+	{
+		if (button == PointerButton::Primary)
+		{
+			const float handleRadius = 6.f / zoomLevel;
+			const float distToStart = (mouseCanvas - state.start).getLength();
+			const float distToEnd = (mouseCanvas - state.end).getLength();
+			if (distToStart <= handleRadius && distToStart <= distToEnd) state.dragEndpoint = 1;
+			else if (distToEnd <= handleRadius) state.dragEndpoint = 2;
+			else
+			{
+				if (isArrow) finalizeArrowDraft();
+				else finalizeLineDraft();
+				return;
+			}
+			redrawEndpointDraft(state, isArrow);
+			return;
+		}
+		if (button == PointerButton::Secondary)
+		{
+			if (isArrow) finalizeArrowDraft();
+			else finalizeLineDraft();
+			return;
+		}
+		return;
+	}
+
+	// Begin new drag.
+	if (!state.dragInProgress && (button == PointerButton::Primary || button == PointerButton::Secondary))
+	{
+		state.dragInProgress = true;
+		state.dragUsesRightColor = (button == PointerButton::Secondary);
+		state.start = mouseCanvas;
+		clearWorkArea();
+	}
+}
+
+void PaintEditor::endpointPointerMove(EndpointDraftState &state, bool isArrow, const bbe::Vector2 &mouseCanvas)
+{
+	if (state.draftActive)
+	{
+		if (state.dragEndpoint != 0 && pointerPrimaryDown)
+		{
+			(state.dragEndpoint == 1 ? state.start : state.end) = mouseCanvas;
+		}
+		redrawEndpointDraft(state, isArrow);
+		return;
+	}
+	if (!state.dragInProgress) return;
+
+	clearWorkArea();
+	if (isArrow) drawArrowSymmetry(state.start, mouseCanvas, getColor(state.dragUsesRightColor));
+	else touchLineSymmetry(mouseCanvas, state.start, getColor(state.dragUsesRightColor), brushWidth);
+}
+
+void PaintEditor::endpointPointerUp(EndpointDraftState &state, PointerButton button, const bbe::Vector2 &mouseCanvas)
+{
+	if (state.draftActive)
+	{
+		if (button == PointerButton::Primary) state.dragEndpoint = 0;
+		return;
+	}
+	if (!state.dragInProgress) return;
+
+	const bool releaseMatches = (state.dragUsesRightColor && button == PointerButton::Secondary) || (!state.dragUsesRightColor && button == PointerButton::Primary);
+	if (!releaseMatches) return;
+
+	state.draftActive = true;
+	state.draftUsesRightColor = state.dragUsesRightColor;
+	state.end = mouseCanvas;
+	state.dragInProgress = false;
+}
+
+bool PaintEditor::handleFloatingDraftInteraction(bool draftActive, const bbe::Vector2i &mousePixel, PointerButton button)
 {
 	if (!draftActive) return false;
-	if (g.isMousePressed(bbe::MouseButton::LEFT))
+	if (button == PointerButton::Primary)
 	{
 		const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
 		if (hitZone == SelectionHitZone::ROTATION) beginRotationDrag(mousePixel);
@@ -35,26 +376,32 @@ bool PaintEditor::handleFloatingDraftInteraction(bool draftActive, const bbe::Ve
 		}
 		return true;
 	}
-	if (!g.isMousePressed(bbe::MouseButton::RIGHT)) return false;
-	commitFloatingSelection();
-	clearSelectionState();
-	return true;
+	if (button == PointerButton::Secondary)
+	{
+		commitFloatingSelection();
+		clearSelectionState();
+		return true;
+	}
+	return false;
 }
 
-void PaintEditor::updateSelectionTransformInteraction(const bbe::Vector2i &mousePixel, bbe::Game &g)
+void PaintEditor::updateSelectionTransformInteraction(const bbe::Vector2i &mousePixel, bool primaryDown)
 {
-	if (selection.rotationHandleActive && g.isMouseDown(bbe::MouseButton::LEFT)) updateRotationDrag(mousePixel);
-	if (selection.moveActive && g.isMouseDown(bbe::MouseButton::LEFT)) updateSelectionMovePreview(mousePixel);
-	if (selection.resizeActive && g.isMouseDown(bbe::MouseButton::LEFT)) updateSelectionResizePreview(mousePixel);
-	if (selection.rotationHandleActive && g.isMouseReleased(bbe::MouseButton::LEFT)) selection.rotationHandleActive = false;
-	if ((selection.moveActive || selection.resizeActive) && g.isMouseReleased(bbe::MouseButton::LEFT)) applySelectionTransform();
+	if (selection.rotationHandleActive && primaryDown) updateRotationDrag(mousePixel);
+	if (selection.moveActive && primaryDown) updateSelectionMovePreview(mousePixel);
+	if (selection.resizeActive && primaryDown) updateSelectionResizePreview(mousePixel);
 }
 
 void PaintEditor::prepareImageForCanvas(bbe::Image &image) const
 {
 	if (image.getWidth() <= 0 || image.getHeight() <= 0) return;
 	image.keepAfterUpload();
-	image.setFilterMode(bbe::ImageFilterMode::NEAREST);
+	// Preview images may already be uploaded when drawn via PrimitiveBrush2D; setFilterMode
+	// is illegal after upload (bbe::Error::AlreadyUploaded).
+	if (!image.isLoadedGpu())
+	{
+		image.setFilterMode(bbe::ImageFilterMode::NEAREST);
+	}
 }
 
 void PaintEditor::clearSelectionState()
@@ -216,7 +563,8 @@ void PaintEditor::importFileAsLayers(const bbe::List<bbe::String> &paths)
 		if (isLayeredDocumentPath(path))
 		{
 			// Import every layer from the .bbepaint file
-			bbe::ByteBuffer buffer = bbe::simpleFile::readBinaryFile(path);
+			bbe::ByteBuffer buffer;
+			if (platform.readBinaryFile) buffer = platform.readBinaryFile(path);
 			if (buffer.getLength() == 0) continue;
 			bbe::ByteBufferSpan span = buffer.getSpan();
 			const bbe::String magic = span.readNullString();
@@ -252,7 +600,8 @@ void PaintEditor::importFileAsLayers(const bbe::List<bbe::String> &paths)
 		else
 		{
 			// Import single PNG as a new layer
-			bbe::Image img(path.getRaw());
+			bbe::Image img;
+			if (platform.loadImageFile) img = platform.loadImageFile(path);
 			if (img.getWidth() <= 0 || img.getHeight() <= 0) continue;
 			prepareImageForCanvas(img);
 			bbe::String name = std::filesystem::path(path.getRaw()).stem().string().c_str();
@@ -428,9 +777,9 @@ void PaintEditor::storeSelectionInClipboard()
 	if (!selection.hasSelection) return;
 	selection.clipboard = selection.floating ? selection.floatingImage : copyCanvasRect(selection.rect);
 	prepareImageForCanvas(selection.clipboard);
-	if (bbe::Image::supportsClipboardImages())
+	if (platform.supportsClipboardImages && platform.setClipboardImage && platform.supportsClipboardImages())
 	{
-		selection.clipboard.copyToClipboard();
+		platform.setClipboardImage(selection.clipboard);
 	}
 }
 
@@ -461,9 +810,10 @@ void PaintEditor::cutSelection()
 
 bool PaintEditor::getPasteImage(bbe::Image &image)
 {
-	if (bbe::Image::supportsClipboardImages() && bbe::Image::isImageInClipbaord())
+	if (platform.supportsClipboardImages && platform.isClipboardImageAvailable && platform.getClipboardImage &&
+		platform.supportsClipboardImages() && platform.isClipboardImageAvailable())
 	{
-		image = bbe::Image::getClipboardImage();
+		image = platform.getClipboardImage();
 		prepareImageForCanvas(image);
 		return image.getWidth() > 0 && image.getHeight() > 0;
 	}
@@ -674,20 +1024,6 @@ void PaintEditor::finalizeArrowDraft()
 	finalizeEndpointDraft(arrow.draftActive, arrow.dragEndpoint);
 }
 
-void PaintEditor::updateLineTool(bbe::Game &g)
-{
-	updateEndpointDraftTool(g, line.draftActive, line.draftUsesRightColor, line.start, line.end, line.dragEndpoint, line.dragInProgress, line.dragUsesRightColor, [&](const bbe::Vector2 &start, const bbe::Vector2 &end, const bbe::Colori &color)
-							{ touchLineSymmetry(end, start, color, brushWidth); }, [&]()
-							{ finalizeLineDraft(); });
-}
-
-void PaintEditor::updateArrowTool(bbe::Game &g)
-{
-	updateEndpointDraftTool(g, arrow.draftActive, arrow.draftUsesRightColor, arrow.start, arrow.end, arrow.dragEndpoint, arrow.dragInProgress, arrow.dragUsesRightColor, [&](const bbe::Vector2 &start, const bbe::Vector2 &end, const bbe::Colori &color)
-							{ drawArrowSymmetry(start, end, color); }, [&]()
-							{ finalizeArrowDraft(); });
-}
-
 bbe::Colori PaintEditor::getBezierColor() const { return getColor(bezier.usesRightColor); }
 
 void PaintEditor::drawBezierToWorkArea(const bbe::List<bbe::Vector2> &points, const bbe::Colori &color)
@@ -710,95 +1046,6 @@ void PaintEditor::finalizeBezierDraft()
 	}
 	bezier.controlPoints.clear();
 	bezier.dragPointIndex = -1;
-}
-
-void PaintEditor::updateBezierTool(bbe::Game &g)
-{
-	const bbe::Vector2 mouseCanvas = screenToCanvas(g.getMouse());
-	const float handleRadius = 6.f / zoomLevel;
-
-	// Update dragged control point
-	if (bezier.dragPointIndex >= 0)
-	{
-		if (g.isMouseDown(bbe::MouseButton::LEFT))
-		{
-			bezier.controlPoints[(size_t)bezier.dragPointIndex] = mouseCanvas;
-		}
-		if (g.isMouseReleased(bbe::MouseButton::LEFT))
-		{
-			bezier.dragPointIndex = -1;
-		}
-	}
-
-	if (bezier.dragPointIndex < 0)
-	{
-		if (g.isMousePressed(bbe::MouseButton::LEFT))
-		{
-			// Check if clicking near an existing control point to drag it
-			int32_t hitIndex = -1;
-			float bestDist = handleRadius;
-			for (size_t i = 0; i < bezier.controlPoints.getLength(); i++)
-			{
-				const float dist = (mouseCanvas - bezier.controlPoints[i]).getLength();
-				if (dist < bestDist)
-				{
-					bestDist = dist;
-					hitIndex = (int32_t)i;
-				}
-			}
-
-			if (hitIndex >= 0)
-			{
-				bezier.dragPointIndex = hitIndex;
-			}
-			else
-			{
-				// Add new control point
-				if (bezier.controlPoints.isEmpty()) bezier.usesRightColor = false;
-				bezier.controlPoints.add(mouseCanvas);
-			}
-		}
-
-		if (g.isMousePressed(bbe::MouseButton::RIGHT))
-		{
-			finalizeBezierDraft();
-			return;
-		}
-
-		// Backspace removes the last placed control point
-		if (g.isKeyPressed(bbe::Key::BACKSPACE) && !bezier.controlPoints.isEmpty())
-		{
-			bezier.controlPoints.popBack();
-		}
-	}
-
-	// Rebuild workArea preview each frame
-	clearWorkArea();
-	if (bezier.controlPoints.getLength() >= 2)
-	{
-		// Show a ghost preview with the cursor as a potential next point
-		bool nearExisting = false;
-		for (size_t i = 0; i < bezier.controlPoints.getLength(); i++)
-		{
-			if ((mouseCanvas - bezier.controlPoints[i]).getLength() < handleRadius)
-			{
-				nearExisting = true;
-				break;
-			}
-		}
-
-		bbe::List<bbe::Vector2> previewPoints = bezier.controlPoints;
-		if (!nearExisting && bezier.dragPointIndex < 0)
-		{
-			previewPoints.add(mouseCanvas);
-		}
-		drawBezierSymmetry(previewPoints, getBezierColor());
-	}
-	else if (bezier.controlPoints.getLength() == 1)
-	{
-		// Before we have 2 points, just draw a line preview to cursor
-		touchLineSymmetry(bezier.controlPoints[0], mouseCanvas, getBezierColor(), brushWidth);
-	}
 }
 
 bbe::Colori PaintEditor::getRectangleDraftColor() const { return getColor(rectangle.draftUsesRightColor); }
@@ -908,14 +1155,6 @@ void PaintEditor::updateCircleDragPreview(const bbe::Vector2i &mousePixel, bool 
 						   { return createCircleDragPreviewImage(width, height); });
 }
 
-void PaintEditor::updateCircleTool(const bbe::Vector2 &currMousePos, bbe::Game &g, bool shiftDown)
-{
-	updateFloatingShapeTool(currMousePos, circle.draftActive, circle.dragActive, circle.dragUsesRightColor, g, shiftDown, [&](const bbe::Vector2i &mousePixel, bool useRightColor)
-							{ beginCircleDrag(mousePixel, useRightColor); }, [&](const bbe::Vector2i &mousePixel)
-							{ updateCircleDragPreview(mousePixel, shiftDown); }, [&](const bbe::Vector2i &mousePixel)
-							{ finalizeCircleDrag(mousePixel, shiftDown); });
-}
-
 void PaintEditor::beginSelectionMove(const bbe::Vector2i &mousePixel)
 {
 	selection.moveActive = true;
@@ -923,6 +1162,8 @@ void PaintEditor::beginSelectionMove(const bbe::Vector2i &mousePixel)
 	selection.interactionStartRect = selection.rect;
 	selection.previewRect = selection.rect;
 	selection.previewImage = selection.floating ? selection.floatingImage : copyCanvasRect(selection.rect);
+	// Must retain CPU pixels after GPU draw (see OpenGLImage ctor); blendOver needs isLoadedCpu().
+	prepareImageForCanvas(selection.previewImage);
 }
 
 void PaintEditor::beginRotationDrag(const bbe::Vector2i &mousePixel)
@@ -1076,6 +1317,7 @@ void PaintEditor::applySelectionTransform()
 		{
 			selection.rect = selection.previewRect;
 			selection.floatingImage = buildSelectionPreviewResultImage();
+			prepareImageForCanvas(selection.floatingImage);
 		}
 		clearSelectionInteractionState();
 		return;
@@ -1087,6 +1329,7 @@ void PaintEditor::applySelectionTransform()
 		selection.rect = selection.previewRect;
 		selection.floating = true;
 		selection.floatingImage = buildSelectionPreviewResultImage();
+		prepareImageForCanvas(selection.floatingImage);
 		rectangle.draftActive = false;
 		rectangle.draftUsesRightColor = false;
 		circle.draftActive = false;
@@ -1097,76 +1340,6 @@ void PaintEditor::applySelectionTransform()
 	clearSelectionInteractionState();
 }
 
-void PaintEditor::updateSelectionTool(const bbe::Vector2 &currMousePos, bbe::Game &g)
-{
-	const bbe::Vector2i mousePixel = toCanvasPixel(currMousePos);
-
-	if (g.isMousePressed(bbe::MouseButton::LEFT))
-	{
-		const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
-		if (hitZone == SelectionHitZone::ROTATION && selection.hasSelection)
-		{
-			beginRotationDrag(mousePixel);
-		}
-		else if (isSelectionResizeHit(hitZone))
-		{
-			beginSelectionResize(hitZone);
-		}
-		else if (hitZone == SelectionHitZone::INSIDE)
-		{
-			beginSelectionMove(mousePixel);
-		}
-		else
-		{
-			if (selection.floating)
-			{
-				commitFloatingSelection();
-			}
-			selection.dragActive = true;
-			selection.dragStart = mousePixel;
-			selection.hasSelection = false;
-			selection.rect = {};
-			selection.previewRect = {};
-		}
-	}
-
-	if (g.isMouseDown(bbe::MouseButton::LEFT))
-	{
-		if (selection.rotationHandleActive)
-		{
-			updateRotationDrag(mousePixel);
-		}
-		if (selection.dragActive)
-		{
-			buildSelectionRect(selection.dragStart, mousePixel, selection.previewRect);
-		}
-		if (selection.moveActive)
-		{
-			updateSelectionMovePreview(mousePixel);
-		}
-		if (selection.resizeActive)
-		{
-			updateSelectionResizePreview(mousePixel);
-		}
-	}
-
-	if (g.isMouseReleased(bbe::MouseButton::LEFT))
-	{
-		selection.rotationHandleActive = false;
-
-		if (selection.dragActive)
-		{
-			selection.hasSelection = buildSelectionRect(selection.dragStart, mousePixel, selection.rect);
-			selection.dragActive = false;
-			selection.previewRect = {};
-		}
-
-		if (selection.moveActive || selection.resizeActive)
-		{
-			applySelectionTransform();
-		}
-	}
-}
 
 void PaintEditor::finalizeRectangleDrag(const bbe::Vector2i &mousePixel, bool shiftDown)
 {
@@ -1191,12 +1364,22 @@ void PaintEditor::updateRectangleDragPreview(const bbe::Vector2i &mousePixel, bo
 						   { return createRectangleDragPreviewImage(width, height); });
 }
 
-void PaintEditor::updateRectangleTool(const bbe::Vector2 &currMousePos, bbe::Game &g, bool shiftDown)
+void PaintEditor::updateFloatingShapePreview(ShapeDragState &shape, bool isCircle, const bbe::Vector2i &mousePixel)
 {
-	updateFloatingShapeTool(currMousePos, rectangle.draftActive, rectangle.dragActive, rectangle.dragUsesRightColor, g, shiftDown, [&](const bbe::Vector2i &mousePixel, bool useRightColor)
-							{ beginRectangleDrag(mousePixel, useRightColor); }, [&](const bbe::Vector2i &mousePixel)
-							{ updateRectangleDragPreview(mousePixel, shiftDown); }, [&](const bbe::Vector2i &mousePixel)
-							{ finalizeRectangleDrag(mousePixel, shiftDown); });
+	const bool shiftDown = constrainSquareEnabled;
+	if (isCircle)
+		updateCircleDragPreview(mousePixel, shiftDown);
+	else
+		updateRectangleDragPreview(mousePixel, shiftDown);
+}
+
+void PaintEditor::finalizeFloatingShapeDrag(ShapeDragState &shape, bool isCircle, const bbe::Vector2i &mousePixel)
+{
+	const bool shiftDown = constrainSquareEnabled;
+	if (isCircle)
+		finalizeCircleDrag(mousePixel, shiftDown);
+	else
+		finalizeRectangleDrag(mousePixel, shiftDown);
 }
 
 bbe::Rectangle PaintEditor::selectionRectToScreen(const bbe::Rectanglei &rect) const
@@ -1337,11 +1520,8 @@ void PaintEditor::clampTextFontIndex()
 void PaintEditor::buildAvailableFontList()
 {
 	availableFonts.clear();
-	const bbe::List<bbe::FontFileEntry> fonts = bbe::Font::findUsableSystemFonts("Text");
-	for (size_t i = 0; i < fonts.getLength(); i++)
-	{
-		availableFonts.add({ fonts[i].displayName, fonts[i].path });
-	}
+	if (!platform.findSystemFonts) return;
+	availableFonts = platform.findSystemFonts("Text");
 }
 
 const bbe::Image &PaintEditor::getTextGlyphImage(const bbe::Font &font, int32_t codePoint) const
@@ -1453,10 +1633,8 @@ bool PaintEditor::deserializeLayerImage(bbe::ByteBufferSpan &span, int32_t width
 	return true;
 }
 
-bool PaintEditor::saveLayeredDocument(const bbe::String &filePath)
+bbe::ByteBuffer PaintEditor::serializeLayeredDocumentBytes() const
 {
-	commitFloatingSelection();
-
 	bbe::ByteBuffer buffer;
 	buffer.writeNullString(LAYERED_FILE_MAGIC);
 
@@ -1471,25 +1649,22 @@ bool PaintEditor::saveLayeredDocument(const bbe::String &filePath)
 
 	for (size_t i = 0; i < canvas.get().layers.getLength(); i++)
 	{
-		PaintLayer &layer = canvas.get().layers[i];
-		buffer.write(layer.visible);
-		buffer.write(layer.name);
-		buffer.write(layer.opacity);
+		const PaintLayer &layer = canvas.get().layers[i];
+		bool visible = layer.visible;
+		bbe::String name = layer.name;
+		float opacity = layer.opacity;
 		uint8_t blendModeRaw = (uint8_t)layer.blendMode;
+		buffer.write(visible);
+		buffer.write(name);
+		buffer.write(opacity);
 		buffer.write(blendModeRaw);
 		serializeLayerImage(layer.image, buffer);
 	}
-
-	bbe::simpleFile::writeBinaryToFile(filePath, buffer);
-	return true;
+	return buffer;
 }
 
-bool PaintEditor::loadLayeredDocument(const bbe::String &filePath)
+bool PaintEditor::deserializeLayeredDocumentBytes(bbe::ByteBufferSpan span, PaintDocument &outDocument, int32_t &outStoredActiveLayerIndex) const
 {
-	bbe::ByteBuffer buffer = bbe::simpleFile::readBinaryFile(filePath);
-	if (buffer.getLength() == 0) return false;
-
-	bbe::ByteBufferSpan span = buffer.getSpan();
 	const bbe::String magic = span.readNullString();
 	const bool isV2 = (magic == LAYERED_FILE_MAGIC);
 	const bool isV1 = (magic == LAYERED_FILE_MAGIC_V1);
@@ -1525,6 +1700,31 @@ bool PaintEditor::loadLayeredDocument(const bbe::String &filePath)
 		document.layers.add(std::move(layer));
 	}
 
+	outDocument = std::move(document);
+	outStoredActiveLayerIndex = storedActiveLayerIndex;
+	return true;
+}
+
+bool PaintEditor::saveLayeredDocument(const bbe::String &filePath)
+{
+	commitFloatingSelection();
+
+	const bbe::ByteBuffer buffer = serializeLayeredDocumentBytes();
+	if (platform.writeBinaryFile) return platform.writeBinaryFile(filePath, buffer);
+	return false;
+}
+
+bool PaintEditor::loadLayeredDocument(const bbe::String &filePath)
+{
+	bbe::ByteBuffer buffer;
+	if (platform.readBinaryFile) buffer = platform.readBinaryFile(filePath);
+	if (buffer.getLength() == 0) return false;
+
+	bbe::ByteBufferSpan span = buffer.getSpan();
+	PaintDocument document;
+	int32_t storedActiveLayerIndex = 0;
+	if (!deserializeLayeredDocumentBytes(span, document, storedActiveLayerIndex)) return false;
+
 	canvas.get() = std::move(document);
 	activeLayerIndex = storedActiveLayerIndex;
 	this->path = filePath;
@@ -1536,8 +1736,8 @@ bool PaintEditor::loadLayeredDocument(const bbe::String &filePath)
 bool PaintEditor::saveFlattenedPng(const bbe::String &filePath)
 {
 	commitFloatingSelection();
-	flattenVisibleLayers().writeToFile(filePath);
-	return true;
+	if (!platform.saveImageFile) return false;
+	return platform.saveImageFile(filePath, flattenVisibleLayers());
 }
 
 bool PaintEditor::saveDocumentToPath(const bbe::String &filePath)
@@ -1555,7 +1755,7 @@ void PaintEditor::saveDocumentAs(SaveFormat format)
 {
 	bbe::String newPath = path;
 	const bbe::String defaultExtension = format == SaveFormat::PNG ? "png" : "bbepaint";
-	if (bbe::simpleFile::showSaveDialog(newPath, defaultExtension))
+	if (platform.showSaveDialog && platform.showSaveDialog(newPath, defaultExtension))
 	{
 		path = newPath;
 		saveDocumentToPath(path);
@@ -1642,7 +1842,9 @@ bool PaintEditor::newCanvas(const char *path)
 	}
 
 	canvas.get().layers.clear();
-	canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, bbe::Image(path) });
+	bbe::Image img;
+	if (platform.loadImageFile) img = platform.loadImageFile(path);
+	canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, std::move(img) });
 	activeLayerIndex = 0;
 	this->path = path;
 	setupCanvas();
@@ -1792,17 +1994,19 @@ void PaintEditor::onFilesDropped(const bbe::List<bbe::String> &paths)
 
 const bbe::Font &PaintEditor::getTextToolFont() const
 {
-	using FontKey = std::pair<std::string, int32_t>;
-	static std::map<FontKey, bbe::Font> textFonts;
 	const int32_t clampedSize = bbe::Math::max<int32_t>(textFontSize, 1);
 	const bbe::String &fontPath = (textFontIndex >= 0 && textFontIndex < (int32_t)availableFonts.getLength())
 									  ? availableFonts[(size_t)textFontIndex].path
 									  : bbe::String("OpenSansRegular.ttf");
-	const FontKey key = { std::string(fontPath.getRaw()), clampedSize };
-	auto it = textFonts.find(key);
-	if (it == textFonts.end())
+	if (platform.getFont)
 	{
-		it = textFonts.emplace(key, bbe::Font(fontPath, (unsigned)clampedSize)).first;
+		if (const bbe::Font *font = platform.getFont(fontPath, clampedSize))
+		{
+			return *font;
+		}
 	}
-	return it->second;
+
+	// Fallback (should not be used in the ExamplePaint app; it installs a platform font provider).
+	static bbe::Font fallback("OpenSansRegular.ttf", (unsigned)20);
+	return fallback;
 }

@@ -81,11 +81,11 @@ void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, co
 	}
 }
 
-void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, bbe::Game &game)
+void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, const bbe::Vector2 &mouseScreenPos)
 {
-		const float PANEL_WIDTH = 260.f * bbe::Math::sqrt(game.getWindow()->getScale());
+		const float PANEL_WIDTH = 260.f * bbe::Math::sqrt(editor.viewport.scale);
 		ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetFrameHeight()), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(PANEL_WIDTH, (float)game.getWindowHeight() - ImGui::GetFrameHeight()), ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(PANEL_WIDTH, (float)editor.viewport.height - ImGui::GetFrameHeight()), ImGuiCond_Always);
 		ImGui::Begin("##panel", nullptr,
 			ImGuiWindowFlags_NoTitleBar |
 			ImGuiWindowFlags_NoResize |
@@ -282,19 +282,20 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, bbe:
 		}
 
 		// --- Clipboard ---
-		const bool supportsClipboardImages = bbe::Image::supportsClipboardImages();
+		const bool supportsClipboardImages = editor.platform.supportsClipboardImages && editor.platform.supportsClipboardImages();
+		const bool clipboardHasImage = editor.platform.isClipboardImageAvailable && editor.platform.isClipboardImageAvailable();
 		ImGui::SeparatorText("Clipboard");
-		ImGui::BeginDisabled(!supportsClipboardImages);
+		ImGui::BeginDisabled(!supportsClipboardImages || !editor.platform.setClipboardImage);
 		if (ImGui::Button("Copy Canvas to Clipboard", ImVec2(-1, 0)))
 		{
-			editor.flattenVisibleLayers().copyToClipboard();
+			editor.platform.setClipboardImage(editor.flattenVisibleLayers());
 		}
 		ImGui::EndDisabled();
-		ImGui::BeginDisabled(!supportsClipboardImages || !bbe::Image::isImageInClipbaord());
+		ImGui::BeginDisabled(!supportsClipboardImages || !clipboardHasImage || !editor.platform.getClipboardImage);
 		if (ImGui::Button("Paste as New Canvas", ImVec2(-1, 0)))
 		{
 			editor.canvas.get().layers.clear();
-			editor.canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, bbe::Image::getClipboardImage() });
+			editor.canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, editor.platform.getClipboardImage() });
 			editor.path = "";
 			editor.submitCanvas();
 			editor.setupCanvas(false);
@@ -418,13 +419,13 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, bbe:
 		{
 			bbe::Vector2 zeroPos = editor.screenToCanvas({ 0, 0 });
 			brush.setColorRGB(0.5f, 0.5f, 0.5f, 0.5f);
-			for (float i = -(zeroPos.x - (int)zeroPos.x) * editor.zoomLevel; i < (float)game.getWindowWidth(); i += editor.zoomLevel)
+			for (float i = -(zeroPos.x - (int)zeroPos.x) * editor.zoomLevel; i < (float)editor.viewport.width; i += editor.zoomLevel)
 			{
-				brush.fillLine(i, 0, i, (float)game.getWindowHeight());
+				brush.fillLine(i, 0, i, (float)editor.viewport.height);
 			}
-			for (float i = -(zeroPos.y - (int)zeroPos.y) * editor.zoomLevel; i < (float)game.getWindowHeight(); i += editor.zoomLevel)
+			for (float i = -(zeroPos.y - (int)zeroPos.y) * editor.zoomLevel; i < (float)editor.viewport.height; i += editor.zoomLevel)
 			{
-				brush.fillLine(0, i, (float)game.getWindowWidth(), i);
+				brush.fillLine(0, i, (float)editor.viewport.width, i);
 			}
 		}
 		// Canvas resize handles
@@ -541,7 +542,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, bbe:
 		}
 		if (editor.mode == PaintEditor::MODE_TEXT)
 		{
-			bbe::Vector2 previewPos = editor.screenToCanvas(game.getMouse());
+			bbe::Vector2 previewPos = editor.screenToCanvas(mouseScreenPos);
 			if (editor.toTiledPos(previewPos))
 			{
 				drawTextPreviewForGui(brush, editor, editor.toCanvasPixel(previewPos));
@@ -662,7 +663,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, bbe:
 			const float scaleX = navW / editor.getCanvasWidth();
 			const float scaleY = navH / editor.getCanvasHeight();
 			const bbe::Vector2 tlCanvas = editor.screenToCanvas({ 0.f, 0.f });
-			const bbe::Vector2 brCanvas = editor.screenToCanvas({ (float)game.getWindowWidth(), (float)game.getWindowHeight() });
+			const bbe::Vector2 brCanvas = editor.screenToCanvas({ (float)editor.viewport.width, (float)editor.viewport.height });
 			const float vx1 = bbe::Math::clamp(navX + tlCanvas.x * scaleX, navX, navX + navW);
 			const float vy1 = bbe::Math::clamp(navY + tlCanvas.y * scaleY, navY, navY + navH);
 			const float vx2 = bbe::Math::clamp(navX + brCanvas.x * scaleX, navX, navX + navW);
@@ -685,7 +686,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, bbe:
 				if (ImGui::MenuItem("Open..."))
 				{
 					bbe::String newPath = editor.path;
-					if (bbe::simpleFile::showOpenDialog(newPath))
+					if (editor.platform.showOpenDialog && editor.platform.showOpenDialog(newPath))
 					{
 						editor.newCanvas(newPath.getRaw());
 					}
