@@ -193,7 +193,8 @@ namespace bbe
 		static Image strokedEllipse(int32_t width, int32_t height, const bbe::Colori &color, int32_t strokeWidth, float rotation = 0.f, bool antiAlias = true);
 
 		// Renders text into a standalone RGBA image (straight-alpha coverage for bilinear-safe rotation).
-		static Image renderTextToImage(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color);
+		// antiAlias=false thresholds stb_truetype grayscale to binary edges (matches other CPU AA-off paths).
+		static Image renderTextToImage(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color, bool antiAlias = true);
 
 		// Draws an arrow into this image (CPU). strokeRadius matches drawLineCapsule brushRadius.
 		void drawArrow(const bbe::Vector2 &from,
@@ -217,7 +218,7 @@ namespace bbe
 		                int32_t minSamples = 200);
 
 		// CPU text: blends font glyphs onto this image (R8 coverage → alpha-over). Optionally tiled.
-		void blendText(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color, bool tiled = false);
+		void blendText(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color, bool tiled = false, bool antiAlias = true);
 
 		void writeToFile(const bbe::String &path) const;
 		void writeToFile(const char *path) const;

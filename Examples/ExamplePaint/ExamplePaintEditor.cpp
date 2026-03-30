@@ -1547,7 +1547,7 @@ bbe::Image PaintEditor::renderTextToImage(const bbe::Vector2i &topLeft, const bb
 {
 	const bbe::String text = getTextBufferString();
 	const bbe::Font &font = getTextToolFont();
-	return bbe::Image::renderTextToImage(font, text, topLeft, color);
+	return bbe::Image::renderTextToImage(font, text, topLeft, color, antiAliasingEnabled);
 }
 
 bool PaintEditor::drawTextAt(const bbe::Vector2i &topLeft, const bbe::Colori &color)
@@ -1555,7 +1555,7 @@ bool PaintEditor::drawTextAt(const bbe::Vector2i &topLeft, const bbe::Colori &co
 	const bbe::String text = getTextBufferString();
 	if (text.isEmpty()) return false;
 	const bbe::Font &font = getTextToolFont();
-	getActiveLayerImage().blendText(font, text, topLeft, color, tiled);
+	getActiveLayerImage().blendText(font, text, topLeft, color, tiled, antiAliasingEnabled);
 	return true;
 }
 

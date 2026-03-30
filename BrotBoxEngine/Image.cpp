@@ -951,7 +951,7 @@ bbe::Image bbe::Image::strokedEllipse(int32_t width, int32_t height, const bbe::
 	return image;
 }
 
-bbe::Image bbe::Image::renderTextToImage(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color)
+bbe::Image bbe::Image::renderTextToImage(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color, bool antiAlias)
 {
 	bbe::Vector2 origin;
 	bbe::Rectangle bounds;
@@ -987,7 +987,12 @@ bbe::Image bbe::Image::renderTextToImage(const Font &font, const bbe::String &te
 				const bbe::Colori glyphColor = glyph.getPixel((size_t)x, (size_t)y);
 				if (glyphColor.r == 0) continue;
 
-				const bbe::byte coverage = static_cast<bbe::byte>((uint32_t(color.a) * uint32_t(glyphColor.r)) / 255u);
+				bbe::byte coverage = static_cast<bbe::byte>((uint32_t(color.a) * uint32_t(glyphColor.r)) / 255u);
+				if (!antiAlias)
+				{
+					if (coverage <= 127) continue;
+					coverage = color.a;
+				}
 				const bbe::byte existing = img.getPixel((size_t)px, (size_t)py).a;
 				if (coverage > existing)
 				{
@@ -1088,7 +1093,7 @@ void bbe::Image::drawBezier(const bbe::List<bbe::Vector2> &points,
 	}
 }
 
-void bbe::Image::blendText(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color, bool tiled)
+void bbe::Image::blendText(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color, bool tiled, bool antiAlias)
 {
 	bbe::Vector2 origin;
 	bbe::Rectangle bounds;
@@ -1132,6 +1137,11 @@ void bbe::Image::blendText(const Font &font, const bbe::String &text, const bbe:
 
 				bbe::Colori sourceColor = color;
 				sourceColor.a = static_cast<bbe::byte>((uint32_t(color.a) * uint32_t(glyphColor.r)) / 255u);
+				if (!antiAlias)
+				{
+					if (sourceColor.a <= 127) continue;
+					sourceColor.a = color.a;
+				}
 
 				const bbe::Colori oldColor = getPixel((size_t)targetX, (size_t)targetY);
 				setPixel((size_t)targetX, (size_t)targetY, oldColor.blendTo(sourceColor));
