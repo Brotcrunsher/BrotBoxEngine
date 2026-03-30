@@ -5,6 +5,7 @@
 #include "../BBE/Rectangle.h"
 #include "../BBE/String.h"
 #include "../BBE/Vector2.h"
+#include "../BBE/List.h"
 #include "../BBE/AutoRefCountable.h"
 
 #ifdef _WIN32
@@ -21,6 +22,7 @@ typedef unsigned char stbi_uc;
 
 namespace bbe
 {
+	class Font;
 	class PrimitiveBrush2D;
 	class PrimitiveBrush3D;
 	namespace INTERNAL
@@ -157,6 +159,20 @@ namespace bbe
 		// Rotation is in radians. Uses bilinear sampling in src pixel coordinates.
 		void blendOverRotated(const bbe::Image &src, const bbe::Rectanglei &dstRect, float rotation, bool tiled = false, bool antiAlias = true);
 
+		// Returns a new image rotated around its center (CPU).
+		// The returned image is sized to the rotated bounding box.
+		// Rotation is in radians. Uses bilinear sampling in src pixel coordinates.
+		bbe::Image rotatedToFit(float rotation, bool antiAlias = true) const;
+
+		// Returns a new image scaled using nearest-neighbor sampling (CPU).
+		// If width/height match, returns a copy.
+		bbe::Image scaledNearest(int32_t width, int32_t height) const;
+
+		// Returns a new image with a different canvas size (CPU) while preserving existing pixels.
+		// dstPosOfOldOrigin is the destination position of the old pixel (0,0) inside the new image.
+		// Pixels outside the old bounds are filled with fillColor.
+		bbe::Image resizedCanvas(int32_t newWidth, int32_t newHeight, const bbe::Vector2i &dstPosOfOldOrigin, const bbe::Color &fillColor = bbe::Color(0.f, 0.f, 0.f, 0.f)) const;
+
 		// Draws a brush stamp into this image (CPU) at pos in pixel coordinates.
 		// brushRadius is the radius in pixels (>= 0). For Square shape, the distance metric is Chebyshev.
 		// For antiAlias=false, the stamp snaps to pixel centers to avoid boundary bleed.
@@ -168,6 +184,40 @@ namespace bbe
 
 		// Fills a triangle in this image (CPU), optionally anti-aliased.
 		void fillTriangle(const bbe::Vector2 &v0, const bbe::Vector2 &v1, const bbe::Vector2 &v2, const bbe::Colori &color, bool tiled = false, bool antiAlias = true);
+
+		// Returns an RGBA image of a stroked rounded rectangle (CPU).
+		// strokeWidth is in pixels; values <= 0 produce a filled rounded rectangle.
+		static Image strokedRoundedRect(int32_t width, int32_t height, const bbe::Colori &color, int32_t strokeWidth, int32_t cornerRadius, float rotation = 0.f, bool antiAlias = true);
+
+		// Returns an RGBA image of a stroked ellipse (ring). If strokeWidth <= 0, returns a filled ellipse.
+		static Image strokedEllipse(int32_t width, int32_t height, const bbe::Colori &color, int32_t strokeWidth, float rotation = 0.f, bool antiAlias = true);
+
+		// Renders text into a standalone RGBA image (straight-alpha coverage for bilinear-safe rotation).
+		static Image renderTextToImage(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color);
+
+		// Draws an arrow into this image (CPU). strokeRadius matches drawLineCapsule brushRadius.
+		void drawArrow(const bbe::Vector2 &from,
+		               const bbe::Vector2 &to,
+		               const bbe::Colori &color,
+		               int32_t strokeRadius,
+		               int32_t headSize,
+		               int32_t headWidth,
+		               bool doubleHeaded = false,
+		               bool filledHead = true,
+		               bool tiled = false,
+		               bool antiAlias = true);
+
+		// Draws a Bezier curve by sampling Math::interpolateBezier and drawing thick segments.
+		// points contains the full control polygon including start and end points.
+		void drawBezier(const bbe::List<bbe::Vector2> &points,
+		                const bbe::Colori &color,
+		                int32_t strokeRadius,
+		                bool tiled = false,
+		                bool antiAlias = true,
+		                int32_t minSamples = 200);
+
+		// CPU text: blends font glyphs onto this image (R8 coverage → alpha-over). Optionally tiled.
+		void blendText(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color, bool tiled = false);
 
 		void writeToFile(const bbe::String &path) const;
 		void writeToFile(const char *path) const;

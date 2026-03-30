@@ -1,4 +1,5 @@
 #include "BBE/Image.h"
+#include "BBE/Font.h"
 #include "BBE/Error.h"
 #include "BBE/Math.h"
 #include "BBE/Grid.h"
@@ -460,6 +461,116 @@ void bbe::Image::blendOverRotated(const bbe::Image &src, const bbe::Rectanglei &
 	}
 }
 
+bbe::Image bbe::Image::rotatedToFit(float rotation, bool antiAlias) const
+{
+	if (!isLoadedCpu())
+	{
+		bbe::Crash(bbe::Error::NotInitialized);
+	}
+	if (m_format != bbe::ImageFormat::R8G8B8A8)
+	{
+		bbe::Crash(bbe::Error::FormatNotSupported);
+	}
+
+	const int32_t srcW = getWidth();
+	const int32_t srcH = getHeight();
+	if (srcW <= 0 || srcH <= 0) return {};
+
+	const float cosA = std::cos(-rotation);
+	const float sinA = std::sin(-rotation);
+	const float srcCX = (srcW - 1) / 2.f;
+	const float srcCY = (srcH - 1) / 2.f;
+
+	const bbe::Rectangle srcRect(-(float)srcW * 0.5f, -(float)srcH * 0.5f, (float)srcW, (float)srcH);
+	const bbe::Rectanglei bb = srcRect.computeRotatedBoundsAfterRotation(rotation, bbe::Vector2(0.f, 0.f));
+	if (bb.width <= 0 || bb.height <= 0) return {};
+
+	const float newHW = (bb.width - 1) * 0.5f;
+	const float newHH = (bb.height - 1) * 0.5f;
+
+	bbe::Image result(bb.width, bb.height, bbe::Color(0.f, 0.f, 0.f, 0.f));
+	for (int32_t py = 0; py < bb.height; py++)
+	{
+		for (int32_t px = 0; px < bb.width; px++)
+		{
+			const float dx = px + 0.5f - newHW;
+			const float dy = py + 0.5f - newHH;
+			bbe::Colori pixel = sampleBilinearPremultiplied(dx * cosA - dy * sinA + srcCX, dx * sinA + dy * cosA + srcCY);
+			if (!antiAlias)
+			{
+				if (pixel.a == 0) continue;
+				pixel.a = 255;
+			}
+			if (pixel.a == 0) continue;
+			result.setPixel((size_t)px, (size_t)py, pixel);
+		}
+	}
+	return result;
+}
+
+bbe::Image bbe::Image::scaledNearest(int32_t width, int32_t height) const
+{
+	if (!isLoadedCpu())
+	{
+		bbe::Crash(bbe::Error::NotInitialized);
+	}
+	if (m_format != bbe::ImageFormat::R8G8B8A8)
+	{
+		bbe::Crash(bbe::Error::FormatNotSupported);
+	}
+
+	if (width <= 0 || height <= 0) return {};
+	if (width == getWidth() && height == getHeight()) return *this;
+
+	bbe::Image scaled(width, height, bbe::Color(0.f, 0.f, 0.f, 0.f));
+	for (int32_t x = 0; x < width; x++)
+	{
+		for (int32_t y = 0; y < height; y++)
+		{
+			int32_t sourceX = (int32_t)((int64_t)x * getWidth() / width);
+			int32_t sourceY = (int32_t)((int64_t)y * getHeight() / height);
+			if (sourceX >= getWidth()) sourceX = getWidth() - 1;
+			if (sourceY >= getHeight()) sourceY = getHeight() - 1;
+			scaled.setPixel((size_t)x, (size_t)y, getPixel((size_t)sourceX, (size_t)sourceY));
+		}
+	}
+	return scaled;
+}
+
+bbe::Image bbe::Image::resizedCanvas(int32_t newWidth, int32_t newHeight, const bbe::Vector2i &dstPosOfOldOrigin, const bbe::Color &fillColor) const
+{
+	if (!isLoadedCpu())
+	{
+		bbe::Crash(bbe::Error::NotInitialized);
+	}
+	if (m_format != bbe::ImageFormat::R8G8B8A8)
+	{
+		bbe::Crash(bbe::Error::FormatNotSupported);
+	}
+
+	if (newWidth <= 0 || newHeight <= 0) return {};
+
+	const int32_t oldW = getWidth();
+	const int32_t oldH = getHeight();
+	if (oldW <= 0 || oldH <= 0)
+	{
+		return bbe::Image(newWidth, newHeight, fillColor);
+	}
+
+	bbe::Image out(newWidth, newHeight, fillColor);
+	for (int32_t oy = 0; oy < oldH; oy++)
+	{
+		for (int32_t ox = 0; ox < oldW; ox++)
+		{
+			const int32_t nx = ox + dstPosOfOldOrigin.x;
+			const int32_t ny = oy + dstPosOfOldOrigin.y;
+			if (nx < 0 || ny < 0 || nx >= newWidth || ny >= newHeight) continue;
+			out.setPixel((size_t)nx, (size_t)ny, getPixel((size_t)ox, (size_t)oy));
+		}
+	}
+	return out;
+}
+
 bool bbe::Image::drawBrushStamp(const bbe::Vector2 &pos, const bbe::Colori &color, int32_t brushRadius, ImageBrushShape shape, bool tiled, bool antiAlias)
 {
 	if (!isLoadedCpu())
@@ -529,14 +640,18 @@ bool bbe::Image::drawLineCapsule(const bbe::Vector2 &from, const bbe::Vector2 &t
 	}
 	if (brushRadius < 0) return false;
 
-	// Keep crisp results: tiled, square brushes, or AA-off uses stamp-based iteration.
-	if (tiled || shape == bbe::ImageBrushShape::Square || !antiAlias)
+	// Stamp iteration: square brushes (no circle SDF), or AA-off for crisp pixels.
+	// Tiled + circle + AA uses the SDF path below with wrapped coordinates (smooth edges).
+	if (shape == bbe::ImageBrushShape::Square || !antiAlias)
 	{
 		bool changed = false;
 		bbe::GridIterator gi(from, to);
 		while (gi.hasNext())
 		{
-			const bbe::Vector2 p = gi.next().as<float>();
+			// GridIterator steps integer cells; brush math expects stamp centers at pixel centers.
+			// Without +0.5, anti-aliased stamps sit on pixel corners and lose ~half strength (gray, not black).
+			const bbe::Vector2i ip = gi.next();
+			const bbe::Vector2 p((float)ip.x + 0.5f, (float)ip.y + 0.5f);
 			changed |= drawBrushStamp(p, color, brushRadius, shape, tiled, antiAlias);
 		}
 		return changed;
@@ -585,7 +700,7 @@ bool bbe::Image::drawLineCapsule(const bbe::Vector2 &from, const bbe::Vector2 &t
 
 			int32_t px = x;
 			int32_t py = y;
-			if (!toTiledPos(px, py, w, h, false)) continue;
+			if (!toTiledPos(px, py, w, h, tiled)) continue;
 
 			bbe::Colori nc = color;
 			nc.a = (bbe::byte)(nc.MAXIMUM_VALUE * strength);
@@ -660,6 +775,366 @@ void bbe::Image::fillTriangle(const bbe::Vector2 &v0, const bbe::Vector2 &v1, co
 			if (pix.a > old.a)
 			{
 				setPixel((size_t)tx, (size_t)ty, pix);
+			}
+		}
+	}
+}
+
+namespace
+{
+}
+
+bbe::Image bbe::Image::strokedRoundedRect(int32_t width, int32_t height, const bbe::Colori &color, int32_t strokeWidth, int32_t cornerRadius, float rotation, bool antiAlias)
+{
+	if (width <= 0 || height <= 0) return {};
+
+	auto sdfRoundRect = [](float px, float py, float hw, float hh, float r) -> float
+	{
+		const float ax = px < 0.f ? -px : px;
+		const float ay = py < 0.f ? -py : py;
+		const float qx = ax - hw + r;
+		const float qy = ay - hh + r;
+		const float qxp = qx > 0.f ? qx : 0.f;
+		const float qyp = qy > 0.f ? qy : 0.f;
+		const float mx = qx > qy ? qx : qy;
+		return bbe::Math::sqrt(qxp * qxp + qyp * qyp) + (mx < 0.f ? mx : 0.f) - r;
+	};
+
+	const float R = (float)bbe::Math::min(cornerRadius, bbe::Math::min(width / 2, height / 2));
+	const float T = (float)bbe::Math::max<int32_t>(0, strokeWidth);
+	const float hw = width * 0.5f;
+	const float hh = height * 0.5f;
+	const float hwi = hw - T;
+	const float hhi = hh - T;
+	const float Ri = R - T > 0.f ? R - T : 0.f;
+
+	if (!antiAlias && std::abs(rotation) > 0.01f)
+	{
+		const float cosA = std::cos(rotation);
+		const float sinA = std::sin(rotation);
+		const float newHW = bbe::Math::abs(hw * cosA) + bbe::Math::abs(hh * sinA);
+		const float newHH = bbe::Math::abs(hw * sinA) + bbe::Math::abs(hh * cosA);
+		const int32_t bbW = (int32_t)std::ceil(newHW * 2.f);
+		const int32_t bbH = (int32_t)std::ceil(newHH * 2.f);
+
+		bbe::Image image(bbW, bbH, bbe::Color(0.f, 0.f, 0.f, 0.f));
+		for (int32_t y = 0; y < bbH; y++)
+		{
+			for (int32_t x = 0; x < bbW; x++)
+			{
+				const float bcx = (x + 0.5f) - newHW;
+				const float bcy = (y + 0.5f) - newHH;
+				const float px = bcx * cosA + bcy * sinA;
+				const float py = -bcx * sinA + bcy * cosA;
+
+				if (sdfRoundRect(px, py, hw, hh, R) >= 0.f) continue;
+				if (T > 0.f && hwi > 0.f && hhi > 0.f && sdfRoundRect(px, py, hwi, hhi, Ri) <= 0.f) continue;
+				image.setPixel((size_t)x, (size_t)y, color);
+			}
+		}
+		return image;
+	}
+
+	bbe::Image image(width, height, bbe::Color(0.f, 0.f, 0.f, 0.f));
+	for (int32_t y = 0; y < height; y++)
+	{
+		for (int32_t x = 0; x < width; x++)
+		{
+			const float px = (x + 0.5f) - hw;
+			const float py = (y + 0.5f) - hh;
+
+			const float dOuter = sdfRoundRect(px, py, hw, hh, R);
+			const float alphaOuter = bbe::Math::clamp01(-dOuter + 0.5f);
+			if (alphaOuter <= 0.f) continue;
+
+			float alphaInner = 1.f;
+			if (T > 0.f && hwi > 0.f && hhi > 0.f)
+			{
+				const float dInner = sdfRoundRect(px, py, hwi, hhi, Ri);
+				alphaInner = bbe::Math::clamp01(dInner + 0.5f);
+			}
+
+			const float alpha = alphaOuter < alphaInner ? alphaOuter : alphaInner;
+			if (alpha <= 0.f) continue;
+
+			const float finalAlpha = antiAlias ? alpha : (alpha > 0.5f ? 1.0f : 0.0f);
+			if (finalAlpha <= 0.f) continue;
+
+			bbe::Colori c = color;
+			c.a = (bbe::byte)(c.a * finalAlpha);
+			image.setPixel((size_t)x, (size_t)y, c);
+		}
+	}
+	return image;
+}
+
+bbe::Image bbe::Image::strokedEllipse(int32_t width, int32_t height, const bbe::Colori &color, int32_t strokeWidth, float rotation, bool antiAlias)
+{
+	if (width <= 0 || height <= 0) return {};
+
+	const float rx_outer = width * 0.5f;
+	const float ry_outer = height * 0.5f;
+	const float T = (float)bbe::Math::max<int32_t>(0, strokeWidth);
+	const float rx_inner = rx_outer - T;
+	const float ry_inner = ry_outer - T;
+	const float minRadius_outer = rx_outer < ry_outer ? rx_outer : ry_outer;
+
+	if (!antiAlias && std::abs(rotation) > 0.01f)
+	{
+		const float cosA = std::cos(rotation);
+		const float sinA = std::sin(rotation);
+		const float newHW = bbe::Math::abs(rx_outer * cosA) + bbe::Math::abs(ry_outer * sinA);
+		const float newHH = bbe::Math::abs(rx_outer * sinA) + bbe::Math::abs(ry_outer * cosA);
+		const int32_t bbW = (int32_t)std::ceil(newHW * 2.f);
+		const int32_t bbH = (int32_t)std::ceil(newHH * 2.f);
+
+		bbe::Image image(bbW, bbH, bbe::Color(0.f, 0.f, 0.f, 0.f));
+		for (int32_t y = 0; y < bbH; y++)
+		{
+			for (int32_t x = 0; x < bbW; x++)
+			{
+				const float bcx = (x + 0.5f) - newHW;
+				const float bcy = (y + 0.5f) - newHH;
+				const float px = bcx * cosA + bcy * sinA;
+				const float py = -bcx * sinA + bcy * cosA;
+
+				const float nx_o = px / rx_outer;
+				const float ny_o = py / ry_outer;
+				if (bbe::Math::sqrt(nx_o * nx_o + ny_o * ny_o) >= 1.f) continue;
+
+				if (T > 0.f && rx_inner > 0.f && ry_inner > 0.f)
+				{
+					const float nx_i = px / rx_inner;
+					const float ny_i = py / ry_inner;
+					if (bbe::Math::sqrt(nx_i * nx_i + ny_i * ny_i) <= 1.f) continue;
+				}
+				image.setPixel((size_t)x, (size_t)y, color);
+			}
+		}
+		return image;
+	}
+
+	bbe::Image image(width, height, bbe::Color(0.f, 0.f, 0.f, 0.f));
+	for (int32_t y = 0; y < height; y++)
+	{
+		for (int32_t x = 0; x < width; x++)
+		{
+			const float px = x - rx_outer + 0.5f;
+			const float py = y - ry_outer + 0.5f;
+
+			const float nx_o = px / rx_outer;
+			const float ny_o = py / ry_outer;
+			const float d_outer = bbe::Math::sqrt(nx_o * nx_o + ny_o * ny_o);
+			const float alpha_outer = bbe::Math::clamp01((1.f - d_outer) * minRadius_outer + 0.5f);
+			if (alpha_outer <= 0.f) continue;
+
+			float alpha_inner = 1.f;
+			if (T > 0.f && rx_inner > 0.f && ry_inner > 0.f)
+			{
+				const float nx_i = px / rx_inner;
+				const float ny_i = py / ry_inner;
+				const float d_inner = bbe::Math::sqrt(nx_i * nx_i + ny_i * ny_i);
+				const float minRadius_inner = rx_inner < ry_inner ? rx_inner : ry_inner;
+				alpha_inner = bbe::Math::clamp01((d_inner - 1.f) * minRadius_inner + 0.5f);
+			}
+
+			const float alpha = alpha_outer < alpha_inner ? alpha_outer : alpha_inner;
+			if (alpha <= 0.f) continue;
+			const float finalAlpha = antiAlias ? alpha : (alpha > 0.5f ? 1.0f : 0.0f);
+			if (finalAlpha <= 0.f) continue;
+
+			bbe::Colori c = color;
+			c.a = (bbe::byte)(c.a * finalAlpha);
+			image.setPixel((size_t)x, (size_t)y, c);
+		}
+	}
+	return image;
+}
+
+bbe::Image bbe::Image::renderTextToImage(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color)
+{
+	bbe::Vector2 origin;
+	bbe::Rectangle bounds;
+	if (!font.getRasterOriginAndBounds(text, topLeft, origin, bounds)) return {};
+
+	const int32_t imgW = (int32_t)std::ceil(bounds.width);
+	const int32_t imgH = (int32_t)std::ceil(bounds.height);
+	if (imgW <= 0 || imgH <= 0) return {};
+
+	bbe::Image img(imgW, imgH, bbe::Color(0.f, 0.f, 0.f, 0.f));
+
+	const bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(origin, text);
+	auto it = text.getIterator();
+	for (size_t i = 0; i < renderPositions.getLength() && it.valid(); i++, ++it)
+	{
+		const int32_t codePoint = it.getCodepoint();
+		if (codePoint == ' ' || codePoint == '\n' || codePoint == '\r' || codePoint == '\t') continue;
+
+		const bbe::Image &glyph = font.getImage(codePoint, 1.0f);
+		if (glyph.getWidth() <= 0 || glyph.getHeight() <= 0) continue;
+
+		const int32_t gx = (int32_t)bbe::Math::round(renderPositions[i].x) - topLeft.x;
+		const int32_t gy = (int32_t)bbe::Math::round(renderPositions[i].y) - topLeft.y;
+
+		for (int32_t x = 0; x < glyph.getWidth(); x++)
+		{
+			for (int32_t y = 0; y < glyph.getHeight(); y++)
+			{
+				const int32_t px = gx + x;
+				const int32_t py = gy + y;
+				if (px < 0 || py < 0 || px >= imgW || py >= imgH) continue;
+
+				const bbe::Colori glyphColor = glyph.getPixel((size_t)x, (size_t)y);
+				if (glyphColor.r == 0) continue;
+
+				const bbe::byte coverage = static_cast<bbe::byte>((uint32_t(color.a) * uint32_t(glyphColor.r)) / 255u);
+				const bbe::byte existing = img.getPixel((size_t)px, (size_t)py).a;
+				if (coverage > existing)
+				{
+					img.setPixel((size_t)px, (size_t)py, bbe::Colori(color.r, color.g, color.b, coverage));
+				}
+			}
+		}
+	}
+	return img;
+}
+
+void bbe::Image::drawArrow(const bbe::Vector2 &from,
+                           const bbe::Vector2 &to,
+                           const bbe::Colori &color,
+                           int32_t strokeRadius,
+                           int32_t headSize,
+                           int32_t headWidth,
+                           bool doubleHeaded,
+                           bool filledHead,
+                           bool tiled,
+                           bool antiAlias)
+{
+	const float dx = to.x - from.x;
+	const float dy = to.y - from.y;
+	const float len = bbe::Math::sqrt(dx * dx + dy * dy);
+	if (len < 1.f) return;
+
+	const float nx = dx / len;
+	const float ny = dy / len;
+	const float px = -ny;
+	const float py = nx;
+
+	const float headLen = (float)bbe::Math::max<int32_t>(0, headSize);
+	const float halfWidth = (float)bbe::Math::max<int32_t>(0, headWidth) * 0.5f;
+
+	bbe::Vector2 shaftFrom = from;
+	bbe::Vector2 shaftTo = to;
+
+	if (filledHead && headLen > 0.f)
+	{
+		shaftTo.x = to.x - nx * headLen;
+		shaftTo.y = to.y - ny * headLen;
+		if (doubleHeaded)
+		{
+			shaftFrom.x = from.x + nx * headLen;
+			shaftFrom.y = from.y + ny * headLen;
+		}
+	}
+
+	drawLineCapsule(shaftFrom, shaftTo, color, strokeRadius, bbe::ImageBrushShape::Circle, tiled, antiAlias);
+
+	auto drawHead = [&](const bbe::Vector2 &tip, const bbe::Vector2 &dir)
+	{
+		if (headLen <= 0.f || halfWidth <= 0.f) return;
+		const bbe::Vector2 base(tip.x - dir.x * headLen, tip.y - dir.y * headLen);
+		const bbe::Vector2 left(base.x + px * halfWidth, base.y + py * halfWidth);
+		const bbe::Vector2 right(base.x - px * halfWidth, base.y - py * halfWidth);
+		if (filledHead)
+		{
+			fillTriangle(tip, left, right, color, tiled, antiAlias);
+		}
+		else
+		{
+			drawLineCapsule(tip, left, color, strokeRadius, bbe::ImageBrushShape::Circle, tiled, antiAlias);
+			drawLineCapsule(tip, right, color, strokeRadius, bbe::ImageBrushShape::Circle, tiled, antiAlias);
+		}
+	};
+
+	drawHead(to, bbe::Vector2(nx, ny));
+	if (doubleHeaded) drawHead(from, bbe::Vector2(-nx, -ny));
+}
+
+void bbe::Image::drawBezier(const bbe::List<bbe::Vector2> &points,
+                            const bbe::Colori &color,
+                            int32_t strokeRadius,
+                            bool tiled,
+                            bool antiAlias,
+                            int32_t minSamples)
+{
+	if (points.getLength() < 2) return;
+
+	const bbe::Vector2 a = points.first();
+	const bbe::Vector2 b = points.last();
+	bbe::List<bbe::Vector2> controls;
+	if (points.getLength() > 2)
+	{
+		for (size_t i = 1; i + 1 < points.getLength(); i++) controls.add(points[i]);
+	}
+
+	const int32_t samples = bbe::Math::max(minSamples, (int32_t)points.getLength() * 100);
+	bbe::Vector2 prev = bbe::Math::interpolateBezier(a, b, 0.f, controls);
+	for (int32_t i = 1; i <= samples; i++)
+	{
+		const float t = (float)i / (float)samples;
+		const bbe::Vector2 curr = bbe::Math::interpolateBezier(a, b, t, controls);
+		drawLineCapsule(prev, curr, color, strokeRadius, bbe::ImageBrushShape::Circle, tiled, antiAlias);
+		prev = curr;
+	}
+}
+
+void bbe::Image::blendText(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color, bool tiled)
+{
+	bbe::Vector2 origin;
+	bbe::Rectangle bounds;
+	if (!font.getRasterOriginAndBounds(text, topLeft, origin, bounds)) return;
+
+	const int32_t dstW = getWidth();
+	const int32_t dstH = getHeight();
+	if (dstW <= 0 || dstH <= 0) return;
+
+	const bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(origin, text);
+	auto it = text.getIterator();
+	for (size_t i = 0; i < renderPositions.getLength() && it.valid(); i++, ++it)
+	{
+		const int32_t codePoint = it.getCodepoint();
+		if (codePoint == ' ' || codePoint == '\n' || codePoint == '\r' || codePoint == '\t') continue;
+
+		const bbe::Image &glyph = font.getImage(codePoint, 1.0f);
+		if (glyph.getWidth() <= 0 || glyph.getHeight() <= 0) continue;
+
+		const bbe::Vector2i glyphPos((int32_t)bbe::Math::round(renderPositions[i].x),
+		                             (int32_t)bbe::Math::round(renderPositions[i].y));
+
+		for (int32_t x = 0; x < glyph.getWidth(); x++)
+		{
+			for (int32_t y = 0; y < glyph.getHeight(); y++)
+			{
+				int32_t targetX = glyphPos.x + x;
+				int32_t targetY = glyphPos.y + y;
+				if (tiled)
+				{
+					targetX = bbe::Math::mod<int32_t>(targetX, dstW);
+					targetY = bbe::Math::mod<int32_t>(targetY, dstH);
+				}
+				else
+				{
+					if (targetX < 0 || targetY < 0 || targetX >= dstW || targetY >= dstH) continue;
+				}
+
+				const bbe::Colori glyphColor = glyph.getPixel((size_t)x, (size_t)y);
+				if (glyphColor.r == 0) continue;
+
+				bbe::Colori sourceColor = color;
+				sourceColor.a = static_cast<bbe::byte>((uint32_t(color.a) * uint32_t(glyphColor.r)) / 255u);
+
+				const bbe::Colori oldColor = getPixel((size_t)targetX, (size_t)targetY);
+				setPixel((size_t)targetX, (size_t)targetY, oldColor.blendTo(sourceColor));
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <map>
 #define STBTT_RASTERIZER_VERSION 1
@@ -17,6 +17,12 @@ namespace bbe
 	{
 		const Font *font = nullptr;
 		bbe::String string = "";
+	};
+
+	struct FontFileEntry
+	{
+		bbe::String displayName;
+		bbe::String path;
 	};
 
 	class Font
@@ -75,6 +81,17 @@ namespace bbe
 		bbe::Rectangle getBoundingBox(const bbe::String &text) const;
 		bbe::Vector2 getSize(const bbe::String &text) const;
 
+		// Layout for CPU rasterization at topLeft (origin + bounds for cropped raster images / previews).
+		bool getRasterOriginAndBounds(const bbe::String &text, const bbe::Vector2i &topLeft, bbe::Vector2 &outOrigin, bbe::Rectangle &outBounds) const;
+
 		static FittedFont getBestFittingFont(const bbe::List<Font> &fonts, const bbe::String &string, bbe::Vector2 maxSize);
+
+		// Returns true if the font file looks usable (stb_truetype can init it and it contains required glyphs).
+		// requiredGlyphs is interpreted as raw bytes; for ASCII strings this matches code points.
+		static bool isFontFileUsable(const bbe::String &path, const bbe::String &requiredGlyphs = "Text");
+
+		// Scans common system directories for .ttf/.otf files and returns usable fonts.
+		// This function may be slow on first use; callers should cache results.
+		static bbe::List<FontFileEntry> findUsableSystemFonts(const bbe::String &requiredGlyphs = "Text");
 	};
 }

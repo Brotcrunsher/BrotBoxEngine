@@ -2,10 +2,26 @@
 #define STBTT_RASTERIZER_VERSION 1
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "BBE/Logging.h"
+#include "BBE/Math.h"
 #include "BBE/SimpleFile.h"
 #include "EmbeddedFonts.h"
+#include <cctype>
+#include <cstdlib>
 #include <filesystem>
+#include <fstream>
+#include <string>
+#include <vector>
 #include <stb_truetype.h>
+
+namespace
+{
+	bool hasTtfOrOtfExtension(const std::filesystem::path &p)
+	{
+		std::string ext = p.extension().string();
+		for (char &c : ext) c = (char)std::tolower((unsigned char)c);
+		return ext == ".ttf" || ext == ".otf";
+	}
+}
 
 const bbe::Font::CharData &bbe::Font::loadCharData(const int32_t codePoint, float scale_) const
 {
@@ -294,6 +310,14 @@ bbe::Vector2 bbe::Font::getSize(const bbe::String &text) const
 	return size.getDim() - size.getPos();
 }
 
+bool bbe::Font::getRasterOriginAndBounds(const bbe::String &text, const bbe::Vector2i &topLeft, bbe::Vector2 &outOrigin, bbe::Rectangle &outBounds) const
+{
+	if (text.isEmpty()) return false;
+	outBounds = getBoundingBox(text);
+	outOrigin = topLeft.as<float>() - outBounds.getPos();
+	return true;
+}
+
 bbe::FittedFont bbe::Font::getBestFittingFont(const bbe::List<Font> &fonts, const bbe::String &string, bbe::Vector2 maxSize)
 {
 	if (fonts.isEmpty())
@@ -353,4 +377,89 @@ bbe::FittedFont bbe::Font::getBestFittingFont(const bbe::List<Font> &fonts, cons
 	}
 
 	return {};
+}
+
+bool bbe::Font::isFontFileUsable(const bbe::String &path, const bbe::String &requiredGlyphs)
+{
+	if (path == "OpenSansRegular.ttf") return true;
+
+	std::ifstream file(path.getRaw(), std::ios::binary | std::ios::ate);
+	if (!file) return false;
+	const auto size = file.tellg();
+	if (size <= 0) return false;
+	file.seekg(0);
+
+	std::vector<unsigned char> data(static_cast<size_t>(size));
+	if (!file.read(reinterpret_cast<char *>(data.data()), size)) return false;
+
+	stbtt_fontinfo info = {};
+	const int offset = stbtt_GetFontOffsetForIndex(data.data(), 0);
+	if (offset < 0) return false;
+	if (!stbtt_InitFont(&info, data.data(), offset)) return false;
+
+	const char *rg = requiredGlyphs.getRaw();
+	for (size_t i = 0; rg[i] != '\0'; i++)
+	{
+		const unsigned char c = (unsigned char)rg[i];
+		if (stbtt_FindGlyphIndex(&info, (int)c) == 0) return false;
+	}
+	return true;
+}
+
+bbe::List<bbe::FontFileEntry> bbe::Font::findUsableSystemFonts(const bbe::String &requiredGlyphs)
+{
+	bbe::List<bbe::FontFileEntry> result;
+	result.add({ "OpenSansRegular", "OpenSansRegular.ttf" });
+
+	bbe::List<bbe::String> fontDirs;
+#ifdef _WIN32
+	fontDirs.add("C:/Windows/Fonts/");
+#else
+	fontDirs.add("/usr/share/fonts/");
+	fontDirs.add("/usr/local/share/fonts/");
+	{
+		const char *home = std::getenv("HOME");
+		if (home)
+		{
+			fontDirs.add(bbe::String(home) + "/.fonts/");
+			fontDirs.add(bbe::String(home) + "/.local/share/fonts/");
+		}
+	}
+#endif
+
+	for (size_t d = 0; d < fontDirs.getLength(); d++)
+	{
+		const std::string dirStr(fontDirs[d].getRaw());
+		if (!std::filesystem::exists(dirStr)) continue;
+		try
+		{
+			for (const auto &entry : std::filesystem::recursive_directory_iterator(dirStr))
+			{
+				if (!entry.is_regular_file()) continue;
+				if (!hasTtfOrOtfExtension(entry.path())) continue;
+
+				const bbe::String fullPath = entry.path().string().c_str();
+				if (!bbe::Font::isFontFileUsable(fullPath, requiredGlyphs)) continue;
+
+				bbe::FontFileEntry fe;
+				fe.displayName = entry.path().stem().string().c_str();
+				fe.path = fullPath;
+				result.add(fe);
+			}
+		}
+		catch (...)
+		{
+		}
+	}
+
+	if (result.getLength() > 2)
+	{
+		bbe::List<bbe::FontFileEntry> tail;
+		for (size_t i = 1; i < result.getLength(); i++) tail.add(result[i]);
+		tail.sort([](const bbe::FontFileEntry &a, const bbe::FontFileEntry &b) { return a.displayName < b.displayName; });
+		while (result.getLength() > 1) result.popBack();
+		for (size_t i = 0; i < tail.getLength(); i++) result.add(tail[i]);
+	}
+
+	return result;
 }

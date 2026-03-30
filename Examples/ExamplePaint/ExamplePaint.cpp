@@ -312,6 +312,7 @@ class MyGame : public bbe::Game
 			return false;
 		}
 		previewImage = createPreview(previewRect.width, previewRect.height);
+		prepareImageForCanvas(previewImage);
 		return true;
 	}
 
@@ -335,6 +336,7 @@ class MyGame : public bbe::Game
 		draftActive = true;
 		draftUsesRightColor = useRightColor;
 		selection.floatingImage = draftImage;
+		prepareImageForCanvas(selection.floatingImage);
 		previewRect = {};
 		previewImage = {};
 	}
@@ -452,46 +454,6 @@ class MyGame : public bbe::Game
 	{
 		const bbe::String lowerPath = filePath.toLowerCase();
 		return lowerPath.endsWith(".png") || lowerPath.endsWith(LAYERED_FILE_EXTENSION);
-	}
-
-	// Returns a rasterized rotation of src, sized to fit the rotated bounding box.
-	bbe::Image createRotatedPreviewImage(const bbe::Image &src, float rotation) const
-	{
-		const float cosA = std::cos(-rotation);
-		const float sinA = std::sin(-rotation);
-		const int32_t srcW = (int32_t)src.getWidth();
-		const int32_t srcH = (int32_t)src.getHeight();
-		const float srcCX = (srcW - 1) / 2.f;
-		const float srcCY = (srcH - 1) / 2.f;
-
-		const bbe::Rectangle srcRect(-(float)srcW * 0.5f, -(float)srcH * 0.5f, (float)srcW, (float)srcH);
-		const bbe::Rectanglei bb = srcRect.computeRotatedBoundsAfterRotation(rotation, bbe::Vector2(0.f, 0.f));
-		const float newHW = (bb.width - 1) * 0.5f;
-		const float newHH = (bb.height - 1) * 0.5f;
-		const int32_t newW = bb.width;
-		const int32_t newH = bb.height;
-
-		bbe::Image result(newW, newH, bbe::Color(0.f, 0.f, 0.f, 0.f));
-		prepareImageForCanvas(result);
-		const auto sampleBilinear = [&](float sx, float sy) -> bbe::Colori { return src.sampleBilinearPremultiplied(sx, sy); };
-
-		for (int32_t py = 0; py < newH; py++)
-		{
-			for (int32_t px = 0; px < newW; px++)
-			{
-				const float dx = px + 0.5f - newHW;
-				const float dy = py + 0.5f - newHH;
-				bbe::Colori pixel = sampleBilinear(dx * cosA - dy * sinA + srcCX, dx * sinA + dy * cosA + srcCY);
-				if (!antiAliasingEnabled)
-				{
-					if (pixel.a == 0) continue;
-					pixel.a = 255;
-				}
-				if (pixel.a == 0) continue;
-				result.setPixel((size_t)px, (size_t)py, pixel);
-			}
-		}
-		return result;
 	}
 
 	bbe::Image flattenVisibleLayers() const
@@ -956,69 +918,7 @@ class MyGame : public bbe::Game
 
 	void drawArrowToWorkArea(const bbe::Vector2 &from, const bbe::Vector2 &to, const bbe::Colori &color)
 	{
-		const float dx = to.x - from.x;
-		const float dy = to.y - from.y;
-		const float len = bbe::Math::sqrt(dx * dx + dy * dy);
-		if (len < 1.f) return;
-
-		const float nx = dx / len;
-		const float ny = dy / len;
-		const float px = -ny;
-		const float py =  nx;
-
-		const float headLen   = (float)arrowHeadSize;
-		const float halfWidth = (float)arrowHeadWidth * 0.5f;
-
-		bbe::Vector2 shaftFrom = from;
-		bbe::Vector2 shaftTo   = to;
-
-		if (arrowFilledHead)
-		{
-			shaftTo.x = to.x - nx * headLen;
-			shaftTo.y = to.y - ny * headLen;
-			if (arrowDoubleHeaded)
-			{
-				shaftFrom.x = from.x + nx * headLen;
-				shaftFrom.y = from.y + ny * headLen;
-			}
-		}
-
-		workArea.drawLineCapsule(shaftFrom, shaftTo, color, brushWidth, bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
-
-		// Forward head
-		{
-			const bbe::Vector2 tip  = to;
-			const bbe::Vector2 base(to.x - nx * headLen, to.y - ny * headLen);
-			const bbe::Vector2 left (base.x + px * halfWidth, base.y + py * halfWidth);
-			const bbe::Vector2 right(base.x - px * halfWidth, base.y - py * halfWidth);
-			if (arrowFilledHead)
-			{
-				workArea.fillTriangle(tip, left, right, color, tiled, antiAliasingEnabled);
-			}
-			else
-			{
-				workArea.drawLineCapsule(tip, left, color, brushWidth, bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
-				workArea.drawLineCapsule(tip, right, color, brushWidth, bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
-			}
-		}
-
-		// Backward head
-		if (arrowDoubleHeaded)
-		{
-			const bbe::Vector2 tip  = from;
-			const bbe::Vector2 base(from.x + nx * headLen, from.y + ny * headLen);
-			const bbe::Vector2 left (base.x + px * halfWidth, base.y + py * halfWidth);
-			const bbe::Vector2 right(base.x - px * halfWidth, base.y - py * halfWidth);
-			if (arrowFilledHead)
-			{
-				workArea.fillTriangle(tip, left, right, color, tiled, antiAliasingEnabled);
-			}
-			else
-			{
-				workArea.drawLineCapsule(tip, left, color, brushWidth, bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
-				workArea.drawLineCapsule(tip, right, color, brushWidth, bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
-			}
-		}
+		workArea.drawArrow(from, to, color, brushWidth, arrowHeadSize, arrowHeadWidth, arrowDoubleHeaded, arrowFilledHead, tiled, antiAliasingEnabled);
 	}
 
 	bbe::Colori getLineDraftColor() const { return getColor(line.draftUsesRightColor); }
@@ -1077,36 +977,9 @@ class MyGame : public bbe::Game
 
 	bbe::Colori getBezierColor() const { return getColor(bezier.usesRightColor); }
 
-	bbe::Vector2 evaluateBezier(const bbe::List<bbe::Vector2> &points, float t) const
-	{
-		// De Casteljau's algorithm with a stack buffer (supports up to 64 control points)
-		static bbe::Vector2 work[64];
-		const size_t n = points.getLength();
-		for (size_t i = 0; i < n; i++) work[i] = points[i];
-		for (size_t r = 1; r < n; r++)
-		{
-			for (size_t i = 0; i < n - r; i++)
-			{
-				work[i] = bbe::Vector2(
-					work[i].x * (1.f - t) + work[i + 1].x * t,
-					work[i].y * (1.f - t) + work[i + 1].y * t);
-			}
-		}
-		return work[0];
-	}
-
 	void drawBezierToWorkArea(const bbe::List<bbe::Vector2> &points, const bbe::Colori &color)
 	{
-		if (points.getLength() < 2) return;
-		const int32_t numSamples = bbe::Math::max(200, (int32_t)points.getLength() * 100);
-		bbe::Vector2 prev = evaluateBezier(points, 0.f);
-		for (int32_t i = 1; i <= numSamples; i++)
-		{
-			const float t = (float)i / (float)numSamples;
-			const bbe::Vector2 curr = evaluateBezier(points, t);
-			workArea.drawLineCapsule(prev, curr, color, brushWidth, bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
-			prev = curr;
-		}
+		workArea.drawBezier(points, color, brushWidth, tiled, antiAliasingEnabled);
 	}
 
 	void finalizeBezierDraft()
@@ -1215,27 +1088,6 @@ class MyGame : public bbe::Game
 		}
 	}
 
-	bbe::Image scaleImageNearest(const bbe::Image &image, int32_t width, int32_t height) const
-	{
-		if (width <= 0 || height <= 0) return {};
-		if (image.getWidth() == width && image.getHeight() == height) return image;
-
-		bbe::Image scaled(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
-		prepareImageForCanvas(scaled);
-		for (int32_t x = 0; x < width; x++)
-		{
-			for (int32_t y = 0; y < height; y++)
-			{
-				int32_t sourceX = (int32_t)((int64_t)x * image.getWidth() / width);
-				int32_t sourceY = (int32_t)((int64_t)y * image.getHeight() / height);
-				if (sourceX >= image.getWidth()) sourceX = image.getWidth() - 1;
-				if (sourceY >= image.getHeight()) sourceY = image.getHeight() - 1;
-				scaled.setPixel((size_t)x, (size_t)y, image.getPixel((size_t)sourceX, (size_t)sourceY));
-			}
-		}
-		return scaled;
-	}
-
 	bbe::Colori getRectangleDraftColor() const { return getColor(rectangle.draftUsesRightColor); }
 
 	bbe::Colori getRectangleDragColor() const { return getColor(rectangle.dragUsesRightColor); }
@@ -1276,98 +1128,7 @@ class MyGame : public bbe::Game
 
 	bbe::Image createRectangleImage(int32_t width, int32_t height, const bbe::Colori &color, float rotation = 0.f) const
 	{
-		if (width <= 0 || height <= 0) return {};
-
-		// SDF of a rounded rectangle centered at origin.
-		auto sdfRoundRect = [](float px, float py, float hw, float hh, float r) -> float
-		{
-			const float ax  = px < 0.f ? -px : px;
-			const float ay  = py < 0.f ? -py : py;
-			const float qx  = ax - hw + r;
-			const float qy  = ay - hh + r;
-			const float qxp = qx > 0.f ? qx : 0.f;
-			const float qyp = qy > 0.f ? qy : 0.f;
-			const float mx  = qx > qy ? qx : qy;
-			return bbe::Math::sqrt(qxp * qxp + qyp * qyp) + (mx < 0.f ? mx : 0.f) - r;
-		};
-
-		const float R   = (float)bbe::Math::min(cornerRadius, bbe::Math::min(width / 2, height / 2));
-		const float T   = (float)brushWidth;
-		const float hw  = width  * 0.5f;
-		const float hh  = height * 0.5f;
-		const float hwi = hw - T;
-		const float hhi = hh - T;
-		const float Ri  = R - T > 0.f ? R - T : 0.f;
-
-		// AA-off with rotation: bake rotation into SDF to avoid gaps and thickness change.
-		// Threshold of 0.01 rad (~0.6°): below this the visual difference is imperceptible
-		// and tiny accidental rotations on non-circular shapes would cause SDF boundary
-		// pixels to flip, producing visible gaps.
-		if (!antiAliasingEnabled && std::abs(rotation) > 0.01f)
-		{
-			const float cosA = std::cos(rotation);
-			const float sinA = std::sin(rotation);
-			const float newHW = std::abs(hw * cosA) + std::abs(hh * sinA);
-			const float newHH = std::abs(hw * sinA) + std::abs(hh * cosA);
-			const int32_t bbW = (int32_t)std::ceil(newHW * 2.f);
-			const int32_t bbH = (int32_t)std::ceil(newHH * 2.f);
-
-			bbe::Image image(bbW, bbH, bbe::Color(0.f, 0.f, 0.f, 0.f));
-			prepareImageForCanvas(image);
-
-			for (int32_t y = 0; y < bbH; y++)
-			{
-				for (int32_t x = 0; x < bbW; x++)
-				{
-					const float bcx = (x + 0.5f) - newHW;
-					const float bcy = (y + 0.5f) - newHH;
-					// Inverse-rotate to shape-local coords
-					const float px =  bcx * cosA + bcy * sinA;
-					const float py = -bcx * sinA + bcy * cosA;
-
-					if (sdfRoundRect(px, py, hw, hh, R) >= 0.f) continue;
-					if (hwi > 0.f && hhi > 0.f && sdfRoundRect(px, py, hwi, hhi, Ri) <= 0.f) continue;
-
-					image.setPixel((size_t)x, (size_t)y, color);
-				}
-			}
-			return image;
-		}
-
-		bbe::Image image(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
-		prepareImageForCanvas(image);
-
-		for (int32_t y = 0; y < height; y++)
-		{
-			for (int32_t x = 0; x < width; x++)
-			{
-				// Pixel center in rectangle-centered coordinates
-				const float px = (x + 0.5f) - hw;
-				const float py = (y + 0.5f) - hh;
-
-				const float dOuter     = sdfRoundRect(px, py, hw, hh, R);
-				const float alphaOuter = bbe::Math::clamp01(-dOuter + 0.5f);
-				if (alphaOuter <= 0.f) continue;
-
-				float alphaInner = 1.f;
-				if (hwi > 0.f && hhi > 0.f)
-				{
-					const float dInner = sdfRoundRect(px, py, hwi, hhi, Ri);
-					alphaInner = bbe::Math::clamp01(dInner + 0.5f);
-				}
-
-				const float alpha = alphaOuter < alphaInner ? alphaOuter : alphaInner;
-				if (alpha <= 0.f) continue;
-				const float finalAlpha = antiAliasingEnabled ? alpha : (alpha > 0.5f ? 1.0f : 0.0f);
-				if (finalAlpha <= 0.f) continue;
-
-				bbe::Colori c = color;
-				c.a = (bbe::byte)(c.a * finalAlpha);
-				image.setPixel((size_t)x, (size_t)y, c);
-			}
-		}
-
-		return image;
+		return bbe::Image::strokedRoundedRect(width, height, color, brushWidth, cornerRadius, rotation, antiAliasingEnabled);
 	}
 
 	bbe::Image createRectangleDraftImage(int32_t width, int32_t height) const { return createRectangleImage(width, height, getRectangleDraftColor()); }
@@ -1385,94 +1146,7 @@ class MyGame : public bbe::Game
 
 	bbe::Image createCircleImage(int32_t width, int32_t height, const bbe::Colori &color, float rotation = 0.f) const
 	{
-		if (width <= 0 || height <= 0) return {};
-
-		const float rx_outer = width  * 0.5f;
-		const float ry_outer = height * 0.5f;
-		const float rx_inner = rx_outer - (float)brushWidth;
-		const float ry_inner = ry_outer - (float)brushWidth;
-		const float minRadius_outer = rx_outer < ry_outer ? rx_outer : ry_outer;
-
-		// AA-off with rotation: bake rotation into ellipse SDF.
-		// Threshold of 0.01 rad (~0.6°): below this, tiny accidental rotations would shift
-		// ellipse-SDF boundary pixels and create gaps (ellipse SDF is not rotation-invariant).
-		if (!antiAliasingEnabled && std::abs(rotation) > 0.01f)
-		{
-			const float cosA = std::cos(rotation);
-			const float sinA = std::sin(rotation);
-			const float newHW = std::abs(rx_outer * cosA) + std::abs(ry_outer * sinA);
-			const float newHH = std::abs(rx_outer * sinA) + std::abs(ry_outer * cosA);
-			const int32_t bbW = (int32_t)std::ceil(newHW * 2.f);
-			const int32_t bbH = (int32_t)std::ceil(newHH * 2.f);
-
-			bbe::Image image(bbW, bbH, bbe::Color(0.f, 0.f, 0.f, 0.f));
-			prepareImageForCanvas(image);
-
-			for (int32_t y = 0; y < bbH; y++)
-			{
-				for (int32_t x = 0; x < bbW; x++)
-				{
-					const float bcx = (x + 0.5f) - newHW;
-					const float bcy = (y + 0.5f) - newHH;
-					// Inverse-rotate to ellipse-local coords
-					const float px =  bcx * cosA + bcy * sinA;
-					const float py = -bcx * sinA + bcy * cosA;
-
-					const float nx_o = px / rx_outer;
-					const float ny_o = py / ry_outer;
-					if (bbe::Math::sqrt(nx_o * nx_o + ny_o * ny_o) >= 1.f) continue;
-
-					if (rx_inner > 0.f && ry_inner > 0.f)
-					{
-						const float nx_i = px / rx_inner;
-						const float ny_i = py / ry_inner;
-						if (bbe::Math::sqrt(nx_i * nx_i + ny_i * ny_i) <= 1.f) continue;
-					}
-
-					image.setPixel((size_t)x, (size_t)y, color);
-				}
-			}
-			return image;
-		}
-
-		bbe::Image image(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
-		prepareImageForCanvas(image);
-
-		for (int32_t y = 0; y < height; y++)
-		{
-			for (int32_t x = 0; x < width; x++)
-			{
-				const float px = x - rx_outer + 0.5f;
-				const float py = y - ry_outer + 0.5f;
-
-				const float nx_o = px / rx_outer;
-				const float ny_o = py / ry_outer;
-				const float d_outer = bbe::Math::sqrt(nx_o * nx_o + ny_o * ny_o);
-				const float alpha_outer = bbe::Math::clamp01((1.f - d_outer) * minRadius_outer + 0.5f);
-				if (alpha_outer <= 0.f) continue;
-
-				float alpha_inner = 1.f;
-				if (rx_inner > 0.f && ry_inner > 0.f)
-				{
-					const float nx_i = px / rx_inner;
-					const float ny_i = py / ry_inner;
-					const float d_inner = bbe::Math::sqrt(nx_i * nx_i + ny_i * ny_i);
-					const float minRadius_inner = rx_inner < ry_inner ? rx_inner : ry_inner;
-					alpha_inner = bbe::Math::clamp01((d_inner - 1.f) * minRadius_inner + 0.5f);
-				}
-
-				const float alpha = alpha_outer < alpha_inner ? alpha_outer : alpha_inner;
-				if (alpha <= 0.f) continue;
-				const float finalAlpha = antiAliasingEnabled ? alpha : (alpha > 0.5f ? 1.0f : 0.0f);
-				if (finalAlpha <= 0.f) continue;
-
-				bbe::Colori c = color;
-				c.a = (bbe::byte)(c.a * finalAlpha);
-				image.setPixel((size_t)x, (size_t)y, c);
-			}
-		}
-
-		return image;
+		return bbe::Image::strokedEllipse(width, height, color, brushWidth, rotation, antiAliasingEnabled);
 	}
 
 	bbe::Image createCircleDraftImage(int32_t width, int32_t height) const { return createCircleImage(width, height, getCircleDraftColor()); }
@@ -1648,7 +1322,7 @@ class MyGame : public bbe::Game
 
 		if (selection.previewRect.width != selection.previewImage.getWidth() || selection.previewRect.height != selection.previewImage.getHeight())
 		{
-			return scaleImageNearest(selection.previewImage, selection.previewRect.width, selection.previewRect.height);
+			return selection.previewImage.scaledNearest(selection.previewRect.width, selection.previewRect.height);
 		}
 
 		return selection.previewImage;
@@ -1854,20 +1528,12 @@ class MyGame : public bbe::Game
 
 		for (size_t li = 0; li < canvas.get().layers.getLength(); li++)
 		{
-			bbe::Image newImage(previewRect.width, previewRect.height, fillColor);
-			prepareImageForCanvas(newImage);
-			for (int32_t ny = 0; ny < previewRect.height; ny++)
-			{
-				for (int32_t nx = 0; nx < previewRect.width; nx++)
-				{
-					const int32_t ox = nx + previewRect.x;
-					const int32_t oy = ny + previewRect.y;
-					if (ox < 0 || ox >= oldW || oy < 0 || oy >= oldH) continue;
-					newImage.setPixel((size_t)nx, (size_t)ny,
-						canvas.get().layers[li].image.getPixel((size_t)ox, (size_t)oy));
-				}
-			}
-			canvas.get().layers[li].image = std::move(newImage);
+			canvas.get().layers[li].image = canvas.get().layers[li].image.resizedCanvas(
+				previewRect.width,
+				previewRect.height,
+				bbe::Vector2i(-previewRect.x, -previewRect.y),
+				fillColor);
+			prepareImageForCanvas(canvas.get().layers[li].image);
 		}
 
 		// Shift offset so visual position of original content is preserved.
@@ -1922,86 +1588,13 @@ class MyGame : public bbe::Game
 		textFontIndex = bbe::Math::clamp(textFontIndex, 0, (int32_t)availableFonts.getLength() - 1);
 	}
 
-	static bool isFontUsable(const bbe::String &path)
-	{
-		if (path == "OpenSansRegular.ttf") return true;
-
-		// Read raw font bytes
-		std::ifstream file(path.getRaw(), std::ios::binary | std::ios::ate);
-		if (!file) return false;
-		const auto size = file.tellg();
-		if (size <= 0) return false;
-		file.seekg(0);
-		std::vector<unsigned char> data(static_cast<size_t>(size));
-		if (!file.read(reinterpret_cast<char *>(data.data()), size)) return false;
-
-		// Check stb_truetype can initialise the font
-		stbtt_fontinfo info = {};
-		const int offset = stbtt_GetFontOffsetForIndex(data.data(), 0);
-		if (offset < 0) return false;
-		if (!stbtt_InitFont(&info, data.data(), offset)) return false;
-
-		// Require the basic Latin glyphs used by the default "Text" string
-		for (const int c : { 'T', 'e', 'x', 't' })
-		{
-			if (stbtt_FindGlyphIndex(&info, c) == 0) return false;
-		}
-		return true;
-	}
-
 	void buildAvailableFontList()
 	{
 		availableFonts.clear();
-		availableFonts.add({"OpenSansRegular", "OpenSansRegular.ttf"});
-
-		bbe::List<bbe::String> fontDirs;
-#ifdef _WIN32
-		fontDirs.add("C:/Windows/Fonts/");
-#else
-		fontDirs.add("/usr/share/fonts/");
-		fontDirs.add("/usr/local/share/fonts/");
+		const bbe::List<bbe::FontFileEntry> fonts = bbe::Font::findUsableSystemFonts("Text");
+		for (size_t i = 0; i < fonts.getLength(); i++)
 		{
-			const char *home = std::getenv("HOME");
-			if (home)
-			{
-				fontDirs.add(bbe::String(home) + "/.fonts/");
-				fontDirs.add(bbe::String(home) + "/.local/share/fonts/");
-			}
-		}
-#endif
-
-		for (size_t d = 0; d < fontDirs.getLength(); d++)
-		{
-			const std::string dirStr(fontDirs[d].getRaw());
-			if (!std::filesystem::exists(dirStr)) continue;
-			try
-			{
-				for (const auto &entry : std::filesystem::recursive_directory_iterator(dirStr))
-				{
-					if (!entry.is_regular_file()) continue;
-					std::string ext = entry.path().extension().string();
-					for (char &c : ext) c = (char)std::tolower((unsigned char)c);
-					if (ext != ".ttf" && ext != ".otf") continue;
-
-					FontEntry fe;
-					fe.displayName = entry.path().stem().string().c_str();
-					fe.path        = entry.path().string().c_str();
-					if (!isFontUsable(fe.path)) continue;
-					availableFonts.add(fe);
-				}
-			}
-			catch (...) {}
-		}
-
-		// Sort alphabetically by display name (keep OpenSansRegular at index 0 by sorting from 1)
-		if (availableFonts.getLength() > 2)
-		{
-			// Extract tail, sort, reinsert
-			bbe::List<FontEntry> tail;
-			for (size_t i = 1; i < availableFonts.getLength(); i++) tail.add(availableFonts[i]);
-			tail.sort([](const FontEntry &a, const FontEntry &b) { return a.displayName < b.displayName; });
-			while (availableFonts.getLength() > 1) availableFonts.popBack();
-			for (size_t i = 0; i < tail.getLength(); i++) availableFonts.add(tail[i]);
+			availableFonts.add({ fonts[i].displayName, fonts[i].path });
 		}
 	}
 
@@ -2038,118 +1631,24 @@ class MyGame : public bbe::Game
 	{
 		const bbe::String text = getTextBufferString();
 		if (text.isEmpty()) return false;
-
-		const bbe::Font &font = getTextToolFont();
-		outBounds = font.getBoundingBox(text);
-		outOrigin = topLeft.as<float>() - outBounds.getPos();
-		return true;
-	}
-
-	void blendGlyphOntoCanvas(const bbe::Image &glyph, const bbe::Vector2i &pos, const bbe::Colori &color)
-	{
-		for (int32_t x = 0; x < glyph.getWidth(); x++)
-		{
-			for (int32_t y = 0; y < glyph.getHeight(); y++)
-			{
-				int32_t targetX = pos.x + x;
-				int32_t targetY = pos.y + y;
-				if (tiled)
-				{
-					targetX = bbe::Math::mod<int32_t>(targetX, getCanvasWidth());
-					targetY = bbe::Math::mod<int32_t>(targetY, getCanvasHeight());
-				}
-				else
-				{
-					if (targetX < 0 || targetY < 0 || targetX >= getCanvasWidth() || targetY >= getCanvasHeight()) continue;
-				}
-
-				const bbe::Colori glyphColor = glyph.getPixel((size_t)x, (size_t)y);
-				if (glyphColor.r == 0) continue;
-
-				bbe::Colori sourceColor = color;
-				sourceColor.a = static_cast<bbe::byte>((uint32_t(color.a) * uint32_t(glyphColor.r)) / 255u);
-
-				const bbe::Colori oldColor = getActiveLayerImage().getPixel((size_t)targetX, (size_t)targetY);
-				getActiveLayerImage().setPixel((size_t)targetX, (size_t)targetY, oldColor.blendTo(sourceColor));
-			}
-		}
+		return getTextToolFont().getRasterOriginAndBounds(text, topLeft, outOrigin, outBounds);
 	}
 
 	// Renders the text (as it would appear at topLeft) into a standalone image.
 	bbe::Image renderTextToImage(const bbe::Vector2i &topLeft, const bbe::Colori &color) const
 	{
-		bbe::Vector2 origin;
-		bbe::Rectangle bounds;
-		if (!getTextOriginAndBounds(topLeft, origin, bounds)) return {};
-
-		const int32_t imgW = (int32_t)std::ceil(bounds.width);
-		const int32_t imgH = (int32_t)std::ceil(bounds.height);
-		if (imgW <= 0 || imgH <= 0) return {};
-
-		bbe::Image img(imgW, imgH, bbe::Color(0.f, 0.f, 0.f, 0.f));
-		prepareImageForCanvas(img);
-
 		const bbe::String text = getTextBufferString();
 		const bbe::Font &font = getTextToolFont();
-		const bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(origin, text);
-
-		auto it = text.getIterator();
-		for (size_t i = 0; i < renderPositions.getLength() && it.valid(); i++, ++it)
-		{
-			const int32_t codePoint = it.getCodepoint();
-			if (codePoint == ' ' || codePoint == '\n' || codePoint == '\r' || codePoint == '\t') continue;
-
-			const bbe::Image &glyph = getTextGlyphImage(font, codePoint);
-			const int32_t gx = (int32_t)bbe::Math::round(renderPositions[i].x) - topLeft.x;
-			const int32_t gy = (int32_t)bbe::Math::round(renderPositions[i].y) - topLeft.y;
-
-			for (int32_t x = 0; x < glyph.getWidth(); x++)
-			{
-				for (int32_t y = 0; y < glyph.getHeight(); y++)
-				{
-					const int32_t px = gx + x;
-					const int32_t py = gy + y;
-					if (px < 0 || py < 0 || px >= imgW || py >= imgH) continue;
-
-					const bbe::Colori glyphColor = glyph.getPixel((size_t)x, (size_t)y);
-					if (glyphColor.r == 0) continue;
-
-					// Store (textColor, coverage) in straight-alpha format so bilinear
-					// interpolation during rotation preserves correct color at edges.
-					const bbe::byte coverage = static_cast<bbe::byte>((uint32_t(color.a) * uint32_t(glyphColor.r)) / 255u);
-					const bbe::byte existing  = img.getPixel((size_t)px, (size_t)py).a;
-					if (coverage > existing)
-						img.setPixel((size_t)px, (size_t)py, bbe::Colori(color.r, color.g, color.b, coverage));
-				}
-			}
-		}
-		return img;
+		return bbe::Image::renderTextToImage(font, text, topLeft, color);
 	}
 
 	bool drawTextAt(const bbe::Vector2i &topLeft, const bbe::Colori &color)
 	{
-		bbe::Vector2 origin;
-		bbe::Rectangle bounds;
-		if (!getTextOriginAndBounds(topLeft, origin, bounds)) return false;
-
 		const bbe::String text = getTextBufferString();
+		if (text.isEmpty()) return false;
 		const bbe::Font &font = getTextToolFont();
-		const bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(origin, text);
-
-		bool changed = false;
-		auto it = text.getIterator();
-		for (size_t i = 0; i < renderPositions.getLength() && it.valid(); i++, ++it)
-		{
-			const int32_t codePoint = it.getCodepoint();
-			if (codePoint == ' ' || codePoint == '\n' || codePoint == '\r' || codePoint == '\t') continue;
-
-			const bbe::Vector2i glyphPos(
-				(int32_t)bbe::Math::round(renderPositions[i].x),
-				(int32_t)bbe::Math::round(renderPositions[i].y));
-			blendGlyphOntoCanvas(getTextGlyphImage(font, codePoint), glyphPos, color);
-			changed = true;
-		}
-		return changed;
+		getActiveLayerImage().blendText(font, text, topLeft, color, tiled);
+		return true;
 	}
 
 	void placeTextAt(const bbe::Vector2i &topLeft, const bbe::Colori &color)
@@ -3472,15 +2971,18 @@ class MyGame : public bbe::Game
 			const bbe::Image *pImg = &image;
 			if (hasRot)
 			{
-				rotatedImg = createRotatedPreviewImage(image, rotation);
-				pImg = &rotatedImg;
-				const float cx = rect.x + rect.width / 2.f;
-				const float cy = rect.y + rect.height / 2.f;
-				displayRect = bbe::Rectanglei(
-					(int32_t)std::floor(cx - rotatedImg.getWidth() / 2.f),
-					(int32_t)std::floor(cy - rotatedImg.getHeight() / 2.f),
-					rotatedImg.getWidth(),
-					rotatedImg.getHeight());
+				rotatedImg = image.rotatedToFit(rotation, antiAliasingEnabled);
+				if (rotatedImg.getWidth() > 0 && rotatedImg.getHeight() > 0)
+				{
+					pImg = &rotatedImg;
+					const float cx = rect.x + rect.width / 2.f;
+					const float cy = rect.y + rect.height / 2.f;
+					displayRect = bbe::Rectanglei(
+						(int32_t)std::floor(cx - rotatedImg.getWidth() / 2.f),
+						(int32_t)std::floor(cy - rotatedImg.getHeight() / 2.f),
+						rotatedImg.getWidth(),
+						rotatedImg.getHeight());
+				}
 			}
 			for (int32_t i = -ghostRepeats; i <= ghostRepeats; i++)
 			{

@@ -107,7 +107,7 @@
 
 #include "../BBE/Font.h"
 #include "../BBE/FragmentShader.h"
-
+#include "../BBE/CanvasView2D.h"
 #include "../BBE/PhysWorld.h"
 #include "../BBE/PhysRectangle.h"
 #include "../BBE/PhysCircle.h"
