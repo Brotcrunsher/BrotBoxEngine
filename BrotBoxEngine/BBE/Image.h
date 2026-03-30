@@ -156,12 +156,12 @@ namespace bbe
 		void blend(const bbe::Image &src, float opacity = 1.0f, bbe::BlendMode mode = bbe::BlendMode::Normal);
 
 		// CPU-side alpha-over blit of src rotated around the center of dstRect.
-		// Rotation is in radians. Uses bilinear sampling in src pixel coordinates.
+		// Rotation is in radians. Bilinear sampling when antiAlias is true; nearest-neighbor when false (crisp pixels).
 		void blendOverRotated(const bbe::Image &src, const bbe::Rectanglei &dstRect, float rotation, bool tiled = false, bool antiAlias = true);
 
 		// Returns a new image rotated around its center (CPU).
 		// The returned image is sized to the rotated bounding box.
-		// Rotation is in radians. Uses bilinear sampling in src pixel coordinates.
+		// Rotation is in radians. Bilinear when antiAlias is true, nearest-neighbor when false.
 		bbe::Image rotatedToFit(float rotation, bool antiAlias = true) const;
 
 		// Returns a new image scaled using nearest-neighbor sampling (CPU).

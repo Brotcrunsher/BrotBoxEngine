@@ -443,13 +443,21 @@ void bbe::Image::blendOverRotated(const bbe::Image &src, const bbe::Rectanglei &
 			const float srcX = dx * cosA - dy * sinA + srcCX;
 			const float srcY = dx * sinA + dy * cosA + srcCY;
 
-			bbe::Colori sp = src.sampleBilinearPremultiplied(srcX, srcY);
-			if (!antiAlias)
+			bbe::Colori sp;
+			if (antiAlias)
 			{
+				sp = src.sampleBilinearPremultiplied(srcX, srcY);
+				if (sp.a == 0) continue;
+			}
+			else
+			{
+				const int32_t ix = (int32_t)std::lround(srcX);
+				const int32_t iy = (int32_t)std::lround(srcY);
+				if (ix < 0 || iy < 0 || ix >= srcW || iy >= srcH) continue;
+				sp = src.getPixel((size_t)ix, (size_t)iy);
 				if (sp.a == 0) continue;
 				sp.a = 255;
 			}
-			if (sp.a == 0) continue;
 
 			int32_t tx = x;
 			int32_t ty = y;
@@ -495,13 +503,23 @@ bbe::Image bbe::Image::rotatedToFit(float rotation, bool antiAlias) const
 		{
 			const float dx = px + 0.5f - newHW;
 			const float dy = py + 0.5f - newHH;
-			bbe::Colori pixel = sampleBilinearPremultiplied(dx * cosA - dy * sinA + srcCX, dx * sinA + dy * cosA + srcCY);
-			if (!antiAlias)
+			const float sx = dx * cosA - dy * sinA + srcCX;
+			const float sy = dx * sinA + dy * cosA + srcCY;
+			bbe::Colori pixel;
+			if (antiAlias)
 			{
+				pixel = sampleBilinearPremultiplied(sx, sy);
+				if (pixel.a == 0) continue;
+			}
+			else
+			{
+				const int32_t ix = (int32_t)std::lround(sx);
+				const int32_t iy = (int32_t)std::lround(sy);
+				if (ix < 0 || iy < 0 || ix >= srcW || iy >= srcH) continue;
+				pixel = getPixel((size_t)ix, (size_t)iy);
 				if (pixel.a == 0) continue;
 				pixel.a = 255;
 			}
-			if (pixel.a == 0) continue;
 			result.setPixel((size_t)px, (size_t)py, pixel);
 		}
 	}
