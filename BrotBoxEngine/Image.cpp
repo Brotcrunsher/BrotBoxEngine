@@ -1,6 +1,8 @@
 #include "BBE/Image.h"
 #include "BBE/Error.h"
 #include "BBE/Math.h"
+#include "BBE/Grid.h"
+#include "BBE/Rectangle.h"
 #if defined(__linux__)
 #include "BBE/WaylandClipboard.h"
 #endif
@@ -64,6 +66,18 @@ namespace
 		std::vector<bbe::byte> retVal(pngData, pngData + pngLength);
 		std::free(pngData);
 		return retVal;
+	}
+
+	bool toTiledPos(int32_t &x, int32_t &y, int32_t w, int32_t h, bool tiled)
+	{
+		if (w <= 0 || h <= 0) return false;
+		if (tiled)
+		{
+			x = bbe::Math::mod<int32_t>(x, w);
+			y = bbe::Math::mod<int32_t>(y, h);
+			return true;
+		}
+		return x >= 0 && y >= 0 && x < w && y < h;
 	}
 }
 
@@ -323,6 +337,298 @@ bbe::Colori bbe::Image::sampleBilinearPremultiplied(float sx, float sy) const
 		(bbe::byte)(pb * invA + 0.5f),
 		(bbe::byte)(pa + 0.5f)
 	);
+}
+
+void bbe::Image::blendOver(const bbe::Image &src, const bbe::Vector2i &dstPos, bool tiled)
+{
+	if (!isLoadedCpu() || !src.isLoadedCpu())
+	{
+		bbe::Crash(bbe::Error::NotInitialized);
+	}
+	if (m_format != bbe::ImageFormat::R8G8B8A8 || src.m_format != bbe::ImageFormat::R8G8B8A8)
+	{
+		bbe::Crash(bbe::Error::FormatNotSupported);
+	}
+
+	const int32_t dstW = getWidth();
+	const int32_t dstH = getHeight();
+	const int32_t srcW = src.getWidth();
+	const int32_t srcH = src.getHeight();
+	if (dstW <= 0 || dstH <= 0 || srcW <= 0 || srcH <= 0) return;
+
+	for (int32_t sy = 0; sy < srcH; sy++)
+	{
+		for (int32_t sx = 0; sx < srcW; sx++)
+		{
+			int32_t dx = dstPos.x + sx;
+			int32_t dy = dstPos.y + sy;
+			if (!toTiledPos(dx, dy, dstW, dstH, tiled)) continue;
+
+			const bbe::Colori sc = src.getPixel((size_t)sx, (size_t)sy);
+			if (sc.a == 0) continue;
+			const bbe::Colori dc = getPixel((size_t)dx, (size_t)dy);
+			setPixel((size_t)dx, (size_t)dy, dc.blendTo(sc));
+		}
+	}
+}
+
+void bbe::Image::blendOverRotated(const bbe::Image &src, const bbe::Rectanglei &dstRect, float rotation, bool tiled, bool antiAlias)
+{
+	if (!isLoadedCpu() || !src.isLoadedCpu())
+	{
+		bbe::Crash(bbe::Error::NotInitialized);
+	}
+	if (m_format != bbe::ImageFormat::R8G8B8A8 || src.m_format != bbe::ImageFormat::R8G8B8A8)
+	{
+		bbe::Crash(bbe::Error::FormatNotSupported);
+	}
+
+	const int32_t dstW = getWidth();
+	const int32_t dstH = getHeight();
+	const int32_t srcW = src.getWidth();
+	const int32_t srcH = src.getHeight();
+	if (dstW <= 0 || dstH <= 0 || srcW <= 0 || srcH <= 0) return;
+
+	const float cx = dstRect.x + dstRect.width / 2.f;
+	const float cy = dstRect.y + dstRect.height / 2.f;
+	const float cosA = std::cos(-rotation);
+	const float sinA = std::sin(-rotation);
+
+	const bbe::Rectangle srcRect(cx - srcW * 0.5f, cy - srcH * 0.5f, (float)srcW, (float)srcH);
+	const bbe::Rectanglei bb = srcRect.computeRotatedBoundsAfterRotation(rotation, bbe::Vector2(cx, cy));
+	const float srcCX = (srcW - 1) / 2.f;
+	const float srcCY = (srcH - 1) / 2.f;
+
+	for (int32_t y = bb.y; y <= bb.y + bb.height - 1; y++)
+	{
+		for (int32_t x = bb.x; x <= bb.x + bb.width - 1; x++)
+		{
+			const float dx = x + 0.5f - cx;
+			const float dy = y + 0.5f - cy;
+			const float srcX = dx * cosA - dy * sinA + srcCX;
+			const float srcY = dx * sinA + dy * cosA + srcCY;
+
+			bbe::Colori sp = src.sampleBilinearPremultiplied(srcX, srcY);
+			if (!antiAlias)
+			{
+				if (sp.a == 0) continue;
+				sp.a = 255;
+			}
+			if (sp.a == 0) continue;
+
+			int32_t tx = x;
+			int32_t ty = y;
+			if (!toTiledPos(tx, ty, dstW, dstH, tiled)) continue;
+
+			const bbe::Colori dc = getPixel((size_t)tx, (size_t)ty);
+			setPixel((size_t)tx, (size_t)ty, dc.blendTo(sp));
+		}
+	}
+}
+
+bool bbe::Image::drawBrushStamp(const bbe::Vector2 &pos, const bbe::Colori &color, int32_t brushRadius, ImageBrushShape shape, bool tiled, bool antiAlias)
+{
+	if (!isLoadedCpu())
+	{
+		bbe::Crash(bbe::Error::NotInitialized);
+	}
+	if (m_format != bbe::ImageFormat::R8G8B8A8)
+	{
+		bbe::Crash(bbe::Error::FormatNotSupported);
+	}
+	if (brushRadius < 0) return false;
+	const int32_t w = getWidth();
+	const int32_t h = getHeight();
+	if (w <= 0 || h <= 0) return false;
+
+	const float effX = antiAlias ? pos.x : std::floor(pos.x) + 0.5f;
+	const float effY = antiAlias ? pos.y : std::floor(pos.y) + 0.5f;
+
+	bool changed = false;
+	for (int32_t oy = -brushRadius; oy <= brushRadius; oy++)
+	{
+		for (int32_t ox = -brushRadius; ox <= brushRadius; ox++)
+		{
+			const float logicalX = std::floor(effX + (float)ox) + 0.5f;
+			const float logicalY = std::floor(effY + (float)oy) + 0.5f;
+			const float dx = logicalX - effX;
+			const float dy = logicalY - effY;
+
+			float strength;
+			if (shape == bbe::ImageBrushShape::Square)
+			{
+				const float maxD = std::max(std::fabsf(dx), std::fabsf(dy));
+				strength = bbe::Math::clamp01((float)brushRadius - maxD);
+			}
+			else
+			{
+				strength = bbe::Math::clamp01((float)brushRadius - bbe::Math::sqrt(dx * dx + dy * dy));
+			}
+			if (strength <= 0.f) continue;
+
+			int32_t px = (int32_t)std::floor(pos.x + (float)ox);
+			int32_t py = (int32_t)std::floor(pos.y + (float)oy);
+			if (!toTiledPos(px, py, w, h, tiled)) continue;
+
+			bbe::Colori nc = color;
+			nc.a = (bbe::byte)(nc.MAXIMUM_VALUE * strength);
+			const bbe::Colori oc = getPixel((size_t)px, (size_t)py);
+			if (nc.a > oc.a)
+			{
+				setPixel((size_t)px, (size_t)py, nc);
+				changed = true;
+			}
+		}
+	}
+	return changed;
+}
+
+bool bbe::Image::drawLineCapsule(const bbe::Vector2 &from, const bbe::Vector2 &to, const bbe::Colori &color, int32_t brushRadius, ImageBrushShape shape, bool tiled, bool antiAlias)
+{
+	if (!isLoadedCpu())
+	{
+		bbe::Crash(bbe::Error::NotInitialized);
+	}
+	if (m_format != bbe::ImageFormat::R8G8B8A8)
+	{
+		bbe::Crash(bbe::Error::FormatNotSupported);
+	}
+	if (brushRadius < 0) return false;
+
+	// Keep crisp results: tiled, square brushes, or AA-off uses stamp-based iteration.
+	if (tiled || shape == bbe::ImageBrushShape::Square || !antiAlias)
+	{
+		bool changed = false;
+		bbe::GridIterator gi(from, to);
+		while (gi.hasNext())
+		{
+			const bbe::Vector2 p = gi.next().as<float>();
+			changed |= drawBrushStamp(p, color, brushRadius, shape, tiled, antiAlias);
+		}
+		return changed;
+	}
+
+	const int32_t w = getWidth();
+	const int32_t h = getHeight();
+	if (w <= 0 || h <= 0) return false;
+
+	const float ax = to.x - from.x;
+	const float ay = to.y - from.y;
+	const float lenSq = ax * ax + ay * ay;
+
+	const float margin = (float)brushRadius + 1.f;
+	const int32_t xMin = (int32_t)std::floor(std::min(from.x, to.x) - margin);
+	const int32_t xMax = (int32_t)std::ceil(std::max(from.x, to.x) + margin);
+	const int32_t yMin = (int32_t)std::floor(std::min(from.y, to.y) - margin);
+	const int32_t yMax = (int32_t)std::ceil(std::max(from.y, to.y) + margin);
+
+	bool changed = false;
+	for (int32_t y = yMin; y <= yMax; y++)
+	{
+		for (int32_t x = xMin; x <= xMax; x++)
+		{
+			const float pcx = (float)x + 0.5f;
+			const float pcy = (float)y + 0.5f;
+			float dist;
+			if (lenSq < 1e-6f)
+			{
+				const float dx = pcx - from.x;
+				const float dy = pcy - from.y;
+				dist = bbe::Math::sqrt(dx * dx + dy * dy);
+			}
+			else
+			{
+				const float bx = pcx - from.x;
+				const float by = pcy - from.y;
+				const float t = bbe::Math::clamp01((bx * ax + by * ay) / lenSq);
+				const float cx = pcx - (from.x + t * ax);
+				const float cy = pcy - (from.y + t * ay);
+				dist = bbe::Math::sqrt(cx * cx + cy * cy);
+			}
+
+			const float strength = bbe::Math::clamp01((float)brushRadius - dist);
+			if (strength <= 0.f) continue;
+
+			int32_t px = x;
+			int32_t py = y;
+			if (!toTiledPos(px, py, w, h, false)) continue;
+
+			bbe::Colori nc = color;
+			nc.a = (bbe::byte)(nc.MAXIMUM_VALUE * strength);
+			const bbe::Colori oc = getPixel((size_t)px, (size_t)py);
+			if (nc.a > oc.a)
+			{
+				setPixel((size_t)px, (size_t)py, nc);
+				changed = true;
+			}
+		}
+	}
+	return changed;
+}
+
+void bbe::Image::fillTriangle(const bbe::Vector2 &v0, const bbe::Vector2 &v1, const bbe::Vector2 &v2, const bbe::Colori &color, bool tiled, bool antiAlias)
+{
+	if (!isLoadedCpu())
+	{
+		bbe::Crash(bbe::Error::NotInitialized);
+	}
+	if (m_format != bbe::ImageFormat::R8G8B8A8)
+	{
+		bbe::Crash(bbe::Error::FormatNotSupported);
+	}
+
+	const int32_t w = getWidth();
+	const int32_t h = getHeight();
+	if (w <= 0 || h <= 0) return;
+
+	auto edgeDist = [](float ax, float ay, float bx, float by, float px, float py) -> float
+	{
+		const float ex = bx - ax, ey = by - ay;
+		const float len = bbe::Math::sqrt(ex * ex + ey * ey);
+		if (len < 1e-6f) return 0.f;
+		return (ex * (py - ay) - ey * (px - ax)) / len;
+	};
+
+	// Ensure CCW winding.
+	const float area2 = (v1.x - v0.x) * (v2.y - v0.y) - (v2.x - v0.x) * (v1.y - v0.y);
+	const bbe::Vector2 a = v0;
+	const bbe::Vector2 b = area2 >= 0.f ? v1 : v2;
+	const bbe::Vector2 c = area2 >= 0.f ? v2 : v1;
+
+	const int32_t x0 = (int32_t)bbe::Math::floor(bbe::Math::min(bbe::Math::min(a.x, b.x), c.x) - 1.f);
+	const int32_t x1 = (int32_t)bbe::Math::ceil(bbe::Math::max(bbe::Math::max(a.x, b.x), c.x) + 1.f);
+	const int32_t y0 = (int32_t)bbe::Math::floor(bbe::Math::min(bbe::Math::min(a.y, b.y), c.y) - 1.f);
+	const int32_t y1 = (int32_t)bbe::Math::ceil(bbe::Math::max(bbe::Math::max(a.y, b.y), c.y) + 1.f);
+
+	for (int32_t y = y0; y <= y1; y++)
+	{
+		for (int32_t x = x0; x <= x1; x++)
+		{
+			const float px = x + 0.5f;
+			const float py = y + 0.5f;
+			const float d0 = edgeDist(a.x, a.y, b.x, b.y, px, py);
+			const float d1 = edgeDist(b.x, b.y, c.x, c.y, px, py);
+			const float d2 = edgeDist(c.x, c.y, a.x, a.y, px, py);
+			const float minD = d0 < d1 ? (d0 < d2 ? d0 : d2) : (d1 < d2 ? d1 : d2);
+			const float alphaAA = bbe::Math::clamp01(minD + 0.5f);
+			if (alphaAA <= 0.f) continue;
+
+			const float finalAlpha = antiAlias ? alphaAA : (alphaAA > 0.5f ? 1.0f : 0.0f);
+			if (finalAlpha <= 0.f) continue;
+
+			int32_t tx = x;
+			int32_t ty = y;
+			if (!toTiledPos(tx, ty, w, h, tiled)) continue;
+
+			bbe::Colori pix = color;
+			pix.a = (bbe::byte)(pix.a * finalAlpha);
+			const bbe::Colori old = getPixel((size_t)tx, (size_t)ty);
+			if (pix.a > old.a)
+			{
+				setPixel((size_t)tx, (size_t)ty, pix);
+			}
+		}
+	}
 }
 
 void bbe::Image::setPixel(const bbe::Vector2i &pos, const bbe::Colori &c)

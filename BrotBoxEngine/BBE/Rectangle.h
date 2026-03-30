@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 #include "../BBE/Vector2.h"
 #include "../BBE/Shape2.h"
 #include "../BBE/Circle.h"
@@ -261,6 +262,34 @@ namespace bbe
 			if (circleMidPoint.getDistanceTo(x + width, y + height) < circle.getWidth() / 2) return true;
 
 			return false;
+		}
+
+		// Returns the axis-aligned integer bounds of this rectangle after rotating it around pivot by rotation radians.
+		// This is primarily intended for rasterization / pixel-based operations.
+		bbe::Rectangle_t<bbe::Vector2i> computeRotatedBoundsAfterRotation(float rotation, const bbe::Vector2 &pivot) const
+		{
+			const float left = (float)getLeft();
+			const float right = (float)getRight();
+			const float top = (float)getTop();
+			const float bottom = (float)getBottom();
+			const float w = right - left;
+			const float h = bottom - top;
+
+			const float hw = w * 0.5f;
+			const float hh = h * 0.5f;
+			const float newHW = std::abs(hw * std::cos(rotation)) + std::abs(hh * std::sin(rotation));
+			const float newHH = std::abs(hw * std::sin(rotation)) + std::abs(hh * std::cos(rotation));
+			const int32_t x0 = (int32_t)bbe::Math::floor(pivot.x - newHW);
+			const int32_t x1 = (int32_t)bbe::Math::ceil(pivot.x + newHW);
+			const int32_t y0 = (int32_t)bbe::Math::floor(pivot.y - newHH);
+			const int32_t y1 = (int32_t)bbe::Math::ceil(pivot.y + newHH);
+			return bbe::Rectangle_t<bbe::Vector2i>(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+		}
+
+		bbe::Rectangle_t<bbe::Vector2i> computeRotatedBoundsAfterRotation(float rotation) const
+		{
+			const auto c = this->getCenter();
+			return computeRotatedBoundsAfterRotation(rotation, bbe::Vector2((float)c.x, (float)c.y));
 		}
 
 		static Vec pack(bbe::List<Rectangle_t<Vec>> &list)

@@ -1,5 +1,7 @@
 
 #include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
+#include "BBE/Editor/RectSelectionGizmo2D.h"
+#include "BBE/Symmetry2D.h"
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
@@ -180,15 +182,7 @@ class MyGame : public bbe::Game
 	int32_t canvasResizeHandleIndex = -1;
 	bbe::Rectanglei canvasResizePreviewRect;
 
-	enum class SymmetryMode
-	{
-		None       = 0,
-		Horizontal = 1,
-		Vertical   = 2,
-		FourWay    = 3,
-		Radial     = 4,
-	};
-	SymmetryMode symmetryMode = SymmetryMode::None;
+	bbe::SymmetryMode symmetryMode = bbe::SymmetryMode::None;
 	int32_t radialSymmetryCount = 6;
 	bool symmetryOffsetCustom = false;
 	bbe::Vector2 symmetryOffset;
@@ -472,103 +466,6 @@ class MyGame : public bbe::Game
 		}
 	}
 
-	void blendOverOpaque(bbe::Image &dst, const bbe::Image &src)
-	{
-		forEachPixel((int32_t)src.getWidth(), (int32_t)src.getHeight(), [&](int32_t x, int32_t y)
-		{
-			const bbe::Colori c = src.getPixel((size_t)x, (size_t)y);
-			if (c.a == 0) return;
-			const bbe::Colori oldColor = dst.getPixel((size_t)x, (size_t)y);
-			dst.setPixel((size_t)x, (size_t)y, oldColor.blendTo(c));
-		});
-	}
-
-	void blendImageOntoImage(bbe::Image &target, const bbe::Image &image, const bbe::Vector2i &pos, bool repeated = false) const
-	{
-		forEachPixel((int32_t)image.getWidth(), (int32_t)image.getHeight(), [&](int32_t x, int32_t y)
-		{
-			int32_t targetX = pos.x + x;
-			int32_t targetY = pos.y + y;
-			if (repeated)
-			{
-				targetX = bbe::Math::mod<int32_t>(targetX, target.getWidth());
-				targetY = bbe::Math::mod<int32_t>(targetY, target.getHeight());
-			}
-			else
-			{
-				if (targetX < 0 || targetY < 0 || targetX >= target.getWidth() || targetY >= target.getHeight()) return;
-			}
-
-			const bbe::Colori sourceColor = image.getPixel((size_t)x, (size_t)y);
-			if (sourceColor.a == 0) return;
-
-			const bbe::Colori oldColor = target.getPixel((size_t)targetX, (size_t)targetY);
-			target.setPixel((size_t)targetX, (size_t)targetY, oldColor.blendTo(sourceColor));
-		});
-	}
-
-	void blendRotatedImageOntoCanvas(const bbe::Image &image, const bbe::Rectanglei &rect, float rotation)
-	{
-		const float cx = rect.x + rect.width / 2.f;
-		const float cy = rect.y + rect.height / 2.f;
-		const float cosA = std::cos(-rotation);
-		const float sinA = std::sin(-rotation);
-		const int32_t imgW = (int32_t)image.getWidth();
-		const int32_t imgH = (int32_t)image.getHeight();
-		const auto sampleBilinear = [&](float sx, float sy) -> bbe::Colori { return image.sampleBilinearPremultiplied(sx, sy); };
-
-		const bbe::Rectanglei bb = computeRotatedBounds((float)imgW, (float)imgH, rotation, cx, cy);
-		const float srcCX = (imgW - 1) / 2.f;
-		const float srcCY = (imgH - 1) / 2.f;
-
-		for (int32_t canvasY = bb.y; canvasY <= bb.y + bb.height - 1; canvasY++)
-		{
-			for (int32_t canvasX = bb.x; canvasX <= bb.x + bb.width - 1; canvasX++)
-			{
-				const float dx = canvasX + 0.5f - cx;
-				const float dy = canvasY + 0.5f - cy;
-				const float srcX = dx * cosA - dy * sinA + srcCX;
-				const float srcY = dx * sinA + dy * cosA + srcCY;
-				bbe::Colori srcPixel = sampleBilinear(srcX, srcY);
-				if (!antiAliasingEnabled)
-				{
-					// Snap to hard edge: bilinear fills rotation gaps, but alpha is binary.
-					if (srcPixel.a == 0) continue;
-					srcPixel.a = 255;
-				}
-				if (srcPixel.a == 0) continue;
-
-				int32_t targetX = canvasX;
-				int32_t targetY = canvasY;
-				if (tiled)
-				{
-					targetX = bbe::Math::mod<int32_t>(targetX, getCanvasWidth());
-					targetY = bbe::Math::mod<int32_t>(targetY, getCanvasHeight());
-				}
-				else
-				{
-					if (targetX < 0 || targetX >= getCanvasWidth()) continue;
-					if (targetY < 0 || targetY >= getCanvasHeight()) continue;
-				}
-				const bbe::Colori oldColor = getActiveLayerImage().getPixel((size_t)targetX, (size_t)targetY);
-				getActiveLayerImage().setPixel((size_t)targetX, (size_t)targetY, oldColor.blendTo(srcPixel));
-			}
-		}
-	}
-
-	static bbe::Rectanglei computeRotatedBounds(float w, float h, float rotation, float cx, float cy)
-	{
-		const float hw = w * 0.5f;
-		const float hh = h * 0.5f;
-		const float newHW = std::abs(hw * std::cos(rotation)) + std::abs(hh * std::sin(rotation));
-		const float newHH = std::abs(hw * std::sin(rotation)) + std::abs(hh * std::cos(rotation));
-		const int32_t x0 = (int32_t)std::floor(cx - newHW);
-		const int32_t x1 = (int32_t)std::ceil(cx + newHW);
-		const int32_t y0 = (int32_t)std::floor(cy - newHH);
-		const int32_t y1 = (int32_t)std::ceil(cy + newHH);
-		return bbe::Rectanglei(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
-	}
-
 	// Returns a rasterized rotation of src, sized to fit the rotated bounding box.
 	bbe::Image createRotatedPreviewImage(const bbe::Image &src, float rotation) const
 	{
@@ -579,7 +476,8 @@ class MyGame : public bbe::Game
 		const float srcCX = (srcW - 1) / 2.f;
 		const float srcCY = (srcH - 1) / 2.f;
 
-		const bbe::Rectanglei bb = computeRotatedBounds((float)srcW, (float)srcH, rotation, 0.f, 0.f);
+		const bbe::Rectangle srcRect(-(float)srcW * 0.5f, -(float)srcH * 0.5f, (float)srcW, (float)srcH);
+		const bbe::Rectanglei bb = srcRect.computeRotatedBoundsAfterRotation(rotation, bbe::Vector2(0.f, 0.f));
 		const float newHW = (bb.width - 1) * 0.5f;
 		const float newHH = (bb.height - 1) * 0.5f;
 		const int32_t newW = bb.width;
@@ -828,55 +726,19 @@ class MyGame : public bbe::Game
 
 	bool isPointInSelection(const bbe::Vector2i &point) const { return selection.hasSelection && selection.rect.isPointInRectangle(point, true); }
 
-	bool isSelectionResizeHit(const SelectionHitZone hitZone) const { return hitZone != SelectionHitZone::NONE && hitZone != SelectionHitZone::INSIDE && hitZone != SelectionHitZone::ROTATION; }
-
-	bbe::Vector2 getRotationHandleCanvasPos(const bbe::Rectanglei &rect) const
-	{
-		const float stemScreenLen = 30.f;
-		return {
-			rect.x + rect.width / 2.f,
-			rect.y - stemScreenLen / zoomLevel
-		};
-	}
+	bool isSelectionResizeHit(const SelectionHitZone hitZone) const { return bbe::editor::isResizeZone((bbe::editor::RectSelectionHitZone)hitZone); }
 
 	SelectionHitZone getSelectionHitZone(const bbe::Vector2i &point) const
 	{
-		if (!selection.hasSelection || selection.rect.width <= 0 || selection.rect.height <= 0)
+		if (!selection.hasSelection)
 		{
 			return SelectionHitZone::NONE;
 		}
-
-		const int32_t left = selection.rect.x;
-		const int32_t top = selection.rect.y;
-		const int32_t right = selection.rect.x + selection.rect.width - 1;
-		const int32_t bottom = selection.rect.y + selection.rect.height - 1;
+		const bool allowRotationHandle = !selection.dragActive;
 		const int32_t padding = bbe::Math::max<int32_t>(1, (int32_t)bbe::Math::ceil(6.0f / zoomLevel));
-
-		const bool nearLeft = point.x >= left - padding && point.x <= left + padding && point.y >= top - padding && point.y <= bottom + padding;
-		const bool nearRight = point.x >= right - padding && point.x <= right + padding && point.y >= top - padding && point.y <= bottom + padding;
-		const bool nearTop = point.y >= top - padding && point.y <= top + padding && point.x >= left - padding && point.x <= right + padding;
-		const bool nearBottom = point.y >= bottom - padding && point.y <= bottom + padding && point.x >= left - padding && point.x <= right + padding;
-
-		if (nearLeft && nearTop) return SelectionHitZone::TOP_LEFT;
-		if (nearRight && nearTop) return SelectionHitZone::TOP_RIGHT;
-		if (nearLeft && nearBottom) return SelectionHitZone::BOTTOM_LEFT;
-		if (nearRight && nearBottom) return SelectionHitZone::BOTTOM_RIGHT;
-		if (nearLeft) return SelectionHitZone::LEFT;
-		if (nearRight) return SelectionHitZone::RIGHT;
-		if (nearTop) return SelectionHitZone::TOP;
-		if (nearBottom) return SelectionHitZone::BOTTOM;
-
-		if (selection.hasSelection && !selection.dragActive)
-		{
-			const bbe::Vector2 handlePos = getRotationHandleCanvasPos(selection.rect);
-			const float hitRadius = 8.f / zoomLevel;
-			const float dx = point.x - handlePos.x;
-			const float dy = point.y - handlePos.y;
-			if (dx * dx + dy * dy <= hitRadius * hitRadius) return SelectionHitZone::ROTATION;
-		}
-
-		if (isPointInSelection(point)) return SelectionHitZone::INSIDE;
-		return SelectionHitZone::NONE;
+		const float rotationStemLenCanvas = 30.f / zoomLevel;
+		const float rotationHitRadiusCanvas = 8.f / zoomLevel;
+		return (SelectionHitZone)bbe::editor::hitTest(selection.rect, point, padding, allowRotationHandle, rotationStemLenCanvas, rotationHitRadiusCanvas);
 	}
 
 	bool isWholeLayerSelection(const bbe::Rectanglei &rect) const { return rect.x == 0 && rect.y == 0 && rect.width == getCanvasWidth() && rect.height == getCanvasHeight(); }
@@ -909,8 +771,6 @@ class MyGame : public bbe::Game
 			}
 		}
 	}
-
-	void blendImageOntoCanvas(const bbe::Image &image, const bbe::Vector2i &pos) { blendImageOntoImage(getActiveLayerImage(), image, pos, tiled); }
 
 	void storeSelectionInClipboard()
 	{
@@ -1015,7 +875,7 @@ class MyGame : public bbe::Game
 					const bbe::Vector2i pos(
 						(int32_t)std::floor(c.x - img.getWidth()  * 0.5f),
 						(int32_t)std::floor(c.y - img.getHeight() * 0.5f));
-					blendImageOntoCanvas(img, pos);
+					getActiveLayerImage().blendOver(img, pos, tiled);
 				};
 
 				blitRotated(selection.rotation, center);
@@ -1029,7 +889,7 @@ class MyGame : public bbe::Game
 				return;
 			}
 
-			blendRotatedImageOntoCanvas(selection.floatingImage, selection.rect, selection.rotation);
+			getActiveLayerImage().blendOverRotated(selection.floatingImage, selection.rect, selection.rotation, tiled, antiAliasingEnabled);
 			if (rectangle.draftActive || circle.draftActive)
 			{
 				const bbe::Vector2 center = {
@@ -1046,7 +906,7 @@ class MyGame : public bbe::Game
 						selection.rect.width,
 						selection.rect.height
 					};
-					blendRotatedImageOntoCanvas(selection.floatingImage, symRect, selection.rotation + symAngles[i]);
+					getActiveLayerImage().blendOverRotated(selection.floatingImage, symRect, selection.rotation + symAngles[i], tiled, antiAliasingEnabled);
 				}
 			}
 			submitCanvas();
@@ -1054,7 +914,7 @@ class MyGame : public bbe::Game
 			return;
 		}
 
-		blendImageOntoCanvas(selection.floatingImage, selection.rect.getPos());
+		getActiveLayerImage().blendOver(selection.floatingImage, selection.rect.getPos(), tiled);
 		if (rectangle.draftActive || circle.draftActive)
 		{
 			const bbe::Vector2 center = {
@@ -1072,9 +932,9 @@ class MyGame : public bbe::Game
 					selection.rect.height
 				};
 				if (std::abs(symAngles[i]) > 0.0001f)
-					blendRotatedImageOntoCanvas(selection.floatingImage, symRect, symAngles[i]);
+					getActiveLayerImage().blendOverRotated(selection.floatingImage, symRect, symAngles[i], tiled, antiAliasingEnabled);
 				else
-					blendImageOntoCanvas(selection.floatingImage, symRect.getPos());
+					getActiveLayerImage().blendOver(selection.floatingImage, symRect.getPos(), tiled);
 			}
 		}
 		submitCanvas();
@@ -1114,188 +974,7 @@ class MyGame : public bbe::Game
 		return pos.x >= 0 && pos.y >= 0 && pos.x < width && pos.y < height;
 	}
 
-	bool touchImage(bbe::Image &image, const bbe::Vector2 &touchPos, const bbe::Colori &color, int32_t toolBrushWidth, bool rectangleShape, bool repeated) const
-	{
-		bool changeRegistered = false;
-		// With AA off, snap to the containing pixel's centre so that distances
-		// are always whole numbers — identical to the original integer-offset
-		// formula, giving clean single-pixel results with no boundary bleed.
-		const float effX = antiAliasingEnabled ? touchPos.x : std::floor(touchPos.x) + 0.5f;
-		const float effY = antiAliasingEnabled ? touchPos.y : std::floor(touchPos.y) + 0.5f;
-		for (int32_t i = -toolBrushWidth; i <= toolBrushWidth; i++)
-		{
-			for (int32_t k = -toolBrushWidth; k <= toolBrushWidth; k++)
-			{
-				// Pixel centers live at (floor(eff + offset) + 0.5) in canvas space,
-				// so a click at the visual centre of any pixel has distance 0 from that pixel.
-				const float logicalX = std::floor(effX + (float)i) + 0.5f;
-				const float logicalY = std::floor(effY + (float)k) + 0.5f;
-				const float dx = logicalX - effX;
-				const float dy = logicalY - effY;
-				float pencilStrength;
-				if (rectangleShape)
-				{
-					const float maxD = std::max(std::fabsf(dx), std::fabsf(dy));
-					pencilStrength = bbe::Math::clamp01((float)toolBrushWidth - maxD);
-				}
-				else
-				{
-					pencilStrength = bbe::Math::clamp01((float)toolBrushWidth - bbe::Math::sqrt(dx * dx + dy * dy));
-				}
-				if (pencilStrength <= 0.f) continue;
-
-				bbe::Vector2 coord = touchPos + bbe::Vector2(i, k);
-				if (toImagePos(coord, image.getWidth(), image.getHeight(), repeated))
-				{
-					bbe::Colori newColor = color;
-					newColor.a = newColor.MAXIMUM_VALUE * pencilStrength;
-					const int32_t pixelX = std::min((int32_t)std::floor(coord.x), (int32_t)image.getWidth()  - 1);
-					const int32_t pixelY = std::min((int32_t)std::floor(coord.y), (int32_t)image.getHeight() - 1);
-					bbe::Colori oldColor = image.getPixel((size_t)pixelX, (size_t)pixelY);
-					if (newColor.a > oldColor.a)
-					{
-						image.setPixel((size_t)pixelX, (size_t)pixelY, newColor);
-						changeRegistered = true;
-					}
-				}
-			}
-		}
-		return changeRegistered;
-	}
-
-	bool touchLineImage(bbe::Image &image, const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, const bbe::Colori &color, int32_t toolBrushWidth, bool rectangleShape, bool repeated) const
-	{
-		// For tiled/wrapped mode, square brushes, or AA-off fall back to the stamp-based
-		// path. The stamp path uses touchImage which handles AA-off via pixel-centre
-		// snapping, giving clean single-pixel results with no capsule-SDF boundary bleed.
-		if (repeated || rectangleShape || !antiAliasingEnabled)
-		{
-			bool changeRegistered = false;
-			bbe::GridIterator gi(pos1, pos2);
-			while (gi.hasNext())
-			{
-				const bbe::Vector2 coordBase = gi.next().as<float>();
-				changeRegistered |= touchImage(image, coordBase, color, toolBrushWidth, rectangleShape, repeated);
-			}
-			return changeRegistered;
-		}
-
-		// Capsule SDF rasterizer: for each pixel in the bounding box, compute the
-		// exact distance from the pixel center to the segment and apply SDF-based AA —
-		// the same technique used by the rotated-rectangle and circle tools.
-		const float ax = pos2.x - pos1.x;
-		const float ay = pos2.y - pos1.y;
-		const float lenSq = ax * ax + ay * ay;
-
-		const float margin = (float)toolBrushWidth + 1.f;
-		const int32_t xMin = (int32_t)std::floor(std::min(pos1.x, pos2.x) - margin);
-		const int32_t xMax = (int32_t)std::ceil (std::max(pos1.x, pos2.x) + margin);
-		const int32_t yMin = (int32_t)std::floor(std::min(pos1.y, pos2.y) - margin);
-		const int32_t yMax = (int32_t)std::ceil (std::max(pos1.y, pos2.y) + margin);
-
-		bool changeRegistered = false;
-		for (int32_t y = yMin; y <= yMax; y++)
-		{
-			for (int32_t x = xMin; x <= xMax; x++)
-			{
-				// Use pixel centres (+0.5) so the distance is 0 when the segment
-				// passes through the middle of a pixel, consistent with touchImage.
-				const float pcx = (float)x + 0.5f;
-				const float pcy = (float)y + 0.5f;
-				float dist;
-				if (lenSq < 1e-6f)
-				{
-					const float dx = pcx - pos1.x;
-					const float dy = pcy - pos1.y;
-					dist = bbe::Math::sqrt(dx * dx + dy * dy);
-				}
-				else
-				{
-					const float bx = pcx - pos1.x;
-					const float by = pcy - pos1.y;
-					const float t = bbe::Math::clamp01((bx * ax + by * ay) / lenSq);
-					const float cx = pcx - (pos1.x + t * ax);
-					const float cy = pcy - (pos1.y + t * ay);
-					dist = bbe::Math::sqrt(cx * cx + cy * cy);
-				}
-
-				const float pencilStrength = bbe::Math::clamp01((float)toolBrushWidth - dist);
-				if (pencilStrength <= 0.f) continue;
-
-				bbe::Vector2 coord = { (float)x, (float)y };
-				if (!toImagePos(coord, image.getWidth(), image.getHeight(), repeated)) continue;
-
-				const int32_t pixelX = std::min((int32_t)std::round(coord.x), (int32_t)image.getWidth()  - 1);
-				const int32_t pixelY = std::min((int32_t)std::round(coord.y), (int32_t)image.getHeight() - 1);
-				bbe::Colori newColor = color;
-				newColor.a = newColor.MAXIMUM_VALUE * pencilStrength;
-				const bbe::Colori oldColor = image.getPixel((size_t)pixelX, (size_t)pixelY);
-				if (newColor.a > oldColor.a)
-				{
-					image.setPixel((size_t)pixelX, (size_t)pixelY, newColor);
-					changeRegistered = true;
-				}
-			}
-		}
-		return changeRegistered;
-	}
-
-	void fillTriangleOnImage(bbe::Image &image, const bbe::Vector2 &v0, const bbe::Vector2 &v1, const bbe::Vector2 &v2, const bbe::Colori &color) const
-	{
-		auto edgeDist = [](float ax, float ay, float bx, float by, float px, float py) -> float
-		{
-			const float ex = bx - ax, ey = by - ay;
-			const float len = bbe::Math::sqrt(ex * ex + ey * ey);
-			if (len < 1e-6f) return 0.f;
-			return (ex * (py - ay) - ey * (px - ax)) / len;
-		};
-
-		// Ensure CCW winding
-		const float area2 = (v1.x - v0.x) * (v2.y - v0.y) - (v2.x - v0.x) * (v1.y - v0.y);
-		const bbe::Vector2 a = v0;
-		const bbe::Vector2 b = area2 >= 0.f ? v1 : v2;
-		const bbe::Vector2 c = area2 >= 0.f ? v2 : v1;
-
-		const int32_t x0 = (int32_t)bbe::Math::floor(bbe::Math::min(bbe::Math::min(a.x, b.x), c.x) - 1.f);
-		const int32_t x1 = (int32_t)bbe::Math::ceil (bbe::Math::max(bbe::Math::max(a.x, b.x), c.x) + 1.f);
-		const int32_t y0 = (int32_t)bbe::Math::floor(bbe::Math::min(bbe::Math::min(a.y, b.y), c.y) - 1.f);
-		const int32_t y1 = (int32_t)bbe::Math::ceil (bbe::Math::max(bbe::Math::max(a.y, b.y), c.y) + 1.f);
-
-		for (int32_t y = y0; y <= y1; y++)
-		{
-			for (int32_t x = x0; x <= x1; x++)
-			{
-				const float px = x + 0.5f, py = y + 0.5f;
-				const float d0 = edgeDist(a.x, a.y, b.x, b.y, px, py);
-				const float d1 = edgeDist(b.x, b.y, c.x, c.y, px, py);
-				const float d2 = edgeDist(c.x, c.y, a.x, a.y, px, py);
-				const float minD = d0 < d1 ? (d0 < d2 ? d0 : d2) : (d1 < d2 ? d1 : d2);
-				const float alpha = bbe::Math::clamp01(minD + 0.5f);
-				if (alpha <= 0.f) continue;
-				const float finalAlpha = antiAliasingEnabled ? alpha : (alpha > 0.5f ? 1.0f : 0.0f);
-				if (finalAlpha <= 0.f) continue;
-
-				int32_t tx = x, ty = y;
-				if (tiled)
-				{
-					tx = bbe::Math::mod<int32_t>(tx, image.getWidth());
-					ty = bbe::Math::mod<int32_t>(ty, image.getHeight());
-				}
-				else
-				{
-					if (tx < 0 || ty < 0 || tx >= image.getWidth() || ty >= image.getHeight()) continue;
-				}
-
-				bbe::Colori pix = color;
-				pix.a = (bbe::byte)(pix.a * finalAlpha);
-				const bbe::Colori old = image.getPixel((size_t)tx, (size_t)ty);
-				if (pix.a > old.a)
-				{
-					image.setPixel((size_t)tx, (size_t)ty, pix);
-				}
-			}
-		}
-	}
+	// (removed drawing indirection helpers; call Image APIs directly)
 
 	void drawArrowToWorkArea(const bbe::Vector2 &from, const bbe::Vector2 &to, const bbe::Colori &color)
 	{
@@ -1326,7 +1005,7 @@ class MyGame : public bbe::Game
 			}
 		}
 
-		touchLineImage(workArea, shaftFrom, shaftTo, color, brushWidth, false, tiled);
+		workArea.drawLineCapsule(shaftFrom, shaftTo, color, brushWidth, bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
 
 		// Forward head
 		{
@@ -1336,12 +1015,12 @@ class MyGame : public bbe::Game
 			const bbe::Vector2 right(base.x - px * halfWidth, base.y - py * halfWidth);
 			if (arrowFilledHead)
 			{
-				fillTriangleOnImage(workArea, tip, left, right, color);
+				workArea.fillTriangle(tip, left, right, color, tiled, antiAliasingEnabled);
 			}
 			else
 			{
-				touchLineImage(workArea, tip, left, color, brushWidth, false, tiled);
-				touchLineImage(workArea, tip, right, color, brushWidth, false, tiled);
+				workArea.drawLineCapsule(tip, left, color, brushWidth, bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
+				workArea.drawLineCapsule(tip, right, color, brushWidth, bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
 			}
 		}
 
@@ -1354,12 +1033,12 @@ class MyGame : public bbe::Game
 			const bbe::Vector2 right(base.x - px * halfWidth, base.y - py * halfWidth);
 			if (arrowFilledHead)
 			{
-				fillTriangleOnImage(workArea, tip, left, right, color);
+				workArea.fillTriangle(tip, left, right, color, tiled, antiAliasingEnabled);
 			}
 			else
 			{
-				touchLineImage(workArea, tip, left, color, brushWidth, false, tiled);
-				touchLineImage(workArea, tip, right, color, brushWidth, false, tiled);
+				workArea.drawLineCapsule(tip, left, color, brushWidth, bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
+				workArea.drawLineCapsule(tip, right, color, brushWidth, bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
 			}
 		}
 	}
@@ -1447,7 +1126,7 @@ class MyGame : public bbe::Game
 		{
 			const float t = (float)i / (float)numSamples;
 			const bbe::Vector2 curr = evaluateBezier(points, t);
-			touchLineImage(workArea, prev, curr, color, brushWidth, false, tiled);
+			workArea.drawLineCapsule(prev, curr, color, brushWidth, bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
 			prev = curr;
 		}
 	}
@@ -2759,19 +2438,7 @@ class MyGame : public bbe::Game
 
 	void applyWorkArea()
 	{
-		// TODO: This should probably be moved to the image class
-		for (size_t i = 0; i < workArea.getWidth(); i++)
-		{
-			for (size_t k = 0; k < workArea.getHeight(); k++)
-			{
-				const bbe::Colori c = workArea.getPixel(i, k);
-				if (c.a == 0) continue;
-
-				const bbe::Colori oldColor = getActiveLayerImage().getPixel(i, k);
-				const bbe::Colori newColor = oldColor.blendTo(c);
-				getActiveLayerImage().setPixel(i, k, newColor);
-			}
-		}
+		getActiveLayerImage().blendOver(workArea, { 0, 0 }, false);
 		clearWorkArea();
 	}
 
@@ -2878,71 +2545,14 @@ class MyGame : public bbe::Game
 		return { getCanvasWidth() * 0.5f, getCanvasHeight() * 0.5f };
 	}
 
-	// Returns all canvas-space positions for the given position under the active symmetry mode.
 	bbe::List<bbe::Vector2> getSymmetryPositions(const bbe::Vector2 &pos) const
 	{
-		bbe::List<bbe::Vector2> result;
-		const bbe::Vector2 center = getSymmetryCenter();
-		switch (symmetryMode)
-		{
-		case SymmetryMode::None:
-			result.add(pos);
-			break;
-		case SymmetryMode::Horizontal:
-			result.add(pos);
-			result.add({ pos.x, 2.f * center.y - pos.y });
-			break;
-		case SymmetryMode::Vertical:
-			result.add(pos);
-			result.add({ 2.f * center.x - pos.x, pos.y });
-			break;
-		case SymmetryMode::FourWay:
-			result.add(pos);
-			result.add({ 2.f * center.x - pos.x, pos.y });
-			result.add({ pos.x, 2.f * center.y - pos.y });
-			result.add({ 2.f * center.x - pos.x, 2.f * center.y - pos.y });
-			break;
-		case SymmetryMode::Radial:
-		{
-			const float step = 2.f * bbe::Math::PI / (float)radialSymmetryCount;
-			for (int32_t i = 0; i < radialSymmetryCount; i++)
-				result.add(pos.rotate(step * (float)i, center));
-			break;
-		}
-		}
-		return result;
+		return bbe::getSymmetryPositions(pos, getSymmetryCenter(), symmetryMode, radialSymmetryCount);
 	}
 
-	// Returns the extra rotation angle (radians) for each copy returned by getSymmetryPositions.
-	// Only radial symmetry produces non-zero angles; mirror modes return all zeros.
 	bbe::List<float> getSymmetryRotationAngles() const
 	{
-		bbe::List<float> result;
-		switch (symmetryMode)
-		{
-		case SymmetryMode::None:
-			result.add(0.f);
-			break;
-		case SymmetryMode::Horizontal:
-		case SymmetryMode::Vertical:
-			result.add(0.f);
-			result.add(0.f);
-			break;
-		case SymmetryMode::FourWay:
-			result.add(0.f);
-			result.add(0.f);
-			result.add(0.f);
-			result.add(0.f);
-			break;
-		case SymmetryMode::Radial:
-		{
-			const float step = 2.f * bbe::Math::PI / (float)radialSymmetryCount;
-			for (int32_t i = 0; i < radialSymmetryCount; i++)
-				result.add(step * (float)i);
-			break;
-		}
-		}
-		return result;
+		return bbe::getSymmetryRotationAngles(symmetryMode, radialSymmetryCount);
 	}
 
 	bool touch(const bbe::Vector2 &touchPos, bool rectangleShape = false)
@@ -2950,7 +2560,7 @@ class MyGame : public bbe::Game
 		bool changed = false;
 		const auto positions = getSymmetryPositions(touchPos);
 		for (size_t i = 0; i < positions.getLength(); i++)
-			changed |= touchImage(workArea, positions[i], getMouseColor(), brushWidth, rectangleShape, tiled);
+			changed |= workArea.drawBrushStamp(positions[i], getMouseColor(), brushWidth, rectangleShape ? bbe::ImageBrushShape::Square : bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
 		return changed;
 	}
 
@@ -2960,7 +2570,7 @@ class MyGame : public bbe::Game
 		const auto starts = getSymmetryPositions(pos1);
 		const auto ends   = getSymmetryPositions(pos2);
 		for (size_t i = 0; i < starts.getLength(); i++)
-			changed |= touchLineImage(workArea, starts[i], ends[i], getMouseColor(), brushWidth, rectangleShape, tiled);
+			changed |= workArea.drawLineCapsule(starts[i], ends[i], getMouseColor(), brushWidth, rectangleShape ? bbe::ImageBrushShape::Square : bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
 		return changed;
 	}
 
@@ -2969,7 +2579,7 @@ class MyGame : public bbe::Game
 		const auto starts = getSymmetryPositions(pos1);
 		const auto ends   = getSymmetryPositions(pos2);
 		for (size_t i = 0; i < starts.getLength(); i++)
-			touchLineImage(workArea, starts[i], ends[i], color, width, rectShape, tiled);
+			workArea.drawLineCapsule(starts[i], ends[i], color, width, rectShape ? bbe::ImageBrushShape::Square : bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
 	}
 
 	void drawArrowSymmetry(const bbe::Vector2 &from, const bbe::Vector2 &to, const bbe::Colori &color)
@@ -3058,7 +2668,7 @@ class MyGame : public bbe::Game
 		{
 			resetCamera();
 		}
-		if (isKeyPressed(bbe::Key::F1) && symmetryMode != SymmetryMode::None)
+		if (isKeyPressed(bbe::Key::F1) && symmetryMode != bbe::SymmetryMode::None)
 		{
 			symmetryOffsetCustom = true;
 			symmetryOffset = screenToCanvas(getMouse());
@@ -3378,7 +2988,7 @@ class MyGame : public bbe::Game
 								textImg.getWidth(),
 								textImg.getHeight()
 							};
-							blendRotatedImageOntoCanvas(textImg, symRect, symAngles[i]);
+							getActiveLayerImage().blendOverRotated(textImg, symRect, symAngles[i], tiled, antiAliasingEnabled);
 							textChanged = true;
 						}
 					}
@@ -3672,7 +3282,7 @@ class MyGame : public bbe::Game
 		ImGui::SeparatorText("Symmetry");
 		{
 			const float w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 4) / 5.f;
-			const struct { const char *label; SymmetryMode mode; } modes[] = { { "Off", SymmetryMode::None }, { "H", SymmetryMode::Horizontal }, { "V", SymmetryMode::Vertical }, { "4W", SymmetryMode::FourWay }, { "Rad", SymmetryMode::Radial } };
+			const struct { const char *label; bbe::SymmetryMode mode; } modes[] = { { "Off", bbe::SymmetryMode::None }, { "H", bbe::SymmetryMode::Horizontal }, { "V", bbe::SymmetryMode::Vertical }, { "4W", bbe::SymmetryMode::FourWay }, { "Rad", bbe::SymmetryMode::Radial } };
 			for (size_t i = 0; i < sizeof(modes) / sizeof(*modes); i++)
 			{
 				const bool active = symmetryMode == modes[i].mode;
@@ -3681,7 +3291,7 @@ class MyGame : public bbe::Game
 				if (active) ImGui::PopStyleColor();
 				if (i + 1 < sizeof(modes) / sizeof(*modes)) ImGui::SameLine();
 			}
-			if (symmetryMode == SymmetryMode::Radial && ImGui::InputInt("Spokes##radialCount", &radialSymmetryCount))
+			if (symmetryMode == bbe::SymmetryMode::Radial && ImGui::InputInt("Spokes##radialCount", &radialSymmetryCount))
 			{
 				if (radialSymmetryCount < 2) radialSymmetryCount = 2;
 				if (radialSymmetryCount > 32) radialSymmetryCount = 32;
@@ -4006,7 +3616,7 @@ class MyGame : public bbe::Game
 		}
 
 		// Symmetry guide lines
-		if (symmetryMode != SymmetryMode::None && getCanvasWidth() > 0)
+		if (symmetryMode != bbe::SymmetryMode::None && getCanvasWidth() > 0)
 		{
 			const float cw = (float)getCanvasWidth();
 			const float ch = (float)getCanvasHeight();
@@ -4020,19 +3630,19 @@ class MyGame : public bbe::Game
 			brush.setColorRGB(0.2f, 0.8f, 1.0f, 0.7f);
 			brush.setOutlineWidth(0.f);
 
-			if (symmetryMode == SymmetryMode::Horizontal || symmetryMode == SymmetryMode::FourWay)
+			if (symmetryMode == bbe::SymmetryMode::Horizontal || symmetryMode == bbe::SymmetryMode::FourWay)
 			{
 				const bbe::Vector2 a = c2s({ 0.f,  center.y });
 				const bbe::Vector2 b = c2s({ cw,   center.y });
 				brush.fillLine(a, b, 1.f);
 			}
-			if (symmetryMode == SymmetryMode::Vertical || symmetryMode == SymmetryMode::FourWay)
+			if (symmetryMode == bbe::SymmetryMode::Vertical || symmetryMode == bbe::SymmetryMode::FourWay)
 			{
 				const bbe::Vector2 a = c2s({ center.x, 0.f });
 				const bbe::Vector2 b = c2s({ center.x, ch  });
 				brush.fillLine(a, b, 1.f);
 			}
-			if (symmetryMode == SymmetryMode::Radial)
+			if (symmetryMode == bbe::SymmetryMode::Radial)
 			{
 				const float step = 2.f * bbe::Math::PI / (float)radialSymmetryCount;
 				const float extent = bbe::Math::sqrt(cw * cw + ch * ch) * 0.5f;
