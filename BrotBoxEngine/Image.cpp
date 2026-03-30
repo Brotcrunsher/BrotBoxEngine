@@ -4,6 +4,7 @@
 #if defined(__linux__)
 #include "BBE/WaylandClipboard.h"
 #endif
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
@@ -273,6 +274,55 @@ bbe::Colori bbe::Image::getPixel(size_t x, size_t y) const
 	default:
 		bbe::Crash(bbe::Error::FormatNotSupported);
 	}
+}
+
+bbe::Colori bbe::Image::sampleBilinearPremultiplied(float sx, float sy) const
+{
+	if (!isLoadedCpu())
+	{
+		bbe::Crash(bbe::Error::NotInitialized);
+	}
+
+	const int32_t w = getWidth();
+	const int32_t h = getHeight();
+	if (w <= 0 || h <= 0)
+	{
+		return bbe::Colori(0, 0, 0, 0);
+	}
+
+	const int32_t ix0 = (int32_t)std::floor(sx);
+	const int32_t iy0 = (int32_t)std::floor(sy);
+	const float fx = sx - (float)ix0;
+	const float fy = sy - (float)iy0;
+	const float iFx = 1.f - fx;
+	const float iFy = 1.f - fy;
+
+	auto get = [&](int32_t x, int32_t y) -> bbe::Colori
+	{
+		if (x < 0 || y < 0 || x >= w || y >= h) return bbe::Colori(0, 0, 0, 0);
+		return getPixel((size_t)x, (size_t)y);
+	};
+
+	const bbe::Colori c00 = get(ix0, iy0);
+	const bbe::Colori c10 = get(ix0 + 1, iy0);
+	const bbe::Colori c01 = get(ix0, iy0 + 1);
+	const bbe::Colori c11 = get(ix0 + 1, iy0 + 1);
+
+	const float a00 = c00.a, a10 = c10.a, a01 = c01.a, a11 = c11.a;
+	const float pa = (a00 * iFx + a10 * fx) * iFy + (a01 * iFx + a11 * fx) * fy;
+	if (pa < 0.5f) return bbe::Colori(0, 0, 0, 0);
+
+	const float pr = (c00.r * a00 * iFx + c10.r * a10 * fx) * iFy + (c01.r * a01 * iFx + c11.r * a11 * fx) * fy;
+	const float pg = (c00.g * a00 * iFx + c10.g * a10 * fx) * iFy + (c01.g * a01 * iFx + c11.g * a11 * fx) * fy;
+	const float pb = (c00.b * a00 * iFx + c10.b * a10 * fx) * iFy + (c01.b * a01 * iFx + c11.b * a11 * fx) * fy;
+
+	const float invA = 1.f / pa;
+	return bbe::Colori(
+		(bbe::byte)(pr * invA + 0.5f),
+		(bbe::byte)(pg * invA + 0.5f),
+		(bbe::byte)(pb * invA + 0.5f),
+		(bbe::byte)(pa + 0.5f)
+	);
 }
 
 void bbe::Image::setPixel(const bbe::Vector2i &pos, const bbe::Colori &c)

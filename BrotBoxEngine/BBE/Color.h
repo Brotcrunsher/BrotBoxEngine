@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdint>
+#include <type_traits>
 #include "../BBE/Vector3.h"
 #include "../BBE/Vector4.h"
 #include "../BBE/String.h"
@@ -6,6 +8,14 @@
 
 namespace bbe
 {
+	enum class BlendMode : uint8_t
+	{
+		Normal = 0,
+		Multiply,
+		Screen,
+		Overlay,
+	};
+
 	template<typename T, T maxValue>
 	class Color_t
 	{
@@ -211,6 +221,83 @@ namespace bbe
 				return *this;
 			}
 			bbe::Crash(bbe::Error::NotImplemented);
+		}
+
+		// Composites `src` over this color using the selected blend mode and opacity.
+		// `opacity` scales source alpha (like a layer opacity slider).
+		bbe::Color_t<T, maxValue> blendTo(const bbe::Color_t<T, maxValue> &src, float opacity, bbe::BlendMode mode) const
+		{
+			const float invMax = 1.0f / float(maxValue);
+
+			const float srcA = (float(src.a) * invMax) * opacity;
+			if (srcA <= 0.0f) return *this;
+
+			const float srcR = float(src.r) * invMax;
+			const float srcG = float(src.g) * invMax;
+			const float srcB = float(src.b) * invMax;
+			const float dstR = float(r) * invMax;
+			const float dstG = float(g) * invMax;
+			const float dstB = float(b) * invMax;
+			const float dstA = float(a) * invMax;
+
+			float blR, blG, blB;
+			switch (mode)
+			{
+			case bbe::BlendMode::Multiply:
+				blR = dstR * srcR;
+				blG = dstG * srcG;
+				blB = dstB * srcB;
+				break;
+			case bbe::BlendMode::Screen:
+				blR = 1.0f - (1.0f - dstR) * (1.0f - srcR);
+				blG = 1.0f - (1.0f - dstG) * (1.0f - srcG);
+				blB = 1.0f - (1.0f - dstB) * (1.0f - srcB);
+				break;
+			case bbe::BlendMode::Overlay:
+				blR = dstR < 0.5f ? 2.0f * dstR * srcR : 1.0f - 2.0f * (1.0f - dstR) * (1.0f - srcR);
+				blG = dstG < 0.5f ? 2.0f * dstG * srcG : 1.0f - 2.0f * (1.0f - dstG) * (1.0f - srcG);
+				blB = dstB < 0.5f ? 2.0f * dstB * srcB : 1.0f - 2.0f * (1.0f - dstB) * (1.0f - srcB);
+				break;
+			default: // Normal
+				blR = srcR;
+				blG = srcG;
+				blB = srcB;
+				break;
+			}
+
+			const float outA = srcA + dstA * (1.0f - srcA);
+			float outR, outG, outB;
+			if (outA > 0.0f)
+			{
+				outR = (blR * srcA + dstR * dstA * (1.0f - srcA)) / outA;
+				outG = (blG * srcA + dstG * dstA * (1.0f - srcA)) / outA;
+				outB = (blB * srcA + dstB * dstA * (1.0f - srcA)) / outA;
+			}
+			else
+			{
+				outR = outG = outB = 0.0f;
+			}
+
+			const float scale = float(maxValue);
+			auto toChannel = [&](float v) -> T
+			{
+				v = bbe::Math::clamp01(v);
+				if constexpr (std::is_same_v<T, float>)
+				{
+					return T(v);
+				}
+				else
+				{
+					return T(v * scale + 0.5f);
+				}
+			};
+
+			return bbe::Color_t<T, maxValue>(
+				toChannel(outR),
+				toChannel(outG),
+				toChannel(outB),
+				toChannel(outA)
+			);
 		}
 	};
 

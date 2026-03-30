@@ -26,20 +26,12 @@ struct FontEntry
 	bbe::String path;
 };
 
-enum class LayerBlendMode : uint8_t
-{
-	Normal   = 0,
-	Multiply = 1,
-	Screen   = 2,
-	Overlay  = 3,
-};
-
 struct PaintLayer
 {
 	bbe::String name = "";
 	bool visible = true;
 	float opacity = 1.0f;
-	LayerBlendMode blendMode = LayerBlendMode::Normal;
+	bbe::BlendMode blendMode = bbe::BlendMode::Normal;
 	bbe::Image image;
 };
 
@@ -468,65 +460,6 @@ class MyGame : public bbe::Game
 		return lowerPath.endsWith(".png") || lowerPath.endsWith(LAYERED_FILE_EXTENSION);
 	}
 
-	bbe::Colori blendPixels(const bbe::Colori &dst, const bbe::Colori &src, float opacity, LayerBlendMode blendMode) const
-	{
-		const float srcA = (src.a / 255.0f) * opacity;
-		if (srcA <= 0.0f) return dst;
-
-		const float srcR = src.r / 255.0f;
-		const float srcG = src.g / 255.0f;
-		const float srcB = src.b / 255.0f;
-		const float dstR = dst.r / 255.0f;
-		const float dstG = dst.g / 255.0f;
-		const float dstB = dst.b / 255.0f;
-		const float dstA = dst.a / 255.0f;
-
-		float blR, blG, blB;
-		switch (blendMode)
-		{
-		case LayerBlendMode::Multiply:
-			blR = dstR * srcR;
-			blG = dstG * srcG;
-			blB = dstB * srcB;
-			break;
-		case LayerBlendMode::Screen:
-			blR = 1.0f - (1.0f - dstR) * (1.0f - srcR);
-			blG = 1.0f - (1.0f - dstG) * (1.0f - srcG);
-			blB = 1.0f - (1.0f - dstB) * (1.0f - srcB);
-			break;
-		case LayerBlendMode::Overlay:
-			blR = dstR < 0.5f ? 2.0f * dstR * srcR : 1.0f - 2.0f * (1.0f - dstR) * (1.0f - srcR);
-			blG = dstG < 0.5f ? 2.0f * dstG * srcG : 1.0f - 2.0f * (1.0f - dstG) * (1.0f - srcG);
-			blB = dstB < 0.5f ? 2.0f * dstB * srcB : 1.0f - 2.0f * (1.0f - dstB) * (1.0f - srcB);
-			break;
-		default: // Normal
-			blR = srcR;
-			blG = srcG;
-			blB = srcB;
-			break;
-		}
-
-		const float outA = srcA + dstA * (1.0f - srcA);
-		float outR, outG, outB;
-		if (outA > 0.0f)
-		{
-			outR = (blR * srcA + dstR * dstA * (1.0f - srcA)) / outA;
-			outG = (blG * srcA + dstG * dstA * (1.0f - srcA)) / outA;
-			outB = (blB * srcA + dstB * dstA * (1.0f - srcA)) / outA;
-		}
-		else
-		{
-			outR = outG = outB = 0.0f;
-		}
-
-		return bbe::Colori(
-			(uint8_t)(outR * 255.0f),
-			(uint8_t)(outG * 255.0f),
-			(uint8_t)(outB * 255.0f),
-			(uint8_t)(outA * 255.0f)
-		);
-	}
-
 	template<typename Fn>
 	void forEachPixel(int32_t width, int32_t height, Fn fn) const
 	{
@@ -582,7 +515,7 @@ class MyGame : public bbe::Game
 		const float sinA = std::sin(-rotation);
 		const int32_t imgW = (int32_t)image.getWidth();
 		const int32_t imgH = (int32_t)image.getHeight();
-		const auto sampleBilinear = [&](float sx, float sy) -> bbe::Colori { return sampleBilinearPremultiplied(image, imgW, imgH, sx, sy); };
+		const auto sampleBilinear = [&](float sx, float sy) -> bbe::Colori { return image.sampleBilinearPremultiplied(sx, sy); };
 
 		const bbe::Rectanglei bb = computeRotatedBounds((float)imgW, (float)imgH, rotation, cx, cy);
 		const float srcCX = (imgW - 1) / 2.f;
@@ -636,45 +569,6 @@ class MyGame : public bbe::Game
 		return bbe::Rectanglei(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
 	}
 
-	static bbe::Colori sampleBilinearPremultiplied(const bbe::Image &image, int32_t w, int32_t h, float sx, float sy)
-	{
-		// Bilinear sample using premultiplied alpha — out-of-bounds pixels are fully
-		// transparent. Premultiplied interpolation prevents color fringing and keeps
-		// edge pixels at the correct text colour rather than bleeding toward zero.
-		const int32_t ix0 = (int32_t)std::floor(sx);
-		const int32_t iy0 = (int32_t)std::floor(sy);
-		const float   fx  = sx - (float)ix0;
-		const float   fy  = sy - (float)iy0;
-		const float   iFx = 1.f - fx;
-		const float   iFy = 1.f - fy;
-
-		auto get = [&](int32_t x, int32_t y) -> bbe::Colori
-		{
-			if (x < 0 || y < 0 || x >= w || y >= h) return bbe::Colori(0, 0, 0, 0);
-			return image.getPixel((size_t)x, (size_t)y);
-		};
-
-		const bbe::Colori c00 = get(ix0,     iy0);
-		const bbe::Colori c10 = get(ix0 + 1, iy0);
-		const bbe::Colori c01 = get(ix0,     iy0 + 1);
-		const bbe::Colori c11 = get(ix0 + 1, iy0 + 1);
-
-		const float a00 = c00.a, a10 = c10.a, a01 = c01.a, a11 = c11.a;
-		const float pa = (a00*iFx + a10*fx)*iFy + (a01*iFx + a11*fx)*fy;
-		if (pa < 0.5f) return bbe::Colori(0, 0, 0, 0);
-
-		const float pr = (c00.r*a00*iFx + c10.r*a10*fx)*iFy + (c01.r*a01*iFx + c11.r*a11*fx)*fy;
-		const float pg = (c00.g*a00*iFx + c10.g*a10*fx)*iFy + (c01.g*a01*iFx + c11.g*a11*fx)*fy;
-		const float pb = (c00.b*a00*iFx + c10.b*a10*fx)*iFy + (c01.b*a01*iFx + c11.b*a11*fx)*fy;
-
-		const float invA = 1.f / pa;
-		return bbe::Colori(
-			(bbe::byte)(pr * invA + 0.5f),
-			(bbe::byte)(pg * invA + 0.5f),
-			(bbe::byte)(pb * invA + 0.5f),
-			(bbe::byte)(pa    + 0.5f));
-	}
-
 	// Returns a rasterized rotation of src, sized to fit the rotated bounding box.
 	bbe::Image createRotatedPreviewImage(const bbe::Image &src, float rotation) const
 	{
@@ -693,7 +587,7 @@ class MyGame : public bbe::Game
 
 		bbe::Image result(newW, newH, bbe::Color(0.f, 0.f, 0.f, 0.f));
 		prepareImageForCanvas(result);
-		const auto sampleBilinear = [&](float sx, float sy) -> bbe::Colori { return sampleBilinearPremultiplied(src, srcW, srcH, sx, sy); };
+		const auto sampleBilinear = [&](float sx, float sy) -> bbe::Colori { return src.sampleBilinearPremultiplied(sx, sy); };
 
 		for (int32_t py = 0; py < newH; py++)
 		{
@@ -726,7 +620,7 @@ class MyGame : public bbe::Game
 			{
 				const bbe::Colori src = layer.image.getPixel((size_t)lx, (size_t)ly);
 				const bbe::Colori dst = flattened.getPixel((size_t)lx, (size_t)ly);
-				flattened.setPixel((size_t)lx, (size_t)ly, blendPixels(dst, src, layer.opacity, layer.blendMode));
+				flattened.setPixel((size_t)lx, (size_t)ly, dst.blendTo(src, layer.opacity, layer.blendMode));
 			});
 		}
 		return flattened;
@@ -740,7 +634,7 @@ class MyGame : public bbe::Game
 			const PaintLayer &layer = canvas.get().layers[i];
 			if (!layer.visible) continue;
 			const bbe::Colori src = layer.image.getPixel(x, y);
-			color = blendPixels(color, src, layer.opacity, layer.blendMode);
+			color = color.blendTo(src, layer.opacity, layer.blendMode);
 		}
 		return color;
 	}
@@ -793,7 +687,7 @@ class MyGame : public bbe::Game
 						span.read(layer.opacity);
 						uint8_t blendModeRaw = 0;
 						span.read(blendModeRaw);
-						layer.blendMode = (LayerBlendMode)blendModeRaw;
+						layer.blendMode = (bbe::BlendMode)blendModeRaw;
 					}
 					if (!deserializeLayerImage(span, width, height, layer.image)) break;
 					prepareForLayerTargetChange();
@@ -809,7 +703,7 @@ class MyGame : public bbe::Game
 				prepareImageForCanvas(img);
 				bbe::String name = std::filesystem::path(path.getRaw()).stem().string().c_str();
 				prepareForLayerTargetChange();
-				canvas.get().layers.add(PaintLayer{ name, true, 1.0f, LayerBlendMode::Normal, std::move(img) });
+				canvas.get().layers.add(PaintLayer{ name, true, 1.0f, bbe::BlendMode::Normal, std::move(img) });
 				activeLayerIndex = (int32_t)canvas.get().layers.getLength() - 1;
 			}
 		}
@@ -863,7 +757,7 @@ class MyGame : public bbe::Game
 		{
 			const bbe::Colori src = above.image.getPixel((size_t)x, (size_t)y);
 			const bbe::Colori dst = below.image.getPixel((size_t)x, (size_t)y);
-			below.image.setPixel((size_t)x, (size_t)y, blendPixels(dst, src, above.opacity, above.blendMode));
+			below.image.setPixel((size_t)x, (size_t)y, dst.blendTo(src, above.opacity, above.blendMode));
 		});
 		canvas.get().layers.removeIndex((size_t)activeLayerIndex);
 		activeLayerIndex--;
@@ -2782,7 +2676,7 @@ class MyGame : public bbe::Game
 				span.read(layer.opacity);
 				uint8_t blendModeRaw = 0;
 				span.read(blendModeRaw);
-				layer.blendMode = (LayerBlendMode)blendModeRaw;
+				layer.blendMode = (bbe::BlendMode)blendModeRaw;
 			}
 			if (!deserializeLayerImage(span, width, height, layer.image))
 			{
@@ -2918,7 +2812,7 @@ class MyGame : public bbe::Game
 		}
 
 		canvas.get().layers.clear();
-		canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, LayerBlendMode::Normal, bbe::Image(path) });
+		canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, bbe::Image(path) });
 		activeLayerIndex = 0;
 		this->path = path;
 		setupCanvas();
@@ -3822,7 +3716,7 @@ class MyGame : public bbe::Game
 		if (ImGui::Button("Paste as New Canvas", ImVec2(-1, 0)))
 		{
 			canvas.get().layers.clear();
-			canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, LayerBlendMode::Normal, bbe::Image::getClipboardImage() });
+			canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, bbe::Image::getClipboardImage() });
 			path = "";
 			submitCanvas();
 			setupCanvas(false);
@@ -3875,7 +3769,7 @@ class MyGame : public bbe::Game
 			int blendModeIdx = (int)getActiveLayer().blendMode;
 			if (ImGui::Combo("Blend##layerBlend", &blendModeIdx, blendModeNames, 4))
 			{
-				getActiveLayer().blendMode = (LayerBlendMode)blendModeIdx;
+				getActiveLayer().blendMode = (bbe::BlendMode)blendModeIdx;
 				submitCanvas();
 			}
 		}
@@ -3907,7 +3801,7 @@ class MyGame : public bbe::Game
 		for (size_t layerIndex = 0; layerIndex < canvas.get().layers.getLength(); layerIndex++)
 		{
 			const PaintLayer &layer = canvas.get().layers[layerIndex];
-			if (layer.visible && layer.blendMode != LayerBlendMode::Normal)
+			if (layer.visible && layer.blendMode != bbe::BlendMode::Normal)
 			{
 				anyNonNormalBlendMode = true;
 				break;

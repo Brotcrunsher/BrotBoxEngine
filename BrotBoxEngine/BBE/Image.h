@@ -117,6 +117,9 @@ namespace bbe
 		size_t getBytesPerPixel() const;
 		Colori getPixel(const bbe::Vector2i &pos) const;
 		Colori getPixel(size_t x, size_t y) const;
+		// Bilinear sample in pixel coordinates using premultiplied-alpha interpolation.
+		// Out-of-bounds samples are treated as fully transparent.
+		Colori sampleBilinearPremultiplied(float x, float y) const;
 		void setPixel(const bbe::Vector2i &pos, const bbe::Colori &c);
 		void setPixel(size_t x, size_t y, const Colori &c);
 		size_t getIndexForRawAccess(size_t x, size_t y) const;
