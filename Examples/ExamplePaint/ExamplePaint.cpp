@@ -1,3371 +1,494 @@
+#include <cmath>
 
 #include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
-#include "BBE/Editor/RectSelectionGizmo2D.h"
-#include "BBE/Symmetry2D.h"
-#include <cmath>
-#include <cstdlib>
-#include <filesystem>
-#include <fstream>
-#include <initializer_list>
-#include <vector>
+#include "ExamplePaintEditor.h"
+#include "ExamplePaintGui.h"
 
-// TODO: Flood fill with edges of brush tool kinda bad.
-// TODO: Bug: right click has weird behaviour with shadow
-
-// TODO: Alpha eraser tool - not just recolering pixels but setting their alpha to 0.
-// TODO: Scaling whole picture/selection up/down
-// TODO: Pixel perfect manipulation with arrow keys
-// TODO: "Filled with color" option for rectangle/circle tool
-// TODO: Color history
-// TODO: Selection via magic wand / color selection
-
-// TODO: It's possible to enter negative numbers for new canvas size. Leads to a crash. Don't allow negative sizes.
-// TODO: Saving an image always returns success, even if the file couldn't be written. Fix that.
-
-struct FontEntry
+static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSinceLastFrame)
 {
-	bbe::String displayName;
-	bbe::String path;
-};
+	PaintWindowMetrics w{};
+	w.width = g.getWindowWidth();
+	w.height = g.getWindowHeight();
+	w.scale = g.getWindow()->getScale();
+	editor.setViewportMetrics(w);
 
-struct PaintLayer
-{
-	bbe::String name = "";
-	bool visible = true;
-	float opacity = 1.0f;
-	bbe::BlendMode blendMode = bbe::BlendMode::Normal;
-	bbe::Image image;
-};
-
-struct PaintDocument
-{
-	bbe::List<PaintLayer> layers;
-};
-
-class MyGame : public bbe::Game
-{
-	bbe::Vector2 offset;
-	bbe::String path;
-	bbe::UndoableObject<PaintDocument> canvas;
-	int32_t activeLayerIndex = 0;
-	bbe::Image workArea;
-	float zoomLevel = 1.f;
-	bool openSaveChoicePopup = false;
-	bool openDropChoicePopup = false;
-	bbe::List<bbe::String> pendingDroppedPaths;
-	bool showHelpWindow = false;
-	bool showNavigator = true;
-	int64_t canvasGeneration = 0;
-	int64_t savedGeneration = 0;
-
-	struct EndpointDraftState
+	const bool ctrlDown = g.isKeyDown(bbe::Key::LEFT_CONTROL) || g.isKeyDown(bbe::Key::RIGHT_CONTROL);
+	const bool shiftDown = g.isKeyDown(bbe::Key::LEFT_SHIFT) || g.isKeyDown(bbe::Key::RIGHT_SHIFT);
+	const bool drawButtonDown = g.isMouseDown(bbe::MouseButton::LEFT) || g.isMouseDown(bbe::MouseButton::RIGHT);
+	auto discardTransientWorkArea = [&]()
 	{
-		bool draftActive = false;
-		bool draftUsesRightColor = false;
-		bbe::Vector2 start;
-		bbe::Vector2 end;
-		int32_t dragEndpoint = 0; // 0=none, 1=start, 2=end
-		bool dragInProgress = false;
-		bool dragUsesRightColor = false;
+		editor.clearWorkArea();
+		editor.brushStrokeChangeRegistered = false;
 	};
-
-	struct ShapeDragState
+	if (editor.mode != editor.lastModeSnapshot && !drawButtonDown)
 	{
-		bool draftActive = false;
-		bool draftUsesRightColor = false;
-		bool dragActive = false;
-		bool dragUsesRightColor = false;
-		bbe::Vector2i dragStart;
-		bbe::Rectanglei dragPreviewRect;
-		bbe::Image dragPreviewImage;
-	};
-
-	struct BezierState
-	{
-		bbe::List<bbe::Vector2> controlPoints;
-		bool usesRightColor = false;
-		int32_t dragPointIndex = -1;
-	};
-
-	enum class SaveFormat
-	{
-		PNG,
-		LAYERED,
-	};
-
-	static constexpr const char *LAYERED_FILE_MAGIC_V1 = "ExamplePaintLayeredV1";
-	static constexpr const char *LAYERED_FILE_MAGIC = "ExamplePaintLayeredV2";
-	static constexpr const char *LAYERED_FILE_EXTENSION = ".bbepaint";
-
-	float leftColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	float rightColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-	constexpr static int32_t MODE_BRUSH = 0;
-	constexpr static int32_t MODE_FLOOD_FILL = 1;
-	constexpr static int32_t MODE_LINE = 2;
-	constexpr static int32_t MODE_RECTANGLE = 3;
-	constexpr static int32_t MODE_SELECTION = 4;
-	constexpr static int32_t MODE_TEXT = 5;
-	constexpr static int32_t MODE_PIPETTE = 6;
-	constexpr static int32_t MODE_CIRCLE  = 7;
-	constexpr static int32_t MODE_ARROW   = 8;
-	constexpr static int32_t MODE_BEZIER  = 9;
-	int32_t mode = MODE_BRUSH;
-
-	int32_t brushWidth = 1;
-	int32_t textFontSize = 20;
-	int32_t textFontIndex = 0;
-	char textBuffer[512] = "Text";
-	bbe::List<FontEntry> availableFonts;
-	bbe::Vector2 startMousePos;
-	int32_t cornerRadius = 0;
-
-	bool drawGridLines = true;
-	bool tiled = false;
-	enum class SelectionHitZone
-	{
-		NONE,
-		INSIDE,
-		LEFT,
-		RIGHT,
-		TOP,
-		BOTTOM,
-		TOP_LEFT,
-		TOP_RIGHT,
-		BOTTOM_LEFT,
-		BOTTOM_RIGHT,
-		ROTATION,
-	};
-	struct SelectionState
-	{
-		bool hasSelection = false;
-		bbe::Rectanglei rect;
-		bbe::Image clipboard;
-
-		bool floating = false;
-		bbe::Image floatingImage;
-
-		bool dragActive = false;
-		bbe::Vector2i dragStart;
-
-		bool moveActive = false;
-		bbe::Vector2i moveOffset;
-
-		bool resizeActive = false;
-		SelectionHitZone resizeZone = SelectionHitZone::NONE;
-
-		bbe::Rectanglei interactionStartRect;
-		bbe::Rectanglei previewRect;
-		bbe::Image previewImage;
-
-		float rotation = 0.f;
-		bool rotationHandleActive = false;
-		bbe::Vector2 rotationDragPivot;
-		float rotationDragStartAngle = 0.f;
-		float rotationDragBaseAngle = 0.f;
-	};
-	SelectionState selection;
-
-	ShapeDragState rectangle;
-	ShapeDragState circle;
-
-	int32_t arrowHeadSize    = 15;
-	int32_t arrowHeadWidth   = 12;
-	bool    arrowDoubleHeaded = false;
-	bool    arrowFilledHead   = true;
-
-	EndpointDraftState line;
-	EndpointDraftState arrow;
-	BezierState bezier;
-
-	bool canvasResizeActive = false;
-	int32_t canvasResizeHandleIndex = -1;
-	bbe::Rectanglei canvasResizePreviewRect;
-
-	bbe::SymmetryMode symmetryMode = bbe::SymmetryMode::None;
-	int32_t radialSymmetryCount = 6;
-	bool symmetryOffsetCustom = false;
-	bbe::Vector2 symmetryOffset;
-
-	bool antiAliasingEnabled = true;
-
-	bbe::Colori getColor(bool useRight) const
-	{
-		return bbe::Color(useRight ? rightColor : leftColor).asByteColor();
-	}
-
-	bool isShiftDown() const
-	{
-		return isKeyDown(bbe::Key::LEFT_SHIFT) || isKeyDown(bbe::Key::RIGHT_SHIFT);
-	}
-
-	template<typename CreateImage>
-	void refreshActiveShapeDraftImage(bool draftActive, CreateImage createImage)
-	{
-		if (!draftActive) return;
-		if (selection.moveActive || selection.resizeActive)
+		if (editor.lastModeSnapshot == PaintEditor::MODE_RECTANGLE && editor.rectangle.draftActive)
 		{
-			if (selection.previewRect.width > 0 && selection.previewRect.height > 0) selection.previewImage = createImage(selection.previewRect.width, selection.previewRect.height);
-			return;
+			editor.commitFloatingSelection();
+			editor.clearSelectionState();
 		}
-		if (selection.rect.width > 0 && selection.rect.height > 0) selection.floatingImage = createImage(selection.rect.width, selection.rect.height);
-	}
-
-	void finalizeEndpointDraft(bool &draftActive, int32_t &draftDragEndpoint)
-	{
-		applyWorkArea();
-		submitCanvas();
-		draftActive = false;
-		draftDragEndpoint = 0;
-	}
-
-	template<typename Draw, typename Finalize>
-	void updateEndpointDraftTool(bool &draftActive, bool &draftUsesRightColor, bbe::Vector2 &draftStart, bbe::Vector2 &draftEnd, int32_t &draftDragEndpoint, bool &dragInProgress, bool &dragUsesRightColor, Draw draw, Finalize finalize)
-	{
-		const bbe::Vector2 mouseCanvas = screenToCanvas(getMouse());
-		if (draftActive)
+		if (editor.lastModeSnapshot == PaintEditor::MODE_CIRCLE && editor.circle.draftActive)
 		{
-			bool handledMousePress = false;
-			if (isMousePressed(bbe::MouseButton::LEFT))
+			editor.commitFloatingSelection();
+			editor.clearSelectionState();
+		}
+		if (editor.lastModeSnapshot == PaintEditor::MODE_LINE && editor.line.draftActive)
+		{
+			editor.finalizeLineDraft();
+		}
+		if (editor.lastModeSnapshot == PaintEditor::MODE_ARROW && editor.arrow.draftActive)
+		{
+			editor.finalizeArrowDraft();
+		}
+		if (editor.lastModeSnapshot == PaintEditor::MODE_BEZIER && !editor.bezier.controlPoints.isEmpty())
+		{
+			editor.finalizeBezierDraft();
+		}
+		discardTransientWorkArea();
+	}
+
+	const bbe::Vector2 prevMousePos = editor.screenToCanvas(g.getMousePrevious());
+	const int32_t modeBeforeInput = editor.mode;
+	bool refreshRectangleDraft = false;
+	if (g.isKeyPressed(bbe::Key::SPACE))
+	{
+		editor.resetCamera();
+	}
+	if (g.isKeyPressed(bbe::Key::F1) && editor.symmetryMode != bbe::SymmetryMode::None)
+	{
+		editor.symmetryOffsetCustom = true;
+		editor.symmetryOffset = editor.screenToCanvas(g.getMouse());
+	}
+
+	constexpr float CAM_WASD_SPEED = 400;
+	if (!ctrlDown && g.isKeyDown(bbe::Key::W))
+	{
+		editor.offset.y += timeSinceLastFrame * CAM_WASD_SPEED;
+	}
+	if (!ctrlDown && g.isKeyDown(bbe::Key::S))
+	{
+		editor.offset.y -= timeSinceLastFrame * CAM_WASD_SPEED;
+	}
+	if (!ctrlDown && g.isKeyDown(bbe::Key::A))
+	{
+		editor.offset.x += timeSinceLastFrame * CAM_WASD_SPEED;
+	}
+	if (!ctrlDown && g.isKeyDown(bbe::Key::D))
+	{
+		editor.offset.x -= timeSinceLastFrame * CAM_WASD_SPEED;
+	}
+
+	if (g.isMouseDown(bbe::MouseButton::MIDDLE))
+	{
+		editor.offset += g.getMouseDelta();
+		if (editor.tiled)
+		{
+			if (editor.offset.x < 0) editor.offset.x += editor.getCanvasWidth() * editor.zoomLevel;
+			if (editor.offset.y < 0) editor.offset.y += editor.getCanvasHeight() * editor.zoomLevel;
+			if (editor.offset.x > editor.getCanvasWidth() * editor.zoomLevel) editor.offset.x -= editor.getCanvasWidth() * editor.zoomLevel;
+			if (editor.offset.y > editor.getCanvasHeight() * editor.zoomLevel) editor.offset.y -= editor.getCanvasHeight() * editor.zoomLevel;
+		}
+	}
+
+	if (g.getMouseScrollY() < 0)
+	{
+		editor.changeZoom(1.0f / 1.1f, g.getMouse());
+	}
+	else if (g.getMouseScrollY() > 0)
+	{
+		editor.changeZoom(1.1f, g.getMouse());
+	}
+	const bbe::Vector2 currMousePos = editor.screenToCanvas(g.getMouse());
+
+	if (g.isKeyPressed(bbe::Key::_1))
+	{
+		editor.mode = PaintEditor::MODE_BRUSH;
+	}
+	if (g.isKeyPressed(bbe::Key::_2))
+	{
+		editor.mode = PaintEditor::MODE_FLOOD_FILL;
+	}
+	if (g.isKeyPressed(bbe::Key::_3))
+	{
+		editor.mode = PaintEditor::MODE_LINE;
+	}
+	if (g.isKeyPressed(bbe::Key::_4))
+	{
+		editor.mode = PaintEditor::MODE_RECTANGLE;
+	}
+	if (g.isKeyPressed(bbe::Key::_5))
+	{
+		editor.mode = PaintEditor::MODE_SELECTION;
+	}
+	if (g.isKeyPressed(bbe::Key::_6))
+	{
+		editor.mode = PaintEditor::MODE_TEXT;
+	}
+	if (g.isKeyPressed(bbe::Key::_7))
+	{
+		editor.mode = PaintEditor::MODE_PIPETTE;
+	}
+	if (g.isKeyPressed(bbe::Key::_8))
+	{
+		editor.mode = PaintEditor::MODE_CIRCLE;
+	}
+	if (g.isKeyPressed(bbe::Key::_9))
+	{
+		editor.mode = PaintEditor::MODE_ARROW;
+	}
+	if (g.isKeyPressed(bbe::Key::_0))
+	{
+		editor.mode = PaintEditor::MODE_BEZIER;
+	}
+	bool refreshCircleDraft = false;
+	if (!ctrlDown && g.isKeyPressed(bbe::Key::X))
+	{
+		editor.swapColors();
+		refreshRectangleDraft = editor.rectangle.draftActive;
+		refreshCircleDraft = editor.circle.draftActive;
+	}
+	const bool increaseToolSize = g.isKeyTyped(bbe::Key::EQUAL) || g.isKeyTyped(bbe::Key::KP_ADD) || g.isKeyTyped(bbe::Key::RIGHT_BRACKET);
+	const bool decreaseToolSize = g.isKeyTyped(bbe::Key::MINUS) || g.isKeyTyped(bbe::Key::KP_SUBTRACT);
+	if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER)
+	{
+		const int32_t previousBrushWidth = editor.brushWidth;
+		if (increaseToolSize) editor.brushWidth++;
+		if (decreaseToolSize) editor.brushWidth--;
+		editor.clampBrushWidth();
+		if (editor.rectangle.draftActive && editor.brushWidth != previousBrushWidth)
+		{
+			refreshRectangleDraft = true;
+		}
+		if (editor.circle.draftActive && editor.brushWidth != previousBrushWidth)
+		{
+			refreshCircleDraft = true;
+		}
+	}
+	else if (editor.mode == PaintEditor::MODE_TEXT)
+	{
+		if (increaseToolSize) editor.textFontSize++;
+		if (decreaseToolSize) editor.textFontSize--;
+		editor.clampTextFontSize();
+	}
+
+	if (ctrlDown)
+	{
+		if (g.isKeyTyped(bbe::Key::Z) && editor.canvas.isUndoable())
+		{
+			editor.undo();
+		}
+		if (g.isKeyTyped(bbe::Key::Y) && editor.canvas.isRedoable())
+		{
+			editor.redo();
+		}
+		if (g.isKeyPressed(bbe::Key::S))
+		{
+			editor.saveCanvas();
+		}
+		if (g.isKeyPressed(bbe::Key::D))
+		{
+			editor.resetColorsToDefault();
+			refreshRectangleDraft = editor.rectangle.draftActive;
+			refreshCircleDraft = editor.circle.draftActive;
+		}
+		if (g.isKeyPressed(bbe::Key::A))
+		{
+			editor.selectWholeLayer();
+		}
+		if (g.isKeyPressed(bbe::Key::C))
+		{
+			if (editor.mode != PaintEditor::MODE_SELECTION)
 			{
-				const float handleRadius = 6.f / zoomLevel;
-				const float distToStart = (mouseCanvas - draftStart).getLength();
-				const float distToEnd = (mouseCanvas - draftEnd).getLength();
-				if (distToStart <= handleRadius && distToStart <= distToEnd) draftDragEndpoint = 1;
-				else if (distToEnd <= handleRadius) draftDragEndpoint = 2;
-				else { finalize(); return; }
-				handledMousePress = true;
-			}
-			if (!handledMousePress && isMousePressed(bbe::MouseButton::RIGHT)) { finalize(); return; }
-			if (draftDragEndpoint != 0 && isMouseDown(bbe::MouseButton::LEFT)) (draftDragEndpoint == 1 ? draftStart : draftEnd) = mouseCanvas;
-			if (draftDragEndpoint != 0 && isMouseReleased(bbe::MouseButton::LEFT)) draftDragEndpoint = 0;
-			clearWorkArea();
-			draw(draftStart, draftEnd, getColor(draftUsesRightColor));
-			return;
-		}
-		if (!dragInProgress)
-		{
-			if (isMousePressed(bbe::MouseButton::LEFT))
-			{
-				dragInProgress = true;
-				dragUsesRightColor = false;
-				draftStart = mouseCanvas;
-			}
-			else if (isMousePressed(bbe::MouseButton::RIGHT))
-			{
-				dragInProgress = true;
-				dragUsesRightColor = true;
-				draftStart = mouseCanvas;
-			}
-		}
-		if (!dragInProgress) return;
-		clearWorkArea();
-		draw(draftStart, mouseCanvas, getColor(dragUsesRightColor));
-		if ((dragUsesRightColor ? isMouseReleased(bbe::MouseButton::RIGHT) : isMouseReleased(bbe::MouseButton::LEFT)))
-		{
-			draftActive = true;
-			draftUsesRightColor = dragUsesRightColor;
-			draftEnd = mouseCanvas;
-			dragInProgress = false;
-		}
-	}
-
-	bool handleFloatingDraftInteraction(bool draftActive, const bbe::Vector2i &mousePixel)
-	{
-		if (!draftActive) return false;
-		if (isMousePressed(bbe::MouseButton::LEFT))
-		{
-			const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
-			if (hitZone == SelectionHitZone::ROTATION) beginRotationDrag(mousePixel);
-			else if (isSelectionResizeHit(hitZone)) beginSelectionResize(hitZone);
-			else if (hitZone == SelectionHitZone::INSIDE) beginSelectionMove(mousePixel);
-			else
-			{
-				commitFloatingSelection();
-				clearSelectionState();
-			}
-			return true;
-		}
-		if (!isMousePressed(bbe::MouseButton::RIGHT)) return false;
-		commitFloatingSelection();
-		clearSelectionState();
-		return true;
-	}
-
-	void updateSelectionTransformInteraction(const bbe::Vector2i &mousePixel)
-	{
-		if (selection.rotationHandleActive && isMouseDown(bbe::MouseButton::LEFT)) updateRotationDrag(mousePixel);
-		if (selection.moveActive && isMouseDown(bbe::MouseButton::LEFT)) updateSelectionMovePreview(mousePixel);
-		if (selection.resizeActive && isMouseDown(bbe::MouseButton::LEFT)) updateSelectionResizePreview(mousePixel);
-		if (selection.rotationHandleActive && isMouseReleased(bbe::MouseButton::LEFT)) selection.rotationHandleActive = false;
-		if ((selection.moveActive || selection.resizeActive) && isMouseReleased(bbe::MouseButton::LEFT)) applySelectionTransform();
-	}
-
-	template<typename BuildRect, typename CreatePreview>
-	bool updateShapeDragPreview(const bbe::Vector2i &dragStart, const bbe::Vector2i &mousePixel, bbe::Rectanglei &previewRect, bbe::Image &previewImage, BuildRect buildRect, CreatePreview createPreview)
-	{
-		const bbe::Vector2i constrainedPixel = isShiftDown() ? constrainToSquare(dragStart, mousePixel) : mousePixel;
-		if (!buildRect(dragStart, constrainedPixel, previewRect))
-		{
-			previewRect = {};
-			previewImage = {};
-			return false;
-		}
-		previewImage = createPreview(previewRect.width, previewRect.height);
-		prepareImageForCanvas(previewImage);
-		return true;
-	}
-
-	template<typename BuildRect, typename CreateImage>
-	void finalizeShapeDrag(bool &dragActive, bool &draftActive, bool &draftUsesRightColor, bool useRightColor, const bbe::Vector2i &dragStart, const bbe::Vector2i &mousePixel, bbe::Rectanglei &previewRect, bbe::Image &previewImage, BuildRect buildRect, CreateImage createImage)
-	{
-		dragActive = false;
-		const bbe::Vector2i constrainedPixel = isShiftDown() ? constrainToSquare(dragStart, mousePixel) : mousePixel;
-		bbe::Rectanglei draftRect;
-		if (!buildRect(dragStart, constrainedPixel, draftRect))
-		{
-			previewRect = {};
-			previewImage = {};
-			return;
-		}
-		const bbe::Image draftImage = previewImage.getWidth() > 0 && previewImage.getHeight() > 0 ? previewImage : createImage(draftRect.width, draftRect.height, getColor(useRightColor));
-		clearSelectionState();
-		selection.hasSelection = true;
-		selection.floating = true;
-		selection.rect = draftRect;
-		draftActive = true;
-		draftUsesRightColor = useRightColor;
-		selection.floatingImage = draftImage;
-		prepareImageForCanvas(selection.floatingImage);
-		previewRect = {};
-		previewImage = {};
-	}
-
-	template<typename BeginDrag, typename UpdatePreview, typename FinalizeDrag>
-	void updateFloatingShapeTool(const bbe::Vector2 &currMousePos, bool draftActive, bool &dragActive, bool dragUsesRightColor, BeginDrag beginDrag, UpdatePreview updatePreview, FinalizeDrag finalizeDrag)
-	{
-		const bbe::Vector2i mousePixel = toCanvasPixel(currMousePos);
-		const bool handledMousePress = handleFloatingDraftInteraction(draftActive, mousePixel);
-		if (!handledMousePress && !draftActive)
-		{
-			if (isMousePressed(bbe::MouseButton::LEFT)) beginDrag(mousePixel, false);
-			else if (isMousePressed(bbe::MouseButton::RIGHT)) beginDrag(mousePixel, true);
-		}
-		updateSelectionTransformInteraction(mousePixel);
-		if (!dragActive) return;
-		updatePreview(mousePixel);
-		if (dragUsesRightColor ? isMouseReleased(bbe::MouseButton::RIGHT) : isMouseReleased(bbe::MouseButton::LEFT)) finalizeDrag(mousePixel);
-	}
-
-	void prepareImageForCanvas(bbe::Image &image) const
-	{
-		if (image.getWidth() <= 0 || image.getHeight() <= 0) return;
-		image.keepAfterUpload();
-		image.setFilterMode(bbe::ImageFilterMode::NEAREST);
-	}
-
-	void clearSelectionState()
-	{
-		selection = {};
-		rectangle = {};
-		circle = {};
-		line = {};
-		arrow = {};
-		bezier.controlPoints.clear();
-		bezier.usesRightColor = false;
-		bezier.dragPointIndex = -1;
-	}
-
-	void selectWholeLayer()
-	{
-		if (selection.floating)
-		{
-			commitFloatingSelection();
-		}
-		if (getCanvasWidth() <= 0 || getCanvasHeight() <= 0) return;
-
-		clearSelectionState();
-		mode = MODE_SELECTION;
-		selection.hasSelection = true;
-		selection.rect = bbe::Rectanglei(0, 0, getCanvasWidth(), getCanvasHeight());
-	}
-
-	int32_t getCanvasWidth() const { return canvas.get().layers.isEmpty() ? 0 : canvas.get().layers[0].image.getWidth(); }
-
-	int32_t getCanvasHeight() const { return canvas.get().layers.isEmpty() ? 0 : canvas.get().layers[0].image.getHeight(); }
-
-	void clampActiveLayerIndex()
-	{
-		if (canvas.get().layers.isEmpty())
-		{
-			activeLayerIndex = 0;
-			return;
-		}
-		activeLayerIndex = bbe::Math::clamp(activeLayerIndex, 0, (int32_t)canvas.get().layers.getLength() - 1);
-	}
-
-	PaintLayer &getActiveLayer()
-	{
-		clampActiveLayerIndex();
-		return canvas.get().layers[(size_t)activeLayerIndex];
-	}
-
-	const PaintLayer &getActiveLayer() const
-	{
-		if (canvas.get().layers.isEmpty()) bbe::Crash(bbe::Error::IllegalState);
-		const int32_t clampedIndex = bbe::Math::clamp(activeLayerIndex, 0, (int32_t)canvas.get().layers.getLength() - 1);
-		return canvas.get().layers[(size_t)clampedIndex];
-	}
-
-	bbe::Image &getActiveLayerImage() { return getActiveLayer().image; }
-
-	const bbe::Image &getActiveLayerImage() const { return getActiveLayer().image; }
-
-	void prepareLayer(PaintLayer &layer) const { prepareImageForCanvas(layer.image); }
-
-	PaintLayer makeLayer(const bbe::String &name, int32_t width, int32_t height, const bbe::Color &color = bbe::Color(0.0f, 0.0f, 0.0f, 0.0f)) const
-	{
-		PaintLayer layer;
-		layer.name = name;
-		layer.visible = true;
-		layer.image = bbe::Image(width, height, color);
-		prepareLayer(layer);
-		return layer;
-	}
-
-	void prepareDocumentImages()
-	{
-		for (size_t i = 0; i < canvas.get().layers.getLength(); i++)
-		{
-			prepareLayer(canvas.get().layers[i]);
-		}
-	}
-
-	void prepareForLayerTargetChange()
-	{
-		commitFloatingSelection();
-		clearSelectionState();
-		clearWorkArea();
-	}
-
-	bool isLayeredDocumentPath(const bbe::String &filePath) const { return filePath.toLowerCase().endsWith(LAYERED_FILE_EXTENSION); }
-
-	bool isSupportedDroppedDocumentPath(const bbe::String &filePath) const
-	{
-		const bbe::String lowerPath = filePath.toLowerCase();
-		return lowerPath.endsWith(".png") || lowerPath.endsWith(LAYERED_FILE_EXTENSION);
-	}
-
-	bbe::Image flattenVisibleLayers() const
-	{
-		bbe::Image flattened(getCanvasWidth(), getCanvasHeight(), bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
-		prepareImageForCanvas(flattened);
-		for (size_t i = 0; i < canvas.get().layers.getLength(); i++)
-		{
-			const PaintLayer &layer = canvas.get().layers[i];
-			if (!layer.visible) continue;
-			flattened.blend(layer.image, layer.opacity, layer.blendMode);
-		}
-		return flattened;
-	}
-
-	bbe::Colori getVisiblePixel(size_t x, size_t y) const
-	{
-		bbe::Colori color(0, 0, 0, 0);
-		for (size_t i = 0; i < canvas.get().layers.getLength(); i++)
-		{
-			const PaintLayer &layer = canvas.get().layers[i];
-			if (!layer.visible) continue;
-			const bbe::Colori src = layer.image.getPixel(x, y);
-			color = color.blendTo(src, layer.opacity, layer.blendMode);
-		}
-		return color;
-	}
-
-	bbe::String makeLayerName() const
-	{
-		return bbe::String("Layer ") + (canvas.get().layers.getLength() + 1);
-	}
-
-	void addLayer()
-	{
-		prepareForLayerTargetChange();
-		canvas.get().layers.add(makeLayer(makeLayerName(), getCanvasWidth(), getCanvasHeight()));
-		activeLayerIndex = (int32_t)canvas.get().layers.getLength() - 1;
-		submitCanvas();
-	}
-
-	void importFileAsLayers(const bbe::List<bbe::String> &paths)
-	{
-		for (size_t i = 0; i < paths.getLength(); i++)
-		{
-			const bbe::String &path = paths[i];
-			if (!isSupportedDroppedDocumentPath(path)) continue;
-
-			if (isLayeredDocumentPath(path))
-			{
-				// Import every layer from the .bbepaint file
-				bbe::ByteBuffer buffer = bbe::simpleFile::readBinaryFile(path);
-				if (buffer.getLength() == 0) continue;
-				bbe::ByteBufferSpan span = buffer.getSpan();
-				const bbe::String magic = span.readNullString();
-				const bool importIsV2 = (magic == LAYERED_FILE_MAGIC);
-				const bool importIsV1 = (magic == LAYERED_FILE_MAGIC_V1);
-				if (!importIsV2 && !importIsV1) continue;
-				int32_t width = 0, height = 0;
-				uint32_t layerCount = 0;
-				int32_t storedActiveLayerIndex = 0;
-				span.read(width);
-				span.read(height);
-				span.read(layerCount);
-				span.read(storedActiveLayerIndex);
-				if (width <= 0 || height <= 0 || layerCount == 0) continue;
-				for (uint32_t k = 0; k < layerCount; k++)
-				{
-					PaintLayer layer;
-					span.read(layer.visible);
-					span.read(layer.name);
-					if (importIsV2)
-					{
-						span.read(layer.opacity);
-						uint8_t blendModeRaw = 0;
-						span.read(blendModeRaw);
-						layer.blendMode = (bbe::BlendMode)blendModeRaw;
-					}
-					if (!deserializeLayerImage(span, width, height, layer.image)) break;
-					prepareForLayerTargetChange();
-					canvas.get().layers.add(std::move(layer));
-					activeLayerIndex = (int32_t)canvas.get().layers.getLength() - 1;
-				}
+				editor.mode = PaintEditor::MODE_SELECTION;
 			}
 			else
 			{
-				// Import single PNG as a new layer
-				bbe::Image img(path.getRaw());
-				if (img.getWidth() <= 0 || img.getHeight() <= 0) continue;
-				prepareImageForCanvas(img);
-				bbe::String name = std::filesystem::path(path.getRaw()).stem().string().c_str();
-				prepareForLayerTargetChange();
-				canvas.get().layers.add(PaintLayer{ name, true, 1.0f, bbe::BlendMode::Normal, std::move(img) });
-				activeLayerIndex = (int32_t)canvas.get().layers.getLength() - 1;
+				editor.storeSelectionInClipboard();
 			}
 		}
-		submitCanvas();
-	}
-
-	void deleteActiveLayer()
-	{
-		if (canvas.get().layers.getLength() <= 1) return;
-		prepareForLayerTargetChange();
-		canvas.get().layers.removeIndex((size_t)activeLayerIndex);
-		clampActiveLayerIndex();
-		submitCanvas();
-	}
-
-	void moveActiveLayerUp()
-	{
-		if ((size_t)activeLayerIndex + 1 >= canvas.get().layers.getLength()) return;
-		prepareForLayerTargetChange();
-		canvas.get().layers.swap((size_t)activeLayerIndex, (size_t)activeLayerIndex + 1);
-		activeLayerIndex++;
-		submitCanvas();
-	}
-
-	void moveActiveLayerDown()
-	{
-		if (activeLayerIndex <= 0) return;
-		prepareForLayerTargetChange();
-		canvas.get().layers.swap((size_t)activeLayerIndex, (size_t)activeLayerIndex - 1);
-		activeLayerIndex--;
-		submitCanvas();
-	}
-
-	void duplicateActiveLayer()
-	{
-		prepareForLayerTargetChange();
-		PaintLayer dup = getActiveLayer();
-		dup.name = dup.name + " Copy";
-		canvas.get().layers.addAt((size_t)activeLayerIndex + 1, dup);
-		activeLayerIndex++;
-		submitCanvas();
-	}
-
-	void mergeActiveLayerDown()
-	{
-		if (activeLayerIndex <= 0) return;
-		prepareForLayerTargetChange();
-		PaintLayer &above = canvas.get().layers[(size_t)activeLayerIndex];
-		PaintLayer &below = canvas.get().layers[(size_t)(activeLayerIndex - 1)];
-		below.image.blend(above.image, above.opacity, above.blendMode);
-		canvas.get().layers.removeIndex((size_t)activeLayerIndex);
-		activeLayerIndex--;
-		submitCanvas();
-	}
-
-	void setActiveLayerIndex(int32_t newIndex)
-	{
-		if (newIndex == activeLayerIndex) return;
-		prepareForLayerTargetChange();
-		activeLayerIndex = newIndex;
-		clampActiveLayerIndex();
-	}
-
-	bbe::Vector2i toCanvasPixel(const bbe::Vector2 &pos) const { return bbe::Vector2i((int32_t)bbe::Math::floor(pos.x), (int32_t)bbe::Math::floor(pos.y)); }
-
-	bbe::Vector2i toTiledCanvasPixel(const bbe::Vector2 &pos)
-	{
-		bbe::Vector2 p = pos;
-		toTiledPos(p);
-		return toCanvasPixel(p);
-	}
-
-	bool clampRectToCanvas(const bbe::Rectanglei &rect, bbe::Rectanglei &outRect) const
-	{
-		const int32_t left = bbe::Math::max<int32_t>(rect.x, 0);
-		const int32_t top = bbe::Math::max<int32_t>(rect.y, 0);
-		const int32_t right = bbe::Math::min<int32_t>(rect.x + rect.width - 1, getCanvasWidth() - 1);
-		const int32_t bottom = bbe::Math::min<int32_t>(rect.y + rect.height - 1, getCanvasHeight() - 1);
-
-		if (left > right || top > bottom)
+		if (g.isKeyPressed(bbe::Key::X))
 		{
-			outRect = {};
-			return false;
+			editor.cutSelection();
 		}
-
-		outRect = bbe::Rectanglei(left, top, right - left + 1, bottom - top + 1);
-		return true;
-	}
-
-	bbe::Vector2i constrainToSquare(const bbe::Vector2i &start, const bbe::Vector2i &end) const
-	{
-		const int32_t dx = end.x - start.x;
-		const int32_t dy = end.y - start.y;
-		const int32_t size = bbe::Math::min(bbe::Math::abs(dx), bbe::Math::abs(dy));
-		return bbe::Vector2i(
-			start.x + (dx >= 0 ? size : -size),
-			start.y + (dy >= 0 ? size : -size));
-	}
-
-	bool buildSelectionRect(const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect) const
-	{
-		const int32_t left = bbe::Math::min(pos1.x, pos2.x);
-		const int32_t top = bbe::Math::min(pos1.y, pos2.y);
-		const int32_t right = bbe::Math::max(pos1.x, pos2.x);
-		const int32_t bottom = bbe::Math::max(pos1.y, pos2.y);
-		return clampRectToCanvas(bbe::Rectanglei(left, top, right - left + 1, bottom - top + 1), outRect);
-	}
-
-	bbe::Rectanglei buildRawRect(const bbe::Vector2i &pos1, const bbe::Vector2i &pos2) const
-	{
-		const int32_t left = bbe::Math::min(pos1.x, pos2.x);
-		const int32_t top = bbe::Math::min(pos1.y, pos2.y);
-		const int32_t right = bbe::Math::max(pos1.x, pos2.x);
-		const int32_t bottom = bbe::Math::max(pos1.y, pos2.y);
-		return bbe::Rectanglei(left, top, right - left + 1, bottom - top + 1);
-	}
-
-	bool isPointInSelection(const bbe::Vector2i &point) const { return selection.hasSelection && selection.rect.isPointInRectangle(point, true); }
-
-	bool isSelectionResizeHit(const SelectionHitZone hitZone) const { return bbe::editor::isResizeZone((bbe::editor::RectSelectionHitZone)hitZone); }
-
-	SelectionHitZone getSelectionHitZone(const bbe::Vector2i &point) const
-	{
-		if (!selection.hasSelection)
+		if (g.isKeyPressed(bbe::Key::V))
 		{
-			return SelectionHitZone::NONE;
+			editor.pasteSelectionAt(editor.toCanvasPixel(currMousePos));
 		}
-		const bool allowRotationHandle = !selection.dragActive;
-		const int32_t padding = bbe::Math::max<int32_t>(1, (int32_t)bbe::Math::ceil(6.0f / zoomLevel));
-		const float rotationStemLenCanvas = 30.f / zoomLevel;
-		const float rotationHitRadiusCanvas = 8.f / zoomLevel;
-		return (SelectionHitZone)bbe::editor::hitTest(selection.rect, point, padding, allowRotationHandle, rotationStemLenCanvas, rotationHitRadiusCanvas);
 	}
-
-	bool isWholeLayerSelection(const bbe::Rectanglei &rect) const { return rect.x == 0 && rect.y == 0 && rect.width == getCanvasWidth() && rect.height == getCanvasHeight(); }
-
-		bool shouldClearWholeLayerSelectionToTransparency() const { return canvas.get().layers.getLength() > 1; }
-
-	bbe::Image copyCanvasRect(const bbe::Rectanglei &rect) const
+	if (editor.mode != modeBeforeInput && !drawButtonDown)
 	{
-		bbe::Image copied(rect.width, rect.height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
-		prepareImageForCanvas(copied);
-		for (int32_t x = 0; x < rect.width; x++)
+		if (modeBeforeInput == PaintEditor::MODE_RECTANGLE && editor.rectangle.draftActive)
 		{
-			for (int32_t y = 0; y < rect.height; y++)
-			{
-				copied.setPixel((size_t)x, (size_t)y, getActiveLayerImage().getPixel((size_t)(rect.x + x), (size_t)(rect.y + y)));
-			}
+			editor.commitFloatingSelection();
+			editor.clearSelectionState();
 		}
-		return copied;
+		if (modeBeforeInput == PaintEditor::MODE_CIRCLE && editor.circle.draftActive)
+		{
+			editor.commitFloatingSelection();
+			editor.clearSelectionState();
+		}
+		if (modeBeforeInput == PaintEditor::MODE_LINE && editor.line.draftActive)
+		{
+			editor.finalizeLineDraft();
+		}
+		if (modeBeforeInput == PaintEditor::MODE_ARROW && editor.arrow.draftActive)
+		{
+			editor.finalizeArrowDraft();
+		}
+		if (modeBeforeInput == PaintEditor::MODE_BEZIER && !editor.bezier.controlPoints.isEmpty())
+		{
+			editor.finalizeBezierDraft();
+		}
+		discardTransientWorkArea();
+	}
+	editor.lastModeSnapshot = editor.mode;
+	if (refreshRectangleDraft)
+	{
+		editor.refreshActiveRectangleDraftImage();
+	}
+	if (refreshCircleDraft)
+	{
+		editor.refreshActiveCircleDraftImage();
+	}
+	if (editor.selection.floating && editor.mode != PaintEditor::MODE_SELECTION && !(editor.mode == PaintEditor::MODE_RECTANGLE && editor.rectangle.draftActive) && !(editor.mode == PaintEditor::MODE_CIRCLE && editor.circle.draftActive))
+	{
+		editor.commitFloatingSelection();
+	}
+	if (g.isKeyPressed(bbe::Key::DELETE) || g.isKeyPressed(bbe::Key::BACKSPACE))
+	{
+		editor.deleteSelection();
 	}
 
-		void clearCanvasRect(const bbe::Rectanglei &rect)
+	const bool mouseOnNavigator = editor.showNavigator && editor.getCanvasWidth() > 0 && editor.getNavigatorRect().isPointInRectangle(g.getMouse());
+
+	if (mouseOnNavigator && g.isMouseDown(bbe::MouseButton::LEFT))
+	{
+		const bbe::Rectangle navRect = editor.getNavigatorRect();
+		const float canvasClickX = (g.getMouse().x - navRect.x) / navRect.width * editor.getCanvasWidth();
+		const float canvasClickY = (g.getMouse().y - navRect.y) / navRect.height * editor.getCanvasHeight();
+		editor.offset.x = editor.viewport.width / 2.f - canvasClickX * editor.zoomLevel;
+		editor.offset.y = editor.viewport.height / 2.f - canvasClickY * editor.zoomLevel;
+	}
+
+	if (!mouseOnNavigator && (g.isMousePressed(bbe::MouseButton::LEFT) || g.isMousePressed(bbe::MouseButton::RIGHT)))
+	{
+		editor.startMousePos = editor.screenToCanvas(g.getMouse());
+	}
+
+	if (!mouseOnNavigator && !editor.canvasResizeActive && g.isMousePressed(bbe::MouseButton::LEFT))
+	{
+		const int32_t hitHandle = editor.getCanvasResizeHitHandle(g.getMouse());
+		if (hitHandle >= 0)
 		{
-			const bool clearToTransparency = isWholeLayerSelection(rect) && shouldClearWholeLayerSelectionToTransparency();
-			const bbe::Colori backgroundColor = clearToTransparency ? bbe::Colori(0, 0, 0, 0) : bbe::Color(rightColor).asByteColor();
-			for (int32_t x = 0; x < rect.width; x++)
-			{
-				for (int32_t y = 0; y < rect.height; y++)
-				{
-				getActiveLayerImage().setPixel((size_t)(rect.x + x), (size_t)(rect.y + y), backgroundColor);
-			}
+			editor.canvasResizeActive = true;
+			editor.canvasResizeHandleIndex = hitHandle;
+			editor.canvasResizePreviewRect = { 0, 0, editor.getCanvasWidth(), editor.getCanvasHeight() };
+			editor.updateCanvasResizePreview(currMousePos);
+		}
+	}
+	if (editor.canvasResizeActive)
+	{
+		if (g.isMouseDown(bbe::MouseButton::LEFT))
+		{
+			editor.updateCanvasResizePreview(currMousePos);
+		}
+		if (g.isMouseReleased(bbe::MouseButton::LEFT))
+		{
+			editor.applyCanvasResize(editor.canvasResizePreviewRect);
+			editor.canvasResizeActive = false;
+			editor.canvasResizeHandleIndex = -1;
+			editor.canvasResizePreviewRect = {};
 		}
 	}
 
-	void storeSelectionInClipboard()
+	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_SELECTION)
 	{
-		if (!selection.hasSelection) return;
-		selection.clipboard = selection.floating ? selection.floatingImage : copyCanvasRect(selection.rect);
-		prepareImageForCanvas(selection.clipboard);
-		if (bbe::Image::supportsClipboardImages())
-		{
-			selection.clipboard.copyToClipboard();
-		}
+		editor.updateSelectionTool(currMousePos, g);
 	}
-
-	void deleteSelection()
+	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_RECTANGLE)
 	{
-		if (!selection.hasSelection) return;
-		if (selection.floating)
-		{
-			clearSelectionState();
-			return;
-		}
-		clearCanvasRect(selection.rect);
-		submitCanvas();
-		clearSelectionState();
+		editor.updateRectangleTool(currMousePos, g, shiftDown);
 	}
-
-	void cutSelection()
+	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_CIRCLE)
 	{
-		if (!selection.hasSelection) return;
-		storeSelectionInClipboard();
-		if (selection.floating)
-		{
-			clearSelectionState();
-			return;
-		}
-		deleteSelection();
+		editor.updateCircleTool(currMousePos, g, shiftDown);
 	}
-
-	bool getPasteImage(bbe::Image &image)
+	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_LINE)
 	{
-		if (bbe::Image::supportsClipboardImages() && bbe::Image::isImageInClipbaord())
-		{
-			image = bbe::Image::getClipboardImage();
-			prepareImageForCanvas(image);
-			return image.getWidth() > 0 && image.getHeight() > 0;
-		}
-
-		if (selection.clipboard.getWidth() > 0 && selection.clipboard.getHeight() > 0)
-		{
-			image = selection.clipboard;
-			prepareImageForCanvas(image);
-			return true;
-		}
-
-		return false;
+		editor.updateLineTool(g);
 	}
-
-	void pasteSelectionAt(const bbe::Vector2i &pos)
+	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_ARROW)
 	{
-		bbe::Image image;
-		if (!getPasteImage(image)) return;
-
-		if (selection.floating)
-		{
-			commitFloatingSelection();
-		}
-
-		mode = MODE_SELECTION;
-		selection.hasSelection = true;
-		selection.floating = true;
-		selection.floatingImage = image;
-		selection.rect = bbe::Rectanglei(pos.x, pos.y, image.getWidth(), image.getHeight());
-		rectangle.draftActive = false;
-		rectangle.draftUsesRightColor = false;
-		selection.moveActive = false;
-		selection.resizeActive = false;
-		selection.dragActive = false;
-		selection.previewRect = {};
-		selection.previewImage = {};
+		editor.updateArrowTool(g);
 	}
-
-	void commitFloatingSelection()
+	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_BEZIER)
 	{
-		if (!selection.floating) return;
-
-		if (std::abs(selection.rotation) > 0.0001f)
+		editor.updateBezierTool(g);
+	}
+	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_TEXT && (g.isMousePressed(bbe::MouseButton::LEFT) || g.isMousePressed(bbe::MouseButton::RIGHT)))
+	{
+		bbe::Vector2 pos = currMousePos;
+		if (editor.toTiledPos(pos))
 		{
-			// AA-off shapes: re-render directly from SDF with rotation baked in.
-			// This avoids both gaps and thickness changes that image-rotation sampling produces.
-			if (!antiAliasingEnabled && (rectangle.draftActive || circle.draftActive) && std::abs(selection.rotation) > 0.01f)
-			{
-				const bbe::Colori color = rectangle.draftActive ? getRectangleDraftColor() : getCircleDraftColor();
-				const bbe::Vector2 center = {
-					selection.rect.x + selection.rect.width  * 0.5f,
-					selection.rect.y + selection.rect.height * 0.5f
-				};
+			bool textChanged = false;
+			const bbe::Vector2i originalTopLeft = editor.toCanvasPixel(pos);
+			const auto symPositions = editor.getSymmetryPositions(pos);
+			const auto symAngles = editor.getSymmetryRotationAngles();
 
-				auto blitRotated = [&](float rot, const bbe::Vector2 &c)
-				{
-					const bbe::Image img = rectangle.draftActive
-						? createRectangleImage(selection.rect.width, selection.rect.height, color, rot)
-						: createCircleImage(selection.rect.width, selection.rect.height, color, rot);
-					const bbe::Vector2i pos(
-						(int32_t)std::floor(c.x - img.getWidth()  * 0.5f),
-						(int32_t)std::floor(c.y - img.getHeight() * 0.5f));
-					getActiveLayerImage().blendOver(img, pos, tiled);
-				};
-
-				blitRotated(selection.rotation, center);
-				const auto symCenters = getSymmetryPositions(center);
-				const auto symAngles  = getSymmetryRotationAngles();
-				for (size_t i = 1; i < symCenters.getLength(); i++)
-					blitRotated(selection.rotation + symAngles[i], symCenters[i]);
-
-				submitCanvas();
-				clearSelectionState();
-				return;
-			}
-
-			getActiveLayerImage().blendOverRotated(selection.floatingImage, selection.rect, selection.rotation, tiled, antiAliasingEnabled);
-			if (rectangle.draftActive || circle.draftActive)
-			{
-				const bbe::Vector2 center = {
-					selection.rect.x + selection.rect.width  * 0.5f,
-					selection.rect.y + selection.rect.height * 0.5f
-				};
-				const auto symCenters = getSymmetryPositions(center);
-				const auto symAngles  = getSymmetryRotationAngles();
-				for (size_t i = 1; i < symCenters.getLength(); i++)
-				{
-					const bbe::Rectanglei symRect = {
-						(int32_t)std::round(symCenters[i].x - selection.rect.width  * 0.5f),
-						(int32_t)std::round(symCenters[i].y - selection.rect.height * 0.5f),
-						selection.rect.width,
-						selection.rect.height
-					};
-					getActiveLayerImage().blendOverRotated(selection.floatingImage, symRect, selection.rotation + symAngles[i], tiled, antiAliasingEnabled);
-				}
-			}
-			submitCanvas();
-			clearSelectionState();
-			return;
-		}
-
-		getActiveLayerImage().blendOver(selection.floatingImage, selection.rect.getPos(), tiled);
-		if (rectangle.draftActive || circle.draftActive)
-		{
-			const bbe::Vector2 center = {
-				selection.rect.x + selection.rect.width  * 0.5f,
-				selection.rect.y + selection.rect.height * 0.5f
+			const bbe::Image textImg = editor.renderTextToImage(originalTopLeft, editor.activeDrawColor(g.isMouseDown(bbe::MouseButton::LEFT), g.isMouseDown(bbe::MouseButton::RIGHT)));
+			const bbe::Vector2 imgCenter = {
+				originalTopLeft.x + textImg.getWidth() * 0.5f,
+				originalTopLeft.y + textImg.getHeight() * 0.5f
 			};
-			const auto symCenters = getSymmetryPositions(center);
-			const auto symAngles  = getSymmetryRotationAngles();
-			for (size_t i = 1; i < symCenters.getLength(); i++)
+			const auto imgCenterSymPositions = editor.getSymmetryPositions(imgCenter);
+
+			for (size_t i = 0; i < symPositions.getLength(); i++)
 			{
-				const bbe::Rectanglei symRect = {
-					(int32_t)std::round(symCenters[i].x - selection.rect.width  * 0.5f),
-					(int32_t)std::round(symCenters[i].y - selection.rect.height * 0.5f),
-					selection.rect.width,
-					selection.rect.height
-				};
+				bbe::Vector2 symPos = symPositions[i];
+				if (!editor.toTiledPos(symPos)) continue;
+				const bbe::Vector2i symTopLeft = editor.toCanvasPixel(symPos);
 				if (std::abs(symAngles[i]) > 0.0001f)
-					getActiveLayerImage().blendOverRotated(selection.floatingImage, symRect, symAngles[i], tiled, antiAliasingEnabled);
-				else
-					getActiveLayerImage().blendOver(selection.floatingImage, symRect.getPos(), tiled);
-			}
-		}
-		submitCanvas();
-
-		bbe::Vector2i displayPos = selection.rect.getPos();
-		if (tiled)
-		{
-			displayPos.x = bbe::Math::mod<int32_t>(displayPos.x, getCanvasWidth());
-			displayPos.y = bbe::Math::mod<int32_t>(displayPos.y, getCanvasHeight());
-		}
-
-		bbe::Rectanglei clampedRect;
-		if (!clampRectToCanvas(bbe::Rectanglei(displayPos.x, displayPos.y, selection.floatingImage.getWidth(), selection.floatingImage.getHeight()), clampedRect))
-		{
-			clearSelectionState();
-			return;
-		}
-
-		selection.rect = clampedRect;
-		selection.floating = false;
-		selection.floatingImage = {};
-		rectangle.draftActive = false;
-		rectangle.draftUsesRightColor = false;
-		circle.draftActive = false;
-		circle.draftUsesRightColor = false;
-	}
-
-	bool toImagePos(bbe::Vector2 &pos, int32_t width, int32_t height, bool repeated) const
-	{
-		if (repeated)
-		{
-			pos.x = bbe::Math::mod<float>(pos.x, width);
-			pos.y = bbe::Math::mod<float>(pos.y, height);
-			return true;
-		}
-
-		return pos.x >= 0 && pos.y >= 0 && pos.x < width && pos.y < height;
-	}
-
-	// (removed drawing indirection helpers; call Image APIs directly)
-
-	void drawArrowToWorkArea(const bbe::Vector2 &from, const bbe::Vector2 &to, const bbe::Colori &color)
-	{
-		workArea.drawArrow(from, to, color, brushWidth, arrowHeadSize, arrowHeadWidth, arrowDoubleHeaded, arrowFilledHead, tiled, antiAliasingEnabled);
-	}
-
-	bbe::Colori getLineDraftColor() const { return getColor(line.draftUsesRightColor); }
-
-	bbe::Colori getArrowDraftColor() const { return getColor(arrow.draftUsesRightColor); }
-
-	void redrawLineDraft()
-	{
-		if (!line.draftActive) return;
-		clearWorkArea();
-		touchLineSymmetry(line.end, line.start, getLineDraftColor(), brushWidth);
-	}
-
-	void redrawArrowDraft()
-	{
-		if (!arrow.draftActive) return;
-		clearWorkArea();
-		drawArrowSymmetry(arrow.start, arrow.end, getArrowDraftColor());
-	}
-
-	void redrawBezierDraft()
-	{
-		if (bezier.controlPoints.isEmpty()) return;
-		clearWorkArea();
-		drawBezierSymmetry(bezier.controlPoints, getBezierColor());
-	}
-
-	void refreshBrushBasedDrafts()
-	{
-		if (rectangle.draftActive) refreshActiveRectangleDraftImage();
-		if (circle.draftActive) refreshActiveCircleDraftImage();
-		redrawLineDraft();
-		redrawArrowDraft();
-		redrawBezierDraft();
-	}
-
-	void finalizeLineDraft()
-	{
-		finalizeEndpointDraft(line.draftActive, line.dragEndpoint);
-	}
-
-	void finalizeArrowDraft()
-	{
-		finalizeEndpointDraft(arrow.draftActive, arrow.dragEndpoint);
-	}
-
-	void updateLineTool(const bbe::Vector2 &currMousePos)
-	{
-		updateEndpointDraftTool(line.draftActive, line.draftUsesRightColor, line.start, line.end, line.dragEndpoint, line.dragInProgress, line.dragUsesRightColor, [&](const bbe::Vector2 &start, const bbe::Vector2 &end, const bbe::Colori &color) { touchLineSymmetry(end, start, color, brushWidth); }, [&]() { finalizeLineDraft(); });
-	}
-
-	void updateArrowTool(const bbe::Vector2 &currMousePos)
-	{
-		updateEndpointDraftTool(arrow.draftActive, arrow.draftUsesRightColor, arrow.start, arrow.end, arrow.dragEndpoint, arrow.dragInProgress, arrow.dragUsesRightColor, [&](const bbe::Vector2 &start, const bbe::Vector2 &end, const bbe::Colori &color) { drawArrowSymmetry(start, end, color); }, [&]() { finalizeArrowDraft(); });
-	}
-
-	bbe::Colori getBezierColor() const { return getColor(bezier.usesRightColor); }
-
-	void drawBezierToWorkArea(const bbe::List<bbe::Vector2> &points, const bbe::Colori &color)
-	{
-		workArea.drawBezier(points, color, brushWidth, tiled, antiAliasingEnabled);
-	}
-
-	void finalizeBezierDraft()
-	{
-		if (bezier.controlPoints.getLength() >= 2)
-		{
-			clearWorkArea();
-			drawBezierSymmetry(bezier.controlPoints, getBezierColor());
-			applyWorkArea();
-			submitCanvas();
-		}
-		else
-		{
-			clearWorkArea();
-		}
-		bezier.controlPoints.clear();
-		bezier.dragPointIndex = -1;
-	}
-
-	void updateBezierTool(const bbe::Vector2 &currMousePos)
-	{
-		const bbe::Vector2 mouseCanvas = screenToCanvas(getMouse());
-		const float handleRadius = 6.f / zoomLevel;
-
-		// Update dragged control point
-		if (bezier.dragPointIndex >= 0)
-		{
-			if (isMouseDown(bbe::MouseButton::LEFT))
-			{
-				bezier.controlPoints[(size_t)bezier.dragPointIndex] = mouseCanvas;
-			}
-			if (isMouseReleased(bbe::MouseButton::LEFT))
-			{
-				bezier.dragPointIndex = -1;
-			}
-		}
-
-		if (bezier.dragPointIndex < 0)
-		{
-			if (isMousePressed(bbe::MouseButton::LEFT))
-			{
-				// Check if clicking near an existing control point to drag it
-				int32_t hitIndex = -1;
-				float bestDist = handleRadius;
-				for (size_t i = 0; i < bezier.controlPoints.getLength(); i++)
 				{
-					const float dist = (mouseCanvas - bezier.controlPoints[i]).getLength();
-					if (dist < bestDist)
+					if (textImg.getWidth() > 0 && textImg.getHeight() > 0)
 					{
-						bestDist = dist;
-						hitIndex = (int32_t)i;
+						const bbe::Rectanglei symRect = {
+							(int32_t)std::round(imgCenterSymPositions[i].x - textImg.getWidth() * 0.5f),
+							(int32_t)std::round(imgCenterSymPositions[i].y - textImg.getHeight() * 0.5f),
+							textImg.getWidth(),
+							textImg.getHeight()
+						};
+						editor.getActiveLayerImage().blendOverRotated(textImg, symRect, symAngles[i], editor.tiled, editor.antiAliasingEnabled);
+						textChanged = true;
 					}
 				}
-
-				if (hitIndex >= 0)
-				{
-					bezier.dragPointIndex = hitIndex;
-				}
 				else
 				{
-					// Add new control point
-					if (bezier.controlPoints.isEmpty()) bezier.usesRightColor = false;
-					bezier.controlPoints.add(mouseCanvas);
+					textChanged |= editor.drawTextAt(symTopLeft, editor.activeDrawColor(g.isMouseDown(bbe::MouseButton::LEFT), g.isMouseDown(bbe::MouseButton::RIGHT)));
 				}
 			}
-
-			if (isMousePressed(bbe::MouseButton::RIGHT))
-			{
-				finalizeBezierDraft();
-				return;
-			}
-
-			// Backspace removes the last placed control point
-			if ((isKeyPressed(bbe::Key::BACKSPACE)) && !bezier.controlPoints.isEmpty())
-			{
-				bezier.controlPoints.popBack();
-			}
-		}
-
-		// Rebuild workArea preview each frame
-		clearWorkArea();
-		if (bezier.controlPoints.getLength() >= 2)
-		{
-			// Show a ghost preview with the cursor as a potential next point
-			bool nearExisting = false;
-			for (size_t i = 0; i < bezier.controlPoints.getLength(); i++)
-			{
-				if ((mouseCanvas - bezier.controlPoints[i]).getLength() < handleRadius)
-				{
-					nearExisting = true;
-					break;
-				}
-			}
-
-			bbe::List<bbe::Vector2> previewPoints = bezier.controlPoints;
-			if (!nearExisting && bezier.dragPointIndex < 0)
-			{
-				previewPoints.add(mouseCanvas);
-			}
-			drawBezierSymmetry(previewPoints, getBezierColor());
-		}
-		else if (bezier.controlPoints.getLength() == 1)
-		{
-			// Before we have 2 points, just draw a line preview to cursor
-			touchLineSymmetry(bezier.controlPoints[0], mouseCanvas, getBezierColor(), brushWidth);
+			if (textChanged) editor.submitCanvas();
 		}
 	}
 
-	bbe::Colori getRectangleDraftColor() const { return getColor(rectangle.draftUsesRightColor); }
+	const bbe::List<decltype(editor.mode)> shadowDrawModes = { PaintEditor::MODE_BRUSH };
+	const bool drawMode = editor.mode != PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_TEXT && editor.mode != PaintEditor::MODE_RECTANGLE && editor.mode != PaintEditor::MODE_CIRCLE && editor.mode != PaintEditor::MODE_LINE && editor.mode != PaintEditor::MODE_ARROW && editor.mode != PaintEditor::MODE_BEZIER && !editor.canvasResizeActive && !mouseOnNavigator && drawButtonDown;
+	const bool shadowDrawMode = shadowDrawModes.contains(editor.mode);
 
-	bbe::Colori getRectangleDragColor() const { return getColor(rectangle.dragUsesRightColor); }
-
-	int32_t getRectangleDraftPadding() const { return 0; }
-
-	bbe::Rectanglei expandRectangleRect(const bbe::Rectanglei &rect) const
+	if (editor.brushStrokeChangeRegistered)
 	{
-		const int32_t padding = getRectangleDraftPadding();
-		return bbe::Rectanglei(
-			rect.x - padding,
-			rect.y - padding,
-			rect.width + padding * 2,
-			rect.height + padding * 2);
-	}
-
-	bool buildRectangleDraftRect(const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect) const
-	{
-		bbe::Rectanglei baseRect;
-		if (tiled)
+		if (g.isMouseReleased(bbe::MouseButton::LEFT) || g.isMouseReleased(bbe::MouseButton::RIGHT))
 		{
-			baseRect = buildRawRect(pos1, pos2);
-			if (baseRect.width <= 0 || baseRect.height <= 0)
+			if (!g.isMouseDown(bbe::MouseButton::LEFT) && !g.isMouseDown(bbe::MouseButton::RIGHT))
 			{
-				outRect = {};
-				return false;
-			}
-		}
-		else if (!buildSelectionRect(pos1, pos2, baseRect))
-		{
-			outRect = {};
-			return false;
-		}
-
-		outRect = expandRectangleRect(baseRect);
-		return true;
-	}
-
-	bbe::Image createRectangleImage(int32_t width, int32_t height, const bbe::Colori &color, float rotation = 0.f) const
-	{
-		return bbe::Image::strokedRoundedRect(width, height, color, brushWidth, cornerRadius, rotation, antiAliasingEnabled);
-	}
-
-	bbe::Image createRectangleDraftImage(int32_t width, int32_t height) const { return createRectangleImage(width, height, getRectangleDraftColor()); }
-
-	bbe::Image createRectangleDragPreviewImage(int32_t width, int32_t height) const { return createRectangleImage(width, height, getRectangleDragColor()); }
-
-	void refreshActiveRectangleDraftImage()
-	{
-		refreshActiveShapeDraftImage(rectangle.draftActive, [&](int32_t width, int32_t height) { return createRectangleDraftImage(width, height); });
-	}
-
-	bbe::Colori getCircleDraftColor() const { return getColor(circle.draftUsesRightColor); }
-
-	bbe::Colori getCircleDragColor() const { return getColor(circle.dragUsesRightColor); }
-
-	bbe::Image createCircleImage(int32_t width, int32_t height, const bbe::Colori &color, float rotation = 0.f) const
-	{
-		return bbe::Image::strokedEllipse(width, height, color, brushWidth, rotation, antiAliasingEnabled);
-	}
-
-	bbe::Image createCircleDraftImage(int32_t width, int32_t height) const { return createCircleImage(width, height, getCircleDraftColor()); }
-
-	bbe::Image createCircleDragPreviewImage(int32_t width, int32_t height) const { return createCircleImage(width, height, getCircleDragColor()); }
-
-	void refreshActiveCircleDraftImage()
-	{
-		refreshActiveShapeDraftImage(circle.draftActive, [&](int32_t width, int32_t height) { return createCircleDraftImage(width, height); });
-	}
-
-	void finalizeCircleDrag(const bbe::Vector2i &mousePixel)
-	{
-		finalizeShapeDrag(circle.dragActive, circle.draftActive, circle.draftUsesRightColor, circle.dragUsesRightColor, circle.dragStart, mousePixel, circle.dragPreviewRect, circle.dragPreviewImage, [&](const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect)
-		{
-			if (tiled)
-			{
-				outRect = buildRawRect(pos1, pos2);
-				return outRect.width > 0 && outRect.height > 0;
-			}
-			return buildSelectionRect(pos1, pos2, outRect) && outRect.width > 0 && outRect.height > 0;
-		}, [&](int32_t width, int32_t height, const bbe::Colori &color) { return createCircleImage(width, height, color); });
-	}
-
-	void beginCircleDrag(const bbe::Vector2i &mousePixel, bool useRightColor) { circle.dragActive = true; circle.dragUsesRightColor = useRightColor; circle.dragStart = mousePixel; circle.dragPreviewRect = {}; circle.dragPreviewImage = {}; }
-
-	void updateCircleDragPreview(const bbe::Vector2i &mousePixel)
-	{
-		updateShapeDragPreview(circle.dragStart, mousePixel, circle.dragPreviewRect, circle.dragPreviewImage, [&](const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect)
-		{
-			if (tiled)
-			{
-				outRect = buildRawRect(pos1, pos2);
-				return outRect.width > 0 && outRect.height > 0;
-			}
-			return buildSelectionRect(pos1, pos2, outRect);
-		}, [&](int32_t width, int32_t height) { return createCircleDragPreviewImage(width, height); });
-	}
-
-	void updateCircleTool(const bbe::Vector2 &currMousePos)
-	{
-		updateFloatingShapeTool(currMousePos, circle.draftActive, circle.dragActive, circle.dragUsesRightColor, [&](const bbe::Vector2i &mousePixel, bool useRightColor) { beginCircleDrag(mousePixel, useRightColor); }, [&](const bbe::Vector2i &mousePixel) { updateCircleDragPreview(mousePixel); }, [&](const bbe::Vector2i &mousePixel) { finalizeCircleDrag(mousePixel); });
-	}
-
-	void beginSelectionMove(const bbe::Vector2i &mousePixel)
-	{
-		selection.moveActive = true;
-		selection.moveOffset = mousePixel - selection.rect.getPos();
-		selection.interactionStartRect = selection.rect;
-		selection.previewRect = selection.rect;
-		selection.previewImage = selection.floating ? selection.floatingImage : copyCanvasRect(selection.rect);
-	}
-
-	void beginRotationDrag(const bbe::Vector2i &mousePixel)
-	{
-		if (!selection.floating && selection.hasSelection)
-		{
-			selection.floatingImage = copyCanvasRect(selection.rect);
-			prepareImageForCanvas(selection.floatingImage);
-			clearCanvasRect(selection.rect);
-			selection.floating = true;
-			submitCanvas();
-		}
-
-		selection.rotationHandleActive = true;
-		selection.rotationDragPivot = {
-			selection.rect.x + selection.rect.width / 2.f,
-			selection.rect.y + selection.rect.height / 2.f
-		};
-		const bbe::Vector2 toMouse((float)mousePixel.x - selection.rotationDragPivot.x, (float)mousePixel.y - selection.rotationDragPivot.y);
-		selection.rotationDragStartAngle = toMouse.getLength() > 0.001f ? toMouse.getAngle() : 0.f;
-		selection.rotationDragBaseAngle = selection.rotation;
-	}
-
-	void updateRotationDrag(const bbe::Vector2i &mousePixel)
-	{
-		const bbe::Vector2 toMouse((float)mousePixel.x - selection.rotationDragPivot.x, (float)mousePixel.y - selection.rotationDragPivot.y);
-		if (toMouse.getLength() > 0.001f)
-		{
-			selection.rotation = selection.rotationDragBaseAngle + (toMouse.getAngle() - selection.rotationDragStartAngle);
-		}
-	}
-
-	void updateSelectionMovePreview(const bbe::Vector2i &mousePixel)
-	{
-		selection.previewRect = bbe::Rectanglei(
-			mousePixel.x - selection.moveOffset.x,
-			mousePixel.y - selection.moveOffset.y,
-			selection.previewImage.getWidth(),
-			selection.previewImage.getHeight());
-	}
-
-	void beginSelectionResize(const SelectionHitZone hitZone)
-	{
-		selection.resizeActive = true;
-		selection.resizeZone = hitZone;
-		selection.interactionStartRect = selection.rect;
-		selection.previewRect = selection.rect;
-		selection.previewImage = selection.floating ? selection.floatingImage : copyCanvasRect(selection.rect);
-	}
-
-	void updateSelectionResizePreview(const bbe::Vector2i &mousePixel)
-	{
-		const int32_t originalLeft = selection.interactionStartRect.x;
-		const int32_t originalTop = selection.interactionStartRect.y;
-		const int32_t originalRight = selection.interactionStartRect.x + selection.interactionStartRect.width - 1;
-		const int32_t originalBottom = selection.interactionStartRect.y + selection.interactionStartRect.height - 1;
-
-		int32_t left = originalLeft;
-		int32_t top = originalTop;
-		int32_t right = originalRight;
-		int32_t bottom = originalBottom;
-
-		switch (selection.resizeZone)
-		{
-		case SelectionHitZone::LEFT:
-		case SelectionHitZone::TOP_LEFT:
-		case SelectionHitZone::BOTTOM_LEFT:
-			left = mousePixel.x;
-			break;
-		default:
-			break;
-		}
-		switch (selection.resizeZone)
-		{
-		case SelectionHitZone::RIGHT:
-		case SelectionHitZone::TOP_RIGHT:
-		case SelectionHitZone::BOTTOM_RIGHT:
-			right = mousePixel.x;
-			break;
-		default:
-			break;
-		}
-		switch (selection.resizeZone)
-		{
-		case SelectionHitZone::TOP:
-		case SelectionHitZone::TOP_LEFT:
-		case SelectionHitZone::TOP_RIGHT:
-			top = mousePixel.y;
-			break;
-		default:
-			break;
-		}
-		switch (selection.resizeZone)
-		{
-		case SelectionHitZone::BOTTOM:
-		case SelectionHitZone::BOTTOM_LEFT:
-		case SelectionHitZone::BOTTOM_RIGHT:
-			bottom = mousePixel.y;
-			break;
-		default:
-			break;
-		}
-
-		selection.previewRect = buildRawRect({ left, top }, { right, bottom });
-		if (rectangle.draftActive)
-		{
-			refreshActiveRectangleDraftImage();
-		}
-	}
-
-	bbe::Image buildSelectionPreviewResultImage() const
-	{
-		if (rectangle.draftActive)
-		{
-			return createRectangleDraftImage(selection.previewRect.width, selection.previewRect.height);
-		}
-
-		if (circle.draftActive)
-		{
-			return createCircleDraftImage(selection.previewRect.width, selection.previewRect.height);
-		}
-
-		if (selection.previewRect.width != selection.previewImage.getWidth() || selection.previewRect.height != selection.previewImage.getHeight())
-		{
-			return selection.previewImage.scaledNearest(selection.previewRect.width, selection.previewRect.height);
-		}
-
-		return selection.previewImage;
-	}
-
-	void clearSelectionInteractionState() { selection.moveActive = false; selection.moveOffset = {}; selection.resizeActive = false; selection.resizeZone = SelectionHitZone::NONE; selection.interactionStartRect = {}; selection.previewRect = {}; selection.previewImage = {}; }
-
-	void applySelectionTransform()
-	{
-		if (!selection.moveActive && !selection.resizeActive) return;
-
-		const bool rectChanged = selection.previewRect.x != selection.rect.x
-			|| selection.previewRect.y != selection.rect.y
-			|| selection.previewRect.width != selection.rect.width
-			|| selection.previewRect.height != selection.rect.height;
-
-		if (selection.floating)
-		{
-			if (rectChanged)
-			{
-				selection.rect = selection.previewRect;
-				selection.floatingImage = buildSelectionPreviewResultImage();
-			}
-			clearSelectionInteractionState();
-			return;
-		}
-
-		if (rectChanged)
-		{
-			clearCanvasRect(selection.rect);
-			selection.rect = selection.previewRect;
-			selection.floating = true;
-			selection.floatingImage = buildSelectionPreviewResultImage();
-			rectangle.draftActive = false;
-			rectangle.draftUsesRightColor = false;
-			circle.draftActive = false;
-			circle.draftUsesRightColor = false;
-			selection.hasSelection = true;
-		}
-
-		clearSelectionInteractionState();
-	}
-
-	void updateSelectionTool(const bbe::Vector2 &currMousePos)
-	{
-		const bbe::Vector2i mousePixel = toCanvasPixel(currMousePos);
-
-		if (isMousePressed(bbe::MouseButton::LEFT))
-		{
-			const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
-			if (hitZone == SelectionHitZone::ROTATION && selection.hasSelection)
-			{
-				beginRotationDrag(mousePixel);
-			}
-			else if (isSelectionResizeHit(hitZone))
-			{
-				beginSelectionResize(hitZone);
-			}
-			else if (hitZone == SelectionHitZone::INSIDE)
-			{
-				beginSelectionMove(mousePixel);
-			}
-			else
-			{
-				if (selection.floating)
-				{
-					commitFloatingSelection();
-				}
-				selection.dragActive = true;
-				selection.dragStart = mousePixel;
-				selection.hasSelection = false;
-				selection.rect = {};
-				selection.previewRect = {};
-			}
-		}
-
-		if (isMouseDown(bbe::MouseButton::LEFT))
-		{
-			if (selection.rotationHandleActive)
-			{
-				updateRotationDrag(mousePixel);
-			}
-			if (selection.dragActive)
-			{
-				buildSelectionRect(selection.dragStart, mousePixel, selection.previewRect);
-			}
-			if (selection.moveActive)
-			{
-				updateSelectionMovePreview(mousePixel);
-			}
-			if (selection.resizeActive)
-			{
-				updateSelectionResizePreview(mousePixel);
-			}
-		}
-
-		if (isMouseReleased(bbe::MouseButton::LEFT))
-		{
-			selection.rotationHandleActive = false;
-
-			if (selection.dragActive)
-			{
-				selection.hasSelection = buildSelectionRect(selection.dragStart, mousePixel, selection.rect);
-				selection.dragActive = false;
-				selection.previewRect = {};
-			}
-
-			if (selection.moveActive || selection.resizeActive)
-			{
-				applySelectionTransform();
+				editor.applyWorkArea();
+				editor.submitCanvas();
+				editor.brushStrokeChangeRegistered = false;
 			}
 		}
 	}
 
-	void finalizeRectangleDrag(const bbe::Vector2i &mousePixel)
+	if (drawMode || shadowDrawMode)
 	{
-		finalizeShapeDrag(rectangle.dragActive, rectangle.draftActive, rectangle.draftUsesRightColor, rectangle.dragUsesRightColor, rectangle.dragStart, mousePixel, rectangle.dragPreviewRect, rectangle.dragPreviewImage, [&](const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect) { return buildRectangleDraftRect(pos1, pos2, outRect); }, [&](int32_t width, int32_t height, const bbe::Colori &color) { return createRectangleImage(width, height, color); });
-	}
-
-	void beginRectangleDrag(const bbe::Vector2i &mousePixel, bool useRightColor) { rectangle.dragActive = true; rectangle.dragUsesRightColor = useRightColor; rectangle.dragStart = mousePixel; rectangle.dragPreviewRect = {}; rectangle.dragPreviewImage = {}; }
-
-	void updateRectangleDragPreview(const bbe::Vector2i &mousePixel)
-	{
-		updateShapeDragPreview(rectangle.dragStart, mousePixel, rectangle.dragPreviewRect, rectangle.dragPreviewImage, [&](const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect) { return buildRectangleDraftRect(pos1, pos2, outRect); }, [&](int32_t width, int32_t height) { return createRectangleDragPreviewImage(width, height); });
-	}
-
-	void updateRectangleTool(const bbe::Vector2 &currMousePos)
-	{
-		updateFloatingShapeTool(currMousePos, rectangle.draftActive, rectangle.dragActive, rectangle.dragUsesRightColor, [&](const bbe::Vector2i &mousePixel, bool useRightColor) { beginRectangleDrag(mousePixel, useRightColor); }, [&](const bbe::Vector2i &mousePixel) { updateRectangleDragPreview(mousePixel); }, [&](const bbe::Vector2i &mousePixel) { finalizeRectangleDrag(mousePixel); });
-	}
-
-	bbe::Rectangle selectionRectToScreen(const bbe::Rectanglei &rect) const
-	{
-		return bbe::Rectangle(
-			offset.x + rect.x * zoomLevel,
-			offset.y + rect.y * zoomLevel,
-			rect.width * zoomLevel,
-			rect.height * zoomLevel);
-	}
-
-	// Returns the screen-space position of canvas resize handle i (0=TL,1=T,2=TR,3=R,4=BR,5=B,6=BL,7=L).
-	bbe::Vector2 getCanvasHandleScreenPos(int32_t i) const
-	{
-		const float W = getCanvasWidth() * zoomLevel;
-		const float H = getCanvasHeight() * zoomLevel;
-		switch (i)
+		static uint32_t shadowBrushCounter = 0;
+		if (!drawMode)
 		{
-			case 0: return { offset.x,         offset.y         };
-			case 1: return { offset.x + W/2.f,  offset.y         };
-			case 2: return { offset.x + W,      offset.y         };
-			case 3: return { offset.x + W,      offset.y + H/2.f };
-			case 4: return { offset.x + W,      offset.y + H     };
-			case 5: return { offset.x + W/2.f,  offset.y + H     };
-			case 6: return { offset.x,           offset.y + H     };
-			case 7: return { offset.x,           offset.y + H/2.f };
-			default: return offset;
-		}
-	}
-
-	// Returns the index (0-7) of the canvas resize handle the screen-space point is near, or -1.
-	int32_t getCanvasResizeHitHandle(const bbe::Vector2 &screenPos) const
-	{
-		if (getCanvasWidth() <= 0 || getCanvasHeight() <= 0) return -1;
-		constexpr float hitRadius = 6.f;
-		for (int32_t i = 0; i < 8; i++)
-		{
-			const bbe::Vector2 hp = getCanvasHandleScreenPos(i);
-			const float dx = screenPos.x - hp.x;
-			const float dy = screenPos.y - hp.y;
-			if (dx * dx + dy * dy <= hitRadius * hitRadius) return i;
-		}
-		return -1;
-	}
-
-	void updateCanvasResizePreview(const bbe::Vector2 &canvasMousePos)
-	{
-		const int32_t W = getCanvasWidth();
-		const int32_t H = getCanvasHeight();
-		const int32_t mx = (int32_t)std::round(canvasMousePos.x);
-		const int32_t my = (int32_t)std::round(canvasMousePos.y);
-		switch (canvasResizeHandleIndex)
-		{
-			case 0: canvasResizePreviewRect = { mx, my, std::max(1, W - mx), std::max(1, H - my) }; break;
-			case 1: canvasResizePreviewRect = { 0,  my, W,                   std::max(1, H - my) }; break;
-			case 2: canvasResizePreviewRect = { 0,  my, std::max(1, mx),     std::max(1, H - my) }; break;
-			case 3: canvasResizePreviewRect = { 0,  0,  std::max(1, mx),     H                   }; break;
-			case 4: canvasResizePreviewRect = { 0,  0,  std::max(1, mx),     std::max(1, my)     }; break;
-			case 5: canvasResizePreviewRect = { 0,  0,  W,                   std::max(1, my)     }; break;
-			case 6: canvasResizePreviewRect = { mx, 0,  std::max(1, W - mx), std::max(1, my)     }; break;
-			case 7: canvasResizePreviewRect = { mx, 0,  std::max(1, W - mx), H                   }; break;
-			default: break;
-		}
-	}
-
-	void applyCanvasResize(const bbe::Rectanglei &previewRect)
-	{
-		if (previewRect.width <= 0 || previewRect.height <= 0) return;
-		if (canvas.get().layers.isEmpty()) return;
-
-		const bbe::Color fillColor(rightColor[0], rightColor[1], rightColor[2], rightColor[3]);
-		const int32_t oldW = getCanvasWidth();
-		const int32_t oldH = getCanvasHeight();
-
-		for (size_t li = 0; li < canvas.get().layers.getLength(); li++)
-		{
-			canvas.get().layers[li].image = canvas.get().layers[li].image.resizedCanvas(
-				previewRect.width,
-				previewRect.height,
-				bbe::Vector2i(-previewRect.x, -previewRect.y),
-				fillColor);
-			prepareImageForCanvas(canvas.get().layers[li].image);
-		}
-
-		// Shift offset so visual position of original content is preserved.
-		offset.x += previewRect.x * zoomLevel;
-		offset.y += previewRect.y * zoomLevel;
-
-		clearSelectionState();
-		clearWorkArea();
-		submitCanvas();
-	}
-
-	void drawSelectionOutline(bbe::PrimitiveBrush2D &brush, const bbe::Rectanglei &rect) const
-	{
-		const bbe::Rectangle screenRect = selectionRectToScreen(rect);
-		brush.setColorRGB(0.0f, 0.0f, 0.0f);
-		brush.sketchRect(screenRect);
-		if (screenRect.width > 2 && screenRect.height > 2)
-		{
-			brush.setColorRGB(1.0f, 1.0f, 1.0f);
-			brush.sketchRect(screenRect.shrinked(1.0f));
-		}
-
-		if (selection.hasSelection && !selection.dragActive)
-		{
-			const float cx = screenRect.x + screenRect.width / 2.f;
-			const float ty = screenRect.y;
-			constexpr float stemLen = 30.f;
-			const float handleY = ty - stemLen;
-			constexpr float handleR = 6.f;
-
-			// Stem line
-			brush.setColorRGB(0.f, 0.f, 0.f);
-			brush.fillLine(cx + 1.f, ty, cx + 1.f, handleY, 1.f);
-			brush.setColorRGB(1.f, 1.f, 1.f);
-			brush.fillLine(cx, ty, cx, handleY, 1.f);
-
-			// Handle circle: black border, white fill
-			brush.setColorRGB(0.f, 0.f, 0.f);
-			brush.fillCircle(cx - handleR - 1.f, handleY - handleR - 1.f, (handleR + 1.f) * 2.f, (handleR + 1.f) * 2.f);
-			brush.setColorRGB(1.f, 1.f, 1.f);
-			brush.fillCircle(cx - handleR, handleY - handleR, handleR * 2.f, handleR * 2.f);
-		}
-	}
-
-	void clampBrushWidth() { if (brushWidth < 1) brushWidth = 1; }
-
-	void clampTextFontSize() { if (textFontSize < 1) textFontSize = 1; }
-
-	void clampTextFontIndex()
-	{
-		if (availableFonts.isEmpty()) { textFontIndex = 0; return; }
-		textFontIndex = bbe::Math::clamp(textFontIndex, 0, (int32_t)availableFonts.getLength() - 1);
-	}
-
-	void buildAvailableFontList()
-	{
-		availableFonts.clear();
-		const bbe::List<bbe::FontFileEntry> fonts = bbe::Font::findUsableSystemFonts("Text");
-		for (size_t i = 0; i < fonts.getLength(); i++)
-		{
-			availableFonts.add({ fonts[i].displayName, fonts[i].path });
-		}
-	}
-
-	const bbe::Font &getTextToolFont() const
-	{
-		using FontKey = std::pair<std::string, int32_t>;
-		static std::map<FontKey, bbe::Font> textFonts;
-		const int32_t clampedSize = bbe::Math::max<int32_t>(textFontSize, 1);
-		const bbe::String &fontPath = (textFontIndex >= 0 && textFontIndex < (int32_t)availableFonts.getLength())
-			? availableFonts[(size_t)textFontIndex].path
-			: bbe::String("OpenSansRegular.ttf");
-		const FontKey key = { std::string(fontPath.getRaw()), clampedSize };
-		auto it = textFonts.find(key);
-		if (it == textFonts.end())
-		{
-			it = textFonts.emplace(key, bbe::Font(fontPath, (unsigned)clampedSize)).first;
-		}
-		return it->second;
-	}
-
-	const bbe::Image &getTextGlyphImage(const bbe::Font &font, int32_t codePoint) const
-	{
-		bbe::Image &glyph = const_cast<bbe::Image &>(font.getImage(codePoint, 1.0f));
-		glyph.keepAfterUpload();
-		return glyph;
-	}
-
-	bbe::String getTextBufferString() const
-	{
-		return bbe::String(textBuffer);
-	}
-
-	bool getTextOriginAndBounds(const bbe::Vector2i &topLeft, bbe::Vector2 &outOrigin, bbe::Rectangle &outBounds) const
-	{
-		const bbe::String text = getTextBufferString();
-		if (text.isEmpty()) return false;
-		return getTextToolFont().getRasterOriginAndBounds(text, topLeft, outOrigin, outBounds);
-	}
-
-	// Renders the text (as it would appear at topLeft) into a standalone image.
-	bbe::Image renderTextToImage(const bbe::Vector2i &topLeft, const bbe::Colori &color) const
-	{
-		const bbe::String text = getTextBufferString();
-		const bbe::Font &font = getTextToolFont();
-		return bbe::Image::renderTextToImage(font, text, topLeft, color);
-	}
-
-	bool drawTextAt(const bbe::Vector2i &topLeft, const bbe::Colori &color)
-	{
-		const bbe::String text = getTextBufferString();
-		if (text.isEmpty()) return false;
-		const bbe::Font &font = getTextToolFont();
-		getActiveLayerImage().blendText(font, text, topLeft, color, tiled);
-		return true;
-	}
-
-	void placeTextAt(const bbe::Vector2i &topLeft, const bbe::Colori &color)
-	{
-		bool changed = drawTextAt(topLeft, color);
-		if (changed)
-		{
-			submitCanvas();
-		}
-	}
-
-	void drawTextPreview(bbe::PrimitiveBrush2D &brush, const bbe::Vector2i &topLeft)
-	{
-		bbe::Vector2 origin;
-		bbe::Rectangle bounds;
-		if (!getTextOriginAndBounds(topLeft, origin, bounds)) return;
-
-		const bbe::String text = getTextBufferString();
-		const bbe::Font &font = getTextToolFont();
-		const bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(origin, text);
-		const bbe::Color previewColor = bbe::Color(leftColor).blendTo(bbe::Color::white(), 0.15f);
-
-		const int32_t tileDraw = tiled ? 20 : 0;
-		for (int32_t ti = -tileDraw; ti <= tileDraw; ti++)
-		{
-			for (int32_t tk = -tileDraw; tk <= tileDraw; tk++)
-			{
-				const float tileOffX = ti * getCanvasWidth() * zoomLevel;
-				const float tileOffY = tk * getCanvasHeight() * zoomLevel;
-
-				brush.setColorRGB(previewColor);
-				auto it = text.getIterator();
-				for (size_t i = 0; i < renderPositions.getLength() && it.valid(); i++, ++it)
-				{
-					const int32_t codePoint = it.getCodepoint();
-					if (codePoint == ' ' || codePoint == '\n' || codePoint == '\r' || codePoint == '\t') continue;
-
-					const bbe::Image &glyph = getTextGlyphImage(font, codePoint);
-					brush.drawImage(
-						offset.x + tileOffX + renderPositions[i].x * zoomLevel,
-						offset.y + tileOffY + renderPositions[i].y * zoomLevel,
-						glyph.getWidth() * zoomLevel,
-						glyph.getHeight() * zoomLevel,
-						glyph);
-				}
-
-				drawSelectionOutline(brush, bbe::Rectanglei(
-					topLeft.x + ti * getCanvasWidth(),
-					topLeft.y + tk * getCanvasHeight(),
-					(int32_t)bbe::Math::ceil(bounds.width),
-					(int32_t)bbe::Math::ceil(bounds.height)));
-			}
-		}
-	}
-
-	void swapColors()
-	{
-		for (size_t i = 0; i < std::size(leftColor); i++)
-		{
-			std::swap(leftColor[i], rightColor[i]);
-		}
-	}
-
-	void resetColorsToDefault()
-	{
-		leftColor[0] = 0.0f;
-		leftColor[1] = 0.0f;
-		leftColor[2] = 0.0f;
-		leftColor[3] = 1.0f;
-
-		rightColor[0] = 1.0f;
-		rightColor[1] = 1.0f;
-		rightColor[2] = 1.0f;
-		rightColor[3] = 1.0f;
-	}
-
-	void serializeLayerImage(const bbe::Image &image, bbe::ByteBuffer &buffer) const
-	{
-		for (int32_t y = 0; y < image.getHeight(); y++)
-		{
-			for (int32_t x = 0; x < image.getWidth(); x++)
-			{
-				const bbe::Colori color = image.getPixel((size_t)x, (size_t)y);
-				uint8_t r = color.r;
-				uint8_t g = color.g;
-				uint8_t b = color.b;
-				uint8_t a = color.a;
-				buffer.write(r);
-				buffer.write(g);
-				buffer.write(b);
-				buffer.write(a);
-			}
-		}
-	}
-
-	bool deserializeLayerImage(bbe::ByteBufferSpan &span, int32_t width, int32_t height, bbe::Image &outImage) const
-	{
-		if (width <= 0 || height <= 0) return false;
-		outImage = bbe::Image(width, height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
-		prepareImageForCanvas(outImage);
-
-		for (int32_t y = 0; y < height; y++)
-		{
-			for (int32_t x = 0; x < width; x++)
-			{
-				uint8_t r = 0;
-				uint8_t g = 0;
-				uint8_t b = 0;
-				uint8_t a = 0;
-				span.read(r);
-				span.read(g);
-				span.read(b);
-				span.read(a);
-				outImage.setPixel((size_t)x, (size_t)y, bbe::Colori(r, g, b, a));
-			}
-		}
-
-		return true;
-	}
-
-	bool saveLayeredDocument(const bbe::String &filePath)
-	{
-		commitFloatingSelection();
-
-		bbe::ByteBuffer buffer;
-		buffer.writeNullString(LAYERED_FILE_MAGIC);
-
-		int32_t width = getCanvasWidth();
-		int32_t height = getCanvasHeight();
-		uint32_t layerCount = (uint32_t)canvas.get().layers.getLength();
-		int32_t storedActiveLayerIndex = activeLayerIndex;
-		buffer.write(width);
-		buffer.write(height);
-		buffer.write(layerCount);
-		buffer.write(storedActiveLayerIndex);
-
-		for (size_t i = 0; i < canvas.get().layers.getLength(); i++)
-		{
-			PaintLayer &layer = canvas.get().layers[i];
-			buffer.write(layer.visible);
-			buffer.write(layer.name);
-			buffer.write(layer.opacity);
-			uint8_t blendModeRaw = (uint8_t)layer.blendMode;
-			buffer.write(blendModeRaw);
-			serializeLayerImage(layer.image, buffer);
-		}
-
-		bbe::simpleFile::writeBinaryToFile(filePath, buffer);
-		return true;
-	}
-
-	bool loadLayeredDocument(const bbe::String &filePath)
-	{
-		bbe::ByteBuffer buffer = bbe::simpleFile::readBinaryFile(filePath);
-		if (buffer.getLength() == 0) return false;
-
-		bbe::ByteBufferSpan span = buffer.getSpan();
-		const bbe::String magic = span.readNullString();
-		const bool isV2 = (magic == LAYERED_FILE_MAGIC);
-		const bool isV1 = (magic == LAYERED_FILE_MAGIC_V1);
-		if (!isV2 && !isV1) return false;
-
-		int32_t width = 0;
-		int32_t height = 0;
-		uint32_t layerCount = 0;
-		int32_t storedActiveLayerIndex = 0;
-		span.read(width);
-		span.read(height);
-		span.read(layerCount);
-		span.read(storedActiveLayerIndex);
-		if (width <= 0 || height <= 0 || layerCount == 0) return false;
-
-		PaintDocument document;
-		for (uint32_t i = 0; i < layerCount; i++)
-		{
-			PaintLayer layer;
-			span.read(layer.visible);
-			span.read(layer.name);
-			if (isV2)
-			{
-				span.read(layer.opacity);
-				uint8_t blendModeRaw = 0;
-				span.read(blendModeRaw);
-				layer.blendMode = (bbe::BlendMode)blendModeRaw;
-			}
-			if (!deserializeLayerImage(span, width, height, layer.image))
-			{
-				return false;
-			}
-			document.layers.add(std::move(layer));
-		}
-
-		canvas.get() = std::move(document);
-		activeLayerIndex = storedActiveLayerIndex;
-		this->path = filePath;
-		setupCanvas();
-		clampActiveLayerIndex();
-		return true;
-	}
-
-	bool saveFlattenedPng(const bbe::String &filePath)
-	{
-		commitFloatingSelection();
-		flattenVisibleLayers().writeToFile(filePath);
-		return true;
-	}
-
-	bool saveDocumentToPath(const bbe::String &filePath)
-	{
-		bool ok;
-		if (isLayeredDocumentPath(filePath))
-			ok = saveLayeredDocument(filePath);
-		else
-			ok = saveFlattenedPng(filePath);
-		if (ok) savedGeneration = canvasGeneration;
-		return ok;
-	}
-
-	void saveDocumentAs(SaveFormat format)
-	{
-		bbe::String newPath = path;
-		const bbe::String defaultExtension = format == SaveFormat::PNG ? "png" : "bbepaint";
-		if (bbe::simpleFile::showSaveDialog(newPath, defaultExtension))
-		{
-			path = newPath;
-			saveDocumentToPath(path);
-		}
-	}
-
-	void requestSave()
-	{
-		if (!path.isEmpty())
-		{
-			saveDocumentToPath(path);
-			return;
-		}
-
-		openSaveChoicePopup = true;
-	}
-
-	void saveCanvas()
-	{
-		requestSave();
-	}
-
-	void resetCamera()
-	{
-		offset = bbe::Vector2(getWindowWidth() / 2 - getCanvasWidth() / 2, getWindowHeight() / 2 - getCanvasHeight() / 2);
-		zoomLevel = 1.f;
-	}
-
-	void clearWorkArea()
-	{
-		workArea = bbe::Image(getCanvasWidth(), getCanvasHeight(), bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
-		workArea.keepAfterUpload();
-		workArea.setFilterMode(bbe::ImageFilterMode::NEAREST);
-	}
-
-	void submitCanvas()
-	{
-		canvas.submit();
-		canvasGeneration++;
-	}
-
-	void applyWorkArea()
-	{
-		getActiveLayerImage().blendOver(workArea, { 0, 0 }, false);
-		clearWorkArea();
-	}
-
-	void setupCanvas(bool clearHistory = true)
-	{
-		prepareDocumentImages();
-		clearWorkArea();
-		resetCamera();
-		clearSelectionState();
-		clampActiveLayerIndex();
-		symmetryOffsetCustom = false;
-		if (clearHistory)
-		{
-			canvas.clearHistory();
-			canvasGeneration = 0;
-			savedGeneration = 0;
-		}
-	}
-
-	void newCanvas(uint32_t width, uint32_t height)
-	{
-		canvas.get().layers.clear();
-		canvas.get().layers.add(makeLayer("Layer 1", (int32_t)width, (int32_t)height, bbe::Color::white()));
-		activeLayerIndex = 0;
-		this->path = "";
-		setupCanvas();
-	}
-
-	bool newCanvas(const char *path)
-	{
-		if (isLayeredDocumentPath(path))
-		{
-			if (loadLayeredDocument(path))
-			{
-				return true;
-			}
-			return false;
-		}
-
-		canvas.get().layers.clear();
-		canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, bbe::Image(path) });
-		activeLayerIndex = 0;
-		this->path = path;
-		setupCanvas();
-		return true;
-	}
-
-	bbe::Vector2 screenToCanvas(const bbe::Vector2 &pos)
-	{
-		return (pos - offset) / zoomLevel;
-	}
-
-	bbe::Rectangle getNavigatorRect()
-	{
-		const float canvasW = (float)getCanvasWidth();
-		const float canvasH = (float)getCanvasHeight();
-		if (canvasW <= 0.f || canvasH <= 0.f) return {};
-		const float navMaxSize = 160.f * bbe::Math::sqrt(getWindow()->getScale());
-		float navW, navH;
-		if (canvasW >= canvasH)
-		{
-			navW = navMaxSize;
-			navH = navMaxSize * canvasH / canvasW;
+			shadowBrushCounter++;
+			if (shadowBrushCounter > 1) editor.clearWorkArea();
 		}
 		else
 		{
-			navH = navMaxSize;
-			navW = navMaxSize * canvasW / canvasH;
-		}
-		const float margin = 8.f;
-		return bbe::Rectangle(getWindowWidth() - navW - margin, getWindowHeight() - navH - margin, navW, navH);
-	}
-
-	bool toTiledPos(bbe::Vector2 &pos)
-	{
-		if (tiled)
-		{
-			pos.x = bbe::Math::mod<float>(pos.x, getCanvasWidth());
-			pos.y = bbe::Math::mod<float>(pos.y, getCanvasHeight());
-			return true; // If we are tiled, then any position is always within the canvas.
+			if (shadowBrushCounter > 0) editor.clearWorkArea();
+			shadowBrushCounter = 0;
 		}
 
-		// If we are not tiled, then we have to check if the pos is actually part of the canvas.
-		return pos.x >= 0 && pos.y >= 0 && pos.x < getCanvasWidth() && pos.y < getCanvasHeight();
-	}
-
-	void changeZoom(float val)
-	{
-		auto mouseBeforeZoom = screenToCanvas(getMouse());
-		zoomLevel *= val;
-		auto mouseAfterZoom = screenToCanvas(getMouse());
-		offset += (mouseAfterZoom - mouseBeforeZoom) * zoomLevel;
-	}
-
-	bbe::Colori getMouseColor() const
-	{
-		if (!isMouseDown(bbe::MouseButton::LEFT) && !isMouseDown(bbe::MouseButton::RIGHT)) return bbe::Color(leftColor).asByteColor();
-		return isMouseDown(bbe::MouseButton::LEFT) ? bbe::Color(leftColor).asByteColor() : bbe::Color(rightColor).asByteColor();
-	}
-
-	bbe::Vector2 getSymmetryCenter() const
-	{
-		if (symmetryOffsetCustom) return symmetryOffset;
-		return { getCanvasWidth() * 0.5f, getCanvasHeight() * 0.5f };
-	}
-
-	bbe::List<bbe::Vector2> getSymmetryPositions(const bbe::Vector2 &pos) const
-	{
-		return bbe::getSymmetryPositions(pos, getSymmetryCenter(), symmetryMode, radialSymmetryCount);
-	}
-
-	bbe::List<float> getSymmetryRotationAngles() const
-	{
-		return bbe::getSymmetryRotationAngles(symmetryMode, radialSymmetryCount);
-	}
-
-	bool touch(const bbe::Vector2 &touchPos, bool rectangleShape = false)
-	{
-		bool changed = false;
-		const auto positions = getSymmetryPositions(touchPos);
-		for (size_t i = 0; i < positions.getLength(); i++)
-			changed |= workArea.drawBrushStamp(positions[i], getMouseColor(), brushWidth, rectangleShape ? bbe::ImageBrushShape::Square : bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
-		return changed;
-	}
-
-	bool touchLine(const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, bool rectangleShape = false)
-	{
-		bool changed = false;
-		const auto starts = getSymmetryPositions(pos1);
-		const auto ends   = getSymmetryPositions(pos2);
-		for (size_t i = 0; i < starts.getLength(); i++)
-			changed |= workArea.drawLineCapsule(starts[i], ends[i], getMouseColor(), brushWidth, rectangleShape ? bbe::ImageBrushShape::Square : bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
-		return changed;
-	}
-
-	void touchLineSymmetry(const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, const bbe::Colori &color, int32_t width, bool rectShape = false)
-	{
-		const auto starts = getSymmetryPositions(pos1);
-		const auto ends   = getSymmetryPositions(pos2);
-		for (size_t i = 0; i < starts.getLength(); i++)
-			workArea.drawLineCapsule(starts[i], ends[i], color, width, rectShape ? bbe::ImageBrushShape::Square : bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
-	}
-
-	void drawArrowSymmetry(const bbe::Vector2 &from, const bbe::Vector2 &to, const bbe::Colori &color)
-	{
-		const auto froms = getSymmetryPositions(from);
-		const auto tos   = getSymmetryPositions(to);
-		for (size_t i = 0; i < froms.getLength(); i++)
-			drawArrowToWorkArea(froms[i], tos[i], color);
-	}
-
-	void drawBezierSymmetry(const bbe::List<bbe::Vector2> &points, const bbe::Colori &color)
-	{
-		if (points.isEmpty()) return;
-		const size_t symCount = getSymmetryPositions(points[0]).getLength();
-		for (size_t s = 0; s < symCount; s++)
+		if (editor.mode == PaintEditor::MODE_BRUSH)
 		{
-			bbe::List<bbe::Vector2> symPoints;
-			for (size_t p = 0; p < points.getLength(); p++)
-				symPoints.add(getSymmetryPositions(points[p])[s]);
-			drawBezierToWorkArea(symPoints, color);
-		}
-	}
-
-	virtual void onStart() override
-	{
-		buildAvailableFontList();
-		newCanvas(400, 300);
-	}
-	virtual void onFilesDropped(const bbe::List<bbe::String> &paths) override
-	{
-		pendingDroppedPaths.clear();
-		for (size_t i = 0; i < paths.getLength(); i++)
-		{
-			if (isSupportedDroppedDocumentPath(paths[i]))
+			const bool touched = editor.touchLine(currMousePos, prevMousePos, false, g.isMouseDown(bbe::MouseButton::LEFT), g.isMouseDown(bbe::MouseButton::RIGHT));
+			if (drawMode)
 			{
-				pendingDroppedPaths.add(paths[i]);
+				editor.brushStrokeChangeRegistered |= touched;
 			}
 		}
-		if (!pendingDroppedPaths.isEmpty())
+		else if (editor.mode == PaintEditor::MODE_FLOOD_FILL)
 		{
-			openDropChoicePopup = true;
-		}
-	}
-	virtual void update(float timeSinceLastFrame) override
-	{
-		static bool changeRegistered = false;
-		static int32_t previousMode = mode;
-		const bool drawButtonDown = isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT);
-		auto discardTransientWorkArea = [&]()
-		{
-			clearWorkArea();
-			changeRegistered = false;
-		};
-		if (mode != previousMode && !drawButtonDown)
-		{
-			if (previousMode == MODE_RECTANGLE && rectangle.draftActive)
+			bbe::Vector2 pos = editor.screenToCanvas(g.getMouse());
+			if (editor.toTiledPos(pos))
 			{
-				commitFloatingSelection();
-				clearSelectionState();
-			}
-			if (previousMode == MODE_CIRCLE && circle.draftActive)
-			{
-				commitFloatingSelection();
-				clearSelectionState();
-			}
-			if (previousMode == MODE_LINE && line.draftActive)
-			{
-				finalizeLineDraft();
-			}
-			if (previousMode == MODE_ARROW && arrow.draftActive)
-			{
-				finalizeArrowDraft();
-			}
-			if (previousMode == MODE_BEZIER && !bezier.controlPoints.isEmpty())
-			{
-				finalizeBezierDraft();
-			}
-			discardTransientWorkArea();
-		}
-
-		const bbe::Vector2 prevMousePos = screenToCanvas(getMousePrevious());
-		const bool ctrlDown = isKeyDown(bbe::Key::LEFT_CONTROL) || isKeyDown(bbe::Key::RIGHT_CONTROL);
-		const int32_t modeBeforeInput = mode;
-		bool refreshRectangleDraft = false;
-		if (isKeyPressed(bbe::Key::SPACE))
-		{
-			resetCamera();
-		}
-		if (isKeyPressed(bbe::Key::F1) && symmetryMode != bbe::SymmetryMode::None)
-		{
-			symmetryOffsetCustom = true;
-			symmetryOffset = screenToCanvas(getMouse());
-		}
-
-		constexpr float CAM_WASD_SPEED = 400;
-		if (!ctrlDown && isKeyDown(bbe::Key::W))
-		{
-			offset.y += timeSinceLastFrame * CAM_WASD_SPEED;
-		}
-		if (!ctrlDown && isKeyDown(bbe::Key::S))
-		{
-			offset.y -= timeSinceLastFrame * CAM_WASD_SPEED;
-		}
-		if (!ctrlDown && isKeyDown(bbe::Key::A))
-		{
-			offset.x += timeSinceLastFrame * CAM_WASD_SPEED;
-		}
-		if (!ctrlDown && isKeyDown(bbe::Key::D))
-		{
-			offset.x -= timeSinceLastFrame * CAM_WASD_SPEED;
-		}
-
-		if (isMouseDown(bbe::MouseButton::MIDDLE))
-		{
-			offset += getMouseDelta();
-			if (tiled)
-			{
-				if (offset.x < 0) offset.x += getCanvasWidth() * zoomLevel;
-				if (offset.y < 0) offset.y += getCanvasHeight() * zoomLevel;
-				if (offset.x > getCanvasWidth() * zoomLevel) offset.x -= getCanvasWidth() * zoomLevel;
-				if (offset.y > getCanvasHeight() * zoomLevel) offset.y -= getCanvasHeight() * zoomLevel;
-			}
-		}
-
-		if (getMouseScrollY() < 0)
-		{
-			changeZoom(1.0f / 1.1f);
-		}
-		else if (getMouseScrollY() > 0)
-		{
-			changeZoom(1.1f);
-		}
-		const bbe::Vector2 currMousePos = screenToCanvas(getMouse());
-
-		if (isKeyPressed(bbe::Key::_1))
-		{
-			mode = MODE_BRUSH;
-		}
-		if (isKeyPressed(bbe::Key::_2))
-		{
-			mode = MODE_FLOOD_FILL;
-		}
-		if (isKeyPressed(bbe::Key::_3))
-		{
-			mode = MODE_LINE;
-		}
-		if (isKeyPressed(bbe::Key::_4))
-		{
-			mode = MODE_RECTANGLE;
-		}
-		if (isKeyPressed(bbe::Key::_5))
-		{
-			mode = MODE_SELECTION;
-		}
-		if (isKeyPressed(bbe::Key::_6))
-		{
-			mode = MODE_TEXT;
-		}
-		if (isKeyPressed(bbe::Key::_7))
-		{
-			mode = MODE_PIPETTE;
-		}
-		if (isKeyPressed(bbe::Key::_8))
-		{
-			mode = MODE_CIRCLE;
-		}
-		if (isKeyPressed(bbe::Key::_9))
-		{
-			mode = MODE_ARROW;
-		}
-		if (isKeyPressed(bbe::Key::_0))
-		{
-			mode = MODE_BEZIER;
-		}
-		bool refreshCircleDraft = false;
-		if (!ctrlDown && isKeyPressed(bbe::Key::X))
-		{
-			swapColors();
-			refreshRectangleDraft = rectangle.draftActive;
-			refreshCircleDraft = circle.draftActive;
-		}
-		const bool increaseToolSize = isKeyTyped(bbe::Key::EQUAL)
-			|| isKeyTyped(bbe::Key::KP_ADD)
-			|| isKeyTyped(bbe::Key::RIGHT_BRACKET);
-		const bool decreaseToolSize = isKeyTyped(bbe::Key::MINUS) || isKeyTyped(bbe::Key::KP_SUBTRACT);
-		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_ARROW || mode == MODE_BEZIER)
-		{
-			const int32_t previousBrushWidth = brushWidth;
-			if (increaseToolSize) brushWidth++;
-			if (decreaseToolSize) brushWidth--;
-			clampBrushWidth();
-			if (rectangle.draftActive && brushWidth != previousBrushWidth)
-			{
-				refreshRectangleDraft = true;
-			}
-			if (circle.draftActive && brushWidth != previousBrushWidth)
-			{
-				refreshCircleDraft = true;
-			}
-		}
-		else if (mode == MODE_TEXT)
-		{
-			if (increaseToolSize) textFontSize++;
-			if (decreaseToolSize) textFontSize--;
-			clampTextFontSize();
-		}
-
-		if (ctrlDown)
-		{
-			if (isKeyTyped(bbe::Key::Z) && canvas.isUndoable())
-			{
-				canvas.undo();
-				canvasGeneration--;
-				clampActiveLayerIndex();
-				clearSelectionState();
-				clearWorkArea();
-			}
-			if (isKeyTyped(bbe::Key::Y) && canvas.isRedoable())
-			{
-				canvas.redo();
-				canvasGeneration++;
-				clampActiveLayerIndex();
-				clearSelectionState();
-				clearWorkArea();
-			}
-			if (isKeyPressed(bbe::Key::S))
-			{
-				saveCanvas();
-			}
-			if (isKeyPressed(bbe::Key::D))
-			{
-				resetColorsToDefault();
-				refreshRectangleDraft = rectangle.draftActive;
-				refreshCircleDraft = circle.draftActive;
-			}
-			if (isKeyPressed(bbe::Key::A))
-			{
-				selectWholeLayer();
-			}
-			if (isKeyPressed(bbe::Key::C))
-			{
-				if (mode != MODE_SELECTION)
-				{
-					mode = MODE_SELECTION;
-				}
-				else
-				{
-					storeSelectionInClipboard();
-				}
-			}
-			if (isKeyPressed(bbe::Key::X))
-			{
-				cutSelection();
-			}
-			if (isKeyPressed(bbe::Key::V))
-			{
-				pasteSelectionAt(toCanvasPixel(currMousePos));
-			}
-		}
-		if (mode != modeBeforeInput && !drawButtonDown)
-		{
-			if (modeBeforeInput == MODE_RECTANGLE && rectangle.draftActive)
-			{
-				commitFloatingSelection();
-				clearSelectionState();
-			}
-			if (modeBeforeInput == MODE_CIRCLE && circle.draftActive)
-			{
-				commitFloatingSelection();
-				clearSelectionState();
-			}
-			if (modeBeforeInput == MODE_LINE && line.draftActive)
-			{
-				finalizeLineDraft();
-			}
-			if (modeBeforeInput == MODE_ARROW && arrow.draftActive)
-			{
-				finalizeArrowDraft();
-			}
-			if (modeBeforeInput == MODE_BEZIER && !bezier.controlPoints.isEmpty())
-			{
-				finalizeBezierDraft();
-			}
-			discardTransientWorkArea();
-		}
-		previousMode = mode;
-		if (refreshRectangleDraft)
-		{
-			refreshActiveRectangleDraftImage();
-		}
-		if (refreshCircleDraft)
-		{
-			refreshActiveCircleDraftImage();
-		}
-		if (selection.floating && mode != MODE_SELECTION && !(mode == MODE_RECTANGLE && rectangle.draftActive) && !(mode == MODE_CIRCLE && circle.draftActive))
-		{
-			commitFloatingSelection();
-		}
-		if (isKeyPressed(bbe::Key::DELETE) || isKeyPressed(bbe::Key::BACKSPACE))
-		{
-			deleteSelection();
-		}
-
-		const bool mouseOnNavigator = showNavigator
-			&& getCanvasWidth() > 0
-			&& getNavigatorRect().isPointInRectangle(getMouse());
-
-		if (mouseOnNavigator && isMouseDown(bbe::MouseButton::LEFT))
-		{
-			const bbe::Rectangle navRect = getNavigatorRect();
-			const float canvasClickX = (getMouse().x - navRect.x) / navRect.width  * getCanvasWidth();
-			const float canvasClickY = (getMouse().y - navRect.y) / navRect.height * getCanvasHeight();
-			offset.x = getWindowWidth()  / 2.f - canvasClickX * zoomLevel;
-			offset.y = getWindowHeight() / 2.f - canvasClickY * zoomLevel;
-		}
-
-		if (!mouseOnNavigator && (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT)))
-		{
-			startMousePos = screenToCanvas(getMouse());
-		}
-
-		// Canvas resize handles — checked before tool handling so they take priority.
-		if (!mouseOnNavigator && !canvasResizeActive && isMousePressed(bbe::MouseButton::LEFT))
-		{
-			const int32_t hitHandle = getCanvasResizeHitHandle(getMouse());
-			if (hitHandle >= 0)
-			{
-				canvasResizeActive = true;
-				canvasResizeHandleIndex = hitHandle;
-				canvasResizePreviewRect = { 0, 0, getCanvasWidth(), getCanvasHeight() };
-				updateCanvasResizePreview(currMousePos);
-			}
-		}
-		if (canvasResizeActive)
-		{
-			if (isMouseDown(bbe::MouseButton::LEFT))
-			{
-				updateCanvasResizePreview(currMousePos);
-			}
-			if (isMouseReleased(bbe::MouseButton::LEFT))
-			{
-				applyCanvasResize(canvasResizePreviewRect);
-				canvasResizeActive = false;
-				canvasResizeHandleIndex = -1;
-				canvasResizePreviewRect = {};
-			}
-		}
-
-		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_SELECTION)
-		{
-			updateSelectionTool(currMousePos);
-		}
-		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_RECTANGLE)
-		{
-			updateRectangleTool(currMousePos);
-		}
-		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_CIRCLE)
-		{
-			updateCircleTool(currMousePos);
-		}
-		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_LINE)
-		{
-			updateLineTool(currMousePos);
-		}
-		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_ARROW)
-		{
-			updateArrowTool(currMousePos);
-		}
-		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_BEZIER)
-		{
-			updateBezierTool(currMousePos);
-		}
-		if (!mouseOnNavigator && !canvasResizeActive && mode == MODE_TEXT && (isMousePressed(bbe::MouseButton::LEFT) || isMousePressed(bbe::MouseButton::RIGHT)))
-		{
-			bbe::Vector2 pos = currMousePos;
-			if (toTiledPos(pos))
-			{
-				bool textChanged = false;
-				const bbe::Vector2i originalTopLeft = toCanvasPixel(pos);
-				const auto symPositions = getSymmetryPositions(pos);
-				const auto symAngles    = getSymmetryRotationAngles();
-
-				// Pre-render the text image and compute the symmetric positions of its
-				// canvas-space centre.  blendRotatedImageOntoCanvas rotates around the
-				// centre of the dest rect, so we must derive that rect from the rotated
-				// IMAGE CENTRE — not from the rotated click position (top-left corner).
-				const bbe::Image textImg = renderTextToImage(originalTopLeft, getMouseColor());
-				const bbe::Vector2 imgCenter = {
-					originalTopLeft.x + textImg.getWidth()  * 0.5f,
-					originalTopLeft.y + textImg.getHeight() * 0.5f
-				};
-				const auto imgCenterSymPositions = getSymmetryPositions(imgCenter);
-
+				const auto symPositions = editor.getSymmetryPositions(pos);
 				for (size_t i = 0; i < symPositions.getLength(); i++)
 				{
 					bbe::Vector2 symPos = symPositions[i];
-					if (!toTiledPos(symPos)) continue;
-					const bbe::Vector2i symTopLeft = toCanvasPixel(symPos);
-					if (std::abs(symAngles[i]) > 0.0001f)
-					{
-						if (textImg.getWidth() > 0 && textImg.getHeight() > 0)
-						{
-							const bbe::Rectanglei symRect = {
-								(int32_t)std::round(imgCenterSymPositions[i].x - textImg.getWidth()  * 0.5f),
-								(int32_t)std::round(imgCenterSymPositions[i].y - textImg.getHeight() * 0.5f),
-								textImg.getWidth(),
-								textImg.getHeight()
-							};
-							getActiveLayerImage().blendOverRotated(textImg, symRect, symAngles[i], tiled, antiAliasingEnabled);
-							textChanged = true;
-						}
-					}
-					else
-					{
-						textChanged |= drawTextAt(symTopLeft, getMouseColor());
-					}
+					if (editor.toTiledPos(symPos))
+						editor.getActiveLayerImage().floodFill(symPos.as<int32_t>(), editor.activeDrawColor(g.isMouseDown(bbe::MouseButton::LEFT), g.isMouseDown(bbe::MouseButton::RIGHT)), false, editor.tiled);
 				}
-				if (textChanged) submitCanvas();
+				editor.brushStrokeChangeRegistered = true;
 			}
 		}
-
-		// TODO: Would be nice if we had a constexpr list
-		const bbe::List<decltype(mode)> shadowDrawModes = { MODE_BRUSH };
-		const bool drawMode = mode != MODE_SELECTION
-			&& mode != MODE_TEXT
-			&& mode != MODE_RECTANGLE
-			&& mode != MODE_CIRCLE
-			&& mode != MODE_LINE
-			&& mode != MODE_ARROW
-			&& mode != MODE_BEZIER
-			&& !canvasResizeActive
-			&& !mouseOnNavigator
-			&& drawButtonDown;
-		const bool shadowDrawMode = shadowDrawModes.contains(mode);
-
-		if (changeRegistered)
+		else if (editor.mode == PaintEditor::MODE_PIPETTE)
 		{
-			if (isMouseReleased(bbe::MouseButton::LEFT) || isMouseReleased(bbe::MouseButton::RIGHT))
+			auto pos = editor.screenToCanvas(g.getMouse());
+			if (editor.toTiledPos(pos))
 			{
-				if (!isMouseDown(bbe::MouseButton::LEFT) && !isMouseDown(bbe::MouseButton::RIGHT))
+				const size_t x = (size_t)pos.x;
+				const size_t y = (size_t)pos.y;
+				const bbe::Colori color = editor.getVisiblePixel(x, y);
+				if (g.isMouseDown(bbe::MouseButton::LEFT))
 				{
-					applyWorkArea();
-					submitCanvas(); // <- changeRegistered is for this
-					changeRegistered = false;
+					editor.leftColor[0] = color.r / 255.f;
+					editor.leftColor[1] = color.g / 255.f;
+					editor.leftColor[2] = color.b / 255.f;
+					editor.leftColor[3] = color.a / 255.f;
+				}
+				if (g.isMouseDown(bbe::MouseButton::RIGHT))
+				{
+					editor.rightColor[0] = color.r / 255.f;
+					editor.rightColor[1] = color.g / 255.f;
+					editor.rightColor[2] = color.b / 255.f;
+					editor.rightColor[3] = color.a / 255.f;
 				}
 			}
 		}
-
-		if (drawMode || shadowDrawMode)
+		else
 		{
-			static uint32_t counter = 0;
-			if (!drawMode)
-			{
-				counter++;
-				if (counter > 1) clearWorkArea();
-			}
-			else
-			{
-				if (counter > 0) clearWorkArea();
-				counter = 0;
-			}
-
-			if (mode == MODE_BRUSH)
-			{
-				const bool touched = touchLine(currMousePos, prevMousePos);
-				if (drawMode)
-				{
-					changeRegistered |= touched;
-				}
-			}
-			else if (mode == MODE_FLOOD_FILL)
-			{
-				bbe::Vector2 pos = screenToCanvas(getMouse());
-				if (toTiledPos(pos))
-				{
-					const auto symPositions = getSymmetryPositions(pos);
-					for (size_t i = 0; i < symPositions.getLength(); i++)
-					{
-						bbe::Vector2 symPos = symPositions[i];
-						if (toTiledPos(symPos))
-							getActiveLayerImage().floodFill(symPos.as<int32_t>(), getMouseColor(), false, tiled);
-					}
-					changeRegistered = true;
-				}
-			}
-			else if (mode == MODE_PIPETTE)
-			{
-				auto pos = screenToCanvas(getMouse());
-				if (toTiledPos(pos))
-				{
-					const size_t x = (size_t)pos.x;
-					const size_t y = (size_t)pos.y;
-					const bbe::Colori color = getVisiblePixel(x, y);
-					if (isMouseDown(bbe::MouseButton::LEFT))
-					{
-						leftColor[0] = color.r / 255.f;
-						leftColor[1] = color.g / 255.f;
-						leftColor[2] = color.b / 255.f;
-						leftColor[3] = color.a / 255.f;
-					}
-					if (isMouseDown(bbe::MouseButton::RIGHT))
-					{
-						rightColor[0] = color.r / 255.f;
-						rightColor[1] = color.g / 255.f;
-						rightColor[2] = color.b / 255.f;
-						rightColor[3] = color.a / 255.f;
-					}
-				}
-			}
-			else
-			{
-				bbe::Crash(bbe::Error::IllegalState);
-			}
+			bbe::Crash(bbe::Error::IllegalState);
 		}
-
 	}
-	virtual void draw3D(bbe::PrimitiveBrush3D &brush) override
+}
+
+class MyGame : public bbe::Game
+{
+public:
+	PaintEditor editor;
+
+	void onStart() override
+	{
+		PaintWindowMetrics w{};
+		w.width = getWindowWidth();
+		w.height = getWindowHeight();
+		w.scale = getWindow()->getScale();
+		editor.onStart(w);
+	}
+
+	void onFilesDropped(const bbe::List<bbe::String> &paths) override
+	{
+		editor.onFilesDropped(paths);
+	}
+
+	void update(float timeSinceLastFrame) override
+	{
+		runPaintEditorUpdate(editor, *this, timeSinceLastFrame);
+	}
+
+	void draw3D(bbe::PrimitiveBrush3D & /*brush*/) override
 	{
 	}
-	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
+
+	void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
-		const float PANEL_WIDTH = 260.f * bbe::Math::sqrt(getWindow()->getScale());
-		ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetFrameHeight()), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(PANEL_WIDTH, (float)getWindowHeight() - ImGui::GetFrameHeight()), ImGuiCond_Always);
-		ImGui::Begin("##panel", nullptr,
-			ImGuiWindowFlags_NoTitleBar |
-			ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoMove);
-
-		auto doUndo = [&]()
-		{
-			canvas.undo();
-			canvasGeneration--;
-			clampActiveLayerIndex();
-			clearSelectionState();
-			clearWorkArea();
-		};
-		auto doRedo = [&]()
-		{
-			canvas.redo();
-			canvasGeneration++;
-			clampActiveLayerIndex();
-			clearSelectionState();
-			clearWorkArea();
-		};
-
-		// --- Undo / Redo ---
-		const float halfW = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
-		ImGui::BeginDisabled(!canvas.isUndoable());
-		if (ImGui::Button("Undo", ImVec2(halfW, 0))) doUndo();
-		ImGui::EndDisabled();
-		ImGui::SameLine();
-		ImGui::BeginDisabled(!canvas.isRedoable());
-		if (ImGui::Button("Redo", ImVec2(halfW, 0))) doRedo();
-		ImGui::EndDisabled();
-
-		// --- Colors ---
-		ImGui::SeparatorText("Colors");
-		const bool leftColorChanged  = ImGui::ColorEdit4("Primary",   leftColor);
-		const bool rightColorChanged = ImGui::ColorEdit4("Secondary", rightColor);
-		if (rectangle.draftActive && ((leftColorChanged && !rectangle.draftUsesRightColor) || (rightColorChanged && rectangle.draftUsesRightColor)))
-		{
-			refreshActiveRectangleDraftImage();
-		}
-		if (circle.draftActive && ((leftColorChanged && !circle.draftUsesRightColor) || (rightColorChanged && circle.draftUsesRightColor)))
-		{
-			refreshActiveCircleDraftImage();
-		}
-		if (line.draftActive && ((leftColorChanged && !line.draftUsesRightColor) || (rightColorChanged && line.draftUsesRightColor))) redrawLineDraft();
-		if (arrow.draftActive && ((leftColorChanged && !arrow.draftUsesRightColor) || (rightColorChanged && arrow.draftUsesRightColor))) redrawArrowDraft();
-		if (!bezier.controlPoints.isEmpty() && ((leftColorChanged && !bezier.usesRightColor) || (rightColorChanged && bezier.usesRightColor))) redrawBezierDraft();
-
-		// --- Tool ---
-		ImGui::SeparatorText("Tool");
-		{
-			const float w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
-			const struct { const char *label; int32_t toolMode; } tools[] = { { "Brush", MODE_BRUSH }, { "Fill", MODE_FLOOD_FILL }, { "Line", MODE_LINE }, { "Rectangle", MODE_RECTANGLE }, { "Circle", MODE_CIRCLE }, { "Selection", MODE_SELECTION }, { "Text", MODE_TEXT }, { "Pipette", MODE_PIPETTE }, { "Arrow", MODE_ARROW }, { "Bezier", MODE_BEZIER } };
-			for (size_t i = 0; i < sizeof(tools) / sizeof(*tools); i++)
-			{
-				const bool active = mode == tools[i].toolMode;
-				if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-				if (ImGui::Button(tools[i].label, ImVec2(w, 0))) mode = tools[i].toolMode;
-				if (active) ImGui::PopStyleColor();
-				if (i % 2 == 0 && i + 1 < sizeof(tools) / sizeof(*tools)) ImGui::SameLine();
-			}
-		}
-
-		// --- Tool options ---
-		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_TEXT || mode == MODE_ARROW || mode == MODE_BEZIER)
-		{
-			ImGui::SeparatorText("Options");
-		}
-		if (mode == MODE_BRUSH || mode == MODE_LINE || mode == MODE_RECTANGLE || mode == MODE_CIRCLE || mode == MODE_ARROW || mode == MODE_BEZIER)
-		{
-			if (ImGui::InputInt("Width", &brushWidth))
-			{
-				clampBrushWidth();
-				refreshBrushBasedDrafts();
-			}
-		}
-		if (mode == MODE_RECTANGLE)
-		{
-			if (ImGui::InputInt("Corner Radius", &cornerRadius))
-			{
-				if (cornerRadius < 0) cornerRadius = 0;
-				if (rectangle.draftActive) refreshActiveRectangleDraftImage();
-			}
-			ImGui::TextDisabled(rectangle.draftActive
-				? "Drag inside/border to move/resize.\nClick outside to place."
-				: "Drag to draw. Click outside to place.");
-		}
-		if (mode == MODE_CIRCLE)
-		{
-			ImGui::TextDisabled(circle.draftActive
-				? "Drag inside/border to move/resize.\nClick outside to place."
-				: "Drag to draw. Click outside to place.");
-		}
-		if (mode == MODE_LINE)
-		{
-			ImGui::TextDisabled(line.draftActive
-				? "Drag endpoints to adjust.\nClick outside or R-click to place."
-				: "Drag to draw.");
-		}
-		if (mode == MODE_ARROW)
-		{
-			bool arrowOptionChanged = false;
-			if (ImGui::InputInt("Head Size", &arrowHeadSize))
-			{
-				if (arrowHeadSize < 1) arrowHeadSize = 1;
-				arrowOptionChanged = true;
-			}
-			if (ImGui::InputInt("Head Width", &arrowHeadWidth))
-			{
-				if (arrowHeadWidth < 1) arrowHeadWidth = 1;
-				arrowOptionChanged = true;
-			}
-			if (ImGui::Checkbox("Double Headed", &arrowDoubleHeaded)) arrowOptionChanged = true;
-			if (ImGui::Checkbox("Filled Head",   &arrowFilledHead))   arrowOptionChanged = true;
-			if (arrowOptionChanged && arrow.draftActive)
-			{
-				clearWorkArea();
-				drawArrowToWorkArea(arrow.start, arrow.end, getArrowDraftColor());
-			}
-			ImGui::TextDisabled(arrow.draftActive
-				? "Drag endpoints to adjust.\nClick outside or R-click to place."
-				: "Drag to draw.");
-		}
-		if (mode == MODE_BEZIER)
-		{
-			ImGui::TextDisabled(bezier.controlPoints.isEmpty()
-				? "L-click to place control points.\nR-click to commit curve."
-				: "L-click to add/drag points.\nBackspace removes last point.\nR-click to commit curve.");
-			if (!bezier.controlPoints.isEmpty())
-			{
-				ImGui::Text("%d control point(s)", (int)bezier.controlPoints.getLength());
-				if (ImGui::Button("Commit", ImVec2(-1, 0)))
-				{
-					finalizeBezierDraft();
-				}
-			}
-		}
-		if (mode == MODE_TEXT)
-		{
-			// Font picker
-			static char fontFilter[128] = "";
-			ImGui::InputText("Filter##fontFilter", fontFilter, sizeof(fontFilter));
-			clampTextFontIndex();
-			const char *currentFontName = availableFonts.isEmpty() ? "None" : availableFonts[(size_t)textFontIndex].displayName.getRaw();
-			if (ImGui::BeginCombo("Font", currentFontName))
-			{
-				for (size_t i = 0; i < availableFonts.getLength(); i++)
-				{
-					const char *name = availableFonts[i].displayName.getRaw();
-					if (fontFilter[0] != '\0')
-					{
-						std::string nameLower = name;
-						std::string filterLower = fontFilter;
-						for (char &c : nameLower)   c = (char)std::tolower((unsigned char)c);
-						for (char &c : filterLower) c = (char)std::tolower((unsigned char)c);
-						if (nameLower.find(filterLower) == std::string::npos) continue;
-					}
-					const bool selected = (textFontIndex == (int32_t)i);
-					if (ImGui::Selectable(name, selected))
-					{
-						textFontIndex = (int32_t)i;
-					}
-					if (selected) ImGui::SetItemDefaultFocus();
-				}
-				ImGui::EndCombo();
-			}
-			if (ImGui::InputInt("Font Size", &textFontSize))
-			{
-				clampTextFontSize();
-			}
-			ImGui::InputTextMultiline("##text", textBuffer, sizeof(textBuffer), ImVec2(-1, ImGui::GetTextLineHeight() * 4.0f));
-			ImGui::TextDisabled("L/R click places text.");
-		}
-
-		// --- Symmetry ---
-		ImGui::SeparatorText("Symmetry");
-		{
-			const float w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 4) / 5.f;
-			const struct { const char *label; bbe::SymmetryMode mode; } modes[] = { { "Off", bbe::SymmetryMode::None }, { "H", bbe::SymmetryMode::Horizontal }, { "V", bbe::SymmetryMode::Vertical }, { "4W", bbe::SymmetryMode::FourWay }, { "Rad", bbe::SymmetryMode::Radial } };
-			for (size_t i = 0; i < sizeof(modes) / sizeof(*modes); i++)
-			{
-				const bool active = symmetryMode == modes[i].mode;
-				if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-				if (ImGui::Button(modes[i].label, ImVec2(w, 0))) symmetryMode = modes[i].mode;
-				if (active) ImGui::PopStyleColor();
-				if (i + 1 < sizeof(modes) / sizeof(*modes)) ImGui::SameLine();
-			}
-			if (symmetryMode == bbe::SymmetryMode::Radial && ImGui::InputInt("Spokes##radialCount", &radialSymmetryCount))
-			{
-				if (radialSymmetryCount < 2) radialSymmetryCount = 2;
-				if (radialSymmetryCount > 32) radialSymmetryCount = 32;
-			}
-		}
-
-		// --- Selection actions ---
-		if (mode == MODE_SELECTION)
-		{
-			ImGui::SeparatorText("Selection");
-			ImGui::BeginDisabled(!selection.hasSelection);
-			if (ImGui::Button("Copy",   ImVec2(-1, 0))) storeSelectionInClipboard();
-			if (ImGui::Button("Cut",    ImVec2(-1, 0))) cutSelection();
-			if (ImGui::Button("Delete", ImVec2(-1, 0))) deleteSelection();
-			ImGui::EndDisabled();
-			if (selection.hasSelection)
-				ImGui::Text("%d x %d px", selection.rect.width, selection.rect.height);
-			else
-				ImGui::TextDisabled("No selection");
-		}
-
-		// --- Clipboard ---
-		const bool supportsClipboardImages = bbe::Image::supportsClipboardImages();
-		ImGui::SeparatorText("Clipboard");
-		ImGui::BeginDisabled(!supportsClipboardImages);
-		if (ImGui::Button("Copy Canvas to Clipboard", ImVec2(-1, 0)))
-		{
-			flattenVisibleLayers().copyToClipboard();
-		}
-		ImGui::EndDisabled();
-		ImGui::BeginDisabled(!supportsClipboardImages || !bbe::Image::isImageInClipbaord());
-		if (ImGui::Button("Paste as New Canvas", ImVec2(-1, 0)))
-		{
-			canvas.get().layers.clear();
-			canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, bbe::Image::getClipboardImage() });
-			path = "";
-			submitCanvas();
-			setupCanvas(false);
-		}
-		ImGui::EndDisabled();
-		if (!supportsClipboardImages)
-			ImGui::TextDisabled("Not supported on this platform");
-
-		// --- Layers ---
-		ImGui::SeparatorText("Layers");
-		{
-			const float btnW = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 3) * 0.25f;
-			if (ImGui::Button("+ New", ImVec2(btnW * 1.5f, 0))) addLayer();
-			ImGui::SameLine();
-			ImGui::BeginDisabled(canvas.get().layers.getLength() <= 1);
-			if (ImGui::Button("- Del", ImVec2(btnW * 1.5f, 0))) deleteActiveLayer();
-			ImGui::EndDisabled();
-			ImGui::SameLine();
-			ImGui::BeginDisabled((size_t)activeLayerIndex + 1 >= canvas.get().layers.getLength());
-			if (ImGui::Button("Up", ImVec2(btnW, 0))) moveActiveLayerUp();
-			ImGui::EndDisabled();
-			ImGui::SameLine();
-			ImGui::BeginDisabled(activeLayerIndex <= 0);
-			if (ImGui::Button("Dn", ImVec2(btnW, 0))) moveActiveLayerDown();
-			ImGui::EndDisabled();
-
-			const float halfW = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
-			if (ImGui::Button("Dup", ImVec2(halfW, 0))) duplicateActiveLayer();
-			ImGui::SameLine();
-			ImGui::BeginDisabled(activeLayerIndex <= 0);
-			if (ImGui::Button("Merge Dn", ImVec2(halfW, 0))) mergeActiveLayerDown();
-			ImGui::EndDisabled();
-		}
-		if (!canvas.get().layers.isEmpty())
-		{
-			if (ImGui::bbe::InputText("Name##layerName", getActiveLayer().name))
-			{
-				submitCanvas();
-			}
-			float opacity = getActiveLayer().opacity;
-			if (ImGui::SliderFloat("Opacity##layerOpacity", &opacity, 0.0f, 1.0f))
-			{
-				getActiveLayer().opacity = opacity;
-			}
-			if (ImGui::IsItemDeactivatedAfterEdit())
-			{
-				submitCanvas();
-			}
-			const char *blendModeNames[] = { "Normal", "Multiply", "Screen", "Overlay" };
-			int blendModeIdx = (int)getActiveLayer().blendMode;
-			if (ImGui::Combo("Blend##layerBlend", &blendModeIdx, blendModeNames, 4))
-			{
-				getActiveLayer().blendMode = (bbe::BlendMode)blendModeIdx;
-				submitCanvas();
-			}
-		}
-		if (ImGui::BeginChild("##layerList", ImVec2(-1, ImGui::GetContentRegionAvail().y), true))
-		{
-			for (int32_t layerIndex = (int32_t)canvas.get().layers.getLength() - 1; layerIndex >= 0; layerIndex--)
-			{
-				PaintLayer &layer = canvas.get().layers[(size_t)layerIndex];
-				ImGui::PushID(layerIndex);
-				bool visible = layer.visible;
-				if (ImGui::Checkbox("##vis", &visible))
-				{
-					layer.visible = visible;
-					submitCanvas();
-				}
-				ImGui::SameLine();
-				if (ImGui::Selectable(layer.name.getRaw(), activeLayerIndex == layerIndex))
-				{
-					setActiveLayerIndex(layerIndex);
-				}
-				ImGui::PopID();
-			}
-		}
-		ImGui::EndChild();
-
-		ImGui::End();
-
-		bool anyNonNormalBlendMode = false;
-		for (size_t layerIndex = 0; layerIndex < canvas.get().layers.getLength(); layerIndex++)
-		{
-			const PaintLayer &layer = canvas.get().layers[layerIndex];
-			if (layer.visible && layer.blendMode != bbe::BlendMode::Normal)
-			{
-				anyNonNormalBlendMode = true;
-				break;
-			}
-		}
-		bbe::Image blendModePreview;
-		if (anyNonNormalBlendMode)
-		{
-			blendModePreview = flattenVisibleLayers();
-		}
-
-		const int32_t repeats = tiled ? 20 : 0;
-		for (int32_t i = -repeats; i <= repeats; i++)
-		{
-			for (int32_t k = -repeats; k <= repeats; k++)
-			{
-				if (anyNonNormalBlendMode)
-				{
-					brush.drawImage(offset.x + i * getCanvasWidth() * zoomLevel, offset.y + k * getCanvasHeight() * zoomLevel, getCanvasWidth() * zoomLevel, getCanvasHeight() * zoomLevel, blendModePreview);
-				}
-				else
-				{
-					for (size_t layerIndex = 0; layerIndex < canvas.get().layers.getLength(); layerIndex++)
-					{
-						const PaintLayer &layer = canvas.get().layers[layerIndex];
-						if (!layer.visible) continue;
-						brush.setColorRGB(1.0f, 1.0f, 1.0f, layer.opacity);
-						brush.drawImage(offset.x + i * getCanvasWidth() * zoomLevel, offset.y + k * getCanvasHeight() * zoomLevel, getCanvasWidth() * zoomLevel, getCanvasHeight() * zoomLevel, layer.image);
-					}
-					brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
-				}
-				brush.drawImage(offset.x + i * getCanvasWidth() * zoomLevel, offset.y + k * getCanvasHeight() * zoomLevel, getCanvasWidth() * zoomLevel, getCanvasHeight() * zoomLevel, workArea);
-			}
-		}
-		if (zoomLevel > 3 && drawGridLines)
-		{
-			bbe::Vector2 zeroPos = screenToCanvas({ 0, 0 });
-			brush.setColorRGB(0.5f, 0.5f, 0.5f, 0.5f);
-			for (float i = -(zeroPos.x - (int)zeroPos.x) * zoomLevel; i < getWindowWidth(); i += zoomLevel)
-			{
-				brush.fillLine(i, 0, i, getWindowHeight());
-			}
-			for (float i = -(zeroPos.y - (int)zeroPos.y) * zoomLevel; i < getWindowHeight(); i += zoomLevel)
-			{
-				brush.fillLine(0, i, getWindowWidth(), i);
-			}
-		}
-		// Canvas resize handles
-		if (getCanvasWidth() > 0 && getCanvasHeight() > 0 && !tiled)
-		{
-			constexpr float hs = 5.f;
-			for (int32_t i = 0; i < 8; i++)
-			{
-				const bbe::Vector2 hp = getCanvasHandleScreenPos(i);
-				brush.setColorRGB(1.f, 1.f, 1.f);
-				brush.fillRect(hp.x - hs, hp.y - hs, hs * 2.f, hs * 2.f);
-				brush.setColorRGB(0.f, 0.f, 0.f);
-				brush.sketchRect(bbe::Rectangle(hp.x - hs, hp.y - hs, hs * 2.f, hs * 2.f));
-			}
-			if (canvasResizeActive && canvasResizePreviewRect.width > 0 && canvasResizePreviewRect.height > 0)
-			{
-				const bbe::Rectangle previewScreen = selectionRectToScreen(canvasResizePreviewRect);
-				brush.setColorRGB(0.f, 0.f, 0.f);
-				brush.sketchRect(previewScreen);
-				if (previewScreen.width > 2 && previewScreen.height > 2)
-				{
-					brush.setColorRGB(1.f, 1.f, 1.f);
-					brush.sketchRect(previewScreen.shrinked(1.f));
-				}
-			}
-		}
-
-		const int32_t ghostRepeats = tiled ? 20 : 0;
-		auto drawInAllTiles = [&](const bbe::Rectanglei &rect, const bbe::Image &image, float rotation = 0.f)
-		{
-			// Pre-rasterize rotation so the preview matches the committed pixel-grid result.
-			const bool hasRot = std::abs(rotation) > 0.0001f;
-			bbe::Image rotatedImg;
-			bbe::Rectanglei displayRect = rect;
-			const bbe::Image *pImg = &image;
-			if (hasRot)
-			{
-				rotatedImg = image.rotatedToFit(rotation, antiAliasingEnabled);
-				if (rotatedImg.getWidth() > 0 && rotatedImg.getHeight() > 0)
-				{
-					pImg = &rotatedImg;
-					const float cx = rect.x + rect.width / 2.f;
-					const float cy = rect.y + rect.height / 2.f;
-					displayRect = bbe::Rectanglei(
-						(int32_t)std::floor(cx - rotatedImg.getWidth() / 2.f),
-						(int32_t)std::floor(cy - rotatedImg.getHeight() / 2.f),
-						rotatedImg.getWidth(),
-						rotatedImg.getHeight());
-				}
-			}
-			for (int32_t i = -ghostRepeats; i <= ghostRepeats; i++)
-			{
-				for (int32_t k = -ghostRepeats; k <= ghostRepeats; k++)
-				{
-					const bbe::Rectanglei tileDisplay(
-						displayRect.x + i * getCanvasWidth(),
-						displayRect.y + k * getCanvasHeight(),
-						displayRect.width,
-						displayRect.height);
-					brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
-					brush.drawImage(selectionRectToScreen(tileDisplay), *pImg);
-					const bbe::Rectanglei tileOutline(
-						rect.x + i * getCanvasWidth(),
-						rect.y + k * getCanvasHeight(),
-						rect.width,
-						rect.height);
-					drawSelectionOutline(brush, tileOutline);
-				}
-			}
-		};
-
-		if (rectangle.dragActive && rectangle.dragPreviewRect.width > 0 && rectangle.dragPreviewRect.height > 0)
-		{
-			drawInAllTiles(rectangle.dragPreviewRect, rectangle.dragPreviewImage);
-		}
-		else if (circle.dragActive && circle.dragPreviewRect.width > 0 && circle.dragPreviewRect.height > 0)
-		{
-			drawInAllTiles(circle.dragPreviewRect, circle.dragPreviewImage);
-		}
-		else if (selection.moveActive || selection.resizeActive)
-		{
-			const bbe::Image previewImage = selection.resizeActive ? buildSelectionPreviewResultImage() : selection.previewImage;
-			drawInAllTiles(selection.previewRect, previewImage, selection.rotation);
-		}
-		else if (selection.floating)
-		{
-			if (!antiAliasingEnabled && std::abs(selection.rotation) > 0.01f && (rectangle.draftActive || circle.draftActive))
-			{
-				// AA-off + rotation: re-render from SDF so preview matches the committed result.
-				const bbe::Colori color = rectangle.draftActive ? getRectangleDraftColor() : getCircleDraftColor();
-				const bbe::Image img = rectangle.draftActive
-					? createRectangleImage(selection.rect.width, selection.rect.height, color, selection.rotation)
-					: createCircleImage(selection.rect.width, selection.rect.height, color, selection.rotation);
-				const float cx = selection.rect.x + selection.rect.width  * 0.5f;
-				const float cy = selection.rect.y + selection.rect.height * 0.5f;
-				const bbe::Rectanglei bbRect(
-					(int32_t)std::floor(cx - img.getWidth()  * 0.5f),
-					(int32_t)std::floor(cy - img.getHeight() * 0.5f),
-					img.getWidth(), img.getHeight());
-				drawInAllTiles(bbRect, img);
-			}
-			else
-			{
-				drawInAllTiles(selection.rect, selection.floatingImage, selection.rotation);
-			}
-		}
-		else if (selection.dragActive)
-		{
-			drawSelectionOutline(brush, selection.previewRect);
-		}
-		else if (selection.hasSelection)
-		{
-			drawSelectionOutline(brush, selection.rect);
-		}
-		if (mode == MODE_TEXT)
-		{
-			bbe::Vector2 previewPos = screenToCanvas(getMouse());
-			if (toTiledPos(previewPos))
-			{
-				drawTextPreview(brush, toCanvasPixel(previewPos));
-			}
-		}
-		auto drawEndpointHandle = [&](const bbe::Vector2 &canvasPos)
-		{
-			const float sx = offset.x + canvasPos.x * zoomLevel;
-			const float sy = offset.y + canvasPos.y * zoomLevel;
-			constexpr float hs = 4.f;
-			brush.setColorRGB(1.f, 1.f, 1.f);
-			brush.fillRect(sx - hs, sy - hs, hs * 2.f, hs * 2.f);
-			brush.setColorRGB(0.f, 0.f, 0.f);
-			brush.sketchRect(bbe::Rectangle(sx - hs, sy - hs, hs * 2.f, hs * 2.f));
-		};
-		if (mode == MODE_LINE && line.draftActive)
-		{
-			drawEndpointHandle(line.start);
-			drawEndpointHandle(line.end);
-		}
-		if (mode == MODE_ARROW && arrow.draftActive)
-		{
-			drawEndpointHandle(arrow.start);
-			drawEndpointHandle(arrow.end);
-		}
-		if (mode == MODE_BEZIER && !bezier.controlPoints.isEmpty())
-		{
-			// Draw the control polygon
-			brush.setColorRGB(0.5f, 0.5f, 0.5f, 0.6f);
-			for (size_t i = 0; i + 1 < bezier.controlPoints.getLength(); i++)
-			{
-				const float x0 = offset.x + bezier.controlPoints[i    ].x * zoomLevel;
-				const float y0 = offset.y + bezier.controlPoints[i    ].y * zoomLevel;
-				const float x1 = offset.x + bezier.controlPoints[i + 1].x * zoomLevel;
-				const float y1 = offset.y + bezier.controlPoints[i + 1].y * zoomLevel;
-				brush.fillLine(x0, y0, x1, y1);
-			}
-			// Draw handles for each control point
-			for (size_t i = 0; i < bezier.controlPoints.getLength(); i++)
-			{
-				drawEndpointHandle(bezier.controlPoints[i]);
-			}
-		}
-
-		// Symmetry guide lines
-		if (symmetryMode != bbe::SymmetryMode::None && getCanvasWidth() > 0)
-		{
-			const float cw = (float)getCanvasWidth();
-			const float ch = (float)getCanvasHeight();
-			const bbe::Vector2 center = getSymmetryCenter();
-			// Convert canvas coords to screen coords: screen = pos * zoomLevel + offset
-			auto c2s = [&](bbe::Vector2 p) -> bbe::Vector2
-			{
-				return p * zoomLevel + offset;
-			};
-
-			brush.setColorRGB(0.2f, 0.8f, 1.0f, 0.7f);
-			brush.setOutlineWidth(0.f);
-
-			if (symmetryMode == bbe::SymmetryMode::Horizontal || symmetryMode == bbe::SymmetryMode::FourWay)
-			{
-				const bbe::Vector2 a = c2s({ 0.f,  center.y });
-				const bbe::Vector2 b = c2s({ cw,   center.y });
-				brush.fillLine(a, b, 1.f);
-			}
-			if (symmetryMode == bbe::SymmetryMode::Vertical || symmetryMode == bbe::SymmetryMode::FourWay)
-			{
-				const bbe::Vector2 a = c2s({ center.x, 0.f });
-				const bbe::Vector2 b = c2s({ center.x, ch  });
-				brush.fillLine(a, b, 1.f);
-			}
-			if (symmetryMode == bbe::SymmetryMode::Radial)
-			{
-				const float step = 2.f * bbe::Math::PI / (float)radialSymmetryCount;
-				const float extent = bbe::Math::sqrt(cw * cw + ch * ch) * 0.5f;
-				for (int32_t i = 0; i < radialSymmetryCount; i++)
-				{
-					const float angle = step * (float)i;
-					const bbe::Vector2 dir = { std::cosf(angle) * extent, std::sinf(angle) * extent };
-					brush.fillLine(c2s(center), c2s(center + dir), 1.f);
-				}
-			}
-			brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
-		}
-
-		// Navigator
-		if (showNavigator && getCanvasWidth() > 0)
-		{
-			const bbe::Rectangle navRect = getNavigatorRect();
-			const float navX = navRect.x;
-			const float navY = navRect.y;
-			const float navW = navRect.width;
-			const float navH = navRect.height;
-
-			// Background
-			brush.setColorRGB(0.08f, 0.08f, 0.08f);
-			brush.fillRect(navX - 2.f, navY - 2.f, navW + 4.f, navH + 4.f);
-
-			// Layers
-			if (anyNonNormalBlendMode)
-			{
-				brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
-				brush.drawImage(navX, navY, navW, navH, blendModePreview);
-			}
-			else
-			{
-				for (size_t layerIndex = 0; layerIndex < canvas.get().layers.getLength(); layerIndex++)
-				{
-					const PaintLayer &layer = canvas.get().layers[layerIndex];
-					if (!layer.visible) continue;
-					brush.setColorRGB(1.0f, 1.0f, 1.0f, layer.opacity);
-					brush.drawImage(navX, navY, navW, navH, layer.image);
-				}
-			}
-			brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
-
-			// Viewport rectangle (clamped to navigator bounds)
-			const float scaleX = navW / getCanvasWidth();
-			const float scaleY = navH / getCanvasHeight();
-			const bbe::Vector2 tlCanvas = screenToCanvas({ 0.f, 0.f });
-			const bbe::Vector2 brCanvas = screenToCanvas({ (float)getWindowWidth(), (float)getWindowHeight() });
-			const float vx1 = bbe::Math::clamp(navX + tlCanvas.x * scaleX, navX, navX + navW);
-			const float vy1 = bbe::Math::clamp(navY + tlCanvas.y * scaleY, navY, navY + navH);
-			const float vx2 = bbe::Math::clamp(navX + brCanvas.x * scaleX, navX, navX + navW);
-			const float vy2 = bbe::Math::clamp(navY + brCanvas.y * scaleY, navY, navY + navH);
-			brush.setColorRGB(1.0f, 1.0f, 0.0f);
-			brush.sketchRect(vx1, vy1, vx2 - vx1, vy2 - vy1);
-			brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
-		}
-
-		// HACK: We can only open popups if we are in the same ID Stack. See: https://github.com/ocornut/imgui/issues/331
-		bool openNewCanvas = false;
-		if (ImGui::BeginMainMenuBar())
-		{
-			if (ImGui::BeginMenu("Menu"))
-			{
-				if (ImGui::MenuItem("New..."))
-				{
-					openNewCanvas = true;
-				}
-				if (ImGui::MenuItem("Open..."))
-				{
-					bbe::String newPath = path;
-					if (bbe::simpleFile::showOpenDialog(newPath))
-					{
-						newCanvas(newPath.getRaw());
-					}
-				}
-				if (ImGui::MenuItem("Save"))
-				{
-					saveCanvas();
-				}
-				if (ImGui::MenuItem("Save As PNG..."))
-				{
-					saveDocumentAs(SaveFormat::PNG);
-				}
-				if (ImGui::MenuItem("Save As Layered..."))
-				{
-					saveDocumentAs(SaveFormat::LAYERED);
-				}
-				ImGui::EndMenu();
-			}
-
-			if (ImGui::BeginMenu("View"))
-			{
-				auto toggleMenuItem = [&](const char *label, bool &value) { if (ImGui::MenuItem(label, nullptr, value)) value = !value; };
-				toggleMenuItem("Draw Grid Lines", drawGridLines);
-				toggleMenuItem("Tiled", tiled);
-				toggleMenuItem("Navigator", showNavigator);
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Preferences"))
-			{
-				if (ImGui::MenuItem("Anti-Aliasing", nullptr, antiAliasingEnabled))
-				{
-					antiAliasingEnabled = !antiAliasingEnabled;
-					refreshBrushBasedDrafts();
-				}
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Help"))
-			{
-				if (ImGui::MenuItem("Show Help"))
-				{
-					showHelpWindow = true;
-				}
-				ImGui::EndMenu();
-			}
-			if (canvasGeneration != savedGeneration)
-			{
-				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.f);
-				ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.0f, 1.0f), "*");
-				if (ImGui::IsItemHovered()) ImGui::SetTooltip("Unsaved changes");
-			}
-			ImGui::EndMainMenuBar();
-		}
-
-		if (openSaveChoicePopup)
-		{
-			ImGui::OpenPopup("Save Document");
-			openSaveChoicePopup = false;
-		}
-		if (openDropChoicePopup)
-		{
-			ImGui::OpenPopup("Dropped File(s)");
-			openDropChoicePopup = false;
-		}
-		if (ImGui::BeginPopupModal("Save Document", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			ImGui::Text("Choose a save format for this document.");
-			if (ImGui::Button("PNG", ImVec2(120, 0)))
-			{
-				saveDocumentAs(SaveFormat::PNG);
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Layered", ImVec2(120, 0)))
-			{
-				saveDocumentAs(SaveFormat::LAYERED);
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel", ImVec2(120, 0)))
-			{
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
-		}
-
-		if (ImGui::BeginPopupModal("Dropped File(s)", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			if (pendingDroppedPaths.getLength() == 1)
-			{
-				ImGui::Text("What would you like to do with \"%s\"?",
-					std::filesystem::path(pendingDroppedPaths[0].getRaw()).filename().string().c_str());
-			}
-			else
-			{
-				ImGui::Text("What would you like to do with %d dropped file(s)?",
-					(int)pendingDroppedPaths.getLength());
-			}
-			ImGui::Spacing();
-			if (ImGui::Button("Open as Document", ImVec2(160, 0)))
-			{
-				// Use only the first valid file as the new document
-				newCanvas(pendingDroppedPaths[0].getRaw());
-				pendingDroppedPaths.clear();
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Add as Layer(s)", ImVec2(160, 0)))
-			{
-				importFileAsLayers(pendingDroppedPaths);
-				pendingDroppedPaths.clear();
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel", ImVec2(120, 0)))
-			{
-				pendingDroppedPaths.clear();
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
-		}
-
-		if (showHelpWindow)
-		{
-			if (ImGui::Begin("ExamplePaint Help", &showHelpWindow))
-			{
-				auto bulletList = [&](const char *title, std::initializer_list<const char *> items)
-				{
-					ImGui::SeparatorText(title);
-					for (const char *item : items) ImGui::BulletText("%s", item);
-				};
-				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow" });
-				bulletList("General", { "+/- changes brush size or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
-				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection" });
-				bulletList("Selection", { "Drag to create a rectangular selection", "Drag inside a selection to move it", "Drag the selection border to resize it", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
-				bulletList("Layers", { "Painting and text placement affect only the active layer", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });
-			}
-			ImGui::End();
-		}
-
-		// Always center this window when appearing
-		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-		static int newWidth = 0;
-		static int newHeight = 0;
-		if (openNewCanvas)
-		{
-			ImGui::OpenPopup("New Canvas");
-			newWidth = getCanvasWidth();
-			newHeight = getCanvasHeight();
-		}
-		if (ImGui::BeginPopupModal("New Canvas", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			ImGui::InputInt("Width", &newWidth);
-			ImGui::SameLine();
-			ImGui::InputInt("Height", &newHeight);
-			if (ImGui::Button("OK", ImVec2(120, 0)))
-			{
-				newCanvas(newWidth, newHeight);
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel", ImVec2(120, 0)))
-			{
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
-		}
+		drawExamplePaintGui(editor, brush, *this);
 	}
 
-	virtual void onEnd() override
+	void onEnd() override
 	{
 	}
 };
