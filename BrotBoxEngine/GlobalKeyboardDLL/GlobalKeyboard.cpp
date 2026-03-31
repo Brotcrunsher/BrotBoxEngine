@@ -21,10 +21,9 @@ void bbe::GlobalKeyboard::init()
 	if (hooked) return;
 	hooked = true;
 
-	if (!bbe::simpleFile::doesFileExist("GlobalKeyboard.dll"))
-	{
-		bbe::simpleFile::writeBinaryToFile("GlobalKeyboard.dll", GlobalKeyboardDLL);
-	}
+	// Always overwrite any existing GlobalKeyboard.dll with the embedded, trusted DLL
+	// to prevent DLL preloading / hijacking from a malicious file in the working directory.
+	bbe::simpleFile::writeBinaryToFile("GlobalKeyboard.dll", GlobalKeyboardDLL);
 
 	hmod = LoadLibrary("GlobalKeyboard.dll");
 	HOOKPROC proc = (HOOKPROC)GetProcAddress(hmod, "KeyboardProc");
