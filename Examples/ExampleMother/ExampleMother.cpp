@@ -2974,13 +2974,22 @@ public:
 				const static bbe::String desiredName = bbe::simpleFile::getAutoStartDirectory() + "ExampleMother.desktop";
 #endif
 				static bool exists = bbe::simpleFile::doesFileExist(desiredName); // Avoid doing IO every frame.
-				ImGui::BeginDisabled(exists);
-				if (ImGui::Button("Add to Autostart"))
+				if (exists)
 				{
-					bbe::simpleFile::createLink(desiredName, bbe::simpleFile::getExecutablePath(), bbe::simpleFile::getWorkingDirectory());
-					exists = true;
+					if (ImGui::Button("Remove from Autostart"))
+					{
+						bbe::simpleFile::deleteFile(desiredName);
+						exists = false;
+					}
 				}
-				ImGui::EndDisabled();
+				else
+				{
+					if (ImGui::Button("Add to Autostart"))
+					{
+						bbe::simpleFile::createLink(desiredName, bbe::simpleFile::getExecutablePath(), bbe::simpleFile::getWorkingDirectory());
+						exists = true;
+					}
+				}
 #endif
 
 #if defined(_WIN32) || defined(__linux__)
