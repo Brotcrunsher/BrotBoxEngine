@@ -3,9 +3,7 @@
 #if defined(__linux__) && defined(BBE_USE_WAYLAND_CLIPBOARD)
 
 #include "BBE/Window.h"
-
-#define GLFW_EXPOSE_NATIVE_WAYLAND
-#include <GLFW/glfw3native.h>
+#include "BBE/glfwWrapper.h"
 
 #include <algorithm>
 #include <cerrno>
@@ -511,7 +509,7 @@ namespace
 			return false;
 		}
 
-		if (glfwGetPlatform() != GLFW_PLATFORM_WAYLAND)
+		if (bbe::glfwWrapper::glfwGetPlatform() != GLFW_PLATFORM_WAYLAND)
 		{
 			return false;
 		}
@@ -522,7 +520,7 @@ namespace
 			return false;
 		}
 
-		state.display = glfwGetWaylandDisplay();
+		state.display = bbe::glfwWrapper::glfwGetWaylandDisplay();
 		if (state.display == nullptr)
 		{
 			return false;

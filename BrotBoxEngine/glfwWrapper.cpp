@@ -1,5 +1,10 @@
 #include "BBE/glfwWrapper.h"
 
+#if defined(__linux__) && defined(BBE_USE_WAYLAND_CLIPBOARD) && !defined(BBE_RENDERER_NULL)
+#define GLFW_EXPOSE_NATIVE_WAYLAND
+#include <GLFW/glfw3native.h>
+#endif
+
 int bbe::glfwWrapper::glfwVulkanSupported(void)
 {
 #ifndef BBE_RENDERER_NULL
@@ -15,6 +20,13 @@ int bbe::glfwWrapper::glfwInit()
 	return ::glfwInit();
 #else
 	return 1;
+#endif
+}
+
+void bbe::glfwWrapper::glfwInitHint(int hint, int value)
+{
+#ifndef BBE_RENDERER_NULL
+	::glfwInitHint(hint, value);
 #endif
 }
 
@@ -322,3 +334,23 @@ void bbe::glfwWrapper::glfwSetWindowPos(GLFWwindow *window, int x, int y)
 	::glfwSetWindowPos(window, x, y);
 #endif
 }
+
+#if defined(__linux__) && defined(BBE_USE_WAYLAND_CLIPBOARD)
+int bbe::glfwWrapper::glfwGetPlatform()
+{
+#if !defined(BBE_RENDERER_NULL)
+	return ::glfwGetPlatform();
+#else
+	return 0;
+#endif
+}
+
+wl_display *bbe::glfwWrapper::glfwGetWaylandDisplay()
+{
+#if !defined(BBE_RENDERER_NULL)
+	return ::glfwGetWaylandDisplay();
+#else
+	return nullptr;
+#endif
+}
+#endif

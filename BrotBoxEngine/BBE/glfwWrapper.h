@@ -5,6 +5,10 @@
 #endif
 #include "GLFW/glfw3.h"
 
+#if defined(__linux__) && defined(BBE_USE_WAYLAND_CLIPBOARD)
+struct wl_display;
+#endif
+
 namespace bbe
 {
 	namespace glfwWrapper
@@ -12,6 +16,7 @@ namespace bbe
 		int glfwInit();
 		int glfwVulkanSupported(void);
 		void glfwWindowHint(int hint, int value);
+		void glfwInitHint(int hint, int value);
 		GLFWwindow *glfwCreateWindow(int width, int height, const char *title, GLFWmonitor *monitor, GLFWwindow *share);
 		void glfwGetWindowContentScale(GLFWwindow *window, float *xscale, float *yscale);
 		GLFWkeyfun glfwSetKeyCallback(GLFWwindow *window, GLFWkeyfun callback);
@@ -49,5 +54,10 @@ namespace bbe
 		void glfwGetFramebufferSize(GLFWwindow *window, int *width, int *height);
 		void glfwMaximizeWindow(GLFWwindow *window);
 		void glfwSetWindowPos(GLFWwindow *window, int x, int y);
+
+#if defined(__linux__) && defined(BBE_USE_WAYLAND_CLIPBOARD)
+		int glfwGetPlatform();
+		wl_display *glfwGetWaylandDisplay();
+#endif
 	}
 }
