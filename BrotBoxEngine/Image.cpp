@@ -7,9 +7,11 @@
 #if defined(__linux__)
 #include "BBE/WaylandClipboard.h"
 #endif
+#include <cstdint>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <limits>
 #include <vector>
 
@@ -27,6 +29,27 @@
 
 namespace
 {
+	#pragma pack(push, 1)
+	struct IcoDir
+	{
+		std::uint16_t reserved;
+		std::uint16_t type;
+		std::uint16_t count;
+	};
+
+	struct IcoDirEntry
+	{
+		std::uint8_t  width;
+		std::uint8_t  height;
+		std::uint8_t  colorCount;
+		std::uint8_t  reserved;
+		std::uint16_t planes;
+		std::uint16_t bitCount;
+		std::uint32_t bytesInRes;
+		std::uint32_t imageOffset;
+	};
+	#pragma pack(pop)
+
 	bool checkedMultiplySizeT(size_t &value, size_t factor)
 	{
 		if (factor != 0 && value > std::numeric_limits<size_t>::max() / factor)
@@ -1542,9 +1565,129 @@ HICON bbe::Image::toIcon() const
 void bbe::Image::writeToFile(const char *path) const
 {
 	const bbe::String lowerPath = bbe::String(path).toLowerCase();
+
+	if (!isLoadedCpu())
+	{
+		bbe::Crash(bbe::Error::NotInitialized);
+	}
+
+	// We only support 8-bit-per-channel integer formats for file export.
+	const size_t bytesPerChannel = getBytesPerChannel();
+	if (bytesPerChannel != 1)
+	{
+		bbe::Crash(bbe::Error::FormatNotSupported, "Image export only supports 8-bit-per-channel formats.");
+	}
+
+	const ImageFormat fmt = m_format;
+	if (fmt != ImageFormat::R8 && fmt != ImageFormat::R8G8B8A8)
+	{
+		bbe::Crash(bbe::Error::FormatNotSupported, "Image export only supports R8 and R8G8B8A8 formats.");
+	}
+
 	if (lowerPath.endsWith(".png"))
 	{
 		stbi_write_png(path, m_width, m_height, (int)getAmountOfChannels(), m_pdata.getRaw(), 0);
+	}
+	else if (lowerPath.endsWith(".ico"))
+	{
+		if (fmt != bbe::ImageFormat::R8G8B8A8)
+		{
+			bbe::Crash(bbe::Error::FormatNotSupported, "ICO export requires R8G8B8A8 format.");
+		}
+
+		if (m_width != 256 || m_height != 256)
+		{
+			bbe::Crash(bbe::Error::IllegalArgument, "ICO export requires a 256x256 image.");
+		}
+
+		const int iconSizes[] = { 256, 128, 64, 32, 16 };
+		constexpr size_t iconCount = sizeof(iconSizes) / sizeof(iconSizes[0]);
+
+		std::vector<std::vector<bbe::byte>> encodedPngs;
+		encodedPngs.reserve(iconCount);
+
+		for (size_t i = 0; i < iconCount; i++)
+		{
+			const int targetSize = iconSizes[i];
+			bbe::Image tempImage = *this;
+			if (targetSize != m_width || targetSize != m_height)
+			{
+				tempImage = scaledNearest(targetSize, targetSize);
+			}
+
+			const std::vector<bbe::byte> pngData = encodeRawImageAsPng(
+				tempImage.m_pdata.getRaw(),
+				tempImage.getWidth(),
+				tempImage.getHeight(),
+				tempImage.getAmountOfChannels(),
+				tempImage.getBytesPerChannel());
+
+			if (pngData.empty())
+			{
+				bbe::Crash(bbe::Error::NotImplemented, "Failed to encode PNG for ICO export.");
+			}
+
+			encodedPngs.push_back(pngData);
+		}
+
+		IcoDir header = {};
+		header.reserved = 0;
+		header.type = 1; // Icon
+		header.count = static_cast<std::uint16_t>(iconCount);
+
+		IcoDirEntry entries[iconCount] = {};
+
+		std::uint32_t offset = static_cast<std::uint32_t>(sizeof(IcoDir) + iconCount * sizeof(IcoDirEntry));
+		for (size_t i = 0; i < iconCount; i++)
+		{
+			const int size = iconSizes[i];
+			const std::vector<bbe::byte> &pngData = encodedPngs[i];
+
+			IcoDirEntry &e = entries[i];
+			e.width = static_cast<std::uint8_t>(size == 256 ? 0 : size);
+			e.height = static_cast<std::uint8_t>(size == 256 ? 0 : size);
+			e.colorCount = 0;
+			e.reserved = 0;
+			e.planes = 1;
+			e.bitCount = 32;
+			e.bytesInRes = static_cast<std::uint32_t>(pngData.size());
+			e.imageOffset = offset;
+
+			offset += e.bytesInRes;
+		}
+
+		std::ofstream file(path, std::ios::binary);
+		if (!file)
+		{
+			bbe::Crash(bbe::Error::IllegalState, "Failed to open file for ICO export.");
+		}
+
+		file.write(reinterpret_cast<const char *>(&header), sizeof(header));
+		if (!file)
+		{
+			bbe::Crash(bbe::Error::IllegalState, "Failed to write ICO header.");
+		}
+
+		file.write(reinterpret_cast<const char *>(entries), sizeof(IcoDirEntry) * iconCount);
+		if (!file)
+		{
+			bbe::Crash(bbe::Error::IllegalState, "Failed to write ICO directory entries.");
+		}
+
+		for (size_t i = 0; i < iconCount; i++)
+		{
+			const std::vector<bbe::byte> &pngData = encodedPngs[i];
+			if (!pngData.empty())
+			{
+				file.write(reinterpret_cast<const char *>(pngData.data()), static_cast<std::streamsize>(pngData.size()));
+				if (!file)
+				{
+					bbe::Crash(bbe::Error::IllegalState, "Failed to write ICO image data.");
+				}
+			}
+		}
+
+		file.close();
 	}
 	else if (lowerPath.endsWith(".bmp"))
 	{

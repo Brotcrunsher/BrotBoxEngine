@@ -14,6 +14,9 @@
 #include <unistd.h>
 #include <vector>
 
+#include <wayland-client-core.h>
+#include <wayland-client-protocol.h>
+
 namespace
 {
 	struct OfferState

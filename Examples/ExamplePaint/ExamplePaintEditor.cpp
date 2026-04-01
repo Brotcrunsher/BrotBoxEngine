@@ -1773,20 +1773,38 @@ bool PaintEditor::loadLayeredDocument(const bbe::String &filePath)
 	return true;
 }
 
-bool PaintEditor::saveFlattenedPng(const bbe::String &filePath)
+bool PaintEditor::saveFlattenedImage(const bbe::String &filePath)
 {
 	commitFloatingSelection();
 	if (!platform.saveImageFile) return false;
-	return platform.saveImageFile(filePath, flattenVisibleLayers());
+	bbe::Image flattened = flattenVisibleLayers();
+
+	const bbe::String lowerPath = filePath.toLowerCase();
+	if (lowerPath.endsWith(".ico"))
+	{
+		// ICO writer expects a 256x256 source image and will generate
+		// the other sizes (128/64/32/16) from it. If the canvas size
+		// is different, rescale the flattened result accordingly.
+		if (flattened.getWidth() != 256 || flattened.getHeight() != 256)
+		{
+			flattened = flattened.scaledNearest(256, 256);
+		}
+	}
+
+	return platform.saveImageFile(filePath, flattened);
 }
 
 bool PaintEditor::saveDocumentToPath(const bbe::String &filePath)
 {
 	bool ok;
 	if (isLayeredDocumentPath(filePath))
+	{
 		ok = saveLayeredDocument(filePath);
+	}
 	else
-		ok = saveFlattenedPng(filePath);
+	{
+		ok = saveFlattenedImage(filePath);
+	}
 	if (ok) savedGeneration = canvasGeneration;
 	return ok;
 }

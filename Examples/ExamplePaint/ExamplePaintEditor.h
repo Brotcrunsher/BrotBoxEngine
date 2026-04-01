@@ -558,8 +558,8 @@ struct PaintEditor
 	bool saveLayeredDocument(const bbe::String &filePath);
 
 	bool loadLayeredDocument(const bbe::String &filePath);
-
-	bool saveFlattenedPng(const bbe::String &filePath);
+	
+	bool saveFlattenedImage(const bbe::String &filePath);
 
 	bool saveDocumentToPath(const bbe::String &filePath);
 
