@@ -307,7 +307,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			if (editor.symmetryMode == bbe::SymmetryMode::Radial && ImGui::InputInt("Spokes##radialCount", &editor.radialSymmetryCount))
 			{
 				if (editor.radialSymmetryCount < 2) editor.radialSymmetryCount = 2;
-				if (editor.radialSymmetryCount > 32) editor.radialSymmetryCount = 32;
 			}
 		}
 
