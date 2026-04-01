@@ -8,6 +8,10 @@
 
 static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSinceLastFrame)
 {
+	static bbe::Vector2 brushPoints[4];
+	static int32_t brushPointCount = 0;
+	static bool lastDrawButtonDown = false;
+
 	PaintWindowMetrics w{};
 	w.width = g.getWindowWidth();
 	w.height = g.getWindowHeight();
@@ -416,7 +420,59 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 
 		if (editor.mode == PaintEditor::MODE_BRUSH)
 		{
-			const bool touched = editor.touchLine(currMousePos, prevMousePos, false, g.isMouseDown(bbe::MouseButton::LEFT), g.isMouseDown(bbe::MouseButton::RIGHT));
+			const bool leftDown = g.isMouseDown(bbe::MouseButton::LEFT);
+			const bool rightDown = g.isMouseDown(bbe::MouseButton::RIGHT);
+
+			if (!lastDrawButtonDown && drawButtonDown)
+			{
+				brushPointCount = 0;
+			}
+
+			// Maintain up to 4 recent mouse positions (index 0 = newest).
+			auto pushBrushPoint = [&](const bbe::Vector2 &p)
+			{
+				if (brushPointCount > 0 && (brushPoints[0] - p).getLength() < 0.01f) return;
+				const int32_t maxIndex = bbe::Math::min<int32_t>(brushPointCount, 3);
+				for (int32_t i = maxIndex; i > 0; --i)
+				{
+					brushPoints[i] = brushPoints[i - 1];
+				}
+				brushPoints[0] = p;
+				if (brushPointCount < 4) brushPointCount++;
+			};
+
+			pushBrushPoint(currMousePos);
+
+			bool touched = false;
+			if (brushPointCount == 1)
+			{
+				touched = editor.touch(brushPoints[0], false, leftDown, rightDown);
+			}
+			else if (brushPointCount >= 4)
+			{
+				// Use Catmull-Rom -> Bezier conversion for the middle segment.
+				// Points: brushPoints[0]=newest, [3]=älteste.
+				const bbe::Vector2 &p0 = brushPoints[3];
+				const bbe::Vector2 &p1 = brushPoints[2];
+				const bbe::Vector2 &p2 = brushPoints[1];
+				const bbe::Vector2 &p3 = brushPoints[0];
+
+				const bbe::Vector2 c1 = p1 + (p2 - p0) / 6.0f;
+				const bbe::Vector2 c2 = p2 - (p3 - p1) / 6.0f;
+
+				bbe::List<bbe::Vector2> splinePoints;
+				splinePoints.add(p1);  // start on curve
+				splinePoints.add(c1);  // control 1 (beeinflusst von p0)
+				splinePoints.add(c2);  // control 2 (beeinflusst von p3)
+				splinePoints.add(p2);  // end on curve
+
+				editor.drawBezierSymmetry(splinePoints, editor.activeDrawColor(leftDown, rightDown));
+				touched = true;
+			}
+			else if (brushPointCount >= 2)
+			{
+				touched = editor.touchLine(brushPoints[0], brushPoints[1], false, leftDown, rightDown);
+			}
 			if (drawMode)
 			{
 				editor.brushStrokeChangeRegistered |= touched;
@@ -466,6 +522,12 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			bbe::Crash(bbe::Error::IllegalState);
 		}
 	}
+
+	if (!drawButtonDown && lastDrawButtonDown)
+	{
+		brushPointCount = 0;
+	}
+	lastDrawButtonDown = drawButtonDown;
 }
 
 class MyGame : public bbe::Game
