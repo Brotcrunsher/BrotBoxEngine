@@ -620,7 +620,7 @@ bool bbe::Image::drawBrushStamp(const bbe::Vector2 &pos, const bbe::Colori &colo
 			float strength;
 			if (shape == bbe::ImageBrushShape::Square)
 			{
-				const float maxD = std::max(std::fabsf(dx), std::fabsf(dy));
+				const float maxD = std::max(std::fabs(dx), std::fabs(dy));
 				strength = bbe::Math::clamp01((float)brushRadius - maxD);
 			}
 			else
