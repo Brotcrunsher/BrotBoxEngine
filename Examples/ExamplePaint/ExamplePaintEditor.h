@@ -19,7 +19,6 @@
 // TODO: Color history
 // TODO: It's possible to enter negative numbers for new canvas size. Leads to a crash. Don't allow negative sizes.
 // TODO: Saving an image always returns success, even if the file couldn't be written. Fix that.
-// TODO: Lasso selection tool
 // TODO: Polygon selection tool
 
 struct FontEntry
@@ -88,8 +87,9 @@ struct PaintEditor
 	static constexpr int32_t MODE_ARROW = 8;
 	static constexpr int32_t MODE_BEZIER = 9;
 	static constexpr int32_t MODE_MAGIC_WAND = 10;
+	static constexpr int32_t MODE_LASSO = 11;
 
-	/// Selection and wand share one marquee; leaving this set of tools applies the selection (see ExamplePaint mode changes).
+	/// Selection, lasso, and wand share one marquee; leaving this set of tools applies the selection (see ExamplePaint mode changes).
 	static bool isSelectionLikeTool(int32_t toolMode);
 
 	bool brushStrokeChangeRegistered = false;
@@ -223,6 +223,10 @@ struct PaintEditor
 		bool mergeBackupHadSelection = false;
 		bbe::Rectanglei mergeBackupRect{};
 		bbe::Image mergeBackupMask;
+
+		/// Freehand lasso drag (MODE_LASSO): path in canvas pixel coordinates, clamped to the canvas.
+		bool lassoDragActive = false;
+		std::vector<bbe::Vector2i> lassoPath;
 	};
 	SelectionState selection;
 
@@ -526,6 +530,9 @@ struct PaintEditor
 
 	/// Outside click, Ctrl+inside, or Ctrl on resize handles: clear / merge / start rect drag.
 	void pointerDownSelectionDefaultMarqueePath(const bbe::Vector2i &mousePixel);
+	void pointerDownLassoMarqueePath(const bbe::Vector2i &mousePixel);
+	void appendLassoPoint(const bbe::Vector2i &p);
+	void finishLassoDrag(const bbe::Vector2i &mousePixel);
 
 	void beginRotationDrag(const bbe::Vector2i &mousePixel);
 

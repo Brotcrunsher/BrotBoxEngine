@@ -168,6 +168,10 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	{
 		editor.mode = PaintEditor::MODE_MAGIC_WAND;
 	}
+	if (g.isKeyPressed(bbe::Key::L))
+	{
+		editor.mode = PaintEditor::MODE_LASSO;
+	}
 	bool refreshCircleDraft = false;
 	if (!ctrlDown && g.isKeyPressed(bbe::Key::X))
 	{
@@ -354,7 +358,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		// Drive previews / drags from the controller (no editor update loop).
 		const bool needsPointerMove =
 			editor.pointerPrimaryDown || editor.pointerSecondaryDown ||
-			editor.selection.dragActive || editor.selection.moveActive || editor.selection.resizeActive || editor.selection.rotationHandleActive ||
+			editor.selection.dragActive || editor.selection.lassoDragActive || editor.selection.moveActive || editor.selection.resizeActive || editor.selection.rotationHandleActive ||
 			editor.rectangle.dragActive || editor.circle.dragActive ||
 			editor.line.dragInProgress || editor.line.draftActive ||
 			editor.arrow.dragInProgress || editor.arrow.draftActive ||
@@ -429,7 +433,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	}
 
 	const bbe::List<decltype(editor.mode)> shadowDrawModes = { PaintEditor::MODE_BRUSH };
-	const bool drawMode = editor.mode != PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_MAGIC_WAND && editor.mode != PaintEditor::MODE_TEXT && editor.mode != PaintEditor::MODE_RECTANGLE && editor.mode != PaintEditor::MODE_CIRCLE && editor.mode != PaintEditor::MODE_LINE && editor.mode != PaintEditor::MODE_ARROW && editor.mode != PaintEditor::MODE_BEZIER && !editor.canvasResizeActive && !mouseOnNavigator && drawButtonDownForTools;
+	const bool drawMode = editor.mode != PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_MAGIC_WAND && editor.mode != PaintEditor::MODE_LASSO && editor.mode != PaintEditor::MODE_TEXT && editor.mode != PaintEditor::MODE_RECTANGLE && editor.mode != PaintEditor::MODE_CIRCLE && editor.mode != PaintEditor::MODE_LINE && editor.mode != PaintEditor::MODE_ARROW && editor.mode != PaintEditor::MODE_BEZIER && !editor.canvasResizeActive && !mouseOnNavigator && drawButtonDownForTools;
 	const bool shadowDrawMode = shadowDrawModes.contains(editor.mode);
 
 	if (editor.brushStrokeChangeRegistered)

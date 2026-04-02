@@ -119,6 +119,92 @@ void dropMaskIfFullySelected(bbe::Rectanglei &rect, bbe::Image &mask)
 	mask = {};
 }
 
+bool pointInPolygon(double px, double py, const std::vector<bbe::Vector2i> &poly)
+{
+	if (poly.size() < 3) return false;
+	bool inside = false;
+	const size_t n = poly.size();
+	for (size_t i = 0, j = n - 1; i < n; j = i++)
+	{
+		const double xi = (double)poly[i].x, yi = (double)poly[i].y;
+		const double xj = (double)poly[j].x, yj = (double)poly[j].y;
+		if (yj == yi) continue;
+		const bool intersect = ((yi > py) != (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+		if (intersect) inside = !inside;
+	}
+	return inside;
+}
+
+/// Fills pixels whose centers lie inside the closed polygon `path` (implicit edge from last to first). Tight bounding output.
+bool buildLassoSelectionMask(const PaintEditor &ed, const std::vector<bbe::Vector2i> &path, bbe::Rectanglei &outTightRect, bbe::Image &outMask)
+{
+	const int32_t W = ed.getCanvasWidth();
+	const int32_t H = ed.getCanvasHeight();
+	if (W <= 0 || H <= 0 || path.size() < 3) return false;
+
+	int32_t minx = path[0].x, maxx = path[0].x, miny = path[0].y, maxy = path[0].y;
+	for (size_t i = 1; i < path.size(); i++)
+	{
+		minx = bbe::Math::min(minx, path[i].x);
+		maxx = bbe::Math::max(maxx, path[i].x);
+		miny = bbe::Math::min(miny, path[i].y);
+		maxy = bbe::Math::max(maxy, path[i].y);
+	}
+	bbe::Rectanglei bbox(minx, miny, maxx - minx + 1, maxy - miny + 1);
+	bbe::Rectanglei clipR;
+	if (!ed.clampRectToCanvas(bbox, clipR)) return false;
+
+	std::vector<uint8_t> sel((size_t)clipR.width * (size_t)clipR.height, 0);
+	bool any = false;
+	int32_t tightL = 0, tightT = 0, tightR = 0, tightB = 0;
+
+	for (int32_t y = 0; y < clipR.height; y++)
+	{
+		for (int32_t x = 0; x < clipR.width; x++)
+		{
+			const int32_t cx = clipR.x + x;
+			const int32_t cy = clipR.y + y;
+			const double pxf = (double)cx + 0.5;
+			const double pyf = (double)cy + 0.5;
+			if (!pointInPolygon(pxf, pyf, path)) continue;
+			sel[(size_t)y * (size_t)clipR.width + (size_t)x] = 1;
+			if (!any)
+			{
+				tightL = tightR = cx;
+				tightT = tightB = cy;
+				any = true;
+			}
+			else
+			{
+				tightL = bbe::Math::min(tightL, cx);
+				tightR = bbe::Math::max(tightR, cx);
+				tightT = bbe::Math::min(tightT, cy);
+				tightB = bbe::Math::max(tightB, cy);
+			}
+		}
+	}
+	if (!any) return false;
+
+	const int32_t rw = tightR - tightL + 1;
+	const int32_t rh = tightB - tightT + 1;
+	outTightRect = bbe::Rectanglei(tightL, tightT, rw, rh);
+	outMask = bbe::Image(rw, rh, bbe::Color(0.f, 0.f, 0.f, 0.f));
+	ed.prepareImageForCanvas(outMask);
+
+	for (int32_t cy = tightT; cy <= tightB; cy++)
+	{
+		for (int32_t cx = tightL; cx <= tightR; cx++)
+		{
+			const int32_t lx = cx - clipR.x;
+			const int32_t ly = cy - clipR.y;
+			if (lx < 0 || ly < 0 || lx >= clipR.width || ly >= clipR.height) continue;
+			if (!sel[(size_t)ly * (size_t)clipR.width + (size_t)lx]) continue;
+			outMask.setPixel((size_t)(cx - tightL), (size_t)(cy - tightT), bbe::Colori(255, 255, 255, 255));
+		}
+	}
+	return true;
+}
+
 bbe::Image copyLayerRectWithMask(const PaintEditor &editor, const bbe::Rectanglei &rect, const bbe::Image &mask)
 {
 	bbe::Image copied(rect.width, rect.height, bbe::Color(0.f, 0.f, 0.f, 0.f));
@@ -188,7 +274,7 @@ bbe::Colori PaintEditor::getColor(bool useRight) const
 
 bool PaintEditor::isSelectionLikeTool(int32_t toolMode)
 {
-	return toolMode == MODE_SELECTION || toolMode == MODE_MAGIC_WAND;
+	return toolMode == MODE_SELECTION || toolMode == MODE_MAGIC_WAND || toolMode == MODE_LASSO;
 }
 
 void PaintEditor::clampMagicWandTolerance()
@@ -348,6 +434,28 @@ void PaintEditor::pointerDown(PointerButton button, const bbe::Vector2 &canvasPo
 		}
 		break;
 	}
+	case MODE_LASSO:
+	{
+		if (button != PointerButton::Primary) break;
+		const SelectionHitZone hitZone = getSelectionHitZone(canvasPos);
+		if (hitZone == SelectionHitZone::ROTATION && selection.hasSelection)
+		{
+			beginRotationDrag(mousePixel);
+		}
+		else if (isSelectionResizeHit(hitZone) && !selectionAdditiveModifier)
+		{
+			beginSelectionResize(hitZone);
+		}
+		else if (hitZone == SelectionHitZone::INSIDE && !selectionAdditiveModifier)
+		{
+			beginSelectionMove(mousePixel);
+		}
+		else
+		{
+			pointerDownLassoMarqueePath(mousePixel);
+		}
+		break;
+	}
 	case MODE_MAGIC_WAND:
 	{
 		if (button != PointerButton::Primary && button != PointerButton::Secondary) break;
@@ -470,6 +578,7 @@ void PaintEditor::pointerMove(const bbe::Vector2 &canvasPos)
 	{
 	case MODE_SELECTION:
 	case MODE_MAGIC_WAND:
+	case MODE_LASSO:
 	{
 		if (!pointerPrimaryDown) break;
 		if (selection.rotationHandleActive)
@@ -479,6 +588,10 @@ void PaintEditor::pointerMove(const bbe::Vector2 &canvasPos)
 		if (mode == MODE_SELECTION && selection.dragActive)
 		{
 			buildSelectionRect(selection.dragStart, mousePixel, selection.previewRect);
+		}
+		if (mode == MODE_LASSO && selection.lassoDragActive)
+		{
+			appendLassoPoint(mousePixel);
 		}
 		if (selection.moveActive)
 		{
@@ -600,6 +713,15 @@ void PaintEditor::pointerUp(PointerButton button, const bbe::Vector2 &canvasPos)
 			selection.mergeBackupHadSelection = false;
 			selection.mergeBackupRect = {};
 			selection.mergeBackupMask = {};
+		}
+		break;
+	}
+	case MODE_LASSO:
+	{
+		if (button != PointerButton::Primary) break;
+		if (selection.lassoDragActive)
+		{
+			finishLassoDrag(mousePixel);
 		}
 		break;
 	}
@@ -812,6 +934,14 @@ void PaintEditor::deselectAll()
 		selection.dragActive = false;
 		selection.previewRect = {};
 		selection.previewImage = {};
+		selection.mergeBackupHadSelection = false;
+		selection.mergeBackupRect = {};
+		selection.mergeBackupMask = {};
+	}
+	if (selection.lassoDragActive)
+	{
+		selection.lassoDragActive = false;
+		selection.lassoPath.clear();
 		selection.mergeBackupHadSelection = false;
 		selection.mergeBackupRect = {};
 		selection.mergeBackupMask = {};
@@ -1148,7 +1278,7 @@ PaintEditor::SelectionHitZone PaintEditor::getSelectionHitZone(const bbe::Vector
 	{
 		return SelectionHitZone::NONE;
 	}
-	const bool allowRotationHandle = !selection.dragActive;
+	const bool allowRotationHandle = !selection.dragActive && !selection.lassoDragActive;
 	const float slopCanvas = 6.f / zoomLevel;
 	const float rotationStemLenCanvas = 30.f / zoomLevel;
 	const float rotationHitRadiusCanvas = 8.f / zoomLevel;
@@ -1444,6 +1574,28 @@ void PaintEditor::applySelectionWhenLeavingTool()
 		selection.previewRect = {};
 	}
 
+	if (selection.lassoDragActive)
+	{
+		if (hasPointerPos)
+		{
+			finishLassoDrag(toCanvasPixel(lastPointerCanvasPos));
+		}
+		else
+		{
+			selection.lassoDragActive = false;
+			selection.lassoPath.clear();
+			if (selection.mergeBackupHadSelection && selectionAdditiveModifier)
+			{
+				selection.rect = selection.mergeBackupRect;
+				selection.mask = std::move(selection.mergeBackupMask);
+				selection.hasSelection = selection.mergeBackupHadSelection;
+			}
+			selection.mergeBackupHadSelection = false;
+			selection.mergeBackupRect = {};
+			selection.mergeBackupMask = {};
+		}
+	}
+
 	if (selection.floating)
 		commitFloatingSelection();
 
@@ -1712,6 +1864,132 @@ void PaintEditor::pointerDownSelectionDefaultMarqueePath(const bbe::Vector2i &mo
 		selection.previewRect = {};
 		selection.mask = {};
 	}
+}
+
+void PaintEditor::pointerDownLassoMarqueePath(const bbe::Vector2i &mousePixel)
+{
+	const bool hadFloating = selection.floating;
+	const bool hadMarquee = selection.hasSelection;
+
+	if (selectionAdditiveModifier)
+	{
+		selection.mergeBackupHadSelection = hadMarquee;
+		if (hadMarquee)
+		{
+			selection.mergeBackupRect = selection.rect;
+			selection.mergeBackupMask = selection.mask;
+		}
+		else
+		{
+			selection.mergeBackupMask = {};
+		}
+	}
+	else
+	{
+		selection.mergeBackupHadSelection = false;
+		selection.mergeBackupMask = {};
+	}
+
+	if (selection.floating)
+	{
+		commitFloatingSelection();
+	}
+
+	selection.dragActive = false;
+	if (selectionAdditiveModifier)
+	{
+		selection.lassoDragActive = true;
+		selection.lassoPath.clear();
+		appendLassoPoint(mousePixel);
+		selection.hasSelection = false;
+		selection.rect = {};
+		selection.previewRect = {};
+		selection.mask = {};
+	}
+	else if (hadMarquee || hadFloating)
+	{
+		clearMarqueePreservingClipboard();
+	}
+	else
+	{
+		selection.lassoDragActive = true;
+		selection.lassoPath.clear();
+		appendLassoPoint(mousePixel);
+		selection.hasSelection = false;
+		selection.rect = {};
+		selection.previewRect = {};
+		selection.mask = {};
+	}
+}
+
+void PaintEditor::appendLassoPoint(const bbe::Vector2i &p)
+{
+	const int32_t W = getCanvasWidth();
+	const int32_t H = getCanvasHeight();
+	if (W <= 0 || H <= 0) return;
+	const bbe::Vector2i c(
+		bbe::Math::clamp(p.x, 0, W - 1),
+		bbe::Math::clamp(p.y, 0, H - 1));
+	if (!selection.lassoPath.empty() && selection.lassoPath.back().x == c.x && selection.lassoPath.back().y == c.y) return;
+	selection.lassoPath.push_back(c);
+}
+
+void PaintEditor::finishLassoDrag(const bbe::Vector2i &mousePixel)
+{
+	appendLassoPoint(mousePixel);
+	const bool merge = selection.mergeBackupHadSelection && selectionAdditiveModifier;
+	std::vector<bbe::Vector2i> path = std::move(selection.lassoPath);
+	selection.lassoPath.clear();
+	selection.lassoDragActive = false;
+
+	bbe::Rectanglei newRect;
+	bbe::Image newMask;
+	const bool ok = buildLassoSelectionMask(*this, path, newRect, newMask);
+
+	if (!ok)
+	{
+		if (merge)
+		{
+			selection.rect = selection.mergeBackupRect;
+			selection.mask = std::move(selection.mergeBackupMask);
+			selection.hasSelection = selection.mergeBackupHadSelection;
+		}
+		else
+		{
+			selection.hasSelection = false;
+			selection.rect = {};
+			selection.mask = {};
+		}
+		selection.mergeBackupHadSelection = false;
+		selection.mergeBackupRect = {};
+		selection.mergeBackupMask = {};
+		return;
+	}
+
+	prepareImageForCanvas(newMask);
+	dropMaskIfFullySelected(newRect, newMask);
+
+	if (merge)
+	{
+		bbe::Rectanglei outR;
+		bbe::Image outM;
+		unionSelectionRegions(selection.mergeBackupRect, selection.mergeBackupMask, newRect, newMask, outR, outM);
+		prepareImageForCanvas(outM);
+		selection.rect = outR;
+		selection.mask = std::move(outM);
+		selection.hasSelection = outR.width > 0 && outR.height > 0;
+		dropMaskIfFullySelected(selection.rect, selection.mask);
+	}
+	else
+	{
+		selection.hasSelection = true;
+		selection.rect = newRect;
+		selection.mask = std::move(newMask);
+		dropMaskIfFullySelected(selection.rect, selection.mask);
+	}
+	selection.mergeBackupHadSelection = false;
+	selection.mergeBackupRect = {};
+	selection.mergeBackupMask = {};
 }
 
 void PaintEditor::beginSelectionMove(const bbe::Vector2i &mousePixel)
