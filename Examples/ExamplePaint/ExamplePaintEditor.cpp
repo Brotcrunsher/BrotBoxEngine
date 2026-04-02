@@ -1694,11 +1694,13 @@ void PaintEditor::pointerDownSelectionDefaultMarqueePath(const bbe::Vector2i &mo
 		selection.previewRect = {};
 		selection.mask = {};
 	}
-	else if (hadMarquee && !hadFloating)
+	else if (hadMarquee || hadFloating)
 	{
+		// Outside click: commit already ran for floating; clear marquee in one press (previously
+		// hadFloating skipped the hadMarquee && !hadFloating branch, requiring a second click).
 		clearMarqueePreservingClipboard();
 	}
-	else if (!hadFloating && !hadMarquee)
+	else
 	{
 		selection.dragActive = true;
 		selection.dragStart = mousePixel;
