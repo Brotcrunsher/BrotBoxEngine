@@ -838,11 +838,33 @@ void PaintEditor::pasteSelectionAt(const bbe::Vector2i &pos)
 		commitFloatingSelection();
 	}
 
+	const bbe::Vector2i clampedPos(
+		bbe::Math::clamp(pos.x, 0, bbe::Math::max(getCanvasWidth()  - image.getWidth(),  0)),
+		bbe::Math::clamp(pos.y, 0, bbe::Math::max(getCanvasHeight() - image.getHeight(), 0))
+	);
+
+	const int32_t neededW = clampedPos.x + image.getWidth();
+	const int32_t neededH = clampedPos.y + image.getHeight();
+	const int32_t newW = bbe::Math::max(getCanvasWidth(), neededW);
+	const int32_t newH = bbe::Math::max(getCanvasHeight(), neededH);
+	if (newW > getCanvasWidth() || newH > getCanvasHeight())
+	{
+		const bbe::Color fillColor(rightColor[0], rightColor[1], rightColor[2], rightColor[3]);
+		for (size_t li = 0; li < canvas.get().layers.getLength(); li++)
+		{
+			canvas.get().layers[li].image = canvas.get().layers[li].image.resizedCanvas(
+				newW, newH, bbe::Vector2i(0, 0), fillColor);
+			prepareImageForCanvas(canvas.get().layers[li].image);
+		}
+		clearWorkArea();
+		submitCanvas();
+	}
+
 	mode = MODE_SELECTION;
 	selection.hasSelection = true;
 	selection.floating = true;
 	selection.floatingImage = image;
-	selection.rect = bbe::Rectanglei(pos.x, pos.y, image.getWidth(), image.getHeight());
+	selection.rect = bbe::Rectanglei(clampedPos.x, clampedPos.y, image.getWidth(), image.getHeight());
 	rectangle.draftActive = false;
 	rectangle.draftUsesRightColor = false;
 	selection.moveActive = false;
