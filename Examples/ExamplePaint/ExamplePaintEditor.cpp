@@ -274,7 +274,7 @@ bbe::Colori PaintEditor::getColor(bool useRight) const
 
 bool PaintEditor::isSelectionLikeTool(int32_t toolMode)
 {
-	return toolMode == MODE_SELECTION || toolMode == MODE_MAGIC_WAND || toolMode == MODE_LASSO;
+	return toolMode == MODE_SELECTION || toolMode == MODE_MAGIC_WAND || toolMode == MODE_LASSO || toolMode == MODE_POLYGON_LASSO;
 }
 
 void PaintEditor::clampMagicWandTolerance()
@@ -456,6 +456,54 @@ void PaintEditor::pointerDown(PointerButton button, const bbe::Vector2 &canvasPo
 		}
 		break;
 	}
+	case MODE_POLYGON_LASSO:
+	{
+		if (button == PointerButton::Secondary)
+		{
+			if (selection.polygonLassoVertices.size() >= 3)
+			{
+				finishPolygonLassoSelection();
+			}
+			else
+			{
+				cancelPolygonLassoDraft();
+			}
+			break;
+		}
+		if (button != PointerButton::Primary) break;
+		const SelectionHitZone hitZone = getSelectionHitZone(canvasPos);
+		if (hitZone == SelectionHitZone::ROTATION && selection.hasSelection)
+		{
+			beginRotationDrag(mousePixel);
+		}
+		else if (isSelectionResizeHit(hitZone) && !selectionAdditiveModifier)
+		{
+			beginSelectionResize(hitZone);
+		}
+		else if (hitZone == SelectionHitZone::INSIDE && !selectionAdditiveModifier)
+		{
+			beginSelectionMove(mousePixel);
+		}
+		else
+		{
+			if (!selection.polygonLassoVertices.empty())
+			{
+				if (isClickClosePolygonLasso(canvasPos))
+				{
+					finishPolygonLassoSelection();
+				}
+				else
+				{
+					appendPolygonLassoVertex(mousePixel);
+				}
+			}
+			else
+			{
+				pointerDownPolygonLassoMarqueePath(mousePixel);
+			}
+		}
+		break;
+	}
 	case MODE_MAGIC_WAND:
 	{
 		if (button != PointerButton::Primary && button != PointerButton::Secondary) break;
@@ -579,6 +627,7 @@ void PaintEditor::pointerMove(const bbe::Vector2 &canvasPos)
 	case MODE_SELECTION:
 	case MODE_MAGIC_WAND:
 	case MODE_LASSO:
+	case MODE_POLYGON_LASSO:
 	{
 		if (!pointerPrimaryDown) break;
 		if (selection.rotationHandleActive)
@@ -946,6 +995,13 @@ void PaintEditor::deselectAll()
 		selection.mergeBackupRect = {};
 		selection.mergeBackupMask = {};
 	}
+	if (!selection.polygonLassoVertices.empty())
+	{
+		selection.polygonLassoVertices.clear();
+		selection.mergeBackupHadSelection = false;
+		selection.mergeBackupRect = {};
+		selection.mergeBackupMask = {};
+	}
 	if (selection.floating) commitFloatingSelection();
 	clearMarqueePreservingClipboard();
 }
@@ -1278,7 +1334,7 @@ PaintEditor::SelectionHitZone PaintEditor::getSelectionHitZone(const bbe::Vector
 	{
 		return SelectionHitZone::NONE;
 	}
-	const bool allowRotationHandle = !selection.dragActive && !selection.lassoDragActive;
+	const bool allowRotationHandle = !selection.dragActive && !selection.lassoDragActive && selection.polygonLassoVertices.empty();
 	const float slopCanvas = 6.f / zoomLevel;
 	const float rotationStemLenCanvas = 30.f / zoomLevel;
 	const float rotationHitRadiusCanvas = 8.f / zoomLevel;
@@ -1593,6 +1649,18 @@ void PaintEditor::applySelectionWhenLeavingTool()
 			selection.mergeBackupHadSelection = false;
 			selection.mergeBackupRect = {};
 			selection.mergeBackupMask = {};
+		}
+	}
+
+	if (!selection.polygonLassoVertices.empty())
+	{
+		if (selection.polygonLassoVertices.size() >= 3)
+		{
+			finishPolygonLassoSelection();
+		}
+		else
+		{
+			cancelPolygonLassoDraft();
 		}
 	}
 
@@ -1934,14 +2002,9 @@ void PaintEditor::appendLassoPoint(const bbe::Vector2i &p)
 	selection.lassoPath.push_back(c);
 }
 
-void PaintEditor::finishLassoDrag(const bbe::Vector2i &mousePixel)
+void PaintEditor::commitSelectionFromClosedLassoPath(std::vector<bbe::Vector2i> path)
 {
-	appendLassoPoint(mousePixel);
 	const bool merge = selection.mergeBackupHadSelection && selectionAdditiveModifier;
-	std::vector<bbe::Vector2i> path = std::move(selection.lassoPath);
-	selection.lassoPath.clear();
-	selection.lassoDragActive = false;
-
 	bbe::Rectanglei newRect;
 	bbe::Image newMask;
 	const bool ok = buildLassoSelectionMask(*this, path, newRect, newMask);
@@ -1990,6 +2053,138 @@ void PaintEditor::finishLassoDrag(const bbe::Vector2i &mousePixel)
 	selection.mergeBackupHadSelection = false;
 	selection.mergeBackupRect = {};
 	selection.mergeBackupMask = {};
+}
+
+void PaintEditor::finishLassoDrag(const bbe::Vector2i &mousePixel)
+{
+	appendLassoPoint(mousePixel);
+	std::vector<bbe::Vector2i> path = std::move(selection.lassoPath);
+	selection.lassoPath.clear();
+	selection.lassoDragActive = false;
+	commitSelectionFromClosedLassoPath(std::move(path));
+}
+
+void PaintEditor::pointerDownPolygonLassoMarqueePath(const bbe::Vector2i &mousePixel)
+{
+	const bool hadFloating = selection.floating;
+	const bool hadMarquee = selection.hasSelection;
+
+	if (selectionAdditiveModifier)
+	{
+		selection.mergeBackupHadSelection = hadMarquee;
+		if (hadMarquee)
+		{
+			selection.mergeBackupRect = selection.rect;
+			selection.mergeBackupMask = selection.mask;
+		}
+		else
+		{
+			selection.mergeBackupMask = {};
+		}
+	}
+	else
+	{
+		selection.mergeBackupHadSelection = false;
+		selection.mergeBackupMask = {};
+	}
+
+	if (selection.floating)
+	{
+		commitFloatingSelection();
+	}
+
+	selection.dragActive = false;
+	selection.lassoDragActive = false;
+	selection.lassoPath.clear();
+
+	if (selectionAdditiveModifier)
+	{
+		selection.polygonLassoVertices.clear();
+		appendPolygonLassoVertex(mousePixel);
+		selection.hasSelection = false;
+		selection.rect = {};
+		selection.previewRect = {};
+		selection.mask = {};
+	}
+	else if (hadMarquee || hadFloating)
+	{
+		clearMarqueePreservingClipboard();
+	}
+	else
+	{
+		selection.polygonLassoVertices.clear();
+		appendPolygonLassoVertex(mousePixel);
+		selection.hasSelection = false;
+		selection.rect = {};
+		selection.previewRect = {};
+		selection.mask = {};
+	}
+}
+
+void PaintEditor::appendPolygonLassoVertex(const bbe::Vector2i &p)
+{
+	const int32_t W = getCanvasWidth();
+	const int32_t H = getCanvasHeight();
+	if (W <= 0 || H <= 0) return;
+	const bbe::Vector2i c(
+		bbe::Math::clamp(p.x, 0, W - 1),
+		bbe::Math::clamp(p.y, 0, H - 1));
+	if (!selection.polygonLassoVertices.empty() && selection.polygonLassoVertices.back().x == c.x && selection.polygonLassoVertices.back().y == c.y) return;
+	selection.polygonLassoVertices.push_back(c);
+}
+
+bool PaintEditor::isClickClosePolygonLasso(const bbe::Vector2 &canvasPos) const
+{
+	if (selection.polygonLassoVertices.size() < 3) return false;
+	const bbe::Vector2 first((float)selection.polygonLassoVertices[0].x + 0.5f, (float)selection.polygonLassoVertices[0].y + 0.5f);
+	const float slop = 8.f / zoomLevel;
+	return (canvasPos - first).getLength() <= slop;
+}
+
+void PaintEditor::finishPolygonLassoSelection()
+{
+	if (selection.polygonLassoVertices.size() < 3) return;
+	std::vector<bbe::Vector2i> path = selection.polygonLassoVertices;
+	selection.polygonLassoVertices.clear();
+	commitSelectionFromClosedLassoPath(std::move(path));
+}
+
+void PaintEditor::cancelPolygonLassoDraft()
+{
+	selection.polygonLassoVertices.clear();
+	if (selection.mergeBackupHadSelection)
+	{
+		selection.rect = selection.mergeBackupRect;
+		selection.mask = std::move(selection.mergeBackupMask);
+		selection.hasSelection = selection.mergeBackupHadSelection;
+	}
+	selection.mergeBackupHadSelection = false;
+	selection.mergeBackupRect = {};
+	selection.mergeBackupMask = {};
+}
+
+void PaintEditor::polygonLassoBackspace()
+{
+	if (selection.polygonLassoVertices.empty()) return;
+	selection.polygonLassoVertices.pop_back();
+	if (selection.polygonLassoVertices.empty() && selection.mergeBackupHadSelection)
+	{
+		selection.rect = selection.mergeBackupRect;
+		selection.mask = std::move(selection.mergeBackupMask);
+		selection.hasSelection = selection.mergeBackupHadSelection;
+		selection.mergeBackupHadSelection = false;
+		selection.mergeBackupRect = {};
+		selection.mergeBackupMask = {};
+	}
+}
+
+void PaintEditor::confirmPolygonLassoIfReady()
+{
+	if (mode != MODE_POLYGON_LASSO) return;
+	if (selection.polygonLassoVertices.size() >= 3)
+	{
+		finishPolygonLassoSelection();
+	}
 }
 
 void PaintEditor::beginSelectionMove(const bbe::Vector2i &mousePixel)

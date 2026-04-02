@@ -76,6 +76,7 @@ void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor 
 		editor.mode == PaintEditor::MODE_SELECTION
 		|| editor.mode == PaintEditor::MODE_MAGIC_WAND
 		|| editor.mode == PaintEditor::MODE_LASSO
+		|| editor.mode == PaintEditor::MODE_POLYGON_LASSO
 		|| (editor.mode == PaintEditor::MODE_RECTANGLE && (editor.rectangle.draftActive || editor.rectangle.dragActive))
 		|| (editor.mode == PaintEditor::MODE_CIRCLE && (editor.circle.draftActive || editor.circle.dragActive));
 
@@ -91,7 +92,7 @@ void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor 
 		brush.sketchRect(screenRect.shrinked(1.0f));
 	}
 
-	if (showSelectionChrome && editor.selection.hasSelection && !editor.selection.dragActive && !editor.selection.lassoDragActive)
+	if (showSelectionChrome && editor.selection.hasSelection && !editor.selection.dragActive && !editor.selection.lassoDragActive && editor.selection.polygonLassoVertices.empty())
 	{
 		const float sx = screenRect.x;
 		const float sy = screenRect.y;
@@ -329,6 +330,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				{ "Circle",    PaintEditor::MODE_CIRCLE,     s_toolIcons.circle.texId },
 				{ "Selection", PaintEditor::MODE_SELECTION,  s_toolIcons.selection.texId },
 				{ "Lasso",     PaintEditor::MODE_LASSO,      nullptr },
+				{ "Poly Lasso", PaintEditor::MODE_POLYGON_LASSO, nullptr },
 				{ "Text",      PaintEditor::MODE_TEXT,       s_toolIcons.text.texId },
 				{ "Pipette",   PaintEditor::MODE_PIPETTE,    s_toolIcons.pipette.texId },
 				{ "Arrow",     PaintEditor::MODE_ARROW,      s_toolIcons.arrow.texId },
@@ -342,6 +344,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				{ "Circle",    PaintEditor::MODE_CIRCLE,     nullptr },
 				{ "Selection", PaintEditor::MODE_SELECTION,  nullptr },
 				{ "Lasso",     PaintEditor::MODE_LASSO,      nullptr },
+				{ "Poly Lasso", PaintEditor::MODE_POLYGON_LASSO, nullptr },
 				{ "Text",      PaintEditor::MODE_TEXT,       nullptr },
 				{ "Pipette",   PaintEditor::MODE_PIPETTE,    nullptr },
 				{ "Arrow",     PaintEditor::MODE_ARROW,      nullptr },
@@ -371,7 +374,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 
 		// --- Tool options ---
-		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_TEXT || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER || editor.mode == PaintEditor::MODE_MAGIC_WAND || editor.mode == PaintEditor::MODE_LASSO)
+		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_TEXT || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER || editor.mode == PaintEditor::MODE_MAGIC_WAND || editor.mode == PaintEditor::MODE_LASSO || editor.mode == PaintEditor::MODE_POLYGON_LASSO)
 		{
 			ImGui::SeparatorText("Options");
 		}
@@ -394,6 +397,10 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		if (editor.mode == PaintEditor::MODE_LASSO)
 		{
 			ImGui::TextDisabled("Click and drag to outline a region (auto-closed). Ctrl adds to the current selection. Move/resize like rectangular selection.");
+		}
+		if (editor.mode == PaintEditor::MODE_POLYGON_LASSO)
+		{
+			ImGui::TextDisabled("Click to place corners. Close: click first point, Enter, or right-click (3+ points). Backspace removes last point. Ctrl adds to selection.");
 		}
 		if (editor.mode == PaintEditor::MODE_RECTANGLE)
 		{
@@ -816,10 +823,55 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				}
 			}
 		}
+		else if (editor.mode == PaintEditor::MODE_POLYGON_LASSO && !editor.selection.polygonLassoVertices.empty())
+		{
+			const int32_t W = editor.getCanvasWidth();
+			const int32_t H = editor.getCanvasHeight();
+			const float lwOuter = std::max(2.f, editor.viewport.scale > 0.f ? editor.viewport.scale : 1.f) + 1.f;
+			const float lwInner = std::max(1.f, editor.viewport.scale > 0.f ? editor.viewport.scale : 1.f);
+			for (int32_t ti = -ghostRepeats; ti <= ghostRepeats; ti++)
+			{
+				for (int32_t tk = -ghostRepeats; tk <= ghostRepeats; tk++)
+				{
+					const int32_t ox = ti * W;
+					const int32_t oy = tk * H;
+					bbe::List<bbe::Vector2> strip;
+					for (size_t pi = 0; pi < editor.selection.polygonLassoVertices.size(); pi++)
+					{
+						const bbe::Vector2i &p = editor.selection.polygonLassoVertices[pi];
+						const bbe::Rectangle scr = editor.selectionRectToScreen(bbe::Rectanglei(p.x + ox, p.y + oy, 1, 1));
+						strip.add({ scr.x + scr.width * 0.5f, scr.y + scr.height * 0.5f });
+					}
+					if (editor.hasPointerPos && W > 0 && H > 0)
+					{
+						const int32_t cx = bbe::Math::clamp((int32_t)std::floor(editor.lastPointerCanvasPos.x), 0, W - 1);
+						const int32_t cy = bbe::Math::clamp((int32_t)std::floor(editor.lastPointerCanvasPos.y), 0, H - 1);
+						const bbe::Rectangle scrC = editor.selectionRectToScreen(bbe::Rectanglei(cx + ox, cy + oy, 1, 1));
+						strip.add({ scrC.x + scrC.width * 0.5f, scrC.y + scrC.height * 0.5f });
+					}
+					brush.setColorRGB(0.f, 0.f, 0.f);
+					brush.fillLineStrip(strip, false, lwOuter);
+					brush.setColorRGB(1.f, 1.f, 1.f);
+					brush.fillLineStrip(strip, false, lwInner);
+					if (editor.selection.polygonLassoVertices.size() >= 3)
+					{
+						const bbe::Vector2i &fp = editor.selection.polygonLassoVertices[0];
+						const bbe::Rectangle scrF = editor.selectionRectToScreen(bbe::Rectanglei(fp.x + ox, fp.y + oy, 1, 1));
+						const float fx = scrF.x + scrF.width * 0.5f;
+						const float fy = scrF.y + scrF.height * 0.5f;
+						const float r = std::max(3.f, lwOuter);
+						brush.setColorRGB(0.f, 0.f, 0.f);
+						brush.fillCircle(fx - r - 1.f, fy - r - 1.f, (r + 1.f) * 2.f, (r + 1.f) * 2.f);
+						brush.setColorRGB(1.f, 1.f, 0.4f);
+						brush.fillCircle(fx - r, fy - r, r * 2.f, r * 2.f);
+					}
+				}
+			}
+		}
 		else if (editor.selection.hasSelection)
 		{
 			const bool overlayMask = editor.hasSelectionPixelMask() && !editor.selection.moveActive && !editor.selection.resizeActive && !editor.selection.dragActive &&
-									 !editor.selection.lassoDragActive &&
+									 !editor.selection.lassoDragActive && editor.selection.polygonLassoVertices.empty() &&
 									 !editor.selection.floating && std::abs(editor.selection.rotation) < 0.0001f;
 			for (int32_t ti = -ghostRepeats; ti <= ghostRepeats; ti++)
 			{
@@ -1122,10 +1174,10 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					ImGui::SeparatorText(title);
 					for (const char *item : items) ImGui::BulletText("%s", item);
 				};
-				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow", "0 Bezier", "L Lasso", "M Magic Wand" });
+				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow", "0 Bezier", "L Lasso", "P Polygon Lasso", "M Magic Wand" });
 				bulletList("General", { "+/- changes brush size, wand tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
 				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection" });
-				bulletList("Selection", { "Drag to create a rectangular selection", "Lasso: click and drag to outline an area (closed automatically)", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand, Selection, or Lasso adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
+				bulletList("Selection", { "Drag to create a rectangular selection", "Lasso: click and drag to outline an area (closed automatically)", "Polygon lasso: click corners, then close via first point, Enter, or right-click", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand, Selection, Lasso, or Polygon lasso adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
 				bulletList("Layers", { "Painting and text placement affect only the active layer", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });
 			}
 			ImGui::End();

@@ -172,6 +172,10 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	{
 		editor.mode = PaintEditor::MODE_LASSO;
 	}
+	if (g.isKeyPressed(bbe::Key::P))
+	{
+		editor.mode = PaintEditor::MODE_POLYGON_LASSO;
+	}
 	bool refreshCircleDraft = false;
 	if (!ctrlDown && g.isKeyPressed(bbe::Key::X))
 	{
@@ -300,9 +304,20 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	{
 		editor.deselectAll();
 	}
+	if (editor.mode == PaintEditor::MODE_POLYGON_LASSO && (g.isKeyPressed(bbe::Key::ENTER) || g.isKeyPressed(bbe::Key::KP_ENTER)))
+	{
+		editor.confirmPolygonLassoIfReady();
+	}
 	if (g.isKeyPressed(bbe::Key::DELETE) || g.isKeyPressed(bbe::Key::BACKSPACE))
 	{
-		editor.deleteSelection();
+		if (editor.mode == PaintEditor::MODE_POLYGON_LASSO && !editor.selection.polygonLassoVertices.empty())
+		{
+			editor.polygonLassoBackspace();
+		}
+		else
+		{
+			editor.deleteSelection();
+		}
 	}
 
 	const bool mouseOnNavigator = editor.showNavigator && editor.getCanvasWidth() > 0 && editor.getNavigatorRect().isPointInRectangle(g.getMouse());
@@ -359,6 +374,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		const bool needsPointerMove =
 			editor.pointerPrimaryDown || editor.pointerSecondaryDown ||
 			editor.selection.dragActive || editor.selection.lassoDragActive || editor.selection.moveActive || editor.selection.resizeActive || editor.selection.rotationHandleActive ||
+			(editor.mode == PaintEditor::MODE_POLYGON_LASSO && !editor.selection.polygonLassoVertices.empty()) ||
 			editor.rectangle.dragActive || editor.circle.dragActive ||
 			editor.line.dragInProgress || editor.line.draftActive ||
 			editor.arrow.dragInProgress || editor.arrow.draftActive ||
@@ -433,7 +449,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	}
 
 	const bbe::List<decltype(editor.mode)> shadowDrawModes = { PaintEditor::MODE_BRUSH };
-	const bool drawMode = editor.mode != PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_MAGIC_WAND && editor.mode != PaintEditor::MODE_LASSO && editor.mode != PaintEditor::MODE_TEXT && editor.mode != PaintEditor::MODE_RECTANGLE && editor.mode != PaintEditor::MODE_CIRCLE && editor.mode != PaintEditor::MODE_LINE && editor.mode != PaintEditor::MODE_ARROW && editor.mode != PaintEditor::MODE_BEZIER && !editor.canvasResizeActive && !mouseOnNavigator && drawButtonDownForTools;
+	const bool drawMode = editor.mode != PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_MAGIC_WAND && editor.mode != PaintEditor::MODE_LASSO && editor.mode != PaintEditor::MODE_POLYGON_LASSO && editor.mode != PaintEditor::MODE_TEXT && editor.mode != PaintEditor::MODE_RECTANGLE && editor.mode != PaintEditor::MODE_CIRCLE && editor.mode != PaintEditor::MODE_LINE && editor.mode != PaintEditor::MODE_ARROW && editor.mode != PaintEditor::MODE_BEZIER && !editor.canvasResizeActive && !mouseOnNavigator && drawButtonDownForTools;
 	const bool shadowDrawMode = shadowDrawModes.contains(editor.mode);
 
 	if (editor.brushStrokeChangeRegistered)
