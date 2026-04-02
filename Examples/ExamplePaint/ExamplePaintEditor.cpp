@@ -2197,6 +2197,23 @@ void PaintEditor::beginSelectionMove(const bbe::Vector2i &mousePixel)
 												: (hasSelectionPixelMask() ? copyLayerRectWithMask(*this, selection.rect, selection.mask) : copyCanvasRect(selection.rect));
 	// Must retain CPU pixels after GPU draw (see OpenGLImage ctor); blendOver needs isLoadedCpu().
 	prepareImageForCanvas(selection.previewImage);
+
+	if (!selection.floating && selection.hasSelection)
+	{
+		if (hasSelectionPixelMask())
+		{
+			clearLayerRectWithMask(*this, selection.rect, selection.mask);
+		}
+		else
+		{
+			clearCanvasRect(selection.rect);
+		}
+		selection.floating = true;
+		selection.floatingImage = selection.previewImage;
+		prepareImageForCanvas(selection.floatingImage);
+		selection.mask = {};
+		submitCanvas();
+	}
 }
 
 void PaintEditor::beginRotationDrag(const bbe::Vector2i &mousePixel)
@@ -2254,6 +2271,24 @@ void PaintEditor::beginSelectionResize(const SelectionHitZone hitZone)
 	selection.previewRect = selection.rect;
 	selection.previewImage = selection.floating ? selection.floatingImage
 												: (hasSelectionPixelMask() ? copyLayerRectWithMask(*this, selection.rect, selection.mask) : copyCanvasRect(selection.rect));
+	prepareImageForCanvas(selection.previewImage);
+
+	if (!selection.floating && selection.hasSelection)
+	{
+		if (hasSelectionPixelMask())
+		{
+			clearLayerRectWithMask(*this, selection.rect, selection.mask);
+		}
+		else
+		{
+			clearCanvasRect(selection.rect);
+		}
+		selection.floating = true;
+		selection.floatingImage = selection.previewImage;
+		prepareImageForCanvas(selection.floatingImage);
+		selection.mask = {};
+		submitCanvas();
+	}
 }
 
 void PaintEditor::updateSelectionResizePreview(const bbe::Vector2i &mousePixel)
