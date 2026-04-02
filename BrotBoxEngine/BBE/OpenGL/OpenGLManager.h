@@ -199,6 +199,10 @@ namespace bbe
 
 				bbe::RenderMode m_renderMode = bbe::RenderMode::DEFERRED;
 
+				bool m_any3DDrawThisFrame = false;
+				bool m_3dFBOsReadyThisFrame = false;
+				void ensure3DFBOsReady();
+
 				bbe::List<InstanceData2D> instanceDatas;
 				void addInstancedData2D(PreviousDrawCall2D type, float x, float y, float width, float height, float rotation);
 				void flushInstanceData2D();

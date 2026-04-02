@@ -913,6 +913,11 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillModel(const bbe::Matrix4 &transfo
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillInternalMesh(const float *modelMatrix, GLuint ibo, GLuint vbo, size_t amountOfIndices, const Image *albedo, const Image *normals, const Image *emissions, const FragmentShader *shader, GLuint framebuffer, bool baking, const bbe::Color &bakingColor)
 {
+	if (!baking)
+	{
+		ensure3DFBOsReady();
+		m_any3DDrawThisFrame = true;
+	}
 	// TODO This function wants way too much. Refactor.
 	GLuint program = 0;
 	GLint modelPos = 0;
@@ -1418,50 +1423,57 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 {
 	if (m_pwindow == nullptr) return;
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	glFrontFace(GL_CCW);
-	// Draw the stuff of 3D
-	m_program3dAmbient.use();
-	glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFb.framebuffer);
-	postProcessingFb.clearTextures();
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, forwardNoLightFb.framebuffer);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFb.framebuffer);
-	glBlitFramebuffer(0, 0, m_windowWidth, m_windowHeight, 0, 0, m_windowWidth, m_windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-	glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFb.framebuffer);
 
-	mrtFb.useAsInput();
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
-	glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLRectangle::getIbo());
-	glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, nullptr);
-	addDrawcallStat();
-
-	m_program3dLight.use();
-	mrtFb.useAsInput();
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
-	for (size_t i = 0; i < pointLights.getLength(); i++)
+	if (m_any3DDrawThisFrame || !pointLights.isEmpty())
 	{
-		const bbe::PointLight &l = pointLights[i];
-		drawLight(l, false);
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
+		glFrontFace(GL_CCW);
+		// Composite 3D scene into the default framebuffer.
+		m_program3dAmbient.use();
+		glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFb.framebuffer);
+		postProcessingFb.clearTextures();
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, forwardNoLightFb.framebuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFb.framebuffer);
+		glBlitFramebuffer(0, 0, m_windowWidth, m_windowHeight, 0, 0, m_windowWidth, m_windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFb.framebuffer);
+
+		mrtFb.useAsInput();
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		glBindBuffer(GL_ARRAY_BUFFER, OpenGLRectangle::getVbo());
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OpenGLRectangle::getIbo());
+		glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)OpenGLRectangle::getAmountOfIndices(), GL_UNSIGNED_INT, nullptr);
+		addDrawcallStat();
+
+		m_program3dLight.use();
+		mrtFb.useAsInput();
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		for (size_t i = 0; i < pointLights.getLength(); i++)
+		{
+			const bbe::PointLight &l = pointLights[i];
+			drawLight(l, false);
+		}
+
+		m_programPostProcessing.use();
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		postProcessingFb.useAsInput();
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIbo);
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+		addDrawcallStat();
 	}
 
-	m_programPostProcessing.use();
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	postProcessingFb.useAsInput();
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIbo);
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-	addDrawcallStat();
-
 	// Switch to 2D
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	m_primitiveBrush2D.INTERNAL_beginDraw(m_pwindow, m_windowWidth, m_windowHeight, this);
 
@@ -1470,11 +1482,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw2D()
 	previousDrawCall2d = PreviousDrawCall2D::NONE;
 }
 
-void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
+void bbe::INTERNAL::openGl::OpenGLManager::ensure3DFBOsReady()
 {
-	if (m_pwindow == nullptr) return;
+	if (m_3dFBOsReadyThisFrame) return;
+	m_3dFBOsReadyThisFrame = true;
+
 	glEnable(GL_DEPTH_TEST);
-	m_primitiveBrush3D.INTERNAL_beginDraw(m_windowWidth, m_windowHeight, this);
 	glBindFramebuffer(GL_FRAMEBUFFER, forwardNoLightFb.framebuffer);
 	forwardNoLightFb.clearTextures();
 	m_program3dMrt.use();
@@ -1484,6 +1497,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 	glFrontFace(GL_CCW);
+}
+
+void bbe::INTERNAL::openGl::OpenGLManager::preDraw3D()
+{
+	if (m_pwindow == nullptr) return;
+	m_primitiveBrush3D.INTERNAL_beginDraw(m_windowWidth, m_windowHeight, this);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
@@ -1498,6 +1517,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::preDraw()
 	pointLights.clear();
 	m_color2d = bbe::Color(1, 1, 1, 1);
 	m_color3d = bbe::Color(1, 1, 1, 1);
+	m_any3DDrawThisFrame = false;
+	m_3dFBOsReadyThisFrame = false;
 	glViewport(0, 0, m_windowWidth, m_windowHeight);
 	glScissor(0, 0, m_windowWidth, m_windowHeight);
 }
