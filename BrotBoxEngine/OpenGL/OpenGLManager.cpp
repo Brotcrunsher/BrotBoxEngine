@@ -1377,7 +1377,10 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char *appName, uint32_t ma
 	}
 
 	glEnable(GL_BLEND);
-	glEnable(GL_MULTISAMPLE);
+	GLint actualSamples = 0;
+	glGetIntegerv(GL_SAMPLES, &actualSamples);
+	if (actualSamples > 1) glEnable(GL_MULTISAMPLE);
+	else                    glDisable(GL_MULTISAMPLE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glEnable(GL_CULL_FACE);

@@ -81,6 +81,11 @@ static void segvHandler(int sig)
 	bbe::Crash(bbe::Error::Segfault);
 }
 
+void bbe::Game::setMsaaSamples(uint32_t samples)
+{
+	m_msaaSamples = samples;
+}
+
 void bbe::Game::start(int windowWidth, int windowHeight, const char *title)
 {
 	BBE_TRY_RELEASE
@@ -248,7 +253,7 @@ void bbe::Game::innerStart(int windowWidth, int windowHeight, const char *title)
 	m_started = true;
 
 	BBELOGLN("Creating window");
-	m_pwindow = new Window(windowWidth, windowHeight, title, this);
+	m_pwindow = new Window(windowWidth, windowHeight, title, this, 0, 0, 0, m_msaaSamples);
 
 	BBELOGLN("Reseting game time");
 	m_gameTime.reset();

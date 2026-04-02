@@ -638,6 +638,7 @@ public:
 int main()
 {
 	MyGame *mg = new MyGame();
+	mg->setMsaaSamples(0);
 	mg->start(1280, 720, "ExamplePaint");
 #ifndef __EMSCRIPTEN__
 	delete mg;

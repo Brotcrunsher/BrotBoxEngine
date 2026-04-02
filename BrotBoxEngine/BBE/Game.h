@@ -72,6 +72,8 @@ namespace bbe
 		bool m_reactiveRendering = false;
 		bool m_isInsideFrame = false;
 
+		uint32_t m_msaaSamples = 4;
+
 		void innerStart(int windowWidth, int windowHeight, const char *title);
 
 	public:
@@ -84,6 +86,7 @@ namespace bbe
 		Game &operator=(Game &&) = delete;
 
 		void start(int windowWidth, int windowHeight, const char *title);
+		void setMsaaSamples(uint32_t samples);
 		bool keepAlive();
 		void frame(bool dragging);
 		void frameUpdate();

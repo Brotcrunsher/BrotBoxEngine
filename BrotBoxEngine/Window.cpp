@@ -55,6 +55,7 @@ namespace
 		uint32_t major = 0;
 		uint32_t minor = 0;
 		uint32_t patch = 0;
+		uint32_t msaaSamples = 4;
 		bbe::CursorMode cursorMode = bbe::CursorMode::NORMAL;
 		bbe::Vector2i lastWindowPos = { 0, 0 };
 		bbe::Vector2i lastWindowSize = { 0, 0 };
@@ -79,14 +80,15 @@ namespace
 #endif
 }
 
-bbe::Window::Window(int width, int height, const char *title, bbe::Game *game, uint32_t major, uint32_t minor, uint32_t patch)
-	: m_width(width), m_height(height), m_pgame(game)
+bbe::Window::Window(int width, int height, const char *title, bbe::Game *game, uint32_t major, uint32_t minor, uint32_t patch, uint32_t msaaSamples)
+	: m_width(width), m_height(height), m_pgame(game), m_msaaSamples(msaaSamples)
 {
 	auto &recreateState = g_windowRecreateStates[this];
 	recreateState.title = title != nullptr ? title : "";
 	recreateState.major = major;
 	recreateState.minor = minor;
 	recreateState.patch = patch;
+	recreateState.msaaSamples = msaaSamples;
 	recreateState.lastWindowSize = { width, height };
 	recreateState.hasPlacement = true;
 
@@ -135,7 +137,7 @@ bbe::Window::Window(int width, int height, const char *title, bbe::Game *game, u
 #endif
 #ifdef BBE_RENDERER_OPENGL
 	glfwWrapper::glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-	glfwWrapper::glfwWindowHint(GLFW_SAMPLES, 4);
+	glfwWrapper::glfwWindowHint(GLFW_SAMPLES, m_msaaSamples);
 #ifdef __APPLE__
 	glfwWrapper::glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWrapper::glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
@@ -469,7 +471,7 @@ void bbe::Window::showWindow()
 #endif
 #ifdef BBE_RENDERER_OPENGL
 		glfwWrapper::glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-		glfwWrapper::glfwWindowHint(GLFW_SAMPLES, 4);
+		glfwWrapper::glfwWindowHint(GLFW_SAMPLES, recreateState.msaaSamples);
 #endif
 #ifndef __EMSCRIPTEN__
 		glfwWrapper::glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);

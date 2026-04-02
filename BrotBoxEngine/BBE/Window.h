@@ -41,8 +41,10 @@ namespace bbe
 
 		bbe::WindowCloseMode m_windowCloseMode = bbe::WindowCloseMode::CLOSE;
 
+		uint32_t m_msaaSamples = 4;
+
 	public:
-		Window(int width, int height, const char *title, bbe::Game *game, uint32_t major = 0, uint32_t minor = 0, uint32_t patch = 0);
+		Window(int width, int height, const char *title, bbe::Game *game, uint32_t major = 0, uint32_t minor = 0, uint32_t patch = 0, uint32_t msaaSamples = 4);
 
 		Window(const Window &other) = delete;
 		Window(Window &&other) = delete;
