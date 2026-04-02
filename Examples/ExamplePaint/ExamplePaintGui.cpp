@@ -48,23 +48,26 @@ static void updateIconSlot(ImTextureID &texId, const bbe::Image *&cachedPtr, con
 struct ToolIconTextures
 {
 	struct Slot { ImTextureID texId = nullptr; const bbe::Image *cachedPtr = nullptr; };
-	Slot brush, fill, line, rectangle, circle, selection, text, pipette, arrow, bezier;
+	Slot brush, fill, line, rectangle, circle, selection, lasso, polygonLasso, magicWand, text, pipette, arrow, bezier;
 	Slot undo, redo;
 
 	void refresh()
 	{
-		updateIconSlot(brush.texId,     brush.cachedPtr,     assetStore::iconBrush());
-		updateIconSlot(fill.texId,      fill.cachedPtr,      assetStore::iconFill());
-		updateIconSlot(line.texId,      line.cachedPtr,      assetStore::iconLine());
-		updateIconSlot(rectangle.texId, rectangle.cachedPtr, assetStore::iconRectangle());
-		updateIconSlot(circle.texId,    circle.cachedPtr,    assetStore::iconCircle());
-		updateIconSlot(selection.texId, selection.cachedPtr, assetStore::iconSelection());
-		updateIconSlot(text.texId,      text.cachedPtr,      assetStore::iconText());
-		updateIconSlot(pipette.texId,   pipette.cachedPtr,   assetStore::iconPipette());
-		updateIconSlot(arrow.texId,     arrow.cachedPtr,     assetStore::iconArrow());
-		updateIconSlot(bezier.texId,    bezier.cachedPtr,    assetStore::iconBezier());
-		updateIconSlot(undo.texId,      undo.cachedPtr,      assetStore::iconUndo());
-		updateIconSlot(redo.texId,      redo.cachedPtr,      assetStore::iconRedo());
+		updateIconSlot(brush.texId,          brush.cachedPtr,          assetStore::iconBrush());
+		updateIconSlot(fill.texId,           fill.cachedPtr,           assetStore::iconFill());
+		updateIconSlot(line.texId,           line.cachedPtr,           assetStore::iconLine());
+		updateIconSlot(rectangle.texId,      rectangle.cachedPtr,      assetStore::iconRectangle());
+		updateIconSlot(circle.texId,         circle.cachedPtr,         assetStore::iconCircle());
+		updateIconSlot(selection.texId,      selection.cachedPtr,      assetStore::iconSelection());
+		updateIconSlot(lasso.texId,          lasso.cachedPtr,          assetStore::iconLasso());
+		updateIconSlot(polygonLasso.texId,   polygonLasso.cachedPtr,   assetStore::iconPolygonLasso());
+		updateIconSlot(magicWand.texId,      magicWand.cachedPtr,      assetStore::iconMagicWand());
+		updateIconSlot(text.texId,           text.cachedPtr,           assetStore::iconText());
+		updateIconSlot(pipette.texId,        pipette.cachedPtr,        assetStore::iconPipette());
+		updateIconSlot(arrow.texId,          arrow.cachedPtr,          assetStore::iconArrow());
+		updateIconSlot(bezier.texId,         bezier.cachedPtr,         assetStore::iconBezier());
+		updateIconSlot(undo.texId,           undo.cachedPtr,           assetStore::iconUndo());
+		updateIconSlot(redo.texId,           redo.cachedPtr,           assetStore::iconRedo());
 	}
 };
 static ToolIconTextures s_toolIcons;
@@ -329,13 +332,13 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				{ "Rectangle", PaintEditor::MODE_RECTANGLE,  s_toolIcons.rectangle.texId },
 				{ "Circle",    PaintEditor::MODE_CIRCLE,     s_toolIcons.circle.texId },
 				{ "Selection", PaintEditor::MODE_SELECTION,  s_toolIcons.selection.texId },
-				{ "Lasso",     PaintEditor::MODE_LASSO,      nullptr },
-				{ "Poly Lasso", PaintEditor::MODE_POLYGON_LASSO, nullptr },
+				{ "Lasso",     PaintEditor::MODE_LASSO,      s_toolIcons.lasso.texId },
+				{ "Poly Lasso", PaintEditor::MODE_POLYGON_LASSO, s_toolIcons.polygonLasso.texId },
 				{ "Text",      PaintEditor::MODE_TEXT,       s_toolIcons.text.texId },
 				{ "Pipette",   PaintEditor::MODE_PIPETTE,    s_toolIcons.pipette.texId },
 				{ "Arrow",     PaintEditor::MODE_ARROW,      s_toolIcons.arrow.texId },
 				{ "Bezier",    PaintEditor::MODE_BEZIER,     s_toolIcons.bezier.texId },
-				{ "Wand",      PaintEditor::MODE_MAGIC_WAND,  nullptr },
+				{ "Wand",      PaintEditor::MODE_MAGIC_WAND,  s_toolIcons.magicWand.texId },
 #else
 				{ "Brush",     PaintEditor::MODE_BRUSH,      nullptr },
 				{ "Fill",      PaintEditor::MODE_FLOOD_FILL, nullptr },
