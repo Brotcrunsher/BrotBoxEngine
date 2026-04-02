@@ -3340,6 +3340,7 @@ int main(int argc, char **argv)
 	(void)argc;
 #endif
 	MyGame *mg = new MyGame();
+	mg->setMsaaSamples(0);
 	mg->start(1280, 720, "M.O.THE.R - Memory of the repetitive");
 #ifdef __linux__
 	if (mg->shouldApplyLinuxSelfUpdate())
