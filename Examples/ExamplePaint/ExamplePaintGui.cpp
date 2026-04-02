@@ -675,8 +675,8 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				brush.fillLine(0, i, (float)editor.viewport.width, i);
 			}
 		}
-		// Canvas resize handles
-		if (editor.getCanvasWidth() > 0 && editor.getCanvasHeight() > 0 && !editor.tiled)
+		// Canvas resize handles (hidden while a selection exists so marquee handles stay unambiguous)
+		if (editor.getCanvasWidth() > 0 && editor.getCanvasHeight() > 0 && !editor.tiled && !editor.selection.hasSelection)
 		{
 			constexpr float hs = 5.f;
 			for (int32_t i = 0; i < 8; i++)

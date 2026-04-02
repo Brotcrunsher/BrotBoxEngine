@@ -1993,6 +1993,7 @@ bbe::Vector2 PaintEditor::getCanvasHandleScreenPos(int32_t i) const
 
 int32_t PaintEditor::getCanvasResizeHitHandle(const bbe::Vector2 &screenPos) const
 {
+	if (selection.hasSelection) return -1;
 	if (getCanvasWidth() <= 0 || getCanvasHeight() <= 0) return -1;
 	constexpr float hitRadius = 6.f;
 	for (int32_t i = 0; i < 8; i++)
