@@ -19,9 +19,20 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	w.scale = g.getWindow()->getDpiScale();
 	editor.setViewportMetrics(w);
 
+	if (editor.mode == PaintEditor::MODE_PIPETTE && editor.lastModeSnapshot != PaintEditor::MODE_PIPETTE)
+	{
+		editor.pipetteReturnMode = editor.lastModeSnapshot;
+	}
+
+	if (editor.suppressCanvasInputUntilMouseUp && !g.isMouseDown(bbe::MouseButton::LEFT) && !g.isMouseDown(bbe::MouseButton::RIGHT))
+	{
+		editor.suppressCanvasInputUntilMouseUp = false;
+	}
+
 	const bool ctrlDown = g.isKeyDown(bbe::Key::LEFT_CONTROL) || g.isKeyDown(bbe::Key::RIGHT_CONTROL);
 	const bool shiftDown = g.isKeyDown(bbe::Key::LEFT_SHIFT) || g.isKeyDown(bbe::Key::RIGHT_SHIFT);
 	const bool drawButtonDown = g.isMouseDown(bbe::MouseButton::LEFT) || g.isMouseDown(bbe::MouseButton::RIGHT);
+	const bool drawButtonDownForTools = drawButtonDown && !editor.suppressCanvasInputUntilMouseUp;
 	editor.setConstrainSquare(shiftDown);
 	auto discardTransientWorkArea = [&]()
 	{
@@ -389,7 +400,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	}
 
 	const bbe::List<decltype(editor.mode)> shadowDrawModes = { PaintEditor::MODE_BRUSH };
-	const bool drawMode = editor.mode != PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_TEXT && editor.mode != PaintEditor::MODE_RECTANGLE && editor.mode != PaintEditor::MODE_CIRCLE && editor.mode != PaintEditor::MODE_LINE && editor.mode != PaintEditor::MODE_ARROW && editor.mode != PaintEditor::MODE_BEZIER && !editor.canvasResizeActive && !mouseOnNavigator && drawButtonDown;
+	const bool drawMode = editor.mode != PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_TEXT && editor.mode != PaintEditor::MODE_RECTANGLE && editor.mode != PaintEditor::MODE_CIRCLE && editor.mode != PaintEditor::MODE_LINE && editor.mode != PaintEditor::MODE_ARROW && editor.mode != PaintEditor::MODE_BEZIER && !editor.canvasResizeActive && !mouseOnNavigator && drawButtonDownForTools;
 	const bool shadowDrawMode = shadowDrawModes.contains(editor.mode);
 
 	if (editor.brushStrokeChangeRegistered)
@@ -421,8 +432,8 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 
 		if (editor.mode == PaintEditor::MODE_BRUSH)
 		{
-			const bool leftDown = g.isMouseDown(bbe::MouseButton::LEFT);
-			const bool rightDown = g.isMouseDown(bbe::MouseButton::RIGHT);
+			const bool leftDown = g.isMouseDown(bbe::MouseButton::LEFT) && !editor.suppressCanvasInputUntilMouseUp;
+			const bool rightDown = g.isMouseDown(bbe::MouseButton::RIGHT) && !editor.suppressCanvasInputUntilMouseUp;
 
 			if (!lastDrawButtonDown && drawButtonDown)
 			{
@@ -502,19 +513,29 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 				const size_t x = (size_t)pos.x;
 				const size_t y = (size_t)pos.y;
 				const bbe::Colori color = editor.getVisiblePixel(x, y);
-				if (g.isMouseDown(bbe::MouseButton::LEFT))
+				if (g.isMousePressed(bbe::MouseButton::LEFT))
 				{
 					editor.leftColor[0] = color.r / 255.f;
 					editor.leftColor[1] = color.g / 255.f;
 					editor.leftColor[2] = color.b / 255.f;
 					editor.leftColor[3] = color.a / 255.f;
+					editor.mode = editor.pipetteReturnMode;
+					editor.suppressCanvasInputUntilMouseUp = true;
+					editor.pointerPrimaryDown = false;
+					editor.pointerSecondaryDown = false;
+					brushPointCount = 0;
 				}
-				if (g.isMouseDown(bbe::MouseButton::RIGHT))
+				if (g.isMousePressed(bbe::MouseButton::RIGHT))
 				{
 					editor.rightColor[0] = color.r / 255.f;
 					editor.rightColor[1] = color.g / 255.f;
 					editor.rightColor[2] = color.b / 255.f;
 					editor.rightColor[3] = color.a / 255.f;
+					editor.mode = editor.pipetteReturnMode;
+					editor.suppressCanvasInputUntilMouseUp = true;
+					editor.pointerPrimaryDown = false;
+					editor.pointerSecondaryDown = false;
+					brushPointCount = 0;
 				}
 			}
 		}

@@ -2055,6 +2055,7 @@ void PaintEditor::onStart(const PaintWindowMetrics &window)
 {
 	viewport = window;
 	lastModeSnapshot = mode;
+	pipetteReturnMode = mode;
 	buildAvailableFontList();
 	newCanvas(400, 300);
 }

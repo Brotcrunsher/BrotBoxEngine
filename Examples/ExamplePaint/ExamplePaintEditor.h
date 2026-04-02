@@ -90,6 +90,10 @@ struct PaintEditor
 
 	bool brushStrokeChangeRegistered = false;
 	int32_t lastModeSnapshot = MODE_BRUSH;
+	/// Tool to return to after sampling with the pipette (set when entering pipette).
+	int32_t pipetteReturnMode = MODE_BRUSH;
+	/// After pipette sampling, ignore tool mouse input until all buttons are released (avoids brush stroke on same click).
+	bool suppressCanvasInputUntilMouseUp = false;
 
 	friend void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, const bbe::Vector2i &topLeft);
 	friend void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor &editor, const bbe::Rectanglei &rect, bool alwaysDrawOutline);
