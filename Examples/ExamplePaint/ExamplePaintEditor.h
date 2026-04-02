@@ -308,7 +308,7 @@ struct PaintEditor
 	void endpointPointerMove(EndpointDraftState &state, bool isArrow, const bbe::Vector2 &mouseCanvas);
 	void endpointPointerUp(EndpointDraftState &state, PointerButton button, const bbe::Vector2 &mouseCanvas);
 
-	bool handleFloatingDraftInteraction(bool draftActive, const bbe::Vector2i &mousePixel, PointerButton button);
+	bool handleFloatingDraftInteraction(bool draftActive, const bbe::Vector2 &canvasPos, PointerButton button);
 	void updateSelectionTransformInteraction(const bbe::Vector2i &mousePixel, bool primaryDown);
 
 	template<typename BuildRect, typename CreatePreview>
@@ -434,7 +434,7 @@ struct PaintEditor
 
 	bool isSelectionResizeHit(const SelectionHitZone hitZone) const;
 
-	SelectionHitZone getSelectionHitZone(const bbe::Vector2i &point) const;
+	SelectionHitZone getSelectionHitZone(const bbe::Vector2 &pointCanvas) const;
 
 	bool isWholeLayerSelection(const bbe::Rectanglei &rect) const;
 

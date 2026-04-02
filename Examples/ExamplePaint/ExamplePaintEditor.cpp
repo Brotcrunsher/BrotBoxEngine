@@ -328,7 +328,7 @@ void PaintEditor::pointerDown(PointerButton button, const bbe::Vector2 &canvasPo
 	case MODE_SELECTION:
 	{
 		if (button != PointerButton::Primary) break;
-		const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
+		const SelectionHitZone hitZone = getSelectionHitZone(canvasPos);
 		if (hitZone == SelectionHitZone::ROTATION && selection.hasSelection)
 		{
 			beginRotationDrag(mousePixel);
@@ -351,7 +351,7 @@ void PaintEditor::pointerDown(PointerButton button, const bbe::Vector2 &canvasPo
 	case MODE_MAGIC_WAND:
 	{
 		if (button != PointerButton::Primary && button != PointerButton::Secondary) break;
-		const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
+		const SelectionHitZone hitZone = getSelectionHitZone(canvasPos);
 		if (button == PointerButton::Primary && hitZone == SelectionHitZone::ROTATION && selection.hasSelection)
 		{
 			beginRotationDrag(mousePixel);
@@ -399,7 +399,7 @@ void PaintEditor::pointerDown(PointerButton button, const bbe::Vector2 &canvasPo
 	{
 		ShapeDragState &shape = (mode == MODE_CIRCLE) ? circle : rectangle;
 		const bool isCircle = (mode == MODE_CIRCLE);
-		const bool handled = handleFloatingDraftInteraction(shape.draftActive, mousePixel, button);
+		const bool handled = handleFloatingDraftInteraction(shape.draftActive, canvasPos, button);
 		if (!handled && !shape.draftActive && (button == PointerButton::Primary || button == PointerButton::Secondary))
 		{
 			shape.dragActive = true;
@@ -731,12 +731,13 @@ void PaintEditor::endpointPointerUp(EndpointDraftState &state, PointerButton but
 	state.dragInProgress = false;
 }
 
-bool PaintEditor::handleFloatingDraftInteraction(bool draftActive, const bbe::Vector2i &mousePixel, PointerButton button)
+bool PaintEditor::handleFloatingDraftInteraction(bool draftActive, const bbe::Vector2 &canvasPos, PointerButton button)
 {
 	if (!draftActive) return false;
+	const bbe::Vector2i mousePixel = toCanvasPixel(canvasPos);
 	if (button == PointerButton::Primary)
 	{
-		const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
+		const SelectionHitZone hitZone = getSelectionHitZone(canvasPos);
 		if (hitZone == SelectionHitZone::ROTATION) beginRotationDrag(mousePixel);
 		else if (isSelectionResizeHit(hitZone) && !selectionAdditiveModifier) beginSelectionResize(hitZone);
 		else if (isSelectionResizeHit(hitZone) && selectionAdditiveModifier)
@@ -1141,18 +1142,20 @@ bool PaintEditor::isPointInSelection(const bbe::Vector2i &point) const
 
 bool PaintEditor::isSelectionResizeHit(const SelectionHitZone hitZone) const { return bbe::editor::isResizeZone((bbe::editor::RectSelectionHitZone)hitZone); }
 
-PaintEditor::SelectionHitZone PaintEditor::getSelectionHitZone(const bbe::Vector2i &point) const
+PaintEditor::SelectionHitZone PaintEditor::getSelectionHitZone(const bbe::Vector2 &pointCanvas) const
 {
 	if (!selection.hasSelection)
 	{
 		return SelectionHitZone::NONE;
 	}
 	const bool allowRotationHandle = !selection.dragActive;
-	const int32_t padding = bbe::Math::max<int32_t>(1, (int32_t)bbe::Math::ceil(6.0f / zoomLevel));
+	const float slopCanvas = 6.f / zoomLevel;
 	const float rotationStemLenCanvas = 30.f / zoomLevel;
 	const float rotationHitRadiusCanvas = 8.f / zoomLevel;
-	const SelectionHitZone z = (SelectionHitZone)bbe::editor::hitTest(selection.rect, point, padding, allowRotationHandle, rotationStemLenCanvas, rotationHitRadiusCanvas);
-	if (z == SelectionHitZone::INSIDE && hasSelectionPixelMask() && !regionPixelOn(selection.rect, selection.mask, point.x, point.y))
+	const SelectionHitZone z = (SelectionHitZone)bbe::editor::hitTestCanvas(selection.rect, pointCanvas, slopCanvas, allowRotationHandle, rotationStemLenCanvas, rotationHitRadiusCanvas);
+	const int32_t maskX = (int32_t)bbe::Math::floor(pointCanvas.x);
+	const int32_t maskY = (int32_t)bbe::Math::floor(pointCanvas.y);
+	if (z == SelectionHitZone::INSIDE && hasSelectionPixelMask() && !regionPixelOn(selection.rect, selection.mask, maskX, maskY))
 	{
 		return SelectionHitZone::NONE;
 	}
