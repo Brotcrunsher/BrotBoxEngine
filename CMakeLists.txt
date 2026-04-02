@@ -139,7 +139,7 @@ macro(add_trivial_project name)
       get_filename_component(ext ${f} EXT)
       get_filename_component(name_we ${f} NAME_WE)
       set(contents "")
-      if(ext STREQUAL ".jpg")
+      if(ext STREQUAL ".jpg" OR ext STREQUAL ".png")
         string(APPEND h_file_string "extern const bbe::Image* ${name_we}()\;\n")
         string(APPEND cpp_file_string 
           "static bbe::Image* ${name_we}_data = nullptr\;

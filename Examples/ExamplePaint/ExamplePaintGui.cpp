@@ -1,10 +1,71 @@
 #include "ExamplePaintEditor.h"
 #include "ExamplePaintGui.h"
 #include "BBE/BrotBoxEngine.h"
+#include "AssetStore.h"
 #include <cmath>
 #include <cctype>
 #include <filesystem>
 #include <string>
+
+#ifdef BBE_RENDERER_OPENGL
+#include "BBE/glfwWrapper.h"
+
+static void updateIconSlot(ImTextureID &texId, const bbe::Image *&cachedPtr, const bbe::Image *current)
+{
+	if (current == cachedPtr && texId) return;
+	if (texId)
+	{
+		GLuint old = (GLuint)(intptr_t)texId;
+		glDeleteTextures(1, &old);
+		texId = nullptr;
+	}
+	cachedPtr = current;
+	if (!current || current->getWidth() <= 0 || current->getHeight() <= 0) return;
+	const int w = current->getWidth();
+	const int h = current->getHeight();
+	std::vector<unsigned char> pixels(w * h * 4);
+	for (int y = 0; y < h; y++)
+	{
+		for (int x = 0; x < w; x++)
+		{
+			const bbe::Colori c = current->getPixel(x, y);
+			const size_t idx = (y * w + x) * 4;
+			pixels[idx + 0] = c.r;
+			pixels[idx + 1] = c.g;
+			pixels[idx + 2] = c.b;
+			pixels[idx + 3] = c.a;
+		}
+	}
+	GLuint tex = 0;
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+	texId = (ImTextureID)(intptr_t)tex;
+}
+
+struct ToolIconTextures
+{
+	struct Slot { ImTextureID texId = nullptr; const bbe::Image *cachedPtr = nullptr; };
+	Slot brush, fill, line, rectangle, circle, selection, text, pipette, arrow, bezier;
+
+	void refresh()
+	{
+		updateIconSlot(brush.texId,     brush.cachedPtr,     assetStore::iconBrush());
+		updateIconSlot(fill.texId,      fill.cachedPtr,      assetStore::iconFill());
+		updateIconSlot(line.texId,      line.cachedPtr,      assetStore::iconLine());
+		updateIconSlot(rectangle.texId, rectangle.cachedPtr, assetStore::iconRectangle());
+		updateIconSlot(circle.texId,    circle.cachedPtr,    assetStore::iconCircle());
+		updateIconSlot(selection.texId, selection.cachedPtr, assetStore::iconSelection());
+		updateIconSlot(text.texId,      text.cachedPtr,      assetStore::iconText());
+		updateIconSlot(pipette.texId,   pipette.cachedPtr,   assetStore::iconPipette());
+		updateIconSlot(arrow.texId,     arrow.cachedPtr,     assetStore::iconArrow());
+		updateIconSlot(bezier.texId,    bezier.cachedPtr,    assetStore::iconBezier());
+	}
+};
+static ToolIconTextures s_toolIcons;
+#endif
 
 void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor &editor, const bbe::Rectanglei &rect, bool alwaysDrawOutline)
 {
@@ -118,6 +179,9 @@ void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, co
 
 void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, const bbe::Vector2 &mouseScreenPos)
 {
+#ifdef BBE_RENDERER_OPENGL
+		s_toolIcons.refresh();
+#endif
 		const float PANEL_WIDTH = 260.f * bbe::Math::sqrt(editor.viewport.scale);
 		ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetFrameHeight()), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(PANEL_WIDTH, (float)editor.viewport.height - ImGui::GetFrameHeight()), ImGuiCond_Always);
@@ -161,12 +225,47 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		ImGui::SeparatorText("Tool");
 		{
 			const float w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
-			const struct { const char *label; int32_t toolMode; } tools[] = { { "Brush", PaintEditor::MODE_BRUSH }, { "Fill", PaintEditor::MODE_FLOOD_FILL }, { "Line", PaintEditor::MODE_LINE }, { "Rectangle", PaintEditor::MODE_RECTANGLE }, { "Circle", PaintEditor::MODE_CIRCLE }, { "Selection", PaintEditor::MODE_SELECTION }, { "Text", PaintEditor::MODE_TEXT }, { "Pipette", PaintEditor::MODE_PIPETTE }, { "Arrow", PaintEditor::MODE_ARROW }, { "Bezier", PaintEditor::MODE_BEZIER } };
+			const struct { const char *label; int32_t toolMode; ImTextureID icon; } tools[] = {
+#ifdef BBE_RENDERER_OPENGL
+				{ "Brush",     PaintEditor::MODE_BRUSH,      s_toolIcons.brush.texId },
+				{ "Fill",      PaintEditor::MODE_FLOOD_FILL, s_toolIcons.fill.texId },
+				{ "Line",      PaintEditor::MODE_LINE,       s_toolIcons.line.texId },
+				{ "Rectangle", PaintEditor::MODE_RECTANGLE,  s_toolIcons.rectangle.texId },
+				{ "Circle",    PaintEditor::MODE_CIRCLE,     s_toolIcons.circle.texId },
+				{ "Selection", PaintEditor::MODE_SELECTION,  s_toolIcons.selection.texId },
+				{ "Text",      PaintEditor::MODE_TEXT,       s_toolIcons.text.texId },
+				{ "Pipette",   PaintEditor::MODE_PIPETTE,    s_toolIcons.pipette.texId },
+				{ "Arrow",     PaintEditor::MODE_ARROW,      s_toolIcons.arrow.texId },
+				{ "Bezier",    PaintEditor::MODE_BEZIER,     s_toolIcons.bezier.texId },
+#else
+				{ "Brush",     PaintEditor::MODE_BRUSH,      nullptr },
+				{ "Fill",      PaintEditor::MODE_FLOOD_FILL, nullptr },
+				{ "Line",      PaintEditor::MODE_LINE,       nullptr },
+				{ "Rectangle", PaintEditor::MODE_RECTANGLE,  nullptr },
+				{ "Circle",    PaintEditor::MODE_CIRCLE,     nullptr },
+				{ "Selection", PaintEditor::MODE_SELECTION,  nullptr },
+				{ "Text",      PaintEditor::MODE_TEXT,       nullptr },
+				{ "Pipette",   PaintEditor::MODE_PIPETTE,    nullptr },
+				{ "Arrow",     PaintEditor::MODE_ARROW,      nullptr },
+				{ "Bezier",    PaintEditor::MODE_BEZIER,     nullptr },
+#endif
+			};
+			constexpr float iconSize = 24.f;
 			for (size_t i = 0; i < sizeof(tools) / sizeof(*tools); i++)
 			{
 				const bool active = editor.mode == tools[i].toolMode;
 				if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-				if (ImGui::Button(tools[i].label, ImVec2(w, 0))) editor.mode = tools[i].toolMode;
+				bool clicked = false;
+				if (tools[i].icon)
+				{
+					clicked = ImGui::ImageButton(tools[i].label, tools[i].icon, ImVec2(iconSize, iconSize));
+				}
+				else
+				{
+					clicked = ImGui::Button(tools[i].label, ImVec2(w, 0));
+				}
+				if (clicked) editor.mode = tools[i].toolMode;
+				if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tools[i].label);
 				if (active) ImGui::PopStyleColor();
 				if (i % 2 == 0 && i + 1 < sizeof(tools) / sizeof(*tools)) ImGui::SameLine();
 			}
