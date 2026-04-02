@@ -74,6 +74,7 @@ void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor 
 {
 	const bool showSelectionChrome =
 		editor.mode == PaintEditor::MODE_SELECTION
+		|| editor.mode == PaintEditor::MODE_MAGIC_WAND
 		|| (editor.mode == PaintEditor::MODE_RECTANGLE && (editor.rectangle.draftActive || editor.rectangle.dragActive))
 		|| (editor.mode == PaintEditor::MODE_CIRCLE && (editor.circle.draftActive || editor.circle.dragActive));
 
@@ -132,6 +133,75 @@ void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor 
 		brush.fillCircle(cx - handleR - 1.f, handleY - handleR - 1.f, (handleR + 1.f) * 2.f, (handleR + 1.f) * 2.f);
 		brush.setColorRGB(1.f, 1.f, 1.f);
 		brush.fillCircle(cx - handleR, handleY - handleR, handleR * 2.f, handleR * 2.f);
+	}
+}
+
+void drawSelectionPixelMaskOverlayForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor &editor, const bbe::Rectanglei &canvasRect)
+{
+	if (!editor.selection.hasSelection || !editor.hasSelectionPixelMask()) return;
+	const bbe::Image &m = editor.selection.mask;
+	if (canvasRect.width <= 0 || canvasRect.height <= 0 || m.getWidth() != (size_t)canvasRect.width || m.getHeight() != (size_t)canvasRect.height) return;
+
+	// Screen-space hairline: stays ~1 device pixel so zoomed-in canvas pixels show a thin contour, not a thick band.
+	const float hair = std::max(1.f, editor.viewport.scale > 0.f ? editor.viewport.scale : 1.f);
+
+	auto isOn = [&](int32_t lx, int32_t ly) -> bool
+	{
+		if (lx < 0 || ly < 0 || lx >= canvasRect.width || ly >= canvasRect.height) return false;
+		return m.getPixel((size_t)lx, (size_t)ly).a >= 128;
+	};
+
+	// Boundary edges only: side of a selected pixel that borders a non-selected neighbor (or mask bounds).
+	for (int32_t ly = 0; ly < canvasRect.height; ly++)
+	{
+		for (int32_t lx = 0; lx < canvasRect.width; lx++)
+		{
+			if (!isOn(lx, ly)) continue;
+			const int32_t cx = canvasRect.x + lx;
+			const int32_t cy = canvasRect.y + ly;
+			const bbe::Rectangle scr = editor.selectionRectToScreen(bbe::Rectanglei(cx, cy, 1, 1));
+
+			if (ly == 0 || !isOn(lx, ly - 1))
+			{
+				brush.setColorRGB(0.f, 0.f, 0.f);
+				brush.fillRect(scr.x, scr.y, scr.width, hair);
+				if (scr.height >= hair * 2.5f)
+				{
+					brush.setColorRGB(1.f, 1.f, 1.f);
+					brush.fillRect(scr.x, scr.y + hair, scr.width, hair);
+				}
+			}
+			if (ly == canvasRect.height - 1 || !isOn(lx, ly + 1))
+			{
+				brush.setColorRGB(0.f, 0.f, 0.f);
+				brush.fillRect(scr.x, scr.y + scr.height - hair, scr.width, hair);
+				if (scr.height >= hair * 2.5f)
+				{
+					brush.setColorRGB(1.f, 1.f, 1.f);
+					brush.fillRect(scr.x, scr.y + scr.height - hair * 2.f, scr.width, hair);
+				}
+			}
+			if (lx == 0 || !isOn(lx - 1, ly))
+			{
+				brush.setColorRGB(0.f, 0.f, 0.f);
+				brush.fillRect(scr.x, scr.y, hair, scr.height);
+				if (scr.width >= hair * 2.5f)
+				{
+					brush.setColorRGB(1.f, 1.f, 1.f);
+					brush.fillRect(scr.x + hair, scr.y, hair, scr.height);
+				}
+			}
+			if (lx == canvasRect.width - 1 || !isOn(lx + 1, ly))
+			{
+				brush.setColorRGB(0.f, 0.f, 0.f);
+				brush.fillRect(scr.x + scr.width - hair, scr.y, hair, scr.height);
+				if (scr.width >= hair * 2.5f)
+				{
+					brush.setColorRGB(1.f, 1.f, 1.f);
+					brush.fillRect(scr.x + scr.width - hair * 2.f, scr.y, hair, scr.height);
+				}
+			}
+		}
 	}
 }
 
@@ -261,6 +331,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				{ "Pipette",   PaintEditor::MODE_PIPETTE,    s_toolIcons.pipette.texId },
 				{ "Arrow",     PaintEditor::MODE_ARROW,      s_toolIcons.arrow.texId },
 				{ "Bezier",    PaintEditor::MODE_BEZIER,     s_toolIcons.bezier.texId },
+				{ "Wand",      PaintEditor::MODE_MAGIC_WAND,  nullptr },
 #else
 				{ "Brush",     PaintEditor::MODE_BRUSH,      nullptr },
 				{ "Fill",      PaintEditor::MODE_FLOOD_FILL, nullptr },
@@ -272,6 +343,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				{ "Pipette",   PaintEditor::MODE_PIPETTE,    nullptr },
 				{ "Arrow",     PaintEditor::MODE_ARROW,      nullptr },
 				{ "Bezier",    PaintEditor::MODE_BEZIER,     nullptr },
+				{ "Wand",      PaintEditor::MODE_MAGIC_WAND,  nullptr },
 #endif
 			};
 			constexpr float iconSize = 24.f;
@@ -296,7 +368,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 
 		// --- Tool options ---
-		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_TEXT || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER)
+		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_TEXT || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER || editor.mode == PaintEditor::MODE_MAGIC_WAND)
 		{
 			ImGui::SeparatorText("Options");
 		}
@@ -307,6 +379,14 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				editor.clampBrushWidth();
 				editor.refreshBrushBasedDrafts();
 			}
+		}
+		if (editor.mode == PaintEditor::MODE_MAGIC_WAND)
+		{
+			if (ImGui::SliderInt("Tolerance", &editor.magicWandTolerance, 0, 255))
+			{
+				editor.clampMagicWandTolerance();
+			}
+			ImGui::TextDisabled("Click visible pixels to select. [+ / -] nudge tolerance. Ctrl adds to selection.");
 		}
 		if (editor.mode == PaintEditor::MODE_RECTANGLE)
 		{
@@ -434,7 +514,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 
 		// --- Selection actions ---
-		if (editor.mode == PaintEditor::MODE_SELECTION)
+		if (PaintEditor::isSelectionLikeTool(editor.mode))
 		{
 			ImGui::SeparatorText("Selection");
 			ImGui::BeginDisabled(!editor.selection.hasSelection);
@@ -705,7 +785,21 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 		else if (editor.selection.hasSelection)
 		{
-			drawSelectionOutlineForGui(brush, editor, editor.selection.rect, false);
+			const bool overlayMask = editor.hasSelectionPixelMask() && !editor.selection.moveActive && !editor.selection.resizeActive && !editor.selection.dragActive &&
+									 !editor.selection.floating && std::abs(editor.selection.rotation) < 0.0001f;
+			for (int32_t ti = -ghostRepeats; ti <= ghostRepeats; ti++)
+			{
+				for (int32_t tk = -ghostRepeats; tk <= ghostRepeats; tk++)
+				{
+					const bbe::Rectanglei tileR(
+						editor.selection.rect.x + ti * editor.getCanvasWidth(),
+						editor.selection.rect.y + tk * editor.getCanvasHeight(),
+						editor.selection.rect.width,
+						editor.selection.rect.height);
+					drawSelectionOutlineForGui(brush, editor, tileR, false);
+					if (overlayMask) drawSelectionPixelMaskOverlayForGui(brush, editor, tileR);
+				}
+			}
 		}
 		if (editor.mode == PaintEditor::MODE_TEXT)
 		{
@@ -994,10 +1088,10 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					ImGui::SeparatorText(title);
 					for (const char *item : items) ImGui::BulletText("%s", item);
 				};
-				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow" });
-				bulletList("General", { "+/- changes brush size or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
+				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow", "0 Bezier", "M Magic Wand" });
+				bulletList("General", { "+/- changes brush size, wand tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
 				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection" });
-				bulletList("Selection", { "Drag to create a rectangular selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
+				bulletList("Selection", { "Drag to create a rectangular selection", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand or Selection marquee adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
 				bulletList("Layers", { "Painting and text placement affect only the active layer", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });
 			}
 			ImGui::End();

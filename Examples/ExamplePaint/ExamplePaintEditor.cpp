@@ -1,13 +1,316 @@
 #include "ExamplePaintEditor.h"
 #include <algorithm>
 #include <cstddef>
+#include <deque>
 #include <filesystem>
+#include <vector>
 
 #include <string>
+
+namespace {
+
+bool selectionMaskMatchesRect(const bbe::Image &mask, const bbe::Rectanglei &rect)
+{
+	return rect.width > 0 && rect.height > 0 && mask.getWidth() == (size_t)rect.width && mask.getHeight() == (size_t)rect.height;
+}
+
+bool regionPixelOn(const bbe::Rectanglei &r, const bbe::Image &m, int32_t cx, int32_t cy)
+{
+	if (!r.isPointInRectangle({ cx, cy }, true)) return false;
+	if (!selectionMaskMatchesRect(m, r)) return true;
+	return m.getPixel((size_t)(cx - r.x), (size_t)(cy - r.y)).a >= 128;
+}
+
+void unionSelectionRegions(
+	const bbe::Rectanglei &aRect, const bbe::Image &aMask,
+	const bbe::Rectanglei &bRect, const bbe::Image &bMask,
+	bbe::Rectanglei &outRect, bbe::Image &outMask)
+{
+	const int32_t aR = aRect.x + aRect.width - 1;
+	const int32_t aB = aRect.y + aRect.height - 1;
+	const int32_t bR = bRect.x + bRect.width - 1;
+	const int32_t bB = bRect.y + bRect.height - 1;
+	const int32_t L = bbe::Math::min(aRect.x, bRect.x);
+	const int32_t T = bbe::Math::min(aRect.y, bRect.y);
+	const int32_t R = bbe::Math::max(aR, bR);
+	const int32_t B = bbe::Math::max(aB, bB);
+	outRect = bbe::Rectanglei(L, T, R - L + 1, B - T + 1);
+	outMask = bbe::Image(outRect.width, outRect.height, bbe::Color(0.f, 0.f, 0.f, 0.f));
+	for (int32_t y = 0; y < outRect.height; y++)
+	{
+		for (int32_t x = 0; x < outRect.width; x++)
+		{
+			const int32_t cx = outRect.x + x;
+			const int32_t cy = outRect.y + y;
+			const bool on = regionPixelOn(aRect, aMask, cx, cy) || regionPixelOn(bRect, bMask, cx, cy);
+			if (on) outMask.setPixel((size_t)x, (size_t)y, bbe::Colori(255, 255, 255, 255));
+		}
+	}
+}
+
+void subtractSelectionRegions(
+	const bbe::Rectanglei &aRect, const bbe::Image &aMask,
+	const bbe::Rectanglei &bRect, const bbe::Image &bMask,
+	bbe::Rectanglei &outRect, bbe::Image &outMask)
+{
+	if (aRect.width <= 0 || aRect.height <= 0)
+	{
+		outRect = {};
+		outMask = {};
+		return;
+	}
+	int32_t minx = 0, miny = 0, maxx = -1, maxy = -1;
+	bool any = false;
+	for (int32_t y = 0; y < aRect.height; y++)
+	{
+		for (int32_t x = 0; x < aRect.width; x++)
+		{
+			const int32_t cx = aRect.x + x;
+			const int32_t cy = aRect.y + y;
+			if (!regionPixelOn(aRect, aMask, cx, cy)) continue;
+			if (regionPixelOn(bRect, bMask, cx, cy)) continue;
+			if (!any)
+			{
+				minx = maxx = cx;
+				miny = maxy = cy;
+				any = true;
+			}
+			else
+			{
+				minx = bbe::Math::min(minx, cx);
+				maxx = bbe::Math::max(maxx, cx);
+				miny = bbe::Math::min(miny, cy);
+				maxy = bbe::Math::max(maxy, cy);
+			}
+		}
+	}
+	if (!any)
+	{
+		outRect = {};
+		outMask = {};
+		return;
+	}
+	const int32_t rw = maxx - minx + 1;
+	const int32_t rh = maxy - miny + 1;
+	outRect = bbe::Rectanglei(minx, miny, rw, rh);
+	outMask = bbe::Image(rw, rh, bbe::Color(0.f, 0.f, 0.f, 0.f));
+	for (int32_t y = miny; y <= maxy; y++)
+	{
+		for (int32_t x = minx; x <= maxx; x++)
+		{
+			if (regionPixelOn(aRect, aMask, x, y) && !regionPixelOn(bRect, bMask, x, y))
+			{
+				outMask.setPixel((size_t)(x - minx), (size_t)(y - miny), bbe::Colori(255, 255, 255, 255));
+			}
+		}
+	}
+}
+
+void dropMaskIfFullySelected(bbe::Rectanglei &rect, bbe::Image &mask)
+{
+	if (!selectionMaskMatchesRect(mask, rect)) return;
+	for (int32_t y = 0; y < rect.height; y++)
+	{
+		for (int32_t x = 0; x < rect.width; x++)
+		{
+			if (mask.getPixel((size_t)x, (size_t)y).a < 250) return;
+		}
+	}
+	mask = {};
+}
+
+bbe::Image copyLayerRectWithMask(const PaintEditor &editor, const bbe::Rectanglei &rect, const bbe::Image &mask)
+{
+	bbe::Image copied(rect.width, rect.height, bbe::Color(0.f, 0.f, 0.f, 0.f));
+	editor.prepareImageForCanvas(copied);
+	const bool useMask = selectionMaskMatchesRect(mask, rect);
+	for (int32_t x = 0; x < rect.width; x++)
+	{
+		for (int32_t y = 0; y < rect.height; y++)
+		{
+			bbe::Colori p = editor.getActiveLayerImage().getPixel((size_t)(rect.x + x), (size_t)(rect.y + y));
+			if (useMask)
+			{
+				const int32_t ma = mask.getPixel((size_t)x, (size_t)y).a;
+				p.a = (bbe::byte)bbe::Math::clamp((int32_t)p.a * ma / 255, 0, 255);
+			}
+			copied.setPixel((size_t)x, (size_t)y, p);
+		}
+	}
+	return copied;
+}
+
+void clearLayerRectWithMask(PaintEditor &editor, const bbe::Rectanglei &rect, const bbe::Image &mask)
+{
+	const bool useMask = selectionMaskMatchesRect(mask, rect);
+	const bool clearToTransparency = editor.isWholeLayerSelection(rect) && editor.shouldClearWholeLayerSelectionToTransparency();
+	const bbe::Colori backgroundColor = clearToTransparency ? bbe::Colori(0, 0, 0, 0) : bbe::Color(editor.rightColor).asByteColor();
+	for (int32_t x = 0; x < rect.width; x++)
+	{
+		for (int32_t y = 0; y < rect.height; y++)
+		{
+			if (useMask && mask.getPixel((size_t)x, (size_t)y).a < 128) continue;
+			editor.getActiveLayerImage().setPixel((size_t)(rect.x + x), (size_t)(rect.y + y), backgroundColor);
+		}
+	}
+}
+
+bool colorWithinTolerance(const bbe::Colori &a, const bbe::Colori &b, int32_t tol)
+{
+	return bbe::Math::abs<int32_t>((int32_t)a.r - b.r) <= tol && bbe::Math::abs<int32_t>((int32_t)a.g - b.g) <= tol &&
+		   bbe::Math::abs<int32_t>((int32_t)a.b - b.b) <= tol && bbe::Math::abs<int32_t>((int32_t)a.a - b.a) <= tol;
+}
+
+bbe::Image maskFromFloatingImageAlpha(const bbe::Image &floating, int32_t w, int32_t h)
+{
+	bbe::Image m(w, h, bbe::Color(0.f, 0.f, 0.f, 0.f));
+	const int32_t fw = (int32_t)floating.getWidth();
+	const int32_t fh = (int32_t)floating.getHeight();
+	for (int32_t y = 0; y < h; y++)
+	{
+		for (int32_t x = 0; x < w; x++)
+		{
+			if (x < fw && y < fh && floating.getPixel((size_t)x, (size_t)y).a >= 128)
+			{
+				m.setPixel((size_t)x, (size_t)y, bbe::Colori(255, 255, 255, 255));
+			}
+		}
+	}
+	return m;
+}
+
+} // namespace
 
 bbe::Colori PaintEditor::getColor(bool useRight) const
 {
 	return bbe::Color(useRight ? rightColor : leftColor).asByteColor();
+}
+
+bool PaintEditor::isSelectionLikeTool(int32_t toolMode)
+{
+	return toolMode == MODE_SELECTION || toolMode == MODE_MAGIC_WAND;
+}
+
+void PaintEditor::clampMagicWandTolerance()
+{
+	magicWandTolerance = bbe::Math::clamp(magicWandTolerance, 0, 255);
+}
+
+bool PaintEditor::hasSelectionPixelMask() const
+{
+	return selection.hasSelection && selectionMaskMatchesRect(selection.mask, selection.rect);
+}
+
+void PaintEditor::applyMagicWandAt(const bbe::Vector2i &pixel, bool additive)
+{
+	clampMagicWandTolerance();
+	const int32_t W = getCanvasWidth();
+	const int32_t H = getCanvasHeight();
+	if (W <= 0 || H <= 0) return;
+	if (pixel.x < 0 || pixel.y < 0 || pixel.x >= W || pixel.y >= H) return;
+
+	const bool subtractWand = isPointInSelection(pixel);
+
+	bbe::Image flat;
+	if (selection.floating && additive)
+	{
+		const bbe::Rectanglei fr = selection.rect;
+		flat = flattenVisibleLayers();
+		flat.blendOver(selection.floatingImage, fr.getPos(), tiled);
+
+		bbe::Image fromFloat = maskFromFloatingImageAlpha(selection.floatingImage, fr.width, fr.height);
+		selection.floating = false;
+		selection.floatingImage = {};
+		selection.hasSelection = true;
+		selection.rect = fr;
+		selection.mask = std::move(fromFloat);
+		prepareImageForCanvas(selection.mask);
+		dropMaskIfFullySelected(selection.rect, selection.mask);
+	}
+	else
+	{
+		if (selection.floating)
+		{
+			commitFloatingSelection();
+		}
+		flat = flattenVisibleLayers();
+	}
+	const bbe::Colori ref = flat.getPixel((size_t)pixel.x, (size_t)pixel.y);
+	const int32_t tol = magicWandTolerance;
+
+	std::vector<uint8_t> vis((size_t)W * (size_t)H, 0);
+	std::deque<bbe::Vector2i> q;
+	q.push_back(pixel);
+	vis[(size_t)pixel.y * (size_t)W + (size_t)pixel.x] = 1;
+
+	int32_t minx = pixel.x, maxx = pixel.x, miny = pixel.y, maxy = pixel.y;
+
+	while (!q.empty())
+	{
+		const bbe::Vector2i p = q.front();
+		q.pop_front();
+		static const int32_t dirs[4][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+		for (size_t di = 0; di < 4; di++)
+		{
+			const int32_t nx = p.x + dirs[di][0];
+			const int32_t ny = p.y + dirs[di][1];
+			if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+			const size_t idx = (size_t)ny * (size_t)W + (size_t)nx;
+			if (vis[idx]) continue;
+			if (!colorWithinTolerance(flat.getPixel((size_t)nx, (size_t)ny), ref, tol)) continue;
+			vis[idx] = 1;
+			q.push_back({ nx, ny });
+			minx = bbe::Math::min(minx, nx);
+			maxx = bbe::Math::max(maxx, nx);
+			miny = bbe::Math::min(miny, ny);
+			maxy = bbe::Math::max(maxy, ny);
+		}
+	}
+
+	const int32_t rw = maxx - minx + 1;
+	const int32_t rh = maxy - miny + 1;
+	bbe::Image newMask(rw, rh, bbe::Color(0.f, 0.f, 0.f, 0.f));
+	prepareImageForCanvas(newMask);
+	for (int32_t y = miny; y <= maxy; y++)
+	{
+		for (int32_t x = minx; x <= maxx; x++)
+		{
+			if (!vis[(size_t)y * (size_t)W + (size_t)x]) continue;
+			newMask.setPixel((size_t)(x - minx), (size_t)(y - miny), bbe::Colori(255, 255, 255, 255));
+		}
+	}
+
+	const bbe::Rectanglei newRect(minx, miny, rw, rh);
+	if (subtractWand)
+	{
+		if (!selection.hasSelection) return;
+		bbe::Rectanglei outR;
+		bbe::Image outM;
+		subtractSelectionRegions(selection.rect, selection.mask, newRect, newMask, outR, outM);
+		prepareImageForCanvas(outM);
+		selection.rect = outR;
+		selection.mask = std::move(outM);
+		selection.hasSelection = outR.width > 0 && outR.height > 0;
+		dropMaskIfFullySelected(selection.rect, selection.mask);
+		return;
+	}
+
+	if (!additive || !selection.hasSelection)
+	{
+		selection.hasSelection = true;
+		selection.rect = newRect;
+		selection.mask = std::move(newMask);
+		dropMaskIfFullySelected(selection.rect, selection.mask);
+		return;
+	}
+
+	bbe::Rectanglei outR;
+	bbe::Image outM;
+	unionSelectionRegions(selection.rect, selection.mask, newRect, newMask, outR, outM);
+	selection.rect = outR;
+	selection.mask = std::move(outM);
+	selection.hasSelection = outR.width > 0 && outR.height > 0;
+	dropMaskIfFullySelected(selection.rect, selection.mask);
 }
 
 void PaintEditor::pointerDown(PointerButton button, const bbe::Vector2 &canvasPos)
@@ -30,25 +333,64 @@ void PaintEditor::pointerDown(PointerButton button, const bbe::Vector2 &canvasPo
 		{
 			beginRotationDrag(mousePixel);
 		}
-		else if (isSelectionResizeHit(hitZone))
+		else if (isSelectionResizeHit(hitZone) && !selectionAdditiveModifier)
 		{
 			beginSelectionResize(hitZone);
 		}
-		else if (hitZone == SelectionHitZone::INSIDE)
+		else if (hitZone == SelectionHitZone::INSIDE && !selectionAdditiveModifier)
 		{
 			beginSelectionMove(mousePixel);
 		}
 		else
 		{
-			if (selection.floating)
+			// Outside, Ctrl+inside, or Ctrl on handles: new rect (additive) / clear / empty drag.
+			pointerDownSelectionDefaultMarqueePath(mousePixel);
+		}
+		break;
+	}
+	case MODE_MAGIC_WAND:
+	{
+		if (button != PointerButton::Primary && button != PointerButton::Secondary) break;
+		const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
+		if (button == PointerButton::Primary && hitZone == SelectionHitZone::ROTATION && selection.hasSelection)
+		{
+			beginRotationDrag(mousePixel);
+		}
+		else if (button == PointerButton::Primary && isSelectionResizeHit(hitZone) && !selectionAdditiveModifier)
+		{
+			beginSelectionResize(hitZone);
+		}
+		else if (button == PointerButton::Primary && isSelectionResizeHit(hitZone) && selectionAdditiveModifier)
+		{
+			// Ctrl: edge/corner resize disabled for the wand tool.
+		}
+		else if (button == PointerButton::Primary && hitZone == SelectionHitZone::INSIDE && !selectionAdditiveModifier)
+		{
+			beginSelectionMove(mousePixel);
+		}
+		else if (button == PointerButton::Primary && hitZone == SelectionHitZone::INSIDE && selectionAdditiveModifier)
+		{
+			// Ctrl: move disabled; wand sample still runs from ExamplePaint if applicable.
+		}
+		else
+		{
+			const bool hadFloating = selection.floating;
+			const SelectionHitZone hzBefore = hitZone;
+
+			if (selection.floating && !selectionAdditiveModifier)
 			{
 				commitFloatingSelection();
 			}
-			selection.dragActive = true;
-			selection.dragStart = mousePixel;
-			selection.hasSelection = false;
-			selection.rect = {};
-			selection.previewRect = {};
+
+			if (hadFloating && !selectionAdditiveModifier)
+			{
+				skipMagicWandSampleOnce = true;
+			}
+			else if (!selectionAdditiveModifier && selection.hasSelection && hzBefore == SelectionHitZone::NONE)
+			{
+				clearMarqueePreservingClipboard();
+				skipMagicWandSampleOnce = true;
+			}
 		}
 		break;
 	}
@@ -127,13 +469,14 @@ void PaintEditor::pointerMove(const bbe::Vector2 &canvasPos)
 	switch (mode)
 	{
 	case MODE_SELECTION:
+	case MODE_MAGIC_WAND:
 	{
 		if (!pointerPrimaryDown) break;
 		if (selection.rotationHandleActive)
 		{
 			updateRotationDrag(mousePixel);
 		}
-		if (selection.dragActive)
+		if (mode == MODE_SELECTION && selection.dragActive)
 		{
 			buildSelectionRect(selection.dragStart, mousePixel, selection.previewRect);
 		}
@@ -226,9 +569,37 @@ void PaintEditor::pointerUp(PointerButton button, const bbe::Vector2 &canvasPos)
 		if (button != PointerButton::Primary) break;
 		if (selection.dragActive)
 		{
-			selection.hasSelection = buildSelectionRect(selection.dragStart, mousePixel, selection.rect);
+			bbe::Rectanglei newRect;
+			const bool ok = buildSelectionRect(selection.dragStart, mousePixel, newRect);
+			const bool merge = selection.mergeBackupHadSelection && selectionAdditiveModifier;
 			selection.dragActive = false;
 			selection.previewRect = {};
+			if (merge && ok && newRect.width > 0 && newRect.height > 0)
+			{
+				bbe::Rectanglei outR;
+				bbe::Image outM;
+				unionSelectionRegions(selection.mergeBackupRect, selection.mergeBackupMask, newRect, {}, outR, outM);
+				selection.rect = outR;
+				selection.mask = std::move(outM);
+				selection.hasSelection = true;
+				dropMaskIfFullySelected(selection.rect, selection.mask);
+			}
+			else if (merge && (!ok || newRect.width <= 0 || newRect.height <= 0))
+			{
+				selection.rect = selection.mergeBackupRect;
+				selection.mask = std::move(selection.mergeBackupMask);
+				selection.hasSelection = selection.mergeBackupHadSelection;
+			}
+			else
+			{
+				selection.hasSelection = ok;
+				if (ok) selection.rect = newRect;
+				else selection.rect = {};
+				selection.mask = {};
+			}
+			selection.mergeBackupHadSelection = false;
+			selection.mergeBackupRect = {};
+			selection.mergeBackupMask = {};
 		}
 		break;
 	}
@@ -367,8 +738,16 @@ bool PaintEditor::handleFloatingDraftInteraction(bool draftActive, const bbe::Ve
 	{
 		const SelectionHitZone hitZone = getSelectionHitZone(mousePixel);
 		if (hitZone == SelectionHitZone::ROTATION) beginRotationDrag(mousePixel);
-		else if (isSelectionResizeHit(hitZone)) beginSelectionResize(hitZone);
-		else if (hitZone == SelectionHitZone::INSIDE) beginSelectionMove(mousePixel);
+		else if (isSelectionResizeHit(hitZone) && !selectionAdditiveModifier) beginSelectionResize(hitZone);
+		else if (isSelectionResizeHit(hitZone) && selectionAdditiveModifier)
+		{
+			// Ctrl: no resize on floating shape drafts.
+		}
+		else if (hitZone == SelectionHitZone::INSIDE && !selectionAdditiveModifier) beginSelectionMove(mousePixel);
+		else if (hitZone == SelectionHitZone::INSIDE && selectionAdditiveModifier)
+		{
+			// Ctrl: no move on floating shape drafts.
+		}
 		else
 		{
 			commitFloatingSelection();
@@ -414,6 +793,37 @@ void PaintEditor::clearSelectionState()
 	bezier.controlPoints.clear();
 	bezier.usesRightColor = false;
 	bezier.dragPointIndex = -1;
+}
+
+void PaintEditor::clearMarqueePreservingClipboard()
+{
+	bbe::Image savedClip = std::move(selection.clipboard);
+	selection = SelectionState{};
+	selection.clipboard = std::move(savedClip);
+}
+
+void PaintEditor::deselectAll()
+{
+	if (selection.rotationHandleActive) selection.rotationHandleActive = false;
+	if (selection.moveActive || selection.resizeActive) applySelectionTransform();
+	if (selection.dragActive)
+	{
+		selection.dragActive = false;
+		selection.previewRect = {};
+		selection.previewImage = {};
+		selection.mergeBackupHadSelection = false;
+		selection.mergeBackupRect = {};
+		selection.mergeBackupMask = {};
+	}
+	if (selection.floating) commitFloatingSelection();
+	clearMarqueePreservingClipboard();
+}
+
+bool PaintEditor::consumeMagicWandSuppressedPick()
+{
+	const bool s = skipMagicWandSampleOnce;
+	skipMagicWandSampleOnce = false;
+	return s;
 }
 
 void PaintEditor::selectWholeLayer()
@@ -724,7 +1134,10 @@ bbe::Rectanglei PaintEditor::buildRawRect(const bbe::Vector2i &pos1, const bbe::
 	return bbe::Rectanglei(left, top, right - left + 1, bottom - top + 1);
 }
 
-bool PaintEditor::isPointInSelection(const bbe::Vector2i &point) const { return selection.hasSelection && selection.rect.isPointInRectangle(point, true); }
+bool PaintEditor::isPointInSelection(const bbe::Vector2i &point) const
+{
+	return selection.hasSelection && regionPixelOn(selection.rect, selection.mask, point.x, point.y);
+}
 
 bool PaintEditor::isSelectionResizeHit(const SelectionHitZone hitZone) const { return bbe::editor::isResizeZone((bbe::editor::RectSelectionHitZone)hitZone); }
 
@@ -738,7 +1151,12 @@ PaintEditor::SelectionHitZone PaintEditor::getSelectionHitZone(const bbe::Vector
 	const int32_t padding = bbe::Math::max<int32_t>(1, (int32_t)bbe::Math::ceil(6.0f / zoomLevel));
 	const float rotationStemLenCanvas = 30.f / zoomLevel;
 	const float rotationHitRadiusCanvas = 8.f / zoomLevel;
-	return (SelectionHitZone)bbe::editor::hitTest(selection.rect, point, padding, allowRotationHandle, rotationStemLenCanvas, rotationHitRadiusCanvas);
+	const SelectionHitZone z = (SelectionHitZone)bbe::editor::hitTest(selection.rect, point, padding, allowRotationHandle, rotationStemLenCanvas, rotationHitRadiusCanvas);
+	if (z == SelectionHitZone::INSIDE && hasSelectionPixelMask() && !regionPixelOn(selection.rect, selection.mask, point.x, point.y))
+	{
+		return SelectionHitZone::NONE;
+	}
+	return z;
 }
 
 bool PaintEditor::isWholeLayerSelection(const bbe::Rectanglei &rect) const { return rect.x == 0 && rect.y == 0 && rect.width == getCanvasWidth() && rect.height == getCanvasHeight(); }
@@ -775,7 +1193,18 @@ void PaintEditor::clearCanvasRect(const bbe::Rectanglei &rect)
 void PaintEditor::storeSelectionInClipboard()
 {
 	if (!selection.hasSelection) return;
-	selection.clipboard = selection.floating ? selection.floatingImage : copyCanvasRect(selection.rect);
+	if (selection.floating)
+	{
+		selection.clipboard = selection.floatingImage;
+	}
+	else if (hasSelectionPixelMask())
+	{
+		selection.clipboard = copyLayerRectWithMask(*this, selection.rect, selection.mask);
+	}
+	else
+	{
+		selection.clipboard = copyCanvasRect(selection.rect);
+	}
 	prepareImageForCanvas(selection.clipboard);
 	if (platform.supportsClipboardImages && platform.setClipboardImage && platform.supportsClipboardImages())
 	{
@@ -791,7 +1220,14 @@ void PaintEditor::deleteSelection()
 		clearSelectionState();
 		return;
 	}
-	clearCanvasRect(selection.rect);
+	if (hasSelectionPixelMask())
+	{
+		clearLayerRectWithMask(*this, selection.rect, selection.mask);
+	}
+	else
+	{
+		clearCanvasRect(selection.rect);
+	}
 	submitCanvas();
 	clearSelectionState();
 }
@@ -1220,13 +1656,67 @@ void PaintEditor::updateCircleDragPreview(const bbe::Vector2i &mousePixel, bool 
 						   { return createCircleDragPreviewImage(width, height); });
 }
 
+void PaintEditor::pointerDownSelectionDefaultMarqueePath(const bbe::Vector2i &mousePixel)
+{
+	const bool hadFloating = selection.floating;
+	const bool hadMarquee = selection.hasSelection;
+
+	if (selectionAdditiveModifier)
+	{
+		selection.mergeBackupHadSelection = hadMarquee;
+		if (hadMarquee)
+		{
+			selection.mergeBackupRect = selection.rect;
+			selection.mergeBackupMask = selection.mask;
+		}
+		else
+		{
+			selection.mergeBackupMask = {};
+		}
+	}
+	else
+	{
+		selection.mergeBackupHadSelection = false;
+		selection.mergeBackupMask = {};
+	}
+
+	if (selection.floating)
+	{
+		commitFloatingSelection();
+	}
+
+	if (selectionAdditiveModifier)
+	{
+		selection.dragActive = true;
+		selection.dragStart = mousePixel;
+		selection.hasSelection = false;
+		selection.rect = {};
+		selection.previewRect = {};
+		selection.mask = {};
+	}
+	else if (hadMarquee && !hadFloating)
+	{
+		clearMarqueePreservingClipboard();
+	}
+	else if (!hadFloating && !hadMarquee)
+	{
+		selection.dragActive = true;
+		selection.dragStart = mousePixel;
+		selection.hasSelection = false;
+		selection.rect = {};
+		selection.previewRect = {};
+		selection.mask = {};
+	}
+}
+
 void PaintEditor::beginSelectionMove(const bbe::Vector2i &mousePixel)
 {
 	selection.moveActive = true;
 	selection.moveOffset = mousePixel - selection.rect.getPos();
 	selection.interactionStartRect = selection.rect;
 	selection.previewRect = selection.rect;
-	selection.previewImage = selection.floating ? selection.floatingImage : copyCanvasRect(selection.rect);
+	selection.previewImage = selection.floating ? selection.floatingImage
+												: (hasSelectionPixelMask() ? copyLayerRectWithMask(*this, selection.rect, selection.mask) : copyCanvasRect(selection.rect));
 	// Must retain CPU pixels after GPU draw (see OpenGLImage ctor); blendOver needs isLoadedCpu().
 	prepareImageForCanvas(selection.previewImage);
 }
@@ -1235,10 +1725,18 @@ void PaintEditor::beginRotationDrag(const bbe::Vector2i &mousePixel)
 {
 	if (!selection.floating && selection.hasSelection)
 	{
-		selection.floatingImage = copyCanvasRect(selection.rect);
+		selection.floatingImage = hasSelectionPixelMask() ? copyLayerRectWithMask(*this, selection.rect, selection.mask) : copyCanvasRect(selection.rect);
 		prepareImageForCanvas(selection.floatingImage);
-		clearCanvasRect(selection.rect);
+		if (hasSelectionPixelMask())
+		{
+			clearLayerRectWithMask(*this, selection.rect, selection.mask);
+		}
+		else
+		{
+			clearCanvasRect(selection.rect);
+		}
 		selection.floating = true;
+		selection.mask = {};
 		submitCanvas();
 	}
 
@@ -1276,7 +1774,8 @@ void PaintEditor::beginSelectionResize(const SelectionHitZone hitZone)
 	selection.resizeZone = hitZone;
 	selection.interactionStartRect = selection.rect;
 	selection.previewRect = selection.rect;
-	selection.previewImage = selection.floating ? selection.floatingImage : copyCanvasRect(selection.rect);
+	selection.previewImage = selection.floating ? selection.floatingImage
+												: (hasSelectionPixelMask() ? copyLayerRectWithMask(*this, selection.rect, selection.mask) : copyCanvasRect(selection.rect));
 }
 
 void PaintEditor::updateSelectionResizePreview(const bbe::Vector2i &mousePixel)
@@ -1383,6 +1882,7 @@ void PaintEditor::applySelectionTransform()
 			selection.rect = selection.previewRect;
 			selection.floatingImage = buildSelectionPreviewResultImage();
 			prepareImageForCanvas(selection.floatingImage);
+			selection.mask = {};
 		}
 		clearSelectionInteractionState();
 		return;
@@ -1390,11 +1890,19 @@ void PaintEditor::applySelectionTransform()
 
 	if (rectChanged)
 	{
-		clearCanvasRect(selection.rect);
+		if (hasSelectionPixelMask())
+		{
+			clearLayerRectWithMask(*this, selection.rect, selection.mask);
+		}
+		else
+		{
+			clearCanvasRect(selection.rect);
+		}
 		selection.rect = selection.previewRect;
 		selection.floating = true;
 		selection.floatingImage = buildSelectionPreviewResultImage();
 		prepareImageForCanvas(selection.floatingImage);
+		selection.mask = {};
 		rectangle.draftActive = false;
 		rectangle.draftUsesRightColor = false;
 		circle.draftActive = false;

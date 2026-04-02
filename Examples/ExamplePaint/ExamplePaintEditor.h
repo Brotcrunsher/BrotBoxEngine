@@ -17,8 +17,6 @@
 // TODO: Alpha eraser tool - not just recolering pixels but setting their alpha to 0.
 // TODO: Pixel perfect manipulation with arrow keys
 // TODO: Color history
-// TODO: Selection via magic wand / color selection
-
 // TODO: It's possible to enter negative numbers for new canvas size. Leads to a crash. Don't allow negative sizes.
 // TODO: Saving an image always returns success, even if the file couldn't be written. Fix that.
 
@@ -87,6 +85,10 @@ struct PaintEditor
 	static constexpr int32_t MODE_CIRCLE = 7;
 	static constexpr int32_t MODE_ARROW = 8;
 	static constexpr int32_t MODE_BEZIER = 9;
+	static constexpr int32_t MODE_MAGIC_WAND = 10;
+
+	/// Selection and wand share one marquee; leaving this set of tools applies the selection (see ExamplePaint mode changes).
+	static bool isSelectionLikeTool(int32_t toolMode);
 
 	bool brushStrokeChangeRegistered = false;
 	int32_t lastModeSnapshot = MODE_BRUSH;
@@ -97,6 +99,7 @@ struct PaintEditor
 
 	friend void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, const bbe::Vector2i &topLeft);
 	friend void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor &editor, const bbe::Rectanglei &rect, bool alwaysDrawOutline);
+	friend void drawSelectionPixelMaskOverlayForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor &editor, const bbe::Rectanglei &canvasRect);
 
 	bbe::Vector2 offset;
 	bbe::String path;
@@ -210,8 +213,32 @@ struct PaintEditor
 		bbe::Vector2 rotationDragPivot;
 		float rotationDragStartAngle = 0.f;
 		float rotationDragBaseAngle = 0.f;
+
+		/// When non-empty and matching `rect` dimensions, only pixels with alpha >= 128 are selected; otherwise the whole rectangle is selected.
+		bbe::Image mask;
+
+		/// Rectangular marquee + Ctrl: preserved while a new drag is in progress.
+		bool mergeBackupHadSelection = false;
+		bbe::Rectanglei mergeBackupRect{};
+		bbe::Image mergeBackupMask;
 	};
 	SelectionState selection;
+
+	/// Set each frame before pointer events: Ctrl adds to the current selection (magic wand and rectangular marquee).
+	void setSelectionAdditiveModifier(bool ctrlDown) { selectionAdditiveModifier = ctrlDown; }
+	bool selectionAdditiveModifier = false;
+
+	int32_t magicWandTolerance = 32;
+	void clampMagicWandTolerance();
+	void applyMagicWandAt(const bbe::Vector2i &pixel, bool additive);
+
+	/// After clearing the selection with a click, suppress one wand sample on the same frame.
+	bool consumeMagicWandSuppressedPick();
+
+	/// True when `selection.mask` matches `selection.rect` and defines a non-rectangular (or sub-rect) selection.
+	bool hasSelectionPixelMask() const;
+
+	bool skipMagicWandSampleOnce = false;
 
 	ShapeDragState rectangle;
 	ShapeDragState circle;
@@ -328,6 +355,12 @@ struct PaintEditor
 	void prepareImageForCanvas(bbe::Image &image) const;
 
 	void clearSelectionState();
+
+	/// Drop the marquee (non-floating or after caller handles floating) but keep the image clipboard.
+	void clearMarqueePreservingClipboard();
+
+	/// Commit floating/move/resize if needed, then clear the selection (clipboard preserved).
+	void deselectAll();
 
 	void selectWholeLayer();
 
@@ -488,6 +521,9 @@ struct PaintEditor
 
 
 	void beginSelectionMove(const bbe::Vector2i &mousePixel);
+
+	/// Outside click, Ctrl+inside, or Ctrl on resize handles: clear / merge / start rect drag.
+	void pointerDownSelectionDefaultMarqueePath(const bbe::Vector2i &mousePixel);
 
 	void beginRotationDrag(const bbe::Vector2i &mousePixel);
 

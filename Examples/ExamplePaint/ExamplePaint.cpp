@@ -31,6 +31,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 
 	const bool ctrlDown = g.isKeyDown(bbe::Key::LEFT_CONTROL) || g.isKeyDown(bbe::Key::RIGHT_CONTROL);
 	const bool shiftDown = g.isKeyDown(bbe::Key::LEFT_SHIFT) || g.isKeyDown(bbe::Key::RIGHT_SHIFT);
+	editor.setSelectionAdditiveModifier(ctrlDown);
 	const bool drawButtonDown = g.isMouseDown(bbe::MouseButton::LEFT) || g.isMouseDown(bbe::MouseButton::RIGHT);
 	const bool drawButtonDownForTools = drawButtonDown && !editor.suppressCanvasInputUntilMouseUp;
 	editor.setConstrainSquare(shiftDown);
@@ -41,7 +42,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	};
 	if (editor.mode != editor.lastModeSnapshot && !drawButtonDown)
 	{
-		if (editor.lastModeSnapshot == PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_SELECTION)
+		if (PaintEditor::isSelectionLikeTool(editor.lastModeSnapshot) && !PaintEditor::isSelectionLikeTool(editor.mode))
 		{
 			editor.applySelectionWhenLeavingTool();
 		}
@@ -163,6 +164,10 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	{
 		editor.mode = PaintEditor::MODE_BEZIER;
 	}
+	if (g.isKeyPressed(bbe::Key::M))
+	{
+		editor.mode = PaintEditor::MODE_MAGIC_WAND;
+	}
 	bool refreshCircleDraft = false;
 	if (!ctrlDown && g.isKeyPressed(bbe::Key::X))
 	{
@@ -193,6 +198,12 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		if (decreaseToolSize) editor.textFontSize--;
 		editor.clampTextFontSize();
 	}
+	else if (editor.mode == PaintEditor::MODE_MAGIC_WAND)
+	{
+		if (increaseToolSize) editor.magicWandTolerance += 4;
+		if (decreaseToolSize) editor.magicWandTolerance -= 4;
+		editor.clampMagicWandTolerance();
+	}
 
 	if (ctrlDown)
 	{
@@ -220,7 +231,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		}
 		if (g.isKeyPressed(bbe::Key::C))
 		{
-			if (editor.mode != PaintEditor::MODE_SELECTION)
+			if (!PaintEditor::isSelectionLikeTool(editor.mode))
 			{
 				editor.mode = PaintEditor::MODE_SELECTION;
 			}
@@ -240,7 +251,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	}
 	if (editor.mode != modeBeforeInput && !drawButtonDown)
 	{
-		if (modeBeforeInput == PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_SELECTION)
+		if (PaintEditor::isSelectionLikeTool(modeBeforeInput) && !PaintEditor::isSelectionLikeTool(editor.mode))
 		{
 			editor.applySelectionWhenLeavingTool();
 		}
@@ -277,9 +288,13 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	{
 		editor.refreshActiveCircleDraftImage();
 	}
-	if (editor.selection.floating && editor.mode != PaintEditor::MODE_SELECTION && !(editor.mode == PaintEditor::MODE_RECTANGLE && editor.rectangle.draftActive) && !(editor.mode == PaintEditor::MODE_CIRCLE && editor.circle.draftActive))
+	if (editor.selection.floating && !PaintEditor::isSelectionLikeTool(editor.mode) && !(editor.mode == PaintEditor::MODE_RECTANGLE && editor.rectangle.draftActive) && !(editor.mode == PaintEditor::MODE_CIRCLE && editor.circle.draftActive))
 	{
 		editor.commitFloatingSelection();
+	}
+	if (g.isKeyPressed(bbe::Key::ESCAPE))
+	{
+		editor.deselectAll();
 	}
 	if (g.isKeyPressed(bbe::Key::DELETE) || g.isKeyPressed(bbe::Key::BACKSPACE))
 	{
@@ -399,8 +414,22 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		}
 	}
 
+	if (!mouseOnNavigator && !editor.canvasResizeActive && editor.mode == PaintEditor::MODE_MAGIC_WAND &&
+		(g.isMousePressed(bbe::MouseButton::LEFT) || g.isMousePressed(bbe::MouseButton::RIGHT)) && !editor.suppressCanvasInputUntilMouseUp)
+	{
+		const bool selectionTransformClick = editor.selection.moveActive || editor.selection.resizeActive || editor.selection.rotationHandleActive;
+		if (!selectionTransformClick && !editor.consumeMagicWandSuppressedPick())
+		{
+			bbe::Vector2 pos = editor.screenToCanvas(g.getMouse());
+			if (editor.toTiledPos(pos))
+			{
+				editor.applyMagicWandAt(editor.toCanvasPixel(pos), ctrlDown);
+			}
+		}
+	}
+
 	const bbe::List<decltype(editor.mode)> shadowDrawModes = { PaintEditor::MODE_BRUSH };
-	const bool drawMode = editor.mode != PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_TEXT && editor.mode != PaintEditor::MODE_RECTANGLE && editor.mode != PaintEditor::MODE_CIRCLE && editor.mode != PaintEditor::MODE_LINE && editor.mode != PaintEditor::MODE_ARROW && editor.mode != PaintEditor::MODE_BEZIER && !editor.canvasResizeActive && !mouseOnNavigator && drawButtonDownForTools;
+	const bool drawMode = editor.mode != PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_MAGIC_WAND && editor.mode != PaintEditor::MODE_TEXT && editor.mode != PaintEditor::MODE_RECTANGLE && editor.mode != PaintEditor::MODE_CIRCLE && editor.mode != PaintEditor::MODE_LINE && editor.mode != PaintEditor::MODE_ARROW && editor.mode != PaintEditor::MODE_BEZIER && !editor.canvasResizeActive && !mouseOnNavigator && drawButtonDownForTools;
 	const bool shadowDrawMode = shadowDrawModes.contains(editor.mode);
 
 	if (editor.brushStrokeChangeRegistered)
