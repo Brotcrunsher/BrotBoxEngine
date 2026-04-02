@@ -186,6 +186,7 @@ struct PaintEditor
 
 		bool floating = false;
 		bbe::Image floatingImage;
+		bool pastedFromClipboard = false;
 
 		bool dragActive = false;
 		bbe::Vector2i dragStart;

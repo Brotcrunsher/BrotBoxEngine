@@ -864,6 +864,7 @@ void PaintEditor::pasteSelectionAt(const bbe::Vector2i &pos)
 	selection.hasSelection = true;
 	selection.floating = true;
 	selection.floatingImage = image;
+	selection.pastedFromClipboard = true;
 	selection.rect = bbe::Rectanglei(clampedPos.x, clampedPos.y, image.getWidth(), image.getHeight());
 	rectangle.draftActive = false;
 	rectangle.draftUsesRightColor = false;
@@ -877,6 +878,8 @@ void PaintEditor::pasteSelectionAt(const bbe::Vector2i &pos)
 void PaintEditor::commitFloatingSelection()
 {
 	if (!selection.floating) return;
+
+	const bool applySymmetry = rectangle.draftActive || circle.draftActive || selection.pastedFromClipboard;
 
 	if (std::abs(selection.rotation) > 0.0001f)
 	{
@@ -913,7 +916,7 @@ void PaintEditor::commitFloatingSelection()
 		}
 
 		getActiveLayerImage().blendOverRotated(selection.floatingImage, selection.rect, selection.rotation, tiled, antiAliasingEnabled);
-		if (rectangle.draftActive || circle.draftActive)
+		if (applySymmetry)
 		{
 			const bbe::Vector2 center = {
 				selection.rect.x + selection.rect.width * 0.5f,
@@ -938,7 +941,7 @@ void PaintEditor::commitFloatingSelection()
 	}
 
 	getActiveLayerImage().blendOver(selection.floatingImage, selection.rect.getPos(), tiled);
-	if (rectangle.draftActive || circle.draftActive)
+	if (applySymmetry)
 	{
 		const bbe::Vector2 center = {
 			selection.rect.x + selection.rect.width * 0.5f,
