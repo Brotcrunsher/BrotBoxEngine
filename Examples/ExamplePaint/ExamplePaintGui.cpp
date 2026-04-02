@@ -842,6 +842,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 
 		// HACK: We can only open popups if we are in the same ID Stack. See: https://github.com/ocornut/imgui/issues/331
 		bool openNewCanvas = false;
+		bool openChangeCanvasSize = false;
 		if (ImGui::BeginMainMenuBar())
 		{
 			if (ImGui::BeginMenu("Menu"))
@@ -869,6 +870,15 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				if (ImGui::MenuItem("Save As Layered..."))
 				{
 					editor.saveDocumentAs(PaintEditor::SaveFormat::LAYERED);
+				}
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Edit"))
+			{
+				if (ImGui::MenuItem("Change Canvas Size..."))
+				{
+					openChangeCanvasSize = true;
 				}
 				ImGui::EndMenu();
 			}
@@ -993,33 +1003,162 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			ImGui::End();
 		}
 
-		// Always center this window when appearing
-		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+		// --- Change Canvas Size popup ---
+		{
+			enum CanvasResizeMode { RESIZE_CROP_EXTEND, RESIZE_SCALE_NEAREST, RESIZE_SCALE_BILINEAR };
+			static int resizeW = 0;
+			static int resizeH = 0;
+			static int resizeMode = RESIZE_CROP_EXTEND;
+			static int anchorX = 1; // 0=left, 1=center, 2=right
+			static int anchorY = 1; // 0=top,  1=center, 2=bottom
 
-		static int newWidth = 0;
-		static int newHeight = 0;
-		if (openNewCanvas)
-		{
-			ImGui::OpenPopup("New Canvas");
-			newWidth = editor.getCanvasWidth();
-			newHeight = editor.getCanvasHeight();
+			if (openChangeCanvasSize)
+			{
+				ImGui::OpenPopup("Change Canvas Size");
+				resizeW = editor.getCanvasWidth();
+				resizeH = editor.getCanvasHeight();
+				resizeMode = RESIZE_CROP_EXTEND;
+				anchorX = 0;
+				anchorY = 0;
+			}
+			ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			if (ImGui::BeginPopupModal("Change Canvas Size", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::Text("Current: %d x %d", editor.getCanvasWidth(), editor.getCanvasHeight());
+				ImGui::Spacing();
+				ImGui::InputInt("Width",  &resizeW);
+				ImGui::InputInt("Height", &resizeH);
+				if (resizeW < 1) resizeW = 1;
+				if (resizeH < 1) resizeH = 1;
+				ImGui::Spacing();
+				ImGui::Separator();
+				ImGui::Spacing();
+
+				const char *modeNames[] = { "Crop / Extend", "Scale (Nearest)", "Scale (Bilinear)" };
+				ImGui::Combo("Mode", &resizeMode, modeNames, IM_ARRAYSIZE(modeNames));
+
+				if (resizeMode == RESIZE_CROP_EXTEND)
+				{
+					ImGui::Spacing();
+					ImGui::Text("Anchor:");
+					const float btnSize = ImGui::GetFrameHeight();
+					for (int row = 0; row < 3; row++)
+					{
+						for (int col = 0; col < 3; col++)
+						{
+							if (col > 0) ImGui::SameLine();
+							const bool selected = (anchorX == col && anchorY == row);
+							if (selected) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+							char id[16];
+							snprintf(id, sizeof(id), "##a%d%d", row, col);
+							if (ImGui::Button(id, ImVec2(btnSize, btnSize)))
+							{
+								anchorX = col;
+								anchorY = row;
+							}
+							if (selected) ImGui::PopStyleColor();
+						}
+					}
+					ImGui::Text("Fill color: secondary (right) color");
+				}
+
+				ImGui::Spacing();
+				ImGui::Separator();
+				ImGui::Spacing();
+
+				if (ImGui::Button("OK", ImVec2(120, 0)))
+				{
+					const int32_t oldW = editor.getCanvasWidth();
+					const int32_t oldH = editor.getCanvasHeight();
+
+					if (resizeMode == RESIZE_CROP_EXTEND)
+					{
+						int32_t offX = 0, offY = 0;
+						if (anchorX == 1) offX = (resizeW - oldW) / 2;
+						if (anchorX == 2) offX = resizeW - oldW;
+						if (anchorY == 1) offY = (resizeH - oldH) / 2;
+						if (anchorY == 2) offY = resizeH - oldH;
+						const bbe::Color fillColor(editor.rightColor[0], editor.rightColor[1], editor.rightColor[2], editor.rightColor[3]);
+						for (size_t li = 0; li < editor.canvas.get().layers.getLength(); li++)
+						{
+							editor.canvas.get().layers[li].image = editor.canvas.get().layers[li].image.resizedCanvas(
+								resizeW, resizeH, bbe::Vector2i(offX, offY), fillColor);
+							editor.prepareImageForCanvas(editor.canvas.get().layers[li].image);
+						}
+						editor.offset.x -= offX * editor.zoomLevel;
+						editor.offset.y -= offY * editor.zoomLevel;
+					}
+					else if (resizeMode == RESIZE_SCALE_NEAREST)
+					{
+						for (size_t li = 0; li < editor.canvas.get().layers.getLength(); li++)
+						{
+							editor.canvas.get().layers[li].image = editor.canvas.get().layers[li].image.scaledNearest(resizeW, resizeH);
+							editor.prepareImageForCanvas(editor.canvas.get().layers[li].image);
+						}
+					}
+					else if (resizeMode == RESIZE_SCALE_BILINEAR)
+					{
+						for (size_t li = 0; li < editor.canvas.get().layers.getLength(); li++)
+						{
+							const bbe::Image &src = editor.canvas.get().layers[li].image;
+							bbe::Image dst(resizeW, resizeH, bbe::Color(0.f, 0.f, 0.f, 0.f));
+							for (int32_t y = 0; y < resizeH; y++)
+							{
+								for (int32_t x = 0; x < resizeW; x++)
+								{
+									const float srcX = ((float)x + 0.5f) * oldW / resizeW - 0.5f;
+									const float srcY = ((float)y + 0.5f) * oldH / resizeH - 0.5f;
+									dst.setPixel(x, y, src.sampleBilinearPremultiplied(srcX, srcY));
+								}
+							}
+							editor.canvas.get().layers[li].image = std::move(dst);
+							editor.prepareImageForCanvas(editor.canvas.get().layers[li].image);
+						}
+					}
+					editor.clearSelectionState();
+					editor.clearWorkArea();
+					editor.submitCanvas();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel", ImVec2(120, 0)))
+				{
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
 		}
-		if (ImGui::BeginPopupModal("New Canvas", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+
+		// --- New Canvas popup ---
 		{
-			ImGui::InputInt("Width", &newWidth);
-			ImGui::SameLine();
-			ImGui::InputInt("Height", &newHeight);
-			if (ImGui::Button("OK", ImVec2(120, 0)))
+			ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+			static int newWidth = 0;
+			static int newHeight = 0;
+			if (openNewCanvas)
 			{
-				editor.newCanvas(newWidth, newHeight);
-				ImGui::CloseCurrentPopup();
+				ImGui::OpenPopup("New Canvas");
+				newWidth = editor.getCanvasWidth();
+				newHeight = editor.getCanvasHeight();
 			}
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			if (ImGui::BeginPopupModal("New Canvas", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 			{
-				ImGui::CloseCurrentPopup();
+				ImGui::InputInt("Width", &newWidth);
+				ImGui::SameLine();
+				ImGui::InputInt("Height", &newHeight);
+				if (ImGui::Button("OK", ImVec2(120, 0)))
+				{
+					editor.newCanvas(newWidth, newHeight);
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel", ImVec2(120, 0)))
+				{
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
 			}
-			ImGui::EndPopup();
 		}
 }
