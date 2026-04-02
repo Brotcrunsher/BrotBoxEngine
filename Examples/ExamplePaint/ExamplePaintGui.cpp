@@ -49,6 +49,7 @@ struct ToolIconTextures
 {
 	struct Slot { ImTextureID texId = nullptr; const bbe::Image *cachedPtr = nullptr; };
 	Slot brush, fill, line, rectangle, circle, selection, text, pipette, arrow, bezier;
+	Slot undo, redo;
 
 	void refresh()
 	{
@@ -62,6 +63,8 @@ struct ToolIconTextures
 		updateIconSlot(pipette.texId,   pipette.cachedPtr,   assetStore::iconPipette());
 		updateIconSlot(arrow.texId,     arrow.cachedPtr,     assetStore::iconArrow());
 		updateIconSlot(bezier.texId,    bezier.cachedPtr,    assetStore::iconBezier());
+		updateIconSlot(undo.texId,      undo.cachedPtr,      assetStore::iconUndo());
+		updateIconSlot(redo.texId,      redo.cachedPtr,      assetStore::iconRedo());
 	}
 };
 static ToolIconTextures s_toolIcons;
@@ -195,12 +198,33 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 
 		// --- Undo / Redo ---
 		const float halfW = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+		constexpr float undoRedoIconSize = 24.f;
 		ImGui::BeginDisabled(!editor.canvas.isUndoable());
-		if (ImGui::Button("Undo", ImVec2(halfW, 0))) doUndo();
+#ifdef BBE_RENDERER_OPENGL
+		if (s_toolIcons.undo.texId)
+		{
+			if (ImGui::ImageButton("Undo", s_toolIcons.undo.texId, ImVec2(undoRedoIconSize, undoRedoIconSize))) doUndo();
+		}
+		else
+#endif
+		{
+			if (ImGui::Button("Undo", ImVec2(halfW, 0))) doUndo();
+		}
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Undo");
 		ImGui::EndDisabled();
 		ImGui::SameLine();
 		ImGui::BeginDisabled(!editor.canvas.isRedoable());
-		if (ImGui::Button("Redo", ImVec2(halfW, 0))) doRedo();
+#ifdef BBE_RENDERER_OPENGL
+		if (s_toolIcons.redo.texId)
+		{
+			if (ImGui::ImageButton("Redo", s_toolIcons.redo.texId, ImVec2(undoRedoIconSize, undoRedoIconSize))) doRedo();
+		}
+		else
+#endif
+		{
+			if (ImGui::Button("Redo", ImVec2(halfW, 0))) doRedo();
+		}
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Redo");
 		ImGui::EndDisabled();
 
 		// --- Colors ---
