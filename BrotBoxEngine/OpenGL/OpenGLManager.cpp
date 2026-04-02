@@ -879,11 +879,11 @@ bbe::INTERNAL::openGl::Framebuffer bbe::INTERNAL::openGl::OpenGLManager::getGeom
 
 void bbe::INTERNAL::openGl::OpenGLManager::initFrameBuffers()
 {
-	// TODO Might not be necessary to create if we stay in FORWARD_NO_LIGHT mode
-	mrtFb.destroy(); // For resizing
+	if (!m_3dFBOsAllocated) return;
+
+	mrtFb.destroy();
 	mrtFb = getGeometryBuffer("GeometryBuffer", m_windowWidth, m_windowHeight, false);
 
-	// TODO Might not be necessary to create if we stay in DEFERRED_SHADING mode
 	forwardNoLightFb.destroy();
 	forwardNoLightFb = Framebuffer(m_windowWidth, m_windowHeight);
 	forwardNoLightFb.setSamples(8);
@@ -1101,20 +1101,23 @@ void bbe::INTERNAL::openGl::OpenGLManager::flushInstanceData2D()
 		bbe::Crash(bbe::Error::IllegalState);
 	}
 
-	GLuint program = m_program2d.program;
-	glUseProgram(program);
+	glUseProgram(m_program2d.program);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
-	GLint positionAttribute = glGetAttribLocation(program, "position");
-	glEnableVertexAttribArray(positionAttribute);
+	glEnableVertexAttribArray(m_attribLocPrim2dPos);
+	glVertexAttribPointer(m_attribLocPrim2dPos, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	GLuint instanceVBO = genBuffer("FlushInstanceVBO", BufferTarget::ARRAY_BUFFER, sizeof(InstanceData2D) * instanceDatas.getLength(), instanceDatas.getRaw());
+	const size_t neededBytes = sizeof(InstanceData2D) * instanceDatas.getLength();
+	if (neededBytes > m_instanceDrawVboCapacity)
+	{
+		if (m_instanceDrawVbo) glDeleteBuffers(1, &m_instanceDrawVbo);
+		m_instanceDrawVboCapacity = neededBytes * 2;
+		m_instanceDrawVbo = genBuffer("InstanceVBO", BufferTarget::ARRAY_BUFFER, m_instanceDrawVboCapacity, nullptr);
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, m_instanceDrawVbo);
+	glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)neededBytes, instanceDatas.getRaw(), GL_STREAM_DRAW);
 
 	GLint pos = 1;
 	glEnableVertexAttribArray(pos);
@@ -1133,7 +1136,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::flushInstanceData2D()
 	addDrawcallStat();
 	instanceDatas.clear();
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glDeleteBuffers(1, &instanceVBO);
 }
 
 bbe::INTERNAL::openGl::OpenGLImage *bbe::INTERNAL::openGl::OpenGLManager::toRendererData(const bbe::Image &image) const
@@ -1358,6 +1360,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char *appName, uint32_t ma
 	m_program3dLightBaking = init3dShadersLight(true);
 	initFrameBuffers();
 
+	m_attribLocImagePos = glGetAttribLocation(m_program2dTex.program, "position");
+	m_attribLocImageUv = glGetAttribLocation(m_program2dTex.program, "uv");
+	m_attribLocPrim2dPos = glGetAttribLocation(m_program2d.program, "position");
+
+	m_imageDrawVbo = genBuffer("imageDrawVBO", BufferTarget::ARRAY_BUFFER, sizeof(bbe::Vector2) * 4, nullptr);
+
 	static bool initDone = false;
 	if (!initDone)
 	{
@@ -1396,6 +1404,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::destroy()
 	}
 #endif
 	glDeleteBuffers(1, &quadIbo);
+	if (m_imageDrawVbo) { glDeleteBuffers(1, &m_imageDrawVbo); m_imageDrawVbo = 0; }
+	if (m_instanceDrawVbo) { glDeleteBuffers(1, &m_instanceDrawVbo); m_instanceDrawVbo = 0; m_instanceDrawVboCapacity = 0; }
 	imguiStop();
 
 	OpenGLSphere::destroy();
@@ -1486,6 +1496,12 @@ void bbe::INTERNAL::openGl::OpenGLManager::ensure3DFBOsReady()
 {
 	if (m_3dFBOsReadyThisFrame) return;
 	m_3dFBOsReadyThisFrame = true;
+
+	if (!m_3dFBOsAllocated)
+	{
+		m_3dFBOsAllocated = true;
+		initFrameBuffers();
+	}
 
 	glEnable(GL_DEPTH_TEST);
 	glBindFramebuffer(GL_FRAMEBUFFER, forwardNoLightFb.framebuffer);
@@ -1646,46 +1662,43 @@ void bbe::INTERNAL::openGl::OpenGLManager::fillCircle2D(const Circle &circle)
 
 void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle &rect, const Image &image, float rotation)
 {
-	// TODO make proper implementation
 	flushInstanceData2D();
 	m_program2dTex.use();
 	m_program2dTex.uniform4f(inColorPos2dTex, m_color2d);
 	previousDrawCall2d = PreviousDrawCall2D::IMAGE;
-	bbe::List<bbe::Vector2> vertices;
-	rect.getVertices(vertices);
-	for (bbe::Vector2 &v : vertices)
+	bbe::Vector2 vertices[4] = {
+		{ rect.x,              rect.y },
+		{ rect.x,              rect.y + rect.height },
+		{ rect.x + rect.width, rect.y + rect.height },
+		{ rect.x + rect.width, rect.y },
+	};
+	if (rotation != 0.f)
 	{
-		v = v.rotate(rotation, rect.getCenter());
+		const bbe::Vector2 center = rect.getCenter();
+		for (bbe::Vector2 &v : vertices)
+		{
+			v = v.rotate(rotation, center);
+		}
 	}
 
-	if (image.m_format == ImageFormat::R8)
-	{
-		m_program2dTex.uniform1i(swizzleModePos, 1);
-	}
-	else
-	{
-		m_program2dTex.uniform1i(swizzleModePos, 0);
-	}
+	m_program2dTex.uniform1i(swizzleModePos, image.m_format == ImageFormat::R8 ? 1 : 0);
 
-	GLuint vbo = genBuffer("drawImageVBO", BufferTarget::ARRAY_BUFFER, sizeof(bbe::Vector2) * vertices.getLength(), vertices.getRaw());
 	constexpr uint32_t indices[] = { 0, 1, 3, 1, 2, 3 };
 	static GLuint ibo = genBuffer("drawImageIBO", BufferTarget::ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * 6, indices);
 	glBindBuffer((GLenum)BufferTarget::ELEMENT_ARRAY_BUFFER, ibo);
-	//TODO: The ibo is never freed - is that actually bad or does OpenGL clean it up when we remove the context?
 
 	glUniform2f(scalePos2dTex, 1.0f, 1.0f);
 
-	GLint positionAttribute = glGetAttribLocation(m_program2dTex.program, "position");
-	glEnableVertexAttribArray(positionAttribute);
+	glBindBuffer(GL_ARRAY_BUFFER, m_imageDrawVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glEnableVertexAttribArray(m_attribLocImagePos);
+	glVertexAttribPointer(m_attribLocImagePos, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	GLint uvPosition = glGetAttribLocation(m_program2dTex.program, "uv");
-	glEnableVertexAttribArray(uvPosition);
+	glEnableVertexAttribArray(m_attribLocImageUv);
 	glBindBuffer(GL_ARRAY_BUFFER, m_imageUvBuffer);
-	glVertexAttribPointer(uvPosition, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
-	glVertexAttribDivisor(uvPosition, 0);
+	glVertexAttribPointer(m_attribLocImageUv, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
+	glVertexAttribDivisor(m_attribLocImageUv, 0);
 
 	glUniform1i(texPos2dTex, 0);
 	glActiveTexture(GL_TEXTURE0);
@@ -1695,7 +1708,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::drawImage2D(const Rectangle &rect, co
 	addDrawcallStat();
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glDeleteBuffers(1, &vbo);
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::fillVertexIndexList2D(const uint32_t *indices, size_t amountOfIndices, const bbe::Vector2 *vertices, size_t amountOfVertices, const bbe::Vector2 &p, const bbe::Vector2 &scale)

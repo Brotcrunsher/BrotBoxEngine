@@ -1,6 +1,7 @@
 #include <cmath>
 #include <map>
 #include <string>
+#include <iostream>
 
 #include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 #include "ExamplePaintEditor.h"
@@ -613,6 +614,10 @@ public:
 
 	void update(float timeSinceLastFrame) override
 	{
+		static float runningAverageFPS = 0;
+		const float fps = 1.0f / timeSinceLastFrame;
+		runningAverageFPS = 0.9f * runningAverageFPS + 0.1f * fps;
+		std::cout << "FPS: " << runningAverageFPS << "\n";
 		runPaintEditorUpdate(editor, *this, timeSinceLastFrame);
 	}
 

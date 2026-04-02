@@ -201,11 +201,20 @@ namespace bbe
 
 				bool m_any3DDrawThisFrame = false;
 				bool m_3dFBOsReadyThisFrame = false;
+				bool m_3dFBOsAllocated = false;
 				void ensure3DFBOsReady();
 
 				bbe::List<InstanceData2D> instanceDatas;
 				void addInstancedData2D(PreviousDrawCall2D type, float x, float y, float width, float height, float rotation);
 				void flushInstanceData2D();
+
+				GLuint m_imageDrawVbo = 0;
+				GLuint m_instanceDrawVbo = 0;
+				size_t m_instanceDrawVboCapacity = 0;
+
+				GLint m_attribLocImagePos = -1;
+				GLint m_attribLocImageUv = -1;
+				GLint m_attribLocPrim2dPos = -1;
 
 				OpenGLImage *toRendererData(const bbe::Image &image) const;
 
