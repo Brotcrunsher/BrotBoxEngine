@@ -1,6 +1,7 @@
 #include "BBE/Vector2.h"
 #include "BBE/Vector3.h"
 #include "BBE/Vulkan/VulkanManager.h"
+#include "BBE/Window.h"
 #include "BBE/Color.h"
 #include "BBE/Error.h"
 #include "BBE/Rectangle.h"
@@ -1050,6 +1051,9 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiStart()
 		bbe::Crash(bbe::Error::NotInitialized);
 	}
 
+	bbe::Window *win = static_cast<bbe::Window *>(glfwGetWindowUserPointer(m_pwindow));
+	m_imguiDpiScale = win ? win->getDpiScale() : 1.0f;
+
 	ImGuiIO &io = ImGui::GetIO();
 	ImFontConfig fontConfig;
 	imguiFontSmall = io.Fonts->AddFontDefault(&fontConfig);
@@ -1070,8 +1074,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiStop()
 
 void bbe::INTERNAL::vulkan::VulkanManager::imguiStartFrame()
 {
-	float scale = 0;
-	glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
+	const float scale = m_imguiDpiScale;
 	ImGuiIO &io = ImGui::GetIO();
 
 	static float lastScale = -1.f;
@@ -1080,11 +1083,25 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiStartFrame()
 		ImGuiStyle &style = ImGui::GetStyle();
 		style = ImGuiStyle();
 		ImGui::StyleColorsDark();
-		style.ScaleAllSizes(bbe::Math::sqrt(scale));
+		style.ScaleAllSizes(scale);
 		lastScale = scale;
 	}
 
-	io.FontDefault = scale < 1.5f ? imguiFontSmall : imguiFontBig;
+	float contentScale = 0;
+	glfwGetWindowContentScale(m_pwindow, &contentScale, nullptr);
+
+	constexpr float baseFontSize = 13.f;
+	constexpr float bigFontSize = 26.f;
+	if (contentScale < 1.5f)
+	{
+		io.FontDefault = imguiFontSmall;
+		io.FontGlobalScale = scale;
+	}
+	else
+	{
+		io.FontDefault = imguiFontBig;
+		io.FontGlobalScale = scale * baseFontSize / bigFontSize;
+	}
 
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();

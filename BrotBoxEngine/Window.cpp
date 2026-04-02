@@ -81,7 +81,7 @@ namespace
 }
 
 bbe::Window::Window(int width, int height, const char *title, bbe::Game *game, uint32_t major, uint32_t minor, uint32_t patch, uint32_t msaaSamples)
-	: m_width(width), m_height(height), m_pgame(game), m_msaaSamples(msaaSamples)
+	: m_width(width), m_height(height), m_requestedWidth(width), m_pgame(game), m_msaaSamples(msaaSamples)
 {
 	auto &recreateState = g_windowRecreateStates[this];
 	recreateState.title = title != nullptr ? title : "";
@@ -159,6 +159,12 @@ bbe::Window::Window(int width, int height, const char *title, bbe::Game *game, u
 
 	BBELOGLN("Setting window user pointer");
 	glfwWrapper::glfwSetWindowUserPointer(m_pwindow, this);
+
+	int actualWindowWidth = 0;
+	glfwWrapper::glfwGetWindowSize(m_pwindow, &actualWindowWidth, nullptr);
+	m_dpiScale = (m_requestedWidth > 0)
+		? static_cast<float>(actualWindowWidth) / static_cast<float>(m_requestedWidth)
+		: 1.0f;
 
 	BBELOGLN("Init render manager");
 	float windowXScale = 0;
@@ -353,6 +359,11 @@ float bbe::Window::getScale() const
 	float scale = 0;
 	glfwWrapper::glfwGetWindowContentScale(m_pwindow, nullptr, &scale);
 	return scale;
+}
+
+float bbe::Window::getDpiScale() const
+{
+	return m_dpiScale;
 }
 
 bbe::Vector2i bbe::Window::getSize() const

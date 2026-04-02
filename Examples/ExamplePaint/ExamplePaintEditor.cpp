@@ -1944,7 +1944,7 @@ bbe::Rectangle PaintEditor::getNavigatorRect()
 	const float canvasW = (float)getCanvasWidth();
 	const float canvasH = (float)getCanvasHeight();
 	if (canvasW <= 0.f || canvasH <= 0.f) return {};
-	const float navMaxSize = 160.f * bbe::Math::sqrt(viewport.scale);
+	const float navMaxSize = 160.f * viewport.scale;
 	float navW, navH;
 	if (canvasW >= canvasH)
 	{

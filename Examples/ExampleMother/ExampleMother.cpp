@@ -3196,7 +3196,7 @@ public:
 		viewport.WorkSize.x -= infoViewport.WorkSize.x;
 		viewport.WorkSize.y *= sizeMult.y;
 
-		const float adaptiveFlipSize = 1000.f * getWindow()->getScale();
+		const float adaptiveFlipSize = 500.f * getWindow()->getScale();
 		const float adaptiveMaxSize = adaptiveFlipSize - 400 * getWindow()->getScale();
 
 		bool adaptive = false;
@@ -3209,7 +3209,7 @@ public:
 			adaptiveWidth = fullViewport.WorkSize.x - viewport.WorkSize.x - infoViewport.WorkSize.x;
 			adaptive = true;
 
-			if (adaptiveWidth > 1700.f)
+			if (adaptiveWidth > 1000.f)
 			{
 				adaptiveWidth *= 0.5f;
 				superAdaptive = true;

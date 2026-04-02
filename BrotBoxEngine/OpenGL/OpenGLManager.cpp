@@ -1,5 +1,6 @@
 #include "BBE/OpenGL/OpenGLManager.h"
 #include "BBE/OpenGL/OpenGLImage.h"
+#include "BBE/Window.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -1871,6 +1872,9 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStart()
 		bbe::Crash(bbe::Error::IllegalState);
 	}
 
+	bbe::Window *win = static_cast<bbe::Window *>(glfwWrapper::glfwGetWindowUserPointer(m_pwindow));
+	m_imguiDpiScale = win ? win->getDpiScale() : 1.0f;
+
 	ImGuiIO &io = ImGui::GetIO();
 	ImFontConfig fontConfig;
 	m_pimguiFontSmall = io.Fonts->AddFontDefault(&fontConfig);
@@ -1893,8 +1897,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStop()
 
 void bbe::INTERNAL::openGl::OpenGLManager::imguiStartFrame()
 {
-	float scale = 0;
-	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &scale, nullptr);
+	const float scale = m_imguiDpiScale;
 	ImGuiIO &io = ImGui::GetIO();
 
 	static float lastScale = -1.f;
@@ -1903,11 +1906,25 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStartFrame()
 		ImGuiStyle &style = ImGui::GetStyle();
 		style = ImGuiStyle();
 		ImGui::StyleColorsDark();
-		style.ScaleAllSizes(bbe::Math::sqrt(scale));
+		style.ScaleAllSizes(scale);
 		lastScale = scale;
 	}
 
-	io.FontDefault = scale < 1.5f ? m_pimguiFontSmall : m_pimguiFontBig;
+	float contentScale = 0;
+	glfwWrapper::glfwGetWindowContentScale(m_pwindow, &contentScale, nullptr);
+
+	constexpr float baseFontSize = 13.f;
+	constexpr float bigFontSize = 26.f;
+	if (contentScale < 1.5f)
+	{
+		io.FontDefault = m_pimguiFontSmall;
+		io.FontGlobalScale = scale;
+	}
+	else
+	{
+		io.FontDefault = m_pimguiFontBig;
+		io.FontGlobalScale = scale * baseFontSize / bigFontSize;
+	}
 
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();

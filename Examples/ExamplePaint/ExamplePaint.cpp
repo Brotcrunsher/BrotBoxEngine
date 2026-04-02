@@ -16,7 +16,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	PaintWindowMetrics w{};
 	w.width = g.getWindowWidth();
 	w.height = g.getWindowHeight();
-	w.scale = g.getWindow()->getScale();
+	w.scale = g.getWindow()->getDpiScale();
 	editor.setViewportMetrics(w);
 
 	const bool ctrlDown = g.isKeyDown(bbe::Key::LEFT_CONTROL) || g.isKeyDown(bbe::Key::RIGHT_CONTROL);
@@ -603,7 +603,7 @@ public:
 		PaintWindowMetrics w{};
 		w.width = getWindowWidth();
 		w.height = getWindowHeight();
-		w.scale = getWindow()->getScale();
+		w.scale = getWindow()->getDpiScale();
 		editor.onStart(w);
 	}
 

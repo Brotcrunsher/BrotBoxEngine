@@ -138,6 +138,7 @@ namespace bbe
 				bool m_imguiInitSuccessful = false;
 				ImFont *imguiFontSmall = nullptr;
 				ImFont *imguiFontBig = nullptr;
+				float m_imguiDpiScale = 1.0f;
 
 				struct BufferMemoryPair
 				{

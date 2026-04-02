@@ -163,6 +163,7 @@ namespace bbe
 				bool m_imguiInitSuccessful = false;
 				ImFont *m_pimguiFontSmall = nullptr;
 				ImFont *m_pimguiFontBig = nullptr;
+				float m_imguiDpiScale = 1.0f;
 
 				Program init2dShaders();
 				Program init2dTexShaders();

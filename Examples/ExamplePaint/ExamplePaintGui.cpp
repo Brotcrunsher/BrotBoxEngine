@@ -185,7 +185,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 #ifdef BBE_RENDERER_OPENGL
 		s_toolIcons.refresh();
 #endif
-		const float PANEL_WIDTH = 260.f * bbe::Math::sqrt(editor.viewport.scale);
+		const float PANEL_WIDTH = 260.f * editor.viewport.scale;
 		ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetFrameHeight()), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(PANEL_WIDTH, (float)editor.viewport.height - ImGui::GetFrameHeight()), ImGuiCond_Always);
 		ImGui::Begin("##panel", nullptr,
