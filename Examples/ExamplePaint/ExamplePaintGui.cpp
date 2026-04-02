@@ -324,56 +324,75 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		ImGui::SeparatorText("Tool");
 		{
 			const float w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
-			const struct { const char *label; int32_t toolMode; ImTextureID icon; } tools[] = {
-#ifdef BBE_RENDERER_OPENGL
-				{ "Brush",     PaintEditor::MODE_BRUSH,      s_toolIcons.brush.texId },
-				{ "Fill",      PaintEditor::MODE_FLOOD_FILL, s_toolIcons.fill.texId },
-				{ "Line",      PaintEditor::MODE_LINE,       s_toolIcons.line.texId },
-				{ "Rectangle", PaintEditor::MODE_RECTANGLE,  s_toolIcons.rectangle.texId },
-				{ "Circle",    PaintEditor::MODE_CIRCLE,     s_toolIcons.circle.texId },
-				{ "Selection", PaintEditor::MODE_SELECTION,  s_toolIcons.selection.texId },
-				{ "Lasso",     PaintEditor::MODE_LASSO,      s_toolIcons.lasso.texId },
-				{ "Poly Lasso", PaintEditor::MODE_POLYGON_LASSO, s_toolIcons.polygonLasso.texId },
-				{ "Text",      PaintEditor::MODE_TEXT,       s_toolIcons.text.texId },
-				{ "Pipette",   PaintEditor::MODE_PIPETTE,    s_toolIcons.pipette.texId },
-				{ "Arrow",     PaintEditor::MODE_ARROW,      s_toolIcons.arrow.texId },
-				{ "Bezier",    PaintEditor::MODE_BEZIER,     s_toolIcons.bezier.texId },
-				{ "Wand",      PaintEditor::MODE_MAGIC_WAND,  s_toolIcons.magicWand.texId },
-#else
-				{ "Brush",     PaintEditor::MODE_BRUSH,      nullptr },
-				{ "Fill",      PaintEditor::MODE_FLOOD_FILL, nullptr },
-				{ "Line",      PaintEditor::MODE_LINE,       nullptr },
-				{ "Rectangle", PaintEditor::MODE_RECTANGLE,  nullptr },
-				{ "Circle",    PaintEditor::MODE_CIRCLE,     nullptr },
-				{ "Selection", PaintEditor::MODE_SELECTION,  nullptr },
-				{ "Lasso",     PaintEditor::MODE_LASSO,      nullptr },
-				{ "Poly Lasso", PaintEditor::MODE_POLYGON_LASSO, nullptr },
-				{ "Text",      PaintEditor::MODE_TEXT,       nullptr },
-				{ "Pipette",   PaintEditor::MODE_PIPETTE,    nullptr },
-				{ "Arrow",     PaintEditor::MODE_ARROW,      nullptr },
-				{ "Bezier",    PaintEditor::MODE_BEZIER,     nullptr },
-				{ "Wand",      PaintEditor::MODE_MAGIC_WAND,  nullptr },
-#endif
-			};
-			constexpr float iconSize = 24.f;
-			for (size_t i = 0; i < sizeof(tools) / sizeof(*tools); i++)
+			struct ToolBtn
 			{
-				const bool active = editor.mode == tools[i].toolMode;
-				if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-				bool clicked = false;
-				if (tools[i].icon)
+				const char *label;
+				int32_t toolMode;
+				ImTextureID icon;
+			};
+#ifdef BBE_RENDERER_OPENGL
+			const ToolBtn mainTools[] = {
+				{ "Brush",     PaintEditor::MODE_BRUSH,       s_toolIcons.brush.texId },
+				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,  s_toolIcons.fill.texId },
+				{ "Line",      PaintEditor::MODE_LINE,        s_toolIcons.line.texId },
+				{ "Rectangle", PaintEditor::MODE_RECTANGLE,   s_toolIcons.rectangle.texId },
+				{ "Circle",    PaintEditor::MODE_CIRCLE,      s_toolIcons.circle.texId },
+				{ "Text",      PaintEditor::MODE_TEXT,        s_toolIcons.text.texId },
+				{ "Pipette",   PaintEditor::MODE_PIPETTE,     s_toolIcons.pipette.texId },
+				{ "Arrow",     PaintEditor::MODE_ARROW,       s_toolIcons.arrow.texId },
+				{ "Bezier",    PaintEditor::MODE_BEZIER,      s_toolIcons.bezier.texId },
+			};
+			const ToolBtn selectionTools[] = {
+				{ "Selection",  PaintEditor::MODE_SELECTION,       s_toolIcons.selection.texId },
+				{ "Poly Lasso", PaintEditor::MODE_POLYGON_LASSO,   s_toolIcons.polygonLasso.texId },
+				{ "Lasso",      PaintEditor::MODE_LASSO,           s_toolIcons.lasso.texId },
+				{ "Wand",       PaintEditor::MODE_MAGIC_WAND,      s_toolIcons.magicWand.texId },
+			};
+#else
+			const ToolBtn mainTools[] = {
+				{ "Brush",     PaintEditor::MODE_BRUSH,       nullptr },
+				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,  nullptr },
+				{ "Line",      PaintEditor::MODE_LINE,        nullptr },
+				{ "Rectangle", PaintEditor::MODE_RECTANGLE,   nullptr },
+				{ "Circle",    PaintEditor::MODE_CIRCLE,      nullptr },
+				{ "Text",      PaintEditor::MODE_TEXT,        nullptr },
+				{ "Pipette",   PaintEditor::MODE_PIPETTE,     nullptr },
+				{ "Arrow",     PaintEditor::MODE_ARROW,       nullptr },
+				{ "Bezier",    PaintEditor::MODE_BEZIER,      nullptr },
+			};
+			const ToolBtn selectionTools[] = {
+				{ "Selection",  PaintEditor::MODE_SELECTION,     nullptr },
+				{ "Poly Lasso", PaintEditor::MODE_POLYGON_LASSO, nullptr },
+				{ "Lasso",      PaintEditor::MODE_LASSO,         nullptr },
+				{ "Wand",       PaintEditor::MODE_MAGIC_WAND,    nullptr },
+			};
+#endif
+			constexpr float iconSize = 24.f;
+			auto drawToolRow = [&](const ToolBtn *tools, size_t count)
+			{
+				for (size_t i = 0; i < count; i++)
 				{
-					clicked = ImGui::ImageButton(tools[i].label, tools[i].icon, ImVec2(iconSize, iconSize));
+					const bool active = editor.mode == tools[i].toolMode;
+					if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+					bool clicked = false;
+					if (tools[i].icon)
+					{
+						clicked = ImGui::ImageButton(tools[i].label, tools[i].icon, ImVec2(iconSize, iconSize));
+					}
+					else
+					{
+						clicked = ImGui::Button(tools[i].label, ImVec2(w, 0));
+					}
+					if (clicked) editor.mode = tools[i].toolMode;
+					if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tools[i].label);
+					if (active) ImGui::PopStyleColor();
+					if (i % 2 == 0 && i + 1 < count) ImGui::SameLine();
 				}
-				else
-				{
-					clicked = ImGui::Button(tools[i].label, ImVec2(w, 0));
-				}
-				if (clicked) editor.mode = tools[i].toolMode;
-				if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tools[i].label);
-				if (active) ImGui::PopStyleColor();
-				if (i % 2 == 0 && i + 1 < sizeof(tools) / sizeof(*tools)) ImGui::SameLine();
-			}
+			};
+
+			drawToolRow(mainTools, sizeof(mainTools) / sizeof(*mainTools));
+			ImGui::Separator();
+			drawToolRow(selectionTools, sizeof(selectionTools) / sizeof(*selectionTools));
 		}
 
 		// --- Tool options ---
