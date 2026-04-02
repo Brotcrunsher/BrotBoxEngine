@@ -3197,14 +3197,13 @@ public:
 		viewport.WorkSize.y *= sizeMult.y;
 
 		const float adaptiveFlipSize = 500.f * getWindow()->getScale();
-		const float adaptiveMaxSize = adaptiveFlipSize - 400 * getWindow()->getScale();
 
 		bool adaptive = false;
 		bool superAdaptive = false;
 		float adaptiveWidth = 0.0f;
 		if (viewport.WorkSize.x > adaptiveFlipSize && !fullscreenTab)
 		{
-			viewport.WorkSize.x = adaptiveMaxSize;
+			viewport.WorkSize.x *= 0.4f;
 
 			adaptiveWidth = fullViewport.WorkSize.x - viewport.WorkSize.x - infoViewport.WorkSize.x;
 			adaptive = true;
