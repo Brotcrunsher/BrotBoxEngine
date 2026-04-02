@@ -92,16 +92,7 @@ namespace bbe
 
 		bbe::Color_t<T, maxValue> blendTo(const bbe::Color_t<T, maxValue> &other) const
 		{
-			const float t = other.a / float(maxValue);
-			if (t < 0.f) return *this;
-			if (t > 1.f) return other;
-
-			return bbe::Color_t<T, maxValue>(
-				bbe::Math::interpolateLinear(r, other.r, t),
-				bbe::Math::interpolateLinear(g, other.g, t),
-				bbe::Math::interpolateLinear(b, other.b, t),
-				maxValue // Is this correct?
-			);
+			return blendTo(other, 1.0f, bbe::BlendMode::Normal);
 		}
 
 		bbe::Color_t<T, maxValue> operator*(float scalar) const
