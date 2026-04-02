@@ -116,6 +116,7 @@ bbe::Window::Window(int width, int height, const char *title, bbe::Game *game, u
 		if (shouldPreferWaylandPlatform())
 		{
 			glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
+			glfwInitHint(GLFW_WAYLAND_LIBDECOR, GLFW_WAYLAND_DISABLE_LIBDECOR);
 		}
 #endif
 		if (glfwWrapper::glfwInit() == GLFW_FALSE)

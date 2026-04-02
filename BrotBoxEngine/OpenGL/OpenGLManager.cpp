@@ -1332,7 +1332,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::init(const char *appName, uint32_t ma
 #endif
 	if (isNoGlxDisplayError)
 	{
-		// Dirty hack for Wayland based Linux
 		BBELOGLN("WARNING: GLEW_ERROR_NO_GLX_DISPLAY");
 	}
 	else if (resp != GLEW_OK)
