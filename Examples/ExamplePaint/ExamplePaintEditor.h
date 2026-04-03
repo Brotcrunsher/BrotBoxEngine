@@ -15,7 +15,6 @@
 // TODO: Bug: right click has weird behaviour with shadow
 
 // TODO: Color history
-// TODO: Saving an image always returns success, even if the file couldn't be written. Fix that.
 struct FontEntry
 {
 	bbe::String displayName;
@@ -111,6 +110,7 @@ struct PaintEditor
 	bbe::Image workArea;
 	float zoomLevel = 1.f;
 	bool openSaveChoicePopup = false;
+	bool openSaveFailedPopup = false;
 	bool openDropChoicePopup = false;
 	bbe::List<bbe::String> pendingDroppedPaths;
 	bool showHelpWindow = false;

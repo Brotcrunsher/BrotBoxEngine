@@ -27,7 +27,7 @@ namespace bbe
 			bool isBackupPathSet();
 			bbe::String backupFullPath(const bbe::String &path);
 
-			void writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer);
+			bool writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer);
 			void createDirectory(const bbe::String &path);
 			void appendBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer);
 		}
@@ -39,7 +39,7 @@ namespace bbe
 		void writeFloatArrToFile(const bbe::String &filePath, const float *arr, size_t size);
 		void writeFloatArrToFile(const bbe::String &filePath, const bbe::List<float> &data);
 		void writeStringToFile(const bbe::String &filePath, const bbe::String &stringToWrite);
-		void writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer);
+		bool writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer);
 		void appendStringToFile(const bbe::String &filePath, const bbe::String &stringToAppend);
 		void appendBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer);
 		bool doesFileExist(const bbe::String &filePath);

@@ -1607,6 +1607,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			ImGui::OpenPopup("Save Document");
 			editor.openSaveChoicePopup = false;
 		}
+		if (editor.openSaveFailedPopup)
+		{
+			ImGui::OpenPopup("Save failed");
+			editor.openSaveFailedPopup = false;
+		}
 		if (editor.openDropChoicePopup)
 		{
 			ImGui::OpenPopup("Dropped File(s)");
@@ -1638,6 +1643,16 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
+		if (ImGui::BeginPopupModal("Save failed", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::TextUnformatted("The file could not be written (permission denied, read-only location, or full disk).");
+			if (ImGui::Button("OK", ImVec2(120, 0)))
 			{
 				ImGui::CloseCurrentPopup();
 			}

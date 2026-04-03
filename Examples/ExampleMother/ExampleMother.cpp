@@ -2839,13 +2839,19 @@ public:
 		{
 			image = imageFuture.get();
 			bbe::String imagePath = bbe::String::format("DallE%07d.png", dallEConfig->picNumber);
-			image.image.writeToFile(imagePath);
-			dallEConfig->picNumber++;
-			dallEConfig.writeToFile();
-
-			if (chainMode)
+			if (image.image.writeToFile(imagePath))
 			{
-				descriptionFuture = chatGPTComm.describeImageAsync(image.url);
+				dallEConfig->picNumber++;
+				dallEConfig.writeToFile();
+
+				if (chainMode)
+				{
+					descriptionFuture = chatGPTComm.describeImageAsync(image.url);
+				}
+			}
+			else
+			{
+				errorString = "Could not save image to disk.";
 			}
 		}
 

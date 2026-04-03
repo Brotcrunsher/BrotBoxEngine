@@ -220,8 +220,8 @@ namespace bbe
 		// CPU text: blends font glyphs onto this image (R8 coverage → alpha-over). Optionally tiled.
 		void blendText(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color, bool tiled = false, bool antiAlias = true);
 
-		void writeToFile(const bbe::String &path) const;
-		void writeToFile(const char *path) const;
+		bool writeToFile(const bbe::String &path) const;
+		bool writeToFile(const char *path) const;
 
 		void mirrorHorizontally();
 		void mirrorVertically();

@@ -790,8 +790,7 @@ public:
 		};
 		callbacks.writeBinaryFile = [](const bbe::String &path, const bbe::ByteBuffer &buffer)
 		{
-			bbe::simpleFile::writeBinaryToFile(path, buffer);
-			return true;
+			return bbe::simpleFile::writeBinaryToFile(path, buffer);
 		};
 		callbacks.loadImageFile = [](const bbe::String &path)
 		{
@@ -799,8 +798,7 @@ public:
 		};
 		callbacks.saveImageFile = [](const bbe::String &path, const bbe::Image &image)
 		{
-			image.writeToFile(path);
-			return true;
+			return image.writeToFile(path);
 		};
 		callbacks.supportsClipboardImages = []() { return bbe::Image::supportsClipboardImages(); };
 		callbacks.isClipboardImageAvailable = []() { return bbe::Image::isImageInClipbaord(); };

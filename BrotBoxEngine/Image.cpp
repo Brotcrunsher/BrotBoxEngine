@@ -1652,7 +1652,7 @@ HICON bbe::Image::toIcon() const
 }
 #endif
 
-void bbe::Image::writeToFile(const char *path) const
+bool bbe::Image::writeToFile(const char *path) const
 {
 	const bbe::String lowerPath = bbe::String(path).toLowerCase();
 
@@ -1676,7 +1676,7 @@ void bbe::Image::writeToFile(const char *path) const
 
 	if (lowerPath.endsWith(".png"))
 	{
-		stbi_write_png(path, m_width, m_height, (int)getAmountOfChannels(), m_pdata.getRaw(), 0);
+		return stbi_write_png(path, m_width, m_height, (int)getAmountOfChannels(), m_pdata.getRaw(), 0) != 0;
 	}
 	else if (lowerPath.endsWith(".ico"))
 	{
@@ -1747,22 +1747,13 @@ void bbe::Image::writeToFile(const char *path) const
 		}
 
 		std::ofstream file(path, std::ios::binary);
-		if (!file)
-		{
-			bbe::Crash(bbe::Error::IllegalState, "Failed to open file for ICO export.");
-		}
+		if (!file) return false;
 
 		file.write(reinterpret_cast<const char *>(&header), sizeof(header));
-		if (!file)
-		{
-			bbe::Crash(bbe::Error::IllegalState, "Failed to write ICO header.");
-		}
+		if (!file) return false;
 
 		file.write(reinterpret_cast<const char *>(entries), sizeof(IcoDirEntry) * iconCount);
-		if (!file)
-		{
-			bbe::Crash(bbe::Error::IllegalState, "Failed to write ICO directory entries.");
-		}
+		if (!file) return false;
 
 		for (size_t i = 0; i < iconCount; i++)
 		{
@@ -1770,26 +1761,24 @@ void bbe::Image::writeToFile(const char *path) const
 			if (!pngData.empty())
 			{
 				file.write(reinterpret_cast<const char *>(pngData.data()), static_cast<std::streamsize>(pngData.size()));
-				if (!file)
-				{
-					bbe::Crash(bbe::Error::IllegalState, "Failed to write ICO image data.");
-				}
+				if (!file) return false;
 			}
 		}
 
 		file.close();
+		return !file.fail();
 	}
 	else if (lowerPath.endsWith(".bmp"))
 	{
-		stbi_write_bmp(path, m_width, m_height, (int)getAmountOfChannels(), m_pdata.getRaw());
+		return stbi_write_bmp(path, m_width, m_height, (int)getAmountOfChannels(), m_pdata.getRaw()) != 0;
 	}
 	else if (lowerPath.endsWith(".tga"))
 	{
-		stbi_write_tga(path, m_width, m_height, (int)getAmountOfChannels(), m_pdata.getRaw());
+		return stbi_write_tga(path, m_width, m_height, (int)getAmountOfChannels(), m_pdata.getRaw()) != 0;
 	}
 	else if (lowerPath.endsWith(".jpg"))
 	{
-		stbi_write_jpg(path, m_width, m_height, (int)getAmountOfChannels(), m_pdata.getRaw(), 90);
+		return stbi_write_jpg(path, m_width, m_height, (int)getAmountOfChannels(), m_pdata.getRaw(), 90) != 0;
 	}
 	else
 	{
@@ -1797,9 +1786,9 @@ void bbe::Image::writeToFile(const char *path) const
 	}
 }
 
-void bbe::Image::writeToFile(const bbe::String &path) const
+bool bbe::Image::writeToFile(const bbe::String &path) const
 {
-	writeToFile(path.getRaw());
+	return writeToFile(path.getRaw());
 }
 
 static void floodFillStep(bbe::Image &image, bbe::List<bbe::Vector2i> &posToCheck, bbe::Vector2i /*copy*/ pos, const bbe::Colori &from, const bbe::Colori &to, bool tiled)

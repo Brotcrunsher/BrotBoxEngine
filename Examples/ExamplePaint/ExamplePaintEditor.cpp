@@ -3749,8 +3749,14 @@ void PaintEditor::saveDocumentAs(SaveFormat format)
 	const bbe::String defaultExtension = format == SaveFormat::PNG ? "png" : "bbepaint";
 	if (platform.showSaveDialog && platform.showSaveDialog(newPath, defaultExtension))
 	{
-		path = newPath;
-		saveDocumentToPath(path);
+		if (saveDocumentToPath(newPath))
+		{
+			path = newPath;
+		}
+		else
+		{
+			openSaveFailedPopup = true;
+		}
 	}
 }
 
@@ -3758,7 +3764,10 @@ void PaintEditor::requestSave()
 {
 	if (!path.isEmpty())
 	{
-		saveDocumentToPath(path);
+		if (!saveDocumentToPath(path))
+		{
+			openSaveFailedPopup = true;
+		}
 		return;
 	}
 

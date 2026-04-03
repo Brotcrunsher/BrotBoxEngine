@@ -64,13 +64,14 @@ bbe::String bbe::simpleFile::backup::backupFullPath(const bbe::String &path)
 	return backupPath + path;
 }
 
-void bbe::simpleFile::backup::writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer)
+bool bbe::simpleFile::backup::writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer)
 {
-	bbe::simpleFile::writeBinaryToFile(filePath, buffer);
+	if (!bbe::simpleFile::writeBinaryToFile(filePath, buffer)) return false;
 	if (isBackupPathSet())
 	{
-		bbe::simpleFile::writeBinaryToFile(backupFullPath(filePath), buffer);
+		if (!bbe::simpleFile::writeBinaryToFile(backupFullPath(filePath), buffer)) return false;
 	}
+	return true;
 }
 
 void bbe::simpleFile::backup::createDirectory(const bbe::String &path)
@@ -199,16 +200,14 @@ void bbe::simpleFile::writeStringToFile(const bbe::String &filePath, const bbe::
 	file.close();
 }
 
-void bbe::simpleFile::writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer)
+bool bbe::simpleFile::writeBinaryToFile(const bbe::String &filePath, const bbe::ByteBuffer &buffer)
 {
 	updateIoStats();
 	std::ofstream file(filePath.getRaw(), std::ios_base::binary);
-	if (!file.is_open())
-	{
-		throw std::runtime_error("Could not open file!");
-	}
+	if (!file.is_open()) return false;
 	std::copy(buffer.getRaw(), buffer.getRaw() + buffer.getLength(), std::ostreambuf_iterator<char>(file));
 	file.close();
+	return !file.fail();
 }
 
 void bbe::simpleFile::appendStringToFile(const bbe::String &filePath, const bbe::String &stringToAppend)
@@ -1346,7 +1345,10 @@ static void innerIoThreadMain()
 		const AsyncJob job = jobs.popFront();
 		if (job.type == AsyncJobType::WRITE_BINARY)
 		{
-			bbe::simpleFile::backup::writeBinaryToFile(job.path, job.buffer);
+			if (!bbe::simpleFile::backup::writeBinaryToFile(job.path, job.buffer))
+			{
+				bbe::Crash(bbe::Error::IllegalState);
+			}
 		}
 		else if (job.type == AsyncJobType::CREATE_DIRECTORY)
 		{
@@ -1416,7 +1418,10 @@ void bbe::simpleFile::backup::async::writeBinaryToFile(const bbe::String &filePa
 {
 	updateIoStats();
 #ifdef __EMSCRIPTEN__
-	bbe::simpleFile::backup::writeBinaryToFile(filePath, buffer);
+	if (!bbe::simpleFile::backup::writeBinaryToFile(filePath, buffer))
+	{
+		bbe::Crash(bbe::Error::IllegalState);
+	}
 #else
 	jobs.add({ AsyncJobType::WRITE_BINARY, filePath, buffer });
 	notifyIOThread();
