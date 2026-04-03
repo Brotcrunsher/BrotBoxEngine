@@ -12,6 +12,11 @@
 #include "ExamplePaintInput.h"
 
 // TODO: Color history
+// TODO: Favorite Colors (Persisted between sessions, separate from history, user-managed)
+// TODO: Most used colors
+// TODO: GUI - All windows should be movable and dockable at arbitrary locations.
+// TODO: GUI - Menu->View->GUI to Default should reset all windows to their default positions and open/closed states.
+// TODO: Shortcuts 1-9 + 0 should be reconfigurable during runtime. When the user hovers over a button and simply pressing CTRL+number assigns that number to that button.
 struct FontEntry
 {
 	bbe::String displayName;
