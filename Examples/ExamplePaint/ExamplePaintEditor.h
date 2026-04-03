@@ -463,10 +463,6 @@ struct PaintEditor
 
 	SelectionHitZone getSelectionHitZone(const bbe::Vector2 &pointCanvas) const;
 
-	bool isWholeLayerSelection(const bbe::Rectanglei &rect) const;
-
-	bool shouldClearWholeLayerSelectionToTransparency() const;
-
 	bbe::Image copyCanvasRect(const bbe::Rectanglei &rect) const;
 
 	void clearCanvasRect(const bbe::Rectanglei &rect);

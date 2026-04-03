@@ -1383,7 +1383,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 							if (selected) ImGui::PopStyleColor();
 						}
 					}
-					ImGui::Text("Fill color: secondary (right) color");
+					ImGui::Text("New area: transparent pixels");
 				}
 
 				ImGui::Spacing();
@@ -1402,7 +1402,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 						if (anchorX == 2) offX = resizeW - oldW;
 						if (anchorY == 1) offY = (resizeH - oldH) / 2;
 						if (anchorY == 2) offY = resizeH - oldH;
-						const bbe::Color fillColor(editor.rightColor[0], editor.rightColor[1], editor.rightColor[2], editor.rightColor[3]);
+						const bbe::Color fillColor(0.f, 0.f, 0.f, 0.f);
 						for (size_t li = 0; li < editor.canvas.get().layers.getLength(); li++)
 						{
 							editor.canvas.get().layers[li].image = editor.canvas.get().layers[li].image.resizedCanvas(

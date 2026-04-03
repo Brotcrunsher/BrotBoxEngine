@@ -298,14 +298,13 @@ bbe::Image copyLayerRectWithMask(const PaintEditor &editor, const bbe::Rectangle
 void clearLayerRectWithMask(PaintEditor &editor, const bbe::Rectanglei &rect, const bbe::Image &mask)
 {
 	const bool useMask = selectionMaskMatchesRect(mask, rect);
-	const bool clearToTransparency = editor.isWholeLayerSelection(rect) && editor.shouldClearWholeLayerSelectionToTransparency();
-	const bbe::Colori backgroundColor = clearToTransparency ? bbe::Colori(0, 0, 0, 0) : bbe::Color(editor.rightColor).asByteColor();
+	constexpr bbe::Colori kClear{0, 0, 0, 0};
 	for (int32_t x = 0; x < rect.width; x++)
 	{
 		for (int32_t y = 0; y < rect.height; y++)
 		{
 			if (useMask && mask.getPixel((size_t)x, (size_t)y).a < 128) continue;
-			editor.getActiveLayerImage().setPixel((size_t)(rect.x + x), (size_t)(rect.y + y), backgroundColor);
+			editor.getActiveLayerImage().setPixel((size_t)(rect.x + x), (size_t)(rect.y + y), kClear);
 		}
 	}
 }
@@ -1544,10 +1543,6 @@ PaintEditor::SelectionHitZone PaintEditor::getSelectionHitZone(const bbe::Vector
 	return z;
 }
 
-bool PaintEditor::isWholeLayerSelection(const bbe::Rectanglei &rect) const { return rect.x == 0 && rect.y == 0 && rect.width == getCanvasWidth() && rect.height == getCanvasHeight(); }
-
-bool PaintEditor::shouldClearWholeLayerSelectionToTransparency() const { return canvas.get().layers.getLength() > 1; }
-
 bbe::Image PaintEditor::copyCanvasRect(const bbe::Rectanglei &rect) const
 {
 	bbe::Image copied(rect.width, rect.height, bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
@@ -1564,13 +1559,12 @@ bbe::Image PaintEditor::copyCanvasRect(const bbe::Rectanglei &rect) const
 
 void PaintEditor::clearCanvasRect(const bbe::Rectanglei &rect)
 {
-	const bool clearToTransparency = isWholeLayerSelection(rect) && shouldClearWholeLayerSelectionToTransparency();
-	const bbe::Colori backgroundColor = clearToTransparency ? bbe::Colori(0, 0, 0, 0) : bbe::Color(rightColor).asByteColor();
+	constexpr bbe::Colori kClear{0, 0, 0, 0};
 	for (int32_t x = 0; x < rect.width; x++)
 	{
 		for (int32_t y = 0; y < rect.height; y++)
 		{
-			getActiveLayerImage().setPixel((size_t)(rect.x + x), (size_t)(rect.y + y), backgroundColor);
+			getActiveLayerImage().setPixel((size_t)(rect.x + x), (size_t)(rect.y + y), kClear);
 		}
 	}
 }
@@ -1670,7 +1664,7 @@ void PaintEditor::pasteSelectionAt(const bbe::Vector2i &pos)
 	const int32_t newH = bbe::Math::max(getCanvasHeight(), neededH);
 	if (newW > getCanvasWidth() || newH > getCanvasHeight())
 	{
-		const bbe::Color fillColor(rightColor[0], rightColor[1], rightColor[2], rightColor[3]);
+		const bbe::Color fillColor(0.f, 0.f, 0.f, 0.f);
 		for (size_t li = 0; li < canvas.get().layers.getLength(); li++)
 		{
 			canvas.get().layers[li].image = canvas.get().layers[li].image.resizedCanvas(
@@ -3277,9 +3271,7 @@ void PaintEditor::applyCanvasResize(const bbe::Rectanglei &previewRect)
 	if (previewRect.width <= 0 || previewRect.height <= 0) return;
 	if (canvas.get().layers.isEmpty()) return;
 
-	const bbe::Color fillColor(rightColor[0], rightColor[1], rightColor[2], rightColor[3]);
-	const int32_t oldW = getCanvasWidth();
-	const int32_t oldH = getCanvasHeight();
+	const bbe::Color fillColor(0.f, 0.f, 0.f, 0.f);
 
 	for (size_t li = 0; li < canvas.get().layers.getLength(); li++)
 	{
