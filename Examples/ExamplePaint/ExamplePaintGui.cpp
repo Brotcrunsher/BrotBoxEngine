@@ -50,6 +50,7 @@ struct ToolIconTextures
 	struct Slot { ImTextureID texId = nullptr; const bbe::Image *cachedPtr = nullptr; };
 	Slot brush, eraser, spray, fill, line, rectangle, circle, selection, ellipseSelection, lasso, polygonLasso, magicWand, text, pipette, arrow, bezier;
 	Slot undo, redo;
+	Slot layerNew, layerDelete, layerUp, layerDown, layerDuplicate, layerMergeDown;
 
 	void refresh()
 	{
@@ -71,6 +72,12 @@ struct ToolIconTextures
 		updateIconSlot(bezier.texId,         bezier.cachedPtr,         assetStore::iconBezier());
 		updateIconSlot(undo.texId,           undo.cachedPtr,           assetStore::iconUndo());
 		updateIconSlot(redo.texId,           redo.cachedPtr,           assetStore::iconRedo());
+		updateIconSlot(layerNew.texId,       layerNew.cachedPtr,       assetStore::iconLayerNew());
+		updateIconSlot(layerDelete.texId,    layerDelete.cachedPtr,    assetStore::iconLayerDelete());
+		updateIconSlot(layerUp.texId,        layerUp.cachedPtr,        assetStore::iconLayerUp());
+		updateIconSlot(layerDown.texId,      layerDown.cachedPtr,      assetStore::iconLayerDown());
+		updateIconSlot(layerDuplicate.texId, layerDuplicate.cachedPtr, assetStore::iconLayerDuplicate());
+		updateIconSlot(layerMergeDown.texId, layerMergeDown.cachedPtr, assetStore::iconLayerMergeDown());
 	}
 };
 static ToolIconTextures s_toolIcons;
@@ -647,26 +654,88 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		if (ImGui::IsItemDeactivatedAfterEdit()) editor.submitCanvas();
 		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Color behind all layers (first layer blends onto this). Used when flattening/exporting PNG. Alpha 0 = fully transparent document.");
 		{
-			const float btnW = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 3) * 0.25f;
-			if (ImGui::Button("+ New", ImVec2(btnW * 1.5f, 0))) editor.addLayer();
+			constexpr float layerIconSize = 24.f;
+			const float layerRowW = ImGui::GetContentRegionAvail().x;
+			const float layerHalfW = (layerRowW - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+			const float btnW = (layerRowW - ImGui::GetStyle().ItemSpacing.x * 3) * 0.25f;
+#ifdef BBE_RENDERER_OPENGL
+			if (s_toolIcons.layerNew.texId)
+			{
+				if (ImGui::ImageButton("##layerNew", s_toolIcons.layerNew.texId, ImVec2(layerIconSize, layerIconSize))) editor.addLayer();
+			}
+			else
+#endif
+			{
+				if (ImGui::Button("+ New", ImVec2(btnW * 1.5f, 0))) editor.addLayer();
+			}
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("New layer");
 			ImGui::SameLine();
 			ImGui::BeginDisabled(editor.canvas.get().layers.getLength() <= 1);
-			if (ImGui::Button("- Del", ImVec2(btnW * 1.5f, 0))) editor.deleteActiveLayer();
+#ifdef BBE_RENDERER_OPENGL
+			if (s_toolIcons.layerDelete.texId)
+			{
+				if (ImGui::ImageButton("##layerDel", s_toolIcons.layerDelete.texId, ImVec2(layerIconSize, layerIconSize))) editor.deleteActiveLayer();
+			}
+			else
+#endif
+			{
+				if (ImGui::Button("- Del", ImVec2(btnW * 1.5f, 0))) editor.deleteActiveLayer();
+			}
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Delete active layer");
 			ImGui::EndDisabled();
 			ImGui::SameLine();
 			ImGui::BeginDisabled((size_t)editor.activeLayerIndex + 1 >= editor.canvas.get().layers.getLength());
-			if (ImGui::Button("Up", ImVec2(btnW, 0))) editor.moveActiveLayerUp();
+#ifdef BBE_RENDERER_OPENGL
+			if (s_toolIcons.layerUp.texId)
+			{
+				if (ImGui::ImageButton("##layerUp", s_toolIcons.layerUp.texId, ImVec2(layerIconSize, layerIconSize))) editor.moveActiveLayerUp();
+			}
+			else
+#endif
+			{
+				if (ImGui::Button("Up", ImVec2(btnW, 0))) editor.moveActiveLayerUp();
+			}
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Move layer up (toward front)");
 			ImGui::EndDisabled();
 			ImGui::SameLine();
 			ImGui::BeginDisabled(editor.activeLayerIndex <= 0);
-			if (ImGui::Button("Dn", ImVec2(btnW, 0))) editor.moveActiveLayerDown();
+#ifdef BBE_RENDERER_OPENGL
+			if (s_toolIcons.layerDown.texId)
+			{
+				if (ImGui::ImageButton("##layerDn", s_toolIcons.layerDown.texId, ImVec2(layerIconSize, layerIconSize))) editor.moveActiveLayerDown();
+			}
+			else
+#endif
+			{
+				if (ImGui::Button("Dn", ImVec2(btnW, 0))) editor.moveActiveLayerDown();
+			}
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Move layer down (toward back)");
 			ImGui::EndDisabled();
 
-			const float halfW = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
-			if (ImGui::Button("Dup", ImVec2(halfW, 0))) editor.duplicateActiveLayer();
+#ifdef BBE_RENDERER_OPENGL
+			if (s_toolIcons.layerDuplicate.texId)
+			{
+				if (ImGui::ImageButton("##layerDup", s_toolIcons.layerDuplicate.texId, ImVec2(layerIconSize, layerIconSize))) editor.duplicateActiveLayer();
+			}
+			else
+#endif
+			{
+				if (ImGui::Button("Dup", ImVec2(layerHalfW, 0))) editor.duplicateActiveLayer();
+			}
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Duplicate active layer");
 			ImGui::SameLine();
 			ImGui::BeginDisabled(editor.activeLayerIndex <= 0);
-			if (ImGui::Button("Merge Dn", ImVec2(halfW, 0))) editor.mergeActiveLayerDown();
+#ifdef BBE_RENDERER_OPENGL
+			if (s_toolIcons.layerMergeDown.texId)
+			{
+				if (ImGui::ImageButton("##layerMerge", s_toolIcons.layerMergeDown.texId, ImVec2(layerIconSize, layerIconSize))) editor.mergeActiveLayerDown();
+			}
+			else
+#endif
+			{
+				if (ImGui::Button("Merge Dn", ImVec2(layerHalfW, 0))) editor.mergeActiveLayerDown();
+			}
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Merge active layer into the one below");
 			ImGui::EndDisabled();
 		}
 		if (!editor.canvas.get().layers.isEmpty())
