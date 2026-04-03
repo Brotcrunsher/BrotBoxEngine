@@ -616,7 +616,9 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		if (ImGui::Button("Paste as New Canvas", ImVec2(-1, 0)))
 		{
 			editor.canvas.get().layers.clear();
-			editor.canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, editor.platform.getClipboardImage() });
+			bbe::Image pasted = editor.platform.getClipboardImage();
+			editor.setCanvasFallbackFromImageAlpha(pasted);
+			editor.canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, std::move(pasted) });
 			editor.path = "";
 			editor.submitCanvas();
 			editor.setupCanvas(false);
@@ -627,6 +629,9 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 
 		// --- Layers ---
 		ImGui::SeparatorText("Layers");
+		ImGui::ColorEdit4("Canvas backdrop##canvasFallback", editor.canvas.get().canvasFallbackRgba, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
+		if (ImGui::IsItemDeactivatedAfterEdit()) editor.submitCanvas();
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Color behind all layers (first layer blends onto this). Used when flattening/exporting PNG. Alpha 0 = fully transparent document.");
 		{
 			const float btnW = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 3) * 0.25f;
 			if (ImGui::Button("+ New", ImVec2(btnW * 1.5f, 0))) editor.addLayer();
@@ -713,14 +718,27 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			blendModePreview = editor.flattenVisibleLayers();
 		}
 
+		const bbe::Color canvasBackdrop(
+			editor.canvas.get().canvasFallbackRgba[0],
+			editor.canvas.get().canvasFallbackRgba[1],
+			editor.canvas.get().canvasFallbackRgba[2],
+			editor.canvas.get().canvasFallbackRgba[3]);
+
 		const int32_t repeats = editor.tiled ? 20 : 0;
 		for (int32_t i = -repeats; i <= repeats; i++)
 		{
 			for (int32_t k = -repeats; k <= repeats; k++)
 			{
+				const float tileX = editor.offset.x + i * editor.getCanvasWidth() * editor.zoomLevel;
+				const float tileY = editor.offset.y + k * editor.getCanvasHeight() * editor.zoomLevel;
+				const float tileW = editor.getCanvasWidth() * editor.zoomLevel;
+				const float tileH = editor.getCanvasHeight() * editor.zoomLevel;
+				brush.setColorRGB(canvasBackdrop);
+				brush.fillRect(tileX, tileY, tileW, tileH);
 				if (anyNonNormalBlendMode)
 				{
-					brush.drawImage(editor.offset.x + i * editor.getCanvasWidth() * editor.zoomLevel, editor.offset.y + k * editor.getCanvasHeight() * editor.zoomLevel, editor.getCanvasWidth() * editor.zoomLevel, editor.getCanvasHeight() * editor.zoomLevel, blendModePreview);
+					brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
+					brush.drawImage(tileX, tileY, tileW, tileH, blendModePreview);
 				}
 				else
 				{
@@ -729,11 +747,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 						const PaintLayer &layer = editor.canvas.get().layers[layerIndex];
 						if (!layer.visible) continue;
 						brush.setColorRGB(1.0f, 1.0f, 1.0f, layer.opacity);
-						brush.drawImage(editor.offset.x + i * editor.getCanvasWidth() * editor.zoomLevel, editor.offset.y + k * editor.getCanvasHeight() * editor.zoomLevel, editor.getCanvasWidth() * editor.zoomLevel, editor.getCanvasHeight() * editor.zoomLevel, layer.image);
+						brush.drawImage(tileX, tileY, tileW, tileH, layer.image);
 					}
 					brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
 				}
-				brush.drawImage(editor.offset.x + i * editor.getCanvasWidth() * editor.zoomLevel, editor.offset.y + k * editor.getCanvasHeight() * editor.zoomLevel, editor.getCanvasWidth() * editor.zoomLevel, editor.getCanvasHeight() * editor.zoomLevel, editor.workArea);
+				brush.drawImage(tileX, tileY, tileW, tileH, editor.workArea);
 			}
 		}
 		if (editor.zoomLevel > 3 && editor.drawGridLines)
@@ -1131,7 +1149,9 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			brush.setColorRGB(0.08f, 0.08f, 0.08f);
 			brush.fillRect(navX - 2.f, navY - 2.f, navW + 4.f, navH + 4.f);
 
-			// Layers
+			// Layers (canvas backdrop then composited image)
+			brush.setColorRGB(canvasBackdrop);
+			brush.fillRect(navX, navY, navW, navH);
 			if (anyNonNormalBlendMode)
 			{
 				brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1321,7 +1341,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				bulletList("General", { "+/- changes brush size, eraser size, wand tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
 				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection" });
 				bulletList("Selection", { "Drag to create a rectangular selection", "Ellipse selection: drag for an elliptical marquee; hold Shift for a circle", "Lasso: click and drag to outline an area (closed automatically)", "Polygon lasso: click corners, then close via first point, Enter, or right-click", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand, Selection, Ellipse selection, Lasso, or Polygon lasso adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
-				bulletList("Layers", { "Painting and text placement affect only the active layer", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });
+				bulletList("Layers", { "Painting and text placement affect only the active layer", "Canvas backdrop defaults to opaque white behind all layers; set alpha to 0 on the backdrop for a fully transparent document", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });
 			}
 			ImGui::End();
 		}

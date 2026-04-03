@@ -34,6 +34,8 @@ struct PaintLayer
 
 struct PaintDocument
 {
+	/// RGBA behind all layers (premultiplied-style source for the first blend). Default opaque white; alpha 0 = transparent document.
+	float canvasFallbackRgba[4] = { 1.f, 1.f, 1.f, 1.f };
 	bbe::List<PaintLayer> layers;
 };
 
@@ -153,6 +155,7 @@ struct PaintEditor
 
 	static constexpr const char *LAYERED_FILE_MAGIC_V1 = "ExamplePaintLayeredV1";
 	static constexpr const char *LAYERED_FILE_MAGIC = "ExamplePaintLayeredV2";
+	static constexpr const char *LAYERED_FILE_MAGIC_V3 = "ExamplePaintLayeredV3";
 	static constexpr const char *LAYERED_FILE_EXTENSION = ".bbepaint";
 
 	float leftColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -669,6 +672,9 @@ struct PaintEditor
 	void newCanvas(uint32_t width, uint32_t height);
 
 	bool newCanvas(const char *path);
+
+	/// After loading a flat image: opaque white backdrop if every pixel has alpha 255, else transparent backdrop.
+	void setCanvasFallbackFromImageAlpha(const bbe::Image &image);
 
 	bbe::Vector2 screenToCanvas(const bbe::Vector2 &pos);
 

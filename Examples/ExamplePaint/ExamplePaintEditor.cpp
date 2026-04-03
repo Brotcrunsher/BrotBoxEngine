@@ -1240,7 +1240,8 @@ bool PaintEditor::isSupportedDroppedDocumentPath(const bbe::String &filePath) co
 
 bbe::Image PaintEditor::flattenVisibleLayers() const
 {
-	bbe::Image flattened(getCanvasWidth(), getCanvasHeight(), bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
+	const float *const cf = canvas.get().canvasFallbackRgba;
+	bbe::Image flattened(getCanvasWidth(), getCanvasHeight(), bbe::Color(cf[0], cf[1], cf[2], cf[3]));
 	prepareImageForCanvas(flattened);
 	for (size_t i = 0; i < canvas.get().layers.getLength(); i++)
 	{
@@ -1253,7 +1254,8 @@ bbe::Image PaintEditor::flattenVisibleLayers() const
 
 bbe::Colori PaintEditor::getVisiblePixel(size_t x, size_t y) const
 {
-	bbe::Colori color(0, 0, 0, 0);
+	const float *const cf = canvas.get().canvasFallbackRgba;
+	bbe::Colori color = bbe::Color(cf[0], cf[1], cf[2], cf[3]).asByteColor();
 	for (size_t i = 0; i < canvas.get().layers.getLength(); i++)
 	{
 		const PaintLayer &layer = canvas.get().layers[i];
@@ -1292,7 +1294,8 @@ void PaintEditor::importFileAsLayers(const bbe::List<bbe::String> &paths)
 			if (buffer.getLength() == 0) continue;
 			bbe::ByteBufferSpan span = buffer.getSpan();
 			const bbe::String magic = span.readNullString();
-			const bool importIsV2 = (magic == LAYERED_FILE_MAGIC);
+			const bool importIsV3 = (magic == LAYERED_FILE_MAGIC_V3);
+			const bool importIsV2 = (magic == LAYERED_FILE_MAGIC) || importIsV3;
 			const bool importIsV1 = (magic == LAYERED_FILE_MAGIC_V1);
 			if (!importIsV2 && !importIsV1) continue;
 			int32_t width = 0, height = 0;
@@ -1302,6 +1305,10 @@ void PaintEditor::importFileAsLayers(const bbe::List<bbe::String> &paths)
 			span.read(height);
 			span.read(layerCount);
 			span.read(storedActiveLayerIndex);
+			if (importIsV3)
+			{
+				for (int c = 0; c < 4; c++) span.read(canvas.get().canvasFallbackRgba[c]);
+			}
 			if (width <= 0 || height <= 0 || layerCount == 0) continue;
 			for (uint32_t k = 0; k < layerCount; k++)
 			{
@@ -3441,7 +3448,7 @@ bool PaintEditor::deserializeLayerImage(bbe::ByteBufferSpan &span, int32_t width
 bbe::ByteBuffer PaintEditor::serializeLayeredDocumentBytes() const
 {
 	bbe::ByteBuffer buffer;
-	buffer.writeNullString(LAYERED_FILE_MAGIC);
+	buffer.writeNullString(LAYERED_FILE_MAGIC_V3);
 
 	int32_t width = getCanvasWidth();
 	int32_t height = getCanvasHeight();
@@ -3451,6 +3458,11 @@ bbe::ByteBuffer PaintEditor::serializeLayeredDocumentBytes() const
 	buffer.write(height);
 	buffer.write(layerCount);
 	buffer.write(storedActiveLayerIndex);
+	for (int c = 0; c < 4; c++)
+	{
+		float fc = canvas.get().canvasFallbackRgba[c];
+		buffer.write(fc);
+	}
 
 	for (size_t i = 0; i < canvas.get().layers.getLength(); i++)
 	{
@@ -3471,7 +3483,8 @@ bbe::ByteBuffer PaintEditor::serializeLayeredDocumentBytes() const
 bool PaintEditor::deserializeLayeredDocumentBytes(bbe::ByteBufferSpan span, PaintDocument &outDocument, int32_t &outStoredActiveLayerIndex) const
 {
 	const bbe::String magic = span.readNullString();
-	const bool isV2 = (magic == LAYERED_FILE_MAGIC);
+	const bool isV3 = (magic == LAYERED_FILE_MAGIC_V3);
+	const bool isV2 = (magic == LAYERED_FILE_MAGIC) || isV3;
 	const bool isV1 = (magic == LAYERED_FILE_MAGIC_V1);
 	if (!isV2 && !isV1) return false;
 
@@ -3486,6 +3499,19 @@ bool PaintEditor::deserializeLayeredDocumentBytes(bbe::ByteBufferSpan span, Pain
 	if (width <= 0 || height <= 0 || layerCount == 0) return false;
 
 	PaintDocument document;
+	if (isV3)
+	{
+		for (int c = 0; c < 4; c++) span.read(document.canvasFallbackRgba[c]);
+	}
+	else
+	{
+		// V1/V2 had no stored backdrop; keep previous transparent-composite behavior.
+		document.canvasFallbackRgba[0] = 0.f;
+		document.canvasFallbackRgba[1] = 0.f;
+		document.canvasFallbackRgba[2] = 0.f;
+		document.canvasFallbackRgba[3] = 0.f;
+	}
+
 	for (uint32_t i = 0; i < layerCount; i++)
 	{
 		PaintLayer layer;
@@ -3666,7 +3692,11 @@ void PaintEditor::setupCanvas(bool clearHistory)
 void PaintEditor::newCanvas(uint32_t width, uint32_t height)
 {
 	canvas.get().layers.clear();
-	canvas.get().layers.add(makeLayer("Layer 1", (int32_t)width, (int32_t)height, bbe::Color::white()));
+	canvas.get().canvasFallbackRgba[0] = 1.f;
+	canvas.get().canvasFallbackRgba[1] = 1.f;
+	canvas.get().canvasFallbackRgba[2] = 1.f;
+	canvas.get().canvasFallbackRgba[3] = 1.f;
+	canvas.get().layers.add(makeLayer("Layer 1", (int32_t)width, (int32_t)height, bbe::Color(0.f, 0.f, 0.f, 0.f)));
 	activeLayerIndex = 0;
 	this->path = "";
 	setupCanvas();
@@ -3686,11 +3716,44 @@ bool PaintEditor::newCanvas(const char *path)
 	canvas.get().layers.clear();
 	bbe::Image img;
 	if (platform.loadImageFile) img = platform.loadImageFile(path);
+	setCanvasFallbackFromImageAlpha(img);
 	canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, std::move(img) });
 	activeLayerIndex = 0;
 	this->path = path;
 	setupCanvas();
 	return true;
+}
+
+void PaintEditor::setCanvasFallbackFromImageAlpha(const bbe::Image &image)
+{
+	const int32_t w = image.getWidth();
+	const int32_t h = image.getHeight();
+	if (w <= 0 || h <= 0)
+	{
+		canvas.get().canvasFallbackRgba[0] = 1.f;
+		canvas.get().canvasFallbackRgba[1] = 1.f;
+		canvas.get().canvasFallbackRgba[2] = 1.f;
+		canvas.get().canvasFallbackRgba[3] = 1.f;
+		return;
+	}
+	for (int32_t y = 0; y < h; y++)
+	{
+		for (int32_t x = 0; x < w; x++)
+		{
+			if (image.getPixel((size_t)x, (size_t)y).a < 255)
+			{
+				canvas.get().canvasFallbackRgba[0] = 0.f;
+				canvas.get().canvasFallbackRgba[1] = 0.f;
+				canvas.get().canvasFallbackRgba[2] = 0.f;
+				canvas.get().canvasFallbackRgba[3] = 0.f;
+				return;
+			}
+		}
+	}
+	canvas.get().canvasFallbackRgba[0] = 1.f;
+	canvas.get().canvasFallbackRgba[1] = 1.f;
+	canvas.get().canvasFallbackRgba[2] = 1.f;
+	canvas.get().canvasFallbackRgba[3] = 1.f;
 }
 
 bbe::Vector2 PaintEditor::screenToCanvas(const bbe::Vector2 &pos)
