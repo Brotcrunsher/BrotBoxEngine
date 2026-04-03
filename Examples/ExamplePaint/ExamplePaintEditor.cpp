@@ -452,6 +452,11 @@ void PaintEditor::clampMagicWandTolerance()
 	magicWandTolerance = bbe::Math::clamp(magicWandTolerance, 0, 255);
 }
 
+void PaintEditor::clampFloodFillTolerance()
+{
+	floodFillTolerance = bbe::Math::clamp(floodFillTolerance, 0, 255);
+}
+
 bool PaintEditor::hasSelectionPixelMask() const
 {
 	return selection.hasSelection && selectionMaskMatchesRect(selection.mask, selection.rect);

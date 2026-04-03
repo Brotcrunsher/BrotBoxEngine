@@ -145,7 +145,8 @@ namespace bbe
 		bool isLoadedGpu() const;
 		void keepAfterUpload();
 
-		void floodFill(const bbe::Vector2i &pos, const bbe::Colori &to, bool fillDiagonal = false, bool tiled = false);
+		/// Fills connected pixels whose channels are within \p tolerance of the seed (per-channel, 0–255). 0 = exact match only.
+		void floodFill(const bbe::Vector2i &pos, const bbe::Colori &to, bool fillDiagonal = false, bool tiled = false, int tolerance = 0);
 
 		// CPU-side alpha-over blit of src onto this image at dstPos (top-left).
 		// If tiled is true, the destination wraps modulo this image's dimensions.

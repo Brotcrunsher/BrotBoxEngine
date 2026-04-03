@@ -1791,41 +1791,81 @@ bool bbe::Image::writeToFile(const bbe::String &path) const
 	return writeToFile(path.getRaw());
 }
 
-static void floodFillStep(bbe::Image &image, bbe::List<bbe::Vector2i> &posToCheck, bbe::Vector2i /*copy*/ pos, const bbe::Colori &from, const bbe::Colori &to, bool tiled)
+static bool floodFillPixelWithinTolerance(const bbe::Colori &p, const bbe::Colori &ref, int tolerance)
 {
-	if (pos.x < 0 || pos.x >= image.getWidth() || pos.y < 0 || pos.y >= image.getHeight())
-	{
-		if (!tiled) return;
-		if (pos.x < 0) pos.x = image.getWidth() - 1;
-		if (pos.y < 0) pos.y = image.getHeight() - 1;
-		if (pos.x >= image.getWidth()) pos.x = 0;
-		if (pos.y >= image.getHeight()) pos.y = 0;
-	}
-	if (image.getPixel(pos) != from) return;
-	image.setPixel(pos, to);
-	posToCheck.add(pos);
+	return bbe::Math::abs<int32_t>((int32_t)p.r - ref.r) <= tolerance && bbe::Math::abs<int32_t>((int32_t)p.g - ref.g) <= tolerance &&
+		   bbe::Math::abs<int32_t>((int32_t)p.b - ref.b) <= tolerance && bbe::Math::abs<int32_t>((int32_t)p.a - ref.a) <= tolerance;
 }
 
-void bbe::Image::floodFill(const bbe::Vector2i &pos, const bbe::Colori &to, bool fillDiagonal, bool tiled)
+static bool floodFillNormalize(int32_t x, int32_t y, int32_t w, int32_t h, bool tiled, int32_t &ox, int32_t &oy)
 {
-	const bbe::Colori from = getPixel(pos);
-	if (from == to) return;
-	bbe::List<bbe::Vector2i> posToCheck;
-	floodFillStep(*this, posToCheck, pos, from, to, tiled);
-
-	while (posToCheck.getLength() > 0)
+	if (!tiled)
 	{
-		const bbe::Vector2i pos = posToCheck.popBack();
-		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x + 1, pos.y), from, to, tiled);
-		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x - 1, pos.y), from, to, tiled);
-		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x, pos.y + 1), from, to, tiled);
-		floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x, pos.y - 1), from, to, tiled);
+		if (x < 0 || y < 0 || x >= w || y >= h) return false;
+		ox = x;
+		oy = y;
+		return true;
+	}
+	ox = x % w;
+	if (ox < 0) ox += w;
+	oy = y % h;
+	if (oy < 0) oy += h;
+	return true;
+}
+
+void bbe::Image::floodFill(const bbe::Vector2i &pos, const bbe::Colori &to, bool fillDiagonal, bool tiled, int tolerance)
+{
+	const int tol = bbe::Math::clamp(tolerance, 0, 255);
+	const int32_t w = getWidth();
+	const int32_t h = getHeight();
+	if (w <= 0 || h <= 0) return;
+
+	int32_t sx = 0;
+	int32_t sy = 0;
+	if (!floodFillNormalize(pos.x, pos.y, w, h, tiled, sx, sy)) return;
+
+	const bbe::Colori ref = getPixel(bbe::Vector2i(sx, sy));
+	if (ref == to) return;
+
+	const size_t cellCount = (size_t)w * (size_t)h;
+	std::vector<uint8_t> visited(cellCount, 0);
+
+	auto indexOf = [w](int32_t x, int32_t y) -> size_t
+	{
+		return (size_t)y * (size_t)w + (size_t)x;
+	};
+
+	bbe::List<bbe::Vector2i> queue;
+	const size_t startIdx = indexOf(sx, sy);
+	visited[startIdx] = 1;
+	queue.add(bbe::Vector2i(sx, sy));
+
+	auto tryEnqueue = [&](int32_t x, int32_t y)
+	{
+		int32_t nx = 0;
+		int32_t ny = 0;
+		if (!floodFillNormalize(x, y, w, h, tiled, nx, ny)) return;
+		const size_t i = indexOf(nx, ny);
+		if (visited[i]) return;
+		if (!floodFillPixelWithinTolerance(getPixel(bbe::Vector2i(nx, ny)), ref, tol)) return;
+		visited[i] = 1;
+		queue.add(bbe::Vector2i(nx, ny));
+	};
+
+	while (queue.getLength() > 0)
+	{
+		const bbe::Vector2i p = queue.popBack();
+		setPixel(p, to);
+		tryEnqueue(p.x + 1, p.y);
+		tryEnqueue(p.x - 1, p.y);
+		tryEnqueue(p.x, p.y + 1);
+		tryEnqueue(p.x, p.y - 1);
 		if (fillDiagonal)
 		{
-			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x + 1, pos.y + 1), from, to, tiled);
-			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x - 1, pos.y + 1), from, to, tiled);
-			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x + 1, pos.y - 1), from, to, tiled);
-			floodFillStep(*this, posToCheck, bbe::Vector2i(pos.x - 1, pos.y - 1), from, to, tiled);
+			tryEnqueue(p.x + 1, p.y + 1);
+			tryEnqueue(p.x - 1, p.y + 1);
+			tryEnqueue(p.x + 1, p.y - 1);
+			tryEnqueue(p.x - 1, p.y - 1);
 		}
 	}
 }

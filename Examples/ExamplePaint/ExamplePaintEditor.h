@@ -11,8 +11,7 @@
 
 #include "ExamplePaintInput.h"
 
-// TODO: Flood fill with edges of brush tool kinda bad.
-// TODO: Bug: right click has weird behaviour with shadow
+// TODO: Rectangle and Circle fill mode should be selectable (none, first color, second color, pattern?).
 
 // TODO: Color history
 struct FontEntry
@@ -264,6 +263,10 @@ struct PaintEditor
 	int32_t magicWandTolerance = 32;
 	void clampMagicWandTolerance();
 	void applyMagicWandAt(const bbe::Vector2i &pixel, bool additive);
+
+	/// Per-channel color tolerance for flood fill on the active layer (same rule as Magic Wand).
+	int32_t floodFillTolerance = 0;
+	void clampFloodFillTolerance();
 
 	/// After clearing the selection with a click, suppress one wand sample on the same frame.
 	bool consumeMagicWandSuppressedPick();

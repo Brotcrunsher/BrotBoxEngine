@@ -268,6 +268,12 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		if (decreaseToolSize) editor.magicWandTolerance -= 4;
 		editor.clampMagicWandTolerance();
 	}
+	else if (editor.mode == PaintEditor::MODE_FLOOD_FILL)
+	{
+		if (increaseToolSize) editor.floodFillTolerance += 4;
+		if (decreaseToolSize) editor.floodFillTolerance -= 4;
+		editor.clampFloodFillTolerance();
+	}
 
 	if (ctrlDown)
 	{
@@ -712,7 +718,8 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 				{
 					bbe::Vector2 symPos = symPositions[i];
 					if (editor.toTiledPos(symPos))
-						editor.getActiveLayerImage().floodFill(symPos.as<int32_t>(), editor.activeDrawColor(g.isMouseDown(bbe::MouseButton::LEFT), g.isMouseDown(bbe::MouseButton::RIGHT)), false, editor.tiled);
+						editor.getActiveLayerImage().floodFill(symPos.as<int32_t>(), editor.activeDrawColor(g.isMouseDown(bbe::MouseButton::LEFT), g.isMouseDown(bbe::MouseButton::RIGHT)), false, editor.tiled,
+							editor.floodFillTolerance);
 				}
 				editor.brushStrokeChangeRegistered = true;
 			}
