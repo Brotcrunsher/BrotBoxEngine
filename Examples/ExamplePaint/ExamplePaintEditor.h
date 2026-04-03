@@ -14,7 +14,6 @@
 // TODO: Flood fill with edges of brush tool kinda bad.
 // TODO: Bug: right click has weird behaviour with shadow
 
-// TODO: Alpha eraser tool - not just recolering pixels but setting their alpha to 0.
 // TODO: Pixel perfect manipulation with arrow keys
 // TODO: Color history
 // TODO: It's possible to enter negative numbers for new canvas size. Leads to a crash. Don't allow negative sizes.
@@ -88,6 +87,7 @@ struct PaintEditor
 	static constexpr int32_t MODE_LASSO = 11;
 	static constexpr int32_t MODE_POLYGON_LASSO = 12;
 	static constexpr int32_t MODE_ELLIPSE_SELECTION = 13;
+	static constexpr int32_t MODE_ERASER = 14;
 
 	/// Selection, lasso, polygon lasso, and wand share one marquee; leaving this set of tools applies the selection (see ExamplePaint mode changes).
 	static bool isSelectionLikeTool(int32_t toolMode);
@@ -162,6 +162,15 @@ struct PaintEditor
 	int32_t mode = MODE_BRUSH;
 
 	int32_t brushWidth = 1;
+	/// Hard rectangular eraser: N×N pixels, alpha cleared to 0 (size 1 = 1×1).
+	int32_t eraserSize = 1;
+	/// Previous canvas mouse position for the current eraser drag (frame-to-frame stroke, not brush spline history).
+	bbe::Vector2 eraserStrokePrevCanvasPos{};
+	bool eraserStrokeHasPrev = false;
+	/// Last in-frame segment actually rasterized (for UI preview); same endpoints as eraseLineOnWorkAreaWithSymmetry(pNew, pOld).
+	bool eraserPreviewSegmentActive = false;
+	bbe::Vector2 eraserPreviewSegmentPNew{};
+	bbe::Vector2 eraserPreviewSegmentPOld{};
 	int32_t textFontSize = 20;
 	int32_t textFontIndex = 0;
 	char textBuffer[512] = "Text";
@@ -591,6 +600,7 @@ struct PaintEditor
 	void applyCanvasResize(const bbe::Rectanglei &previewRect);
 
 	void clampBrushWidth();
+	void clampEraserSize();
 	void clampShapeStripePeriod();
 
 	void clampTextFontSize();
@@ -647,6 +657,8 @@ struct PaintEditor
 	void submitCanvas();
 
 	void applyWorkArea();
+	/// Commits erase marks from workArea: sets active layer alpha to 0 where the workArea mask is non-transparent.
+	void applyEraserWorkArea();
 
 	void setupCanvas(bool clearHistory = true);
 
@@ -673,6 +685,17 @@ struct PaintEditor
 	bool touch(const bbe::Vector2 &touchPos, bool rectangleShape, bool leftDown, bool rightDown);
 
 	bool touchLine(const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, bool rectangleShape, bool leftDown, bool rightDown);
+
+	/// N×N canvas pixel rectangle (N = eraserSize) centered with the same rule as the erase stamp.
+	bbe::Rectanglei getEraserPixelRect(const bbe::Vector2 &canvasPos) const;
+
+	/// Preview rects for the lerped segment (same sampling as eraseLineOnWorkAreaWithSymmetry).
+	void appendEraserStampRectsAlongSegment(const bbe::Vector2 &pNew, const bbe::Vector2 &pOld, bbe::List<bbe::Rectanglei> &out) const;
+
+	/// Marks an N×N erase region on workArea (all symmetry copies). N = eraserSize.
+	bool eraseStampAtCanvasWithSymmetry(const bbe::Vector2 &canvasPos);
+	/// Lerps from pOld to pNew (ceil distance steps); each sample uses getEraserPixelRect like the stamp tool.
+	bool eraseLineOnWorkAreaWithSymmetry(const bbe::Vector2 &pNew, const bbe::Vector2 &pOld);
 
 	void touchLineSymmetry(const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, const bbe::Colori &color, int32_t width, bool rectShape = false);
 

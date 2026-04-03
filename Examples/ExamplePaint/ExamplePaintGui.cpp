@@ -48,12 +48,13 @@ static void updateIconSlot(ImTextureID &texId, const bbe::Image *&cachedPtr, con
 struct ToolIconTextures
 {
 	struct Slot { ImTextureID texId = nullptr; const bbe::Image *cachedPtr = nullptr; };
-	Slot brush, fill, line, rectangle, circle, selection, ellipseSelection, lasso, polygonLasso, magicWand, text, pipette, arrow, bezier;
+	Slot brush, eraser, fill, line, rectangle, circle, selection, ellipseSelection, lasso, polygonLasso, magicWand, text, pipette, arrow, bezier;
 	Slot undo, redo;
 
 	void refresh()
 	{
 		updateIconSlot(brush.texId,          brush.cachedPtr,          assetStore::iconBrush());
+		updateIconSlot(eraser.texId,         eraser.cachedPtr,         assetStore::iconEraser());
 		updateIconSlot(fill.texId,           fill.cachedPtr,           assetStore::iconFill());
 		updateIconSlot(line.texId,           line.cachedPtr,           assetStore::iconLine());
 		updateIconSlot(rectangle.texId,      rectangle.cachedPtr,      assetStore::iconRectangle());
@@ -337,6 +338,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 #ifdef BBE_RENDERER_OPENGL
 			const ToolBtn mainTools[] = {
 				{ "Brush",     PaintEditor::MODE_BRUSH,       s_toolIcons.brush.texId },
+				{ "Eraser",    PaintEditor::MODE_ERASER,      s_toolIcons.eraser.texId },
 				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,  s_toolIcons.fill.texId },
 				{ "Line",      PaintEditor::MODE_LINE,        s_toolIcons.line.texId },
 				{ "Rectangle", PaintEditor::MODE_RECTANGLE,   s_toolIcons.rectangle.texId },
@@ -356,6 +358,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 #else
 			const ToolBtn mainTools[] = {
 				{ "Brush",     PaintEditor::MODE_BRUSH,       nullptr },
+				{ "Eraser",    PaintEditor::MODE_ERASER,      nullptr },
 				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,  nullptr },
 				{ "Line",      PaintEditor::MODE_LINE,        nullptr },
 				{ "Rectangle", PaintEditor::MODE_RECTANGLE,   nullptr },
@@ -402,9 +405,17 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 
 		// --- Tool options ---
-		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_TEXT || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER || editor.mode == PaintEditor::MODE_MAGIC_WAND || editor.mode == PaintEditor::MODE_LASSO || editor.mode == PaintEditor::MODE_POLYGON_LASSO)
+		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_ERASER || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_TEXT || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER || editor.mode == PaintEditor::MODE_MAGIC_WAND || editor.mode == PaintEditor::MODE_LASSO || editor.mode == PaintEditor::MODE_POLYGON_LASSO)
 		{
 			ImGui::SeparatorText("Options");
+		}
+		if (editor.mode == PaintEditor::MODE_ERASER)
+		{
+			if (ImGui::InputInt("Eraser size", &editor.eraserSize))
+			{
+				editor.clampEraserSize();
+			}
+			ImGui::TextDisabled("Hard N×N rectangle; sets alpha to 0. [+ / -] changes size.");
 		}
 		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER)
 		{
@@ -975,6 +986,52 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				drawTextPreviewForGui(brush, editor, editor.toCanvasPixel(previewPos));
 			}
 		}
+		if (editor.mode == PaintEditor::MODE_ERASER && editor.getCanvasWidth() > 0 && editor.getCanvasHeight() > 0)
+		{
+			bbe::Vector2 previewCenter = editor.screenToCanvas(mouseScreenPos);
+			if (editor.toTiledPos(previewCenter))
+			{
+				const int32_t cw = editor.getCanvasWidth();
+				const int32_t ch = editor.getCanvasHeight();
+				const int32_t tileRepeat = editor.tiled ? 20 : 0;
+				const float z = editor.zoomLevel;
+				constexpr float line = 1.f;
+				brush.setColorRGB(1.f, 0.35f, 0.35f, 0.9f);
+				auto drawEraserStampScreenOutline = [&](const bbe::Rectanglei &stamp)
+				{
+					for (int32_t ti = -tileRepeat; ti <= tileRepeat; ti++)
+					{
+						for (int32_t tk = -tileRepeat; tk <= tileRepeat; tk++)
+						{
+							const float ox = editor.offset.x + (float)(ti * cw) * z;
+							const float oy = editor.offset.y + (float)(tk * ch) * z;
+							const bbe::Rectangle scr(ox + (float)stamp.x * z, oy + (float)stamp.y * z, (float)stamp.width * z, (float)stamp.height * z);
+							brush.fillRect(scr.x, scr.y, scr.width, line);
+							brush.fillRect(scr.x, scr.y + scr.height - line, scr.width, line);
+							brush.fillRect(scr.x, scr.y, line, scr.height);
+							brush.fillRect(scr.x + scr.width - line, scr.y, line, scr.height);
+						}
+					}
+				};
+				if (editor.eraserPreviewSegmentActive)
+				{
+					bbe::List<bbe::Rectanglei> segStamps;
+					editor.appendEraserStampRectsAlongSegment(editor.eraserPreviewSegmentPNew, editor.eraserPreviewSegmentPOld, segStamps);
+					for (size_t ri = 0; ri < segStamps.getLength(); ri++)
+					{
+						drawEraserStampScreenOutline(segStamps[ri]);
+					}
+				}
+				else
+				{
+					const bbe::List<bbe::Vector2> centers = editor.getSymmetryPositions(previewCenter);
+					for (size_t si = 0; si < centers.getLength(); si++)
+					{
+						drawEraserStampScreenOutline(editor.getEraserPixelRect(centers[si]));
+					}
+				}
+			}
+		}
 		auto drawEndpointHandle = [&](const bbe::Vector2 &canvasPos)
 		{
 			const float sx = editor.offset.x + canvasPos.x * editor.zoomLevel;
@@ -1254,8 +1311,8 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					ImGui::SeparatorText(title);
 					for (const char *item : items) ImGui::BulletText("%s", item);
 				};
-				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow", "0 Bezier", "O Ellipse selection", "L Lasso", "P Polygon Lasso", "M Magic Wand" });
-				bulletList("General", { "+/- changes brush size, wand tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
+				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow", "0 Bezier", "E Eraser", "O Ellipse selection", "L Lasso", "P Polygon Lasso", "M Magic Wand" });
+				bulletList("General", { "+/- changes brush size, eraser size, wand tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
 				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection" });
 				bulletList("Selection", { "Drag to create a rectangular selection", "Ellipse selection: drag for an elliptical marquee; hold Shift for a circle", "Lasso: click and drag to outline an area (closed automatically)", "Polygon lasso: click corners, then close via first point, Enter, or right-click", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand, Selection, Ellipse selection, Lasso, or Polygon lasso adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
 				bulletList("Layers", { "Painting and text placement affect only the active layer", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });

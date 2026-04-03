@@ -39,6 +39,8 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	{
 		editor.clearWorkArea();
 		editor.brushStrokeChangeRegistered = false;
+		editor.eraserStrokeHasPrev = false;
+		editor.eraserPreviewSegmentActive = false;
 	};
 	if (editor.mode != editor.lastModeSnapshot && !drawButtonDown)
 	{
@@ -180,6 +182,10 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	{
 		editor.mode = PaintEditor::MODE_ELLIPSE_SELECTION;
 	}
+	if (g.isKeyPressed(bbe::Key::E))
+	{
+		editor.mode = PaintEditor::MODE_ERASER;
+	}
 	bool refreshCircleDraft = false;
 	if (!ctrlDown && g.isKeyPressed(bbe::Key::X))
 	{
@@ -189,7 +195,13 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	}
 	const bool increaseToolSize = g.isKeyTyped(bbe::Key::EQUAL) || g.isKeyTyped(bbe::Key::KP_ADD) || g.isKeyTyped(bbe::Key::RIGHT_BRACKET);
 	const bool decreaseToolSize = g.isKeyTyped(bbe::Key::MINUS) || g.isKeyTyped(bbe::Key::KP_SUBTRACT);
-	if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER)
+	if (editor.mode == PaintEditor::MODE_ERASER)
+	{
+		if (increaseToolSize) editor.eraserSize++;
+		if (decreaseToolSize) editor.eraserSize--;
+		editor.clampEraserSize();
+	}
+	else if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER)
 	{
 		const int32_t previousBrushWidth = editor.brushWidth;
 		if (increaseToolSize) editor.brushWidth++;
@@ -452,7 +464,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		}
 	}
 
-	const bbe::List<decltype(editor.mode)> shadowDrawModes = { PaintEditor::MODE_BRUSH };
+	const bbe::List<decltype(editor.mode)> shadowDrawModes = { PaintEditor::MODE_BRUSH, PaintEditor::MODE_ERASER };
 	const bool drawMode = editor.mode != PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_ELLIPSE_SELECTION && editor.mode != PaintEditor::MODE_MAGIC_WAND && editor.mode != PaintEditor::MODE_LASSO && editor.mode != PaintEditor::MODE_POLYGON_LASSO && editor.mode != PaintEditor::MODE_TEXT && editor.mode != PaintEditor::MODE_RECTANGLE && editor.mode != PaintEditor::MODE_CIRCLE && editor.mode != PaintEditor::MODE_LINE && editor.mode != PaintEditor::MODE_ARROW && editor.mode != PaintEditor::MODE_BEZIER && !editor.canvasResizeActive && !mouseOnNavigator && drawButtonDownForTools;
 	const bool shadowDrawMode = shadowDrawModes.contains(editor.mode);
 
@@ -462,7 +474,8 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		{
 			if (!g.isMouseDown(bbe::MouseButton::LEFT) && !g.isMouseDown(bbe::MouseButton::RIGHT))
 			{
-				editor.applyWorkArea();
+				if (editor.mode == PaintEditor::MODE_ERASER) editor.applyEraserWorkArea();
+				else editor.applyWorkArea();
 				editor.submitCanvas();
 				editor.brushStrokeChangeRegistered = false;
 			}
@@ -543,6 +556,55 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 				editor.brushStrokeChangeRegistered |= touched;
 			}
 		}
+		else if (editor.mode == PaintEditor::MODE_ERASER)
+		{
+			const bool leftDown = g.isMouseDown(bbe::MouseButton::LEFT) && !editor.suppressCanvasInputUntilMouseUp;
+			const bool rightDown = g.isMouseDown(bbe::MouseButton::RIGHT) && !editor.suppressCanvasInputUntilMouseUp;
+			const bool eraseActive = leftDown || rightDown;
+
+			if (!lastDrawButtonDown && drawButtonDown)
+			{
+				editor.eraserStrokeHasPrev = false;
+			}
+
+			if (!eraseActive)
+			{
+				editor.eraserPreviewSegmentActive = false;
+			}
+
+			bool touched = false;
+			if (eraseActive)
+			{
+				const bbe::Vector2 from = editor.eraserStrokePrevCanvasPos;
+				if (editor.eraserStrokeHasPrev)
+				{
+					const float segLen = (currMousePos - from).getLength();
+					if (segLen < 1e-5f)
+					{
+						touched = false;
+						editor.eraserPreviewSegmentActive = false;
+					}
+					else
+					{
+						touched = editor.eraseLineOnWorkAreaWithSymmetry(currMousePos, from);
+						editor.eraserPreviewSegmentPNew = currMousePos;
+						editor.eraserPreviewSegmentPOld = from;
+						editor.eraserPreviewSegmentActive = true;
+					}
+				}
+				else
+				{
+					touched = editor.eraseStampAtCanvasWithSymmetry(currMousePos);
+					editor.eraserPreviewSegmentActive = false;
+				}
+				editor.eraserStrokePrevCanvasPos = currMousePos;
+				editor.eraserStrokeHasPrev = true;
+			}
+			if (drawMode)
+			{
+				editor.brushStrokeChangeRegistered |= touched;
+			}
+		}
 		else if (editor.mode == PaintEditor::MODE_FLOOD_FILL)
 		{
 			bbe::Vector2 pos = editor.screenToCanvas(g.getMouse());
@@ -601,6 +663,8 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	if (!drawButtonDown && lastDrawButtonDown)
 	{
 		brushPointCount = 0;
+		editor.eraserStrokeHasPrev = false;
+		editor.eraserPreviewSegmentActive = false;
 	}
 	lastDrawButtonDown = drawButtonDown;
 }

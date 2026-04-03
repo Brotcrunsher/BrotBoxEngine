@@ -3290,6 +3290,11 @@ void PaintEditor::clampBrushWidth()
 	if (brushWidth < 1) brushWidth = 1;
 }
 
+void PaintEditor::clampEraserSize()
+{
+	eraserSize = bbe::Math::clamp(eraserSize, 1, 512);
+}
+
 void PaintEditor::clampShapeStripePeriod()
 {
 	shapeStripePeriodPx = bbe::Math::clamp(shapeStripePeriodPx, 4, 512);
@@ -3616,6 +3621,25 @@ void PaintEditor::applyWorkArea()
 	clearWorkArea();
 }
 
+void PaintEditor::applyEraserWorkArea()
+{
+	const int32_t cw = getCanvasWidth();
+	const int32_t ch = getCanvasHeight();
+	if (cw <= 0 || ch <= 0) return;
+	bbe::Image &layer = getActiveLayerImage();
+	for (int32_t y = 0; y < ch; ++y)
+	{
+		for (int32_t x = 0; x < cw; ++x)
+		{
+			if (workArea.getPixel((size_t)x, (size_t)y).a == 0) continue;
+			bbe::Colori c = layer.getPixel((size_t)x, (size_t)y);
+			c.a = 0;
+			layer.setPixel((size_t)x, (size_t)y, c);
+		}
+	}
+	clearWorkArea();
+}
+
 void PaintEditor::setupCanvas(bool clearHistory)
 {
 	prepareDocumentImages();
@@ -3729,6 +3753,96 @@ bbe::List<bbe::Vector2> PaintEditor::getSymmetryPositions(const bbe::Vector2 &po
 bbe::List<float> PaintEditor::getSymmetryRotationAngles() const
 {
 	return bbe::getSymmetryRotationAngles(symmetryMode, radialSymmetryCount);
+}
+
+bbe::Rectanglei PaintEditor::getEraserPixelRect(const bbe::Vector2 &canvasPos) const
+{
+	const int32_t n = eraserSize;
+	return bbe::Rectanglei(
+		(int32_t)std::floor(canvasPos.x - n * 0.5f + 0.5f),
+		(int32_t)std::floor(canvasPos.y - n * 0.5f + 0.5f),
+		n,
+		n);
+}
+
+void PaintEditor::appendEraserStampRectsAlongSegment(const bbe::Vector2 &pNew, const bbe::Vector2 &pOld, bbe::List<bbe::Rectanglei> &out) const
+{
+	const float dist = (pNew - pOld).getLength();
+	if (dist < 1e-5f) return;
+	const int steps = bbe::Math::max(1, (int)std::ceil((double)dist));
+	// Skip i=0 (pOld): that position was already stamped on the previous frame.
+	for (int i = 1; i <= steps; ++i)
+	{
+		const bbe::Vector2 p = pOld + (pNew - pOld) * ((float)i / (float)steps);
+		const auto sym = getSymmetryPositions(p);
+		for (size_t s = 0; s < sym.getLength(); s++)
+			out.add(getEraserPixelRect(sym[s]));
+	}
+}
+
+namespace {
+
+// Opaque white matches a typical bottom layer fill, so the in-flight mask would disappear there.
+// applyEraserWorkArea only tests alpha != 0; RGB is for preview visibility only.
+constexpr bbe::Colori kEraserWorkAreaMark(255, 64, 255, 230);
+
+bool eraseStampAtCanvasPointNoSymmetry(
+	bbe::Image &workArea,
+	const bbe::Rectanglei &stamp,
+	bool tiled,
+	int32_t cw,
+	int32_t ch)
+{
+	const int32_t eraserN = stamp.width;
+	if (eraserN < 1 || stamp.height != eraserN || cw <= 0 || ch <= 0) return false;
+	const int32_t left = stamp.x;
+	const int32_t top = stamp.y;
+	const bbe::Colori mark = kEraserWorkAreaMark;
+	bool changed = false;
+	for (int32_t yy = top; yy < top + eraserN; ++yy)
+	{
+		for (int32_t xx = left; xx < left + eraserN; ++xx)
+		{
+			int32_t px = xx;
+			int32_t py = yy;
+			if (tiled)
+			{
+				px = bbe::Math::mod<int32_t>(px, cw);
+				py = bbe::Math::mod<int32_t>(py, ch);
+			}
+			else if (px < 0 || py < 0 || px >= cw || py >= ch) continue;
+			workArea.setPixel((size_t)px, (size_t)py, mark);
+			changed = true;
+		}
+	}
+	return changed;
+}
+
+} // namespace
+
+bool PaintEditor::eraseStampAtCanvasWithSymmetry(const bbe::Vector2 &canvasPos)
+{
+	const int32_t cw = getCanvasWidth();
+	const int32_t ch = getCanvasHeight();
+	bool changed = false;
+	const auto positions = getSymmetryPositions(canvasPos);
+	for (size_t i = 0; i < positions.getLength(); i++)
+		changed |= eraseStampAtCanvasPointNoSymmetry(workArea, getEraserPixelRect(positions[i]), tiled, cw, ch);
+	return changed;
+}
+
+bool PaintEditor::eraseLineOnWorkAreaWithSymmetry(const bbe::Vector2 &pNew, const bbe::Vector2 &pOld)
+{
+	const float dist = (pNew - pOld).getLength();
+	if (dist < 1e-5f) return false;
+	const int steps = bbe::Math::max(1, (int)std::ceil((double)dist));
+	bool changed = false;
+	for (int i = 1; i <= steps; ++i)
+	{
+		const bbe::Vector2 p = pOld + (pNew - pOld) * ((float)i / (float)steps);
+		changed |= eraseStampAtCanvasWithSymmetry(p);
+	}
+	return changed;
 }
 
 bool PaintEditor::touch(const bbe::Vector2 &touchPos, bool rectangleShape, bool leftDown, bool rightDown)
