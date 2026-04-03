@@ -146,7 +146,7 @@ namespace bbe
 		void keepAfterUpload();
 
 		/// Fills connected pixels whose channels are within \p tolerance of the seed (per-channel, 0–255). 0 = exact match only.
-		void floodFill(const bbe::Vector2i &pos, const bbe::Colori &to, bool fillDiagonal = false, bool tiled = false, int tolerance = 0);
+		void floodFill(const bbe::Vector2i &pos, const bbe::Colori &to, bool fillDiagonal = false, bool tiled = false, int tolerance = 0, int overflowTolerance = 0, int overflowMaxDepth = 0);
 
 		// CPU-side alpha-over blit of src onto this image at dstPos (top-left).
 		// If tiled is true, the destination wraps modulo this image's dimensions.
@@ -199,24 +199,24 @@ namespace bbe
 
 		// Draws an arrow into this image (CPU). strokeRadius matches drawLineCapsule brushRadius.
 		void drawArrow(const bbe::Vector2 &from,
-		               const bbe::Vector2 &to,
-		               const bbe::Colori &color,
-		               int32_t strokeRadius,
-		               int32_t headSize,
-		               int32_t headWidth,
-		               bool doubleHeaded = false,
-		               bool filledHead = true,
-		               bool tiled = false,
-		               bool antiAlias = true);
+					   const bbe::Vector2 &to,
+					   const bbe::Colori &color,
+					   int32_t strokeRadius,
+					   int32_t headSize,
+					   int32_t headWidth,
+					   bool doubleHeaded = false,
+					   bool filledHead = true,
+					   bool tiled = false,
+					   bool antiAlias = true);
 
 		// Draws a Bezier curve by sampling Math::interpolateBezier and drawing thick segments.
 		// points contains the full control polygon including start and end points.
 		void drawBezier(const bbe::List<bbe::Vector2> &points,
-		                const bbe::Colori &color,
-		                int32_t strokeRadius,
-		                bool tiled = false,
-		                bool antiAlias = true,
-		                int32_t minSamples = 200);
+						const bbe::Colori &color,
+						int32_t strokeRadius,
+						bool tiled = false,
+						bool antiAlias = true,
+						int32_t minSamples = 200);
 
 		// CPU text: blends font glyphs onto this image (R8 coverage → alpha-over). Optionally tiled.
 		void blendText(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color, bool tiled = false, bool antiAlias = true);

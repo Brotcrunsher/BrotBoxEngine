@@ -362,11 +362,12 @@ static void drawPaintToolOptionsPanel(PaintEditor &editor, float toolbarWidth)
 		if (editor.mode == PaintEditor::MODE_FLOOD_FILL)
 		{
 			ensureOptionsHeader();
+			ImGui::Checkbox("Smart Fill", &editor.floodFillSmartFill);
 			if (ImGui::SliderInt("Tolerance", &editor.floodFillTolerance, 0, 255))
 			{
 				editor.clampFloodFillTolerance();
 			}
-			ImGui::TextDisabled("Fills the active layer from the click; per-channel match vs seed color. [+ / -] nudges tolerance.");
+			ImGui::TextDisabled("Fills the active layer from the click; per-channel match vs seed color. [+ / -] nudges tolerance. Smart Fill extends one pixel past the strict boundary with high overflow tolerance (helps thin gaps).");
 		}
 		if (editor.mode == PaintEditor::MODE_LASSO)
 		{

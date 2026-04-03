@@ -718,8 +718,17 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 				{
 					bbe::Vector2 symPos = symPositions[i];
 					if (editor.toTiledPos(symPos))
-						editor.getActiveLayerImage().floodFill(symPos.as<int32_t>(), editor.activeDrawColor(g.isMouseDown(bbe::MouseButton::LEFT), g.isMouseDown(bbe::MouseButton::RIGHT)), false, editor.tiled,
-							editor.floodFillTolerance);
+					{
+						const int overflowTol = editor.floodFillSmartFill ? 255 : 0;
+						const int overflowDepth = editor.floodFillSmartFill ? 1 : 0;
+						editor.getActiveLayerImage().floodFill(symPos.as<int32_t>(),
+							editor.activeDrawColor(g.isMouseDown(bbe::MouseButton::LEFT), g.isMouseDown(bbe::MouseButton::RIGHT)),
+							false,
+							editor.tiled,
+							editor.floodFillTolerance,
+							overflowTol,
+							overflowDepth);
+					}
 				}
 				editor.brushStrokeChangeRegistered = true;
 			}

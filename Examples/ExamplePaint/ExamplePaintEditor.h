@@ -266,6 +266,8 @@ struct PaintEditor
 
 	/// Per-channel color tolerance for flood fill on the active layer (same rule as Magic Wand).
 	int32_t floodFillTolerance = 0;
+	/// When true, flood fill uses overflow (gap-bridging): tolerance 255 and Manhattan depth 1 past the strict fill boundary.
+	bool floodFillSmartFill = false;
 	void clampFloodFillTolerance();
 
 	/// After clearing the selection with a click, suppress one wand sample on the same frame.

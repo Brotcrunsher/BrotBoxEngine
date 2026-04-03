@@ -11,9 +11,11 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <cstdint>
 #include <fstream>
 #include <limits>
 #include <vector>
+#include <deque>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -1793,8 +1795,10 @@ bool bbe::Image::writeToFile(const bbe::String &path) const
 
 static bool floodFillPixelWithinTolerance(const bbe::Colori &p, const bbe::Colori &ref, int tolerance)
 {
-	return bbe::Math::abs<int32_t>((int32_t)p.r - ref.r) <= tolerance && bbe::Math::abs<int32_t>((int32_t)p.g - ref.g) <= tolerance &&
-		   bbe::Math::abs<int32_t>((int32_t)p.b - ref.b) <= tolerance && bbe::Math::abs<int32_t>((int32_t)p.a - ref.a) <= tolerance;
+	return bbe::Math::abs<int32_t>((int32_t)p.r - ref.r) <= tolerance &&
+		   bbe::Math::abs<int32_t>((int32_t)p.g - ref.g) <= tolerance &&
+		   bbe::Math::abs<int32_t>((int32_t)p.b - ref.b) <= tolerance &&
+		   bbe::Math::abs<int32_t>((int32_t)p.a - ref.a) <= tolerance;
 }
 
 static bool floodFillNormalize(int32_t x, int32_t y, int32_t w, int32_t h, bool tiled, int32_t &ox, int32_t &oy)
@@ -1806,6 +1810,7 @@ static bool floodFillNormalize(int32_t x, int32_t y, int32_t w, int32_t h, bool 
 		oy = y;
 		return true;
 	}
+
 	ox = x % w;
 	if (ox < 0) ox += w;
 	oy = y % h;
@@ -1813,9 +1818,17 @@ static bool floodFillNormalize(int32_t x, int32_t y, int32_t w, int32_t h, bool 
 	return true;
 }
 
-void bbe::Image::floodFill(const bbe::Vector2i &pos, const bbe::Colori &to, bool fillDiagonal, bool tiled, int tolerance)
+void bbe::Image::floodFill(const bbe::Vector2i &pos,
+						   const bbe::Colori &to,
+						   bool fillDiagonal,
+						   bool tiled,
+						   int tolerance,
+						   int overflowTolerance,
+						   int overflowMaxDepth)
 {
 	const int tol = bbe::Math::clamp(tolerance, 0, 255);
+	const int overflowTol = bbe::Math::clamp(overflowTolerance, 0, 255);
+
 	const int32_t w = getWidth();
 	const int32_t h = getHeight();
 	if (w <= 0 || h <= 0) return;
@@ -1828,44 +1841,181 @@ void bbe::Image::floodFill(const bbe::Vector2i &pos, const bbe::Colori &to, bool
 	if (ref == to) return;
 
 	const size_t cellCount = (size_t)w * (size_t)h;
-	std::vector<uint8_t> visited(cellCount, 0);
 
 	auto indexOf = [w](int32_t x, int32_t y) -> size_t
 	{
 		return (size_t)y * (size_t)w + (size_t)x;
 	};
 
-	bbe::List<bbe::Vector2i> queue;
-	const size_t startIdx = indexOf(sx, sy);
-	visited[startIdx] = 1;
-	queue.add(bbe::Vector2i(sx, sy));
+	static constexpr int32_t cardinalDirs[4][2] = {
+		{ 1, 0 },
+		{ -1, 0 },
+		{ 0, 1 },
+		{ 0, -1 },
+	};
 
-	auto tryEnqueue = [&](int32_t x, int32_t y)
+	static constexpr int32_t diagonalDirs[4][2] = {
+		{ 1, 1 },
+		{ -1, 1 },
+		{ 1, -1 },
+		{ -1, -1 },
+	};
+
+	// First pass: normal flood fill using the base tolerance.
+	// The mask stores the whole first-fill region, independent of the overwritten image colors.
+	std::vector<uint8_t> firstFillMask(cellCount, 0);
+	std::vector<bbe::Vector2i> boundaryPixels;
+	std::deque<bbe::Vector2i> fillQueue;
+
+	auto tryEnqueueFirst = [&](int32_t x, int32_t y)
+	{
+		int32_t nx = 0;
+		int32_t ny = 0;
+		if (!floodFillNormalize(x, y, w, h, tiled, nx, ny)) return false;
+
+		const size_t i = indexOf(nx, ny);
+		if (firstFillMask[i]) return true;
+
+		if (!floodFillPixelWithinTolerance(getPixel(bbe::Vector2i(nx, ny)), ref, tol)) return false;
+
+		firstFillMask[i] = 1;
+		fillQueue.push_back(bbe::Vector2i(nx, ny));
+		return true;
+	};
+
+	firstFillMask[indexOf(sx, sy)] = 1;
+	fillQueue.push_back(bbe::Vector2i(sx, sy));
+
+	while (!fillQueue.empty())
+	{
+		const bbe::Vector2i p = fillQueue.back();
+		fillQueue.pop_back();
+
+		bool isBoundary = false;
+
+		for (const auto &dir : cardinalDirs)
+		{
+			if (!tryEnqueueFirst(p.x + dir[0], p.y + dir[1]))
+			{
+				isBoundary = true;
+			}
+		}
+
+		if (fillDiagonal)
+		{
+			for (const auto &dir : diagonalDirs)
+			{
+				if (!tryEnqueueFirst(p.x + dir[0], p.y + dir[1]))
+				{
+					isBoundary = true;
+				}
+			}
+		}
+
+		if (isBoundary)
+		{
+			boundaryPixels.push_back(p);
+		}
+
+		setPixel(p, to);
+	}
+
+	// Skip overflow if it cannot add anything useful.
+	if (overflowTol <= tol || overflowMaxDepth <= 0 || boundaryPixels.empty()) return;
+
+	// Compute exact Manhattan distance from the nearest boundary pixel.
+	// This expansion intentionally uses only 4-neighborhood, even if fillDiagonal is enabled.
+	// The search is cut off at overflowMaxDepth to avoid exploring irrelevant pixels.
+	std::vector<int32_t> boundaryDistance(cellCount, -1);
+	std::deque<bbe::Vector2i> distanceQueue;
+
+	for (const bbe::Vector2i &p : boundaryPixels)
+	{
+		const size_t i = indexOf(p.x, p.y);
+		if (boundaryDistance[i] == 0) continue;
+		boundaryDistance[i] = 0;
+		distanceQueue.push_back(p);
+	}
+
+	while (!distanceQueue.empty())
+	{
+		const bbe::Vector2i p = distanceQueue.front();
+		distanceQueue.pop_front();
+
+		const int32_t currentDist = boundaryDistance[indexOf(p.x, p.y)];
+		if (currentDist >= overflowMaxDepth) continue;
+
+		for (const auto &dir : cardinalDirs)
+		{
+			int32_t nx = 0;
+			int32_t ny = 0;
+			if (!floodFillNormalize(p.x + dir[0], p.y + dir[1], w, h, tiled, nx, ny)) continue;
+
+			const size_t i = indexOf(nx, ny);
+			if (boundaryDistance[i] != -1) continue;
+
+			boundaryDistance[i] = currentDist + 1;
+			distanceQueue.push_back(bbe::Vector2i(nx, ny));
+		}
+	}
+
+	// Second pass: overflow fill.
+	// Traversal is allowed through the original first-fill region.
+	// New pixels may only be entered if they match overflowTol against the original ref color.
+	std::vector<uint8_t> overflowVisited(cellCount, 0);
+	std::deque<bbe::Vector2i> overflowQueue;
+
+	for (const bbe::Vector2i &p : boundaryPixels)
+	{
+		const size_t i = indexOf(p.x, p.y);
+		if (overflowVisited[i]) continue;
+		overflowVisited[i] = 1;
+		overflowQueue.push_back(p);
+	}
+
+	auto tryEnqueueOverflow = [&](int32_t x, int32_t y)
 	{
 		int32_t nx = 0;
 		int32_t ny = 0;
 		if (!floodFillNormalize(x, y, w, h, tiled, nx, ny)) return;
+
 		const size_t i = indexOf(nx, ny);
-		if (visited[i]) return;
-		if (!floodFillPixelWithinTolerance(getPixel(bbe::Vector2i(nx, ny)), ref, tol)) return;
-		visited[i] = 1;
-		queue.add(bbe::Vector2i(nx, ny));
+		if (overflowVisited[i]) return;
+
+		const int32_t dist = boundaryDistance[i];
+		if (dist < 0 || dist > overflowMaxDepth) return;
+
+		const bool wasInFirstFill = firstFillMask[i] != 0;
+		if (!wasInFirstFill)
+		{
+			if (!floodFillPixelWithinTolerance(getPixel(bbe::Vector2i(nx, ny)), ref, overflowTol)) return;
+		}
+
+		overflowVisited[i] = 1;
+		overflowQueue.push_back(bbe::Vector2i(nx, ny));
+
+		if (!wasInFirstFill)
+		{
+			setPixel(bbe::Vector2i(nx, ny), to);
+		}
 	};
 
-	while (queue.getLength() > 0)
+	while (!overflowQueue.empty())
 	{
-		const bbe::Vector2i p = queue.popBack();
-		setPixel(p, to);
-		tryEnqueue(p.x + 1, p.y);
-		tryEnqueue(p.x - 1, p.y);
-		tryEnqueue(p.x, p.y + 1);
-		tryEnqueue(p.x, p.y - 1);
+		const bbe::Vector2i p = overflowQueue.front();
+		overflowQueue.pop_front();
+
+		for (const auto &dir : cardinalDirs)
+		{
+			tryEnqueueOverflow(p.x + dir[0], p.y + dir[1]);
+		}
+
 		if (fillDiagonal)
 		{
-			tryEnqueue(p.x + 1, p.y + 1);
-			tryEnqueue(p.x - 1, p.y + 1);
-			tryEnqueue(p.x + 1, p.y - 1);
-			tryEnqueue(p.x - 1, p.y - 1);
+			for (const auto &dir : diagonalDirs)
+			{
+				tryEnqueueOverflow(p.x + dir[0], p.y + dir[1]);
+			}
 		}
 	}
 }
