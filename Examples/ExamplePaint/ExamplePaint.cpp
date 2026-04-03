@@ -7,6 +7,35 @@
 #include "ExamplePaintEditor.h"
 #include "ExamplePaintGui.h"
 
+/// For axis mirror symmetries, text must be flipped (not just moved). Indices match `bbe::getSymmetryPositions` order.
+/// `outFlipH` / `outFlipV` mean reflection across a **vertical** / **horizontal** line in canvas space (L-R vs upside down).
+/// Note: `bbe::Image::mirrorVertically()` swaps pixels left↔right; `mirrorHorizontally()` swaps rows top↔bottom.
+static void textSymmetryMirrorFlags(bbe::SymmetryMode mode, size_t symIndex, bool &outFlipH, bool &outFlipV)
+{
+	outFlipH = false;
+	outFlipV = false;
+	switch (mode)
+	{
+	case bbe::SymmetryMode::Horizontal:
+		if (symIndex == 1) outFlipV = true;
+		break;
+	case bbe::SymmetryMode::Vertical:
+		if (symIndex == 1) outFlipH = true;
+		break;
+	case bbe::SymmetryMode::FourWay:
+		if (symIndex == 1) outFlipH = true;
+		else if (symIndex == 2) outFlipV = true;
+		else if (symIndex == 3)
+		{
+			outFlipH = true;
+			outFlipV = true;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSinceLastFrame)
 {
 	static bbe::Vector2 brushPoints[4];
@@ -432,8 +461,9 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			const bbe::Vector2i originalTopLeft = editor.toCanvasPixel(pos);
 			const auto symPositions = editor.getSymmetryPositions(pos);
 			const auto symAngles = editor.getSymmetryRotationAngles();
+			const bbe::Colori textColor = editor.activeDrawColor(g.isMouseDown(bbe::MouseButton::LEFT), g.isMouseDown(bbe::MouseButton::RIGHT));
 
-			const bbe::Image textImg = editor.renderTextToImage(originalTopLeft, editor.activeDrawColor(g.isMouseDown(bbe::MouseButton::LEFT), g.isMouseDown(bbe::MouseButton::RIGHT)));
+			const bbe::Image textImg = editor.renderTextToImage(originalTopLeft, textColor);
 			const bbe::Vector2 imgCenter = {
 				originalTopLeft.x + textImg.getWidth() * 0.5f,
 				originalTopLeft.y + textImg.getHeight() * 0.5f
@@ -444,7 +474,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			{
 				bbe::Vector2 symPos = symPositions[i];
 				if (!editor.toTiledPos(symPos)) continue;
-				const bbe::Vector2i symTopLeft = editor.toCanvasPixel(symPos);
+
 				if (std::abs(symAngles[i]) > 0.0001f)
 				{
 					if (textImg.getWidth() > 0 && textImg.getHeight() > 0)
@@ -461,7 +491,26 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 				}
 				else
 				{
-					textChanged |= editor.drawTextAt(symTopLeft, editor.activeDrawColor(g.isMouseDown(bbe::MouseButton::LEFT), g.isMouseDown(bbe::MouseButton::RIGHT)));
+					bool flipH = false;
+					bool flipV = false;
+					textSymmetryMirrorFlags(editor.symmetryMode, i, flipH, flipV);
+					if (!flipH && !flipV)
+					{
+						const bbe::Vector2i symTopLeft = editor.toCanvasPixel(symPos);
+						textChanged |= editor.drawTextAt(symTopLeft, textColor);
+					}
+					else if (textImg.getWidth() > 0 && textImg.getHeight() > 0)
+					{
+						bbe::Image symImg = textImg;
+						if (flipH) symImg.mirrorVertically();
+						if (flipV) symImg.mirrorHorizontally();
+						const bbe::Vector2i dstTopLeft = {
+							(int32_t)std::round(imgCenterSymPositions[i].x - symImg.getWidth() * 0.5f),
+							(int32_t)std::round(imgCenterSymPositions[i].y - symImg.getHeight() * 0.5f)
+						};
+						editor.getActiveLayerImage().blendOver(symImg, dstTopLeft, editor.tiled);
+						textChanged = true;
+					}
 				}
 			}
 			if (textChanged) editor.submitCanvas();
