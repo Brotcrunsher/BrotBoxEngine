@@ -51,6 +51,8 @@ struct ToolIconTextures
 	Slot brush, eraser, spray, fill, line, rectangle, circle, selection, ellipseSelection, lasso, polygonLasso, magicWand, text, pipette, arrow, bezier;
 	Slot undo, redo;
 	Slot layerNew, layerDelete, layerUp, layerDown, layerDuplicate, layerMergeDown;
+	Slot symmetryOff, symmetryHorizontal, symmetryVertical, symmetryFourWay, symmetryRadial;
+	Slot clipboardCopyCanvas, clipboardPasteNew;
 
 	void refresh()
 	{
@@ -78,6 +80,13 @@ struct ToolIconTextures
 		updateIconSlot(layerDown.texId,      layerDown.cachedPtr,      assetStore::iconLayerDown());
 		updateIconSlot(layerDuplicate.texId, layerDuplicate.cachedPtr, assetStore::iconLayerDuplicate());
 		updateIconSlot(layerMergeDown.texId, layerMergeDown.cachedPtr, assetStore::iconLayerMergeDown());
+		updateIconSlot(symmetryOff.texId, symmetryOff.cachedPtr, assetStore::iconSymmetryOff());
+		updateIconSlot(symmetryHorizontal.texId, symmetryHorizontal.cachedPtr, assetStore::iconSymmetryHorizontal());
+		updateIconSlot(symmetryVertical.texId, symmetryVertical.cachedPtr, assetStore::iconSymmetryVertical());
+		updateIconSlot(symmetryFourWay.texId, symmetryFourWay.cachedPtr, assetStore::iconSymmetryFourWay());
+		updateIconSlot(symmetryRadial.texId, symmetryRadial.cachedPtr, assetStore::iconSymmetryRadial());
+		updateIconSlot(clipboardCopyCanvas.texId, clipboardCopyCanvas.cachedPtr, assetStore::iconClipboardCopyCanvas());
+		updateIconSlot(clipboardPasteNew.texId, clipboardPasteNew.cachedPtr, assetStore::iconClipboardPasteNew());
 	}
 };
 static ToolIconTextures s_toolIcons;
@@ -591,15 +600,49 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		// --- Symmetry ---
 		ImGui::SeparatorText("Symmetry");
 		{
-			const float w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 4) / 5.f;
-			const struct { const char *label; bbe::SymmetryMode mode; } modes[] = { { "Off", bbe::SymmetryMode::None }, { "H", bbe::SymmetryMode::Horizontal }, { "V", bbe::SymmetryMode::Vertical }, { "4W", bbe::SymmetryMode::FourWay }, { "Rad", bbe::SymmetryMode::Radial } };
-			for (size_t i = 0; i < sizeof(modes) / sizeof(*modes); i++)
+			constexpr float symIconSize = 24.f;
+			const float symRowW = ImGui::GetContentRegionAvail().x;
+			const float symBtnW = (symRowW - ImGui::GetStyle().ItemSpacing.x * 4.f) / 5.f;
+			const struct
 			{
-				const bool active = editor.symmetryMode == modes[i].mode;
+				const char *id;
+				const char *fallback;
+				bbe::SymmetryMode mode;
+				const char *tip;
+			} symModes[] = {
+				{ "##symOff", "Off", bbe::SymmetryMode::None, "No mirror symmetry" },
+				{ "##symH", "H", bbe::SymmetryMode::Horizontal, "Mirror horizontally (reflect across the vertical center)" },
+				{ "##symV", "V", bbe::SymmetryMode::Vertical, "Mirror vertically (reflect across the horizontal center)" },
+				{ "##sym4", "4W", bbe::SymmetryMode::FourWay, "Mirror on both axes (four-way symmetry)" },
+				{ "##symRad", "Rad", bbe::SymmetryMode::Radial, "Radial symmetry around canvas center" },
+			};
+			for (size_t i = 0; i < sizeof(symModes) / sizeof(*symModes); i++)
+			{
+				const bool active = editor.symmetryMode == symModes[i].mode;
 				if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-				if (ImGui::Button(modes[i].label, ImVec2(w, 0))) editor.symmetryMode = modes[i].mode;
+				bool clicked = false;
+#ifdef BBE_RENDERER_OPENGL
+				ImTextureID symTex = nullptr;
+				switch (i)
+				{
+				case 0: symTex = s_toolIcons.symmetryOff.texId; break;
+				case 1: symTex = s_toolIcons.symmetryHorizontal.texId; break;
+				case 2: symTex = s_toolIcons.symmetryVertical.texId; break;
+				case 3: symTex = s_toolIcons.symmetryFourWay.texId; break;
+				case 4: symTex = s_toolIcons.symmetryRadial.texId; break;
+				default: break;
+				}
+				if (symTex)
+					clicked = ImGui::ImageButton(symModes[i].id, symTex, ImVec2(symIconSize, symIconSize));
+				else
+#endif
+				{
+					clicked = ImGui::Button(symModes[i].fallback, ImVec2(symBtnW, 0));
+				}
+				if (clicked) editor.symmetryMode = symModes[i].mode;
+				if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", symModes[i].tip);
 				if (active) ImGui::PopStyleColor();
-				if (i + 1 < sizeof(modes) / sizeof(*modes)) ImGui::SameLine();
+				if (i + 1 < sizeof(symModes) / sizeof(*symModes)) ImGui::SameLine();
 			}
 			if (editor.symmetryMode == bbe::SymmetryMode::Radial && ImGui::InputInt("Spokes##radialCount", &editor.radialSymmetryCount))
 			{
@@ -626,23 +669,58 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		const bool supportsClipboardImages = editor.platform.supportsClipboardImages && editor.platform.supportsClipboardImages();
 		const bool clipboardHasImage = editor.platform.isClipboardImageAvailable && editor.platform.isClipboardImageAvailable();
 		ImGui::SeparatorText("Clipboard");
+		constexpr float clipIconSize = 24.f;
+#ifdef BBE_RENDERER_OPENGL
+		const bool clipboardUseIconRow = s_toolIcons.clipboardCopyCanvas.texId && s_toolIcons.clipboardPasteNew.texId;
+#else
+		const bool clipboardUseIconRow = false;
+#endif
 		ImGui::BeginDisabled(!supportsClipboardImages || !editor.platform.setClipboardImage);
-		if (ImGui::Button("Copy Canvas to Clipboard", ImVec2(-1, 0)))
+#ifdef BBE_RENDERER_OPENGL
+		if (clipboardUseIconRow)
 		{
-			editor.platform.setClipboardImage(editor.flattenVisibleLayers());
+			if (ImGui::ImageButton("##clipCopyCanvas", s_toolIcons.clipboardCopyCanvas.texId, ImVec2(clipIconSize, clipIconSize)))
+				editor.platform.setClipboardImage(editor.flattenVisibleLayers());
 		}
+		else
+#endif
+		{
+			if (ImGui::Button("Copy Canvas to Clipboard", ImVec2(-1, 0)))
+				editor.platform.setClipboardImage(editor.flattenVisibleLayers());
+		}
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Copy flattened visible canvas to the system clipboard as an image");
 		ImGui::EndDisabled();
 		ImGui::BeginDisabled(!supportsClipboardImages || !clipboardHasImage || !editor.platform.getClipboardImage);
-		if (ImGui::Button("Paste as New Canvas", ImVec2(-1, 0)))
+#ifdef BBE_RENDERER_OPENGL
+		if (clipboardUseIconRow)
 		{
-			editor.canvas.get().layers.clear();
-			bbe::Image pasted = editor.platform.getClipboardImage();
-			editor.setCanvasFallbackFromImageAlpha(pasted);
-			editor.canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, std::move(pasted) });
-			editor.path = "";
-			editor.submitCanvas();
-			editor.setupCanvas(false);
+			ImGui::SameLine();
+			if (ImGui::ImageButton("##clipPasteNew", s_toolIcons.clipboardPasteNew.texId, ImVec2(clipIconSize, clipIconSize)))
+			{
+				editor.canvas.get().layers.clear();
+				bbe::Image pasted = editor.platform.getClipboardImage();
+				editor.setCanvasFallbackFromImageAlpha(pasted);
+				editor.canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, std::move(pasted) });
+				editor.path = "";
+				editor.submitCanvas();
+				editor.setupCanvas(false);
+			}
 		}
+		else
+#endif
+		{
+			if (ImGui::Button("Paste as New Canvas", ImVec2(-1, 0)))
+			{
+				editor.canvas.get().layers.clear();
+				bbe::Image pasted = editor.platform.getClipboardImage();
+				editor.setCanvasFallbackFromImageAlpha(pasted);
+				editor.canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, std::move(pasted) });
+				editor.path = "";
+				editor.submitCanvas();
+				editor.setupCanvas(false);
+			}
+		}
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Replace the document with the image from the clipboard (new single layer)");
 		ImGui::EndDisabled();
 		if (!supportsClipboardImages)
 			ImGui::TextDisabled("Not supported on this platform");
