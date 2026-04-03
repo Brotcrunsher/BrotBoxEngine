@@ -1,5 +1,6 @@
 #include "ExamplePaintEditor.h"
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <deque>
 #include <filesystem>
@@ -1971,17 +1972,531 @@ bool PaintEditor::buildRectangleDraftRect(const bbe::Vector2i &pos1, const bbe::
 	return true;
 }
 
+namespace {
+
+constexpr float kPi = 3.14159265f;
+
+void pushRingVertex(std::vector<bbe::Vector2> &ring, const bbe::Vector2 &v)
+{
+	if (!ring.empty() && (v - ring.back()).getLengthSq() < 1e-8f) return;
+	ring.push_back(v);
+}
+
+void appendLineToRing(std::vector<bbe::Vector2> &ring, const bbe::Vector2 &a, const bbe::Vector2 &b, float stepPx)
+{
+	const float len = (b - a).getLength();
+	if (len < 1e-6f)
+	{
+		pushRingVertex(ring, a);
+		return;
+	}
+	const int n = bbe::Math::max(1, (int)std::ceil((double)len / (double)stepPx));
+	for (int i = 0; i <= n; ++i)
+	{
+		const float t = (float)i / (float)n;
+		pushRingVertex(ring, a + (b - a) * t);
+	}
+}
+
+void appendArcToRing(std::vector<bbe::Vector2> &ring, const bbe::Vector2 &c, float r, float a0, float a1, float stepPx)
+{
+	const float arcLen = std::abs(a1 - a0) * r;
+	const int n = bbe::Math::max(2, (int)std::ceil((double)arcLen / (double)stepPx));
+	for (int i = 0; i <= n; ++i)
+	{
+		const float t = (float)i / (float)n;
+		const float ang = a0 + (a1 - a0) * t;
+		pushRingVertex(ring, c + bbe::Vector2(std::cos(ang), std::sin(ang)) * r);
+	}
+}
+
+void buildRoundedRectOutlineRing(float width, float height, float cornerR, float stepPx, std::vector<bbe::Vector2> &ring)
+{
+	ring.clear();
+	if (width <= 0.f || height <= 0.f) return;
+	const float hw = width * 0.5f;
+	const float hh = height * 0.5f;
+	float R = bbe::Math::max(0.f, cornerR);
+	R = bbe::Math::min(R, bbe::Math::min(hw, hh));
+	if (R < 1e-4f)
+	{
+		appendLineToRing(ring, { 0.f, -hh }, { hw, -hh }, stepPx);
+		appendLineToRing(ring, { hw, -hh }, { hw, hh }, stepPx);
+		appendLineToRing(ring, { hw, hh }, { -hw, hh }, stepPx);
+		appendLineToRing(ring, { -hw, hh }, { -hw, -hh }, stepPx);
+		appendLineToRing(ring, { -hw, -hh }, { 0.f, -hh }, stepPx);
+	}
+	else
+	{
+		appendLineToRing(ring, { 0.f, -hh }, { hw - R, -hh }, stepPx);
+		appendArcToRing(ring, { hw - R, -hh + R }, R, -kPi * 0.5f, 0.f, stepPx);
+		appendLineToRing(ring, { hw, -hh + R }, { hw, hh - R }, stepPx);
+		appendArcToRing(ring, { hw - R, hh - R }, R, 0.f, kPi * 0.5f, stepPx);
+		appendLineToRing(ring, { hw - R, hh }, { -hw + R, hh }, stepPx);
+		appendArcToRing(ring, { -hw + R, hh - R }, R, kPi * 0.5f, kPi, stepPx);
+		appendLineToRing(ring, { -hw, hh - R }, { -hw, -hh + R }, stepPx);
+		appendArcToRing(ring, { -hw + R, -hh + R }, R, kPi, kPi * 1.5f, stepPx);
+		appendLineToRing(ring, { -hw + R, -hh }, { 0.f, -hh }, stepPx);
+	}
+	if (ring.size() >= 2 && (ring.back() - ring.front()).getLengthSq() < 1e-5f)
+	{
+		ring.pop_back();
+	}
+}
+
+void buildEllipseOutlineRing(float rx, float ry, float stepPx, std::vector<bbe::Vector2> &ring)
+{
+	ring.clear();
+	if (rx <= 0.f || ry <= 0.f) return;
+	const float circApprox = 2.f * kPi * std::sqrt(0.5f * (rx * rx + ry * ry));
+	const int n = bbe::Math::max(64, (int)std::ceil((double)circApprox / (double)stepPx));
+	for (int i = 0; i < n; ++i)
+	{
+		const float t = (float)i / (float)n;
+		const float theta = -kPi * 0.5f + t * (2.f * kPi);
+		ring.push_back({ rx * std::cos(theta), ry * std::sin(theta) });
+	}
+}
+
+float closedPolylinePerimeter(const std::vector<bbe::Vector2> &v)
+{
+	const size_t nv = v.size();
+	if (nv < 2) return 0.f;
+	float p = 0.f;
+	for (size_t i = 0; i < nv; ++i)
+		p += (v[(i + 1) % nv] - v[i]).getLength();
+	return p;
+}
+
+bbe::Vector2 pointOnClosedPolyline(const std::vector<bbe::Vector2> &v, float s)
+{
+	const size_t nv = v.size();
+	if (nv < 2) return nv ? v[0] : bbe::Vector2();
+	const float P = closedPolylinePerimeter(v);
+	if (P < 1e-6f) return v[0];
+	float t = std::fmod(s, P);
+	if (t < 0.f) t += P;
+	for (size_t i = 0; i < nv; ++i)
+	{
+		const bbe::Vector2 &a = v[i];
+		const bbe::Vector2 &b = v[(i + 1) % nv];
+		const float len = (b - a).getLength();
+		if (i == nv - 1)
+		{
+			const float u = len > 1e-6f ? bbe::Math::clamp01(t / len) : 0.f;
+			return a + (b - a) * u;
+		}
+		if (t <= len + 1e-4f)
+		{
+			const float u = len > 1e-6f ? t / len : 0.f;
+			return a + (b - a) * bbe::Math::clamp01(u);
+		}
+		t -= len;
+	}
+	return v[0];
+}
+
+void mapRingToBmp(
+	const std::vector<bbe::Vector2> &ringLocal,
+	std::vector<bbe::Vector2> &outBmp,
+	bool expandedBb,
+	float bbHalfW,
+	float bbHalfH,
+	float rotation)
+{
+	outBmp.clear();
+	outBmp.reserve(ringLocal.size());
+	const float cosA = std::cos(rotation);
+	const float sinA = std::sin(rotation);
+	for (const bbe::Vector2 &loc : ringLocal)
+	{
+		if (expandedBb)
+		{
+			const float bcx = loc.x * cosA - loc.y * sinA;
+			const float bcy = loc.x * sinA + loc.y * cosA;
+			outBmp.push_back({ bcx + bbHalfW, bcy + bbHalfH });
+		}
+		else
+			outBmp.push_back({ loc.x + bbHalfW, loc.y + bbHalfH });
+	}
+}
+
+/// Closest point on closed polyline to `p`; returns squared distance and arc length from first vertex along the loop to that closest point.
+void closestPointOnClosedPolylineDistSqAndS(const std::vector<bbe::Vector2> &v, const bbe::Vector2 &p, float &outDistSq, float &outS)
+{
+	const size_t n = v.size();
+	if (n < 2)
+	{
+		outDistSq = 1e30f;
+		outS = 0.f;
+		return;
+	}
+	float bestD2 = 1e30f;
+	float bestS = 0.f;
+	float cum = 0.f;
+	for (size_t i = 0; i < n; ++i)
+	{
+		const bbe::Vector2 &a = v[i];
+		const bbe::Vector2 &b = v[(i + 1) % n];
+		const bbe::Vector2 ab = b - a;
+		const float lenSq = ab.getLengthSq();
+		float t = 0.f;
+		bbe::Vector2 q;
+		if (lenSq < 1e-12f)
+		{
+			q = a;
+		}
+		else
+		{
+			t = ((p - a) * ab) / lenSq;
+			t = bbe::Math::clamp01(t);
+			q = a + ab * t;
+		}
+		const float d2 = (p - q).getLengthSq();
+		const float segLen = std::sqrt(lenSq < 1e-12f ? 0.f : lenSq);
+		const float sAt = cum + t * segLen;
+		if (d2 < bestD2)
+		{
+			bestD2 = d2;
+			bestS = sAt;
+		}
+		cum += segLen;
+	}
+	outDistSq = bestD2;
+	outS = bestS;
+}
+
+bbe::Image compositeSolidWithSeamlessStripesAlongMidline(
+	const bbe::Image &solid,
+	const std::vector<bbe::Vector2> &polyBmp,
+	float strokeWidthF,
+	float stripeNominalPeriodPx)
+{
+	const int32_t imgW = (int32_t)solid.getWidth();
+	const int32_t imgH = (int32_t)solid.getHeight();
+	if (imgW <= 0 || imgH <= 0 || polyBmp.size() < 2) return {};
+
+	const float P = closedPolylinePerimeter(polyBmp);
+	if (P < 1e-4f) return {};
+
+	const float periodTarget = bbe::Math::max(stripeNominalPeriodPx, 4.f);
+	const int nPeriods = bbe::Math::max(1, (int)std::lround((double)P / (double)periodTarget));
+	const float period = P / (float)nPeriods;
+	const float dashLen = period * 0.5f;
+
+	// Midline approximation vs true SDF offset: allow slack so outer annulus pixels are not dropped.
+	const float bandR = strokeWidthF * 0.5f + 2.5f;
+	const float bandR2 = bandR * bandR;
+
+	bbe::Image out(imgW, imgH, bbe::Color(0.f, 0.f, 0.f, 0.f));
+	for (int32_t py = 0; py < imgH; ++py)
+	{
+		for (int32_t px = 0; px < imgW; ++px)
+		{
+			const bbe::Colori s = solid.getPixel((size_t)px, (size_t)py);
+			if (s.a == 0) continue;
+
+			float d2 = 0.f;
+			float arcS = 0.f;
+			closestPointOnClosedPolylineDistSqAndS(polyBmp, { (float)px + 0.5f, (float)py + 0.5f }, d2, arcS);
+			if (d2 > bandR2) continue;
+
+			float ph = std::fmod(arcS, period);
+			if (ph < 0.f) ph += period;
+			if (ph < dashLen) out.setPixel((size_t)px, (size_t)py, s);
+		}
+	}
+	return out;
+}
+
+/// Capsule rasterization with hard coverage (matches strokedRoundedRect non-AA thresholding: no grey fringe from soft brush stamps).
+void drawLineCapsuleOpaque(bbe::Image &img, const bbe::Vector2 &from, const bbe::Vector2 &to, const bbe::Colori &color, int32_t brushRadius)
+{
+	if (brushRadius < 0 || !img.isLoadedCpu()) return;
+	const int32_t w = (int32_t)img.getWidth();
+	const int32_t h = (int32_t)img.getHeight();
+	if (w <= 0 || h <= 0) return;
+
+	const float ax = to.x - from.x;
+	const float ay = to.y - from.y;
+	const float lenSq = ax * ax + ay * ay;
+
+	const float margin = (float)brushRadius + 1.f;
+	const int32_t xMin = (int32_t)std::floor(std::min(from.x, to.x) - margin);
+	const int32_t xMax = (int32_t)std::ceil(std::max(from.x, to.x) + margin);
+	const int32_t yMin = (int32_t)std::floor(std::min(from.y, to.y) - margin);
+	const int32_t yMax = (int32_t)std::ceil(std::max(from.y, to.y) + margin);
+
+	for (int32_t y = yMin; y <= yMax; y++)
+	{
+		for (int32_t x = xMin; x <= xMax; x++)
+		{
+			if (x < 0 || y < 0 || x >= w || y >= h) continue;
+
+			const float pcx = (float)x + 0.5f;
+			const float pcy = (float)y + 0.5f;
+			float dist;
+			if (lenSq < 1e-6f)
+			{
+				const float dx = pcx - from.x;
+				const float dy = pcy - from.y;
+				dist = bbe::Math::sqrt(dx * dx + dy * dy);
+			}
+			else
+			{
+				const float bx = pcx - from.x;
+				const float by = pcy - from.y;
+				const float t = bbe::Math::clamp01((bx * ax + by * ay) / lenSq);
+				const float cx = pcx - (from.x + t * ax);
+				const float cy = pcy - (from.y + t * ay);
+				dist = bbe::Math::sqrt(cx * cx + cy * cy);
+			}
+
+			const float strength = bbe::Math::clamp01((float)brushRadius - dist);
+			// Use >= 0.5: strength == 0.5 hits often on axis-aligned edges (e.g. brush 1), and strict > drew nothing.
+			if (strength < 0.5f) continue;
+
+			img.setPixel((size_t)x, (size_t)y, color);
+		}
+	}
+}
+
+void drawSeamlessStripedClosedLoop(
+	bbe::Image &img,
+	const std::vector<bbe::Vector2> &ring,
+	const bbe::Colori &color,
+	int32_t brushRadius,
+	float desiredPeriod,
+	float dashFraction,
+	bool antiAlias,
+	bool expandedBb,
+	float bbHalfW,
+	float bbHalfH,
+	float rotation,
+	bool forceOpaqueCapsules,
+	bool axisAlignedSquareCapsules)
+{
+	const float P = closedPolylinePerimeter(ring);
+	if (P < 1e-4f || brushRadius < 0) return;
+	const float periodTarget = bbe::Math::max(desiredPeriod, 4.f);
+	const int nPeriods = bbe::Math::max(1, (int)std::lround((double)P / (double)periodTarget));
+	const float period = P / (float)nPeriods;
+	const float dashLen = period * bbe::Math::clamp01(dashFraction);
+	const float step = antiAlias ? 0.55f : 0.9f;
+	const int N = bbe::Math::max(24, (int)std::ceil((double)P / (double)step));
+
+	const float cosA = std::cos(rotation);
+	const float sinA = std::sin(rotation);
+
+	auto toBmp = [&](const bbe::Vector2 &loc) -> bbe::Vector2 {
+		if (expandedBb)
+		{
+			const float bcx = loc.x * cosA - loc.y * sinA;
+			const float bcy = loc.x * sinA + loc.y * cosA;
+			return { bcx + bbHalfW, bcy + bbHalfH };
+		}
+		return { loc.x + bbHalfW, loc.y + bbHalfH };
+	};
+
+	bool haveLast = false;
+	bbe::Vector2 lastBmp;
+	for (int i = 0; i <= N; ++i)
+	{
+		const bool isClosure = (i == N);
+		const float sGeom = isClosure ? 0.f : (P * (float)i / (float)N);
+		const float sPhase = isClosure ? (P - 1e-4f) : (P * (float)i / (float)N);
+		float phase = std::fmod(sPhase, period);
+		if (phase < 0.f) phase += period;
+		const bool on = phase < dashLen;
+
+		const bbe::Vector2 bmp = toBmp(pointOnClosedPolyline(ring, sGeom));
+
+		if (on)
+		{
+			if (haveLast)
+			{
+				// Square stamps stay axis-aligned: on H/V sides the stroke band is rectangular. Circles scallop inward (round spots) when stroked thick.
+				if (axisAlignedSquareCapsules)
+				{
+					if (antiAlias && !forceOpaqueCapsules)
+						img.drawLineCapsule(lastBmp, bmp, color, brushRadius, bbe::ImageBrushShape::Square, false, true);
+					else
+						img.drawLineCapsule(lastBmp, bmp, color, brushRadius, bbe::ImageBrushShape::Square, false, false);
+				}
+				else if (antiAlias && !forceOpaqueCapsules)
+					img.drawLineCapsule(lastBmp, bmp, color, brushRadius, bbe::ImageBrushShape::Circle, false, antiAlias);
+				else
+					drawLineCapsuleOpaque(img, lastBmp, bmp, color, brushRadius);
+			}
+			lastBmp = bmp;
+			haveLast = true;
+		}
+		else
+		{
+			haveLast = false;
+		}
+	}
+}
+
+bbe::Image paintStripedRoundedRectOutline(
+	int32_t width,
+	int32_t height,
+	int32_t strokeWidth,
+	int32_t cornerRadius,
+	const bbe::Colori &color,
+	float rotation,
+	bool antiAlias,
+	float stripeNominalPeriodPx)
+{
+	if (width <= 0 || height <= 0) return {};
+	const float hw = width * 0.5f;
+	const float hh = height * 0.5f;
+	const bool expandedBb = !antiAlias && std::abs(rotation) > 0.01f;
+	float bbHalfW = hw;
+	float bbHalfH = hh;
+	int32_t imgW = width;
+	int32_t imgH = height;
+	float rotUse = rotation;
+	if (expandedBb)
+	{
+		const float cosA = std::cos(rotation);
+		const float sinA = std::sin(rotation);
+		const float newHW = std::abs(hw * cosA) + std::abs(hh * sinA);
+		const float newHH = std::abs(hw * sinA) + std::abs(hh * cosA);
+		imgW = (int32_t)std::ceil(newHW * 2.f);
+		imgH = (int32_t)std::ceil(newHH * 2.f);
+		bbHalfW = imgW * 0.5f;
+		bbHalfH = imgH * 0.5f;
+	}
+
+	const float stepPx = antiAlias ? 0.55f : 0.95f;
+	const float T = (float)strokeWidth;
+	const float wMid = (float)width - T;
+	const float hMid = (float)height - T;
+	if (wMid < 1.f || hMid < 1.f) return {};
+
+	// Mid-stroke guide (offset ~T/2 from outer): matches the SDF annulus; outer ring sat on bbox edges and clipped.
+	const float inset = T * 0.5f;
+	const float cornerMid = bbe::Math::max(0.f, (float)cornerRadius - inset);
+	std::vector<bbe::Vector2> ring;
+	buildRoundedRectOutlineRing(wMid, hMid, cornerMid, stepPx, ring);
+	if (ring.size() < 2) return {};
+
+	bbe::Image solid = bbe::Image::strokedRoundedRect(width, height, color, strokeWidth, cornerRadius, rotation, antiAlias);
+	if ((int32_t)solid.getWidth() != imgW || (int32_t)solid.getHeight() != imgH)
+	{
+		std::vector<bbe::Vector2> ringOuter;
+		buildRoundedRectOutlineRing((float)width, (float)height, (float)cornerRadius, stepPx, ringOuter);
+		bbe::Image img(imgW, imgH, bbe::Color(0.f, 0.f, 0.f, 0.f));
+		drawSeamlessStripedClosedLoop(
+			img,
+			ringOuter,
+			color,
+			strokeWidth,
+			stripeNominalPeriodPx,
+			0.5f,
+			antiAlias,
+			expandedBb,
+			bbHalfW,
+			bbHalfH,
+			rotUse,
+			false,
+			true);
+		return img;
+	}
+
+	std::vector<bbe::Vector2> polyBmp;
+	mapRingToBmp(ring, polyBmp, expandedBb, bbHalfW, bbHalfH, rotUse);
+	return compositeSolidWithSeamlessStripesAlongMidline(solid, polyBmp, T, stripeNominalPeriodPx);
+}
+
+bbe::Image paintStripedEllipseOutline(
+	int32_t width,
+	int32_t height,
+	int32_t strokeWidth,
+	const bbe::Colori &color,
+	float rotation,
+	bool antiAlias,
+	float stripeNominalPeriodPx)
+{
+	if (width <= 0 || height <= 0) return {};
+	const float rx = width * 0.5f;
+	const float ry = height * 0.5f;
+	const bool expandedBb = !antiAlias && std::abs(rotation) > 0.01f;
+	float bbHalfW = rx;
+	float bbHalfH = ry;
+	int32_t imgW = width;
+	int32_t imgH = height;
+	if (expandedBb)
+	{
+		const float cosA = std::cos(rotation);
+		const float sinA = std::sin(rotation);
+		const float newHW = std::abs(rx * cosA) + std::abs(ry * sinA);
+		const float newHH = std::abs(rx * sinA) + std::abs(ry * cosA);
+		imgW = (int32_t)std::ceil(newHW * 2.f);
+		imgH = (int32_t)std::ceil(newHH * 2.f);
+		bbHalfW = imgW * 0.5f;
+		bbHalfH = imgH * 0.5f;
+	}
+
+	const float stepPx = antiAlias ? 0.55f : 0.95f;
+	const float T = (float)strokeWidth;
+	const float rxMid = bbe::Math::max(0.5f, rx - T * 0.5f);
+	const float ryMid = bbe::Math::max(0.5f, ry - T * 0.5f);
+	std::vector<bbe::Vector2> ring;
+	buildEllipseOutlineRing(rxMid, ryMid, stepPx, ring);
+	if (ring.size() < 2) return {};
+
+	bbe::Image solid = bbe::Image::strokedEllipse(width, height, color, strokeWidth, rotation, antiAlias);
+	if ((int32_t)solid.getWidth() != imgW || (int32_t)solid.getHeight() != imgH)
+	{
+		std::vector<bbe::Vector2> ringOuter;
+		buildEllipseOutlineRing(rx, ry, stepPx, ringOuter);
+		bbe::Image img(imgW, imgH, bbe::Color(0.f, 0.f, 0.f, 0.f));
+		drawSeamlessStripedClosedLoop(
+			img,
+			ringOuter,
+			color,
+			strokeWidth,
+			stripeNominalPeriodPx,
+			0.5f,
+			antiAlias,
+			expandedBb,
+			bbHalfW,
+			bbHalfH,
+			rotation,
+			false,
+			false);
+		return img;
+	}
+
+	std::vector<bbe::Vector2> polyBmp;
+	mapRingToBmp(ring, polyBmp, expandedBb, bbHalfW, bbHalfH, rotation);
+	return compositeSolidWithSeamlessStripesAlongMidline(solid, polyBmp, T, stripeNominalPeriodPx);
+}
+
+} // namespace
+
 bbe::Image PaintEditor::createRectangleImage(int32_t width, int32_t height, const bbe::Colori &strokeColor, float rotation, bool strokeUsesRightColor) const
 {
+	const auto solidStroke = [&]() {
+		return bbe::Image::strokedRoundedRect(width, height, strokeColor, brushWidth, cornerRadius, rotation, antiAliasingEnabled);
+	};
+	const float stripePeriod = (float)bbe::Math::clamp(shapeStripePeriodPx, 4, 512);
+	const auto stripedStroke = [&]() {
+		return paintStripedRoundedRectOutline(width, height, brushWidth, cornerRadius, strokeColor, rotation, antiAliasingEnabled, stripePeriod);
+	};
+
 	if (shapeFillWithSecondary)
 	{
 		const bbe::Colori fillColor = getColor(!strokeUsesRightColor);
 		bbe::Image img = bbe::Image::strokedRoundedRect(width, height, fillColor, 0, cornerRadius, rotation, antiAliasingEnabled);
-		bbe::Image stroke = bbe::Image::strokedRoundedRect(width, height, strokeColor, brushWidth, cornerRadius, rotation, antiAliasingEnabled);
+		bbe::Image stroke = shapeStripedStroke ? stripedStroke() : solidStroke();
 		img.blend(stroke, 1.0f, bbe::BlendMode::Normal);
 		return img;
 	}
-	return bbe::Image::strokedRoundedRect(width, height, strokeColor, brushWidth, cornerRadius, rotation, antiAliasingEnabled);
+	if (shapeStripedStroke) return stripedStroke();
+	return solidStroke();
 }
 
 bbe::Image PaintEditor::createRectangleDraftImage(int32_t width, int32_t height) const { return createRectangleImage(width, height, getRectangleDraftColor(), 0.f, rectangle.draftUsesRightColor); }
@@ -2000,15 +2515,24 @@ bbe::Colori PaintEditor::getCircleDragColor() const { return getColor(circle.dra
 
 bbe::Image PaintEditor::createCircleImage(int32_t width, int32_t height, const bbe::Colori &strokeColor, float rotation, bool strokeUsesRightColor) const
 {
+	const auto solidStroke = [&]() {
+		return bbe::Image::strokedEllipse(width, height, strokeColor, brushWidth, rotation, antiAliasingEnabled);
+	};
+	const float stripePeriod = (float)bbe::Math::clamp(shapeStripePeriodPx, 4, 512);
+	const auto stripedStroke = [&]() {
+		return paintStripedEllipseOutline(width, height, brushWidth, strokeColor, rotation, antiAliasingEnabled, stripePeriod);
+	};
+
 	if (shapeFillWithSecondary)
 	{
 		const bbe::Colori fillColor = getColor(!strokeUsesRightColor);
 		bbe::Image img = bbe::Image::strokedEllipse(width, height, fillColor, 0, rotation, antiAliasingEnabled);
-		bbe::Image stroke = bbe::Image::strokedEllipse(width, height, strokeColor, brushWidth, rotation, antiAliasingEnabled);
+		bbe::Image stroke = shapeStripedStroke ? stripedStroke() : solidStroke();
 		img.blend(stroke, 1.0f, bbe::BlendMode::Normal);
 		return img;
 	}
-	return bbe::Image::strokedEllipse(width, height, strokeColor, brushWidth, rotation, antiAliasingEnabled);
+	if (shapeStripedStroke) return stripedStroke();
+	return solidStroke();
 }
 
 bbe::Image PaintEditor::createCircleDraftImage(int32_t width, int32_t height) const { return createCircleImage(width, height, getCircleDraftColor(), 0.f, circle.draftUsesRightColor); }
@@ -2764,6 +3288,11 @@ void PaintEditor::applyCanvasResize(const bbe::Rectanglei &previewRect)
 void PaintEditor::clampBrushWidth()
 {
 	if (brushWidth < 1) brushWidth = 1;
+}
+
+void PaintEditor::clampShapeStripePeriod()
+{
+	shapeStripePeriodPx = bbe::Math::clamp(shapeStripePeriodPx, 4, 512);
 }
 
 void PaintEditor::clampTextFontSize()

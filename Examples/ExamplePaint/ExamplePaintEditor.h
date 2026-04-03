@@ -170,6 +170,10 @@ struct PaintEditor
 	int32_t cornerRadius = 0;
 	/// When true, rectangle/circle interior uses the opposite mouse color (secondary vs primary) under the stroke.
 	bool shapeFillWithSecondary = false;
+	/// When true, rectangle/circle outline is drawn as dashes whose period fits the closed perimeter (no seam).
+	bool shapeStripedStroke = false;
+	/// Target dash+gap length in pixels before snapping to a seamless divisor of the outline length.
+	int32_t shapeStripePeriodPx = 16;
 
 	bool drawGridLines = true;
 	bool tiled = false;
@@ -587,6 +591,7 @@ struct PaintEditor
 	void applyCanvasResize(const bbe::Rectanglei &previewRect);
 
 	void clampBrushWidth();
+	void clampShapeStripePeriod();
 
 	void clampTextFontSize();
 

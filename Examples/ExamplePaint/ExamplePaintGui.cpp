@@ -308,13 +308,15 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		ImGui::SeparatorText("Colors");
 		const bool leftColorChanged  = ImGui::ColorEdit4("Primary",   editor.leftColor);
 		const bool rightColorChanged = ImGui::ColorEdit4("Secondary", editor.rightColor);
-		if (editor.rectangle.draftActive && (editor.shapeFillWithSecondary ? (leftColorChanged || rightColorChanged)
-																			: ((leftColorChanged && !editor.rectangle.draftUsesRightColor) || (rightColorChanged && editor.rectangle.draftUsesRightColor))))
+		if (editor.rectangle.draftActive && (editor.shapeFillWithSecondary || editor.shapeStripedStroke
+			? (leftColorChanged || rightColorChanged)
+			: ((leftColorChanged && !editor.rectangle.draftUsesRightColor) || (rightColorChanged && editor.rectangle.draftUsesRightColor))))
 		{
 			editor.refreshActiveRectangleDraftImage();
 		}
-		if (editor.circle.draftActive && (editor.shapeFillWithSecondary ? (leftColorChanged || rightColorChanged)
-																		  : ((leftColorChanged && !editor.circle.draftUsesRightColor) || (rightColorChanged && editor.circle.draftUsesRightColor))))
+		if (editor.circle.draftActive && (editor.shapeFillWithSecondary || editor.shapeStripedStroke
+			? (leftColorChanged || rightColorChanged)
+			: ((leftColorChanged && !editor.circle.draftUsesRightColor) || (rightColorChanged && editor.circle.draftUsesRightColor))))
 		{
 			editor.refreshActiveCircleDraftImage();
 		}
@@ -451,6 +453,21 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			{
 				if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
 				if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
+			}
+			if (ImGui::Checkbox("Striped outline", &editor.shapeStripedStroke))
+			{
+				if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
+				if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
+			}
+			if (editor.shapeStripedStroke)
+			{
+				if (ImGui::InputInt("Stripe repeat (px)", &editor.shapeStripePeriodPx))
+				{
+					editor.clampShapeStripePeriod();
+					if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
+					if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
+				}
+				ImGui::TextDisabled("Target dash+gap along the outline; actual spacing snaps so the pattern closes with no seam.");
 			}
 		}
 		if (editor.mode == PaintEditor::MODE_LINE)
