@@ -1401,7 +1401,7 @@ bbe::Vector2 PaintEditor::lineEndpointCanvasPos(const EndpointDraftState &state,
 {
 	if (antiAliasingEnabled || &state != &line) return canvas;
 	const bbe::Vector2i p = toCanvasPixel(canvas);
-	return bbe::Vector2((float)p.x, (float)p.y);
+	return bbe::Vector2((float)p.x + 0.5f, (float)p.y + 0.5f);
 }
 
 bbe::Vector2i PaintEditor::toTiledCanvasPixel(const bbe::Vector2 &pos)

@@ -441,7 +441,7 @@ struct PaintEditor
 	void setActiveLayerIndex(int32_t newIndex);
 
 	bbe::Vector2i toCanvasPixel(const bbe::Vector2 &pos) const;
-	/// Line tool only: with AA off, snap pointer to integer pixel coordinates (same rule as toCanvasPixel).
+	/// Line tool only: with AA off, snap to pixel via toCanvasPixel then use pixel centers (+0.5).
 	bbe::Vector2 lineEndpointCanvasPos(const EndpointDraftState &state, const bbe::Vector2 &canvas) const;
 
 	bbe::Vector2i toTiledCanvasPixel(const bbe::Vector2 &pos);
