@@ -10,9 +10,9 @@
 #include "ExamplePaintGui.h"
 
 // TODO: Color history
-// TODO: Favorite Colors (Persisted between sessions, separate from history, user-managed)
 // TODO: Most used colors
 // TODO: Window docking for tools etc.
+// TODO: Minimap navigator should be green instead of yellow
 
 /// Persisted 1–9 / 0 digit bindings (one \c int32_t action per key; \c formatVersion distinguishes this from older multi-field saves).
 struct ExamplePaintDigitHotkeysPersist
@@ -60,6 +60,45 @@ static void captureDigitHotkeysToPersist(const PaintEditor &editor, ExamplePaint
 {
 	p.formatVersion = ExamplePaintDigitHotkeysPersist::kFormatVersion;
 	for (int i = 0; i < 10; i++) p.action[(size_t)i] = static_cast<int32_t>(editor.digitHotkeys[i]);
+}
+
+struct ExamplePaintFavoriteColorsPersist
+{
+	static constexpr int32_t kFormatVersion = 1;
+	int32_t formatVersion = kFormatVersion;
+	std::array<std::array<float, 4>, PaintEditor::favoriteColorSlotCount> rgba{};
+
+	ExamplePaintFavoriteColorsPersist()
+	{
+		formatVersion = kFormatVersion;
+		for (auto &slot : rgba)
+			slot = { 1.f, 1.f, 1.f, 1.f };
+	}
+
+	void serialDescription(bbe::SerializedDescription &desc)
+	{
+		desc.describe(formatVersion);
+		desc.describe(rgba);
+	}
+};
+
+static void applyPersistedFavoriteColors(PaintEditor &editor, const ExamplePaintFavoriteColorsPersist &p)
+{
+	if (p.formatVersion != ExamplePaintFavoriteColorsPersist::kFormatVersion)
+	{
+		for (size_t i = 0; i < PaintEditor::favoriteColorSlotCount; i++)
+			for (int j = 0; j < 4; j++) editor.favoriteColorRgba[i][j] = 1.f;
+		return;
+	}
+	for (size_t i = 0; i < PaintEditor::favoriteColorSlotCount; i++)
+		for (int j = 0; j < 4; j++) editor.favoriteColorRgba[i][j] = p.rgba[i][j];
+}
+
+static void captureFavoriteColorsToPersist(const PaintEditor &editor, ExamplePaintFavoriteColorsPersist &p)
+{
+	p.formatVersion = ExamplePaintFavoriteColorsPersist::kFormatVersion;
+	for (size_t i = 0; i < PaintEditor::favoriteColorSlotCount; i++)
+		for (int j = 0; j < 4; j++) p.rgba[i][j] = editor.favoriteColorRgba[i][j];
 }
 
 /// For axis mirror symmetries, text must be flipped (not just moved). Indices match `bbe::getSymmetryPositions` order.
@@ -813,6 +852,7 @@ class MyGame : public bbe::Game
 {
 public:
 	bbe::SerializableObject<ExamplePaintDigitHotkeysPersist> digitHotkeysPersist{ "ExamplePaintDigitHotkeys.dat", "ParanoiaConfig" };
+	bbe::SerializableObject<ExamplePaintFavoriteColorsPersist> favoriteColorsPersist{ "ExamplePaintFavoriteColors.dat", "ParanoiaConfig" };
 	PaintEditor editor;
 
 	void onStart() override
@@ -884,6 +924,13 @@ public:
 			digitHotkeysPersist.writeToFile();
 		};
 
+		applyPersistedFavoriteColors(editor, *favoriteColorsPersist.operator->());
+		editor.onFavoriteColorsChanged = [this]()
+		{
+			captureFavoriteColorsToPersist(editor, *favoriteColorsPersist.operator->());
+			favoriteColorsPersist.writeToFile();
+		};
+
 		PaintWindowMetrics w{};
 		w.width = getWindowWidth();
 		w.height = getWindowHeight();
@@ -919,6 +966,9 @@ public:
 		captureDigitHotkeysToPersist(editor, *digitHotkeysPersist.operator->());
 		digitHotkeysPersist.writeToFile();
 		editor.onDigitHotkeysChanged = nullptr;
+		captureFavoriteColorsToPersist(editor, *favoriteColorsPersist.operator->());
+		favoriteColorsPersist.writeToFile();
+		editor.onFavoriteColorsChanged = nullptr;
 	}
 };
 

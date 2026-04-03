@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <cstddef>
 #include <functional>
 #include <initializer_list>
 #include <vector>
@@ -158,6 +159,14 @@ struct PaintEditor
 	bool showNavigator = true;
 	/// Docked tool-options window (View menu); can be closed and re-opened from the menu.
 	bool showToolOptionsPanel = true;
+	/// Colors window (primary/secondary, pipette, favorite swatches); View menu.
+	bool showColorsPanel = true;
+
+	static constexpr size_t favoriteColorSlotCount = 16;
+	/// RGBA favorite swatches (default filled white on load from settings).
+	float favoriteColorRgba[favoriteColorSlotCount][4]{};
+	/// Called when a favorite swatch is edited (persist).
+	std::function<void()> onFavoriteColorsChanged;
 	int64_t canvasGeneration = 0;
 	int64_t savedGeneration = 0;
 

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cctype>
+#include <cstring>
 #include <filesystem>
 #include <string>
 
@@ -320,7 +321,160 @@ static void paintEditorDigitHotkeyTooltip(const PaintEditor &editor, PaintEditor
 		ImGui::SetTooltip("%s\n(No number keys; Ctrl+digit while hovered assigns)", title);
 }
 
-/// \p defaultLeft is the initial X offset from the left (matches default Tools + Layers widths on first run).
+static void paintEditorRefreshDraftsAfterPrimarySecondaryChange(PaintEditor &editor, bool leftColorChanged, bool rightColorChanged)
+{
+	if (editor.rectangle.draftActive && (editor.shapeFillMode != PaintEditor::ShapeFillMode::None || editor.shapeStripedStroke
+		? (leftColorChanged || rightColorChanged)
+		: ((leftColorChanged && !editor.rectangle.draftUsesRightColor) || (rightColorChanged && editor.rectangle.draftUsesRightColor))))
+	{
+		editor.refreshActiveRectangleDraftImage();
+	}
+	if (editor.circle.draftActive && (editor.shapeFillMode != PaintEditor::ShapeFillMode::None || editor.shapeStripedStroke
+		? (leftColorChanged || rightColorChanged)
+		: ((leftColorChanged && !editor.circle.draftUsesRightColor) || (rightColorChanged && editor.circle.draftUsesRightColor))))
+	{
+		editor.refreshActiveCircleDraftImage();
+	}
+	if (editor.line.draftActive && ((leftColorChanged && !editor.line.draftUsesRightColor) || (rightColorChanged && editor.line.draftUsesRightColor))) editor.redrawLineDraft();
+	if (editor.arrow.draftActive && ((leftColorChanged && !editor.arrow.draftUsesRightColor) || (rightColorChanged && editor.arrow.draftUsesRightColor))) editor.redrawArrowDraft();
+	if (!editor.bezier.controlPoints.isEmpty() && ((leftColorChanged && !editor.bezier.usesRightColor) || (rightColorChanged && editor.bezier.usesRightColor))) editor.redrawBezierDraft();
+}
+
+/// Third column: primary/secondary, pipette, persisted favorite swatches (Tools and Layers occupy the first two columns).
+static void drawPaintColorsPanel(PaintEditor &editor, float panelWidth, float menuBarH, const ImVec2 &sidePanelSize)
+{
+	if (!editor.showColorsPanel) return;
+
+	ImGui::SetNextWindowPos(ImVec2(panelWidth * 2.f, menuBarH), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(sidePanelSize, ImGuiCond_FirstUseEver);
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.14f, 0.14f, 0.15f, 1.f));
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.11f, 0.11f, 0.12f, 1.f));
+	if (ImGui::Begin("Colors", &editor.showColorsPanel, ImGuiWindowFlags_AlwaysVerticalScrollbar))
+	{
+		// Do not set DisplayRGB alone: ImGui only shows HSV + hex rows when DisplayMask is 0 or all of RGB/HSV/Hex are set.
+		const ImGuiColorEditFlags pickerFlags =
+			ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Uint8;
+		ImGui::SeparatorText("Primary / secondary");
+		const float colorGap = ImGui::GetStyle().ItemSpacing.x;
+		const float pipetteBtn = std::max(1.f, std::floor(26.f * editor.viewport.scale));
+		const ImVec2 swatchSize(pipetteBtn, pipetteBtn);
+		// Match favorite swatches: ColorButton fills the rect; zero frame padding (ColorEdit4 used large padding before).
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, 0.f));
+		ImGui::BeginGroup();
+		const ImVec4 leftVec(editor.leftColor[0], editor.leftColor[1], editor.leftColor[2], editor.leftColor[3]);
+		const ImVec4 rightVec(editor.rightColor[0], editor.rightColor[1], editor.rightColor[2], editor.rightColor[3]);
+		bool leftColorChanged = false;
+		bool rightColorChanged = false;
+		if (ImGui::ColorButton("##primaryColor", leftVec, ImGuiColorEditFlags_AlphaPreviewHalf, swatchSize))
+			ImGui::OpenPopup("##primaryPick");
+		ImGui::SameLine(0.f, colorGap);
+		if (ImGui::ColorButton("##secondaryColor", rightVec, ImGuiColorEditFlags_AlphaPreviewHalf, swatchSize))
+			ImGui::OpenPopup("##secondaryPick");
+		ImGui::SameLine(0.f, colorGap);
+		{
+			const bool pipActive = editor.mode == PaintEditor::MODE_PIPETTE;
+			if (pipActive) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+			bool pipClicked = false;
+#ifdef BBE_RENDERER_OPENGL
+			if (s_toolIcons.pipette.texId)
+			{
+				pipClicked = ImGui::ImageButton("Pipette##colorsPipette", s_toolIcons.pipette.texId, ImVec2(pipetteBtn, pipetteBtn));
+			}
+			else
+#endif
+			{
+				pipClicked = ImGui::Button("Pick##colorsPipette", ImVec2(pipetteBtn, pipetteBtn));
+			}
+			if (pipActive) ImGui::PopStyleColor();
+			const PaintEditor::DigitHotkeyAction pipBind = PaintEditor::digitHotkeyActionForToolMode(PaintEditor::MODE_PIPETTE);
+			paintEditorTryBindDigitHotkeyOnHover(editor, pipBind);
+			if (pipClicked) editor.mode = PaintEditor::MODE_PIPETTE;
+			if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, pipBind, "Pipette — click canvas to sample a color");
+		}
+		ImGui::EndGroup();
+		if (ImGui::BeginPopup("##primaryPick"))
+		{
+			if (ImGui::ColorPicker4("##primaryPicker", editor.leftColor, pickerFlags)) leftColorChanged = true;
+			ImGui::EndPopup();
+		}
+		if (ImGui::BeginPopup("##secondaryPick"))
+		{
+			if (ImGui::ColorPicker4("##secondaryPicker", editor.rightColor, pickerFlags)) rightColorChanged = true;
+			ImGui::EndPopup();
+		}
+		paintEditorRefreshDraftsAfterPrimarySecondaryChange(editor, leftColorChanged, rightColorChanged);
+
+		ImGui::SeparatorText("Favorites");
+		ImGui::TextDisabled("Click to edit. Shift+left: primary · Shift+right: secondary · Right-click: menu.");
+		constexpr int kFavCols = 4;
+		const ImVec2 favCellSize = swatchSize;
+		for (size_t i = 0; i < PaintEditor::favoriteColorSlotCount; i++)
+		{
+			ImGui::PushID(static_cast<int>(i));
+			const ImVec4 favVec(editor.favoriteColorRgba[i][0], editor.favoriteColorRgba[i][1], editor.favoriteColorRgba[i][2], editor.favoriteColorRgba[i][3]);
+			const bool shiftHeld = ImGui::GetIO().KeyShift;
+			const bool favPressed = ImGui::ColorButton("##fav", favVec, ImGuiColorEditFlags_AlphaPreviewHalf, favCellSize);
+			const ImGuiHoveredFlags hfav = ImGuiHoveredFlags_AllowWhenBlockedByPopup;
+			if (favPressed && shiftHeld)
+			{
+				std::memcpy(editor.leftColor, editor.favoriteColorRgba[i], sizeof(editor.leftColor));
+				paintEditorRefreshDraftsAfterPrimarySecondaryChange(editor, true, false);
+			}
+			else if (favPressed && !shiftHeld)
+			{
+				ImGui::OpenPopup("##favpick");
+			}
+			if (ImGui::IsItemHovered(hfav) && shiftHeld && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+			{
+				std::memcpy(editor.rightColor, editor.favoriteColorRgba[i], sizeof(editor.rightColor));
+				paintEditorRefreshDraftsAfterPrimarySecondaryChange(editor, false, true);
+			}
+			else if (ImGui::IsItemHovered(hfav) && !shiftHeld && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+			{
+				ImGui::OpenPopup("fav_ctx");
+			}
+			if (ImGui::BeginPopup("##favpick"))
+			{
+				if (ImGui::ColorPicker4("##picker", editor.favoriteColorRgba[i], pickerFlags) && editor.onFavoriteColorsChanged) editor.onFavoriteColorsChanged();
+				ImGui::EndPopup();
+			}
+			if (ImGui::BeginPopup("fav_ctx"))
+			{
+				bool usedPri = false;
+				bool usedSec = false;
+				if (ImGui::MenuItem("Use as primary"))
+				{
+					std::memcpy(editor.leftColor, editor.favoriteColorRgba[i], sizeof(editor.leftColor));
+					usedPri = true;
+				}
+				if (ImGui::MenuItem("Use as secondary"))
+				{
+					std::memcpy(editor.rightColor, editor.favoriteColorRgba[i], sizeof(editor.rightColor));
+					usedSec = true;
+				}
+				if (ImGui::MenuItem("Store primary here"))
+				{
+					std::memcpy(editor.favoriteColorRgba[i], editor.leftColor, sizeof(editor.leftColor));
+					if (editor.onFavoriteColorsChanged) editor.onFavoriteColorsChanged();
+				}
+				if (ImGui::MenuItem("Store secondary here"))
+				{
+					std::memcpy(editor.favoriteColorRgba[i], editor.rightColor, sizeof(editor.rightColor));
+					if (editor.onFavoriteColorsChanged) editor.onFavoriteColorsChanged();
+				}
+				ImGui::EndPopup();
+				paintEditorRefreshDraftsAfterPrimarySecondaryChange(editor, usedPri, usedSec);
+			}
+			ImGui::PopID();
+			if ((i + 1) % (size_t)kFavCols != 0 && i + 1 < PaintEditor::favoriteColorSlotCount) ImGui::SameLine();
+		}
+		ImGui::PopStyleVar(); // FramePadding — primary, secondary, favorites ColorButtons
+	}
+	ImGui::End();
+	ImGui::PopStyleColor(2);
+}
+
+/// \p defaultLeft is the initial X offset from the left (matches default Tools + Layers + Colors widths on first run).
 static void drawPaintToolOptionsPanel(PaintEditor &editor, float defaultLeft)
 {
 	if (!editor.showToolOptionsPanel) return;
@@ -668,63 +822,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, PaintEditor::DigitHotkeyAction::Redo, "Redo");
 		}
 		ImGui::EndDisabled();
-
-		// --- Colors (swatches + pipette on one row) ---
-		ImGui::SeparatorText("Colors");
-		const ImGuiColorEditFlags colorPickFlags =
-			ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel
-			| ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar;
-		const float colorRowPadY = 5.f * editor.viewport.scale;
-		const float availColorW = ImGui::GetContentRegionAvail().x;
-		const float colorGap = ImGui::GetStyle().ItemSpacing.x;
-		const float pipetteBtn = std::max(1.f, std::floor(26.f * editor.viewport.scale));
-		const float swatchPairW = std::max(1.f, availColorW - pipetteBtn - colorGap);
-		const float swatchColW = std::max(1.f, (swatchPairW - colorGap) * 0.5f);
-		ImGui::BeginGroup();
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.f, colorRowPadY));
-		ImGui::SetNextItemWidth(swatchColW);
-		const bool leftColorChanged = ImGui::ColorEdit4("##primaryColor", editor.leftColor, colorPickFlags);
-		ImGui::SameLine(0.f, colorGap);
-		ImGui::SetNextItemWidth(swatchColW);
-		const bool rightColorChanged = ImGui::ColorEdit4("##secondaryColor", editor.rightColor, colorPickFlags);
-		ImGui::PopStyleVar();
-		ImGui::SameLine(0.f, colorGap);
-		{
-			const bool pipActive = editor.mode == PaintEditor::MODE_PIPETTE;
-			if (pipActive) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-			bool pipClicked = false;
-#ifdef BBE_RENDERER_OPENGL
-			if (s_toolIcons.pipette.texId)
-			{
-				pipClicked = ImGui::ImageButton("Pipette##colorsPipette", s_toolIcons.pipette.texId, ImVec2(pipetteBtn, pipetteBtn));
-			}
-			else
-#endif
-			{
-				pipClicked = ImGui::Button("Pick##colorsPipette", ImVec2(pipetteBtn, pipetteBtn));
-			}
-			if (pipActive) ImGui::PopStyleColor();
-			const PaintEditor::DigitHotkeyAction pipBind = PaintEditor::digitHotkeyActionForToolMode(PaintEditor::MODE_PIPETTE);
-			paintEditorTryBindDigitHotkeyOnHover(editor, pipBind);
-			if (pipClicked) editor.mode = PaintEditor::MODE_PIPETTE;
-			if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, pipBind, "Pipette — click canvas to sample a color");
-		}
-		ImGui::EndGroup();
-		if (editor.rectangle.draftActive && (editor.shapeFillMode != PaintEditor::ShapeFillMode::None || editor.shapeStripedStroke
-			? (leftColorChanged || rightColorChanged)
-			: ((leftColorChanged && !editor.rectangle.draftUsesRightColor) || (rightColorChanged && editor.rectangle.draftUsesRightColor))))
-		{
-			editor.refreshActiveRectangleDraftImage();
-		}
-		if (editor.circle.draftActive && (editor.shapeFillMode != PaintEditor::ShapeFillMode::None || editor.shapeStripedStroke
-			? (leftColorChanged || rightColorChanged)
-			: ((leftColorChanged && !editor.circle.draftUsesRightColor) || (rightColorChanged && editor.circle.draftUsesRightColor))))
-		{
-			editor.refreshActiveCircleDraftImage();
-		}
-		if (editor.line.draftActive && ((leftColorChanged && !editor.line.draftUsesRightColor) || (rightColorChanged && editor.line.draftUsesRightColor))) editor.redrawLineDraft();
-		if (editor.arrow.draftActive && ((leftColorChanged && !editor.arrow.draftUsesRightColor) || (rightColorChanged && editor.arrow.draftUsesRightColor))) editor.redrawArrowDraft();
-		if (!editor.bezier.controlPoints.isEmpty() && ((leftColorChanged && !editor.bezier.usesRightColor) || (rightColorChanged && editor.bezier.usesRightColor))) editor.redrawBezierDraft();
 
 		// --- Tools: drawing / paint vs selection (matches isSelectionLikeTool split) ---
 		{
@@ -1130,7 +1227,9 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		ImGui::End();
 		ImGui::PopStyleColor(2);
 
-		drawPaintToolOptionsPanel(editor, PANEL_WIDTH * 2.f);
+		drawPaintColorsPanel(editor, PANEL_WIDTH, menuBarH, sidePanelSize);
+
+		drawPaintToolOptionsPanel(editor, PANEL_WIDTH * 3.f);
 
 		bool anyNonNormalBlendMode = false;
 		for (size_t layerIndex = 0; layerIndex < editor.canvas.get().layers.getLength(); layerIndex++)
@@ -1702,6 +1801,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				toggleMenuItem("Draw Grid Lines", editor.drawGridLines);
 				toggleMenuItem("Tiled", editor.tiled);
 				toggleMenuItem("Navigator", editor.showNavigator);
+				toggleMenuItem("Colors", editor.showColorsPanel);
 				toggleMenuItem("Tool Options", editor.showToolOptionsPanel);
 				ImGui::EndMenu();
 			}
@@ -1883,7 +1983,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					for (const char *item : items) ImGui::BulletText("%s", item);
 				};
 				bulletList("Tools", { "Digits 1–9 and 0 trigger customizable actions; hover a control in Tools (tools, pipette, symmetry, undo/redo, selection actions, clipboard) or Layers and press Ctrl+digit to assign", "Bindings are saved to ExamplePaintDigitHotkeys.dat (with ParanoiaConfig backups like ExampleMother)", "Defaults: 1 Brush, 2 Flood Fill, 3 Line, 4 Rectangle, 5 Selection, 6 Text, 7 Pipette, 8 Circle, 9 Arrow, 0 Bezier", "E Eraser, R Spray, O Ellipse selection, L Lasso, P Polygon Lasso, M Magic Wand" });
-				bulletList("General", { "+/- changes brush width, eraser size, spray width (spray tool), wand or flood-fill tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms", "Tools, Layers, and Tool options are separate floating windows: drag title bars to move; resize freely; layout is remembered (imgui.ini)" });
+				bulletList("General", { "+/- changes brush width, eraser size, spray width (spray tool), wand or flood-fill tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms", "Tools, Layers, Colors, and Tool options are separate floating windows: drag title bars to move; resize freely; layout is remembered (imgui.ini)", "Favorite swatches in the Colors window default to white and are saved to ExamplePaintFavoriteColors.dat" });
 				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection", "Edit → Mirror flips all layers (vertical or horizontal in the dialog)", "Edit → Rotate Canvas 90° turns all layers; canvas width and height swap" });
 				bulletList("Selection", { "Drag to create a rectangular selection", "Ellipse selection: drag for an elliptical marquee; hold Shift for a circle", "Lasso: click and drag to outline an area (closed automatically)", "Polygon lasso: click corners, then close via first point, Enter, or right-click", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand, Selection, Ellipse selection, Lasso, or Polygon lasso adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
 				bulletList("Layers", { "Painting and text placement affect only the active layer", "Canvas backdrop defaults to opaque white behind all layers; set alpha to 0 on the backdrop for a fully transparent document", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });
