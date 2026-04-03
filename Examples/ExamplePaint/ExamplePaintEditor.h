@@ -585,7 +585,7 @@ struct PaintEditor
 
 	void applySelectionTransform();
 
-	/// Move the selection like a one-pixel drag: lifts to floating if needed, then offsets the rect (clamped to the canvas).
+	/// Move the selection like a one-pixel drag: lifts to floating if needed, then offsets the rect (may go past canvas edges like mouse move; commit crops).
 	void nudgeSelectionByPixels(int32_t dx, int32_t dy);
 
 	void finalizeRectangleDrag(const bbe::Vector2i &mousePixel, bool shiftDown);

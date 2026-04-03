@@ -3135,26 +3135,11 @@ void PaintEditor::nudgeSelectionByPixels(int32_t dx, int32_t dy)
 
 	liftSelectionToFloatingIfNeeded();
 
-	const int32_t w = selection.rect.width;
-	const int32_t h = selection.rect.height;
-	const int32_t W = getCanvasWidth();
-	const int32_t H = getCanvasHeight();
-	if (w <= 0 || h <= 0 || W <= 0 || H <= 0) return;
+	if (selection.rect.width <= 0 || selection.rect.height <= 0) return;
 
-	int32_t nx = selection.rect.x + dx;
-	int32_t ny = selection.rect.y + dy;
-
-	const int32_t minX = bbe::Math::min<int32_t>(0, W - w);
-	const int32_t maxX = bbe::Math::max<int32_t>(0, W - w);
-	const int32_t minY = bbe::Math::min<int32_t>(0, H - h);
-	const int32_t maxY = bbe::Math::max<int32_t>(0, H - h);
-	nx = bbe::Math::clamp<int32_t>(nx, minX, maxX);
-	ny = bbe::Math::clamp<int32_t>(ny, minY, maxY);
-
-	if (nx == selection.rect.x && ny == selection.rect.y) return;
-
-	selection.rect.x = nx;
-	selection.rect.y = ny;
+	// Match mouse move: allow the rect to extend past the canvas; commit crops via clampRectToCanvas.
+	selection.rect.x += dx;
+	selection.rect.y += dy;
 }
 
 
