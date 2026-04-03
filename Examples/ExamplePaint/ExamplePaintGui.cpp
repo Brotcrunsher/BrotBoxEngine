@@ -604,7 +604,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 
 		// --- Tools: drawing / paint vs selection (matches isSelectionLikeTool split) ---
 		{
-			const float w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+			constexpr int kToolCols = 5;
+			const float rowW = ImGui::GetContentRegionAvail().x;
+			const float sp = ImGui::GetStyle().ItemSpacing.x;
+			const float cell = std::max(1.f, (rowW - sp * (float)(kToolCols - 1)) / (float)kToolCols);
+			const float w = cell;
 			struct ToolBtn
 			{
 				const char *label;
@@ -654,7 +658,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				{ "Poly Lasso",  PaintEditor::MODE_POLYGON_LASSO,     nullptr },
 			};
 #endif
-			const float iconSize = 24.f * editor.viewport.scale;
+			const float iconSize = std::max(1.f, std::min(24.f * editor.viewport.scale, std::floor(cell)));
 			auto drawToolGrid = [&](const ToolBtn *tools, size_t count)
 			{
 				for (size_t i = 0; i < count; i++)
@@ -670,7 +674,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					if (clicked) editor.mode = tb.toolMode;
 					if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tb.label);
 					if (active) ImGui::PopStyleColor();
-					if (i % 2 == 0 && i + 1 < count) ImGui::SameLine();
+					if (i % kToolCols != (size_t)kToolCols - 1 && i + 1 < count) ImGui::SameLine();
 				}
 			};
 
