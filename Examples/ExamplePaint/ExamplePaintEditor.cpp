@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <deque>
 #include <filesystem>
 #include <random>
@@ -3833,12 +3834,16 @@ void PaintEditor::setupCanvas(bool clearHistory)
 
 void PaintEditor::newCanvas(uint32_t width, uint32_t height)
 {
+	int32_t iw = width > (uint32_t)INT32_MAX ? INT32_MAX : (int32_t)width;
+	int32_t ih = height > (uint32_t)INT32_MAX ? INT32_MAX : (int32_t)height;
+	if (iw < 1) iw = 1;
+	if (ih < 1) ih = 1;
 	canvas.get().layers.clear();
 	canvas.get().canvasFallbackRgba[0] = 1.f;
 	canvas.get().canvasFallbackRgba[1] = 1.f;
 	canvas.get().canvasFallbackRgba[2] = 1.f;
 	canvas.get().canvasFallbackRgba[3] = 1.f;
-	canvas.get().layers.add(makeLayer("Layer 1", (int32_t)width, (int32_t)height, bbe::Color(0.f, 0.f, 0.f, 0.f)));
+	canvas.get().layers.add(makeLayer("Layer 1", iw, ih, bbe::Color(0.f, 0.f, 0.f, 0.f)));
 	activeLayerIndex = 0;
 	this->path = "";
 	setupCanvas();

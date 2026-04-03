@@ -15,7 +15,6 @@
 // TODO: Bug: right click has weird behaviour with shadow
 
 // TODO: Color history
-// TODO: It's possible to enter negative numbers for new canvas size. Leads to a crash. Don't allow negative sizes.
 // TODO: Saving an image always returns success, even if the file couldn't be written. Fix that.
 struct FontEntry
 {

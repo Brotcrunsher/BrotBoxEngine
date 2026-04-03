@@ -1889,9 +1889,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				ImGui::InputInt("Width", &newWidth);
 				ImGui::SameLine();
 				ImGui::InputInt("Height", &newHeight);
+				if (newWidth < 1) newWidth = 1;
+				if (newHeight < 1) newHeight = 1;
 				if (ImGui::Button("OK", ImVec2(120, 0)))
 				{
-					editor.newCanvas(newWidth, newHeight);
+					editor.newCanvas((uint32_t)newWidth, (uint32_t)newHeight);
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::SameLine();
