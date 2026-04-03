@@ -328,12 +328,14 @@ void ImGui::bbe::AddNgonFilled(const ImVec2 &center, float radius, int num_segme
 
 void ImGui::bbe::AddEllipse(const ImVec2 &center, float radius_x, float radius_y, float rot, int num_segments, float thickness)
 {
-	ImGui::GetForegroundDrawList()->AddEllipse(center, ToResolution(radius_x), ToResolution(radius_y), col, rot, num_segments, thickness);
+	const ImVec2 r(ToResolution(radius_x), ToResolution(radius_y));
+	ImGui::GetForegroundDrawList()->AddEllipse(center, r, col, rot, num_segments, thickness);
 }
 
 void ImGui::bbe::AddEllipseFilled(const ImVec2 &center, float radius_x, float radius_y, float rot, int num_segments)
 {
-	ImGui::GetForegroundDrawList()->AddEllipseFilled(center, ToResolution(radius_x), ToResolution(radius_y), col, rot, num_segments);
+	const ImVec2 r(ToResolution(radius_x), ToResolution(radius_y));
+	ImGui::GetForegroundDrawList()->AddEllipseFilled(center, r, col, rot, num_segments);
 }
 
 void ImGui::bbe::AddText(const ImVec2 &pos, const char *text_begin, const char *text_end)
@@ -343,7 +345,7 @@ void ImGui::bbe::AddText(const ImVec2 &pos, const char *text_begin, const char *
 
 void ImGui::bbe::AddText(const ImFont *font, float font_size, const ImVec2 &pos, const char *text_begin, const char *text_end, float wrap_width, const ImVec4 *cpu_fine_clip_rect)
 {
-	ImGui::GetForegroundDrawList()->AddText(font, font_size, pos, col, text_begin, text_end, wrap_width, cpu_fine_clip_rect);
+	ImGui::GetForegroundDrawList()->AddText(const_cast<ImFont *>(font), font_size, pos, col, text_begin, text_end, wrap_width, cpu_fine_clip_rect);
 }
 
 void ImGui::bbe::AddPolyline(const ImVec2 *points, int num_points, ImDrawFlags flags, float thickness)
@@ -439,12 +441,14 @@ void ImGui::bbe::window::AddNgonFilled(const ImVec2 &center, float radius, int n
 
 void ImGui::bbe::window::AddEllipse(const ImVec2 &center, float radius_x, float radius_y, float rot, int num_segments, float thickness)
 {
-	ImGui::GetForegroundDrawList()->AddEllipse(ToWindowCoord(center), ToResolution(radius_x), ToResolution(radius_y), col, rot, num_segments, thickness);
+	const ImVec2 r(ToResolution(radius_x), ToResolution(radius_y));
+	ImGui::GetForegroundDrawList()->AddEllipse(ToWindowCoord(center), r, col, rot, num_segments, thickness);
 }
 
 void ImGui::bbe::window::AddEllipseFilled(const ImVec2 &center, float radius_x, float radius_y, float rot, int num_segments)
 {
-	ImGui::GetForegroundDrawList()->AddEllipseFilled(ToWindowCoord(center), ToResolution(radius_x), ToResolution(radius_y), col, rot, num_segments);
+	const ImVec2 r(ToResolution(radius_x), ToResolution(radius_y));
+	ImGui::GetForegroundDrawList()->AddEllipseFilled(ToWindowCoord(center), r, col, rot, num_segments);
 }
 
 void ImGui::bbe::window::AddText(const ImVec2 &pos, const char *text_begin, const char *text_end)
@@ -454,7 +458,7 @@ void ImGui::bbe::window::AddText(const ImVec2 &pos, const char *text_begin, cons
 
 void ImGui::bbe::window::AddText(const ImFont *font, float font_size, const ImVec2 &pos, const char *text_begin, const char *text_end, float wrap_width, const ImVec4 *cpu_fine_clip_rect)
 {
-	ImGui::GetForegroundDrawList()->AddText(font, font_size, ToWindowCoord(pos), col, text_begin, text_end, wrap_width, cpu_fine_clip_rect);
+	ImGui::GetForegroundDrawList()->AddText(const_cast<ImFont *>(font), font_size, ToWindowCoord(pos), col, text_begin, text_end, wrap_width, cpu_fine_clip_rect);
 }
 
 void ImGui::bbe::window::AddPolyline(const ImVec2 *points, int num_points, ImDrawFlags flags, float thickness)

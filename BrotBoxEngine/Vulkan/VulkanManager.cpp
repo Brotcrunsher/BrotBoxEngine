@@ -1040,12 +1040,14 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiStart()
 	implVulkanInitInfo.Queue = m_device.getQueue();
 	implVulkanInitInfo.PipelineCache = VK_NULL_HANDLE;
 	implVulkanInitInfo.DescriptorPool = m_descriptorPool.getDescriptorPool();
-	implVulkanInitInfo.Subpass = 0;
 	implVulkanInitInfo.MinImageCount = m_imguiMinImageCount;
 	implVulkanInitInfo.ImageCount = m_imguiMinImageCount;
+	implVulkanInitInfo.PipelineInfoMain.RenderPass = m_renderPass.getRenderPass();
+	implVulkanInitInfo.PipelineInfoMain.Subpass = 0;
+	implVulkanInitInfo.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 	implVulkanInitInfo.Allocator = nullptr;
 	implVulkanInitInfo.CheckVkResultFn = CheckVkResultFn;
-	m_imguiInitSuccessful = ImGui_ImplVulkan_Init(&implVulkanInitInfo, m_renderPass.getRenderPass());
+	m_imguiInitSuccessful = ImGui_ImplVulkan_Init(&implVulkanInitInfo);
 	if (!m_imguiInitSuccessful)
 	{
 		bbe::Crash(bbe::Error::NotInitialized);
@@ -1059,8 +1061,6 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiStart()
 	imguiFontSmall = io.Fonts->AddFontDefault(&fontConfig);
 	fontConfig.SizePixels = 26;
 	imguiFontBig = io.Fonts->AddFontDefault(&fontConfig);
-
-	ImGui_ImplVulkan_CreateFontsTexture();
 }
 
 void bbe::INTERNAL::vulkan::VulkanManager::imguiStop()

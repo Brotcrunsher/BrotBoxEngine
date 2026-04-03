@@ -78,6 +78,44 @@ namespace
 		return waylandDisplay != nullptr && waylandDisplay[0] != '\0';
 	}
 #endif
+
+#ifndef BBE_RENDERER_NULL
+#define BBE_GLFW_VER_COMBINED (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 + GLFW_VERSION_REVISION)
+#define BBE_GLFW_HAS_GETKEYNAME (BBE_GLFW_VER_COMBINED >= 3200)
+#define BBE_GLFW_HAS_GETERROR (BBE_GLFW_VER_COMBINED >= 3300)
+
+	// Dear ImGui applies this inside ImGui_ImplGlfw_KeyCallback (helper is no longer public). Mirror it here so
+	// engine keyboard input stays consistent with GLFW "untranslated" key quirks. See imgui_impl_glfw.cpp.
+	static int translateGlfwKeyForKeyboard(int key, int scancode)
+	{
+#if BBE_GLFW_HAS_GETKEYNAME && (!defined(__EMSCRIPTEN__) || defined(EMSCRIPTEN_USE_PORT_CONTRIB_GLFW3))
+		if (key >= GLFW_KEY_KP_0 && key <= GLFW_KEY_KP_EQUAL)
+			return key;
+		GLFWerrorfun prev_error_callback = glfwSetErrorCallback(nullptr);
+		const char *key_name = glfwGetKeyName(key, scancode);
+		glfwSetErrorCallback(prev_error_callback);
+#if BBE_GLFW_HAS_GETERROR && (!defined(__EMSCRIPTEN__) || defined(EMSCRIPTEN_USE_PORT_CONTRIB_GLFW3))
+		(void)glfwGetError(nullptr);
+#endif
+		if (key_name != nullptr && key_name[0] != 0 && key_name[1] == 0)
+		{
+			static const char char_names[] = "`-=[]\\,;\'./";
+			static const int char_keys[] = { GLFW_KEY_GRAVE_ACCENT, GLFW_KEY_MINUS, GLFW_KEY_EQUAL, GLFW_KEY_LEFT_BRACKET, GLFW_KEY_RIGHT_BRACKET, GLFW_KEY_BACKSLASH, GLFW_KEY_COMMA, GLFW_KEY_SEMICOLON, GLFW_KEY_APOSTROPHE, GLFW_KEY_PERIOD, GLFW_KEY_SLASH, 0 };
+			if (key_name[0] >= '0' && key_name[0] <= '9')
+				key = GLFW_KEY_0 + (key_name[0] - '0');
+			else if (key_name[0] >= 'A' && key_name[0] <= 'Z')
+				key = GLFW_KEY_A + (key_name[0] - 'A');
+			else if (key_name[0] >= 'a' && key_name[0] <= 'z')
+				key = GLFW_KEY_A + (key_name[0] - 'a');
+			else if (const char *p = strchr(char_names, key_name[0]))
+				key = char_keys[static_cast<size_t>(p - char_names)];
+		}
+#else
+		(void)scancode;
+#endif
+		return key;
+	}
+#endif
 }
 
 bbe::Window::Window(int width, int height, const char *title, bbe::Game *game, uint32_t major, uint32_t minor, uint32_t patch, uint32_t msaaSamples)
@@ -772,16 +810,16 @@ void bbe::INTERNAL_keyCallback(GLFWwindow *window, int keyCode, int scanCode, in
 		return;
 	}
 	((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->requestRender();
-	keyCode = ImGui_ImplGlfw_TranslateUntranslatedKey(keyCode, scanCode);
 	ImGui_ImplGlfw_KeyCallback(window, keyCode, scanCode, action, mods);
 	if (ImGui::GetIO().WantCaptureKeyboard) return;
+	const int keyForKeyboard = translateGlfwKeyForKeyboard(keyCode, scanCode);
 	if (action == GLFW_PRESS)
 	{
-		((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_press((bbe::Key)keyCode);
+		((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_press((bbe::Key)keyForKeyboard);
 	}
 	else if (action == GLFW_RELEASE)
 	{
-		((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_release((bbe::Key)keyCode);
+		((bbe::Window *)glfwWrapper::glfwGetWindowUserPointer(window))->INTERNAL_keyboard.INTERNAL_release((bbe::Key)keyForKeyboard);
 	}
 #endif
 }

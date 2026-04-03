@@ -14,12 +14,12 @@
 
 static void updateIconSlot(ImTextureID &texId, const bbe::Image *&cachedPtr, const bbe::Image *current)
 {
-	if (current == cachedPtr && texId) return;
-	if (texId)
+	if (current == cachedPtr && texId != ImTextureID_Invalid) return;
+	if (texId != ImTextureID_Invalid)
 	{
 		GLuint old = (GLuint)(intptr_t)texId;
 		glDeleteTextures(1, &old);
-		texId = nullptr;
+		texId = ImTextureID_Invalid;
 	}
 	cachedPtr = current;
 	if (!current || current->getWidth() <= 0 || current->getHeight() <= 0) return;
@@ -49,7 +49,7 @@ static void updateIconSlot(ImTextureID &texId, const bbe::Image *&cachedPtr, con
 
 struct ToolIconTextures
 {
-	struct Slot { ImTextureID texId = nullptr; const bbe::Image *cachedPtr = nullptr; };
+	struct Slot { ImTextureID texId = ImTextureID_Invalid; const bbe::Image *cachedPtr = nullptr; };
 	Slot brush, eraser, spray, fill, line, rectangle, circle, selection, ellipseSelection, lasso, polygonLasso, magicWand, text, pipette, arrow, bezier;
 	Slot undo, redo;
 	Slot layerNew, layerDelete, layerUp, layerDown, layerDuplicate, layerMergeDown;
@@ -965,23 +965,23 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			};
 #else
 			const ToolBtn paintTools[] = {
-				{ "Brush",     PaintEditor::MODE_BRUSH,             nullptr },
-				{ "Eraser",    PaintEditor::MODE_ERASER,          nullptr },
-				{ "Rectangle", PaintEditor::MODE_RECTANGLE,       nullptr },
-				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,      nullptr },
-				{ "Circle",    PaintEditor::MODE_CIRCLE,          nullptr },
-				{ "Text",      PaintEditor::MODE_TEXT,            nullptr },
-				{ "Line",      PaintEditor::MODE_LINE,            nullptr },
-				{ "Arrow",     PaintEditor::MODE_ARROW,           nullptr },
-				{ "Spray",     PaintEditor::MODE_SPRAY,           nullptr },
-				{ "Bezier",    PaintEditor::MODE_BEZIER,          nullptr },
+				{ "Brush",     PaintEditor::MODE_BRUSH,             ImTextureID_Invalid },
+				{ "Eraser",    PaintEditor::MODE_ERASER,          ImTextureID_Invalid },
+				{ "Rectangle", PaintEditor::MODE_RECTANGLE,       ImTextureID_Invalid },
+				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,      ImTextureID_Invalid },
+				{ "Circle",    PaintEditor::MODE_CIRCLE,          ImTextureID_Invalid },
+				{ "Text",      PaintEditor::MODE_TEXT,            ImTextureID_Invalid },
+				{ "Line",      PaintEditor::MODE_LINE,            ImTextureID_Invalid },
+				{ "Arrow",     PaintEditor::MODE_ARROW,           ImTextureID_Invalid },
+				{ "Spray",     PaintEditor::MODE_SPRAY,           ImTextureID_Invalid },
+				{ "Bezier",    PaintEditor::MODE_BEZIER,          ImTextureID_Invalid },
 			};
 			const ToolBtn selectionTools[] = {
-				{ "Selection",   PaintEditor::MODE_SELECTION,         nullptr },
-				{ "Ellipse Sel", PaintEditor::MODE_ELLIPSE_SELECTION, nullptr },
-				{ "Lasso",       PaintEditor::MODE_LASSO,             nullptr },
-				{ "Wand",        PaintEditor::MODE_MAGIC_WAND,        nullptr },
-				{ "Poly Lasso",  PaintEditor::MODE_POLYGON_LASSO,     nullptr },
+				{ "Selection",   PaintEditor::MODE_SELECTION,         ImTextureID_Invalid },
+				{ "Ellipse Sel", PaintEditor::MODE_ELLIPSE_SELECTION, ImTextureID_Invalid },
+				{ "Lasso",       PaintEditor::MODE_LASSO,             ImTextureID_Invalid },
+				{ "Wand",        PaintEditor::MODE_MAGIC_WAND,        ImTextureID_Invalid },
+				{ "Poly Lasso",  PaintEditor::MODE_POLYGON_LASSO,     ImTextureID_Invalid },
 			};
 #endif
 			const float iconSize = std::max(1.f, std::min(24.f * editor.viewport.scale, std::floor(cell)));
@@ -1037,7 +1037,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
 				bool clicked = false;
 #ifdef BBE_RENDERER_OPENGL
-				ImTextureID symTex = nullptr;
+				ImTextureID symTex = ImTextureID_Invalid;
 				switch (i)
 				{
 				case 0: symTex = s_toolIcons.symmetryOff.texId; break;

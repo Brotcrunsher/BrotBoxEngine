@@ -1880,8 +1880,6 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStart()
 	m_pimguiFontSmall = io.Fonts->AddFontDefault(&fontConfig);
 	fontConfig.SizePixels = 26;
 	m_pimguiFontBig = io.Fonts->AddFontDefault(&fontConfig);
-
-	ImGui_ImplOpenGL3_CreateFontsTexture();
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::imguiStop()
