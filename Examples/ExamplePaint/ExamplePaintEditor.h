@@ -87,6 +87,7 @@ struct PaintEditor
 	static constexpr int32_t MODE_MAGIC_WAND = 10;
 	static constexpr int32_t MODE_LASSO = 11;
 	static constexpr int32_t MODE_POLYGON_LASSO = 12;
+	static constexpr int32_t MODE_ELLIPSE_SELECTION = 13;
 
 	/// Selection, lasso, polygon lasso, and wand share one marquee; leaving this set of tools applies the selection (see ExamplePaint mode changes).
 	static bool isSelectionLikeTool(int32_t toolMode);
@@ -433,6 +434,10 @@ struct PaintEditor
 	bbe::Vector2i constrainToSquare(const bbe::Vector2i &start, const bbe::Vector2i &end) const;
 
 	bool buildSelectionRect(const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect) const;
+
+	bool buildEllipseMarqueeRect(const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect) const;
+
+	void finishEllipseMarqueeDrag(const bbe::Vector2i &mousePixel);
 
 	bbe::Rectanglei buildRawRect(const bbe::Vector2i &pos1, const bbe::Vector2i &pos2) const;
 
