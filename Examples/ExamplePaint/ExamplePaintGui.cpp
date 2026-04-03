@@ -337,17 +337,18 @@ static void drawPaintToolOptionsPanel(PaintEditor &editor, float toolbarWidth)
 			widthWithSteppers("Size", &editor.eraserSize, &PaintEditor::clampEraserSize, nullptr);
 			ImGui::TextDisabled("Square stamp; alpha→0. [+ / -] also adjusts.");
 		}
-		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_SPRAY || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER)
+		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER)
 		{
 			widthWithSteppers("Width", &editor.brushWidth, &PaintEditor::clampBrushWidth, &PaintEditor::refreshBrushBasedDrafts);
 		}
 		if (editor.mode == PaintEditor::MODE_SPRAY)
 		{
+			widthWithSteppers("Spray width", &editor.sprayWidth, &PaintEditor::clampSprayWidth, nullptr);
 			if (ImGui::InputInt("Droplets", &editor.sprayDensity))
 			{
 				editor.clampSprayDensity();
 			}
-			ImGui::TextDisabled("Random dots per sample inside the width radius. [+ / -] adjusts droplets.");
+			ImGui::TextDisabled("Dots per burst; denser near the center of the spray disk. [+ / -] adjusts spray width.");
 		}
 		if (editor.mode == PaintEditor::MODE_MAGIC_WAND)
 		{
@@ -1343,7 +1344,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				const int32_t ch = editor.getCanvasHeight();
 				const int32_t tileRepeat = editor.tiled ? 20 : 0;
 				const float z = editor.zoomLevel;
-				const float rad = (float)editor.brushWidth * z;
+				const float rad = (float)editor.sprayWidth * z;
 				const bbe::List<bbe::Vector2> centers = editor.getSymmetryPositions(previewCenter);
 				for (size_t si = 0; si < centers.getLength(); si++)
 				{
@@ -1712,7 +1713,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					for (const char *item : items) ImGui::BulletText("%s", item);
 				};
 				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow", "0 Bezier", "E Eraser", "R Spray", "O Ellipse selection", "L Lasso", "P Polygon Lasso", "M Magic Wand" });
-				bulletList("General", { "+/- changes brush size, eraser size, spray droplet count, wand tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
+				bulletList("General", { "+/- changes brush width, eraser size, spray width (spray tool), wand tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
 				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection", "Edit → Mirror flips all layers (vertical or horizontal in the dialog)", "Edit → Rotate Canvas 90° turns all layers; canvas width and height swap" });
 				bulletList("Selection", { "Drag to create a rectangular selection", "Ellipse selection: drag for an elliptical marquee; hold Shift for a circle", "Lasso: click and drag to outline an area (closed automatically)", "Polygon lasso: click corners, then close via first point, Enter, or right-click", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand, Selection, Ellipse selection, Lasso, or Polygon lasso adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
 				bulletList("Layers", { "Painting and text placement affect only the active layer", "Canvas backdrop defaults to opaque white behind all layers; set alpha to 0 on the backdrop for a fully transparent document", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });

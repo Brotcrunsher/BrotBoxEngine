@@ -3441,6 +3441,11 @@ void PaintEditor::clampEraserSize()
 	eraserSize = bbe::Math::clamp(eraserSize, 1, 512);
 }
 
+void PaintEditor::clampSprayWidth()
+{
+	sprayWidth = bbe::Math::clamp(sprayWidth, 1, 512);
+}
+
 void PaintEditor::clampSprayDensity()
 {
 	sprayDensity = bbe::Math::clamp(sprayDensity, 1, 256);
@@ -4098,7 +4103,7 @@ bool PaintEditor::sprayBurstAtCanvasWithSymmetry(const bbe::Vector2 &canvasPos, 
 	std::uniform_real_distribution<float> angDist(0.f, bbe::Math::TAU);
 	std::uniform_real_distribution<float> radDist(0.f, 1.f);
 	std::uniform_int_distribution<int> dropletAlphaDist(1, 255);
-	const float radius = (float)brushWidth;
+	const float radius = (float)sprayWidth;
 	const int droplets = sprayDensity;
 	bool changed = false;
 	const auto centers = getSymmetryPositions(canvasPos);
@@ -4108,7 +4113,8 @@ bool PaintEditor::sprayBurstAtCanvasWithSymmetry(const bbe::Vector2 &canvasPos, 
 		for (int i = 0; i < droplets; i++)
 		{
 			const float t = radDist(g_sprayRng);
-			const float r = radius > 0.f ? std::sqrt(t) * radius : 0.f;
+			// Bias samples toward the center: r = R * t^2 (t ~ U[0,1]) vs sqrt(t)*R for area-uniform disk.
+			const float r = radius > 0.f ? t * t * radius : 0.f;
 			const float ang = angDist(g_sprayRng);
 			const bbe::Vector2 p(c.x + std::cos(ang) * r, c.y + std::sin(ang) * r);
 			const bbe::byte da = (bbe::byte)dropletAlphaDist(g_sprayRng);

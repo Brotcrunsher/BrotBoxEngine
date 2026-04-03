@@ -237,9 +237,9 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	}
 	else if (editor.mode == PaintEditor::MODE_SPRAY)
 	{
-		if (increaseToolSize) editor.sprayDensity++;
-		if (decreaseToolSize) editor.sprayDensity--;
-		editor.clampSprayDensity();
+		if (increaseToolSize) editor.sprayWidth++;
+		if (decreaseToolSize) editor.sprayWidth--;
+		editor.clampSprayWidth();
 	}
 	else if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER)
 	{

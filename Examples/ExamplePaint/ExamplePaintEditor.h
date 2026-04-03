@@ -175,8 +175,10 @@ struct PaintEditor
 	/// Spray tool: previous canvas position for interpolating bursts while dragging.
 	bbe::Vector2 sprayStrokePrevCanvasPos{};
 	bool sprayStrokeHasPrev = false;
+	/// Spray disk radius in pixels (independent of \c brushWidth).
+	int32_t sprayWidth = 12;
 	/// Droplets placed per burst (per symmetry copy); each frame samples the spray disk this many times.
-	int32_t sprayDensity = 12;
+	int32_t sprayDensity = 1;
 	/// Last in-frame segment actually rasterized (for UI preview); same endpoints as eraseLineOnWorkAreaWithSymmetry(pNew, pOld).
 	bool eraserPreviewSegmentActive = false;
 	bbe::Vector2 eraserPreviewSegmentPNew{};
@@ -622,6 +624,7 @@ struct PaintEditor
 
 	void clampBrushWidth();
 	void clampEraserSize();
+	void clampSprayWidth();
 	void clampSprayDensity();
 	void clampShapeStripePeriod();
 
@@ -722,7 +725,7 @@ struct PaintEditor
 	/// Lerps from pOld to pNew (ceil distance steps); each sample uses getEraserPixelRect like the stamp tool.
 	bool eraseLineOnWorkAreaWithSymmetry(const bbe::Vector2 &pNew, const bbe::Vector2 &pOld);
 
-	/// Random droplets in a disk of radius \c brushWidth (same as brush stamp) at each symmetry copy of \c canvasPos.
+	/// Random droplets in a disk of radius \c sprayWidth at each symmetry copy of \c canvasPos.
 	bool sprayBurstAtCanvasWithSymmetry(const bbe::Vector2 &canvasPos, bool leftDown, bool rightDown);
 	/// Like eraseLineOnWorkAreaWithSymmetry: one burst per interpolated step along the segment.
 	bool sprayLineOnWorkAreaWithSymmetry(const bbe::Vector2 &pNew, const bbe::Vector2 &pOld, bool leftDown, bool rightDown);
