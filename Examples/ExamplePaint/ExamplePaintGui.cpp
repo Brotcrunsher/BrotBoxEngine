@@ -1844,7 +1844,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			const float vy1 = bbe::Math::clamp(navY + tlCanvas.y * scaleY, navY, navY + navH);
 			const float vx2 = bbe::Math::clamp(navX + brCanvas.x * scaleX, navX, navX + navW);
 			const float vy2 = bbe::Math::clamp(navY + brCanvas.y * scaleY, navY, navY + navH);
-			brush.setColorRGB(1.0f, 1.0f, 0.0f);
+			brush.setColorRGB(0.0f, 1.0f, 0.0f);
 			brush.sketchRect(vx1, vy1, vx2 - vx1, vy2 - vy1);
 			brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
 		}

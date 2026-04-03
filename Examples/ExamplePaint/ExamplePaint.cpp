@@ -10,7 +10,6 @@
 #include "ExamplePaintGui.h"
 
 // TODO: Window docking for tools etc.
-// TODO: Minimap navigator should be green instead of yellow
 
 /// Persisted 1–9 / 0 digit bindings (one \c int32_t action per key; \c formatVersion distinguishes this from older multi-field saves).
 struct ExamplePaintDigitHotkeysPersist
