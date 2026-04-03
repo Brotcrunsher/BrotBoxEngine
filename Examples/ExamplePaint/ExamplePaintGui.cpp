@@ -402,20 +402,51 @@ static void drawPaintToolOptionsPanel(PaintEditor &editor, float toolbarWidth)
 		{
 			ensureOptionsHeader();
 			{
-				static const char *shapeFillNames[] = { "None", "Primary color", "Secondary color", "Checkerboard" };
+				static const char *shapeFillNames[] = {
+					"None",
+					"Primary color",
+					"Secondary color",
+					"Checkerboard",
+					"Horizontal stripes",
+					"Vertical stripes",
+					"Diagonal stripes (/)",
+					"Diagonal stripes (\\)",
+					"Dot grid",
+					"Concentric rings",
+					"Radial gradient",
+					"Crosshatch mesh",
+					"Brick wall",
+					"Noise dither",
+				};
+				static_assert(IM_ARRAYSIZE(shapeFillNames) == static_cast<int>(PaintEditor::ShapeFillMode::COUNT), "shapeFillNames must match ShapeFillMode");
 				int fillIdx = static_cast<int>(editor.shapeFillMode);
-				if (fillIdx < 0 || fillIdx >= IM_ARRAYSIZE(shapeFillNames)) fillIdx = 0;
-				if (ImGui::Combo("Fill", &fillIdx, shapeFillNames, IM_ARRAYSIZE(shapeFillNames)))
+				if (fillIdx < 0 || fillIdx >= static_cast<int>(PaintEditor::ShapeFillMode::COUNT)) fillIdx = 0;
+				if (ImGui::Combo("Fill", &fillIdx, shapeFillNames, static_cast<int>(PaintEditor::ShapeFillMode::COUNT)))
 				{
 					editor.shapeFillMode = static_cast<PaintEditor::ShapeFillMode>(fillIdx);
 					if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
 					if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
 				}
-				if (editor.shapeFillMode == PaintEditor::ShapeFillMode::Checkerboard)
+				const bool showPatternScale = editor.shapeFillMode != PaintEditor::ShapeFillMode::None && editor.shapeFillMode != PaintEditor::ShapeFillMode::Primary && editor.shapeFillMode != PaintEditor::ShapeFillMode::Secondary && editor.shapeFillMode != PaintEditor::ShapeFillMode::RadialGradient;
+				if (showPatternScale)
 				{
-					if (ImGui::InputInt("Checkerboard cell (px)", &editor.shapeFillPatternCellPx))
+					if (ImGui::InputInt("Pattern scale (px)", &editor.shapeFillPatternCellPx))
 					{
 						editor.clampShapeFillPatternCellPx();
+						if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
+						if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
+					}
+				}
+				if (editor.shapeFillMode == PaintEditor::ShapeFillMode::NoiseDither)
+				{
+					if (ImGui::InputScalar("Noise seed", ImGuiDataType_U32, &editor.shapeFillNoiseSeed))
+					{
+						if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
+						if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
+					}
+					if (ImGui::Button("Reroll##shapeNoiseSeed"))
+					{
+						editor.rerollShapeFillNoiseSeed();
 						if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
 						if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
 					}

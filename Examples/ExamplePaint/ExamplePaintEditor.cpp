@@ -2629,21 +2629,134 @@ bbe::Image paintStripedEllipseOutline(
 	return compositeSolidWithSeamlessStripesAlongMidline(solid, polyBmp, T, stripeNominalPeriodPx);
 }
 
-/// Per-cell checkerboard of \p primary / \p secondary on non-transparent pixels (preserves alpha).
-static void applyCheckerboardPatternToFill(bbe::Image &img, const bbe::Colori &primary, const bbe::Colori &secondary, int32_t cellPx)
+static bbe::Colori lerpByteColor(const bbe::Colori &a, const bbe::Colori &b, float t)
+{
+	t = bbe::Math::clamp(t, 0.f, 1.f);
+	const auto L = [&](uint8_t ca, uint8_t cb) -> uint8_t
+	{
+		return (uint8_t)((float)ca * (1.f - t) + (float)cb * t + 0.5f);
+	};
+	return bbe::Colori(L(a.r, b.r), L(a.g, b.g), L(a.b, b.b), 255);
+}
+
+static bbe::Colori avgByteColor(const bbe::Colori &a, const bbe::Colori &b)
+{
+	return bbe::Colori((uint8_t)(((int)a.r + (int)b.r) / 2), (uint8_t)(((int)a.g + (int)b.g) / 2), (uint8_t)(((int)a.b + (int)b.b) / 2), 255);
+}
+
+static uint32_t shapeFillNoiseHash(int32_t x, int32_t y, uint32_t seed)
+{
+	uint32_t h = (uint32_t)(x * 374761393 + y * 668265263);
+	h ^= seed * 2654435769u;
+	h = (h ^ (h >> 13u)) * 1274126177u;
+	return h ^ (h >> 16u);
+}
+
+/// Re-color non-transparent pixels of \p img (assumed filled with \p primary) using \p mode. Preserves per-pixel alpha.
+static void applyShapeFillPattern(bbe::Image &img, PaintEditor::ShapeFillMode mode, const bbe::Colori &primary, const bbe::Colori &secondary, int32_t cellPx, uint32_t noiseSeed)
 {
 	if (cellPx < 1) cellPx = 1;
 	const int32_t w = (int32_t)img.getWidth();
 	const int32_t h = (int32_t)img.getHeight();
+	if (w <= 0 || h <= 0) return;
+
+	const float cx = (w - 1) * 0.5f;
+	const float cy = (h - 1) * 0.5f;
+	const float maxR = std::sqrt(cx * cx + cy * cy) + 1.f;
+
 	for (int32_t y = 0; y < h; y++)
 	{
 		for (int32_t x = 0; x < w; x++)
 		{
 			const bbe::Colori p = img.getPixel(x, y);
 			if (p.a == 0) continue;
-			const bool usePrimary = ((x / cellPx) + (y / cellPx)) % 2 == 0;
-			const bbe::Colori &pick = usePrimary ? primary : secondary;
-			img.setPixel(x, y, bbe::Colori(pick.r, pick.g, pick.b, p.a));
+
+			bbe::Colori out = primary;
+
+			switch (mode)
+			{
+			case PaintEditor::ShapeFillMode::Checkerboard:
+			{
+				const bool usePrimary = ((x / cellPx) + (y / cellPx)) % 2 == 0;
+				out = usePrimary ? primary : secondary;
+				break;
+			}
+			case PaintEditor::ShapeFillMode::HorizontalStripes:
+				out = ((y / cellPx) % 2 == 0) ? primary : secondary;
+				break;
+			case PaintEditor::ShapeFillMode::VerticalStripes:
+				out = ((x / cellPx) % 2 == 0) ? primary : secondary;
+				break;
+			case PaintEditor::ShapeFillMode::DiagonalStripes:
+				out = (((x + y) / cellPx) % 2 == 0) ? primary : secondary;
+				break;
+			case PaintEditor::ShapeFillMode::DiagonalStripesAlt:
+				out = (((x + (h - 1 - y)) / cellPx) % 2 == 0) ? primary : secondary;
+				break;
+			case PaintEditor::ShapeFillMode::DotGrid:
+			{
+				const int32_t ux = x % cellPx;
+				const int32_t uy = y % cellPx;
+				const int32_t mx = cellPx / 2;
+				const int32_t my = cellPx / 2;
+				const int32_t dx = ux - mx;
+				const int32_t dy = uy - my;
+				const int32_t r = bbe::Math::max(1, cellPx / 3);
+				out = (dx * dx + dy * dy <= r * r) ? secondary : primary;
+				break;
+			}
+			case PaintEditor::ShapeFillMode::ConcentricRings:
+			{
+				const float dx = (float)x - cx;
+				const float dy = (float)y - cy;
+				const float d = std::sqrt(dx * dx + dy * dy);
+				const float u = d / (float)cellPx;
+				const float t = 0.5f + 0.5f * std::cos(bbe::Math::TAU * u);
+				out = lerpByteColor(primary, secondary, t);
+				break;
+			}
+			case PaintEditor::ShapeFillMode::RadialGradient:
+			{
+				const float dx = (float)x - cx;
+				const float dy = (float)y - cy;
+				const float d = std::sqrt(dx * dx + dy * dy);
+				const float t = bbe::Math::clamp(d / maxR, 0.f, 1.f);
+				out = lerpByteColor(primary, secondary, t);
+				break;
+			}
+			case PaintEditor::ShapeFillMode::Crosshatch:
+			{
+				const int32_t lineW = bbe::Math::max(1, cellPx / 4);
+				const bool hLine = (y % cellPx) < lineW;
+				const bool vLine = (x % cellPx) < lineW;
+				if (hLine && vLine) out = avgByteColor(primary, secondary);
+				else if (hLine || vLine) out = secondary;
+				else out = primary;
+				break;
+			}
+			case PaintEditor::ShapeFillMode::Brick:
+			{
+				const int32_t cellW = cellPx;
+				const int32_t cellH = bbe::Math::max(1, (cellPx * 2) / 3);
+				const int32_t row = y / cellH;
+				int32_t col = x / cellW;
+				if ((row & 1) != 0) col = (x + cellW / 2) / cellW;
+				out = (((row + col) & 1) == 0) ? primary : secondary;
+				break;
+			}
+			case PaintEditor::ShapeFillMode::NoiseDither:
+			{
+				const int32_t qx = x / cellPx;
+				const int32_t qy = y / cellPx;
+				const float t = (float)(shapeFillNoiseHash(qx, qy, noiseSeed) & 0xFFFFu) / 65535.f;
+				out = lerpByteColor(primary, secondary, t);
+				break;
+			}
+			default:
+				break;
+			}
+
+			img.setPixel(x, y, bbe::Colori(out.r, out.g, out.b, p.a));
 		}
 	}
 }
@@ -2674,10 +2787,10 @@ bbe::Image PaintEditor::createRectangleImage(int32_t width, int32_t height, cons
 		{
 			img = bbe::Image::strokedRoundedRect(width, height, secondary, 0, cornerRadius, rotation, antiAliasingEnabled);
 		}
-		else if (shapeFillMode == ShapeFillMode::Checkerboard)
+		else
 		{
 			img = bbe::Image::strokedRoundedRect(width, height, primary, 0, cornerRadius, rotation, antiAliasingEnabled);
-			applyCheckerboardPatternToFill(img, primary, secondary, shapeFillPatternCellPx);
+			applyShapeFillPattern(img, shapeFillMode, primary, secondary, shapeFillPatternCellPx, shapeFillNoiseSeed);
 		}
 		bbe::Image stroke = shapeStripedStroke ? stripedStroke() : solidStroke();
 		img.blend(stroke, 1.0f, bbe::BlendMode::Normal);
@@ -2725,10 +2838,10 @@ bbe::Image PaintEditor::createCircleImage(int32_t width, int32_t height, const b
 		{
 			img = bbe::Image::strokedEllipse(width, height, secondary, 0, rotation, antiAliasingEnabled);
 		}
-		else if (shapeFillMode == ShapeFillMode::Checkerboard)
+		else
 		{
 			img = bbe::Image::strokedEllipse(width, height, primary, 0, rotation, antiAliasingEnabled);
-			applyCheckerboardPatternToFill(img, primary, secondary, shapeFillPatternCellPx);
+			applyShapeFillPattern(img, shapeFillMode, primary, secondary, shapeFillPatternCellPx, shapeFillNoiseSeed);
 		}
 		bbe::Image stroke = shapeStripedStroke ? stripedStroke() : solidStroke();
 		img.blend(stroke, 1.0f, bbe::BlendMode::Normal);
@@ -3514,6 +3627,13 @@ void PaintEditor::clampShapeStripePeriod()
 void PaintEditor::clampShapeFillPatternCellPx()
 {
 	shapeFillPatternCellPx = bbe::Math::clamp(shapeFillPatternCellPx, 1, 512);
+}
+
+void PaintEditor::rerollShapeFillNoiseSeed()
+{
+	std::random_device rd;
+	std::uniform_int_distribution<uint32_t> dist;
+	shapeFillNoiseSeed = dist(rd);
 }
 
 void PaintEditor::clampTextFontSize()

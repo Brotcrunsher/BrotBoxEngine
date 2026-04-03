@@ -4,6 +4,7 @@
 #include "BBE/Editor/RectSelectionGizmo2D.h"
 #include "BBE/Symmetry2D.h"
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <functional>
 #include <initializer_list>
@@ -164,6 +165,17 @@ struct PaintEditor
 		Primary,
 		Secondary,
 		Checkerboard,
+		HorizontalStripes,
+		VerticalStripes,
+		DiagonalStripes,
+		DiagonalStripesAlt,
+		DotGrid,
+		ConcentricRings,
+		RadialGradient,
+		Crosshatch,
+		Brick,
+		NoiseDither,
+		COUNT,
 	};
 
 	static constexpr const char *LAYERED_FILE_MAGIC_V1 = "ExamplePaintLayeredV1";
@@ -204,8 +216,10 @@ struct PaintEditor
 	bool shapeStripedStroke = false;
 	/// Target dash+gap length in pixels before snapping to a seamless divisor of the outline length.
 	int32_t shapeStripePeriodPx = 16;
-	/// Edge length in pixels of each square in checkerboard shape fill (\ref ShapeFillMode::Checkerboard).
+	/// Scale in pixels for repeating shape fills (checkerboard cell, stripe period, dot spacing, ring thickness, brick width, noise patch size, etc.). Unused for \ref ShapeFillMode::RadialGradient.
 	int32_t shapeFillPatternCellPx = 8;
+	/// Mixed into \ref ShapeFillMode::NoiseDither; change or reroll for a different random layout.
+	uint32_t shapeFillNoiseSeed = 0xC001D00Du;
 
 	bool drawGridLines = true;
 	bool tiled = false;
@@ -645,6 +659,7 @@ struct PaintEditor
 	void clampSprayDensity();
 	void clampShapeStripePeriod();
 	void clampShapeFillPatternCellPx();
+	void rerollShapeFillNoiseSeed();
 
 	void clampTextFontSize();
 
