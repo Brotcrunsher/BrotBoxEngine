@@ -269,6 +269,8 @@ struct PaintEditor
 	int32_t arrowHeadWidth = 12;
 	bool arrowDoubleHeaded = false;
 	bool arrowFilledHead = true;
+	/// When set, finishing a line or arrow drag applies the stroke immediately (no endpoint gizmo).
+	bool endpointApplyStrokeOnRelease = false;
 
 	EndpointDraftState line;
 	EndpointDraftState arrow;
@@ -323,9 +325,9 @@ struct PaintEditor
 	}
 
 	void finalizeEndpointDraft(bool &draftActive, int32_t &draftDragEndpoint);
-	void redrawEndpointDraft(EndpointDraftState &state, bool isArrow);
-	void endpointPointerDown(EndpointDraftState &state, bool isArrow, PointerButton button, const bbe::Vector2 &mouseCanvas);
-	void endpointPointerMove(EndpointDraftState &state, bool isArrow, const bbe::Vector2 &mouseCanvas);
+	void redrawEndpointDraft(EndpointDraftState &state);
+	void endpointPointerDown(EndpointDraftState &state, PointerButton button, const bbe::Vector2 &mouseCanvas);
+	void endpointPointerMove(EndpointDraftState &state, const bbe::Vector2 &mouseCanvas);
 	void endpointPointerUp(EndpointDraftState &state, PointerButton button, const bbe::Vector2 &mouseCanvas);
 
 	bool handleFloatingDraftInteraction(bool draftActive, const bbe::Vector2 &canvasPos, PointerButton button);

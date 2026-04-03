@@ -483,12 +483,18 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 		if (editor.mode == PaintEditor::MODE_LINE)
 		{
-			ImGui::TextDisabled(editor.line.draftActive
-				? "Drag endpoints to adjust.\nClick outside or R-click to place."
-				: "Drag to draw.");
+			ImGui::Checkbox("Apply on release", &editor.endpointApplyStrokeOnRelease);
+			ImGui::TextDisabled(editor.endpointApplyStrokeOnRelease
+				? (editor.line.draftActive
+					   ? "Drag endpoints to adjust.\nClick outside or R-click to place."
+					   : "Drag to draw; the stroke is committed when you release the button.")
+				: (editor.line.draftActive
+					   ? "Drag endpoints to adjust.\nClick outside or R-click to place."
+					   : "Drag to draw."));
 		}
 		if (editor.mode == PaintEditor::MODE_ARROW)
 		{
+			ImGui::Checkbox("Apply on release", &editor.endpointApplyStrokeOnRelease);
 			bool arrowOptionChanged = false;
 			if (ImGui::InputInt("Head Size", &editor.arrowHeadSize))
 			{
@@ -502,14 +508,14 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			}
 			if (ImGui::Checkbox("Double Headed", &editor.arrowDoubleHeaded)) arrowOptionChanged = true;
 			if (ImGui::Checkbox("Filled Head",   &editor.arrowFilledHead))   arrowOptionChanged = true;
-			if (arrowOptionChanged && editor.arrow.draftActive)
-			{
-				editor.clearWorkArea();
-				editor.drawArrowToWorkArea(editor.arrow.start, editor.arrow.end, editor.getArrowDraftColor());
-			}
-			ImGui::TextDisabled(editor.arrow.draftActive
-				? "Drag endpoints to adjust.\nClick outside or R-click to place."
-				: "Drag to draw.");
+			if (arrowOptionChanged && editor.arrow.draftActive) editor.redrawArrowDraft();
+			ImGui::TextDisabled(editor.endpointApplyStrokeOnRelease
+				? (editor.arrow.draftActive
+					   ? "Drag endpoints to adjust.\nClick outside or R-click to place."
+					   : "Drag to draw; the stroke is committed when you release the button.")
+				: (editor.arrow.draftActive
+					   ? "Drag endpoints to adjust.\nClick outside or R-click to place."
+					   : "Drag to draw."));
 		}
 		if (editor.mode == PaintEditor::MODE_BEZIER)
 		{

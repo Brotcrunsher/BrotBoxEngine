@@ -660,10 +660,10 @@ void PaintEditor::pointerDown(PointerButton button, const bbe::Vector2 &canvasPo
 		break;
 	}
 	case MODE_LINE:
-		endpointPointerDown(line, false, button, canvasPos);
+		endpointPointerDown(line, button, canvasPos);
 		break;
 	case MODE_ARROW:
-		endpointPointerDown(arrow, true, button, canvasPos);
+		endpointPointerDown(arrow, button, canvasPos);
 		break;
 	case MODE_BEZIER:
 	{
@@ -759,10 +759,10 @@ void PaintEditor::pointerMove(const bbe::Vector2 &canvasPos)
 		break;
 	}
 	case MODE_LINE:
-		endpointPointerMove(line, false, canvasPos);
+		endpointPointerMove(line, canvasPos);
 		break;
 	case MODE_ARROW:
-		endpointPointerMove(arrow, true, canvasPos);
+		endpointPointerMove(arrow, canvasPos);
 		break;
 	case MODE_BEZIER:
 	{
@@ -926,16 +926,18 @@ void PaintEditor::finalizeEndpointDraft(bool &draftActive, int32_t &draftDragEnd
 	draftDragEndpoint = 0;
 }
 
-void PaintEditor::redrawEndpointDraft(EndpointDraftState &state, bool isArrow)
+void PaintEditor::redrawEndpointDraft(EndpointDraftState &state)
 {
 	if (!state.draftActive) return;
 	clearWorkArea();
-	if (isArrow) drawArrowSymmetry(state.start, state.end, getColor(state.draftUsesRightColor));
+	const bool forArrow = (&state == &arrow);
+	if (forArrow) drawArrowSymmetry(state.start, state.end, getColor(state.draftUsesRightColor));
 	else touchLineSymmetry(state.end, state.start, getColor(state.draftUsesRightColor), brushWidth);
 }
 
-void PaintEditor::endpointPointerDown(EndpointDraftState &state, bool isArrow, PointerButton button, const bbe::Vector2 &mouseCanvas)
+void PaintEditor::endpointPointerDown(EndpointDraftState &state, PointerButton button, const bbe::Vector2 &mouseCanvas)
 {
+	const bool forArrow = (&state == &arrow);
 	// Adjust active draft by dragging endpoints or commit/cancel.
 	if (state.draftActive)
 	{
@@ -948,16 +950,16 @@ void PaintEditor::endpointPointerDown(EndpointDraftState &state, bool isArrow, P
 			else if (distToEnd <= handleRadius) state.dragEndpoint = 2;
 			else
 			{
-				if (isArrow) finalizeArrowDraft();
+				if (forArrow) finalizeArrowDraft();
 				else finalizeLineDraft();
 				return;
 			}
-			redrawEndpointDraft(state, isArrow);
+			redrawEndpointDraft(state);
 			return;
 		}
 		if (button == PointerButton::Secondary)
 		{
-			if (isArrow) finalizeArrowDraft();
+			if (forArrow) finalizeArrowDraft();
 			else finalizeLineDraft();
 			return;
 		}
@@ -974,21 +976,22 @@ void PaintEditor::endpointPointerDown(EndpointDraftState &state, bool isArrow, P
 	}
 }
 
-void PaintEditor::endpointPointerMove(EndpointDraftState &state, bool isArrow, const bbe::Vector2 &mouseCanvas)
+void PaintEditor::endpointPointerMove(EndpointDraftState &state, const bbe::Vector2 &mouseCanvas)
 {
+	const bool forArrow = (&state == &arrow);
 	if (state.draftActive)
 	{
 		if (state.dragEndpoint != 0 && pointerPrimaryDown)
 		{
 			(state.dragEndpoint == 1 ? state.start : state.end) = mouseCanvas;
 		}
-		redrawEndpointDraft(state, isArrow);
+		redrawEndpointDraft(state);
 		return;
 	}
 	if (!state.dragInProgress) return;
 
 	clearWorkArea();
-	if (isArrow) drawArrowSymmetry(state.start, mouseCanvas, getColor(state.dragUsesRightColor));
+	if (forArrow) drawArrowSymmetry(state.start, mouseCanvas, getColor(state.dragUsesRightColor));
 	else touchLineSymmetry(mouseCanvas, state.start, getColor(state.dragUsesRightColor), brushWidth);
 }
 
@@ -1004,10 +1007,24 @@ void PaintEditor::endpointPointerUp(EndpointDraftState &state, PointerButton but
 	const bool releaseMatches = (state.dragUsesRightColor && button == PointerButton::Secondary) || (!state.dragUsesRightColor && button == PointerButton::Primary);
 	if (!releaseMatches) return;
 
-	state.draftActive = true;
-	state.draftUsesRightColor = state.dragUsesRightColor;
 	state.end = mouseCanvas;
 	state.dragInProgress = false;
+
+	if (endpointApplyStrokeOnRelease)
+	{
+		clearWorkArea();
+		const bool forArrow = (&state == &arrow);
+		if (forArrow) drawArrowSymmetry(state.start, state.end, getColor(state.dragUsesRightColor));
+		else touchLineSymmetry(state.end, state.start, getColor(state.dragUsesRightColor), brushWidth);
+		applyWorkArea();
+		submitCanvas();
+		state.draftActive = false;
+		state.dragEndpoint = 0;
+		return;
+	}
+
+	state.draftActive = true;
+	state.draftUsesRightColor = state.dragUsesRightColor;
 }
 
 bool PaintEditor::handleFloatingDraftInteraction(bool draftActive, const bbe::Vector2 &canvasPos, PointerButton button)
