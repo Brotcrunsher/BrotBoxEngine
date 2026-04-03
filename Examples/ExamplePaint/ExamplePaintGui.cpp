@@ -568,7 +568,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Redo");
 		ImGui::EndDisabled();
 
-		// --- Colors (paired swatches: stable ImGui layout, no oversized row advance) ---
+		// --- Colors (swatches + pipette on one row) ---
 		ImGui::SeparatorText("Colors");
 		const ImGuiColorEditFlags colorPickFlags =
 			ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel
@@ -576,7 +576,9 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		const float colorRowPadY = 5.f * editor.viewport.scale;
 		const float availColorW = ImGui::GetContentRegionAvail().x;
 		const float colorGap = ImGui::GetStyle().ItemSpacing.x;
-		const float swatchColW = std::max(1.f, (availColorW - colorGap) * 0.5f);
+		const float pipetteBtn = std::max(1.f, std::floor(26.f * editor.viewport.scale));
+		const float swatchPairW = std::max(1.f, availColorW - pipetteBtn - colorGap);
+		const float swatchColW = std::max(1.f, (swatchPairW - colorGap) * 0.5f);
 		ImGui::BeginGroup();
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.f, colorRowPadY));
 		ImGui::SetNextItemWidth(swatchColW);
@@ -585,6 +587,25 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		ImGui::SetNextItemWidth(swatchColW);
 		const bool rightColorChanged = ImGui::ColorEdit4("##secondaryColor", editor.rightColor, colorPickFlags);
 		ImGui::PopStyleVar();
+		ImGui::SameLine(0.f, colorGap);
+		{
+			const bool pipActive = editor.mode == PaintEditor::MODE_PIPETTE;
+			if (pipActive) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+#ifdef BBE_RENDERER_OPENGL
+			if (s_toolIcons.pipette.texId)
+			{
+				if (ImGui::ImageButton("Pipette##colorsPipette", s_toolIcons.pipette.texId, ImVec2(pipetteBtn, pipetteBtn)))
+					editor.mode = PaintEditor::MODE_PIPETTE;
+			}
+			else
+#endif
+			{
+				if (ImGui::Button("Pick##colorsPipette", ImVec2(pipetteBtn, pipetteBtn)))
+					editor.mode = PaintEditor::MODE_PIPETTE;
+			}
+			if (pipActive) ImGui::PopStyleColor();
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pipette — click canvas to sample a color");
+		}
 		ImGui::EndGroup();
 		if (editor.rectangle.draftActive && (editor.shapeFillWithSecondary || editor.shapeStripedStroke
 			? (leftColorChanged || rightColorChanged)
@@ -623,7 +644,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,      s_toolIcons.fill.texId },
 				{ "Circle",    PaintEditor::MODE_CIRCLE,          s_toolIcons.circle.texId },
 				{ "Text",      PaintEditor::MODE_TEXT,            s_toolIcons.text.texId },
-				{ "Pipette",   PaintEditor::MODE_PIPETTE,         s_toolIcons.pipette.texId },
 				{ "Line",      PaintEditor::MODE_LINE,            s_toolIcons.line.texId },
 				{ "Arrow",     PaintEditor::MODE_ARROW,           s_toolIcons.arrow.texId },
 				{ "Spray",     PaintEditor::MODE_SPRAY,           s_toolIcons.spray.texId },
@@ -644,7 +664,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,      nullptr },
 				{ "Circle",    PaintEditor::MODE_CIRCLE,          nullptr },
 				{ "Text",      PaintEditor::MODE_TEXT,            nullptr },
-				{ "Pipette",   PaintEditor::MODE_PIPETTE,         nullptr },
 				{ "Line",      PaintEditor::MODE_LINE,            nullptr },
 				{ "Arrow",     PaintEditor::MODE_ARROW,           nullptr },
 				{ "Spray",     PaintEditor::MODE_SPRAY,           nullptr },
