@@ -441,6 +441,65 @@ bbe::Colori PaintEditor::getColor(bool useRight) const
 	return bbe::Color(useRight ? rightColor : leftColor).asByteColor();
 }
 
+namespace {
+
+uint8_t colorHistoryFloatToByte(float x)
+{
+	return (uint8_t)bbe::Math::clamp((int32_t)std::lround(x * 255.f), 0, 255);
+}
+
+bool colorHistoryRgbaMatches(const float *a, const float *b)
+{
+	return colorHistoryFloatToByte(a[0]) == colorHistoryFloatToByte(b[0]) && colorHistoryFloatToByte(a[1]) == colorHistoryFloatToByte(b[1]) &&
+		   colorHistoryFloatToByte(a[2]) == colorHistoryFloatToByte(b[2]) && colorHistoryFloatToByte(a[3]) == colorHistoryFloatToByte(b[3]);
+}
+
+void colorHistoryCopyRgba(float *dst, const float *src)
+{
+	for (int i = 0; i < 4; i++) dst[i] = src[i];
+}
+
+} // namespace
+
+void PaintEditor::recordColorHistory(const float rgba[4])
+{
+	if (colorHistoryCount > 0)
+	{
+		for (size_t i = 0; i < colorHistoryCount; i++)
+		{
+			if (!colorHistoryRgbaMatches(rgba, colorHistoryRgba[i])) continue;
+			float tmp[4];
+			colorHistoryCopyRgba(tmp, colorHistoryRgba[i]);
+			for (size_t j = i; j > 0; j--) colorHistoryCopyRgba(colorHistoryRgba[j], colorHistoryRgba[j - 1]);
+			colorHistoryCopyRgba(colorHistoryRgba[0], tmp);
+			return;
+		}
+	}
+
+	if (colorHistoryCount < colorHistoryCapacity)
+	{
+		for (size_t j = colorHistoryCount; j > 0; j--) colorHistoryCopyRgba(colorHistoryRgba[j], colorHistoryRgba[j - 1]);
+		colorHistoryCount++;
+	}
+	else
+	{
+		for (size_t j = colorHistoryCapacity - 1; j > 0; j--) colorHistoryCopyRgba(colorHistoryRgba[j], colorHistoryRgba[j - 1]);
+	}
+	colorHistoryCopyRgba(colorHistoryRgba[0], rgba);
+}
+
+void PaintEditor::recordColorHistoryFromColori(const bbe::Colori &c)
+{
+	const float rgba[4] = { c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f };
+	recordColorHistory(rgba);
+}
+
+void PaintEditor::resetColorHistoryStrokeTouched()
+{
+	colorHistoryStrokeTouchedPrimary = false;
+	colorHistoryStrokeTouchedSecondary = false;
+}
+
 bool PaintEditor::isSelectionLikeTool(int32_t toolMode)
 {
 	return toolMode == MODE_SELECTION || toolMode == MODE_MAGIC_WAND || toolMode == MODE_LASSO || toolMode == MODE_POLYGON_LASSO ||
@@ -1126,6 +1185,7 @@ void PaintEditor::endpointPointerUp(EndpointDraftState &state, PointerButton but
 		else touchLineSymmetry(state.end, state.start, getColor(state.dragUsesRightColor), brushWidth);
 		applyWorkArea();
 		submitCanvas();
+		recordColorHistoryFromColori(getColor(state.dragUsesRightColor));
 		state.draftActive = false;
 		state.dragEndpoint = 0;
 		return;
@@ -1916,6 +1976,10 @@ void PaintEditor::commitFloatingSelection()
 {
 	if (!selection.floating) return;
 
+	const bool recordShapeColor = rectangle.draftActive || circle.draftActive;
+	bbe::Colori shapeHistColor;
+	if (recordShapeColor) shapeHistColor = rectangle.draftActive ? getRectangleDraftColor() : getCircleDraftColor();
+
 	const bool applySymmetry = rectangle.draftActive || circle.draftActive || selection.pastedFromClipboard;
 
 	if (std::abs(selection.rotation) > 0.0001f)
@@ -1948,6 +2012,7 @@ void PaintEditor::commitFloatingSelection()
 				blitRotated(selection.rotation + symAngles[i], symCenters[i]);
 
 			submitCanvas();
+			if (recordShapeColor) recordColorHistoryFromColori(shapeHistColor);
 			clearSelectionState();
 			return;
 		}
@@ -1973,6 +2038,7 @@ void PaintEditor::commitFloatingSelection()
 			}
 		}
 		submitCanvas();
+		if (recordShapeColor) recordColorHistoryFromColori(shapeHistColor);
 		clearSelectionState();
 		return;
 	}
@@ -2001,6 +2067,7 @@ void PaintEditor::commitFloatingSelection()
 		}
 	}
 	submitCanvas();
+	if (recordShapeColor) recordColorHistoryFromColori(shapeHistColor);
 
 	bbe::Vector2i displayPos = selection.rect.getPos();
 	if (tiled)
@@ -2145,12 +2212,18 @@ void PaintEditor::refreshBrushBasedDrafts()
 
 void PaintEditor::finalizeLineDraft()
 {
+	const bool hadDraft = line.draftActive;
+	const bool useRight = line.draftUsesRightColor;
 	finalizeEndpointDraft(line.draftActive, line.dragEndpoint);
+	if (hadDraft) recordColorHistoryFromColori(getColor(useRight));
 }
 
 void PaintEditor::finalizeArrowDraft()
 {
+	const bool hadDraft = arrow.draftActive;
+	const bool useRight = arrow.draftUsesRightColor;
 	finalizeEndpointDraft(arrow.draftActive, arrow.dragEndpoint);
+	if (hadDraft) recordColorHistoryFromColori(getColor(useRight));
 }
 
 bbe::Colori PaintEditor::getBezierColor() const { return getColor(bezier.usesRightColor); }
@@ -2168,6 +2241,7 @@ void PaintEditor::finalizeBezierDraft()
 		drawBezierSymmetry(bezier.controlPoints, getBezierColor());
 		applyWorkArea();
 		submitCanvas();
+		recordColorHistoryFromColori(getBezierColor());
 	}
 	else
 	{

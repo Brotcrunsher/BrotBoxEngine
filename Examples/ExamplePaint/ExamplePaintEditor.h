@@ -167,6 +167,16 @@ struct PaintEditor
 	float favoriteColorRgba[favoriteColorSlotCount][4]{};
 	/// Called when a favorite swatch is edited (persist).
 	std::function<void()> onFavoriteColorsChanged;
+
+	/// Most recently used draw colors (MRU), shown in the Colors window; defaults to all white, persisted.
+	static constexpr size_t colorHistoryCapacity = 16;
+	float colorHistoryRgba[colorHistoryCapacity][4]{};
+	size_t colorHistoryCount = colorHistoryCapacity;
+	/// Called when a recent swatch is edited in the Colors window (persist).
+	std::function<void()> onColorHistoryChanged;
+	/// Set during brush/spray/flood strokes; consumed when the stroke commits (see \c resetColorHistoryStrokeTouched).
+	bool colorHistoryStrokeTouchedPrimary = false;
+	bool colorHistoryStrokeTouchedSecondary = false;
 	int64_t canvasGeneration = 0;
 	int64_t savedGeneration = 0;
 
@@ -393,6 +403,11 @@ struct PaintEditor
 	void bezierBackspace();
 
 	bbe::Colori getColor(bool useRight) const;
+
+	/// Insert or promote \p rgba in MRU history (compares quantized 8-bit channels).
+	void recordColorHistory(const float rgba[4]);
+	void recordColorHistoryFromColori(const bbe::Colori &c);
+	void resetColorHistoryStrokeTouched();
 
 	template<typename CreateImage>
 	void refreshActiveShapeDraftImage(bool draftActive, CreateImage createImage)

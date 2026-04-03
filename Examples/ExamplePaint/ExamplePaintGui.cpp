@@ -404,6 +404,61 @@ static void drawPaintColorsPanel(PaintEditor &editor, float panelWidth, float me
 		}
 		paintEditorRefreshDraftsAfterPrimarySecondaryChange(editor, leftColorChanged, rightColorChanged);
 
+		ImGui::SeparatorText("Recent");
+		ImGui::TextDisabled("Click to edit. Shift+left: primary · Shift+right: secondary · Right-click: menu.");
+		constexpr int kHistCols = 4;
+		const ImVec2 histCellSize = swatchSize;
+		for (size_t i = 0; i < PaintEditor::colorHistoryCapacity; i++)
+		{
+			ImGui::PushID(static_cast<int>(i + 30000));
+			const ImVec4 hVec(editor.colorHistoryRgba[i][0], editor.colorHistoryRgba[i][1], editor.colorHistoryRgba[i][2], editor.colorHistoryRgba[i][3]);
+			const bool shiftHeld = ImGui::GetIO().KeyShift;
+			const bool histPressed = ImGui::ColorButton("##hist", hVec, ImGuiColorEditFlags_AlphaPreviewHalf, histCellSize);
+			const ImGuiHoveredFlags hh = ImGuiHoveredFlags_AllowWhenBlockedByPopup;
+			if (histPressed && shiftHeld)
+			{
+				std::memcpy(editor.leftColor, editor.colorHistoryRgba[i], sizeof(editor.leftColor));
+				paintEditorRefreshDraftsAfterPrimarySecondaryChange(editor, true, false);
+			}
+			else if (histPressed && !shiftHeld)
+			{
+				ImGui::OpenPopup("##histpick");
+			}
+			if (ImGui::IsItemHovered(hh) && shiftHeld && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+			{
+				std::memcpy(editor.rightColor, editor.colorHistoryRgba[i], sizeof(editor.rightColor));
+				paintEditorRefreshDraftsAfterPrimarySecondaryChange(editor, false, true);
+			}
+			else if (ImGui::IsItemHovered(hh) && !shiftHeld && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+			{
+				ImGui::OpenPopup("hist_ctx");
+			}
+			if (ImGui::BeginPopup("##histpick"))
+			{
+				if (ImGui::ColorPicker4("##histpicker", editor.colorHistoryRgba[i], pickerFlags) && editor.onColorHistoryChanged) editor.onColorHistoryChanged();
+				ImGui::EndPopup();
+			}
+			if (ImGui::BeginPopup("hist_ctx"))
+			{
+				bool usedPri = false;
+				bool usedSec = false;
+				if (ImGui::MenuItem("Use as primary"))
+				{
+					std::memcpy(editor.leftColor, editor.colorHistoryRgba[i], sizeof(editor.leftColor));
+					usedPri = true;
+				}
+				if (ImGui::MenuItem("Use as secondary"))
+				{
+					std::memcpy(editor.rightColor, editor.colorHistoryRgba[i], sizeof(editor.rightColor));
+					usedSec = true;
+				}
+				ImGui::EndPopup();
+				paintEditorRefreshDraftsAfterPrimarySecondaryChange(editor, usedPri, usedSec);
+			}
+			ImGui::PopID();
+			if ((i + 1) % (size_t)kHistCols != 0 && i + 1 < PaintEditor::colorHistoryCapacity) ImGui::SameLine();
+		}
+
 		ImGui::SeparatorText("Favorites");
 		ImGui::TextDisabled("Click to edit. Shift+left: primary · Shift+right: secondary · Right-click: menu.");
 		constexpr int kFavCols = 4;
@@ -1983,7 +2038,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					for (const char *item : items) ImGui::BulletText("%s", item);
 				};
 				bulletList("Tools", { "Digits 1–9 and 0 trigger customizable actions; hover a control in Tools (tools, pipette, symmetry, undo/redo, selection actions, clipboard) or Layers and press Ctrl+digit to assign", "Bindings are saved to ExamplePaintDigitHotkeys.dat (with ParanoiaConfig backups like ExampleMother)", "Defaults: 1 Brush, 2 Flood Fill, 3 Line, 4 Rectangle, 5 Selection, 6 Text, 7 Pipette, 8 Circle, 9 Arrow, 0 Bezier", "E Eraser, R Spray, O Ellipse selection, L Lasso, P Polygon Lasso, M Magic Wand" });
-				bulletList("General", { "+/- changes brush width, eraser size, spray width (spray tool), wand or flood-fill tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms", "Tools, Layers, Colors, and Tool options are separate floating windows: drag title bars to move; resize freely; layout is remembered (imgui.ini)", "Favorite swatches in the Colors window default to white and are saved to ExamplePaintFavoriteColors.dat" });
+				bulletList("General", { "+/- changes brush width, eraser size, spray width (spray tool), wand or flood-fill tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms", "Tools, Layers, Colors, and Tool options are separate floating windows: drag title bars to move; resize freely; layout is remembered (imgui.ini)", "Favorite swatches in the Colors window default to white and are saved to ExamplePaintFavoriteColors.dat", "Recent colors default to white, update as you draw, and are saved to ExamplePaintColorHistory.dat" });
 				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection", "Edit → Mirror flips all layers (vertical or horizontal in the dialog)", "Edit → Rotate Canvas 90° turns all layers; canvas width and height swap" });
 				bulletList("Selection", { "Drag to create a rectangular selection", "Ellipse selection: drag for an elliptical marquee; hold Shift for a circle", "Lasso: click and drag to outline an area (closed automatically)", "Polygon lasso: click corners, then close via first point, Enter, or right-click", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand, Selection, Ellipse selection, Lasso, or Polygon lasso adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
 				bulletList("Layers", { "Painting and text placement affect only the active layer", "Canvas backdrop defaults to opaque white behind all layers; set alpha to 0 on the backdrop for a fully transparent document", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });

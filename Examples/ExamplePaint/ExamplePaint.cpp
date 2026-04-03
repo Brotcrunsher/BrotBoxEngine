@@ -9,7 +9,6 @@
 #include "ExamplePaintEditor.h"
 #include "ExamplePaintGui.h"
 
-// TODO: Color history
 // TODO: Most used colors
 // TODO: Window docking for tools etc.
 // TODO: Minimap navigator should be green instead of yellow
@@ -101,6 +100,47 @@ static void captureFavoriteColorsToPersist(const PaintEditor &editor, ExamplePai
 		for (int j = 0; j < 4; j++) p.rgba[i][j] = editor.favoriteColorRgba[i][j];
 }
 
+struct ExamplePaintColorHistoryPersist
+{
+	static constexpr int32_t kFormatVersion = 1;
+	int32_t formatVersion = kFormatVersion;
+	std::array<std::array<float, 4>, PaintEditor::colorHistoryCapacity> rgba{};
+
+	ExamplePaintColorHistoryPersist()
+	{
+		formatVersion = kFormatVersion;
+		for (auto &slot : rgba)
+			slot = { 1.f, 1.f, 1.f, 1.f };
+	}
+
+	void serialDescription(bbe::SerializedDescription &desc)
+	{
+		desc.describe(formatVersion);
+		desc.describe(rgba);
+	}
+};
+
+static void applyPersistedColorHistory(PaintEditor &editor, const ExamplePaintColorHistoryPersist &p)
+{
+	if (p.formatVersion != ExamplePaintColorHistoryPersist::kFormatVersion)
+	{
+		for (size_t i = 0; i < PaintEditor::colorHistoryCapacity; i++)
+			for (int j = 0; j < 4; j++) editor.colorHistoryRgba[i][j] = 1.f;
+		editor.colorHistoryCount = PaintEditor::colorHistoryCapacity;
+		return;
+	}
+	for (size_t i = 0; i < PaintEditor::colorHistoryCapacity; i++)
+		for (int j = 0; j < 4; j++) editor.colorHistoryRgba[i][j] = p.rgba[i][j];
+	editor.colorHistoryCount = PaintEditor::colorHistoryCapacity;
+}
+
+static void captureColorHistoryToPersist(const PaintEditor &editor, ExamplePaintColorHistoryPersist &p)
+{
+	p.formatVersion = ExamplePaintColorHistoryPersist::kFormatVersion;
+	for (size_t i = 0; i < PaintEditor::colorHistoryCapacity; i++)
+		for (int j = 0; j < 4; j++) p.rgba[i][j] = editor.colorHistoryRgba[i][j];
+}
+
 /// For axis mirror symmetries, text must be flipped (not just moved). Indices match `bbe::getSymmetryPositions` order.
 /// `outFlipH` / `outFlipV` mean reflection across a **vertical** / **horizontal** line in canvas space (L-R vs upside down).
 /// Note: `bbe::Image::mirrorVertically()` swaps pixels left↔right; `mirrorHorizontally()` swaps rows top↔bottom.
@@ -162,6 +202,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	{
 		editor.clearWorkArea();
 		editor.brushStrokeChangeRegistered = false;
+		editor.resetColorHistoryStrokeTouched();
 		editor.eraserStrokeHasPrev = false;
 		editor.eraserPreviewSegmentActive = false;
 		editor.sprayStrokeHasPrev = false;
@@ -584,7 +625,11 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 					}
 				}
 			}
-			if (textChanged) editor.submitCanvas();
+			if (textChanged)
+			{
+				editor.submitCanvas();
+				editor.recordColorHistoryFromColori(textColor);
+			}
 		}
 	}
 
@@ -615,6 +660,12 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 				if (editor.mode == PaintEditor::MODE_ERASER) editor.applyEraserWorkArea();
 				else editor.applyWorkArea();
 				editor.submitCanvas();
+				if (editor.mode != PaintEditor::MODE_ERASER)
+				{
+					if (editor.colorHistoryStrokeTouchedPrimary) editor.recordColorHistory(editor.leftColor);
+					if (editor.colorHistoryStrokeTouchedSecondary) editor.recordColorHistory(editor.rightColor);
+				}
+				editor.resetColorHistoryStrokeTouched();
 				editor.brushStrokeChangeRegistered = false;
 			}
 		}
@@ -692,6 +743,11 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			if (drawMode)
 			{
 				editor.brushStrokeChangeRegistered |= touched;
+				if (touched)
+				{
+					if (leftDown) editor.colorHistoryStrokeTouchedPrimary = true;
+					if (rightDown && !leftDown) editor.colorHistoryStrokeTouchedSecondary = true;
+				}
 			}
 		}
 		else if (editor.mode == PaintEditor::MODE_ERASER)
@@ -771,10 +827,17 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			if (drawMode)
 			{
 				editor.brushStrokeChangeRegistered |= touched;
+				if (touched)
+				{
+					if (leftDown) editor.colorHistoryStrokeTouchedPrimary = true;
+					if (rightDown && !leftDown) editor.colorHistoryStrokeTouchedSecondary = true;
+				}
 			}
 		}
 		else if (editor.mode == PaintEditor::MODE_FLOOD_FILL)
 		{
+			const bool leftDown = g.isMouseDown(bbe::MouseButton::LEFT) && !editor.suppressCanvasInputUntilMouseUp;
+			const bool rightDown = g.isMouseDown(bbe::MouseButton::RIGHT) && !editor.suppressCanvasInputUntilMouseUp;
 			bbe::Vector2 pos = editor.screenToCanvas(g.getMouse());
 			if (editor.toTiledPos(pos))
 			{
@@ -787,7 +850,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 						const int overflowTol = editor.floodFillSmartFill ? 255 : 0;
 						const int overflowDepth = editor.floodFillSmartFill ? 1 : 0;
 						editor.getActiveLayerImage().floodFill(symPos.as<int32_t>(),
-							editor.activeDrawColor(g.isMouseDown(bbe::MouseButton::LEFT), g.isMouseDown(bbe::MouseButton::RIGHT)),
+							editor.activeDrawColor(leftDown, rightDown),
 							false,
 							editor.tiled,
 							editor.floodFillTolerance,
@@ -796,6 +859,11 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 					}
 				}
 				editor.brushStrokeChangeRegistered = true;
+				if (drawMode)
+				{
+					if (leftDown) editor.colorHistoryStrokeTouchedPrimary = true;
+					if (rightDown && !leftDown) editor.colorHistoryStrokeTouchedSecondary = true;
+				}
 			}
 		}
 		else if (editor.mode == PaintEditor::MODE_PIPETTE)
@@ -851,8 +919,9 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 class MyGame : public bbe::Game
 {
 public:
-	bbe::SerializableObject<ExamplePaintDigitHotkeysPersist> digitHotkeysPersist{ "ExamplePaintDigitHotkeys.dat", "ParanoiaConfig" };
-	bbe::SerializableObject<ExamplePaintFavoriteColorsPersist> favoriteColorsPersist{ "ExamplePaintFavoriteColors.dat", "ParanoiaConfig" };
+	bbe::SerializableObject<ExamplePaintDigitHotkeysPersist> digitHotkeysPersist{ "ExamplePaintDigitHotkeys.dat" };
+	bbe::SerializableObject<ExamplePaintFavoriteColorsPersist> favoriteColorsPersist{ "ExamplePaintFavoriteColors.dat" };
+	bbe::SerializableObject<ExamplePaintColorHistoryPersist> colorHistoryPersist{ "ExamplePaintColorHistory.dat" };
 	PaintEditor editor;
 
 	void onStart() override
@@ -931,6 +1000,13 @@ public:
 			favoriteColorsPersist.writeToFile();
 		};
 
+		applyPersistedColorHistory(editor, *colorHistoryPersist.operator->());
+		editor.onColorHistoryChanged = [this]()
+		{
+			captureColorHistoryToPersist(editor, *colorHistoryPersist.operator->());
+			colorHistoryPersist.writeToFile();
+		};
+
 		PaintWindowMetrics w{};
 		w.width = getWindowWidth();
 		w.height = getWindowHeight();
@@ -969,6 +1045,9 @@ public:
 		captureFavoriteColorsToPersist(editor, *favoriteColorsPersist.operator->());
 		favoriteColorsPersist.writeToFile();
 		editor.onFavoriteColorsChanged = nullptr;
+		captureColorHistoryToPersist(editor, *colorHistoryPersist.operator->());
+		colorHistoryPersist.writeToFile();
+		editor.onColorHistoryChanged = nullptr;
 	}
 };
 
