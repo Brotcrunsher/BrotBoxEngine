@@ -116,6 +116,8 @@ struct PaintEditor
 	bbe::List<bbe::String> pendingDroppedPaths;
 	bool showHelpWindow = false;
 	bool showNavigator = true;
+	/// Docked tool-options window (View menu); can be closed and re-opened from the menu.
+	bool showToolOptionsPanel = true;
 	int64_t canvasGeneration = 0;
 	int64_t savedGeneration = 0;
 

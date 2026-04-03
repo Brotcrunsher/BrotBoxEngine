@@ -2,6 +2,7 @@
 #include "ExamplePaintGui.h"
 #include "BBE/BrotBoxEngine.h"
 #include "AssetStore.h"
+#include <algorithm>
 #include <cmath>
 #include <cctype>
 #include <filesystem>
@@ -275,18 +276,262 @@ void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, co
 	}
 }
 
+static void drawPaintToolOptionsPanel(PaintEditor &editor, float toolbarWidth)
+{
+	if (!editor.showToolOptionsPanel) return;
+
+	const float scale = editor.viewport.scale > 0.f ? editor.viewport.scale : 1.f;
+	const float optW = 292.f * scale;
+	const float menuH = ImGui::GetFrameHeight();
+	const float vh = (float)editor.viewport.height - menuH;
+
+	ImGui::SetNextWindowPos(ImVec2(toolbarWidth, menuH), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(optW, vh), ImGuiCond_FirstUseEver);
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.14f, 0.14f, 0.15f, 1.f));
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.11f, 0.11f, 0.12f, 1.f));
+	if (ImGui::Begin("Tool options", &editor.showToolOptionsPanel,
+			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysVerticalScrollbar))
+	{
+		ImGui::PushID("paintToolOpts");
+
+		bool optionsHeaderShown = false;
+		auto ensureOptionsHeader = [&]()
+		{
+			if (!optionsHeaderShown)
+			{
+				ImGui::SeparatorText("Options");
+				optionsHeaderShown = true;
+			}
+		};
+		const float stepBtnW = ImGui::GetFrameHeight();
+		auto widthWithSteppers = [&](const char *label, int *value, void (PaintEditor::*clampFn)(), void (PaintEditor::*refreshFn)())
+		{
+			ensureOptionsHeader();
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("%s", label);
+			ImGui::SameLine();
+			if (ImGui::Button("-##wdec", ImVec2(stepBtnW, stepBtnW)))
+			{
+				--*value;
+				(editor.*clampFn)();
+				if (refreshFn) (editor.*refreshFn)();
+			}
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(std::max(1.f, ImGui::GetContentRegionAvail().x - stepBtnW * 2.f - ImGui::GetStyle().ItemSpacing.x * 2.f));
+			if (ImGui::InputInt("##wval", value, 0, 0))
+			{
+				(editor.*clampFn)();
+				if (refreshFn) (editor.*refreshFn)();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("+##winc", ImVec2(stepBtnW, stepBtnW)))
+			{
+				++*value;
+				(editor.*clampFn)();
+				if (refreshFn) (editor.*refreshFn)();
+			}
+		};
+
+		if (editor.mode == PaintEditor::MODE_ERASER)
+		{
+			widthWithSteppers("Size", &editor.eraserSize, &PaintEditor::clampEraserSize, nullptr);
+			ImGui::TextDisabled("Square stamp; alpha→0. [+ / -] also adjusts.");
+		}
+		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_SPRAY || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER)
+		{
+			widthWithSteppers("Width", &editor.brushWidth, &PaintEditor::clampBrushWidth, &PaintEditor::refreshBrushBasedDrafts);
+		}
+		if (editor.mode == PaintEditor::MODE_SPRAY)
+		{
+			if (ImGui::InputInt("Droplets", &editor.sprayDensity))
+			{
+				editor.clampSprayDensity();
+			}
+			ImGui::TextDisabled("Random dots per sample inside the width radius. [+ / -] adjusts droplets.");
+		}
+		if (editor.mode == PaintEditor::MODE_MAGIC_WAND)
+		{
+			ensureOptionsHeader();
+			if (ImGui::SliderInt("Tolerance", &editor.magicWandTolerance, 0, 255))
+			{
+				editor.clampMagicWandTolerance();
+			}
+			ImGui::TextDisabled("Click visible pixels to select. [+ / -] nudge tolerance. Ctrl adds to selection.");
+		}
+		if (editor.mode == PaintEditor::MODE_LASSO)
+		{
+			ensureOptionsHeader();
+			ImGui::TextDisabled("Click and drag to outline a region (auto-closed). Ctrl adds to the current selection. Move/resize like rectangular selection.");
+		}
+		if (editor.mode == PaintEditor::MODE_POLYGON_LASSO)
+		{
+			ensureOptionsHeader();
+			ImGui::TextDisabled("Click to place corners. Close: click first point, Enter, or right-click (3+ points). Backspace removes last point. Ctrl adds to selection.");
+		}
+		if (editor.mode == PaintEditor::MODE_RECTANGLE)
+		{
+			ensureOptionsHeader();
+			if (ImGui::InputInt("Corner Radius", &editor.cornerRadius))
+			{
+				if (editor.cornerRadius < 0) editor.cornerRadius = 0;
+				if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
+			}
+			ImGui::TextDisabled(editor.rectangle.draftActive
+				? "Drag inside/border to move/resize.\nClick outside to place."
+				: "Drag to draw. Click outside to place.");
+		}
+		if (editor.mode == PaintEditor::MODE_CIRCLE)
+		{
+			ensureOptionsHeader();
+			ImGui::TextDisabled(editor.circle.draftActive
+				? "Drag inside/border to move/resize.\nClick outside to place."
+				: "Drag to draw. Click outside to place.");
+		}
+		if (editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE)
+		{
+			ensureOptionsHeader();
+			if (ImGui::Checkbox("Fill with secondary color", &editor.shapeFillWithSecondary))
+			{
+				if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
+				if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
+			}
+			if (ImGui::Checkbox("Striped outline", &editor.shapeStripedStroke))
+			{
+				if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
+				if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
+			}
+			if (editor.shapeStripedStroke)
+			{
+				if (ImGui::InputInt("Stripe repeat (px)", &editor.shapeStripePeriodPx))
+				{
+					editor.clampShapeStripePeriod();
+					if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
+					if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
+				}
+				ImGui::TextDisabled("Target dash+gap along the outline; actual spacing snaps so the pattern closes with no seam.");
+			}
+		}
+		if (editor.mode == PaintEditor::MODE_LINE)
+		{
+			ensureOptionsHeader();
+			ImGui::Checkbox("Apply on release", &editor.endpointApplyStrokeOnRelease);
+			ImGui::TextDisabled(editor.endpointApplyStrokeOnRelease
+				? (editor.line.draftActive
+					   ? "Drag endpoints to adjust.\nClick outside or R-click to place."
+					   : "Drag to draw; the stroke is committed when you release the button.")
+				: (editor.line.draftActive
+					   ? "Drag endpoints to adjust.\nClick outside or R-click to place."
+					   : "Drag to draw."));
+		}
+		if (editor.mode == PaintEditor::MODE_ARROW)
+		{
+			ensureOptionsHeader();
+			ImGui::Checkbox("Apply on release", &editor.endpointApplyStrokeOnRelease);
+			bool arrowOptionChanged = false;
+			if (ImGui::InputInt("Head Size", &editor.arrowHeadSize))
+			{
+				if (editor.arrowHeadSize < 1) editor.arrowHeadSize = 1;
+				arrowOptionChanged = true;
+			}
+			if (ImGui::InputInt("Head Width", &editor.arrowHeadWidth))
+			{
+				if (editor.arrowHeadWidth < 1) editor.arrowHeadWidth = 1;
+				arrowOptionChanged = true;
+			}
+			if (ImGui::Checkbox("Double Headed", &editor.arrowDoubleHeaded)) arrowOptionChanged = true;
+			if (ImGui::Checkbox("Filled Head",   &editor.arrowFilledHead))   arrowOptionChanged = true;
+			if (arrowOptionChanged && editor.arrow.draftActive) editor.redrawArrowDraft();
+			ImGui::TextDisabled(editor.endpointApplyStrokeOnRelease
+				? (editor.arrow.draftActive
+					   ? "Drag endpoints to adjust.\nClick outside or R-click to place."
+					   : "Drag to draw; the stroke is committed when you release the button.")
+				: (editor.arrow.draftActive
+					   ? "Drag endpoints to adjust.\nClick outside or R-click to place."
+					   : "Drag to draw."));
+		}
+		if (editor.mode == PaintEditor::MODE_BEZIER)
+		{
+			ensureOptionsHeader();
+			ImGui::TextDisabled(editor.bezier.controlPoints.isEmpty()
+				? "L-click to place control points.\nR-click to commit curve."
+				: "L-click to add/drag points.\nBackspace removes last point.\nR-click to commit curve.");
+			if (!editor.bezier.controlPoints.isEmpty())
+			{
+				ImGui::Text("%d control point(s)", (int)editor.bezier.controlPoints.getLength());
+				if (ImGui::Button("Commit", ImVec2(-1, 0)))
+				{
+					editor.finalizeBezierDraft();
+				}
+			}
+		}
+		if (editor.mode == PaintEditor::MODE_TEXT)
+		{
+			ensureOptionsHeader();
+			static char fontFilter[128] = "";
+			ImGui::InputText("Filter##fontFilter", fontFilter, sizeof(fontFilter));
+			editor.clampTextFontIndex();
+			const char *currentFontName = editor.availableFonts.isEmpty() ? "None" : editor.availableFonts[(size_t)editor.textFontIndex].displayName.getRaw();
+			if (ImGui::BeginCombo("Font", currentFontName))
+			{
+				for (size_t i = 0; i < editor.availableFonts.getLength(); i++)
+				{
+					const char *name = editor.availableFonts[i].displayName.getRaw();
+					if (fontFilter[0] != '\0')
+					{
+						std::string nameLower = name;
+						std::string filterLower = fontFilter;
+						for (char &c : nameLower)   c = (char)std::tolower((unsigned char)c);
+						for (char &c : filterLower) c = (char)std::tolower((unsigned char)c);
+						if (nameLower.find(filterLower) == std::string::npos) continue;
+					}
+					const bool selected = (editor.textFontIndex == (int32_t)i);
+					if (ImGui::Selectable(name, selected))
+					{
+						editor.textFontIndex = (int32_t)i;
+					}
+					if (selected) ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+			if (ImGui::InputInt("Font Size", &editor.textFontSize))
+			{
+				editor.clampTextFontSize();
+			}
+			ImGui::InputTextMultiline("##text", editor.textBuffer, sizeof(editor.textBuffer), ImVec2(-1, ImGui::GetTextLineHeight() * 4.0f));
+			ImGui::TextDisabled("L/R click places text.");
+		}
+
+		if (!optionsHeaderShown)
+			ImGui::TextDisabled("No adjustable options for this tool.");
+
+		ImGui::PopID();
+	}
+	ImGui::End();
+	ImGui::PopStyleColor(2);
+}
+
 void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, const bbe::Vector2 &mouseScreenPos)
 {
 #ifdef BBE_RENDERER_OPENGL
 		s_toolIcons.refresh();
 #endif
-		const float PANEL_WIDTH = 260.f * editor.viewport.scale;
+		const float PANEL_WIDTH = 236.f * editor.viewport.scale;
 		ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetFrameHeight()), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(PANEL_WIDTH, (float)editor.viewport.height - ImGui::GetFrameHeight()), ImGuiCond_Always);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.14f, 0.14f, 0.15f, 1.f));
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.11f, 0.11f, 0.12f, 1.f));
 		ImGui::Begin("##panel", nullptr,
 			ImGuiWindowFlags_NoTitleBar |
 			ImGuiWindowFlags_NoResize |
 			ImGuiWindowFlags_NoMove);
+
+		const float availY = ImGui::GetContentRegionAvail().y;
+		const float layerDockMin = 200.f * editor.viewport.scale;
+		const float layerDockMax = 340.f * editor.viewport.scale;
+		const float layerDockH = std::clamp(availY * 0.42f, layerDockMin, layerDockMax);
+		const float toolScrollH = std::max(80.f, availY - layerDockH - ImGui::GetStyle().ItemSpacing.y);
+
+		ImGui::BeginChild("##toolScroll", ImVec2(-1, toolScrollH), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
 		auto doUndo = [&]() { editor.undo(); };
 		auto doRedo = [&]() { editor.redo(); };
@@ -322,12 +567,24 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Redo");
 		ImGui::EndDisabled();
 
-		// --- Colors ---
+		// --- Colors (paired swatches: stable ImGui layout, no oversized row advance) ---
 		ImGui::SeparatorText("Colors");
-		const ImGuiColorEditFlags colorPickFlags = ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel;
-		const bool leftColorChanged  = ImGui::ColorEdit4("##primaryColor",   editor.leftColor, colorPickFlags);
-		ImGui::SameLine();
+		const ImGuiColorEditFlags colorPickFlags =
+			ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel
+			| ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar;
+		const float colorRowPadY = 5.f * editor.viewport.scale;
+		const float availColorW = ImGui::GetContentRegionAvail().x;
+		const float colorGap = ImGui::GetStyle().ItemSpacing.x;
+		const float swatchColW = std::max(1.f, (availColorW - colorGap) * 0.5f);
+		ImGui::BeginGroup();
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.f, colorRowPadY));
+		ImGui::SetNextItemWidth(swatchColW);
+		const bool leftColorChanged = ImGui::ColorEdit4("##primaryColor", editor.leftColor, colorPickFlags);
+		ImGui::SameLine(0.f, colorGap);
+		ImGui::SetNextItemWidth(swatchColW);
 		const bool rightColorChanged = ImGui::ColorEdit4("##secondaryColor", editor.rightColor, colorPickFlags);
+		ImGui::PopStyleVar();
+		ImGui::EndGroup();
 		if (editor.rectangle.draftActive && (editor.shapeFillWithSecondary || editor.shapeStripedStroke
 			? (leftColorChanged || rightColorChanged)
 			: ((leftColorChanged && !editor.rectangle.draftUsesRightColor) || (rightColorChanged && editor.rectangle.draftUsesRightColor))))
@@ -344,8 +601,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		if (editor.arrow.draftActive && ((leftColorChanged && !editor.arrow.draftUsesRightColor) || (rightColorChanged && editor.arrow.draftUsesRightColor))) editor.redrawArrowDraft();
 		if (!editor.bezier.controlPoints.isEmpty() && ((leftColorChanged && !editor.bezier.usesRightColor) || (rightColorChanged && editor.bezier.usesRightColor))) editor.redrawBezierDraft();
 
-		// --- Tool ---
-		ImGui::SeparatorText("Tool");
+		// --- Tools: drawing / paint vs selection (matches isSelectionLikeTool split) ---
 		{
 			const float w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
 			struct ToolBtn
@@ -355,252 +611,78 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				ImTextureID icon;
 			};
 #ifdef BBE_RENDERER_OPENGL
-			const ToolBtn mainTools[] = {
-				{ "Brush",     PaintEditor::MODE_BRUSH,       s_toolIcons.brush.texId },
-				{ "Eraser",    PaintEditor::MODE_ERASER,      s_toolIcons.eraser.texId },
-				{ "Spray",     PaintEditor::MODE_SPRAY,       s_toolIcons.spray.texId },
-				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,  s_toolIcons.fill.texId },
-				{ "Line",      PaintEditor::MODE_LINE,        s_toolIcons.line.texId },
-				{ "Rectangle", PaintEditor::MODE_RECTANGLE,   s_toolIcons.rectangle.texId },
-				{ "Circle",    PaintEditor::MODE_CIRCLE,      s_toolIcons.circle.texId },
-				{ "Text",      PaintEditor::MODE_TEXT,        s_toolIcons.text.texId },
-				{ "Pipette",   PaintEditor::MODE_PIPETTE,     s_toolIcons.pipette.texId },
-				{ "Arrow",     PaintEditor::MODE_ARROW,       s_toolIcons.arrow.texId },
-				{ "Bezier",    PaintEditor::MODE_BEZIER,      s_toolIcons.bezier.texId },
+			const ToolBtn paintTools[] = {
+				{ "Brush",     PaintEditor::MODE_BRUSH,             s_toolIcons.brush.texId },
+				{ "Eraser",    PaintEditor::MODE_ERASER,          s_toolIcons.eraser.texId },
+				{ "Rectangle", PaintEditor::MODE_RECTANGLE,       s_toolIcons.rectangle.texId },
+				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,      s_toolIcons.fill.texId },
+				{ "Circle",    PaintEditor::MODE_CIRCLE,          s_toolIcons.circle.texId },
+				{ "Text",      PaintEditor::MODE_TEXT,            s_toolIcons.text.texId },
+				{ "Pipette",   PaintEditor::MODE_PIPETTE,         s_toolIcons.pipette.texId },
+				{ "Line",      PaintEditor::MODE_LINE,            s_toolIcons.line.texId },
+				{ "Arrow",     PaintEditor::MODE_ARROW,           s_toolIcons.arrow.texId },
+				{ "Spray",     PaintEditor::MODE_SPRAY,           s_toolIcons.spray.texId },
+				{ "Bezier",    PaintEditor::MODE_BEZIER,          s_toolIcons.bezier.texId },
 			};
 			const ToolBtn selectionTools[] = {
-				{ "Selection",  PaintEditor::MODE_SELECTION,         s_toolIcons.selection.texId },
+				{ "Selection",   PaintEditor::MODE_SELECTION,         s_toolIcons.selection.texId },
 				{ "Ellipse Sel", PaintEditor::MODE_ELLIPSE_SELECTION, s_toolIcons.ellipseSelection.texId },
-				{ "Poly Lasso", PaintEditor::MODE_POLYGON_LASSO,     s_toolIcons.polygonLasso.texId },
-				{ "Lasso",      PaintEditor::MODE_LASSO,             s_toolIcons.lasso.texId },
-				{ "Wand",       PaintEditor::MODE_MAGIC_WAND,        s_toolIcons.magicWand.texId },
+				{ "Lasso",       PaintEditor::MODE_LASSO,             s_toolIcons.lasso.texId },
+				{ "Wand",        PaintEditor::MODE_MAGIC_WAND,        s_toolIcons.magicWand.texId },
+				{ "Poly Lasso",  PaintEditor::MODE_POLYGON_LASSO,     s_toolIcons.polygonLasso.texId },
 			};
 #else
-			const ToolBtn mainTools[] = {
-				{ "Brush",     PaintEditor::MODE_BRUSH,       nullptr },
-				{ "Eraser",    PaintEditor::MODE_ERASER,      nullptr },
-				{ "Spray",     PaintEditor::MODE_SPRAY,       nullptr },
-				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,  nullptr },
-				{ "Line",      PaintEditor::MODE_LINE,        nullptr },
-				{ "Rectangle", PaintEditor::MODE_RECTANGLE,   nullptr },
-				{ "Circle",    PaintEditor::MODE_CIRCLE,      nullptr },
-				{ "Text",      PaintEditor::MODE_TEXT,        nullptr },
-				{ "Pipette",   PaintEditor::MODE_PIPETTE,     nullptr },
-				{ "Arrow",     PaintEditor::MODE_ARROW,       nullptr },
-				{ "Bezier",    PaintEditor::MODE_BEZIER,      nullptr },
+			const ToolBtn paintTools[] = {
+				{ "Brush",     PaintEditor::MODE_BRUSH,             nullptr },
+				{ "Eraser",    PaintEditor::MODE_ERASER,          nullptr },
+				{ "Rectangle", PaintEditor::MODE_RECTANGLE,       nullptr },
+				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,      nullptr },
+				{ "Circle",    PaintEditor::MODE_CIRCLE,          nullptr },
+				{ "Text",      PaintEditor::MODE_TEXT,            nullptr },
+				{ "Pipette",   PaintEditor::MODE_PIPETTE,         nullptr },
+				{ "Line",      PaintEditor::MODE_LINE,            nullptr },
+				{ "Arrow",     PaintEditor::MODE_ARROW,           nullptr },
+				{ "Spray",     PaintEditor::MODE_SPRAY,           nullptr },
+				{ "Bezier",    PaintEditor::MODE_BEZIER,          nullptr },
 			};
 			const ToolBtn selectionTools[] = {
-				{ "Selection",   PaintEditor::MODE_SELECTION,           nullptr },
+				{ "Selection",   PaintEditor::MODE_SELECTION,         nullptr },
 				{ "Ellipse Sel", PaintEditor::MODE_ELLIPSE_SELECTION, nullptr },
-				{ "Poly Lasso",  PaintEditor::MODE_POLYGON_LASSO,     nullptr },
 				{ "Lasso",       PaintEditor::MODE_LASSO,             nullptr },
 				{ "Wand",        PaintEditor::MODE_MAGIC_WAND,        nullptr },
+				{ "Poly Lasso",  PaintEditor::MODE_POLYGON_LASSO,     nullptr },
 			};
 #endif
-			constexpr float iconSize = 24.f;
-			auto drawToolRow = [&](const ToolBtn *tools, size_t count)
+			const float iconSize = 24.f * editor.viewport.scale;
+			auto drawToolGrid = [&](const ToolBtn *tools, size_t count)
 			{
 				for (size_t i = 0; i < count; i++)
 				{
-					const bool active = editor.mode == tools[i].toolMode;
+					const ToolBtn &tb = tools[i];
+					const bool active = editor.mode == tb.toolMode;
 					if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
 					bool clicked = false;
-					if (tools[i].icon)
-					{
-						clicked = ImGui::ImageButton(tools[i].label, tools[i].icon, ImVec2(iconSize, iconSize));
-					}
+					if (tb.icon)
+						clicked = ImGui::ImageButton(tb.label, tb.icon, ImVec2(iconSize, iconSize));
 					else
-					{
-						clicked = ImGui::Button(tools[i].label, ImVec2(w, 0));
-					}
-					if (clicked) editor.mode = tools[i].toolMode;
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tools[i].label);
+						clicked = ImGui::Button(tb.label, ImVec2(w, 0));
+					if (clicked) editor.mode = tb.toolMode;
+					if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tb.label);
 					if (active) ImGui::PopStyleColor();
 					if (i % 2 == 0 && i + 1 < count) ImGui::SameLine();
 				}
 			};
 
-			drawToolRow(mainTools, sizeof(mainTools) / sizeof(*mainTools));
-			ImGui::Separator();
-			drawToolRow(selectionTools, sizeof(selectionTools) / sizeof(*selectionTools));
-		}
-
-		// --- Tool options ---
-		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_ERASER || editor.mode == PaintEditor::MODE_SPRAY || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_TEXT || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER || editor.mode == PaintEditor::MODE_MAGIC_WAND || editor.mode == PaintEditor::MODE_LASSO || editor.mode == PaintEditor::MODE_POLYGON_LASSO)
-		{
-			ImGui::SeparatorText("Options");
-		}
-		if (editor.mode == PaintEditor::MODE_ERASER)
-		{
-			if (ImGui::InputInt("Eraser size", &editor.eraserSize))
-			{
-				editor.clampEraserSize();
-			}
-			ImGui::TextDisabled("Hard N×N rectangle; sets alpha to 0. [+ / -] changes size.");
-		}
-		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_SPRAY || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER)
-		{
-			if (ImGui::InputInt("Width", &editor.brushWidth))
-			{
-				editor.clampBrushWidth();
-				editor.refreshBrushBasedDrafts();
-			}
-		}
-		if (editor.mode == PaintEditor::MODE_SPRAY)
-		{
-			if (ImGui::InputInt("Droplets", &editor.sprayDensity))
-			{
-				editor.clampSprayDensity();
-			}
-			ImGui::TextDisabled("Random dots per sample inside the width radius. [+ / -] adjusts droplets.");
-		}
-		if (editor.mode == PaintEditor::MODE_MAGIC_WAND)
-		{
-			if (ImGui::SliderInt("Tolerance", &editor.magicWandTolerance, 0, 255))
-			{
-				editor.clampMagicWandTolerance();
-			}
-			ImGui::TextDisabled("Click visible pixels to select. [+ / -] nudge tolerance. Ctrl adds to selection.");
-		}
-		if (editor.mode == PaintEditor::MODE_LASSO)
-		{
-			ImGui::TextDisabled("Click and drag to outline a region (auto-closed). Ctrl adds to the current selection. Move/resize like rectangular selection.");
-		}
-		if (editor.mode == PaintEditor::MODE_POLYGON_LASSO)
-		{
-			ImGui::TextDisabled("Click to place corners. Close: click first point, Enter, or right-click (3+ points). Backspace removes last point. Ctrl adds to selection.");
-		}
-		if (editor.mode == PaintEditor::MODE_RECTANGLE)
-		{
-			if (ImGui::InputInt("Corner Radius", &editor.cornerRadius))
-			{
-				if (editor.cornerRadius < 0) editor.cornerRadius = 0;
-				if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
-			}
-			ImGui::TextDisabled(editor.rectangle.draftActive
-				? "Drag inside/border to move/resize.\nClick outside to place."
-				: "Drag to draw. Click outside to place.");
-		}
-		if (editor.mode == PaintEditor::MODE_CIRCLE)
-		{
-			ImGui::TextDisabled(editor.circle.draftActive
-				? "Drag inside/border to move/resize.\nClick outside to place."
-				: "Drag to draw. Click outside to place.");
-		}
-		if (editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE)
-		{
-			if (ImGui::Checkbox("Fill with secondary color", &editor.shapeFillWithSecondary))
-			{
-				if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
-				if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
-			}
-			if (ImGui::Checkbox("Striped outline", &editor.shapeStripedStroke))
-			{
-				if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
-				if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
-			}
-			if (editor.shapeStripedStroke)
-			{
-				if (ImGui::InputInt("Stripe repeat (px)", &editor.shapeStripePeriodPx))
-				{
-					editor.clampShapeStripePeriod();
-					if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
-					if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
-				}
-				ImGui::TextDisabled("Target dash+gap along the outline; actual spacing snaps so the pattern closes with no seam.");
-			}
-		}
-		if (editor.mode == PaintEditor::MODE_LINE)
-		{
-			ImGui::Checkbox("Apply on release", &editor.endpointApplyStrokeOnRelease);
-			ImGui::TextDisabled(editor.endpointApplyStrokeOnRelease
-				? (editor.line.draftActive
-					   ? "Drag endpoints to adjust.\nClick outside or R-click to place."
-					   : "Drag to draw; the stroke is committed when you release the button.")
-				: (editor.line.draftActive
-					   ? "Drag endpoints to adjust.\nClick outside or R-click to place."
-					   : "Drag to draw."));
-		}
-		if (editor.mode == PaintEditor::MODE_ARROW)
-		{
-			ImGui::Checkbox("Apply on release", &editor.endpointApplyStrokeOnRelease);
-			bool arrowOptionChanged = false;
-			if (ImGui::InputInt("Head Size", &editor.arrowHeadSize))
-			{
-				if (editor.arrowHeadSize < 1) editor.arrowHeadSize = 1;
-				arrowOptionChanged = true;
-			}
-			if (ImGui::InputInt("Head Width", &editor.arrowHeadWidth))
-			{
-				if (editor.arrowHeadWidth < 1) editor.arrowHeadWidth = 1;
-				arrowOptionChanged = true;
-			}
-			if (ImGui::Checkbox("Double Headed", &editor.arrowDoubleHeaded)) arrowOptionChanged = true;
-			if (ImGui::Checkbox("Filled Head",   &editor.arrowFilledHead))   arrowOptionChanged = true;
-			if (arrowOptionChanged && editor.arrow.draftActive) editor.redrawArrowDraft();
-			ImGui::TextDisabled(editor.endpointApplyStrokeOnRelease
-				? (editor.arrow.draftActive
-					   ? "Drag endpoints to adjust.\nClick outside or R-click to place."
-					   : "Drag to draw; the stroke is committed when you release the button.")
-				: (editor.arrow.draftActive
-					   ? "Drag endpoints to adjust.\nClick outside or R-click to place."
-					   : "Drag to draw."));
-		}
-		if (editor.mode == PaintEditor::MODE_BEZIER)
-		{
-			ImGui::TextDisabled(editor.bezier.controlPoints.isEmpty()
-				? "L-click to place control points.\nR-click to commit curve."
-				: "L-click to add/drag points.\nBackspace removes last point.\nR-click to commit curve.");
-			if (!editor.bezier.controlPoints.isEmpty())
-			{
-				ImGui::Text("%d control point(s)", (int)editor.bezier.controlPoints.getLength());
-				if (ImGui::Button("Commit", ImVec2(-1, 0)))
-				{
-					editor.finalizeBezierDraft();
-				}
-			}
-		}
-		if (editor.mode == PaintEditor::MODE_TEXT)
-		{
-			// Font picker
-			static char fontFilter[128] = "";
-			ImGui::InputText("Filter##fontFilter", fontFilter, sizeof(fontFilter));
-			editor.clampTextFontIndex();
-			const char *currentFontName = editor.availableFonts.isEmpty() ? "None" : editor.availableFonts[(size_t)editor.textFontIndex].displayName.getRaw();
-			if (ImGui::BeginCombo("Font", currentFontName))
-			{
-				for (size_t i = 0; i < editor.availableFonts.getLength(); i++)
-				{
-					const char *name = editor.availableFonts[i].displayName.getRaw();
-					if (fontFilter[0] != '\0')
-					{
-						std::string nameLower = name;
-						std::string filterLower = fontFilter;
-						for (char &c : nameLower)   c = (char)std::tolower((unsigned char)c);
-						for (char &c : filterLower) c = (char)std::tolower((unsigned char)c);
-						if (nameLower.find(filterLower) == std::string::npos) continue;
-					}
-					const bool selected = (editor.textFontIndex == (int32_t)i);
-					if (ImGui::Selectable(name, selected))
-					{
-						editor.textFontIndex = (int32_t)i;
-					}
-					if (selected) ImGui::SetItemDefaultFocus();
-				}
-				ImGui::EndCombo();
-			}
-			if (ImGui::InputInt("Font Size", &editor.textFontSize))
-			{
-				editor.clampTextFontSize();
-			}
-			ImGui::InputTextMultiline("##text", editor.textBuffer, sizeof(editor.textBuffer), ImVec2(-1, ImGui::GetTextLineHeight() * 4.0f));
-			ImGui::TextDisabled("L/R click places text.");
+			ImGui::SeparatorText("Draw & paint");
+			drawToolGrid(paintTools, sizeof(paintTools) / sizeof(*paintTools));
+			ImGui::SeparatorText("Selection");
+			drawToolGrid(selectionTools, sizeof(selectionTools) / sizeof(*selectionTools));
 		}
 
 		// --- Symmetry ---
 		ImGui::SeparatorText("Symmetry");
 		{
-			constexpr float symIconSize = 24.f;
+			const float symIconSize = 24.f * editor.viewport.scale;
 			const float symRowW = ImGui::GetContentRegionAvail().x;
 			const float symBtnW = (symRowW - ImGui::GetStyle().ItemSpacing.x * 4.f) / 5.f;
 			const struct
@@ -725,14 +807,42 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		if (!supportsClipboardImages)
 			ImGui::TextDisabled("Not supported on this platform");
 
+		ImGui::EndChild();
+
+		ImGui::Separator();
+		ImGui::BeginChild("##layerDock", ImVec2(-1, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
 		// --- Layers ---
 		ImGui::SeparatorText("Layers");
-		ImGui::ColorEdit4("Canvas backdrop##canvasFallback", editor.canvas.get().canvasFallbackRgba,
-			ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
-		if (ImGui::IsItemDeactivatedAfterEdit()) editor.submitCanvas();
-		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Color behind all layers (first layer blends onto this). Used when flattening/exporting PNG. Alpha 0 = fully transparent document.");
+		static float s_canvasBackdropAlphaBackup = 1.f;
+		bool canvasBackdropOn = editor.canvas.get().canvasFallbackRgba[3] > 0.001f;
+		if (ImGui::Checkbox("Canvas backdrop", &canvasBackdropOn))
 		{
-			constexpr float layerIconSize = 24.f;
+			if (!canvasBackdropOn)
+			{
+				s_canvasBackdropAlphaBackup = editor.canvas.get().canvasFallbackRgba[3];
+				editor.canvas.get().canvasFallbackRgba[3] = 0.f;
+			}
+			else
+			{
+				editor.canvas.get().canvasFallbackRgba[3] =
+					(s_canvasBackdropAlphaBackup > 0.001f) ? s_canvasBackdropAlphaBackup : 1.f;
+			}
+			editor.submitCanvas();
+		}
+		ImGui::SameLine();
+		ImGui::BeginDisabled(!canvasBackdropOn);
+		if (ImGui::ColorEdit4("##canvasFallback", editor.canvas.get().canvasFallbackRgba,
+				ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf))
+		{
+			if (editor.canvas.get().canvasFallbackRgba[3] > 0.001f)
+				s_canvasBackdropAlphaBackup = editor.canvas.get().canvasFallbackRgba[3];
+			editor.submitCanvas();
+		}
+		ImGui::EndDisabled();
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Color behind all layers. Alpha 0 = transparent document when backdrop is off.");
+		{
+			const float layerIconSize = 24.f * editor.viewport.scale;
 			const float layerRowW = ImGui::GetContentRegionAvail().x;
 			const float layerHalfW = (layerRowW - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
 			const float btnW = (layerRowW - ImGui::GetStyle().ItemSpacing.x * 3) * 0.25f;
@@ -790,6 +900,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Move layer down (toward back)");
 			ImGui::EndDisabled();
 
+			ImGui::Dummy(ImVec2(0, ImGui::GetStyle().ItemSpacing.y * 0.5f));
 #ifdef BBE_RENDERER_OPENGL
 			if (s_toolIcons.layerDuplicate.texId)
 			{
@@ -861,7 +972,12 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 		ImGui::EndChild();
 
+		ImGui::EndChild();
+
 		ImGui::End();
+		ImGui::PopStyleColor(2);
+
+		drawPaintToolOptionsPanel(editor, PANEL_WIDTH);
 
 		bool anyNonNormalBlendMode = false;
 		for (size_t layerIndex = 0; layerIndex < editor.canvas.get().layers.getLength(); layerIndex++)
@@ -1433,6 +1549,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				toggleMenuItem("Draw Grid Lines", editor.drawGridLines);
 				toggleMenuItem("Tiled", editor.tiled);
 				toggleMenuItem("Navigator", editor.showNavigator);
+				toggleMenuItem("Tool Options", editor.showToolOptionsPanel);
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Preferences"))
