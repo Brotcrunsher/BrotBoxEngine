@@ -86,45 +86,32 @@ struct PaintEditor
 	static constexpr int32_t MODE_ERASER = 14;
 	static constexpr int32_t MODE_SPRAY = 15;
 
-	/// Kind of action bound to a top-row digit (1–9, 0). Only \c Tool and \c Symmetry use \c toolMode / \c symmetryMode respectively.
-	enum class DigitHotkeyKind : uint8_t
+	/// Single code for what a top-row digit (1–9, 0) does: tool modes \c MODE_BRUSH…\c MODE_SPRAY are their own numeric values (0–15); other actions use distinct ids (see implementation).
+	enum class DigitHotkeyAction : int32_t
 	{
-		Tool,
-		Symmetry,
-		Undo,
-		Redo,
-		SelectionCopy,
-		SelectionCut,
-		SelectionDelete,
-		ClipboardCopyCanvas,
-		ClipboardPasteNew,
-		LayerNew,
-		LayerDelete,
-		LayerMoveUp,
-		LayerMoveDown,
-		LayerDuplicate,
-		LayerMergeDown,
+		SymmetryNone = 32,
+		SymmetryHorizontal = 33,
+		SymmetryVertical = 34,
+		SymmetryFourWay = 35,
+		SymmetryRadial = 36,
+		Undo = 40,
+		Redo = 41,
+		SelectionCopy = 42,
+		SelectionCut = 43,
+		SelectionDelete = 44,
+		ClipboardCopyCanvas = 45,
+		ClipboardPasteNew = 46,
+		LayerNew = 47,
+		LayerDelete = 48,
+		LayerMoveUp = 49,
+		LayerMoveDown = 50,
+		LayerDuplicate = 51,
+		LayerMergeDown = 52,
 	};
 
-	struct DigitHotkey
-	{
-		DigitHotkeyKind kind = DigitHotkeyKind::Tool;
-		int32_t toolMode = MODE_BRUSH;
-		bbe::SymmetryMode symmetryMode = bbe::SymmetryMode::None;
-		bool operator==(const DigitHotkey &o) const
-		{
-			if (kind != o.kind) return false;
-			switch (kind)
-			{
-			case DigitHotkeyKind::Tool:
-				return toolMode == o.toolMode;
-			case DigitHotkeyKind::Symmetry:
-				return symmetryMode == o.symmetryMode;
-			default:
-				return true;
-			}
-		}
-	};
+	static constexpr DigitHotkeyAction digitHotkeyActionForToolMode(int32_t toolMode) { return static_cast<DigitHotkeyAction>(toolMode); }
+	static constexpr DigitHotkeyAction digitHotkeyActionForSymmetry(bbe::SymmetryMode m) { return static_cast<DigitHotkeyAction>(32 + static_cast<int32_t>(m)); }
+	static bool digitHotkeyActionIsValid(DigitHotkeyAction a);
 
 	/// Selection, lasso, polygon lasso, and wand share one marquee; leaving this set of tools applies the selection (see ExamplePaint mode changes).
 	static bool isSelectionLikeTool(int32_t toolMode);
@@ -137,17 +124,20 @@ struct PaintEditor
 	bool suppressCanvasInputUntilMouseUp = false;
 
 	/// Top-row digits 1–9 then 0: `digitHotkeys[0]`…`[8]` = keys 1–9, `[9]` = key 0. Reassign with Ctrl+digit while hovering a bound control in Tools or Layers.
-	DigitHotkey digitHotkeys[10] = {
-		{ DigitHotkeyKind::Tool, MODE_BRUSH, bbe::SymmetryMode::None },
-		{ DigitHotkeyKind::Tool, MODE_FLOOD_FILL, bbe::SymmetryMode::None },
-		{ DigitHotkeyKind::Tool, MODE_LINE, bbe::SymmetryMode::None },
-		{ DigitHotkeyKind::Tool, MODE_RECTANGLE, bbe::SymmetryMode::None },
-		{ DigitHotkeyKind::Tool, MODE_SELECTION, bbe::SymmetryMode::None },
-		{ DigitHotkeyKind::Tool, MODE_TEXT, bbe::SymmetryMode::None },
-		{ DigitHotkeyKind::Tool, MODE_PIPETTE, bbe::SymmetryMode::None },
-		{ DigitHotkeyKind::Tool, MODE_CIRCLE, bbe::SymmetryMode::None },
-		{ DigitHotkeyKind::Tool, MODE_ARROW, bbe::SymmetryMode::None },
-		{ DigitHotkeyKind::Tool, MODE_BEZIER, bbe::SymmetryMode::None },
+	/// When set, invoked after a digit binding changes (e.g. to persist settings).
+	std::function<void()> onDigitHotkeysChanged;
+
+	DigitHotkeyAction digitHotkeys[10] = {
+		digitHotkeyActionForToolMode(MODE_BRUSH),
+		digitHotkeyActionForToolMode(MODE_FLOOD_FILL),
+		digitHotkeyActionForToolMode(MODE_LINE),
+		digitHotkeyActionForToolMode(MODE_RECTANGLE),
+		digitHotkeyActionForToolMode(MODE_SELECTION),
+		digitHotkeyActionForToolMode(MODE_TEXT),
+		digitHotkeyActionForToolMode(MODE_PIPETTE),
+		digitHotkeyActionForToolMode(MODE_CIRCLE),
+		digitHotkeyActionForToolMode(MODE_ARROW),
+		digitHotkeyActionForToolMode(MODE_BEZIER),
 	};
 
 	friend void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, const bbe::Vector2i &topLeft);
@@ -489,7 +479,7 @@ struct PaintEditor
 
 	void redo();
 
-	void applyDigitHotkeyBinding(const DigitHotkey &binding);
+	void applyDigitHotkeyBinding(DigitHotkeyAction action);
 	void copyFlattenedCanvasToClipboard();
 	void pasteClipboardAsNewDocument();
 

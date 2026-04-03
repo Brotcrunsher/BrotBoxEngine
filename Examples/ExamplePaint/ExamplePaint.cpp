@@ -1,4 +1,6 @@
+#include <array>
 #include <cmath>
+#include <cstdint>
 #include <map>
 #include <string>
 #include <iostream>
@@ -11,7 +13,54 @@
 // TODO: Favorite Colors (Persisted between sessions, separate from history, user-managed)
 // TODO: Most used colors
 // TODO: Window docking for tools etc.
-// TODO: Bound number hotkeys shall be persisted between sessions
+
+/// Persisted 1–9 / 0 digit bindings (one \c int32_t action per key; \c formatVersion distinguishes this from older multi-field saves).
+struct ExamplePaintDigitHotkeysPersist
+{
+	static constexpr int32_t kFormatVersion = 2;
+	int32_t formatVersion = kFormatVersion;
+	std::array<int32_t, 10> action{};
+
+	ExamplePaintDigitHotkeysPersist()
+	{
+		formatVersion = kFormatVersion;
+		const int32_t defaultTool[10] = {
+			PaintEditor::MODE_BRUSH,
+			PaintEditor::MODE_FLOOD_FILL,
+			PaintEditor::MODE_LINE,
+			PaintEditor::MODE_RECTANGLE,
+			PaintEditor::MODE_SELECTION,
+			PaintEditor::MODE_TEXT,
+			PaintEditor::MODE_PIPETTE,
+			PaintEditor::MODE_CIRCLE,
+			PaintEditor::MODE_ARROW,
+			PaintEditor::MODE_BEZIER,
+		};
+		for (int i = 0; i < 10; i++) action[(size_t)i] = defaultTool[(size_t)i];
+	}
+
+	void serialDescription(bbe::SerializedDescription &desc)
+	{
+		desc.describe(formatVersion);
+		desc.describe(action);
+	}
+};
+
+static void applyPersistedDigitHotkeys(PaintEditor &editor, const ExamplePaintDigitHotkeysPersist &p)
+{
+	if (p.formatVersion != ExamplePaintDigitHotkeysPersist::kFormatVersion) return;
+	for (int i = 0; i < 10; i++)
+	{
+		const auto a = static_cast<PaintEditor::DigitHotkeyAction>(p.action[(size_t)i]);
+		if (PaintEditor::digitHotkeyActionIsValid(a)) editor.digitHotkeys[i] = a;
+	}
+}
+
+static void captureDigitHotkeysToPersist(const PaintEditor &editor, ExamplePaintDigitHotkeysPersist &p)
+{
+	p.formatVersion = ExamplePaintDigitHotkeysPersist::kFormatVersion;
+	for (int i = 0; i < 10; i++) p.action[(size_t)i] = static_cast<int32_t>(editor.digitHotkeys[i]);
+}
 
 /// For axis mirror symmetries, text must be flipped (not just moved). Indices match `bbe::getSymmetryPositions` order.
 /// `outFlipH` / `outFlipV` mean reflection across a **vertical** / **horizontal** line in canvas space (L-R vs upside down).
@@ -763,6 +812,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 class MyGame : public bbe::Game
 {
 public:
+	bbe::SerializableObject<ExamplePaintDigitHotkeysPersist> digitHotkeysPersist{ "ExamplePaintDigitHotkeys.dat", "ParanoiaConfig" };
 	PaintEditor editor;
 
 	void onStart() override
@@ -827,6 +877,13 @@ public:
 		};
 		editor.setPlatformCallbacks(std::move(callbacks));
 
+		applyPersistedDigitHotkeys(editor, *digitHotkeysPersist.operator->());
+		editor.onDigitHotkeysChanged = [this]()
+		{
+			captureDigitHotkeysToPersist(editor, *digitHotkeysPersist.operator->());
+			digitHotkeysPersist.writeToFile();
+		};
+
 		PaintWindowMetrics w{};
 		w.width = getWindowWidth();
 		w.height = getWindowHeight();
@@ -859,6 +916,9 @@ public:
 
 	void onEnd() override
 	{
+		captureDigitHotkeysToPersist(editor, *digitHotkeysPersist.operator->());
+		digitHotkeysPersist.writeToFile();
+		editor.onDigitHotkeysChanged = nullptr;
 	}
 };
 

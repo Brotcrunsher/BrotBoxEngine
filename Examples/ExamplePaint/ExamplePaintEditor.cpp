@@ -1312,54 +1312,71 @@ void PaintEditor::pasteClipboardAsNewDocument()
 	setupCanvas(false);
 }
 
-void PaintEditor::applyDigitHotkeyBinding(const DigitHotkey &b)
+bool PaintEditor::digitHotkeyActionIsValid(DigitHotkeyAction a)
 {
-	switch (b.kind)
+	const int32_t v = static_cast<int32_t>(a);
+	if (v >= MODE_BRUSH && v <= MODE_SPRAY) return true;
+	if (v >= static_cast<int32_t>(DigitHotkeyAction::SymmetryNone) && v <= static_cast<int32_t>(DigitHotkeyAction::SymmetryRadial)) return true;
+	if (v >= static_cast<int32_t>(DigitHotkeyAction::Undo) && v <= static_cast<int32_t>(DigitHotkeyAction::LayerMergeDown)) return true;
+	return false;
+}
+
+void PaintEditor::applyDigitHotkeyBinding(DigitHotkeyAction b)
+{
+	if (!digitHotkeyActionIsValid(b)) return;
+	const int32_t v = static_cast<int32_t>(b);
+	if (v >= MODE_BRUSH && v <= MODE_SPRAY)
 	{
-	case DigitHotkeyKind::Tool:
-		mode = b.toolMode;
-		break;
-	case DigitHotkeyKind::Symmetry:
-		symmetryMode = b.symmetryMode;
-		break;
-	case DigitHotkeyKind::Undo:
+		mode = v;
+		return;
+	}
+	if (v >= static_cast<int32_t>(DigitHotkeyAction::SymmetryNone) && v <= static_cast<int32_t>(DigitHotkeyAction::SymmetryRadial))
+	{
+		symmetryMode = static_cast<bbe::SymmetryMode>(v - static_cast<int32_t>(DigitHotkeyAction::SymmetryNone));
+		return;
+	}
+	switch (b)
+	{
+	case DigitHotkeyAction::Undo:
 		if (canvas.isUndoable()) undo();
 		break;
-	case DigitHotkeyKind::Redo:
+	case DigitHotkeyAction::Redo:
 		if (canvas.isRedoable()) redo();
 		break;
-	case DigitHotkeyKind::SelectionCopy:
+	case DigitHotkeyAction::SelectionCopy:
 		if (selection.hasSelection) storeSelectionInClipboard();
 		break;
-	case DigitHotkeyKind::SelectionCut:
+	case DigitHotkeyAction::SelectionCut:
 		if (selection.hasSelection) cutSelection();
 		break;
-	case DigitHotkeyKind::SelectionDelete:
+	case DigitHotkeyAction::SelectionDelete:
 		if (selection.hasSelection) deleteSelection();
 		break;
-	case DigitHotkeyKind::ClipboardCopyCanvas:
+	case DigitHotkeyAction::ClipboardCopyCanvas:
 		copyFlattenedCanvasToClipboard();
 		break;
-	case DigitHotkeyKind::ClipboardPasteNew:
+	case DigitHotkeyAction::ClipboardPasteNew:
 		pasteClipboardAsNewDocument();
 		break;
-	case DigitHotkeyKind::LayerNew:
+	case DigitHotkeyAction::LayerNew:
 		addLayer();
 		break;
-	case DigitHotkeyKind::LayerDelete:
+	case DigitHotkeyAction::LayerDelete:
 		if (canvas.get().layers.getLength() > 1) deleteActiveLayer();
 		break;
-	case DigitHotkeyKind::LayerMoveUp:
+	case DigitHotkeyAction::LayerMoveUp:
 		if ((size_t)activeLayerIndex + 1 < canvas.get().layers.getLength()) moveActiveLayerUp();
 		break;
-	case DigitHotkeyKind::LayerMoveDown:
+	case DigitHotkeyAction::LayerMoveDown:
 		if (activeLayerIndex > 0) moveActiveLayerDown();
 		break;
-	case DigitHotkeyKind::LayerDuplicate:
+	case DigitHotkeyAction::LayerDuplicate:
 		duplicateActiveLayer();
 		break;
-	case DigitHotkeyKind::LayerMergeDown:
+	case DigitHotkeyAction::LayerMergeDown:
 		if (activeLayerIndex > 0) mergeActiveLayerDown();
+		break;
+	default:
 		break;
 	}
 }
