@@ -941,9 +941,10 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					bbe::List<bbe::Vector2> strip;
 					for (size_t pi = 0; pi < editor.selection.lassoPath.size(); pi++)
 					{
-						const bbe::Vector2i &p = editor.selection.lassoPath[pi];
-						const bbe::Rectangle scr = editor.selectionRectToScreen(bbe::Rectanglei(p.x + ox, p.y + oy, 1, 1));
-						strip.add({ scr.x + scr.width * 0.5f, scr.y + scr.height * 0.5f });
+						const bbe::Vector2 &pf = editor.selection.lassoPath[pi];
+						const float sx = editor.offset.x + (pf.x + (float)ox) * editor.zoomLevel;
+						const float sy = editor.offset.y + (pf.y + (float)oy) * editor.zoomLevel;
+						strip.add({ sx, sy });
 					}
 					brush.setColorRGB(0.f, 0.f, 0.f);
 					brush.fillLineStrip(strip, false, lwOuter);

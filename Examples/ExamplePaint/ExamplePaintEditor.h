@@ -245,9 +245,9 @@ struct PaintEditor
 		bbe::Rectanglei mergeBackupRect{};
 		bbe::Image mergeBackupMask;
 
-		/// Freehand lasso drag (MODE_LASSO): path in canvas pixel coordinates, clamped to the canvas.
+		/// Freehand lasso drag (MODE_LASSO): path in continuous canvas space, clamped to [0,W]×[0,H] so outlines can sit on the outer pixel edges.
 		bool lassoDragActive = false;
-		std::vector<bbe::Vector2i> lassoPath;
+		std::vector<bbe::Vector2> lassoPath;
 
 		/// Polygon lasso (MODE_POLYGON_LASSO): click to add vertices; close via first point, Enter, or right-click.
 		std::vector<bbe::Vector2i> polygonLassoVertices;
@@ -567,10 +567,10 @@ struct PaintEditor
 
 	/// Outside click, Ctrl+inside, or Ctrl on resize handles: clear / merge / start rect drag.
 	void pointerDownSelectionDefaultMarqueePath(const bbe::Vector2i &mousePixel);
-	void pointerDownLassoMarqueePath(const bbe::Vector2i &mousePixel);
-	void appendLassoPoint(const bbe::Vector2i &p);
-	void finishLassoDrag(const bbe::Vector2i &mousePixel);
-	void commitSelectionFromClosedLassoPath(std::vector<bbe::Vector2i> path);
+	void pointerDownLassoMarqueePath(const bbe::Vector2 &canvasPos);
+	void appendLassoPoint(const bbe::Vector2 &canvasPos);
+	void finishLassoDrag(const bbe::Vector2 &canvasPos);
+	void commitSelectionFromClosedLassoPath(std::vector<bbe::Vector2> path);
 
 	void pointerDownPolygonLassoMarqueePath(const bbe::Vector2i &mousePixel);
 	void appendPolygonLassoVertex(const bbe::Vector2i &p);

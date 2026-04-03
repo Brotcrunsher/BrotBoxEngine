@@ -148,7 +148,7 @@ void dropMaskIfFullySelected(bbe::Rectanglei &rect, bbe::Image &mask)
 	mask = {};
 }
 
-bool pointInPolygon(double px, double py, const std::vector<bbe::Vector2i> &poly)
+bool pointInPolygon(double px, double py, const std::vector<bbe::Vector2> &poly)
 {
 	if (poly.size() < 3) return false;
 	bool inside = false;
@@ -164,21 +164,95 @@ bool pointInPolygon(double px, double py, const std::vector<bbe::Vector2i> &poly
 	return inside;
 }
 
-/// Fills pixels whose centers lie inside the closed polygon `path` (implicit edge from last to first). Tight bounding output.
-bool buildLassoSelectionMask(const PaintEditor &ed, const std::vector<bbe::Vector2i> &path, bbe::Rectanglei &outTightRect, bbe::Image &outMask)
+// True if segment (x1,y1)-(x2,y2) meets the closed axis-aligned rectangle [rx0,rx1]×[ry0,ry1].
+bool segmentIntersectsClosedRect(double x1, double y1, double x2, double y2, double rx0, double ry0, double rx1, double ry1)
+{
+	auto pin = [&](double x, double y) { return x >= rx0 && x <= rx1 && y >= ry0 && y <= ry1; };
+	if (pin(x1, y1) || pin(x2, y2)) return true;
+
+	const double dx = x2 - x1;
+	const double dy = y2 - y1;
+	double t0 = 0.0;
+	double t1 = 1.0;
+	constexpr double peps = 1e-15;
+	auto clip = [&](double p, double q) -> bool
+	{
+		if (std::fabs(p) < peps) return q >= -1e-9;
+		const double r = q / p;
+		if (p < 0.0)
+		{
+			if (r > t1) return false;
+			if (r > t0) t0 = r;
+		}
+		else
+		{
+			if (r < t0) return false;
+			if (r < t1) t1 = r;
+		}
+		return true;
+	};
+
+	if (!clip(-dx, x1 - rx0)) return false;
+	if (!clip(dx, rx1 - x1)) return false;
+	if (!clip(-dy, y1 - ry0)) return false;
+	if (!clip(dy, ry1 - y1)) return false;
+	return t0 <= t1 + 1e-10;
+}
+
+// Pixel (cx,cy) = closed unit square [cx,cx+1]×[cy,cy+1]. Selected if the polygon interior (sampled) or boundary touches that square.
+bool pixelTouchedByLassoPolygon(int32_t cx, int32_t cy, const std::vector<bbe::Vector2> &poly)
+{
+	const double x0 = (double)cx;
+	const double y0 = (double)cy;
+	const double x1 = (double)cx + 1.0;
+	const double y1 = (double)cy + 1.0;
+	const size_t n = poly.size();
+
+	for (size_t i = 0; i < n; i++)
+	{
+		const double ax = (double)poly[i].x;
+		const double ay = (double)poly[i].y;
+		const double bx = (double)poly[(i + 1) % n].x;
+		const double by = (double)poly[(i + 1) % n].y;
+		if (segmentIntersectsClosedRect(ax, ay, bx, by, x0, y0, x1, y1)) return true;
+		if (ax >= x0 && ax <= x1 && ay >= y0 && ay <= y1) return true;
+	}
+
+	constexpr double e = 1e-3;
+	if (pointInPolygon(x0 + 0.5, y0 + 0.5, poly)) return true;
+	if (pointInPolygon(x0 + e, y0 + e, poly)) return true;
+	if (pointInPolygon(x1 - e, y0 + e, poly)) return true;
+	if (pointInPolygon(x1 - e, y1 - e, poly)) return true;
+	if (pointInPolygon(x0 + e, y1 - e, poly)) return true;
+	return false;
+}
+
+/// Fills pixels whose closed unit squares intersect the closed polygon `path` (interior or edge). Tight bounding output.
+bool buildLassoSelectionMask(const PaintEditor &ed, const std::vector<bbe::Vector2> &path, bbe::Rectanglei &outTightRect, bbe::Image &outMask)
 {
 	const int32_t W = ed.getCanvasWidth();
 	const int32_t H = ed.getCanvasHeight();
 	if (W <= 0 || H <= 0 || path.size() < 3) return false;
 
-	int32_t minx = path[0].x, maxx = path[0].x, miny = path[0].y, maxy = path[0].y;
+	float fminx = path[0].x, fmaxx = path[0].x, fminy = path[0].y, fmaxy = path[0].y;
 	for (size_t i = 1; i < path.size(); i++)
 	{
-		minx = bbe::Math::min(minx, path[i].x);
-		maxx = bbe::Math::max(maxx, path[i].x);
-		miny = bbe::Math::min(miny, path[i].y);
-		maxy = bbe::Math::max(maxy, path[i].y);
+		fminx = bbe::Math::min(fminx, path[i].x);
+		fmaxx = bbe::Math::max(fmaxx, path[i].x);
+		fminy = bbe::Math::min(fminy, path[i].y);
+		fmaxy = bbe::Math::max(fmaxy, path[i].y);
 	}
+	int32_t minx = (int32_t)std::floor((double)fminx);
+	int32_t maxx = (int32_t)std::ceil((double)fmaxx) - 1;
+	int32_t miny = (int32_t)std::floor((double)fminy);
+	int32_t maxy = (int32_t)std::ceil((double)fmaxy) - 1;
+	if (maxx < minx) maxx = minx;
+	if (maxy < miny) maxy = miny;
+	// Expand: thin strokes along pixel edges can intersect neighbors of the vertex bbox.
+	minx -= 1;
+	maxx += 1;
+	miny -= 1;
+	maxy += 1;
 	bbe::Rectanglei bbox(minx, miny, maxx - minx + 1, maxy - miny + 1);
 	bbe::Rectanglei clipR;
 	if (!ed.clampRectToCanvas(bbox, clipR)) return false;
@@ -193,9 +267,7 @@ bool buildLassoSelectionMask(const PaintEditor &ed, const std::vector<bbe::Vecto
 		{
 			const int32_t cx = clipR.x + x;
 			const int32_t cy = clipR.y + y;
-			const double pxf = (double)cx + 0.5;
-			const double pyf = (double)cy + 0.5;
-			if (!pointInPolygon(pxf, pyf, path)) continue;
+			if (!pixelTouchedByLassoPolygon(cx, cy, path)) continue;
 			sel[(size_t)y * (size_t)clipR.width + (size_t)x] = 1;
 			if (!any)
 			{
@@ -571,7 +643,7 @@ void PaintEditor::pointerDown(PointerButton button, const bbe::Vector2 &canvasPo
 		}
 		else
 		{
-			pointerDownLassoMarqueePath(mousePixel);
+			pointerDownLassoMarqueePath(canvasPos);
 		}
 		break;
 	}
@@ -764,7 +836,7 @@ void PaintEditor::pointerMove(const bbe::Vector2 &canvasPos)
 		}
 		if (mode == MODE_LASSO && selection.lassoDragActive)
 		{
-			appendLassoPoint(mousePixel);
+			appendLassoPoint(canvasPos);
 		}
 		if (selection.moveActive)
 		{
@@ -905,7 +977,7 @@ void PaintEditor::pointerUp(PointerButton button, const bbe::Vector2 &canvasPos)
 		if (button != PointerButton::Primary) break;
 		if (selection.lassoDragActive)
 		{
-			finishLassoDrag(mousePixel);
+			finishLassoDrag(canvasPos);
 		}
 		break;
 	}
@@ -1888,7 +1960,7 @@ void PaintEditor::applySelectionWhenLeavingTool()
 	{
 		if (hasPointerPos)
 		{
-			finishLassoDrag(toCanvasPixel(lastPointerCanvasPos));
+			finishLassoDrag(lastPointerCanvasPos);
 		}
 		else
 		{
@@ -2711,7 +2783,7 @@ void PaintEditor::pointerDownSelectionDefaultMarqueePath(const bbe::Vector2i &mo
 	}
 }
 
-void PaintEditor::pointerDownLassoMarqueePath(const bbe::Vector2i &mousePixel)
+void PaintEditor::pointerDownLassoMarqueePath(const bbe::Vector2 &canvasPos)
 {
 	const bool hadFloating = selection.floating;
 	const bool hadMarquee = selection.hasSelection;
@@ -2745,7 +2817,7 @@ void PaintEditor::pointerDownLassoMarqueePath(const bbe::Vector2i &mousePixel)
 	{
 		selection.lassoDragActive = true;
 		selection.lassoPath.clear();
-		appendLassoPoint(mousePixel);
+		appendLassoPoint(canvasPos);
 		selection.hasSelection = false;
 		selection.rect = {};
 		selection.previewRect = {};
@@ -2759,7 +2831,7 @@ void PaintEditor::pointerDownLassoMarqueePath(const bbe::Vector2i &mousePixel)
 	{
 		selection.lassoDragActive = true;
 		selection.lassoPath.clear();
-		appendLassoPoint(mousePixel);
+		appendLassoPoint(canvasPos);
 		selection.hasSelection = false;
 		selection.rect = {};
 		selection.previewRect = {};
@@ -2767,19 +2839,19 @@ void PaintEditor::pointerDownLassoMarqueePath(const bbe::Vector2i &mousePixel)
 	}
 }
 
-void PaintEditor::appendLassoPoint(const bbe::Vector2i &p)
+void PaintEditor::appendLassoPoint(const bbe::Vector2 &p)
 {
 	const int32_t W = getCanvasWidth();
 	const int32_t H = getCanvasHeight();
 	if (W <= 0 || H <= 0) return;
-	const bbe::Vector2i c(
-		bbe::Math::clamp(p.x, 0, W - 1),
-		bbe::Math::clamp(p.y, 0, H - 1));
-	if (!selection.lassoPath.empty() && selection.lassoPath.back().x == c.x && selection.lassoPath.back().y == c.y) return;
+	const bbe::Vector2 c(
+		bbe::Math::clamp(p.x, 0.f, (float)W),
+		bbe::Math::clamp(p.y, 0.f, (float)H));
+	if (!selection.lassoPath.empty() && (selection.lassoPath.back() - c).getLength() < 1e-5f) return;
 	selection.lassoPath.push_back(c);
 }
 
-void PaintEditor::commitSelectionFromClosedLassoPath(std::vector<bbe::Vector2i> path)
+void PaintEditor::commitSelectionFromClosedLassoPath(std::vector<bbe::Vector2> path)
 {
 	const bool merge = selection.mergeBackupHadSelection && selectionAdditiveModifier;
 	bbe::Rectanglei newRect;
@@ -2832,10 +2904,10 @@ void PaintEditor::commitSelectionFromClosedLassoPath(std::vector<bbe::Vector2i> 
 	selection.mergeBackupMask = {};
 }
 
-void PaintEditor::finishLassoDrag(const bbe::Vector2i &mousePixel)
+void PaintEditor::finishLassoDrag(const bbe::Vector2 &canvasPos)
 {
-	appendLassoPoint(mousePixel);
-	std::vector<bbe::Vector2i> path = std::move(selection.lassoPath);
+	appendLassoPoint(canvasPos);
+	std::vector<bbe::Vector2> path = std::move(selection.lassoPath);
 	selection.lassoPath.clear();
 	selection.lassoDragActive = false;
 	commitSelectionFromClosedLassoPath(std::move(path));
@@ -2904,8 +2976,8 @@ void PaintEditor::appendPolygonLassoVertex(const bbe::Vector2i &p)
 	const int32_t H = getCanvasHeight();
 	if (W <= 0 || H <= 0) return;
 	const bbe::Vector2i c(
-		bbe::Math::clamp(p.x, 0, W - 1),
-		bbe::Math::clamp(p.y, 0, H - 1));
+		bbe::Math::clamp(p.x, 0, W),
+		bbe::Math::clamp(p.y, 0, H));
 	if (!selection.polygonLassoVertices.empty() && selection.polygonLassoVertices.back().x == c.x && selection.polygonLassoVertices.back().y == c.y) return;
 	selection.polygonLassoVertices.push_back(c);
 }
@@ -2921,7 +2993,19 @@ bool PaintEditor::isClickClosePolygonLasso(const bbe::Vector2 &canvasPos) const
 void PaintEditor::finishPolygonLassoSelection()
 {
 	if (selection.polygonLassoVertices.size() < 3) return;
-	std::vector<bbe::Vector2i> path = selection.polygonLassoVertices;
+	const int32_t W = getCanvasWidth();
+	const int32_t H = getCanvasHeight();
+	if (W <= 0 || H <= 0) return;
+	std::vector<bbe::Vector2> path;
+	path.reserve(selection.polygonLassoVertices.size());
+	for (const bbe::Vector2i &v : selection.polygonLassoVertices)
+	{
+		// Pixel centers + same clamp as appendLassoPoint so geometry matches the preview and freehand lasso.
+		path.push_back({
+			bbe::Math::clamp((float)v.x + 0.5f, 0.f, (float)W),
+			bbe::Math::clamp((float)v.y + 0.5f, 0.f, (float)H)
+		});
+	}
 	selection.polygonLassoVertices.clear();
 	commitSelectionFromClosedLassoPath(std::move(path));
 }
