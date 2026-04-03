@@ -48,13 +48,14 @@ static void updateIconSlot(ImTextureID &texId, const bbe::Image *&cachedPtr, con
 struct ToolIconTextures
 {
 	struct Slot { ImTextureID texId = nullptr; const bbe::Image *cachedPtr = nullptr; };
-	Slot brush, eraser, fill, line, rectangle, circle, selection, ellipseSelection, lasso, polygonLasso, magicWand, text, pipette, arrow, bezier;
+	Slot brush, eraser, spray, fill, line, rectangle, circle, selection, ellipseSelection, lasso, polygonLasso, magicWand, text, pipette, arrow, bezier;
 	Slot undo, redo;
 
 	void refresh()
 	{
 		updateIconSlot(brush.texId,          brush.cachedPtr,          assetStore::iconBrush());
 		updateIconSlot(eraser.texId,         eraser.cachedPtr,         assetStore::iconEraser());
+		updateIconSlot(spray.texId,          spray.cachedPtr,          assetStore::iconSpray());
 		updateIconSlot(fill.texId,           fill.cachedPtr,           assetStore::iconFill());
 		updateIconSlot(line.texId,           line.cachedPtr,           assetStore::iconLine());
 		updateIconSlot(rectangle.texId,      rectangle.cachedPtr,      assetStore::iconRectangle());
@@ -339,6 +340,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			const ToolBtn mainTools[] = {
 				{ "Brush",     PaintEditor::MODE_BRUSH,       s_toolIcons.brush.texId },
 				{ "Eraser",    PaintEditor::MODE_ERASER,      s_toolIcons.eraser.texId },
+				{ "Spray",     PaintEditor::MODE_SPRAY,       s_toolIcons.spray.texId },
 				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,  s_toolIcons.fill.texId },
 				{ "Line",      PaintEditor::MODE_LINE,        s_toolIcons.line.texId },
 				{ "Rectangle", PaintEditor::MODE_RECTANGLE,   s_toolIcons.rectangle.texId },
@@ -359,6 +361,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			const ToolBtn mainTools[] = {
 				{ "Brush",     PaintEditor::MODE_BRUSH,       nullptr },
 				{ "Eraser",    PaintEditor::MODE_ERASER,      nullptr },
+				{ "Spray",     PaintEditor::MODE_SPRAY,       nullptr },
 				{ "Fill",      PaintEditor::MODE_FLOOD_FILL,  nullptr },
 				{ "Line",      PaintEditor::MODE_LINE,        nullptr },
 				{ "Rectangle", PaintEditor::MODE_RECTANGLE,   nullptr },
@@ -405,7 +408,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 
 		// --- Tool options ---
-		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_ERASER || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_TEXT || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER || editor.mode == PaintEditor::MODE_MAGIC_WAND || editor.mode == PaintEditor::MODE_LASSO || editor.mode == PaintEditor::MODE_POLYGON_LASSO)
+		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_ERASER || editor.mode == PaintEditor::MODE_SPRAY || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_TEXT || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER || editor.mode == PaintEditor::MODE_MAGIC_WAND || editor.mode == PaintEditor::MODE_LASSO || editor.mode == PaintEditor::MODE_POLYGON_LASSO)
 		{
 			ImGui::SeparatorText("Options");
 		}
@@ -417,13 +420,21 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			}
 			ImGui::TextDisabled("Hard N×N rectangle; sets alpha to 0. [+ / -] changes size.");
 		}
-		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER)
+		if (editor.mode == PaintEditor::MODE_BRUSH || editor.mode == PaintEditor::MODE_SPRAY || editor.mode == PaintEditor::MODE_LINE || editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE || editor.mode == PaintEditor::MODE_ARROW || editor.mode == PaintEditor::MODE_BEZIER)
 		{
 			if (ImGui::InputInt("Width", &editor.brushWidth))
 			{
 				editor.clampBrushWidth();
 				editor.refreshBrushBasedDrafts();
 			}
+		}
+		if (editor.mode == PaintEditor::MODE_SPRAY)
+		{
+			if (ImGui::InputInt("Droplets", &editor.sprayDensity))
+			{
+				editor.clampSprayDensity();
+			}
+			ImGui::TextDisabled("Random dots per sample inside the width radius. [+ / -] adjusts droplets.");
 		}
 		if (editor.mode == PaintEditor::MODE_MAGIC_WAND)
 		{
@@ -1056,6 +1067,35 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				}
 			}
 		}
+		if (editor.mode == PaintEditor::MODE_SPRAY && editor.getCanvasWidth() > 0 && editor.getCanvasHeight() > 0)
+		{
+			bbe::Vector2 previewCenter = editor.screenToCanvas(mouseScreenPos);
+			if (editor.toTiledPos(previewCenter))
+			{
+				const int32_t cw = editor.getCanvasWidth();
+				const int32_t ch = editor.getCanvasHeight();
+				const int32_t tileRepeat = editor.tiled ? 20 : 0;
+				const float z = editor.zoomLevel;
+				const float rad = (float)editor.brushWidth * z;
+				const bbe::List<bbe::Vector2> centers = editor.getSymmetryPositions(previewCenter);
+				for (size_t si = 0; si < centers.getLength(); si++)
+				{
+					for (int32_t ti = -tileRepeat; ti <= tileRepeat; ti++)
+					{
+						for (int32_t tk = -tileRepeat; tk <= tileRepeat; tk++)
+						{
+							const float cx = editor.offset.x + (centers[si].x + (float)(ti * cw)) * z;
+							const float cy = editor.offset.y + (centers[si].y + (float)(tk * ch)) * z;
+							const float r = std::max(1.f, rad);
+							brush.setColorRGB(0.f, 0.f, 0.f, 0.9f);
+							brush.fillCircle(cx - r - 1.f, cy - r - 1.f, (r + 1.f) * 2.f, (r + 1.f) * 2.f);
+							brush.setColorRGB(0.35f, 0.9f, 1.f, 0.35f);
+							brush.fillCircle(cx - r, cy - r, r * 2.f, r * 2.f);
+						}
+					}
+				}
+			}
+		}
 		auto drawEndpointHandle = [&](const bbe::Vector2 &canvasPos)
 		{
 			const float sx = editor.offset.x + canvasPos.x * editor.zoomLevel;
@@ -1403,8 +1443,8 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					ImGui::SeparatorText(title);
 					for (const char *item : items) ImGui::BulletText("%s", item);
 				};
-				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow", "0 Bezier", "E Eraser", "O Ellipse selection", "L Lasso", "P Polygon Lasso", "M Magic Wand" });
-				bulletList("General", { "+/- changes brush size, eraser size, wand tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
+				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow", "0 Bezier", "E Eraser", "R Spray", "O Ellipse selection", "L Lasso", "P Polygon Lasso", "M Magic Wand" });
+				bulletList("General", { "+/- changes brush size, eraser size, spray droplet count, wand tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
 				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection", "Edit → Mirror flips all layers (vertical or horizontal in the dialog)", "Edit → Rotate Canvas 90° turns all layers; canvas width and height swap" });
 				bulletList("Selection", { "Drag to create a rectangular selection", "Ellipse selection: drag for an elliptical marquee; hold Shift for a circle", "Lasso: click and drag to outline an area (closed automatically)", "Polygon lasso: click corners, then close via first point, Enter, or right-click", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand, Selection, Ellipse selection, Lasso, or Polygon lasso adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
 				bulletList("Layers", { "Painting and text placement affect only the active layer", "Canvas backdrop defaults to opaque white behind all layers; set alpha to 0 on the backdrop for a fully transparent document", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });

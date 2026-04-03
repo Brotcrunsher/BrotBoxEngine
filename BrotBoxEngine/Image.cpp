@@ -627,6 +627,22 @@ bool bbe::Image::drawBrushStamp(const bbe::Vector2 &pos, const bbe::Colori &colo
 	const int32_t h = getHeight();
 	if (w <= 0 || h <= 0) return false;
 
+	// Radius 0: one pixel (the general loop uses strength = radius - dist, which is 0 at the center).
+	if (brushRadius == 0)
+	{
+		int32_t px = (int32_t)std::floor(pos.x);
+		int32_t py = (int32_t)std::floor(pos.y);
+		if (!toTiledPos(px, py, w, h, tiled)) return false;
+		const bbe::Colori nc = color;
+		const bbe::Colori oc = getPixel((size_t)px, (size_t)py);
+		if (nc.a > oc.a)
+		{
+			setPixel((size_t)px, (size_t)py, nc);
+			return true;
+		}
+		return false;
+	}
+
 	const float effX = antiAlias ? pos.x : std::floor(pos.x) + 0.5f;
 	const float effY = antiAlias ? pos.y : std::floor(pos.y) + 0.5f;
 

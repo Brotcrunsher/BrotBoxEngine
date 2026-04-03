@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <deque>
 #include <filesystem>
+#include <random>
 #include <vector>
 
 #include <string>
@@ -3356,6 +3357,11 @@ void PaintEditor::clampEraserSize()
 	eraserSize = bbe::Math::clamp(eraserSize, 1, 512);
 }
 
+void PaintEditor::clampSprayDensity()
+{
+	sprayDensity = bbe::Math::clamp(sprayDensity, 1, 256);
+}
+
 void PaintEditor::clampShapeStripePeriod()
 {
 	shapeStripePeriodPx = bbe::Math::clamp(shapeStripePeriodPx, 4, 512);
@@ -3958,6 +3964,86 @@ bool PaintEditor::eraseLineOnWorkAreaWithSymmetry(const bbe::Vector2 &pNew, cons
 	{
 		const bbe::Vector2 p = pOld + (pNew - pOld) * ((float)i / (float)steps);
 		changed |= eraseStampAtCanvasWithSymmetry(p);
+	}
+	return changed;
+}
+
+namespace {
+
+thread_local std::mt19937 g_sprayRng{std::random_device{}()};
+
+// Composites one spray speck onto the work-area image (straight alpha). dropletAlpha is a random stain strength in 1..255, scaled by brushColor.a.
+bool sprayBlendDropletOntoWorkArea(bbe::Image &workArea, float xf, float yf, const bbe::Colori &brushColor, bbe::byte dropletAlpha, bool tiled)
+{
+	int32_t px = (int32_t)std::floor(xf);
+	int32_t py = (int32_t)std::floor(yf);
+	const int32_t w = workArea.getWidth();
+	const int32_t h = workArea.getHeight();
+	if (w <= 0 || h <= 0) return false;
+	if (tiled)
+	{
+		px = bbe::Math::mod<int32_t>(px, w);
+		py = bbe::Math::mod<int32_t>(py, h);
+	}
+	else if (px < 0 || py < 0 || px >= w || py >= h) return false;
+
+	const uint32_t ba = (uint32_t)brushColor.a;
+	if (ba == 0) return false;
+	const uint32_t combinedA = (uint32_t(dropletAlpha) * ba + 127u) / 255u;
+	if (combinedA == 0) return false;
+	const bbe::Colori src(
+		brushColor.r,
+		brushColor.g,
+		brushColor.b,
+		(bbe::byte)bbe::Math::min<uint32_t>(combinedA, 255u));
+
+	const bbe::Colori dst = workArea.getPixel((size_t)px, (size_t)py);
+	const bbe::Colori out = dst.blendTo(src, 1.f, bbe::BlendMode::Normal);
+	workArea.setPixel((size_t)px, (size_t)py, out);
+	return true;
+}
+
+} // namespace
+
+bool PaintEditor::sprayBurstAtCanvasWithSymmetry(const bbe::Vector2 &canvasPos, bool leftDown, bool rightDown)
+{
+	const int32_t cw = getCanvasWidth();
+	const int32_t ch = getCanvasHeight();
+	if (cw <= 0 || ch <= 0) return false;
+	const bbe::Colori color = activeDrawColor(leftDown, rightDown);
+	std::uniform_real_distribution<float> angDist(0.f, bbe::Math::TAU);
+	std::uniform_real_distribution<float> radDist(0.f, 1.f);
+	std::uniform_int_distribution<int> dropletAlphaDist(1, 255);
+	const float radius = (float)brushWidth;
+	const int droplets = sprayDensity;
+	bool changed = false;
+	const auto centers = getSymmetryPositions(canvasPos);
+	for (size_t s = 0; s < centers.getLength(); s++)
+	{
+		const bbe::Vector2 &c = centers[s];
+		for (int i = 0; i < droplets; i++)
+		{
+			const float t = radDist(g_sprayRng);
+			const float r = radius > 0.f ? std::sqrt(t) * radius : 0.f;
+			const float ang = angDist(g_sprayRng);
+			const bbe::Vector2 p(c.x + std::cos(ang) * r, c.y + std::sin(ang) * r);
+			const bbe::byte da = (bbe::byte)dropletAlphaDist(g_sprayRng);
+			changed |= sprayBlendDropletOntoWorkArea(workArea, p.x, p.y, color, da, tiled);
+		}
+	}
+	return changed;
+}
+
+bool PaintEditor::sprayLineOnWorkAreaWithSymmetry(const bbe::Vector2 &pNew, const bbe::Vector2 &pOld, bool leftDown, bool rightDown)
+{
+	const float dist = (pNew - pOld).getLength();
+	if (dist < 1e-5f) return false;
+	const int steps = bbe::Math::max(1, (int)std::ceil((double)dist));
+	bool changed = false;
+	for (int i = 1; i <= steps; ++i)
+	{
+		const bbe::Vector2 p = pOld + (pNew - pOld) * ((float)i / (float)steps);
+		changed |= sprayBurstAtCanvasWithSymmetry(p, leftDown, rightDown);
 	}
 	return changed;
 }

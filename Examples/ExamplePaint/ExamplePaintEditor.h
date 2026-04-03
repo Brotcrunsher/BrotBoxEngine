@@ -17,7 +17,6 @@
 // TODO: Color history
 // TODO: It's possible to enter negative numbers for new canvas size. Leads to a crash. Don't allow negative sizes.
 // TODO: Saving an image always returns success, even if the file couldn't be written. Fix that.
-// TODO: Tool spraycan
 struct FontEntry
 {
 	bbe::String displayName;
@@ -90,6 +89,7 @@ struct PaintEditor
 	static constexpr int32_t MODE_POLYGON_LASSO = 12;
 	static constexpr int32_t MODE_ELLIPSE_SELECTION = 13;
 	static constexpr int32_t MODE_ERASER = 14;
+	static constexpr int32_t MODE_SPRAY = 15;
 
 	/// Selection, lasso, polygon lasso, and wand share one marquee; leaving this set of tools applies the selection (see ExamplePaint mode changes).
 	static bool isSelectionLikeTool(int32_t toolMode);
@@ -170,6 +170,11 @@ struct PaintEditor
 	/// Previous canvas mouse position for the current eraser drag (frame-to-frame stroke, not brush spline history).
 	bbe::Vector2 eraserStrokePrevCanvasPos{};
 	bool eraserStrokeHasPrev = false;
+	/// Spray tool: previous canvas position for interpolating bursts while dragging.
+	bbe::Vector2 sprayStrokePrevCanvasPos{};
+	bool sprayStrokeHasPrev = false;
+	/// Droplets placed per burst (per symmetry copy); each frame samples the spray disk this many times.
+	int32_t sprayDensity = 12;
 	/// Last in-frame segment actually rasterized (for UI preview); same endpoints as eraseLineOnWorkAreaWithSymmetry(pNew, pOld).
 	bool eraserPreviewSegmentActive = false;
 	bbe::Vector2 eraserPreviewSegmentPNew{};
@@ -615,6 +620,7 @@ struct PaintEditor
 
 	void clampBrushWidth();
 	void clampEraserSize();
+	void clampSprayDensity();
 	void clampShapeStripePeriod();
 
 	void clampTextFontSize();
@@ -713,6 +719,11 @@ struct PaintEditor
 	bool eraseStampAtCanvasWithSymmetry(const bbe::Vector2 &canvasPos);
 	/// Lerps from pOld to pNew (ceil distance steps); each sample uses getEraserPixelRect like the stamp tool.
 	bool eraseLineOnWorkAreaWithSymmetry(const bbe::Vector2 &pNew, const bbe::Vector2 &pOld);
+
+	/// Random droplets in a disk of radius \c brushWidth (same as brush stamp) at each symmetry copy of \c canvasPos.
+	bool sprayBurstAtCanvasWithSymmetry(const bbe::Vector2 &canvasPos, bool leftDown, bool rightDown);
+	/// Like eraseLineOnWorkAreaWithSymmetry: one burst per interpolated step along the segment.
+	bool sprayLineOnWorkAreaWithSymmetry(const bbe::Vector2 &pNew, const bbe::Vector2 &pOld, bool leftDown, bool rightDown);
 
 	void touchLineSymmetry(const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, const bbe::Colori &color, int32_t width, bool rectShape = false);
 
