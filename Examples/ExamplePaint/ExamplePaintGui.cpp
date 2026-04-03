@@ -1187,6 +1187,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		bool openNewCanvas = false;
 		bool openChangeCanvasSize = false;
 		bool openMirrorImage = false;
+		bool openRotateCanvas = false;
 		if (ImGui::BeginMainMenuBar())
 		{
 			if (ImGui::BeginMenu("Menu"))
@@ -1227,6 +1228,10 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				if (ImGui::MenuItem("Mirror..."))
 				{
 					openMirrorImage = true;
+				}
+				if (ImGui::MenuItem("Rotate Canvas 90°..."))
+				{
+					openRotateCanvas = true;
 				}
 				ImGui::EndMenu();
 			}
@@ -1279,6 +1284,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		{
 			ImGui::OpenPopup("Mirror image");
 			openMirrorImage = false;
+		}
+		if (openRotateCanvas)
+		{
+			ImGui::OpenPopup("Rotate canvas");
+			openRotateCanvas = false;
 		}
 		if (ImGui::BeginPopupModal("Save Document", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
@@ -1361,6 +1371,29 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			ImGui::EndPopup();
 		}
 
+		ImVec2 rotateCenter = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(rotateCenter, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+		if (ImGui::BeginPopupModal("Rotate canvas", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::TextUnformatted("Rotate the entire document (all layers). Width and height are swapped.");
+			ImGui::Spacing();
+			ImGui::BeginDisabled(editor.getCanvasWidth() <= 0 || editor.getCanvasHeight() <= 0);
+			if (ImGui::Button("90° clockwise", ImVec2(200, 0)))
+			{
+				editor.rotateAllLayers90Clockwise();
+				ImGui::CloseCurrentPopup();
+			}
+			if (ImGui::Button("90° counter-clockwise", ImVec2(200, 0)))
+			{
+				editor.rotateAllLayers90CounterClockwise();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndDisabled();
+			ImGui::Spacing();
+			if (ImGui::Button("Cancel", ImVec2(200, 0))) ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+		}
+
 		if (editor.showHelpWindow)
 		{
 			if (ImGui::Begin("ExamplePaint Help", &editor.showHelpWindow))
@@ -1372,7 +1405,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				};
 				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow", "0 Bezier", "E Eraser", "O Ellipse selection", "L Lasso", "P Polygon Lasso", "M Magic Wand" });
 				bulletList("General", { "+/- changes brush size, eraser size, wand tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
-				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection", "Edit → Mirror flips all layers (vertical or horizontal in the dialog)" });
+				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection", "Edit → Mirror flips all layers (vertical or horizontal in the dialog)", "Edit → Rotate Canvas 90° turns all layers; canvas width and height swap" });
 				bulletList("Selection", { "Drag to create a rectangular selection", "Ellipse selection: drag for an elliptical marquee; hold Shift for a circle", "Lasso: click and drag to outline an area (closed automatically)", "Polygon lasso: click corners, then close via first point, Enter, or right-click", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand, Selection, Ellipse selection, Lasso, or Polygon lasso adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
 				bulletList("Layers", { "Painting and text placement affect only the active layer", "Canvas backdrop defaults to opaque white behind all layers; set alpha to 0 on the backdrop for a fully transparent document", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });
 			}

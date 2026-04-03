@@ -23,6 +23,20 @@ void mirrorAllLayersEach(PaintEditor &ed, void (bbe::Image::*mirror)())
 	ed.submitCanvas();
 }
 
+void rotateAllLayers90(PaintEditor &ed, bool clockwise)
+{
+	if (ed.getCanvasWidth() <= 0 || ed.getCanvasHeight() <= 0) return;
+	ed.prepareForLayerTargetChange();
+	for (size_t i = 0; i < ed.canvas.get().layers.getLength(); i++)
+	{
+		bbe::Image &img = ed.canvas.get().layers[i].image;
+		img = clockwise ? img.rotated90Clockwise() : img.rotated90CounterClockwise();
+		ed.prepareLayer(ed.canvas.get().layers[i]);
+	}
+	ed.clearWorkArea();
+	ed.submitCanvas();
+}
+
 bool selectionMaskMatchesRect(const bbe::Image &mask, const bbe::Rectanglei &rect)
 {
 	return rect.width > 0 && rect.height > 0 && mask.getWidth() == (size_t)rect.width && mask.getHeight() == (size_t)rect.height;
@@ -1300,6 +1314,16 @@ void PaintEditor::mirrorAllLayersHorizontally()
 void PaintEditor::mirrorAllLayersVertically()
 {
 	mirrorAllLayersEach(*this, &bbe::Image::mirrorVertically);
+}
+
+void PaintEditor::rotateAllLayers90Clockwise()
+{
+	rotateAllLayers90(*this, true);
+}
+
+void PaintEditor::rotateAllLayers90CounterClockwise()
+{
+	rotateAllLayers90(*this, false);
 }
 
 void PaintEditor::importFileAsLayers(const bbe::List<bbe::String> &paths)

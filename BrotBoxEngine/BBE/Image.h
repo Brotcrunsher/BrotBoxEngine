@@ -226,6 +226,10 @@ namespace bbe
 		void mirrorHorizontally();
 		void mirrorVertically();
 
+		// Exact 90° rotations (CPU). Dimensions become height×width; y-down, x-right screen space.
+		[[nodiscard]] Image rotated90Clockwise() const;
+		[[nodiscard]] Image rotated90CounterClockwise() const;
+
 		static bool supportsClipboardImages();
 		static bool isImageInClipbaord();
 		static bbe::Image getClipboardImage();

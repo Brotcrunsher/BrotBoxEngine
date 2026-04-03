@@ -1379,6 +1379,54 @@ void bbe::Image::mirrorHorizontally()
 	m_prendererData = nullptr;
 }
 
+bbe::Image bbe::Image::rotated90Clockwise() const
+{
+	if (!isLoadedCpu())
+	{
+		bbe::Crash(bbe::Error::NotInitialized);
+	}
+	if (m_format != bbe::ImageFormat::R8G8B8A8)
+	{
+		bbe::Crash(bbe::Error::FormatNotSupported);
+	}
+	const int32_t w = m_width;
+	const int32_t h = m_height;
+	if (w <= 0 || h <= 0) return {};
+	bbe::Image result(h, w, bbe::Color(0.f, 0.f, 0.f, 0.f));
+	for (int32_t y = 0; y < h; y++)
+	{
+		for (int32_t x = 0; x < w; x++)
+		{
+			result.setPixel((size_t)(h - 1 - y), (size_t)x, getPixel((size_t)x, (size_t)y));
+		}
+	}
+	return result;
+}
+
+bbe::Image bbe::Image::rotated90CounterClockwise() const
+{
+	if (!isLoadedCpu())
+	{
+		bbe::Crash(bbe::Error::NotInitialized);
+	}
+	if (m_format != bbe::ImageFormat::R8G8B8A8)
+	{
+		bbe::Crash(bbe::Error::FormatNotSupported);
+	}
+	const int32_t w = m_width;
+	const int32_t h = m_height;
+	if (w <= 0 || h <= 0) return {};
+	bbe::Image result(h, w, bbe::Color(0.f, 0.f, 0.f, 0.f));
+	for (int32_t y = 0; y < h; y++)
+	{
+		for (int32_t x = 0; x < w; x++)
+		{
+			result.setPixel((size_t)y, (size_t)(w - 1 - x), getPixel((size_t)x, (size_t)y));
+		}
+	}
+	return result;
+}
+
 bool bbe::Image::supportsClipboardImages()
 {
 #ifdef _WIN32
