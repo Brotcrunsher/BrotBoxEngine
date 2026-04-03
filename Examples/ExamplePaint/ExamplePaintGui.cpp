@@ -276,7 +276,8 @@ void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, co
 	}
 }
 
-static void drawPaintToolOptionsPanel(PaintEditor &editor, float toolbarWidth)
+/// \p defaultLeft is the initial X offset from the left (matches default Tools + Layers widths on first run).
+static void drawPaintToolOptionsPanel(PaintEditor &editor, float defaultLeft)
 {
 	if (!editor.showToolOptionsPanel) return;
 
@@ -285,7 +286,7 @@ static void drawPaintToolOptionsPanel(PaintEditor &editor, float toolbarWidth)
 	const float menuH = ImGui::GetFrameHeight();
 	const float vh = (float)editor.viewport.height - menuH;
 
-	ImGui::SetNextWindowPos(ImVec2(toolbarWidth, menuH), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(defaultLeft, menuH), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(optW, vh), ImGuiCond_FirstUseEver);
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.14f, 0.14f, 0.15f, 1.f));
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.11f, 0.11f, 0.12f, 1.f));
@@ -574,22 +575,15 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		s_toolIcons.refresh();
 #endif
 		const float PANEL_WIDTH = 236.f * editor.viewport.scale;
-		ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetFrameHeight()), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(PANEL_WIDTH, (float)editor.viewport.height - ImGui::GetFrameHeight()), ImGuiCond_Always);
+		const float menuBarH = ImGui::GetFrameHeight();
+		const float workH = (float)editor.viewport.height - menuBarH;
+		const ImVec2 sidePanelSize(PANEL_WIDTH, std::max(200.f, workH));
+
+		ImGui::SetNextWindowPos(ImVec2(0, menuBarH), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(sidePanelSize, ImGuiCond_FirstUseEver);
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.14f, 0.14f, 0.15f, 1.f));
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.11f, 0.11f, 0.12f, 1.f));
-		ImGui::Begin("##panel", nullptr,
-			ImGuiWindowFlags_NoTitleBar |
-			ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoMove);
-
-		const float availY = ImGui::GetContentRegionAvail().y;
-		const float layerDockMin = 200.f * editor.viewport.scale;
-		const float layerDockMax = 340.f * editor.viewport.scale;
-		const float layerDockH = std::clamp(availY * 0.42f, layerDockMin, layerDockMax);
-		const float toolScrollH = std::max(80.f, availY - layerDockH - ImGui::GetStyle().ItemSpacing.y);
-
-		ImGui::BeginChild("##toolScroll", ImVec2(-1, toolScrollH), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+		ImGui::Begin("Tools", nullptr, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
 		auto doUndo = [&]() { editor.undo(); };
 		auto doRedo = [&]() { editor.redo(); };
@@ -888,13 +882,15 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		if (!supportsClipboardImages)
 			ImGui::TextDisabled("Not supported on this platform");
 
-		ImGui::EndChild();
+		ImGui::End();
+		ImGui::PopStyleColor(2);
 
-		ImGui::Separator();
-		ImGui::BeginChild("##layerDock", ImVec2(-1, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+		ImGui::SetNextWindowPos(ImVec2(PANEL_WIDTH, menuBarH), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(sidePanelSize, ImGuiCond_FirstUseEver);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.14f, 0.14f, 0.15f, 1.f));
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.11f, 0.11f, 0.12f, 1.f));
+		ImGui::Begin("Layers", nullptr, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
-		// --- Layers ---
-		ImGui::SeparatorText("Layers");
 		static float s_canvasBackdropAlphaBackup = 1.f;
 		bool canvasBackdropOn = editor.canvas.get().canvasFallbackRgba[3] > 0.001f;
 		if (ImGui::Checkbox("Canvas backdrop", &canvasBackdropOn))
@@ -1053,12 +1049,10 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 		ImGui::EndChild();
 
-		ImGui::EndChild();
-
 		ImGui::End();
 		ImGui::PopStyleColor(2);
 
-		drawPaintToolOptionsPanel(editor, PANEL_WIDTH);
+		drawPaintToolOptionsPanel(editor, PANEL_WIDTH * 2.f);
 
 		bool anyNonNormalBlendMode = false;
 		for (size_t layerIndex = 0; layerIndex < editor.canvas.get().layers.getLength(); layerIndex++)
@@ -1800,7 +1794,10 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 
 		if (editor.showHelpWindow)
 		{
-			if (ImGui::Begin("ExamplePaint Help", &editor.showHelpWindow))
+			const ImVec2 helpSize(520.f * (editor.viewport.scale > 0.f ? editor.viewport.scale : 1.f), 480.f * (editor.viewport.scale > 0.f ? editor.viewport.scale : 1.f));
+			ImGui::SetNextWindowSize(helpSize, ImGuiCond_FirstUseEver);
+			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
+			if (ImGui::Begin("ExamplePaint Help", &editor.showHelpWindow, ImGuiWindowFlags_AlwaysVerticalScrollbar))
 			{
 				auto bulletList = [&](const char *title, std::initializer_list<const char *> items)
 				{
@@ -1808,7 +1805,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					for (const char *item : items) ImGui::BulletText("%s", item);
 				};
 				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow", "0 Bezier", "E Eraser", "R Spray", "O Ellipse selection", "L Lasso", "P Polygon Lasso", "M Magic Wand" });
-				bulletList("General", { "+/- changes brush width, eraser size, spray width (spray tool), wand or flood-fill tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms" });
+				bulletList("General", { "+/- changes brush width, eraser size, spray width (spray tool), wand or flood-fill tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms", "Tools, Layers, and Tool options are separate floating windows: drag title bars to move; resize freely; layout is remembered (imgui.ini)" });
 				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection", "Edit → Mirror flips all layers (vertical or horizontal in the dialog)", "Edit → Rotate Canvas 90° turns all layers; canvas width and height swap" });
 				bulletList("Selection", { "Drag to create a rectangular selection", "Ellipse selection: drag for an elliptical marquee; hold Shift for a circle", "Lasso: click and drag to outline an area (closed automatically)", "Polygon lasso: click corners, then close via first point, Enter, or right-click", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand, Selection, Ellipse selection, Lasso, or Polygon lasso adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
 				bulletList("Layers", { "Painting and text placement affect only the active layer", "Canvas backdrop defaults to opaque white behind all layers; set alpha to 0 on the backdrop for a fully transparent document", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });
