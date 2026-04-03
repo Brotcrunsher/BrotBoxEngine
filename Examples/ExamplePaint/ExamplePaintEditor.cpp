@@ -2915,53 +2915,40 @@ void PaintEditor::confirmPolygonLassoIfReady()
 	}
 }
 
+void PaintEditor::liftSelectionToFloatingIfNeeded()
+{
+	if (selection.floating || !selection.hasSelection) return;
+	if (selection.rect.width <= 0 || selection.rect.height <= 0) return;
+
+	bbe::Image lifted = hasSelectionPixelMask() ? copyLayerRectWithMask(*this, selection.rect, selection.mask) : copyCanvasRect(selection.rect);
+	prepareImageForCanvas(lifted);
+	if (hasSelectionPixelMask())
+		clearLayerRectWithMask(*this, selection.rect, selection.mask);
+	else
+		clearCanvasRect(selection.rect);
+	selection.floating = true;
+	selection.floatingImage = std::move(lifted);
+	prepareImageForCanvas(selection.floatingImage);
+	selection.mask = {};
+	submitCanvas();
+}
+
 void PaintEditor::beginSelectionMove(const bbe::Vector2i &mousePixel)
 {
+	liftSelectionToFloatingIfNeeded();
+
 	selection.moveActive = true;
 	selection.moveOffset = mousePixel - selection.rect.getPos();
 	selection.interactionStartRect = selection.rect;
 	selection.previewRect = selection.rect;
-	selection.previewImage = selection.floating ? selection.floatingImage
-												: (hasSelectionPixelMask() ? copyLayerRectWithMask(*this, selection.rect, selection.mask) : copyCanvasRect(selection.rect));
+	selection.previewImage = selection.floatingImage;
 	// Must retain CPU pixels after GPU draw (see OpenGLImage ctor); blendOver needs isLoadedCpu().
 	prepareImageForCanvas(selection.previewImage);
-
-	if (!selection.floating && selection.hasSelection)
-	{
-		if (hasSelectionPixelMask())
-		{
-			clearLayerRectWithMask(*this, selection.rect, selection.mask);
-		}
-		else
-		{
-			clearCanvasRect(selection.rect);
-		}
-		selection.floating = true;
-		selection.floatingImage = selection.previewImage;
-		prepareImageForCanvas(selection.floatingImage);
-		selection.mask = {};
-		submitCanvas();
-	}
 }
 
 void PaintEditor::beginRotationDrag(const bbe::Vector2i &mousePixel)
 {
-	if (!selection.floating && selection.hasSelection)
-	{
-		selection.floatingImage = hasSelectionPixelMask() ? copyLayerRectWithMask(*this, selection.rect, selection.mask) : copyCanvasRect(selection.rect);
-		prepareImageForCanvas(selection.floatingImage);
-		if (hasSelectionPixelMask())
-		{
-			clearLayerRectWithMask(*this, selection.rect, selection.mask);
-		}
-		else
-		{
-			clearCanvasRect(selection.rect);
-		}
-		selection.floating = true;
-		selection.mask = {};
-		submitCanvas();
-	}
+	liftSelectionToFloatingIfNeeded();
 
 	selection.rotationHandleActive = true;
 	selection.rotationDragPivot = {
@@ -2993,30 +2980,14 @@ void PaintEditor::updateSelectionMovePreview(const bbe::Vector2i &mousePixel)
 
 void PaintEditor::beginSelectionResize(const SelectionHitZone hitZone)
 {
+	liftSelectionToFloatingIfNeeded();
+
 	selection.resizeActive = true;
 	selection.resizeZone = hitZone;
 	selection.interactionStartRect = selection.rect;
 	selection.previewRect = selection.rect;
-	selection.previewImage = selection.floating ? selection.floatingImage
-												: (hasSelectionPixelMask() ? copyLayerRectWithMask(*this, selection.rect, selection.mask) : copyCanvasRect(selection.rect));
+	selection.previewImage = selection.floatingImage;
 	prepareImageForCanvas(selection.previewImage);
-
-	if (!selection.floating && selection.hasSelection)
-	{
-		if (hasSelectionPixelMask())
-		{
-			clearLayerRectWithMask(*this, selection.rect, selection.mask);
-		}
-		else
-		{
-			clearCanvasRect(selection.rect);
-		}
-		selection.floating = true;
-		selection.floatingImage = selection.previewImage;
-		prepareImageForCanvas(selection.floatingImage);
-		selection.mask = {};
-		submitCanvas();
-	}
 }
 
 void PaintEditor::updateSelectionResizePreview(const bbe::Vector2i &mousePixel)
@@ -3152,6 +3123,38 @@ void PaintEditor::applySelectionTransform()
 	}
 
 	clearSelectionInteractionState();
+}
+
+void PaintEditor::nudgeSelectionByPixels(int32_t dx, int32_t dy)
+{
+	if ((dx | dy) == 0) return;
+	if (!selection.hasSelection) return;
+	if (selection.dragActive || selection.lassoDragActive) return;
+	if (selection.moveActive || selection.resizeActive || selection.rotationHandleActive) return;
+	if (!selection.polygonLassoVertices.empty()) return;
+
+	liftSelectionToFloatingIfNeeded();
+
+	const int32_t w = selection.rect.width;
+	const int32_t h = selection.rect.height;
+	const int32_t W = getCanvasWidth();
+	const int32_t H = getCanvasHeight();
+	if (w <= 0 || h <= 0 || W <= 0 || H <= 0) return;
+
+	int32_t nx = selection.rect.x + dx;
+	int32_t ny = selection.rect.y + dy;
+
+	const int32_t minX = bbe::Math::min<int32_t>(0, W - w);
+	const int32_t maxX = bbe::Math::max<int32_t>(0, W - w);
+	const int32_t minY = bbe::Math::min<int32_t>(0, H - h);
+	const int32_t maxY = bbe::Math::max<int32_t>(0, H - h);
+	nx = bbe::Math::clamp<int32_t>(nx, minX, maxX);
+	ny = bbe::Math::clamp<int32_t>(ny, minY, maxY);
+
+	if (nx == selection.rect.x && ny == selection.rect.y) return;
+
+	selection.rect.x = nx;
+	selection.rect.y = ny;
 }
 
 

@@ -14,7 +14,6 @@
 // TODO: Flood fill with edges of brush tool kinda bad.
 // TODO: Bug: right click has weird behaviour with shadow
 
-// TODO: Pixel perfect manipulation with arrow keys
 // TODO: Color history
 // TODO: It's possible to enter negative numbers for new canvas size. Leads to a crash. Don't allow negative sizes.
 // TODO: Saving an image always returns success, even if the file couldn't be written. Fix that.
@@ -550,6 +549,9 @@ struct PaintEditor
 	void updateCircleDragPreview(const bbe::Vector2i &mousePixel, bool shiftDown);
 
 
+	/// Cut selected pixels to a floating layer if not already floating (same as starting a move/resize/rotate drag).
+	void liftSelectionToFloatingIfNeeded();
+
 	void beginSelectionMove(const bbe::Vector2i &mousePixel);
 
 	/// Outside click, Ctrl+inside, or Ctrl on resize handles: clear / merge / start rect drag.
@@ -583,6 +585,8 @@ struct PaintEditor
 
 	void applySelectionTransform();
 
+	/// Move the selection like a one-pixel drag: lifts to floating if needed, then offsets the rect (clamped to the canvas).
+	void nudgeSelectionByPixels(int32_t dx, int32_t dy);
 
 	void finalizeRectangleDrag(const bbe::Vector2i &mousePixel, bool shiftDown);
 
