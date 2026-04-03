@@ -428,6 +428,9 @@ struct PaintEditor
 
 	void addLayer();
 
+	void mirrorAllLayersHorizontally();
+	void mirrorAllLayersVertically();
+
 	void importFileAsLayers(const bbe::List<bbe::String> &paths);
 
 	void deleteActiveLayer();

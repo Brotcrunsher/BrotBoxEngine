@@ -223,7 +223,8 @@ namespace bbe
 		void writeToFile(const bbe::String &path) const;
 		void writeToFile(const char *path) const;
 
-		void flipHorizontally();
+		void mirrorHorizontally();
+		void mirrorVertically();
 
 		static bool supportsClipboardImages();
 		static bool isImageInClipbaord();

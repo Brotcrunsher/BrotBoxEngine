@@ -10,6 +10,19 @@
 
 namespace {
 
+void mirrorAllLayersEach(PaintEditor &ed, void (bbe::Image::*mirror)())
+{
+	if (ed.getCanvasWidth() <= 0 || ed.getCanvasHeight() <= 0) return;
+	ed.prepareForLayerTargetChange();
+	for (size_t i = 0; i < ed.canvas.get().layers.getLength(); i++)
+	{
+		(ed.canvas.get().layers[i].image.*mirror)();
+		ed.prepareLayer(ed.canvas.get().layers[i]);
+	}
+	ed.clearWorkArea();
+	ed.submitCanvas();
+}
+
 bool selectionMaskMatchesRect(const bbe::Image &mask, const bbe::Rectanglei &rect)
 {
 	return rect.width > 0 && rect.height > 0 && mask.getWidth() == (size_t)rect.width && mask.getHeight() == (size_t)rect.height;
@@ -1277,6 +1290,16 @@ void PaintEditor::addLayer()
 	canvas.get().layers.add(makeLayer(makeLayerName(), getCanvasWidth(), getCanvasHeight()));
 	activeLayerIndex = (int32_t)canvas.get().layers.getLength() - 1;
 	submitCanvas();
+}
+
+void PaintEditor::mirrorAllLayersHorizontally()
+{
+	mirrorAllLayersEach(*this, &bbe::Image::mirrorHorizontally);
+}
+
+void PaintEditor::mirrorAllLayersVertically()
+{
+	mirrorAllLayersEach(*this, &bbe::Image::mirrorVertically);
 }
 
 void PaintEditor::importFileAsLayers(const bbe::List<bbe::String> &paths)

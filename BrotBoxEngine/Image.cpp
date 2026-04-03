@@ -1337,20 +1337,46 @@ size_t bbe::Image::getBytesPerPixel() const
 	return getBytesPerChannel() * getAmountOfChannels();
 }
 
-void bbe::Image::flipHorizontally()
+void bbe::Image::mirrorVertically()
 {
-	bbe::List<byte> rowBuffer;
-	const size_t bytesPerRow = getWidth() * getBytesPerPixel();
-	rowBuffer.resizeCapacity(bytesPerRow);
-	for (size_t row = 0; row < getHeight() / 2; row++)
+	if (!isLoadedCpu() || m_width <= 1) return;
+	const size_t w = (size_t)m_width;
+	const size_t h = (size_t)m_height;
+	const size_t bpp = getBytesPerPixel();
+	bbe::List<byte> pixBuf;
+	pixBuf.resizeCapacity(bpp);
+	for (size_t y = 0; y < h; y++)
 	{
-		const size_t lowerRow = getHeight() - 1 - row;
+		byte *row = m_pdata.getRaw() + y * w * bpp;
+		for (size_t x = 0; x < w / 2; x++)
+		{
+			byte *left = row + x * bpp;
+			byte *right = row + (w - 1 - x) * bpp;
+			memcpy(pixBuf.getRaw(), left, bpp);
+			memcpy(left, right, bpp);
+			memcpy(right, pixBuf.getRaw(), bpp);
+		}
+	}
+	m_prendererData = nullptr;
+}
+
+void bbe::Image::mirrorHorizontally()
+{
+	if (!isLoadedCpu() || m_height <= 1) return;
+	bbe::List<byte> rowBuffer;
+	const size_t bytesPerRow = (size_t)m_width * getBytesPerPixel();
+	rowBuffer.resizeCapacity(bytesPerRow);
+	const size_t h = (size_t)m_height;
+	for (size_t row = 0; row < h / 2; row++)
+	{
+		const size_t lowerRow = h - 1 - row;
 		void *rowPtr = m_pdata.getRaw() + row * bytesPerRow;
 		void *rowLowerPtr = m_pdata.getRaw() + lowerRow * bytesPerRow;
 		memcpy(rowBuffer.getRaw(), rowPtr, bytesPerRow);
 		memcpy(rowPtr, rowLowerPtr, bytesPerRow);
 		memcpy(rowLowerPtr, rowBuffer.getRaw(), bytesPerRow);
 	}
+	m_prendererData = nullptr;
 }
 
 bool bbe::Image::supportsClipboardImages()
@@ -1463,7 +1489,7 @@ bbe::Image bbe::Image::getClipboardImage()
 				bytes[i + 2] = temp;
 			}
 
-			retVal.flipHorizontally();
+			retVal.mirrorHorizontally();
 
 			SelectObject(dc, oldBitmap);
 
