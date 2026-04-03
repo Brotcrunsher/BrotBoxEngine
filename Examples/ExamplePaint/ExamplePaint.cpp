@@ -472,8 +472,8 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 
 			for (size_t i = 0; i < symPositions.getLength(); i++)
 			{
-				bbe::Vector2 symPos = symPositions[i];
-				if (!editor.toTiledPos(symPos)) continue;
+				// Do not skip when symPos is outside the canvas: radial/mirror copies are centered on
+				// imgCenterSymPositions[i] and may still overlap the layer; blendOverRotated / blendOver clip per pixel.
 
 				if (std::abs(symAngles[i]) > 0.0001f)
 				{
@@ -496,7 +496,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 					textSymmetryMirrorFlags(editor.symmetryMode, i, flipH, flipV);
 					if (!flipH && !flipV)
 					{
-						const bbe::Vector2i symTopLeft = editor.toCanvasPixel(symPos);
+						const bbe::Vector2i symTopLeft = editor.toCanvasPixel(symPositions[i]);
 						textChanged |= editor.drawTextAt(symTopLeft, textColor);
 					}
 					else if (textImg.getWidth() > 0 && textImg.getHeight() > 0)
