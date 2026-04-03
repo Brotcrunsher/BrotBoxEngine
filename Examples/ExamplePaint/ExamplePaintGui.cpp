@@ -276,6 +276,49 @@ void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, co
 	}
 }
 
+static void paintEditorFormatDigitHotkeys(const PaintEditor &editor, const PaintEditor::DigitHotkey &target, char *out, size_t outN)
+{
+	if (outN == 0) return;
+	out[0] = '\0';
+	size_t n = 0;
+	for (int i = 0; i < 10; i++)
+	{
+		if (!(editor.digitHotkeys[i] == target)) continue;
+		if (n > 0 && n + 2 < outN) out[n++] = ',';
+		const char d = (i < 9) ? char('1' + i) : '0';
+		if (n + 1 < outN) out[n++] = d;
+	}
+	if (n < outN) out[n] = '\0';
+}
+
+static void paintEditorTryBindDigitHotkeyOnHover(PaintEditor &editor, const PaintEditor::DigitHotkey &binding)
+{
+	if (!ImGui::IsItemHovered()) return;
+	if (!ImGui::GetIO().KeyCtrl) return;
+	static const ImGuiKey digitKeys[10] = {
+		ImGuiKey_1, ImGuiKey_2, ImGuiKey_3, ImGuiKey_4, ImGuiKey_5,
+		ImGuiKey_6, ImGuiKey_7, ImGuiKey_8, ImGuiKey_9, ImGuiKey_0,
+	};
+	for (int i = 0; i < 10; i++)
+	{
+		if (ImGui::IsKeyPressed(digitKeys[i], false))
+		{
+			editor.digitHotkeys[i] = binding;
+			break;
+		}
+	}
+}
+
+static void paintEditorDigitHotkeyTooltip(const PaintEditor &editor, const PaintEditor::DigitHotkey &target, const char *title)
+{
+	char keys[24];
+	paintEditorFormatDigitHotkeys(editor, target, keys, sizeof keys);
+	if (keys[0] != '\0')
+		ImGui::SetTooltip("%s\nNumber keys: %s\n(Ctrl+digit while hovered assigns)", title, keys);
+	else
+		ImGui::SetTooltip("%s\n(No number keys; Ctrl+digit while hovered assigns)", title);
+}
+
 /// \p defaultLeft is the initial X offset from the left (matches default Tools + Layers widths on first run).
 static void drawPaintToolOptionsPanel(PaintEditor &editor, float defaultLeft)
 {
@@ -602,7 +645,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		{
 			if (ImGui::Button("Undo", ImVec2(halfW, 0))) doUndo();
 		}
-		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Undo");
+		{
+			const PaintEditor::DigitHotkey bind{ PaintEditor::DigitHotkeyKind::Undo, 0, bbe::SymmetryMode::None };
+			paintEditorTryBindDigitHotkeyOnHover(editor, bind);
+			if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, bind, "Undo");
+		}
 		ImGui::EndDisabled();
 		ImGui::SameLine();
 		ImGui::BeginDisabled(!editor.canvas.isRedoable());
@@ -616,7 +663,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		{
 			if (ImGui::Button("Redo", ImVec2(halfW, 0))) doRedo();
 		}
-		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Redo");
+		{
+			const PaintEditor::DigitHotkey bind{ PaintEditor::DigitHotkeyKind::Redo, 0, bbe::SymmetryMode::None };
+			paintEditorTryBindDigitHotkeyOnHover(editor, bind);
+			if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, bind, "Redo");
+		}
 		ImGui::EndDisabled();
 
 		// --- Colors (swatches + pipette on one row) ---
@@ -642,20 +693,22 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		{
 			const bool pipActive = editor.mode == PaintEditor::MODE_PIPETTE;
 			if (pipActive) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+			bool pipClicked = false;
 #ifdef BBE_RENDERER_OPENGL
 			if (s_toolIcons.pipette.texId)
 			{
-				if (ImGui::ImageButton("Pipette##colorsPipette", s_toolIcons.pipette.texId, ImVec2(pipetteBtn, pipetteBtn)))
-					editor.mode = PaintEditor::MODE_PIPETTE;
+				pipClicked = ImGui::ImageButton("Pipette##colorsPipette", s_toolIcons.pipette.texId, ImVec2(pipetteBtn, pipetteBtn));
 			}
 			else
 #endif
 			{
-				if (ImGui::Button("Pick##colorsPipette", ImVec2(pipetteBtn, pipetteBtn)))
-					editor.mode = PaintEditor::MODE_PIPETTE;
+				pipClicked = ImGui::Button("Pick##colorsPipette", ImVec2(pipetteBtn, pipetteBtn));
 			}
 			if (pipActive) ImGui::PopStyleColor();
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pipette — click canvas to sample a color");
+			const PaintEditor::DigitHotkey pipBind{ PaintEditor::DigitHotkeyKind::Tool, PaintEditor::MODE_PIPETTE, bbe::SymmetryMode::None };
+			paintEditorTryBindDigitHotkeyOnHover(editor, pipBind);
+			if (pipClicked) editor.mode = PaintEditor::MODE_PIPETTE;
+			if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, pipBind, "Pipette — click canvas to sample a color");
 		}
 		ImGui::EndGroup();
 		if (editor.rectangle.draftActive && (editor.shapeFillMode != PaintEditor::ShapeFillMode::None || editor.shapeStripedStroke
@@ -741,8 +794,10 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 						clicked = ImGui::ImageButton(tb.label, tb.icon, ImVec2(iconSize, iconSize));
 					else
 						clicked = ImGui::Button(tb.label, ImVec2(w, 0));
+					const PaintEditor::DigitHotkey toolBind{ PaintEditor::DigitHotkeyKind::Tool, tb.toolMode, bbe::SymmetryMode::None };
+					paintEditorTryBindDigitHotkeyOnHover(editor, toolBind);
 					if (clicked) editor.mode = tb.toolMode;
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tb.label);
+					if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, toolBind, tb.label);
 					if (active) ImGui::PopStyleColor();
 					if (i % kToolCols != (size_t)kToolCols - 1 && i + 1 < count) ImGui::SameLine();
 				}
@@ -797,7 +852,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					clicked = ImGui::Button(symModes[i].fallback, ImVec2(symBtnW, 0));
 				}
 				if (clicked) editor.symmetryMode = symModes[i].mode;
-				if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", symModes[i].tip);
+				{
+					const PaintEditor::DigitHotkey symBind{ PaintEditor::DigitHotkeyKind::Symmetry, 0, symModes[i].mode };
+					paintEditorTryBindDigitHotkeyOnHover(editor, symBind);
+					if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, symBind, symModes[i].tip);
+				}
 				if (active) ImGui::PopStyleColor();
 				if (i + 1 < sizeof(symModes) / sizeof(*symModes)) ImGui::SameLine();
 			}
@@ -813,8 +872,23 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			ImGui::SeparatorText("Selection");
 			ImGui::BeginDisabled(!editor.selection.hasSelection);
 			if (ImGui::Button("Copy",   ImVec2(-1, 0))) editor.storeSelectionInClipboard();
+			{
+				const PaintEditor::DigitHotkey bind{ PaintEditor::DigitHotkeyKind::SelectionCopy, 0, bbe::SymmetryMode::None };
+				paintEditorTryBindDigitHotkeyOnHover(editor, bind);
+				if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, bind, "Copy selection to internal clipboard");
+			}
 			if (ImGui::Button("Cut",    ImVec2(-1, 0))) editor.cutSelection();
+			{
+				const PaintEditor::DigitHotkey bind{ PaintEditor::DigitHotkeyKind::SelectionCut, 0, bbe::SymmetryMode::None };
+				paintEditorTryBindDigitHotkeyOnHover(editor, bind);
+				if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, bind, "Cut selection");
+			}
 			if (ImGui::Button("Delete", ImVec2(-1, 0))) editor.deleteSelection();
+			{
+				const PaintEditor::DigitHotkey bind{ PaintEditor::DigitHotkeyKind::SelectionDelete, 0, bbe::SymmetryMode::None };
+				paintEditorTryBindDigitHotkeyOnHover(editor, bind);
+				if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, bind, "Delete selection contents");
+			}
 			ImGui::EndDisabled();
 			if (editor.selection.hasSelection)
 				ImGui::Text("%d x %d px", editor.selection.rect.width, editor.selection.rect.height);
@@ -837,15 +911,19 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		if (clipboardUseIconRow)
 		{
 			if (ImGui::ImageButton("##clipCopyCanvas", s_toolIcons.clipboardCopyCanvas.texId, ImVec2(clipIconSize, clipIconSize)))
-				editor.platform.setClipboardImage(editor.flattenVisibleLayers());
+				editor.copyFlattenedCanvasToClipboard();
 		}
 		else
 #endif
 		{
 			if (ImGui::Button("Copy Canvas to Clipboard", ImVec2(-1, 0)))
-				editor.platform.setClipboardImage(editor.flattenVisibleLayers());
+				editor.copyFlattenedCanvasToClipboard();
 		}
-		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Copy flattened visible canvas to the system clipboard as an image");
+		{
+			const PaintEditor::DigitHotkey bind{ PaintEditor::DigitHotkeyKind::ClipboardCopyCanvas, 0, bbe::SymmetryMode::None };
+			paintEditorTryBindDigitHotkeyOnHover(editor, bind);
+			if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, bind, "Copy flattened visible canvas to the system clipboard as an image");
+		}
 		ImGui::EndDisabled();
 		ImGui::BeginDisabled(!supportsClipboardImages || !clipboardHasImage || !editor.platform.getClipboardImage);
 #ifdef BBE_RENDERER_OPENGL
@@ -853,31 +931,19 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		{
 			ImGui::SameLine();
 			if (ImGui::ImageButton("##clipPasteNew", s_toolIcons.clipboardPasteNew.texId, ImVec2(clipIconSize, clipIconSize)))
-			{
-				editor.canvas.get().layers.clear();
-				bbe::Image pasted = editor.platform.getClipboardImage();
-				editor.setCanvasFallbackFromImageAlpha(pasted);
-				editor.canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, std::move(pasted) });
-				editor.path = "";
-				editor.submitCanvas();
-				editor.setupCanvas(false);
-			}
+				editor.pasteClipboardAsNewDocument();
 		}
 		else
 #endif
 		{
 			if (ImGui::Button("Paste as New Canvas", ImVec2(-1, 0)))
-			{
-				editor.canvas.get().layers.clear();
-				bbe::Image pasted = editor.platform.getClipboardImage();
-				editor.setCanvasFallbackFromImageAlpha(pasted);
-				editor.canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, std::move(pasted) });
-				editor.path = "";
-				editor.submitCanvas();
-				editor.setupCanvas(false);
-			}
+				editor.pasteClipboardAsNewDocument();
 		}
-		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Replace the document with the image from the clipboard (new single layer)");
+		{
+			const PaintEditor::DigitHotkey bind{ PaintEditor::DigitHotkeyKind::ClipboardPasteNew, 0, bbe::SymmetryMode::None };
+			paintEditorTryBindDigitHotkeyOnHover(editor, bind);
+			if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, bind, "Replace the document with the image from the clipboard (new single layer)");
+		}
 		ImGui::EndDisabled();
 		if (!supportsClipboardImages)
 			ImGui::TextDisabled("Not supported on this platform");
@@ -933,7 +999,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			{
 				if (ImGui::Button("+ New", ImVec2(btnW * 1.5f, 0))) editor.addLayer();
 			}
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("New layer");
+			{
+				const PaintEditor::DigitHotkey bind{ PaintEditor::DigitHotkeyKind::LayerNew, 0, bbe::SymmetryMode::None };
+				paintEditorTryBindDigitHotkeyOnHover(editor, bind);
+				if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, bind, "New layer");
+			}
 			ImGui::SameLine();
 			ImGui::BeginDisabled(editor.canvas.get().layers.getLength() <= 1);
 #ifdef BBE_RENDERER_OPENGL
@@ -946,7 +1016,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			{
 				if (ImGui::Button("- Del", ImVec2(btnW * 1.5f, 0))) editor.deleteActiveLayer();
 			}
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Delete active layer");
+			{
+				const PaintEditor::DigitHotkey bind{ PaintEditor::DigitHotkeyKind::LayerDelete, 0, bbe::SymmetryMode::None };
+				paintEditorTryBindDigitHotkeyOnHover(editor, bind);
+				if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, bind, "Delete active layer");
+			}
 			ImGui::EndDisabled();
 			ImGui::SameLine();
 			ImGui::BeginDisabled((size_t)editor.activeLayerIndex + 1 >= editor.canvas.get().layers.getLength());
@@ -960,7 +1034,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			{
 				if (ImGui::Button("Up", ImVec2(btnW, 0))) editor.moveActiveLayerUp();
 			}
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Move layer up (toward front)");
+			{
+				const PaintEditor::DigitHotkey bind{ PaintEditor::DigitHotkeyKind::LayerMoveUp, 0, bbe::SymmetryMode::None };
+				paintEditorTryBindDigitHotkeyOnHover(editor, bind);
+				if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, bind, "Move layer up (toward front)");
+			}
 			ImGui::EndDisabled();
 			ImGui::SameLine();
 			ImGui::BeginDisabled(editor.activeLayerIndex <= 0);
@@ -974,7 +1052,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			{
 				if (ImGui::Button("Dn", ImVec2(btnW, 0))) editor.moveActiveLayerDown();
 			}
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Move layer down (toward back)");
+			{
+				const PaintEditor::DigitHotkey bind{ PaintEditor::DigitHotkeyKind::LayerMoveDown, 0, bbe::SymmetryMode::None };
+				paintEditorTryBindDigitHotkeyOnHover(editor, bind);
+				if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, bind, "Move layer down (toward back)");
+			}
 			ImGui::EndDisabled();
 
 			ImGui::Dummy(ImVec2(0, ImGui::GetStyle().ItemSpacing.y * 0.5f));
@@ -988,7 +1070,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			{
 				if (ImGui::Button("Dup", ImVec2(layerHalfW, 0))) editor.duplicateActiveLayer();
 			}
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Duplicate active layer");
+			{
+				const PaintEditor::DigitHotkey bind{ PaintEditor::DigitHotkeyKind::LayerDuplicate, 0, bbe::SymmetryMode::None };
+				paintEditorTryBindDigitHotkeyOnHover(editor, bind);
+				if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, bind, "Duplicate active layer");
+			}
 			ImGui::SameLine();
 			ImGui::BeginDisabled(editor.activeLayerIndex <= 0);
 #ifdef BBE_RENDERER_OPENGL
@@ -1001,7 +1087,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			{
 				if (ImGui::Button("Merge Dn", ImVec2(layerHalfW, 0))) editor.mergeActiveLayerDown();
 			}
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Merge active layer into the one below");
+			{
+				const PaintEditor::DigitHotkey bind{ PaintEditor::DigitHotkeyKind::LayerMergeDown, 0, bbe::SymmetryMode::None };
+				paintEditorTryBindDigitHotkeyOnHover(editor, bind);
+				if (ImGui::IsItemHovered()) paintEditorDigitHotkeyTooltip(editor, bind, "Merge active layer into the one below");
+			}
 			ImGui::EndDisabled();
 		}
 		if (!editor.canvas.get().layers.isEmpty())
@@ -1804,7 +1894,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					ImGui::SeparatorText(title);
 					for (const char *item : items) ImGui::BulletText("%s", item);
 				};
-				bulletList("Tools", { "1 Brush", "2 Flood Fill", "3 Line", "4 Rectangle", "5 Selection", "6 Text", "7 Pipette", "8 Circle", "9 Arrow", "0 Bezier", "E Eraser", "R Spray", "O Ellipse selection", "L Lasso", "P Polygon Lasso", "M Magic Wand" });
+				bulletList("Tools", { "Digits 1–9 and 0 trigger customizable actions; hover a control in Tools (tools, pipette, symmetry, undo/redo, selection actions, clipboard) or Layers and press Ctrl+digit to assign", "Defaults: 1 Brush, 2 Flood Fill, 3 Line, 4 Rectangle, 5 Selection, 6 Text, 7 Pipette, 8 Circle, 9 Arrow, 0 Bezier", "E Eraser, R Spray, O Ellipse selection, L Lasso, P Polygon Lasso, M Magic Wand" });
 				bulletList("General", { "+/- changes brush width, eraser size, spray width (spray tool), wand or flood-fill tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms", "Tools, Layers, and Tool options are separate floating windows: drag title bars to move; resize freely; layout is remembered (imgui.ini)" });
 				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection", "Edit → Mirror flips all layers (vertical or horizontal in the dialog)", "Edit → Rotate Canvas 90° turns all layers; canvas width and height swap" });
 				bulletList("Selection", { "Drag to create a rectangular selection", "Ellipse selection: drag for an elliptical marquee; hold Shift for a circle", "Lasso: click and drag to outline an area (closed automatically)", "Polygon lasso: click corners, then close via first point, Enter, or right-click", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand, Selection, Ellipse selection, Lasso, or Polygon lasso adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });

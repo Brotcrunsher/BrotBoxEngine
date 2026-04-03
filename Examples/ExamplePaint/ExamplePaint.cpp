@@ -7,6 +7,12 @@
 #include "ExamplePaintEditor.h"
 #include "ExamplePaintGui.h"
 
+// TODO: Color history
+// TODO: Favorite Colors (Persisted between sessions, separate from history, user-managed)
+// TODO: Most used colors
+// TODO: Window docking for tools etc.
+// TODO: Bound number hotkeys shall be persisted between sessions
+
 /// For axis mirror symmetries, text must be flipped (not just moved). Indices match `bbe::getSymmetryPositions` order.
 /// `outFlipH` / `outFlipV` mean reflection across a **vertical** / **horizontal** line in canvas space (L-R vs upside down).
 /// Note: `bbe::Image::mirrorVertically()` swaps pixels left↔right; `mirrorHorizontally()` swaps rows top↔bottom.
@@ -156,45 +162,16 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	}
 	const bbe::Vector2 currMousePos = editor.screenToCanvas(g.getMouse());
 
-	if (g.isKeyPressed(bbe::Key::_1))
+	if (!ctrlDown)
 	{
-		editor.mode = PaintEditor::MODE_BRUSH;
-	}
-	if (g.isKeyPressed(bbe::Key::_2))
-	{
-		editor.mode = PaintEditor::MODE_FLOOD_FILL;
-	}
-	if (g.isKeyPressed(bbe::Key::_3))
-	{
-		editor.mode = PaintEditor::MODE_LINE;
-	}
-	if (g.isKeyPressed(bbe::Key::_4))
-	{
-		editor.mode = PaintEditor::MODE_RECTANGLE;
-	}
-	if (g.isKeyPressed(bbe::Key::_5))
-	{
-		editor.mode = PaintEditor::MODE_SELECTION;
-	}
-	if (g.isKeyPressed(bbe::Key::_6))
-	{
-		editor.mode = PaintEditor::MODE_TEXT;
-	}
-	if (g.isKeyPressed(bbe::Key::_7))
-	{
-		editor.mode = PaintEditor::MODE_PIPETTE;
-	}
-	if (g.isKeyPressed(bbe::Key::_8))
-	{
-		editor.mode = PaintEditor::MODE_CIRCLE;
-	}
-	if (g.isKeyPressed(bbe::Key::_9))
-	{
-		editor.mode = PaintEditor::MODE_ARROW;
-	}
-	if (g.isKeyPressed(bbe::Key::_0))
-	{
-		editor.mode = PaintEditor::MODE_BEZIER;
+		const bbe::Key digitKeys[10] = {
+			bbe::Key::_1, bbe::Key::_2, bbe::Key::_3, bbe::Key::_4, bbe::Key::_5,
+			bbe::Key::_6, bbe::Key::_7, bbe::Key::_8, bbe::Key::_9, bbe::Key::_0,
+		};
+		for (int di = 0; di < 10; di++)
+		{
+			if (g.isKeyPressed(digitKeys[di])) editor.applyDigitHotkeyBinding(editor.digitHotkeys[di]);
+		}
 	}
 	if (g.isKeyPressed(bbe::Key::M))
 	{

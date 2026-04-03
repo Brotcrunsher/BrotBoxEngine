@@ -1292,6 +1292,78 @@ void PaintEditor::redo()
 	clearWorkArea();
 }
 
+void PaintEditor::copyFlattenedCanvasToClipboard()
+{
+	if (!platform.supportsClipboardImages || !platform.supportsClipboardImages() || !platform.setClipboardImage) return;
+	platform.setClipboardImage(flattenVisibleLayers());
+}
+
+void PaintEditor::pasteClipboardAsNewDocument()
+{
+	if (!platform.supportsClipboardImages || !platform.supportsClipboardImages()) return;
+	if (!platform.isClipboardImageAvailable || !platform.isClipboardImageAvailable()) return;
+	if (!platform.getClipboardImage) return;
+	canvas.get().layers.clear();
+	bbe::Image pasted = platform.getClipboardImage();
+	setCanvasFallbackFromImageAlpha(pasted);
+	canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, std::move(pasted) });
+	path = "";
+	submitCanvas();
+	setupCanvas(false);
+}
+
+void PaintEditor::applyDigitHotkeyBinding(const DigitHotkey &b)
+{
+	switch (b.kind)
+	{
+	case DigitHotkeyKind::Tool:
+		mode = b.toolMode;
+		break;
+	case DigitHotkeyKind::Symmetry:
+		symmetryMode = b.symmetryMode;
+		break;
+	case DigitHotkeyKind::Undo:
+		if (canvas.isUndoable()) undo();
+		break;
+	case DigitHotkeyKind::Redo:
+		if (canvas.isRedoable()) redo();
+		break;
+	case DigitHotkeyKind::SelectionCopy:
+		if (selection.hasSelection) storeSelectionInClipboard();
+		break;
+	case DigitHotkeyKind::SelectionCut:
+		if (selection.hasSelection) cutSelection();
+		break;
+	case DigitHotkeyKind::SelectionDelete:
+		if (selection.hasSelection) deleteSelection();
+		break;
+	case DigitHotkeyKind::ClipboardCopyCanvas:
+		copyFlattenedCanvasToClipboard();
+		break;
+	case DigitHotkeyKind::ClipboardPasteNew:
+		pasteClipboardAsNewDocument();
+		break;
+	case DigitHotkeyKind::LayerNew:
+		addLayer();
+		break;
+	case DigitHotkeyKind::LayerDelete:
+		if (canvas.get().layers.getLength() > 1) deleteActiveLayer();
+		break;
+	case DigitHotkeyKind::LayerMoveUp:
+		if ((size_t)activeLayerIndex + 1 < canvas.get().layers.getLength()) moveActiveLayerUp();
+		break;
+	case DigitHotkeyKind::LayerMoveDown:
+		if (activeLayerIndex > 0) moveActiveLayerDown();
+		break;
+	case DigitHotkeyKind::LayerDuplicate:
+		duplicateActiveLayer();
+		break;
+	case DigitHotkeyKind::LayerMergeDown:
+		if (activeLayerIndex > 0) mergeActiveLayerDown();
+		break;
+	}
+}
+
 PaintLayer &PaintEditor::getActiveLayer()
 {
 	clampActiveLayerIndex();

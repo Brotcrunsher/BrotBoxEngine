@@ -12,11 +12,6 @@
 
 #include "ExamplePaintInput.h"
 
-// TODO: Color history
-// TODO: Favorite Colors (Persisted between sessions, separate from history, user-managed)
-// TODO: Most used colors
-// TODO: Window docking for tools etc.
-// TODO: Shortcuts 1-9 + 0 should be reconfigurable during runtime. When the user hovers over a button and simply pressing CTRL+number assigns that number to that button.
 struct FontEntry
 {
 	bbe::String displayName;
@@ -91,6 +86,46 @@ struct PaintEditor
 	static constexpr int32_t MODE_ERASER = 14;
 	static constexpr int32_t MODE_SPRAY = 15;
 
+	/// Kind of action bound to a top-row digit (1–9, 0). Only \c Tool and \c Symmetry use \c toolMode / \c symmetryMode respectively.
+	enum class DigitHotkeyKind : uint8_t
+	{
+		Tool,
+		Symmetry,
+		Undo,
+		Redo,
+		SelectionCopy,
+		SelectionCut,
+		SelectionDelete,
+		ClipboardCopyCanvas,
+		ClipboardPasteNew,
+		LayerNew,
+		LayerDelete,
+		LayerMoveUp,
+		LayerMoveDown,
+		LayerDuplicate,
+		LayerMergeDown,
+	};
+
+	struct DigitHotkey
+	{
+		DigitHotkeyKind kind = DigitHotkeyKind::Tool;
+		int32_t toolMode = MODE_BRUSH;
+		bbe::SymmetryMode symmetryMode = bbe::SymmetryMode::None;
+		bool operator==(const DigitHotkey &o) const
+		{
+			if (kind != o.kind) return false;
+			switch (kind)
+			{
+			case DigitHotkeyKind::Tool:
+				return toolMode == o.toolMode;
+			case DigitHotkeyKind::Symmetry:
+				return symmetryMode == o.symmetryMode;
+			default:
+				return true;
+			}
+		}
+	};
+
 	/// Selection, lasso, polygon lasso, and wand share one marquee; leaving this set of tools applies the selection (see ExamplePaint mode changes).
 	static bool isSelectionLikeTool(int32_t toolMode);
 
@@ -100,6 +135,20 @@ struct PaintEditor
 	int32_t pipetteReturnMode = MODE_BRUSH;
 	/// After pipette sampling, ignore tool mouse input until all buttons are released (avoids brush stroke on same click).
 	bool suppressCanvasInputUntilMouseUp = false;
+
+	/// Top-row digits 1–9 then 0: `digitHotkeys[0]`…`[8]` = keys 1–9, `[9]` = key 0. Reassign with Ctrl+digit while hovering a bound control in Tools or Layers.
+	DigitHotkey digitHotkeys[10] = {
+		{ DigitHotkeyKind::Tool, MODE_BRUSH, bbe::SymmetryMode::None },
+		{ DigitHotkeyKind::Tool, MODE_FLOOD_FILL, bbe::SymmetryMode::None },
+		{ DigitHotkeyKind::Tool, MODE_LINE, bbe::SymmetryMode::None },
+		{ DigitHotkeyKind::Tool, MODE_RECTANGLE, bbe::SymmetryMode::None },
+		{ DigitHotkeyKind::Tool, MODE_SELECTION, bbe::SymmetryMode::None },
+		{ DigitHotkeyKind::Tool, MODE_TEXT, bbe::SymmetryMode::None },
+		{ DigitHotkeyKind::Tool, MODE_PIPETTE, bbe::SymmetryMode::None },
+		{ DigitHotkeyKind::Tool, MODE_CIRCLE, bbe::SymmetryMode::None },
+		{ DigitHotkeyKind::Tool, MODE_ARROW, bbe::SymmetryMode::None },
+		{ DigitHotkeyKind::Tool, MODE_BEZIER, bbe::SymmetryMode::None },
+	};
 
 	friend void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, const bbe::Vector2i &topLeft);
 	friend void drawSelectionOutlineForGui(bbe::PrimitiveBrush2D &brush, const PaintEditor &editor, const bbe::Rectanglei &rect, bool alwaysDrawOutline);
@@ -439,6 +488,10 @@ struct PaintEditor
 	void undo();
 
 	void redo();
+
+	void applyDigitHotkeyBinding(const DigitHotkey &binding);
+	void copyFlattenedCanvasToClipboard();
+	void pasteClipboardAsNewDocument();
 
 	PaintLayer &getActiveLayer();
 
