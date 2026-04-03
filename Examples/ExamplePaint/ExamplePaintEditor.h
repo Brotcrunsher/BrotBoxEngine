@@ -177,8 +177,20 @@ struct PaintEditor
 	/// Set during brush/spray/flood strokes; consumed when the stroke commits (see \c resetColorHistoryStrokeTouched).
 	bool colorHistoryStrokeTouchedPrimary = false;
 	bool colorHistoryStrokeTouchedSecondary = false;
+
+	/// Top colors by frequency on the flattened visible canvas (alpha = 0 pixels skipped); see \c ensureMostUsedOnCanvasColorsUpdated.
+	static constexpr size_t mostUsedOnCanvasCapacity = 16;
+	float mostUsedOnCanvasRgba[mostUsedOnCanvasCapacity][4]{};
+	size_t mostUsedOnCanvasCount = 0;
+	void ensureMostUsedOnCanvasColorsUpdated();
+
 	int64_t canvasGeneration = 0;
 	int64_t savedGeneration = 0;
+	/// Bumped when document identity resets while \c canvasGeneration returns to 0 (e.g. new canvas); invalidates derived caches.
+	uint32_t canvasVisualEpoch = 0;
+
+	uint32_t mostUsedOnCanvasCacheKeyStored = 0;
+	bool mostUsedOnCanvasCacheValid = false;
 
 	struct EndpointDraftState
 	{

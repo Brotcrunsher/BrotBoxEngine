@@ -6,6 +6,7 @@
 #include <deque>
 #include <filesystem>
 #include <random>
+#include <unordered_map>
 #include <vector>
 
 #include <string>
@@ -1519,6 +1520,94 @@ bbe::Colori PaintEditor::getVisiblePixel(size_t x, size_t y) const
 		color = color.blendTo(src, layer.opacity, layer.blendMode);
 	}
 	return color;
+}
+
+namespace {
+
+uint32_t mostUsedOnCanvasComputeCacheKey(const PaintEditor &ed)
+{
+	const PaintDocument &doc = ed.canvas.get();
+	uint32_t h = (uint32_t)ed.canvasGeneration;
+	h ^= ed.canvasVisualEpoch * 0x85EBCA6Bu;
+	h ^= (uint32_t)ed.getCanvasWidth() * 0x9E3779B1u;
+	h ^= (uint32_t)ed.getCanvasHeight() * 0xC2B2AE3Du;
+	for (int i = 0; i < 4; i++)
+	{
+		const uint32_t bits = (uint32_t)(doc.canvasFallbackRgba[i] * 65535.f);
+		h ^= bits << (unsigned)(i * 7 & 31);
+	}
+	for (size_t li = 0; li < doc.layers.getLength(); li++)
+	{
+		const PaintLayer &L = doc.layers[li];
+		h ^= L.visible ? (uint32_t)(li + 1u) * 0xA5A5A5A5u : 0u;
+		h ^= (uint32_t)(L.opacity * 4095.f) * (uint32_t)((li + 1) * 0x27D4EB2Du);
+		h ^= (uint32_t)L.blendMode * (uint32_t)((li + 1) * 17u);
+	}
+	return h;
+}
+
+} // namespace
+
+void PaintEditor::ensureMostUsedOnCanvasColorsUpdated()
+{
+	const uint32_t key = mostUsedOnCanvasComputeCacheKey(*this);
+	if (mostUsedOnCanvasCacheValid && key == mostUsedOnCanvasCacheKeyStored) return;
+
+	mostUsedOnCanvasCacheValid = true;
+	mostUsedOnCanvasCacheKeyStored = key;
+	mostUsedOnCanvasCount = 0;
+
+	const int32_t W = getCanvasWidth();
+	const int32_t H = getCanvasHeight();
+	if (W <= 0 || H <= 0) return;
+
+	const int64_t totalPx = (int64_t)W * (int64_t)H;
+	int32_t stride = 1;
+	if (totalPx > 2000000)
+	{
+		const double s = std::ceil(std::sqrt((double)totalPx / 2000000.0));
+		stride = (int32_t)s;
+		if (stride < 1) stride = 1;
+	}
+
+	bbe::Image flat = flattenVisibleLayers();
+	std::unordered_map<uint32_t, uint64_t> freq;
+	freq.reserve(8192);
+
+	for (int32_t y = 0; y < H; y += stride)
+	{
+		for (int32_t x = 0; x < W; x += stride)
+		{
+			const bbe::Colori c = flat.getPixel((size_t)x, (size_t)y);
+			if (c.a == 0) continue;
+			const uint32_t packed = (uint32_t)c.r << 24 | (uint32_t)c.g << 16 | (uint32_t)c.b << 8 | (uint32_t)c.a;
+			++freq[packed];
+		}
+	}
+
+	if (freq.empty()) return;
+
+	std::vector<std::pair<uint32_t, uint64_t>> items;
+	items.reserve(freq.size());
+	for (const auto &kv : freq) items.push_back(kv);
+
+	const size_t kTop = std::min(mostUsedOnCanvasCapacity, items.size());
+	std::partial_sort(items.begin(), items.begin() + (std::ptrdiff_t)kTop, items.end(),
+					  [](const std::pair<uint32_t, uint64_t> &a, const std::pair<uint32_t, uint64_t> &b) { return a.second > b.second; });
+
+	for (size_t i = 0; i < kTop; i++)
+	{
+		const uint32_t p = items[i].first;
+		const uint8_t r = (uint8_t)((p >> 24) & 255u);
+		const uint8_t g = (uint8_t)((p >> 16) & 255u);
+		const uint8_t b = (uint8_t)((p >> 8) & 255u);
+		const uint8_t a = (uint8_t)(p & 255u);
+		mostUsedOnCanvasRgba[i][0] = r / 255.f;
+		mostUsedOnCanvasRgba[i][1] = g / 255.f;
+		mostUsedOnCanvasRgba[i][2] = b / 255.f;
+		mostUsedOnCanvasRgba[i][3] = a / 255.f;
+	}
+	mostUsedOnCanvasCount = kTop;
 }
 
 bbe::String PaintEditor::makeLayerName() const
@@ -4180,6 +4269,7 @@ void PaintEditor::setupCanvas(bool clearHistory)
 		canvas.clearHistory();
 		canvasGeneration = 0;
 		savedGeneration = 0;
+		canvasVisualEpoch++;
 	}
 }
 

@@ -9,7 +9,6 @@
 #include "ExamplePaintEditor.h"
 #include "ExamplePaintGui.h"
 
-// TODO: Most used colors
 // TODO: Window docking for tools etc.
 // TODO: Minimap navigator should be green instead of yellow
 
