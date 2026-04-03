@@ -308,8 +308,10 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 
 		// --- Colors ---
 		ImGui::SeparatorText("Colors");
-		const bool leftColorChanged  = ImGui::ColorEdit4("Primary",   editor.leftColor);
-		const bool rightColorChanged = ImGui::ColorEdit4("Secondary", editor.rightColor);
+		const ImGuiColorEditFlags colorPickFlags = ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel;
+		const bool leftColorChanged  = ImGui::ColorEdit4("##primaryColor",   editor.leftColor, colorPickFlags);
+		ImGui::SameLine();
+		const bool rightColorChanged = ImGui::ColorEdit4("##secondaryColor", editor.rightColor, colorPickFlags);
 		if (editor.rectangle.draftActive && (editor.shapeFillWithSecondary || editor.shapeStripedStroke
 			? (leftColorChanged || rightColorChanged)
 			: ((leftColorChanged && !editor.rectangle.draftUsesRightColor) || (rightColorChanged && editor.rectangle.draftUsesRightColor))))
@@ -640,7 +642,8 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 
 		// --- Layers ---
 		ImGui::SeparatorText("Layers");
-		ImGui::ColorEdit4("Canvas backdrop##canvasFallback", editor.canvas.get().canvasFallbackRgba, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
+		ImGui::ColorEdit4("Canvas backdrop##canvasFallback", editor.canvas.get().canvasFallbackRgba,
+			ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
 		if (ImGui::IsItemDeactivatedAfterEdit()) editor.submitCanvas();
 		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Color behind all layers (first layer blends onto this). Used when flattening/exporting PNG. Alpha 0 = fully transparent document.");
 		{
