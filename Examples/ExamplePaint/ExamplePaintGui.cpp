@@ -401,10 +401,26 @@ static void drawPaintToolOptionsPanel(PaintEditor &editor, float toolbarWidth)
 		if (editor.mode == PaintEditor::MODE_RECTANGLE || editor.mode == PaintEditor::MODE_CIRCLE)
 		{
 			ensureOptionsHeader();
-			if (ImGui::Checkbox("Fill with secondary color", &editor.shapeFillWithSecondary))
 			{
-				if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
-				if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
+				static const char *shapeFillNames[] = { "None", "Primary color", "Secondary color", "Checkerboard" };
+				int fillIdx = static_cast<int>(editor.shapeFillMode);
+				if (fillIdx < 0 || fillIdx >= IM_ARRAYSIZE(shapeFillNames)) fillIdx = 0;
+				if (ImGui::Combo("Fill", &fillIdx, shapeFillNames, IM_ARRAYSIZE(shapeFillNames)))
+				{
+					editor.shapeFillMode = static_cast<PaintEditor::ShapeFillMode>(fillIdx);
+					if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
+					if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
+				}
+				if (editor.shapeFillMode == PaintEditor::ShapeFillMode::Checkerboard)
+				{
+					if (ImGui::InputInt("Checkerboard cell (px)", &editor.shapeFillPatternCellPx))
+					{
+						editor.clampShapeFillPatternCellPx();
+						if (editor.rectangle.draftActive) editor.refreshActiveRectangleDraftImage();
+						if (editor.circle.draftActive) editor.refreshActiveCircleDraftImage();
+					}
+				}
+				ImGui::TextDisabled("Interior uses primary/secondary swatches; outline still follows the mouse button used to draw.");
 			}
 			if (ImGui::Checkbox("Striped outline", &editor.shapeStripedStroke))
 			{
@@ -617,13 +633,13 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pipette — click canvas to sample a color");
 		}
 		ImGui::EndGroup();
-		if (editor.rectangle.draftActive && (editor.shapeFillWithSecondary || editor.shapeStripedStroke
+		if (editor.rectangle.draftActive && (editor.shapeFillMode != PaintEditor::ShapeFillMode::None || editor.shapeStripedStroke
 			? (leftColorChanged || rightColorChanged)
 			: ((leftColorChanged && !editor.rectangle.draftUsesRightColor) || (rightColorChanged && editor.rectangle.draftUsesRightColor))))
 		{
 			editor.refreshActiveRectangleDraftImage();
 		}
-		if (editor.circle.draftActive && (editor.shapeFillWithSecondary || editor.shapeStripedStroke
+		if (editor.circle.draftActive && (editor.shapeFillMode != PaintEditor::ShapeFillMode::None || editor.shapeStripedStroke
 			? (leftColorChanged || rightColorChanged)
 			: ((leftColorChanged && !editor.circle.draftUsesRightColor) || (rightColorChanged && editor.circle.draftUsesRightColor))))
 		{
@@ -1167,8 +1183,8 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				// AA-off + rotation: re-render from SDF so preview matches the committed result.
 				const bbe::Colori color = editor.rectangle.draftActive ? editor.getRectangleDraftColor() : editor.getCircleDraftColor();
 				const bbe::Image img = editor.rectangle.draftActive
-					? editor.createRectangleImage(editor.selection.rect.width, editor.selection.rect.height, color, editor.selection.rotation, editor.rectangle.draftUsesRightColor)
-					: editor.createCircleImage(editor.selection.rect.width, editor.selection.rect.height, color, editor.selection.rotation, editor.circle.draftUsesRightColor);
+					? editor.createRectangleImage(editor.selection.rect.width, editor.selection.rect.height, color, editor.selection.rotation)
+					: editor.createCircleImage(editor.selection.rect.width, editor.selection.rect.height, color, editor.selection.rotation);
 				const float cx = editor.selection.rect.x + editor.selection.rect.width  * 0.5f;
 				const float cy = editor.selection.rect.y + editor.selection.rect.height * 0.5f;
 				const bbe::Rectanglei bbRect(

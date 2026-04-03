@@ -11,8 +11,6 @@
 
 #include "ExamplePaintInput.h"
 
-// TODO: Rectangle and Circle fill mode should be selectable (none, first color, second color, pattern?).
-
 // TODO: Color history
 struct FontEntry
 {
@@ -154,6 +152,15 @@ struct PaintEditor
 		LAYERED,
 	};
 
+	/// Interior fill for rectangle and ellipse shape tools (outline still uses the active mouse color).
+	enum class ShapeFillMode : int32_t
+	{
+		None = 0,
+		Primary,
+		Secondary,
+		Checkerboard,
+	};
+
 	static constexpr const char *LAYERED_FILE_MAGIC_V1 = "ExamplePaintLayeredV1";
 	static constexpr const char *LAYERED_FILE_MAGIC = "ExamplePaintLayeredV2";
 	static constexpr const char *LAYERED_FILE_MAGIC_V3 = "ExamplePaintLayeredV3";
@@ -187,12 +194,13 @@ struct PaintEditor
 	bbe::List<FontEntry> availableFonts;
 	bbe::Vector2 startMousePos;
 	int32_t cornerRadius = 0;
-	/// When true, rectangle/circle interior uses the opposite mouse color (secondary vs primary) under the stroke.
-	bool shapeFillWithSecondary = false;
+	ShapeFillMode shapeFillMode = ShapeFillMode::None;
 	/// When true, rectangle/circle outline is drawn as dashes whose period fits the closed perimeter (no seam).
 	bool shapeStripedStroke = false;
 	/// Target dash+gap length in pixels before snapping to a seamless divisor of the outline length.
 	int32_t shapeStripePeriodPx = 16;
+	/// Edge length in pixels of each square in checkerboard shape fill (\ref ShapeFillMode::Checkerboard).
+	int32_t shapeFillPatternCellPx = 8;
 
 	bool drawGridLines = true;
 	bool tiled = false;
@@ -541,7 +549,7 @@ struct PaintEditor
 
 	bool buildRectangleDraftRect(const bbe::Vector2i &pos1, const bbe::Vector2i &pos2, bbe::Rectanglei &outRect) const;
 
-	bbe::Image createRectangleImage(int32_t width, int32_t height, const bbe::Colori &strokeColor, float rotation = 0.f, bool strokeUsesRightColor = false) const;
+	bbe::Image createRectangleImage(int32_t width, int32_t height, const bbe::Colori &strokeColor, float rotation = 0.f) const;
 
 	bbe::Image createRectangleDraftImage(int32_t width, int32_t height) const;
 
@@ -553,7 +561,7 @@ struct PaintEditor
 
 	bbe::Colori getCircleDragColor() const;
 
-	bbe::Image createCircleImage(int32_t width, int32_t height, const bbe::Colori &strokeColor, float rotation = 0.f, bool strokeUsesRightColor = false) const;
+	bbe::Image createCircleImage(int32_t width, int32_t height, const bbe::Colori &strokeColor, float rotation = 0.f) const;
 
 	bbe::Image createCircleDraftImage(int32_t width, int32_t height) const;
 
@@ -631,6 +639,7 @@ struct PaintEditor
 	void clampSprayWidth();
 	void clampSprayDensity();
 	void clampShapeStripePeriod();
+	void clampShapeFillPatternCellPx();
 
 	void clampTextFontSize();
 
