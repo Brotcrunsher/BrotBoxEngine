@@ -493,14 +493,6 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		if (g.isKeyTyped(bbe::Key::DOWN)) editor.nudgeSelectionByPixels(0, 1);
 	}
 
-	if (mouseOnNavigator && g.isMouseDown(bbe::MouseButton::LEFT))
-	{
-		const bbe::Rectangle navRect = editor.getNavigatorRect();
-		const float canvasClickX = (g.getMouse().x - navRect.x) / navRect.width * editor.getCanvasWidth();
-		const float canvasClickY = (g.getMouse().y - navRect.y) / navRect.height * editor.getCanvasHeight();
-		editor.offset.x = editor.viewport.width / 2.f - canvasClickX * editor.zoomLevel;
-		editor.offset.y = editor.viewport.height / 2.f - canvasClickY * editor.zoomLevel;
-	}
 
 	if (!mouseOnNavigator && (g.isMousePressed(bbe::MouseButton::LEFT) || g.isMousePressed(bbe::MouseButton::RIGHT)))
 	{

@@ -157,6 +157,9 @@ struct PaintEditor
 	bbe::List<bbe::String> pendingDroppedPaths;
 	bool showHelpWindow = false;
 	bool showNavigator = true;
+	/// Screen-space minimap bounds from the last completed ImGui frame (see \c drawExamplePaintGui); drives \c getNavigatorRect().
+	bbe::Rectangle navigatorMinimapHitRect{};
+	bool navigatorMinimapHitRectValid = false;
 	/// Docked tool-options window (View menu); can be closed and re-opened from the menu.
 	bool showToolOptionsPanel = true;
 	/// Colors window (primary/secondary, pipette, favorite swatches); View menu.

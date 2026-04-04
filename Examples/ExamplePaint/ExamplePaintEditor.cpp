@@ -4351,23 +4351,9 @@ bbe::Vector2 PaintEditor::screenToCanvas(const bbe::Vector2 &pos)
 
 bbe::Rectangle PaintEditor::getNavigatorRect()
 {
-	const float canvasW = (float)getCanvasWidth();
-	const float canvasH = (float)getCanvasHeight();
-	if (canvasW <= 0.f || canvasH <= 0.f) return {};
-	const float navMaxSize = 160.f * viewport.scale;
-	float navW, navH;
-	if (canvasW >= canvasH)
-	{
-		navW = navMaxSize;
-		navH = navMaxSize * canvasH / canvasW;
-	}
-	else
-	{
-		navH = navMaxSize;
-		navW = navMaxSize * canvasW / canvasH;
-	}
-	const float margin = 8.f;
-	return bbe::Rectangle(viewport.width - navW - margin, viewport.height - navH - margin, navW, navH);
+	if (!showNavigator || !navigatorMinimapHitRectValid || getCanvasWidth() <= 0)
+		return {};
+	return navigatorMinimapHitRect;
 }
 
 bool PaintEditor::toTiledPos(bbe::Vector2 &pos)

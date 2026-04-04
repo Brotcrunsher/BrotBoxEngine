@@ -8,6 +8,7 @@
 #include <cstring>
 #include <filesystem>
 #include <string>
+#include <vector>
 
 #ifdef BBE_RENDERER_OPENGL
 #include "BBE/glfwWrapper.h"
@@ -45,6 +46,21 @@ static void updateIconSlot(ImTextureID &texId, const bbe::Image *&cachedPtr, con
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 	texId = (ImTextureID)(intptr_t)tex;
+}
+
+static GLuint s_navigatorMinimapGlTex = 0;
+
+static void navigatorUploadRgbaTexture(int w, int h, const unsigned char *pixels)
+{
+	if (s_navigatorMinimapGlTex == 0)
+		glGenTextures(1, &s_navigatorMinimapGlTex);
+	glBindTexture(GL_TEXTURE_2D, s_navigatorMinimapGlTex);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 }
 
 struct ToolIconTextures
@@ -874,6 +890,122 @@ static void drawPaintToolOptionsPanel(PaintEditor &editor, float defaultLeft)
 	ImGui::PopStyleColor(2);
 }
 
+static void drawPaintNavigatorImGuiWindow(PaintEditor &editor, bool anyNonNormalBlend, const bbe::Image *blendPreview, const bbe::Color &canvasBackdrop)
+{
+	if (!editor.showNavigator || editor.getCanvasWidth() <= 0)
+	{
+		editor.navigatorMinimapHitRectValid = false;
+		return;
+	}
+
+	const float canvasW = (float)editor.getCanvasWidth();
+	const float canvasH = (float)editor.getCanvasHeight();
+	const float navMaxSize = 160.f * editor.viewport.scale;
+	float navW, navH;
+	if (canvasW >= canvasH)
+	{
+		navW = navMaxSize;
+		navH = navMaxSize * canvasH / canvasW;
+	}
+	else
+	{
+		navH = navMaxSize;
+		navW = navMaxSize * canvasW / canvasH;
+	}
+	const int tw = std::max(1, (int)std::floor(navW));
+	const int th = std::max(1, (int)std::floor(navH));
+
+	ImGui::SetNextWindowPos(ImVec2((float)editor.viewport.width - navW - 16.f, (float)editor.viewport.height - th - 48.f), ImGuiCond_FirstUseEver);
+
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.14f, 0.14f, 0.15f, 1.f));
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.11f, 0.11f, 0.12f, 1.f));
+	if (!ImGui::Begin("Navigator", &editor.showNavigator))
+	{
+		ImGui::PopStyleColor(2);
+		ImGui::End();
+		editor.navigatorMinimapHitRectValid = false;
+		return;
+	}
+
+	bbe::Image composite;
+	if (anyNonNormalBlend && blendPreview && blendPreview->getWidth() > 0)
+		composite = *blendPreview;
+	else
+		composite = editor.flattenVisibleLayers();
+	composite.blend(editor.workArea, 1.f, bbe::BlendMode::Normal);
+	const bbe::Image thumb = composite.scaledNearest(tw, th);
+
+	std::vector<unsigned char> rgbaPixels((size_t)tw * th * 4);
+	for (int y = 0; y < th; y++)
+	{
+		for (int x = 0; x < tw; x++)
+		{
+			const bbe::Colori c = thumb.getPixel(x, y);
+			const size_t i = ((size_t)y * tw + x) * 4;
+			rgbaPixels[i + 0] = c.r;
+			rgbaPixels[i + 1] = c.g;
+			rgbaPixels[i + 2] = c.b;
+			rgbaPixels[i + 3] = c.a;
+		}
+	}
+
+	const ImVec2 imgSize((float)tw, (float)th);
+#ifdef BBE_RENDERER_OPENGL
+	navigatorUploadRgbaTexture(tw, th, rgbaPixels.data());
+	ImGui::Image((ImTextureID)(intptr_t)s_navigatorMinimapGlTex, imgSize);
+#else
+	ImGui::InvisibleButton("##navigatorMap", imgSize);
+	{
+		const ImVec2 p0 = ImGui::GetItemRectMin();
+		const ImVec2 p1 = ImGui::GetItemRectMax();
+		ImDrawList *dl = ImGui::GetWindowDrawList();
+		const auto u8 = [](float f) -> int { return (int)bbe::Math::clamp(f * 255.f, 0.f, 255.f); };
+		const ImU32 backdropCol = IM_COL32(u8(canvasBackdrop.r), u8(canvasBackdrop.g), u8(canvasBackdrop.b), u8(canvasBackdrop.a));
+		dl->AddRectFilled(p0, p1, backdropCol);
+		for (int y = 0; y < th; y++)
+		{
+			for (int x = 0; x < tw; x++)
+			{
+				const bbe::Colori c = thumb.getPixel(x, y);
+				if (c.a == 0) continue;
+				const ImVec2 a(p0.x + x, p0.y + y);
+				const ImVec2 b(p0.x + x + 1, p0.y + y + 1);
+				dl->AddRectFilled(a, b, IM_COL32(c.r, c.g, c.b, c.a));
+			}
+		}
+	}
+#endif
+
+	const ImVec2 rmin = ImGui::GetItemRectMin();
+	const ImVec2 rmax = ImGui::GetItemRectMax();
+	const float dispW = rmax.x - rmin.x;
+	const float dispH = rmax.y - rmin.y;
+	editor.navigatorMinimapHitRect = bbe::Rectangle(rmin.x, rmin.y, dispW, dispH);
+	editor.navigatorMinimapHitRectValid = dispW > 0.f && dispH > 0.f;
+
+	const float scaleX = dispW / canvasW;
+	const float scaleY = dispH / canvasH;
+	const bbe::Vector2 tlCanvas = editor.screenToCanvas({ 0.f, 0.f });
+	const bbe::Vector2 brCanvas = editor.screenToCanvas({ (float)editor.viewport.width, (float)editor.viewport.height });
+	const float vx1 = bbe::Math::clamp(rmin.x + tlCanvas.x * scaleX, rmin.x, rmax.x);
+	const float vy1 = bbe::Math::clamp(rmin.y + tlCanvas.y * scaleY, rmin.y, rmax.y);
+	const float vx2 = bbe::Math::clamp(rmin.x + brCanvas.x * scaleX, rmin.x, rmax.x);
+	const float vy2 = bbe::Math::clamp(rmin.y + brCanvas.y * scaleY, rmin.y, rmax.y);
+	ImGui::GetWindowDrawList()->AddRect(ImVec2(vx1, vy1), ImVec2(vx2, vy2), IM_COL32(0, 255, 0, 255), 0.f, 0, 1.f);
+
+	if (ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+	{
+		const ImVec2 mp = ImGui::GetIO().MousePos;
+		const float canvasClickX = (mp.x - rmin.x) / dispW * canvasW;
+		const float canvasClickY = (mp.y - rmin.y) / dispH * canvasH;
+		editor.offset.x = (float)editor.viewport.width * 0.5f - canvasClickX * editor.zoomLevel;
+		editor.offset.y = (float)editor.viewport.height * 0.5f - canvasClickY * editor.zoomLevel;
+	}
+
+	ImGui::End();
+	ImGui::PopStyleColor(2);
+}
+
 void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, const bbe::Vector2 &mouseScreenPos)
 {
 #ifdef BBE_RENDERER_OPENGL
@@ -882,6 +1014,8 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		// Host dock space for Tools / Layers / Colors / Tool Options; central node is passthrough so the
 		// canvas (drawn under ImGui) still receives mouse via io.WantCaptureMouse when not over a panel.
 		ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+
+		editor.navigatorMinimapHitRectValid = false;
 
 		const float PANEL_WIDTH = 236.f * editor.viewport.scale;
 		const float menuBarH = ImGui::GetFrameHeight();
@@ -1364,6 +1498,8 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			editor.canvas.get().canvasFallbackRgba[2],
 			editor.canvas.get().canvasFallbackRgba[3]);
 
+		drawPaintNavigatorImGuiWindow(editor, anyNonNormalBlendMode, anyNonNormalBlendMode ? &blendModePreview : nullptr, canvasBackdrop);
+
 		const int32_t repeats = editor.tiled ? 20 : 0;
 		for (int32_t i = -repeats; i <= repeats; i++)
 		{
@@ -1803,53 +1939,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					brush.fillLine(c2s(center), c2s(center + dir), 1.f);
 				}
 			}
-			brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
-		}
-
-		// Navigator
-		if (editor.showNavigator && editor.getCanvasWidth() > 0)
-		{
-			const bbe::Rectangle navRect = editor.getNavigatorRect();
-			const float navX = navRect.x;
-			const float navY = navRect.y;
-			const float navW = navRect.width;
-			const float navH = navRect.height;
-
-			// Background
-			brush.setColorRGB(0.08f, 0.08f, 0.08f);
-			brush.fillRect(navX - 2.f, navY - 2.f, navW + 4.f, navH + 4.f);
-
-			// Layers (canvas backdrop then composited image)
-			brush.setColorRGB(canvasBackdrop);
-			brush.fillRect(navX, navY, navW, navH);
-			if (anyNonNormalBlendMode)
-			{
-				brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
-				brush.drawImage(navX, navY, navW, navH, blendModePreview);
-			}
-			else
-			{
-				for (size_t layerIndex = 0; layerIndex < editor.canvas.get().layers.getLength(); layerIndex++)
-				{
-					const PaintLayer &layer = editor.canvas.get().layers[layerIndex];
-					if (!layer.visible) continue;
-					brush.setColorRGB(1.0f, 1.0f, 1.0f, layer.opacity);
-					brush.drawImage(navX, navY, navW, navH, layer.image);
-				}
-			}
-			brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
-
-			// Viewport editor.rectangle (clamped to navigator bounds)
-			const float scaleX = navW / editor.getCanvasWidth();
-			const float scaleY = navH / editor.getCanvasHeight();
-			const bbe::Vector2 tlCanvas = editor.screenToCanvas({ 0.f, 0.f });
-			const bbe::Vector2 brCanvas = editor.screenToCanvas({ (float)editor.viewport.width, (float)editor.viewport.height });
-			const float vx1 = bbe::Math::clamp(navX + tlCanvas.x * scaleX, navX, navX + navW);
-			const float vy1 = bbe::Math::clamp(navY + tlCanvas.y * scaleY, navY, navY + navH);
-			const float vx2 = bbe::Math::clamp(navX + brCanvas.x * scaleX, navX, navX + navW);
-			const float vy2 = bbe::Math::clamp(navY + brCanvas.y * scaleY, navY, navY + navH);
-			brush.setColorRGB(0.0f, 1.0f, 0.0f);
-			brush.sketchRect(vx1, vy1, vx2 - vx1, vy2 - vy1);
 			brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 
