@@ -4420,9 +4420,18 @@ bool PaintEditor::newCanvas(const char *path)
 		return false;
 	}
 
+	if (!platform.loadImageFile)
+	{
+		return false;
+	}
+
+	bbe::Image img = platform.loadImageFile(bbe::String(path));
+	if (img.getWidth() <= 0 || img.getHeight() <= 0)
+	{
+		return false;
+	}
+
 	canvas.get().layers.clear();
-	bbe::Image img;
-	if (platform.loadImageFile) img = platform.loadImageFile(path);
 	setCanvasFallbackFromImageAlpha(img);
 	canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, std::move(img) });
 	activeLayerIndex = 0;
