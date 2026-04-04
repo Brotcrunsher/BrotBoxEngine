@@ -193,8 +193,6 @@ struct PaintEditor
 	std::function<void()> applicationExitRequested;
 	bbe::List<bbe::String> pendingDroppedPaths;
 	bool showHelpWindow = false;
-	/// ImGui profiler: timings, EMA, copy-to-clipboard report (on by default for profiling sessions).
-	bool showPerfProfilerWindow = true;
 	bool showNavigator = true;
 	/// Screen-space minimap bounds from the last completed ImGui frame (see \c drawExamplePaintGui); drives \c getNavigatorRect().
 	bbe::Rectangle navigatorMinimapHitRect{};

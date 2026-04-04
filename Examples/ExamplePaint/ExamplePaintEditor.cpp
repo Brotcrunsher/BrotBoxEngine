@@ -4460,7 +4460,9 @@ void PaintEditor::submitCanvas()
 void PaintEditor::applyWorkArea()
 {
 	if (workArea.getWidth() > 0 && workArea.getHeight() > 0 && workArea.isLoadedCpu())
+	{
 		getActiveLayerImage().blendOver(workArea, workAreaCanvasOrigin, false);
+	}
 	clearWorkArea();
 }
 
@@ -4468,7 +4470,8 @@ void PaintEditor::applyEraserWorkArea()
 {
 	const int32_t cw = getCanvasWidth();
 	const int32_t ch = getCanvasHeight();
-	if (cw <= 0 || ch <= 0) return;
+	if (cw <= 0 || ch <= 0)
+		return;
 	const int32_t ww = workArea.getWidth();
 	const int32_t wh = workArea.getHeight();
 	if (ww <= 0 || wh <= 0 || !workArea.isLoadedCpu())

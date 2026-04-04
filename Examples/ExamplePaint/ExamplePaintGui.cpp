@@ -1,6 +1,5 @@
 #include "ExamplePaintEditor.h"
 #include "ExamplePaintGui.h"
-#include "ExamplePaintPerf.h"
 #include "BBE/BrotBoxEngine.h"
 #include "AssetStore.h"
 #include <algorithm>
@@ -1126,20 +1125,17 @@ static void drawPaintNavigatorImGuiWindow(PaintEditor &editor, uint64_t navigato
 	}
 
 	{
-		EXAMPLE_PAINT_PERF_ZONE("gui.navigator.windowInner");
 
 	const uint64_t thumbPixelHash = paintEditorNavigatorThumbPixelHash(navigatorContentHash, tw, th);
 	if (thumbPixelHash != editor.navigatorThumbPixelHashStored
 		|| tw != s_navigatorThumbCacheW || th != s_navigatorThumbCacheH
 		|| s_navigatorThumbRgbaCache.size() != (size_t)tw * th * 4)
 	{
-		EXAMPLE_PAINT_PERF_ZONE("gui.navigatorThumbRebuild");
 		// Sample visible pixels at minimap resolution only (O(tw*th)), not full-canvas flatten + downscale (O(W*H)).
 		const int32_t W = editor.getCanvasWidth();
 		const int32_t H = editor.getCanvasHeight();
 		s_navigatorThumbRgbaCache.resize((size_t)tw * th * 4);
 		{
-			EXAMPLE_PAINT_PERF_ZONE("gui.navigatorThumb.sampleLoop");
 			for (int y = 0; y < th; y++)
 			{
 				for (int x = 0; x < tw; x++)
@@ -1164,14 +1160,12 @@ static void drawPaintNavigatorImGuiWindow(PaintEditor &editor, uint64_t navigato
 		editor.navigatorThumbPixelHashStored = thumbPixelHash;
 #ifdef BBE_RENDERER_OPENGL
 		{
-			EXAMPLE_PAINT_PERF_ZONE("gui.navigatorThumb.glUpload");
 			navigatorUploadRgbaTexture(tw, th, s_navigatorThumbRgbaCache.data());
 		}
 #endif
 	}
 
 	{
-		EXAMPLE_PAINT_PERF_ZONE("gui.navigator.minimapPresent");
 	const ImVec2 imgSize((float)tw, (float)th);
 #ifdef BBE_RENDERER_OPENGL
 	ImGui::Image((ImTextureID)(intptr_t)s_navigatorMinimapGlTex, imgSize);
@@ -1246,7 +1240,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		uint64_t navigatorContentHash = 0;
 
 		{
-			EXAMPLE_PAINT_PERF_ZONE("gui.imguiSidePanels");
 		// Host dock space for Tools / Layers / Colors / Tool Options; central node is passthrough so the
 		// canvas (drawn under ImGui) still receives mouse via io.WantCaptureMouse when not over a panel.
 		ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
@@ -1715,7 +1708,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 
 		{
-			EXAMPLE_PAINT_PERF_ZONE("gui.navigator.docState");
 		anyNonNormalBlendMode = false;
 		for (size_t layerIndex = 0; layerIndex < editor.canvas.get().layers.getLength(); layerIndex++)
 		{
@@ -1731,7 +1723,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		{
 			if (anyNonNormalBlendMode)
 			{
-				EXAMPLE_PAINT_PERF_ZONE("gui.navigatorCacheFlatten");
 				editor.navigatorCachedFlattenVisible = editor.flattenVisibleLayers();
 			}
 			editor.navigatorContentHashStored = navigatorContentHash;
@@ -1747,11 +1738,9 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		drawPaintNavigatorImGuiWindow(editor, navigatorContentHash, canvasBackdrop);
 
 		{
-			EXAMPLE_PAINT_PERF_ZONE("gui.canvasDraw");
 			int mainTiMin = 0, mainTiMax = 0, mainTkMin = 0, mainTkMax = 0;
 			paintEditorVisibleMainTileRange(editor, mainTiMin, mainTiMax, mainTkMin, mainTkMax);
 		{
-			EXAMPLE_PAINT_PERF_ZONE("gui.canvas.mainTiles");
 		for (int32_t i = mainTiMin; i <= mainTiMax; i++)
 		{
 			for (int32_t k = mainTkMin; k <= mainTkMax; k++)
@@ -1790,7 +1779,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 		}
 		{
-			EXAMPLE_PAINT_PERF_ZONE("gui.canvas.grid");
 		if (editor.zoomLevel > 3 && editor.drawGridLines)
 		{
 			bbe::Vector2 zeroPos = editor.screenToCanvas({ 0, 0 });
@@ -1806,7 +1794,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 		}
 		{
-			EXAMPLE_PAINT_PERF_ZONE("gui.canvas.resizeHandles");
 		// Canvas resize handles (hidden while a selection exists so marquee handles stay unambiguous)
 		if (editor.getCanvasWidth() > 0 && editor.getCanvasHeight() > 0 && !editor.tiled && !editor.selection.hasSelection)
 		{
@@ -1834,7 +1821,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 
 		{
-			EXAMPLE_PAINT_PERF_ZONE("gui.canvas.selectionOverlay");
 		auto drawInAllTiles = [&](const bbe::Rectanglei &rect, const bbe::Image &image, float rotation = 0.f)
 		{
 			// Pre-rasterize rotation so the preview matches the committed pixel-grid result.
@@ -2063,7 +2049,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 
 		{
-			EXAMPLE_PAINT_PERF_ZONE("gui.canvas.toolPreviews");
 		if (editor.mode == PaintEditor::MODE_TEXT)
 		{
 			bbe::Vector2 previewPos = editor.screenToCanvas(mouseScreenPos);
@@ -2160,7 +2145,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 
 		{
-			EXAMPLE_PAINT_PERF_ZONE("gui.canvas.draftHandles");
 		auto drawEndpointHandle = [&](const bbe::Vector2 &canvasPos)
 		{
 			const float sx = editor.offset.x + canvasPos.x * editor.zoomLevel;
@@ -2202,7 +2186,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 
 		{
-			EXAMPLE_PAINT_PERF_ZONE("gui.canvas.symmetryGuides");
 		// Symmetry guide lines
 		if (editor.symmetryMode != bbe::SymmetryMode::None && editor.getCanvasWidth() > 0)
 		{
@@ -2248,7 +2231,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 
 		{
-			EXAMPLE_PAINT_PERF_ZONE("gui.menuAndPopups");
 		// HACK: We can only open popups if we are in the same ID Stack. See: https://github.com/ocornut/imgui/issues/331
 		bool openNewCanvas = false;
 		bool openChangeCanvasSize = false;
@@ -2312,7 +2294,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				toggleMenuItem("Draw Grid Lines", editor.drawGridLines);
 				toggleMenuItem("Tiled", editor.tiled);
 				toggleMenuItem("Navigator", editor.showNavigator);
-				toggleMenuItem("Performance (debug)", editor.showPerfProfilerWindow);
 				toggleMenuItem("Colors", editor.showColorsPanel);
 				toggleMenuItem("Tool Options", editor.showToolOptionsPanel);
 				ImGui::EndMenu();
@@ -2745,56 +2726,5 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			}
 		}
 
-		}
-
-		if (editor.showPerfProfilerWindow)
-		{
-			ImGui::SetNextWindowPos(ImVec2(48.f, 48.f), ImGuiCond_FirstUseEver);
-			ImGui::SetNextWindowSize(ImVec2(440.f, 540.f), ImGuiCond_FirstUseEver);
-			if (ImGui::Begin("Performance (debug)", &editor.showPerfProfilerWindow, ImGuiWindowFlags_None))
-			{
-				ImGui::TextDisabled("CPU zones; sum can exceed frame time when scopes overlap.");
-				ImGui::Text("Frame seq (last complete): %llu  wall dt: %.3f ms  FPS: %.1f",
-					(unsigned long long)ExamplePaintPerf::lastFrameSequence(),
-					(double)(ExamplePaintPerf::lastFrameWallSeconds() * 1000.0),
-					ExamplePaintPerf::lastFrameWallSeconds() > 1e-8f ? (double)(1.0f / ExamplePaintPerf::lastFrameWallSeconds()) : 0.0);
-				ImGui::Text("EMA frames counted: %llu", (unsigned long long)ExamplePaintPerf::completedFramesCounted());
-				float emaA = (float)ExamplePaintPerf::emaAlpha();
-				if (ImGui::SliderFloat("EMA blend / frame", &emaA, 0.02f, 0.5f, "%.3f"))
-				{
-					ExamplePaintPerf::setEmaAlpha((double)emaA);
-				}
-				if (ImGui::Button("Copy full report to clipboard"))
-				{
-					const std::string r = ExamplePaintPerf::buildClipboardReport(&editor);
-					ImGui::SetClipboardText(r.c_str());
-				}
-				ImGui::SameLine();
-				ImGui::TextDisabled("(paste to chat)");
-
-				ImGui::SeparatorText("Last frame (slowest first)");
-				const auto &last = ExamplePaintPerf::lastFrameSamples();
-				std::vector<std::pair<std::string, double>> lastSorted(last.begin(), last.end());
-				std::sort(lastSorted.begin(), lastSorted.end(),
-					[](const std::pair<std::string, double> &a, const std::pair<std::string, double> &b) { return a.second > b.second; });
-				ImGui::BeginChild("##perfLast", ImVec2(0, 140), true);
-				for (size_t i = 0; i < lastSorted.size(); i++)
-				{
-					ImGui::BulletText("%s: %.3f ms", lastSorted[i].first.c_str(), lastSorted[i].second);
-				}
-				if (last.empty()) ImGui::TextDisabled("(no samples yet — wait one frame)");
-				ImGui::EndChild();
-
-				ImGui::SeparatorText("EMA (slowest first)");
-				ImGui::BeginChild("##perfEma", ImVec2(0, 160), true);
-				const auto &ema = ExamplePaintPerf::zoneEmaSortedSlowestFirst();
-				for (size_t i = 0; i < ema.size(); i++)
-				{
-					ImGui::BulletText("%s: %.3f ms", ema[i].first.c_str(), ema[i].second);
-				}
-				if (ema.empty()) ImGui::TextDisabled("(builds over frames)");
-				ImGui::EndChild();
-			}
-			ImGui::End();
 		}
 }
