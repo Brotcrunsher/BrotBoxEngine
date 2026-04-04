@@ -1268,13 +1268,13 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		{
 			ImGui::SameLine();
 			if (ImGui::ImageButton("##clipPasteNew", s_toolIcons.clipboardPasteNew.texId, ImVec2(clipIconSize, clipIconSize)))
-				editor.pasteClipboardAsNewDocument();
+				editor.requestReplaceDocumentPasteFromClipboard();
 		}
 		else
 #endif
 		{
 			if (ImGui::Button("Paste as New Canvas", ImVec2(-1, 0)))
-				editor.pasteClipboardAsNewDocument();
+				editor.requestReplaceDocumentPasteFromClipboard();
 		}
 		{
 			paintEditorTryBindDigitHotkeyOnHover(editor, PaintEditor::DigitHotkeyAction::ClipboardPasteNew);
@@ -1960,7 +1960,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					bbe::String newPath = editor.path;
 					if (editor.platform.showOpenDialog && editor.platform.showOpenDialog(newPath))
 					{
-						editor.newCanvas(newPath.getRaw());
+						editor.requestReplaceDocumentOpen(newPath);
 					}
 				}
 				if (ImGui::MenuItem("Save"))
@@ -1974,6 +1974,10 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				if (ImGui::MenuItem("Save As Layered..."))
 				{
 					editor.saveDocumentAs(PaintEditor::SaveFormat::LAYERED);
+				}
+				if (ImGui::MenuItem("Quit"))
+				{
+					editor.requestReplaceApplicationQuit();
 				}
 				ImGui::EndMenu();
 			}
@@ -2046,6 +2050,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			ImGui::OpenPopup("Dropped File(s)");
 			editor.openDropChoicePopup = false;
 		}
+		if (editor.openUnsavedChangesPopup)
+		{
+			ImGui::OpenPopup("Unsaved changes");
+			editor.openUnsavedChangesPopup = false;
+		}
 		if (openMirrorImage)
 		{
 			ImGui::OpenPopup("Mirror image");
@@ -2073,9 +2082,64 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
+				if (editor.runPendingReplaceAfterSuccessfulSave)
+				{
+					editor.runPendingReplaceAfterSuccessfulSave = false;
+					editor.openUnsavedChangesPopup = true;
+				}
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
+		}
+
+		{
+			ImVec2 unsavedCenter = ImGui::GetMainViewport()->GetCenter();
+			ImGui::SetNextWindowPos(unsavedCenter, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			if (ImGui::BeginPopupModal("Unsaved changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				const bool pendingQuit = (editor.pendingDocumentReplace.kind == PaintEditor::PendingDocumentReplace::Kind::QuitApplication);
+				ImGui::TextUnformatted(pendingQuit
+					? "You have unsaved changes. Save before closing?"
+					: "You have unsaved changes. Save before continuing?");
+				ImGui::Spacing();
+				if (ImGui::Button("Save", ImVec2(120, 0)))
+				{
+					if (!editor.path.isEmpty())
+					{
+						if (editor.saveDocumentToPath(editor.path))
+						{
+							editor.runPendingDocumentReplace();
+							editor.clearPendingDocumentReplace();
+							ImGui::CloseCurrentPopup();
+						}
+						else
+						{
+							editor.openSaveFailedPopup = true;
+							editor.reshowUnsavedAfterSaveFail = true;
+						}
+					}
+					else
+					{
+						editor.runPendingReplaceAfterSuccessfulSave = true;
+						editor.openSaveChoicePopup = true;
+						ImGui::CloseCurrentPopup();
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Don't save", ImVec2(120, 0)))
+				{
+					editor.runPendingDocumentReplace();
+					editor.clearPendingDocumentReplace();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel", ImVec2(120, 0)))
+				{
+					editor.clearPendingDocumentReplace();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
 		}
 
 		if (ImGui::BeginPopupModal("Save failed", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
@@ -2083,6 +2147,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			ImGui::TextUnformatted("The file could not be written (permission denied, read-only location, or full disk).");
 			if (ImGui::Button("OK", ImVec2(120, 0)))
 			{
+				if (editor.reshowUnsavedAfterSaveFail)
+				{
+					editor.reshowUnsavedAfterSaveFail = false;
+					editor.openUnsavedChangesPopup = true;
+				}
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
@@ -2104,9 +2173,10 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			if (ImGui::Button("Open as Document", ImVec2(160, 0)))
 			{
 				// Use only the first valid file as the new document
-				editor.newCanvas(editor.pendingDroppedPaths[0].getRaw());
+				const bbe::String dropPath = editor.pendingDroppedPaths[0];
 				editor.pendingDroppedPaths.clear();
 				ImGui::CloseCurrentPopup();
+				editor.requestReplaceDocumentOpen(dropPath);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Add as Layer(s)", ImVec2(160, 0)))
@@ -2183,7 +2253,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					for (const char *item : items) ImGui::BulletText("%s", item);
 				};
 				bulletList("Tools", { "Digits 1–9 and 0 trigger customizable actions; hover a control in Tools (tools, pipette, symmetry, undo/redo, selection actions, clipboard) or Layers and press Ctrl+digit to assign", "Bindings are saved to ExamplePaintDigitHotkeys.dat (with ParanoiaConfig backups like ExampleMother)", "Defaults: 1 Brush, 2 Flood Fill, 3 Line, 4 Rectangle, 5 Selection, 6 Text, 7 Pipette, 8 Circle, 9 Arrow, 0 Bezier", "E Eraser, R Spray, O Ellipse selection, L Lasso, P Polygon Lasso, M Magic Wand" });
-				bulletList("General", { "+/- changes brush width, eraser size, spray width (spray tool), wand or flood-fill tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms", "Tools, Layers, Colors, and Tool options are separate floating windows: drag title bars to move; resize freely; layout is remembered (imgui.ini)", "Favorite swatches in the Colors window default to white and are saved to ExamplePaintFavoriteColors.dat", "Recent colors default to white, update as you draw, and are saved to ExamplePaintColorHistory.dat", "Most used (Colors window) ranks colors on the visible flattened canvas; fully transparent pixels are skipped" });
+				bulletList("General", { "+/- changes brush width, eraser size, spray width (spray tool), wand or flood-fill tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "With unsaved edits, New…, Open…, Paste as New Canvas, drop→Open as Document, Menu→Quit, or closing the window asks Save / Don't save / Cancel", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms", "Tools, Layers, Colors, and Tool options are separate floating windows: drag title bars to move; resize freely; layout is remembered (imgui.ini)", "Favorite swatches in the Colors window default to white and are saved to ExamplePaintFavoriteColors.dat", "Recent colors default to white, update as you draw, and are saved to ExamplePaintColorHistory.dat", "Most used (Colors window) ranks colors on the visible flattened canvas; fully transparent pixels are skipped" });
 				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection", "Edit → Mirror flips all layers (vertical or horizontal in the dialog)", "Edit → Rotate Canvas 90° turns all layers; canvas width and height swap" });
 				bulletList("Selection", { "Drag to create a rectangular selection", "Ellipse selection: drag for an elliptical marquee; hold Shift for a circle", "Lasso: click and drag to outline an area (closed automatically)", "Polygon lasso: click corners, then close via first point, Enter, or right-click", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand, Selection, Ellipse selection, Lasso, or Polygon lasso adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
 				bulletList("Layers", { "Painting and text placement affect only the active layer", "Canvas backdrop defaults to opaque white behind all layers; set alpha to 0 on the backdrop for a fully transparent document", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });
@@ -2340,7 +2410,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				if (newHeight < 1) newHeight = 1;
 				if (ImGui::Button("OK", ImVec2(120, 0)))
 				{
-					editor.newCanvas((uint32_t)newWidth, (uint32_t)newHeight);
+					editor.requestReplaceDocumentNewBlank((uint32_t)newWidth, (uint32_t)newHeight);
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::SameLine();

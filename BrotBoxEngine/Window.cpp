@@ -273,6 +273,11 @@ bool bbe::Window::keepAlive()
 
 	if (glfwWrapper::glfwWindowShouldClose(m_pwindow))
 	{
+		if (m_pgame != nullptr && !m_pgame->onWindowCloseRequest())
+		{
+			glfwWrapper::glfwSetWindowShouldClose(m_pwindow, GLFW_FALSE);
+			return true;
+		}
 		return false;
 	}
 

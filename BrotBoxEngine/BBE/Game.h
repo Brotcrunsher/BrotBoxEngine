@@ -99,6 +99,8 @@ namespace bbe
 		virtual void draw2D(bbe::PrimitiveBrush2D &brush) = 0;
 		virtual void onEnd() = 0;
 		virtual void onFilesDropped(const bbe::List<bbe::String> &paths) {}
+		/// GLFW requested window close (title bar, Alt+F4, etc.). Return \c false to cancel and keep running; \c true to allow the main loop to exit.
+		virtual bool onWindowCloseRequest();
 
 		void setExternallyManaged(bool managed);
 		bool isExternallyManaged() const;

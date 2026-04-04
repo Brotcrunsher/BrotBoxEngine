@@ -154,6 +154,33 @@ struct PaintEditor
 	bool openSaveChoicePopup = false;
 	bool openSaveFailedPopup = false;
 	bool openDropChoicePopup = false;
+	/// Pending full document replace (new/open/paste-as-new/quit) while \c hasUnsavedChanges(); resolved via \c openUnsavedChangesPopup.
+	struct PendingDocumentReplace
+	{
+		enum class Kind
+		{
+			None,
+			NewBlank,
+			OpenPath,
+			PasteClipboard,
+			QuitApplication,
+		} kind = Kind::None;
+		uint32_t blankW = 0;
+		uint32_t blankH = 0;
+		bbe::String path;
+	};
+	PendingDocumentReplace pendingDocumentReplace{};
+	bool openUnsavedChangesPopup = false;
+	/// After choosing Save in the unsaved dialog with no path yet: complete save via \c saveDocumentAs, then \c runPendingDocumentReplace().
+	bool runPendingReplaceAfterSuccessfulSave = false;
+	/// Re-open the unsaved dialog after a failed save that was part of that chain.
+	bool reshowUnsavedAfterSaveFail = false;
+	/// When set, \c saveDocumentAs must not assign \c path (document was replaced by the save-then-replace chain).
+	bool suppressNextSaveAsPathAssign = false;
+	/// After Save / Don't save on the quit confirmation, allow one close without showing the dialog again (see \c MyGame::onWindowCloseRequest).
+	bool allowWindowCloseWithoutPromptOnce = false;
+	/// Request application exit via window close (e.g. \c Window::close); set by the host game so quit uses the same GLFW path as the title-bar close button.
+	std::function<void()> applicationExitRequested;
 	bbe::List<bbe::String> pendingDroppedPaths;
 	bool showHelpWindow = false;
 	bool showNavigator = true;
@@ -520,7 +547,6 @@ struct PaintEditor
 
 	void applyDigitHotkeyBinding(DigitHotkeyAction action);
 	void copyFlattenedCanvasToClipboard();
-	void pasteClipboardAsNewDocument();
 
 	PaintLayer &getActiveLayer();
 
@@ -801,9 +827,16 @@ struct PaintEditor
 
 	void setupCanvas(bool clearHistory = true);
 
-	void newCanvas(uint32_t width, uint32_t height);
+	bool hasUnsavedChanges() const { return canvasGeneration != savedGeneration; }
 
-	bool newCanvas(const char *path);
+	/// If the document is clean, replaces immediately; otherwise opens the unsaved-changes dialog.
+	void requestReplaceDocumentNewBlank(uint32_t width, uint32_t height);
+	void requestReplaceDocumentOpen(const bbe::String &filePath);
+	void requestReplaceDocumentPasteFromClipboard();
+	void requestReplaceApplicationQuit();
+
+	void runPendingDocumentReplace();
+	void clearPendingDocumentReplace();
 
 	/// After loading a flat image: opaque white backdrop if every pixel has alpha 255, else transparent backdrop.
 	void setCanvasFallbackFromImageAlpha(const bbe::Image &image);
@@ -853,4 +886,9 @@ struct PaintEditor
 	void onStart(const PaintWindowMetrics &window);
 
 	void onFilesDropped(const bbe::List<bbe::String> &paths);
+
+private:
+	void newCanvas(uint32_t width, uint32_t height);
+	bool newCanvas(const char *path);
+	void pasteClipboardAsNewDocument();
 };

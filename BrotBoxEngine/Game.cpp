@@ -290,6 +290,11 @@ void bbe::Game::innerStart(int windowWidth, int windowHeight, const char *title)
 	}
 }
 
+bool bbe::Game::onWindowCloseRequest()
+{
+	return true;
+}
+
 bool bbe::Game::keepAlive()
 {
 	if (m_requestShutdown)

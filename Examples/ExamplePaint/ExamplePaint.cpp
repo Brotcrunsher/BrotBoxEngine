@@ -1000,6 +1000,30 @@ public:
 		w.height = getWindowHeight();
 		w.scale = getWindow()->getDpiScale();
 		editor.onStart(w);
+
+		editor.applicationExitRequested = [this]()
+		{
+			bbe::Window *w = getWindow();
+			if (w != nullptr)
+			{
+				w->close();
+			}
+		};
+	}
+
+	bool onWindowCloseRequest() override
+	{
+		if (editor.allowWindowCloseWithoutPromptOnce)
+		{
+			editor.allowWindowCloseWithoutPromptOnce = false;
+			return true;
+		}
+		if (!editor.hasUnsavedChanges())
+		{
+			return true;
+		}
+		editor.requestReplaceApplicationQuit();
+		return false;
 	}
 
 	void onFilesDropped(const bbe::List<bbe::String> &paths) override
@@ -1036,6 +1060,7 @@ public:
 		captureColorHistoryToPersist(editor, *colorHistoryPersist.operator->());
 		colorHistoryPersist.writeToFile();
 		editor.onColorHistoryChanged = nullptr;
+		editor.applicationExitRequested = nullptr;
 	}
 };
 

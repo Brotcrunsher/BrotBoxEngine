@@ -1417,7 +1417,7 @@ void PaintEditor::applyDigitHotkeyBinding(DigitHotkeyAction b)
 		copyFlattenedCanvasToClipboard();
 		break;
 	case DigitHotkeyAction::ClipboardPasteNew:
-		pasteClipboardAsNewDocument();
+		requestReplaceDocumentPasteFromClipboard();
 		break;
 	case DigitHotkeyAction::LayerNew:
 		addLayer();
@@ -4170,7 +4170,22 @@ bool PaintEditor::saveDocumentToPath(const bbe::String &filePath)
 	{
 		ok = saveFlattenedImage(filePath);
 	}
-	if (ok) savedGeneration = canvasGeneration;
+	const bool chainReplace = runPendingReplaceAfterSuccessfulSave;
+	if (ok)
+	{
+		savedGeneration = canvasGeneration;
+		if (chainReplace)
+		{
+			runPendingReplaceAfterSuccessfulSave = false;
+			suppressNextSaveAsPathAssign = true;
+			runPendingDocumentReplace();
+		}
+	}
+	else if (chainReplace)
+	{
+		runPendingReplaceAfterSuccessfulSave = false;
+		reshowUnsavedAfterSaveFail = true;
+	}
 	return ok;
 }
 
@@ -4182,12 +4197,22 @@ void PaintEditor::saveDocumentAs(SaveFormat format)
 	{
 		if (saveDocumentToPath(newPath))
 		{
-			path = newPath;
+			if (!suppressNextSaveAsPathAssign)
+			{
+				path = newPath;
+			}
+			suppressNextSaveAsPathAssign = false;
 		}
 		else
 		{
+			suppressNextSaveAsPathAssign = false;
 			openSaveFailedPopup = true;
 		}
+	}
+	else if (runPendingReplaceAfterSuccessfulSave)
+	{
+		runPendingReplaceAfterSuccessfulSave = false;
+		openUnsavedChangesPopup = true;
 	}
 }
 
@@ -4271,6 +4296,100 @@ void PaintEditor::setupCanvas(bool clearHistory)
 		savedGeneration = 0;
 		canvasVisualEpoch++;
 	}
+}
+
+void PaintEditor::clearPendingDocumentReplace()
+{
+	pendingDocumentReplace.kind = PendingDocumentReplace::Kind::None;
+	runPendingReplaceAfterSuccessfulSave = false;
+	reshowUnsavedAfterSaveFail = false;
+	suppressNextSaveAsPathAssign = false;
+}
+
+void PaintEditor::runPendingDocumentReplace()
+{
+	const PendingDocumentReplace p = pendingDocumentReplace;
+	pendingDocumentReplace.kind = PendingDocumentReplace::Kind::None;
+	switch (p.kind)
+	{
+	case PendingDocumentReplace::Kind::None:
+		return;
+	case PendingDocumentReplace::Kind::NewBlank:
+		newCanvas(p.blankW, p.blankH);
+		return;
+	case PendingDocumentReplace::Kind::OpenPath:
+		newCanvas(p.path.getRaw());
+		return;
+	case PendingDocumentReplace::Kind::PasteClipboard:
+		pasteClipboardAsNewDocument();
+		return;
+	case PendingDocumentReplace::Kind::QuitApplication:
+		allowWindowCloseWithoutPromptOnce = true;
+		if (applicationExitRequested)
+		{
+			applicationExitRequested();
+		}
+		return;
+	}
+}
+
+void PaintEditor::requestReplaceDocumentNewBlank(uint32_t width, uint32_t height)
+{
+	if (!hasUnsavedChanges())
+	{
+		newCanvas(width, height);
+		return;
+	}
+	pendingDocumentReplace.kind = PendingDocumentReplace::Kind::NewBlank;
+	pendingDocumentReplace.blankW = width;
+	pendingDocumentReplace.blankH = height;
+	pendingDocumentReplace.path = "";
+	openUnsavedChangesPopup = true;
+}
+
+void PaintEditor::requestReplaceDocumentOpen(const bbe::String &filePath)
+{
+	if (!hasUnsavedChanges())
+	{
+		newCanvas(filePath.getRaw());
+		return;
+	}
+	pendingDocumentReplace.kind = PendingDocumentReplace::Kind::OpenPath;
+	pendingDocumentReplace.blankW = 0;
+	pendingDocumentReplace.blankH = 0;
+	pendingDocumentReplace.path = filePath;
+	openUnsavedChangesPopup = true;
+}
+
+void PaintEditor::requestReplaceDocumentPasteFromClipboard()
+{
+	if (!hasUnsavedChanges())
+	{
+		pasteClipboardAsNewDocument();
+		return;
+	}
+	pendingDocumentReplace.kind = PendingDocumentReplace::Kind::PasteClipboard;
+	pendingDocumentReplace.blankW = 0;
+	pendingDocumentReplace.blankH = 0;
+	pendingDocumentReplace.path = "";
+	openUnsavedChangesPopup = true;
+}
+
+void PaintEditor::requestReplaceApplicationQuit()
+{
+	if (!hasUnsavedChanges())
+	{
+		if (applicationExitRequested)
+		{
+			applicationExitRequested();
+		}
+		return;
+	}
+	pendingDocumentReplace.kind = PendingDocumentReplace::Kind::QuitApplication;
+	pendingDocumentReplace.blankW = 0;
+	pendingDocumentReplace.blankH = 0;
+	pendingDocumentReplace.path = "";
+	openUnsavedChangesPopup = true;
 }
 
 void PaintEditor::newCanvas(uint32_t width, uint32_t height)
