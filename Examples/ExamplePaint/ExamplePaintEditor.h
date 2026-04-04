@@ -907,5 +907,5 @@ private:
 
 	void newCanvas(uint32_t width, uint32_t height);
 	bool newCanvas(const char *path);
-	void pasteClipboardAsNewDocument();
+	bool pasteClipboardAsNewDocument();
 };

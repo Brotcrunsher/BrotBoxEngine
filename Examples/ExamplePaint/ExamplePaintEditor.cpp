@@ -1359,18 +1359,22 @@ void PaintEditor::copyFlattenedCanvasToClipboard()
 	platform.setClipboardImage(flattenVisibleLayers());
 }
 
-void PaintEditor::pasteClipboardAsNewDocument()
+bool PaintEditor::pasteClipboardAsNewDocument()
 {
-	if (!platform.supportsClipboardImages || !platform.supportsClipboardImages()) return;
-	if (!platform.isClipboardImageAvailable || !platform.isClipboardImageAvailable()) return;
-	if (!platform.getClipboardImage) return;
-	canvas.get().layers.clear();
+	if (!platform.supportsClipboardImages || !platform.supportsClipboardImages()) return false;
+	if (!platform.isClipboardImageAvailable || !platform.isClipboardImageAvailable()) return false;
+	if (!platform.getClipboardImage) return false;
+
 	bbe::Image pasted = platform.getClipboardImage();
+	if (pasted.getWidth() <= 0 || pasted.getHeight() <= 0) return false;
+
+	canvas.get().layers.clear();
 	setCanvasFallbackFromImageAlpha(pasted);
 	canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, std::move(pasted) });
 	path = "";
 	submitCanvas();
 	setupCanvas(false);
+	return true;
 }
 
 bool PaintEditor::digitHotkeyActionIsValid(DigitHotkeyAction a)
