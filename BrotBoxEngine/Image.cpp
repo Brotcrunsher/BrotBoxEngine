@@ -1141,7 +1141,15 @@ void bbe::Image::drawBezier(const bbe::List<bbe::Vector2> &points,
 		for (size_t i = 1; i + 1 < points.getLength(); i++) controls.add(points[i]);
 	}
 
-	const int32_t samples = bbe::Math::max(minSamples, (int32_t)points.getLength() * 100);
+	// Sample count scales with control polygon length (canvas pixels), not a fixed *100 per point
+	// (which forced ≥400 segments for cubics and made large canvases unusable).
+	float controlSpan = 0.f;
+	for (size_t i = 0; i + 1 < points.getLength(); i++)
+	{
+		controlSpan += (points[i + 1] - points[i]).getLength();
+	}
+	const int32_t spanSamples = (int32_t)bbe::Math::clamp(controlSpan * 0.65f, 12.f, 384.f);
+	const int32_t samples = bbe::Math::max(minSamples, spanSamples);
 	bbe::Vector2 prev = bbe::Math::interpolateBezier(a, b, 0.f, controls);
 	for (int32_t i = 1; i <= samples; i++)
 	{

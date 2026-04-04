@@ -1532,6 +1532,17 @@ bbe::Colori PaintEditor::getVisiblePixel(size_t x, size_t y) const
 	return color;
 }
 
+bbe::Colori PaintEditor::getWorkAreaPixelAtCanvas(int32_t canvasX, int32_t canvasY) const
+{
+	const int32_t w = workArea.getWidth();
+	const int32_t h = workArea.getHeight();
+	if (w <= 0 || h <= 0 || !workArea.isLoadedCpu()) return bbe::Colori(0, 0, 0, 0);
+	const int32_t lx = canvasX - workAreaCanvasOrigin.x;
+	const int32_t ly = canvasY - workAreaCanvasOrigin.y;
+	if (lx < 0 || ly < 0 || lx >= w || ly >= h) return bbe::Colori(0, 0, 0, 0);
+	return workArea.getPixel((size_t)lx, (size_t)ly);
+}
+
 namespace {
 
 uint32_t mostUsedOnCanvasComputeCacheKey(const PaintEditor &ed)
@@ -2275,7 +2286,16 @@ bool PaintEditor::toImagePos(bbe::Vector2 &pos, int32_t width, int32_t height, b
 
 void PaintEditor::drawArrowToWorkArea(const bbe::Vector2 &from, const bbe::Vector2 &to, const bbe::Colori &color)
 {
-	workArea.drawArrow(from, to, color, brushWidth, arrowHeadSize, arrowHeadWidth, arrowDoubleHeaded, arrowFilledHead, tiled, antiAliasingEnabled);
+	if (tiled)
+	{
+		allocateWorkAreaFullCanvasIfTiled();
+		if (!workAreaCpuBufferReady()) return;
+		workArea.drawArrow(from, to, color, brushWidth, arrowHeadSize, arrowHeadWidth, arrowDoubleHeaded, arrowFilledHead, true, antiAliasingEnabled);
+		return;
+	}
+	expandWorkAreaToIncludeCanvasRect(canvasBoundsForArrowStroke(from, to));
+	if (!workAreaCpuBufferReady()) return;
+	workArea.drawArrow(toWorkAreaLocal(from), toWorkAreaLocal(to), color, brushWidth, arrowHeadSize, arrowHeadWidth, arrowDoubleHeaded, arrowFilledHead, false, antiAliasingEnabled);
 }
 
 bbe::Colori PaintEditor::getLineDraftColor() const { return getColor(line.draftUsesRightColor); }
@@ -2332,7 +2352,20 @@ bbe::Colori PaintEditor::getBezierColor() const { return getColor(bezier.usesRig
 
 void PaintEditor::drawBezierToWorkArea(const bbe::List<bbe::Vector2> &points, const bbe::Colori &color)
 {
-	workArea.drawBezier(points, color, brushWidth, tiled, antiAliasingEnabled);
+	if (points.getLength() < 2) return;
+	if (tiled)
+	{
+		allocateWorkAreaFullCanvasIfTiled();
+		if (!workAreaCpuBufferReady()) return;
+		workArea.drawBezier(points, color, brushWidth, true, antiAliasingEnabled);
+		return;
+	}
+	expandWorkAreaToIncludeCanvasRect(canvasBoundsForBezierStroke(points));
+	if (!workAreaCpuBufferReady()) return;
+	bbe::List<bbe::Vector2> localPts;
+	for (size_t i = 0; i < points.getLength(); i++)
+		localPts.add(toWorkAreaLocal(points[i]));
+	workArea.drawBezier(localPts, color, brushWidth, false, antiAliasingEnabled);
 }
 
 void PaintEditor::finalizeBezierDraft()
@@ -4256,9 +4289,158 @@ void PaintEditor::resetCamera()
 	zoomLevel = 1.f;
 }
 
+void PaintEditor::expandWorkAreaToIncludeCanvasRect(const bbe::Rectanglei &rectOnCanvas)
+{
+	if (tiled) return;
+	const int32_t cw = getCanvasWidth();
+	const int32_t ch = getCanvasHeight();
+	if (cw <= 0 || ch <= 0) return;
+	if (rectOnCanvas.getRight() <= rectOnCanvas.getLeft() || rectOnCanvas.getBottom() <= rectOnCanvas.getTop()) return;
+
+	const int32_t nL = bbe::Math::max(0, rectOnCanvas.getLeft());
+	const int32_t nT = bbe::Math::max(0, rectOnCanvas.getTop());
+	const int32_t nR = bbe::Math::min(cw, rectOnCanvas.getRight());
+	const int32_t nB = bbe::Math::min(ch, rectOnCanvas.getBottom());
+	if (nR <= nL || nB <= nT) return;
+
+	const bbe::Rectanglei clipped(nL, nT, nR - nL, nB - nT);
+	const bbe::Color transparent(0.f, 0.f, 0.f, 0.f);
+
+	const int32_t ow = workArea.getWidth();
+	const int32_t oh = workArea.getHeight();
+	if (ow <= 0 || oh <= 0 || !workArea.isLoadedCpu())
+	{
+		workArea = bbe::Image(clipped.width, clipped.height, transparent);
+		workAreaCanvasOrigin = { clipped.x, clipped.y };
+		workArea.keepAfterUpload();
+		workArea.setFilterMode(bbe::ImageFilterMode::NEAREST);
+		bumpNavigatorThumbnailDirty();
+		return;
+	}
+
+	const bbe::Rectanglei cur(workAreaCanvasOrigin.x, workAreaCanvasOrigin.y, ow, oh);
+	const int32_t uL = bbe::Math::min(cur.getLeft(), clipped.getLeft());
+	const int32_t uT = bbe::Math::min(cur.getTop(), clipped.getTop());
+	const int32_t uR = bbe::Math::max(cur.getRight(), clipped.getRight());
+	const int32_t uB = bbe::Math::max(cur.getBottom(), clipped.getBottom());
+	if (uL == cur.getLeft() && uT == cur.getTop() && uR == cur.getRight() && uB == cur.getBottom()) return;
+
+	workArea = workArea.resizedCanvas(uR - uL, uB - uT, { cur.x - uL, cur.y - uT }, transparent);
+	workAreaCanvasOrigin = { uL, uT };
+	workArea.keepAfterUpload();
+	workArea.setFilterMode(bbe::ImageFilterMode::NEAREST);
+	bumpNavigatorThumbnailDirty();
+}
+
+void PaintEditor::allocateWorkAreaFullCanvasIfTiled()
+{
+	if (!tiled) return;
+	const int32_t cw = getCanvasWidth();
+	const int32_t ch = getCanvasHeight();
+	if (cw <= 0 || ch <= 0) return;
+	if (workArea.getWidth() == cw && workArea.getHeight() == ch && workAreaCanvasOrigin.x == 0 && workAreaCanvasOrigin.y == 0 && workArea.isLoadedCpu())
+		return;
+
+	const bbe::Color transparent(0.f, 0.f, 0.f, 0.f);
+	workArea = bbe::Image(cw, ch, transparent);
+	workAreaCanvasOrigin = { 0, 0 };
+	workArea.keepAfterUpload();
+	workArea.setFilterMode(bbe::ImageFilterMode::NEAREST);
+}
+
+bbe::Vector2 PaintEditor::toWorkAreaLocal(const bbe::Vector2 &canvasPos) const
+{
+	return { canvasPos.x - (float)workAreaCanvasOrigin.x, canvasPos.y - (float)workAreaCanvasOrigin.y };
+}
+
+bool PaintEditor::workAreaCpuBufferReady() const
+{
+	return workArea.getWidth() > 0 && workArea.getHeight() > 0 && workArea.isLoadedCpu();
+}
+
+bbe::Rectanglei PaintEditor::canvasBoundsForBrushStampAt(const bbe::Vector2 &canvasPos) const
+{
+	const int32_t r = brushWidth;
+	const int32_t x0 = (int32_t)std::floor(canvasPos.x) - r - 3;
+	const int32_t y0 = (int32_t)std::floor(canvasPos.y) - r - 3;
+	const int32_t x1 = (int32_t)std::ceil(canvasPos.x) + r + 4;
+	const int32_t y1 = (int32_t)std::ceil(canvasPos.y) + r + 4;
+	return { x0, y0, x1 - x0, y1 - y0 };
+}
+
+bbe::Rectanglei PaintEditor::canvasBoundsForBrushSegment(const bbe::Vector2 &from, const bbe::Vector2 &to, int32_t brushRadius)
+{
+	const float m = (float)brushRadius + 5.f;
+	const int32_t L = (int32_t)std::floor(std::min(from.x, to.x) - m);
+	const int32_t T = (int32_t)std::floor(std::min(from.y, to.y) - m);
+	const int32_t R = (int32_t)std::ceil(std::max(from.x, to.x) + m);
+	const int32_t B = (int32_t)std::ceil(std::max(from.y, to.y) + m);
+	return { L, T, R - L, B - T };
+}
+
+bbe::Rectanglei PaintEditor::canvasBoundsForBezierStroke(const bbe::List<bbe::Vector2> &canvasPoints) const
+{
+	if (canvasPoints.isEmpty()) return {};
+	float minX = canvasPoints[0].x, maxX = canvasPoints[0].x, minY = canvasPoints[0].y, maxY = canvasPoints[0].y;
+	for (size_t i = 1; i < canvasPoints.getLength(); ++i)
+	{
+		minX = std::min(minX, canvasPoints[i].x);
+		maxX = std::max(maxX, canvasPoints[i].x);
+		minY = std::min(minY, canvasPoints[i].y);
+		maxY = std::max(maxY, canvasPoints[i].y);
+	}
+	const float m = (float)brushWidth + 8.f;
+	const int32_t L = (int32_t)std::floor(minX - m);
+	const int32_t T = (int32_t)std::floor(minY - m);
+	const int32_t R = (int32_t)std::ceil(maxX + m);
+	const int32_t B = (int32_t)std::ceil(maxY + m);
+	return { L, T, R - L, B - T };
+}
+
+bbe::Rectanglei PaintEditor::canvasBoundsForArrowStroke(const bbe::Vector2 &from, const bbe::Vector2 &to) const
+{
+	const int32_t m = bbe::Math::max(brushWidth, bbe::Math::max(arrowHeadSize, arrowHeadWidth) + brushWidth + 4);
+	const bbe::Rectanglei seg = canvasBoundsForBrushSegment(from, to, brushWidth);
+	const int32_t L = seg.getLeft() - m;
+	const int32_t T = seg.getTop() - m;
+	const int32_t R = seg.getRight() + m;
+	const int32_t B = seg.getBottom() + m;
+	return { L, T, R - L, B - T };
+}
+
+bbe::Rectanglei PaintEditor::canvasBoundsForSprayDisk(const bbe::Vector2 &center, float radius)
+{
+	const float m = radius + 6.f;
+	const int32_t L = (int32_t)std::floor(center.x - m);
+	const int32_t T = (int32_t)std::floor(center.y - m);
+	const int32_t R = (int32_t)std::ceil(center.x + m);
+	const int32_t B = (int32_t)std::ceil(center.y + m);
+	return { L, T, R - L, B - T };
+}
+
 void PaintEditor::clearWorkArea()
 {
-	workArea = bbe::Image(getCanvasWidth(), getCanvasHeight(), bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
+	const int32_t cw = getCanvasWidth();
+	const int32_t ch = getCanvasHeight();
+	if (cw <= 0 || ch <= 0) return;
+	const bbe::Color transparent(0.0f, 0.0f, 0.0f, 0.0f);
+	if (tiled)
+	{
+		if (workArea.getWidth() == cw && workArea.getHeight() == ch && workArea.isLoadedCpu())
+		{
+			workArea.load(cw, ch, transparent);
+		}
+		else
+		{
+			workArea = bbe::Image(cw, ch, transparent);
+		}
+		workAreaCanvasOrigin = { 0, 0 };
+	}
+	else
+	{
+		workArea = bbe::Image();
+		workAreaCanvasOrigin = { 0, 0 };
+	}
 	workArea.keepAfterUpload();
 	workArea.setFilterMode(bbe::ImageFilterMode::NEAREST);
 	bumpNavigatorThumbnailDirty();
@@ -4277,7 +4459,8 @@ void PaintEditor::submitCanvas()
 
 void PaintEditor::applyWorkArea()
 {
-	getActiveLayerImage().blendOver(workArea, { 0, 0 }, false);
+	if (workArea.getWidth() > 0 && workArea.getHeight() > 0 && workArea.isLoadedCpu())
+		getActiveLayerImage().blendOver(workArea, workAreaCanvasOrigin, false);
 	clearWorkArea();
 }
 
@@ -4286,15 +4469,25 @@ void PaintEditor::applyEraserWorkArea()
 	const int32_t cw = getCanvasWidth();
 	const int32_t ch = getCanvasHeight();
 	if (cw <= 0 || ch <= 0) return;
-	bbe::Image &layer = getActiveLayerImage();
-	for (int32_t y = 0; y < ch; ++y)
+	const int32_t ww = workArea.getWidth();
+	const int32_t wh = workArea.getHeight();
+	if (ww <= 0 || wh <= 0 || !workArea.isLoadedCpu())
 	{
-		for (int32_t x = 0; x < cw; ++x)
+		clearWorkArea();
+		return;
+	}
+	bbe::Image &layer = getActiveLayerImage();
+	for (int32_t ly = 0; ly < wh; ++ly)
+	{
+		for (int32_t lx = 0; lx < ww; ++lx)
 		{
-			if (workArea.getPixel((size_t)x, (size_t)y).a == 0) continue;
-			bbe::Colori c = layer.getPixel((size_t)x, (size_t)y);
+			if (workArea.getPixel((size_t)lx, (size_t)ly).a == 0) continue;
+			const int32_t cx = workAreaCanvasOrigin.x + lx;
+			const int32_t cy = workAreaCanvasOrigin.y + ly;
+			if (cx < 0 || cy < 0 || cx >= cw || cy >= ch) continue;
+			bbe::Colori c = layer.getPixel((size_t)cx, (size_t)cy);
 			c.a = 0;
-			layer.setPixel((size_t)x, (size_t)y, c);
+			layer.setPixel((size_t)cx, (size_t)cy, c);
 		}
 	}
 	clearWorkArea();
@@ -4586,14 +4779,18 @@ namespace {
 constexpr bbe::Colori kEraserWorkAreaMark(255, 64, 255, 230);
 
 bool eraseStampAtCanvasPointNoSymmetry(
-	bbe::Image &workArea,
+	bbe::Image &wa,
 	const bbe::Rectanglei &stamp,
 	bool tiled,
 	int32_t cw,
-	int32_t ch)
+	int32_t ch,
+	const bbe::Vector2i *workOrigin)
 {
 	const int32_t eraserN = stamp.width;
 	if (eraserN < 1 || stamp.height != eraserN || cw <= 0 || ch <= 0) return false;
+	const int32_t waW = wa.getWidth();
+	const int32_t waH = wa.getHeight();
+	if (waW <= 0 || waH <= 0) return false;
 	const int32_t left = stamp.x;
 	const int32_t top = stamp.y;
 	const bbe::Colori mark = kEraserWorkAreaMark;
@@ -4602,15 +4799,24 @@ bool eraseStampAtCanvasPointNoSymmetry(
 	{
 		for (int32_t xx = left; xx < left + eraserN; ++xx)
 		{
-			int32_t px = xx;
-			int32_t py = yy;
+			int32_t tcx = xx;
+			int32_t tcy = yy;
 			if (tiled)
 			{
-				px = bbe::Math::mod<int32_t>(px, cw);
-				py = bbe::Math::mod<int32_t>(py, ch);
+				tcx = bbe::Math::mod<int32_t>(tcx, cw);
+				tcy = bbe::Math::mod<int32_t>(tcy, ch);
 			}
-			else if (px < 0 || py < 0 || px >= cw || py >= ch) continue;
-			workArea.setPixel((size_t)px, (size_t)py, mark);
+			else if (tcx < 0 || tcy < 0 || tcx >= cw || tcy >= ch) continue;
+
+			int32_t imgX = tcx;
+			int32_t imgY = tcy;
+			if (workOrigin != nullptr)
+			{
+				imgX = tcx - workOrigin->x;
+				imgY = tcy - workOrigin->y;
+			}
+			if (imgX < 0 || imgY < 0 || imgX >= waW || imgY >= waH) continue;
+			wa.setPixel((size_t)imgX, (size_t)imgY, mark);
 			changed = true;
 		}
 	}
@@ -4623,10 +4829,25 @@ bool PaintEditor::eraseStampAtCanvasWithSymmetry(const bbe::Vector2 &canvasPos)
 {
 	const int32_t cw = getCanvasWidth();
 	const int32_t ch = getCanvasHeight();
-	bool changed = false;
 	const auto positions = getSymmetryPositions(canvasPos);
+	if (positions.isEmpty()) return false;
+	if (tiled)
+	{
+		allocateWorkAreaFullCanvasIfTiled();
+		if (!workAreaCpuBufferReady()) return false;
+		bool changed = false;
+		for (size_t i = 0; i < positions.getLength(); i++)
+			changed |= eraseStampAtCanvasPointNoSymmetry(workArea, getEraserPixelRect(positions[i]), true, cw, ch, nullptr);
+		return changed;
+	}
+	bbe::Rectanglei bounds = getEraserPixelRect(positions[0]);
+	for (size_t i = 1; i < positions.getLength(); i++)
+		bounds = bounds.combine(getEraserPixelRect(positions[i]));
+	expandWorkAreaToIncludeCanvasRect(bounds);
+	if (!workAreaCpuBufferReady()) return false;
+	bool changed = false;
 	for (size_t i = 0; i < positions.getLength(); i++)
-		changed |= eraseStampAtCanvasPointNoSymmetry(workArea, getEraserPixelRect(positions[i]), tiled, cw, ch);
+		changed |= eraseStampAtCanvasPointNoSymmetry(workArea, getEraserPixelRect(positions[i]), false, cw, ch, &workAreaCanvasOrigin);
 	return changed;
 }
 
@@ -4648,20 +4869,28 @@ namespace {
 
 thread_local std::mt19937 g_sprayRng{std::random_device{}()};
 
-// Composites one spray speck onto the work-area image (straight alpha). dropletAlpha is a random stain strength in 1..255, scaled by brushColor.a.
-bool sprayBlendDropletOntoWorkArea(bbe::Image &workArea, float xf, float yf, const bbe::Colori &brushColor, bbe::byte dropletAlpha, bool tiled)
+} // namespace
+
+bool PaintEditor::sprayBlendDropletAtCanvas(float xf, float yf, const bbe::Colori &brushColor, bbe::byte dropletAlpha)
 {
-	int32_t px = (int32_t)std::floor(xf);
-	int32_t py = (int32_t)std::floor(yf);
+	const int32_t cw = getCanvasWidth();
+	const int32_t ch = getCanvasHeight();
 	const int32_t w = workArea.getWidth();
 	const int32_t h = workArea.getHeight();
-	if (w <= 0 || h <= 0) return false;
+	if (cw <= 0 || ch <= 0 || w <= 0 || h <= 0 || !workArea.isLoadedCpu()) return false;
+
+	int32_t tcx = (int32_t)std::floor(xf);
+	int32_t tcy = (int32_t)std::floor(yf);
 	if (tiled)
 	{
-		px = bbe::Math::mod<int32_t>(px, w);
-		py = bbe::Math::mod<int32_t>(py, h);
+		tcx = bbe::Math::mod<int32_t>(tcx, cw);
+		tcy = bbe::Math::mod<int32_t>(tcy, ch);
 	}
-	else if (px < 0 || py < 0 || px >= w || py >= h) return false;
+	else if (tcx < 0 || tcy < 0 || tcx >= cw || tcy >= ch) return false;
+
+	const int32_t lx = tcx - workAreaCanvasOrigin.x;
+	const int32_t ly = tcy - workAreaCanvasOrigin.y;
+	if (lx < 0 || ly < 0 || lx >= w || ly >= h) return false;
 
 	const uint32_t ba = (uint32_t)brushColor.a;
 	if (ba == 0) return false;
@@ -4673,13 +4902,11 @@ bool sprayBlendDropletOntoWorkArea(bbe::Image &workArea, float xf, float yf, con
 		brushColor.b,
 		(bbe::byte)bbe::Math::min<uint32_t>(combinedA, 255u));
 
-	const bbe::Colori dst = workArea.getPixel((size_t)px, (size_t)py);
+	const bbe::Colori dst = workArea.getPixel((size_t)lx, (size_t)ly);
 	const bbe::Colori out = dst.blendTo(src, 1.f, bbe::BlendMode::Normal);
-	workArea.setPixel((size_t)px, (size_t)py, out);
+	workArea.setPixel((size_t)lx, (size_t)ly, out);
 	return true;
 }
-
-} // namespace
 
 bool PaintEditor::sprayBurstAtCanvasWithSymmetry(const bbe::Vector2 &canvasPos, bool leftDown, bool rightDown)
 {
@@ -4694,6 +4921,19 @@ bool PaintEditor::sprayBurstAtCanvasWithSymmetry(const bbe::Vector2 &canvasPos, 
 	const int droplets = sprayDensity;
 	bool changed = false;
 	const auto centers = getSymmetryPositions(canvasPos);
+	if (centers.isEmpty()) return false;
+	if (tiled)
+	{
+		allocateWorkAreaFullCanvasIfTiled();
+	}
+	else
+	{
+		bbe::Rectanglei bounds = canvasBoundsForSprayDisk(centers[0], radius);
+		for (size_t s = 1; s < centers.getLength(); s++)
+			bounds = bounds.combine(canvasBoundsForSprayDisk(centers[s], radius));
+		expandWorkAreaToIncludeCanvasRect(bounds);
+	}
+	if (!workAreaCpuBufferReady()) return false;
 	for (size_t s = 0; s < centers.getLength(); s++)
 	{
 		const bbe::Vector2 &c = centers[s];
@@ -4705,7 +4945,7 @@ bool PaintEditor::sprayBurstAtCanvasWithSymmetry(const bbe::Vector2 &canvasPos, 
 			const float ang = angDist(g_sprayRng);
 			const bbe::Vector2 p(c.x + std::cos(ang) * r, c.y + std::sin(ang) * r);
 			const bbe::byte da = (bbe::byte)dropletAlphaDist(g_sprayRng);
-			changed |= sprayBlendDropletOntoWorkArea(workArea, p.x, p.y, color, da, tiled);
+			changed |= sprayBlendDropletAtCanvas(p.x, p.y, color, da);
 		}
 	}
 	return changed;
@@ -4727,20 +4967,54 @@ bool PaintEditor::sprayLineOnWorkAreaWithSymmetry(const bbe::Vector2 &pNew, cons
 
 bool PaintEditor::touch(const bbe::Vector2 &touchPos, bool rectangleShape, bool leftDown, bool rightDown)
 {
-	bool changed = false;
 	const auto positions = getSymmetryPositions(touchPos);
+	if (positions.isEmpty()) return false;
+	const bbe::Colori col = activeDrawColor(leftDown, rightDown);
+	const auto shape = rectangleShape ? bbe::ImageBrushShape::Square : bbe::ImageBrushShape::Circle;
+	if (tiled)
+	{
+		allocateWorkAreaFullCanvasIfTiled();
+		if (!workAreaCpuBufferReady()) return false;
+		bool changed = false;
+		for (size_t i = 0; i < positions.getLength(); i++)
+			changed |= workArea.drawBrushStamp(positions[i], col, brushWidth, shape, true, antiAliasingEnabled);
+		return changed;
+	}
+	bbe::Rectanglei bounds = canvasBoundsForBrushStampAt(positions[0]);
+	for (size_t i = 1; i < positions.getLength(); i++)
+		bounds = bounds.combine(canvasBoundsForBrushStampAt(positions[i]));
+	expandWorkAreaToIncludeCanvasRect(bounds);
+	if (!workAreaCpuBufferReady()) return false;
+	bool changed = false;
 	for (size_t i = 0; i < positions.getLength(); i++)
-		changed |= workArea.drawBrushStamp(positions[i], activeDrawColor(leftDown, rightDown), brushWidth, rectangleShape ? bbe::ImageBrushShape::Square : bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
+		changed |= workArea.drawBrushStamp(toWorkAreaLocal(positions[i]), col, brushWidth, shape, false, antiAliasingEnabled);
 	return changed;
 }
 
 bool PaintEditor::touchLine(const bbe::Vector2 &pos1, const bbe::Vector2 &pos2, bool rectangleShape, bool leftDown, bool rightDown)
 {
-	bool changed = false;
 	const auto starts = getSymmetryPositions(pos1);
 	const auto ends = getSymmetryPositions(pos2);
+	if (starts.isEmpty() || ends.getLength() != starts.getLength()) return false;
+	const bbe::Colori col = activeDrawColor(leftDown, rightDown);
+	const auto shape = rectangleShape ? bbe::ImageBrushShape::Square : bbe::ImageBrushShape::Circle;
+	if (tiled)
+	{
+		allocateWorkAreaFullCanvasIfTiled();
+		if (!workAreaCpuBufferReady()) return false;
+		bool changed = false;
+		for (size_t i = 0; i < starts.getLength(); i++)
+			changed |= workArea.drawLineCapsule(starts[i], ends[i], col, brushWidth, shape, true, antiAliasingEnabled);
+		return changed;
+	}
+	bbe::Rectanglei bounds = canvasBoundsForBrushSegment(starts[0], ends[0], brushWidth);
+	for (size_t i = 1; i < starts.getLength(); i++)
+		bounds = bounds.combine(canvasBoundsForBrushSegment(starts[i], ends[i], brushWidth));
+	expandWorkAreaToIncludeCanvasRect(bounds);
+	if (!workAreaCpuBufferReady()) return false;
+	bool changed = false;
 	for (size_t i = 0; i < starts.getLength(); i++)
-		changed |= workArea.drawLineCapsule(starts[i], ends[i], activeDrawColor(leftDown, rightDown), brushWidth, rectangleShape ? bbe::ImageBrushShape::Square : bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
+		changed |= workArea.drawLineCapsule(toWorkAreaLocal(starts[i]), toWorkAreaLocal(ends[i]), col, brushWidth, shape, false, antiAliasingEnabled);
 	return changed;
 }
 
@@ -4748,8 +5022,23 @@ void PaintEditor::touchLineSymmetry(const bbe::Vector2 &pos1, const bbe::Vector2
 {
 	const auto starts = getSymmetryPositions(pos1);
 	const auto ends = getSymmetryPositions(pos2);
+	if (starts.isEmpty() || ends.getLength() != starts.getLength()) return;
+	const auto shape = rectShape ? bbe::ImageBrushShape::Square : bbe::ImageBrushShape::Circle;
+	if (tiled)
+	{
+		allocateWorkAreaFullCanvasIfTiled();
+		if (!workAreaCpuBufferReady()) return;
+		for (size_t i = 0; i < starts.getLength(); i++)
+			workArea.drawLineCapsule(starts[i], ends[i], color, width, shape, true, antiAliasingEnabled);
+		return;
+	}
+	bbe::Rectanglei bounds = canvasBoundsForBrushSegment(starts[0], ends[0], width);
+	for (size_t i = 1; i < starts.getLength(); i++)
+		bounds = bounds.combine(canvasBoundsForBrushSegment(starts[i], ends[i], width));
+	expandWorkAreaToIncludeCanvasRect(bounds);
+	if (!workAreaCpuBufferReady()) return;
 	for (size_t i = 0; i < starts.getLength(); i++)
-		workArea.drawLineCapsule(starts[i], ends[i], color, width, rectShape ? bbe::ImageBrushShape::Square : bbe::ImageBrushShape::Circle, tiled, antiAliasingEnabled);
+		workArea.drawLineCapsule(toWorkAreaLocal(starts[i]), toWorkAreaLocal(ends[i]), color, width, shape, false, antiAliasingEnabled);
 }
 
 void PaintEditor::drawArrowSymmetry(const bbe::Vector2 &from, const bbe::Vector2 &to, const bbe::Colori &color)

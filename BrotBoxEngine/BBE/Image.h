@@ -216,7 +216,7 @@ namespace bbe
 						int32_t strokeRadius,
 						bool tiled = false,
 						bool antiAlias = true,
-						int32_t minSamples = 200);
+						int32_t minSamples = 24);
 
 		// CPU text: blends font glyphs onto this image (R8 coverage → alpha-over). Optionally tiled.
 		void blendText(const Font &font, const bbe::String &text, const bbe::Vector2i &topLeft, const bbe::Colori &color, bool tiled = false, bool antiAlias = true);

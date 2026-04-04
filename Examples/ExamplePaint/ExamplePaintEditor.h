@@ -157,6 +157,8 @@ struct PaintEditor
 	bbe::UndoableObject<PaintDocument> canvas;
 	int32_t activeLayerIndex = 0;
 	bbe::Image workArea;
+	/// Top-left of \c workArea in canvas pixel space. When \c tiled is true the buffer is always full-canvas at (0,0).
+	bbe::Vector2i workAreaCanvasOrigin{ 0, 0 };
 	float zoomLevel = 1.f;
 	bool openSaveChoicePopup = false;
 	bool openSaveFailedPopup = false;
@@ -191,6 +193,8 @@ struct PaintEditor
 	std::function<void()> applicationExitRequested;
 	bbe::List<bbe::String> pendingDroppedPaths;
 	bool showHelpWindow = false;
+	/// ImGui profiler: timings, EMA, copy-to-clipboard report (on by default for profiling sessions).
+	bool showPerfProfilerWindow = true;
 	bool showNavigator = true;
 	/// Screen-space minimap bounds from the last completed ImGui frame (see \c drawExamplePaintGui); drives \c getNavigatorRect().
 	bbe::Rectangle navigatorMinimapHitRect{};
@@ -586,6 +590,9 @@ struct PaintEditor
 
 	bbe::Colori getVisiblePixel(size_t x, size_t y) const;
 
+	/// Sample the live work-area layer at a canvas pixel (transparent outside the current patch).
+	bbe::Colori getWorkAreaPixelAtCanvas(int32_t canvasX, int32_t canvasY) const;
+
 	bbe::String makeLayerName() const;
 
 	void addLayer();
@@ -904,6 +911,18 @@ struct PaintEditor
 	void onFilesDropped(const bbe::List<bbe::String> &paths);
 
 private:
+	void expandWorkAreaToIncludeCanvasRect(const bbe::Rectanglei &rectOnCanvas);
+	void allocateWorkAreaFullCanvasIfTiled();
+	bbe::Vector2 toWorkAreaLocal(const bbe::Vector2 &canvasPos) const;
+	bbe::Rectanglei canvasBoundsForBrushStampAt(const bbe::Vector2 &canvasPos) const;
+	static bbe::Rectanglei canvasBoundsForBrushSegment(const bbe::Vector2 &from, const bbe::Vector2 &to, int32_t brushRadius);
+	bbe::Rectanglei canvasBoundsForBezierStroke(const bbe::List<bbe::Vector2> &canvasPoints) const;
+	bbe::Rectanglei canvasBoundsForArrowStroke(const bbe::Vector2 &from, const bbe::Vector2 &to) const;
+	static bbe::Rectanglei canvasBoundsForSprayDisk(const bbe::Vector2 &center, float radius);
+	bool sprayBlendDropletAtCanvas(float xf, float yf, const bbe::Colori &brushColor, bbe::byte dropletAlpha);
+
+	bool workAreaCpuBufferReady() const;
+
 	void resetBrushStrokeUpdateState();
 
 	void newCanvas(uint32_t width, uint32_t height);

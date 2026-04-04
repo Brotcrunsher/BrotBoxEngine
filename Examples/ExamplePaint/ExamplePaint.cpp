@@ -3,11 +3,11 @@
 #include <cstdint>
 #include <map>
 #include <string>
-#include <iostream>
 
 #include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 #include "ExamplePaintEditor.h"
 #include "ExamplePaintGui.h"
+#include "ExamplePaintPerf.h"
 
 /// Persisted 1–9 / 0 digit bindings (one \c int32_t action per key; \c formatVersion distinguishes this from older multi-field saves).
 struct ExamplePaintDigitHotkeysPersist
@@ -174,6 +174,15 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	w.scale = g.getWindow()->getDpiScale();
 	editor.setViewportMetrics(w);
 
+	bbe::Vector2 currMousePos{};
+	bool drawMode = false;
+	bool shadowDrawMode = false;
+	bool drawButtonDown = false;
+	bool drawButtonDownForTools = false;
+
+	{
+		EXAMPLE_PAINT_PERF_ZONE("update.editorLogic");
+
 	if (editor.mode == PaintEditor::MODE_PIPETTE && editor.lastModeSnapshot != PaintEditor::MODE_PIPETTE)
 	{
 		editor.pipetteReturnMode = editor.lastModeSnapshot;
@@ -187,8 +196,8 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	const bool ctrlDown = g.isKeyDown(bbe::Key::LEFT_CONTROL) || g.isKeyDown(bbe::Key::RIGHT_CONTROL);
 	const bool shiftDown = g.isKeyDown(bbe::Key::LEFT_SHIFT) || g.isKeyDown(bbe::Key::RIGHT_SHIFT);
 	editor.setSelectionAdditiveModifier(ctrlDown);
-	const bool drawButtonDown = g.isMouseDown(bbe::MouseButton::LEFT) || g.isMouseDown(bbe::MouseButton::RIGHT);
-	const bool drawButtonDownForTools = drawButtonDown && !editor.suppressCanvasInputUntilMouseUp;
+	drawButtonDown = g.isMouseDown(bbe::MouseButton::LEFT) || g.isMouseDown(bbe::MouseButton::RIGHT);
+	drawButtonDownForTools = drawButtonDown && !editor.suppressCanvasInputUntilMouseUp;
 	editor.setConstrainSquare(shiftDown);
 	auto discardTransientWorkArea = [&]()
 	{
@@ -281,7 +290,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	{
 		editor.changeZoom(1.1f, g.getMouse());
 	}
-	const bbe::Vector2 currMousePos = editor.screenToCanvas(g.getMouse());
+	currMousePos = editor.screenToCanvas(g.getMouse());
 
 	if (!ctrlDown)
 	{
@@ -632,11 +641,14 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	}
 
 	const bbe::List<decltype(editor.mode)> shadowDrawModes = { PaintEditor::MODE_BRUSH, PaintEditor::MODE_ERASER, PaintEditor::MODE_SPRAY };
-	const bool drawMode = editor.mode != PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_ELLIPSE_SELECTION && editor.mode != PaintEditor::MODE_MAGIC_WAND && editor.mode != PaintEditor::MODE_LASSO && editor.mode != PaintEditor::MODE_POLYGON_LASSO && editor.mode != PaintEditor::MODE_TEXT && editor.mode != PaintEditor::MODE_RECTANGLE && editor.mode != PaintEditor::MODE_CIRCLE && editor.mode != PaintEditor::MODE_LINE && editor.mode != PaintEditor::MODE_ARROW && editor.mode != PaintEditor::MODE_BEZIER && !editor.canvasResizeActive && !mouseOnNavigator && drawButtonDownForTools;
-	const bool shadowDrawMode = shadowDrawModes.contains(editor.mode);
+	drawMode = editor.mode != PaintEditor::MODE_SELECTION && editor.mode != PaintEditor::MODE_ELLIPSE_SELECTION && editor.mode != PaintEditor::MODE_MAGIC_WAND && editor.mode != PaintEditor::MODE_LASSO && editor.mode != PaintEditor::MODE_POLYGON_LASSO && editor.mode != PaintEditor::MODE_TEXT && editor.mode != PaintEditor::MODE_RECTANGLE && editor.mode != PaintEditor::MODE_CIRCLE && editor.mode != PaintEditor::MODE_LINE && editor.mode != PaintEditor::MODE_ARROW && editor.mode != PaintEditor::MODE_BEZIER && !editor.canvasResizeActive && !mouseOnNavigator && drawButtonDownForTools;
+	shadowDrawMode = shadowDrawModes.contains(editor.mode);
+
+	} // update.editorLogic
 
 	if (editor.brushStrokeChangeRegistered)
 	{
+		EXAMPLE_PAINT_PERF_ZONE("update.strokeEndCommit");
 		if (g.isMouseReleased(bbe::MouseButton::LEFT) || g.isMouseReleased(bbe::MouseButton::RIGHT))
 		{
 			if (!g.isMouseDown(bbe::MouseButton::LEFT) && !g.isMouseDown(bbe::MouseButton::RIGHT))
@@ -657,15 +669,19 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 
 	if (drawMode || shadowDrawMode)
 	{
-		if (!drawMode)
+		EXAMPLE_PAINT_PERF_ZONE("update.liveBrushTools");
 		{
-			editor.brushStrokeUpdateShadowCounter++;
-			if (editor.brushStrokeUpdateShadowCounter > 1) editor.clearWorkArea();
-		}
-		else
-		{
-			if (editor.brushStrokeUpdateShadowCounter > 0) editor.clearWorkArea();
-			editor.brushStrokeUpdateShadowCounter = 0;
+			EXAMPLE_PAINT_PERF_ZONE("update.liveBrushTools.shadowAndClear");
+			if (!drawMode)
+			{
+				editor.brushStrokeUpdateShadowCounter++;
+				if (editor.brushStrokeUpdateShadowCounter > 1) editor.clearWorkArea();
+			}
+			else
+			{
+				if (editor.brushStrokeUpdateShadowCounter > 0) editor.clearWorkArea();
+				editor.brushStrokeUpdateShadowCounter = 0;
+			}
 		}
 
 		if (editor.mode == PaintEditor::MODE_BRUSH)
@@ -696,10 +712,12 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			bool touched = false;
 			if (editor.brushStrokeUpdateRecentPointCount == 1)
 			{
+				EXAMPLE_PAINT_PERF_ZONE("update.brush.touchStamp");
 				touched = editor.touch(editor.brushStrokeUpdateRecentPoints[0], false, leftDown, rightDown);
 			}
 			else if (editor.brushStrokeUpdateRecentPointCount >= 4)
 			{
+				EXAMPLE_PAINT_PERF_ZONE("update.brush.catmullBezier");
 				// Use Catmull-Rom -> Bezier conversion for the middle segment.
 				// Points: [0]=newest, [3]=älteste.
 				const bbe::Vector2 &p0 = editor.brushStrokeUpdateRecentPoints[3];
@@ -722,6 +740,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			}
 			else if (editor.brushStrokeUpdateRecentPointCount >= 2)
 			{
+				EXAMPLE_PAINT_PERF_ZONE("update.brush.touchLine");
 				touched = editor.touchLine(editor.brushStrokeUpdateRecentPoints[0], editor.brushStrokeUpdateRecentPoints[1], false, leftDown, rightDown);
 			}
 			if (drawMode)
@@ -754,6 +773,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			bool touched = false;
 			if (eraseActive)
 			{
+				EXAMPLE_PAINT_PERF_ZONE("update.eraser.stroke");
 				const bbe::Vector2 from = editor.eraserStrokePrevCanvasPos;
 				if (editor.eraserStrokeHasPrev)
 				{
@@ -800,6 +820,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			bool touched = false;
 			if (sprayActive)
 			{
+				EXAMPLE_PAINT_PERF_ZONE("update.spray.stroke");
 				if (editor.sprayStrokeHasPrev)
 				{
 					touched = editor.sprayLineOnWorkAreaWithSymmetry(currMousePos, editor.sprayStrokePrevCanvasPos, leftDown, rightDown);
@@ -829,6 +850,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			bbe::Vector2 pos = editor.screenToCanvas(g.getMouse());
 			if (editor.toTiledPos(pos))
 			{
+				EXAMPLE_PAINT_PERF_ZONE("update.floodFill.apply");
 				const auto symPositions = editor.getSymmetryPositions(pos);
 				for (size_t i = 0; i < symPositions.getLength(); i++)
 				{
@@ -860,6 +882,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			auto pos = editor.screenToCanvas(g.getMouse());
 			if (editor.toTiledPos(pos))
 			{
+				EXAMPLE_PAINT_PERF_ZONE("update.pipette.sample");
 				const size_t x = (size_t)pos.x;
 				const size_t y = (size_t)pos.y;
 				const bbe::Colori color = editor.getVisiblePixel(x, y);
@@ -1034,10 +1057,7 @@ public:
 
 	void update(float timeSinceLastFrame) override
 	{
-		static float runningAverageFPS = 0;
-		const float fps = 1.0f / timeSinceLastFrame;
-		runningAverageFPS = 0.9f * runningAverageFPS + 0.1f * fps;
-		std::cout << "FPS: " << runningAverageFPS << "\n";
+		ExamplePaintPerf::beginFrame(timeSinceLastFrame);
 		runPaintEditorUpdate(editor, *this, timeSinceLastFrame);
 	}
 
