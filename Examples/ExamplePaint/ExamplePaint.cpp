@@ -723,6 +723,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 
 				editor.drawBezierSymmetry(splinePoints, editor.activeDrawColor(leftDown, rightDown));
 				touched = true;
+				editor.bumpNavigatorThumbnailDirty();
 			}
 			else if (brushPointCount >= 2)
 			{
@@ -733,6 +734,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 				editor.brushStrokeChangeRegistered |= touched;
 				if (touched)
 				{
+					editor.bumpNavigatorThumbnailDirty();
 					if (leftDown) editor.colorHistoryStrokeTouchedPrimary = true;
 					if (rightDown && !leftDown) editor.colorHistoryStrokeTouchedSecondary = true;
 				}
@@ -785,6 +787,8 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			if (drawMode)
 			{
 				editor.brushStrokeChangeRegistered |= touched;
+				if (touched)
+					editor.bumpNavigatorThumbnailDirty();
 			}
 		}
 		else if (editor.mode == PaintEditor::MODE_SPRAY)
@@ -817,6 +821,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 				editor.brushStrokeChangeRegistered |= touched;
 				if (touched)
 				{
+					editor.bumpNavigatorThumbnailDirty();
 					if (leftDown) editor.colorHistoryStrokeTouchedPrimary = true;
 					if (rightDown && !leftDown) editor.colorHistoryStrokeTouchedSecondary = true;
 				}
@@ -847,6 +852,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 					}
 				}
 				editor.brushStrokeChangeRegistered = true;
+				editor.bumpNavigatorThumbnailDirty();
 				if (drawMode)
 				{
 					if (leftDown) editor.colorHistoryStrokeTouchedPrimary = true;

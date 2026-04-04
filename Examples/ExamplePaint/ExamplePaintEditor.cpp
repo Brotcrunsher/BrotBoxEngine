@@ -4248,6 +4248,12 @@ void PaintEditor::clearWorkArea()
 	workArea = bbe::Image(getCanvasWidth(), getCanvasHeight(), bbe::Color(0.0f, 0.0f, 0.0f, 0.0f));
 	workArea.keepAfterUpload();
 	workArea.setFilterMode(bbe::ImageFilterMode::NEAREST);
+	bumpNavigatorThumbnailDirty();
+}
+
+void PaintEditor::bumpNavigatorThumbnailDirty()
+{
+	++navigatorThumbnailCacheRevision;
 }
 
 void PaintEditor::submitCanvas()

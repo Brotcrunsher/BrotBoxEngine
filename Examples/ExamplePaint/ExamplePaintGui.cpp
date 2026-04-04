@@ -3,9 +3,11 @@
 #include "BBE/BrotBoxEngine.h"
 #include "AssetStore.h"
 #include <algorithm>
+#include <climits>
 #include <cmath>
 #include <cctype>
 #include <cstring>
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -61,6 +63,195 @@ static void navigatorUploadRgbaTexture(int w, int h, const unsigned char *pixels
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+}
+
+static std::vector<unsigned char> s_navigatorThumbRgbaCache;
+static int s_navigatorThumbCacheW = 0;
+static int s_navigatorThumbCacheH = 0;
+
+static uint64_t paintEditorLayerStackDisplayHash(const PaintEditor &editor)
+{
+	uint64_t h = 14695981039346656037ull;
+	const size_t n = editor.canvas.get().layers.getLength();
+	for (size_t i = 0; i < n; i++)
+	{
+		const PaintLayer &L = editor.canvas.get().layers[i];
+		h ^= L.visible ? 0x9e3779b185ebca87ull : 0;
+		h *= 1099511628211ull;
+		h ^= (uint64_t)i * 0xC2B2AE3D27D4EB4Full;
+		union
+		{
+			float f;
+			uint32_t u;
+		} op;
+		op.f = L.opacity;
+		h ^= (uint64_t)op.u;
+		h *= 1099511628211ull;
+		h ^= (uint64_t)(int)L.blendMode * 0x100000001B3ull;
+	}
+	return h;
+}
+
+static uint64_t paintEditorNavigatorContentHash(const PaintEditor &editor, bool anyNonNormalBlendMode)
+{
+	uint64_t h = paintEditorLayerStackDisplayHash(editor);
+	h ^= (uint64_t)editor.canvasGeneration;
+	h *= 1099511628211ull;
+	h ^= (uint64_t)editor.canvasVisualEpoch;
+	h *= 1099511628211ull;
+	h ^= editor.navigatorThumbnailCacheRevision;
+	h *= 1099511628211ull;
+	h ^= (uint64_t)(int32_t)editor.getCanvasWidth() << 32 ^ (uint32_t)editor.getCanvasHeight();
+	h ^= anyNonNormalBlendMode ? 0xD6E8FEB86655A902ull : 0;
+	const float *fb = editor.canvas.get().canvasFallbackRgba;
+	union
+	{
+		float f;
+		uint32_t u;
+	} q[4];
+	for (int i = 0; i < 4; i++)
+	{
+		q[i].f = fb[i];
+		h ^= (uint64_t)q[i].u << (i * 8);
+	}
+	return h;
+}
+
+static uint64_t paintEditorNavigatorThumbPixelHash(uint64_t contentHash, int tw, int th)
+{
+	uint64_t h = contentHash;
+	h ^= (uint64_t)(uint32_t)tw * 0xC6BC279692B5CC83ull;
+	h ^= (uint64_t)(uint32_t)th * 0x9E3779B97F4A7C15ull;
+	return h;
+}
+
+/// Screen-space tile indices (i,k) for repeating the canvas in tiled mode; only copies that can intersect the viewport.
+static void paintEditorVisibleMainTileRange(const PaintEditor &editor, int &outIMin, int &outIMax, int &outKMin, int &outKMax)
+{
+	if (!editor.tiled)
+	{
+		outIMin = outIMax = outKMin = outKMax = 0;
+		return;
+	}
+	const float cwz = (float)editor.getCanvasWidth() * editor.zoomLevel;
+	const float chz = (float)editor.getCanvasHeight() * editor.zoomLevel;
+	const float ox = editor.offset.x;
+	const float oy = editor.offset.y;
+	const float vw = (float)editor.viewport.width;
+	const float vh = (float)editor.viewport.height;
+	const float m = 2.f;
+	if (cwz <= 1e-6f || chz <= 1e-6f)
+	{
+		outIMin = outIMax = outKMin = outKMax = 0;
+		return;
+	}
+	outIMin = (int)std::floor((0.f - m - ox - cwz) / cwz + 1e-5f) + 1;
+	outIMax = (int)std::ceil((vw + m - ox) / cwz - 1e-5f) - 1;
+	outKMin = (int)std::floor((0.f - m - oy - chz) / chz + 1e-5f) + 1;
+	outKMax = (int)std::ceil((vh + m - oy) / chz - 1e-5f) - 1;
+	if (outIMin > outIMax)
+		outIMax = outIMin - 1;
+	if (outKMin > outKMax)
+		outKMax = outKMin - 1;
+}
+
+/// Tile indices so that \c canvasPixelRect shifted by (ti*W, tk*H) can intersect the viewport in canvas space.
+static void paintEditorVisibleGhostTileRangeForCanvasRect(PaintEditor &editor, const bbe::Rectanglei &canvasPixelRect, int &tiMin, int &tiMax, int &tkMin, int &tkMax)
+{
+	if (!editor.tiled)
+	{
+		tiMin = tiMax = tkMin = tkMax = 0;
+		return;
+	}
+	const int W = editor.getCanvasWidth();
+	const int H = editor.getCanvasHeight();
+	if (W <= 0 || H <= 0)
+	{
+		tiMin = tiMax = tkMin = tkMax = 0;
+		return;
+	}
+	const bbe::Vector2 c0 = editor.screenToCanvas(bbe::Vector2(0.f, 0.f));
+	const bbe::Vector2 c1 = editor.screenToCanvas(bbe::Vector2((float)editor.viewport.width, (float)editor.viewport.height));
+	float cvMinX = std::min(c0.x, c1.x);
+	float cvMaxX = std::max(c0.x, c1.x);
+	float cvMinY = std::min(c0.y, c1.y);
+	float cvMaxY = std::max(c0.y, c1.y);
+	const float margin = 2.f;
+	const int rw = std::max(0, canvasPixelRect.width);
+	const int rh = std::max(0, canvasPixelRect.height);
+	const double rx = (double)canvasPixelRect.x;
+	const double ry = (double)canvasPixelRect.y;
+	const double tiLow = ((double)cvMinX - margin - rx - (double)rw) / (double)W;
+	const double tiHigh = ((double)cvMaxX + margin - rx) / (double)W;
+	tiMin = (int)std::floor(tiLow + 1e-6) + 1;
+	tiMax = (int)std::ceil(tiHigh - 1e-6) - 1;
+	const double tkLow = ((double)cvMinY - margin - ry - (double)rh) / (double)H;
+	const double tkHigh = ((double)cvMaxY + margin - ry) / (double)H;
+	tkMin = (int)std::floor(tkLow + 1e-6) + 1;
+	tkMax = (int)std::ceil(tkHigh - 1e-6) - 1;
+	if (tiMin > tiMax)
+		tiMax = tiMin - 1;
+	if (tkMin > tkMax)
+		tkMax = tkMin - 1;
+}
+
+static bbe::Rectanglei paintEditorUnionRecti(const bbe::Rectanglei &a, const bbe::Rectanglei &b)
+{
+	const int32_t x0 = std::min(a.x, b.x);
+	const int32_t y0 = std::min(a.y, b.y);
+	const int32_t x1 = std::max(a.x + a.width, b.x + b.width);
+	const int32_t y1 = std::max(a.y + a.height, b.y + b.height);
+	return bbe::Rectanglei(x0, y0, std::max(0, x1 - x0), std::max(0, y1 - y0));
+}
+
+static bbe::Rectanglei paintEditorBoundsOfLassoPath(const PaintEditor &editor, int32_t padPx)
+{
+	const std::vector<bbe::Vector2> &path = editor.selection.lassoPath;
+	if (path.size() < 2) return {};
+	int32_t minX = INT32_MAX, minY = INT32_MAX, maxX = INT32_MIN, maxY = INT32_MIN;
+	for (size_t pi = 0; pi < path.size(); pi++)
+	{
+		const bbe::Vector2 &pf = path[pi];
+		minX = std::min(minX, (int32_t)std::floor(pf.x));
+		minY = std::min(minY, (int32_t)std::floor(pf.y));
+		maxX = std::max(maxX, (int32_t)std::ceil(pf.x));
+		maxY = std::max(maxY, (int32_t)std::ceil(pf.y));
+	}
+	return bbe::Rectanglei(
+		minX - padPx,
+		minY - padPx,
+		std::max(0, maxX - minX + padPx * 2),
+		std::max(0, maxY - minY + padPx * 2));
+}
+
+static bbe::Rectanglei paintEditorBoundsOfPolygonLasso(const PaintEditor &editor, int32_t padPx)
+{
+	const int32_t W = editor.getCanvasWidth();
+	const int32_t H = editor.getCanvasHeight();
+	const auto &verts = editor.selection.polygonLassoVertices;
+	if (verts.empty()) return {};
+	int32_t minX = verts[0].x, minY = verts[0].y, maxX = verts[0].x, maxY = verts[0].y;
+	for (size_t i = 1; i < verts.size(); i++)
+	{
+		minX = std::min(minX, verts[i].x);
+		minY = std::min(minY, verts[i].y);
+		maxX = std::max(maxX, verts[i].x);
+		maxY = std::max(maxY, verts[i].y);
+	}
+	if (editor.hasPointerPos && W > 0 && H > 0)
+	{
+		const int32_t cx = bbe::Math::clamp((int32_t)std::floor(editor.lastPointerCanvasPos.x), 0, W - 1);
+		const int32_t cy = bbe::Math::clamp((int32_t)std::floor(editor.lastPointerCanvasPos.y), 0, H - 1);
+		minX = std::min(minX, cx);
+		minY = std::min(minY, cy);
+		maxX = std::max(maxX, cx);
+		maxY = std::max(maxY, cy);
+	}
+	return bbe::Rectanglei(
+		minX - padPx,
+		minY - padPx,
+		std::max(0, maxX - minX + padPx * 2),
+		std::max(0, maxY - minY + padPx * 2));
 }
 
 struct ToolIconTextures
@@ -259,10 +450,16 @@ void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, co
 	const bbe::List<bbe::Vector2> renderPositions = font.getRenderPositions(origin, text);
 	const bbe::Color previewColor = bbe::Color(editor.leftColor).blendTo(bbe::Color::white(), 0.15f);
 
-	const int32_t tileDraw = editor.tiled ? 20 : 0;
-	for (int32_t ti = -tileDraw; ti <= tileDraw; ti++)
+	const bbe::Rectanglei textBounds(
+		topLeft.x,
+		topLeft.y,
+		(int32_t)bbe::Math::ceil(bounds.width),
+		(int32_t)bbe::Math::ceil(bounds.height));
+	int tiMin = 0, tiMax = 0, tkMin = 0, tkMax = 0;
+	paintEditorVisibleGhostTileRangeForCanvasRect(editor, textBounds, tiMin, tiMax, tkMin, tkMax);
+	for (int32_t ti = tiMin; ti <= tiMax; ti++)
 	{
-		for (int32_t tk = -tileDraw; tk <= tileDraw; tk++)
+		for (int32_t tk = tkMin; tk <= tkMax; tk++)
 		{
 			const float tileOffX = ti * editor.getCanvasWidth() * editor.zoomLevel;
 			const float tileOffY = tk * editor.getCanvasHeight() * editor.zoomLevel;
@@ -286,8 +483,8 @@ void drawTextPreviewForGui(bbe::PrimitiveBrush2D &brush, PaintEditor &editor, co
 			drawSelectionOutlineForGui(brush, editor, bbe::Rectanglei(
 				topLeft.x + ti * editor.getCanvasWidth(),
 				topLeft.y + tk * editor.getCanvasHeight(),
-				(int32_t)bbe::Math::ceil(bounds.width),
-				(int32_t)bbe::Math::ceil(bounds.height)),
+				textBounds.width,
+				textBounds.height),
 				true);
 		}
 	}
@@ -890,7 +1087,7 @@ static void drawPaintToolOptionsPanel(PaintEditor &editor, float defaultLeft)
 	ImGui::PopStyleColor(2);
 }
 
-static void drawPaintNavigatorImGuiWindow(PaintEditor &editor, bool anyNonNormalBlend, const bbe::Image *blendPreview, const bbe::Color &canvasBackdrop)
+static void drawPaintNavigatorImGuiWindow(PaintEditor &editor, bool anyNonNormalBlend, uint64_t navigatorContentHash, const bbe::Color &canvasBackdrop)
 {
 	if (!editor.showNavigator || editor.getCanvasWidth() <= 0)
 	{
@@ -927,31 +1124,42 @@ static void drawPaintNavigatorImGuiWindow(PaintEditor &editor, bool anyNonNormal
 		return;
 	}
 
-	bbe::Image composite;
-	if (anyNonNormalBlend && blendPreview && blendPreview->getWidth() > 0)
-		composite = *blendPreview;
-	else
-		composite = editor.flattenVisibleLayers();
-	composite.blend(editor.workArea, 1.f, bbe::BlendMode::Normal);
-	const bbe::Image thumb = composite.scaledNearest(tw, th);
-
-	std::vector<unsigned char> rgbaPixels((size_t)tw * th * 4);
-	for (int y = 0; y < th; y++)
+	const uint64_t thumbPixelHash = paintEditorNavigatorThumbPixelHash(navigatorContentHash, tw, th);
+	if (thumbPixelHash != editor.navigatorThumbPixelHashStored
+		|| tw != s_navigatorThumbCacheW || th != s_navigatorThumbCacheH
+		|| s_navigatorThumbRgbaCache.size() != (size_t)tw * th * 4)
 	{
-		for (int x = 0; x < tw; x++)
+		bbe::Image composite;
+		if (anyNonNormalBlend && editor.navigatorCachedFlattenVisible.getWidth() > 0 && editor.navigatorCachedFlattenVisible.getHeight() > 0)
+			composite = editor.navigatorCachedFlattenVisible;
+		else
+			composite = editor.flattenVisibleLayers();
+		composite.blend(editor.workArea, 1.f, bbe::BlendMode::Normal);
+		const bbe::Image thumb = composite.scaledNearest(tw, th);
+
+		s_navigatorThumbRgbaCache.resize((size_t)tw * th * 4);
+		for (int y = 0; y < th; y++)
 		{
-			const bbe::Colori c = thumb.getPixel(x, y);
-			const size_t i = ((size_t)y * tw + x) * 4;
-			rgbaPixels[i + 0] = c.r;
-			rgbaPixels[i + 1] = c.g;
-			rgbaPixels[i + 2] = c.b;
-			rgbaPixels[i + 3] = c.a;
+			for (int x = 0; x < tw; x++)
+			{
+				const bbe::Colori c = thumb.getPixel(x, y);
+				const size_t i = ((size_t)y * tw + x) * 4;
+				s_navigatorThumbRgbaCache[i + 0] = c.r;
+				s_navigatorThumbRgbaCache[i + 1] = c.g;
+				s_navigatorThumbRgbaCache[i + 2] = c.b;
+				s_navigatorThumbRgbaCache[i + 3] = c.a;
+			}
 		}
+		s_navigatorThumbCacheW = tw;
+		s_navigatorThumbCacheH = th;
+		editor.navigatorThumbPixelHashStored = thumbPixelHash;
+#ifdef BBE_RENDERER_OPENGL
+		navigatorUploadRgbaTexture(tw, th, s_navigatorThumbRgbaCache.data());
+#endif
 	}
 
 	const ImVec2 imgSize((float)tw, (float)th);
 #ifdef BBE_RENDERER_OPENGL
-	navigatorUploadRgbaTexture(tw, th, rgbaPixels.data());
 	ImGui::Image((ImTextureID)(intptr_t)s_navigatorMinimapGlTex, imgSize);
 #else
 	ImGui::InvisibleButton("##navigatorMap", imgSize);
@@ -966,11 +1174,15 @@ static void drawPaintNavigatorImGuiWindow(PaintEditor &editor, bool anyNonNormal
 		{
 			for (int x = 0; x < tw; x++)
 			{
-				const bbe::Colori c = thumb.getPixel(x, y);
-				if (c.a == 0) continue;
-				const ImVec2 a(p0.x + x, p0.y + y);
-				const ImVec2 b(p0.x + x + 1, p0.y + y + 1);
-				dl->AddRectFilled(a, b, IM_COL32(c.r, c.g, c.b, c.a));
+				const size_t i = ((size_t)y * tw + x) * 4;
+				const unsigned char r = s_navigatorThumbRgbaCache[i + 0];
+				const unsigned char g = s_navigatorThumbRgbaCache[i + 1];
+				const unsigned char b = s_navigatorThumbRgbaCache[i + 2];
+				const unsigned char a = s_navigatorThumbRgbaCache[i + 3];
+				if (a == 0) continue;
+				const ImVec2 a0(p0.x + x, p0.y + y);
+				const ImVec2 b0(p0.x + x + 1, p0.y + y + 1);
+				dl->AddRectFilled(a0, b0, IM_COL32(r, g, b, a));
 			}
 		}
 	}
@@ -1486,10 +1698,12 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				break;
 			}
 		}
-		bbe::Image blendModePreview;
-		if (anyNonNormalBlendMode)
+		const uint64_t navigatorContentHash = paintEditorNavigatorContentHash(editor, anyNonNormalBlendMode);
+		if (navigatorContentHash != editor.navigatorContentHashStored)
 		{
-			blendModePreview = editor.flattenVisibleLayers();
+			if (anyNonNormalBlendMode)
+				editor.navigatorCachedFlattenVisible = editor.flattenVisibleLayers();
+			editor.navigatorContentHashStored = navigatorContentHash;
 		}
 
 		const bbe::Color canvasBackdrop(
@@ -1498,12 +1712,13 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			editor.canvas.get().canvasFallbackRgba[2],
 			editor.canvas.get().canvasFallbackRgba[3]);
 
-		drawPaintNavigatorImGuiWindow(editor, anyNonNormalBlendMode, anyNonNormalBlendMode ? &blendModePreview : nullptr, canvasBackdrop);
+		drawPaintNavigatorImGuiWindow(editor, anyNonNormalBlendMode, navigatorContentHash, canvasBackdrop);
 
-		const int32_t repeats = editor.tiled ? 20 : 0;
-		for (int32_t i = -repeats; i <= repeats; i++)
+		int mainTiMin = 0, mainTiMax = 0, mainTkMin = 0, mainTkMax = 0;
+		paintEditorVisibleMainTileRange(editor, mainTiMin, mainTiMax, mainTkMin, mainTkMax);
+		for (int32_t i = mainTiMin; i <= mainTiMax; i++)
 		{
-			for (int32_t k = -repeats; k <= repeats; k++)
+			for (int32_t k = mainTkMin; k <= mainTkMax; k++)
 			{
 				const float tileX = editor.offset.x + i * editor.getCanvasWidth() * editor.zoomLevel;
 				const float tileY = editor.offset.y + k * editor.getCanvasHeight() * editor.zoomLevel;
@@ -1514,7 +1729,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				if (anyNonNormalBlendMode)
 				{
 					brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
-					brush.drawImage(tileX, tileY, tileW, tileH, blendModePreview);
+					brush.drawImage(tileX, tileY, tileW, tileH, editor.navigatorCachedFlattenVisible);
 				}
 				else
 				{
@@ -1568,7 +1783,6 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			}
 		}
 
-		const int32_t ghostRepeats = editor.tiled ? 20 : 0;
 		auto drawInAllTiles = [&](const bbe::Rectanglei &rect, const bbe::Image &image, float rotation = 0.f)
 		{
 			// Pre-rasterize rotation so the preview matches the committed pixel-grid result.
@@ -1591,9 +1805,12 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 						rotatedImg.getHeight());
 				}
 			}
-			for (int32_t i = -ghostRepeats; i <= ghostRepeats; i++)
+			const bbe::Rectanglei ghostBounds = paintEditorUnionRecti(rect, displayRect);
+			int gTiMin = 0, gTiMax = 0, gTkMin = 0, gTkMax = 0;
+			paintEditorVisibleGhostTileRangeForCanvasRect(editor, ghostBounds, gTiMin, gTiMax, gTkMin, gTkMax);
+			for (int32_t i = gTiMin; i <= gTiMax; i++)
 			{
-				for (int32_t k = -ghostRepeats; k <= ghostRepeats; k++)
+				for (int32_t k = gTkMin; k <= gTkMax; k++)
 				{
 					const bbe::Rectanglei tileDisplay(
 						displayRect.x + i * editor.getCanvasWidth(),
@@ -1661,9 +1878,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				const float rx = r.width * 0.5f;
 				const float ry = r.height * 0.5f;
 				constexpr int seg = 64;
-				for (int32_t ti = -ghostRepeats; ti <= ghostRepeats; ti++)
+				int elTiMin = 0, elTiMax = 0, elTkMin = 0, elTkMax = 0;
+				paintEditorVisibleGhostTileRangeForCanvasRect(editor, r, elTiMin, elTiMax, elTkMin, elTkMax);
+				for (int32_t ti = elTiMin; ti <= elTiMax; ti++)
 				{
-					for (int32_t tk = -ghostRepeats; tk <= ghostRepeats; tk++)
+					for (int32_t tk = elTkMin; tk <= elTkMax; tk++)
 					{
 						const int32_t ox = ti * W;
 						const int32_t oy = tk * H;
@@ -1694,9 +1913,13 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			const int32_t H = editor.getCanvasHeight();
 			const float lwOuter = std::max(2.f, editor.viewport.scale > 0.f ? editor.viewport.scale : 1.f) + 1.f;
 			const float lwInner = std::max(1.f, editor.viewport.scale > 0.f ? editor.viewport.scale : 1.f);
-			for (int32_t ti = -ghostRepeats; ti <= ghostRepeats; ti++)
+			const int32_t linePad = (int32_t)std::ceil(std::max(lwOuter, lwInner)) + 2;
+			const bbe::Rectanglei lassoBounds = paintEditorBoundsOfLassoPath(editor, linePad);
+			int lsTiMin = 0, lsTiMax = 0, lsTkMin = 0, lsTkMax = 0;
+			paintEditorVisibleGhostTileRangeForCanvasRect(editor, lassoBounds, lsTiMin, lsTiMax, lsTkMin, lsTkMax);
+			for (int32_t ti = lsTiMin; ti <= lsTiMax; ti++)
 			{
-				for (int32_t tk = -ghostRepeats; tk <= ghostRepeats; tk++)
+				for (int32_t tk = lsTkMin; tk <= lsTkMax; tk++)
 				{
 					const int32_t ox = ti * W;
 					const int32_t oy = tk * H;
@@ -1721,9 +1944,13 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			const int32_t H = editor.getCanvasHeight();
 			const float lwOuter = std::max(2.f, editor.viewport.scale > 0.f ? editor.viewport.scale : 1.f) + 1.f;
 			const float lwInner = std::max(1.f, editor.viewport.scale > 0.f ? editor.viewport.scale : 1.f);
-			for (int32_t ti = -ghostRepeats; ti <= ghostRepeats; ti++)
+			const int32_t polyPad = (int32_t)std::ceil(std::max(lwOuter, lwInner)) + 4;
+			const bbe::Rectanglei polyBounds = paintEditorBoundsOfPolygonLasso(editor, polyPad);
+			int pgTiMin = 0, pgTiMax = 0, pgTkMin = 0, pgTkMax = 0;
+			paintEditorVisibleGhostTileRangeForCanvasRect(editor, polyBounds, pgTiMin, pgTiMax, pgTkMin, pgTkMax);
+			for (int32_t ti = pgTiMin; ti <= pgTiMax; ti++)
 			{
-				for (int32_t tk = -ghostRepeats; tk <= ghostRepeats; tk++)
+				for (int32_t tk = pgTkMin; tk <= pgTkMax; tk++)
 				{
 					const int32_t ox = ti * W;
 					const int32_t oy = tk * H;
@@ -1765,9 +1992,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			const bool overlayMask = editor.hasSelectionPixelMask() && !editor.selection.moveActive && !editor.selection.resizeActive && !editor.selection.dragActive &&
 									 !editor.selection.lassoDragActive && editor.selection.polygonLassoVertices.empty() &&
 									 !editor.selection.floating && std::abs(editor.selection.rotation) < 0.0001f;
-			for (int32_t ti = -ghostRepeats; ti <= ghostRepeats; ti++)
+			int selTiMin = 0, selTiMax = 0, selTkMin = 0, selTkMax = 0;
+			paintEditorVisibleGhostTileRangeForCanvasRect(editor, editor.selection.rect, selTiMin, selTiMax, selTkMin, selTkMax);
+			for (int32_t ti = selTiMin; ti <= selTiMax; ti++)
 			{
-				for (int32_t tk = -ghostRepeats; tk <= ghostRepeats; tk++)
+				for (int32_t tk = selTkMin; tk <= selTkMax; tk++)
 				{
 					const bbe::Rectanglei tileR(
 						editor.selection.rect.x + ti * editor.getCanvasWidth(),
@@ -1794,15 +2023,16 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			{
 				const int32_t cw = editor.getCanvasWidth();
 				const int32_t ch = editor.getCanvasHeight();
-				const int32_t tileRepeat = editor.tiled ? 20 : 0;
 				const float z = editor.zoomLevel;
 				constexpr float line = 1.f;
 				brush.setColorRGB(1.f, 0.35f, 0.35f, 0.9f);
 				auto drawEraserStampScreenOutline = [&](const bbe::Rectanglei &stamp)
 				{
-					for (int32_t ti = -tileRepeat; ti <= tileRepeat; ti++)
+					int erTiMin = 0, erTiMax = 0, erTkMin = 0, erTkMax = 0;
+					paintEditorVisibleGhostTileRangeForCanvasRect(editor, stamp, erTiMin, erTiMax, erTkMin, erTkMax);
+					for (int32_t ti = erTiMin; ti <= erTiMax; ti++)
 					{
-						for (int32_t tk = -tileRepeat; tk <= tileRepeat; tk++)
+						for (int32_t tk = erTkMin; tk <= erTkMax; tk++)
 						{
 							const float ox = editor.offset.x + (float)(ti * cw) * z;
 							const float oy = editor.offset.y + (float)(tk * ch) * z;
@@ -1840,15 +2070,24 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			{
 				const int32_t cw = editor.getCanvasWidth();
 				const int32_t ch = editor.getCanvasHeight();
-				const int32_t tileRepeat = editor.tiled ? 20 : 0;
 				const float z = editor.zoomLevel;
 				const float rad = (float)editor.sprayWidth * z;
 				const bbe::List<bbe::Vector2> centers = editor.getSymmetryPositions(previewCenter);
 				for (size_t si = 0; si < centers.getLength(); si++)
 				{
-					for (int32_t ti = -tileRepeat; ti <= tileRepeat; ti++)
+					const int32_t sw = editor.sprayWidth;
+					const int32_t pad = 4;
+					const int32_t ext = sw + pad;
+					const bbe::Rectanglei sprayCanvasBounds(
+						(int32_t)std::floor(centers[si].x) - ext,
+						(int32_t)std::floor(centers[si].y) - ext,
+						std::max(1, ext * 2 + 1),
+						std::max(1, ext * 2 + 1));
+					int spTiMin = 0, spTiMax = 0, spTkMin = 0, spTkMax = 0;
+					paintEditorVisibleGhostTileRangeForCanvasRect(editor, sprayCanvasBounds, spTiMin, spTiMax, spTkMin, spTkMax);
+					for (int32_t ti = spTiMin; ti <= spTiMax; ti++)
 					{
-						for (int32_t tk = -tileRepeat; tk <= tileRepeat; tk++)
+						for (int32_t tk = spTkMin; tk <= spTkMax; tk++)
 						{
 							const float cx = editor.offset.x + (centers[si].x + (float)(ti * cw)) * z;
 							const float cy = editor.offset.y + (centers[si].y + (float)(tk * ch)) * z;

@@ -187,6 +187,12 @@ struct PaintEditor
 	/// Screen-space minimap bounds from the last completed ImGui frame (see \c drawExamplePaintGui); drives \c getNavigatorRect().
 	bbe::Rectangle navigatorMinimapHitRect{};
 	bool navigatorMinimapHitRectValid = false;
+	/// Bumped when workArea or other navigator-visible pixels change without a new \c canvasGeneration (live stroke, clearWorkArea, flood fill).
+	uint64_t navigatorThumbnailCacheRevision = 0;
+	uint64_t navigatorContentHashStored = ~(uint64_t)0;
+	uint64_t navigatorThumbPixelHashStored = ~(uint64_t)0;
+	/// Flattened visible layers (excluding workArea); valid while \c navigatorContentHashStored matches current content hash and any non-normal blend is active.
+	bbe::Image navigatorCachedFlattenVisible;
 	/// Docked tool-options window (View menu); can be closed and re-opened from the menu.
 	bool showToolOptionsPanel = true;
 	/// Colors window (primary/secondary, pipette, favorite swatches); View menu.
@@ -818,6 +824,8 @@ struct PaintEditor
 	void resetCamera();
 
 	void clearWorkArea();
+
+	void bumpNavigatorThumbnailDirty();
 
 	void submitCanvas();
 
