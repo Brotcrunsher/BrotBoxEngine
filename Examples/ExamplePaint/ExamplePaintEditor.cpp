@@ -1353,10 +1353,16 @@ void PaintEditor::redo()
 	clearWorkArea();
 }
 
-void PaintEditor::copyFlattenedCanvasToClipboard()
+bool PaintEditor::copyFlattenedCanvasToClipboard()
 {
-	if (!platform.supportsClipboardImages || !platform.supportsClipboardImages() || !platform.setClipboardImage) return;
-	platform.setClipboardImage(flattenVisibleLayers());
+	if (!platform.supportsClipboardImages || !platform.supportsClipboardImages() || !platform.setClipboardImage) return false;
+	const bbe::Image flat = flattenVisibleLayers();
+	if (!platform.setClipboardImage(flat))
+	{
+		openClipboardWriteFailedPopup = true;
+		return false;
+	}
+	return true;
 }
 
 bool PaintEditor::pasteClipboardAsNewDocument()
@@ -1409,7 +1415,7 @@ void PaintEditor::applyDigitHotkeyBinding(DigitHotkeyAction b)
 		if (canvas.isRedoable()) redo();
 		break;
 	case DigitHotkeyAction::SelectionCopy:
-		if (selection.hasSelection) storeSelectionInClipboard();
+		if (selection.hasSelection) (void)storeSelectionInClipboard();
 		break;
 	case DigitHotkeyAction::SelectionCut:
 		if (selection.hasSelection) cutSelection();
@@ -1418,7 +1424,7 @@ void PaintEditor::applyDigitHotkeyBinding(DigitHotkeyAction b)
 		if (selection.hasSelection) deleteSelection();
 		break;
 	case DigitHotkeyAction::ClipboardCopyCanvas:
-		copyFlattenedCanvasToClipboard();
+		(void)copyFlattenedCanvasToClipboard();
 		break;
 	case DigitHotkeyAction::ClipboardPasteNew:
 		requestReplaceDocumentPasteFromClipboard();
@@ -1944,9 +1950,9 @@ void PaintEditor::clearCanvasRect(const bbe::Rectanglei &rect)
 	}
 }
 
-void PaintEditor::storeSelectionInClipboard()
+bool PaintEditor::storeSelectionInClipboard()
 {
-	if (!selection.hasSelection) return;
+	if (!selection.hasSelection) return false;
 	if (selection.floating)
 	{
 		selection.clipboard = selection.floatingImage;
@@ -1960,10 +1966,13 @@ void PaintEditor::storeSelectionInClipboard()
 		selection.clipboard = copyCanvasRect(selection.rect);
 	}
 	prepareImageForCanvas(selection.clipboard);
-	if (platform.supportsClipboardImages && platform.setClipboardImage && platform.supportsClipboardImages())
+	if (!platform.supportsClipboardImages || !platform.supportsClipboardImages() || !platform.setClipboardImage) return false;
+	if (!platform.setClipboardImage(selection.clipboard))
 	{
-		platform.setClipboardImage(selection.clipboard);
+		openClipboardWriteFailedPopup = true;
+		return false;
 	}
+	return true;
 }
 
 void PaintEditor::deleteSelection()
@@ -1989,7 +1998,7 @@ void PaintEditor::deleteSelection()
 void PaintEditor::cutSelection()
 {
 	if (!selection.hasSelection) return;
-	storeSelectionInClipboard();
+	if (!storeSelectionInClipboard()) return;
 	if (selection.floating)
 	{
 		clearSelectionState();

@@ -2284,6 +2284,11 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			ImGui::OpenPopup("Save failed");
 			editor.openSaveFailedPopup = false;
 		}
+		if (editor.openClipboardWriteFailedPopup)
+		{
+			ImGui::OpenPopup("Clipboard copy failed");
+			editor.openClipboardWriteFailedPopup = false;
+		}
 		if (editor.openDropChoicePopup)
 		{
 			ImGui::OpenPopup("Dropped File(s)");
@@ -2391,6 +2396,16 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					editor.reshowUnsavedAfterSaveFail = false;
 					editor.openUnsavedChangesPopup = true;
 				}
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
+		if (ImGui::BeginPopupModal("Clipboard copy failed", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::TextUnformatted("The image could not be placed on the clipboard (the platform denied the request or the clipboard is unavailable).");
+			if (ImGui::Button("OK", ImVec2(120, 0)))
+			{
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();

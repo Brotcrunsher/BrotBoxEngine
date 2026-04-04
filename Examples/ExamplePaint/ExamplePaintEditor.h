@@ -160,6 +160,7 @@ struct PaintEditor
 	float zoomLevel = 1.f;
 	bool openSaveChoicePopup = false;
 	bool openSaveFailedPopup = false;
+	bool openClipboardWriteFailedPopup = false;
 	bool openDropChoicePopup = false;
 	/// Pending full document replace (new/open/paste-as-new/quit) while \c hasUnsavedChanges(); resolved via \c openUnsavedChangesPopup.
 	struct PendingDocumentReplace
@@ -559,7 +560,7 @@ struct PaintEditor
 	void redo();
 
 	void applyDigitHotkeyBinding(DigitHotkeyAction action);
-	void copyFlattenedCanvasToClipboard();
+	bool copyFlattenedCanvasToClipboard();
 
 	PaintLayer &getActiveLayer();
 
@@ -637,7 +638,7 @@ struct PaintEditor
 
 	void clearCanvasRect(const bbe::Rectanglei &rect);
 
-	void storeSelectionInClipboard();
+	bool storeSelectionInClipboard();
 
 	void deleteSelection();
 
