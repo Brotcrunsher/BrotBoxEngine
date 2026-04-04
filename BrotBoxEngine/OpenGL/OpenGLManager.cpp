@@ -1863,6 +1863,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStart()
 	ImGui::CreateContext();
 	ImPlot::CreateContext();
 	ImGui::StyleColorsDark();
+	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 	ImGui_ImplGlfw_InitForOpenGL(m_pwindow, false);
 

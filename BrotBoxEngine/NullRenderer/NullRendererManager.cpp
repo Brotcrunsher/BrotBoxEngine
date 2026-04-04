@@ -111,6 +111,7 @@ void bbe::INTERNAL::nullRenderer::NullRendererManager::imguiStart()
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO &io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	ImFontConfig fontConfig;
 	io.Fonts->AddFontDefault(&fontConfig);
 

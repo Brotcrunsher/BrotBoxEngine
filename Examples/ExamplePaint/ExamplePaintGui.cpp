@@ -879,6 +879,10 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 #ifdef BBE_RENDERER_OPENGL
 		s_toolIcons.refresh();
 #endif
+		// Host dock space for Tools / Layers / Colors / Tool Options; central node is passthrough so the
+		// canvas (drawn under ImGui) still receives mouse via io.WantCaptureMouse when not over a panel.
+		ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+
 		const float PANEL_WIDTH = 236.f * editor.viewport.scale;
 		const float menuBarH = ImGui::GetFrameHeight();
 		const float workH = (float)editor.viewport.height - menuBarH;

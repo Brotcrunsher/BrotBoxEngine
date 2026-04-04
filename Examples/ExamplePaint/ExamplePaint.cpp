@@ -9,8 +9,6 @@
 #include "ExamplePaintEditor.h"
 #include "ExamplePaintGui.h"
 
-// TODO: Window docking for tools etc.
-
 /// Persisted 1–9 / 0 digit bindings (one \c int32_t action per key; \c formatVersion distinguishes this from older multi-field saves).
 struct ExamplePaintDigitHotkeysPersist
 {

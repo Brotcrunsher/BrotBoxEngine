@@ -1029,6 +1029,7 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiStart()
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
+	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 	ImGui_ImplGlfw_InitForVulkan(m_pwindow, false);
 
