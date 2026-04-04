@@ -124,6 +124,13 @@ struct PaintEditor
 	/// After pipette sampling, ignore tool mouse input until all buttons are released (avoids brush stroke on same click).
 	bool suppressCanvasInputUntilMouseUp = false;
 
+	/// Per-instance brush stroke sampling for \c runPaintEditorUpdate (was file-static; index 0 = newest sample).
+	bbe::Vector2 brushStrokeUpdateRecentPoints[4]{};
+	int32_t brushStrokeUpdateRecentPointCount = 0;
+	bool brushStrokeUpdateLastDrawButtonDown = false;
+	/// Frames spent in shadow brush/eraser/spray preview while the active tool is not drawing (clears workArea after the first shadow frame).
+	uint32_t brushStrokeUpdateShadowCounter = 0;
+
 	/// Top-row digits 1–9 then 0: `digitHotkeys[0]`…`[8]` = keys 1–9, `[9]` = key 0. Reassign with Ctrl+digit while hovering a bound control in Tools or Layers.
 	/// When set, invoked after a digit binding changes (e.g. to persist settings).
 	std::function<void()> onDigitHotkeysChanged;
@@ -896,6 +903,8 @@ struct PaintEditor
 	void onFilesDropped(const bbe::List<bbe::String> &paths);
 
 private:
+	void resetBrushStrokeUpdateState();
+
 	void newCanvas(uint32_t width, uint32_t height);
 	bool newCanvas(const char *path);
 	void pasteClipboardAsNewDocument();

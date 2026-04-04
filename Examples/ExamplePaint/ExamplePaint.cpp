@@ -168,10 +168,6 @@ static void textSymmetryMirrorFlags(bbe::SymmetryMode mode, size_t symIndex, boo
 
 static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSinceLastFrame)
 {
-	static bbe::Vector2 brushPoints[4];
-	static int32_t brushPointCount = 0;
-	static bool lastDrawButtonDown = false;
-
 	PaintWindowMetrics w{};
 	w.width = g.getWindowWidth();
 	w.height = g.getWindowHeight();
@@ -661,16 +657,15 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 
 	if (drawMode || shadowDrawMode)
 	{
-		static uint32_t shadowBrushCounter = 0;
 		if (!drawMode)
 		{
-			shadowBrushCounter++;
-			if (shadowBrushCounter > 1) editor.clearWorkArea();
+			editor.brushStrokeUpdateShadowCounter++;
+			if (editor.brushStrokeUpdateShadowCounter > 1) editor.clearWorkArea();
 		}
 		else
 		{
-			if (shadowBrushCounter > 0) editor.clearWorkArea();
-			shadowBrushCounter = 0;
+			if (editor.brushStrokeUpdateShadowCounter > 0) editor.clearWorkArea();
+			editor.brushStrokeUpdateShadowCounter = 0;
 		}
 
 		if (editor.mode == PaintEditor::MODE_BRUSH)
@@ -678,39 +673,39 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			const bool leftDown = g.isMouseDown(bbe::MouseButton::LEFT) && !editor.suppressCanvasInputUntilMouseUp;
 			const bool rightDown = g.isMouseDown(bbe::MouseButton::RIGHT) && !editor.suppressCanvasInputUntilMouseUp;
 
-			if (!lastDrawButtonDown && drawButtonDown)
+			if (!editor.brushStrokeUpdateLastDrawButtonDown && drawButtonDown)
 			{
-				brushPointCount = 0;
+				editor.brushStrokeUpdateRecentPointCount = 0;
 			}
 
 			// Maintain up to 4 recent mouse positions (index 0 = newest).
 			auto pushBrushPoint = [&](const bbe::Vector2 &p)
 			{
-				if (brushPointCount > 0 && (brushPoints[0] - p).getLength() < 0.01f) return;
-				const int32_t maxIndex = bbe::Math::min<int32_t>(brushPointCount, 3);
+				if (editor.brushStrokeUpdateRecentPointCount > 0 && (editor.brushStrokeUpdateRecentPoints[0] - p).getLength() < 0.01f) return;
+				const int32_t maxIndex = bbe::Math::min<int32_t>(editor.brushStrokeUpdateRecentPointCount, 3);
 				for (int32_t i = maxIndex; i > 0; --i)
 				{
-					brushPoints[i] = brushPoints[i - 1];
+					editor.brushStrokeUpdateRecentPoints[i] = editor.brushStrokeUpdateRecentPoints[i - 1];
 				}
-				brushPoints[0] = p;
-				if (brushPointCount < 4) brushPointCount++;
+				editor.brushStrokeUpdateRecentPoints[0] = p;
+				if (editor.brushStrokeUpdateRecentPointCount < 4) editor.brushStrokeUpdateRecentPointCount++;
 			};
 
 			pushBrushPoint(currMousePos);
 
 			bool touched = false;
-			if (brushPointCount == 1)
+			if (editor.brushStrokeUpdateRecentPointCount == 1)
 			{
-				touched = editor.touch(brushPoints[0], false, leftDown, rightDown);
+				touched = editor.touch(editor.brushStrokeUpdateRecentPoints[0], false, leftDown, rightDown);
 			}
-			else if (brushPointCount >= 4)
+			else if (editor.brushStrokeUpdateRecentPointCount >= 4)
 			{
 				// Use Catmull-Rom -> Bezier conversion for the middle segment.
-				// Points: brushPoints[0]=newest, [3]=älteste.
-				const bbe::Vector2 &p0 = brushPoints[3];
-				const bbe::Vector2 &p1 = brushPoints[2];
-				const bbe::Vector2 &p2 = brushPoints[1];
-				const bbe::Vector2 &p3 = brushPoints[0];
+				// Points: [0]=newest, [3]=älteste.
+				const bbe::Vector2 &p0 = editor.brushStrokeUpdateRecentPoints[3];
+				const bbe::Vector2 &p1 = editor.brushStrokeUpdateRecentPoints[2];
+				const bbe::Vector2 &p2 = editor.brushStrokeUpdateRecentPoints[1];
+				const bbe::Vector2 &p3 = editor.brushStrokeUpdateRecentPoints[0];
 
 				const bbe::Vector2 c1 = p1 + (p2 - p0) / 6.0f;
 				const bbe::Vector2 c2 = p2 - (p3 - p1) / 6.0f;
@@ -725,9 +720,9 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 				touched = true;
 				editor.bumpNavigatorThumbnailDirty();
 			}
-			else if (brushPointCount >= 2)
+			else if (editor.brushStrokeUpdateRecentPointCount >= 2)
 			{
-				touched = editor.touchLine(brushPoints[0], brushPoints[1], false, leftDown, rightDown);
+				touched = editor.touchLine(editor.brushStrokeUpdateRecentPoints[0], editor.brushStrokeUpdateRecentPoints[1], false, leftDown, rightDown);
 			}
 			if (drawMode)
 			{
@@ -746,7 +741,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			const bool rightDown = g.isMouseDown(bbe::MouseButton::RIGHT) && !editor.suppressCanvasInputUntilMouseUp;
 			const bool eraseActive = leftDown || rightDown;
 
-			if (!lastDrawButtonDown && drawButtonDown)
+			if (!editor.brushStrokeUpdateLastDrawButtonDown && drawButtonDown)
 			{
 				editor.eraserStrokeHasPrev = false;
 			}
@@ -797,7 +792,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 			const bool rightDown = g.isMouseDown(bbe::MouseButton::RIGHT) && !editor.suppressCanvasInputUntilMouseUp;
 			const bool sprayActive = leftDown || rightDown;
 
-			if (!lastDrawButtonDown && drawButtonDown)
+			if (!editor.brushStrokeUpdateLastDrawButtonDown && drawButtonDown)
 			{
 				editor.sprayStrokeHasPrev = false;
 			}
@@ -878,7 +873,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 					editor.suppressCanvasInputUntilMouseUp = true;
 					editor.pointerPrimaryDown = false;
 					editor.pointerSecondaryDown = false;
-					brushPointCount = 0;
+					editor.brushStrokeUpdateRecentPointCount = 0;
 				}
 				if (g.isMousePressed(bbe::MouseButton::RIGHT))
 				{
@@ -890,7 +885,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 					editor.suppressCanvasInputUntilMouseUp = true;
 					editor.pointerPrimaryDown = false;
 					editor.pointerSecondaryDown = false;
-					brushPointCount = 0;
+					editor.brushStrokeUpdateRecentPointCount = 0;
 				}
 			}
 		}
@@ -900,14 +895,14 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		}
 	}
 
-	if (!drawButtonDown && lastDrawButtonDown)
+	if (!drawButtonDown && editor.brushStrokeUpdateLastDrawButtonDown)
 	{
-		brushPointCount = 0;
+		editor.brushStrokeUpdateRecentPointCount = 0;
 		editor.eraserStrokeHasPrev = false;
 		editor.eraserPreviewSegmentActive = false;
 		editor.sprayStrokeHasPrev = false;
 	}
-	lastDrawButtonDown = drawButtonDown;
+	editor.brushStrokeUpdateLastDrawButtonDown = drawButtonDown;
 }
 
 class MyGame : public bbe::Game

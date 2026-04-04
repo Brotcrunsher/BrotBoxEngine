@@ -4287,8 +4287,16 @@ void PaintEditor::applyEraserWorkArea()
 	clearWorkArea();
 }
 
+void PaintEditor::resetBrushStrokeUpdateState()
+{
+	brushStrokeUpdateRecentPointCount = 0;
+	brushStrokeUpdateLastDrawButtonDown = false;
+	brushStrokeUpdateShadowCounter = 0;
+}
+
 void PaintEditor::setupCanvas(bool clearHistory)
 {
+	resetBrushStrokeUpdateState();
 	prepareDocumentImages();
 	clearWorkArea();
 	resetCamera();
