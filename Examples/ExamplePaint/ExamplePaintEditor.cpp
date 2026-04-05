@@ -3669,6 +3669,28 @@ void PaintEditor::clearSelectionInteractionState()
 	selection.interactionStartRect = {};
 	selection.previewRect = {};
 	selection.previewImage = {};
+	selection.paletteResizeDrawCache = {};
+	selection.paletteResizeDrawCacheW = 0;
+	selection.paletteResizeDrawCacheH = 0;
+}
+
+void PaintEditor::refreshPaletteModeSelectionResizeDrawCacheIfStale()
+{
+	PaintDocument &doc = canvas.get();
+	if (!doc.paletteMode || doc.paletteColors.isEmpty() || !selection.resizeActive) return;
+	const int32_t pw = selection.previewRect.width;
+	const int32_t ph = selection.previewRect.height;
+	if (pw <= 0 || ph <= 0) return;
+	if (pw == selection.paletteResizeDrawCacheW && ph == selection.paletteResizeDrawCacheH &&
+		selection.paletteResizeDrawCache.getWidth() == pw && selection.paletteResizeDrawCache.getHeight() == ph &&
+		selection.paletteResizeDrawCache.isLoadedCpu())
+		return;
+	selection.paletteResizeDrawCache = buildSelectionPreviewResultImage();
+	prepareImageForCanvas(selection.paletteResizeDrawCache);
+	paintPalette::quantizeImageToPaletteInPlace(selection.paletteResizeDrawCache, doc.paletteColors, false, 50);
+	prepareImageForCanvas(selection.paletteResizeDrawCache);
+	selection.paletteResizeDrawCacheW = pw;
+	selection.paletteResizeDrawCacheH = ph;
 }
 
 void PaintEditor::applySelectionTransform()
@@ -4087,15 +4109,28 @@ void PaintEditor::quantizeFloatingSelectionImagesIfPaletteMode()
 {
 	PaintDocument &doc = canvas.get();
 	if (!doc.paletteMode || doc.paletteColors.isEmpty()) return;
+	const bool dither = doc.paletteDither;
 	if (selection.floatingImage.getWidth() > 0 && selection.floatingImage.getHeight() > 0 && selection.floatingImage.isLoadedCpu())
 	{
-		paintPalette::quantizeImageToPaletteInPlace(selection.floatingImage, doc.paletteColors, false, 50);
+		paintPalette::quantizeImageToPaletteInPlace(selection.floatingImage, doc.paletteColors, dither, 50);
 		prepareImageForCanvas(selection.floatingImage);
 	}
 	if (selection.previewImage.getWidth() > 0 && selection.previewImage.getHeight() > 0 && selection.previewImage.isLoadedCpu())
 	{
-		paintPalette::quantizeImageToPaletteInPlace(selection.previewImage, doc.paletteColors, false, 50);
-		prepareImageForCanvas(selection.previewImage);
+		const bool sameSizeAsFloating =
+			selection.floatingImage.getWidth() > 0 && selection.floatingImage.getHeight() > 0 &&
+			selection.previewImage.getWidth() == selection.floatingImage.getWidth() &&
+			selection.previewImage.getHeight() == selection.floatingImage.getHeight();
+		if (sameSizeAsFloating)
+		{
+			selection.previewImage = selection.floatingImage;
+			prepareImageForCanvas(selection.previewImage);
+		}
+		else
+		{
+			paintPalette::quantizeImageToPaletteInPlace(selection.previewImage, doc.paletteColors, dither, 50);
+			prepareImageForCanvas(selection.previewImage);
+		}
 	}
 }
 

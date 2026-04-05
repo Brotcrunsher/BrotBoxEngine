@@ -382,6 +382,10 @@ struct PaintEditor
 		bbe::Rectanglei interactionStartRect;
 		bbe::Rectanglei previewRect;
 		bbe::Image previewImage;
+		/// Palette-mode selection resize overlay: rebuilt only when \ref previewRect size changes (avoids per-frame quantize in the GUI path).
+		bbe::Image paletteResizeDrawCache;
+		int32_t paletteResizeDrawCacheW = 0;
+		int32_t paletteResizeDrawCacheH = 0;
 
 		float rotation = 0.f;
 		bool rotationHandleActive = false;
@@ -796,6 +800,9 @@ struct PaintEditor
 	bbe::Image buildSelectionPreviewResultImage() const;
 
 	void clearSelectionInteractionState();
+
+	/// While resizing a floating selection in palette mode, refresh \ref SelectionState::paletteResizeDrawCache only if the preview size changed.
+	void refreshPaletteModeSelectionResizeDrawCacheIfStale();
 
 	void applySelectionTransform();
 

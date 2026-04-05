@@ -2065,9 +2065,29 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 		else if (editor.selection.moveActive || editor.selection.resizeActive)
 		{
-			bbe::Image previewImage = editor.selection.resizeActive ? editor.buildSelectionPreviewResultImage() : editor.selection.previewImage;
-			paintEditorQuantizeImageCopyIfPaletteMode(editor, previewImage);
-			drawInAllTiles(editor.selection.previewRect, previewImage, editor.selection.rotation);
+			// Palette mode: floating/preview pixels are quantized when the selection is created or transformed (see quantizeFloatingSelectionImagesIfPaletteMode).
+			// Do not re-quantize every GUI frame here — full-image passes (especially with dither) made moves unusably slow and could desync preview vs. commit.
+			if (editor.canvas.get().paletteMode && !editor.canvas.get().paletteColors.isEmpty())
+			{
+				const bbe::Image *src = nullptr;
+				if (editor.selection.resizeActive)
+				{
+					editor.refreshPaletteModeSelectionResizeDrawCacheIfStale();
+					src = &editor.selection.paletteResizeDrawCache;
+				}
+				else
+				{
+					src = &editor.selection.previewImage;
+				}
+				if (src->getWidth() > 0 && src->getHeight() > 0)
+					drawInAllTiles(editor.selection.previewRect, *src, editor.selection.rotation);
+			}
+			else
+			{
+				bbe::Image previewImage = editor.selection.resizeActive ? editor.buildSelectionPreviewResultImage() : editor.selection.previewImage;
+				paintEditorQuantizeImageCopyIfPaletteMode(editor, previewImage);
+				drawInAllTiles(editor.selection.previewRect, previewImage, editor.selection.rotation);
+			}
 		}
 		else if (editor.selection.floating)
 		{
