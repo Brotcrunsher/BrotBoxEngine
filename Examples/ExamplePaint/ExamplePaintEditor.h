@@ -497,7 +497,7 @@ struct PaintEditor
 	/// Pipette in palette mode: map sampled opaque color to nearest palette entry (ignores alpha for distance).
 	void applyPipetteSampleToPaletteSelection(const bbe::Colori &sampled, bool useRightButton);
 
-	/// Set by View → Palette Mode (on); GUI should call \c ImGui::OpenPopup once when this becomes true.
+	/// Set by Edit → Palette Mode (on); GUI should call \c ImGui::OpenPopup once when this becomes true.
 	bool paletteModeSetupOpenRequest = false;
 	int32_t paletteSetupDistinctX = 0;
 	int32_t paletteSetupReduceY = 16;
