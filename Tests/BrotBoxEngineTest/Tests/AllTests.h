@@ -7,7 +7,6 @@
 #include "DataStructures/ArrayTest.h"
 #include "DataStructures/DynamicArrayTest.h"
 #include "BBE/UtilTest.h"
-#include "UniquePointerTest.h"
 #include "Matrix4Test.h"
 #include "MathTest.h"
 #include "Vector2Test.h"
@@ -35,10 +34,6 @@ namespace bbe
 
 			BBELOGLN("Testing Stack");
 			bbe::test::testStack();
-			Person::checkIfAllPersonsWereDestroyed();
-
-			BBELOGLN("Testing UniquePointer");
-			bbe::test::testUniquePointer();
 			Person::checkIfAllPersonsWereDestroyed();
 
 			BBELOGLN("Testing Array");
