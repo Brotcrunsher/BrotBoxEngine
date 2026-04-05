@@ -73,6 +73,8 @@ namespace bbe
 		bool m_isInsideFrame = false;
 
 		uint32_t m_msaaSamples = 4;
+		/// Set when this game successfully called \c CoInitializeEx on the startup thread (Windows only); cleared after \c CoUninitialize.
+		bool m_comInitialized = false;
 
 		void innerStart(int windowWidth, int windowHeight, const char *title);
 

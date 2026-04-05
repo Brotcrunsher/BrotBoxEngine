@@ -40,7 +40,7 @@ namespace bbe
 
 		bool isLoaded = false;
 
-		mutable bbe::AutoRef m_prendererData = nullptr;
+		mutable bbe::AutoRef m_prendererData;
 		bbe::ByteBuffer m_rawData;
 
 	public:

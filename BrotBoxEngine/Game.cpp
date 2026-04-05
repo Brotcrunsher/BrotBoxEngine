@@ -74,6 +74,13 @@ bbe::Game::~Game()
 		delete m_pwindow;
 	}
 	bbe::simpleFile::backup::async::stopIoThread();
+#ifdef _WIN32
+	if (m_comInitialized)
+	{
+		CoUninitialize();
+		m_comInitialized = false;
+	}
+#endif
 }
 
 static void segvHandler(int sig)
@@ -226,20 +233,6 @@ void bbe::Game::innerStart(int windowWidth, int windowHeight, const char *title)
 {
 #ifdef _WIN32
 	AddVectoredExceptionHandler(1, UnhandledVectoredExceptionHandler);
-
-	HRESULT res = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-	if (res != S_OK)
-	{
-		bbe::Crash(bbe::Error::IllegalState, "CoInitializeEx Failed");
-	}
-	{
-		WSADATA wsaData = { 0 };
-
-		if (WSAStartup(MAKEWORD(2, 2), &wsaData) != NO_ERROR)
-		{
-			bbe::Crash(bbe::Error::IllegalState, "WSAStartup Failed");
-		}
-	}
 #endif
 	std::set_terminate(&terminateHandler);
 
@@ -251,6 +244,25 @@ void bbe::Game::innerStart(int windowWidth, int windowHeight, const char *title)
 		bbe::Crash(bbe::Error::AlreadyCreated);
 	}
 	m_started = true;
+
+#ifdef _WIN32
+	HRESULT res = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	if (FAILED(res))
+	{
+		bbe::Crash(bbe::Error::IllegalState, "CoInitializeEx Failed");
+	}
+	m_comInitialized = true;
+	{
+		WSADATA wsaData = { 0 };
+
+		if (WSAStartup(MAKEWORD(2, 2), &wsaData) != NO_ERROR)
+		{
+			CoUninitialize();
+			m_comInitialized = false;
+			bbe::Crash(bbe::Error::IllegalState, "WSAStartup Failed");
+		}
+	}
+#endif
 
 	BBELOGLN("Creating window");
 	m_pwindow = new Window(windowWidth, windowHeight, title, this, 0, 0, 0, m_msaaSamples);
@@ -441,8 +453,13 @@ void bbe::Game::shutdown()
 	m_soundManager.destroy();
 #endif
 	INTERNAL::allocCleanup();
-#ifdef WIN32
+#ifdef _WIN32
 	WSACleanup();
+	if (m_comInitialized)
+	{
+		CoUninitialize();
+		m_comInitialized = false;
+	}
 #endif
 }
 

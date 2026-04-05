@@ -1,48 +1,47 @@
 #pragma once
 
 #include "../BBE/Error.h"
-#include "../BBE/AutoRefCountable.h"
+#include <memory>
 
 namespace bbe
 {
+	/// Produces a value asynchronously (e.g. GPU query). Owned by \c Future via \c std::shared_ptr — must be heap-managed.
 	template<typename T>
-	class DataProvider : public bbe::AutoRefCountable
+	class DataProvider
 	{
 	public:
-		~DataProvider() override {}
+		virtual ~DataProvider() = default;
 		virtual bool isValueReady() const = 0;
 		virtual T getValue() const = 0;
 	};
 
+	/// Shared ownership of a \c DataProvider. Not thread-safe unless the provider itself is.
 	template<typename T>
 	class Future
 	{
 	private:
-		AutoRef ref;
+		std::shared_ptr<DataProvider<T>> m_provider;
 
 	public:
-		Future() {}
-		explicit Future(DataProvider<T> *dataProvider)
-			: ref(dataProvider) // TODO: This is far from ideal. What if the dataProvider wasn't created with new?
-								//       Right now the alternative would be to take an AutoRef as parameter, but then
-								//       the API doesn't enforce that the value is actually a DataProvider. We need
-								//       some AutoRef kinda Template that has type infomration about the underlying
-								//       type.
+		Future() = default;
+
+		explicit Future(std::shared_ptr<DataProvider<T>> dataProvider)
+			: m_provider(std::move(dataProvider))
 		{
 		}
 
 		bool isValueReady() const
 		{
-			return ((const DataProvider<T> *)ref.get())->isValueReady();
+			return m_provider != nullptr && m_provider->isValueReady();
 		}
 
 		T getValue() const
 		{
-			if (!isValueReady())
+			if (!m_provider || !m_provider->isValueReady())
 			{
 				bbe::Crash(bbe::Error::IllegalState);
 			}
-			return ((const DataProvider<T> *)ref.get())->getValue();
+			return m_provider->getValue();
 		}
 	};
 }

@@ -27,7 +27,7 @@ namespace bbe
 				VulkanFragmentShader(const VulkanFragmentShader &) = delete;
 				VulkanFragmentShader(VulkanFragmentShader &&) = delete;
 				VulkanFragmentShader &operator=(const VulkanFragmentShader &) = delete;
-				VulkanFragmentShader &&operator==(const VulkanFragmentShader &&) = delete;
+				VulkanFragmentShader &operator=(VulkanFragmentShader &&) = delete;
 
 				void init(const bbe::List<unsigned char> &code);
 			};

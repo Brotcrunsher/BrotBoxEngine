@@ -2,7 +2,7 @@
 
 bbe::INTERNAL::openGl::OpenGLModel::OpenGLModel(const bbe::Model &model)
 {
-	model.m_prendererData = this;
+	model.m_prendererData = bbe::AutoRef(this);
 
 	const bbe::List<PosNormalPair> &vertices = model.m_vertices;
 	glGenBuffers(1, &m_vbo);

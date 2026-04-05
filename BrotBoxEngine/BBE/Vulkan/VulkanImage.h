@@ -37,7 +37,7 @@ namespace bbe
 				VulkanImage(const VulkanImage &) = delete;
 				VulkanImage(VulkanImage &&) = delete;
 				VulkanImage &operator=(const VulkanImage &) = delete;
-				VulkanImage &&operator==(const VulkanImage &&) = delete;
+				VulkanImage &operator=(VulkanImage &&) = delete;
 
 				void changeLayout(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkImageLayout layout, uint32_t baseMipLevel = 0, uint32_t levelCount = 1) const;
 				void writeBufferToImage(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuffer buffer) const;

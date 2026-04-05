@@ -600,8 +600,11 @@ namespace bbe
 
 		void removeRange(size_t start, size_t length)
 		{
-			if (start + length >= m_length) bbe::Crash(bbe::Error::IllegalArgument);
 			if (length == 0) return;
+			if (start > m_length || length > m_length - start)
+			{
+				bbe::Crash(bbe::Error::IllegalArgument);
+			}
 
 			T *d = getRaw();
 			for (size_t i = start; i < m_length - length; i++)

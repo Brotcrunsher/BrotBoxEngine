@@ -108,7 +108,7 @@ bbe::INTERNAL::openGl::OpenGLFragmentShader::OpenGLFragmentShader(const bbe::Fra
 	{
 		bbe::Crash(bbe::Error::IllegalState);
 	}
-	shader.m_prendererData = this;
+	shader.m_prendererData = bbe::AutoRef(this);
 
 	bbe::String normalizedSource = normalizeFragmentShaderSource(reinterpret_cast<const char *>(shader.m_rawData.getRaw()));
 	code.resizeCapacityAndLengthUninit(normalizedSource.getLengthBytes() + 1);

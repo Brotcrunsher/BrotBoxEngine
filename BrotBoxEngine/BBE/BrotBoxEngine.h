@@ -82,7 +82,6 @@
 #include "../BBE/DefaultDestroyer.h"
 #include "../BBE/NewDeleteAllocator.h"
 #include "../BBE/STLAllocator.h"
-#include "../BBE/UniquePointer.h"
 
 #include "../BBE/LinearCongruentialGenerator.h"
 #include "../BBE/MersenneTwister.h"

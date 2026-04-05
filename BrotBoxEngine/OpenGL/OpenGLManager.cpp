@@ -21,6 +21,7 @@
 #include "implot.h"
 #include <cstddef>
 #include <iostream>
+#include <memory>
 
 // TODO: Is every OpenGL Resource properly freed? How can we find that out?
 
@@ -1839,7 +1840,7 @@ struct OcclusionQuery : public bbe::DataProvider<bool>
 
 bbe::Future<bool> bbe::INTERNAL::openGl::OpenGLManager::isCubeVisible(const Cube &cube)
 {
-	return bbe::Future<bool>(new OcclusionQuery(this, cube));
+	return bbe::Future<bool>(std::make_shared<OcclusionQuery>(this, cube));
 }
 
 void bbe::INTERNAL::openGl::OpenGLManager::setRenderMode(bbe::RenderMode renderMode)
@@ -1942,7 +1943,7 @@ void bbe::INTERNAL::openGl::OpenGLManager::bakeLightMrt(bbe::LightBaker &lightBa
 	if (lightBaker.m_prendererData != nullptr) bbe::Crash(bbe::Error::IllegalState);
 
 	OpenGLLightBaker *ogllb = new OpenGLLightBaker();
-	lightBaker.m_prendererData = ogllb;
+		lightBaker.m_prendererData = bbe::AutoRef(ogllb);
 
 	ogllb->geometryBuffer = getGeometryBuffer("BakeLightsGeometryBuffer", lightBaker.m_resolution.x, lightBaker.m_resolution.y, true);
 	ogllb->colorBuffer = Framebuffer(lightBaker.m_resolution.x, lightBaker.m_resolution.y);

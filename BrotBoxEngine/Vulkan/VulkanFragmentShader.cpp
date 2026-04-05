@@ -9,7 +9,7 @@ bbe::INTERNAL::vulkan::VulkanFragmentShader::VulkanFragmentShader(const bbe::Fra
 		bbe::Crash(bbe::Error::IllegalState);
 	}
 
-	shader.m_prendererData = this;
+	shader.m_prendererData = bbe::AutoRef(this);
 
 	m_shader.init(bbe::INTERNAL::vulkan::VulkanManager::s_pinstance->getVulkanDevice(), shader.m_rawData);
 

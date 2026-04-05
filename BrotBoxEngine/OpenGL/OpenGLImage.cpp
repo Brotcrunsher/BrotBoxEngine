@@ -12,7 +12,7 @@ bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image &image)
 		bbe::Crash(bbe::Error::IllegalState);
 	}
 
-	image.m_prendererData = this;
+	image.m_prendererData = bbe::AutoRef(this);
 
 	glGenTextures(1, &tex);
 	glBindTexture(GL_TEXTURE_2D, tex);
@@ -53,7 +53,7 @@ bbe::INTERNAL::openGl::OpenGLImage::OpenGLImage(const bbe::Image &image, GLuint 
 		bbe::Crash(bbe::Error::IllegalState);
 	}
 
-	image.m_prendererData = this;
+	image.m_prendererData = bbe::AutoRef(this);
 	this->tex = tex;
 }
 

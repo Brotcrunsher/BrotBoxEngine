@@ -117,6 +117,7 @@ bool bbe::AdafruitMacroPadRP2040::connect()
 			{
 				HIDD_ATTRIBUTES attributes;
 				attributes.Size = sizeof(HIDD_ATTRIBUTES);
+				bool matched = false;
 				if (HidD_GetAttributes(deviceHandle, &attributes))
 				{
 					if (attributes.VendorID == 0x239A /* Adafruit VID */ && attributes.ProductID == 0x8108 /* MacroPad PID */)
@@ -125,8 +126,13 @@ bool bbe::AdafruitMacroPadRP2040::connect()
 						this->winHandle = deviceHandle;
 						threadRunning = true;
 						thread = std::jthread(&AdafruitMacroPadRP2040::threadMain, this);
+						matched = true;
 						break;
 					}
+				}
+				if (!matched)
+				{
+					CloseHandle(deviceHandle);
 				}
 			}
 		}

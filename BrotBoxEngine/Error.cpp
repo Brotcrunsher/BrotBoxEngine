@@ -6,7 +6,10 @@
 #include "../BBE/UtilDebug.h"
 #include <cstdlib>
 #include <sstream>
-#if __has_include(<stacktrace>)
+// <stacktrace> can exist as a stub without a linkable implementation. Enable only when the library claims support
+// (or MSVC, where the feature is normally complete), so Linux/Clang stays link-clean while still using stacktrace
+// on toolchains where it is actually usable.
+#if __has_include(<stacktrace>) && (defined(_MSC_VER) || (defined(__cpp_lib_stacktrace) && __cpp_lib_stacktrace >= 202011L))
 #include <stacktrace>
 #define BBE_HAS_STD_STACKTRACE 1
 #else
@@ -79,7 +82,7 @@ const char *bbe::toString(Error err)
 	string += "Where: " + bbe::String(file) + "(" + line + ")\n";
 	string += "       @" + bbe::String(function) + "\n\n";
 	string += "Stacktrace:\n";
-#if defined(WIN32) && BBE_HAS_STD_STACKTRACE // TODO: GCC14 does support this! But it's currently hard to find a stable, easy to install version of it on debian and ubuntu...
+#if BBE_HAS_STD_STACKTRACE
 	std::ostringstream stacktraceStream;
 	stacktraceStream << std::stacktrace::current();
 	string += stacktraceStream.str();

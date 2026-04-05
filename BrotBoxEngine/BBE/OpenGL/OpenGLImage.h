@@ -21,7 +21,7 @@ namespace bbe
 				OpenGLImage(const OpenGLImage &) = delete;
 				OpenGLImage(OpenGLImage &&) = delete;
 				OpenGLImage &operator=(const OpenGLImage &) = delete;
-				OpenGLImage &&operator==(const OpenGLImage &&) = delete;
+				OpenGLImage &operator=(OpenGLImage &&) = delete;
 
 				GLint internalFormat(const bbe::Image &image);
 				GLenum format(const bbe::Image &image);

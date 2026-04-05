@@ -19,7 +19,7 @@ bbe::INTERNAL::vulkan::VulkanImage::VulkanImage(const bbe::Image &image, const I
 		bbe::Crash(bbe::Error::IllegalState);
 	}
 
-	image.m_prendererData = this;
+	image.m_prendererData = bbe::AutoRef(this);
 
 	m_format = (VkFormat)image.m_format;
 	m_width = image.getWidth();

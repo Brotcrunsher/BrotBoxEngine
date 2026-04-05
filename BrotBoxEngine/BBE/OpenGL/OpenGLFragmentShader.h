@@ -66,7 +66,7 @@ namespace bbe
 				OpenGLFragmentShader(const OpenGLFragmentShader &) = delete;
 				OpenGLFragmentShader(OpenGLFragmentShader &&) = delete;
 				OpenGLFragmentShader &operator=(const OpenGLFragmentShader &) = delete;
-				OpenGLFragmentShader &&operator==(const OpenGLFragmentShader &&) = delete;
+				OpenGLFragmentShader &operator=(OpenGLFragmentShader &&) = delete;
 			};
 		}
 	}
