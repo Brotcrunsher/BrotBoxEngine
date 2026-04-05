@@ -869,10 +869,14 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 				const bbe::Colori color = editor.getVisiblePixel(x, y);
 				if (g.isMousePressed(bbe::MouseButton::LEFT))
 				{
-					editor.leftColor[0] = color.r / 255.f;
-					editor.leftColor[1] = color.g / 255.f;
-					editor.leftColor[2] = color.b / 255.f;
-					editor.leftColor[3] = color.a / 255.f;
+					if (editor.canvas.get().paletteMode) editor.applyPipetteSampleToPaletteSelection(color, false);
+					else
+					{
+						editor.leftColor[0] = color.r / 255.f;
+						editor.leftColor[1] = color.g / 255.f;
+						editor.leftColor[2] = color.b / 255.f;
+						editor.leftColor[3] = color.a / 255.f;
+					}
 					editor.mode = editor.pipetteReturnMode;
 					editor.suppressCanvasInputUntilMouseUp = true;
 					editor.pointerPrimaryDown = false;
@@ -881,10 +885,14 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 				}
 				if (g.isMousePressed(bbe::MouseButton::RIGHT))
 				{
-					editor.rightColor[0] = color.r / 255.f;
-					editor.rightColor[1] = color.g / 255.f;
-					editor.rightColor[2] = color.b / 255.f;
-					editor.rightColor[3] = color.a / 255.f;
+					if (editor.canvas.get().paletteMode) editor.applyPipetteSampleToPaletteSelection(color, true);
+					else
+					{
+						editor.rightColor[0] = color.r / 255.f;
+						editor.rightColor[1] = color.g / 255.f;
+						editor.rightColor[2] = color.b / 255.f;
+						editor.rightColor[3] = color.a / 255.f;
+					}
 					editor.mode = editor.pipetteReturnMode;
 					editor.suppressCanvasInputUntilMouseUp = true;
 					editor.pointerPrimaryDown = false;
@@ -907,6 +915,11 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		editor.sprayStrokeHasPrev = false;
 	}
 	editor.brushStrokeUpdateLastDrawButtonDown = drawButtonDown;
+
+	if (editor.canvas.get().paletteMode && editor.workArea.getWidth() > 0 && editor.workArea.getHeight() > 0 && editor.workArea.isLoadedCpu())
+	{
+		editor.quantizeWorkAreaPreviewIfPaletteMode();
+	}
 }
 
 class MyGame : public bbe::Game
@@ -978,6 +991,13 @@ public:
 			return &it->second;
 		};
 		editor.setPlatformCallbacks(std::move(callbacks));
+
+#ifndef NDEBUG
+		if (!PaintEditor::debugRunPalettePersistenceRegressionChecks())
+		{
+			bbe::Crash(bbe::Error::IllegalState, "ExamplePaint palette regression checks failed");
+		}
+#endif
 
 		applyPersistedDigitHotkeys(editor, *digitHotkeysPersist.operator->());
 		editor.onDigitHotkeysChanged = [this]()

@@ -1,4 +1,5 @@
 #include "ExamplePaintEditor.h"
+#include "ExamplePaintPalette.h"
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -439,6 +440,16 @@ bbe::Image maskFromFloatingImageAlpha(const bbe::Image &floating, int32_t w, int
 
 bbe::Colori PaintEditor::getColor(bool useRight) const
 {
+	if (canvas.get().paletteMode)
+	{
+		const PaintDocument &doc = canvas.get();
+		const bbe::List<bbe::Colori> &pal = doc.paletteColors;
+		if (pal.isEmpty()) return bbe::Colori(0, 0, 0, 255);
+		const int32_t idx = useRight ? doc.paletteSecondaryIndex : doc.palettePrimaryIndex;
+		const int32_t clamped = bbe::Math::clamp(idx, 0, (int32_t)pal.getLength() - 1);
+		const bbe::Colori &p = pal[(size_t)clamped];
+		return bbe::Colori(p.r, p.g, p.b, 255);
+	}
 	return bbe::Color(useRight ? rightColor : leftColor).asByteColor();
 }
 
@@ -1430,22 +1441,22 @@ void PaintEditor::applyDigitHotkeyBinding(DigitHotkeyAction b)
 		requestReplaceDocumentPasteFromClipboard();
 		break;
 	case DigitHotkeyAction::LayerNew:
-		addLayer();
+		if (!canvas.get().paletteMode) addLayer();
 		break;
 	case DigitHotkeyAction::LayerDelete:
-		if (canvas.get().layers.getLength() > 1) deleteActiveLayer();
+		if (!canvas.get().paletteMode && canvas.get().layers.getLength() > 1) deleteActiveLayer();
 		break;
 	case DigitHotkeyAction::LayerMoveUp:
-		if ((size_t)activeLayerIndex + 1 < canvas.get().layers.getLength()) moveActiveLayerUp();
+		if (!canvas.get().paletteMode && (size_t)activeLayerIndex + 1 < canvas.get().layers.getLength()) moveActiveLayerUp();
 		break;
 	case DigitHotkeyAction::LayerMoveDown:
-		if (activeLayerIndex > 0) moveActiveLayerDown();
+		if (!canvas.get().paletteMode && activeLayerIndex > 0) moveActiveLayerDown();
 		break;
 	case DigitHotkeyAction::LayerDuplicate:
-		duplicateActiveLayer();
+		if (!canvas.get().paletteMode) duplicateActiveLayer();
 		break;
 	case DigitHotkeyAction::LayerMergeDown:
-		if (activeLayerIndex > 0) mergeActiveLayerDown();
+		if (!canvas.get().paletteMode && activeLayerIndex > 0) mergeActiveLayerDown();
 		break;
 	default:
 		break;
@@ -1673,43 +1684,18 @@ void PaintEditor::importFileAsLayers(const bbe::List<bbe::String> &paths)
 
 		if (isLayeredDocumentPath(path))
 		{
-			// Import every layer from the .bbepaint file
 			bbe::ByteBuffer buffer;
 			if (platform.readBinaryFile) buffer = platform.readBinaryFile(path);
 			if (buffer.getLength() == 0) continue;
 			bbe::ByteBufferSpan span = buffer.getSpan();
-			const bbe::String magic = span.readNullString();
-			const bool importIsV3 = (magic == LAYERED_FILE_MAGIC_V3);
-			const bool importIsV2 = (magic == LAYERED_FILE_MAGIC) || importIsV3;
-			const bool importIsV1 = (magic == LAYERED_FILE_MAGIC_V1);
-			if (!importIsV2 && !importIsV1) continue;
-			int32_t width = 0, height = 0;
-			uint32_t layerCount = 0;
-			int32_t storedActiveLayerIndex = 0;
-			span.read(width);
-			span.read(height);
-			span.read(layerCount);
-			span.read(storedActiveLayerIndex);
-			if (importIsV3)
+			PaintDocument imported;
+			int32_t importedActive = 0;
+			if (!deserializeLayeredDocumentBytes(span, imported, importedActive)) continue;
+			prepareForLayerTargetChange();
+			const size_t importLayerCount = imported.layers.getLength();
+			for (size_t k = 0; k < importLayerCount; k++)
 			{
-				for (int c = 0; c < 4; c++) span.read(canvas.get().canvasFallbackRgba[c]);
-			}
-			if (width <= 0 || height <= 0 || layerCount == 0) continue;
-			for (uint32_t k = 0; k < layerCount; k++)
-			{
-				PaintLayer layer;
-				span.read(layer.visible);
-				span.read(layer.name);
-				if (importIsV2)
-				{
-					span.read(layer.opacity);
-					uint8_t blendModeRaw = 0;
-					span.read(blendModeRaw);
-					layer.blendMode = (bbe::BlendMode)blendModeRaw;
-				}
-				if (!deserializeLayerImage(span, width, height, layer.image)) break;
-				prepareForLayerTargetChange();
-				canvas.get().layers.add(std::move(layer));
+				canvas.get().layers.add(std::move(imported.layers[k]));
 				activeLayerIndex = (int32_t)canvas.get().layers.getLength() - 1;
 			}
 		}
@@ -2083,11 +2069,13 @@ void PaintEditor::pasteSelectionAt(const bbe::Vector2i &pos)
 	selection.dragActive = false;
 	selection.previewRect = {};
 	selection.previewImage = {};
+	quantizeFloatingSelectionImagesIfPaletteMode();
 }
 
 void PaintEditor::commitFloatingSelection()
 {
 	if (!selection.floating) return;
+	quantizeFloatingSelectionImagesIfPaletteMode();
 
 	const bool recordShapeColor = rectangle.draftActive || circle.draftActive;
 	bbe::Colori shapeHistColor;
@@ -3529,6 +3517,7 @@ void PaintEditor::liftSelectionToFloatingIfNeeded()
 	selection.floatingImage = std::move(lifted);
 	prepareImageForCanvas(selection.floatingImage);
 	selection.mask = {};
+	quantizeFloatingSelectionImagesIfPaletteMode();
 	submitCanvas();
 }
 
@@ -3543,6 +3532,7 @@ void PaintEditor::beginSelectionMove(const bbe::Vector2i &mousePixel)
 	selection.previewImage = selection.floatingImage;
 	// Must retain CPU pixels after GPU draw (see OpenGLImage ctor); blendOver needs isLoadedCpu().
 	prepareImageForCanvas(selection.previewImage);
+	quantizeFloatingSelectionImagesIfPaletteMode();
 }
 
 void PaintEditor::beginRotationDrag(const bbe::Vector2i &mousePixel)
@@ -3587,6 +3577,7 @@ void PaintEditor::beginSelectionResize(const SelectionHitZone hitZone)
 	selection.previewRect = selection.rect;
 	selection.previewImage = selection.floatingImage;
 	prepareImageForCanvas(selection.previewImage);
+	quantizeFloatingSelectionImagesIfPaletteMode();
 }
 
 void PaintEditor::updateSelectionResizePreview(const bbe::Vector2i &mousePixel)
@@ -3694,6 +3685,7 @@ void PaintEditor::applySelectionTransform()
 			selection.floatingImage = buildSelectionPreviewResultImage();
 			prepareImageForCanvas(selection.floatingImage);
 			selection.mask = {};
+			quantizeFloatingSelectionImagesIfPaletteMode();
 		}
 		clearSelectionInteractionState();
 		return;
@@ -3714,6 +3706,7 @@ void PaintEditor::applySelectionTransform()
 		selection.floatingImage = buildSelectionPreviewResultImage();
 		prepareImageForCanvas(selection.floatingImage);
 		selection.mask = {};
+		quantizeFloatingSelectionImagesIfPaletteMode();
 		rectangle.draftActive = false;
 		rectangle.draftUsesRightColor = false;
 		circle.draftActive = false;
@@ -4002,6 +3995,12 @@ void PaintEditor::placeTextAt(const bbe::Vector2i &topLeft, const bbe::Colori &c
 
 void PaintEditor::swapColors()
 {
+	if (canvas.get().paletteMode)
+	{
+		std::swap(canvas.get().palettePrimaryIndex, canvas.get().paletteSecondaryIndex);
+		syncLeftRightColorsFromPaletteIndices();
+		return;
+	}
 	for (size_t i = 0; i < std::size(leftColor); i++)
 	{
 		std::swap(leftColor[i], rightColor[i]);
@@ -4010,6 +4009,13 @@ void PaintEditor::swapColors()
 
 void PaintEditor::resetColorsToDefault()
 {
+	if (canvas.get().paletteMode)
+	{
+		canvas.get().palettePrimaryIndex = 0;
+		canvas.get().paletteSecondaryIndex = canvas.get().paletteColors.getLength() > 1 ? 1 : 0;
+		syncLeftRightColorsFromPaletteIndices();
+		return;
+	}
 	leftColor[0] = 0.0f;
 	leftColor[1] = 0.0f;
 	leftColor[2] = 0.0f;
@@ -4019,6 +4025,373 @@ void PaintEditor::resetColorsToDefault()
 	rightColor[1] = 1.0f;
 	rightColor[2] = 1.0f;
 	rightColor[3] = 1.0f;
+}
+
+void PaintEditor::clampPaletteIndicesToValid()
+{
+	PaintDocument &doc = canvas.get();
+	if (!doc.paletteMode || doc.paletteColors.isEmpty())
+	{
+		doc.palettePrimaryIndex = 0;
+		doc.paletteSecondaryIndex = 0;
+		return;
+	}
+	const int32_t n = (int32_t)doc.paletteColors.getLength() - 1;
+	doc.palettePrimaryIndex = bbe::Math::clamp(doc.palettePrimaryIndex, 0, n);
+	doc.paletteSecondaryIndex = bbe::Math::clamp(doc.paletteSecondaryIndex, 0, n);
+}
+
+void PaintEditor::syncLeftRightColorsFromPaletteIndices()
+{
+	if (!canvas.get().paletteMode)
+	{
+		return;
+	}
+	clampPaletteIndicesToValid();
+	const PaintDocument &doc = canvas.get();
+	if (doc.paletteColors.isEmpty()) return;
+	const bbe::Colori lp = doc.paletteColors[(size_t)doc.palettePrimaryIndex];
+	const bbe::Colori rp = doc.paletteColors[(size_t)doc.paletteSecondaryIndex];
+	leftColor[0] = lp.r / 255.f;
+	leftColor[1] = lp.g / 255.f;
+	leftColor[2] = lp.b / 255.f;
+	leftColor[3] = 1.f;
+	rightColor[0] = rp.r / 255.f;
+	rightColor[1] = rp.g / 255.f;
+	rightColor[2] = rp.b / 255.f;
+	rightColor[3] = 1.f;
+}
+
+void PaintEditor::quantizeAllLayersIfPaletteModeBeforeHistorySnapshot()
+{
+	PaintDocument &doc = canvas.get();
+	if (!doc.paletteMode || doc.paletteColors.isEmpty()) return;
+	for (size_t li = 0; li < doc.layers.getLength(); li++)
+	{
+		paintPalette::quantizeImageToPaletteInPlace(doc.layers[li].image, doc.paletteColors, doc.paletteDither, 50);
+		prepareLayer(doc.layers[li]);
+	}
+}
+
+void PaintEditor::quantizeWorkAreaPreviewIfPaletteMode()
+{
+	PaintDocument &doc = canvas.get();
+	if (!doc.paletteMode || doc.paletteColors.isEmpty()) return;
+	const int32_t ww = workArea.getWidth();
+	const int32_t wh = workArea.getHeight();
+	if (ww <= 0 || wh <= 0 || !workArea.isLoadedCpu()) return;
+	paintPalette::quantizeImageToPaletteInPlace(workArea, doc.paletteColors, false, 50);
+}
+
+void PaintEditor::quantizeFloatingSelectionImagesIfPaletteMode()
+{
+	PaintDocument &doc = canvas.get();
+	if (!doc.paletteMode || doc.paletteColors.isEmpty()) return;
+	if (selection.floatingImage.getWidth() > 0 && selection.floatingImage.getHeight() > 0 && selection.floatingImage.isLoadedCpu())
+	{
+		paintPalette::quantizeImageToPaletteInPlace(selection.floatingImage, doc.paletteColors, false, 50);
+		prepareImageForCanvas(selection.floatingImage);
+	}
+	if (selection.previewImage.getWidth() > 0 && selection.previewImage.getHeight() > 0 && selection.previewImage.isLoadedCpu())
+	{
+		paintPalette::quantizeImageToPaletteInPlace(selection.previewImage, doc.paletteColors, false, 50);
+		prepareImageForCanvas(selection.previewImage);
+	}
+}
+
+int32_t PaintEditor::countDistinctRgbOnImage(const bbe::Image &flat) const
+{
+	std::vector<std::array<uint8_t, 3>> distinct;
+	paintPalette::collectDistinctOpaqueRgb(flat, distinct);
+	return (int32_t)distinct.size();
+}
+
+void PaintEditor::preparePaletteModeSetupDialog()
+{
+	commitFloatingSelection();
+	const bbe::Image flat = flattenVisibleLayers();
+	paletteSetupDistinctX = countDistinctRgbOnImage(flat);
+	if (paletteSetupReduceY < 1) paletteSetupReduceY = 1;
+	paletteSetupDither = true;
+	paletteModeSetupOpenRequest = true;
+}
+
+void PaintEditor::applyPaletteModeActivation(bool useAllExistingColors, int32_t reduceToY, bool dither)
+{
+	prepareForLayerTargetChange();
+	bbe::Image flat = flattenVisibleLayers();
+	std::vector<std::array<uint8_t, 3>> distinct;
+	paintPalette::collectDistinctOpaqueRgb(flat, distinct);
+
+	bbe::List<bbe::Colori> palette;
+	if (useAllExistingColors)
+	{
+		if (distinct.empty())
+		{
+			paintPalette::fillPaletteToCount(distinct, 16, palette);
+		}
+		else
+		{
+			for (const auto &rgb : distinct)
+			{
+				palette.add(bbe::Colori(rgb[0], rgb[1], rgb[2], 255));
+			}
+		}
+	}
+	else
+	{
+		const int32_t y = bbe::Math::max<int32_t>(1, reduceToY);
+		if ((int32_t)distinct.size() <= y)
+		{
+			paintPalette::fillPaletteToCount(distinct, y, palette);
+		}
+		else
+		{
+			paintPalette::buildReducedPalette(distinct, y, palette);
+		}
+	}
+
+	if (palette.isEmpty())
+	{
+		paintPalette::fillPaletteToCount(distinct, 1, palette);
+	}
+
+	paintPalette::quantizeImageToPaletteInPlace(flat, palette, dither, 50);
+
+	PaintDocument doc;
+	doc.canvasFallbackRgba[0] = 0.f;
+	doc.canvasFallbackRgba[1] = 0.f;
+	doc.canvasFallbackRgba[2] = 0.f;
+	doc.canvasFallbackRgba[3] = 0.f;
+	doc.paletteMode = true;
+	doc.paletteDither = dither;
+	doc.paletteColors = std::move(palette);
+	doc.palettePrimaryIndex = 0;
+	doc.paletteSecondaryIndex = doc.paletteColors.getLength() > 1 ? 1 : 0;
+	PaintLayer layer;
+	layer.name = "Layer 1";
+	layer.visible = true;
+	layer.opacity = 1.f;
+	layer.blendMode = bbe::BlendMode::Normal;
+	layer.image = std::move(flat);
+	doc.layers.add(std::move(layer));
+
+	canvas.get() = std::move(doc);
+	activeLayerIndex = 0;
+	prepareDocumentImages();
+	clearWorkArea();
+	syncLeftRightColorsFromPaletteIndices();
+	submitCanvas();
+}
+
+void PaintEditor::disablePaletteMode()
+{
+	prepareForLayerTargetChange();
+	canvas.get().paletteMode = false;
+	canvas.get().paletteDither = true;
+	canvas.get().paletteColors.clear();
+	canvas.get().palettePrimaryIndex = 0;
+	canvas.get().paletteSecondaryIndex = 0;
+	canvas.get().canvasFallbackRgba[0] = 0.f;
+	canvas.get().canvasFallbackRgba[1] = 0.f;
+	canvas.get().canvasFallbackRgba[2] = 0.f;
+	canvas.get().canvasFallbackRgba[3] = 0.f;
+	submitCanvas();
+}
+
+void PaintEditor::setPalettePrimaryIndex(int32_t idx)
+{
+	canvas.get().palettePrimaryIndex = idx;
+	clampPaletteIndicesToValid();
+	syncLeftRightColorsFromPaletteIndices();
+}
+
+void PaintEditor::setPaletteSecondaryIndex(int32_t idx)
+{
+	canvas.get().paletteSecondaryIndex = idx;
+	clampPaletteIndicesToValid();
+	syncLeftRightColorsFromPaletteIndices();
+}
+
+void PaintEditor::applyPipetteSampleToPaletteSelection(const bbe::Colori &sampled, bool useRightButton)
+{
+	PaintDocument &doc = canvas.get();
+	if (!doc.paletteMode || doc.paletteColors.isEmpty()) return;
+	if (sampled.a < 50) return;
+	const int32_t ni = paintPalette::nearestPaletteIndexRgb(sampled.r, sampled.g, sampled.b, doc.paletteColors);
+	if (useRightButton) setPaletteSecondaryIndex(ni);
+	else setPalettePrimaryIndex(ni);
+}
+
+void PaintEditor::paletteAddUniqueColor(uint8_t r, uint8_t g, uint8_t b)
+{
+	PaintDocument &doc = canvas.get();
+	if (!doc.paletteMode) return;
+	for (size_t i = 0; i < doc.paletteColors.getLength(); i++)
+	{
+		const bbe::Colori &p = doc.paletteColors[i];
+		if (p.r == r && p.g == g && p.b == b) return;
+	}
+	doc.paletteColors.add(bbe::Colori(r, g, b, 255));
+	doc.palettePrimaryIndex = (int32_t)doc.paletteColors.getLength() - 1;
+	clampPaletteIndicesToValid();
+	syncLeftRightColorsFromPaletteIndices();
+	submitCanvas();
+}
+
+void PaintEditor::paletteReplaceColorAtIndex(size_t index, uint8_t r, uint8_t g, uint8_t b)
+{
+	PaintDocument &doc = canvas.get();
+	if (!doc.paletteMode || index >= doc.paletteColors.getLength()) return;
+	for (size_t i = 0; i < doc.paletteColors.getLength(); i++)
+	{
+		if (i == index) continue;
+		const bbe::Colori &p = doc.paletteColors[i];
+		if (p.r == r && p.g == g && p.b == b) return;
+	}
+	const bbe::Colori old = doc.paletteColors[index];
+	if (old.r == r && old.g == g && old.b == b) return;
+	doc.paletteColors[index] = bbe::Colori(r, g, b, 255);
+	const std::array<uint8_t, 3> from{ old.r, old.g, old.b };
+	const std::array<uint8_t, 3> to{ r, g, b };
+	for (size_t li = 0; li < doc.layers.getLength(); li++)
+	{
+		paintPalette::replaceRgbInImageInPlace(doc.layers[li].image, from, to, 50);
+		prepareLayer(doc.layers[li]);
+	}
+	clampPaletteIndicesToValid();
+	syncLeftRightColorsFromPaletteIndices();
+	submitCanvas();
+}
+
+void PaintEditor::paletteTryRemoveColorAtIndex(size_t index)
+{
+	PaintDocument &doc = canvas.get();
+	if (!doc.paletteMode || index >= doc.paletteColors.getLength()) return;
+
+	const bbe::Colori removed = doc.paletteColors[index];
+	const std::array<uint8_t, 3> removedRgb{ removed.r, removed.g, removed.b };
+
+	bbe::List<bbe::Colori> newPalette;
+	for (size_t i = 0; i < doc.paletteColors.getLength(); i++)
+	{
+		if (i == index) continue;
+		newPalette.add(doc.paletteColors[i]);
+	}
+	if (newPalette.isEmpty())
+	{
+		newPalette.add(bbe::Colori(255, 255, 255, 255));
+	}
+
+	const int64_t used = paintPalette::countPixelsWithRgb(getActiveLayerImage(), removedRgb, 50);
+	if (used == 0)
+	{
+		doc.paletteColors = std::move(newPalette);
+		if ((size_t)doc.palettePrimaryIndex == index)
+		{
+			doc.palettePrimaryIndex = 0;
+		}
+		else if ((size_t)doc.palettePrimaryIndex > index)
+		{
+			doc.palettePrimaryIndex--;
+		}
+		if ((size_t)doc.paletteSecondaryIndex == index)
+		{
+			doc.paletteSecondaryIndex = 0;
+		}
+		else if ((size_t)doc.paletteSecondaryIndex > index)
+		{
+			doc.paletteSecondaryIndex--;
+		}
+		clampPaletteIndicesToValid();
+		syncLeftRightColorsFromPaletteIndices();
+		submitCanvas();
+		return;
+	}
+
+	paletteRemovePendingIndex = (int32_t)index;
+	paletteRemovePendingPixelCount = used;
+	openPaletteRemoveConfirmDialog = true;
+}
+
+void PaintEditor::paletteConfirmPendingRemove()
+{
+	PaintDocument &doc = canvas.get();
+	const int32_t index = paletteRemovePendingIndex;
+	openPaletteRemoveConfirmDialog = false;
+	paletteRemovePendingIndex = -1;
+	if (!doc.paletteMode || index < 0 || (size_t)index >= doc.paletteColors.getLength()) return;
+
+	const bbe::Colori removed = doc.paletteColors[(size_t)index];
+	const std::array<uint8_t, 3> removedRgb{ removed.r, removed.g, removed.b };
+
+	bbe::List<bbe::Colori> newPalette;
+	for (size_t i = 0; i < doc.paletteColors.getLength(); i++)
+	{
+		if ((int32_t)i == index) continue;
+		newPalette.add(doc.paletteColors[i]);
+	}
+	if (newPalette.isEmpty())
+	{
+		newPalette.add(bbe::Colori(255, 255, 255, 255));
+	}
+
+	for (size_t li = 0; li < doc.layers.getLength(); li++)
+	{
+		paintPalette::remapRemovedPaletteColorInPlace(doc.layers[li].image, removedRgb, newPalette, 50);
+		prepareLayer(doc.layers[li]);
+	}
+
+	doc.paletteColors = std::move(newPalette);
+	if ((size_t)doc.palettePrimaryIndex == (size_t)index)
+	{
+		doc.palettePrimaryIndex = 0;
+	}
+	else if (doc.palettePrimaryIndex > index)
+	{
+		doc.palettePrimaryIndex--;
+	}
+	if ((size_t)doc.paletteSecondaryIndex == (size_t)index)
+	{
+		doc.paletteSecondaryIndex = 0;
+	}
+	else if (doc.paletteSecondaryIndex > index)
+	{
+		doc.paletteSecondaryIndex--;
+	}
+	clampPaletteIndicesToValid();
+	syncLeftRightColorsFromPaletteIndices();
+	submitCanvas();
+}
+
+void PaintEditor::paletteMoveEntryBefore(size_t fromIndex, size_t insertBeforeIndex)
+{
+	PaintDocument &doc = canvas.get();
+	if (!doc.paletteMode || fromIndex >= doc.paletteColors.getLength() || insertBeforeIndex > doc.paletteColors.getLength()) return;
+	if (fromIndex == insertBeforeIndex || fromIndex + 1 == insertBeforeIndex) return;
+
+	const bbe::Colori primaryCol = doc.paletteColors[(size_t)bbe::Math::clamp(doc.palettePrimaryIndex, 0, (int32_t)doc.paletteColors.getLength() - 1)];
+	const bbe::Colori secondaryCol = doc.paletteColors[(size_t)bbe::Math::clamp(doc.paletteSecondaryIndex, 0, (int32_t)doc.paletteColors.getLength() - 1)];
+
+	bbe::Colori moved = doc.paletteColors[fromIndex];
+	doc.paletteColors.removeIndex(fromIndex);
+	size_t ins = insertBeforeIndex;
+	if (fromIndex < insertBeforeIndex) ins--;
+	doc.paletteColors.addAt(ins, std::move(moved));
+
+	auto findRgb = [&](const bbe::Colori &c) -> int32_t {
+		for (size_t i = 0; i < doc.paletteColors.getLength(); i++)
+		{
+			const bbe::Colori &p = doc.paletteColors[i];
+			if (p.r == c.r && p.g == c.g && p.b == c.b) return (int32_t)i;
+		}
+		return 0;
+	};
+	doc.palettePrimaryIndex = findRgb(primaryCol);
+	doc.paletteSecondaryIndex = findRgb(secondaryCol);
+	clampPaletteIndicesToValid();
+	syncLeftRightColorsFromPaletteIndices();
+	submitCanvas();
 }
 
 void PaintEditor::serializeLayerImage(const bbe::Image &image, bbe::ByteBuffer &buffer) const
@@ -4068,7 +4441,7 @@ bool PaintEditor::deserializeLayerImage(bbe::ByteBufferSpan &span, int32_t width
 bbe::ByteBuffer PaintEditor::serializeLayeredDocumentBytes() const
 {
 	bbe::ByteBuffer buffer;
-	buffer.writeNullString(LAYERED_FILE_MAGIC_V3);
+	buffer.writeNullString(LAYERED_FILE_MAGIC_V4);
 
 	int32_t width = getCanvasWidth();
 	int32_t height = getCanvasHeight();
@@ -4083,6 +4456,27 @@ bbe::ByteBuffer PaintEditor::serializeLayeredDocumentBytes() const
 		float fc = canvas.get().canvasFallbackRgba[c];
 		buffer.write(fc);
 	}
+
+	bool paletteModeW = canvas.get().paletteMode;
+	bool paletteDitherW = canvas.get().paletteDither;
+	buffer.write(paletteModeW);
+	buffer.write(paletteDitherW);
+	uint32_t paletteCountW = (uint32_t)canvas.get().paletteColors.getLength();
+	buffer.write(paletteCountW);
+	for (size_t pi = 0; pi < canvas.get().paletteColors.getLength(); pi++)
+	{
+		const bbe::Colori &pc = canvas.get().paletteColors[pi];
+		uint8_t r = pc.r;
+		uint8_t g = pc.g;
+		uint8_t b = pc.b;
+		buffer.write(r);
+		buffer.write(g);
+		buffer.write(b);
+	}
+	int32_t palettePriW = canvas.get().palettePrimaryIndex;
+	int32_t paletteSecW = canvas.get().paletteSecondaryIndex;
+	buffer.write(palettePriW);
+	buffer.write(paletteSecW);
 
 	for (size_t i = 0; i < canvas.get().layers.getLength(); i++)
 	{
@@ -4103,7 +4497,8 @@ bbe::ByteBuffer PaintEditor::serializeLayeredDocumentBytes() const
 bool PaintEditor::deserializeLayeredDocumentBytes(bbe::ByteBufferSpan span, PaintDocument &outDocument, int32_t &outStoredActiveLayerIndex) const
 {
 	const bbe::String magic = span.readNullString();
-	const bool isV3 = (magic == LAYERED_FILE_MAGIC_V3);
+	const bool isV4 = (magic == LAYERED_FILE_MAGIC_V4);
+	const bool isV3 = (magic == LAYERED_FILE_MAGIC_V3) || isV4;
 	const bool isV2 = (magic == LAYERED_FILE_MAGIC) || isV3;
 	const bool isV1 = (magic == LAYERED_FILE_MAGIC_V1);
 	if (!isV2 && !isV1) return false;
@@ -4119,6 +4514,12 @@ bool PaintEditor::deserializeLayeredDocumentBytes(bbe::ByteBufferSpan span, Pain
 	if (width <= 0 || height <= 0 || layerCount == 0) return false;
 
 	PaintDocument document;
+	document.paletteMode = false;
+	document.paletteDither = true;
+	document.paletteColors.clear();
+	document.palettePrimaryIndex = 0;
+	document.paletteSecondaryIndex = 0;
+
 	if (isV3)
 	{
 		for (int c = 0; c < 4; c++) span.read(document.canvasFallbackRgba[c]);
@@ -4130,6 +4531,35 @@ bool PaintEditor::deserializeLayeredDocumentBytes(bbe::ByteBufferSpan span, Pain
 		document.canvasFallbackRgba[1] = 0.f;
 		document.canvasFallbackRgba[2] = 0.f;
 		document.canvasFallbackRgba[3] = 0.f;
+	}
+
+	if (isV4)
+	{
+		bool pm = false;
+		bool pd = false;
+		span.read(pm);
+		span.read(pd);
+		document.paletteMode = pm;
+		document.paletteDither = pd;
+		// Read palette entry count exactly once, then that many RGB triplets, then indices (no duplicate count read).
+		uint32_t paletteEntryCount = 0;
+		span.read(paletteEntryCount);
+		constexpr uint32_t kMaxPaletteEntries = 65536u;
+		if (paletteEntryCount > kMaxPaletteEntries)
+		{
+			return false;
+		}
+		document.paletteColors.clear();
+		for (uint32_t pi = 0; pi < paletteEntryCount; pi++)
+		{
+			uint8_t r = 0, g = 0, b = 0;
+			span.read(r);
+			span.read(g);
+			span.read(b);
+			document.paletteColors.add(bbe::Colori(r, g, b, 255));
+		}
+		span.read(document.palettePrimaryIndex);
+		span.read(document.paletteSecondaryIndex);
 	}
 
 	for (uint32_t i = 0; i < layerCount; i++)
@@ -4149,6 +4579,27 @@ bool PaintEditor::deserializeLayeredDocumentBytes(bbe::ByteBufferSpan span, Pain
 			return false;
 		}
 		document.layers.add(std::move(layer));
+	}
+
+	if (document.paletteMode && document.layers.getLength() != 1)
+	{
+		document.paletteMode = false;
+		document.paletteColors.clear();
+		document.palettePrimaryIndex = 0;
+		document.paletteSecondaryIndex = 0;
+	}
+
+	if (!document.paletteMode)
+	{
+		document.paletteColors.clear();
+		document.palettePrimaryIndex = 0;
+		document.paletteSecondaryIndex = 0;
+	}
+	else
+	{
+		paintPalette::deduplicatePalettePreserveOrderRemapIndices(document.paletteColors, document.palettePrimaryIndex, document.paletteSecondaryIndex);
+		paintPalette::ensurePaletteNonEmptyWhenModeOn(document.paletteColors, document.palettePrimaryIndex, document.paletteSecondaryIndex, true);
+		paintPalette::clampPalettePrimarySecondaryIndices(document.paletteColors, document.palettePrimaryIndex, document.paletteSecondaryIndex);
 	}
 
 	outDocument = std::move(document);
@@ -4453,6 +4904,7 @@ void PaintEditor::bumpNavigatorThumbnailDirty()
 
 void PaintEditor::submitCanvas()
 {
+	quantizeAllLayersIfPaletteModeBeforeHistorySnapshot();
 	canvas.submit();
 	canvasGeneration++;
 }
@@ -4512,6 +4964,21 @@ void PaintEditor::setupCanvas(bool clearHistory)
 	clearSelectionState();
 	clampActiveLayerIndex();
 	symmetryOffsetCustom = false;
+	if (canvas.get().paletteMode && canvas.get().layers.getLength() != 1)
+	{
+		canvas.get().paletteMode = false;
+		canvas.get().paletteColors.clear();
+		canvas.get().palettePrimaryIndex = 0;
+		canvas.get().paletteSecondaryIndex = 0;
+	}
+	else if (canvas.get().paletteMode)
+	{
+		paintPalette::deduplicatePalettePreserveOrderRemapIndices(canvas.get().paletteColors, canvas.get().palettePrimaryIndex, canvas.get().paletteSecondaryIndex);
+		paintPalette::ensurePaletteNonEmptyWhenModeOn(canvas.get().paletteColors, canvas.get().palettePrimaryIndex, canvas.get().paletteSecondaryIndex, true);
+		paintPalette::clampPalettePrimarySecondaryIndices(canvas.get().paletteColors, canvas.get().palettePrimaryIndex, canvas.get().paletteSecondaryIndex);
+	}
+	clampPaletteIndicesToValid();
+	if (canvas.get().paletteMode) syncLeftRightColorsFromPaletteIndices();
 	if (clearHistory)
 	{
 		canvas.clearHistory();
@@ -4622,6 +5089,11 @@ void PaintEditor::newCanvas(uint32_t width, uint32_t height)
 	if (iw < 1) iw = 1;
 	if (ih < 1) ih = 1;
 	canvas.get().layers.clear();
+	canvas.get().paletteMode = false;
+	canvas.get().paletteDither = true;
+	canvas.get().paletteColors.clear();
+	canvas.get().palettePrimaryIndex = 0;
+	canvas.get().paletteSecondaryIndex = 0;
 	canvas.get().canvasFallbackRgba[0] = 1.f;
 	canvas.get().canvasFallbackRgba[1] = 1.f;
 	canvas.get().canvasFallbackRgba[2] = 1.f;
@@ -4655,6 +5127,11 @@ bool PaintEditor::newCanvas(const char *path)
 	}
 
 	canvas.get().layers.clear();
+	canvas.get().paletteMode = false;
+	canvas.get().paletteDither = true;
+	canvas.get().paletteColors.clear();
+	canvas.get().palettePrimaryIndex = 0;
+	canvas.get().paletteSecondaryIndex = 0;
 	setCanvasFallbackFromImageAlpha(img);
 	canvas.get().layers.add(PaintLayer{ "Layer 1", true, 1.0f, bbe::BlendMode::Normal, std::move(img) });
 	activeLayerIndex = 0;
@@ -5107,4 +5584,66 @@ const bbe::Font &PaintEditor::getTextToolFont() const
 	// Fallback (should not be used in the ExamplePaint app; it installs a platform font provider).
 	static bbe::Font fallback("OpenSansRegular.ttf", (unsigned)20);
 	return fallback;
+}
+
+bool PaintEditor::debugRunPalettePersistenceRegressionChecks()
+{
+	if (!paintPalette::runPaletteRegressionSelfChecks(nullptr))
+	{
+		return false;
+	}
+
+	PaintEditor ed;
+	ed.newCanvas(8, 8);
+	PaintDocument &d = ed.canvas.get();
+	d.paletteMode = true;
+	d.paletteDither = false;
+	d.paletteColors.clear();
+	d.paletteColors.add(bbe::Colori(200, 10, 10, 255));
+	d.paletteColors.add(bbe::Colori(10, 200, 10, 255));
+	d.palettePrimaryIndex = 1;
+	d.paletteSecondaryIndex = 0;
+	ed.prepareDocumentImages();
+
+	bbe::ByteBuffer buf = ed.serializeLayeredDocumentBytes();
+	bbe::ByteBufferSpan span = buf.getSpan();
+	PaintDocument out;
+	int32_t active = -1;
+	if (!ed.deserializeLayeredDocumentBytes(span, out, active)) return false;
+	if (!out.paletteMode || out.paletteDither) return false;
+	if (out.paletteColors.getLength() != 2u) return false;
+	if (out.palettePrimaryIndex != 1 || out.paletteSecondaryIndex != 0) return false;
+	if (out.paletteColors[0].r != 200 || out.paletteColors[1].g != 200) return false;
+
+	PaintEditor ed2;
+	ed2.newCanvas(4, 4);
+	PaintDocument &d2 = ed2.canvas.get();
+	d2.paletteMode = true;
+	d2.paletteDither = true;
+	d2.paletteColors.clear();
+	d2.paletteColors.add(bbe::Colori(5, 5, 5, 255));
+	d2.paletteColors.add(bbe::Colori(9, 9, 9, 255));
+	d2.paletteColors.add(bbe::Colori(5, 5, 5, 255));
+	d2.palettePrimaryIndex = 50;
+	d2.paletteSecondaryIndex = -4;
+	ed2.prepareDocumentImages();
+	bbe::ByteBuffer buf2 = ed2.serializeLayeredDocumentBytes();
+	bbe::ByteBufferSpan span2 = buf2.getSpan();
+	PaintDocument healed;
+	int32_t a2 = 0;
+	if (!ed.deserializeLayeredDocumentBytes(span2, healed, a2)) return false;
+	if (healed.paletteColors.getLength() != 2u) return false;
+	for (size_t i = 0; i < healed.paletteColors.getLength(); i++)
+	{
+		for (size_t j = i + 1; j < healed.paletteColors.getLength(); j++)
+		{
+			const bbe::Colori &x = healed.paletteColors[i];
+			const bbe::Colori &y = healed.paletteColors[j];
+			if (x.r == y.r && x.g == y.g && x.b == y.b) return false;
+		}
+	}
+	if (healed.palettePrimaryIndex < 0 || healed.palettePrimaryIndex > 1) return false;
+	if (healed.paletteSecondaryIndex < 0 || healed.paletteSecondaryIndex > 1) return false;
+
+	return true;
 }

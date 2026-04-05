@@ -32,6 +32,13 @@ struct PaintDocument
 {
 	/// RGBA behind all layers (premultiplied-style source for the first blend). Default opaque white; alpha 0 = transparent document.
 	float canvasFallbackRgba[4] = { 1.f, 1.f, 1.f, 1.f };
+	/// Pixel-art palette mode: single layer, strict palette quantization, ordered RGB entries (alpha channel unused; treat as opaque RGB).
+	bool paletteMode = false;
+	/// When quantizing (save stroke, transforms, etc.), use Floyd–Steinberg if true; otherwise nearest color only.
+	bool paletteDither = true;
+	bbe::List<bbe::Colori> paletteColors;
+	int32_t palettePrimaryIndex = 0;
+	int32_t paletteSecondaryIndex = 0;
 	bbe::List<PaintLayer> layers;
 };
 
@@ -296,6 +303,7 @@ struct PaintEditor
 	static constexpr const char *LAYERED_FILE_MAGIC_V1 = "ExamplePaintLayeredV1";
 	static constexpr const char *LAYERED_FILE_MAGIC = "ExamplePaintLayeredV2";
 	static constexpr const char *LAYERED_FILE_MAGIC_V3 = "ExamplePaintLayeredV3";
+	static constexpr const char *LAYERED_FILE_MAGIC_V4 = "ExamplePaintLayeredV4";
 	static constexpr const char *LAYERED_FILE_EXTENSION = ".bbepaint";
 
 	float leftColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -461,6 +469,40 @@ struct PaintEditor
 	void bezierBackspace();
 
 	bbe::Colori getColor(bool useRight) const;
+
+	// --- Palette mode (per-document; see PaintDocument) ---
+	void clampPaletteIndicesToValid();
+	void syncLeftRightColorsFromPaletteIndices();
+	void quantizeAllLayersIfPaletteModeBeforeHistorySnapshot();
+	void quantizeWorkAreaPreviewIfPaletteMode();
+	void quantizeFloatingSelectionImagesIfPaletteMode();
+	/// Flatten, build palette, collapse to one layer, enable palette mode. Single undo step via caller \c submitCanvas().
+	void applyPaletteModeActivation(bool useAllExistingColors, int32_t reduceToY, bool dither);
+	void disablePaletteMode();
+	/// Distinct opaque RGB count on a flattened composite (alpha > 0), for the setup dialog.
+	int32_t countDistinctRgbOnImage(const bbe::Image &flat) const;
+
+	void paletteAddUniqueColor(uint8_t r, uint8_t g, uint8_t b);
+	void paletteReplaceColorAtIndex(size_t index, uint8_t r, uint8_t g, uint8_t b);
+	/// If unused, removes immediately; otherwise sets \c paletteRemoveConfirm* for the GUI modal.
+	void paletteTryRemoveColorAtIndex(size_t index);
+	void paletteConfirmPendingRemove();
+	void paletteMoveEntryBefore(size_t fromIndex, size_t insertBeforeIndex);
+	void setPalettePrimaryIndex(int32_t idx);
+	void setPaletteSecondaryIndex(int32_t idx);
+	/// Pipette in palette mode: map sampled opaque color to nearest palette entry (ignores alpha for distance).
+	void applyPipetteSampleToPaletteSelection(const bbe::Colori &sampled, bool useRightButton);
+
+	/// Set by View → Palette Mode (on); GUI should call \c ImGui::OpenPopup once when this becomes true.
+	bool paletteModeSetupOpenRequest = false;
+	int32_t paletteSetupDistinctX = 0;
+	int32_t paletteSetupReduceY = 16;
+	bool paletteSetupDither = true;
+	void preparePaletteModeSetupDialog();
+
+	bool openPaletteRemoveConfirmDialog = false;
+	int32_t paletteRemovePendingIndex = -1;
+	int64_t paletteRemovePendingPixelCount = 0;
 
 	/// Insert or promote \p rgba in MRU history (compares quantized 8-bit channels).
 	void recordColorHistory(const float rgba[4]);
@@ -819,6 +861,9 @@ struct PaintEditor
 	// Memory-only layered-document serialization (unit-test friendly).
 	bbe::ByteBuffer serializeLayeredDocumentBytes() const;
 	bool deserializeLayeredDocumentBytes(bbe::ByteBufferSpan span, PaintDocument &outDocument, int32_t &outStoredActiveLayerIndex) const;
+
+	/// Round-trip + \c paintPalette::runPaletteRegressionSelfChecks; returns false if any check fails (used from ExamplePaint debug startup).
+	static bool debugRunPalettePersistenceRegressionChecks();
 
 	bool saveLayeredDocument(const bbe::String &filePath);
 

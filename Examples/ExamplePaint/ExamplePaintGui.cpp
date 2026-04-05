@@ -1,5 +1,6 @@
 #include "ExamplePaintEditor.h"
 #include "ExamplePaintGui.h"
+#include "ExamplePaintPalette.h"
 #include "BBE/BrotBoxEngine.h"
 #include "AssetStore.h"
 #include <algorithm>
@@ -8,6 +9,7 @@
 #include <cctype>
 #include <cstring>
 #include <cstdint>
+#include <cstdio>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -534,6 +536,13 @@ static void paintEditorDigitHotkeyTooltip(const PaintEditor &editor, PaintEditor
 		ImGui::SetTooltip("%s\n(No number keys; Ctrl+digit while hovered assigns)", title);
 }
 
+static void paintEditorQuantizeImageCopyIfPaletteMode(const PaintEditor &editor, bbe::Image &img)
+{
+	if (!editor.canvas.get().paletteMode || editor.canvas.get().paletteColors.isEmpty()) return;
+	if (img.getWidth() <= 0 || img.getHeight() <= 0 || !img.isLoadedCpu()) return;
+	paintPalette::quantizeImageToPaletteInPlace(img, editor.canvas.get().paletteColors, false, 50);
+}
+
 static void paintEditorRefreshDraftsAfterPrimarySecondaryChange(PaintEditor &editor, bool leftColorChanged, bool rightColorChanged)
 {
 	if (editor.rectangle.draftActive && (editor.shapeFillMode != PaintEditor::ShapeFillMode::None || editor.shapeStripedStroke
@@ -564,6 +573,174 @@ static void drawPaintColorsPanel(PaintEditor &editor, float panelWidth, float me
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.11f, 0.11f, 0.12f, 1.f));
 	if (ImGui::Begin("Colors", &editor.showColorsPanel, ImGuiWindowFlags_AlwaysVerticalScrollbar))
 	{
+		if (editor.canvas.get().paletteMode)
+		{
+			const ImGuiColorEditFlags pickerFlags =
+				ImGuiColorEditFlags_Uint8 | ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoLabel;
+			ImGui::SeparatorText("Palette mode");
+			bool dith = editor.canvas.get().paletteDither;
+			if (ImGui::Checkbox("Dither when quantizing", &dith))
+			{
+				editor.canvas.get().paletteDither = dith;
+				editor.submitCanvas();
+			}
+			ImGui::TextDisabled("Left-click swatch: primary · Right-click: secondary · Drag to reorder · Context: edit/remove");
+			const PaintDocument &doc = editor.canvas.get();
+			const int32_t nPal = (int32_t)doc.paletteColors.getLength();
+			const int32_t priIdx = nPal > 0 ? bbe::Math::clamp(doc.palettePrimaryIndex, 0, nPal - 1) : 0;
+			const int32_t secIdx = nPal > 0 ? bbe::Math::clamp(doc.paletteSecondaryIndex, 0, nPal - 1) : 0;
+			ImGui::SeparatorText("Active colors");
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, 0.f));
+			const float pipetteBtn = std::max(1.f, std::floor(26.f * editor.viewport.scale));
+			const ImVec2 swatchSize(pipetteBtn, pipetteBtn);
+			if (nPal > 0)
+			{
+				{
+					const bbe::Colori &c = doc.paletteColors[(size_t)priIdx];
+					const ImVec4 cv(c.r / 255.f, c.g / 255.f, c.b / 255.f, 1.f);
+					ImGui::ColorButton("Primary##palact", cv, ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoTooltip, swatchSize);
+					ImGui::SameLine();
+					ImGui::AlignTextToFramePadding();
+					ImGui::Text("Primary (index %d)", (int)priIdx);
+				}
+				{
+					const bbe::Colori &c = doc.paletteColors[(size_t)secIdx];
+					const ImVec4 cv(c.r / 255.f, c.g / 255.f, c.b / 255.f, 1.f);
+					ImGui::ColorButton("Secondary##palact", cv, ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoTooltip, swatchSize);
+					ImGui::SameLine();
+					ImGui::AlignTextToFramePadding();
+					ImGui::Text("Secondary (index %d)", (int)secIdx);
+				}
+			}
+			else
+			{
+				ImGui::TextDisabled("(empty palette)");
+			}
+			ImGui::PopStyleVar();
+
+			ImGui::SeparatorText("Palette");
+			static float s_addPick[3] = { 1.f, 1.f, 1.f };
+			if (ImGui::Button("Add color…"))
+			{
+				s_addPick[0] = s_addPick[1] = s_addPick[2] = 1.f;
+				ImGui::OpenPopup("##paletteAddPick");
+			}
+			if (ImGui::BeginPopup("##paletteAddPick"))
+			{
+				if (ImGui::ColorPicker3("##addPicker", s_addPick, pickerFlags))
+				{
+				}
+				if (ImGui::Button("Add"))
+				{
+					const uint8_t r = (uint8_t)bbe::Math::clamp((int32_t)std::lround(s_addPick[0] * 255.f), 0, 255);
+					const uint8_t g = (uint8_t)bbe::Math::clamp((int32_t)std::lround(s_addPick[1] * 255.f), 0, 255);
+					const uint8_t b = (uint8_t)bbe::Math::clamp((int32_t)std::lround(s_addPick[2] * 255.f), 0, 255);
+					editor.paletteAddUniqueColor(r, g, b);
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
+
+			static float s_editPick[3] = { 1.f, 1.f, 1.f };
+			static int s_editIdx = -1;
+			static bool s_editOpenRequest = false;
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.f, 2.f));
+			const float cell = std::max(24.f, std::floor(28.f * editor.viewport.scale));
+			const ImVec2 cellSz(cell, cell);
+			const int kPalCols = 4;
+			for (size_t i = 0; i < doc.paletteColors.getLength(); i++)
+			{
+				if (i > 0 && (i % (size_t)kPalCols) != 0) ImGui::SameLine();
+				ImGui::PushID((int)(i + 90000));
+				const bbe::Colori &c = doc.paletteColors[i];
+				const ImVec4 cv(c.r / 255.f, c.g / 255.f, c.b / 255.f, 1.f);
+				ImGui::ColorButton("##sw", cv, ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoTooltip, cellSz);
+				if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) editor.setPalettePrimaryIndex((int32_t)i);
+				if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) editor.setPaletteSecondaryIndex((int32_t)i);
+
+				if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+				{
+					int payload = (int)i;
+					ImGui::SetDragDropPayload("PALETTE_ROW", &payload, sizeof(int));
+					ImGui::ColorButton("##drag", cv, ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoTooltip, cellSz);
+					ImGui::EndDragDropSource();
+				}
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("PALETTE_ROW"))
+					{
+						if (payload->DataSize == sizeof(int))
+						{
+							const int from = *(const int *)payload->Data;
+							if (from >= 0 && (size_t)from < doc.paletteColors.getLength() && (int)i != from)
+							{
+								editor.paletteMoveEntryBefore((size_t)from, i);
+							}
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+
+				if (ImGui::BeginPopupContextItem("palctx"))
+				{
+					if (ImGui::MenuItem("Edit color…"))
+					{
+						s_editIdx = (int)i;
+						s_editPick[0] = c.r / 255.f;
+						s_editPick[1] = c.g / 255.f;
+						s_editPick[2] = c.b / 255.f;
+						s_editOpenRequest = true;
+						ImGui::CloseCurrentPopup();
+					}
+					if (ImGui::MenuItem("Remove"))
+					{
+						editor.paletteTryRemoveColorAtIndex(i);
+					}
+					ImGui::EndPopup();
+				}
+
+				ImGui::PopID();
+			}
+			ImGui::PopStyleVar();
+			if (s_editOpenRequest)
+			{
+				ImGui::OpenPopup("Edit palette entry");
+				s_editOpenRequest = false;
+			}
+			ImVec2 edCenter = ImGui::GetMainViewport()->GetCenter();
+			ImGui::SetNextWindowPos(edCenter, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			if (ImGui::BeginPopupModal("Edit palette entry", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				if (s_editIdx < 0 || (size_t)s_editIdx >= editor.canvas.get().paletteColors.getLength())
+				{
+					ImGui::CloseCurrentPopup();
+				}
+				else
+				{
+					ImGui::ColorPicker3("##editPicker", s_editPick, pickerFlags);
+					if (ImGui::Button("Apply", ImVec2(120, 0)))
+					{
+						const uint8_t r = (uint8_t)bbe::Math::clamp((int32_t)std::lround(s_editPick[0] * 255.f), 0, 255);
+						const uint8_t g = (uint8_t)bbe::Math::clamp((int32_t)std::lround(s_editPick[1] * 255.f), 0, 255);
+						const uint8_t b = (uint8_t)bbe::Math::clamp((int32_t)std::lround(s_editPick[2] * 255.f), 0, 255);
+						editor.paletteReplaceColorAtIndex((size_t)s_editIdx, r, g, b);
+						s_editIdx = -1;
+						ImGui::CloseCurrentPopup();
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Cancel", ImVec2(120, 0)))
+					{
+						s_editIdx = -1;
+						ImGui::CloseCurrentPopup();
+					}
+				}
+				ImGui::EndPopup();
+			}
+			ImGui::End();
+			ImGui::PopStyleColor(2);
+			return;
+		}
+
 		// Do not set DisplayRGB alone: ImGui only shows HSV + hex rows when DisplayMask is 0 or all of RGB/HSV/Hex are set.
 		const ImGuiColorEditFlags pickerFlags =
 			ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_Uint8;
@@ -1522,6 +1699,9 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.11f, 0.11f, 0.12f, 1.f));
 		ImGui::Begin("Layers", nullptr, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
+		const bool paletteLocksLayers = editor.canvas.get().paletteMode;
+		if (paletteLocksLayers) ImGui::BeginDisabled(true);
+
 		static float s_canvasBackdropAlphaBackup = 1.f;
 		bool canvasBackdropOn = editor.canvas.get().canvasFallbackRgba[3] > 0.001f;
 		if (ImGui::Checkbox("Canvas backdrop", &canvasBackdropOn))
@@ -1698,6 +1878,9 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 		}
 		ImGui::EndChild();
 
+		if (paletteLocksLayers) ImGui::EndDisabled();
+		if (paletteLocksLayers) ImGui::TextDisabled("Palette Mode: single layer only.");
+
 		ImGui::End();
 		ImGui::PopStyleColor(2);
 
@@ -1831,6 +2014,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			if (hasRot)
 			{
 				rotatedImg = image.rotatedToFit(rotation, editor.antiAliasingEnabled);
+				paintEditorQuantizeImageCopyIfPaletteMode(editor, rotatedImg);
 				if (rotatedImg.getWidth() > 0 && rotatedImg.getHeight() > 0)
 				{
 					pImg = &rotatedImg;
@@ -1869,15 +2053,20 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 
 		if (editor.rectangle.dragActive && editor.rectangle.dragPreviewRect.width > 0 && editor.rectangle.dragPreviewRect.height > 0)
 		{
-			drawInAllTiles(editor.rectangle.dragPreviewRect, editor.rectangle.dragPreviewImage);
+			bbe::Image rectPv = editor.rectangle.dragPreviewImage;
+			paintEditorQuantizeImageCopyIfPaletteMode(editor, rectPv);
+			drawInAllTiles(editor.rectangle.dragPreviewRect, rectPv);
 		}
 		else if (editor.circle.dragActive && editor.circle.dragPreviewRect.width > 0 && editor.circle.dragPreviewRect.height > 0)
 		{
-			drawInAllTiles(editor.circle.dragPreviewRect, editor.circle.dragPreviewImage);
+			bbe::Image circPv = editor.circle.dragPreviewImage;
+			paintEditorQuantizeImageCopyIfPaletteMode(editor, circPv);
+			drawInAllTiles(editor.circle.dragPreviewRect, circPv);
 		}
 		else if (editor.selection.moveActive || editor.selection.resizeActive)
 		{
-			const bbe::Image previewImage = editor.selection.resizeActive ? editor.buildSelectionPreviewResultImage() : editor.selection.previewImage;
+			bbe::Image previewImage = editor.selection.resizeActive ? editor.buildSelectionPreviewResultImage() : editor.selection.previewImage;
+			paintEditorQuantizeImageCopyIfPaletteMode(editor, previewImage);
 			drawInAllTiles(editor.selection.previewRect, previewImage, editor.selection.rotation);
 		}
 		else if (editor.selection.floating)
@@ -1886,9 +2075,10 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			{
 				// AA-off + rotation: re-render from SDF so preview matches the committed result.
 				const bbe::Colori color = editor.rectangle.draftActive ? editor.getRectangleDraftColor() : editor.getCircleDraftColor();
-				const bbe::Image img = editor.rectangle.draftActive
+				bbe::Image img = editor.rectangle.draftActive
 					? editor.createRectangleImage(editor.selection.rect.width, editor.selection.rect.height, color, editor.selection.rotation)
 					: editor.createCircleImage(editor.selection.rect.width, editor.selection.rect.height, color, editor.selection.rotation);
+				paintEditorQuantizeImageCopyIfPaletteMode(editor, img);
 				const float cx = editor.selection.rect.x + editor.selection.rect.width  * 0.5f;
 				const float cy = editor.selection.rect.y + editor.selection.rect.height * 0.5f;
 				const bbe::Rectanglei bbRect(
@@ -2296,6 +2486,12 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				toggleMenuItem("Navigator", editor.showNavigator);
 				toggleMenuItem("Colors", editor.showColorsPanel);
 				toggleMenuItem("Tool Options", editor.showToolOptionsPanel);
+				const bool palOn = editor.canvas.get().paletteMode;
+				if (ImGui::MenuItem("Palette Mode", nullptr, palOn))
+				{
+					if (!palOn) editor.preparePaletteModeSetupDialog();
+					else editor.disablePaletteMode();
+				}
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Preferences"))
@@ -2359,6 +2555,16 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 			ImGui::OpenPopup("Rotate canvas");
 			openRotateCanvas = false;
 		}
+		if (editor.paletteModeSetupOpenRequest)
+		{
+			ImGui::OpenPopup("Palette mode setup");
+			editor.paletteModeSetupOpenRequest = false;
+		}
+		if (editor.openPaletteRemoveConfirmDialog)
+		{
+			ImGui::OpenPopup("Remove palette color");
+			editor.openPaletteRemoveConfirmDialog = false;
+		}
 		if (ImGui::BeginPopupModal("Save Document", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::Text("Choose a save format for this document.");
@@ -2384,6 +2590,63 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
+		}
+
+		{
+			ImVec2 palCenter = ImGui::GetMainViewport()->GetCenter();
+			ImGui::SetNextWindowPos(palCenter, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			if (ImGui::BeginPopupModal("Palette mode setup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				const int32_t x = editor.paletteSetupDistinctX;
+				ImGui::Text("The canvas will be flattened to one layer. Choose how to build the palette.");
+				ImGui::Separator();
+				ImGui::Checkbox("Dither (Floyd–Steinberg)", &editor.paletteSetupDither);
+				ImGui::InputInt("Reduce to Y colors", &editor.paletteSetupReduceY, 0, 0);
+				if (editor.paletteSetupReduceY < 1) editor.paletteSetupReduceY = 1;
+				ImGui::Spacing();
+				char bufAll[128];
+				std::snprintf(bufAll, sizeof bufAll, "Use all %d existing colors", (int)x);
+				if (ImGui::Button(bufAll, ImVec2(-1, 0)))
+				{
+					editor.applyPaletteModeActivation(true, editor.paletteSetupReduceY, editor.paletteSetupDither);
+					ImGui::CloseCurrentPopup();
+				}
+				char bufRed[128];
+				std::snprintf(bufRed, sizeof bufRed, "Reduce to %d colors", (int)editor.paletteSetupReduceY);
+				if (ImGui::Button(bufRed, ImVec2(-1, 0)))
+				{
+					editor.applyPaletteModeActivation(false, editor.paletteSetupReduceY, editor.paletteSetupDither);
+					ImGui::CloseCurrentPopup();
+				}
+				if (ImGui::Button("Cancel", ImVec2(-1, 0)))
+				{
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
+		}
+
+		{
+			ImVec2 rmCenter = ImGui::GetMainViewport()->GetCenter();
+			ImGui::SetNextWindowPos(rmCenter, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			if (ImGui::BeginPopupModal("Remove palette color", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::Text("This color is used by %lld pixels. They will be remapped to the nearest remaining palette color.",
+							(long long)editor.paletteRemovePendingPixelCount);
+				ImGui::Spacing();
+				if (ImGui::Button("Remove and remap", ImVec2(160, 0)))
+				{
+					editor.paletteConfirmPendingRemove();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel", ImVec2(120, 0)))
+				{
+					editor.paletteRemovePendingIndex = -1;
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
 		}
 
 		{
