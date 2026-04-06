@@ -1093,15 +1093,18 @@ void bbe::INTERNAL::vulkan::VulkanManager::imguiStartFrame()
 
 	constexpr float baseFontSize = 13.f;
 	constexpr float bigFontSize = 26.f;
+	ImGuiStyle &fontStyle = ImGui::GetStyle();
 	if (contentScale < 1.5f)
 	{
 		io.FontDefault = imguiFontSmall;
-		io.FontGlobalScale = scale;
+		fontStyle.FontSizeBase = baseFontSize;
+		fontStyle.FontScaleMain = scale;
 	}
 	else
 	{
 		io.FontDefault = imguiFontBig;
-		io.FontGlobalScale = scale * baseFontSize / bigFontSize;
+		fontStyle.FontSizeBase = bigFontSize;
+		fontStyle.FontScaleMain = scale * baseFontSize / bigFontSize;
 	}
 
 	ImGui_ImplVulkan_NewFrame();
