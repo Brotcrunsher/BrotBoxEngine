@@ -38,24 +38,27 @@ namespace gitReview
 			return s;
 		}
 
-		bool writeTempCommitMessage(const std::string &msg, std::filesystem::path &outPath, std::string &err)
+		bool hasNonWhitespace(const char *s)
 		{
-			outPath = std::filesystem::temp_directory_path() / "bbe_example_gitreview_commitmsg.txt";
-			std::ofstream f(outPath, std::ios::binary | std::ios::trunc);
-			if (!f)
+			for (; *s; ++s)
 			{
-				err = "Could not write temporary commit message file.";
-				return false;
+				if (!std::isspace(static_cast<unsigned char>(*s)))
+					return true;
 			}
-			f.write(msg.data(), static_cast<std::streamsize>(msg.size()));
-			if (!msg.empty() && msg.back() != '\n')
-				f.put('\n');
-			if (!f)
+			return false;
+		}
+
+		/// Sanitize git output for user-facing display.
+		std::string sanitizedGitError(const GitRunResult &r)
+		{
+			std::string combined = r.standardOut;
+			if (!r.standardError.empty())
 			{
-				err = "Writing commit message failed.";
-				return false;
+				if (!combined.empty())
+					combined += '\n';
+				combined += r.standardError;
 			}
-			return true;
+			return redactGitOutput(trimCopy(std::move(combined)));
 		}
 	}
 
@@ -155,6 +158,10 @@ namespace gitReview
 		app.rightEditBuffer.push_back('\0');
 		app.rightSideIsWorktreeFile = false;
 		app.binaryFile = false;
+		app.cachedDiffLeft.clear();
+		app.cachedDiffRight.clear();
+		app.cachedDiffRows.clear();
+		app.diffCacheLargeFallback = false;
 		if (!app.selection.has_value())
 			return;
 
@@ -187,6 +194,10 @@ namespace gitReview
 		app.rightSideIsWorktreeFile = false;
 		app.binaryFile = false;
 		app.loadDiffError.clear();
+		app.cachedDiffLeft.clear();
+		app.cachedDiffRight.clear();
+		app.cachedDiffRows.clear();
+		app.diffCacheLargeFallback = false;
 	}
 
 	bool saveWorktreeBuffer(ReviewAppState &app, std::string &err)
@@ -201,7 +212,7 @@ namespace gitReview
 		return writeFileUtf8(p.string(), rightBufferAsString(app.rightEditBuffer), err);
 	}
 
-	void stagePath(ReviewAppState &app, const std::string &path, std::string &err)
+	void stageEntry(ReviewAppState &app, const FileEntry &entry, std::string &err)
 	{
 		err.clear();
 		const std::string root = repoRootString(app);
@@ -210,12 +221,22 @@ namespace gitReview
 			err = "No repository path.";
 			return;
 		}
-		GitRunResult r = runGit(root, { "add", "--", path });
-		if (r.exitCode != 0)
-			err = trimCopy(r.standardOut + r.standardError);
+
+		if (entry.kind == ChangeKind::Renamed && !entry.renameFrom.empty())
+		{
+			GitRunResult r = runGit(root, { "add", "--", entry.renameFrom, entry.path });
+			if (r.exitCode != 0)
+				err = sanitizedGitError(r);
+		}
+		else
+		{
+			GitRunResult r = runGit(root, { "add", "--", entry.path });
+			if (r.exitCode != 0)
+				err = sanitizedGitError(r);
+		}
 	}
 
-	void unstagePath(ReviewAppState &app, const std::string &path, std::string &err)
+	void unstageEntry(ReviewAppState &app, const FileEntry &entry, std::string &err)
 	{
 		err.clear();
 		const std::string root = repoRootString(app);
@@ -224,12 +245,22 @@ namespace gitReview
 			err = "No repository path.";
 			return;
 		}
-		GitRunResult r = runGit(root, { "restore", "--staged", "--", path });
-		if (r.exitCode != 0)
-			err = trimCopy(r.standardOut + r.standardError);
+
+		if (entry.kind == ChangeKind::Renamed && !entry.renameFrom.empty())
+		{
+			GitRunResult r = runGit(root, { "restore", "--staged", "--", entry.renameFrom, entry.path });
+			if (r.exitCode != 0)
+				err = sanitizedGitError(r);
+		}
+		else
+		{
+			GitRunResult r = runGit(root, { "restore", "--staged", "--", entry.path });
+			if (r.exitCode != 0)
+				err = sanitizedGitError(r);
+		}
 	}
 
-	void discardWorktreePath(ReviewAppState &app, const std::string &path, std::string &err)
+	void discardWorktreeEntry(ReviewAppState &app, const FileEntry &entry, std::string &err)
 	{
 		err.clear();
 		const std::string root = repoRootString(app);
@@ -238,9 +269,16 @@ namespace gitReview
 			err = "No repository path.";
 			return;
 		}
-		GitRunResult r = runGit(root, { "restore", "--", path });
+
+		if (entry.kind == ChangeKind::Renamed)
+		{
+			err = "Discarding a rename is not supported yet.  Unstage the rename first, then discard the individual paths.";
+			return;
+		}
+
+		GitRunResult r = runGit(root, { "restore", "--", entry.path });
 		if (r.exitCode != 0)
-			err = trimCopy(r.standardOut + r.standardError);
+			err = sanitizedGitError(r);
 	}
 
 	void deleteUntrackedPath(ReviewAppState &app, const std::string &path, std::string &err)
@@ -257,26 +295,20 @@ namespace gitReview
 			err = ec.message();
 	}
 
-	void commitWithMessageFile(ReviewAppState &app, std::string &err)
+	void commitStaged(ReviewAppState &app, std::string &err)
 	{
 		err.clear();
 		const std::string root = repoRootString(app);
-		const std::string msg = trimCopy(std::string(app.commitMessageUtf8));
-		if (msg.empty())
+		const std::string msg(app.commitMessageUtf8);
+		if (!hasNonWhitespace(app.commitMessageUtf8))
 		{
 			err = "Commit message is empty.";
 			return;
 		}
 
-		std::filesystem::path tmp;
-		if (!writeTempCommitMessage(msg, tmp, err))
-			return;
-
-		GitRunResult r = runGit(root, { "commit", "-F", tmp.string() });
-		std::error_code ec;
-		std::filesystem::remove(tmp, ec);
+		GitRunResult r = runGitWithStdin(root, { "commit", "-F", "-" }, msg);
 		if (r.exitCode != 0)
-			err = trimCopy(r.standardOut + r.standardError);
+			err = sanitizedGitError(r);
 	}
 
 	void pushUpstream(ReviewAppState &app, std::string &err)
@@ -285,11 +317,23 @@ namespace gitReview
 		const std::string root = repoRootString(app);
 		GitRunResult r = runGit(root, { "push" });
 		if (r.exitCode != 0)
-			err = trimCopy(r.standardOut + r.standardError);
+			err = sanitizedGitError(r);
 	}
 
 	std::string rightBufferText(const ReviewAppState &app)
 	{
 		return rightBufferAsString(app.rightEditBuffer);
+	}
+
+	const std::vector<DiffRow> &cachedDiffRows(ReviewAppState &app)
+	{
+		const std::string currentRight = rightBufferText(app);
+		if (app.leftText != app.cachedDiffLeft || currentRight != app.cachedDiffRight)
+		{
+			app.cachedDiffLeft = app.leftText;
+			app.cachedDiffRight = currentRight;
+			app.cachedDiffRows = buildSideBySideRows(app.leftText, currentRight, app.diffCacheLargeFallback);
+		}
+		return app.cachedDiffRows;
 	}
 }

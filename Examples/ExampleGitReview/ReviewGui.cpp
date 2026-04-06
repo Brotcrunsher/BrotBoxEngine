@@ -115,7 +115,8 @@ namespace gitReview
 			ImGui::NewLine();
 		}
 
-		void drawSidePaneLine(const DiffRow &row, bool isLeft, const ImVec4 &stableCol, const ImVec4 &addCol, const ImVec4 &delCol, const ImVec4 &mutedCol)
+		void drawSidePaneLine(const DiffRow &row, bool isLeft, bool largeFallback, const ImVec4 &stableCol, const ImVec4 &addCol, const ImVec4 &delCol,
+			const ImVec4 &mutedCol)
 		{
 			switch (row.kind)
 			{
@@ -143,7 +144,7 @@ namespace gitReview
 				else
 				{
 					ImGui::PushStyleColor(ImGuiCol_Text, mutedCol);
-					ImGui::TextUnformatted("—");
+					ImGui::TextUnformatted(" ");
 					ImGui::PopStyleColor();
 				}
 				break;
@@ -151,7 +152,7 @@ namespace gitReview
 				if (isLeft)
 				{
 					ImGui::PushStyleColor(ImGuiCol_Text, mutedCol);
-					ImGui::TextUnformatted("—");
+					ImGui::TextUnformatted(" ");
 					ImGui::PopStyleColor();
 				}
 				else
@@ -163,12 +164,30 @@ namespace gitReview
 				break;
 			case DiffRowKind::Changed:
 			{
-				std::vector<WordSpan> sl, sr;
-				buildWordSpans(row.leftLine, row.rightLine, sl, sr);
-				if (isLeft)
-					drawWordSpansRow(sl, stableCol, addCol, delCol);
+				if (largeFallback)
+				{
+					if (isLeft)
+					{
+						ImGui::PushStyleColor(ImGuiCol_Text, delCol);
+						ImGui::TextUnformatted(row.leftLine.empty() ? " " : row.leftLine.c_str());
+						ImGui::PopStyleColor();
+					}
+					else
+					{
+						ImGui::PushStyleColor(ImGuiCol_Text, addCol);
+						ImGui::TextUnformatted(row.rightLine.empty() ? " " : row.rightLine.c_str());
+						ImGui::PopStyleColor();
+					}
+				}
 				else
-					drawWordSpansRow(sr, stableCol, addCol, delCol);
+				{
+					std::vector<WordSpan> sl, sr;
+					buildWordSpans(row.leftLine, row.rightLine, sl, sr);
+					if (isLeft)
+						drawWordSpansRow(sl, stableCol, addCol, delCol);
+					else
+						drawWordSpansRow(sr, stableCol, addCol, delCol);
+				}
 				break;
 			}
 			}
@@ -190,7 +209,7 @@ namespace gitReview
 			if (ImGui::Button("Stage"))
 			{
 				std::string err;
-				stagePath(app, app.selection->path, err);
+				stageEntry(app, *app.selection, err);
 				if (!err.empty())
 					showModal(app, "Stage failed", err);
 				else
@@ -203,7 +222,7 @@ namespace gitReview
 			if (ImGui::Button("Unstage"))
 			{
 				std::string err;
-				unstagePath(app, app.selection->path, err);
+				unstageEntry(app, *app.selection, err);
 				if (!err.empty())
 					showModal(app, "Unstage failed", err);
 				else
@@ -242,7 +261,7 @@ namespace gitReview
 				if (ImGui::Button("Commit", ImVec2(120, 0)))
 				{
 					std::string err;
-					commitWithMessageFile(app, err);
+					commitStaged(app, err);
 					if (!err.empty())
 						showModal(app, "Commit failed", err);
 					else
@@ -283,10 +302,13 @@ namespace gitReview
 					return;
 				}
 				const FileEntry &e = *app.selection;
+
+				const bool isRename = (e.kind == ChangeKind::Renamed);
+				ImGui::BeginDisabled(isRename);
 				if (ImGui::Button("Discard unstaged edits (restore tracked file to index)"))
 				{
 					std::string err;
-					discardWorktreePath(app, e.path, err);
+					discardWorktreeEntry(app, e, err);
 					if (!err.empty())
 						showModal(app, "Discard failed", err);
 					else
@@ -296,10 +318,14 @@ namespace gitReview
 					}
 					ImGui::CloseCurrentPopup();
 				}
+				ImGui::EndDisabled();
+				if (isRename)
+					ImGui::TextDisabled("(Discard is not supported for renames; unstage first.)");
+
 				if (ImGui::Button("Unstage (keep worktree)"))
 				{
 					std::string err;
-					unstagePath(app, e.path, err);
+					unstageEntry(app, e, err);
 					if (!err.empty())
 						showModal(app, "Unstage failed", err);
 					else
@@ -373,7 +399,7 @@ namespace gitReview
 						continue;
 					std::string label = e.path + kindTag(e.kind);
 					if (e.kind == ChangeKind::Renamed && !e.renameFrom.empty())
-						label += "\n  " + e.renameFrom + " → " + e.path;
+						label += "\n  " + e.renameFrom + " -> " + e.path;
 
 					const bool sel = app.selection.has_value() && app.selection->path == e.path && app.selection->section == e.section && app.selection->kind == e.kind &&
 									 app.selection->renameFrom == e.renameFrom;
@@ -448,6 +474,11 @@ namespace gitReview
 			ImGui::EndChild();
 			ImGui::Separator();
 
+			if (app.diffCacheLargeFallback)
+			{
+				ImGui::TextColored(ImVec4(0.9f, 0.75f, 0.3f, 1.f), "Large diff — showing line-level comparison only (word-level highlighting disabled).");
+			}
+
 			const float footer = app.rightSideIsWorktreeFile ? 168.f : 128.f;
 			ImGui::BeginChild("diffScroll", ImVec2(0, -footer), true,
 				ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar);
@@ -457,7 +488,8 @@ namespace gitReview
 			const ImVec4 delc(0.95f, 0.45f, 0.45f, 1.f);
 			const ImVec4 muted(0.45f, 0.45f, 0.5f, 1.f);
 
-			const std::vector<DiffRow> rows = buildSideBySideRows(app.leftText, rightBufferText(app));
+			const std::vector<DiffRow> &rows = cachedDiffRows(app);
+			const bool largeFB = app.diffCacheLargeFallback;
 			const float lineH = ImGui::GetTextLineHeightWithSpacing();
 			const float totalW = ImGui::GetContentRegionAvail().x;
 			const float halfW = std::max(80.f, totalW * 0.5f - 6.f);
@@ -471,11 +503,11 @@ namespace gitReview
 					ImGui::PushID(i);
 					ImGui::BeginGroup();
 					ImGui::BeginChild("dL", ImVec2(halfW, lineH), false, ImGuiWindowFlags_NoScrollbar);
-					drawSidePaneLine(rows[static_cast<size_t>(i)], true, stable, addc, delc, muted);
+					drawSidePaneLine(rows[static_cast<size_t>(i)], true, largeFB, stable, addc, delc, muted);
 					ImGui::EndChild();
 					ImGui::SameLine();
 					ImGui::BeginChild("dR", ImVec2(0, lineH), false, ImGuiWindowFlags_NoScrollbar);
-					drawSidePaneLine(rows[static_cast<size_t>(i)], false, stable, addc, delc, muted);
+					drawSidePaneLine(rows[static_cast<size_t>(i)], false, largeFB, stable, addc, delc, muted);
 					ImGui::EndChild();
 					ImGui::EndGroup();
 					ImGui::PopID();

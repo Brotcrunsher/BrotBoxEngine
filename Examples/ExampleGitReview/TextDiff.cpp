@@ -43,7 +43,9 @@ namespace gitReview
 			Insert,
 		};
 
-		/// LCS DP backtrack; if the grid would be too large, falls back to a single \c Changed row.
+		/// LCS dynamic-programming diff with backtrack.
+		/// Returns false when the grid would exceed the cell budget,
+		/// signalling the caller to use the large-diff fallback.
 		bool lineDiffScript(const std::vector<std::string> &a, const std::vector<std::string> &b, std::vector<Edit> &script)
 		{
 			script.clear();
@@ -104,22 +106,64 @@ namespace gitReview
 			std::reverse(script.begin(), script.end());
 			return true;
 		}
+
+		/// Fallback for diffs that exceed the DP cell budget.
+		/// Pairs up lines positionally: equal lines → Equal,
+		/// differing lines → Changed, and excess lines on either
+		/// side → LeftOnly / RightOnly.  No word-level diff is
+		/// attempted for Changed rows in the renderer when the
+		/// large-fallback flag is set.
+		std::vector<DiffRow> buildLargeFallback(const std::vector<std::string> &a, const std::vector<std::string> &b)
+		{
+			std::vector<DiffRow> rows;
+			const size_t common = std::min(a.size(), b.size());
+			rows.reserve(std::max(a.size(), b.size()));
+
+			for (size_t i = 0; i < common; i++)
+			{
+				DiffRow r;
+				if (a[i] == b[i])
+				{
+					r.kind = DiffRowKind::Equal;
+					r.leftLine = a[i];
+					r.rightLine = b[i];
+				}
+				else
+				{
+					r.kind = DiffRowKind::Changed;
+					r.leftLine = a[i];
+					r.rightLine = b[i];
+				}
+				rows.push_back(std::move(r));
+			}
+			for (size_t i = common; i < a.size(); i++)
+			{
+				DiffRow r;
+				r.kind = DiffRowKind::LeftOnly;
+				r.leftLine = a[i];
+				rows.push_back(std::move(r));
+			}
+			for (size_t i = common; i < b.size(); i++)
+			{
+				DiffRow r;
+				r.kind = DiffRowKind::RightOnly;
+				r.rightLine = b[i];
+				rows.push_back(std::move(r));
+			}
+			return rows;
+		}
 	}
 
-	std::vector<DiffRow> buildSideBySideRows(const std::string &leftText, const std::string &rightText)
+	std::vector<DiffRow> buildSideBySideRows(const std::string &leftText, const std::string &rightText, bool &outLargeFallback)
 	{
+		outLargeFallback = false;
 		const std::vector<std::string> a = splitLinesForDiff(leftText);
 		const std::vector<std::string> b = splitLinesForDiff(rightText);
 		std::vector<Edit> script;
 		if (!lineDiffScript(a, b, script))
 		{
-			std::vector<DiffRow> huge;
-			DiffRow r;
-			r.kind = DiffRowKind::Changed;
-			r.leftLine = leftText;
-			r.rightLine = rightText;
-			huge.push_back(std::move(r));
-			return huge;
+			outLargeFallback = true;
+			return buildLargeFallback(a, b);
 		}
 
 		std::vector<DiffRow> rows;
@@ -150,7 +194,6 @@ namespace gitReview
 			}
 		}
 
-		// Merge delete+insert into Changed for nicer word-diff (single-line substitution).
 		for (size_t k = 0; k + 1 < rows.size(); k++)
 		{
 			if (rows[k].kind == DiffRowKind::LeftOnly && rows[k + 1].kind == DiffRowKind::RightOnly)
@@ -165,7 +208,6 @@ namespace gitReview
 
 	namespace
 	{
-		/// Whitespace runs and non-whitespace runs preserve the exact original string when concatenated.
 		void tokenizeMixed(const std::string &line, std::vector<std::string> &outTokens)
 		{
 			outTokens.clear();

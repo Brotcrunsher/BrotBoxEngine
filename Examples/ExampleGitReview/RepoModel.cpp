@@ -22,90 +22,132 @@ namespace gitReview
 			return s;
 		}
 
-		std::vector<std::string> splitLines(const std::string &s)
-		{
-			std::vector<std::string> lines;
-			std::istringstream iss(s);
-			std::string line;
-			while (std::getline(iss, line))
-			{
-				if (!line.empty() && line.back() == '\r')
-					line.pop_back();
-				lines.push_back(std::move(line));
-			}
-			return lines;
-		}
+		// ── NUL-delimited parsers ────────────────────────────────────
 
-		std::vector<std::string> splitTab(const std::string &line, size_t minParts)
+		/// Reads a NUL-terminated field from \p raw starting at \p pos.
+		/// Advances pos past the NUL.  Returns false if no NUL was found.
+		bool readNulField(const std::string &raw, size_t &pos, std::string &out)
 		{
-			std::vector<std::string> parts;
-			size_t pos = 0;
-			while (pos < line.size())
+			const size_t nul = raw.find('\0', pos);
+			if (nul == std::string::npos)
 			{
-				const size_t tab = line.find('\t', pos);
-				if (tab == std::string::npos)
+				if (pos < raw.size())
 				{
-					parts.push_back(line.substr(pos));
-					break;
+					out = raw.substr(pos);
+					pos = raw.size();
+					return true;
 				}
-				parts.push_back(line.substr(pos, tab - pos));
-				pos = tab + 1;
+				return false;
 			}
-			while (parts.size() < minParts)
-				parts.emplace_back();
-			return parts;
+			out = raw.substr(pos, nul - pos);
+			pos = nul + 1;
+			return true;
 		}
 
-		void appendNameStatus(std::unordered_map<std::string, FileEntry> &byPath, const std::vector<std::string> &lines, FileListSection section)
+		/// Parses `git diff -z --name-status` output.
+		/// Format: STATUS\0path[\0path2]\0  (renames/copies have two paths).
+		void appendNameStatusNul(std::unordered_map<std::string, FileEntry> &byPath, const std::string &raw, FileListSection section)
 		{
-			for (const std::string &line : lines)
+			size_t pos = 0;
+			while (pos < raw.size())
 			{
-				if (line.empty())
+				std::string status;
+				if (!readNulField(raw, pos, status) || status.empty())
 					continue;
-				const auto parts = splitTab(line, 3);
-				if (parts[0].empty())
-					continue;
-				const std::string &status = parts[0];
+
+				const char sc = status[0];
 				FileEntry fe;
 				fe.section = section;
-				if (status[0] == 'R' || status[0] == 'C')
+
+				if (sc == 'R' || sc == 'C')
 				{
 					fe.kind = ChangeKind::Renamed;
-					if (parts.size() < 3 || parts[1].empty() || parts[2].empty())
-						continue;
-					fe.renameFrom = parts[1];
-					fe.path = parts[2];
-				}
-				else if (status[0] == 'A')
-				{
-					fe.kind = ChangeKind::Added;
-					if (parts.size() < 2)
-						continue;
-					fe.path = parts[1];
-				}
-				else if (status[0] == 'D')
-				{
-					fe.kind = ChangeKind::Deleted;
-					if (parts.size() < 2)
-						continue;
-					fe.path = parts[1];
+					if (!readNulField(raw, pos, fe.renameFrom))
+						break;
+					if (!readNulField(raw, pos, fe.path))
+						break;
 				}
 				else
 				{
-					fe.kind = ChangeKind::Modified;
-					if (parts.size() < 2)
-						continue;
-					fe.path = parts[1];
+					if (!readNulField(raw, pos, fe.path))
+						break;
+					if (sc == 'A')
+						fe.kind = ChangeKind::Added;
+					else if (sc == 'D')
+						fe.kind = ChangeKind::Deleted;
+					else
+						fe.kind = ChangeKind::Modified;
 				}
-				byPath[fe.path] = std::move(fe);
+
+				if (!fe.path.empty())
+					byPath[fe.path] = std::move(fe);
 			}
+		}
+
+		/// Parses `git ls-files -z` output (NUL-separated paths).
+		void parseNulPaths(const std::string &raw, std::unordered_set<std::string> &out)
+		{
+			size_t pos = 0;
+			while (pos < raw.size())
+			{
+				std::string p;
+				if (!readNulField(raw, pos, p))
+					break;
+				if (!p.empty())
+					out.insert(std::move(p));
+			}
+		}
+
+		// ── Binary detection helpers ─────────────────────────────────
+
+		std::string toLowerExt(const std::string &path)
+		{
+			const auto dot = path.rfind('.');
+			if (dot == std::string::npos)
+				return {};
+			std::string ext = path.substr(dot);
+			for (char &c : ext)
+				c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+			return ext;
 		}
 	}
 
 	bool pathLooksBinaryByContent(const std::string &text)
 	{
-		// NUL bytes are a strong signal; keep heuristic small for V1.
-		return text.find('\0') != std::string::npos;
+		if (text.empty())
+			return false;
+		const size_t checkLen = std::min(text.size(), static_cast<size_t>(8192));
+		size_t nonPrintable = 0;
+		for (size_t i = 0; i < checkLen; i++)
+		{
+			const unsigned char c = static_cast<unsigned char>(text[i]);
+			if (c == '\0')
+				return true;
+			if (c < 0x08)
+				nonPrintable++;
+			else if (c >= 0x0E && c < 0x20 && c != 0x1B)
+				nonPrintable++;
+		}
+		return checkLen > 0 && nonPrintable * 10 > checkLen;
+	}
+
+	bool pathLooksBinaryByExtension(const std::string &path)
+	{
+		const std::string ext = toLowerExt(path);
+		if (ext.empty())
+			return false;
+		static const char *const binaryExts[] = {
+			".png", ".jpg",  ".jpeg", ".gif",  ".bmp",  ".ico",  ".webp",  ".tiff", ".tif",  ".svg",  ".mp3",  ".mp4",  ".wav",
+			".flac", ".ogg", ".avi",  ".mkv",  ".mov",  ".wmv",  ".zip",   ".gz",   ".bz2",  ".xz",   ".7z",   ".rar",  ".tar",
+			".exe",  ".dll", ".so",   ".dylib", ".o",   ".obj",  ".a",     ".lib",  ".pdf",  ".doc",  ".docx", ".xls",  ".xlsx",
+			".ppt",  ".pptx", ".class", ".pyc", ".pyo", ".ttf",  ".otf",   ".woff", ".woff2", ".eot", ".sqlite", ".db", ".wasm",
+		};
+		for (const char *e : binaryExts)
+		{
+			if (ext == e)
+				return true;
+		}
+		return false;
 	}
 
 	bool isGitRepositoryRoot(const std::string &path, std::string &outError)
@@ -146,9 +188,9 @@ namespace gitReview
 		if (head.exitCode == 0)
 			outSnap.headShort = trim(head.standardOut);
 
-		GitRunResult unst = runGit(repoRoot, { "diff", "--find-renames", "--name-status" });
-		GitRunResult stgd = runGit(repoRoot, { "diff", "--cached", "--find-renames", "--name-status" });
-		GitRunResult untr = runGit(repoRoot, { "ls-files", "-o", "--exclude-standard" });
+		GitRunResult unst = runGit(repoRoot, { "diff", "--find-renames", "--name-status", "-z" });
+		GitRunResult stgd = runGit(repoRoot, { "diff", "--cached", "--find-renames", "--name-status", "-z" });
+		GitRunResult untr = runGit(repoRoot, { "ls-files", "-o", "--exclude-standard", "-z" });
 
 		if (unst.exitCode != 0)
 		{
@@ -168,18 +210,12 @@ namespace gitReview
 
 		std::unordered_map<std::string, FileEntry> staged;
 		std::unordered_map<std::string, FileEntry> unstaged;
-		appendNameStatus(staged, splitLines(stgd.standardOut), FileListSection::Staged);
-		appendNameStatus(unstaged, splitLines(unst.standardOut), FileListSection::Unstaged);
+		appendNameStatusNul(staged, stgd.standardOut, FileListSection::Staged);
+		appendNameStatusNul(unstaged, unst.standardOut, FileListSection::Unstaged);
 
 		std::unordered_set<std::string> untrackedPaths;
-		for (const auto &line : splitLines(untr.standardOut))
-		{
-			const std::string p = trim(line);
-			if (!p.empty())
-				untrackedPaths.insert(p);
-		}
+		parseNulPaths(untr.standardOut, untrackedPaths);
 
-		// Untracked section: only paths not present as tracked entries in staged/unstaged maps.
 		for (const auto &p : untrackedPaths)
 		{
 			if (staged.count(p) || unstaged.count(p))
@@ -191,11 +227,9 @@ namespace gitReview
 			outSnap.entries.push_back(std::move(fe));
 		}
 
-		// Unstaged entries (skip if only appears because identical to staged-only — diff already excludes clean files).
 		for (auto &kv : unstaged)
 			outSnap.entries.push_back(std::move(kv.second));
 
-		// Staged entries
 		for (auto &kv : staged)
 			outSnap.entries.push_back(std::move(kv.second));
 
@@ -247,29 +281,37 @@ namespace gitReview
 		outBinary = false;
 		outError.clear();
 
+		if (pathLooksBinaryByExtension(entry.path) || pathLooksBinaryByExtension(entry.renameFrom))
+		{
+			outBinary = true;
+			return;
+		}
+
 		const std::filesystem::path root(repoRoot);
 		const std::filesystem::path workPath = root / std::filesystem::path(entry.path);
 
-		auto showHeadPath = [&](const std::string &pathInRepo, std::string &into) {
-			GitRunResult r = runGit(repoRoot, { "show", std::string("HEAD:") + pathInRepo });
+		// `git show REV:path` — the path must be repo-relative.
+		// The paths stored in FileEntry come from git's own output and are
+		// already repo-relative, so they are safe to concatenate directly.
+		// We validate non-emptiness as a guard against logic bugs.
+		auto showObject = [&](const std::string &prefix, const std::string &pathInRepo, std::string &into) {
+			if (pathInRepo.empty())
+			{
+				into.clear();
+				return false;
+			}
+			GitRunResult r = runGit(repoRoot, { "show", prefix + pathInRepo });
 			if (r.exitCode != 0)
 			{
 				into.clear();
 				return false;
 			}
-			into = r.standardOut;
+			into = std::move(r.standardOut);
 			return true;
 		};
-		auto showIndexPath = [&](const std::string &pathInRepo, std::string &into) {
-			GitRunResult r = runGit(repoRoot, { "show", std::string(":") + pathInRepo });
-			if (r.exitCode != 0)
-			{
-				into.clear();
-				return false;
-			}
-			into = r.standardOut;
-			return true;
-		};
+
+		auto showHeadPath = [&](const std::string &pathInRepo, std::string &into) { return showObject("HEAD:", pathInRepo, into); };
+		auto showIndexPath = [&](const std::string &pathInRepo, std::string &into) { return showObject(":", pathInRepo, into); };
 
 		if (entry.section == FileListSection::Untracked)
 		{
@@ -299,7 +341,6 @@ namespace gitReview
 
 			if (entry.kind == ChangeKind::Renamed)
 			{
-				// Unstaged rename: index still has old name; worktree has new name.
 				if (!showIndexPath(entry.renameFrom, outLeft))
 				{
 					outError = "Could not read old path at index for rename.";
@@ -313,10 +354,8 @@ namespace gitReview
 				return;
 			}
 
-			// Modified or added (unstaged means index vs worktree; added file may exist in index as empty?)
 			if (entry.kind == ChangeKind::Added)
 			{
-				// New in index not typical for unstaged-only; still try index then worktree.
 				(void)showIndexPath(entry.path, outLeft);
 			}
 			else

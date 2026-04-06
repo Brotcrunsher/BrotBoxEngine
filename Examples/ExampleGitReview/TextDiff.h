@@ -39,8 +39,12 @@ namespace gitReview
 	/// Splits text into lines (LF / CRLF); omits a trailing empty line caused by a final newline.
 	std::vector<std::string> splitLinesForDiff(const std::string &text);
 
-	/// Myers-based line diff; merges adjacent delete+insert pairs into \c DiffRowKind::Changed when single-line substitution.
-	std::vector<DiffRow> buildSideBySideRows(const std::string &leftText, const std::string &rightText);
+	/// LCS-based (dynamic-programming) line diff; merges adjacent
+	/// delete+insert pairs into \c DiffRowKind::Changed for intra-line
+	/// highlighting.  When the grid would be too large, falls back to
+	/// a line-level display without LCS alignment and sets
+	/// \p outLargeFallback.
+	std::vector<DiffRow> buildSideBySideRows(const std::string &leftText, const std::string &rightText, bool &outLargeFallback);
 
 	/// Word-level highlighting for one left/right line pair (whitespace-separated tokens).
 	void buildWordSpans(const std::string &leftLine, const std::string &rightLine, std::vector<WordSpan> &outLeft,

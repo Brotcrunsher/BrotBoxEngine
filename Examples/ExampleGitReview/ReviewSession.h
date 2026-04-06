@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RepoModel.h"
+#include "TextDiff.h"
 
 #include <optional>
 #include <string>
@@ -36,6 +37,12 @@ namespace gitReview
 
 		bool pendingDiscardAsk = false;
 		bool pendingUntrackedDeleteAsk = false;
+
+		// Diff-row cache: avoids rebuilding the side-by-side model every frame.
+		std::string cachedDiffLeft;
+		std::string cachedDiffRight;
+		std::vector<DiffRow> cachedDiffRows;
+		bool diffCacheLargeFallback = false;
 	};
 
 	void showToast(ReviewAppState &app, const std::string &text, float seconds = 4.f);
@@ -51,13 +58,22 @@ namespace gitReview
 	void clearSelection(ReviewAppState &app);
 
 	bool saveWorktreeBuffer(ReviewAppState &app, std::string &err);
-	void stagePath(ReviewAppState &app, const std::string &path, std::string &err);
-	void unstagePath(ReviewAppState &app, const std::string &path, std::string &err);
-	void discardWorktreePath(ReviewAppState &app, const std::string &path, std::string &err);
+
+	/// Stages the entry.  For renames, both old and new paths are staged.
+	void stageEntry(ReviewAppState &app, const FileEntry &entry, std::string &err);
+	/// Unstages the entry.  For renames, both old and new paths are restored.
+	void unstageEntry(ReviewAppState &app, const FileEntry &entry, std::string &err);
+	/// Discards unstaged worktree changes.  Disabled for renames (sets err).
+	void discardWorktreeEntry(ReviewAppState &app, const FileEntry &entry, std::string &err);
 	void deleteUntrackedPath(ReviewAppState &app, const std::string &path, std::string &err);
-	void commitWithMessageFile(ReviewAppState &app, std::string &err);
+
+	void commitStaged(ReviewAppState &app, std::string &err);
 	void pushUpstream(ReviewAppState &app, std::string &err);
 
 	/// Text of \c rightEditBuffer without the trailing null terminator (for diffing and saving).
 	std::string rightBufferText(const ReviewAppState &app);
+
+	/// Returns a cached view of the side-by-side diff rows, only
+	/// recomputing when the underlying texts change.
+	const std::vector<DiffRow> &cachedDiffRows(ReviewAppState &app);
 }

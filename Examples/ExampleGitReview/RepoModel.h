@@ -60,5 +60,10 @@ namespace gitReview
 	void loadDiffPair(const std::string &repoRoot, ReviewMode mode, const FileEntry &entry, std::string &outLeft, std::string &outRight,
 		bool &outRightIsWorktreeFile, bool &outBinary, std::string &outError);
 
+	/// Content-based heuristic: checks for NUL bytes and high density of
+	/// non-text control characters in the first 8 KB.
 	bool pathLooksBinaryByContent(const std::string &text);
+
+	/// Extension-based heuristic for common binary formats.
+	bool pathLooksBinaryByExtension(const std::string &path);
 }
