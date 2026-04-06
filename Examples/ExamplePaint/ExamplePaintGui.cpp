@@ -620,7 +620,7 @@ static void drawPaintColorsPanel(PaintEditor &editor, float panelWidth, float me
 
 			ImGui::SeparatorText("Palette");
 			static float s_addPick[3] = { 1.f, 1.f, 1.f };
-			if (ImGui::Button("Add color…"))
+			if (ImGui::Button("Add color..."))
 			{
 				s_addPick[0] = s_addPick[1] = s_addPick[2] = 1.f;
 				ImGui::OpenPopup("##paletteAddPick");
@@ -683,7 +683,7 @@ static void drawPaintColorsPanel(PaintEditor &editor, float panelWidth, float me
 
 				if (ImGui::BeginPopupContextItem("palctx"))
 				{
-					if (ImGui::MenuItem("Edit color…"))
+					if (ImGui::MenuItem("Edit color..."))
 					{
 						s_editIdx = (int)i;
 						s_editPick[0] = c.r / 255.f;
@@ -2841,7 +2841,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 					for (const char *item : items) ImGui::BulletText("%s", item);
 				};
 				bulletList("Tools", { "Digits 1–9 and 0 trigger customizable actions; hover a control in Tools (tools, pipette, symmetry, undo/redo, selection actions, clipboard) or Layers and press Ctrl+digit to assign", "Bindings are saved to ExamplePaintDigitHotkeys.dat (with ParanoiaConfig backups like ExampleMother)", "Defaults: 1 Brush, 2 Flood Fill, 3 Line, 4 Rectangle, 5 Selection, 6 Text, 7 Pipette, 8 Circle, 9 Arrow, 0 Bezier", "E Eraser, R Spray, O Ellipse selection, L Lasso, P Polygon Lasso, M Magic Wand" });
-				bulletList("General", { "+/- changes brush width, eraser size, spray width (spray tool), wand or flood-fill tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "With unsaved edits, New…, Open…, Paste as New Canvas, drop→Open as Document, Menu→Quit, or closing the window asks Save / Don't save / Cancel", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms", "Tools, Layers, Colors, and Tool options are separate floating windows: drag title bars to move; resize freely; layout is remembered (imgui.ini)", "Favorite swatches in the Colors window default to white and are saved to ExamplePaintFavoriteColors.dat", "Recent colors default to white, update as you draw, and are saved to ExamplePaintColorHistory.dat", "Most used (Colors window) ranks colors on the visible flattened canvas; fully transparent pixels are skipped" });
+				bulletList("General", { "+/- changes brush width, eraser size, spray width (spray tool), wand or flood-fill tolerance, or text size for the active tool", "X swaps primary and secondary color", "Ctrl+D resets colors to black/white", "Drag and drop PNG or .bbepaint files to open as a document or add as a new layer", "With unsaved edits, New..., Open..., Paste as New Canvas, drop→Open as Document, Menu→Quit, or closing the window asks Save / Don't save / Cancel", "Space resets the camera", "Middle mouse pans", "Mouse wheel zooms", "Tools, Layers, Colors, and Tool options are separate floating windows: drag title bars to move; resize freely; layout is remembered (imgui.ini)", "Favorite swatches in the Colors window default to white and are saved to ExamplePaintFavoriteColors.dat", "Recent colors default to white, update as you draw, and are saved to ExamplePaintColorHistory.dat", "Most used (Colors window) ranks colors on the visible flattened canvas; fully transparent pixels are skipped" });
 				bulletList("Edit", { "Ctrl+S saves", "Ctrl+Z / Ctrl+Y undo and redo", "Delete / Backspace deletes the current selection", "Edit → Mirror flips all layers (vertical or horizontal in the dialog)", "Edit → Rotate Canvas 90° turns all layers; canvas width and height swap", "Edit → Palette Mode enables or disables indexed color for the document (single layer, per-document palette)" });
 				bulletList("Selection", { "Drag to create a rectangular selection", "Ellipse selection: drag for an elliptical marquee; hold Shift for a circle", "Lasso: click and drag to outline an area (closed automatically)", "Polygon lasso: click corners, then close via first point, Enter, or right-click", "Magic Wand selects by similar color (visible flatten) with adjustable tolerance", "Ctrl+click with Magic Wand, Selection, Ellipse selection, Lasso, or Polygon lasso adds to the current selection", "Drag inside a selection to move it", "Drag corner or edge handles to resize", "Rectangle creates a floating selection first; click outside to place it", "Ctrl+A selects the whole active layer", "Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste" });
 				bulletList("Layers", { "Painting and text placement affect only the active layer", "Canvas backdrop defaults to opaque white behind all layers; set alpha to 0 on the backdrop for a fully transparent document", "Visible layers are flattened when saving as PNG", "Save as Layered keeps all layers in .bbepaint", "Opening PNG still works as a normal single-layer document" });

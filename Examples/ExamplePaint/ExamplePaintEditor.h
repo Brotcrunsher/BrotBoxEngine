@@ -94,7 +94,7 @@ struct PaintEditor
 	static constexpr int32_t MODE_ERASER = 14;
 	static constexpr int32_t MODE_SPRAY = 15;
 
-	/// Single code for what a top-row digit (1–9, 0) does: tool modes \c MODE_BRUSH…\c MODE_SPRAY are their own numeric values (0–15); other actions use distinct ids (see implementation).
+	/// Single code for what a top-row digit (1–9, 0) does: tool modes \c MODE_BRUSH...\c MODE_SPRAY are their own numeric values (0–15); other actions use distinct ids (see implementation).
 	enum class DigitHotkeyAction : int32_t
 	{
 		SymmetryNone = 32,
@@ -138,7 +138,7 @@ struct PaintEditor
 	/// Frames spent in shadow brush/eraser/spray preview while the active tool is not drawing (clears workArea after the first shadow frame).
 	uint32_t brushStrokeUpdateShadowCounter = 0;
 
-	/// Top-row digits 1–9 then 0: `digitHotkeys[0]`…`[8]` = keys 1–9, `[9]` = key 0. Reassign with Ctrl+digit while hovering a bound control in Tools or Layers.
+	/// Top-row digits 1–9 then 0: `digitHotkeys[0]`...`[8]` = keys 1–9, `[9]` = key 0. Reassign with Ctrl+digit while hovering a bound control in Tools or Layers.
 	/// When set, invoked after a digit binding changes (e.g. to persist settings).
 	std::function<void()> onDigitHotkeysChanged;
 
