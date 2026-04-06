@@ -28,5 +28,14 @@ SOFTWARE.
 Third Party Licenses:
 ===============================================================================
 
-This Repository contains various Third Party projects which may contain other
-licenses. See in the subdirectories of "Third-Party" within this Repository.
+This repository contains various third-party projects distributed under their
+own licenses. See THIRD_PARTY_LICENSES in the repository root for a complete
+listing, or refer to the individual subdirectories under "Third-Party".
+
+PROMINENT NOTICE (required by LGPL Section 6):
+This software uses OpenAL Soft, which is licensed under the GNU Library General
+Public License version 2.1 (LGPL-2.1). The complete source code for OpenAL Soft
+is included in Third-Party/openal-soft-1.25.1/ and its license text is at
+Third-Party/openal-soft-1.25.1/COPYING. Because all source code for
+BrotBoxEngine is available in this repository, users can modify OpenAL Soft and
+relink as permitted by the LGPL.

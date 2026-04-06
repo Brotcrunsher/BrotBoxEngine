@@ -1,0 +1,143 @@
+===============================================================================
+Third-Party Licenses for BrotBoxEngine
+===============================================================================
+
+BrotBoxEngine depends on several third-party libraries and assets, each
+distributed under its own license. This file summarizes every bundled
+dependency and where to find the full license text.
+
+IMPORTANT: OpenAL Soft is licensed under the GNU LGPL 2.1. It is statically
+linked into BrotBoxEngine. Because BrotBoxEngine is fully open source (MIT)
+and all source code is available in this repository, users retain the ability
+to modify OpenAL Soft and relink, satisfying LGPL Section 6. See the
+"OpenAL Soft" section below for details.
+
+===============================================================================
+1. Box2D
+===============================================================================
+  Directory:  Third-Party/box2d-master/
+  License:    MIT
+  Copyright:  (c) 2019 Erin Catto
+  Full text:  Third-Party/box2d-master/LICENSE
+
+===============================================================================
+2. curl / libcurl
+===============================================================================
+  Directory:  Third-Party/curl-8.8.0/
+  License:    curl (MIT-style permissive)
+  Copyright:  (c) 1996-2024 Daniel Stenberg and contributors
+  Full text:  Third-Party/curl-8.8.0/COPYING
+
+===============================================================================
+3. Dear ImGui
+===============================================================================
+  Directory:  Third-Party/imgui-1.92.7-docking/
+  License:    MIT
+  Copyright:  (c) 2014-2026 Omar Cornut
+  Full text:  Third-Party/imgui-1.92.7-docking/LICENSE.txt
+
+===============================================================================
+4. GLEW (OpenGL Extension Wrangler Library)
+===============================================================================
+  Directory:  Third-Party/glew-2.3.1/
+  License:    Modified BSD (library), MIT (Mesa/Khronos portions)
+  Copyright:  (c) 2002-2007 Milan Ikits / Marcelo Magallon; and others
+  Full text:  Third-Party/glew-2.3.1/LICENSE.txt
+  Note:       Code-generation scripts are under GPL (not the library itself).
+
+===============================================================================
+5. GLFW
+===============================================================================
+  Directory:  Third-Party/glfw-3.4/
+  License:    zlib/libpng
+  Copyright:  (c) 2002-2006 Marcus Geelnard; 2006-2019 Camilla Löwy
+  Full text:  Third-Party/glfw-3.4/LICENSE.md
+
+===============================================================================
+6. Google Test
+===============================================================================
+  Directory:  Third-Party/googletest-1.17.0/
+  License:    BSD 3-Clause
+  Copyright:  (c) 2008 Google Inc.
+  Full text:  Third-Party/googletest-1.17.0/LICENSE
+
+===============================================================================
+7. ImPlot
+===============================================================================
+  Directory:  Third-Party/implot-0.17/
+  License:    MIT
+  Copyright:  (c) 2020 Evan Pezent
+  Full text:  Third-Party/implot-0.17/LICENSE
+
+===============================================================================
+8. jo_mpeg
+===============================================================================
+  Directory:  Third-Party/jo/
+  License:    Public Domain
+  Author:     Jon Olick (http://jonolick.com)
+  Full text:  Third-Party/jo/LICENSE
+
+===============================================================================
+9. libsodium (via libsodium-cmake)
+===============================================================================
+  Directory:  Third-Party/libsodium-cmake/
+  License:    ISC (CMake wrapper: Robin Linden; libsodium: Frank Denis)
+  Full text:  Third-Party/libsodium-cmake/LICENSE
+              Third-Party/libsodium-cmake/libsodium/LICENSE
+
+===============================================================================
+10. minimp3
+===============================================================================
+  Directory:  Third-Party/minimp3/
+  License:    CC0 1.0 Universal (Public Domain Dedication)
+  Author:     lieff (https://github.com/lieff/minimp3)
+  Full text:  Third-Party/minimp3/LICENSE
+
+===============================================================================
+11. nlohmann/json
+===============================================================================
+  Directory:  Third-Party/nlohmann/
+  License:    MIT
+  Copyright:  (c) 2013-2022 Niels Lohmann
+  Full text:  Third-Party/nlohmann/LICENSE.MIT
+
+===============================================================================
+12. OpenAL Soft  ** LGPL — see note below **
+===============================================================================
+  Directory:  Third-Party/openal-soft-1.25.1/
+  License:    GNU Library General Public License, version 2.1 (LGPL-2.1)
+  Full text:  Third-Party/openal-soft-1.25.1/COPYING
+
+  BrotBoxEngine statically links OpenAL Soft. The LGPL requires that users
+  be able to modify the library and relink. Because BrotBoxEngine is fully
+  open source under the MIT license, all source code required to rebuild
+  and relink is available in this repository, satisfying LGPL Section 6.
+
+  Bundled sub-dependencies of OpenAL Soft:
+    - {fmt}           MIT          Third-Party/openal-soft-1.25.1/fmt-11.2.0/LICENSE
+    - Microsoft GSL   MIT          Third-Party/openal-soft-1.25.1/gsl/LICENSE
+    - PFFFT (modified) BSD-like    Third-Party/openal-soft-1.25.1/LICENSE-pffft
+
+===============================================================================
+13. stb (stb_image, stb_image_write, stb_truetype)
+===============================================================================
+  Directory:  Third-Party/stb/
+  License:    Dual: MIT or Public Domain (Unlicense) — user's choice
+  Copyright:  (c) 2017 Sean Barrett
+  Full text:  Third-Party/stb/LICENSE
+
+===============================================================================
+14. TinyXML-2
+===============================================================================
+  Directory:  Third-Party/tinyxml2-10.0.0/
+  License:    zlib
+  Copyright:  (c) Lee Thomason
+  Full text:  Third-Party/tinyxml2-10.0.0/LICENSE.txt
+
+===============================================================================
+15. Open Sans (Font)
+===============================================================================
+  Directory:  BrotBoxEngine/Assets/Fonts/
+  License:    SIL Open Font License 1.1
+  Copyright:  (c) 2020 The Open Sans Project Authors
+  Full text:  BrotBoxEngine/Assets/Fonts/OFL.txt
