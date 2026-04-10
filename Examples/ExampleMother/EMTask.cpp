@@ -501,7 +501,8 @@ int32_t SubsystemTask::drawTable(float scale, const char *title, const std::func
 				}
 				else if (t.inputType == Task::IT_INTEGER)
 				{
-					if (ImGui::InputInt("##input", &t.inputInt, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue))
+					ImGui::InputInt("##input", &t.inputInt, 0, 0);
+					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
 						t.history.add(t.inputInt);
 						t.execDone();
@@ -510,7 +511,8 @@ int32_t SubsystemTask::drawTable(float scale, const char *title, const std::func
 				}
 				else if (t.inputType == Task::IT_FLOAT)
 				{
-					if (ImGui::InputFloat("##input", &t.inputFloat, 0, 0, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
+					ImGui::InputFloat("##input", &t.inputFloat, 0, 0, "%.3f");
+					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
 						t.history.add(t.inputFloat);
 						t.execDone();
