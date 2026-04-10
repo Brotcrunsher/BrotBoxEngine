@@ -4,6 +4,7 @@
 #include "TextDiff.h"
 
 #include "BBE/BrotBoxEngine.h"
+#include "imgui_internal.h"
 
 #include <algorithm>
 #include <cstring>
@@ -378,6 +379,140 @@ namespace gitReview
 			}
 		}
 
+		void drawDiffMap(ReviewAppState &app, const std::vector<DiffRow> &rows, float barWidth, float mapHeight,
+			float scrollY, float scrollMaxY, float innerViewH, float lineH)
+		{
+			const int numRows = static_cast<int>(rows.size());
+			const float arrowH = 16.f;
+			const float spacingY = ImGui::GetStyle().ItemSpacing.y;
+			const float stripH = mapHeight - 2.f * arrowH - 2.f * spacingY;
+			if (stripH < 10.f)
+			{
+				ImGui::Dummy(ImVec2(barWidth, mapHeight));
+				return;
+			}
+
+			const float wpad = ImGui::GetStyle().WindowPadding.y;
+			const float totalScrollableH = scrollMaxY + std::max(innerViewH, 1.f);
+
+			std::vector<int> hunkStarts;
+			for (int i = 0; i < numRows; i++)
+			{
+				if (rows[static_cast<size_t>(i)].kind != DiffRowKind::Equal &&
+					(i == 0 || rows[static_cast<size_t>(i - 1)].kind == DiffRowKind::Equal))
+				{
+					hunkStarts.push_back(i);
+				}
+			}
+			const int topVisibleRow = (lineH > 0.f) ? static_cast<int>(scrollY / lineH) : 0;
+
+			ImGui::BeginGroup();
+
+			// --- Previous-change arrow ---
+			{
+				ImGui::InvisibleButton("##prevDiff", ImVec2(barWidth, arrowH));
+				ImDrawList *dl = ImGui::GetWindowDrawList();
+				ImVec2 rmin = ImGui::GetItemRectMin();
+				ImVec2 rmax = ImGui::GetItemRectMax();
+				bool hovered = ImGui::IsItemHovered();
+				if (hovered)
+					dl->AddRectFilled(rmin, rmax, IM_COL32(60, 60, 65, 200));
+				ImVec2 ctr((rmin.x + rmax.x) * 0.5f, (rmin.y + rmax.y) * 0.5f);
+				float s = 4.5f;
+				ImU32 col = hovered ? IM_COL32(255, 255, 255, 240) : IM_COL32(150, 150, 160, 180);
+				dl->AddTriangleFilled(
+					ImVec2(ctr.x, ctr.y - s),
+					ImVec2(ctr.x - s, ctr.y + s * 0.5f),
+					ImVec2(ctr.x + s, ctr.y + s * 0.5f), col);
+				if (ImGui::IsItemClicked() && !hunkStarts.empty())
+				{
+					auto it = std::lower_bound(hunkStarts.begin(), hunkStarts.end(), topVisibleRow);
+					if (it != hunkStarts.begin())
+					{
+						--it;
+						app.diffMapScrollTarget = std::max(0.f, *it * lineH - 3.f * lineH);
+					}
+				}
+				if (hovered)
+					ImGui::SetTooltip("Previous change");
+			}
+
+			// --- Map strip ---
+			{
+				ImGui::InvisibleButton("##diffMapStrip", ImVec2(barWidth, stripH));
+				ImVec2 smin = ImGui::GetItemRectMin();
+				ImVec2 smax = ImGui::GetItemRectMax();
+				bool hovered = ImGui::IsItemHovered();
+				bool active = ImGui::IsItemActive();
+				ImDrawList *dl = ImGui::GetWindowDrawList();
+
+				dl->AddRectFilled(smin, smax, IM_COL32(22, 22, 25, 255));
+
+				if (numRows > 0 && totalScrollableH > 0.f)
+				{
+					const float minTickH = std::max(lineH / totalScrollableH * stripH, 2.0f);
+					const float padX = 3.f;
+					for (int i = 0; i < numRows; i++)
+					{
+						ImU32 c;
+						switch (rows[static_cast<size_t>(i)].kind)
+						{
+						case DiffRowKind::LeftOnly:  c = IM_COL32(220, 80, 80, 200); break;
+						case DiffRowKind::RightOnly: c = IM_COL32(80, 200, 100, 200); break;
+						case DiffRowKind::Changed:   c = IM_COL32(200, 170, 60, 200); break;
+						default: continue;
+						}
+						float y0 = smin.y + (wpad + i * lineH) / totalScrollableH * stripH;
+						float y1 = std::min(y0 + minTickH, smax.y);
+						dl->AddRectFilled(ImVec2(smin.x + padX, y0), ImVec2(smax.x - padX, y1), c);
+					}
+
+					float vpY0 = std::max(smin.y + scrollY / totalScrollableH * stripH, smin.y);
+					float vpY1 = std::min(smin.y + (scrollY + innerViewH) / totalScrollableH * stripH, smax.y);
+					dl->AddRectFilled(ImVec2(smin.x, vpY0), ImVec2(smax.x, vpY1), IM_COL32(255, 255, 255, 25));
+					dl->AddRect(ImVec2(smin.x, vpY0), ImVec2(smax.x, vpY1), IM_COL32(255, 255, 255, 90), 0.f, 0, 1.f);
+				}
+
+				if (hovered)
+					ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+				if (active && numRows > 0 && totalScrollableH > 0.f)
+				{
+					float mouseY = ImGui::GetMousePos().y - smin.y;
+					float frac = std::clamp(mouseY / stripH, 0.f, 1.f);
+					float targetScroll = frac * totalScrollableH - innerViewH * 0.5f;
+					app.diffMapScrollTarget = std::clamp(targetScroll, 0.f, scrollMaxY);
+				}
+			}
+
+			// --- Next-change arrow ---
+			{
+				ImGui::InvisibleButton("##nextDiff", ImVec2(barWidth, arrowH));
+				ImDrawList *dl = ImGui::GetWindowDrawList();
+				ImVec2 rmin = ImGui::GetItemRectMin();
+				ImVec2 rmax = ImGui::GetItemRectMax();
+				bool hovered = ImGui::IsItemHovered();
+				if (hovered)
+					dl->AddRectFilled(rmin, rmax, IM_COL32(60, 60, 65, 200));
+				ImVec2 ctr((rmin.x + rmax.x) * 0.5f, (rmin.y + rmax.y) * 0.5f);
+				float s = 4.5f;
+				ImU32 col = hovered ? IM_COL32(255, 255, 255, 240) : IM_COL32(150, 150, 160, 180);
+				dl->AddTriangleFilled(
+					ImVec2(ctr.x, ctr.y + s),
+					ImVec2(ctr.x - s, ctr.y - s * 0.5f),
+					ImVec2(ctr.x + s, ctr.y - s * 0.5f), col);
+				if (ImGui::IsItemClicked() && !hunkStarts.empty())
+				{
+					auto it = std::upper_bound(hunkStarts.begin(), hunkStarts.end(), topVisibleRow);
+					if (it != hunkStarts.end())
+						app.diffMapScrollTarget = std::max(0.f, *it * lineH - 3.f * lineH);
+				}
+				if (hovered)
+					ImGui::SetTooltip("Next change");
+			}
+
+			ImGui::EndGroup();
+		}
+
 		void drawFileList(ReviewAppState &app)
 		{
 			ImGui::BeginChild("fileList", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
@@ -474,47 +609,63 @@ namespace gitReview
 			ImGui::EndChild();
 			ImGui::Separator();
 
-			if (app.diffCacheLargeFallback)
+		if (app.diffCacheLargeFallback)
+		{
+			ImGui::TextColored(ImVec4(0.9f, 0.75f, 0.3f, 1.f), "Large diff — showing line-level comparison only (word-level highlighting disabled).");
+		}
+
+		const std::vector<DiffRow> &rows = cachedDiffRows(app);
+		const bool largeFB = app.diffCacheLargeFallback;
+		const float lineH = ImGui::GetTextLineHeightWithSpacing();
+		const float mapBarW = 18.f;
+
+		const float footer = app.rightSideIsWorktreeFile ? 168.f : 128.f;
+		ImGui::BeginChild("diffScroll", ImVec2(-(mapBarW + ImGui::GetStyle().ItemSpacing.x), -footer), true,
+			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar);
+
+		if (app.diffMapScrollTarget >= 0.f)
+		{
+			ImGui::SetScrollY(app.diffMapScrollTarget);
+			app.diffMapScrollTarget = -1.f;
+		}
+
+		const ImVec4 stable(0.85f, 0.88f, 0.92f, 1.f);
+		const ImVec4 addc(0.45f, 0.85f, 0.55f, 1.f);
+		const ImVec4 delc(0.95f, 0.45f, 0.45f, 1.f);
+		const ImVec4 muted(0.45f, 0.45f, 0.5f, 1.f);
+
+		const float totalW = ImGui::GetContentRegionAvail().x;
+		const float halfW = std::max(80.f, totalW * 0.5f - 6.f);
+
+		ImGuiListClipper clipper;
+		clipper.Begin(static_cast<int>(rows.size()), lineH);
+		while (clipper.Step())
+		{
+			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 			{
-				ImGui::TextColored(ImVec4(0.9f, 0.75f, 0.3f, 1.f), "Large diff — showing line-level comparison only (word-level highlighting disabled).");
+				ImGui::PushID(i);
+				ImGui::BeginGroup();
+				ImGui::BeginChild("dL", ImVec2(halfW, lineH), false, ImGuiWindowFlags_NoScrollbar);
+				drawSidePaneLine(rows[static_cast<size_t>(i)], true, largeFB, stable, addc, delc, muted);
+				ImGui::EndChild();
+				ImGui::SameLine();
+				ImGui::BeginChild("dR", ImVec2(0, lineH), false, ImGuiWindowFlags_NoScrollbar);
+				drawSidePaneLine(rows[static_cast<size_t>(i)], false, largeFB, stable, addc, delc, muted);
+				ImGui::EndChild();
+				ImGui::EndGroup();
+				ImGui::PopID();
 			}
+		}
 
-			const float footer = app.rightSideIsWorktreeFile ? 168.f : 128.f;
-			ImGui::BeginChild("diffScroll", ImVec2(0, -footer), true,
-				ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar);
+		const float scrollY = ImGui::GetScrollY();
+		const float scrollMaxY = ImGui::GetScrollMaxY();
+		const float scrollChildH = ImGui::GetWindowHeight();
+		const float innerRectH = ImGui::GetCurrentWindow()->InnerRect.GetHeight();
 
-			const ImVec4 stable(0.85f, 0.88f, 0.92f, 1.f);
-			const ImVec4 addc(0.45f, 0.85f, 0.55f, 1.f);
-			const ImVec4 delc(0.95f, 0.45f, 0.45f, 1.f);
-			const ImVec4 muted(0.45f, 0.45f, 0.5f, 1.f);
+		ImGui::EndChild();
 
-			const std::vector<DiffRow> &rows = cachedDiffRows(app);
-			const bool largeFB = app.diffCacheLargeFallback;
-			const float lineH = ImGui::GetTextLineHeightWithSpacing();
-			const float totalW = ImGui::GetContentRegionAvail().x;
-			const float halfW = std::max(80.f, totalW * 0.5f - 6.f);
-
-			ImGuiListClipper clipper;
-			clipper.Begin(static_cast<int>(rows.size()), lineH);
-			while (clipper.Step())
-			{
-				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-				{
-					ImGui::PushID(i);
-					ImGui::BeginGroup();
-					ImGui::BeginChild("dL", ImVec2(halfW, lineH), false, ImGuiWindowFlags_NoScrollbar);
-					drawSidePaneLine(rows[static_cast<size_t>(i)], true, largeFB, stable, addc, delc, muted);
-					ImGui::EndChild();
-					ImGui::SameLine();
-					ImGui::BeginChild("dR", ImVec2(0, lineH), false, ImGuiWindowFlags_NoScrollbar);
-					drawSidePaneLine(rows[static_cast<size_t>(i)], false, largeFB, stable, addc, delc, muted);
-					ImGui::EndChild();
-					ImGui::EndGroup();
-					ImGui::PopID();
-				}
-			}
-
-			ImGui::EndChild();
+		ImGui::SameLine();
+		drawDiffMap(app, rows, mapBarW, scrollChildH, scrollY, scrollMaxY, innerRectH, lineH);
 
 			ImGui::Separator();
 			if (app.rightSideIsWorktreeFile)

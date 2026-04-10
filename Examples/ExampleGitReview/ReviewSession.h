@@ -38,6 +38,9 @@ namespace gitReview
 		bool pendingDiscardAsk = false;
 		bool pendingUntrackedDeleteAsk = false;
 
+		/// When >= 0, the diff scroll view jumps to this Y offset on the next frame (set by the diff map).
+		float diffMapScrollTarget = -1.f;
+
 		// Diff-row cache: avoids rebuilding the side-by-side model every frame.
 		std::string cachedDiffLeft;
 		std::string cachedDiffRight;
