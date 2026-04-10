@@ -207,32 +207,6 @@ namespace gitReview
 			ImGui::SameLine(0.f, 12.f);
 
 			ImGui::BeginDisabled(!app.selection.has_value());
-			if (ImGui::Button("Stage"))
-			{
-				std::string err;
-				stageEntry(app, *app.selection, err);
-				if (!err.empty())
-					showModal(app, "Stage failed", err);
-				else
-				{
-					showToast(app, "Staged file.", 2.f);
-					refreshSnapshot(app);
-				}
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Unstage"))
-			{
-				std::string err;
-				unstageEntry(app, *app.selection, err);
-				if (!err.empty())
-					showModal(app, "Unstage failed", err);
-				else
-				{
-					showToast(app, "Unstaged file.", 2.f);
-					refreshSnapshot(app);
-				}
-			}
-			ImGui::SameLine();
 			if (ImGui::Button("Discard..."))
 				app.pendingDiscardAsk = true;
 			ImGui::EndDisabled();
@@ -516,38 +490,117 @@ namespace gitReview
 		void drawFileList(ReviewAppState &app)
 		{
 			ImGui::BeginChild("fileList", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-			ImGui::TextDisabled("Files");
+			ImGui::TextDisabled("Files  (check = staged)");
 			ImGui::Separator();
 
-			for (const auto sec : { FileListSection::Untracked, FileListSection::Unstaged, FileListSection::Staged })
+			struct MergedFile
 			{
-				ImGui::PushID(static_cast<int>(sec));
-				if (!ImGui::CollapsingHeader(sectionTitle(sec), ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					ImGui::PopID();
-					continue;
-				}
-				int row = 0;
-				for (const FileEntry &e : app.snapshot.entries)
-				{
-					if (e.section != sec)
-						continue;
-					std::string label = e.path + kindTag(e.kind);
-					if (e.kind == ChangeKind::Renamed && !e.renameFrom.empty())
-						label += "\n  " + e.renameFrom + " -> " + e.path;
+				std::string path;
+				bool hasStaged = false;
+				bool hasUnstaged = false;
+				bool isUntracked = false;
+				FileEntry stagedEntry;
+				FileEntry unstagedEntry;
+			};
 
-					const bool sel = app.selection.has_value() && app.selection->path == e.path && app.selection->section == e.section && app.selection->kind == e.kind &&
-									 app.selection->renameFrom == e.renameFrom;
-					ImGui::PushID(row * 31 + static_cast<int>(sec));
-					if (ImGui::Selectable(label.c_str(), sel, ImGuiSelectableFlags_AllowDoubleClick))
-						setSelection(app, e);
-					ImGui::PopID();
-					row++;
+			std::vector<MergedFile> merged;
+			for (const FileEntry &e : app.snapshot.entries)
+			{
+				auto it = std::find_if(merged.begin(), merged.end(),
+					[&](const MergedFile &m) { return m.path == e.path; });
+				if (it == merged.end())
+				{
+					MergedFile mf;
+					mf.path = e.path;
+					if (e.section == FileListSection::Staged)
+					{
+						mf.hasStaged = true;
+						mf.stagedEntry = e;
+					}
+					else
+					{
+						mf.hasUnstaged = true;
+						mf.isUntracked = (e.section == FileListSection::Untracked);
+						mf.unstagedEntry = e;
+					}
+					merged.push_back(std::move(mf));
 				}
+				else
+				{
+					if (e.section == FileListSection::Staged)
+					{
+						it->hasStaged = true;
+						it->stagedEntry = e;
+					}
+					else
+					{
+						it->hasUnstaged = true;
+						it->isUntracked = (e.section == FileListSection::Untracked);
+						it->unstagedEntry = e;
+					}
+				}
+			}
+
+			std::sort(merged.begin(), merged.end(),
+				[](const MergedFile &a, const MergedFile &b) { return a.path < b.path; });
+
+			bool needsRefresh = false;
+			for (size_t idx = 0; idx < merged.size() && !needsRefresh; idx++)
+			{
+				const MergedFile &mf = merged[idx];
+				ImGui::PushID(static_cast<int>(idx));
+
+				bool staged = mf.hasStaged;
+				if (ImGui::Checkbox("##stg", &staged))
+				{
+					std::string err;
+					if (staged)
+					{
+						stageEntry(app, mf.unstagedEntry, err);
+						if (!err.empty())
+							showModal(app, "Stage failed", err);
+						else
+							needsRefresh = true;
+					}
+					else
+					{
+						unstageEntry(app, mf.stagedEntry, err);
+						if (!err.empty())
+							showModal(app, "Unstage failed", err);
+						else
+							needsRefresh = true;
+					}
+				}
+
+				ImGui::SameLine();
+
+				const FileEntry &selEntry = mf.hasUnstaged ? mf.unstagedEntry : mf.stagedEntry;
+
+				std::string label = mf.path;
+				if (mf.isUntracked && !mf.hasStaged)
+					label += "  [untracked]";
+				else
+					label += kindTag(selEntry.kind);
+				if (selEntry.kind == ChangeKind::Renamed && !selEntry.renameFrom.empty())
+					label += "\n  " + selEntry.renameFrom + " -> " + mf.path;
+
+				const bool isSel = app.selection.has_value() && app.selection->path == mf.path;
+				if (ImGui::Selectable(label.c_str(), isSel, ImGuiSelectableFlags_AllowDoubleClick))
+				{
+					if (mf.hasStaged && !mf.hasUnstaged)
+						app.reviewMode = ReviewMode::Staged;
+					else if (mf.hasUnstaged && !mf.hasStaged)
+						app.reviewMode = ReviewMode::Unstaged;
+					setSelection(app, selEntry);
+				}
+
 				ImGui::PopID();
 			}
 
-			if (app.snapshot.entries.empty() && !repoRootString(app).empty())
+			if (needsRefresh)
+				refreshSnapshot(app);
+
+			if (merged.empty() && !repoRootString(app).empty())
 				ImGui::TextDisabled("(no changes)");
 
 			ImGui::EndChild();
