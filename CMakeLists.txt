@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -94,6 +94,7 @@ endmacro()
 macro(add_trivial_project name)
   add_compile_definitions(BBE_APPLICATION_ASSET_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
   add_executable(${name})
+  set_target_properties(${name} PROPERTIES OPTIMIZE_DEPENDENCIES TRUE)
   if(MSVC)
     target_compile_options(${name} PRIVATE /wd4244 /wd4267) # I don't quite care about "possible loss of data" in trivial projects.
     target_compile_options(${name} PRIVATE /wd4305 /wd4309) # Same for "truncation of contant" warnings.
@@ -289,6 +290,7 @@ macro(add_trivial_project name)
 endmacro()
 
 add_library(BrotBoxEngine STATIC)
+set_target_properties(BrotBoxEngine PROPERTIES OPTIMIZE_DEPENDENCIES TRUE)
 message(STATUS "C++ Version: ${CMAKE_CXX_STANDARD}")
 set_property(TARGET BrotBoxEngine PROPERTY CXX_STANDARD ${CMAKE_CXX_STANDARD})
 set_property(TARGET BrotBoxEngine PROPERTY CXX_STANDARD_REQUIRED ON)
