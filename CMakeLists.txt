@@ -327,6 +327,8 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_cxx_linker_flag("-fprofile-arcs")
     add_cxx_linker_flag("-ftest-coverage")
   endif()
+
+  target_link_libraries(BrotBoxEngine stdc++exp)
 endif()
 
 add_subdirectory(BrotBoxEngine)
@@ -338,16 +340,17 @@ if(BBE_RENDER_MODE STREQUAL "Vulkan")
   target_compile_definitions(BrotBoxEngine PUBLIC BBE_RENDERER_VULKAN)
   target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-1.92.7-docking/backends/imgui_impl_vulkan.cpp)
 elseif(BBE_RENDER_MODE STREQUAL "OpenGL")
+  set(BUILD_UTILS OFF CACHE BOOL "" FORCE)
   add_subdirectory(Third-Party/glew-2.3.1/build/cmake)
+  set_target_properties(glew PROPERTIES EXCLUDE_FROM_ALL TRUE)
   target_include_directories(BrotBoxEngine SYSTEM PUBLIC Third-Party/glew-2.3.1/include)
   target_link_libraries(BrotBoxEngine glew_s)
   target_compile_definitions(BrotBoxEngine PUBLIC BBE_RENDERER_OPENGL)
   target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-1.92.7-docking/backends/imgui_impl_opengl3.cpp)
-  set_target_properties(glew glew_s glewinfo visualinfo PROPERTIES FOLDER Deps)
+  set_target_properties(glew_s PROPERTIES FOLDER Deps)
   if(MSVC)
     target_link_options(glew PRIVATE /BASE:0x140000000) # Fixes LNK4281 warning: undesirable base address 0x62AA0000 for x64 image; set base address above 4GB for best ASLR optimization
   endif()
-  disable_warnings(glewinfo)
 elseif(BBE_RENDER_MODE STREQUAL "Emscripten")
   add_compile_options(-sUSE_PTHREADS=1 -matomics -mbulk-memory)
   add_link_options(-sEXCEPTION_DEBUG=1 --profiling-funcs -sUSE_PTHREADS=1 -sPTHREAD_POOL_SIZE=20 -matomics -mbulk-memory --shared-memory)
@@ -398,6 +401,7 @@ target_link_libraries(BrotBoxEngine sodium)
 target_include_directories(BrotBoxEngine SYSTEM PUBLIC Third-Party/libsodium-cmake/libsodium/src/libsodium/include)
 set_target_properties(sodium PROPERTIES FOLDER Deps)
 
+target_compile_definitions(BrotBoxEngine PUBLIC IMGUI_DEFINE_MATH_OPERATORS)
 set(BBE_IMGUI_DEMO_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-1.92.7-docking/imgui_demo.cpp)
 target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-1.92.7-docking/imgui.cpp)
 target_sources(BrotBoxEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Third-Party/imgui-1.92.7-docking/imgui_draw.cpp)
@@ -468,6 +472,7 @@ target_include_directories(BrotBoxEngine SYSTEM PUBLIC Third-Party/tinyxml2-10.0
 
 if(BBE_ADD_AUDIO)
   set(ALSOFT_EXAMPLES OFF CACHE BOOL "" FORCE)
+  set(ALSOFT_UTILS OFF CACHE BOOL "" FORCE)
   set(AL_LIBTYPE_STATIC ON CACHE BOOL "" FORCE)
   set(LIBTYPE STATIC CACHE STRING "" FORCE)
   add_subdirectory("Third-Party/openal-soft-1.25.1")
@@ -475,11 +480,8 @@ if(BBE_ADD_AUDIO)
   if(NOT EMSCRIPTEN)
     target_link_libraries(BrotBoxEngine OpenAL)
   endif()
-  set_target_properties(OpenAL openal-info PROPERTIES FOLDER Deps)
+  set_target_properties(OpenAL PROPERTIES FOLDER Deps)
   disable_warnings(OpenAL)
-  #disable_warnings(common)
-  #disable_warnings(ex-common)
-  disable_warnings(openal-info)
 else()
   add_compile_definitions(BBE_NO_AUDIO)
 endif()
@@ -496,6 +498,33 @@ else()
   target_compile_definitions(BrotBoxEngine PUBLIC BBE_NO_PYTHON)
 endif()
 
+target_precompile_headers(BrotBoxEngine PRIVATE
+  <algorithm>
+  <array>
+  <cassert>
+  <cmath>
+  <cstdint>
+  <cstdlib>
+  <cstring>
+  <deque>
+  <filesystem>
+  <fstream>
+  <functional>
+  <future>
+  <iostream>
+  <limits>
+  <map>
+  <memory>
+  <mutex>
+  <optional>
+  <sstream>
+  <string>
+  <vector>
+  <imgui.h>
+  <implot.h>
+  <nlohmann/json.hpp>
+)
+
 if(BBE_ADD_TEST_PROJECTS)
   add_subdirectory(Third-Party/googletest-1.17.0)
   set_target_properties(gtest gtest_main PROPERTIES FOLDER Deps)
@@ -503,4 +532,15 @@ if(BBE_ADD_TEST_PROJECTS)
 endif()
 if(BBE_ADD_EXAMPLE_PROJECTS)
   add_subdirectory(Examples)
+endif()
+
+if(CMAKE_GENERATOR MATCHES "Ninja")
+  find_program(BBE_PYTHON3 python3)
+  if(BBE_PYTHON3)
+    add_custom_target(compile_times
+      COMMAND ${BBE_PYTHON3} ${CMAKE_SOURCE_DIR}/tools/compile_times.py ${CMAKE_BINARY_DIR}/.ninja_log
+      USES_TERMINAL
+      COMMENT "Analyzing compilation times from .ninja_log ..."
+    )
+  endif()
 endif()
