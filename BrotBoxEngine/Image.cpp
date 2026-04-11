@@ -2093,3 +2093,17 @@ bool bbe::Image::isLoadedGpu() const
 {
 	return m_prendererData != nullptr;
 }
+
+#ifdef BBE_RENDERER_OPENGL
+#include "BBE/OpenGL/OpenGLImage.h"
+void* bbe::Image::getOpenGlTexture() const
+{
+	if (m_prendererData == nullptr)
+	{
+		if (!isLoadedCpu()) return nullptr;
+		new bbe::INTERNAL::openGl::OpenGLImage(*this);
+	}
+	auto* ogi = static_cast<bbe::INTERNAL::openGl::OpenGLImage*>(m_prendererData.get());
+	return reinterpret_cast<void*>(static_cast<intptr_t>(ogi->tex));
+}
+#endif

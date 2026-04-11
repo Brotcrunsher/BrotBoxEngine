@@ -256,17 +256,6 @@ BOOL CALLBACK MinimizeWindowCallback(HWND hwnd, LPARAM lParam)
 
 namespace
 {
-	constexpr const char *kAdaptiveWindowNames[] = {
-		"Adaptive Window: 0",
-		"Adaptive Window: 1",
-		"Adaptive Window: 2",
-	};
-
-	constexpr const char *kSuperAdaptiveWindowNames[] = {
-		"Super Adaptive Window: 0",
-		"Super Adaptive Window: 1",
-	};
-
 	bbe::String normalizeExternalUrl(const bbe::String &url)
 	{
 		if (url.startsWith("www."))
@@ -440,8 +429,6 @@ private:
 	bbe::List<Tab> adaptiveTabs;
 	bbe::List<Tab> superAdaptiveTabs;
 	bbe::PrimitiveBrush2D *activeBrush = nullptr;
-	bbe::Vector2 weatherOffset = { 20, 120 };
-	const char *previousTabTitle = "";
 	size_t consoleWarningIgnoreRevision = 0;
 	size_t cachedConsoleWarningIgnoreRevision = (size_t)-1;
 	size_t cachedConsoleWarningLogLength = 0;
@@ -472,17 +459,17 @@ private:
 						  { return drawTabStopwatch(); } });
 #ifdef _WIN32
 		mainTabs.add(Tab{ "MsTrck", "Mouse Track", [this]()
-						  { return drawTabMouseTracking(*activeBrush); } });
+						  { return drawTabMouseTracking(); } });
 #endif
 #ifdef _WIN32
 		mainTabs.add(Tab{ "KyTr", "Keyboard Track", [this]()
-						  { return drawTabKeyboardTracking(*activeBrush); } });
+						  { return drawTabKeyboardTracking(); } });
 #endif
 #if 0
 		mainTabs.add(Tab{"Terri", "Territorial", [this]() { return drawTabTerri(*activeBrush); }});
 #endif
 		mainTabs.add(Tab{ "Strks", "Streaks", [this]()
-						  { return drawTabStreaks(*activeBrush); } });
+						  { return drawTabStreaks(); } });
 		mainTabs.add(Tab{ "Lsts", "Lists", [this]()
 						  { return drawTabRememberLists(); } });
 		mainTabs.add(Tab{ "PW", "Password Manager", [this]()
@@ -490,7 +477,7 @@ private:
 		mainTabs.add(Tab{ "GPT", "ChatGPT", [this]()
 						  { return drawTabChatGPT(); } });
 		mainTabs.add(Tab{ "DE", "DALL E", [this]()
-						  { return drawTabDallE(*activeBrush); } });
+						  { return drawTabDallE(); } });
 		// mainTabs.add(Tab{"Mic", "Microphone Test", [this]() { return drawMicrophoneTest(); }});
 		// mainTabs.add(Tab{"Ada", "AdafruitMacroPadRP2040", [this]() { return drawAdafruitMacroPadRP2040(*activeBrush); }});
 		mainTabs.add(Tab{ "ENews", "Edit News", [this]()
@@ -513,7 +500,7 @@ private:
 		adaptiveTabs.add(Tab{ "BTC", "Bitcoin", [this]()
 							  { return drawBitcoin(); } });
 		adaptiveTabs.add(Tab{ "Wthr", "Weather", [this]()
-							  { return drawWeather(*activeBrush, weatherOffset); } });
+							  { return drawWeather(); } });
 		adaptiveTabs.add(Tab{ "VNews", "View News", [this]()
 							  { return drawNews(); } });
 
@@ -1303,13 +1290,23 @@ public:
 		return retVal;
 	}
 
-	void drawWeatherEntry(bbe::PrimitiveBrush2D &brush, const bbe::Vector2 &offset, const WeatherEntry &entry)
+	static ImU32 colorToImU32(float r, float g, float b, float a = 1.0f)
+	{
+		return IM_COL32((int)(r * 255), (int)(g * 255), (int)(b * 255), (int)(a * 255));
+	}
+
+	static ImU32 colorToImU32(const bbe::Color &c)
+	{
+		return colorToImU32(c.r, c.g, c.b, c.a);
+	}
+
+	void drawWeatherEntry(ImDrawList *dl, const ImVec2 &origin, float scale, const bbe::Vector2 &offset, const WeatherEntry &entry)
 	{
 		if (!renderWhether)
 		{
 			return;
 		}
-		constexpr signed fontSize = 15;
+		constexpr float fontSize = 15.0f;
 		const bbe::List<std::pair<float, bbe::Color>> colorLerps = {
 			{ -10.0f, bbe::Color(0.8f, 0.8f, 1.0f) },
 			{ 0.0f, bbe::Color(0.5f, 0.5f, 1.0f) },
@@ -1319,32 +1316,49 @@ public:
 			{ 40.0f, bbe::Color(0.5f, 0.0f, 0.0f) }
 		};
 
+		// The brush's fillText with BOTTOM_LEFT anchor treats y as the text baseline.
+		// ImGui's AddText treats y as the line top. The baseline sits at y + Ascent.
+		// So: imgui_y + ascent_at_render_size = brush_y => imgui_y = brush_y - ascent
+		const float fs = fontSize * scale;
+		ImFontBaked *baked = ImGui::GetFont()->GetFontBaked(fs);
+		const float ascentAtFs = baked->Ascent * (fs / baked->Size);
+		auto textPos = [&](float x, float y) -> ImVec2 {
+			return ImVec2(origin.x + (offset.x + x) * scale,
+			              origin.y + (offset.y + y) * scale - ascentAtFs);
+		};
+		auto rectPos = [&](float x, float y) -> ImVec2 {
+			return ImVec2(origin.x + (offset.x + x) * scale,
+			              origin.y + (offset.y + y) * scale);
+		};
+		const ImU32 white = colorToImU32(1, 1, 1);
+
 		bbe::String timeString = "";
 		timeString += entry.time.getHour();
 		timeString += ":00";
-		brush.fillText(offset + bbe::Vector2{ 0, 0 }, timeString, fontSize);
-		const bbe::Color tempColor = bbe::Math::multiLerp(colorLerps, entry.temperatureC);
-		brush.setColorRGB(tempColor);
-		brush.fillText(offset + bbe::Vector2{ 40, 0 }, bbe::String((int)entry.temperatureC) + "C", fontSize);
+		dl->AddText(nullptr, fs, textPos(0, 0), white, timeString.getRaw());
 
-		brush.setColorRGB(1.0f, 1.0f, 1.0f, 1.0f);
-		brush.fillText(offset + bbe::Vector2{ 80, 0 }, "Hum: " + bbe::String((int)entry.humidity), fontSize);
-		brush.setColorRGB(1.0f, 1.0f, bbe::Math::clamp01(1.0f - entry.uvIndex / 10.f));
-		brush.fillText(offset + bbe::Vector2{ 150, 0 }, "UV: " + bbe::String((int)entry.uvIndex), fontSize);
-		brush.setColorRGB(1.0f, 1.0f, 1.0f);
+		const bbe::Color tempColor = bbe::Math::multiLerp(colorLerps, entry.temperatureC);
+		dl->AddText(nullptr, fs, textPos(40, 0), colorToImU32(tempColor), (bbe::String((int)entry.temperatureC) + "C").getRaw());
+
+		dl->AddText(nullptr, fs, textPos(85, 0), white, ("Hum:" + bbe::String((int)entry.humidity)).getRaw());
+		ImU32 uvColor = colorToImU32(1.0f, 1.0f, bbe::Math::clamp01(1.0f - entry.uvIndex / 10.f));
+		dl->AddText(nullptr, fs, textPos(150, 0), uvColor, ("UV:" + bbe::String((int)entry.uvIndex)).getRaw());
+
+		ImU32 precipColor = white;
 		if (entry.precipMM > 0.f || entry.chanceOfRain > 0.f)
 		{
-			brush.setColorRGB(0.5f, 0.5f, 1.0f);
+			precipColor = colorToImU32(0.5f, 0.5f, 1.0f);
 		}
-		brush.fillText(offset + bbe::Vector2{ 0, 15 }, "Prcp: " + bbe::String(entry.precipMM).rounded(2), fontSize);
-		brush.fillText(offset + bbe::Vector2{ 79, 15 }, "%Rn: " + bbe::String((int)entry.chanceOfRain), fontSize);
-		brush.setColorRGB(1.0f, 1.0f, 1.0f);
-		brush.fillText(offset + bbe::Vector2{ 138, 15 }, "Wnd: " + bbe::String((int)entry.windspeedKmph), fontSize);
+		dl->AddText(nullptr, fs, textPos(0, 15), precipColor, ("Prcp:" + bbe::String(entry.precipMM).rounded(2)).getRaw());
+		dl->AddText(nullptr, fs, textPos(85, 15), precipColor, ("%Rn:" + bbe::String((int)entry.chanceOfRain)).getRaw());
+		dl->AddText(nullptr, fs, textPos(150, 15), white, ("Wnd:" + bbe::String((int)entry.windspeedKmph)).getRaw());
 
-		brush.sketchRect(offset - bbe::Vector2{ 2, 15 }, { 189, 33 });
+		ImVec2 rectMin = rectPos(-2, -13);
+		ImVec2 rectMax = ImVec2(rectMin.x + 201 * scale, rectMin.y + 33 * scale);
+		dl->AddRect(rectMin, rectMax, white);
 	}
 
-	bbe::Vector2 drawWeather(bbe::PrimitiveBrush2D &brush, const bbe::Vector2 &offset)
+	bbe::Vector2 drawWeather()
 	{
 		static bbe::TimePoint nextWeatherQuery;
 		static std::future<bbe::simpleUrlRequest::UrlRequestResult> future;
@@ -1433,9 +1447,19 @@ public:
 			}
 		}
 
+		ImDrawList *dl = ImGui::GetWindowDrawList();
+		ImVec2 winPos = ImGui::GetWindowPos();
+		ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+		float scale = getWindow()->getScale();
+		ImVec2 origin(winPos.x + contentMin.x, winPos.y + contentMin.y);
+		bbe::Vector2 offset(10, 60);
+
 		if (!errorString.isEmpty())
 		{
-			brush.fillText(offset, errorString);
+			const float errFs = 15.0f * scale;
+			ImFontBaked *errBaked = ImGui::GetFont()->GetFontBaked(errFs);
+			float errAscent = errBaked->Ascent * (errFs / errBaked->Size);
+			dl->AddText(nullptr, errFs, ImVec2(origin.x + offset.x * scale, origin.y + offset.y * scale - errAscent), colorToImU32(1, 1, 1), errorString.getRaw());
 		}
 
 		if (weatherEntries.getLength() > 0)
@@ -1449,12 +1473,12 @@ public:
 					continue;
 				if (!previousTime.isSameDay(weatherEntries[i].time))
 				{
-					curX += 200;
+					curX += 220;
 					curY = 0;
 				}
 				previousTime = weatherEntries[i].time;
 
-				drawWeatherEntry(brush, bbe::Vector2(curX, curY) + offset, weatherEntries[i]);
+				drawWeatherEntry(dl, origin, scale, bbe::Vector2(curX, curY) + offset, weatherEntries[i]);
 
 				curY += 35;
 			}
@@ -2160,7 +2184,7 @@ public:
 		return bbe::Vector2(1);
 	}
 
-	bbe::Vector2 drawTabMouseTracking(bbe::PrimitiveBrush2D &brush)
+	bbe::Vector2 drawTabMouseTracking()
 	{
 		static bbe::Image image;
 		static std::atomic<bool> loaded(false);
@@ -2177,7 +2201,6 @@ public:
 		{
 			if (!computationInProgress)
 			{
-				// Start the computation
 				progress = 0.0f;
 				loaded = false;
 
@@ -2212,7 +2235,7 @@ public:
 							minY = bbe::Math::min(minY, y);
 						}
 
-						progress = 10.0f * (float)(idx + 1) / (float)totalFiles; // Reading files progress
+						progress = 10.0f * (float)(idx + 1) / (float)totalFiles;
 					}
 
 					bbe::Grid<float> grid(maxX - minX + 1, maxY - minY + 1);
@@ -2227,7 +2250,7 @@ public:
 
 						if (i % 1000 == 0)
 						{
-							progress = 10.0f + 40.0f * (float)(i + 1) / (float)totalPositions; // Processing positions progress
+							progress = 10.0f + 40.0f * (float)(i + 1) / (float)totalPositions;
 						}
 					}
 
@@ -2246,7 +2269,7 @@ public:
 
 						if (x % 10 == 0)
 						{
-							progress = 50.0f + 50.0f * (float)(x + 1) / (float)gridWidth; // Image creation progress
+							progress = 50.0f + 50.0f * (float)(x + 1) / (float)gridWidth;
 						}
 					}
 
@@ -2266,7 +2289,14 @@ public:
 		}
 		if (!computationInProgress && loaded)
 		{
-			brush.drawImage(0, 200, 800, 400, image);
+#ifdef BBE_RENDERER_OPENGL
+			void *texId = image.getOpenGlTexture();
+			if (texId)
+			{
+				float scale = getWindow()->getScale();
+				ImGui::Image((ImTextureID)texId, ImVec2(800 * scale, 400 * scale));
+			}
+#endif
 		}
 
 		bbe::Vector2 globalMouse = getMouseGlobal();
@@ -2276,7 +2306,7 @@ public:
 	}
 
 #ifdef _WIN32
-	bbe::Vector2 drawTabKeyboardTracking(bbe::PrimitiveBrush2D &brush)
+	bbe::Vector2 drawTabKeyboardTracking()
 	{
 		static bool normalize = true;
 		ImGui::Checkbox("Normalize", &normalize);
@@ -2297,7 +2327,7 @@ public:
 		};
 		bbe::List<DrawnKey> keys = {
 			{ K::_1, { -0.3f, -1 } }, { K::_2, { 0.7f, -1 } }, { K::_3, { 1.7f, -1 } }, { K::_4, { 2.7f, -1 } }, { K::_5, { 3.7f, -1 } }, { K::_6, { 4.7f, -1 } }, { K::_7, { 5.7f, -1 } }, { K::_8, { 6.7f, -1 } }, { K::_9, { 7.7f, -1 } }, { K::_0, { 8.7f, -1 } }, { K::Q, { 0.0f, 0 } }, { K::W, { 1.0f, 0 } }, { K::E, { 2.0f, 0 } }, { K::R, { 3.0f, 0 } }, { K::T, { 4.0f, 0 } }, { K::Z, { 5.0f, 0 } }, { K::U, { 6.0f, 0 } }, { K::I, { 7.0f, 0 } }, { K::O, { 8.0f, 0 } }, { K::P, { 9.0f, 0 } }, { K::A, { 0.3f, 1 } }, { K::S, { 1.3f, 1 } }, { K::D, { 2.3f, 1 } }, { K::F, { 3.3f, 1 } }, { K::G, { 4.3f, 1 } }, { K::H, { 5.3f, 1 } }, { K::J, { 6.3f, 1 } }, { K::K, { 7.3f, 1 } }, { K::L, { 8.3f, 1 } }, { K::Y, { 0.6f, 2 } }, { K::X, { 1.6f, 2 } }, { K::C, { 2.6f, 2 } }, { K::V, { 3.6f, 2 } }, { K::B, { 4.6f, 2 } }, { K::N, { 5.6f, 2 } }, { K::M,
-																																																																																																																																																																																																																		{ 6.6f, 2 } }
+																																																																																																																																																																																																																	{ 6.6f, 2 } }
 		};
 
 		float min = 10000000000.f;
@@ -2315,12 +2345,26 @@ public:
 		if (!normalize)
 			min = 0.0f;
 
+		ImDrawList *dl = ImGui::GetWindowDrawList();
+		ImVec2 winPos = ImGui::GetWindowPos();
+		ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+		float scale = getWindow()->getScale();
+		ImVec2 origin(winPos.x + contentMin.x, winPos.y + contentMin.y);
+
 		for (size_t i = 0; i < keys.getLength(); i++)
 		{
 			DrawnKey &k = keys[i];
 			k.value = (k.value - min) / (max - min);
-			brush.setColorRGB(bbe::Color(k.value, k.value, k.value));
-			brush.fillText(30 + k.pos.x * 60, 400 + k.pos.y * 60, bbe::keyCodeToString(k.key), 40);
+			ImU32 col = colorToImU32(k.value, k.value, k.value);
+			// Original: BOTTOM_LEFT at (30 + pos.x*60, 400 + pos.y*60) with fontSize 40
+			// Brush baseline at y. ImGui top = baseline - ascent.
+			const float kbFontSize = 40.0f;
+			const float kbFs = kbFontSize * scale;
+			ImFontBaked *kbBaked = ImGui::GetFont()->GetFontBaked(kbFs);
+			float kbAscent = kbBaked->Ascent * (kbFs / kbBaked->Size);
+			float x = (30 + k.pos.x * 60) * scale;
+			float y = (400 + k.pos.y * 60) * scale - kbAscent;
+			dl->AddText(nullptr, kbFs, ImVec2(origin.x + x, origin.y + y), col, bbe::keyCodeToString(k.key).getRaw());
 		}
 
 		for (size_t i = 0; i < (size_t)bbe::Key::LAST; i++)
@@ -2335,10 +2379,16 @@ public:
 	}
 #endif
 
-	bbe::Vector2 drawTabStreaks(bbe::PrimitiveBrush2D &brush)
+	bbe::Vector2 drawTabStreaks()
 	{
+		ImDrawList *dl = ImGui::GetWindowDrawList();
+		ImVec2 winPos = ImGui::GetWindowPos();
+		ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+		float scale = getWindow()->getScale();
+		ImVec2 origin(winPos.x + contentMin.x, winPos.y + contentMin.y);
+
 		int32_t year = bbe::TimePoint().getYear();
-		int32_t month = (int32_t)bbe::TimePoint().getMonth() + 1; /* +1 so that we can decrement at the start of the loop, a bit more readable. */
+		int32_t month = (int32_t)bbe::TimePoint().getMonth() + 1;
 		for (int32_t monthIter = 1; monthIter <= 12; monthIter++)
 		{
 			month--;
@@ -2363,24 +2413,38 @@ public:
 					}
 				}
 
+				ImU32 col;
 				if (isStreakDay)
-				{
-					brush.setColorRGB(1.0f, 1.0f, 0.5f, 1.0f);
-				}
+					col = colorToImU32(1.0f, 1.0f, 0.5f);
 				else if (tp.isToday())
-				{
-					brush.setColorRGB(0.5f, 0.5f, 1, 1);
-				}
+					col = colorToImU32(0.5f, 0.5f, 1.0f);
 				else if (tp.hasPassed())
-				{
-					brush.setColorRGB(1, 1, 1, 1);
-				}
+					col = colorToImU32(1, 1, 1);
 				else
-				{
-					brush.setColorRGB(0.3f, 0.3f, 0.3f, 1);
-				}
-				brush.sketchRect(-9 + k * 19, 35 + (12 - monthIter) * 30, 15, 15);
-				brush.fillText(3 - 4 + k * 19, 46 + (12 - monthIter) * 30, bbe::String(k), 15, bbe::Anchor::BOTTOM_CENTER);
+					col = colorToImU32(0.3f, 0.3f, 0.3f);
+
+				float rx = (-9 + k * 19) * scale;
+				float ry = (35 + (12 - monthIter) * 30) * scale;
+				dl->AddRect(
+					ImVec2(origin.x + rx, origin.y + ry),
+					ImVec2(origin.x + rx + 15 * scale, origin.y + ry + 15 * scale),
+					col);
+
+				bbe::String label(k);
+				constexpr float streakFontSize = 15.0f;
+				const float fs = streakFontSize * scale;
+				const float fontScale = fs / ImGui::GetFontSize();
+				ImVec2 textSize = ImGui::CalcTextSize(label.getRaw());
+				float scaledTextW = textSize.x * fontScale;
+				// Original: BOTTOM_CENTER at (3 - 4 + k*19, 46 + (12-monthIter)*30)
+				// Brush baseline at y=46. ImGui top = baseline - ascent.
+				ImFontBaked *baked = ImGui::GetFont()->GetFontBaked(fs);
+				float ascentAtFs = baked->Ascent * (fs / baked->Size);
+				float tx = (3 - 4 + k * 19) * scale - scaledTextW * 0.5f;
+				float ty = (46 + (12 - monthIter) * 30) * scale - ascentAtFs;
+				dl->AddText(nullptr, fs,
+					ImVec2(origin.x + tx, origin.y + ty),
+					col, label.getRaw());
 			}
 		}
 
@@ -2791,14 +2855,12 @@ public:
 
 		return bbe::Vector2(1);
 	}
-	bbe::Vector2 drawTabDallE(bbe::PrimitiveBrush2D &brush)
+	bbe::Vector2 drawTabDallE()
 	{
 		static std::future<bbe::ChatGPTCreateImageResponse> imageFuture;
 		static bbe::ChatGPTCreateImageResponse image;
 		static std::future<bbe::String> descriptionFuture;
 
-		static float offsetX = 170;
-		static float offsetY = 110;
 		static float sizeMult = 0.87f;
 		static bool chainMode = false;
 		static bbe::String errorString;
@@ -2855,24 +2917,7 @@ public:
 			}
 		}
 
-		// TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
-		// static bbe::String loadPath;
-		// if (ImGui::Button("load"))
-		//{
-		//	if (loadPath.startsWith("\"") && loadPath.endsWith("\""))
-		//	{
-		//		loadPath = loadPath.substring(1, loadPath.getLength() - 1);
-		//	}
-		//	image.load(loadPath);
-		//}
-		// ImGui::SameLine();
-		// ImGui::bbe::InputText("Load", loadPath);
-
 		ImGui::PushItemWidth(200);
-		ImGui::InputFloat("OffsetX", &offsetX);
-		ImGui::SameLine();
-		ImGui::InputFloat("offsetY", &offsetY);
-		ImGui::SameLine();
 		ImGui::InputFloat("sizeMult", &sizeMult);
 		ImGui::PopItemWidth();
 
@@ -2889,7 +2934,14 @@ public:
 			}
 		}
 
-		brush.drawImage({ offsetX, offsetY }, image.image.getDimensions().as<float>() * sizeMult, image.image);
+#ifdef BBE_RENDERER_OPENGL
+		void *texId = image.image.getOpenGlTexture();
+		if (texId)
+		{
+			bbe::Vector2 dims = image.image.getDimensions().as<float>() * sizeMult;
+			ImGui::Image((ImTextureID)texId, ImVec2(dims.x, dims.y));
+		}
+#endif
 
 		return bbe::Vector2(101, 100.1f);
 	}
@@ -2926,32 +2978,70 @@ public:
 	}
 #endif
 
-	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
+	void setupDefaultDockLayout(ImGuiID dockspaceId)
 	{
-		static bool fullscreenTab = false;
-		const ImGuiViewport fullViewport = *ImGui::GetMainViewport();
-		bool shouldMinimize = false;
+		if (ImGui::DockBuilderGetNode(dockspaceId) != nullptr)
+			return;
 
-		beginMeasure("Draw info window");
-		ImGuiViewport infoViewport = fullViewport;
-		infoViewport.WorkSize.x *= 0.4f;
-		infoViewport.WorkSize.y *= 1.f / 3.f;
-		infoViewport.WorkPos.x += fullViewport.WorkSize.x * 0.6;
+		ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
+		ImGui::DockBuilderSetNodeSize(dockspaceId, ImGui::GetMainViewport()->Size);
 
-		const float maxInfoWindowWidth = 550 * getWindow()->getScale();
-		if (infoViewport.WorkSize.x > maxInfoWindowWidth)
+		ImGuiID leftId, restId;
+		ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.4f, &leftId, &restId);
+
+		ImGuiID middleId, rightColumnId;
+		ImGui::DockBuilderSplitNode(restId, ImGuiDir_Right, 0.5f, &rightColumnId, &middleId);
+
+		ImGuiID adaptiveId, superAdaptiveId;
+		ImGui::DockBuilderSplitNode(middleId, ImGuiDir_Up, 0.6f, &adaptiveId, &superAdaptiveId);
+
+		ImGuiID infoId, rightRestId;
+		ImGui::DockBuilderSplitNode(rightColumnId, ImGuiDir_Up, 0.33f, &infoId, &rightRestId);
+
+#ifdef _WIN32
+		ImGuiID processesId, urlsId;
+		ImGui::DockBuilderSplitNode(rightRestId, ImGuiDir_Up, 0.5f, &processesId, &urlsId);
+#else
+		ImGuiID processesId = rightRestId;
+#endif
+
+		for (size_t i = 0; i < mainTabs.getLength(); i++)
 		{
-			const float offset = infoViewport.WorkSize.x - maxInfoWindowWidth;
-			infoViewport.WorkPos.x += offset;
-			infoViewport.WorkSize.x = maxInfoWindowWidth;
+			ImGui::DockBuilderDockWindow(mainTabs[i].tooltip, leftId);
+		}
+		for (size_t i = 0; i < superAdaptiveTabs.getLength(); i++)
+		{
+			ImGui::DockBuilderDockWindow(superAdaptiveTabs[i].tooltip, leftId);
 		}
 
-		if (!fullscreenTab)
+		for (size_t i = 0; i < adaptiveTabs.getLength(); i++)
 		{
-			ImGui::SetNextWindowPos(infoViewport.WorkPos);
-			ImGui::SetNextWindowSize(infoViewport.WorkSize);
-			ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
-			{
+			ImGui::DockBuilderDockWindow(adaptiveTabs[i].tooltip, adaptiveId);
+		}
+
+		ImGui::DockBuilderDockWindow("Info", infoId);
+#if defined(_WIN32) || defined(__linux__)
+		ImGui::DockBuilderDockWindow("Processes", processesId);
+#endif
+#ifdef _WIN32
+		ImGui::DockBuilderDockWindow("URLs", urlsId);
+#endif
+
+		ImGui::DockBuilderFinish(dockspaceId);
+	}
+
+	virtual void draw2D(bbe::PrimitiveBrush2D &brush) override
+	{
+		activeBrush = &brush;
+		bool shouldMinimize = false;
+
+		ImGuiID dockspaceId = ImGui::GetID("MotherDockSpace");
+		setupDefaultDockLayout(dockspaceId);
+		ImGui::DockSpaceOverViewport(dockspaceId, ImGui::GetMainViewport());
+
+		beginMeasure("Draw info window");
+		if (ImGui::Begin("Info"))
+		{
 				ImGui::Text("Build: " __DATE__ ", " __TIME__);
 				ImGui::Text(bbe::simpleFile::backup::async::hasOpenIO() ? "Saving" : "Done");
 				{
@@ -3168,146 +3258,49 @@ public:
 				ImGui::NewLine();
 				ImGui::Text("Playing sounds: %d, Heartbeat: %lld", (int)getAmountOfPlayingSounds(), static_cast<long long>(bbe::INTERNAL::SoundManager::getHeartbeatSignal()));
 				drawMeasurement();
-			}
-			ImGui::End();
-
-#if defined(_WIN32) || defined(__linux__)
-			beginMeasure("Draw process window");
-			infoViewport.WorkPos.y = infoViewport.WorkSize.y;
-			ImGui::SetNextWindowPos(infoViewport.WorkPos);
-			ImGui::SetNextWindowSize(infoViewport.WorkSize);
-			ImGui::Begin("Processes", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
-			{
-				processes.drawGui(getWindow()->getScale());
-			}
-			ImGui::End();
-#endif
-
-#ifdef _WIN32
-			beginMeasure("Draw url window");
-			infoViewport.WorkPos.y = infoViewport.WorkSize.y * 2;
-			ImGui::SetNextWindowPos(infoViewport.WorkPos);
-			ImGui::SetNextWindowSize(infoViewport.WorkSize);
-			ImGui::Begin("URLs", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
-			{
-				urls.drawGui(getWindow()->getScale());
-			}
-			ImGui::End();
-#endif
-		}
-
-		beginMeasure("Draw main window");
-		static bbe::Vector2 sizeMult(1.0f, 1.0f);
-		ImGuiViewport viewport = fullViewport;
-		viewport.WorkSize.x -= infoViewport.WorkSize.x;
-		viewport.WorkSize.y *= sizeMult.y;
-
-		const float adaptiveFlipSize = 500.f * getWindow()->getScale();
-
-		bool adaptive = false;
-		bool superAdaptive = false;
-		float adaptiveWidth = 0.0f;
-		if (viewport.WorkSize.x > adaptiveFlipSize && !fullscreenTab)
-		{
-			viewport.WorkSize.x *= 0.4f;
-
-			adaptiveWidth = fullViewport.WorkSize.x - viewport.WorkSize.x - infoViewport.WorkSize.x;
-			adaptive = true;
-
-			if (adaptiveWidth > 1000.f)
-			{
-				adaptiveWidth *= 0.5f;
-				superAdaptive = true;
-			}
-		}
-
-		ImGui::SetNextWindowPos(viewport.WorkPos);
-		ImGui::SetNextWindowSize(viewport.WorkSize);
-		activeBrush = &brush;
-		weatherOffset = { 20, 120 };
-
-		const ImGuiWindowFlags noConsoleMouseScroll = std::strcmp(previousTabTitle, "Cnsl") == 0 ? ImGuiWindowFlags_NoScrollWithMouse : ImGuiWindowFlags_None;
-		ImGui::Begin("MainWindow", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | noConsoleMouseScroll);
-		{
-			static size_t previousShownTab = 0;
-			DrawTabResult dtr = drawTabs(mainTabs, adaptiveTabs, superAdaptiveTabs, !adaptive, !superAdaptive, &previousShownTab, tabSwitchRequestedLeft, tabSwitchRequestedRight);
-			sizeMult = dtr.sizeMult;
-			fullscreenTab = sizeMult.x > 100 || sizeMult.y > 100;
-			if (fullscreenTab)
-			{
-				sizeMult.x -= 100;
-				sizeMult.y -= 100;
-			}
-			if (dtr.tab)
-			{
-				previousTabTitle = dtr.tab->title;
-			}
 		}
 		ImGui::End();
 
-		beginMeasure("Draw adaptive windows");
-		if (adaptive)
+#if defined(_WIN32) || defined(__linux__)
+		beginMeasure("Draw process window");
+		if (ImGui::Begin("Processes"))
 		{
-			static bbe::List<bbe::Vector2> adaptiveSizes;
-			adaptiveSizes.resizeCapacityAndLength(adaptiveTabs.getLength());
-			for (size_t i = 0; i < adaptiveTabs.getLength(); i++)
-			{
-				beginMeasure(adaptiveTabs[i].title);
-				ImGuiViewport adaptiveViewport = fullViewport;
-				adaptiveViewport.WorkSize.x = adaptiveWidth;
-				adaptiveViewport.WorkSize.y /= adaptiveTabs.getLength();
-				adaptiveViewport.WorkPos.x = viewport.WorkSize.x;
-				adaptiveViewport.WorkPos.y = fullViewport.WorkSize.y * i / adaptiveTabs.getLength();
-				if (i == 1)
-				{
-					weatherOffset = bbe::Vector2(adaptiveViewport.WorkPos.x, adaptiveViewport.WorkPos.y);
-					weatherOffset /= getWindow()->getScale();
-					weatherOffset.x += 10;
-					weatherOffset.y += 60;
-				}
-
-				adaptiveViewport.WorkSize.x *= adaptiveSizes[i].x;
-				adaptiveViewport.WorkSize.y *= adaptiveSizes[i].y;
-				ImGui::SetNextWindowPos(adaptiveViewport.WorkPos);
-				ImGui::SetNextWindowSize(adaptiveViewport.WorkSize);
-				ImGui::Begin(kAdaptiveWindowNames[i], nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | noConsoleMouseScroll);
-				{
-					adaptiveSizes[i] = adaptiveTabs[i].run();
-				}
-				ImGui::End();
-			}
+			processes.drawGui(getWindow()->getScale());
 		}
-		beginMeasure("Draw super adaptive windows");
-		if (superAdaptive)
-		{
-			static bbe::List<bbe::Vector2> adaptiveSizes;
-			adaptiveSizes.resizeCapacityAndLength(superAdaptiveTabs.getLength());
-			for (size_t i = 0; i < superAdaptiveTabs.getLength(); i++)
-			{
-				beginMeasure(superAdaptiveTabs[i].title);
-				ImGuiViewport adaptiveViewport = fullViewport;
-				adaptiveViewport.WorkSize.x = adaptiveWidth;
-				adaptiveViewport.WorkSize.y /= superAdaptiveTabs.getLength();
-				adaptiveViewport.WorkPos.x = viewport.WorkSize.x + adaptiveWidth;
-				adaptiveViewport.WorkPos.y = fullViewport.WorkSize.y * i / superAdaptiveTabs.getLength();
-				if (i == 1)
-				{
-					weatherOffset = bbe::Vector2(adaptiveViewport.WorkPos.x, adaptiveViewport.WorkPos.y);
-					weatherOffset /= getWindow()->getScale();
-					weatherOffset.x += 10;
-					weatherOffset.y += 60;
-				}
+		ImGui::End();
+#endif
 
-				adaptiveViewport.WorkSize.x *= adaptiveSizes[i].x;
-				adaptiveViewport.WorkSize.y *= adaptiveSizes[i].y;
-				ImGui::SetNextWindowPos(adaptiveViewport.WorkPos);
-				ImGui::SetNextWindowSize(adaptiveViewport.WorkSize);
-				ImGui::Begin(kSuperAdaptiveWindowNames[i], nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | noConsoleMouseScroll);
+#ifdef _WIN32
+		beginMeasure("Draw url window");
+		if (ImGui::Begin("URLs"))
+		{
+			urls.drawGui(getWindow()->getScale());
+		}
+		ImGui::End();
+#endif
+
+		beginMeasure("Draw tab windows");
+		{
+			auto drawAsWindows = [&](const bbe::List<Tab> &tabs)
+			{
+				for (size_t i = 0; i < tabs.getLength(); i++)
 				{
-					adaptiveSizes[i] = superAdaptiveTabs[i].run();
+					beginMeasure(tabs[i].title);
+					ImGuiWindowFlags flags = ImGuiWindowFlags_None;
+					if (std::strcmp(tabs[i].title, "Cnsl") == 0)
+						flags |= ImGuiWindowFlags_NoScrollWithMouse;
+
+					if (ImGui::Begin(tabs[i].tooltip, nullptr, flags))
+					{
+						tabs[i].run();
+					}
+					ImGui::End();
 				}
-				ImGui::End();
-			}
+			};
+
+			drawAsWindows(mainTabs);
+			drawAsWindows(adaptiveTabs);
+			drawAsWindows(superAdaptiveTabs);
 		}
 
 		beginMeasure("Draw debug windows");
@@ -3320,7 +3313,6 @@ public:
 #ifdef _WIN32
 		if (shouldMinimize)
 		{
-			// We need to delay this to the end, or else dear ImGui gets confused.
 			minimizeAllWindows();
 		}
 #endif

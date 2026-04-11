@@ -241,5 +241,9 @@ namespace bbe
 		HICON toIcon() const;
 		static Image screenshot(int x, int y, int width, int height);
 #endif
+
+#ifdef BBE_RENDERER_OPENGL
+		void* getOpenGlTexture() const;
+#endif
 	};
 }
