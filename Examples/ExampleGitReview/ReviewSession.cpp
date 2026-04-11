@@ -145,6 +145,17 @@ namespace gitReview
 					return;
 				}
 			}
+			// Fallback: match by path only (section may change after stage/unstage).
+			for (const auto &e : app.snapshot.entries)
+			{
+				if (e.path == selPath)
+				{
+					app.selection = e;
+					reloadDiffForSelection(app);
+					showToast(app, "Refreshed.", 1.8f);
+					return;
+				}
+			}
 		}
 		clearSelection(app);
 		showToast(app, "Refreshed.", 1.8f);
