@@ -43,8 +43,8 @@ namespace gitReview
 			Insert,
 		};
 
-		/// LCS dynamic-programming diff with backtrack.
-		/// Returns false when the grid would exceed the cell budget,
+		/// Myers' diff algorithm – O((n+m)*d) where d = edit distance.
+		/// Falls back (returns false) when d exceeds the budget,
 		/// signalling the caller to use the large-diff fallback.
 		bool lineDiffScript(const std::vector<std::string> &a, const std::vector<std::string> &b, std::vector<Edit> &script)
 		{
@@ -64,46 +64,86 @@ namespace gitReview
 				return true;
 			}
 
-			const long long cells = (static_cast<long long>(n) + 1) * (static_cast<long long>(m) + 1);
-			if (cells > 12'000'000)
+			const int budget = std::min(n + m, 2000);
+			const int vOffset = budget;
+			const int vSize = 2 * budget + 1;
+
+			std::vector<std::vector<int>> traces;
+			std::vector<int> v(static_cast<size_t>(vSize), 0);
+
+			int finalD = -1;
+			for (int d = 0; d <= budget; d++)
+			{
+				traces.emplace_back(v.begin() + vOffset - d, v.begin() + vOffset + d + 1);
+
+				for (int k = -d; k <= d; k += 2)
+				{
+					int x;
+					if (k == -d || (k != d && v[k - 1 + vOffset] < v[k + 1 + vOffset]))
+						x = v[k + 1 + vOffset];
+					else
+						x = v[k - 1 + vOffset] + 1;
+
+					int y = x - k;
+					while (x < n && y < m && a[x] == b[y])
+					{
+						x++;
+						y++;
+					}
+					v[k + vOffset] = x;
+
+					if (x >= n && y >= m)
+					{
+						finalD = d;
+						break;
+					}
+				}
+				if (finalD >= 0)
+					break;
+			}
+
+			if (finalD < 0)
 				return false;
 
-			const int cols = m + 1;
-			std::vector<int> dp(static_cast<size_t>((n + 1) * cols), 0);
-			for (int i = 1; i <= n; i++)
+			int x = n, y = m;
+			std::vector<Edit> rev;
+
+			for (int d = finalD; d > 0; d--)
 			{
-				for (int j = 1; j <= m; j++)
+				const int k = x - y;
+				const auto &tv = traces[static_cast<size_t>(d)];
+				auto tvAt = [&](int kk) { return tv[static_cast<size_t>(kk + d)]; };
+
+				int prevK;
+				if (k == -d || (k != d && tvAt(k - 1) < tvAt(k + 1)))
+					prevK = k + 1;
+				else
+					prevK = k - 1;
+
+				const int prevX = tvAt(prevK);
+				const int prevY = prevX - prevK;
+
+				while (x > prevX && y > prevY)
 				{
-					const size_t cur = static_cast<size_t>(i * cols + j);
-					if (a[static_cast<size_t>(i - 1)] == b[static_cast<size_t>(j - 1)])
-						dp[cur] = dp[static_cast<size_t>((i - 1) * cols + (j - 1))] + 1;
-					else
-						dp[cur] = std::max(dp[static_cast<size_t>((i - 1) * cols + j)], dp[static_cast<size_t>(i * cols + (j - 1))]);
+					rev.push_back(Edit::Match);
+					x--;
+					y--;
 				}
+
+				rev.push_back(k == prevK + 1 ? Edit::Delete : Edit::Insert);
+				x = prevX;
+				y = prevY;
 			}
 
-			int i = n;
-			int j = m;
-			while (i > 0 || j > 0)
+			while (x > 0 && y > 0)
 			{
-				if (i > 0 && j > 0 && a[static_cast<size_t>(i - 1)] == b[static_cast<size_t>(j - 1)])
-				{
-					script.push_back(Edit::Match);
-					i--;
-					j--;
-				}
-				else if (j > 0 && (i == 0 || dp[static_cast<size_t>((i - 1) * cols + j)] <= dp[static_cast<size_t>(i * cols + (j - 1))]))
-				{
-					script.push_back(Edit::Insert);
-					j--;
-				}
-				else
-				{
-					script.push_back(Edit::Delete);
-					i--;
-				}
+				rev.push_back(Edit::Match);
+				x--;
+				y--;
 			}
-			std::reverse(script.begin(), script.end());
+
+			std::reverse(rev.begin(), rev.end());
+			script = std::move(rev);
 			return true;
 		}
 
