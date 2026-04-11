@@ -2753,6 +2753,7 @@ public:
 
 		if (generating)
 		{
+			requestRedraw();
 			float elapsed = (bbe::TimePoint() - pwGenStartTime).toMillis() / 1000.0f;
 			float estimated = passwordManager->pwGenDurationSeconds * pwGenExpectedHashes;
 			if (estimated > 0)
