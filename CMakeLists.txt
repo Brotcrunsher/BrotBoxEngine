@@ -328,6 +328,10 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_cxx_linker_flag("-ftest-coverage")
   endif()
 
+endif()
+
+# libstdc++ requires stdc++exp for <stacktrace> support, regardless of compiler frontend.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_link_libraries(BrotBoxEngine stdc++exp)
 endif()
 

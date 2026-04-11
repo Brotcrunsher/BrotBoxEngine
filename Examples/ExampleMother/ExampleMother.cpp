@@ -2502,7 +2502,7 @@ public:
 				{
 					listDeleteIndex = i;
 				}
-				ImGui::SameLine();
+				ImGui::SameLine(0, 0);
 			}
 			if (ImGui::TreeNode((void *)(intptr_t)i, "%s", rememberLists[i].title.getRaw()))
 			{
