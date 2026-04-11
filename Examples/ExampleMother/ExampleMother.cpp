@@ -660,7 +660,7 @@ private:
 	bbe::List<float> resourceCpuCoreUsages;
 	float resourceCpuMin = 0.f;
 	float resourceCpuMax = 0.f;
-	float resourceCpuMedian = 0.f;
+	float resourceCpuAvg = 0.f;
 	float resourceRamUsedGB = 0.f;
 	float resourceRamTotalGB = 0.f;
 	struct GpuInfo
@@ -2354,10 +2354,10 @@ public:
 						sorted.sort();
 						resourceCpuMin = sorted[0];
 						resourceCpuMax = sorted[sorted.getLength() - 1];
-						size_t mid = sorted.getLength() / 2;
-						resourceCpuMedian = (sorted.getLength() % 2 == 0)
-							? (sorted[mid - 1] + sorted[mid]) / 2.0f
-							: sorted[mid];
+						float sum = 0.f;
+						for (size_t i = 0; i < resourceCpuCoreUsages.getLength(); i++)
+							sum += resourceCpuCoreUsages[i];
+						resourceCpuAvg = sum / (float)resourceCpuCoreUsages.getLength();
 					}
 					prevCpuCoreTimes = current;
 				}
@@ -2539,12 +2539,12 @@ public:
 		ImGui::SeparatorText("CPU");
 		if (resourceCpuCoreUsages.getLength() > 0)
 		{
-			ImGui::Text("Cores: %d  |  Min: %.1f%%  Median: %.1f%%  Max: %.1f%%",
-				(int)resourceCpuCoreUsages.getLength(), resourceCpuMin, resourceCpuMedian, resourceCpuMax);
+			ImGui::Text("Cores: %d  |  Min: %.1f%%  Avg: %.1f%%  Max: %.1f%%",
+				(int)resourceCpuCoreUsages.getLength(), resourceCpuMin, resourceCpuAvg, resourceCpuMax);
 
-			char medianOverlay[64];
-			snprintf(medianOverlay, sizeof(medianOverlay), "Median: %.1f%%", resourceCpuMedian);
-			colorBar(resourceCpuMedian / 100.0f, medianOverlay);
+			char avgOverlay[64];
+			snprintf(avgOverlay, sizeof(avgOverlay), "Avg: %.1f%%", resourceCpuAvg);
+			colorBar(resourceCpuAvg / 100.0f, avgOverlay);
 
 			float scale = getWindow()->getScale();
 			float barW = 60.0f * scale;
