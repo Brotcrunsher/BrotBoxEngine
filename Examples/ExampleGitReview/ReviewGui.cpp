@@ -8,6 +8,7 @@
 #include "imgui_internal.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 #include <string>
 
@@ -188,6 +189,74 @@ namespace gitReview
 					}
 					break;
 				}
+			}
+		}
+
+		void computeSideLineNumbers(const std::vector<DiffRow> &rows, std::vector<int> &outLeft, std::vector<int> &outRight)
+		{
+			outLeft.assign(rows.size(), 0);
+			outRight.assign(rows.size(), 0);
+			int ln = 0, rn = 0;
+			for (size_t i = 0; i < rows.size(); ++i)
+			{
+				const DiffRow &r = rows[i];
+				switch (r.kind)
+				{
+				case DiffRowKind::Equal:
+					++ln;
+					++rn;
+					outLeft[i] = ln;
+					outRight[i] = rn;
+					break;
+				case DiffRowKind::LeftOnly:
+					++ln;
+					outLeft[i] = ln;
+					break;
+				case DiffRowKind::RightOnly:
+					++rn;
+					outRight[i] = rn;
+					break;
+				case DiffRowKind::Changed:
+					++ln;
+					++rn;
+					outLeft[i] = ln;
+					outRight[i] = rn;
+					break;
+				}
+			}
+		}
+
+		float diffGutterWidth(const std::vector<int> &leftNums, const std::vector<int> &rightNums)
+		{
+			int mx = 1;
+			for (int v : leftNums)
+				mx = (std::max)(mx, v);
+			for (int v : rightNums)
+				mx = (std::max)(mx, v);
+			char buf[32];
+			std::snprintf(buf, sizeof buf, "%d", mx);
+			const float numW = ImGui::CalcTextSize(buf).x;
+			return ImGui::GetStyle().FramePadding.x + numW + 8.f;
+		}
+
+		void drawDiffLineNumberGutter(ImDrawList *dl, const ImVec2 &gutterTopLeft, float gutterW, float lineH, float padY, int rowBegin, int rowEnd,
+			const std::vector<int> &nums, ImU32 col)
+		{
+			const float fontSize = ImGui::GetFontSize();
+			for (int i = rowBegin; i < rowEnd; ++i)
+			{
+				const int n = nums[static_cast<size_t>(i)];
+				if (n <= 0)
+					continue;
+				char txt[32];
+				const int plen = std::snprintf(txt, sizeof txt, "%d", n);
+				if (plen <= 0)
+					continue;
+				const float y0 = gutterTopLeft.y + padY + static_cast<float>(i) * lineH;
+				const float tw = ImGui::CalcTextSize(txt, txt + plen).x;
+				const float tx = gutterTopLeft.x + gutterW - tw - 4.f;
+				const float ty = y0 + (lineH - fontSize) * 0.5f;
+				dl->AddText(ImVec2(tx, ty), col, txt, txt + plen);
 			}
 		}
 
@@ -920,6 +989,13 @@ namespace gitReview
 		// NoScrollbar on these children blocks forwarding wheel to the parent (see ImGui changelog 2017/12/14).
 		const ImGuiWindowFlags paneFlags = ImGuiWindowFlags_NoScrollWithMouse;
 
+		std::vector<int> leftLineNums;
+		std::vector<int> rightLineNums;
+		computeSideLineNumbers(rows, leftLineNums, rightLineNums);
+		const float gutterW = diffGutterWidth(leftLineNums, rightLineNums);
+		const ImU32 gutterTextCol = ImGui::ColorConvertFloat4ToU32(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+		const ImU32 gutterRuleCol = IM_COL32(70, 70, 78, 140);
+
 		ImGui::BeginChild("diffLeftCol", ImVec2(halfW, paneH), false, paneFlags);
 		{
 			const ImGuiStyle &stl = ImGui::GetStyle();
@@ -927,15 +1003,21 @@ namespace gitReview
 			const float padYL = stl.FramePadding.y;
 			ImDrawList *dll = ImGui::GetWindowDrawList();
 			const ImVec2 innerL = ImGui::GetCursorScreenPos();
-			const float innerWL = ImGui::GetContentRegionAvail().x;
+			const float innerWL = ImGui::GetContentRegionAvail().x - gutterW;
 
 			ImGuiListClipper clipperLeftHL;
 			clipperLeftHL.Begin(static_cast<int>(rows.size()), lineH);
 			while (clipperLeftHL.Step())
-				drawLeftPaneHighlights(dll, innerL, innerWL, lineH, padXL, padYL, clipperLeftHL.DisplayStart, clipperLeftHL.DisplayEnd, rows, largeFB, delc,
-					muted);
+			{
+				drawDiffLineNumberGutter(dll, innerL, gutterW, lineH, padYL, clipperLeftHL.DisplayStart, clipperLeftHL.DisplayEnd, leftLineNums,
+					gutterTextCol);
+				drawLeftPaneHighlights(dll, ImVec2(innerL.x + gutterW, innerL.y), innerWL, lineH, padXL, padYL, clipperLeftHL.DisplayStart,
+					clipperLeftHL.DisplayEnd, rows, largeFB, delc, muted);
+			}
 
-			ImGui::SetCursorPos(ImVec2(0.f, 0.f));
+			dll->AddLine(ImVec2(innerL.x + gutterW, innerL.y), ImVec2(innerL.x + gutterW, innerL.y + paneH), gutterRuleCol, 1.f);
+
+			ImGui::SetCursorPos(ImVec2(gutterW, 0.f));
 
 			std::vector<char> &leftBuf = app.leftViewBuffer;
 			if (leftBuf.empty())
@@ -961,15 +1043,20 @@ namespace gitReview
 			const float padY = st.FramePadding.y;
 			ImDrawList *dl = ImGui::GetWindowDrawList();
 			const ImVec2 inner0 = ImGui::GetCursorScreenPos();
-			const float innerW = ImGui::GetContentRegionAvail().x;
+			const float textW = ImGui::GetContentRegionAvail().x - gutterW;
 
 			ImGuiListClipper clipperHL;
 			clipperHL.Begin(static_cast<int>(rows.size()), lineH);
 			while (clipperHL.Step())
-				drawRightPaneHighlights(dl, inner0, innerW, lineH, padX, padY, clipperHL.DisplayStart, clipperHL.DisplayEnd, rows, largeFB, addc, chgcol,
-					muted);
+			{
+				drawDiffLineNumberGutter(dl, inner0, gutterW, lineH, padY, clipperHL.DisplayStart, clipperHL.DisplayEnd, rightLineNums, gutterTextCol);
+				drawRightPaneHighlights(dl, ImVec2(inner0.x + gutterW, inner0.y), textW, lineH, padX, padY, clipperHL.DisplayStart, clipperHL.DisplayEnd, rows,
+					largeFB, addc, chgcol, muted);
+			}
 
-			ImGui::SetCursorPos(ImVec2(0.f, 0.f));
+			dl->AddLine(ImVec2(inner0.x + gutterW, inner0.y), ImVec2(inner0.x + gutterW, inner0.y + paneH), gutterRuleCol, 1.f);
+
+			ImGui::SetCursorPos(ImVec2(gutterW, 0.f));
 
 			ImGuiInputTextFlags editFlags = ImGuiInputTextFlags_CallbackResize;
 			if (!app.rightSideIsWorktreeFile)
@@ -986,7 +1073,7 @@ namespace gitReview
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
 			ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
 			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.f, 0.f, 0.f, 0.f));
-			ImGui::InputTextMultiline("##rightEditMain", buf.data(), static_cast<int>(buf.size()), ImVec2(innerW, paneH), editFlags, vectorResizeCallback,
+			ImGui::InputTextMultiline("##rightEditMain", buf.data(), static_cast<int>(buf.size()), ImVec2(textW, paneH), editFlags, vectorResizeCallback,
 				&buf);
 			ImGui::PopStyleColor(3);
 		}
