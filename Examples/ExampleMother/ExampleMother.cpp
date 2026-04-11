@@ -139,7 +139,8 @@ struct RememberList
 struct PasswordManager
 {
 	BBE_SERIALIZABLE_DATA(
-		((bbe::List<bbe::String>), knownHashes))
+		((bbe::List<bbe::String>), knownHashes),
+		((float), pwGenDurationSeconds, 0.0f))
 };
 
 struct ChatGPTConfig
@@ -2630,7 +2631,7 @@ public:
 		return normalizedUser;
 	}
 
-	bbe::String GeneratePasswordHash(const bbe::String &data)
+	static bbe::String GeneratePasswordHash(const bbe::String &data)
 	{
 		unsigned char hash[16] = {};
 		const int err = crypto_pwhash_argon2id(hash, sizeof(hash), data.getRaw(), data.getLength(), (const unsigned char *)"BrotbEnginePWGv1", 5, static_cast<size_t>(256 * 1024 * 1024), crypto_pwhash_argon2id_ALG_ARGON2ID13);
@@ -2665,17 +2666,51 @@ public:
 
 	bbe::Vector2 drawPasswordManager()
 	{
+		struct PwGenResult
+		{
+			bbe::String masterPwHash;
+			bbe::String servicePw;
+			bool shouldRegisterHash = false;
+			int32_t hashCount = 0;
+		};
+
 		static bbe::String masterPw;
 		static bbe::String masterPwHash;
 		static bbe::String masterPwRepeat;
 		static bbe::String service;
 		static bbe::String user;
 		static bbe::String servicePw;
+		static std::future<PwGenResult> pwGenFuture;
+		static bbe::TimePoint pwGenStartTime;
+		static int32_t pwGenExpectedHashes = 0;
+
+		if (pwGenFuture.valid() && pwGenFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+		{
+			PwGenResult result = pwGenFuture.get();
+			masterPwHash = result.masterPwHash;
+			servicePw = result.servicePw;
+
+			if (result.hashCount > 0)
+			{
+				float elapsed = (bbe::TimePoint() - pwGenStartTime).toMillis() / 1000.0f;
+				passwordManager->pwGenDurationSeconds = elapsed / result.hashCount;
+				passwordManager.writeToFile();
+			}
+
+			if (result.shouldRegisterHash)
+			{
+				passwordManager->knownHashes.add(result.masterPwHash);
+				passwordManager.writeToFile();
+			}
+		}
+
+		const bool generating = pwGenFuture.valid();
+
+		ImGui::BeginDisabled(generating);
 		bool newHashRequested = false;
 		if (ImGui::bbe::InputText("Master PW", masterPw, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_Password))
 		{
 			newHashRequested = true;
-			masterPwHash = GeneratePasswordHash(masterPw);
 		}
 		if (!passwordManager->knownHashes.contains(masterPwHash))
 		{
@@ -2692,23 +2727,61 @@ public:
 		{
 			newHashRequested = true;
 		}
+		ImGui::EndDisabled();
+
 		const bbe::String normServ = normalizeService(service);
 		const bbe::String normUser = normalizeUser(user);
 
-		if (newHashRequested && !normServ.isEmpty() && !masterPw.isEmpty() && (masterPw == masterPwRepeat || passwordManager->knownHashes.contains(masterPwHash)))
+		if (!generating && newHashRequested && !masterPw.isEmpty())
 		{
-			masterPwHash = GeneratePasswordHash(masterPw);
-			if (masterPw == masterPwRepeat || passwordManager->knownHashes.contains(masterPwHash))
-			{
-				if (!passwordManager->knownHashes.contains(masterPwHash))
+			bbe::String capturedMasterPw = masterPw;
+			bbe::String capturedRepeat = masterPwRepeat;
+			bbe::String capturedNormServ = normServ;
+			bbe::String capturedNormUser = normUser;
+			bbe::List<bbe::String> capturedKnownHashes = passwordManager->knownHashes;
+
+			pwGenExpectedHashes = capturedNormServ.isEmpty() ? 1 : 2;
+			pwGenStartTime = bbe::TimePoint();
+
+			pwGenFuture = std::async(std::launch::async,
+				[capturedMasterPw, capturedRepeat, capturedNormServ, capturedNormUser, capturedKnownHashes]() -> PwGenResult
 				{
-					passwordManager->knownHashes.add(masterPwHash);
-					passwordManager.writeToFile();
-				}
-				bbe::String hashableString = masterPw + "|||" + normServ;
-				if (!normUser.isEmpty())
-					hashableString += "|||" + normUser;
-				servicePw = GeneratePasswordHash(hashableString);
+					PwGenResult result;
+					result.masterPwHash = GeneratePasswordHash(capturedMasterPw);
+					result.hashCount = 1;
+
+					bool isKnown = capturedKnownHashes.contains(result.masterPwHash);
+					bool repeatMatches = capturedMasterPw == capturedRepeat;
+
+					if (!capturedNormServ.isEmpty() && (isKnown || repeatMatches))
+					{
+						bbe::String hashableString = capturedMasterPw + "|||" + capturedNormServ;
+						if (!capturedNormUser.isEmpty())
+							hashableString += "|||" + capturedNormUser;
+						result.servicePw = GeneratePasswordHash(hashableString);
+						result.hashCount = 2;
+
+						if (!isKnown)
+						{
+							result.shouldRegisterHash = true;
+						}
+					}
+
+					return result;
+				});
+		}
+
+		if (generating)
+		{
+			float elapsed = (bbe::TimePoint() - pwGenStartTime).toMillis() / 1000.0f;
+			float estimated = passwordManager->pwGenDurationSeconds * pwGenExpectedHashes;
+			if (estimated > 0)
+			{
+				ImGui::ProgressBar(bbe::Math::clamp01(elapsed / estimated));
+			}
+			else
+			{
+				ImGui::ProgressBar(-1.0f * (float)ImGui::GetTime(), ImVec2(-1, 0), "Generating...");
 			}
 		}
 
