@@ -8,11 +8,19 @@
 
 #include <algorithm>
 #include <cstring>
+#include <string>
 
 namespace gitReview
 {
 	namespace
 	{
+		static std::string truncatePreviewLine(const std::string &s, size_t maxLen)
+		{
+			if (s.size() <= maxLen)
+				return s;
+			return s.substr(0, maxLen - 3) + "...";
+		}
+
 		static int vectorResizeCallback(ImGuiInputTextCallbackData *data)
 		{
 			if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
@@ -437,6 +445,86 @@ namespace gitReview
 
 				if (hovered)
 					ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+
+				if (hovered && numRows > 0 && totalScrollableH > 0.f && lineH > 0.f)
+				{
+					const float relY = std::clamp(ImGui::GetMousePos().y - smin.y, 0.f, stripH);
+					const float rowFloat = (relY / stripH * totalScrollableH - wpad) / lineH;
+					int centerRow = static_cast<int>(std::floor(rowFloat + 0.5f));
+					centerRow = std::clamp(centerRow, 0, numRows - 1);
+
+					const int ctx = 8;
+					const int r0 = std::max(0, centerRow - ctx);
+					const int r1 = std::min(numRows - 1, centerRow + ctx);
+
+					ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.f, 8.f));
+					ImGui::BeginTooltip();
+					ImGui::SetWindowFontScale(1.32f);
+
+					const ImVec4 colStable(0.85f, 0.88f, 0.92f, 1.f);
+					const ImVec4 colAdd(0.45f, 0.85f, 0.55f, 1.f);
+					const ImVec4 colDel(0.95f, 0.45f, 0.45f, 1.f);
+					const ImVec4 colMuted(0.45f, 0.45f, 0.5f, 1.f);
+					const ImVec4 colHi(1.f, 0.95f, 0.55f, 1.f);
+
+					ImGui::TextDisabled("Preview (row %d) — click to scroll", centerRow + 1);
+					ImGui::Separator();
+
+					const float tableW = ImGui::GetFontSize() * 54.f;
+					if (ImGui::BeginTable("##mapHoverTip", 3, ImGuiTableFlags_BordersInnerV, ImVec2(tableW, 0.f)))
+					{
+						ImGui::TableSetupColumn("##ln", ImGuiTableColumnFlags_WidthFixed, 34.f);
+						ImGui::TableSetupColumn("Index", ImGuiTableColumnFlags_WidthStretch);
+						ImGui::TableSetupColumn("Working tree", ImGuiTableColumnFlags_WidthStretch);
+						const size_t kMaxCell = 140;
+						for (int r = r0; r <= r1; ++r)
+						{
+							const DiffRow &row = rows[static_cast<size_t>(r)];
+							ImGui::TableNextRow();
+							if (r == centerRow)
+								ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, IM_COL32(70, 65, 35, 200));
+
+							ImGui::TableSetColumnIndex(0);
+							if (r == centerRow)
+								ImGui::PushStyleColor(ImGuiCol_Text, colHi);
+							ImGui::TextDisabled("%d", r + 1);
+							if (r == centerRow)
+								ImGui::PopStyleColor();
+
+							std::string leftDisp = row.leftLine.empty() ? std::string(" ") : truncatePreviewLine(row.leftLine, kMaxCell);
+							std::string rightDisp = row.rightLine.empty() ? std::string(" ") : truncatePreviewLine(row.rightLine, kMaxCell);
+
+							ImGui::TableSetColumnIndex(1);
+							{
+								ImVec4 lc = colStable;
+								if (row.kind == DiffRowKind::LeftOnly || row.kind == DiffRowKind::Changed)
+									lc = colDel;
+								else if (row.kind == DiffRowKind::RightOnly)
+									lc = colMuted;
+								ImGui::PushStyleColor(ImGuiCol_Text, lc);
+								ImGui::TextUnformatted(leftDisp.c_str());
+								ImGui::PopStyleColor();
+							}
+							ImGui::TableSetColumnIndex(2);
+							{
+								ImVec4 rc = colStable;
+								if (row.kind == DiffRowKind::RightOnly || row.kind == DiffRowKind::Changed)
+									rc = colAdd;
+								else if (row.kind == DiffRowKind::LeftOnly)
+									rc = colMuted;
+								ImGui::PushStyleColor(ImGuiCol_Text, rc);
+								ImGui::TextUnformatted(rightDisp.c_str());
+								ImGui::PopStyleColor();
+							}
+						}
+						ImGui::EndTable();
+					}
+
+					ImGui::SetWindowFontScale(1.f);
+					ImGui::EndTooltip();
+					ImGui::PopStyleVar();
+				}
+
 				if (active && numRows > 0 && totalScrollableH > 0.f)
 				{
 					float mouseY = ImGui::GetMousePos().y - smin.y;
