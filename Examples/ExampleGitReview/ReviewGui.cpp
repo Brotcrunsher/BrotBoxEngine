@@ -891,6 +891,9 @@ namespace gitReview
 
 		ImGui::Begin("ExampleGitReviewRoot", nullptr, wflags);
 
+		if (!repoRootString(app).empty() && ImGui::IsKeyPressed(ImGuiKey_F5))
+			refreshSnapshot(app);
+
 		if (ImGui::BeginMenuBar())
 		{
 			if (ImGui::BeginMenu("Repository"))
@@ -900,7 +903,7 @@ namespace gitReview
 					if (auto p = pickFolderInteractive("Select Git repository"))
 						tryOpenRepository(app, *p);
 				}
-				if (ImGui::MenuItem("Refresh", nullptr, false, !repoRootString(app).empty()))
+				if (ImGui::MenuItem("Refresh", "F5", false, !repoRootString(app).empty()))
 					refreshSnapshot(app);
 				ImGui::EndMenu();
 			}
