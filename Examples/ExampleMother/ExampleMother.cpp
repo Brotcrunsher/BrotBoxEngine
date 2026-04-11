@@ -1554,14 +1554,13 @@ public:
 		EVERY_MINUTES(1)
 		{
 			static std::future<void> f;
-			f = bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1", &requestMutex, []()
+			f = bbe::simpleUrlRequest::urlRequestJsonElementsAsync("https://min-api.cryptocompare.com/data/v2/histohour?fsym=BTC&tsym=USD&limit=24", &requestMutex, []()
 																   {
-					// The timestamps are becoming so big that they lead to a float conversion overflow.
 					times.clear();
 					for (int32_t i = 0; i < prices.getLength(); i++)
 					{
 						times.add(i);
-					} }, std::make_pair(&times, "prices/%%%/0"), std::make_pair(&prices, "prices/%%%/1"));
+					} }, std::make_pair(&times, "Data/Data/%%%/time"), std::make_pair(&prices, "Data/Data/%%%/close"));
 		}
 
 		static int32_t currentPriceMempool = 0;
@@ -1605,7 +1604,7 @@ public:
 				ImPlot::PlotLine("Bitcoin", times.getRaw(), prices.getRaw(), times.getLength());
 				ImPlot::EndPlot();
 			}
-			ImGui::Text("Current Price (CoinGecko)    : $%d", prices.last());
+			ImGui::Text("Current Price (CryptoCompare): $%d", prices.last());
 			ImGui::Text("Current Price (MemPool.space): $%d", currentPriceMempool);
 			ImGui::Text("Current Price (Binance)      : $%d", std::atoi(currentPriceBinance.c_str()));
 			bbe::List<int32_t> currentPrices = { prices.last(), currentPriceMempool, std::atoi(currentPriceBinance.c_str()) };
