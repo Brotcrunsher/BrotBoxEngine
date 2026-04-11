@@ -684,6 +684,16 @@ private:
 		float totalGB = 0.f;
 	};
 	std::vector<DiskInfo> cachedDisks;
+	struct NetIfaceInfo
+	{
+		std::string name;
+		uint64_t rxBytes = 0;
+		uint64_t txBytes = 0;
+		float rxRate = 0.f;
+		float txRate = 0.f;
+	};
+	std::vector<NetIfaceInfo> prevNetIfaces;
+	std::vector<NetIfaceInfo> cachedNetIfaces;
 #endif
 
 	void initializeTabs()
@@ -2455,6 +2465,44 @@ public:
 			}
 			cachedDisks = std::move(disks);
 		}
+		{
+			std::vector<NetIfaceInfo> current;
+			std::ifstream netdev("/proc/net/dev");
+			if (netdev.is_open())
+			{
+				std::string line;
+				std::getline(netdev, line);
+				std::getline(netdev, line);
+				while (std::getline(netdev, line))
+				{
+					char name[64];
+					uint64_t rxBytes, rxPkt, rxErr, rxDrop, rxFifo, rxFrame, rxComp, rxMcast;
+					uint64_t txBytes, txPkt, txErr, txDrop, txFifo, txColls, txCarr, txComp;
+					if (sscanf(line.c_str(), " %63[^:]: %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu",
+						name,
+						&rxBytes, &rxPkt, &rxErr, &rxDrop, &rxFifo, &rxFrame, &rxComp, &rxMcast,
+						&txBytes, &txPkt, &txErr, &txDrop, &txFifo, &txColls, &txCarr, &txComp) < 17) continue;
+					std::string n(name);
+					if (n == "lo") continue;
+					NetIfaceInfo info;
+					info.name = n;
+					info.rxBytes = rxBytes;
+					info.txBytes = txBytes;
+					for (const auto &prev : prevNetIfaces)
+					{
+						if (prev.name == n)
+						{
+							info.rxRate = (float)(rxBytes - prev.rxBytes);
+							info.txRate = (float)(txBytes - prev.txBytes);
+							break;
+						}
+					}
+					current.push_back(info);
+				}
+			}
+			prevNetIfaces = current;
+			cachedNetIfaces = std::move(current);
+		}
 		}
 
 		EVERY_SECONDS(2)
@@ -2619,6 +2667,37 @@ public:
 				{
 					ImGui::bbe::tooltip(disk.mountPoint.c_str());
 				}
+			}
+		}
+
+		if (!cachedNetIfaces.empty())
+		{
+			ImGui::SeparatorText("Network");
+			auto formatBytes = [](float bytes) -> std::string
+			{
+				if (bytes >= 1024.f * 1024.f * 1024.f)
+				{
+					char buf[32]; snprintf(buf, sizeof(buf), "%.1f GB", bytes / (1024.f * 1024.f * 1024.f)); return buf;
+				}
+				if (bytes >= 1024.f * 1024.f)
+				{
+					char buf[32]; snprintf(buf, sizeof(buf), "%.1f MB", bytes / (1024.f * 1024.f)); return buf;
+				}
+				if (bytes >= 1024.f)
+				{
+					char buf[32]; snprintf(buf, sizeof(buf), "%.1f KB", bytes / 1024.f); return buf;
+				}
+				char buf[32]; snprintf(buf, sizeof(buf), "%.0f B", bytes); return buf;
+			};
+			for (const auto &net : cachedNetIfaces)
+			{
+				if (net.rxBytes == 0 && net.txBytes == 0) continue;
+				ImGui::Text("%s   Total: %s / %s   Rate: %s/s / %s/s",
+					net.name.c_str(),
+					formatBytes((float)net.rxBytes).c_str(),
+					formatBytes((float)net.txBytes).c_str(),
+					formatBytes(net.rxRate).c_str(),
+					formatBytes(net.txRate).c_str());
 			}
 		}
 
