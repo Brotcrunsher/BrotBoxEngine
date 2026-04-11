@@ -443,6 +443,30 @@ private:
 	int32_t cachedPacmanUpdateCount = 0;
 #endif
 
+#ifdef __linux__
+	struct CpuCoreTime { uint64_t total = 0; uint64_t idle = 0; };
+	bbe::List<CpuCoreTime> prevCpuCoreTimes;
+	bbe::List<float> resourceCpuCoreUsages;
+	float resourceCpuMin = 0.f;
+	float resourceCpuMax = 0.f;
+	float resourceCpuMedian = 0.f;
+	float resourceRamUsedGB = 0.f;
+	float resourceRamTotalGB = 0.f;
+	struct GpuInfo
+	{
+		std::string label;
+		float usage = -1.f;
+		float vramUsedMB = 0.f;
+		float vramTotalMB = 0.f;
+	};
+	struct GpuQueryResult
+	{
+		std::vector<GpuInfo> gpus;
+	};
+	std::future<GpuQueryResult> gpuQueryFuture;
+	GpuQueryResult cachedGpuResult;
+#endif
+
 	void initializeTabs()
 	{
 		mainTabs.clear();
@@ -496,6 +520,10 @@ private:
 #ifdef _WIN32
 		mainTabs.add(Tab{ "EC", "Empires Commander", [this]()
 						  { return drawEmpiresCommand(); } });
+#endif
+#ifdef __linux__
+		mainTabs.add(Tab{ "Rsrc", "Resources", [this]()
+						  { return drawResourceWatcher(); } });
 #endif
 		mainTabs.add(Tab{ "Cnsl", "Console", [this]()
 						  { return drawTabConsole(); } });
@@ -2065,6 +2093,227 @@ public:
 		cwiList.add(newElement);
 		consoleWarningIgnoreRevision++;
 	}
+
+#ifdef __linux__
+	bbe::Vector2 drawResourceWatcher()
+	{
+		EVERY_SECONDS(1)
+		{
+			{
+				std::ifstream stat("/proc/stat");
+				if (stat.is_open())
+				{
+					bbe::List<CpuCoreTime> current;
+					std::string line;
+					while (std::getline(stat, line))
+					{
+						if (line.compare(0, 3, "cpu") != 0) break;
+						if (line[3] == ' ') continue;
+						unsigned long long user, nice, sys, idle, iow, irq, sirq, steal;
+						char name[16];
+						if (sscanf(line.c_str(), "%15s %llu %llu %llu %llu %llu %llu %llu %llu",
+							name, &user, &nice, &sys, &idle, &iow, &irq, &sirq, &steal) == 9)
+						{
+							CpuCoreTime ct;
+							ct.total = user + nice + sys + idle + iow + irq + sirq + steal;
+							ct.idle = idle + iow;
+							current.add(ct);
+						}
+					}
+					if (prevCpuCoreTimes.getLength() == current.getLength() && current.getLength() > 0)
+					{
+						resourceCpuCoreUsages.clear();
+						for (size_t i = 0; i < current.getLength(); i++)
+						{
+							uint64_t dTotal = current[i].total - prevCpuCoreTimes[i].total;
+							uint64_t dIdle  = current[i].idle  - prevCpuCoreTimes[i].idle;
+							float usage = dTotal > 0 ? (1.0f - (float)dIdle / (float)dTotal) * 100.0f : 0.0f;
+							resourceCpuCoreUsages.add(usage);
+						}
+						bbe::List<float> sorted = resourceCpuCoreUsages;
+						sorted.sort();
+						resourceCpuMin = sorted[0];
+						resourceCpuMax = sorted[sorted.getLength() - 1];
+						size_t mid = sorted.getLength() / 2;
+						resourceCpuMedian = (sorted.getLength() % 2 == 0)
+							? (sorted[mid - 1] + sorted[mid]) / 2.0f
+							: sorted[mid];
+					}
+					prevCpuCoreTimes = current;
+				}
+			}
+			{
+				std::ifstream meminfo("/proc/meminfo");
+				if (meminfo.is_open())
+				{
+					unsigned long long memTotal = 0, memAvail = 0;
+					std::string line;
+					while (std::getline(meminfo, line))
+					{
+						unsigned long long val;
+						if (sscanf(line.c_str(), "MemTotal: %llu kB", &val) == 1)
+							memTotal = val;
+						else if (sscanf(line.c_str(), "MemAvailable: %llu kB", &val) == 1)
+							memAvail = val;
+					}
+					resourceRamTotalGB = memTotal / (1024.0f * 1024.0f);
+					resourceRamUsedGB  = (memTotal - memAvail) / (1024.0f * 1024.0f);
+				}
+			}
+		}
+
+		EVERY_SECONDS(2)
+		{
+			if (!gpuQueryFuture.valid())
+			{
+				gpuQueryFuture = std::async(std::launch::async, []() -> GpuQueryResult {
+					GpuQueryResult r;
+					for (int card = 0; card < 10; card++)
+					{
+						std::string base = "/sys/class/drm/card" + std::to_string(card) + "/device/";
+						std::ifstream busy(base + "gpu_busy_percent");
+						if (!busy.is_open()) continue;
+
+						GpuInfo info;
+						info.label = "card" + std::to_string(card);
+						int val = 0;
+						busy >> val;
+						info.usage = (float)val;
+
+						std::ifstream vUsedFile(base + "mem_info_vram_used");
+						std::ifstream vTotalFile(base + "mem_info_vram_total");
+						if (vUsedFile.is_open() && vTotalFile.is_open())
+						{
+							unsigned long long u = 0, t = 0;
+							vUsedFile >> u;
+							vTotalFile >> t;
+							info.vramUsedMB  = u / (1024.0f * 1024.0f);
+							info.vramTotalMB = t / (1024.0f * 1024.0f);
+						}
+						r.gpus.push_back(info);
+					}
+					{
+						FILE *pipe = popen("timeout 5 nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null", "r");
+						if (pipe)
+						{
+							char buf[256];
+							int gpuIdx = 0;
+							while (fgets(buf, sizeof(buf), pipe))
+							{
+								float gu = 0, mu = 0, mt = 0;
+								if (sscanf(buf, "%f, %f, %f", &gu, &mu, &mt) == 3)
+								{
+									GpuInfo info;
+									info.label = "NVIDIA " + std::to_string(gpuIdx);
+									info.usage       = gu;
+									info.vramUsedMB  = mu;
+									info.vramTotalMB = mt;
+									r.gpus.push_back(info);
+								}
+								gpuIdx++;
+							}
+							pclose(pipe);
+						}
+					}
+					return r;
+				});
+			}
+		}
+
+		if (gpuQueryFuture.valid() && gpuQueryFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+		{
+			cachedGpuResult = gpuQueryFuture.get();
+		}
+
+		auto colorBar = [](float fraction, const char *overlay)
+		{
+			ImVec4 col;
+			if      (fraction > 0.9f) col = ImVec4(0.1f, 0.1f, 0.5f, 1.0f);
+			else if (fraction > 0.7f) col = ImVec4(0.1f, 0.1f, 0.4f, 1.0f);
+			else                      col = ImVec4(0.1f, 0.1f, 0.3f, 1.0f);
+			ImGui::PushStyleColor(ImGuiCol_PlotHistogram, col);
+			ImGui::ProgressBar(fraction, ImVec2(-1, 0), "");
+			ImGui::PopStyleColor();
+			ImVec2 rMin = ImGui::GetItemRectMin();
+			ImVec2 rMax = ImGui::GetItemRectMax();
+			float textY = rMin.y + (rMax.y - rMin.y - ImGui::GetFontSize()) * 0.5f;
+			ImGui::GetWindowDrawList()->AddText(ImVec2(rMin.x + ImGui::GetStyle().FramePadding.x, textY),
+				ImGui::GetColorU32(ImGuiCol_Text), overlay);
+		};
+
+		ImGui::SeparatorText("CPU");
+		if (resourceCpuCoreUsages.getLength() > 0)
+		{
+			ImGui::Text("Cores: %d  |  Min: %.1f%%  Median: %.1f%%  Max: %.1f%%",
+				(int)resourceCpuCoreUsages.getLength(), resourceCpuMin, resourceCpuMedian, resourceCpuMax);
+
+			char medianOverlay[64];
+			snprintf(medianOverlay, sizeof(medianOverlay), "Median: %.1f%%", resourceCpuMedian);
+			colorBar(resourceCpuMedian / 100.0f, medianOverlay);
+
+			float scale = getWindow()->getScale();
+			float barW = 60.0f * scale;
+			float barH = 14.0f * scale;
+			float cellW = barW + ImGui::GetStyle().ItemSpacing.x;
+			float avail = ImGui::GetContentRegionAvail().x;
+			int perRow = bbe::Math::max(1, (int)(avail / cellW));
+			for (size_t i = 0; i < resourceCpuCoreUsages.getLength(); i++)
+			{
+				if (i % perRow != 0) ImGui::SameLine();
+				ImGui::PushID((int)i);
+				float u = resourceCpuCoreUsages[i] / 100.0f;
+				ImVec4 col;
+				if      (u > 0.9f) col = ImVec4(0.1f, 0.1f, 0.5f, 1.0f);
+				else if (u > 0.7f) col = ImVec4(0.1f, 0.1f, 0.4f, 1.0f);
+				else               col = ImVec4(0.1f, 0.1f, 0.3f, 1.0f);
+				ImGui::PushStyleColor(ImGuiCol_PlotHistogram, col);
+				ImGui::ProgressBar(u, ImVec2(barW, barH), "");
+				ImGui::PopStyleColor();
+				char tip[64];
+				snprintf(tip, sizeof(tip), "Core %d: %.1f%%", (int)i, resourceCpuCoreUsages[i]);
+				ImGui::bbe::tooltip(tip);
+				ImGui::PopID();
+			}
+		}
+		else
+		{
+			ImGui::Text("Collecting CPU data...");
+		}
+
+		ImGui::SeparatorText("RAM");
+		if (resourceRamTotalGB > 0)
+		{
+			char ramOverlay[64];
+			snprintf(ramOverlay, sizeof(ramOverlay), "%.1f / %.1f GB", resourceRamUsedGB, resourceRamTotalGB);
+			colorBar(resourceRamUsedGB / resourceRamTotalGB, ramOverlay);
+		}
+
+		for (size_t gi = 0; gi < cachedGpuResult.gpus.size(); gi++)
+		{
+			const GpuInfo &gpu = cachedGpuResult.gpus[gi];
+			char header[128];
+			snprintf(header, sizeof(header), "GPU (%s)", gpu.label.c_str());
+			ImGui::SeparatorText(header);
+
+			if (gpu.usage >= 0)
+			{
+				char gpuOverlay[64];
+				snprintf(gpuOverlay, sizeof(gpuOverlay), "%.1f%%", gpu.usage);
+				colorBar(gpu.usage / 100.0f, gpuOverlay);
+			}
+			if (gpu.vramTotalMB > 0)
+			{
+				float usedGB  = gpu.vramUsedMB  / 1024.0f;
+				float totalGB = gpu.vramTotalMB / 1024.0f;
+				char vramOverlay[64];
+				snprintf(vramOverlay, sizeof(vramOverlay), "VRAM: %.1f / %.1f GB", usedGB, totalGB);
+				colorBar(gpu.vramUsedMB / gpu.vramTotalMB, vramOverlay);
+			}
+		}
+
+		return bbe::Vector2(1);
+	}
+#endif
 
 	bbe::Vector2 drawTabConsole()
 	{
