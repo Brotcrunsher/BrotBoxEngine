@@ -10,9 +10,11 @@
 #include <fstream>
 #include <iostream>
 #include <mutex>
+#include <set>
 #include <string>
 #include <vector>
 #ifdef __linux__
+#include <sys/statvfs.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
@@ -674,6 +676,14 @@ private:
 	};
 	std::future<GpuQueryResult> gpuQueryFuture;
 	GpuQueryResult cachedGpuResult;
+	struct DiskInfo
+	{
+		std::string mountPoint;
+		std::string device;
+		float usedGB = 0.f;
+		float totalGB = 0.f;
+	};
+	std::vector<DiskInfo> cachedDisks;
 #endif
 
 	void initializeTabs()
@@ -2366,10 +2376,85 @@ public:
 						else if (sscanf(line.c_str(), "MemAvailable: %llu kB", &val) == 1)
 							memAvail = val;
 					}
-					resourceRamTotalGB = memTotal / (1024.0f * 1024.0f);
-					resourceRamUsedGB  = (memTotal - memAvail) / (1024.0f * 1024.0f);
+				resourceRamTotalGB = memTotal / (1024.0f * 1024.0f);
+				resourceRamUsedGB  = (memTotal - memAvail) / (1024.0f * 1024.0f);
+			}
+		}
+		{
+			std::vector<DiskInfo> disks;
+			for (const auto &entry : std::filesystem::directory_iterator("/sys/block/"))
+			{
+				std::string name = entry.path().filename().string();
+				if (name.rfind("sd",     0) != 0
+				 && name.rfind("nvme",   0) != 0
+				 && name.rfind("vd",     0) != 0
+				 && name.rfind("hd",     0) != 0
+				 && name.rfind("mmcblk", 0) != 0) continue;
+				std::ifstream sizeFile(entry.path() / "size");
+				if (!sizeFile.is_open()) continue;
+				unsigned long long sectors = 0;
+				sizeFile >> sectors;
+				if (sectors == 0) continue;
+				DiskInfo d;
+				d.device = name;
+				d.totalGB = (float)((double)sectors * 512.0 / (1024.0 * 1024.0 * 1024.0));
+				disks.push_back(d);
+			}
+
+			auto resolveToPhysicalDiskIdx = [&](const std::string &devPath) -> int
+			{
+				std::string current = devPath;
+				for (int depth = 0; depth < 10; depth++)
+				{
+					if (current.rfind("/dev/", 0) != 0) return -1;
+					std::string devName = current.substr(5);
+					for (size_t i = 0; i < disks.size(); i++)
+					{
+						if (devName.rfind(disks[i].device, 0) == 0)
+							return (int)i;
+					}
+					std::string slavesDir = "/sys/block/" + devName + "/slaves";
+					if (!std::filesystem::is_directory(slavesDir)) return -1;
+					bool found = false;
+					for (const auto &slave : std::filesystem::directory_iterator(slavesDir))
+					{
+						current = "/dev/" + slave.path().filename().string();
+						found = true;
+						break;
+					}
+					if (!found) return -1;
+				}
+				return -1;
+			};
+
+			std::ifstream mounts("/proc/mounts");
+			if (mounts.is_open())
+			{
+				std::set<std::string> seenDevices;
+				std::string line;
+				while (std::getline(mounts, line))
+				{
+					char dev[512], mp[512];
+					if (sscanf(line.c_str(), "%511s %511s", dev, mp) < 2) continue;
+					std::string devStr(dev);
+					if (devStr.rfind("/dev/", 0) != 0) continue;
+					if (!seenDevices.insert(devStr).second) continue;
+					char resolved[PATH_MAX];
+					std::string resolvedDev = devStr;
+					if (realpath(devStr.c_str(), resolved))
+						resolvedDev = resolved;
+					int idx = resolveToPhysicalDiskIdx(resolvedDev);
+					if (idx < 0) continue;
+					struct statvfs st;
+					if (statvfs(mp, &st) != 0) continue;
+					if (st.f_blocks == 0) continue;
+					disks[idx].usedGB += (float)((double)(st.f_blocks - st.f_bfree) * st.f_frsize / (1024.0 * 1024.0 * 1024.0));
+					if (!disks[idx].mountPoint.empty()) disks[idx].mountPoint += ", ";
+					disks[idx].mountPoint += std::string(mp);
 				}
 			}
+			cachedDisks = std::move(disks);
+		}
 		}
 
 		EVERY_SECONDS(2)
@@ -2518,6 +2603,22 @@ public:
 				char vramOverlay[64];
 				snprintf(vramOverlay, sizeof(vramOverlay), "VRAM: %.1f / %.1f GB", usedGB, totalGB);
 				colorBar(gpu.vramUsedMB / gpu.vramTotalMB, vramOverlay);
+			}
+		}
+
+		if (!cachedDisks.empty())
+		{
+			ImGui::SeparatorText("Disk");
+			for (const auto &disk : cachedDisks)
+			{
+				char diskOverlay[256];
+				snprintf(diskOverlay, sizeof(diskOverlay), "%s  %.1f / %.1f GB",
+					disk.device.c_str(), disk.usedGB, disk.totalGB);
+				colorBar(disk.usedGB / disk.totalGB, diskOverlay);
+				if (!disk.mountPoint.empty())
+				{
+					ImGui::bbe::tooltip(disk.mountPoint.c_str());
+				}
 			}
 		}
 
