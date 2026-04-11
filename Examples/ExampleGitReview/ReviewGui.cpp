@@ -688,7 +688,7 @@ namespace gitReview
 		void drawFileList(ReviewAppState &app)
 		{
 			ImGui::BeginChild("fileList", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-			ImGui::TextDisabled("Files  (check = staged)");
+			ImGui::TextDisabled("Files  (check = full file staged for commit)");
 			ImGui::Separator();
 
 			struct MergedFile
@@ -748,13 +748,19 @@ namespace gitReview
 				const MergedFile &mf = merged[idx];
 				ImGui::PushID(static_cast<int>(idx));
 
-				bool staged = mf.hasStaged;
+				// Checked only when the index matches the worktree for this path (no remaining unstaged
+				// diff). Mixed staged+unstaged is treated as "not fully staged" until the user stages
+				// the whole file with git add (full worktree snapshot per path).
+				const bool fullyStaged = mf.hasStaged && !mf.hasUnstaged;
+				bool staged = fullyStaged;
 				if (ImGui::Checkbox("##stg", &staged))
 				{
 					std::string err;
 					if (staged)
 					{
-						stageEntry(app, mf.unstagedEntry, err);
+						// Always stage the entire path from the working tree (git add -- <path>).
+						const FileEntry &toStage = mf.hasUnstaged ? mf.unstagedEntry : mf.stagedEntry;
+						stageEntry(app, toStage, err);
 						if (!err.empty())
 							showModal(app, "Stage failed", err);
 						else
@@ -769,6 +775,9 @@ namespace gitReview
 							needsRefresh = true;
 					}
 				}
+				if (mf.hasStaged && mf.hasUnstaged)
+					ImGui::SetItemTooltip("This file has both staged and unstaged changes. Checking the box runs "
+										  "\"git add\" on the whole file so the index matches your working tree.");
 
 				ImGui::SameLine();
 

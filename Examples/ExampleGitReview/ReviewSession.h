@@ -67,7 +67,7 @@ namespace gitReview
 
 	bool saveWorktreeBuffer(ReviewAppState &app, std::string &err);
 
-	/// Stages the entry.  For renames, both old and new paths are staged.
+	/// Stages the full file from the working tree (\c git add -- …).  For renames, both paths are staged.
 	void stageEntry(ReviewAppState &app, const FileEntry &entry, std::string &err);
 	/// Unstages the entry.  For renames, both old and new paths are restored.
 	void unstageEntry(ReviewAppState &app, const FileEntry &entry, std::string &err);
