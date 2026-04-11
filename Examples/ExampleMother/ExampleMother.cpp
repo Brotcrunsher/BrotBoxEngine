@@ -152,6 +152,13 @@ struct CalculatorEntry
 		((bbe::String), result))
 };
 
+struct QuickNote
+{
+	BBE_SERIALIZABLE_DATA(
+		((bbe::String), title),
+		((bbe::String), content))
+};
+
 struct ChatGPTConfig
 {
 	BBE_SERIALIZABLE_DATA(
@@ -575,6 +582,7 @@ private:
 	bbe::SerializableObject<PasswordManager> passwordManager = bbe::SerializableObject<PasswordManager>("PasswordManager.dat", "ParanoiaConfig");
 	bbe::SerializableList<ConsoleWarningIgnoreElement> cwiList = bbe::SerializableList<ConsoleWarningIgnoreElement>("CWIList.dat", "ParanoiaConfig");
 	bbe::SerializableList<CalculatorEntry> calculatorHistory = bbe::SerializableList<CalculatorEntry>("CalculatorHistory.dat", "ParanoiaConfig");
+	bbe::SerializableList<QuickNote> quickNotes = bbe::SerializableList<QuickNote>("QuickNotes.dat", "ParanoiaConfig");
 
 	bbe::ChatGPTComm chatGPTComm;						  // ChatGPT communication object
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
@@ -734,6 +742,8 @@ private:
 						  { return drawPasswordManager(); } });
 		mainTabs.add(Tab{ "Calc", "Calculator", [this]()
 						  { return drawCalculator(); } });
+		mainTabs.add(Tab{ "Notes", "Quick Notes", [this]()
+						  { return drawQuickNotes(); } });
 		mainTabs.add(Tab{ "GPT", "ChatGPT", [this]()
 						  { return drawTabChatGPT(); } });
 		mainTabs.add(Tab{ "DE", "DALL E", [this]()
@@ -3476,6 +3486,69 @@ public:
 			if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
 			{
 				calcInput = calculatorHistory[idx].result;
+			}
+			ImGui::PopID();
+		}
+
+		return bbe::Vector2(1);
+	}
+	bbe::Vector2 drawQuickNotes()
+	{
+		if (ImGui::Button("+ New Note"))
+		{
+			QuickNote note;
+			note.title = "Untitled";
+			quickNotes.add(note);
+		}
+
+		static int32_t pendingDelete = -1;
+
+		for (int32_t i = 0; i < (int32_t)quickNotes.getLength(); i++)
+		{
+			ImGui::PushID(i);
+			if (ImGui::CollapsingHeader(quickNotes[i].title.getRaw(), ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				if (ImGui::bbe::InputText("Title", quickNotes[i].title))
+				{
+					quickNotes.writeToFile();
+				}
+				float availH = ImGui::GetContentRegionAvail().y;
+				float boxH = bbe::Math::max(80.0f, availH - ImGui::GetFrameHeightWithSpacing() * ((int32_t)quickNotes.getLength() - i));
+				if (ImGui::bbe::InputTextMultiline("##content", quickNotes[i].content, ImVec2(-1, boxH)))
+				{
+					quickNotes.writeToFile();
+				}
+				if (ImGui::Button("Delete Note"))
+				{
+					if (ImGui::GetIO().KeyShift)
+					{
+						quickNotes.removeIndex(i);
+						ImGui::PopID();
+						break;
+					}
+					pendingDelete = i;
+					ImGui::OpenPopup("ConfirmDeleteNote");
+				}
+			}
+			if (pendingDelete == i && ImGui::BeginPopupModal("ConfirmDeleteNote", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::Text("Delete \"%s\"? This will permanently remove all its contents.", quickNotes[i].title.getRaw());
+				if (ImGui::Button("Yes, delete"))
+				{
+					quickNotes.removeIndex(pendingDelete);
+					pendingDelete = -1;
+					ImGui::CloseCurrentPopup();
+					ImGui::EndPopup();
+					ImGui::PopID();
+					break;
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+				{
+					pendingDelete = -1;
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
 			}
 			ImGui::PopID();
 		}

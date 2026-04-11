@@ -10,6 +10,7 @@ namespace ImGui
 	namespace bbe
 	{
 		bool InputText(const char *label, ::bbe::String &s, ImGuiInputTextFlags flags = 0);
+		bool InputTextMultiline(const char *label, ::bbe::String &s, const ImVec2 &size = ImVec2(0, 0), ImGuiInputTextFlags flags = 0);
 
 		void tooltip(const char *text);
 		void tooltip(const ::bbe::String &text);

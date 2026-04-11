@@ -26,6 +26,13 @@ bool ImGui::bbe::InputText(const char *label, ::bbe::String &s, ImGuiInputTextFl
 	return ImGui::InputText(label, s.getRaw(), s.getCapacity(), flags, InputTextCallback, &s);
 }
 
+bool ImGui::bbe::InputTextMultiline(const char *label, ::bbe::String &s, const ImVec2 &size, ImGuiInputTextFlags flags)
+{
+	IM_ASSERT((flags & ImGuiInputTextFlags_CallbackResize) == 0);
+	flags |= ImGuiInputTextFlags_CallbackResize;
+	return ImGui::InputTextMultiline(label, s.getRaw(), s.getCapacity(), size, flags, InputTextCallback, &s);
+}
+
 void ImGui::bbe::tooltip(const char *text)
 {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort) && ImGui::BeginTooltip())
