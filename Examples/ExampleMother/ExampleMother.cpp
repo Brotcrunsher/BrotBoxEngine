@@ -428,6 +428,11 @@ namespace
 					pos += 2;
 					val = val * val * val;
 				}
+				else if (input[pos] == '!')
+				{
+					pos++;
+					val = ::tgamma(val + 1.0);
+				}
 				else break;
 			}
 			return val;
