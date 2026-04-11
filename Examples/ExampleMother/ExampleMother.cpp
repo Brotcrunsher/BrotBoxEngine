@@ -2729,13 +2729,16 @@ public:
 			ImGui::TableSetColumnIndex(0);
 			ImGui::VSliderScalar("##Scrollbar", { 10 * getWindow()->getScale(), ImGui::GetWindowHeight() - 50 }, ImGuiDataType_S64, &sliderVal, &max, &min);
 			constexpr int64_t wheelSpeed = 5;
-			if (getMouseScrollY() > 0)
+			if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
 			{
-				sliderVal -= wheelSpeed;
-			}
-			else if (getMouseScrollY() < 0)
-			{
-				sliderVal += wheelSpeed;
+				if (getMouseScrollY() > 0)
+				{
+					sliderVal -= wheelSpeed;
+				}
+				else if (getMouseScrollY() < 0)
+				{
+					sliderVal += wheelSpeed;
+				}
 			}
 			sliderVal = bbe::Math::clamp(sliderVal, min, max);
 			ImGui::TableSetColumnIndex(1);
