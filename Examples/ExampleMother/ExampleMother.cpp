@@ -2355,13 +2355,17 @@ public:
 					toggleIgnoreState(log[index]);
 				}
 				ImGui::SameLine();
-				if (isLogIgnored(log[index]))
+				if (!isLogIgnored(log[index]))
 				{
-					ImGui::Text(log[index]);
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.0f, 0.5f, 0.5f, 1.0f });
 				}
-				else
+				if (ImGui::bbe::clickableText("%s", log[index].getRaw()))
 				{
-					ImGui::TextColored(ImVec4{ 1.0f, 0.5f, 0.5f, 1.0f }, log[index]);
+					ImGui::SetClipboardText(log[index].getRaw());
+				}
+				if (!isLogIgnored(log[index]))
+				{
+					ImGui::PopStyleColor();
 				}
 				ImGui::PopID();
 			}
