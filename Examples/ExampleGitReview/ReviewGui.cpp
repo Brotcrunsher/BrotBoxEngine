@@ -322,7 +322,7 @@ namespace gitReview
 			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 			if (ImGui::BeginPopupModal("##commitPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 			{
-				ImGui::TextUnformatted("Commit staged changes");
+				ImGui::TextUnformatted("Commit checked files (index is matched to the list before committing)");
 				ImGui::InputTextMultiline("##commitMsg", app.commitMessageUtf8, sizeof(app.commitMessageUtf8), ImVec2(520, 160));
 				if (ImGui::Button("Commit", ImVec2(120, 0)))
 				{
@@ -702,7 +702,7 @@ namespace gitReview
 		void drawFileList(ReviewAppState &app)
 		{
 			ImGui::BeginChild("fileList", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-			ImGui::TextDisabled("Files  (check = full file staged for commit)");
+			ImGui::TextDisabled("Files  (check = stage full file; commit only includes checked files)");
 			ImGui::Separator();
 
 			struct MergedFile
@@ -764,7 +764,9 @@ namespace gitReview
 
 				// Checked only when the index matches the worktree for this path (no remaining unstaged
 				// diff). Mixed staged+unstaged is treated as "not fully staged" until the user stages
-				// the whole file with git add (full worktree snapshot per path).
+				// the whole file with git add (full worktree snapshot per path). Commit runs
+				// \c git restore --staged :/ then re-stages only fully-staged paths so the index cannot
+				// diverge from these checkboxes.
 				const bool fullyStaged = mf.hasStaged && !mf.hasUnstaged;
 				bool staged = fullyStaged;
 				if (ImGui::Checkbox("##stg", &staged))

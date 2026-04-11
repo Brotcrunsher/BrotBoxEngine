@@ -6,6 +6,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <vector>
 
 namespace gitReview
 {
@@ -60,6 +61,64 @@ namespace gitReview
 			}
 			return redactGitOutput(trimCopy(std::move(combined)));
 		}
+	}
+
+	namespace detail
+	{
+		struct MergedFile
+		{
+			std::string path;
+			bool hasStaged = false;
+			bool hasUnstaged = false;
+			bool isUntracked = false;
+			FileEntry stagedEntry;
+			FileEntry unstagedEntry;
+		};
+
+		std::vector<MergedFile> mergeSnapshotEntries(const RepoSnapshot &snapshot)
+		{
+			std::vector<MergedFile> merged;
+			for (const FileEntry &e : snapshot.entries)
+			{
+				auto it = std::find_if(merged.begin(), merged.end(),
+					[&](const MergedFile &m) { return m.path == e.path; });
+				if (it == merged.end())
+				{
+					MergedFile mf;
+					mf.path = e.path;
+					if (e.section == FileListSection::Staged)
+					{
+						mf.hasStaged = true;
+						mf.stagedEntry = e;
+					}
+					else
+					{
+						mf.hasUnstaged = true;
+						mf.isUntracked = (e.section == FileListSection::Untracked);
+						mf.unstagedEntry = e;
+					}
+					merged.push_back(std::move(mf));
+				}
+				else
+				{
+					if (e.section == FileListSection::Staged)
+					{
+						it->hasStaged = true;
+						it->stagedEntry = e;
+					}
+					else
+					{
+						it->hasUnstaged = true;
+						it->isUntracked = (e.section == FileListSection::Untracked);
+						it->unstagedEntry = e;
+					}
+				}
+			}
+			std::sort(merged.begin(), merged.end(),
+				[](const MergedFile &a, const MergedFile &b) { return a.path < b.path; });
+			return merged;
+		}
+
 	}
 
 	void showToast(ReviewAppState &app, const std::string &text, float seconds)
@@ -332,6 +391,50 @@ namespace gitReview
 		{
 			err = "Commit message is empty.";
 			return;
+		}
+		const std::vector<detail::MergedFile> merged = detail::mergeSnapshotEntries(app.snapshot);
+		std::vector<std::string> pathsForCommit;
+		pathsForCommit.reserve(merged.size());
+		for (const detail::MergedFile &mf : merged)
+		{
+			if (mf.hasStaged && !mf.hasUnstaged)
+				pathsForCommit.push_back(mf.path);
+		}
+		if (pathsForCommit.empty())
+		{
+			err = "Nothing to commit: no files are fully staged (no checkboxes ticked).";
+			return;
+		}
+
+		{
+			GitRunResult r = runGit(root, { "restore", "--staged", ":/" });
+			if (r.exitCode != 0)
+			{
+				err = sanitizedGitError(r);
+				return;
+			}
+		}
+
+		for (const std::string &path : pathsForCommit)
+		{
+			const detail::MergedFile *mf = nullptr;
+			for (const detail::MergedFile &m : merged)
+			{
+				if (m.path == path)
+				{
+					mf = &m;
+					break;
+				}
+			}
+			if (!mf)
+			{
+				err = "Internal error: checked path \"" + path + "\" is missing from the file list. Try refreshing.";
+				return;
+			}
+			const FileEntry &toStageEntry = mf->hasUnstaged ? mf->unstagedEntry : mf->stagedEntry;
+			stageEntry(app, toStageEntry, err);
+			if (!err.empty())
+				return;
 		}
 
 		GitRunResult r = runGitWithStdin(root, { "commit", "-F", "-" }, msg);
