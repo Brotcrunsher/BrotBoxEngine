@@ -201,12 +201,14 @@ namespace gitReview
 			app.reviewMode = ReviewMode::Unstaged;
 		reloadDiffForSelection(app);
 		app.diffScrollY = 0.f;
-		app.diffNavRequest = 1;
+		app.diffNavRequest = 0;
+		app.diffScrollToFirstChange = true;
 	}
 
 	void clearSelection(ReviewAppState &app)
 	{
 		app.selection.reset();
+		app.diffScrollToFirstChange = false;
 		app.leftText.clear();
 		app.leftViewBuffer.clear();
 		app.leftViewBuffer.push_back('\0');

@@ -840,6 +840,7 @@ namespace gitReview
 
 			if (!app.loadDiffError.empty())
 			{
+				app.diffScrollToFirstChange = false;
 				ImGui::TextColored(ImVec4(1.f, 0.45f, 0.35f, 1.f), "Could not load diff");
 				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 48.f);
 				ImGui::TextUnformatted(app.loadDiffError.c_str());
@@ -850,6 +851,7 @@ namespace gitReview
 
 			if (app.binaryFile)
 			{
+				app.diffScrollToFirstChange = false;
 				ImGui::TextDisabled("Review mode");
 				ImGui::SameLine();
 				ImGui::BeginDisabled(app.selection->section == FileListSection::Untracked);
@@ -960,6 +962,15 @@ namespace gitReview
 		const float footer = app.rightSideIsWorktreeFile ? 104.f : 84.f;
 		ImGui::BeginChild("diffScroll", ImVec2(-(mapBarW + ImGui::GetStyle().ItemSpacing.x), -footer), true,
 			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar);
+
+		if (app.diffScrollToFirstChange)
+		{
+			if (!hunkStarts.empty())
+				app.diffMapScrollTarget = std::max(0.f, static_cast<float>(hunkStarts[0]) * lineH - 3.f * lineH);
+			else
+				app.diffMapScrollTarget = 0.f;
+			app.diffScrollToFirstChange = false;
+		}
 
 		if (app.diffNavRequest != 0 && !hunkStarts.empty())
 		{

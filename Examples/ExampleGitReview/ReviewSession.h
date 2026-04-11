@@ -43,6 +43,8 @@ namespace gitReview
 		float diffMapScrollTarget = -1.f;
 		/// Set to -1 or +1 to request navigation to the previous/next hunk; cleared after processing.
 		int diffNavRequest = 0;
+		/// After selecting a file, scroll to the first non-equal row once \c hunkStarts is known (not \c diffNavRequest next).
+		bool diffScrollToFirstChange = false;
 		/// Last known scroll position of the diff view (updated each frame for button enable/disable).
 		float diffScrollY = 0.f;
 
