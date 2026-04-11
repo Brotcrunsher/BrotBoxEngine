@@ -198,6 +198,8 @@ namespace gitReview
 		if (app.selection->section == FileListSection::Untracked)
 			app.reviewMode = ReviewMode::Unstaged;
 		reloadDiffForSelection(app);
+		app.diffScrollY = 0.f;
+		app.diffNavRequest = 1;
 	}
 
 	void clearSelection(ReviewAppState &app)
