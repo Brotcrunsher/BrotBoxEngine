@@ -5602,6 +5602,11 @@ void PaintEditor::onFilesDropped(const bbe::List<bbe::String> &paths)
 	}
 }
 
+bool PaintEditor::tryOpenDocumentFromPath(const char *path)
+{
+	return newCanvas(path);
+}
+
 const bbe::Font &PaintEditor::getTextToolFont() const
 {
 	const int32_t clampedSize = bbe::Math::max<int32_t>(textFontSize, 1);

@@ -1,6 +1,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <map>
 #include <string>
 
@@ -929,6 +930,8 @@ public:
 	bbe::SerializableObject<ExamplePaintFavoriteColorsPersist> favoriteColorsPersist{ "ExamplePaintFavoriteColors.dat" };
 	bbe::SerializableObject<ExamplePaintColorHistoryPersist> colorHistoryPersist{ "ExamplePaintColorHistory.dat" };
 	PaintEditor editor;
+	/// If non-empty, opened on startup (CLI: first argument after the program name).
+	std::string initialDocumentPath;
 
 	void onStart() override
 	{
@@ -1026,6 +1029,14 @@ public:
 		w.scale = getWindow()->getDpiScale();
 		editor.onStart(w);
 
+		if (!initialDocumentPath.empty())
+		{
+			if (!editor.tryOpenDocumentFromPath(initialDocumentPath.c_str()))
+			{
+				std::fprintf(stderr, "ExamplePaint: could not open \"%s\"\n", initialDocumentPath.c_str());
+			}
+		}
+
 		editor.applicationExitRequested = [this]()
 		{
 			bbe::Window *w = getWindow();
@@ -1085,9 +1096,13 @@ public:
 	}
 };
 
-int main()
+int main(int argc, char **argv)
 {
 	MyGame *mg = new MyGame();
+	if (argc >= 2)
+	{
+		mg->initialDocumentPath = argv[1];
+	}
 	mg->setMsaaSamples(0);
 	mg->start(1280, 720, "ExamplePaint");
 #ifndef __EMSCRIPTEN__

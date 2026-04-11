@@ -960,6 +960,9 @@ struct PaintEditor
 
 	void onFilesDropped(const bbe::List<bbe::String> &paths);
 
+	/// Layered project or flat image (same as Open). Used by CLI and host apps.
+	bool tryOpenDocumentFromPath(const char *path);
+
 private:
 	void expandWorkAreaToIncludeCanvasRect(const bbe::Rectanglei &rectOnCanvas);
 	void allocateWorkAreaFullCanvasIfTiled();
