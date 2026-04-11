@@ -2305,11 +2305,28 @@ public:
 		return bbe::Vector2(1);
 	}
 
+	static bbe::String stripTimestamp(const bbe::String &msg)
+	{
+		const char *s = msg.getRaw();
+		if (s[0] == '[')
+		{
+			const char *end = strchr(s, ']');
+			if (end)
+			{
+				end++;
+				while (*end == ' ') end++;
+				return bbe::String(end);
+			}
+		}
+		return msg;
+	}
+
 	bool isLogIgnored(const bbe::String &msg) const
 	{
+		bbe::String stripped = stripTimestamp(msg);
 		for (size_t i = 0; i < cwiList.getLength(); i++)
 		{
-			if (cwiList[i].name == msg)
+			if (cwiList[i].name == stripped)
 			{
 				return true;
 			}
@@ -2319,9 +2336,10 @@ public:
 
 	void toggleIgnoreState(const bbe::String &msg)
 	{
+		bbe::String stripped = stripTimestamp(msg);
 		for (size_t i = 0; i < cwiList.getLength(); i++)
 		{
-			if (cwiList[i].name == msg)
+			if (cwiList[i].name == stripped)
 			{
 				cwiList.removeIndex(i);
 				consoleWarningIgnoreRevision++;
@@ -2329,7 +2347,7 @@ public:
 			}
 		}
 		ConsoleWarningIgnoreElement newElement;
-		newElement.name = msg;
+		newElement.name = stripped;
 		cwiList.add(newElement);
 		consoleWarningIgnoreRevision++;
 	}
