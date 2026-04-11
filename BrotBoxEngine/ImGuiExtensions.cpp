@@ -78,7 +78,7 @@ bool ImGui::bbe::securityButton(const char *text, SecurityButtonFlags flags)
 	{
 		if (!shiftPressed)
 		{
-			ImGui::Text(""); // This is here to make sure ImGui::SameLine() behaves as expected.
+			ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight()));
 			return false;
 		}
 	}
