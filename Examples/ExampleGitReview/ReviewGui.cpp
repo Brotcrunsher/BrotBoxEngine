@@ -94,103 +94,91 @@ namespace gitReview
 			ImGui::End();
 		}
 
-		void drawWordSpansRow(const std::vector<WordSpan> &spans, const ImVec4 &stableCol, const ImVec4 &addCol, const ImVec4 &delCol)
+		void drawLeftPaneHighlights(ImDrawList *dl, const ImVec2 &innerTopLeft, float innerWidth, float lineH, float padX, float padY, int rowBegin,
+			int rowEnd, const std::vector<DiffRow> &rows, bool largeFB, const ImVec4 &delCol, const ImVec4 &mutedCol)
 		{
-			if (spans.empty())
+			for (int i = rowBegin; i < rowEnd; i++)
 			{
-				ImGui::TextUnformatted(" ");
-				return;
+				const DiffRow &row = rows[static_cast<size_t>(i)];
+				const float y0 = innerTopLeft.y + padY + static_cast<float>(i) * lineH;
+				const ImVec2 rmin(innerTopLeft.x, y0);
+				const ImVec2 rmax(innerTopLeft.x + innerWidth, y0 + lineH);
+				switch (row.kind)
+				{
+				case DiffRowKind::Equal:
+					break;
+				case DiffRowKind::LeftOnly:
+					dl->AddRectFilled(rmin, rmax, ImGui::ColorConvertFloat4ToU32(ImVec4(delCol.x, delCol.y, delCol.z, 0.28f)));
+					break;
+				case DiffRowKind::RightOnly:
+					dl->AddRectFilled(rmin, rmax, ImGui::ColorConvertFloat4ToU32(ImVec4(mutedCol.x, mutedCol.y, mutedCol.z, 0.38f)));
+					break;
+				case DiffRowKind::Changed:
+					if (largeFB)
+					{
+						dl->AddRectFilled(rmin, rmax, ImGui::ColorConvertFloat4ToU32(ImVec4(delCol.x, delCol.y, delCol.z, 0.32f)));
+					}
+					else
+					{
+						std::vector<WordSpan> sl, sr;
+						buildWordSpans(row.leftLine, row.rightLine, sl, sr);
+						(void)sr;
+						float x = innerTopLeft.x + padX;
+						for (const WordSpan &sp : sl)
+						{
+							const float tw = ImGui::CalcTextSize(sp.text.c_str()).x;
+							if (sp.kind == WordSpanKind::Removed)
+								dl->AddRectFilled(ImVec2(x, y0), ImVec2(x + tw, y0 + lineH),
+									ImGui::ColorConvertFloat4ToU32(ImVec4(delCol.x, delCol.y, delCol.z, 0.42f)));
+							x += tw;
+						}
+					}
+					break;
+				}
 			}
-			for (const WordSpan &sp : spans)
-			{
-				ImVec4 c = stableCol;
-				if (sp.kind == WordSpanKind::Added)
-					c = addCol;
-				else if (sp.kind == WordSpanKind::Removed)
-					c = delCol;
-				ImGui::PushStyleColor(ImGuiCol_Text, c);
-				ImGui::TextUnformatted(sp.text.c_str());
-				ImGui::PopStyleColor();
-				ImGui::SameLine(0.f, 0.f);
-			}
-			ImGui::NewLine();
 		}
 
-		void drawSidePaneLine(const DiffRow &row, bool isLeft, bool largeFallback, const ImVec4 &stableCol, const ImVec4 &addCol, const ImVec4 &delCol,
-			const ImVec4 &mutedCol)
+		void drawRightPaneHighlights(ImDrawList *dl, const ImVec2 &innerTopLeft, float innerWidth, float lineH, float padX, float padY, int rowBegin,
+			int rowEnd, const std::vector<DiffRow> &rows, bool largeFB, const ImVec4 &addCol, const ImVec4 &chgCol, const ImVec4 &mutedCol)
 		{
-			switch (row.kind)
+			for (int i = rowBegin; i < rowEnd; i++)
 			{
-			case DiffRowKind::Equal:
-				if (isLeft)
+				const DiffRow &row = rows[static_cast<size_t>(i)];
+				const float y0 = innerTopLeft.y + padY + static_cast<float>(i) * lineH;
+				const ImVec2 rmin(innerTopLeft.x, y0);
+				const ImVec2 rmax(innerTopLeft.x + innerWidth, y0 + lineH);
+				switch (row.kind)
 				{
-					ImGui::PushStyleColor(ImGuiCol_Text, stableCol);
-					ImGui::TextUnformatted(row.leftLine.c_str());
-					ImGui::PopStyleColor();
-				}
-				else
-				{
-					ImGui::PushStyleColor(ImGuiCol_Text, stableCol);
-					ImGui::TextUnformatted(row.rightLine.c_str());
-					ImGui::PopStyleColor();
-				}
-				break;
-			case DiffRowKind::LeftOnly:
-				if (isLeft)
-				{
-					ImGui::PushStyleColor(ImGuiCol_Text, delCol);
-					ImGui::TextUnformatted(row.leftLine.empty() ? " " : row.leftLine.c_str());
-					ImGui::PopStyleColor();
-				}
-				else
-				{
-					ImGui::PushStyleColor(ImGuiCol_Text, mutedCol);
-					ImGui::TextUnformatted(" ");
-					ImGui::PopStyleColor();
-				}
-				break;
-			case DiffRowKind::RightOnly:
-				if (isLeft)
-				{
-					ImGui::PushStyleColor(ImGuiCol_Text, mutedCol);
-					ImGui::TextUnformatted(" ");
-					ImGui::PopStyleColor();
-				}
-				else
-				{
-					ImGui::PushStyleColor(ImGuiCol_Text, addCol);
-					ImGui::TextUnformatted(row.rightLine.empty() ? " " : row.rightLine.c_str());
-					ImGui::PopStyleColor();
-				}
-				break;
-			case DiffRowKind::Changed:
-			{
-				if (largeFallback)
-				{
-					if (isLeft)
+				case DiffRowKind::Equal:
+					break;
+				case DiffRowKind::LeftOnly:
+					dl->AddRectFilled(rmin, rmax, ImGui::ColorConvertFloat4ToU32(ImVec4(mutedCol.x, mutedCol.y, mutedCol.z, 0.38f)));
+					break;
+				case DiffRowKind::RightOnly:
+					dl->AddRectFilled(rmin, rmax, ImGui::ColorConvertFloat4ToU32(ImVec4(addCol.x, addCol.y, addCol.z, 0.28f)));
+					break;
+				case DiffRowKind::Changed:
+					if (largeFB)
 					{
-						ImGui::PushStyleColor(ImGuiCol_Text, delCol);
-						ImGui::TextUnformatted(row.leftLine.empty() ? " " : row.leftLine.c_str());
-						ImGui::PopStyleColor();
+						dl->AddRectFilled(rmin, rmax, ImGui::ColorConvertFloat4ToU32(ImVec4(chgCol.x, chgCol.y, chgCol.z, 0.32f)));
 					}
 					else
 					{
-						ImGui::PushStyleColor(ImGuiCol_Text, addCol);
-						ImGui::TextUnformatted(row.rightLine.empty() ? " " : row.rightLine.c_str());
-						ImGui::PopStyleColor();
+						std::vector<WordSpan> sl, sr;
+						buildWordSpans(row.leftLine, row.rightLine, sl, sr);
+						(void)sl;
+						float x = innerTopLeft.x + padX;
+						for (const WordSpan &sp : sr)
+						{
+							const float tw = ImGui::CalcTextSize(sp.text.c_str()).x;
+							if (sp.kind == WordSpanKind::Added)
+								dl->AddRectFilled(ImVec2(x, y0), ImVec2(x + tw, y0 + lineH),
+									ImGui::ColorConvertFloat4ToU32(ImVec4(chgCol.x, chgCol.y, chgCol.z, 0.42f)));
+							x += tw;
+						}
 					}
+					break;
 				}
-				else
-				{
-					std::vector<WordSpan> sl, sr;
-					buildWordSpans(row.leftLine, row.rightLine, sl, sr);
-					if (isLeft)
-						drawWordSpansRow(sl, stableCol, addCol, delCol);
-					else
-						drawWordSpansRow(sr, stableCol, addCol, delCol);
-				}
-				break;
-			}
 			}
 		}
 
@@ -651,7 +639,8 @@ namespace gitReview
 
 			const std::vector<DiffRow> &rows = cachedDiffRows(app);
 			const bool largeFB = app.diffCacheLargeFallback;
-			const float lineH = ImGui::GetTextLineHeightWithSpacing();
+			/// Must match \c InputTextMultiline line step (\c g.FontSize), not \c GetTextLineHeightWithSpacing().
+			const float lineH = ImGui::GetTextLineHeight();
 
 			std::vector<int> hunkStarts;
 			for (int i = 0; i < static_cast<int>(rows.size()); i++)
@@ -718,7 +707,7 @@ namespace gitReview
 
 		const float mapBarW = 18.f;
 
-		const float footer = app.rightSideIsWorktreeFile ? 168.f : 128.f;
+		const float footer = app.rightSideIsWorktreeFile ? 104.f : 84.f;
 		ImGui::BeginChild("diffScroll", ImVec2(-(mapBarW + ImGui::GetStyle().ItemSpacing.x), -footer), true,
 			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar);
 
@@ -759,33 +748,92 @@ namespace gitReview
 			app.diffMapScrollTarget = -1.f;
 		}
 
-		const ImVec4 stable(0.85f, 0.88f, 0.92f, 1.f);
 		const ImVec4 addc(0.45f, 0.85f, 0.55f, 1.f);
 		const ImVec4 delc(0.95f, 0.45f, 0.45f, 1.f);
 		const ImVec4 muted(0.45f, 0.45f, 0.5f, 1.f);
+		const ImVec4 chgcol(0.95f, 0.82f, 0.35f, 1.f);
 
 		const float totalW = ImGui::GetContentRegionAvail().x;
 		const float halfW = std::max(80.f, totalW * 0.5f - 6.f);
+		const float contentH = static_cast<float>(rows.size()) * lineH;
+		// Multiline InputText adds a Dummy of (lines * FontSize + FramePadding.y); without slack the inner
+		// child gets ScrollMaxY > 0 and captures the mouse wheel instead of the outer diff scroll.
+		const ImGuiStyle &styleRef = ImGui::GetStyle();
+		const float paneH = contentH + styleRef.FramePadding.y * 2.f;
+		// NoScrollbar on these children blocks forwarding wheel to the parent (see ImGui changelog 2017/12/14).
+		const ImGuiWindowFlags paneFlags = ImGuiWindowFlags_NoScrollWithMouse;
 
-		ImGuiListClipper clipper;
-		clipper.Begin(static_cast<int>(rows.size()), lineH);
-		while (clipper.Step())
+		ImGui::BeginChild("diffLeftCol", ImVec2(halfW, paneH), false, paneFlags);
 		{
-			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-			{
-				ImGui::PushID(i);
-				ImGui::BeginGroup();
-				ImGui::BeginChild("dL", ImVec2(halfW, lineH), false, ImGuiWindowFlags_NoScrollbar);
-				drawSidePaneLine(rows[static_cast<size_t>(i)], true, largeFB, stable, addc, delc, muted);
-				ImGui::EndChild();
-				ImGui::SameLine();
-				ImGui::BeginChild("dR", ImVec2(0, lineH), false, ImGuiWindowFlags_NoScrollbar);
-				drawSidePaneLine(rows[static_cast<size_t>(i)], false, largeFB, stable, addc, delc, muted);
-				ImGui::EndChild();
-				ImGui::EndGroup();
-				ImGui::PopID();
-			}
+			const ImGuiStyle &stl = ImGui::GetStyle();
+			const float padXL = stl.FramePadding.x;
+			const float padYL = stl.FramePadding.y;
+			ImDrawList *dll = ImGui::GetWindowDrawList();
+			const ImVec2 innerL = ImGui::GetCursorScreenPos();
+			const float innerWL = ImGui::GetContentRegionAvail().x;
+
+			ImGuiListClipper clipperLeftHL;
+			clipperLeftHL.Begin(static_cast<int>(rows.size()), lineH);
+			while (clipperLeftHL.Step())
+				drawLeftPaneHighlights(dll, innerL, innerWL, lineH, padXL, padYL, clipperLeftHL.DisplayStart, clipperLeftHL.DisplayEnd, rows, largeFB, delc,
+					muted);
+
+			ImGui::SetCursorPos(ImVec2(0.f, 0.f));
+
+			std::vector<char> &leftBuf = app.leftViewBuffer;
+			if (leftBuf.empty())
+				leftBuf.push_back('\0');
+			if (leftBuf.capacity() < leftBuf.size() + 1024u)
+				leftBuf.reserve(leftBuf.size() + 2048u);
+
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
+			ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
+			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.f, 0.f, 0.f, 0.f));
+			ImGui::InputTextMultiline("##leftViewMain", leftBuf.data(), static_cast<int>(leftBuf.size()), ImVec2(innerWL, paneH),
+				ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_CallbackResize, vectorResizeCallback, &leftBuf);
+			ImGui::PopStyleColor(3);
 		}
+		ImGui::EndChild();
+
+		ImGui::SameLine(0.f, 0.f);
+
+		ImGui::BeginChild("diffRightCol", ImVec2(0.f, paneH), false, paneFlags);
+		{
+			const ImGuiStyle &st = ImGui::GetStyle();
+			const float padX = st.FramePadding.x;
+			const float padY = st.FramePadding.y;
+			ImDrawList *dl = ImGui::GetWindowDrawList();
+			const ImVec2 inner0 = ImGui::GetCursorScreenPos();
+			const float innerW = ImGui::GetContentRegionAvail().x;
+
+			ImGuiListClipper clipperHL;
+			clipperHL.Begin(static_cast<int>(rows.size()), lineH);
+			while (clipperHL.Step())
+				drawRightPaneHighlights(dl, inner0, innerW, lineH, padX, padY, clipperHL.DisplayStart, clipperHL.DisplayEnd, rows, largeFB, addc, chgcol,
+					muted);
+
+			ImGui::SetCursorPos(ImVec2(0.f, 0.f));
+
+			ImGuiInputTextFlags editFlags = ImGuiInputTextFlags_CallbackResize;
+			if (!app.rightSideIsWorktreeFile)
+				editFlags |= ImGuiInputTextFlags_ReadOnly;
+			if (app.rightSideIsWorktreeFile)
+				editFlags |= ImGuiInputTextFlags_AllowTabInput;
+
+			std::vector<char> &buf = app.rightEditBuffer;
+			if (buf.empty())
+				buf.push_back('\0');
+			if (buf.capacity() < buf.size() + 1024u)
+				buf.reserve(buf.size() + 2048u);
+
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
+			ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
+			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.f, 0.f, 0.f, 0.f));
+			ImGui::InputTextMultiline("##rightEditMain", buf.data(), static_cast<int>(buf.size()), ImVec2(innerW, paneH), editFlags, vectorResizeCallback,
+				&buf);
+			ImGui::PopStyleColor(3);
+		}
+		ImGui::EndChild();
 
 		const float scrollY = ImGui::GetScrollY();
 		app.diffScrollY = scrollY;
@@ -813,26 +861,11 @@ namespace gitReview
 						showModal(app, "Save failed", err);
 				}
 				ImGui::SameLine();
-				ImGui::TextDisabled("Edits update the diff immediately after save.");
+				ImGui::TextDisabled("The diff highlights update from the buffer; save writes the working tree file.");
 			}
 			else
 			{
 				ImGui::TextDisabled("Staged/HEAD view: edit the working tree from the unstaged review mode.");
-			}
-
-			ImGui::Separator();
-			ImGui::TextUnformatted("Plain buffer (editable side)");
-			ImGuiInputTextFlags flags = ImGuiInputTextFlags_None;
-			if (!app.rightSideIsWorktreeFile)
-				flags |= ImGuiInputTextFlags_ReadOnly;
-			flags |= ImGuiInputTextFlags_CallbackResize;
-			{
-				std::vector<char> &buf = app.rightEditBuffer;
-				if (buf.empty())
-					buf.push_back('\0');
-				if (buf.capacity() < buf.size() + 1024)
-					buf.reserve(buf.size() + 2048);
-				ImGui::InputTextMultiline("##rightBuf", buf.data(), static_cast<int>(buf.size()), ImVec2(-1.f, 72.f), flags, vectorResizeCallback, &buf);
 			}
 
 			ImGui::EndChild();

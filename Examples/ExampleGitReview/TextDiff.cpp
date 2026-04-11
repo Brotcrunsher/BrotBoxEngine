@@ -284,6 +284,71 @@ namespace gitReview
 		}
 	}
 
+	std::string joinLinesForDiff(const std::vector<std::string> &lines)
+	{
+		std::string o;
+		for (size_t i = 0; i < lines.size(); i++)
+		{
+			if (i)
+				o += '\n';
+			o += lines[i];
+		}
+		return o;
+	}
+
+	std::string canonicalFromAlignedRightBuffer(const std::vector<std::string> &alignedLines, const std::vector<DiffRow> &rows)
+	{
+		std::vector<std::string> canonLines;
+		const size_t n = std::min(alignedLines.size(), rows.size());
+		canonLines.reserve(n);
+		for (size_t i = 0; i < n; i++)
+		{
+			if (rows[i].kind == DiffRowKind::LeftOnly)
+			{
+				if (!alignedLines[i].empty())
+					canonLines.push_back(alignedLines[i]);
+				continue;
+			}
+			canonLines.push_back(alignedLines[i]);
+		}
+		return joinLinesForDiff(canonLines);
+	}
+
+	std::string buildAlignedRightBuffer(const std::string &canonicalRight, const std::vector<DiffRow> &rows)
+	{
+		const std::vector<std::string> L = splitLinesForDiff(canonicalRight);
+		std::vector<std::string> outLines;
+		outLines.reserve(rows.size());
+		size_t li = 0;
+		for (const DiffRow &r : rows)
+		{
+			if (r.kind == DiffRowKind::LeftOnly)
+			{
+				outLines.emplace_back();
+				continue;
+			}
+			if (li < L.size())
+				outLines.push_back(L[li++]);
+			else
+				outLines.emplace_back();
+		}
+		return joinLinesForDiff(outLines);
+	}
+
+	std::string buildAlignedLeftBuffer(const std::vector<DiffRow> &rows)
+	{
+		std::vector<std::string> outLines;
+		outLines.reserve(rows.size());
+		for (const DiffRow &r : rows)
+		{
+			if (r.kind == DiffRowKind::RightOnly)
+				outLines.emplace_back();
+			else
+				outLines.push_back(r.leftLine);
+		}
+		return joinLinesForDiff(outLines);
+	}
+
 	void buildWordSpans(const std::string &leftLine, const std::string &rightLine, std::vector<WordSpan> &outLeft,
 		std::vector<WordSpan> &outRight)
 	{

@@ -49,4 +49,16 @@ namespace gitReview
 	/// Word-level highlighting for one left/right line pair (whitespace-separated tokens).
 	void buildWordSpans(const std::string &leftLine, const std::string &rightLine, std::vector<WordSpan> &outLeft,
 		std::vector<WordSpan> &outRight);
+
+	/// Inverse of \c splitLinesForDiff for round-tripping line vectors.
+	std::string joinLinesForDiff(const std::vector<std::string> &lines);
+
+	/// Reconstructs on-disk text from a side-by-side row-aligned buffer (one physical line per \c DiffRow).
+	std::string canonicalFromAlignedRightBuffer(const std::vector<std::string> &alignedLines, const std::vector<DiffRow> &rows);
+
+	/// Builds a row-aligned buffer so each diff row maps to one editor line (empty line for \c LeftOnly rows).
+	std::string buildAlignedRightBuffer(const std::string &canonicalRight, const std::vector<DiffRow> &rows);
+
+	/// Row-aligned left buffer: empty line for \c RightOnly rows; otherwise \c leftLine from each row.
+	std::string buildAlignedLeftBuffer(const std::vector<DiffRow> &rows);
 }

@@ -20,6 +20,8 @@ namespace gitReview
 		ReviewMode reviewMode = ReviewMode::Unstaged;
 
 		std::string leftText;
+		/// Row-aligned read-only view of the left side (matches \c InputTextMultiline line layout).
+		std::vector<char> leftViewBuffer;
 		/// Null-terminated buffer for the right side (ImGui + diff); excludes the trailing '\0' from text comparisons.
 		std::vector<char> rightEditBuffer;
 		bool rightSideIsWorktreeFile = false;
@@ -77,8 +79,8 @@ namespace gitReview
 	void commitStaged(ReviewAppState &app, std::string &err);
 	void pushUpstream(ReviewAppState &app, std::string &err);
 
-	/// Text of \c rightEditBuffer without the trailing null terminator (for diffing and saving).
-	std::string rightBufferText(const ReviewAppState &app);
+	/// Canonical worktree text derived from the row-aligned editor buffer (refreshes the diff cache).
+	std::string rightBufferText(ReviewAppState &app);
 
 	/// Returns a cached view of the side-by-side diff rows, only
 	/// recomputing when the underlying texts change.

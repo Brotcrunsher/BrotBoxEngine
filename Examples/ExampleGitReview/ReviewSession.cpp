@@ -11,7 +11,7 @@ namespace gitReview
 {
 	namespace
 	{
-		void setRightBufferFromText(std::vector<char> &buf, const std::string &text)
+		void setBufferFromText(std::vector<char> &buf, const std::string &text)
 		{
 			buf.assign(text.begin(), text.end());
 			buf.push_back('\0');
@@ -169,6 +169,8 @@ namespace gitReview
 	{
 		app.loadDiffError.clear();
 		app.leftText.clear();
+		app.leftViewBuffer.clear();
+		app.leftViewBuffer.push_back('\0');
 		app.rightEditBuffer.clear();
 		app.rightEditBuffer.push_back('\0');
 		app.rightSideIsWorktreeFile = false;
@@ -187,7 +189,7 @@ namespace gitReview
 		std::string err;
 		std::string rightTmp;
 		loadDiffPair(root, app.reviewMode, *app.selection, app.leftText, rightTmp, app.rightSideIsWorktreeFile, app.binaryFile, err);
-		setRightBufferFromText(app.rightEditBuffer, rightTmp);
+		setBufferFromText(app.rightEditBuffer, rightTmp);
 		if (!err.empty())
 			app.loadDiffError = err;
 	}
@@ -206,6 +208,8 @@ namespace gitReview
 	{
 		app.selection.reset();
 		app.leftText.clear();
+		app.leftViewBuffer.clear();
+		app.leftViewBuffer.push_back('\0');
 		app.rightEditBuffer.clear();
 		app.rightEditBuffer.push_back('\0');
 		app.rightSideIsWorktreeFile = false;
@@ -226,7 +230,7 @@ namespace gitReview
 			return false;
 		}
 		const std::filesystem::path p = std::filesystem::path(repoRootString(app)) / std::filesystem::path(app.selection->path);
-		return writeFileUtf8(p.string(), rightBufferAsString(app.rightEditBuffer), err);
+		return writeFileUtf8(p.string(), rightBufferText(app), err);
 	}
 
 	void stageEntry(ReviewAppState &app, const FileEntry &entry, std::string &err)
@@ -337,20 +341,33 @@ namespace gitReview
 			err = sanitizedGitError(r);
 	}
 
-	std::string rightBufferText(const ReviewAppState &app)
-	{
-		return rightBufferAsString(app.rightEditBuffer);
-	}
-
 	const std::vector<DiffRow> &cachedDiffRows(ReviewAppState &app)
 	{
-		const std::string currentRight = rightBufferText(app);
-		if (app.leftText != app.cachedDiffLeft || currentRight != app.cachedDiffRight)
+		const std::string aligned = rightBufferAsString(app.rightEditBuffer);
+		const std::vector<std::string> pl = splitLinesForDiff(aligned);
+
+		std::string canon;
+		if (!app.cachedDiffRows.empty() && pl.size() == app.cachedDiffRows.size())
+			canon = canonicalFromAlignedRightBuffer(pl, app.cachedDiffRows);
+		else
+			canon = joinLinesForDiff(pl);
+
+		if (app.leftText != app.cachedDiffLeft || canon != app.cachedDiffRight)
 		{
 			app.cachedDiffLeft = app.leftText;
-			app.cachedDiffRight = currentRight;
-			app.cachedDiffRows = buildSideBySideRows(app.leftText, currentRight, app.diffCacheLargeFallback);
+			app.cachedDiffRight = canon;
+			app.cachedDiffRows = buildSideBySideRows(app.leftText, canon, app.diffCacheLargeFallback);
+			const std::string alignedFix = buildAlignedRightBuffer(canon, app.cachedDiffRows);
+			if (alignedFix != aligned)
+				setBufferFromText(app.rightEditBuffer, alignedFix);
+			setBufferFromText(app.leftViewBuffer, buildAlignedLeftBuffer(app.cachedDiffRows));
 		}
 		return app.cachedDiffRows;
+	}
+
+	std::string rightBufferText(ReviewAppState &app)
+	{
+		cachedDiffRows(app);
+		return app.cachedDiffRight;
 	}
 }
