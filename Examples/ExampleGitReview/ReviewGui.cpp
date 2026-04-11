@@ -89,11 +89,10 @@ namespace gitReview
 			}
 		}
 
-		void drawToast(ReviewAppState &app, float deltaSeconds)
+		void drawToast(ReviewAppState &app)
 		{
 			if (app.toastSecondsRemaining <= 0.f || app.toastText.empty())
 				return;
-			app.toastSecondsRemaining -= deltaSeconds;
 			const ImGuiViewport *vp = ImGui::GetMainViewport();
 			ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x - 24.f, vp->WorkPos.y + 24.f), ImGuiCond_Always, ImVec2(1.f, 0.f));
 			ImGui::SetNextWindowBgAlpha(0.92f);
@@ -1153,8 +1152,7 @@ namespace gitReview
 
 	void drawReviewGui(ReviewAppState &app)
 	{
-		const float dt = ImGui::GetIO().DeltaTime;
-		drawToast(app, dt);
+		drawToast(app);
 
 		const ImGuiViewport *vp = ImGui::GetMainViewport();
 		ImGui::SetNextWindowPos(vp->WorkPos);

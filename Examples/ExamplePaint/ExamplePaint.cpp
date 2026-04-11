@@ -933,6 +933,12 @@ public:
 	/// If non-empty, opened on startup (CLI: first argument after the program name).
 	std::string initialDocumentPath;
 
+	MyGame()
+	{
+		setReactiveRendering(true);
+		setTargetFrametime(1.f / 60.f);
+	}
+
 	void onStart() override
 	{
 		// Platform integration is configured by the host example, not by the editor core.
@@ -1070,6 +1076,9 @@ public:
 	void update(float timeSinceLastFrame) override
 	{
 		runPaintEditorUpdate(editor, *this, timeSinceLastFrame);
+		// Continuous strokes / drags may not emit GLFW events every frame; keep redraw requested while a button is held.
+		if (isMouseDown(bbe::MouseButton::LEFT) || isMouseDown(bbe::MouseButton::RIGHT) || isMouseDown(bbe::MouseButton::MIDDLE))
+			requestRedraw();
 	}
 
 	void draw3D(bbe::PrimitiveBrush3D & /*brush*/) override
