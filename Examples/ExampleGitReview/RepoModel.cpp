@@ -6,6 +6,8 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <climits>
+#include <cstdlib>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -226,6 +228,20 @@ namespace gitReview
 		GitRunResult head = runGit(repoRoot, { "rev-parse", "--short", "HEAD" });
 		if (head.exitCode == 0)
 			outSnap.headShort = trim(head.standardOut);
+
+		outSnap.commitsAheadOfUpstream = -1;
+		GitRunResult ahead = runGit(repoRoot, { "rev-list", "--count", "@{upstream}..HEAD" });
+		if (ahead.exitCode == 0)
+		{
+			const std::string t = trim(ahead.standardOut);
+			if (!t.empty())
+			{
+				char *endPtr = nullptr;
+				const long n = std::strtol(t.c_str(), &endPtr, 10);
+				if (endPtr != t.c_str() && n >= 0 && n <= static_cast<long>(INT_MAX))
+					outSnap.commitsAheadOfUpstream = static_cast<int>(n);
+			}
+		}
 
 		GitRunResult unst = runGit(repoRoot, { "diff", "--find-renames", "--name-status", "-z" });
 		GitRunResult stgd = runGit(repoRoot, { "diff", "--cached", "--find-renames", "--name-status", "-z" });

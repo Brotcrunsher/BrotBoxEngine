@@ -43,6 +43,8 @@ namespace gitReview
 		std::string root;
 		std::string headShort;
 		std::string branchHint;
+		/// Local commits not present on \c @{upstream}; \c -1 if no upstream / error.
+		int commitsAheadOfUpstream = -1;
 		std::vector<FileEntry> entries;
 	};
 

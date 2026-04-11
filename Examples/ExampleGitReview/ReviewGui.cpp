@@ -293,14 +293,29 @@ namespace gitReview
 			if (ImGui::Button("Commit..."))
 				ImGui::OpenPopup("##commitPopup");
 			ImGui::SameLine();
-			if (ImGui::Button("Push"))
 			{
-				std::string err;
-				pushUpstream(app, err);
-				if (!err.empty())
-					showModal(app, "Push failed", err);
-				else
-					showToast(app, "Push completed.", 2.5f);
+				std::string pushLabel = "Push";
+				if (app.snapshot.commitsAheadOfUpstream >= 0)
+					pushLabel += "(" + std::to_string(app.snapshot.commitsAheadOfUpstream) + ")";
+				if (ImGui::Button(pushLabel.c_str()))
+				{
+					std::string err;
+					pushUpstream(app, err);
+					if (!err.empty())
+						showModal(app, "Push failed", err);
+					else
+					{
+						showToast(app, "Push completed.", 2.5f);
+						refreshSnapshot(app);
+					}
+				}
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+				{
+					if (app.snapshot.commitsAheadOfUpstream >= 0)
+						ImGui::SetTooltip("git push — %d local commit(s) not on upstream.", app.snapshot.commitsAheadOfUpstream);
+					else
+						ImGui::SetTooltip("git push (upstream count unavailable — branch may have no @{upstream}).");
+				}
 			}
 			ImGui::EndDisabled();
 
