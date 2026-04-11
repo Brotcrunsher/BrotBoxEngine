@@ -1,7 +1,4 @@
 #include "BBE/ImGuiExtensions.h"
-#include "BBE/Window.h"
-
-static ::bbe::Game *activeGame = nullptr;
 
 static int InputTextCallback(ImGuiInputTextCallbackData *data)
 {
@@ -76,7 +73,7 @@ bool ImGui::bbe::clickableText(const char *fmt, ...)
 
 bool ImGui::bbe::securityButton(const char *text, SecurityButtonFlags flags)
 {
-	const bool shiftPressed = activeGame->isKeyDown(::bbe::Key::LEFT_SHIFT);
+	const bool shiftPressed = ImGui::GetIO().KeyShift;
 	if (flags & SecurityButtonFlags_DontShowWOSecurityButton)
 	{
 		if (!shiftPressed)
@@ -251,7 +248,7 @@ bool ImGui::bbe::timePicker(const char *label, int32_t *hour, int32_t *minute)
 	ImGui::Text("%s:", label);
 	ImGui::SameLine();
 	bool retVal = false;
-	ImGui::PushItemWidth(50 * activeGame->getWindow()->getScale());
+	ImGui::PushItemWidth(50 * ImGui::GetWindowDpiScale());
 	retVal |= combo(comboLabel1.getRaw(), hourSelection, hour);
 	ImGui::SameLine();
 	retVal |= combo(comboLabel2.getRaw(), minuteSelection, minute);
@@ -268,7 +265,7 @@ void ImGui::bbe::SetColor(ImU32 c)
 
 float ImGui::bbe::ToResolution(float val)
 {
-	return activeGame->getWindow()->getScale() * val;
+	return ImGui::GetWindowDpiScale() * val;
 }
 
 void ImGui::bbe::AddLine(const ImVec2 &p1, const ImVec2 &p2, float thickness)
@@ -481,11 +478,6 @@ void ImGui::bbe::window::AddBezierCubic(const ImVec2 &p1, const ImVec2 &p2, cons
 void ImGui::bbe::window::AddBezierQuadratic(const ImVec2 &p1, const ImVec2 &p2, const ImVec2 &p3, float thickness, int num_segments)
 {
 	ImGui::GetForegroundDrawList()->AddBezierQuadratic(ToWindowCoord(p1), ToWindowCoord(p2), ToWindowCoord(p3), col, thickness, num_segments);
-}
-
-void ImGui::bbe::INTERNAL::setActiveGame(::bbe::Game *game)
-{
-	activeGame = game;
 }
 
 bool ImGui::Button(const ::bbe::String &s, const ImVec2 &size)

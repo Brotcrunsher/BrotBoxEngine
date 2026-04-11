@@ -378,7 +378,6 @@ void bbe::Game::frame(bool dragging)
 void bbe::Game::frameUpdate()
 {
 	beginMeasure("INTERNAL - Frame Start");
-	ImGui::bbe::INTERNAL::setActiveGame(this);
 	m_pwindow->update();
 	float timeSinceLastFrame = m_gameTime.tick();
 	if (m_fixedFrameTime != 0.f) timeSinceLastFrame = m_fixedFrameTime;

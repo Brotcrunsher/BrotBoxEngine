@@ -3,18 +3,12 @@
 #include "imgui.h"
 #include "../BBE/String.h"
 #include "../BBE/List.h"
-#include "../BBE/Game.h"
 #include "../BBE/BrotTime.h"
 
 namespace ImGui
 {
 	namespace bbe
 	{
-		namespace INTERNAL
-		{
-			void setActiveGame(::bbe::Game *game);
-		}
-
 		bool InputText(const char *label, ::bbe::String &s, ImGuiInputTextFlags flags = 0);
 
 		void tooltip(const char *text);
