@@ -137,7 +137,7 @@ namespace gitReview
 		if (ext.empty())
 			return false;
 		static const char *const binaryExts[] = {
-			".png", ".jpg",  ".jpeg", ".gif",  ".bmp",  ".ico",  ".webp",  ".tiff", ".tif",  ".svg",  ".mp3",  ".mp4",  ".wav",
+			".png", ".jpg",  ".jpeg", ".gif",  ".bmp",  ".ico",  ".webp",  ".tiff", ".tif",  ".mp3",  ".mp4",  ".wav",
 			".flac", ".ogg", ".avi",  ".mkv",  ".mov",  ".wmv",  ".zip",   ".gz",   ".bz2",  ".xz",   ".7z",   ".rar",  ".tar",
 			".exe",  ".dll", ".so",   ".dylib", ".o",   ".obj",  ".a",     ".lib",  ".pdf",  ".doc",  ".docx", ".xls",  ".xlsx",
 			".ppt",  ".pptx", ".class", ".pyc", ".pyo", ".ttf",  ".otf",   ".woff", ".woff2", ".eot", ".sqlite", ".db", ".wasm",
@@ -148,6 +148,45 @@ namespace gitReview
 				return true;
 		}
 		return false;
+	}
+
+	bool pathLooksTextByExtension(const std::string &path)
+	{
+		const std::string ext = toLowerExt(path);
+		if (ext.empty())
+			return false;
+		static const char *const textExts[] = {
+			".txt",  ".md",   ".markdown", ".rst",  ".adoc", ".tex",  ".svg",  ".xml",  ".html", ".htm", ".xhtml",
+			".css",  ".scss", ".less",    ".sass",
+			".json", ".jsonc", ".json5", ".yaml", ".yml", ".toml", ".ini",  ".cfg",  ".conf", ".properties",
+			".c",    ".h",    ".cc",     ".cpp",  ".cxx",  ".hpp",  ".hh",   ".hxx",  ".m",    ".mm",
+			".cs",   ".fs",   ".fsx",    ".fsi",  ".vb",   ".rs",   ".go",   ".java", ".kt",   ".kts",
+			".py",   ".pyw",  ".pyi",    ".rb",   ".php",  ".swift", ".scala", ".sc",  ".pl",   ".pm",  ".lua", ".vim",
+			".js",   ".jsx",  ".mjs",    ".cjs",  ".ts",   ".tsx",  ".vue",  ".svelte",
+			".sh",   ".bash", ".zsh",    ".fish", ".ps1",  ".bat",  ".cmd",
+			".sql",  ".graphql", ".gql", ".cmake",
+			".glsl", ".vert", ".frag", ".comp", ".geom", ".tesc", ".tese",
+			".hlsl", ".metal",
+			".csv",  ".tsv",  ".gitignore", ".gitattributes", ".editorconfig", ".dockerignore",
+		};
+		for (const char *e : textExts)
+		{
+			if (ext == e)
+				return true;
+		}
+		return false;
+	}
+
+	static void decideBinaryAfterLoad(const FileEntry &entry, const std::string &left, const std::string &right, bool &outBinary)
+	{
+		const bool lc = pathLooksBinaryByContent(left);
+		const bool rc = pathLooksBinaryByContent(right);
+		const bool extBin = pathLooksBinaryByExtension(entry.path) || (!entry.renameFrom.empty() && pathLooksBinaryByExtension(entry.renameFrom));
+		const bool textHint = pathLooksTextByExtension(entry.path) || (!entry.renameFrom.empty() && pathLooksTextByExtension(entry.renameFrom));
+		if (textHint && !lc && !rc)
+			outBinary = false;
+		else
+			outBinary = lc || rc || (extBin && !textHint);
 	}
 
 	bool isGitRepositoryRoot(const std::string &path, std::string &outError)
@@ -281,12 +320,6 @@ namespace gitReview
 		outBinary = false;
 		outError.clear();
 
-		if (pathLooksBinaryByExtension(entry.path) || pathLooksBinaryByExtension(entry.renameFrom))
-		{
-			outBinary = true;
-			return;
-		}
-
 		const std::filesystem::path root(repoRoot);
 		const std::filesystem::path workPath = root / std::filesystem::path(entry.path);
 
@@ -320,7 +353,7 @@ namespace gitReview
 			outRightIsWorktreeFile = true;
 			if (!outError.empty())
 				return;
-			outBinary = pathLooksBinaryByContent(outRight);
+			decideBinaryAfterLoad(entry, outLeft, outRight, outBinary);
 			return;
 		}
 
@@ -335,7 +368,7 @@ namespace gitReview
 				}
 				outRight.clear();
 				outRightIsWorktreeFile = false;
-				outBinary = pathLooksBinaryByContent(outLeft);
+				decideBinaryAfterLoad(entry, outLeft, outRight, outBinary);
 				return;
 			}
 
@@ -350,7 +383,7 @@ namespace gitReview
 				outRightIsWorktreeFile = true;
 				if (!outError.empty())
 					return;
-				outBinary = pathLooksBinaryByContent(outLeft) || pathLooksBinaryByContent(outRight);
+				decideBinaryAfterLoad(entry, outLeft, outRight, outBinary);
 				return;
 			}
 
@@ -370,7 +403,7 @@ namespace gitReview
 			outRightIsWorktreeFile = true;
 			if (!outError.empty())
 				return;
-			outBinary = pathLooksBinaryByContent(outLeft) || pathLooksBinaryByContent(outRight);
+			decideBinaryAfterLoad(entry, outLeft, outRight, outBinary);
 			return;
 		}
 
@@ -384,7 +417,7 @@ namespace gitReview
 			}
 			outRight.clear();
 			outRightIsWorktreeFile = false;
-			outBinary = pathLooksBinaryByContent(outLeft);
+			decideBinaryAfterLoad(entry, outLeft, outRight, outBinary);
 			return;
 		}
 
@@ -401,7 +434,7 @@ namespace gitReview
 				return;
 			}
 			outRightIsWorktreeFile = false;
-			outBinary = pathLooksBinaryByContent(outLeft) || pathLooksBinaryByContent(outRight);
+			decideBinaryAfterLoad(entry, outLeft, outRight, outBinary);
 			return;
 		}
 
@@ -414,7 +447,7 @@ namespace gitReview
 				return;
 			}
 			outRightIsWorktreeFile = false;
-			outBinary = pathLooksBinaryByContent(outRight);
+			decideBinaryAfterLoad(entry, outLeft, outRight, outBinary);
 			return;
 		}
 
@@ -430,6 +463,6 @@ namespace gitReview
 			return;
 		}
 		outRightIsWorktreeFile = false;
-		outBinary = pathLooksBinaryByContent(outLeft) || pathLooksBinaryByContent(outRight);
+		decideBinaryAfterLoad(entry, outLeft, outRight, outBinary);
 	}
 }

@@ -66,4 +66,7 @@ namespace gitReview
 
 	/// Extension-based heuristic for common binary formats.
 	bool pathLooksBinaryByExtension(const std::string &path);
+
+	/// Source / markup extensions we prefer to treat as text when content looks printable.
+	bool pathLooksTextByExtension(const std::string &path);
 }

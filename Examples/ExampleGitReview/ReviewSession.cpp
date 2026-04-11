@@ -229,6 +229,11 @@ namespace gitReview
 			err = "Nothing to save (editable side is not the working tree file).";
 			return false;
 		}
+		if (app.binaryFile)
+		{
+			err = "Binary files cannot be edited in this view; save is disabled.";
+			return false;
+		}
 		const std::filesystem::path p = std::filesystem::path(repoRootString(app)) / std::filesystem::path(app.selection->path);
 		return writeFileUtf8(p.string(), rightBufferText(app), err);
 	}
@@ -343,6 +348,8 @@ namespace gitReview
 
 	const std::vector<DiffRow> &cachedDiffRows(ReviewAppState &app)
 	{
+		if (app.binaryFile)
+			return app.cachedDiffRows;
 		const std::string aligned = rightBufferAsString(app.rightEditBuffer);
 		const std::vector<std::string> pl = splitLinesForDiff(aligned);
 
@@ -367,6 +374,8 @@ namespace gitReview
 
 	std::string rightBufferText(ReviewAppState &app)
 	{
+		if (app.binaryFile)
+			return rightBufferAsString(app.rightEditBuffer);
 		cachedDiffRows(app);
 		return app.cachedDiffRight;
 	}

@@ -1,4 +1,5 @@
 #include "ReviewGui.h"
+#include "BinaryDiffPresenters.h"
 #include "NativeFolderPicker.h"
 #include "ReviewSession.h"
 #include "TextDiff.h"
@@ -704,7 +705,23 @@ namespace gitReview
 
 			if (app.binaryFile)
 			{
-				ImGui::TextUnformatted("Binary file — text diff is disabled for this file.");
+				ImGui::TextDisabled("Review mode");
+				ImGui::SameLine();
+				ImGui::BeginDisabled(app.selection->section == FileListSection::Untracked);
+				if (ImGui::RadioButton("Unstaged", app.reviewMode == ReviewMode::Unstaged))
+				{
+					app.reviewMode = ReviewMode::Unstaged;
+					reloadDiffForSelection(app);
+				}
+				ImGui::SameLine();
+				if (ImGui::RadioButton("Staged", app.reviewMode == ReviewMode::Staged))
+				{
+					app.reviewMode = ReviewMode::Staged;
+					reloadDiffForSelection(app);
+				}
+				ImGui::EndDisabled();
+				ImGui::Separator();
+				drawBinaryDiffPresenters(app.selection->path, app.leftText, rightBufferText(app));
 				ImGui::EndChild();
 				return;
 			}
