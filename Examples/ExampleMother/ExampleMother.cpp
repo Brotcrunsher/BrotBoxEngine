@@ -10,7 +10,6 @@
 #include <fstream>
 #include <iostream>
 #include <mutex>
-#include <sodium/crypto_pwhash_argon2id.h>
 #include <string>
 #include <vector>
 #ifdef __linux__
@@ -35,6 +34,7 @@
 #include "EMProcess.h"
 #include "EMTab.h"
 #include "EMTask.h"
+#include "PasswordGenerator.h"
 #include "imgui_internal.h"
 
 // TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
@@ -2604,66 +2604,6 @@ public:
 	}
 #endif
 
-	bbe::String normalizeService(const bbe::String &service)
-	{
-		bbe::String normalizedService = service;
-		normalizedService.toLowerCaseInPlace();
-		normalizedService = normalizedService.replace(" ", "");
-		normalizedService = normalizedService.replace("http://", "");
-		normalizedService = normalizedService.replace("https://", "");
-		if (normalizedService.contains("/"))
-		{
-			normalizedService = normalizedService.substring(0, normalizedService.search("/"));
-		}
-		if (normalizedService.count(".") > 1)
-		{
-			auto normalizedServicesTokens = normalizedService.split(".");
-			normalizedService = normalizedServicesTokens[normalizedServicesTokens.getLength() - 2] + "." + normalizedServicesTokens[normalizedServicesTokens.getLength() - 1];
-		}
-		return normalizedService;
-	}
-
-	bbe::String normalizeUser(const bbe::String &user)
-	{
-		bbe::String normalizedUser = user;
-		normalizedUser.toLowerCaseInPlace();
-		normalizedUser = normalizedUser.replace(" ", "");
-		return normalizedUser;
-	}
-
-	static bbe::String GeneratePasswordHash(const bbe::String &data)
-	{
-		unsigned char hash[16] = {};
-		const int err = crypto_pwhash_argon2id(hash, sizeof(hash), data.getRaw(), data.getLength(), (const unsigned char *)"BrotbEnginePWGv1", 5, static_cast<size_t>(256 * 1024 * 1024), crypto_pwhash_argon2id_ALG_ARGON2ID13);
-		if (err != 0)
-			bbe::Crash(bbe::Error::NotImplemented, "Implement me properly.");
-		const bbe::String lower = "abcdefghijklmnopqrstuvwxyz";
-		const bbe::String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-		const bbe::String digits = "0123456789";
-		const bbe::String special = "!@#%*-_=+,.?";
-		const bbe::String all = lower + upper + digits + special;
-		bbe::String retVal;
-		for (size_t i = 0; i < sizeof(hash); i++)
-		{
-			const bbe::String *set = nullptr;
-			// The first char is always lower, second always upper and so on. This is a very simple way to ensure
-			// we fulfill the vast majority of pw requirements while not reducing the amount of entropy by a lot.
-			if (i == 0)
-				set = &lower;
-			else if (i == 1)
-				set = &upper;
-			else if (i == 2)
-				set = &digits;
-			else if (i == 3)
-				set = &special;
-			else
-				set = &all;
-
-			retVal += (*set)[hash[i] % set->getLength()];
-		}
-		return retVal;
-	}
-
 	bbe::Vector2 drawPasswordManager()
 	{
 		struct PwGenResult
@@ -2729,8 +2669,8 @@ public:
 		}
 		ImGui::EndDisabled();
 
-		const bbe::String normServ = normalizeService(service);
-		const bbe::String normUser = normalizeUser(user);
+		const bbe::String normServ = PasswordGenerator::normalizeService(std::string(service.getRaw())).c_str();
+		const bbe::String normUser = PasswordGenerator::normalizeUser(std::string(user.getRaw())).c_str();
 
 		if (!generating && newHashRequested && !masterPw.isEmpty())
 		{
@@ -2747,7 +2687,7 @@ public:
 				[capturedMasterPw, capturedRepeat, capturedNormServ, capturedNormUser, capturedKnownHashes]() -> PwGenResult
 				{
 					PwGenResult result;
-					result.masterPwHash = GeneratePasswordHash(capturedMasterPw);
+					result.masterPwHash = PasswordGenerator::generateHash(std::string(capturedMasterPw.getRaw())).c_str();
 					result.hashCount = 1;
 
 					bool isKnown = capturedKnownHashes.contains(result.masterPwHash);
@@ -2755,10 +2695,10 @@ public:
 
 					if (!capturedNormServ.isEmpty() && (isKnown || repeatMatches))
 					{
-						bbe::String hashableString = capturedMasterPw + "|||" + capturedNormServ;
+						std::string hashableString = std::string(capturedMasterPw.getRaw()) + "|||" + capturedNormServ.getRaw();
 						if (!capturedNormUser.isEmpty())
-							hashableString += "|||" + capturedNormUser;
-						result.servicePw = GeneratePasswordHash(hashableString);
+							hashableString += std::string("|||") + capturedNormUser.getRaw();
+						result.servicePw = PasswordGenerator::generateHash(hashableString).c_str();
 						result.hashCount = 2;
 
 						if (!isKnown)
