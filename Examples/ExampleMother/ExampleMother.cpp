@@ -2251,16 +2251,7 @@ public:
 				continue;
 			}
 
-			bool isIgnoredLog = false;
-			for (size_t k = 0; k < cwiList.getLength(); k++)
-			{
-				if (cwiList[k].name == log[i])
-				{
-					isIgnoredLog = true;
-					break;
-				}
-			}
-			if (!isIgnoredLog)
+			if (!isLogIgnored(log[i]))
 			{
 				cachedHasUnreadConsoleWarnings = true;
 				cachedConsoleWarningLogLength = log.getLength();
