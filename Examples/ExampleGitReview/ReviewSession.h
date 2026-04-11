@@ -40,6 +40,10 @@ namespace gitReview
 
 		/// When >= 0, the diff scroll view jumps to this Y offset on the next frame (set by the diff map).
 		float diffMapScrollTarget = -1.f;
+		/// Set to -1 or +1 to request navigation to the previous/next hunk; cleared after processing.
+		int diffNavRequest = 0;
+		/// Last known scroll position of the diff view (updated each frame for button enable/disable).
+		float diffScrollY = 0.f;
 
 		// Diff-row cache: avoids rebuilding the side-by-side model every frame.
 		std::string cachedDiffLeft;

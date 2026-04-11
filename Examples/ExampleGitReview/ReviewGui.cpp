@@ -648,6 +648,55 @@ namespace gitReview
 				reloadDiffForSelection(app);
 			}
 			ImGui::EndDisabled();
+
+			const std::vector<DiffRow> &rows = cachedDiffRows(app);
+			const bool largeFB = app.diffCacheLargeFallback;
+			const float lineH = ImGui::GetTextLineHeightWithSpacing();
+
+			std::vector<int> hunkStarts;
+			for (int i = 0; i < static_cast<int>(rows.size()); i++)
+			{
+				if (rows[static_cast<size_t>(i)].kind != DiffRowKind::Equal &&
+					(i == 0 || rows[static_cast<size_t>(i - 1)].kind == DiffRowKind::Equal))
+				{
+					hunkStarts.push_back(i);
+				}
+			}
+
+			bool hasPrev = false;
+			bool hasNext = false;
+			for (int h : hunkStarts)
+			{
+				float t = std::max(0.f, h * lineH - 3.f * lineH);
+				if (t < app.diffScrollY - 1.f)
+					hasPrev = true;
+				if (t > app.diffScrollY + 1.f)
+				{
+					hasNext = true;
+					break;
+				}
+			}
+
+			ImGui::SameLine(0.f, 24.f);
+			ImGui::BeginDisabled(!hasPrev);
+			if (ImGui::Button("<< Prev") || (!ImGui::GetIO().WantTextInput && hasPrev && ImGui::IsKeyPressed(ImGuiKey_F7)))
+			{
+				app.diffNavRequest = -1;
+			}
+			ImGui::EndDisabled();
+			ImGui::SameLine();
+			ImGui::BeginDisabled(!hasNext);
+			if (ImGui::Button("Next >>") || (!ImGui::GetIO().WantTextInput && hasNext && ImGui::IsKeyPressed(ImGuiKey_F8)))
+			{
+				app.diffNavRequest = 1;
+			}
+			ImGui::EndDisabled();
+			if (hasPrev || hasNext)
+			{
+				ImGui::SameLine();
+				ImGui::TextDisabled("(F7/F8)");
+			}
+
 			ImGui::Separator();
 
 			const char *leftCap = app.reviewMode == ReviewMode::Unstaged ? "Index (read-only)" : "HEAD (read-only)";
@@ -667,14 +716,42 @@ namespace gitReview
 			ImGui::TextColored(ImVec4(0.9f, 0.75f, 0.3f, 1.f), "Large diff — showing line-level comparison only (word-level highlighting disabled).");
 		}
 
-		const std::vector<DiffRow> &rows = cachedDiffRows(app);
-		const bool largeFB = app.diffCacheLargeFallback;
-		const float lineH = ImGui::GetTextLineHeightWithSpacing();
 		const float mapBarW = 18.f;
 
 		const float footer = app.rightSideIsWorktreeFile ? 168.f : 128.f;
 		ImGui::BeginChild("diffScroll", ImVec2(-(mapBarW + ImGui::GetStyle().ItemSpacing.x), -footer), true,
 			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar);
+
+		if (app.diffNavRequest != 0 && !hunkStarts.empty())
+		{
+			const float scrollY = ImGui::GetScrollY();
+			if (app.diffNavRequest < 0)
+			{
+				float prevTarget = -1.f;
+				for (int h : hunkStarts)
+				{
+					float t = std::max(0.f, h * lineH - 3.f * lineH);
+					if (t >= scrollY - 1.f)
+						break;
+					prevTarget = t;
+				}
+				if (prevTarget >= 0.f)
+					app.diffMapScrollTarget = prevTarget;
+			}
+			else
+			{
+				for (int h : hunkStarts)
+				{
+					float t = std::max(0.f, h * lineH - 3.f * lineH);
+					if (t > scrollY + 1.f)
+					{
+						app.diffMapScrollTarget = t;
+						break;
+					}
+				}
+			}
+			app.diffNavRequest = 0;
+		}
 
 		if (app.diffMapScrollTarget >= 0.f)
 		{
@@ -711,6 +788,7 @@ namespace gitReview
 		}
 
 		const float scrollY = ImGui::GetScrollY();
+		app.diffScrollY = scrollY;
 		const float scrollMaxY = ImGui::GetScrollMaxY();
 		const float scrollChildH = ImGui::GetWindowHeight();
 		const float innerRectH = ImGui::GetCurrentWindow()->InnerRect.GetHeight();
