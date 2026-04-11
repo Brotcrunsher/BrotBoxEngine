@@ -143,6 +143,13 @@ struct PasswordManager
 		((float), pwGenDurationSeconds, 0.0f))
 };
 
+struct CalculatorEntry
+{
+	BBE_SERIALIZABLE_DATA(
+		((bbe::String), equation),
+		((bbe::String), result))
+};
+
 struct ChatGPTConfig
 {
 	BBE_SERIALIZABLE_DATA(
@@ -333,6 +340,207 @@ namespace
 #endif
 }
 
+namespace
+{
+	struct ExprParser
+	{
+		const char *input;
+		size_t pos;
+		bool error;
+
+		ExprParser(const char *str) : input(str), pos(0), error(false) {}
+
+		void skipSpaces()
+		{
+			while (input[pos] == ' ' || input[pos] == '\t') pos++;
+		}
+
+		double parseExpression() { return parseAddSub(); }
+
+		double parseAddSub()
+		{
+			double left = parseMulDiv();
+			while (!error)
+			{
+				skipSpaces();
+				if      (input[pos] == '+') { pos++; left += parseMulDiv(); }
+				else if (input[pos] == '-') { pos++; left -= parseMulDiv(); }
+				else break;
+			}
+			return left;
+		}
+
+		double parseMulDiv()
+		{
+			double left = parseUnary();
+			while (!error)
+			{
+				skipSpaces();
+				if      (input[pos] == '*') { pos++; left *= parseUnary(); }
+				else if (input[pos] == '/') { pos++; left /= parseUnary(); }
+				else if (input[pos] == '%') { pos++; left = fmod(left, parseUnary()); }
+				else break;
+			}
+			return left;
+		}
+
+		double parseUnary()
+		{
+			skipSpaces();
+			if (input[pos] == '-') { pos++; return -parseUnary(); }
+			if (input[pos] == '+') { pos++; return  parseUnary(); }
+			return parsePower();
+		}
+
+		double parsePower()
+		{
+			double base = parsePostfix();
+			skipSpaces();
+			if (input[pos] == '^')
+			{
+				pos++;
+				return ::pow(base, parseUnary());
+			}
+			return base;
+		}
+
+		double parsePostfix()
+		{
+			double val = parsePrimary();
+			while (!error)
+			{
+				if ((unsigned char)input[pos] == 0xC2 && (unsigned char)input[pos + 1] == 0xB2)
+				{
+					pos += 2;
+					val = val * val;
+				}
+				else if ((unsigned char)input[pos] == 0xC2 && (unsigned char)input[pos + 1] == 0xB3)
+				{
+					pos += 2;
+					val = val * val * val;
+				}
+				else break;
+			}
+			return val;
+		}
+
+		double parsePrimary()
+		{
+			skipSpaces();
+
+			if (input[pos] == '(')
+			{
+				pos++;
+				double val = parseExpression();
+				skipSpaces();
+				if (input[pos] == ')') pos++;
+				else error = true;
+				return val;
+			}
+
+			auto matchFunc = [&](const char *name) -> bool
+			{
+				size_t len = strlen(name);
+				if (strncmp(input + pos, name, len) == 0 && input[pos + len] == '(')
+				{
+					pos += len + 1;
+					return true;
+				}
+				return false;
+			};
+
+			auto closeParen = [&]()
+			{
+				skipSpaces();
+				if (input[pos] == ')') pos++;
+				else error = true;
+			};
+
+			auto parseTwoArgs = [&]() -> std::pair<double, double>
+			{
+				double a = parseExpression();
+				skipSpaces();
+				if (input[pos] == ',') pos++;
+				else error = true;
+				double b = parseExpression();
+				closeParen();
+				return { a, b };
+			};
+
+			if (matchFunc("sqrt"))  { double a = parseExpression(); closeParen(); return ::sqrt(a);  }
+			if (matchFunc("cbrt"))  { double a = parseExpression(); closeParen(); return ::cbrt(a);  }
+			if (matchFunc("abs"))   { double a = parseExpression(); closeParen(); return ::fabs(a);  }
+			if (matchFunc("sin"))   { double a = parseExpression(); closeParen(); return ::sin(a);   }
+			if (matchFunc("cos"))   { double a = parseExpression(); closeParen(); return ::cos(a);   }
+			if (matchFunc("tan"))   { double a = parseExpression(); closeParen(); return ::tan(a);   }
+			if (matchFunc("asin"))  { double a = parseExpression(); closeParen(); return ::asin(a);  }
+			if (matchFunc("acos"))  { double a = parseExpression(); closeParen(); return ::acos(a);  }
+			if (matchFunc("atan"))  { double a = parseExpression(); closeParen(); return ::atan(a);  }
+			if (matchFunc("ln"))    { double a = parseExpression(); closeParen(); return ::log(a);   }
+			if (matchFunc("log"))   { double a = parseExpression(); closeParen(); return ::log10(a); }
+			if (matchFunc("ceil"))  { double a = parseExpression(); closeParen(); return ::ceil(a);  }
+			if (matchFunc("floor")) { double a = parseExpression(); closeParen(); return ::floor(a); }
+			if (matchFunc("round")) { double a = parseExpression(); closeParen(); return ::round(a); }
+			if (matchFunc("exp"))   { double a = parseExpression(); closeParen(); return ::exp(a);   }
+
+			if (matchFunc("pow"))   { auto [a, b] = parseTwoArgs(); return ::pow(a, b);    }
+			if (matchFunc("min"))   { auto [a, b] = parseTwoArgs(); return a < b ? a : b;  }
+			if (matchFunc("max"))   { auto [a, b] = parseTwoArgs(); return a > b ? a : b;  }
+			if (matchFunc("atan2")) { auto [a, b] = parseTwoArgs(); return ::atan2(a, b);  }
+
+			if (strncmp(input + pos, "pi", 2) == 0 && !isalnum((unsigned char)input[pos + 2]))
+			{
+				pos += 2;
+				return 3.14159265358979323846;
+			}
+			if (input[pos] == 'e' && !isalnum((unsigned char)input[pos + 1]))
+			{
+				pos += 1;
+				return 2.71828182845904523536;
+			}
+
+			if (isdigit((unsigned char)input[pos]) || input[pos] == '.')
+			{
+				char *end;
+				double val = strtod(input + pos, &end);
+				if (end == input + pos) { error = true; return 0; }
+				pos = end - input;
+				return val;
+			}
+
+			error = true;
+			return 0;
+		}
+	};
+
+	struct ExprResult
+	{
+		double value;
+		bool success;
+	};
+
+	ExprResult evaluateExpression(const char *expr)
+	{
+		ExprParser parser(expr);
+		double result = parser.parseExpression();
+		parser.skipSpaces();
+		if (parser.error || parser.input[parser.pos] != '\0')
+		{
+			return { 0, false };
+		}
+		return { result, true };
+	}
+
+	bbe::String formatCalcResult(double value)
+	{
+		if (std::isnan(value)) return "NaN";
+		if (std::isinf(value)) return value > 0 ? "Infinity" : "-Infinity";
+		char buf[64];
+		snprintf(buf, sizeof(buf), "%.15g", value);
+		return buf;
+	}
+}
+
 class MyGame : public bbe::Game
 {
 private:
@@ -364,6 +572,7 @@ private:
 	bbe::SerializableObject<BitcoinData> bitcoinData = bbe::SerializableObject<BitcoinData>("BitcoinData.dat", "ParanoiaConfig");
 	bbe::SerializableObject<PasswordManager> passwordManager = bbe::SerializableObject<PasswordManager>("PasswordManager.dat", "ParanoiaConfig");
 	bbe::SerializableList<ConsoleWarningIgnoreElement> cwiList = bbe::SerializableList<ConsoleWarningIgnoreElement>("CWIList.dat", "ParanoiaConfig");
+	bbe::SerializableList<CalculatorEntry> calculatorHistory = bbe::SerializableList<CalculatorEntry>("CalculatorHistory.dat", "ParanoiaConfig");
 
 	bbe::ChatGPTComm chatGPTComm;						  // ChatGPT communication object
 	std::future<bbe::ChatGPTQueryResponse> chatGPTFuture; // Future for async ChatGPT queries
@@ -503,6 +712,8 @@ private:
 						  { return drawTabRememberLists(); } });
 		mainTabs.add(Tab{ "PW", "Password Manager", [this]()
 						  { return drawPasswordManager(); } });
+		mainTabs.add(Tab{ "Calc", "Calculator", [this]()
+						  { return drawCalculator(); } });
 		mainTabs.add(Tab{ "GPT", "ChatGPT", [this]()
 						  { return drawTabChatGPT(); } });
 		mainTabs.add(Tab{ "DE", "DALL E", [this]()
@@ -3028,6 +3239,65 @@ public:
 				setClipboard(servicePw);
 				servicePw = "";
 			}
+		}
+
+		return bbe::Vector2(1);
+	}
+	bbe::Vector2 drawCalculator()
+	{
+		static bbe::String calcInput;
+
+		if (!calcInput.isEmpty())
+		{
+			ExprResult preview = evaluateExpression(calcInput.getRaw());
+			if (preview.success)
+			{
+				bbe::String previewStr = bbe::String("= ") + formatCalcResult(preview.value);
+				if (ImGui::bbe::clickableText("%s", previewStr.getRaw()))
+				{
+					ImGui::SetClipboardText(formatCalcResult(preview.value).getRaw());
+				}
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Invalid expression");
+			}
+		}
+		else
+		{
+			ImGui::TextUnformatted(" ");
+		}
+
+		bool submitted = ImGui::bbe::InputText("##CalcInput", calcInput, ImGuiInputTextFlags_EnterReturnsTrue);
+		if (submitted && !calcInput.isEmpty())
+		{
+			ExprResult result = evaluateExpression(calcInput.getRaw());
+			if (result.success)
+			{
+				CalculatorEntry entry;
+				entry.equation = calcInput;
+				entry.result = formatCalcResult(result.value);
+				calculatorHistory.add(entry);
+				calcInput = entry.result;
+			}
+		}
+
+		ImGui::Separator();
+
+		for (size_t i = calculatorHistory.getLength(); i > 0; i--)
+		{
+			size_t idx = i - 1;
+			ImGui::PushID((int)idx);
+			bbe::String display = calculatorHistory[idx].equation + " = " + calculatorHistory[idx].result;
+			if (ImGui::Selectable(display.getRaw()))
+			{
+				calcInput = calculatorHistory[idx].equation;
+			}
+			if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+			{
+				calcInput = calculatorHistory[idx].result;
+			}
+			ImGui::PopID();
 		}
 
 		return bbe::Vector2(1);
