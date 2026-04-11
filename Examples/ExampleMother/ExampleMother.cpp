@@ -437,6 +437,10 @@ private:
 #ifdef __linux__
 	bool pendingLinuxUpdate = false;
 	bbe::String pendingLinuxUpdateSource;
+
+	std::future<int32_t> pacmanUpdateFuture;
+	// -2 = pacman not installed, -1 = checkupdates not installed, 0+ = number of updates
+	int32_t cachedPacmanUpdateCount = 0;
 #endif
 
 	void initializeTabs()
@@ -1169,6 +1173,32 @@ public:
 					assetStore::OpenTasks()->play();
 				}
 			}
+		}
+#endif
+
+#ifdef __linux__
+		beginMeasure("Pacman Updates");
+		EVERY_HOURS(1)
+		{
+			pacmanUpdateFuture = std::async(std::launch::async, []() -> int32_t {
+				if (system("command -v pacman >/dev/null 2>&1") != 0) return -2;
+				if (system("command -v checkupdates >/dev/null 2>&1") != 0) return -1;
+				FILE *pipe = popen("checkupdates 2>/dev/null", "r");
+				if (!pipe) return 0;
+				int32_t count = 0;
+				char buf[256];
+				while (fgets(buf, sizeof(buf), pipe))
+				{
+					if (buf[0] != '\0' && buf[0] != '\n')
+						count++;
+				}
+				pclose(pipe);
+				return count;
+			});
+		}
+		if (pacmanUpdateFuture.valid() && pacmanUpdateFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+		{
+			cachedPacmanUpdateCount = pacmanUpdateFuture.get();
 		}
 #endif
 	}
@@ -1981,6 +2011,16 @@ public:
 		warnings.addList(processes.getWarnings());
 #endif
 		warnings.addList(getConsoleWarnings());
+#ifdef __linux__
+		if (cachedPacmanUpdateCount == -1)
+		{
+			warnings.add("checkupdates not found. Install via: sudo pacman -S pacman-contrib");
+		}
+		else if (cachedPacmanUpdateCount > 0)
+		{
+			warnings.add(bbe::String("Pacman: ") + cachedPacmanUpdateCount + " update(s) available.");
+		}
+#endif
 
 		if (warnings.getLength() == 0)
 		{
