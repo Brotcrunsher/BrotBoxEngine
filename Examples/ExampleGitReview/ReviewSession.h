@@ -38,7 +38,6 @@ namespace gitReview
 		bool modalOpen = false;
 
 		bool pendingDiscardAsk = false;
-		bool pendingUntrackedDeleteAsk = false;
 
 		/// When >= 0, the diff scroll view jumps to this Y offset on the next frame (set by the diff map).
 		float diffMapScrollTarget = -1.f;

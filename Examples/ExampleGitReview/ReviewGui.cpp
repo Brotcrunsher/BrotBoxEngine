@@ -204,8 +204,19 @@ namespace gitReview
 			ImGui::SameLine(0.f, 12.f);
 
 			ImGui::BeginDisabled(!app.selection.has_value());
-			if (ImGui::Button("Discard..."))
-				app.pendingDiscardAsk = true;
+			{
+				const bool untrackedSel = app.selection.has_value() && app.selection->section == FileListSection::Untracked;
+				const char *restoreOrDeleteBtn = untrackedSel ? "Delete..." : "Restore...";
+				if (ImGui::Button(restoreOrDeleteBtn))
+					app.pendingDiscardAsk = true;
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+				{
+					if (untrackedSel)
+						ImGui::SetTooltip("Permanently delete this untracked file from disk (Delete).");
+					else
+						ImGui::SetTooltip("Run git restore on the selected path (working tree and/or index). Shortcut: Delete.");
+				}
+			}
 			ImGui::EndDisabled();
 
 			ImGui::SameLine(0.f, 12.f);
@@ -255,7 +266,7 @@ namespace gitReview
 		{
 			if (!app.pendingDiscardAsk)
 				return;
-			ImGui::OpenPopup("##discard");
+			ImGui::OpenPopup("##restoreOrDelete");
 			app.pendingDiscardAsk = false;
 		}
 
@@ -263,75 +274,32 @@ namespace gitReview
 		{
 			const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-			if (ImGui::BeginPopupModal("##discard", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			if (ImGui::BeginPopupModal("##restoreOrDelete", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 			{
-				ImGui::TextUnformatted("Choose what to discard for the selected path.");
 				if (!app.selection.has_value())
 				{
-					if (ImGui::Button("Close"))
+					ImGui::TextUnformatted("No file is selected.");
+					if (ImGui::Button("Close", ImVec2(120, 0)))
 						ImGui::CloseCurrentPopup();
 					ImGui::EndPopup();
 					return;
 				}
 				const FileEntry &e = *app.selection;
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 46.f);
 
-				const bool isRename = (e.kind == ChangeKind::Renamed);
-				ImGui::BeginDisabled(isRename);
-				if (ImGui::Button("Discard unstaged edits (restore tracked file to index)"))
-				{
-					std::string err;
-					discardWorktreeEntry(app, e, err);
-					if (!err.empty())
-						showModal(app, "Discard failed", err);
-					else
-					{
-						showToast(app, "Restored file from index.", 2.f);
-						refreshSnapshot(app);
-					}
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::EndDisabled();
-				if (isRename)
-					ImGui::TextDisabled("(Discard is not supported for renames; unstage first.)");
-
-				if (ImGui::Button("Unstage (keep worktree)"))
-				{
-					std::string err;
-					unstageEntry(app, e, err);
-					if (!err.empty())
-						showModal(app, "Unstage failed", err);
-					else
-					{
-						showToast(app, "Unstaged.", 2.f);
-						refreshSnapshot(app);
-					}
-					ImGui::CloseCurrentPopup();
-				}
 				if (e.section == FileListSection::Untracked)
 				{
-					if (ImGui::Button("Delete untracked file from disk..."))
-						app.pendingUntrackedDeleteAsk = true;
-				}
-				if (ImGui::Button("Cancel", ImVec2(120, 0)))
-					ImGui::CloseCurrentPopup();
-				ImGui::EndPopup();
-			}
-
-			if (app.pendingUntrackedDeleteAsk)
-			{
-				ImGui::OpenPopup("##delUntracked");
-				app.pendingUntrackedDeleteAsk = false;
-			}
-			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-			if (ImGui::BeginPopupModal("##delUntracked", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-			{
-				ImGui::TextUnformatted("Delete this untracked file from disk?");
-				if (ImGui::Button("Delete permanently"))
-				{
-					if (app.selection.has_value())
+					ImGui::TextUnformatted("Delete untracked file");
+					ImGui::Separator();
+					ImGui::TextUnformatted("Permanently delete this path from disk?");
+					ImGui::TextUnformatted(e.path.c_str());
+					ImGui::Spacing();
+					ImGui::TextUnformatted(
+						"Untracked files are not in Git history; this cannot be undone except from your system trash or backups.");
+					if (ImGui::Button("Delete permanently", ImVec2(160, 0)))
 					{
 						std::string err;
-						deleteUntrackedPath(app, app.selection->path, err);
+						deleteUntrackedPath(app, e.path, err);
 						if (!err.empty())
 							showModal(app, "Delete failed", err);
 						else
@@ -340,12 +308,96 @@ namespace gitReview
 							clearSelection(app);
 							refreshSnapshot(app);
 						}
+						ImGui::CloseCurrentPopup();
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Cancel", ImVec2(120, 0)))
+						ImGui::CloseCurrentPopup();
+					ImGui::PopTextWrapPos();
+					ImGui::EndPopup();
+					return;
+				}
+
+				if (e.section == FileListSection::Staged)
+				{
+					ImGui::TextUnformatted("Restore the index from HEAD");
+					ImGui::Separator();
+					ImGui::TextUnformatted(
+						"Reset the index entry for this path to match HEAD (last commit), removing these changes from what will be committed.");
+					ImGui::TextUnformatted(e.path.c_str());
+					ImGui::Spacing();
+					ImGui::TextUnformatted("Equivalent: git restore --staged -- <path>");
+					ImGui::TextUnformatted("The working tree file is not modified by this command.");
+					if (e.kind == ChangeKind::Renamed && !e.renameFrom.empty())
+					{
+						ImGui::Spacing();
+						ImGui::TextDisabled("Rename: both paths are updated:");
+						ImGui::TextUnformatted(e.renameFrom.c_str());
+						ImGui::TextUnformatted(e.path.c_str());
+					}
+
+					if (ImGui::Button("git restore --staged", ImVec2(240, 0)))
+					{
+						std::string err;
+						unstageEntry(app, e, err);
+						if (!err.empty())
+							showModal(app, "git restore --staged failed", err);
+						else
+						{
+							showToast(app, "Index restored from HEAD.", 2.5f);
+							refreshSnapshot(app);
+						}
+						ImGui::CloseCurrentPopup();
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Cancel", ImVec2(120, 0)))
+						ImGui::CloseCurrentPopup();
+					ImGui::PopTextWrapPos();
+					ImGui::EndPopup();
+					return;
+				}
+
+				// Unstaged: worktree vs index
+				ImGui::TextUnformatted("Restore the working tree from the index");
+				ImGui::Separator();
+				const bool isRename = (e.kind == ChangeKind::Renamed);
+				if (isRename)
+				{
+					ImGui::TextUnformatted(
+						"git restore on a rename is not supported here. Unstage the rename first (switch to Staged view), "
+						"then restore each path separately if needed.");
+					if (ImGui::Button("Close", ImVec2(120, 0)))
+						ImGui::CloseCurrentPopup();
+					ImGui::PopTextWrapPos();
+					ImGui::EndPopup();
+					return;
+				}
+
+				ImGui::TextUnformatted("Overwrite the working tree file with the version in the index (staging area).");
+				ImGui::TextUnformatted(e.path.c_str());
+				ImGui::Spacing();
+				ImGui::TextUnformatted("Equivalent: git restore -- <path>");
+				ImGui::TextUnformatted("Uncommitted edits in the file will be lost.");
+
+				if (ImGui::Button("git restore (working tree)", ImVec2(220, 0)))
+				{
+					std::string err;
+					discardWorktreeEntry(app, e, err);
+					if (!err.empty())
+						showModal(app, "git restore failed", err);
+					else
+					{
+						showToast(app, "Working tree matches index.", 2.f);
+						refreshSnapshot(app);
 					}
 					ImGui::CloseCurrentPopup();
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("Cancel"))
+
+				ImGui::Spacing();
+				if (ImGui::Button("Cancel", ImVec2(120, 0)))
 					ImGui::CloseCurrentPopup();
+
+				ImGui::PopTextWrapPos();
 				ImGui::EndPopup();
 			}
 		}
@@ -1013,6 +1065,13 @@ namespace gitReview
 				ImGui::EndMenu();
 			}
 			ImGui::EndMenuBar();
+		}
+
+		if (app.selection.has_value() && !ImGui::GetIO().WantTextInput &&
+			!ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel) &&
+			ImGui::IsKeyPressed(ImGuiKey_Delete))
+		{
+			app.pendingDiscardAsk = true;
 		}
 
 		drawToolbar(app);
