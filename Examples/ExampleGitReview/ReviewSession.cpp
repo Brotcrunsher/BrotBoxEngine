@@ -175,7 +175,13 @@ namespace gitReview
 	void tryOpenRepository(ReviewAppState &app, const std::string &path)
 	{
 		std::string err;
-		const std::string p = trimCopy(path);
+		std::string p = trimCopy(path);
+
+		std::error_code fsEc;
+		const std::filesystem::path fsPath(p);
+		if (std::filesystem::is_regular_file(fsPath, fsEc))
+			p = fsPath.parent_path().string();
+
 		if (p.size() >= ReviewAppState::kRepoPathCap)
 		{
 			showModal(app, "Cannot open repository", "Path is too long for the path buffer.");
@@ -191,6 +197,16 @@ namespace gitReview
 			clearSelection(app);
 			return;
 		}
+
+		// Use the canonical work tree root so paths from git align with repoPathUtf8 (drops may target a subfolder).
+		GitRunResult top = runGit(p, { "rev-parse", "--show-toplevel" });
+		if (top.exitCode == 0)
+		{
+			std::string canon = trimCopy(top.standardOut);
+			if (!canon.empty() && canon.size() < ReviewAppState::kRepoPathCap)
+				p = std::move(canon);
+		}
+		std::memcpy(app.repoPathUtf8, p.c_str(), p.size() + 1);
 
 		clearHistoryBrowser(app);
 		refreshSnapshot(app);

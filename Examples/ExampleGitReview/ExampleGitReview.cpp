@@ -2,6 +2,8 @@
 #include "ReviewGui.h"
 #include "ReviewSession.h"
 
+#include <string>
+
 class GitReviewGame : public bbe::Game
 {
 public:
@@ -24,6 +26,14 @@ private:
 		{
 			gitReview::tryOpenRepository(appState, initialRepoPath);
 		}
+	}
+
+	void onFilesDropped(const bbe::List<bbe::String> &paths) override
+	{
+		if (paths.isEmpty())
+			return;
+		gitReview::tryOpenRepository(appState, std::string(paths[0].getRaw()));
+		requestRedraw();
 	}
 
 	virtual void update(float timeSinceLastFrame) override
