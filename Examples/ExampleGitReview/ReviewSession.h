@@ -100,6 +100,8 @@ namespace gitReview
 		int historySelectedFileIdx = -1;
 		std::vector<char> historyPreviewBuffer;
 		bool historyPreviewIsBinary = false;
+		/// Split of the last loaded text preview (for C++ syntax overlay in the history window).
+		std::vector<std::string> historyPreviewLinesForHl;
 		std::string historyLoadError;
 	};
 

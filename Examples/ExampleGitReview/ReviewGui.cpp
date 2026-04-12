@@ -1992,7 +1992,9 @@ namespace gitReview
 			return;
 
 		ImGui::SetNextWindowSize(ImVec2(980.f, 600.f), ImGuiCond_FirstUseEver);
-		const ImGuiWindowFlags histWinFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+		// NoScrollbar keeps the window chrome clean; do not use NoScrollWithMouse or the wheel never reaches
+		// the read-only multiline preview (and its vertical scroll would stay stuck at 0).
+		const ImGuiWindowFlags histWinFlags = ImGuiWindowFlags_NoScrollbar;
 		if (!ImGui::Begin("Git history", &app.historyBrowserOpen, histWinFlags))
 		{
 			ImGui::End();
@@ -2036,10 +2038,81 @@ namespace gitReview
 		}
 		float previewH = ImGui::GetContentRegionAvail().y - bottomBlock;
 		previewH = std::max(120.f, previewH);
-		ImGui::BeginChild("##histPreview", ImVec2(0.f, previewH), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar);
-		if (!app.historyPreviewBuffer.empty())
-			ImGui::InputTextMultiline("##histBlob", app.historyPreviewBuffer.data(), app.historyPreviewBuffer.size(), ImVec2(-1.f, -1.f),
-				ImGuiInputTextFlags_ReadOnly);
+		// Shell: never claim the wheel (otherwise it can win over the real scroll target). Scrolling is done by ##histScroll.
+		ImGui::BeginChild("##histPreview", ImVec2(0.f, previewH), ImGuiChildFlags_Borders,
+			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+		{
+			std::string histPreviewPath;
+			if (app.historySelectedFileIdx >= 0 && app.historySelectedFileIdx < static_cast<int>(app.historyCommitFiles.size()))
+				histPreviewPath = app.historyCommitFiles[static_cast<size_t>(app.historySelectedFileIdx)].path;
+
+			const ImGuiStyle &stl = ImGui::GetStyle();
+			const float padX = stl.FramePadding.x;
+			const float padY = stl.FramePadding.y;
+			const ImVec2 scrollRegionAvail = ImGui::GetContentRegionAvail();
+			ImGui::BeginChild("##histScroll", scrollRegionAvail, ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+			const float innerW = ImGui::GetContentRegionAvail().x;
+			const float innerH = ImGui::GetContentRegionAvail().y;
+			// Match InputTextMultiline vertical line stride (see imgui_widgets InputTextEx).
+			const float lineH = ImGui::GetFontSize();
+			int lineCount = 1;
+			if (!app.historyPreviewLinesForHl.empty())
+				lineCount = static_cast<int>(app.historyPreviewLinesForHl.size());
+			else
+			{
+				for (char ch : app.historyPreviewBuffer)
+					if (ch == '\n')
+						++lineCount;
+			}
+			// Size the multiline to the full text height so its inner child has ScrollMaxY == 0; the outer ##histScroll
+			// captures the mouse wheel (same idea as diff panes, but inverted — we want scroll here, not inside InputText).
+			const float textExtentH = static_cast<float>(lineCount) * lineH + stl.FramePadding.y * 2.f + lineH;
+			const float multilineH = std::max(innerH, textExtentH);
+			const bool cppHl = pathLooksLikeCpp(histPreviewPath) && !app.historyPreviewIsBinary && !app.historyPreviewLinesForHl.empty();
+
+			if (!app.historyPreviewBuffer.empty())
+			{
+				if (app.historyPreviewBuffer.capacity() < app.historyPreviewBuffer.size() + 1024u)
+					app.historyPreviewBuffer.reserve(app.historyPreviewBuffer.size() + 2048u);
+
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
+				ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
+				ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.f, 0.f, 0.f, 0.f));
+				if (cppHl)
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.f, 0.f, 0.f));
+				ImGui::InputTextMultiline("##histBlob", app.historyPreviewBuffer.data(), static_cast<int>(app.historyPreviewBuffer.size()),
+					ImVec2(innerW, multilineH), ImGuiInputTextFlags_ReadOnly);
+				if (cppHl)
+					ImGui::PopStyleColor();
+				ImGui::PopStyleColor(3);
+
+				if (cppHl)
+				{
+					const ImGuiID histInputId = ImGui::GetItemID();
+					const ImVec2 itemMin = ImGui::GetItemRectMin();
+					ImGuiInputTextState *histState = ImGui::GetInputTextState(histInputId);
+					const float scrollX = histState ? histState->Scroll.x : 0.f;
+					ImDrawList *ov = ImGui::GetWindowDrawList();
+					ImFont *font = ImGui::GetFont();
+					const float fontSz = ImGui::GetFontSize();
+					const ImU32 textBase = ImGui::GetColorU32(ImGuiCol_Text);
+					const ImRect clipR(ImGui::GetCurrentWindow()->InnerClipRect);
+					// Do not use ImGuiListClipper here: after InputTextMultiline the layout cursor sits below the widget, so
+					// clipper would use the wrong vertical origin unless we SetCursorPos upward (which triggers ImGui's
+					// "extend boundaries" assert). Cull lines manually against the inner clip rect instead.
+					for (int li = 0; li < static_cast<int>(app.historyPreviewLinesForHl.size()); ++li)
+					{
+						const float y0 = itemMin.y + padY + static_cast<float>(li) * lineH;
+						if (y0 + lineH < clipR.Min.y || y0 > clipR.Max.y)
+							continue;
+						const std::string &ln = app.historyPreviewLinesForHl[static_cast<size_t>(li)];
+						const ImVec2 linePos(itemMin.x + padX, y0);
+						drawCppSyntaxLineOverlay(ov, font, fontSz, linePos, ln, scrollX, clipR.Min, clipR.Max, textBase);
+					}
+				}
+			}
+			ImGui::EndChild();
+		}
 		ImGui::EndChild();
 
 		ImGui::Spacing();

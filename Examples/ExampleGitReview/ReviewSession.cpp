@@ -874,6 +874,7 @@ namespace gitReview
 		app.historyPreviewBuffer.clear();
 		app.historyPreviewBuffer.push_back('\0');
 		app.historyPreviewIsBinary = false;
+		app.historyPreviewLinesForHl.clear();
 		app.historyLoadError.clear();
 	}
 
@@ -980,6 +981,7 @@ namespace gitReview
 	{
 		setBufferFromText(app.historyPreviewBuffer, "");
 		app.historyPreviewIsBinary = false;
+		app.historyPreviewLinesForHl.clear();
 
 		if (app.historySelectedCommitIdx < 0 || app.historySelectedCommitIdx >= static_cast<int>(app.historyCommits.size()))
 			return;
@@ -999,6 +1001,7 @@ namespace gitReview
 		{
 			setBufferFromText(app.historyPreviewBuffer,
 				"(This path was removed in this commit. There is no file content at this revision to preview.)");
+			app.historyPreviewLinesForHl.clear();
 			return;
 		}
 		const std::string pathInTree = trimHistoryToken(ent.path);
@@ -1009,6 +1012,7 @@ namespace gitReview
 		if (r.exitCode != 0)
 		{
 			setBufferFromText(app.historyPreviewBuffer, std::string("Could not read this revision of the file:\n") + sanitizedGitError(r));
+			app.historyPreviewLinesForHl.clear();
 			return;
 		}
 
@@ -1020,10 +1024,12 @@ namespace gitReview
 		{
 			app.historyPreviewIsBinary = true;
 			setBufferFromText(app.historyPreviewBuffer, "[Binary or non-text file — preview hidden.]");
+			app.historyPreviewLinesForHl.clear();
 			return;
 		}
 
 		setBufferFromText(app.historyPreviewBuffer, r.standardOut);
+		app.historyPreviewLinesForHl = splitLinesForDiff(r.standardOut);
 	}
 
 	bool historyRestoreActionEnabled(const ReviewAppState &app)
