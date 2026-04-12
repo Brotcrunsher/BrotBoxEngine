@@ -130,6 +130,8 @@ namespace bbe
 		RIGHT_SUPER = GLFW_KEY_RIGHT_SUPER,
 		MENU = GLFW_KEY_MENU,
 
+		/// Not a GLFW keycode: aggregate queries over all keys (\c isKeyPressed, etc.).
+		ANY = 32766,
 		INVALID = -1,
 	};
 

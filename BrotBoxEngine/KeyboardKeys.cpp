@@ -245,6 +245,8 @@ bbe::String bbe::keyCodeToString(bbe::Key key)
 		return bbe::String("RIGHT_SUPER");
 	case bbe::Key::MENU:
 		return bbe::String("MENU");
+	case bbe::Key::ANY:
+		return bbe::String("ANY");
 	}
 
 	bbe::Crash(bbe::Error::NoSuchKeycode);
@@ -374,6 +376,7 @@ bool bbe::isKeyCodeValid(bbe::Key key)
 	case bbe::Key::RIGHT_ALT:
 	case bbe::Key::RIGHT_SUPER:
 	case bbe::Key::MENU:
+	case bbe::Key::ANY:
 		return true;
 	}
 	return false;

@@ -17,8 +17,13 @@ namespace bbe
 		_6 = GLFW_MOUSE_BUTTON_6,
 		_7 = GLFW_MOUSE_BUTTON_7,
 		_8 = GLFW_MOUSE_BUTTON_8,
+		/// Not a GLFW index: aggregate queries over all physical buttons (\c isButtonPressed, etc.).
+		ANY = 32766,
 	};
 
 	bbe::String mouseButtonToString(MouseButton button);
+	/// True for real GLFW mouse buttons (array indices \c 0 … \c LAST), excluding \c ANY.
+	bool isMouseButtonPhysical(MouseButton button);
+	/// True for physical buttons and \c ANY (valid for query APIs).
 	bool isMouseButtonValid(MouseButton button);
 }

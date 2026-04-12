@@ -21,12 +21,14 @@ bbe::String bbe::mouseButtonToString(MouseButton button)
 		return bbe::String("MB_7");
 	case MouseButton::_8:
 		return bbe::String("MB_8");
+	case MouseButton::ANY:
+		return bbe::String("MB_ANY");
 	}
 
 	bbe::Crash(bbe::Error::IllegalArgument);
 }
 
-bool bbe::isMouseButtonValid(MouseButton button)
+bool bbe::isMouseButtonPhysical(MouseButton button)
 {
 	switch (button)
 	{
@@ -39,6 +41,12 @@ bool bbe::isMouseButtonValid(MouseButton button)
 	case MouseButton::_7:
 	case MouseButton::_8:
 		return true;
+	default:
+		return false;
 	}
-	return false;
+}
+
+bool bbe::isMouseButtonValid(MouseButton button)
+{
+	return button == MouseButton::ANY || isMouseButtonPhysical(button);
 }

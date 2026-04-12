@@ -3,6 +3,10 @@
 
 void bbe::Keyboard::INTERNAL_press(bbe::Key key)
 {
+	if (key == Key::ANY)
+	{
+		bbe::Crash(bbe::Error::NoSuchKeycode);
+	}
 	if (!isKeyCodeValid(key))
 	{
 		bbe::Crash(bbe::Error::NoSuchKeycode);
@@ -16,6 +20,10 @@ void bbe::Keyboard::INTERNAL_press(bbe::Key key)
 
 void bbe::Keyboard::INTERNAL_release(bbe::Key key)
 {
+	if (key == Key::ANY)
+	{
+		bbe::Crash(bbe::Error::NoSuchKeycode);
+	}
 	if (!isKeyCodeValid(key))
 	{
 		bbe::Crash(bbe::Error::NoSuchKeycode);
@@ -44,6 +52,18 @@ void bbe::Keyboard::update()
 
 bool bbe::Keyboard::isKeyDown(bbe::Key key, bool checkValid) const
 {
+	if (key == Key::ANY)
+	{
+		for (size_t i = 0; i < m_pkeysThisFrame.size(); ++i)
+		{
+			const Key k = static_cast<Key>(i);
+			if (k == Key::ANY || !isKeyCodeValid(k))
+				continue;
+			if (m_pkeysThisFrame[i].down)
+				return true;
+		}
+		return false;
+	}
 	if (checkValid && !isKeyCodeValid(key))
 	{
 		bbe::Crash(bbe::Error::NoSuchKeycode);
@@ -54,6 +74,18 @@ bool bbe::Keyboard::isKeyDown(bbe::Key key, bool checkValid) const
 
 bool bbe::Keyboard::isKeyUp(bbe::Key key, bool checkValid) const
 {
+	if (key == Key::ANY)
+	{
+		for (size_t i = 0; i < m_pkeysThisFrame.size(); ++i)
+		{
+			const Key k = static_cast<Key>(i);
+			if (k == Key::ANY || !isKeyCodeValid(k))
+				continue;
+			if (m_pkeysThisFrame[i].down)
+				return false;
+		}
+		return true;
+	}
 	if (checkValid && !isKeyCodeValid(key))
 	{
 		bbe::Crash(bbe::Error::NoSuchKeycode);
@@ -64,6 +96,18 @@ bool bbe::Keyboard::isKeyUp(bbe::Key key, bool checkValid) const
 
 bool bbe::Keyboard::isKeyPressed(bbe::Key key, bool checkValid) const
 {
+	if (key == Key::ANY)
+	{
+		for (size_t i = 0; i < m_pkeysThisFrame.size(); ++i)
+		{
+			const Key k = static_cast<Key>(i);
+			if (k == Key::ANY || !isKeyCodeValid(k))
+				continue;
+			if (m_pkeysThisFrame[i].pressed)
+				return true;
+		}
+		return false;
+	}
 	if (checkValid && !isKeyCodeValid(key))
 	{
 		bbe::Crash(bbe::Error::NoSuchKeycode);
@@ -74,6 +118,18 @@ bool bbe::Keyboard::isKeyPressed(bbe::Key key, bool checkValid) const
 
 bool bbe::Keyboard::isKeyTyped(bbe::Key key, bool checkValid) const
 {
+	if (key == Key::ANY)
+	{
+		for (size_t i = 0; i < m_pkeysThisFrame.size(); ++i)
+		{
+			const Key k = static_cast<Key>(i);
+			if (k == Key::ANY || !isKeyCodeValid(k))
+				continue;
+			if (m_pkeysThisFrame[i].typed)
+				return true;
+		}
+		return false;
+	}
 	if (checkValid && !isKeyCodeValid(key))
 	{
 		bbe::Crash(bbe::Error::NoSuchKeycode);

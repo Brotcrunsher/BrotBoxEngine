@@ -4,7 +4,16 @@
 
 bool bbe::Mouse::isButtonDown(bbe::MouseButton button) const
 {
-	if (!isMouseButtonValid(button))
+	if (button == MouseButton::ANY)
+	{
+		for (int i = 0; i <= (int)MouseButton::LAST; ++i)
+		{
+			if (m_pButtonsThisFrame[i])
+				return true;
+		}
+		return false;
+	}
+	if (!isMouseButtonPhysical(button))
 	{
 		bbe::Crash(bbe::Error::IllegalArgument);
 	}
@@ -13,7 +22,16 @@ bool bbe::Mouse::isButtonDown(bbe::MouseButton button) const
 
 bool bbe::Mouse::isButtonUp(bbe::MouseButton button) const
 {
-	if (!isMouseButtonValid(button))
+	if (button == MouseButton::ANY)
+	{
+		for (int i = 0; i <= (int)MouseButton::LAST; ++i)
+		{
+			if (m_pButtonsThisFrame[i])
+				return false;
+		}
+		return true;
+	}
+	if (!isMouseButtonPhysical(button))
 	{
 		bbe::Crash(bbe::Error::IllegalArgument);
 	}
@@ -22,7 +40,16 @@ bool bbe::Mouse::isButtonUp(bbe::MouseButton button) const
 
 bool bbe::Mouse::wasButtonDownLastFrame(bbe::MouseButton button) const
 {
-	if (!isMouseButtonValid(button))
+	if (button == MouseButton::ANY)
+	{
+		for (int i = 0; i <= (int)MouseButton::LAST; ++i)
+		{
+			if (m_pButtonsLastFrame[i])
+				return true;
+		}
+		return false;
+	}
+	if (!isMouseButtonPhysical(button))
 	{
 		bbe::Crash(bbe::Error::IllegalArgument);
 	}
@@ -31,7 +58,16 @@ bool bbe::Mouse::wasButtonDownLastFrame(bbe::MouseButton button) const
 
 bool bbe::Mouse::wasButtonUpLastFrame(bbe::MouseButton button) const
 {
-	if (!isMouseButtonValid(button))
+	if (button == MouseButton::ANY)
+	{
+		for (int i = 0; i <= (int)MouseButton::LAST; ++i)
+		{
+			if (m_pButtonsLastFrame[i])
+				return false;
+		}
+		return true;
+	}
+	if (!isMouseButtonPhysical(button))
 	{
 		bbe::Crash(bbe::Error::IllegalArgument);
 	}
@@ -40,7 +76,16 @@ bool bbe::Mouse::wasButtonUpLastFrame(bbe::MouseButton button) const
 
 bool bbe::Mouse::isButtonPressed(bbe::MouseButton button) const
 {
-	if (!isMouseButtonValid(button))
+	if (button == MouseButton::ANY)
+	{
+		for (int i = 0; i <= (int)MouseButton::LAST; ++i)
+		{
+			if (m_pButtonsThisFrame[i] && !m_pButtonsLastFrame[i])
+				return true;
+		}
+		return false;
+	}
+	if (!isMouseButtonPhysical(button))
 	{
 		bbe::Crash(bbe::Error::IllegalArgument);
 	}
@@ -49,7 +94,16 @@ bool bbe::Mouse::isButtonPressed(bbe::MouseButton button) const
 
 bool bbe::Mouse::isButtonReleased(bbe::MouseButton button) const
 {
-	if (!isMouseButtonValid(button))
+	if (button == MouseButton::ANY)
+	{
+		for (int i = 0; i <= (int)MouseButton::LAST; ++i)
+		{
+			if (!m_pButtonsThisFrame[i] && m_pButtonsLastFrame[i])
+				return true;
+		}
+		return false;
+	}
+	if (!isMouseButtonPhysical(button))
 	{
 		bbe::Crash(bbe::Error::IllegalArgument);
 	}
@@ -64,7 +118,7 @@ void bbe::Mouse::INTERNAL_moveMouse(float x, float y)
 
 void bbe::Mouse::INTERNAL_press(MouseButton button)
 {
-	if (!isMouseButtonValid(button))
+	if (!isMouseButtonPhysical(button))
 	{
 		bbe::Crash(bbe::Error::IllegalArgument);
 	}
@@ -74,7 +128,7 @@ void bbe::Mouse::INTERNAL_press(MouseButton button)
 
 void bbe::Mouse::INTERNAL_release(MouseButton button)
 {
-	if (!isMouseButtonValid(button))
+	if (!isMouseButtonPhysical(button))
 	{
 		bbe::Crash(bbe::Error::IllegalArgument);
 	}
