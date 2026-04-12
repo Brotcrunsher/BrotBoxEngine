@@ -5,6 +5,7 @@
 
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace gitReview
@@ -17,6 +18,10 @@ namespace gitReview
 		char repoPathUtf8[kRepoPathCap]{};
 		RepoSnapshot snapshot;
 		std::optional<FileEntry> selection;
+		/// Paths highlighted in the file list (Ctrl/Shift). Always includes \c selection->path when a file is selected.
+		std::unordered_set<std::string> fileListMultiPaths;
+		/// Index into the sorted merged file list for Shift-range selection; \c -1 until first plain or Ctrl click.
+		int fileListShiftAnchorIdx = -1;
 		ReviewMode reviewMode = ReviewMode::Unstaged;
 
 		std::string leftText;
@@ -65,6 +70,8 @@ namespace gitReview
 	void reloadDiffForSelection(ReviewAppState &app);
 
 	void setSelection(ReviewAppState &app, FileEntry entry);
+	/// Sets the diff focus entry and the file-list multi-selection (paths must exist in the current snapshot list).
+	void setFileListPrimaryAndMulti(ReviewAppState &app, FileEntry entry, std::unordered_set<std::string> multiPaths, int shiftAnchorIdx);
 	void clearSelection(ReviewAppState &app);
 
 	bool saveWorktreeBuffer(ReviewAppState &app, std::string &err);

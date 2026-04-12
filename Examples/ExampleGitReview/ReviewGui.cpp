@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <unordered_set>
 
 namespace gitReview
 {
@@ -703,7 +704,7 @@ namespace gitReview
 		void drawFileList(ReviewAppState &app)
 		{
 			ImGui::BeginChild("fileList", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-			ImGui::TextDisabled("Files  (check = stage full file; commit only includes checked files)");
+			ImGui::TextDisabled("Files  (check = stage; commit uses checked paths only).  Ctrl+click toggles highlight; Shift+click range; with 2+ highlighted, one checkbox stages or unstages all of them.");
 			ImGui::Separator();
 
 			struct MergedFile
@@ -772,22 +773,39 @@ namespace gitReview
 				bool staged = fullyStaged;
 				if (ImGui::Checkbox("##stg", &staged))
 				{
+					const bool inMulti = app.fileListMultiPaths.count(mf.path) != 0;
+					const bool bulk = inMulti && app.fileListMultiPaths.size() >= 2u;
 					std::string err;
-					if (staged)
-					{
-						// Always stage the entire path from the working tree (git add -- <path>).
-						const FileEntry &toStage = mf.hasUnstaged ? mf.unstagedEntry : mf.stagedEntry;
-						stageEntry(app, toStage, err);
-						if (!err.empty())
-							showModal(app, "Stage failed", err);
+					auto applyOne = [&](const MergedFile &m) {
+						if (staged)
+						{
+							const FileEntry &toStage = m.hasUnstaged ? m.unstagedEntry : m.stagedEntry;
+							stageEntry(app, toStage, err);
+						}
 						else
+							unstageEntry(app, m.stagedEntry, err);
+					};
+					if (bulk)
+					{
+						for (const MergedFile &m : merged)
+						{
+							if (!app.fileListMultiPaths.count(m.path))
+								continue;
+							applyOne(m);
+							if (!err.empty())
+							{
+								showModal(app, staged ? "Stage failed" : "Unstage failed", err);
+								break;
+							}
+						}
+						if (err.empty())
 							needsRefresh = true;
 					}
 					else
 					{
-						unstageEntry(app, mf.stagedEntry, err);
+						applyOne(mf);
 						if (!err.empty())
-							showModal(app, "Unstage failed", err);
+							showModal(app, staged ? "Stage failed" : "Unstage failed", err);
 						else
 							needsRefresh = true;
 					}
@@ -808,14 +826,51 @@ namespace gitReview
 				if (selEntry.kind == ChangeKind::Renamed && !selEntry.renameFrom.empty())
 					label += "\n  " + selEntry.renameFrom + " -> " + mf.path;
 
-				const bool isSel = app.selection.has_value() && app.selection->path == mf.path;
+				const bool isSel = (app.fileListMultiPaths.count(mf.path) != 0) ||
+								   (app.selection.has_value() && app.selection->path == mf.path);
 				if (ImGui::Selectable(label.c_str(), isSel, ImGuiSelectableFlags_AllowDoubleClick))
 				{
 					if (mf.hasStaged && !mf.hasUnstaged)
 						app.reviewMode = ReviewMode::Staged;
 					else if (mf.hasUnstaged && !mf.hasStaged)
 						app.reviewMode = ReviewMode::Unstaged;
-					setSelection(app, selEntry);
+
+					const ImGuiIO &io = ImGui::GetIO();
+					if (io.KeyShift && app.fileListShiftAnchorIdx >= 0 &&
+						app.fileListShiftAnchorIdx < static_cast<int>(merged.size()))
+					{
+						const int a = std::min(app.fileListShiftAnchorIdx, static_cast<int>(idx));
+						const int b = std::max(app.fileListShiftAnchorIdx, static_cast<int>(idx));
+						std::unordered_set<std::string> paths;
+						for (int i = a; i <= b; ++i)
+							paths.insert(merged[static_cast<size_t>(i)].path);
+						FileEntry primary = selEntry;
+						setFileListPrimaryAndMulti(app, std::move(primary), std::move(paths), app.fileListShiftAnchorIdx);
+					}
+					else if (io.KeyCtrl)
+					{
+						std::unordered_set<std::string> paths = app.fileListMultiPaths;
+						if (paths.count(mf.path))
+							paths.erase(mf.path);
+						else
+							paths.insert(mf.path);
+						if (paths.empty())
+						{
+							clearSelection(app);
+						}
+						else
+						{
+							FileEntry primary = selEntry;
+							setFileListPrimaryAndMulti(app, std::move(primary), std::move(paths), static_cast<int>(idx));
+						}
+					}
+					else
+					{
+						std::unordered_set<std::string> paths;
+						paths.insert(mf.path);
+						FileEntry primary = selEntry;
+						setFileListPrimaryAndMulti(app, std::move(primary), std::move(paths), static_cast<int>(idx));
+					}
 				}
 
 				ImGui::PopID();

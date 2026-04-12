@@ -6,6 +6,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <unordered_set>
 #include <vector>
 
 namespace gitReview
@@ -192,6 +193,21 @@ namespace gitReview
 
 		app.snapshot = std::move(next);
 
+		{
+			const std::vector<detail::MergedFile> mergedFresh = detail::mergeSnapshotEntries(app.snapshot);
+			for (auto it = app.fileListMultiPaths.begin(); it != app.fileListMultiPaths.end();)
+			{
+				const bool keep = std::any_of(mergedFresh.begin(), mergedFresh.end(),
+					[&](const detail::MergedFile &m) { return m.path == *it; });
+				if (!keep)
+					it = app.fileListMultiPaths.erase(it);
+				else
+					++it;
+			}
+			if (app.fileListShiftAnchorIdx < 0 || app.fileListShiftAnchorIdx >= static_cast<int>(mergedFresh.size()))
+				app.fileListShiftAnchorIdx = -1;
+		}
+
 		if (!selPath.empty())
 		{
 			for (const auto &e : app.snapshot.entries)
@@ -199,6 +215,8 @@ namespace gitReview
 				if (e.path == selPath && e.section == selSection && e.kind == selKind && e.renameFrom == selRename)
 				{
 					app.selection = e;
+					if (app.fileListMultiPaths.empty())
+						app.fileListMultiPaths.insert(selPath);
 					reloadDiffForSelection(app);
 					showToast(app, "Refreshed.", 1.8f);
 					return;
@@ -214,6 +232,8 @@ namespace gitReview
 					app.reviewMode = ReviewMode::Staged;
 				else
 					app.reviewMode = ReviewMode::Unstaged;
+				if (app.fileListMultiPaths.empty())
+					app.fileListMultiPaths.insert(selPath);
 				reloadDiffForSelection(app);
 				showToast(app, "Refreshed.", 1.8f);
 				return;
@@ -253,9 +273,11 @@ namespace gitReview
 			app.loadDiffError = err;
 	}
 
-	void setSelection(ReviewAppState &app, FileEntry entry)
+	void setFileListPrimaryAndMulti(ReviewAppState &app, FileEntry entry, std::unordered_set<std::string> multiPaths, int shiftAnchorIdx)
 	{
 		app.selection = std::move(entry);
+		app.fileListMultiPaths = std::move(multiPaths);
+		app.fileListShiftAnchorIdx = shiftAnchorIdx;
 		if (app.selection->section == FileListSection::Untracked)
 			app.reviewMode = ReviewMode::Unstaged;
 		reloadDiffForSelection(app);
@@ -264,9 +286,18 @@ namespace gitReview
 		app.diffScrollToFirstChange = true;
 	}
 
+	void setSelection(ReviewAppState &app, FileEntry entry)
+	{
+		std::unordered_set<std::string> one;
+		one.insert(entry.path);
+		setFileListPrimaryAndMulti(app, std::move(entry), std::move(one), -1);
+	}
+
 	void clearSelection(ReviewAppState &app)
 	{
 		app.selection.reset();
+		app.fileListMultiPaths.clear();
+		app.fileListShiftAnchorIdx = -1;
 		app.diffScrollToFirstChange = false;
 		app.leftText.clear();
 		app.leftViewBuffer.clear();
