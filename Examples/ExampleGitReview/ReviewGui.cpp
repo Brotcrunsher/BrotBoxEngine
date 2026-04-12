@@ -1,5 +1,6 @@
 #include "ReviewGui.h"
 #include "BinaryDiffPresenters.h"
+#include "CppSyntaxHighlight.h"
 #include "NativeFolderPicker.h"
 #include "ReviewSession.h"
 #include "TextDiff.h"
@@ -1064,9 +1065,40 @@ namespace gitReview
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
 			ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
 			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.f, 0.f, 0.f, 0.f));
+			const bool cppHlLeft = pathLooksLikeCpp(app.selection->path);
+			if (cppHlLeft)
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.f, 0.f, 0.f));
 			ImGui::InputTextMultiline("##leftViewMain", leftBuf.data(), static_cast<int>(leftBuf.size()), ImVec2(innerWL, paneH),
 				ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_CallbackResize, vectorResizeCallback, &leftBuf);
+			if (cppHlLeft)
+				ImGui::PopStyleColor();
 			ImGui::PopStyleColor(3);
+
+			if (cppHlLeft)
+			{
+				const ImGuiID leftInputId = ImGui::GetItemID();
+				// InputTextMultiline ends with a Dummy() that leaves CursorPos.y past the last line; ListClipper
+				// uses CursorPos.y as its vertical origin, so reset before clipping or only ~one row is "visible".
+				ImGui::SetCursorPos(ImVec2(gutterW, 0.f));
+				ImGuiInputTextState *leftState = ImGui::GetInputTextState(leftInputId);
+				const float leftScrollX = leftState ? leftState->Scroll.x : 0.f;
+				ImDrawList *ov = ImGui::GetWindowDrawList();
+				ImFont *font = ImGui::GetFont();
+				const float fontSz = ImGui::GetFontSize();
+				const ImU32 textBase = ImGui::GetColorU32(ImGuiCol_Text);
+				const ImRect clipR(ImGui::GetCurrentWindow()->InnerClipRect);
+				ImGuiListClipper clipperOv;
+				clipperOv.Begin(static_cast<int>(rows.size()), lineH);
+				while (clipperOv.Step())
+				{
+					for (int li = clipperOv.DisplayStart; li < clipperOv.DisplayEnd; ++li)
+					{
+						const std::string &ln = rows[static_cast<size_t>(li)].leftLine;
+						const ImVec2 linePos(innerL.x + gutterW + padXL, innerL.y + padYL + static_cast<float>(li) * lineH);
+						drawCppSyntaxLineOverlay(ov, font, fontSz, linePos, ln, leftScrollX, clipR.Min, clipR.Max, textBase);
+					}
+				}
+			}
 		}
 		ImGui::EndChild();
 
@@ -1109,9 +1141,38 @@ namespace gitReview
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
 			ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
 			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.f, 0.f, 0.f, 0.f));
+			const bool cppHlRight = pathLooksLikeCpp(app.selection->path);
+			if (cppHlRight)
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.f, 0.f, 0.f));
 			ImGui::InputTextMultiline("##rightEditMain", buf.data(), static_cast<int>(buf.size()), ImVec2(textW, paneH), editFlags, vectorResizeCallback,
 				&buf);
+			if (cppHlRight)
+				ImGui::PopStyleColor();
 			ImGui::PopStyleColor(3);
+
+			if (cppHlRight)
+			{
+				const ImGuiID rightInputId = ImGui::GetItemID();
+				ImGui::SetCursorPos(ImVec2(gutterW, 0.f));
+				ImGuiInputTextState *rightState = ImGui::GetInputTextState(rightInputId);
+				const float rightScrollX = rightState ? rightState->Scroll.x : 0.f;
+				ImDrawList *ov = ImGui::GetWindowDrawList();
+				ImFont *font = ImGui::GetFont();
+				const float fontSz = ImGui::GetFontSize();
+				const ImU32 textBase = ImGui::GetColorU32(ImGuiCol_Text);
+				const ImRect clipR(ImGui::GetCurrentWindow()->InnerClipRect);
+				ImGuiListClipper clipperOv;
+				clipperOv.Begin(static_cast<int>(rows.size()), lineH);
+				while (clipperOv.Step())
+				{
+					for (int li = clipperOv.DisplayStart; li < clipperOv.DisplayEnd; ++li)
+					{
+						const std::string &ln = rows[static_cast<size_t>(li)].rightLine;
+						const ImVec2 linePos(inner0.x + gutterW + padX, inner0.y + padY + static_cast<float>(li) * lineH);
+						drawCppSyntaxLineOverlay(ov, font, fontSz, linePos, ln, rightScrollX, clipR.Min, clipR.Max, textBase);
+					}
+				}
+			}
 		}
 		ImGui::EndChild();
 
