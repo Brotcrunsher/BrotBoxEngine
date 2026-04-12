@@ -268,3 +268,4 @@ ModelManifest.xml
 /ExampleSimplePresentation/out.xml
 /BrotBoxEngine/GlobalKeyboardDLL/EmbeddedDlls.cpp
 /BrotBoxEngine/GlobalKeyboardDLL/EmbeddedDlls.h
+imgui.ini

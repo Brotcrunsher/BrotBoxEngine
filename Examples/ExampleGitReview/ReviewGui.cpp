@@ -13,6 +13,7 @@
 #include <cstring>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 namespace gitReview
 {
@@ -261,6 +262,86 @@ namespace gitReview
 			}
 		}
 
+		static std::vector<std::string> untrackedPathsToIgnoreFromSelection(const ReviewAppState &app)
+		{
+			std::vector<std::string> out;
+			if (!app.selection.has_value() || app.selection->section != FileListSection::Untracked)
+				return out;
+
+			std::unordered_set<std::string> consider = app.fileListMultiPaths;
+			if (consider.empty())
+				consider.insert(app.selection->path);
+
+			for (const FileEntry &e : app.snapshot.entries)
+			{
+				if (e.section != FileListSection::Untracked)
+					continue;
+				if (consider.count(e.path))
+					out.push_back(e.path);
+			}
+			std::sort(out.begin(), out.end());
+			out.erase(std::unique(out.begin(), out.end()), out.end());
+			return out;
+		}
+
+		void drawGitignorePopup(ReviewAppState &app)
+		{
+			if (!app.pendingGitignoreAsk)
+				return;
+			ImGui::OpenPopup("##gitignoreAppend");
+			app.pendingGitignoreAsk = false;
+		}
+
+		void drawGitignoreModal(ReviewAppState &app)
+		{
+			const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			if (ImGui::BeginPopupModal("##gitignoreAppend", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				const std::vector<std::string> paths = untrackedPathsToIgnoreFromSelection(app);
+				if (paths.empty())
+				{
+					ImGui::TextUnformatted("No untracked paths to add (selection may have changed).");
+					if (ImGui::Button("Close", ImVec2(120, 0)))
+						ImGui::CloseCurrentPopup();
+					ImGui::EndPopup();
+					return;
+				}
+
+				ImGui::TextUnformatted("Append to .gitignore");
+				ImGui::Separator();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 46.f);
+				ImGui::TextUnformatted("These lines will be appended to the repository .gitignore file (created if it does not exist).");
+				ImGui::PopTextWrapPos();
+				ImGui::Spacing();
+				ImGui::BeginChild("##gitignorePaths", ImVec2(480.f, 180.f), ImGuiChildFlags_Borders, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+				for (const std::string &p : paths)
+					ImGui::BulletText("%s", p.c_str());
+				ImGui::EndChild();
+
+				if (ImGui::Button("Append", ImVec2(120, 0)))
+				{
+					std::string err;
+					const int n = appendPathsToGitignore(repoRootString(app), paths, err);
+					if (!err.empty())
+						showModal(app, "Could not update .gitignore", err);
+					else if (n == 0)
+						showToast(app, "Those paths were already listed in .gitignore.", 2.5f);
+					else
+						showToast(app, "Updated .gitignore (" + std::to_string(n) + " line(s)).", 2.5f);
+					if (err.empty())
+					{
+						refreshSnapshot(app);
+						ImGui::CloseCurrentPopup();
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel", ImVec2(120, 0)))
+					ImGui::CloseCurrentPopup();
+				ImGui::EndPopup();
+			}
+		}
+
 		void drawToolbar(ReviewAppState &app)
 		{
 			if (ImGui::Button("Open folder..."))
@@ -285,6 +366,15 @@ namespace gitReview
 						ImGui::SetTooltip("Permanently delete this untracked file from disk (Delete).");
 					else
 						ImGui::SetTooltip("Run git restore on the selected path (working tree and/or index). Shortcut: Delete.");
+				}
+
+				if (untrackedSel)
+				{
+					ImGui::SameLine();
+					if (ImGui::Button("Ignore..."))
+						app.pendingGitignoreAsk = true;
+					if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+						ImGui::SetTooltip("Append selected untracked path(s) as new lines in .gitignore (multi-select supported).");
 				}
 			}
 			ImGui::EndDisabled();
@@ -1314,6 +1404,7 @@ namespace gitReview
 
 		drawToolbar(app);
 		drawDiscardPopup(app);
+		drawGitignorePopup(app);
 
 		ImGui::Separator();
 		ImGui::Text("Repository path");
@@ -1343,6 +1434,7 @@ namespace gitReview
 
 		drawModalIfAny(app);
 		drawDiscardModal(app);
+		drawGitignoreModal(app);
 
 		ImGui::End();
 		ImGui::PopStyleColor(2);

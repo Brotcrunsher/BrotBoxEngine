@@ -298,6 +298,7 @@ namespace gitReview
 		app.selection.reset();
 		app.fileListMultiPaths.clear();
 		app.fileListShiftAnchorIdx = -1;
+		app.pendingGitignoreAsk = false;
 		app.diffScrollToFirstChange = false;
 		app.leftText.clear();
 		app.leftViewBuffer.clear();
@@ -411,6 +412,96 @@ namespace gitReview
 		}
 		if (!std::filesystem::remove(p, ec))
 			err = ec.message();
+	}
+
+	namespace
+	{
+		static std::string trimGitignoreLine(std::string line)
+		{
+			while (!line.empty() && (line.back() == '\r' || line.back() == ' ' || line.back() == '\t'))
+				line.pop_back();
+			return line;
+		}
+
+		static bool isSafeGitignorePath(const std::string &p)
+		{
+			if (p.empty())
+				return false;
+			if (p.front() == '/')
+				return false;
+			if (p.find("..") != std::string::npos)
+				return false;
+			return true;
+		}
+
+		static void collectGitignoreLines(const std::string &content, std::unordered_set<std::string> &outTrimmedLines)
+		{
+			size_t i = 0;
+			while (i < content.size())
+			{
+				const size_t j = content.find('\n', i);
+				const std::string raw = (j == std::string::npos) ? content.substr(i) : content.substr(i, j - i);
+				const std::string t = trimGitignoreLine(raw);
+				if (!t.empty())
+					outTrimmedLines.insert(t);
+				if (j == std::string::npos)
+					break;
+				i = j + 1;
+			}
+		}
+	} // namespace
+
+	int appendPathsToGitignore(const std::string &repoRoot, const std::vector<std::string> &pathsRel, std::string &err)
+	{
+		err.clear();
+		if (repoRoot.empty())
+		{
+			err = "No repository path.";
+			return -1;
+		}
+		if (pathsRel.empty())
+			return 0;
+
+		const std::filesystem::path giFs = std::filesystem::path(repoRoot) / ".gitignore";
+		const std::string giPath = giFs.string();
+
+		std::string content;
+		if (std::filesystem::exists(giFs))
+		{
+			content = readFileUtf8(giPath, err);
+			if (!err.empty())
+				return -1;
+		}
+
+		std::unordered_set<std::string> existing;
+		collectGitignoreLines(content, existing);
+
+		std::string toAppend;
+		int added = 0;
+		for (const std::string &p : pathsRel)
+		{
+			if (!isSafeGitignorePath(p))
+			{
+				err = "Refusing unsafe path for .gitignore: " + p;
+				return -1;
+			}
+			if (existing.count(p))
+				continue;
+			toAppend += p;
+			toAppend.push_back('\n');
+			existing.insert(p);
+			++added;
+		}
+		if (added == 0)
+			return 0;
+
+		if (!content.empty() && content.back() != '\n')
+			content.push_back('\n');
+		content += toAppend;
+
+		if (!writeFileUtf8(giPath, content, err))
+			return -1;
+		return added;
 	}
 
 	void commitStaged(ReviewAppState &app, std::string &err)

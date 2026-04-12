@@ -43,6 +43,7 @@ namespace gitReview
 		bool modalOpen = false;
 
 		bool pendingDiscardAsk = false;
+		bool pendingGitignoreAsk = false;
 
 		/// When >= 0, the diff scroll view jumps to this Y offset on the next frame (set by the diff map).
 		float diffMapScrollTarget = -1.f;
@@ -83,6 +84,10 @@ namespace gitReview
 	/// Discards unstaged worktree changes.  Disabled for renames (sets err).
 	void discardWorktreeEntry(ReviewAppState &app, const FileEntry &entry, std::string &err);
 	void deleteUntrackedPath(ReviewAppState &app, const std::string &path, std::string &err);
+
+	/// Append each path as a line to \c <repoRoot>/.gitignore (creates the file if needed). Skips paths that are
+	/// already present as an exact line (after trimming CR and trailing spaces). Returns lines added, or \c -1 on failure.
+	int appendPathsToGitignore(const std::string &repoRoot, const std::vector<std::string> &pathsRel, std::string &err);
 
 	void commitStaged(ReviewAppState &app, std::string &err);
 	void pushUpstream(ReviewAppState &app, std::string &err);
