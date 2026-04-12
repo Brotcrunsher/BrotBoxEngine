@@ -401,7 +401,7 @@ namespace gitReview
 				}
 			}
 			if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
-				ImGui::SetTooltip("Open the Git history window (commits, paths, restore).");
+				ImGui::SetTooltip("Open the Git history window (all refs, cherry-pick, paths, restore).");
 			ImGui::SameLine(0.f, 12.f);
 
 			ImGui::BeginDisabled(!app.selection.has_value());
@@ -2017,7 +2017,40 @@ namespace gitReview
 				showModal(app, "Git log failed", err);
 		}
 		ImGui::SameLine();
-		ImGui::TextDisabled("Recent commits; pick one to see paths and file contents at that revision.");
+		if (ImGui::Button("Cherry-pick selected"))
+		{
+			std::string err;
+			cherryPickHistoryCommits(app, err);
+			if (!err.empty())
+				showModal(app, "git cherry-pick failed", err);
+			else
+			{
+				showToast(app, "Cherry-pick completed.", 3.5f);
+				refreshSnapshot(app);
+				std::string e2;
+				refreshCommitHistory(app, e2);
+				if (!e2.empty())
+					showModal(app, "History reload failed", e2);
+			}
+		}
+		ImGui::SameLine();
+		ImGui::BeginDisabled(app.historyCherryPickHashes.empty());
+		if (ImGui::Button("Clear pick marks"))
+			app.historyCherryPickHashes.clear();
+		ImGui::EndDisabled();
+		ImGui::SameLine();
+		if (!app.historyCherryPickHashes.empty())
+		{
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextDisabled("%zu selected", app.historyCherryPickHashes.size());
+		}
+
+		if (!app.historyHeadBranchLabel.empty())
+		{
+			ImGui::TextDisabled("Checked out: %s", app.historyHeadBranchLabel.c_str());
+		}
+		ImGui::TextDisabled(
+			"git log --all (500). * = reachable from HEAD; . = not. Open the commit combo for cherry-pick checkboxes; pick a path in the list below for preview.");
 
 		if (!app.historyLoadError.empty())
 		{
@@ -2026,8 +2059,10 @@ namespace gitReview
 		}
 
 		const ImGuiStyle &st = ImGui::GetStyle();
-		// Reserve fixed vertical space for two combo rows + restore button so the preview fills the rest (no window scrollbar).
-		const float bottomBlock = ImGui::GetFrameHeightWithSpacing() * 3.f + st.ItemSpacing.y * 4.f + ImGui::GetTextLineHeightWithSpacing();
+		const float pathListH = 240.f;
+		// Path list + commit combo row + restore row + spacing (no window scrollbar on the main history window).
+		const float bottomBlock =
+			pathListH + ImGui::GetFrameHeightWithSpacing() * 4.f + st.ItemSpacing.y * 5.f + ImGui::GetTextLineHeightWithSpacing() * 3.f;
 
 		ImGui::Separator();
 		ImGui::TextUnformatted("File at selected revision");
@@ -2135,14 +2170,36 @@ namespace gitReview
 		ImGui::BeginDisabled(app.historyCommits.empty());
 		if (ImGui::BeginCombo("##histCommitCombo", commitPreview.c_str()))
 		{
+			const float rowH = ImGui::GetFrameHeightWithSpacing();
+			const ImVec4 colOn(0.45f, 0.95f, 0.55f, 1.f);
+			const ImVec4 colOff(0.55f, 0.55f, 0.62f, 1.f);
 			for (int row = 0; row < static_cast<int>(app.historyCommits.size()); ++row)
 			{
 				const HistoryCommitLine &c = app.historyCommits[static_cast<size_t>(row)];
-				const bool sel = (row == app.historySelectedCommitIdx);
-				const std::string subj = truncatePreviewLine(c.subject, 96);
-				const std::string label = c.hashShort + "  " + c.dateIso + "  " + subj;
 				ImGui::PushID(row);
-				if (ImGui::Selectable(label.c_str(), sel))
+				bool pick = app.historyCherryPickHashes.count(c.hashFull) > 0;
+				if (ImGui::Checkbox("##cp", &pick))
+				{
+					if (pick)
+						app.historyCherryPickHashes.insert(c.hashFull);
+					else
+						app.historyCherryPickHashes.erase(c.hashFull);
+				}
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
+					ImGui::SetTooltip("Include this commit when you press Cherry-pick selected (applied oldest-first).");
+				ImGui::SameLine();
+				ImGui::AlignTextToFramePadding();
+				ImGui::TextColored(c.reachableFromHead ? colOn : colOff, "%s", c.reachableFromHead ? "*" : ".");
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
+					ImGui::SetTooltip(c.reachableFromHead ? "Reachable from HEAD (on your current history)." : "Not an ancestor of HEAD (other branch / ref only).");
+				ImGui::SameLine();
+				const bool selRow = (row == app.historySelectedCommitIdx);
+				std::string rowLabel = c.hashShort;
+				rowLabel.append("  ");
+				rowLabel += c.dateIso;
+				rowLabel.append("  ");
+				rowLabel += truncatePreviewLine(c.subject, 96);
+				if (ImGui::Selectable(rowLabel.c_str(), selRow, ImGuiSelectableFlags_AllowOverlap, ImVec2(0.f, rowH)))
 				{
 					if (app.historySelectedCommitIdx != row)
 					{
@@ -2167,30 +2224,15 @@ namespace gitReview
 		}
 		ImGui::EndDisabled();
 
-		auto pathPreviewLabel = [&]() -> std::string {
-			if (app.historyCommits.empty())
-				return "—";
-			if (app.historyCommitFiles.empty())
-				return "(no paths in this commit)";
-			if (app.historySelectedFileIdx < 0 || app.historySelectedFileIdx >= static_cast<int>(app.historyCommitFiles.size()))
-				return "Pick a path";
-			const HistoryPathChange &f = app.historyCommitFiles[static_cast<size_t>(app.historySelectedFileIdx)];
-			std::string s;
-			s.push_back(f.status);
-			s.append("  ");
-			s += truncatePreviewLine(f.path, 88);
-			return s;
-		};
-		const std::string pathPreview = pathPreviewLabel();
-
 		ImGui::AlignTextToFramePadding();
-		ImGui::TextUnformatted("Path");
-		ImGui::SameLine(72.f);
-		ImGui::SetNextItemWidth(-1.f);
+		ImGui::TextUnformatted("Paths");
+		ImGui::SameLine();
+		ImGui::TextDisabled("(click a row for preview)");
 		const bool pathsOk = !app.historyCommits.empty() && !app.historyCommitFiles.empty();
 		ImGui::BeginDisabled(!pathsOk);
-		if (ImGui::BeginCombo("##histPathCombo", pathPreview.c_str()))
+		ImGui::BeginChild("##histFileList", ImVec2(0.f, pathListH), ImGuiChildFlags_Borders);
 		{
+			const float rowH = ImGui::GetFrameHeightWithSpacing();
 			for (int i = 0; i < static_cast<int>(app.historyCommitFiles.size()); ++i)
 			{
 				const HistoryPathChange &f = app.historyCommitFiles[static_cast<size_t>(i)];
@@ -2201,18 +2243,17 @@ namespace gitReview
 				line.append("  ");
 				line += f.path;
 				ImGui::PushID(i);
-				if (ImGui::Selectable(line.c_str(), sel))
+				if (ImGui::Selectable(line.c_str(), sel, ImGuiSelectableFlags_None, ImVec2(0.f, rowH)))
 				{
 					app.historySelectedFileIdx = i;
 					reloadHistoryBlobPreview(app);
-					ImGui::CloseCurrentPopup();
 				}
 				if (!f.renameFrom.empty() && ImGui::IsItemHovered())
 					ImGui::SetTooltip("Renamed from: %s", f.renameFrom.c_str());
 				ImGui::PopID();
 			}
-			ImGui::EndCombo();
 		}
+		ImGui::EndChild();
 		ImGui::EndDisabled();
 
 		ImGui::Spacing();

@@ -17,6 +17,8 @@ namespace gitReview
 		std::string hashShort;
 		std::string dateIso;
 		std::string subject;
+		/// True when this commit is reachable from \c HEAD (part of your checked-out branch history).
+		bool reachableFromHead = false;
 	};
 
 	struct HistoryPathChange
@@ -103,6 +105,10 @@ namespace gitReview
 		/// Split of the last loaded text preview (for C++ syntax overlay in the history window).
 		std::vector<std::string> historyPreviewLinesForHl;
 		std::string historyLoadError;
+		/// Full hashes (40-char) toggled for \c git cherry-pick; survives until reload or successful pick.
+		std::unordered_set<std::string> historyCherryPickHashes;
+		/// From \c git rev-parse --abbrev-ref HEAD when not detached; else \c "HEAD" or empty.
+		std::string historyHeadBranchLabel;
 	};
 
 	void showToast(ReviewAppState &app, const std::string &text, float seconds = 4.f);
@@ -159,4 +165,7 @@ namespace gitReview
 	void reloadHistoryBlobPreview(ReviewAppState &app);
 	void restoreHistoryPathToWorktree(ReviewAppState &app, std::string &err);
 	bool historyRestoreActionEnabled(const ReviewAppState &app);
+
+	/// Applies \c git cherry-pick for each hash in \c historyCherryPickHashes (oldest first vs. the log order).
+	void cherryPickHistoryCommits(ReviewAppState &app, std::string &err);
 }

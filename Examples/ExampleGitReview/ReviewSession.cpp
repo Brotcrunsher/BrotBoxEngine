@@ -876,12 +876,15 @@ namespace gitReview
 		app.historyPreviewIsBinary = false;
 		app.historyPreviewLinesForHl.clear();
 		app.historyLoadError.clear();
+		app.historyCherryPickHashes.clear();
+		app.historyHeadBranchLabel.clear();
 	}
 
 	void refreshCommitHistory(ReviewAppState &app, std::string &err)
 	{
 		err.clear();
 		app.historyLoadError.clear();
+		app.historyCherryPickHashes.clear();
 		const std::string root = repoRootString(app);
 		if (root.empty())
 		{
@@ -889,7 +892,40 @@ namespace gitReview
 			return;
 		}
 
-		GitRunResult r = runGit(root, { "log", "-n", "500", "--pretty=format:%H%x1f%h%x1f%cs%x1f%s%x1e" });
+		app.historyHeadBranchLabel.clear();
+		{
+			GitRunResult br = runGit(root, { "rev-parse", "--abbrev-ref", "HEAD" });
+			if (br.exitCode == 0)
+			{
+				app.historyHeadBranchLabel = trimCopy(std::move(br.standardOut));
+				if (app.historyHeadBranchLabel == "HEAD")
+					app.historyHeadBranchLabel = "(detached HEAD)";
+			}
+		}
+
+		std::unordered_set<std::string> reachableFromHead;
+		{
+			GitRunResult revs = runGit(root, { "rev-list", "HEAD" });
+			if (revs.exitCode != 0)
+			{
+				err = sanitizedGitError(revs);
+				return;
+			}
+			const std::string &raw = revs.standardOut;
+			size_t p = 0;
+			while (p < raw.size())
+			{
+				size_t eol = raw.find('\n', p);
+				const std::string line = trimHistoryToken(raw.substr(p, eol == std::string::npos ? std::string::npos : eol - p));
+				p = (eol == std::string::npos) ? raw.size() : eol + 1;
+				if (line.empty())
+					continue;
+				if (isHexGitObjectId(line))
+					reachableFromHead.insert(line);
+			}
+		}
+
+		GitRunResult r = runGit(root, { "log", "--all", "-n", "500", "--pretty=format:%H%x1f%h%x1f%cs%x1f%s%x1e" });
 		if (r.exitCode != 0)
 		{
 			err = sanitizedGitError(r);
@@ -932,6 +968,7 @@ namespace gitReview
 			line.subject = trimHistoryToken(std::move(f[3]));
 			if (!isHexGitObjectId(line.hashFull))
 				continue;
+			line.reachableFromHead = reachableFromHead.find(line.hashFull) != reachableFromHead.end();
 			app.historyCommits.push_back(std::move(line));
 		}
 
@@ -1062,6 +1099,62 @@ namespace gitReview
 		GitRunResult r = runGit(root, { "restore", "--source", rev, "--worktree", "--", pathRel });
 		if (r.exitCode != 0)
 			err = sanitizedGitError(r);
+	}
+
+	void cherryPickHistoryCommits(ReviewAppState &app, std::string &err)
+	{
+		err.clear();
+		if (app.historyCherryPickHashes.empty())
+		{
+			err = "Use the checkboxes in the commit list to choose one or more commits to cherry-pick.";
+			return;
+		}
+		const std::string root = repoRootString(app);
+		if (root.empty())
+		{
+			err = "No repository path set.";
+			return;
+		}
+
+		std::vector<std::pair<int, std::string>> ordered;
+		ordered.reserve(app.historyCherryPickHashes.size());
+		for (const std::string &h : app.historyCherryPickHashes)
+		{
+			int idx = -1;
+			for (int i = 0; i < static_cast<int>(app.historyCommits.size()); ++i)
+			{
+				if (app.historyCommits[static_cast<size_t>(i)].hashFull == h)
+				{
+					idx = i;
+					break;
+				}
+			}
+			if (idx < 0)
+				continue;
+			ordered.push_back({ idx, h });
+		}
+		if (ordered.empty())
+		{
+			err = "None of the selected commits are in the current list; press Reload log.";
+			return;
+		}
+		std::sort(ordered.begin(), ordered.end(),
+			[](const std::pair<int, std::string> &a, const std::pair<int, std::string> &b) { return a.first > b.first; });
+
+		std::vector<std::string> args;
+		args.reserve(ordered.size() + 1u);
+		args.push_back("cherry-pick");
+		for (const auto &p : ordered)
+			args.push_back(p.second);
+
+		GitRunResult r = runGit(root, args);
+		if (r.exitCode != 0)
+		{
+			err = sanitizedGitError(r);
+			return;
+		}
+
+		app.historyCherryPickHashes.clear();
 	}
 
 }
