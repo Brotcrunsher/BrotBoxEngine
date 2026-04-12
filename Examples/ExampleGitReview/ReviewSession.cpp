@@ -259,6 +259,21 @@ namespace gitReview
 		app.cachedDiffRight.clear();
 		app.cachedDiffRows.clear();
 		app.diffCacheLargeFallback = false;
+		app.mergeThreeWayUnmerged = false;
+		app.mergeBaseText.clear();
+		app.mergeTheirsText.clear();
+		app.cachedMergeRows.clear();
+		app.cachedMergeBlobKey.clear();
+		app.cachedMergeWorkRaw.clear();
+		app.mergeCacheLargeFallback = false;
+		app.cachedMergeConflictLineRanges.clear();
+		app.mergePaneBaseBuf.clear();
+		app.mergePaneBaseBuf.push_back('\0');
+		app.mergePaneOursBuf.clear();
+		app.mergePaneOursBuf.push_back('\0');
+		app.mergePaneTheirsBuf.clear();
+		app.mergePaneTheirsBuf.push_back('\0');
+		app.mergePickUndoStack.clear();
 		if (!app.selection.has_value())
 			return;
 
@@ -266,9 +281,49 @@ namespace gitReview
 		if (root.empty())
 			return;
 
+		const FileEntry &sel = *app.selection;
+		const bool tryMerge = app.reviewMode == ReviewMode::Unstaged && sel.section != FileListSection::Untracked && sel.kind != ChangeKind::Deleted &&
+							  sel.kind != ChangeKind::Renamed && pathHasUnmergedIndex(root, sel.path);
+
+		if (tryMerge)
+		{
+			std::string mbase, mours, mtheirs;
+			std::string merr;
+			if (tryLoadMergeIndexVersions(root, sel.path, mbase, mours, mtheirs, merr))
+			{
+				const std::filesystem::path workPath = std::filesystem::path(root) / std::filesystem::path(sel.path);
+				std::string werr;
+				std::string rightTmp = readFileUtf8(workPath.string(), werr);
+				bool bin = false;
+				decideBinaryAfterLoad(sel, mours, rightTmp, bin);
+				if (!werr.empty())
+				{
+					app.loadDiffError = werr;
+					return;
+				}
+				if (!bin)
+				{
+					app.mergeThreeWayUnmerged = true;
+					app.mergeBaseText = std::move(mbase);
+					app.leftText = std::move(mours);
+					app.mergeTheirsText = std::move(mtheirs);
+					setBufferFromText(app.rightEditBuffer, rightTmp);
+					app.rightSideIsWorktreeFile = true;
+					cachedMergeThreePaneRows(app);
+					app.rightWorktreeSavedCanon = rightBufferText(app);
+					return;
+				}
+			}
+			else if (!merr.empty())
+			{
+				app.loadDiffError = merr;
+				return;
+			}
+		}
+
 		std::string err;
 		std::string rightTmp;
-		loadDiffPair(root, app.reviewMode, *app.selection, app.leftText, rightTmp, app.rightSideIsWorktreeFile, app.binaryFile, err);
+		loadDiffPair(root, app.reviewMode, sel, app.leftText, rightTmp, app.rightSideIsWorktreeFile, app.binaryFile, err);
 		setBufferFromText(app.rightEditBuffer, rightTmp);
 		if (!err.empty())
 			app.loadDiffError = err;
@@ -280,6 +335,8 @@ namespace gitReview
 	{
 		if (!app.selection.has_value() || !app.rightSideIsWorktreeFile || app.binaryFile || !app.loadDiffError.empty())
 			return false;
+		if (app.mergeThreeWayUnmerged)
+			cachedMergeThreePaneRows(app);
 		return rightBufferText(app) != app.rightWorktreeSavedCanon;
 	}
 
@@ -323,6 +380,21 @@ namespace gitReview
 		app.cachedDiffRows.clear();
 		app.diffCacheLargeFallback = false;
 		app.rightWorktreeSavedCanon.clear();
+		app.mergeThreeWayUnmerged = false;
+		app.mergeBaseText.clear();
+		app.mergeTheirsText.clear();
+		app.cachedMergeRows.clear();
+		app.cachedMergeBlobKey.clear();
+		app.cachedMergeWorkRaw.clear();
+		app.mergeCacheLargeFallback = false;
+		app.cachedMergeConflictLineRanges.clear();
+		app.mergePaneBaseBuf.clear();
+		app.mergePaneBaseBuf.push_back('\0');
+		app.mergePaneOursBuf.clear();
+		app.mergePaneOursBuf.push_back('\0');
+		app.mergePaneTheirsBuf.clear();
+		app.mergePaneTheirsBuf.push_back('\0');
+		app.mergePickUndoStack.clear();
 	}
 
 	bool saveWorktreeBuffer(ReviewAppState &app, std::string &err)
@@ -354,6 +426,21 @@ namespace gitReview
 		{
 			err = "No repository path.";
 			return;
+		}
+
+		// `git add` reads the worktree from disk; the diff/merge editor keeps edits in memory until Save.
+		// Flush the open buffer when staging that path so the index matches the editor and refresh does not wipe edits.
+		if (app.selection.has_value() && app.selection->path == entry.path && app.rightSideIsWorktreeFile && !app.binaryFile)
+		{
+			if (rightWorktreeBufferHasUnsavedEdits(app))
+			{
+				std::string saveErr;
+				if (!saveWorktreeBuffer(app, saveErr))
+				{
+					err = "Could not save the working tree before staging: " + saveErr;
+					return;
+				}
+			}
 		}
 
 		if (entry.kind == ChangeKind::Renamed && !entry.renameFrom.empty())
@@ -590,6 +677,8 @@ namespace gitReview
 
 	const std::vector<DiffRow> &cachedDiffRows(ReviewAppState &app)
 	{
+		if (app.mergeThreeWayUnmerged)
+			return app.cachedDiffRows;
 		if (app.binaryFile)
 			return app.cachedDiffRows;
 		const std::string aligned = rightBufferAsString(app.rightEditBuffer);
@@ -618,7 +707,72 @@ namespace gitReview
 	{
 		if (app.binaryFile)
 			return rightBufferAsString(app.rightEditBuffer);
+		if (app.mergeThreeWayUnmerged)
+		{
+			cachedMergeThreePaneRows(app);
+			return mergeRowsWorkCanon(app.cachedMergeRows);
+		}
 		cachedDiffRows(app);
 		return app.cachedDiffRight;
+	}
+
+	const std::vector<MergeThreePaneRow> &cachedMergeThreePaneRows(ReviewAppState &app)
+	{
+		if (!app.mergeThreeWayUnmerged || app.binaryFile)
+			return app.cachedMergeRows;
+		const std::string workRaw = rightBufferAsString(app.rightEditBuffer);
+		const std::string workCanonKey = joinLinesForDiff(splitLinesForDiff(workRaw));
+		const std::string blobKey = app.mergeBaseText + std::string(1, '\0') + app.leftText + std::string(1, '\0') + app.mergeTheirsText;
+		if (blobKey == app.cachedMergeBlobKey && workCanonKey == app.cachedMergeWorkRaw && !app.cachedMergeRows.empty())
+			return app.cachedMergeRows;
+
+		app.cachedMergeRows = buildMergeThreePaneRows(app.mergeBaseText, app.leftText, workRaw, app.mergeTheirsText, app.mergeCacheLargeFallback);
+		app.cachedMergeConflictLineRanges = listMergeConflictHunkLines(workRaw);
+
+		const std::string alignedWork = mergeRowsWorkCanon(app.cachedMergeRows);
+		if (workCanonKey != joinLinesForDiff(splitLinesForDiff(alignedWork)))
+			setBufferFromText(app.rightEditBuffer, alignedWork);
+		const std::string alignedBase = buildAlignedMergePaneBuffer(app.cachedMergeRows, MergePaneColumn::Base);
+		const std::string alignedOurs = buildAlignedMergePaneBuffer(app.cachedMergeRows, MergePaneColumn::Ours);
+		const std::string alignedTheirs = buildAlignedMergePaneBuffer(app.cachedMergeRows, MergePaneColumn::Theirs);
+		setBufferFromText(app.mergePaneBaseBuf, alignedBase);
+		setBufferFromText(app.mergePaneOursBuf, alignedOurs);
+		setBufferFromText(app.mergePaneTheirsBuf, alignedTheirs);
+		app.cachedMergeBlobKey = blobKey;
+		app.cachedMergeWorkRaw = joinLinesForDiff(splitLinesForDiff(rightBufferAsString(app.rightEditBuffer)));
+		return app.cachedMergeRows;
+	}
+
+	bool applyWorktreeMergeConflictPick(ReviewAppState &app, size_t hunkIndex, MergeConflictPick pick, std::string &err)
+	{
+		err.clear();
+		if (!app.mergeThreeWayUnmerged || app.binaryFile)
+		{
+			err = "Conflict picks are only available in the three-way merge view.";
+			return false;
+		}
+		std::string doc = rightBufferText(app);
+		const std::string beforePick = doc;
+		if (!applyMergeConflictPick(doc, hunkIndex, pick, &err))
+			return false;
+		if (app.mergePickUndoStack.size() >= 64)
+			app.mergePickUndoStack.erase(app.mergePickUndoStack.begin());
+		app.mergePickUndoStack.push_back(beforePick);
+		app.cachedMergeBlobKey.clear();
+		setBufferFromText(app.rightEditBuffer, doc);
+		cachedMergeThreePaneRows(app);
+		return true;
+	}
+
+	bool undoMergePick(ReviewAppState &app)
+	{
+		if (app.mergePickUndoStack.empty())
+			return false;
+		std::string prev = std::move(app.mergePickUndoStack.back());
+		app.mergePickUndoStack.pop_back();
+		app.cachedMergeBlobKey.clear();
+		setBufferFromText(app.rightEditBuffer, prev);
+		cachedMergeThreePaneRows(app);
+		return true;
 	}
 }

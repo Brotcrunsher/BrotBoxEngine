@@ -419,4 +419,102 @@ namespace gitReview
 			}
 		}
 	}
+
+	std::vector<MergeThreePaneRow> buildMergeThreePaneRows(const std::string &base, const std::string &ours, const std::string &work,
+		const std::string &theirs, bool &outLargeFallback)
+	{
+		outLargeFallback = false;
+		bool l1 = false, l2 = false, l3 = false;
+		const std::vector<DiffRow> a = buildSideBySideRows(ours, work, l1);
+		const std::vector<DiffRow> b = buildSideBySideRows(theirs, work, l2);
+		const std::vector<DiffRow> c = buildSideBySideRows(base, work, l3);
+		outLargeFallback = l1 || l2 || l3;
+		const size_t L = std::max({a.size(), b.size(), c.size()});
+		std::vector<MergeThreePaneRow> rows(L);
+		for (size_t i = 0; i < L; ++i)
+		{
+			MergeThreePaneRow &row = rows[i];
+			row.oursLine = i < a.size() ? a[i].leftLine : std::string{};
+			row.theirsLine = i < b.size() ? b[i].leftLine : std::string{};
+			row.baseLine = i < c.size() ? c[i].leftLine : std::string{};
+			std::string w;
+			if (i < a.size() && !a[i].rightLine.empty())
+				w = a[i].rightLine;
+			else if (i < b.size() && !b[i].rightLine.empty())
+				w = b[i].rightLine;
+			else if (i < c.size() && !c[i].rightLine.empty())
+				w = c[i].rightLine;
+			row.workLine = std::move(w);
+		}
+
+		const std::vector<std::string> wl = splitLinesForDiff(work);
+		size_t cursor = 0;
+		for (MergeThreePaneRow &row : rows)
+		{
+			const std::string &w = row.workLine;
+			if (w.empty())
+			{
+				row.workLineIndex0 = -1;
+				continue;
+			}
+			int found = -1;
+			for (size_t j = cursor; j < wl.size(); ++j)
+			{
+				if (wl[j] == w)
+				{
+					found = static_cast<int>(j);
+					cursor = j + 1;
+					break;
+				}
+			}
+			if (found < 0)
+			{
+				for (size_t j = 0; j < wl.size(); ++j)
+				{
+					if (wl[j] == w)
+					{
+						found = static_cast<int>(j);
+						cursor = j + 1;
+						break;
+					}
+				}
+			}
+			row.workLineIndex0 = found;
+		}
+		return rows;
+	}
+
+	std::string mergeRowsWorkCanon(const std::vector<MergeThreePaneRow> &rows)
+	{
+		std::vector<std::string> lines;
+		lines.reserve(rows.size());
+		for (const MergeThreePaneRow &r : rows)
+			lines.push_back(r.workLine);
+		return joinLinesForDiff(lines);
+	}
+
+	std::string buildAlignedMergePaneBuffer(const std::vector<MergeThreePaneRow> &rows, MergePaneColumn which)
+	{
+		std::vector<std::string> lines;
+		lines.reserve(rows.size());
+		for (const MergeThreePaneRow &r : rows)
+		{
+			switch (which)
+			{
+			case MergePaneColumn::Base:
+				lines.push_back(r.baseLine);
+				break;
+			case MergePaneColumn::Ours:
+				lines.push_back(r.oursLine);
+				break;
+			case MergePaneColumn::Theirs:
+				lines.push_back(r.theirsLine);
+				break;
+			case MergePaneColumn::Work:
+				lines.push_back(r.workLine);
+				break;
+			}
+		}
+		return joinLinesForDiff(lines);
+	}
 }

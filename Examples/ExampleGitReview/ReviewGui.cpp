@@ -9,6 +9,7 @@
 #include "imgui_internal.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -38,6 +39,24 @@ namespace gitReview
 				data->BufSize = static_cast<int>(v->size());
 			}
 			return 0;
+		}
+
+		/// True when the index is still unmerged for \p pathRel and the working tree (or open merge buffer) still contains conflict markers.
+		static bool mergeConflictsBlockStaging(const ReviewAppState &app, const std::string &repoRoot, const std::string &pathRel, bool hasUnstaged,
+			bool isUntracked)
+		{
+			if (repoRoot.empty() || !hasUnstaged || isUntracked)
+				return false;
+			if (!pathHasUnmergedIndex(repoRoot, pathRel))
+				return false;
+			if (app.selection.has_value() && app.selection->path == pathRel && app.mergeThreeWayUnmerged && !app.binaryFile)
+				return !app.cachedMergeConflictLineRanges.empty();
+			std::string rerr;
+			const std::string absPath = (std::filesystem::path(repoRoot) / std::filesystem::path(pathRel)).string();
+			const std::string doc = readFileUtf8(absPath, rerr);
+			if (!rerr.empty())
+				return true;
+			return !listMergeConflictHunkLines(doc).empty();
 		}
 
 		static bool worktreeSaveApplies(const ReviewAppState &app)
@@ -865,6 +884,7 @@ namespace gitReview
 			std::sort(merged.begin(), merged.end(),
 				[](const MergedFile &a, const MergedFile &b) { return a.path < b.path; });
 
+			const std::string repoRoot = repoRootString(app);
 			bool needsRefresh = false;
 			for (size_t idx = 0; idx < merged.size() && !needsRefresh; idx++)
 			{
@@ -877,7 +897,9 @@ namespace gitReview
 				// \c git restore --staged :/ then re-stages only fully-staged paths so the index cannot
 				// diverge from these checkboxes.
 				const bool fullyStaged = mf.hasStaged && !mf.hasUnstaged;
+				const bool blockStageCheckbox = mergeConflictsBlockStaging(app, repoRoot, mf.path, mf.hasUnstaged, mf.isUntracked);
 				bool staged = fullyStaged;
+				ImGui::BeginDisabled(blockStageCheckbox);
 				if (ImGui::Checkbox("##stg", &staged))
 				{
 					const bool inMulti = app.fileListMultiPaths.count(mf.path) != 0;
@@ -886,6 +908,11 @@ namespace gitReview
 					auto applyOne = [&](const MergedFile &m) {
 						if (staged)
 						{
+							if (mergeConflictsBlockStaging(app, repoRoot, m.path, m.hasUnstaged, m.isUntracked))
+							{
+								err = "Cannot stage \"" + m.path + "\": resolve merge conflict markers in that file first.";
+								return;
+							}
 							const FileEntry &toStage = m.hasUnstaged ? m.unstagedEntry : m.stagedEntry;
 							stageEntry(app, toStage, err);
 						}
@@ -917,9 +944,16 @@ namespace gitReview
 							needsRefresh = true;
 					}
 				}
-				if (mf.hasStaged && mf.hasUnstaged)
-					ImGui::SetItemTooltip("This file has both staged and unstaged changes. Checking the box runs "
+				const bool stgHovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled);
+				ImGui::EndDisabled();
+				if (stgHovered)
+				{
+					if (blockStageCheckbox)
+						ImGui::SetTooltip("Resolve all merge conflict markers in this file before staging.");
+					else if (mf.hasStaged && mf.hasUnstaged)
+						ImGui::SetTooltip("This file has both staged and unstaged changes. Checking the box runs "
 										  "\"git add\" on the whole file so the index matches your working tree.");
+				}
 
 				ImGui::SameLine();
 
@@ -992,6 +1026,548 @@ namespace gitReview
 			ImGui::EndChild();
 		}
 
+		static void computeMergeGutterLineNumbers(const std::vector<MergeThreePaneRow> &rows, std::vector<int> &outOurs, std::vector<int> &outWork,
+			std::vector<int> &outTheirs)
+		{
+			outOurs.assign(rows.size(), 0);
+			outWork.assign(rows.size(), 0);
+			outTheirs.assign(rows.size(), 0);
+			int on = 0, tn = 0;
+			for (size_t i = 0; i < rows.size(); ++i)
+			{
+				const MergeThreePaneRow &r = rows[i];
+				if (!r.oursLine.empty())
+					outOurs[i] = ++on;
+				if (r.workLineIndex0 >= 0)
+					outWork[i] = r.workLineIndex0 + 1;
+				if (!r.theirsLine.empty())
+					outTheirs[i] = ++tn;
+			}
+		}
+
+		static void drawMergePaneBackground(ImDrawList *dl, const ImVec2 &innerTopLeft, float innerWidth, float lineH, float padX, float padY, int rowBegin,
+			int rowEnd, const std::vector<MergeThreePaneRow> &rows, const std::vector<MergeConflictHunkLines> &conflictRanges, const ImVec4 &branchDiffCol,
+			const ImVec4 &conflictCol)
+		{
+			for (int i = rowBegin; i < rowEnd; i++)
+			{
+				const MergeThreePaneRow &row = rows[static_cast<size_t>(i)];
+				const float y0 = innerTopLeft.y + padY + static_cast<float>(i) * lineH;
+				const ImVec2 rmin(innerTopLeft.x, y0);
+				const ImVec2 rmax(innerTopLeft.x + innerWidth, y0 + lineH);
+				const bool inConflict =
+					row.workLineIndex0 >= 0 && mergeConflictHunkAtLine(conflictRanges, row.workLineIndex0) >= 0;
+				const bool branchDiff = row.oursLine != row.theirsLine;
+				if (inConflict)
+					dl->AddRectFilled(rmin, rmax, ImGui::ColorConvertFloat4ToU32(ImVec4(conflictCol.x, conflictCol.y, conflictCol.z, 0.42f)));
+				else if (branchDiff)
+					dl->AddRectFilled(rmin, rmax, ImGui::ColorConvertFloat4ToU32(ImVec4(branchDiffCol.x, branchDiffCol.y, branchDiffCol.z, 0.22f)));
+			}
+		}
+
+		static void drawMergeThreeWayDiffMap(ReviewAppState &app, const std::vector<MergeThreePaneRow> &rows, float barWidth, float mapHeight, float scrollY,
+			float scrollMaxY, float innerViewH, float lineH, const std::vector<MergeConflictHunkLines> &conflictRanges)
+		{
+			const int numRows = static_cast<int>(rows.size());
+			const float arrowH = 16.f;
+			const float spacingY = ImGui::GetStyle().ItemSpacing.y;
+			const float stripH = mapHeight - 2.f * arrowH - 2.f * spacingY;
+			if (stripH < 10.f)
+			{
+				ImGui::Dummy(ImVec2(barWidth, mapHeight));
+				return;
+			}
+
+			const float wpad = ImGui::GetStyle().WindowPadding.y;
+			const float totalScrollableH = scrollMaxY + std::max(innerViewH, 1.f);
+
+			std::vector<int> hunkStarts;
+			for (int i = 0; i < numRows; i++)
+			{
+				const MergeThreePaneRow &row = rows[static_cast<size_t>(i)];
+				const bool inConflict =
+					row.workLineIndex0 >= 0 && mergeConflictHunkAtLine(conflictRanges, row.workLineIndex0) >= 0;
+				const bool branchDiff = row.oursLine != row.theirsLine;
+				const bool interesting = inConflict || branchDiff;
+				const bool prevInteresting =
+					i > 0 &&
+					((rows[static_cast<size_t>(i - 1)].workLineIndex0 >= 0 &&
+						 mergeConflictHunkAtLine(conflictRanges, rows[static_cast<size_t>(i - 1)].workLineIndex0) >= 0) ||
+						(rows[static_cast<size_t>(i - 1)].oursLine != rows[static_cast<size_t>(i - 1)].theirsLine));
+				if (interesting && (i == 0 || !prevInteresting))
+					hunkStarts.push_back(i);
+			}
+			const int topVisibleRow = (lineH > 0.f) ? static_cast<int>(scrollY / lineH) : 0;
+
+			ImGui::BeginGroup();
+
+			{
+				ImGui::InvisibleButton("##mergePrevDiff", ImVec2(barWidth, arrowH));
+				ImDrawList *dl = ImGui::GetWindowDrawList();
+				ImVec2 rmin = ImGui::GetItemRectMin();
+				ImVec2 rmax = ImGui::GetItemRectMax();
+				bool hovered = ImGui::IsItemHovered();
+				if (hovered)
+					dl->AddRectFilled(rmin, rmax, IM_COL32(60, 60, 65, 200));
+				ImVec2 ctr((rmin.x + rmax.x) * 0.5f, (rmin.y + rmax.y) * 0.5f);
+				float s = 4.5f;
+				ImU32 col = hovered ? IM_COL32(255, 255, 255, 240) : IM_COL32(150, 150, 160, 180);
+				dl->AddTriangleFilled(
+					ImVec2(ctr.x, ctr.y - s),
+					ImVec2(ctr.x - s, ctr.y + s * 0.5f),
+					ImVec2(ctr.x + s, ctr.y + s * 0.5f), col);
+				if (ImGui::IsItemClicked() && !hunkStarts.empty())
+				{
+					auto it = std::lower_bound(hunkStarts.begin(), hunkStarts.end(), topVisibleRow);
+					if (it != hunkStarts.begin())
+					{
+						--it;
+						app.diffMapScrollTarget = std::max(0.f, *it * lineH - 3.f * lineH);
+					}
+				}
+				if (hovered)
+					ImGui::SetTooltip("Previous change / conflict");
+			}
+
+			{
+				ImGui::InvisibleButton("##mergeDiffMapStrip", ImVec2(barWidth, stripH));
+				ImVec2 smin = ImGui::GetItemRectMin();
+				ImVec2 smax = ImGui::GetItemRectMax();
+				bool hovered = ImGui::IsItemHovered();
+				bool active = ImGui::IsItemActive();
+				ImDrawList *dl = ImGui::GetWindowDrawList();
+
+				dl->AddRectFilled(smin, smax, IM_COL32(22, 22, 25, 255));
+
+				if (numRows > 0 && totalScrollableH > 0.f)
+				{
+					const float minTickH = std::max(lineH / totalScrollableH * stripH, 2.0f);
+					const float padX = 3.f;
+					for (int i = 0; i < numRows; i++)
+					{
+						const MergeThreePaneRow &row = rows[static_cast<size_t>(i)];
+						const bool inConflict =
+							row.workLineIndex0 >= 0 && mergeConflictHunkAtLine(conflictRanges, row.workLineIndex0) >= 0;
+						const bool branchDiff = row.oursLine != row.theirsLine;
+						if (!inConflict && !branchDiff)
+							continue;
+						const ImU32 c = inConflict ? IM_COL32(220, 90, 220, 230) : IM_COL32(200, 170, 60, 200);
+						float y0 = smin.y + (wpad + i * lineH) / totalScrollableH * stripH;
+						float y1 = std::min(y0 + minTickH, smax.y);
+						dl->AddRectFilled(ImVec2(smin.x + padX, y0), ImVec2(smax.x - padX, y1), c);
+					}
+
+					float vpY0 = std::max(smin.y + scrollY / totalScrollableH * stripH, smin.y);
+					float vpY1 = std::min(smin.y + (scrollY + innerViewH) / totalScrollableH * stripH, smax.y);
+					dl->AddRectFilled(ImVec2(smin.x, vpY0), ImVec2(smax.x, vpY1), IM_COL32(255, 255, 255, 25));
+					dl->AddRect(ImVec2(smin.x, vpY0), ImVec2(smax.x, vpY1), IM_COL32(255, 255, 255, 90), 0.f, 0, 1.f);
+				}
+
+				if (hovered)
+					ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+
+				if (hovered && numRows > 0 && totalScrollableH > 0.f && lineH > 0.f)
+				{
+					const float relY = std::clamp(ImGui::GetMousePos().y - smin.y, 0.f, stripH);
+					const float rowFloat = (relY / stripH * totalScrollableH - wpad) / lineH;
+					int centerRow = static_cast<int>(std::floor(rowFloat + 0.5f));
+					centerRow = std::clamp(centerRow, 0, numRows - 1);
+
+					ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.f, 8.f));
+					ImGui::BeginTooltip();
+					ImGui::TextDisabled("Merge row %d", centerRow + 1);
+					ImGui::Separator();
+					const size_t kMax = 120;
+					const MergeThreePaneRow &rw = rows[static_cast<size_t>(centerRow)];
+					ImGui::TextDisabled("Ours");
+					ImGui::TextUnformatted(truncatePreviewLine(rw.oursLine, kMax).c_str());
+					ImGui::TextDisabled("Working tree");
+					ImGui::TextUnformatted(truncatePreviewLine(rw.workLine, kMax).c_str());
+					ImGui::TextDisabled("Theirs");
+					ImGui::TextUnformatted(truncatePreviewLine(rw.theirsLine, kMax).c_str());
+					ImGui::EndTooltip();
+					ImGui::PopStyleVar();
+				}
+
+				if (active && numRows > 0 && totalScrollableH > 0.f)
+				{
+					float mouseY = ImGui::GetMousePos().y - smin.y;
+					float frac = std::clamp(mouseY / stripH, 0.f, 1.f);
+					float targetScroll = frac * totalScrollableH - innerViewH * 0.5f;
+					app.diffMapScrollTarget = std::clamp(targetScroll, 0.f, scrollMaxY);
+				}
+			}
+
+			{
+				ImGui::InvisibleButton("##mergeNextDiff", ImVec2(barWidth, arrowH));
+				ImDrawList *dl = ImGui::GetWindowDrawList();
+				ImVec2 rmin = ImGui::GetItemRectMin();
+				ImVec2 rmax = ImGui::GetItemRectMax();
+				bool hovered = ImGui::IsItemHovered();
+				if (hovered)
+					dl->AddRectFilled(rmin, rmax, IM_COL32(60, 60, 65, 200));
+				ImVec2 ctr((rmin.x + rmax.x) * 0.5f, (rmin.y + rmax.y) * 0.5f);
+				float s = 4.5f;
+				ImU32 col = hovered ? IM_COL32(255, 255, 255, 240) : IM_COL32(150, 150, 160, 180);
+				dl->AddTriangleFilled(
+					ImVec2(ctr.x, ctr.y + s),
+					ImVec2(ctr.x - s, ctr.y - s * 0.5f),
+					ImVec2(ctr.x + s, ctr.y - s * 0.5f), col);
+				if (ImGui::IsItemClicked() && !hunkStarts.empty())
+				{
+					auto it = std::upper_bound(hunkStarts.begin(), hunkStarts.end(), topVisibleRow);
+					if (it != hunkStarts.end())
+						app.diffMapScrollTarget = std::max(0.f, *it * lineH - 3.f * lineH);
+				}
+				if (hovered)
+					ImGui::SetTooltip("Next change / conflict");
+			}
+
+			ImGui::EndGroup();
+		}
+
+		static void drawMergeThreeWayDiffBody(ReviewAppState &app)
+		{
+			const std::vector<MergeThreePaneRow> &rows = cachedMergeThreePaneRows(app);
+			const bool largeFB = app.mergeCacheLargeFallback;
+			const float lineH = ImGui::GetTextLineHeight();
+
+			std::vector<int> hunkStarts;
+			for (int i = 0; i < static_cast<int>(rows.size()); i++)
+			{
+				const MergeThreePaneRow &row = rows[static_cast<size_t>(i)];
+				const bool inConflict =
+					row.workLineIndex0 >= 0 && mergeConflictHunkAtLine(app.cachedMergeConflictLineRanges, row.workLineIndex0) >= 0;
+				const bool branchDiff = row.oursLine != row.theirsLine;
+				const bool interesting = inConflict || branchDiff;
+				const bool prevInteresting =
+					i > 0 &&
+					((rows[static_cast<size_t>(i - 1)].workLineIndex0 >= 0 &&
+						 mergeConflictHunkAtLine(app.cachedMergeConflictLineRanges, rows[static_cast<size_t>(i - 1)].workLineIndex0) >= 0) ||
+						(rows[static_cast<size_t>(i - 1)].oursLine != rows[static_cast<size_t>(i - 1)].theirsLine));
+				if (interesting && (i == 0 || !prevInteresting))
+					hunkStarts.push_back(i);
+			}
+
+			bool hasPrev = false;
+			bool hasNext = false;
+			for (int h : hunkStarts)
+			{
+				float t = std::max(0.f, h * lineH - 3.f * lineH);
+				if (t < app.diffScrollY - 1.f)
+					hasPrev = true;
+				if (t > app.diffScrollY + 1.f)
+				{
+					hasNext = true;
+					break;
+				}
+			}
+
+			ImGui::BeginDisabled(!hasPrev);
+			if (ImGui::Button("<< Prev") || (!ImGui::GetIO().WantTextInput && hasPrev && ImGui::IsKeyPressed(ImGuiKey_F7)))
+				app.diffNavRequest = -1;
+			ImGui::EndDisabled();
+			ImGui::SameLine();
+			ImGui::BeginDisabled(!hasNext);
+			if (ImGui::Button("Next >>") || (!ImGui::GetIO().WantTextInput && hasNext && ImGui::IsKeyPressed(ImGuiKey_F8)))
+				app.diffNavRequest = 1;
+			ImGui::EndDisabled();
+			if (hasPrev || hasNext)
+			{
+				ImGui::SameLine();
+				ImGui::TextDisabled("(F7/F8)");
+			}
+
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			ImGui::BeginChild("merge3ColHdr", ImVec2(-1.f, ImGui::GetTextLineHeightWithSpacing() + 4.f), false);
+			const float cw = std::max(120.f, (ImGui::GetWindowWidth() - ImGui::GetStyle().ItemSpacing.x * 2.f) / 3.f);
+			ImGui::BeginChild("##mh0", ImVec2(cw, 0.f), false);
+			ImGui::TextUnformatted("Ours (stage 2)");
+			ImGui::EndChild();
+			ImGui::SameLine(0.f, ImGui::GetStyle().ItemSpacing.x);
+			ImGui::BeginChild("##mh1", ImVec2(cw, 0.f), false);
+			ImGui::TextUnformatted("Working tree (editable)");
+			if (rightWorktreeBufferHasUnsavedEdits(app))
+			{
+				ImGui::SameLine(0.f, 6.f);
+				ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.0f, 1.0f), "*");
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Unsaved changes");
+			}
+			ImGui::EndChild();
+			ImGui::SameLine(0.f, ImGui::GetStyle().ItemSpacing.x);
+			ImGui::BeginChild("##mh2", ImVec2(0.f, 0.f), false);
+			ImGui::TextUnformatted("Theirs (stage 3)");
+			ImGui::EndChild();
+			ImGui::EndChild();
+			ImGui::Separator();
+
+			ImGui::TextColored(ImVec4(0.75f, 0.7f, 0.95f, 1.f),
+				"Three-way merge view (unmerged index). Base (stage 1) is loaded for alignment but not shown as a column. "
+				"Right-click a highlighted conflict row to resolve markers. Ctrl+Z undoes the last resolution when the middle editor is not focused for typing.");
+			if (largeFB)
+			{
+				ImGui::SameLine();
+				ImGui::TextColored(ImVec4(0.9f, 0.75f, 0.3f, 1.f), "Large diff — line-level only.");
+			}
+
+			const float mapBarW = 18.f;
+			const float footer = app.rightSideIsWorktreeFile ? 104.f : 84.f;
+			ImGui::BeginChild("diffScroll", ImVec2(-(mapBarW + ImGui::GetStyle().ItemSpacing.x), -footer), true,
+				ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar);
+
+			if (app.diffScrollToFirstChange)
+			{
+				if (!hunkStarts.empty())
+					app.diffMapScrollTarget = std::max(0.f, static_cast<float>(hunkStarts[0]) * lineH - 3.f * lineH);
+				else
+					app.diffMapScrollTarget = 0.f;
+				app.diffScrollToFirstChange = false;
+			}
+
+			if (app.diffNavRequest != 0 && !hunkStarts.empty())
+			{
+				const float scrollY = ImGui::GetScrollY();
+				if (app.diffNavRequest < 0)
+				{
+					float prevTarget = -1.f;
+					for (int h : hunkStarts)
+					{
+						float t = std::max(0.f, h * lineH - 3.f * lineH);
+						if (t >= scrollY - 1.f)
+							break;
+						prevTarget = t;
+					}
+					if (prevTarget >= 0.f)
+						app.diffMapScrollTarget = prevTarget;
+				}
+				else
+				{
+					for (int h : hunkStarts)
+					{
+						float t = std::max(0.f, h * lineH - 3.f * lineH);
+						if (t > scrollY + 1.f)
+						{
+							app.diffMapScrollTarget = t;
+							break;
+						}
+					}
+				}
+				app.diffNavRequest = 0;
+			}
+
+			if (app.diffMapScrollTarget >= 0.f)
+			{
+				ImGui::SetScrollY(app.diffMapScrollTarget);
+				app.diffMapScrollTarget = -1.f;
+			}
+
+			const ImVec4 branchDiffCol(0.95f, 0.82f, 0.35f, 1.f);
+			const ImVec4 conflictCol(0.85f, 0.45f, 0.95f, 1.f);
+
+			const float colW = std::max(100.f, (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 2.f) / 3.f);
+			const float contentH = static_cast<float>(rows.size()) * lineH;
+			const ImGuiStyle &styleRef = ImGui::GetStyle();
+			// InputTextMultiline ends with a Dummy(text_size_y + FramePadding.y); editable fields can still get
+			// ScrollMaxY > 0 vs. read-only without slack, which shows ImGui's scrollbar and steals the mouse wheel.
+			const float fontSz = ImGui::GetFontSize();
+			const float paneH = contentH + styleRef.FramePadding.y * 2.f + fontSz;
+			const ImGuiWindowFlags paneFlags = ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar;
+
+			std::vector<int> gutO, gutW, gutT;
+			computeMergeGutterLineNumbers(rows, gutO, gutW, gutT);
+			const float gutterWO = diffGutterWidth(gutO, gutO);
+			const float gutterWW = diffGutterWidth(gutW, gutW);
+			const float gutterWT = diffGutterWidth(gutT, gutT);
+			const ImU32 gutterTextCol = ImGui::ColorConvertFloat4ToU32(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+			const ImU32 gutterRuleCol = IM_COL32(70, 70, 78, 140);
+
+			enum class M3PaneCol
+			{
+				Ours,
+				Work,
+				Theirs
+			};
+			const bool cpp = pathLooksLikeCpp(app.selection->path);
+			float mergeRow0TextScreenY = 0.f;
+			bool haveMergeRow0Y = false;
+			auto drawOnePane = [&](M3PaneCol pane, const char *childWinId, const char *inputLabel, std::vector<char> &buf, bool readOnly, float gutterW,
+								const std::vector<int> &gutNums) {
+				ImGui::BeginChild(childWinId, ImVec2(colW, paneH), false, paneFlags);
+				const ImGuiStyle &stl = ImGui::GetStyle();
+				const float padXL = stl.FramePadding.x;
+				const float padYL = stl.FramePadding.y;
+				ImDrawList *dll = ImGui::GetWindowDrawList();
+				const ImVec2 innerL = ImGui::GetCursorScreenPos();
+				if (pane == M3PaneCol::Ours && !haveMergeRow0Y && !rows.empty())
+				{
+					mergeRow0TextScreenY = innerL.y + padYL;
+					haveMergeRow0Y = true;
+				}
+				const float innerWL = ImGui::GetContentRegionAvail().x - gutterW;
+
+				ImGuiListClipper clipBg;
+				clipBg.Begin(static_cast<int>(rows.size()), lineH);
+				while (clipBg.Step())
+				{
+					drawMergePaneBackground(dll, ImVec2(innerL.x + gutterW, innerL.y), innerWL, lineH, padXL, padYL, clipBg.DisplayStart, clipBg.DisplayEnd,
+						rows, app.cachedMergeConflictLineRanges, branchDiffCol, conflictCol);
+					drawDiffLineNumberGutter(dll, innerL, gutterW, lineH, padYL, clipBg.DisplayStart, clipBg.DisplayEnd, gutNums, gutterTextCol);
+				}
+
+				dll->AddLine(ImVec2(innerL.x + gutterW, innerL.y), ImVec2(innerL.x + gutterW, innerL.y + paneH), gutterRuleCol, 1.f);
+				ImGui::SetCursorPos(ImVec2(gutterW, 0.f));
+
+				if (buf.empty())
+					buf.push_back('\0');
+				if (buf.capacity() < buf.size() + 1024u)
+					buf.reserve(buf.size() + 2048u);
+
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
+				ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
+				ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.f, 0.f, 0.f, 0.f));
+				ImGuiInputTextFlags fl = ImGuiInputTextFlags_CallbackResize | (readOnly ? ImGuiInputTextFlags_ReadOnly : 0);
+				if (!readOnly)
+					fl |= ImGuiInputTextFlags_AllowTabInput;
+				if (cpp)
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.f, 0.f, 0.f));
+				ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 0.0f);
+				ImGui::InputTextMultiline(inputLabel, buf.data(), static_cast<int>(buf.size()), ImVec2(innerWL, paneH), fl, vectorResizeCallback, &buf);
+				ImGui::PopStyleVar();
+				if (cpp)
+					ImGui::PopStyleColor();
+				ImGui::PopStyleColor(3);
+
+				if (cpp)
+				{
+					const ImGuiID inputId = ImGui::GetItemID();
+					ImGui::SetCursorPos(ImVec2(gutterW, 0.f));
+					ImGuiInputTextState *st = ImGui::GetInputTextState(inputId);
+					const float scrollX = st ? st->Scroll.x : 0.f;
+					ImDrawList *ov = ImGui::GetWindowDrawList();
+					ImFont *font = ImGui::GetFont();
+					const float fontSz = ImGui::GetFontSize();
+					const ImU32 textBase = ImGui::GetColorU32(ImGuiCol_Text);
+					const ImRect clipR(ImGui::GetCurrentWindow()->InnerClipRect);
+					ImGuiListClipper clipOv;
+					clipOv.Begin(static_cast<int>(rows.size()), lineH);
+					while (clipOv.Step())
+					{
+						for (int li = clipOv.DisplayStart; li < clipOv.DisplayEnd; ++li)
+						{
+							std::string ln;
+							switch (pane)
+							{
+							case M3PaneCol::Ours:
+								ln = rows[static_cast<size_t>(li)].oursLine;
+								break;
+							case M3PaneCol::Work:
+								ln = rows[static_cast<size_t>(li)].workLine;
+								break;
+							case M3PaneCol::Theirs:
+								ln = rows[static_cast<size_t>(li)].theirsLine;
+								break;
+							}
+							const ImVec2 linePos(innerL.x + gutterW + padXL, innerL.y + padYL + static_cast<float>(li) * lineH);
+							drawCppSyntaxLineOverlay(ov, font, fontSz, linePos, ln, scrollX, clipR.Min, clipR.Max, textBase);
+						}
+					}
+				}
+				ImGui::EndChild();
+			};
+
+			drawOnePane(M3PaneCol::Ours, "m3ours", "##mergeOurs", app.mergePaneOursBuf, true, gutterWO, gutO);
+			ImGui::SameLine(0.f, 0.f);
+			drawOnePane(M3PaneCol::Work, "m3work", "##mergeWork", app.rightEditBuffer, false, gutterWW, gutW);
+			ImGui::SameLine(0.f, 0.f);
+			drawOnePane(M3PaneCol::Theirs, "m3theirs", "##mergeTheirs", app.mergePaneTheirsBuf, true, gutterWT, gutT);
+
+			ImGuiWindow *mergeScrollWin = ImGui::GetCurrentWindow();
+			const ImGuiIO &ioMerge = ImGui::GetIO();
+			static int s_mergePickHunkIndex = -1;
+			if (haveMergeRow0Y && mergeScrollWin->InnerRect.Contains(ioMerge.MousePos) && ImGui::IsMouseClicked(ImGuiMouseButton_Right) &&
+				!ImGui::IsPopupOpen("##mergeConflictPick", ImGuiPopupFlags_None))
+			{
+				const float yRel = ioMerge.MousePos.y - mergeRow0TextScreenY;
+				if (yRel >= 0.f && yRel < contentH)
+				{
+					const int rowHit = static_cast<int>(std::floor(yRel / lineH));
+					if (rowHit >= 0 && rowHit < static_cast<int>(rows.size()))
+					{
+						const MergeThreePaneRow &hitRow = rows[static_cast<size_t>(rowHit)];
+						if (hitRow.workLineIndex0 >= 0)
+						{
+							const int hix = mergeConflictHunkAtLine(app.cachedMergeConflictLineRanges, hitRow.workLineIndex0);
+							if (hix >= 0)
+							{
+								s_mergePickHunkIndex = hix;
+								ImGui::SetNextWindowPos(ioMerge.MousePos, ImGuiCond_Always);
+								ImGui::OpenPopup("##mergeConflictPick");
+							}
+						}
+					}
+				}
+			}
+
+			if (ImGui::BeginPopup("##mergeConflictPick"))
+			{
+				auto applyPick = [&](MergeConflictPick pick) {
+					if (s_mergePickHunkIndex < 0)
+					{
+						ImGui::CloseCurrentPopup();
+						return;
+					}
+					std::string err;
+					if (!applyWorktreeMergeConflictPick(app, static_cast<size_t>(s_mergePickHunkIndex), pick, err))
+						showModal(app, "Could not apply merge resolution", err);
+					else
+						showToast(app, "Conflict resolution applied to the buffer. Save when ready.", 2.5f);
+					s_mergePickHunkIndex = -1;
+					ImGui::CloseCurrentPopup();
+				};
+				if (ImGui::MenuItem("Use Ours"))
+					applyPick(MergeConflictPick::Ours);
+				if (ImGui::MenuItem("Use Theirs"))
+					applyPick(MergeConflictPick::Theirs);
+				if (ImGui::MenuItem("Use Ours then Theirs"))
+					applyPick(MergeConflictPick::OursThenTheirs);
+				if (ImGui::MenuItem("Use Theirs then Ours"))
+					applyPick(MergeConflictPick::TheirsThenOurs);
+				ImGui::EndPopup();
+			}
+
+			if (!app.mergePickUndoStack.empty() && !ioMerge.WantTextInput)
+			{
+				if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Z, ImGuiInputFlags_RouteGlobal))
+				{
+					if (undoMergePick(app))
+						showToast(app, "Undid merge conflict resolution.", 1.8f);
+				}
+			}
+
+			const float scrollY = ImGui::GetScrollY();
+			app.diffScrollY = scrollY;
+			const float scrollMaxY = ImGui::GetScrollMaxY();
+			const float scrollChildH = ImGui::GetWindowHeight();
+			const float innerRectH = ImGui::GetCurrentWindow()->InnerRect.GetHeight();
+
+			ImGui::EndChild();
+
+			ImGui::SameLine();
+			drawMergeThreeWayDiffMap(app, rows, mapBarW, scrollChildH, scrollY, scrollMaxY, innerRectH, lineH, app.cachedMergeConflictLineRanges);
+
+			ImGui::Separator();
+			if (app.rightSideIsWorktreeFile)
+			{
+				if (ImGui::Button("Save worktree"))
+					runSaveWorktreeOrShowError(app);
+				ImGui::SameLine();
+				ImGui::TextDisabled("Save writes the working tree file. Resolve conflict markers, then stage when ready.");
+			}
+		}
+
 		void drawDiffView(ReviewAppState &app)
 		{
 			ImGui::BeginChild("diffRightPane", ImVec2(0, 0), true);
@@ -1033,6 +1609,29 @@ namespace gitReview
 				ImGui::EndDisabled();
 				ImGui::Separator();
 				drawBinaryDiffPresenters(app.selection->path, app.leftText, rightBufferText(app));
+				ImGui::EndChild();
+				return;
+			}
+
+			if (app.mergeThreeWayUnmerged)
+			{
+				ImGui::TextDisabled("Review mode");
+				ImGui::SameLine();
+				ImGui::BeginDisabled(app.selection->section == FileListSection::Untracked);
+				if (ImGui::RadioButton("Unstaged", app.reviewMode == ReviewMode::Unstaged))
+				{
+					app.reviewMode = ReviewMode::Unstaged;
+					reloadDiffForSelection(app);
+				}
+				ImGui::SameLine();
+				if (ImGui::RadioButton("Staged", app.reviewMode == ReviewMode::Staged))
+				{
+					app.reviewMode = ReviewMode::Staged;
+					reloadDiffForSelection(app);
+				}
+				ImGui::EndDisabled();
+				ImGui::SameLine(0.f, 24.f);
+				drawMergeThreeWayDiffBody(app);
 				ImGui::EndChild();
 				return;
 			}

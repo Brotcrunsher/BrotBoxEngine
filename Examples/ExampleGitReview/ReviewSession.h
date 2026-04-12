@@ -1,5 +1,6 @@
 #pragma once
 
+#include "MergeConflictResolve.h"
 #include "RepoModel.h"
 #include "TextDiff.h"
 
@@ -61,6 +62,21 @@ namespace gitReview
 		std::string cachedDiffRight;
 		std::vector<DiffRow> cachedDiffRows;
 		bool diffCacheLargeFallback = false;
+
+		/// Unmerged index entry: ours / working tree / theirs columns (stage-1 base participates in alignment only).
+		bool mergeThreeWayUnmerged = false;
+		std::string mergeBaseText;
+		std::string mergeTheirsText;
+		std::vector<MergeThreePaneRow> cachedMergeRows;
+		std::string cachedMergeBlobKey;
+		std::string cachedMergeWorkRaw;
+		bool mergeCacheLargeFallback = false;
+		std::vector<char> mergePaneBaseBuf;
+		std::vector<char> mergePaneOursBuf;
+		std::vector<char> mergePaneTheirsBuf;
+		std::vector<MergeConflictHunkLines> cachedMergeConflictLineRanges;
+		/// Snapshots before each context-menu merge resolution (Ctrl+Z when not in a text field).
+		std::vector<std::string> mergePickUndoStack;
 	};
 
 	void showToast(ReviewAppState &app, const std::string &text, float seconds = 4.f);
@@ -103,4 +119,11 @@ namespace gitReview
 	/// Returns a cached view of the side-by-side diff rows, only
 	/// recomputing when the underlying texts change.
 	const std::vector<DiffRow> &cachedDiffRows(ReviewAppState &app);
+
+	const std::vector<MergeThreePaneRow> &cachedMergeThreePaneRows(ReviewAppState &app);
+
+	/// Replaces one Git conflict hunk in the working-tree buffer (merge view) using \p pick. Returns false on failure.
+	bool applyWorktreeMergeConflictPick(ReviewAppState &app, size_t hunkIndex, MergeConflictPick pick, std::string &err);
+	/// Restores the working buffer to the state before the last merge resolution. Returns false if nothing to undo.
+	bool undoMergePick(ReviewAppState &app);
 }

@@ -61,4 +61,34 @@ namespace gitReview
 
 	/// Row-aligned left buffer: empty line for \c RightOnly rows; otherwise \c leftLine from each row.
 	std::string buildAlignedLeftBuffer(const std::vector<DiffRow> &rows);
+
+	/// One row in a merge-compare grid: index stages aligned to the same working-tree line where possible.
+	struct MergeThreePaneRow
+	{
+		std::string baseLine;
+		std::string oursLine;
+		std::string theirsLine;
+		std::string workLine;
+		/// 0-based physical line in \p work text used for conflict-marker mapping, or \c -1 when \c workLine is empty.
+		int workLineIndex0 = -1;
+	};
+
+	/// Builds rows for base / ours / theirs vs. the working tree, padded to a common length. \p outLargeFallback
+	/// is true if any of the underlying pairwise diffs used the large-file fallback.
+	std::vector<MergeThreePaneRow> buildMergeThreePaneRows(const std::string &base, const std::string &ours, const std::string &work,
+		const std::string &theirs, bool &outLargeFallback);
+
+	/// Joins \c workLine fields (same convention as \c joinLinesForDiff).
+	std::string mergeRowsWorkCanon(const std::vector<MergeThreePaneRow> &rows);
+
+	enum class MergePaneColumn
+	{
+		Base,
+		Ours,
+		Theirs,
+		Work,
+	};
+
+	/// One physical line per merge row (for multiline panes).
+	std::string buildAlignedMergePaneBuffer(const std::vector<MergeThreePaneRow> &rows, MergePaneColumn which);
 }

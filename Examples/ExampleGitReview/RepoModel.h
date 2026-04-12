@@ -62,6 +62,14 @@ namespace gitReview
 	void loadDiffPair(const std::string &repoRoot, ReviewMode mode, const FileEntry &entry, std::string &outLeft, std::string &outRight,
 		bool &outRightIsWorktreeFile, bool &outBinary, std::string &outError);
 
+	/// True when the index has multiple stages for \p pathInRepo (merge conflict).
+	bool pathHasUnmergedIndex(const std::string &repoRoot, const std::string &pathInRepo);
+
+	/// Reads merge stages \c :1: (base), \c :2: (ours), \c :3: (theirs). Missing stage 1 yields empty base.
+	/// Returns false if stages 2 and 3 cannot both be read (caller falls back to \c loadDiffPair).
+	bool tryLoadMergeIndexVersions(const std::string &repoRoot, const std::string &pathInRepo, std::string &outBase, std::string &outOurs,
+		std::string &outTheirs, std::string &outError);
+
 	/// Content-based heuristic: checks for NUL bytes and high density of
 	/// non-text control characters in the first 8 KB.
 	bool pathLooksBinaryByContent(const std::string &text);
@@ -71,4 +79,7 @@ namespace gitReview
 
 	/// Source / markup extensions we prefer to treat as text when content looks printable.
 	bool pathLooksTextByExtension(const std::string &path);
+
+	/// Sets \p outBinary using the same rules as \c loadDiffPair (content + extension heuristics).
+	void decideBinaryAfterLoad(const FileEntry &entry, const std::string &left, const std::string &right, bool &outBinary);
 }

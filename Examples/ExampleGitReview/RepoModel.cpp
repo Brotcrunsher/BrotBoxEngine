@@ -179,7 +179,7 @@ namespace gitReview
 		return false;
 	}
 
-	static void decideBinaryAfterLoad(const FileEntry &entry, const std::string &left, const std::string &right, bool &outBinary)
+	void decideBinaryAfterLoad(const FileEntry &entry, const std::string &left, const std::string &right, bool &outBinary)
 	{
 		const bool lc = pathLooksBinaryByContent(left);
 		const bool rc = pathLooksBinaryByContent(right);
@@ -480,5 +480,52 @@ namespace gitReview
 		}
 		outRightIsWorktreeFile = false;
 		decideBinaryAfterLoad(entry, outLeft, outRight, outBinary);
+	}
+
+	bool pathHasUnmergedIndex(const std::string &repoRoot, const std::string &pathInRepo)
+	{
+		if (repoRoot.empty() || pathInRepo.empty())
+			return false;
+		GitRunResult r = runGit(repoRoot, { "ls-files", "-u", "--", pathInRepo });
+		if (r.exitCode != 0)
+			return false;
+		return !trim(r.standardOut).empty();
+	}
+
+	bool tryLoadMergeIndexVersions(const std::string &repoRoot, const std::string &pathInRepo, std::string &outBase, std::string &outOurs,
+		std::string &outTheirs, std::string &outError)
+	{
+		outError.clear();
+		outBase.clear();
+		outOurs.clear();
+		outTheirs.clear();
+		if (repoRoot.empty() || pathInRepo.empty())
+		{
+			outError = "Missing repository path or file path.";
+			return false;
+		}
+
+		auto showStage = [&](const char *stageNum, std::string &into) -> bool {
+			const std::string ref = std::string(":") + stageNum + ":" + pathInRepo;
+			GitRunResult r = runGit(repoRoot, { "show", ref });
+			if (r.exitCode != 0)
+				return false;
+			into = std::move(r.standardOut);
+			return true;
+		};
+
+		if (!showStage("2", outOurs))
+		{
+			outError = "Could not read merge stage 2 (ours) from the index.";
+			return false;
+		}
+		if (!showStage("3", outTheirs))
+		{
+			outError = "Could not read merge stage 3 (theirs) from the index.";
+			return false;
+		}
+		if (!showStage("1", outBase))
+			outBase.clear();
+		return true;
 	}
 }
