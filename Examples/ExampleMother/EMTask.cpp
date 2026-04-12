@@ -137,6 +137,8 @@ bbe::TimePoint Task::nextPossibleExecution() const
 			return bbe::TimePoint();
 		return bbe::TimePoint().plusDays(daysToAdd).toMorning();
 	}
+	if (!googleCalendarEventId.isEmpty())
+		return nextExecution;
 	if (overwriteTime.isToday())
 		return nextExecution;
 	if (!nextExecution.hasPassed())
@@ -290,6 +292,11 @@ bool Task::isRareTask() const
 	return repeatDays > 1 || !isPossibleWeekday(nextPossibleExecution().plusDays(-1));
 }
 
+void Task::setGoogleCalendarScheduledInstant(const bbe::TimePoint &when)
+{
+	nextExecution = when;
+}
+
 bbe::Duration Task::getWorkDurationLeft() const
 {
 	return endWorkTime - bbe::TimePoint();
@@ -367,13 +374,19 @@ int32_t SubsystemTask::drawTable(float scale, const char *title, const std::func
 				ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, 0xFF333333);
 			int32_t column = 0;
 			ImGui::TableSetColumnIndex(column++);
-			if (!t.serverId.isEmpty())
+			if (!t.googleCalendarEventId.isEmpty())
+			{
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "(!)");
+				ImGui::bbe::tooltip("Google Calendar event (read-only sync)");
+				ImGui::SameLine();
+			}
+			else if (!t.serverId.isEmpty())
 			{
 				ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), "(!)");
 				ImGui::bbe::tooltip("This Task originated from the Server");
 				ImGui::SameLine();
 			}
-			if ((highlightRareTasks && t.isRareTask()) || t.oneShot)
+			if ((highlightRareTasks && t.isRareTask()) || (t.oneShot && t.googleCalendarEventId.isEmpty()))
 			{
 				const bool poosibleTodoToday = (t.nextPossibleExecution().hasPassed() || t.nextPossibleExecution().isToday());
 				if (t.oneShot)
@@ -492,6 +505,10 @@ int32_t SubsystemTask::drawTable(float scale, const char *title, const std::func
 						{
 							if (ImGui::bbe::securityButton("Done"))
 							{
+								if (!t.googleCalendarEventId.isEmpty())
+								{
+									registerGoogleCalendarDismissal(t.googleCalendarEventId);
+								}
 								tasks.removeIndex(i);
 								// Doesn't require write cause removeIndex already does that.
 								deletedTasks++;
@@ -852,6 +869,8 @@ bbe::Vector2 SubsystemTask::drawTabEditTasks()
 	for (size_t i = 0; i < tasks.getLength(); i++)
 	{
 		Task &t = tasks[i];
+		if (!t.googleCalendarEventId.isEmpty())
+			continue;
 		if (searchBuffer[0] != 0 && !bbe::String(t.title).containsIgnoreCase(searchBuffer))
 			continue;
 		ImGui::PushID(i);
@@ -1058,6 +1077,95 @@ void SubsystemTask::addServerTask(const bbe::String &id, const bbe::String &task
 	t.oneShot = true;
 	t.clipboard = task;
 	tasks.add(t);
+}
+
+void SubsystemTask::registerGoogleCalendarDismissal(const bbe::String &eventId)
+{
+	if (eventId.isEmpty())
+		return;
+	for (size_t i = 0; i < googleCalendarDismissed.getLength(); i++)
+	{
+		if (googleCalendarDismissed[i].id == eventId)
+			return;
+	}
+	GoogleCalendarDismissedEventId row;
+	row.id = eventId;
+	googleCalendarDismissed.add(row);
+	googleCalendarDismissed.writeToFile();
+}
+
+bool SubsystemTask::applyGoogleCalendarSync(const bbe::List<GoogleCalendarParsedEvent> &incoming)
+{
+	auto incomingHas = [&](const bbe::String &id) -> bool {
+		for (size_t i = 0; i < incoming.getLength(); i++)
+		{
+			if (incoming[i].id == id)
+				return true;
+		}
+		return false;
+	};
+	auto isDismissed = [&](const bbe::String &id) -> bool {
+		for (size_t i = 0; i < googleCalendarDismissed.getLength(); i++)
+		{
+			if (googleCalendarDismissed[i].id == id)
+				return true;
+		}
+		return false;
+	};
+
+	for (size_t i = googleCalendarDismissed.getLength(); i > 0; i--)
+	{
+		const size_t idx = i - 1;
+		if (!incomingHas(googleCalendarDismissed[idx].id))
+		{
+			googleCalendarDismissed.removeIndex(idx);
+		}
+	}
+
+	for (size_t i = tasks.getLength(); i > 0; i--)
+	{
+		const size_t idx = i - 1;
+		if (!tasks[idx].googleCalendarEventId.isEmpty() && !incomingHas(tasks[idx].googleCalendarEventId))
+		{
+			tasks.removeIndex(idx);
+		}
+	}
+
+	for (size_t e = 0; e < incoming.getLength(); e++)
+	{
+		const GoogleCalendarParsedEvent &ev = incoming[e];
+		if (isDismissed(ev.id))
+			continue;
+		size_t found = (size_t)-1;
+		for (size_t i = 0; i < tasks.getLength(); i++)
+		{
+			if (tasks[i].googleCalendarEventId == ev.id)
+			{
+				found = i;
+				break;
+			}
+		}
+		if (found != (size_t)-1)
+		{
+			tasks[found].title = ev.title;
+			tasks[found].setGoogleCalendarScheduledInstant(ev.start);
+			tasks[found].sanity();
+		}
+		else
+		{
+			Task t;
+			t.googleCalendarEventId = ev.id;
+			t.title = ev.title;
+			t.oneShot = true;
+			t.setGoogleCalendarScheduledInstant(ev.start);
+			t.sanity();
+			tasks.add(t);
+		}
+	}
+
+	tasks.writeToFile();
+	googleCalendarDismissed.writeToFile();
+	return true;
 }
 
 bbe::List<bbe::String> SubsystemTask::getWarnings() const

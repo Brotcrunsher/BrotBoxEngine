@@ -42,7 +42,6 @@
 // TODO: If openal is multithreaded, then why don't we launch static sounds on the main thread and push the info over to the audio thread for later processing?
 //       Careful when doing this ^^^^^^ - Audio Restart on device change?
 // TODO: Serializable List/Object should somehow handle versions... it's really complicated to do that within the nice BBE_SERIALIZABLE_DATA macro though.
-// TODO: Google Calendar link (finally learn OAuth 2 properly, not just basics...)
 // TODO: The "Elevate" button is really kinda unsecure. It would be much better if we instead do the firewall modification in a separate process that is short lived and terminates quickly. Less of a security vulnerability then.
 // TODO: Starting a reimagine chain with any arbitrary pic would be super cool - but we'd need to have a base64 encoder for that.
 // TODO: Remember news items. Would be nice to hear all the news of the past week or so, not having to listen to them every day.
@@ -623,6 +622,17 @@ private:
 	bbe::TimePoint lastServerReach = bbe::TimePoint::epoch();
 	bool serverUnreachableSilenced = false;
 
+	bbe::SerializableObject<GoogleCalendarConfig> googleCalendarConfig = bbe::SerializableObject<GoogleCalendarConfig>("GoogleCalendarConfig.dat", "ParanoiaConfig");
+#if defined(BBE_ADD_CURL)
+	std::mutex googleCalendarOAuthMutex;
+	bool googleCalendarOAuthRunning = false;
+	bool googleCalendarOAuthDone = false;
+	bool googleCalendarOAuthSuccess = false;
+	bbe::String googleCalendarOAuthRefresh;
+	bbe::String googleCalendarOAuthError;
+#endif
+	bbe::String googleCalendarLastSyncMsg;
+
 #if defined(_WIN32) || defined(__linux__)
 	bbe::Monitor monitor;
 	float monitorBrightness = 1.0f;
@@ -796,6 +806,89 @@ public:
 	{
 		setReactiveRendering(true);
 	}
+
+#if defined(BBE_ADD_CURL)
+	void pollGoogleCalendarOAuth()
+	{
+		std::unique_lock<std::mutex> ul(googleCalendarOAuthMutex);
+		if (!googleCalendarOAuthDone)
+			return;
+		const bool ok = googleCalendarOAuthSuccess;
+		const bbe::String rt = googleCalendarOAuthRefresh;
+		const bbe::String er = googleCalendarOAuthError;
+		googleCalendarOAuthDone = false;
+		ul.unlock();
+		if (ok)
+		{
+			googleCalendarConfig->refreshToken = rt;
+			googleCalendarConfig.writeToFile();
+			googleCalendarLastSyncMsg = "Google OAuth complete.";
+			tryGoogleCalendarSync(false);
+		}
+		else
+		{
+			googleCalendarLastSyncMsg = bbe::String("Google OAuth failed: ") + er;
+		}
+	}
+
+	void tryGoogleCalendarSync(const bool manual)
+	{
+		GoogleCalendarConfig &gCal = *googleCalendarConfig.operator->();
+		if (gCal.oauthClientId.isEmpty() || gCal.refreshToken.isEmpty())
+		{
+			if (manual)
+				googleCalendarLastSyncMsg = "Set OAuth Client ID and connect first.";
+			return;
+		}
+		bbe::String err;
+		if (gCal.accessToken.isEmpty() || gCal.accessTokenExpiry.hasPassed())
+		{
+			if (!emGoogleCalendar::refreshAccessToken(gCal, err))
+			{
+				googleCalendarLastSyncMsg = bbe::String("Token: ") + err;
+				return;
+			}
+			googleCalendarConfig.writeToFile();
+		}
+		bbe::List<GoogleCalendarParsedEvent> evs;
+		const bbe::TimePoint tMin = bbe::TimePoint().plusDays(-1);
+		const bbe::TimePoint tMax = bbe::TimePoint().plusDays(90);
+		if (!emGoogleCalendar::fetchCalendarEvents(gCal, tMin, tMax, evs, err))
+		{
+			googleCalendarLastSyncMsg = bbe::String("Fetch: ") + err;
+			return;
+		}
+		tasks.applyGoogleCalendarSync(evs);
+		googleCalendarLastSyncMsg = bbe::String::format("Calendar sync OK (%u events).", (unsigned)evs.getLength());
+	}
+
+	void startGoogleOAuthConnect()
+	{
+		bbe::String clientId;
+		bbe::String clientSecret;
+		{
+			std::lock_guard<std::mutex> g(googleCalendarOAuthMutex);
+			if (googleCalendarOAuthRunning)
+				return;
+			if (googleCalendarConfig->oauthClientId.isEmpty())
+			{
+				googleCalendarLastSyncMsg = "Set Google OAuth Client ID first.";
+				return;
+			}
+			googleCalendarOAuthRunning = true;
+			clientId = googleCalendarConfig->oauthClientId;
+			clientSecret = googleCalendarConfig->oauthClientSecret;
+		}
+		emGoogleCalendar::startOAuthLoopbackAsync(clientId, clientSecret, [this](bool ok, const bbe::String &rt, const bbe::String &err) {
+			std::lock_guard<std::mutex> g(googleCalendarOAuthMutex);
+			googleCalendarOAuthRunning = false;
+			googleCalendarOAuthDone = true;
+			googleCalendarOAuthSuccess = ok;
+			googleCalendarOAuthRefresh = rt;
+			googleCalendarOAuthError = err;
+		});
+	}
+#endif
 
 #if defined(_WIN32) || defined(__linux__)
 	bbe::TrayIcon::IconHandle createTrayIcon(uint32_t offset, int redGreenBlue)
@@ -1066,6 +1159,17 @@ public:
 		{
 			requestRedraw();
 		}
+
+#if defined(BBE_ADD_CURL)
+		pollGoogleCalendarOAuth();
+		EVERY_MINUTES(15)
+		{
+			if (!googleCalendarConfig->refreshToken.isEmpty() && !googleCalendarConfig->oauthClientId.isEmpty())
+			{
+				tryGoogleCalendarSync(false);
+			}
+		}
+#endif
 
 #ifdef _WIN32
 		beginMeasure("Server Stuff");
@@ -2805,6 +2909,48 @@ public:
 		generalConfigChanged |= ImGui::bbe::InputText("Server Address", generalConfig->serverAddress, ImGuiInputTextFlags_EnterReturnsTrue);
 		generalConfigChanged |= ImGui::InputInt("Server Port", &generalConfig->serverPort);
 		generalConfigChanged |= ImGui::bbe::InputText("Server Key Path", generalConfig->serverKeyFilePath, ImGuiInputTextFlags_EnterReturnsTrue);
+
+#if defined(BBE_ADD_CURL)
+		{
+			ImGui::Separator();
+			ImGui::TextUnformatted("Google Calendar (read-only): Calendar API events appear in View Tasks with a yellow (!). Done removes the local copy; cancelled events clear dismissals on sync.");
+			bool gCalChanged = false;
+			gCalChanged |= ImGui::bbe::InputText("Google OAuth Client ID", googleCalendarConfig->oauthClientId, ImGuiInputTextFlags_EnterReturnsTrue);
+			gCalChanged |= ImGui::bbe::InputText("Google OAuth Client Secret (optional)", googleCalendarConfig->oauthClientSecret, ImGuiInputTextFlags_Password | ImGuiInputTextFlags_EnterReturnsTrue);
+			ImGui::bbe::tooltip("Optional. If token exchange fails with client_secret is missing, paste the Desktop client secret from Google Cloud Console.");
+			gCalChanged |= ImGui::bbe::InputText("Calendar ID (blank = primary)", googleCalendarConfig->calendarId, ImGuiInputTextFlags_EnterReturnsTrue);
+			if (googleCalendarConfig->refreshToken.isEmpty())
+				ImGui::TextUnformatted("Status: not connected");
+			else
+				ImGui::TextUnformatted("Status: connected (refresh token on disk)");
+			if (ImGui::Button("Connect Google Calendar"))
+			{
+				startGoogleOAuthConnect();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Sync calendar now"))
+			{
+				tryGoogleCalendarSync(true);
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Disconnect Google"))
+			{
+				googleCalendarConfig->refreshToken = {};
+				googleCalendarConfig->accessToken = {};
+				googleCalendarConfig->accessTokenExpiry = bbe::TimePoint::epoch();
+				gCalChanged = true;
+			}
+			if (!googleCalendarLastSyncMsg.isEmpty())
+				ImGui::TextWrapped("%s", googleCalendarLastSyncMsg.getRaw());
+			if (gCalChanged)
+			{
+				googleCalendarConfig.writeToFile();
+			}
+		}
+#else
+		ImGui::Separator();
+		ImGui::TextUnformatted("Google Calendar sync is unavailable (build with BBE_ADD_CURL).");
+#endif
 
 		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 1", &generalConfig->baseMonitorBrightness1, 0.0f, 1.0f);
 		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 2", &generalConfig->baseMonitorBrightness2, 0.0f, 1.0f);

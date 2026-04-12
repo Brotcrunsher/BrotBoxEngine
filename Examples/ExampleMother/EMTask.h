@@ -3,6 +3,8 @@
 #include "BBE/BrotBoxEngine.h" // NOLINT(misc-include-cleaner): examples/tests intentionally use the engine umbrella.
 #include "BBE/SessionLockMonitor.h"
 
+#include "EMGoogleCalendar.h"
+
 struct Task
 {
 	enum /*Non-Class*/ InputType
@@ -63,7 +65,8 @@ struct Task
 		((int32_t), dtMonthlyDay, 1),
 		((int32_t), historyTargetAnchor, -1),
 		((float), historyTargetStartValue, 0.0f),
-		((float), historyTargetChangeValue, 0.0f))
+		((float), historyTargetChangeValue, 0.0f),
+		((bbe::String), googleCalendarEventId))
 
 	// Non-Persisted Helper Data below.
 	int32_t inputInt = 0;
@@ -108,6 +111,17 @@ public:
 	void execStart();
 
 	bool isRareTask() const;
+
+	/** Sets the exact instant used by View Tasks (Google Calendar mirror). */
+	void setGoogleCalendarScheduledInstant(const bbe::TimePoint &when);
+};
+
+struct GoogleCalendarDismissedEventId
+{
+	BBE_SERIALIZABLE_DATA(
+		((bbe::String), id))
+
+	bool operator==(const GoogleCalendarDismissedEventId &) const = default;
 };
 
 struct Heartbeat
@@ -123,6 +137,7 @@ public:
 
 private:
 	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", "ParanoiaConfig", bbe::Undoable::YES);
+	bbe::SerializableList<GoogleCalendarDismissedEventId> googleCalendarDismissed = bbe::SerializableList<GoogleCalendarDismissedEventId>("GoogleCalDismiss.dat", "ParanoiaConfig");
 	bbe::SerializableObject<Heartbeat> heartbeat = bbe::SerializableObject<Heartbeat>("Heartbeat.dat", "ParanoiaConfig");
 #ifdef _WIN32
 	bbe::SessionLockMonitor sessionLockMonitor;
@@ -153,6 +168,9 @@ public:
 	bool isStreakFulfilled() const;
 
 	void addServerTask(const bbe::String &id, const bbe::String &task);
+
+	void registerGoogleCalendarDismissal(const bbe::String &eventId);
+	bool applyGoogleCalendarSync(const bbe::List<GoogleCalendarParsedEvent> &incoming);
 
 	bbe::List<bbe::String> getWarnings() const;
 	bbe::TimePoint getHeartbeat() const;
