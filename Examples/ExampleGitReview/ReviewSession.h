@@ -11,6 +11,21 @@
 
 namespace gitReview
 {
+	struct HistoryCommitLine
+	{
+		std::string hashFull;
+		std::string hashShort;
+		std::string dateIso;
+		std::string subject;
+	};
+
+	struct HistoryPathChange
+	{
+		char status = 'M';
+		std::string path;
+		std::string renameFrom;
+	};
+
 	struct ReviewAppState
 	{
 		static constexpr int kRepoPathCap = 4096;
@@ -77,6 +92,15 @@ namespace gitReview
 		std::vector<MergeConflictHunkLines> cachedMergeConflictLineRanges;
 		/// Snapshots before each context-menu merge resolution (Ctrl+Z when not in a text field).
 		std::vector<std::string> mergePickUndoStack;
+
+		bool historyBrowserOpen = false;
+		std::vector<HistoryCommitLine> historyCommits;
+		int historySelectedCommitIdx = -1;
+		std::vector<HistoryPathChange> historyCommitFiles;
+		int historySelectedFileIdx = -1;
+		std::vector<char> historyPreviewBuffer;
+		bool historyPreviewIsBinary = false;
+		std::string historyLoadError;
 	};
 
 	void showToast(ReviewAppState &app, const std::string &text, float seconds = 4.f);
@@ -126,4 +150,11 @@ namespace gitReview
 	bool applyWorktreeMergeConflictPick(ReviewAppState &app, size_t hunkIndex, MergeConflictPick pick, std::string &err);
 	/// Restores the working buffer to the state before the last merge resolution. Returns false if nothing to undo.
 	bool undoMergePick(ReviewAppState &app);
+
+	void clearHistoryBrowser(ReviewAppState &app);
+	void refreshCommitHistory(ReviewAppState &app, std::string &err);
+	void reloadHistoryCommitFiles(ReviewAppState &app);
+	void reloadHistoryBlobPreview(ReviewAppState &app);
+	void restoreHistoryPathToWorktree(ReviewAppState &app, std::string &err);
+	bool historyRestoreActionEnabled(const ReviewAppState &app);
 }

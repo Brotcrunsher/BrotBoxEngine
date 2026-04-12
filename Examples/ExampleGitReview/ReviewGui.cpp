@@ -388,6 +388,20 @@ namespace gitReview
 			ImGui::SameLine();
 			if (ImGui::Button("Refresh"))
 				refreshSnapshot(app);
+			ImGui::SameLine();
+			if (ImGui::Button("History"))
+			{
+				app.historyBrowserOpen = true;
+				if (!repoRootString(app).empty() && app.historyCommits.empty())
+				{
+					std::string err;
+					refreshCommitHistory(app, err);
+					if (!err.empty())
+						showModal(app, "Git log failed", err);
+				}
+			}
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+				ImGui::SetTooltip("Open the Git history window (commits, paths, restore).");
 			ImGui::SameLine(0.f, 12.f);
 
 			ImGui::BeginDisabled(!app.selection.has_value());
@@ -1972,6 +1986,185 @@ namespace gitReview
 		}
 	}
 
+	void drawHistoryBrowser(ReviewAppState &app)
+	{
+		if (!app.historyBrowserOpen)
+			return;
+
+		ImGui::SetNextWindowSize(ImVec2(980.f, 600.f), ImGuiCond_FirstUseEver);
+		const ImGuiWindowFlags histWinFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+		if (!ImGui::Begin("Git history", &app.historyBrowserOpen, histWinFlags))
+		{
+			ImGui::End();
+			return;
+		}
+
+		const std::string root = repoRootString(app);
+		if (root.empty())
+		{
+			ImGui::TextUnformatted("Open a repository from the toolbar or the Repository menu first.");
+			ImGui::End();
+			return;
+		}
+
+		if (ImGui::Button("Reload log"))
+		{
+			std::string err;
+			refreshCommitHistory(app, err);
+			if (!err.empty())
+				showModal(app, "Git log failed", err);
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("Recent commits; pick one to see paths and file contents at that revision.");
+
+		if (!app.historyLoadError.empty())
+		{
+			ImGui::Spacing();
+			ImGui::TextColored(ImVec4(1.f, 0.42f, 0.32f, 1.f), "%s", app.historyLoadError.c_str());
+		}
+
+		const ImGuiStyle &st = ImGui::GetStyle();
+		// Reserve fixed vertical space for two combo rows + restore button so the preview fills the rest (no window scrollbar).
+		const float bottomBlock = ImGui::GetFrameHeightWithSpacing() * 3.f + st.ItemSpacing.y * 4.f + ImGui::GetTextLineHeightWithSpacing();
+
+		ImGui::Separator();
+		ImGui::TextUnformatted("File at selected revision");
+		if (app.historyPreviewIsBinary)
+		{
+			ImGui::SameLine();
+			ImGui::TextDisabled("(binary)");
+		}
+		float previewH = ImGui::GetContentRegionAvail().y - bottomBlock;
+		previewH = std::max(120.f, previewH);
+		ImGui::BeginChild("##histPreview", ImVec2(0.f, previewH), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar);
+		if (!app.historyPreviewBuffer.empty())
+			ImGui::InputTextMultiline("##histBlob", app.historyPreviewBuffer.data(), app.historyPreviewBuffer.size(), ImVec2(-1.f, -1.f),
+				ImGuiInputTextFlags_ReadOnly);
+		ImGui::EndChild();
+
+		ImGui::Spacing();
+		ImGui::Separator();
+
+		auto commitPreviewLabel = [&]() -> std::string {
+			if (app.historyCommits.empty())
+				return "Load the log first";
+			if (app.historySelectedCommitIdx < 0 || app.historySelectedCommitIdx >= static_cast<int>(app.historyCommits.size()))
+				return "Pick a commit";
+			const HistoryCommitLine &c = app.historyCommits[static_cast<size_t>(app.historySelectedCommitIdx)];
+			return c.hashShort + "  " + truncatePreviewLine(c.subject, 72);
+		};
+		const std::string commitPreview = commitPreviewLabel();
+
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted("Commit");
+		ImGui::SameLine(72.f);
+		ImGui::SetNextItemWidth(-1.f);
+		ImGui::BeginDisabled(app.historyCommits.empty());
+		if (ImGui::BeginCombo("##histCommitCombo", commitPreview.c_str()))
+		{
+			for (int row = 0; row < static_cast<int>(app.historyCommits.size()); ++row)
+			{
+				const HistoryCommitLine &c = app.historyCommits[static_cast<size_t>(row)];
+				const bool sel = (row == app.historySelectedCommitIdx);
+				const std::string subj = truncatePreviewLine(c.subject, 96);
+				const std::string label = c.hashShort + "  " + c.dateIso + "  " + subj;
+				ImGui::PushID(row);
+				if (ImGui::Selectable(label.c_str(), sel))
+				{
+					if (app.historySelectedCommitIdx != row)
+					{
+						app.historySelectedCommitIdx = row;
+						reloadHistoryCommitFiles(app);
+					}
+					ImGui::CloseCurrentPopup();
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(c.hashFull.c_str());
+					ImGui::Separator();
+					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 48.f);
+					ImGui::TextUnformatted(c.subject.c_str());
+					ImGui::PopTextWrapPos();
+					ImGui::EndTooltip();
+				}
+				ImGui::PopID();
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::EndDisabled();
+
+		auto pathPreviewLabel = [&]() -> std::string {
+			if (app.historyCommits.empty())
+				return "—";
+			if (app.historyCommitFiles.empty())
+				return "(no paths in this commit)";
+			if (app.historySelectedFileIdx < 0 || app.historySelectedFileIdx >= static_cast<int>(app.historyCommitFiles.size()))
+				return "Pick a path";
+			const HistoryPathChange &f = app.historyCommitFiles[static_cast<size_t>(app.historySelectedFileIdx)];
+			std::string s;
+			s.push_back(f.status);
+			s.append("  ");
+			s += truncatePreviewLine(f.path, 88);
+			return s;
+		};
+		const std::string pathPreview = pathPreviewLabel();
+
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted("Path");
+		ImGui::SameLine(72.f);
+		ImGui::SetNextItemWidth(-1.f);
+		const bool pathsOk = !app.historyCommits.empty() && !app.historyCommitFiles.empty();
+		ImGui::BeginDisabled(!pathsOk);
+		if (ImGui::BeginCombo("##histPathCombo", pathPreview.c_str()))
+		{
+			for (int i = 0; i < static_cast<int>(app.historyCommitFiles.size()); ++i)
+			{
+				const HistoryPathChange &f = app.historyCommitFiles[static_cast<size_t>(i)];
+				const bool sel = (i == app.historySelectedFileIdx);
+				std::string line;
+				line.reserve(8 + f.path.size());
+				line.push_back(f.status);
+				line.append("  ");
+				line += f.path;
+				ImGui::PushID(i);
+				if (ImGui::Selectable(line.c_str(), sel))
+				{
+					app.historySelectedFileIdx = i;
+					reloadHistoryBlobPreview(app);
+					ImGui::CloseCurrentPopup();
+				}
+				if (!f.renameFrom.empty() && ImGui::IsItemHovered())
+					ImGui::SetTooltip("Renamed from: %s", f.renameFrom.c_str());
+				ImGui::PopID();
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::EndDisabled();
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::BeginDisabled(!historyRestoreActionEnabled(app));
+		if (ImGui::Button("Restore file to worktree"))
+		{
+			std::string err;
+			restoreHistoryPathToWorktree(app, err);
+			if (!err.empty())
+				showModal(app, "git restore failed", err);
+			else
+			{
+				showToast(app, "Working tree file replaced from the selected commit.", 3.f);
+				refreshSnapshot(app);
+				reloadHistoryBlobPreview(app);
+			}
+		}
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+			ImGui::SetTooltip("Equivalent: git restore --source=<commit> --worktree -- <path>");
+		ImGui::EndDisabled();
+
+		ImGui::End();
+	}
+
 	void drawReviewGui(ReviewAppState &app)
 	{
 		drawToast(app);
@@ -2013,6 +2206,19 @@ namespace gitReview
 				ImGui::Separator();
 				if (ImGui::MenuItem("Save working tree", "Ctrl+S", false, worktreeSaveApplies(app)))
 					runSaveWorktreeOrShowError(app);
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("View"))
+			{
+				const bool wasHistoryOpen = app.historyBrowserOpen;
+				ImGui::MenuItem("Git history", nullptr, &app.historyBrowserOpen);
+				if (app.historyBrowserOpen && !wasHistoryOpen && !repoRootString(app).empty())
+				{
+					std::string err;
+					refreshCommitHistory(app, err);
+					if (!err.empty())
+						showModal(app, "Git log failed", err);
+				}
 				ImGui::EndMenu();
 			}
 			if (rightWorktreeBufferHasUnsavedEdits(app))
@@ -2069,5 +2275,7 @@ namespace gitReview
 		ImGui::End();
 		ImGui::PopStyleColor(2);
 		ImGui::PopStyleVar();
+
+		drawHistoryBrowser(app);
 	}
 }

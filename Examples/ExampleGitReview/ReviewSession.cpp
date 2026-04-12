@@ -62,6 +62,38 @@ namespace gitReview
 			}
 			return redactGitOutput(trimCopy(std::move(combined)));
 		}
+
+		std::string trimHistoryToken(std::string s)
+		{
+			while (!s.empty() && static_cast<unsigned char>(s.back()) <= 32u)
+				s.pop_back();
+			size_t a = 0;
+			while (a < s.size() && static_cast<unsigned char>(s[a]) <= 32u)
+				++a;
+			return s.substr(a);
+		}
+
+		bool isHexGitObjectId(const std::string &s)
+		{
+			if (s.size() != 40u && s.size() != 64u)
+				return false;
+			for (unsigned char c : s)
+			{
+				if (!std::isxdigit(c))
+					return false;
+			}
+			return true;
+		}
+
+		std::string historyRevForGit(const ReviewAppState &app, int commitIdx)
+		{
+			if (commitIdx < 0 || commitIdx >= static_cast<int>(app.historyCommits.size()))
+				return {};
+			std::string h = trimHistoryToken(app.historyCommits[static_cast<size_t>(commitIdx)].hashFull);
+			if (!isHexGitObjectId(h))
+				return {};
+			return h;
+		}
 	}
 
 	namespace detail
@@ -155,10 +187,12 @@ namespace gitReview
 		{
 			showModal(app, "Not a Git repository", err.empty() ? "Unknown error." : err);
 			app.snapshot = RepoSnapshot();
+			clearHistoryBrowser(app);
 			clearSelection(app);
 			return;
 		}
 
+		clearHistoryBrowser(app);
 		refreshSnapshot(app);
 		showToast(app, "Repository opened.", 2.5f);
 	}
@@ -775,4 +809,253 @@ namespace gitReview
 		cachedMergeThreePaneRows(app);
 		return true;
 	}
+
+	namespace
+	{
+		void parseDiffTreeNameStatusLines(const std::string &raw, std::vector<HistoryPathChange> &out)
+		{
+			out.clear();
+			size_t pos = 0;
+			while (pos < raw.size())
+			{
+				const size_t lineEnd = raw.find('\n', pos);
+				std::string line = raw.substr(pos, lineEnd == std::string::npos ? std::string::npos : lineEnd - pos);
+				pos = (lineEnd == std::string::npos) ? raw.size() : lineEnd + 1;
+				while (!line.empty() && (line.back() == '\r' || line.back() == '\n'))
+					line.pop_back();
+				while (!line.empty() && std::isspace(static_cast<unsigned char>(line.front())))
+					line.erase(line.begin());
+				if (line.empty())
+					continue;
+
+				std::vector<std::string> tabparts;
+				size_t p = 0;
+				while (p < line.size())
+				{
+					const size_t t = line.find('\t', p);
+					if (t == std::string::npos)
+					{
+						tabparts.push_back(line.substr(p));
+						break;
+					}
+					tabparts.push_back(line.substr(p, t - p));
+					p = t + 1;
+				}
+				if (tabparts.empty())
+					continue;
+
+				HistoryPathChange hp;
+				const std::string &st = tabparts[0];
+				hp.status = st.empty() ? '?' : st[0];
+				if (hp.status == 'R' || hp.status == 'C')
+				{
+					if (tabparts.size() < 3)
+						continue;
+					hp.renameFrom = trimHistoryToken(tabparts[1]);
+					hp.path = trimHistoryToken(tabparts[2]);
+				}
+				else
+				{
+					if (tabparts.size() < 2)
+						continue;
+					hp.path = trimHistoryToken(tabparts[1]);
+				}
+				out.push_back(std::move(hp));
+			}
+		}
+	}
+
+	void clearHistoryBrowser(ReviewAppState &app)
+	{
+		app.historyCommits.clear();
+		app.historySelectedCommitIdx = -1;
+		app.historyCommitFiles.clear();
+		app.historySelectedFileIdx = -1;
+		app.historyPreviewBuffer.clear();
+		app.historyPreviewBuffer.push_back('\0');
+		app.historyPreviewIsBinary = false;
+		app.historyLoadError.clear();
+	}
+
+	void refreshCommitHistory(ReviewAppState &app, std::string &err)
+	{
+		err.clear();
+		app.historyLoadError.clear();
+		const std::string root = repoRootString(app);
+		if (root.empty())
+		{
+			err = "No repository path set.";
+			return;
+		}
+
+		GitRunResult r = runGit(root, { "log", "-n", "500", "--pretty=format:%H%x1f%h%x1f%cs%x1f%s%x1e" });
+		if (r.exitCode != 0)
+		{
+			err = sanitizedGitError(r);
+			return;
+		}
+
+		app.historyCommits.clear();
+		const std::string &blob = r.standardOut;
+		const char sepRecord = static_cast<char>(0x1e);
+		const char sepField = static_cast<char>(0x1f);
+		size_t i = 0;
+		while (i < blob.size())
+		{
+			const size_t recEnd = blob.find(sepRecord, i);
+			const std::string rec = blob.substr(i, recEnd == std::string::npos ? std::string::npos : recEnd - i);
+			i = (recEnd == std::string::npos) ? blob.size() : recEnd + 1;
+			if (rec.empty())
+				continue;
+
+			std::vector<std::string> f;
+			size_t j = 0;
+			while (j < rec.size())
+			{
+				const size_t fe = rec.find(sepField, j);
+				if (fe == std::string::npos)
+				{
+					f.push_back(rec.substr(j));
+					break;
+				}
+				f.push_back(rec.substr(j, fe - j));
+				j = fe + 1;
+			}
+			if (f.size() < 4)
+				continue;
+
+			HistoryCommitLine line;
+			line.hashFull = trimHistoryToken(std::move(f[0]));
+			line.hashShort = trimHistoryToken(std::move(f[1]));
+			line.dateIso = trimHistoryToken(std::move(f[2]));
+			line.subject = trimHistoryToken(std::move(f[3]));
+			if (!isHexGitObjectId(line.hashFull))
+				continue;
+			app.historyCommits.push_back(std::move(line));
+		}
+
+		if (app.historyCommits.empty())
+		{
+			err = "No commits were returned by git log.";
+			return;
+		}
+
+		app.historySelectedCommitIdx = 0;
+		app.historySelectedFileIdx = -1;
+		reloadHistoryCommitFiles(app);
+	}
+
+	void reloadHistoryCommitFiles(ReviewAppState &app)
+	{
+		app.historyCommitFiles.clear();
+		app.historySelectedFileIdx = -1;
+		reloadHistoryBlobPreview(app);
+		app.historyLoadError.clear();
+
+		if (app.historySelectedCommitIdx < 0 || app.historySelectedCommitIdx >= static_cast<int>(app.historyCommits.size()))
+			return;
+
+		const std::string root = repoRootString(app);
+		if (root.empty())
+			return;
+
+		const std::string h = historyRevForGit(app, app.historySelectedCommitIdx);
+		if (h.empty())
+		{
+			app.historyLoadError = "Invalid commit id in the history list; press Reload log.";
+			return;
+		}
+		// Must not use `--` before the commit: remaining tokens would be parsed as pathspecs only,
+		// so Git would print usage (what you saw as the red wall of text).
+		GitRunResult r = runGit(root, { "diff-tree", "--no-commit-id", "--name-status", "-r", h });
+		if (r.exitCode != 0)
+		{
+			app.historyLoadError = sanitizedGitError(r);
+			return;
+		}
+		parseDiffTreeNameStatusLines(r.standardOut, app.historyCommitFiles);
+	}
+
+	void reloadHistoryBlobPreview(ReviewAppState &app)
+	{
+		setBufferFromText(app.historyPreviewBuffer, "");
+		app.historyPreviewIsBinary = false;
+
+		if (app.historySelectedCommitIdx < 0 || app.historySelectedCommitIdx >= static_cast<int>(app.historyCommits.size()))
+			return;
+		if (app.historySelectedFileIdx < 0 || app.historySelectedFileIdx >= static_cast<int>(app.historyCommitFiles.size()))
+			return;
+
+		const std::string root = repoRootString(app);
+		if (root.empty())
+			return;
+
+		const HistoryPathChange &ent = app.historyCommitFiles[static_cast<size_t>(app.historySelectedFileIdx)];
+		const std::string rev = historyRevForGit(app, app.historySelectedCommitIdx);
+		if (rev.empty())
+			return;
+
+		if (ent.status == 'D')
+		{
+			setBufferFromText(app.historyPreviewBuffer,
+				"(This path was removed in this commit. There is no file content at this revision to preview.)");
+			return;
+		}
+		const std::string pathInTree = trimHistoryToken(ent.path);
+		if (pathInTree.empty())
+			return;
+
+		GitRunResult r = runGit(root, { "show", rev + ":" + pathInTree });
+		if (r.exitCode != 0)
+		{
+			setBufferFromText(app.historyPreviewBuffer, std::string("Could not read this revision of the file:\n") + sanitizedGitError(r));
+			return;
+		}
+
+		FileEntry probe;
+		probe.path = pathInTree;
+		bool bin = false;
+		decideBinaryAfterLoad(probe, std::string(), r.standardOut, bin);
+		if (bin)
+		{
+			app.historyPreviewIsBinary = true;
+			setBufferFromText(app.historyPreviewBuffer, "[Binary or non-text file — preview hidden.]");
+			return;
+		}
+
+		setBufferFromText(app.historyPreviewBuffer, r.standardOut);
+	}
+
+	bool historyRestoreActionEnabled(const ReviewAppState &app)
+	{
+		if (app.historySelectedCommitIdx < 0 || app.historySelectedCommitIdx >= static_cast<int>(app.historyCommits.size()))
+			return false;
+		if (app.historySelectedFileIdx < 0 || app.historySelectedFileIdx >= static_cast<int>(app.historyCommitFiles.size()))
+			return false;
+		const char st = app.historyCommitFiles[static_cast<size_t>(app.historySelectedFileIdx)].status;
+		return st != 'D';
+	}
+
+	void restoreHistoryPathToWorktree(ReviewAppState &app, std::string &err)
+	{
+		err.clear();
+		if (!historyRestoreActionEnabled(app))
+		{
+			err = "Pick a commit and a file that still exists at that revision (not a pure deletion line).";
+			return;
+		}
+		const std::string root = repoRootString(app);
+		const HistoryPathChange &ent = app.historyCommitFiles[static_cast<size_t>(app.historySelectedFileIdx)];
+		const std::string rev = historyRevForGit(app, app.historySelectedCommitIdx);
+		if (rev.empty())
+		{
+			err = "Invalid commit id; try Reload log in the history window.";
+			return;
+		}
+		const std::string pathRel = trimHistoryToken(ent.path);
+		GitRunResult r = runGit(root, { "restore", "--source", rev, "--worktree", "--", pathRel });
+		if (r.exitCode != 0)
+			err = sanitizedGitError(r);
+	}
+
 }
