@@ -361,6 +361,11 @@ void bbe::Game::frame(bool dragging)
 	{
 		shouldDraw = m_pwindow->hasPendingRenderRequest();
 	}
+	// Dear ImGui: NewFrame/Render run inside frameDraw (see OpenGLManager::preDraw / postDraw). If we skip
+	// frameDraw, GLFW events are queued but ImGui does not advance; clicks/keys misbehave until something
+	// else requests a redraw (e.g. mouse move). Games that use ImGui in draw2D must not skip frames.
+	if (m_imguiRequiresEveryFrame)
+		shouldDraw = true;
 	if (shouldDraw)
 	{
 		frameDraw(dragging);
@@ -489,6 +494,18 @@ void bbe::Game::setReactiveRendering(bool reactiveRendering)
 bool bbe::Game::isReactiveRendering() const
 {
 	return m_reactiveRendering;
+}
+
+void bbe::Game::setImGuiRequiresEveryFrame(bool everyFrame)
+{
+	m_imguiRequiresEveryFrame = everyFrame;
+	if (everyFrame)
+		requestRedraw();
+}
+
+bool bbe::Game::isImGuiRequiresEveryFrame() const
+{
+	return m_imguiRequiresEveryFrame;
 }
 
 void bbe::Game::requestRedraw()

@@ -70,6 +70,9 @@ namespace bbe
 		bool m_requestShowWindow = false;
 		bool m_requestShutdown = false;
 		bool m_reactiveRendering = false;
+		/// When true, \c frameDraw runs every iteration even if reactive mode would otherwise skip it.
+		/// Dear ImGui requires \c ImGui::NewFrame() once per frame; skipping \c frameDraw breaks input and widgets.
+		bool m_imguiRequiresEveryFrame = false;
 		bool m_isInsideFrame = false;
 
 		uint32_t m_msaaSamples = 4;
@@ -108,6 +111,8 @@ namespace bbe
 		bool isExternallyManaged() const;
 		void setReactiveRendering(bool reactiveRendering);
 		bool isReactiveRendering() const;
+		void setImGuiRequiresEveryFrame(bool everyFrame);
+		bool isImGuiRequiresEveryFrame() const;
 		void requestRedraw();
 
 		bool isKeyDown(bbe::Key key) const;
