@@ -247,6 +247,7 @@ namespace gitReview
 	void reloadDiffForSelection(ReviewAppState &app)
 	{
 		app.loadDiffError.clear();
+		app.rightWorktreeSavedCanon.clear();
 		app.leftText.clear();
 		app.leftViewBuffer.clear();
 		app.leftViewBuffer.push_back('\0');
@@ -271,6 +272,15 @@ namespace gitReview
 		setBufferFromText(app.rightEditBuffer, rightTmp);
 		if (!err.empty())
 			app.loadDiffError = err;
+		if (err.empty() && app.rightSideIsWorktreeFile && !app.binaryFile)
+			app.rightWorktreeSavedCanon = rightBufferText(app);
+	}
+
+	bool rightWorktreeBufferHasUnsavedEdits(ReviewAppState &app)
+	{
+		if (!app.selection.has_value() || !app.rightSideIsWorktreeFile || app.binaryFile || !app.loadDiffError.empty())
+			return false;
+		return rightBufferText(app) != app.rightWorktreeSavedCanon;
 	}
 
 	void setFileListPrimaryAndMulti(ReviewAppState &app, FileEntry entry, std::unordered_set<std::string> multiPaths, int shiftAnchorIdx)
@@ -312,6 +322,7 @@ namespace gitReview
 		app.cachedDiffRight.clear();
 		app.cachedDiffRows.clear();
 		app.diffCacheLargeFallback = false;
+		app.rightWorktreeSavedCanon.clear();
 	}
 
 	bool saveWorktreeBuffer(ReviewAppState &app, std::string &err)
@@ -328,7 +339,11 @@ namespace gitReview
 			return false;
 		}
 		const std::filesystem::path p = std::filesystem::path(repoRootString(app)) / std::filesystem::path(app.selection->path);
-		return writeFileUtf8(p.string(), rightBufferText(app), err);
+		const std::string toWrite = rightBufferText(app);
+		if (!writeFileUtf8(p.string(), toWrite, err))
+			return false;
+		app.rightWorktreeSavedCanon = toWrite;
+		return true;
 	}
 
 	void stageEntry(ReviewAppState &app, const FileEntry &entry, std::string &err)

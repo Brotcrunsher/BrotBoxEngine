@@ -29,6 +29,8 @@ namespace gitReview
 		std::vector<char> leftViewBuffer;
 		/// Null-terminated buffer for the right side (ImGui + diff); excludes the trailing '\0' from text comparisons.
 		std::vector<char> rightEditBuffer;
+		/// Canonical working-tree text last loaded from disk or written by Save; used for the unsaved (*) indicator.
+		std::string rightWorktreeSavedCanon;
 		bool rightSideIsWorktreeFile = false;
 		bool binaryFile = false;
 		std::string loadDiffError;
@@ -94,6 +96,9 @@ namespace gitReview
 
 	/// Canonical worktree text derived from the row-aligned editor buffer (refreshes the diff cache).
 	std::string rightBufferText(ReviewAppState &app);
+
+	/// True when the editable working-tree buffer differs from the last saved-on-disk snapshot (menu-bar * indicator).
+	bool rightWorktreeBufferHasUnsavedEdits(ReviewAppState &app);
 
 	/// Returns a cached view of the side-by-side diff rows, only
 	/// recomputing when the underlying texts change.

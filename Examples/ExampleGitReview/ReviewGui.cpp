@@ -40,6 +40,23 @@ namespace gitReview
 			return 0;
 		}
 
+		static bool worktreeSaveApplies(const ReviewAppState &app)
+		{
+			return app.selection.has_value() && app.rightSideIsWorktreeFile && !app.binaryFile && app.loadDiffError.empty();
+		}
+
+		static void runSaveWorktreeOrShowError(ReviewAppState &app)
+		{
+			std::string err;
+			if (saveWorktreeBuffer(app, err))
+			{
+				showToast(app, "Saved working tree file.", 2.f);
+				reloadDiffForSelection(app);
+			}
+			else
+				showModal(app, "Save failed", err);
+		}
+
 		const char *sectionTitle(FileListSection s)
 		{
 			switch (s)
@@ -1095,6 +1112,13 @@ namespace gitReview
 			ImGui::TextUnformatted(leftCap);
 			ImGui::NextColumn();
 			ImGui::TextUnformatted(rightCap);
+			if (rightWorktreeBufferHasUnsavedEdits(app))
+			{
+				ImGui::SameLine(0.f, 6.f);
+				ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.0f, 1.0f), "*");
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Unsaved changes");
+			}
 			ImGui::Columns(1);
 			ImGui::EndChild();
 			ImGui::Separator();
@@ -1336,16 +1360,7 @@ namespace gitReview
 			if (app.rightSideIsWorktreeFile)
 			{
 				if (ImGui::Button("Save worktree"))
-				{
-					std::string err;
-					if (saveWorktreeBuffer(app, err))
-					{
-						showToast(app, "Saved working tree file.", 2.f);
-						reloadDiffForSelection(app);
-					}
-					else
-						showModal(app, "Save failed", err);
-				}
+					runSaveWorktreeOrShowError(app);
 				ImGui::SameLine();
 				ImGui::TextDisabled("The diff highlights update from the buffer; save writes the working tree file.");
 			}
@@ -1376,6 +1391,12 @@ namespace gitReview
 
 		ImGui::Begin("ExampleGitReviewRoot", nullptr, wflags);
 
+		if (worktreeSaveApplies(app) && !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel) &&
+			ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_S, ImGuiInputFlags_RouteGlobal | ImGuiInputFlags_RouteOverFocused))
+		{
+			runSaveWorktreeOrShowError(app);
+		}
+
 		if (!repoRootString(app).empty() && ImGui::IsKeyPressed(ImGuiKey_F5))
 			refreshSnapshot(app);
 
@@ -1390,7 +1411,17 @@ namespace gitReview
 				}
 				if (ImGui::MenuItem("Refresh", "F5", false, !repoRootString(app).empty()))
 					refreshSnapshot(app);
+				ImGui::Separator();
+				if (ImGui::MenuItem("Save working tree", "Ctrl+S", false, worktreeSaveApplies(app)))
+					runSaveWorktreeOrShowError(app);
 				ImGui::EndMenu();
+			}
+			if (rightWorktreeBufferHasUnsavedEdits(app))
+			{
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.f);
+				ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.0f, 1.0f), "*");
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("Unsaved changes");
 			}
 			ImGui::EndMenuBar();
 		}
