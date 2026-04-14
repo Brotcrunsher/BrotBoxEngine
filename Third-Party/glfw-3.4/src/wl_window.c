@@ -1078,6 +1078,11 @@ static GLFWbool createNativeSurface(_GLFWwindow* window,
 static void setCursorImage(_GLFWwindow* window,
                            _GLFWcursorWayland* cursorWayland)
 {
+    // Seat may revoke pointer capability and destroy _glfw.wl.pointer without a leave
+    // event; the cursor animation timer can still fire until the next poll iteration.
+    if (!_glfw.wl.pointer)
+        return;
+
     struct itimerspec timer = {0};
     struct wl_cursor* wlCursor = cursorWayland->cursor;
     struct wl_cursor_image* image;
@@ -3305,4 +3310,3 @@ GLFWAPI struct wl_surface* glfwGetWaylandWindow(GLFWwindow* handle)
 }
 
 #endif // _GLFW_WAYLAND
-
