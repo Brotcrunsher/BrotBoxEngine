@@ -60,8 +60,14 @@ std::string PasswordGenerator::normalizeUser(const std::string &user)
 
 std::string PasswordGenerator::generateHash(const std::string &data)
 {
-	unsigned char hash[16] = {};
-	const int err = crypto_pwhash_argon2id(hash, sizeof(hash), data.c_str(), data.size(), (const unsigned char *)"BrotbEnginePWGv1", 5, static_cast<size_t>(256 * 1024 * 1024), crypto_pwhash_argon2id_ALG_ARGON2ID13);
+	return generateHash(data, 16);
+}
+
+std::string PasswordGenerator::generateHash(const std::string &data, size_t length)
+{
+	if (length == 0) length = 16;
+	std::vector<unsigned char> hash(length);
+	const int err = crypto_pwhash_argon2id(hash.data(), hash.size(), data.c_str(), data.size(), (const unsigned char *)"BrotbEnginePWGv1", 5, static_cast<size_t>(256 * 1024 * 1024), crypto_pwhash_argon2id_ALG_ARGON2ID13);
 	if (err != 0)
 	{
 		std::cerr << "FATAL: crypto_pwhash_argon2id failed." << std::endl;
@@ -73,7 +79,8 @@ std::string PasswordGenerator::generateHash(const std::string &data)
 	const std::string special = "!@#%*-_=+,.?";
 	const std::string all = lower + upper + digits + special;
 	std::string retVal;
-	for (size_t i = 0; i < sizeof(hash); i++)
+	retVal.reserve(hash.size());
+	for (size_t i = 0; i < hash.size(); i++)
 	{
 		const std::string *set = nullptr;
 		// The first char is always lower, second always upper and so on. This is a very simple way to ensure
@@ -96,10 +103,15 @@ std::string PasswordGenerator::generateHash(const std::string &data)
 
 std::string PasswordGenerator::generateServicePassword(const std::string &masterPw, const std::string &service, const std::string &user)
 {
+	return generateServicePassword(masterPw, service, user, 16);
+}
+
+std::string PasswordGenerator::generateServicePassword(const std::string &masterPw, const std::string &service, const std::string &user, size_t length)
+{
 	std::string normServ = normalizeService(service);
 	std::string normUser = normalizeUser(user);
 	std::string hashableString = masterPw + "|||" + normServ;
 	if (!normUser.empty())
 		hashableString += "|||" + normUser;
-	return generateHash(hashableString);
+	return generateHash(hashableString, length);
 }

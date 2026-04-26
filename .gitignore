@@ -269,3 +269,6 @@ ModelManifest.xml
 /BrotBoxEngine/GlobalKeyboardDLL/EmbeddedDlls.cpp
 /BrotBoxEngine/GlobalKeyboardDLL/EmbeddedDlls.h
 imgui.ini
+ExamplePaintColorHistory.dat
+ExamplePaintDigitHotkeys.dat
+ExamplePaintFavoriteColors.dat

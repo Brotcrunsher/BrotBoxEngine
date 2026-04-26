@@ -618,6 +618,7 @@ private:
 #endif
 
 	bool terriActive = false;
+	bool pwLongPassword = false;
 
 	bbe::TimePoint lastServerReach = bbe::TimePoint::epoch();
 	bool serverUnreachableSilenced = false;
@@ -3504,6 +3505,10 @@ public:
 
 		ImGui::BeginDisabled(generating);
 		bool newHashRequested = false;
+		if (ImGui::Checkbox("Long password (32 chars)", &pwLongPassword))
+		{
+			newHashRequested = true;
+		}
 		if (ImGui::bbe::InputText("Master PW", masterPw, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_Password))
 		{
 			newHashRequested = true;
@@ -3535,12 +3540,13 @@ public:
 			bbe::String capturedNormServ = normServ;
 			bbe::String capturedNormUser = normUser;
 			bbe::List<bbe::String> capturedKnownHashes = passwordManager->knownHashes;
+			const bool capturedLongPassword = pwLongPassword;
 
 			pwGenExpectedHashes = capturedNormServ.isEmpty() ? 1 : 2;
 			pwGenStartTime = bbe::TimePoint();
 
 			pwGenFuture = std::async(std::launch::async,
-				[capturedMasterPw, capturedRepeat, capturedNormServ, capturedNormUser, capturedKnownHashes]() -> PwGenResult
+				[capturedMasterPw, capturedRepeat, capturedNormServ, capturedNormUser, capturedKnownHashes, capturedLongPassword]() -> PwGenResult
 				{
 					PwGenResult result;
 					result.masterPwHash = PasswordGenerator::generateHash(std::string(capturedMasterPw.getRaw())).c_str();
@@ -3554,7 +3560,7 @@ public:
 						std::string hashableString = std::string(capturedMasterPw.getRaw()) + "|||" + capturedNormServ.getRaw();
 						if (!capturedNormUser.isEmpty())
 							hashableString += std::string("|||") + capturedNormUser.getRaw();
-						result.servicePw = PasswordGenerator::generateHash(hashableString).c_str();
+						result.servicePw = PasswordGenerator::generateHash(hashableString, capturedLongPassword ? 32 : 16).c_str();
 						result.hashCount = 2;
 
 						if (!isKnown)
@@ -4327,6 +4333,7 @@ int main(int argc, char **argv)
 	_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF); // See: https://stackoverflow.com/questions/30413066/how-do-i-diagnose-heap-corruption-errors-on-windows
 #else
 	(void)argc;
+	(void)argv;
 #endif
 	MyGame *mg = new MyGame();
 	mg->setMsaaSamples(0);

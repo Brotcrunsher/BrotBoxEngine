@@ -103,8 +103,35 @@ static bool setClipboard(const std::string &text)
 #endif
 }
 
-int main()
+static void printUsage(const char *exe)
 {
+	std::cout << "Usage: " << exe << " [--long-password]" << std::endl;
+	std::cout << "  --long-password   Generate 32 character password (default: 16)" << std::endl;
+}
+
+int main(int argc, char **argv)
+{
+	bool longPassword = false;
+	for (int i = 1; i < argc; i++)
+	{
+		const char *a = argv[i];
+		if (std::strcmp(a, "--long-password") == 0)
+		{
+			longPassword = true;
+		}
+		else if (std::strcmp(a, "--help") == 0 || std::strcmp(a, "-h") == 0)
+		{
+			printUsage(argv[0]);
+			return 0;
+		}
+		else
+		{
+			std::cerr << "Unknown argument: " << a << std::endl;
+			printUsage(argv[0]);
+			return 1;
+		}
+	}
+
 	std::string masterPw = readPassword("Master Password: ");
 	std::string masterPwRepeat = readPassword("Repeat Password: ");
 
@@ -124,7 +151,7 @@ int main()
 	}
 
 	std::cout << "Generating..." << std::flush;
-	std::string password = PasswordGenerator::generateServicePassword(masterPw, service, user);
+	std::string password = PasswordGenerator::generateServicePassword(masterPw, service, user, longPassword ? 32 : 16);
 	std::cout << " Done." << std::endl;
 
 	if (setClipboard(password))
