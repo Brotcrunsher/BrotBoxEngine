@@ -1,4 +1,5 @@
 #include "BBE/SimpleFile.h"
+#include "BBE/Logging.h"
 #include "BBE/SimpleThread.h"
 #include <atomic>
 #include <condition_variable>
@@ -45,10 +46,20 @@ void bbe::simpleFile::backup::setBackupPath(const bbe::String &path)
 	}
 	else
 	{
-		if (path.endsWith("/")) backupPath = path;
-		else backupPath = path + "/";
+		bbe::String newBackupPath;
+		if (path.endsWith("/")) newBackupPath = path;
+		else newBackupPath = path + "/";
 
-		bbe::simpleFile::createDirectory(backupPath);
+		try
+		{
+			bbe::simpleFile::createDirectory(newBackupPath);
+			backupPath = newBackupPath;
+		}
+		catch (const std::exception &e)
+		{
+			backupPath = "";
+			BBELOGLN("Could not use backup path \"" << newBackupPath << "\". Backups disabled. Error: " << e.what());
+		}
 	}
 }
 
