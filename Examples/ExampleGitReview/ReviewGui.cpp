@@ -588,10 +588,14 @@ namespace gitReview
 
 			const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			const ImVec2 workSize = ImGui::GetMainViewport()->WorkSize;
+			const float commitPopupWidth = std::min(900.f, std::max(640.f, workSize.x - 96.f));
+			ImGui::SetNextWindowSize(ImVec2(commitPopupWidth, 0.f), ImGuiCond_Appearing);
 			if (ImGui::BeginPopupModal("##commitPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 			{
 				ImGui::TextUnformatted("Commit checked files (index is matched to the list before committing)");
-				ImGui::InputTextMultiline("##commitMsg", app.commitMessageUtf8, sizeof(app.commitMessageUtf8), ImVec2(520, 160));
+				const float commitMsgHeight = std::min(360.f, std::max(220.f, workSize.y - 300.f));
+				ImGui::InputTextMultiline("##commitMsg", app.commitMessageUtf8, sizeof(app.commitMessageUtf8), ImVec2(-1.f, commitMsgHeight));
 				if (ImGui::Button("Commit", ImVec2(120, 0)))
 				{
 					std::string err;
