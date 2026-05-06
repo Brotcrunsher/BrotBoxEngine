@@ -484,6 +484,14 @@ namespace
 		dbus_message_iter_close_container(iter, &structIter);
 	}
 
+	void triggerMenuItemEvent(int32_t id, const char *eventId)
+	{
+		if (eventId && std::strcmp(eventId, "clicked") == 0 && id > 0 && static_cast<size_t>(id) <= g_menuItems.size())
+		{
+			g_menuItems[static_cast<size_t>(id - 1)].callback();
+		}
+	}
+
 	void emitSimpleSignal(const char *path, const char *interfaceName, const char *signalName)
 	{
 		if (!g_connection)
@@ -873,6 +881,7 @@ namespace
 				"    <method name='GetGroupProperties'><arg type='ai' direction='in'/><arg type='as' direction='in'/><arg type='a(ia{sv})' direction='out'/></method>"
 				"    <method name='GetProperty'><arg type='i' direction='in'/><arg type='s' direction='in'/><arg type='v' direction='out'/></method>"
 				"    <method name='Event'><arg type='i' direction='in'/><arg type='s' direction='in'/><arg type='v' direction='in'/><arg type='u' direction='in'/></method>"
+				"    <method name='EventGroup'><arg type='a(isvu)' direction='in'/><arg type='ai' direction='out'/></method>"
 				"    <method name='AboutToShow'><arg type='i' direction='in'/><arg type='b' direction='out'/></method>"
 				"    <signal name='LayoutUpdated'><arg type='u'/><arg type='i'/></signal>"
 				"    <signal name='ItemsPropertiesUpdated'><arg type='a(ia{sv})'/><arg type='a(ias)'/></signal>"
@@ -1083,11 +1092,47 @@ namespace
 			{
 				dbus_message_iter_get_basic(&argsIter, &eventId);
 			}
-			if (eventId && std::strcmp(eventId, "clicked") == 0 && id > 0 && static_cast<size_t>(id) <= g_menuItems.size())
-			{
-				g_menuItems[static_cast<size_t>(id - 1)].callback();
-			}
+			triggerMenuItemEvent(id, eventId);
 			DBusMessage *reply = dbus_message_new_method_return(message);
+			dbus_connection_send(g_connection, reply, nullptr);
+			dbus_message_unref(reply);
+			return DBUS_HANDLER_RESULT_HANDLED;
+		}
+
+		if (dbus_message_is_method_call(message, DBUSMENU_INTERFACE, "EventGroup"))
+		{
+			DBusMessageIter argsIter;
+			if (dbus_message_iter_init(message, &argsIter) && dbus_message_iter_get_arg_type(&argsIter) == DBUS_TYPE_ARRAY)
+			{
+				DBusMessageIter arrayIter;
+				dbus_message_iter_recurse(&argsIter, &arrayIter);
+				while (dbus_message_iter_get_arg_type(&arrayIter) == DBUS_TYPE_STRUCT)
+				{
+					DBusMessageIter eventIter;
+					dbus_message_iter_recurse(&arrayIter, &eventIter);
+
+					dbus_int32_t id = 0;
+					const char *eventId = nullptr;
+					if (dbus_message_iter_get_arg_type(&eventIter) == DBUS_TYPE_INT32)
+					{
+						dbus_message_iter_get_basic(&eventIter, &id);
+						dbus_message_iter_next(&eventIter);
+					}
+					if (dbus_message_iter_get_arg_type(&eventIter) == DBUS_TYPE_STRING)
+					{
+						dbus_message_iter_get_basic(&eventIter, &eventId);
+					}
+					triggerMenuItemEvent(id, eventId);
+					dbus_message_iter_next(&arrayIter);
+				}
+			}
+
+			DBusMessage *reply = dbus_message_new_method_return(message);
+			DBusMessageIter iter;
+			dbus_message_iter_init_append(reply, &iter);
+			DBusMessageIter errorsIter;
+			dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY, "i", &errorsIter);
+			dbus_message_iter_close_container(&iter, &errorsIter);
 			dbus_connection_send(g_connection, reply, nullptr);
 			dbus_message_unref(reply);
 			return DBUS_HANDLER_RESULT_HANDLED;
