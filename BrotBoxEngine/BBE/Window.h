@@ -36,6 +36,7 @@ namespace bbe
 		int m_height;
 		int m_requestedWidth;
 		float m_dpiScale = 1.0f;
+		float m_dpiScaleOverride = 0.0f;
 
 		bool     m_pendingResize       = false;
 		uint32_t m_pendingResizeWidth  = 0;
@@ -78,6 +79,7 @@ namespace bbe
 
 		float getScale() const;
 		float getDpiScale() const;
+		void setDpiScaleOverride(float scale);
 
 		Vector2i getSize() const;
 		void setSize(const Vector2i &size);

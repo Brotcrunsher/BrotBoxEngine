@@ -1897,7 +1897,8 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStop()
 
 void bbe::INTERNAL::openGl::OpenGLManager::imguiStartFrame()
 {
-	const float scale = m_imguiDpiScale;
+	bbe::Window *win = static_cast<bbe::Window *>(glfwWrapper::glfwGetWindowUserPointer(m_pwindow));
+	const float scale = win ? win->getDpiScale() : m_imguiDpiScale;
 	ImGuiIO &io = ImGui::GetIO();
 
 	static float lastScale = -1.f;

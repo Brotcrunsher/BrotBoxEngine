@@ -84,7 +84,8 @@ struct GeneralConfig
 		((int32_t), windowSizeY, 0),
 		((bool), windowMaximized),
 		((int32_t), nightTimeStartHour, 22),
-		((int32_t), nightTimeStartMinute, 00))
+		((int32_t), nightTimeStartMinute, 00),
+		((float), windowScaleOverride, 0.0f))
 };
 
 struct KeyboardTracker
@@ -668,6 +669,20 @@ private:
 	size_t consoleWarningIgnoreRevision = 0;
 	size_t cachedConsoleWarningIgnoreRevision = (size_t)-1;
 	size_t cachedConsoleWarningLogLength = 0;
+
+	float getConfiguredWindowScale()
+	{
+		if (generalConfig->windowScaleOverride > 0.0f)
+		{
+			return generalConfig->windowScaleOverride;
+		}
+		return getWindow()->getScale();
+	}
+
+	void applyConfiguredWindowScale()
+	{
+		getWindow()->setDpiScaleOverride(generalConfig->windowScaleOverride);
+	}
 	bool cachedHasUnreadConsoleWarnings = false;
 #ifdef __linux__
 	bool pendingLinuxUpdate = false;
@@ -731,7 +746,7 @@ private:
 		superAdaptiveTabs.resizeCapacity(2);
 
 		mainTabs.add(Tab{ "VTasks", "View Tasks", [this]()
-						  { return tasks.drawTabViewTasks(getWindow()->getScale()); } });
+						  { return tasks.drawTabViewTasks(getConfiguredWindowScale()); } });
 		mainTabs.add(Tab{ "ETasks", "Edit Tasks", [this]()
 						  { return tasks.drawTabEditTasks(); } });
 		mainTabs.add(Tab{ "Clpbrd", "Clipboard", [this]()
@@ -1008,6 +1023,7 @@ public:
 
 	void exitCallback()
 	{
+		setWindowCloseMode(bbe::WindowCloseMode::CLOSE);
 		closeWindow();
 	}
 
@@ -1016,6 +1032,7 @@ public:
 	{
 		pendingLinuxUpdate = true;
 		pendingLinuxUpdateSource = updatePath;
+		setWindowCloseMode(bbe::WindowCloseMode::CLOSE);
 		closeWindow();
 	}
 
@@ -1060,6 +1077,7 @@ public:
 				getWindow()->maximize();
 			}
 		}
+		applyConfiguredWindowScale();
 
 		bbe::SoundGenerator sg(bbe::Duration::fromMilliseconds(500));
 		sg.addRecipeSineWave(0.0, 0.1, 150.0);
@@ -1860,7 +1878,7 @@ public:
 		ImDrawList *dl = ImGui::GetWindowDrawList();
 		ImVec2 winPos = ImGui::GetWindowPos();
 		ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
-		float scale = getWindow()->getScale();
+		float scale = getConfiguredWindowScale();
 		ImVec2 origin(winPos.x + contentMin.x, winPos.y + contentMin.y);
 		bbe::Vector2 offset(10, 60);
 
@@ -1949,7 +1967,7 @@ public:
 		if (prices.getLength() > 0 && prices.getLength() == times.getLength())
 		{
 			ImPlot::SetNextAxesToFit();
-			if (ImPlot::BeginPlot("Line Plots", { -1, 250 * getWindow()->getScale() }))
+			if (ImPlot::BeginPlot("Line Plots", { -1, 250 * getConfiguredWindowScale() }))
 			{
 				ImPlot::SetupAxes("time", "price");
 				ImPlot::PlotLine("Bitcoin", times.getRaw(), prices.getRaw(), times.getLength());
@@ -2723,7 +2741,7 @@ public:
 			snprintf(avgOverlay, sizeof(avgOverlay), "Avg: %.1f%%", resourceCpuAvg);
 			colorBar(resourceCpuAvg / 100.0f, avgOverlay);
 
-			float scale = getWindow()->getScale();
+			float scale = getConfiguredWindowScale();
 			float barW = 60.0f * scale;
 			float barH = 14.0f * scale;
 			float cellW = barW + ImGui::GetStyle().ItemSpacing.x;
@@ -2842,11 +2860,11 @@ public:
 		const int64_t max = log.getLength() - 2;
 		if (ImGui::BeginTable("table", 2, ImGuiTableFlags_RowBg))
 		{
-			ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 10 * getWindow()->getScale());
+			ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthFixed, 10 * getConfiguredWindowScale());
 			ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthStretch);
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
-			ImGui::VSliderScalar("##Scrollbar", { 10 * getWindow()->getScale(), ImGui::GetWindowHeight() - 50 }, ImGuiDataType_S64, &sliderVal, &max, &min);
+			ImGui::VSliderScalar("##Scrollbar", { 10 * getConfiguredWindowScale(), ImGui::GetWindowHeight() - 50 }, ImGuiDataType_S64, &sliderVal, &max, &min);
 			constexpr int64_t wheelSpeed = 5;
 			if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
 			{
@@ -2965,6 +2983,21 @@ public:
 			generalConfig->windowSizeX = getWindow()->getSize().x;
 			generalConfig->windowSizeY = getWindow()->getSize().y;
 			generalConfig->windowMaximized = getWindow()->isMaximized();
+			generalConfigChanged = true;
+		}
+
+		ImGui::Text("Detected Window Scale: %.2f", getWindow()->getScale());
+		ImGui::SetNextItemWidth(220 * getConfiguredWindowScale());
+		if (ImGui::DragFloat("Window Scale Override (0 = auto)", &generalConfig->windowScaleOverride, 0.01f, 0.0f, 8.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp))
+		{
+			applyConfiguredWindowScale();
+			generalConfigChanged = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Auto Window Scale"))
+		{
+			generalConfig->windowScaleOverride = 0.0f;
+			applyConfiguredWindowScale();
 			generalConfigChanged = true;
 		}
 
@@ -3151,7 +3184,7 @@ public:
 			void *texId = image.getOpenGlTexture();
 			if (texId)
 			{
-				float scale = getWindow()->getScale();
+				float scale = getConfiguredWindowScale();
 				ImGui::Image((ImTextureID)texId, ImVec2(800 * scale, 400 * scale));
 			}
 #endif
@@ -3206,7 +3239,7 @@ public:
 		ImDrawList *dl = ImGui::GetWindowDrawList();
 		ImVec2 winPos = ImGui::GetWindowPos();
 		ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
-		float scale = getWindow()->getScale();
+		float scale = getConfiguredWindowScale();
 		ImVec2 origin(winPos.x + contentMin.x, winPos.y + contentMin.y);
 
 		for (size_t i = 0; i < keys.getLength(); i++)
@@ -3242,7 +3275,7 @@ public:
 		ImDrawList *dl = ImGui::GetWindowDrawList();
 		ImVec2 winPos = ImGui::GetWindowPos();
 		ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
-		float scale = getWindow()->getScale();
+		float scale = getConfiguredWindowScale();
 		ImVec2 origin(winPos.x + contentMin.x, winPos.y + contentMin.y);
 
 		int32_t year = bbe::TimePoint().getYear();
@@ -4263,7 +4296,7 @@ public:
 		beginMeasure("Draw process window");
 		if (ImGui::Begin("Processes"))
 		{
-			processes.drawGui(getWindow()->getScale());
+			processes.drawGui(getConfiguredWindowScale());
 		}
 		ImGui::End();
 #endif
@@ -4272,7 +4305,7 @@ public:
 		beginMeasure("Draw url window");
 		if (ImGui::Begin("URLs"))
 		{
-			urls.drawGui(getWindow()->getScale());
+			urls.drawGui(getConfiguredWindowScale());
 		}
 		ImGui::End();
 #endif

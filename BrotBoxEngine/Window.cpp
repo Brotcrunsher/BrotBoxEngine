@@ -406,7 +406,14 @@ float bbe::Window::getScale() const
 
 float bbe::Window::getDpiScale() const
 {
+	if (m_dpiScaleOverride > 0.0f) return m_dpiScaleOverride;
 	return m_dpiScale;
+}
+
+void bbe::Window::setDpiScaleOverride(float scale)
+{
+	m_dpiScaleOverride = scale > 0.0f ? scale : 0.0f;
+	requestRender();
 }
 
 bbe::Vector2i bbe::Window::getSize() const
