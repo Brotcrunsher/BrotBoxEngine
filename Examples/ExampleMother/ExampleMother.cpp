@@ -691,6 +691,9 @@ private:
 	std::future<int32_t> pacmanUpdateFuture;
 	// -2 = pacman not installed, -1 = checkupdates not installed, 0+ = number of updates
 	int32_t cachedPacmanUpdateCount = 0;
+	std::future<int32_t> aptUpdateFuture;
+	// -2 = apt-get not installed on a Debian/Ubuntu-like system, -1 = not an apt system, 0+ = number of updates
+	int32_t cachedAptUpdateCount = 0;
 #endif
 
 #ifdef __linux__
@@ -1597,6 +1600,33 @@ public:
 		{
 			cachedPacmanUpdateCount = pacmanUpdateFuture.get();
 		}
+
+		beginMeasure("Apt Updates");
+		EVERY_HOURS(1)
+		{
+			aptUpdateFuture = std::async(std::launch::async, []() -> int32_t {
+				const bool looksLikeAptSystem = system("test -e /etc/debian_version >/dev/null 2>&1") == 0;
+				if (!looksLikeAptSystem) return -1;
+				if (system("command -v apt-get >/dev/null 2>&1") != 0) return -2;
+
+				FILE *pipe = popen("apt-get -s upgrade 2>/dev/null", "r");
+				if (!pipe) return 0;
+
+				int32_t count = 0;
+				char buf[512];
+				while (fgets(buf, sizeof(buf), pipe))
+				{
+					if (strncmp(buf, "Inst ", 5) == 0)
+						count++;
+				}
+				pclose(pipe);
+				return count;
+			});
+		}
+		if (aptUpdateFuture.valid() && aptUpdateFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+		{
+			cachedAptUpdateCount = aptUpdateFuture.get();
+		}
 #endif
 	}
 
@@ -2406,6 +2436,14 @@ public:
 		else if (cachedPacmanUpdateCount > 0)
 		{
 			warnings.add(bbe::String("Pacman: ") + cachedPacmanUpdateCount + " update(s) available.");
+		}
+		if (cachedAptUpdateCount == -2)
+		{
+			warnings.add("apt-get not found, but this looks like an apt based system.");
+		}
+		else if (cachedAptUpdateCount > 0)
+		{
+			warnings.add(bbe::String("Apt: ") + cachedAptUpdateCount + " update(s) available.");
 		}
 #endif
 
