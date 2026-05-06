@@ -543,15 +543,45 @@ namespace emGoogleCalendar
 		}
 		const bbe::String calEnc = urlEncodeCurl(curl, cal);
 		curl_easy_cleanup(curl);
-		const bbe::String url = bbe::String("https://www.googleapis.com/calendar/v3/calendars/") + calEnc + "/events?singleEvents=true&orderBy=startTime&maxResults=250&timeMin=" + formatRfc3339Utc(timeMin) + "&timeMax=" + formatRfc3339Utc(timeMax);
+		const bbe::String baseUrl = bbe::String("https://www.googleapis.com/calendar/v3/calendars/") + calEnc + "/events?singleEvents=true&orderBy=startTime&maxResults=2500&timeMin=" + formatRfc3339Utc(timeMin) + "&timeMax=" + formatRfc3339Utc(timeMax);
 		const bbe::List<bbe::String> headers = { bbe::String("Authorization: Bearer ") + cfg.accessToken };
-		const auto res = bbe::simpleUrlRequest::urlRequest(url, headers, {}, true, false);
-		if (res.responseCode != 200)
+		bbe::String pageToken;
+		for (int32_t page = 0; page < 100; page++)
 		{
-			errorOut = bbe::String::format("Events HTTP %ld: %s", res.responseCode, res.dataContainer.getRaw());
-			return false;
+			CURL *tokenCurl = curl_easy_init();
+			const bbe::String pageTokenParam = pageToken.isEmpty() ? bbe::String("") : bbe::String("&pageToken=") + (tokenCurl ? urlEncodeCurl(tokenCurl, pageToken) : pageToken);
+			if (tokenCurl)
+				curl_easy_cleanup(tokenCurl);
+			const auto res = bbe::simpleUrlRequest::urlRequest(baseUrl + pageTokenParam, headers, {}, true, false);
+			if (res.responseCode != 200)
+			{
+				errorOut = bbe::String::format("Events HTTP %ld: %s", res.responseCode, res.dataContainer.getRaw());
+				return false;
+			}
+			try
+			{
+				const nlohmann::json j = nlohmann::json::parse(res.dataContainer.getRaw());
+				if (j.contains("items") && j["items"].is_array())
+				{
+					bbe::List<GoogleCalendarParsedEvent> pageEvents;
+					if (!parseEventsJson(bbe::String(res.dataContainer.getRaw()), pageEvents, errorOut))
+						return false;
+					out.addList(pageEvents);
+				}
+				if (!j.contains("nextPageToken") || !j["nextPageToken"].is_string())
+					return true;
+				pageToken = j["nextPageToken"].get<std::string>().c_str();
+				if (pageToken.isEmpty())
+					return true;
+			}
+			catch (const std::exception &e)
+			{
+				errorOut = e.what();
+				return false;
+			}
 		}
-		return parseEventsJson(bbe::String(res.dataContainer.getRaw()), out, errorOut);
+		errorOut = "Too many calendar event pages";
+		return false;
 	}
 
 	bool parseEventsJson(const bbe::String &jsonUtf8, bbe::List<GoogleCalendarParsedEvent> &out, bbe::String &errorOut)
