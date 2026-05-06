@@ -68,6 +68,41 @@ namespace gitReview
 				[](unsigned char a, unsigned char b) { return std::tolower(a) == std::tolower(b); }) != haystack.end();
 		}
 
+		bool isGitHubHttpsRemoteUrl(const std::string &url)
+		{
+			const std::string trimmed = trimCopy(url);
+			return (containsCaseInsensitive(trimmed, "https://github.com/") || containsCaseInsensitive(trimmed, "http://github.com/"));
+		}
+
+		std::string githubHttpsCliSetupInstructions(const std::string &originUrl)
+		{
+			std::string msg =
+				"GitHub authentication is not configured for this HTTPS remote, and this app will not let git open an interactive username/password prompt.\n\n";
+			if (!originUrl.empty())
+				msg += "origin: " + redactGitOutput(trimCopy(originUrl)) + "\n\n";
+			msg +=
+				"Set up GitHub HTTPS authentication with GitHub CLI:\n\n"
+				"1. Install GitHub CLI if needed:\n"
+				"   https://cli.github.com/\n\n"
+				"2. Log in for HTTPS Git operations:\n"
+				"   gh auth login --hostname github.com --web --git-protocol https\n\n"
+				"3. Let gh configure Git's credential helper:\n"
+				"   gh auth setup-git\n\n"
+				"4. Check the login:\n"
+				"   gh auth status --hostname github.com\n\n"
+				"5. Push again from ExampleGitReview.";
+			return msg;
+		}
+
+		bool isCredentialPromptFailure(const std::string &err)
+		{
+			return containsCaseInsensitive(err, "terminal prompts disabled") ||
+				   containsCaseInsensitive(err, "could not read Username") ||
+				   containsCaseInsensitive(err, "could not read Password") ||
+				   containsCaseInsensitive(err, "authentication failed") ||
+				   containsCaseInsensitive(err, "credential");
+		}
+
 		/// Sanitize git output for user-facing display.
 		std::string sanitizedGitError(const GitRunResult &r)
 		{
@@ -807,9 +842,17 @@ namespace gitReview
 	{
 		err.clear();
 		const std::string root = repoRootString(app);
-		GitRunResult r = runGit(root, { "push" });
+		GitRunResult origin = runGit(root, { "remote", "get-url", "origin" });
+		const bool githubHttpsOrigin = origin.exitCode == 0 && isGitHubHttpsRemoteUrl(origin.standardOut);
+		GitRunResult r = githubHttpsOrigin
+			? runGitNoTerminalPrompt(root, { "-c", "credential.interactive=false", "push" })
+			: runGit(root, { "push" });
 		if (r.exitCode != 0)
+		{
 			err = sanitizedGitError(r);
+			if (githubHttpsOrigin && isCredentialPromptFailure(err))
+				err = githubHttpsCliSetupInstructions(origin.standardOut);
+		}
 	}
 
 	const std::vector<DiffRow> &cachedDiffRows(ReviewAppState &app)

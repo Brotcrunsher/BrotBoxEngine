@@ -19,6 +19,9 @@ namespace gitReview
 	/// Like runGit, but feeds \p stdinData to the child's stdin and closes it.
 	GitRunResult runGitWithStdin(const std::string &repoRoot, const std::vector<std::string> &args, const std::string &stdinData);
 
+	/// Like runGit, but disables interactive terminal credential prompts for the child process.
+	GitRunResult runGitNoTerminalPrompt(const std::string &repoRoot, const std::vector<std::string> &args);
+
 	/// Redacts credentialed URLs and obvious token patterns from Git
 	/// output before it is shown in the UI.
 	std::string redactGitOutput(const std::string &text);

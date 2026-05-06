@@ -106,6 +106,60 @@ namespace gitReview
 			return "";
 		}
 
+		std::string trimModalLine(std::string s)
+		{
+			while (!s.empty() && (s.front() == ' ' || s.front() == '\t'))
+				s.erase(s.begin());
+			while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\r'))
+				s.pop_back();
+			return s;
+		}
+
+		bool isCopyableModalLine(const std::string &line)
+		{
+			const std::string trimmed = trimModalLine(line);
+			return trimmed.rfind("http://", 0) == 0 || trimmed.rfind("https://", 0) == 0 || trimmed.rfind("gh ", 0) == 0;
+		}
+
+		void drawCopyableModalLine(const std::string &line, int id)
+		{
+			std::string text = trimModalLine(line);
+			std::vector<char> buffer(text.begin(), text.end());
+			buffer.push_back('\0');
+			ImGui::SetNextItemWidth(ImGui::GetFontSize() * 42.f);
+			ImGui::InputText(("##modalCopy" + std::to_string(id)).c_str(), buffer.data(), buffer.size(), ImGuiInputTextFlags_ReadOnly);
+		}
+
+		void drawModalBody(const std::string &body)
+		{
+			size_t lineStart = 0;
+			int copyId = 0;
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 42.f);
+			while (lineStart <= body.size())
+			{
+				const size_t lineEnd = body.find('\n', lineStart);
+				const std::string line = body.substr(lineStart, lineEnd == std::string::npos ? std::string::npos : lineEnd - lineStart);
+				if (isCopyableModalLine(line))
+				{
+					ImGui::PopTextWrapPos();
+					drawCopyableModalLine(line, copyId++);
+					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 42.f);
+				}
+				else if (line.empty())
+				{
+					ImGui::Spacing();
+				}
+				else
+				{
+					ImGui::TextUnformatted(line.c_str());
+				}
+				if (lineEnd == std::string::npos)
+					break;
+				lineStart = lineEnd + 1;
+			}
+			ImGui::PopTextWrapPos();
+		}
+
 		void drawModalIfAny(ReviewAppState &app)
 		{
 			if (app.modalOpen)
@@ -116,9 +170,7 @@ namespace gitReview
 			{
 				ImGui::TextUnformatted(app.modalTitle.c_str());
 				ImGui::Separator();
-				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 42.f);
-				ImGui::TextUnformatted(app.modalBody.c_str());
-				ImGui::PopTextWrapPos();
+				drawModalBody(app.modalBody);
 				if (ImGui::Button("OK", ImVec2(120, 0)))
 				{
 					app.modalOpen = false;

@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdio>
 #include <cstring>
+#include <cwchar>
 #include <sstream>
 #include <stdexcept>
 #include <thread>
@@ -84,7 +85,38 @@ namespace gitReview
 			into.append(buf, static_cast<size_t>(n));
 	}
 
-	static GitRunResult runGitImpl(const std::string &repoRoot, const std::vector<std::string> &args, const std::string *stdinData)
+	static bool isEnvName(const wchar_t *entry, const wchar_t *name)
+	{
+		const size_t nameLen = wcslen(name);
+		return _wcsnicmp(entry, name, nameLen) == 0 && entry[nameLen] == L'=';
+	}
+
+	static std::vector<wchar_t> makeNoTerminalPromptEnvironment()
+	{
+		std::vector<wchar_t> block;
+		LPWCH raw = GetEnvironmentStringsW();
+		if (!raw)
+			return block;
+
+		for (LPWCH p = raw; *p; p += wcslen(p) + 1)
+		{
+			if (isEnvName(p, L"GIT_TERMINAL_PROMPT") || isEnvName(p, L"GCM_INTERACTIVE"))
+				continue;
+			const size_t len = wcslen(p);
+			block.insert(block.end(), p, p + len + 1);
+		}
+		FreeEnvironmentStringsW(raw);
+
+		const wchar_t gitPrompt[] = L"GIT_TERMINAL_PROMPT=0";
+		const wchar_t gcmInteractive[] = L"GCM_INTERACTIVE=never";
+		block.insert(block.end(), gitPrompt, gitPrompt + wcslen(gitPrompt) + 1);
+		block.insert(block.end(), gcmInteractive, gcmInteractive + wcslen(gcmInteractive) + 1);
+		block.push_back(L'\0');
+		return block;
+	}
+
+	static GitRunResult runGitImpl(const std::string &repoRoot, const std::vector<std::string> &args, const std::string *stdinData,
+		bool noTerminalPrompt)
 	{
 		GitRunResult result;
 
@@ -138,8 +170,12 @@ namespace gitReview
 		PROCESS_INFORMATION pi{};
 		std::vector<wchar_t> cmdBuf(cmdLine.begin(), cmdLine.end());
 		cmdBuf.push_back(L'\0');
+		std::vector<wchar_t> envBlock;
+		if (noTerminalPrompt)
+			envBlock = makeNoTerminalPromptEnvironment();
 
-		const BOOL ok = CreateProcessW(nullptr, cmdBuf.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi);
+		const BOOL ok = CreateProcessW(nullptr, cmdBuf.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+			noTerminalPrompt && !envBlock.empty() ? envBlock.data() : nullptr, nullptr, &si, &pi);
 
 		CloseHandle(hStdoutWrite);
 		CloseHandle(hStderrWrite);
@@ -191,7 +227,8 @@ namespace gitReview
 #else
 	// ── POSIX helpers ────────────────────────────────────────────────
 
-	static GitRunResult runGitImpl(const std::string &repoRoot, const std::vector<std::string> &args, const std::string *stdinData)
+	static GitRunResult runGitImpl(const std::string &repoRoot, const std::vector<std::string> &args, const std::string *stdinData,
+		bool noTerminalPrompt)
 	{
 		GitRunResult result;
 
@@ -249,6 +286,21 @@ namespace gitReview
 				close(inPipe[1]);
 				dup2(inPipe[0], STDIN_FILENO);
 				close(inPipe[0]);
+			}
+			else if (noTerminalPrompt)
+			{
+				const int devNull = open("/dev/null", O_RDONLY);
+				if (devNull >= 0)
+				{
+					dup2(devNull, STDIN_FILENO);
+					close(devNull);
+				}
+			}
+
+			if (noTerminalPrompt)
+			{
+				setenv("GIT_TERMINAL_PROMPT", "0", 1);
+				setenv("GCM_INTERACTIVE", "never", 1);
 			}
 
 			std::vector<std::string> argvStorage;
@@ -328,12 +380,17 @@ namespace gitReview
 
 	GitRunResult runGit(const std::string &repoRoot, const std::vector<std::string> &args)
 	{
-		return runGitImpl(repoRoot, args, nullptr);
+		return runGitImpl(repoRoot, args, nullptr, false);
 	}
 
 	GitRunResult runGitWithStdin(const std::string &repoRoot, const std::vector<std::string> &args, const std::string &stdinData)
 	{
-		return runGitImpl(repoRoot, args, &stdinData);
+		return runGitImpl(repoRoot, args, &stdinData, false);
+	}
+
+	GitRunResult runGitNoTerminalPrompt(const std::string &repoRoot, const std::vector<std::string> &args)
+	{
+		return runGitImpl(repoRoot, args, nullptr, true);
 	}
 
 	std::string redactGitOutput(const std::string &text)
