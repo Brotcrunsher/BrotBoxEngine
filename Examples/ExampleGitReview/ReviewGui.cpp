@@ -128,6 +128,80 @@ namespace gitReview
 			}
 		}
 
+		void drawAuthorIdentityModal(ReviewAppState &app)
+		{
+			if (app.pendingAuthorIdentityAsk)
+				ImGui::OpenPopup("##authorIdentity");
+			const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			if (ImGui::BeginPopupModal("##authorIdentity", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::TextUnformatted("Git author identity");
+				ImGui::Separator();
+				ImGui::SetNextItemWidth(420.f);
+				ImGui::InputText("Name", app.authorNameUtf8, sizeof(app.authorNameUtf8));
+				ImGui::SetNextItemWidth(420.f);
+				ImGui::InputText("Email", app.authorEmailUtf8, sizeof(app.authorEmailUtf8));
+				ImGui::Checkbox("Set globally", &app.authorIdentityGlobal);
+				if (!app.authorIdentityError.empty())
+				{
+					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 42.f);
+					ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.25f, 1.0f), "%s", app.authorIdentityError.c_str());
+					ImGui::PopTextWrapPos();
+				}
+
+				if (ImGui::Button("Save & Commit", ImVec2(140, 0)))
+				{
+					std::string err;
+					configureGitAuthorIdentity(app, app.authorIdentityGlobal, err);
+					if (!err.empty())
+					{
+						app.authorIdentityError = err;
+					}
+					else
+					{
+						commitStaged(app, err);
+						if (!err.empty())
+						{
+							app.authorIdentityError = err;
+						}
+						else
+						{
+							showToast(app, "Commit created.", 2.5f);
+							std::memset(app.commitMessageUtf8, 0, sizeof(app.commitMessageUtf8));
+							app.pendingAuthorIdentityAsk = false;
+							app.authorIdentityError.clear();
+							ImGui::CloseCurrentPopup();
+							refreshSnapshot(app);
+						}
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Save", ImVec2(120, 0)))
+				{
+					std::string err;
+					configureGitAuthorIdentity(app, app.authorIdentityGlobal, err);
+					if (!err.empty())
+						app.authorIdentityError = err;
+					else
+					{
+						showToast(app, "Git author identity saved.", 2.5f);
+						app.pendingAuthorIdentityAsk = false;
+						app.authorIdentityError.clear();
+						ImGui::CloseCurrentPopup();
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel", ImVec2(120, 0)))
+				{
+					app.pendingAuthorIdentityAsk = false;
+					app.authorIdentityError.clear();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
+		}
+
 		void drawToast(ReviewAppState &app)
 		{
 			if (app.toastSecondsRemaining <= 0.f || app.toastText.empty())
@@ -471,7 +545,17 @@ namespace gitReview
 					std::string err;
 					commitStaged(app, err);
 					if (!err.empty())
-						showModal(app, "Commit failed", err);
+					{
+						if (isGitAuthorIdentityMissingError(err))
+						{
+							prepareGitAuthorIdentityDialog(app);
+							ImGui::CloseCurrentPopup();
+						}
+						else
+						{
+							showModal(app, "Commit failed", err);
+						}
+					}
 					else
 					{
 						showToast(app, "Commit created.", 2.5f);
@@ -2385,6 +2469,7 @@ namespace gitReview
 		drawModalIfAny(app);
 		drawDiscardModal(app);
 		drawGitignoreModal(app);
+		drawAuthorIdentityModal(app);
 
 		ImGui::End();
 		ImGui::PopStyleColor(2);

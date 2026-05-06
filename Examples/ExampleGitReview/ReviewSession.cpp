@@ -50,6 +50,24 @@ namespace gitReview
 			return false;
 		}
 
+		void setFixedBuffer(char *dst, size_t cap, const std::string &text)
+		{
+			if (cap == 0)
+				return;
+			const std::string trimmed = trimCopy(text);
+			const size_t n = std::min(cap - 1, trimmed.size());
+			std::memcpy(dst, trimmed.data(), n);
+			dst[n] = '\0';
+		}
+
+		bool containsCaseInsensitive(const std::string &haystack, const std::string &needle)
+		{
+			if (needle.empty())
+				return true;
+			return std::search(haystack.begin(), haystack.end(), needle.begin(), needle.end(),
+				[](unsigned char a, unsigned char b) { return std::tolower(a) == std::tolower(b); }) != haystack.end();
+		}
+
 		/// Sanitize git output for user-facing display.
 		std::string sanitizedGitError(const GitRunResult &r)
 		{
@@ -714,6 +732,75 @@ namespace gitReview
 		GitRunResult r = runGitWithStdin(root, { "commit", "-F", "-" }, msg);
 		if (r.exitCode != 0)
 			err = sanitizedGitError(r);
+	}
+
+	bool isGitAuthorIdentityMissingError(const std::string &err)
+	{
+		return containsCaseInsensitive(err, "Author identity unknown") ||
+			   containsCaseInsensitive(err, "unable to auto-detect email address") ||
+			   (containsCaseInsensitive(err, "please tell me who you are") && containsCaseInsensitive(err, "user.email"));
+	}
+
+	void prepareGitAuthorIdentityDialog(ReviewAppState &app)
+	{
+		const std::string root = repoRootString(app);
+		if (root.empty())
+			return;
+
+		if (!hasNonWhitespace(app.authorNameUtf8))
+		{
+			GitRunResult name = runGit(root, { "config", "--get", "user.name" });
+			if (name.exitCode == 0)
+				setFixedBuffer(app.authorNameUtf8, sizeof(app.authorNameUtf8), name.standardOut);
+		}
+		if (!hasNonWhitespace(app.authorEmailUtf8))
+		{
+			GitRunResult email = runGit(root, { "config", "--get", "user.email" });
+			if (email.exitCode == 0)
+				setFixedBuffer(app.authorEmailUtf8, sizeof(app.authorEmailUtf8), email.standardOut);
+		}
+		app.pendingAuthorIdentityAsk = true;
+		app.authorIdentityError.clear();
+	}
+
+	void configureGitAuthorIdentity(ReviewAppState &app, bool global, std::string &err)
+	{
+		err.clear();
+		const std::string root = repoRootString(app);
+		const std::string name = trimCopy(std::string(app.authorNameUtf8));
+		const std::string email = trimCopy(std::string(app.authorEmailUtf8));
+		if (name.empty())
+		{
+			err = "Name is empty.";
+			return;
+		}
+		if (email.empty())
+		{
+			err = "Email is empty.";
+			return;
+		}
+
+		std::vector<std::string> nameArgs = { "config" };
+		std::vector<std::string> emailArgs = { "config" };
+		if (global)
+		{
+			nameArgs.push_back("--global");
+			emailArgs.push_back("--global");
+		}
+		nameArgs.push_back("user.name");
+		nameArgs.push_back(name);
+		emailArgs.push_back("user.email");
+		emailArgs.push_back(email);
+
+		GitRunResult nameResult = runGit(root, nameArgs);
+		if (nameResult.exitCode != 0)
+		{
+			err = sanitizedGitError(nameResult);
+			return;
+		}
+		GitRunResult emailResult = runGit(root, emailArgs);
+		if (emailResult.exitCode != 0)
+			err = sanitizedGitError(emailResult);
 	}
 
 	void pushUpstream(ReviewAppState &app, std::string &err)

@@ -32,6 +32,8 @@ namespace gitReview
 	{
 		static constexpr int kRepoPathCap = 4096;
 		static constexpr int kCommitCap = 65536;
+		static constexpr int kAuthorNameCap = 256;
+		static constexpr int kAuthorEmailCap = 256;
 
 		char repoPathUtf8[kRepoPathCap]{};
 		RepoSnapshot snapshot;
@@ -54,6 +56,11 @@ namespace gitReview
 		std::string loadDiffError;
 
 		char commitMessageUtf8[kCommitCap]{};
+		char authorNameUtf8[kAuthorNameCap]{};
+		char authorEmailUtf8[kAuthorEmailCap]{};
+		bool pendingAuthorIdentityAsk = false;
+		bool authorIdentityGlobal = false;
+		std::string authorIdentityError;
 
 		std::string toastText;
 		float toastSecondsRemaining = 0.f;
@@ -140,6 +147,9 @@ namespace gitReview
 	int appendPathsToGitignore(const std::string &repoRoot, const std::vector<std::string> &pathsRel, std::string &err);
 
 	void commitStaged(ReviewAppState &app, std::string &err);
+	bool isGitAuthorIdentityMissingError(const std::string &err);
+	void prepareGitAuthorIdentityDialog(ReviewAppState &app);
+	void configureGitAuthorIdentity(ReviewAppState &app, bool global, std::string &err);
 	void pushUpstream(ReviewAppState &app, std::string &err);
 
 	/// Canonical worktree text derived from the row-aligned editor buffer (refreshes the diff cache).
