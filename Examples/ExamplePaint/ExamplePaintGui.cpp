@@ -2430,7 +2430,7 @@ void drawExamplePaintGui(PaintEditor &editor, bbe::PrimitiveBrush2D &brush, cons
 				for (int32_t i = 0; i < editor.radialSymmetryCount; i++)
 				{
 					const float angle = step * (float)i;
-					const bbe::Vector2 dir = { std::cosf(angle) * extent, std::sinf(angle) * extent };
+					const bbe::Vector2 dir = { std::cos(angle) * extent, std::sin(angle) * extent };
 					brush.fillLine(c2s(center), c2s(center + dir), 1.f);
 				}
 			}
