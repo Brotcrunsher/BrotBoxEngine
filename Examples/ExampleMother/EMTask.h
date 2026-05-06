@@ -138,7 +138,7 @@ public:
 private:
 	bbe::SerializableList<Task> tasks = bbe::SerializableList<Task>("config.dat", "ParanoiaConfig", bbe::Undoable::YES);
 	bbe::SerializableList<GoogleCalendarDismissedEventId> googleCalendarDismissed = bbe::SerializableList<GoogleCalendarDismissedEventId>("GoogleCalDismiss.dat", "ParanoiaConfig");
-	bbe::SerializableObject<Heartbeat> heartbeat = bbe::SerializableObject<Heartbeat>("Heartbeat.dat", "ParanoiaConfig");
+	bbe::SerializableObject<Heartbeat> heartbeat = bbe::SerializableObject<Heartbeat>("Heartbeat.dat");
 #ifdef _WIN32
 	bbe::SessionLockMonitor sessionLockMonitor;
 #endif
