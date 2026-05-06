@@ -5,6 +5,113 @@
 #include <GLFW/glfw3native.h>
 #endif
 
+#if defined(__linux__)
+#include <cerrno>
+#include <csignal>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
+
+namespace
+{
+#if defined(__linux__)
+	bool isExecutableInPath(const char *name)
+	{
+		const char *path = std::getenv("PATH");
+		if (path == nullptr)
+		{
+			return false;
+		}
+
+		std::string remaining(path);
+		while (!remaining.empty())
+		{
+			const size_t separator = remaining.find(':');
+			const std::string directory = remaining.substr(0, separator);
+			remaining = separator == std::string::npos ? "" : remaining.substr(separator + 1);
+			const std::string fullPath = directory + "/" + name;
+			if (access(fullPath.c_str(), X_OK) == 0)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool writeAllToFd(int fd, const char *data)
+	{
+		size_t written = 0;
+		const size_t length = data == nullptr ? 0 : std::strlen(data);
+		while (written < length)
+		{
+			const ssize_t currentWrite = write(fd, data + written, length - written);
+			if (currentWrite < 0)
+			{
+				if (errno == EINTR)
+				{
+					continue;
+				}
+				return false;
+			}
+			written += static_cast<size_t>(currentWrite);
+		}
+		return true;
+	}
+
+	bool launchExternalClipboardOwner(const char *const *argv, const char *text)
+	{
+		int stdinPipe[2] = { -1, -1 };
+		if (pipe(stdinPipe) != 0)
+		{
+			return false;
+		}
+
+		const pid_t supervisor = fork();
+		if (supervisor == 0)
+		{
+			const pid_t worker = fork();
+			if (worker == 0)
+			{
+				dup2(stdinPipe[0], STDIN_FILENO);
+				close(stdinPipe[0]);
+				close(stdinPipe[1]);
+				execvp(argv[0], const_cast<char *const *>(argv));
+				_exit(127);
+			}
+			_exit(worker < 0 ? 127 : 0);
+		}
+
+		close(stdinPipe[0]);
+		if (supervisor < 0)
+		{
+			close(stdinPipe[1]);
+			return false;
+		}
+
+		int status = 0;
+		waitpid(supervisor, &status, 0);
+		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+		{
+			close(stdinPipe[1]);
+			return false;
+		}
+
+		struct sigaction ignoreAction = {};
+		struct sigaction previousAction = {};
+		ignoreAction.sa_handler = SIG_IGN;
+		sigemptyset(&ignoreAction.sa_mask);
+		sigaction(SIGPIPE, &ignoreAction, &previousAction);
+		const bool writeOk = writeAllToFd(stdinPipe[1], text);
+		sigaction(SIGPIPE, &previousAction, nullptr);
+		close(stdinPipe[1]);
+		return writeOk;
+	}
+#endif
+}
+
 int bbe::glfwWrapper::glfwVulkanSupported(void)
 {
 #ifndef BBE_RENDERER_NULL
@@ -236,8 +343,37 @@ const char *bbe::glfwWrapper::glfwGetClipboardString(GLFWwindow *handle)
 void bbe::glfwWrapper::glfwSetClipboardString(GLFWwindow *handle, const char *string)
 {
 #ifndef BBE_RENDERER_NULL
+	if (setClipboardStringExternal(string))
+	{
+		return;
+	}
 	::glfwSetClipboardString(handle, string);
 #endif
+}
+
+bool bbe::glfwWrapper::setClipboardStringExternal(const char *string)
+{
+#if defined(__linux__) && !defined(BBE_RENDERER_NULL)
+	const char *const wlCopy[] = { "wl-copy", nullptr };
+	const char *const xclip[] = { "xclip", "-selection", "clipboard", nullptr };
+	const char *const xsel[] = { "xsel", "--clipboard", "--input", nullptr };
+
+	const char *const *commands[] = { wlCopy, xclip, xsel };
+	for (const char *const *command : commands)
+	{
+		if (!isExecutableInPath(command[0]))
+		{
+			continue;
+		}
+		if (launchExternalClipboardOwner(command, string))
+		{
+			return true;
+		}
+	}
+#else
+	(void)string;
+#endif
+	return false;
 }
 
 void bbe::glfwWrapper::glfwSetWindowShouldClose(GLFWwindow *window, int value)

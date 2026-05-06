@@ -1867,6 +1867,14 @@ void bbe::INTERNAL::openGl::OpenGLManager::imguiStart()
 	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 	ImGui_ImplGlfw_InitForOpenGL(m_pwindow, false);
+	ImGui::GetPlatformIO().Platform_ClipboardUserData = m_pwindow;
+	ImGui::GetPlatformIO().Platform_SetClipboardTextFn = [](ImGuiContext *, const char *text)
+	{
+		if (!bbe::glfwWrapper::setClipboardStringExternal(text))
+		{
+			glfwSetClipboardString(static_cast<GLFWwindow *>(ImGui::GetPlatformIO().Platform_ClipboardUserData), text);
+		}
+	};
 
 	m_imguiInitSuccessful = ImGui_ImplOpenGL3_Init();
 	if (!m_imguiInitSuccessful)
