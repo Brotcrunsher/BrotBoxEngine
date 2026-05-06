@@ -85,7 +85,16 @@ struct GeneralConfig
 		((bool), windowMaximized),
 		((int32_t), nightTimeStartHour, 22),
 		((int32_t), nightTimeStartMinute, 00),
-		((float), windowScaleOverride, 0.0f))
+		((float), windowScaleOverride, 0.0f),
+		((float), maxResourceRamUsedGB, 0.0f),
+		((float), maxResourceVramUsedGB0, 0.0f),
+		((float), maxResourceVramUsedGB1, 0.0f),
+		((float), maxResourceVramUsedGB2, 0.0f),
+		((float), maxResourceVramUsedGB3, 0.0f),
+		((float), maxResourceVramUsedGB4, 0.0f),
+		((float), maxResourceVramUsedGB5, 0.0f),
+		((float), maxResourceVramUsedGB6, 0.0f),
+		((float), maxResourceVramUsedGB7, 0.0f))
 };
 
 struct KeyboardTracker
@@ -683,6 +692,95 @@ private:
 	{
 		getWindow()->setDpiScaleOverride(generalConfig->windowScaleOverride);
 	}
+
+#ifdef __linux__
+	void updateResourceRamPeak(float usedGB)
+	{
+		if (usedGB <= generalConfig->maxResourceRamUsedGB)
+			return;
+		generalConfig->maxResourceRamUsedGB = usedGB;
+		if (usedGB >= resourceRamPeakPersistedGB + 0.1f)
+		{
+			resourceRamPeakPersistedGB = usedGB;
+			generalConfig.writeToFile();
+		}
+	}
+
+	void flushResourceRamPeak()
+	{
+		if (generalConfig->maxResourceRamUsedGB > resourceRamPeakPersistedGB)
+		{
+			resourceRamPeakPersistedGB = generalConfig->maxResourceRamUsedGB;
+			generalConfig.writeToFile();
+		}
+	}
+
+	float *getResourceVramPeakConfigSlot(size_t gpuIndex)
+	{
+		switch (gpuIndex)
+		{
+		case 0: return &generalConfig->maxResourceVramUsedGB0;
+		case 1: return &generalConfig->maxResourceVramUsedGB1;
+		case 2: return &generalConfig->maxResourceVramUsedGB2;
+		case 3: return &generalConfig->maxResourceVramUsedGB3;
+		case 4: return &generalConfig->maxResourceVramUsedGB4;
+		case 5: return &generalConfig->maxResourceVramUsedGB5;
+		case 6: return &generalConfig->maxResourceVramUsedGB6;
+		case 7: return &generalConfig->maxResourceVramUsedGB7;
+		default: return nullptr;
+		}
+	}
+
+	float getResourceVramPeak(size_t gpuIndex)
+	{
+		float *slot = getResourceVramPeakConfigSlot(gpuIndex);
+		return slot ? *slot : 0.0f;
+	}
+
+	void setResourceVramPeakPersisted(size_t gpuIndex, float value)
+	{
+		while (resourceVramPeakPersistedGB.getLength() <= gpuIndex)
+			resourceVramPeakPersistedGB.add(0.0f);
+		resourceVramPeakPersistedGB[gpuIndex] = value;
+	}
+
+	float getResourceVramPeakPersisted(size_t gpuIndex)
+	{
+		while (resourceVramPeakPersistedGB.getLength() <= gpuIndex)
+			resourceVramPeakPersistedGB.add(0.0f);
+		return resourceVramPeakPersistedGB[gpuIndex];
+	}
+
+	void updateResourceVramPeak(size_t gpuIndex, float usedGB)
+	{
+		float *slot = getResourceVramPeakConfigSlot(gpuIndex);
+		if (!slot || usedGB <= *slot)
+			return;
+		*slot = usedGB;
+		if (usedGB >= getResourceVramPeakPersisted(gpuIndex) + 0.1f)
+		{
+			setResourceVramPeakPersisted(gpuIndex, usedGB);
+			generalConfig.writeToFile();
+		}
+	}
+
+	void flushResourceVramPeaks()
+	{
+		bool requiresWrite = false;
+		for (size_t i = 0; i < 8; i++)
+		{
+			const float peak = getResourceVramPeak(i);
+			if (peak > getResourceVramPeakPersisted(i))
+			{
+				setResourceVramPeakPersisted(i, peak);
+				requiresWrite = true;
+			}
+		}
+		if (requiresWrite)
+			generalConfig.writeToFile();
+	}
+#endif
+
 	bool cachedHasUnreadConsoleWarnings = false;
 #ifdef __linux__
 	bool pendingLinuxUpdate = false;
@@ -704,7 +802,9 @@ private:
 	float resourceCpuMax = 0.f;
 	float resourceCpuAvg = 0.f;
 	float resourceRamUsedGB = 0.f;
+	float resourceRamPeakPersistedGB = 0.f;
 	float resourceRamTotalGB = 0.f;
+	bbe::List<float> resourceVramPeakPersistedGB;
 	struct GpuInfo
 	{
 		std::string label;
@@ -1063,6 +1163,12 @@ public:
 #endif
 
 		bbe::simpleFile::backup::setBackupPath(generalConfig->backupPath);
+
+#ifdef __linux__
+		resourceRamPeakPersistedGB = generalConfig->maxResourceRamUsedGB;
+		for (size_t i = 0; i < 8; i++)
+			setResourceVramPeakPersisted(i, getResourceVramPeak(i));
+#endif
 
 		// Initialize ChatGPTComm with the API key if available
 		if (!chatGPTConfig->apiKey.isEmpty())
@@ -2573,6 +2679,7 @@ public:
 					}
 				resourceRamTotalGB = memTotal / (1024.0f * 1024.0f);
 				resourceRamUsedGB  = (memTotal - memAvail) / (1024.0f * 1024.0f);
+				updateResourceRamPeak(resourceRamUsedGB);
 			}
 		}
 		{
@@ -2751,6 +2858,12 @@ public:
 		if (gpuQueryFuture.valid() && gpuQueryFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 		{
 			cachedGpuResult = gpuQueryFuture.get();
+			for (size_t gi = 0; gi < cachedGpuResult.gpus.size(); gi++)
+			{
+				const GpuInfo &gpu = cachedGpuResult.gpus[gi];
+				if (gpu.vramTotalMB > 0)
+					updateResourceVramPeak(gi, gpu.vramUsedMB / 1024.0f);
+			}
 		}
 
 		auto colorBar = [](float fraction, const char *overlay)
@@ -2812,7 +2925,7 @@ public:
 		if (resourceRamTotalGB > 0)
 		{
 			char ramOverlay[64];
-			snprintf(ramOverlay, sizeof(ramOverlay), "%.1f / %.1f GB", resourceRamUsedGB, resourceRamTotalGB);
+			snprintf(ramOverlay, sizeof(ramOverlay), "%.1f / %.1f GB  Peak %.1f GB", resourceRamUsedGB, resourceRamTotalGB, generalConfig->maxResourceRamUsedGB);
 			colorBar(resourceRamUsedGB / resourceRamTotalGB, ramOverlay);
 		}
 
@@ -2834,7 +2947,7 @@ public:
 				float usedGB  = gpu.vramUsedMB  / 1024.0f;
 				float totalGB = gpu.vramTotalMB / 1024.0f;
 				char vramOverlay[64];
-				snprintf(vramOverlay, sizeof(vramOverlay), "VRAM: %.1f / %.1f GB", usedGB, totalGB);
+				snprintf(vramOverlay, sizeof(vramOverlay), "VRAM: %.1f / %.1f GB  Peak %.1f GB", usedGB, totalGB, getResourceVramPeak(gi));
 				colorBar(gpu.vramUsedMB / gpu.vramTotalMB, vramOverlay);
 			}
 		}
@@ -4400,6 +4513,10 @@ public:
 	}
 	virtual void onEnd() override
 	{
+#ifdef __linux__
+		flushResourceRamPeak();
+		flushResourceVramPeaks();
+#endif
 	}
 };
 
