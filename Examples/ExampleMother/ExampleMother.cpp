@@ -4122,14 +4122,19 @@ public:
 #if defined(_WIN32) || defined(__linux__)
 				static bool updatePathExists = false;
 				static bool updatePathNewer = false;
+				static bbe::String cachedUpdatePath;
 				// Avoiding multiple IO calls.
-				EVERY_SECONDS(60)
+				if (cachedUpdatePath != generalConfig->updatePath)
 				{
-					if (!updatePathExists)
-					{
-						updatePathExists = bbe::simpleFile::doesFileExist(generalConfig->updatePath);
-					}
-					else
+					cachedUpdatePath = generalConfig->updatePath;
+					updatePathExists = false;
+					updatePathNewer = false;
+				}
+				EVERY_SECONDS(5)
+				{
+					updatePathExists = !generalConfig->updatePath.isEmpty() && bbe::simpleFile::doesFileExist(generalConfig->updatePath);
+					updatePathNewer = false;
+					if (updatePathExists)
 					{
 						const auto updateModTime = bbe::simpleFile::getLastModifyTime(generalConfig->updatePath);
 						const auto thisModTime = bbe::simpleFile::getLastModifyTime(bbe::simpleFile::getExecutablePath());
@@ -4139,35 +4144,39 @@ public:
 						}
 					}
 				}
-				if (updatePathExists)
+				ImGui::BeginDisabled(!updatePathExists);
+				if (ImGui::Button("Update"))
 				{
-					if (ImGui::Button("Update"))
-					{
 #ifdef _WIN32
-						bbe::String batchFileName = "update.bat";
-						bbe::simpleFile::deleteFile(batchFileName);
+					bbe::String batchFileName = "update.bat";
+					bbe::simpleFile::deleteFile(batchFileName);
 
-						{
-							std::ofstream file;
-							file.open(batchFileName.getRaw(), std::ios::out);
-
-							file << "taskkill /f /im ExampleMother.exe\n";
-							file << "xcopy /s /y \"" + bbe::String(generalConfig->updatePath) + "\" " + bbe::simpleFile::getExecutablePath() + "\n";
-							file << "start ExampleMother.exe\n";
-							file << "del update.bat\n";
-						}
-
-						bbe::simpleFile::executeBatchFile("update.bat");
-#else
-						requestLinuxSelfUpdate(generalConfig->updatePath);
-#endif
-					}
-					if (updatePathNewer)
 					{
-						ImGui::SameLine();
-						ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "(!)");
-						ImGui::bbe::tooltip("The update path is newer than this version!");
+						std::ofstream file;
+						file.open(batchFileName.getRaw(), std::ios::out);
+
+						file << "taskkill /f /im ExampleMother.exe\n";
+						file << "xcopy /s /y \"" + bbe::String(generalConfig->updatePath) + "\" " + bbe::simpleFile::getExecutablePath() + "\n";
+						file << "start ExampleMother.exe\n";
+						file << "del update.bat\n";
 					}
+
+					bbe::simpleFile::executeBatchFile("update.bat");
+#else
+					requestLinuxSelfUpdate(generalConfig->updatePath);
+#endif
+				}
+				ImGui::EndDisabled();
+				if (!updatePathExists)
+				{
+					ImGui::SameLine();
+					ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Update path missing");
+				}
+				else if (updatePathNewer)
+				{
+					ImGui::SameLine();
+					ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "(!)");
+					ImGui::bbe::tooltip("The update path is newer than this version!");
 				}
 #endif
 #ifdef _WIN32
