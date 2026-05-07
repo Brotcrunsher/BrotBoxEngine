@@ -1648,7 +1648,15 @@ namespace gitReview
 				if (cpp)
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.f, 0.f, 0.f));
 				ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 0.0f);
-				ImGui::InputTextMultiline(inputLabel, buf.data(), static_cast<int>(buf.size()), ImVec2(innerWL, paneH), fl, vectorResizeCallback, &buf);
+				const bool edited = ImGui::InputTextMultiline(inputLabel, buf.data(), static_cast<int>(buf.size()), ImVec2(innerWL, paneH), fl,
+					vectorResizeCallback, &buf);
+				const ImGuiID inputId = ImGui::GetItemID();
+				if (edited && pane == M3PaneCol::Work)
+				{
+					cachedMergeThreePaneRows(app);
+					if (ImGuiInputTextState *st = ImGui::GetInputTextState(inputId))
+						st->ReloadUserBufAndKeepSelection();
+				}
 				ImGui::PopStyleVar();
 				if (cpp)
 					ImGui::PopStyleColor();
@@ -1656,7 +1664,6 @@ namespace gitReview
 
 				if (cpp)
 				{
-					const ImGuiID inputId = ImGui::GetItemID();
 					ImGui::SetCursorPos(ImVec2(gutterW, 0.f));
 					ImGuiInputTextState *st = ImGui::GetInputTextState(inputId);
 					const float scrollX = st ? st->Scroll.x : 0.f;
@@ -2144,15 +2151,21 @@ namespace gitReview
 			const bool cppHlRight = pathLooksLikeCpp(app.selection->path);
 			if (cppHlRight)
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.f, 0.f, 0.f));
-			ImGui::InputTextMultiline("##rightEditMain", buf.data(), static_cast<int>(buf.size()), ImVec2(textW, paneH), editFlags, vectorResizeCallback,
-				&buf);
+			const bool rightEdited = ImGui::InputTextMultiline("##rightEditMain", buf.data(), static_cast<int>(buf.size()), ImVec2(textW, paneH), editFlags,
+				vectorResizeCallback, &buf);
+			const ImGuiID rightInputId = ImGui::GetItemID();
+			if (rightEdited && app.rightSideIsWorktreeFile)
+			{
+				cachedDiffRows(app);
+				if (ImGuiInputTextState *rightState = ImGui::GetInputTextState(rightInputId))
+					rightState->ReloadUserBufAndKeepSelection();
+			}
 			if (cppHlRight)
 				ImGui::PopStyleColor();
 			ImGui::PopStyleColor(3);
 
 			if (cppHlRight)
 			{
-				const ImGuiID rightInputId = ImGui::GetItemID();
 				ImGui::SetCursorPos(ImVec2(gutterW, 0.f));
 				ImGuiInputTextState *rightState = ImGui::GetInputTextState(rightInputId);
 				const float rightScrollX = rightState ? rightState->Scroll.x : 0.f;
