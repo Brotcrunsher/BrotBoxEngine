@@ -466,6 +466,17 @@ namespace gitReview
 			}
 		}
 
+		void drawFixedDiffLineNumberGutter(ImDrawList *dl, const ImVec2 &contentTopLeft, float gutterW, float paneH, float lineH, float padY,
+			int rowBegin, int rowEnd, const std::vector<int> &nums, ImU32 textCol, ImU32 ruleCol)
+		{
+			const ImRect clipR(ImGui::GetCurrentWindow()->InnerClipRect);
+			const ImVec2 fixedTopLeft(clipR.Min.x, contentTopLeft.y);
+			const ImU32 bgCol = ImGui::GetColorU32(ImGuiCol_WindowBg);
+			dl->AddRectFilled(fixedTopLeft, ImVec2(fixedTopLeft.x + gutterW, fixedTopLeft.y + paneH), bgCol);
+			drawDiffLineNumberGutter(dl, fixedTopLeft, gutterW, lineH, padY, rowBegin, rowEnd, nums, textCol);
+			dl->AddLine(ImVec2(fixedTopLeft.x + gutterW, fixedTopLeft.y), ImVec2(fixedTopLeft.x + gutterW, fixedTopLeft.y + paneH), ruleCol, 1.f);
+		}
+
 		static std::vector<std::string> untrackedPathsToIgnoreFromSelection(const ReviewAppState &app)
 		{
 			std::vector<std::string> out;
@@ -1619,10 +1630,8 @@ namespace gitReview
 				{
 					drawMergePaneBackground(dll, ImVec2(innerL.x + gutterW, innerL.y), innerWL, lineH, padXL, padYL, clipBg.DisplayStart, clipBg.DisplayEnd,
 						rows, app.cachedMergeConflictLineRanges, branchDiffCol, conflictCol);
-					drawDiffLineNumberGutter(dll, innerL, gutterW, lineH, padYL, clipBg.DisplayStart, clipBg.DisplayEnd, gutNums, gutterTextCol);
 				}
 
-				dll->AddLine(ImVec2(innerL.x + gutterW, innerL.y), ImVec2(innerL.x + gutterW, innerL.y + paneH), gutterRuleCol, 1.f);
 				ImGui::SetCursorPos(ImVec2(gutterW, 0.f));
 
 				if (buf.empty())
@@ -1679,6 +1688,14 @@ namespace gitReview
 							drawCppSyntaxLineOverlay(ov, font, fontSz, linePos, ln, scrollX, clipR.Min, clipR.Max, textBase);
 						}
 					}
+				}
+				ImGui::SetCursorPos(ImVec2(0.f, 0.f));
+				ImGuiListClipper clipGut;
+				clipGut.Begin(static_cast<int>(rows.size()), lineH);
+				while (clipGut.Step())
+				{
+					drawFixedDiffLineNumberGutter(dll, innerL, gutterW, paneH, lineH, padYL, clipGut.DisplayStart, clipGut.DisplayEnd, gutNums,
+						gutterTextCol, gutterRuleCol);
 				}
 				ImGui::EndChild();
 			};
@@ -2027,13 +2044,9 @@ namespace gitReview
 			clipperLeftHL.Begin(static_cast<int>(rows.size()), lineH);
 			while (clipperLeftHL.Step())
 			{
-				drawDiffLineNumberGutter(dll, innerL, gutterW, lineH, padYL, clipperLeftHL.DisplayStart, clipperLeftHL.DisplayEnd, leftLineNums,
-					gutterTextCol);
 				drawLeftPaneHighlights(dll, ImVec2(innerL.x + gutterW, innerL.y), innerWL, lineH, padXL, padYL, clipperLeftHL.DisplayStart,
 					clipperLeftHL.DisplayEnd, rows, largeFB, delc, muted);
 			}
-
-			dll->AddLine(ImVec2(innerL.x + gutterW, innerL.y), ImVec2(innerL.x + gutterW, innerL.y + paneH), gutterRuleCol, 1.f);
 
 			ImGui::SetCursorPos(ImVec2(gutterW, 0.f));
 
@@ -2080,6 +2093,14 @@ namespace gitReview
 					}
 				}
 			}
+			ImGui::SetCursorPos(ImVec2(0.f, 0.f));
+			ImGuiListClipper clipperLeftGut;
+			clipperLeftGut.Begin(static_cast<int>(rows.size()), lineH);
+			while (clipperLeftGut.Step())
+			{
+				drawFixedDiffLineNumberGutter(dll, innerL, gutterW, paneH, lineH, padYL, clipperLeftGut.DisplayStart, clipperLeftGut.DisplayEnd,
+					leftLineNums, gutterTextCol, gutterRuleCol);
+			}
 		}
 		ImGui::EndChild();
 
@@ -2099,12 +2120,9 @@ namespace gitReview
 			clipperHL.Begin(static_cast<int>(rows.size()), lineH);
 			while (clipperHL.Step())
 			{
-				drawDiffLineNumberGutter(dl, inner0, gutterW, lineH, padY, clipperHL.DisplayStart, clipperHL.DisplayEnd, rightLineNums, gutterTextCol);
 				drawRightPaneHighlights(dl, ImVec2(inner0.x + gutterW, inner0.y), textW, lineH, padX, padY, clipperHL.DisplayStart, clipperHL.DisplayEnd, rows,
 					largeFB, addc, chgcol, muted);
 			}
-
-			dl->AddLine(ImVec2(inner0.x + gutterW, inner0.y), ImVec2(inner0.x + gutterW, inner0.y + paneH), gutterRuleCol, 1.f);
 
 			ImGui::SetCursorPos(ImVec2(gutterW, 0.f));
 
@@ -2154,6 +2172,14 @@ namespace gitReview
 						drawCppSyntaxLineOverlay(ov, font, fontSz, linePos, ln, rightScrollX, clipR.Min, clipR.Max, textBase);
 					}
 				}
+			}
+			ImGui::SetCursorPos(ImVec2(0.f, 0.f));
+			ImGuiListClipper clipperRightGut;
+			clipperRightGut.Begin(static_cast<int>(rows.size()), lineH);
+			while (clipperRightGut.Step())
+			{
+				drawFixedDiffLineNumberGutter(dl, inner0, gutterW, paneH, lineH, padY, clipperRightGut.DisplayStart, clipperRightGut.DisplayEnd,
+					rightLineNums, gutterTextCol, gutterRuleCol);
 			}
 		}
 		ImGui::EndChild();
