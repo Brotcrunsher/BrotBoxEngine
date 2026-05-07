@@ -356,6 +356,11 @@ namespace gitReview
 		app.leftViewBuffer.push_back('\0');
 		app.rightEditBuffer.clear();
 		app.rightEditBuffer.push_back('\0');
+		app.rightEditUndoStack.clear();
+		app.rightEditRedoStack.clear();
+		app.rightEditUndoChunkActive = false;
+		app.rightEditUndoLastSeconds = -1000.0;
+		app.rightEditUndoLastLineCount = 0;
 		app.rightSideIsWorktreeFile = false;
 		app.binaryFile = false;
 		app.cachedDiffLeft.clear();

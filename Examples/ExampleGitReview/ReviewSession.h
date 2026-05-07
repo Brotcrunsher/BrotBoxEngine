@@ -49,6 +49,11 @@ namespace gitReview
 		std::vector<char> leftViewBuffer;
 		/// Null-terminated buffer for the right side (ImGui + diff); excludes the trailing '\0' from text comparisons.
 		std::vector<char> rightEditBuffer;
+		std::vector<std::string> rightEditUndoStack;
+		std::vector<std::string> rightEditRedoStack;
+		bool rightEditUndoChunkActive = false;
+		double rightEditUndoLastSeconds = -1000.0;
+		int rightEditUndoLastLineCount = 0;
 		/// Canonical working-tree text last loaded from disk or written by Save; used for the unsaved (*) indicator.
 		std::string rightWorktreeSavedCanon;
 		bool rightSideIsWorktreeFile = false;

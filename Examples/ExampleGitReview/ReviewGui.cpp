@@ -59,6 +59,94 @@ namespace gitReview
 			return app.diffScrollX;
 		}
 
+		static void setBufferText(std::vector<char> &buf, const std::string &text)
+		{
+			buf.assign(text.begin(), text.end());
+			buf.push_back('\0');
+		}
+
+		static int diffLineCount(const std::string &text)
+		{
+			return static_cast<int>(splitLinesForDiff(text).size());
+		}
+
+		static void pushUndoSnapshot(std::vector<std::string> &stack, const std::string &text)
+		{
+			if (!stack.empty() && stack.back() == text)
+				return;
+			if (stack.size() >= 128)
+				stack.erase(stack.begin());
+			stack.push_back(text);
+		}
+
+		static void noteRightEditForUndo(ReviewAppState &app, const std::string &before, const std::string &after)
+		{
+			if (before == after)
+				return;
+
+			const double now = ImGui::GetTime();
+			const int beforeLines = diffLineCount(before);
+			const int afterLines = diffLineCount(after);
+			const size_t sizeDelta = before.size() > after.size() ? before.size() - after.size() : after.size() - before.size();
+			const bool structuralEdit = beforeLines != afterLines || sizeDelta > 1;
+			const bool newChunk = !app.rightEditUndoChunkActive || now - app.rightEditUndoLastSeconds > 0.8 || structuralEdit ||
+								  beforeLines != app.rightEditUndoLastLineCount;
+
+			if (newChunk)
+				pushUndoSnapshot(app.rightEditUndoStack, before);
+
+			app.rightEditRedoStack.clear();
+			app.rightEditUndoChunkActive = true;
+			app.rightEditUndoLastSeconds = now;
+			app.rightEditUndoLastLineCount = afterLines;
+		}
+
+		static void applyRightEditSnapshot(ReviewAppState &app, const std::string &text, ImGuiID inputId)
+		{
+			setBufferText(app.rightEditBuffer, text);
+			if (app.mergeThreeWayUnmerged)
+			{
+				app.cachedMergeBlobKey.clear();
+				app.cachedMergeWorkRaw.clear();
+				app.cachedMergeRows.clear();
+				cachedMergeThreePaneRows(app);
+			}
+			else
+			{
+				app.cachedDiffRight.clear();
+				app.cachedDiffRows.clear();
+				cachedDiffRows(app);
+			}
+			if (ImGuiInputTextState *st = ImGui::GetInputTextState(inputId))
+				st->ReloadUserBufAndKeepSelection();
+		}
+
+		static bool undoRightEdit(ReviewAppState &app, ImGuiID inputId)
+		{
+			if (app.rightEditUndoStack.empty())
+				return false;
+			const std::string current = rightBufferText(app);
+			const std::string target = std::move(app.rightEditUndoStack.back());
+			app.rightEditUndoStack.pop_back();
+			pushUndoSnapshot(app.rightEditRedoStack, current);
+			app.rightEditUndoChunkActive = false;
+			applyRightEditSnapshot(app, target, inputId);
+			return true;
+		}
+
+		static bool redoRightEdit(ReviewAppState &app, ImGuiID inputId)
+		{
+			if (app.rightEditRedoStack.empty())
+				return false;
+			const std::string current = rightBufferText(app);
+			const std::string target = std::move(app.rightEditRedoStack.back());
+			app.rightEditRedoStack.pop_back();
+			pushUndoSnapshot(app.rightEditUndoStack, current);
+			app.rightEditUndoChunkActive = false;
+			applyRightEditSnapshot(app, target, inputId);
+			return true;
+		}
+
 		static void drawSharedHorizontalScrollbar(ReviewAppState &app, const char *id, float visibleW, float contentW)
 		{
 			const float scrollBarH = ImGui::GetStyle().ScrollbarSize + ImGui::GetStyle().FramePadding.y * 2.f;
@@ -1639,10 +1727,11 @@ namespace gitReview
 				if (buf.capacity() < buf.size() + 1024u)
 					buf.reserve(buf.size() + 2048u);
 
+				const std::string undoBefore = readOnly ? std::string{} : rightBufferText(app);
 				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
 				ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
 				ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.f, 0.f, 0.f, 0.f));
-				ImGuiInputTextFlags fl = ImGuiInputTextFlags_CallbackResize | (readOnly ? ImGuiInputTextFlags_ReadOnly : 0);
+				ImGuiInputTextFlags fl = ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_NoUndoRedo | (readOnly ? ImGuiInputTextFlags_ReadOnly : 0);
 				if (!readOnly)
 					fl |= ImGuiInputTextFlags_AllowTabInput;
 				if (cpp)
@@ -1654,8 +1743,16 @@ namespace gitReview
 				if (edited && pane == M3PaneCol::Work)
 				{
 					cachedMergeThreePaneRows(app);
+					noteRightEditForUndo(app, undoBefore, rightBufferText(app));
 					if (ImGuiInputTextState *st = ImGui::GetInputTextState(inputId))
 						st->ReloadUserBufAndKeepSelection();
+				}
+				if (!readOnly && ImGui::IsItemActive())
+				{
+					if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Z))
+						undoRightEdit(app, inputId);
+					if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Y))
+						redoRightEdit(app, inputId);
 				}
 				ImGui::PopStyleVar();
 				if (cpp)
@@ -2133,7 +2230,7 @@ namespace gitReview
 
 			ImGui::SetCursorPos(ImVec2(gutterW, 0.f));
 
-			ImGuiInputTextFlags editFlags = ImGuiInputTextFlags_CallbackResize;
+			ImGuiInputTextFlags editFlags = ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_NoUndoRedo;
 			if (!app.rightSideIsWorktreeFile)
 				editFlags |= ImGuiInputTextFlags_ReadOnly;
 			if (app.rightSideIsWorktreeFile)
@@ -2145,6 +2242,7 @@ namespace gitReview
 			if (buf.capacity() < buf.size() + 1024u)
 				buf.reserve(buf.size() + 2048u);
 
+			const std::string undoBefore = app.rightSideIsWorktreeFile ? rightBufferText(app) : std::string{};
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
 			ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
 			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.f, 0.f, 0.f, 0.f));
@@ -2157,8 +2255,16 @@ namespace gitReview
 			if (rightEdited && app.rightSideIsWorktreeFile)
 			{
 				cachedDiffRows(app);
+				noteRightEditForUndo(app, undoBefore, rightBufferText(app));
 				if (ImGuiInputTextState *rightState = ImGui::GetInputTextState(rightInputId))
 					rightState->ReloadUserBufAndKeepSelection();
+			}
+			if (app.rightSideIsWorktreeFile && ImGui::IsItemActive())
+			{
+				if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Z))
+					undoRightEdit(app, rightInputId);
+				if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Y))
+					redoRightEdit(app, rightInputId);
 			}
 			if (cppHlRight)
 				ImGui::PopStyleColor();
