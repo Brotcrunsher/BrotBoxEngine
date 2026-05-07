@@ -94,7 +94,8 @@ struct GeneralConfig
 		((float), maxResourceVramUsedGB4, 0.0f),
 		((float), maxResourceVramUsedGB5, 0.0f),
 		((float), maxResourceVramUsedGB6, 0.0f),
-		((float), maxResourceVramUsedGB7, 0.0f))
+		((float), maxResourceVramUsedGB7, 0.0f),
+		((bool), monitorDimmingEnabled, true))
 };
 
 struct KeyboardTracker
@@ -1648,14 +1649,17 @@ public:
 
 #if defined(_WIN32) || defined(__linux__)
 		beginMeasure("Monitor Dim");
-		if (!monitorBrightnessOverwrite)
+		if (generalConfig->monitorDimmingEnabled)
 		{
-			monitorBrightness = getMonitorDim();
+			if (!monitorBrightnessOverwrite)
+			{
+				monitorBrightness = getMonitorDim();
+			}
+			monitor.setBrightness(
+				{ monitorBrightness * generalConfig->baseMonitorBrightness1,
+				  monitorBrightness * generalConfig->baseMonitorBrightness2,
+				  monitorBrightness * generalConfig->baseMonitorBrightness3 });
 		}
-		monitor.setBrightness(
-			{ monitorBrightness * generalConfig->baseMonitorBrightness1,
-			  monitorBrightness * generalConfig->baseMonitorBrightness2,
-			  monitorBrightness * generalConfig->baseMonitorBrightness3 });
 #endif
 #if defined(_WIN32) || defined(__linux__)
 		beginMeasure("Working Hours");
@@ -3125,6 +3129,7 @@ public:
 		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 1", &generalConfig->baseMonitorBrightness1, 0.0f, 1.0f);
 		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 2", &generalConfig->baseMonitorBrightness2, 0.0f, 1.0f);
 		generalConfigChanged |= ImGui::SliderFloat("Base Monitor Brightness 3", &generalConfig->baseMonitorBrightness3, 0.0f, 1.0f);
+		generalConfigChanged |= ImGui::Checkbox("Monitor Dimming Enabled", &generalConfig->monitorDimmingEnabled);
 
 		if (ImGui::Button("Remember Window Position"))
 		{
@@ -4437,12 +4442,18 @@ public:
 				ImGui::Checkbox("Render Whether", &renderWhether);
 
 #if defined(_WIN32) || defined(__linux__)
+				ImGui::BeginDisabled(!generalConfig->monitorDimmingEnabled);
 				ImGui::Checkbox("Overwrite Monitor Brightness", &monitorBrightnessOverwrite);
-				ImGui::BeginDisabled(!monitorBrightnessOverwrite);
+				if (!generalConfig->monitorDimmingEnabled && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort | ImGuiHoveredFlags_AllowWhenDisabled))
+				{
+					ImGui::SetTooltip("Monitor dimming is disabled in the config.");
+				}
+				ImGui::BeginDisabled(!monitorBrightnessOverwrite || !generalConfig->monitorDimmingEnabled);
 				ImGui::SameLine();
 				ImGui::PushItemWidth(100);
 				ImGui::SliderFloat("##Monitor Brightness", &monitorBrightness, 0.0, 1.0);
 				ImGui::PopItemWidth();
+				ImGui::EndDisabled();
 				ImGui::EndDisabled();
 #endif
 
