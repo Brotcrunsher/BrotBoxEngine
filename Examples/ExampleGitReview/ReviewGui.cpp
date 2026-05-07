@@ -27,6 +27,48 @@ namespace gitReview
 			return s.substr(0, maxLen - 3) + "...";
 		}
 
+		static float maxDiffPaneTextWidth(const std::vector<DiffRow> &rows, bool left)
+		{
+			float ret = 0.f;
+			for (const DiffRow &row : rows)
+			{
+				const std::string &line = left ? row.leftLine : row.rightLine;
+				ret = std::max(ret, ImGui::CalcTextSize(line.data(), line.data() + line.size(), false).x);
+			}
+			return ret;
+		}
+
+		static float maxMergePaneTextWidth(const std::vector<MergeThreePaneRow> &rows, int pane)
+		{
+			float ret = 0.f;
+			for (const MergeThreePaneRow &row : rows)
+			{
+				const std::string *line = &row.oursLine;
+				if (pane == 1)
+					line = &row.workLine;
+				else if (pane == 2)
+					line = &row.theirsLine;
+				ret = std::max(ret, ImGui::CalcTextSize(line->data(), line->data() + line->size(), false).x);
+			}
+			return ret;
+		}
+
+		static float clampSharedDiffScrollX(ReviewAppState &app, float maxScrollX)
+		{
+			app.diffScrollX = std::clamp(app.diffScrollX, 0.f, std::max(0.f, maxScrollX));
+			return app.diffScrollX;
+		}
+
+		static void drawSharedHorizontalScrollbar(ReviewAppState &app, const char *id, float visibleW, float contentW)
+		{
+			const float scrollBarH = ImGui::GetStyle().ScrollbarSize + ImGui::GetStyle().FramePadding.y * 2.f;
+			ImGui::SetNextWindowScroll(ImVec2(app.diffScrollX, -1.f));
+			ImGui::BeginChild(id, ImVec2(visibleW, scrollBarH), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+			ImGui::Dummy(ImVec2(std::max(visibleW, contentW), 1.f));
+			app.diffScrollX = ImGui::GetScrollX();
+			ImGui::EndChild();
+		}
+
 		static int vectorResizeCallback(ImGuiInputTextCallbackData *data)
 		{
 			if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
@@ -1467,10 +1509,12 @@ namespace gitReview
 				ImGui::TextColored(ImVec4(0.9f, 0.75f, 0.3f, 1.f), "Large diff — line-level only.");
 			}
 
-			const float mapBarW = 18.f;
-			const float footer = app.rightSideIsWorktreeFile ? 104.f : 84.f;
-			ImGui::BeginChild("diffScroll", ImVec2(-(mapBarW + ImGui::GetStyle().ItemSpacing.x), -footer), true,
-				ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar);
+		const float mapBarW = 18.f;
+		const float footer = app.rightSideIsWorktreeFile ? 104.f : 84.f;
+		const float sharedScrollbarH = ImGui::GetStyle().ScrollbarSize + ImGui::GetStyle().FramePadding.y * 2.f;
+		const float diffAreaW = std::max(120.f, ImGui::GetContentRegionAvail().x - (mapBarW + ImGui::GetStyle().ItemSpacing.x));
+		ImGui::BeginGroup();
+		ImGui::BeginChild("diffScroll", ImVec2(diffAreaW, -(footer + sharedScrollbarH)), true, ImGuiWindowFlags_NoScrollbar);
 
 			if (app.diffScrollToFirstChange)
 			{
@@ -1521,7 +1565,6 @@ namespace gitReview
 			const ImVec4 branchDiffCol(0.95f, 0.82f, 0.35f, 1.f);
 			const ImVec4 conflictCol(0.85f, 0.45f, 0.95f, 1.f);
 
-			const float colW = std::max(100.f, (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 2.f) / 3.f);
 			const float contentH = static_cast<float>(rows.size()) * lineH;
 			const ImGuiStyle &styleRef = ImGui::GetStyle();
 			// InputTextMultiline ends with a Dummy(text_size_y + FramePadding.y); editable fields can still get
@@ -1535,6 +1578,13 @@ namespace gitReview
 			const float gutterWO = diffGutterWidth(gutO, gutO);
 			const float gutterWW = diffGutterWidth(gutW, gutW);
 			const float gutterWT = diffGutterWidth(gutT, gutT);
+			const float diffScrollVisibleW = ImGui::GetContentRegionAvail().x;
+			const float visibleColW = std::max(100.f, (diffScrollVisibleW - ImGui::GetStyle().ItemSpacing.x * 2.f) / 3.f);
+			const float colWO = std::max(visibleColW, gutterWO + maxMergePaneTextWidth(rows, 0) + styleRef.FramePadding.x * 2.f);
+			const float colWW = std::max(visibleColW, gutterWW + maxMergePaneTextWidth(rows, 1) + styleRef.FramePadding.x * 2.f);
+			const float colWT = std::max(visibleColW, gutterWT + maxMergePaneTextWidth(rows, 2) + styleRef.FramePadding.x * 2.f);
+			const float sharedMaxScrollX = std::max({ colWO - visibleColW, colWW - visibleColW, colWT - visibleColW });
+			const float sharedScrollX = clampSharedDiffScrollX(app, sharedMaxScrollX);
 			const ImU32 gutterTextCol = ImGui::ColorConvertFloat4ToU32(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
 			const ImU32 gutterRuleCol = IM_COL32(70, 70, 78, 140);
 
@@ -1547,9 +1597,10 @@ namespace gitReview
 			const bool cpp = pathLooksLikeCpp(app.selection->path);
 			float mergeRow0TextScreenY = 0.f;
 			bool haveMergeRow0Y = false;
-			auto drawOnePane = [&](M3PaneCol pane, const char *childWinId, const char *inputLabel, std::vector<char> &buf, bool readOnly, float gutterW,
+			auto drawOnePane = [&](M3PaneCol pane, const char *childWinId, const char *inputLabel, std::vector<char> &buf, bool readOnly, float colW, float gutterW,
 								const std::vector<int> &gutNums) {
-				ImGui::BeginChild(childWinId, ImVec2(colW, paneH), false, paneFlags);
+				ImGui::SetNextWindowScroll(ImVec2(sharedScrollX, -1.f));
+				ImGui::BeginChild(childWinId, ImVec2(visibleColW, paneH), false, paneFlags);
 				const ImGuiStyle &stl = ImGui::GetStyle();
 				const float padXL = stl.FramePadding.x;
 				const float padYL = stl.FramePadding.y;
@@ -1560,7 +1611,7 @@ namespace gitReview
 					mergeRow0TextScreenY = innerL.y + padYL;
 					haveMergeRow0Y = true;
 				}
-				const float innerWL = ImGui::GetContentRegionAvail().x - gutterW;
+				const float innerWL = colW - gutterW;
 
 				ImGuiListClipper clipBg;
 				clipBg.Begin(static_cast<int>(rows.size()), lineH);
@@ -1632,11 +1683,11 @@ namespace gitReview
 				ImGui::EndChild();
 			};
 
-			drawOnePane(M3PaneCol::Ours, "m3ours", "##mergeOurs", app.mergePaneOursBuf, true, gutterWO, gutO);
+			drawOnePane(M3PaneCol::Ours, "m3ours", "##mergeOurs", app.mergePaneOursBuf, true, colWO, gutterWO, gutO);
 			ImGui::SameLine(0.f, 0.f);
-			drawOnePane(M3PaneCol::Work, "m3work", "##mergeWork", app.rightEditBuffer, false, gutterWW, gutW);
+			drawOnePane(M3PaneCol::Work, "m3work", "##mergeWork", app.rightEditBuffer, false, colWW, gutterWW, gutW);
 			ImGui::SameLine(0.f, 0.f);
-			drawOnePane(M3PaneCol::Theirs, "m3theirs", "##mergeTheirs", app.mergePaneTheirsBuf, true, gutterWT, gutT);
+			drawOnePane(M3PaneCol::Theirs, "m3theirs", "##mergeTheirs", app.mergePaneTheirsBuf, true, colWT, gutterWT, gutT);
 
 			ImGuiWindow *mergeScrollWin = ImGui::GetCurrentWindow();
 			const ImGuiIO &ioMerge = ImGui::GetIO();
@@ -1708,6 +1759,8 @@ namespace gitReview
 			const float innerRectH = ImGui::GetCurrentWindow()->InnerRect.GetHeight();
 
 			ImGui::EndChild();
+			drawSharedHorizontalScrollbar(app, "##mergeSharedHorizontalScroll", diffScrollVisibleW, diffScrollVisibleW + sharedMaxScrollX);
+			ImGui::EndGroup();
 
 			ImGui::SameLine();
 			drawMergeThreeWayDiffMap(app, rows, mapBarW, scrollChildH, scrollY, scrollMaxY, innerRectH, lineH, app.cachedMergeConflictLineRanges);
@@ -1884,8 +1937,10 @@ namespace gitReview
 		const float mapBarW = 18.f;
 
 		const float footer = app.rightSideIsWorktreeFile ? 104.f : 84.f;
-		ImGui::BeginChild("diffScroll", ImVec2(-(mapBarW + ImGui::GetStyle().ItemSpacing.x), -footer), true,
-			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar);
+		const float sharedScrollbarH = ImGui::GetStyle().ScrollbarSize + ImGui::GetStyle().FramePadding.y * 2.f;
+		const float diffAreaW = std::max(120.f, ImGui::GetContentRegionAvail().x - (mapBarW + ImGui::GetStyle().ItemSpacing.x));
+		ImGui::BeginGroup();
+		ImGui::BeginChild("diffScroll", ImVec2(diffAreaW, -(footer + sharedScrollbarH)), true, ImGuiWindowFlags_NoScrollbar);
 
 		if (app.diffScrollToFirstChange)
 		{
@@ -1938,31 +1993,35 @@ namespace gitReview
 		const ImVec4 muted(0.45f, 0.45f, 0.5f, 1.f);
 		const ImVec4 chgcol(0.95f, 0.82f, 0.35f, 1.f);
 
-		const float totalW = ImGui::GetContentRegionAvail().x;
-		const float halfW = std::max(80.f, totalW * 0.5f - 6.f);
 		const float contentH = static_cast<float>(rows.size()) * lineH;
 		// Multiline InputText adds a Dummy of (lines * FontSize + FramePadding.y); without slack the inner
 		// child gets ScrollMaxY > 0 and captures the mouse wheel instead of the outer diff scroll.
 		const ImGuiStyle &styleRef = ImGui::GetStyle();
 		const float paneH = contentH + styleRef.FramePadding.y * 2.f;
-		// NoScrollbar on these children blocks forwarding wheel to the parent (see ImGui changelog 2017/12/14).
-		const ImGuiWindowFlags paneFlags = ImGuiWindowFlags_NoScrollWithMouse;
+		const ImGuiWindowFlags paneFlags = ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar;
 
 		std::vector<int> leftLineNums;
 		std::vector<int> rightLineNums;
 		computeSideLineNumbers(rows, leftLineNums, rightLineNums);
 		const float gutterW = diffGutterWidth(leftLineNums, rightLineNums);
+		const float diffScrollVisibleW = ImGui::GetContentRegionAvail().x;
+		const float visibleHalfW = std::max(80.f, diffScrollVisibleW * 0.5f - 6.f);
+		const float leftContentW = std::max(visibleHalfW, gutterW + maxDiffPaneTextWidth(rows, true) + styleRef.FramePadding.x * 2.f);
+		const float rightContentW = std::max(visibleHalfW, gutterW + maxDiffPaneTextWidth(rows, false) + styleRef.FramePadding.x * 2.f);
+		const float sharedMaxScrollX = std::max(leftContentW - visibleHalfW, rightContentW - visibleHalfW);
+		const float sharedScrollX = clampSharedDiffScrollX(app, sharedMaxScrollX);
 		const ImU32 gutterTextCol = ImGui::ColorConvertFloat4ToU32(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
 		const ImU32 gutterRuleCol = IM_COL32(70, 70, 78, 140);
 
-		ImGui::BeginChild("diffLeftCol", ImVec2(halfW, paneH), false, paneFlags);
+		ImGui::SetNextWindowScroll(ImVec2(sharedScrollX, -1.f));
+		ImGui::BeginChild("diffLeftCol", ImVec2(visibleHalfW, paneH), false, paneFlags);
 		{
 			const ImGuiStyle &stl = ImGui::GetStyle();
 			const float padXL = stl.FramePadding.x;
 			const float padYL = stl.FramePadding.y;
 			ImDrawList *dll = ImGui::GetWindowDrawList();
 			const ImVec2 innerL = ImGui::GetCursorScreenPos();
-			const float innerWL = ImGui::GetContentRegionAvail().x - gutterW;
+			const float innerWL = leftContentW - gutterW;
 
 			ImGuiListClipper clipperLeftHL;
 			clipperLeftHL.Begin(static_cast<int>(rows.size()), lineH);
@@ -2026,14 +2085,15 @@ namespace gitReview
 
 		ImGui::SameLine(0.f, 0.f);
 
-		ImGui::BeginChild("diffRightCol", ImVec2(0.f, paneH), false, paneFlags);
+		ImGui::SetNextWindowScroll(ImVec2(sharedScrollX, -1.f));
+		ImGui::BeginChild("diffRightCol", ImVec2(visibleHalfW, paneH), false, paneFlags);
 		{
 			const ImGuiStyle &st = ImGui::GetStyle();
 			const float padX = st.FramePadding.x;
 			const float padY = st.FramePadding.y;
 			ImDrawList *dl = ImGui::GetWindowDrawList();
 			const ImVec2 inner0 = ImGui::GetCursorScreenPos();
-			const float textW = ImGui::GetContentRegionAvail().x - gutterW;
+			const float textW = rightContentW - gutterW;
 
 			ImGuiListClipper clipperHL;
 			clipperHL.Begin(static_cast<int>(rows.size()), lineH);
@@ -2105,6 +2165,8 @@ namespace gitReview
 		const float innerRectH = ImGui::GetCurrentWindow()->InnerRect.GetHeight();
 
 		ImGui::EndChild();
+		drawSharedHorizontalScrollbar(app, "##diffSharedHorizontalScroll", diffScrollVisibleW, diffScrollVisibleW + sharedMaxScrollX);
+		ImGui::EndGroup();
 
 		ImGui::SameLine();
 		drawDiffMap(app, rows, mapBarW, scrollChildH, scrollY, scrollMaxY, innerRectH, lineH);

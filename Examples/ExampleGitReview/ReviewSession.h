@@ -80,6 +80,8 @@ namespace gitReview
 		bool diffScrollToFirstChange = false;
 		/// Last known scroll position of the diff view (updated each frame for button enable/disable).
 		float diffScrollY = 0.f;
+		/// Shared horizontal scroll position for side-by-side text panes.
+		float diffScrollX = 0.f;
 
 		// Diff-row cache: avoids rebuilding the side-by-side model every frame.
 		std::string cachedDiffLeft;

@@ -452,6 +452,7 @@ namespace gitReview
 			app.reviewMode = ReviewMode::Unstaged;
 		reloadDiffForSelection(app);
 		app.diffScrollY = 0.f;
+		app.diffScrollX = 0.f;
 		app.diffNavRequest = 0;
 		app.diffScrollToFirstChange = true;
 	}
