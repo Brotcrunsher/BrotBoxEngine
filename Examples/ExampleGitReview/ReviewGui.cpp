@@ -65,6 +65,64 @@ namespace gitReview
 			buf.push_back('\0');
 		}
 
+		static std::string bufferToString(const std::vector<char> &buf)
+		{
+			if (buf.empty())
+				return {};
+			if (buf.back() == '\0')
+				return buf.size() <= 1 ? std::string{} : std::string(buf.begin(), buf.end() - 1);
+			return std::string(buf.begin(), buf.end());
+		}
+
+		static int mapCursorByLineColumn(const std::string &beforeReload, const std::string &afterReload, int sourceCursor)
+		{
+			sourceCursor = std::clamp(sourceCursor, 0, static_cast<int>(beforeReload.size()));
+			int line = 0;
+			int column = 0;
+			for (int i = 0; i < sourceCursor; ++i)
+			{
+				if (beforeReload[static_cast<size_t>(i)] == '\n')
+				{
+					++line;
+					column = 0;
+				}
+				else
+				{
+					++column;
+				}
+			}
+
+			int currentLine = 0;
+			int currentColumn = 0;
+			for (int i = 0; i < static_cast<int>(afterReload.size()); ++i)
+			{
+				if (currentLine == line && currentColumn >= column)
+					return i;
+				if (afterReload[static_cast<size_t>(i)] == '\n')
+				{
+					if (currentLine == line)
+						return i;
+					++currentLine;
+					currentColumn = 0;
+				}
+				else
+				{
+					++currentColumn;
+				}
+			}
+			return static_cast<int>(afterReload.size());
+		}
+
+		static void reloadUserBufferPreservingCursor(ImGuiInputTextState *state, const std::string &beforeReload, const std::string &afterReload)
+		{
+			if (!state)
+				return;
+			const int mappedCursor = mapCursorByLineColumn(beforeReload, afterReload, state->GetCursorPos());
+			state->WantReloadUserBuf = true;
+			state->ReloadSelectionStart = mappedCursor;
+			state->ReloadSelectionEnd = mappedCursor;
+		}
+
 		static int diffLineCount(const std::string &text)
 		{
 			return static_cast<int>(splitLinesForDiff(text).size());
@@ -1742,10 +1800,21 @@ namespace gitReview
 				const ImGuiID inputId = ImGui::GetItemID();
 				if (edited && pane == M3PaneCol::Work)
 				{
+					const std::string rawAfterEdit = bufferToString(buf);
 					cachedMergeThreePaneRows(app);
 					noteRightEditForUndo(app, undoBefore, rightBufferText(app));
-					if (ImGuiInputTextState *st = ImGui::GetInputTextState(inputId))
-						st->ReloadUserBufAndKeepSelection();
+
+
+
+
+
+
+
+					if (bufferToString(buf) != rawAfterEdit)
+					{
+						if (ImGuiInputTextState *st = ImGui::GetInputTextState(inputId))
+							reloadUserBufferPreservingCursor(st, rawAfterEdit, bufferToString(buf));
+					}
 				}
 				if (!readOnly && ImGui::IsItemActive())
 				{
@@ -2254,10 +2323,21 @@ namespace gitReview
 			const ImGuiID rightInputId = ImGui::GetItemID();
 			if (rightEdited && app.rightSideIsWorktreeFile)
 			{
+				const std::string rawAfterEdit = bufferToString(buf);
 				cachedDiffRows(app);
 				noteRightEditForUndo(app, undoBefore, rightBufferText(app));
-				if (ImGuiInputTextState *rightState = ImGui::GetInputTextState(rightInputId))
-					rightState->ReloadUserBufAndKeepSelection();
+
+
+
+
+
+
+
+				if (bufferToString(buf) != rawAfterEdit)
+				{
+					if (ImGuiInputTextState *rightState = ImGui::GetInputTextState(rightInputId))
+						reloadUserBufferPreservingCursor(rightState, rawAfterEdit, bufferToString(buf));
+				}
 			}
 			if (app.rightSideIsWorktreeFile && ImGui::IsItemActive())
 			{
