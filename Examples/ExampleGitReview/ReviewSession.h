@@ -54,6 +54,8 @@ namespace gitReview
 		bool rightEditUndoChunkActive = false;
 		double rightEditUndoLastSeconds = -1000.0;
 		int rightEditUndoLastLineCount = 0;
+		std::vector<int> rightEditExtraCarets;
+		int rightEditLastPrimaryCursor = -1;
 		/// Canonical working-tree text last loaded from disk or written by Save; used for the unsaved (*) indicator.
 		std::string rightWorktreeSavedCanon;
 		bool rightSideIsWorktreeFile = false;

@@ -361,6 +361,8 @@ namespace gitReview
 		app.rightEditUndoChunkActive = false;
 		app.rightEditUndoLastSeconds = -1000.0;
 		app.rightEditUndoLastLineCount = 0;
+		app.rightEditExtraCarets.clear();
+		app.rightEditLastPrimaryCursor = -1;
 		app.rightSideIsWorktreeFile = false;
 		app.binaryFile = false;
 		app.cachedDiffLeft.clear();

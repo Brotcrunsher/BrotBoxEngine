@@ -9,11 +9,14 @@
 #include "imgui_internal.h"
 
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 #include <string>
 #include <unordered_set>
+#include <set>
 #include <vector>
 
 namespace gitReview
@@ -121,6 +124,204 @@ namespace gitReview
 			state->WantReloadUserBuf = true;
 			state->ReloadSelectionStart = mappedCursor;
 			state->ReloadSelectionEnd = mappedCursor;
+		}
+
+		static void reloadUserBufferAtCursor(ImGuiInputTextState *state, int cursor)
+		{
+			if (!state)
+				return;
+			state->WantReloadUserBuf = true;
+			state->ReloadSelectionStart = cursor;
+			state->ReloadSelectionEnd = cursor;
+		}
+
+		static std::vector<size_t> lineStartOffsets(const std::string &text)
+		{
+			std::vector<size_t> ret;
+			ret.push_back(0);
+			for (size_t i = 0; i < text.size(); ++i)
+			{
+				if (text[i] == '\n')
+					ret.push_back(i + 1);
+			}
+			return ret;
+		}
+
+		static void mergeDuplicateCarets(ReviewAppState &app, int primaryCursor, int textLength)
+		{
+			std::set<int> unique;
+			for (int caret : app.rightEditExtraCarets)
+			{
+				caret = std::clamp(caret, 0, textLength);
+				if (caret != primaryCursor)
+					unique.insert(caret);
+			}
+			app.rightEditExtraCarets.assign(unique.begin(), unique.end());
+		}
+
+		static int mouseToBufferOffset(const std::string &text, const ImVec2 &contentTopLeft, float gutterW, float padX, float padY, float lineH)
+		{
+			const ImGuiIO &io = ImGui::GetIO();
+			const std::vector<size_t> starts = lineStartOffsets(text);
+			if (starts.empty())
+				return 0;
+
+			int row = static_cast<int>((io.MousePos.y - (contentTopLeft.y + padY)) / lineH);
+			row = std::clamp(row, 0, static_cast<int>(starts.size()) - 1);
+			const size_t lineStart = starts[static_cast<size_t>(row)];
+			const size_t lineEnd = (row + 1 < static_cast<int>(starts.size())) ? starts[static_cast<size_t>(row + 1)] - 1 : text.size();
+			const float relX = std::max(0.f, io.MousePos.x - (contentTopLeft.x + gutterW + padX));
+
+			size_t best = lineStart;
+			float bestDist = std::numeric_limits<float>::max();
+			for (size_t p = lineStart; p <= lineEnd; ++p)
+			{
+				const float w = ImGui::CalcTextSize(text.data() + lineStart, text.data() + p, false).x;
+				const float dist = std::abs(w - relX);
+				if (dist < bestDist)
+				{
+					bestDist = dist;
+					best = p;
+				}
+			}
+			return static_cast<int>(best);
+		}
+
+		static void addExtraCaretFromMouse(ReviewAppState &app, const std::string &text, const ImVec2 &contentTopLeft, float gutterW, float padX, float padY,
+			float lineH, int primaryCursor, int previousPrimaryCursor)
+		{
+			const ImGuiIO &io = ImGui::GetIO();
+			const ImRect paneRect(ImGui::GetWindowPos(), ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y));
+			if (!io.MouseClicked[0] || !paneRect.Contains(io.MousePos))
+				return;
+			if (!io.KeyAlt && !io.KeyCtrl)
+			{
+				app.rightEditExtraCarets.clear();
+				return;
+			}
+			const int caret = mouseToBufferOffset(text, contentTopLeft, gutterW, padX, padY, lineH);
+			if (previousPrimaryCursor >= 0)
+				app.rightEditExtraCarets.push_back(previousPrimaryCursor);
+			app.rightEditExtraCarets.push_back(caret);
+			mergeDuplicateCarets(app, primaryCursor, static_cast<int>(text.size()));
+		}
+
+		static void drawExtraCarets(const ReviewAppState &app, const std::string &text, const ImVec2 &contentTopLeft, float gutterW, float padX, float padY,
+			float lineH)
+		{
+			const std::vector<size_t> starts = lineStartOffsets(text);
+			if (starts.empty())
+				return;
+			const ImRect clipR(ImGui::GetCurrentWindow()->InnerClipRect);
+			const float blink = 0.55f + 0.45f * ((std::sin(static_cast<float>(ImGui::GetTime()) * 6.0f) + 1.0f) * 0.5f);
+			const ImU32 visibleColor = IM_COL32(255, 255, 255, static_cast<int>(255.0f * blink));
+			ImDrawList *dl = ImGui::GetForegroundDrawList();
+			dl->PushClipRect(clipR.Min, clipR.Max, true);
+			for (int caret : app.rightEditExtraCarets)
+			{
+				caret = std::clamp(caret, 0, static_cast<int>(text.size()));
+				auto it = std::upper_bound(starts.begin(), starts.end(), static_cast<size_t>(caret));
+				const int row = static_cast<int>(std::distance(starts.begin(), it)) - 1;
+				if (row < 0)
+					continue;
+				const size_t lineStart = starts[static_cast<size_t>(row)];
+				const float x = contentTopLeft.x + gutterW + padX + ImGui::CalcTextSize(text.data() + lineStart, text.data() + caret, false).x;
+				const float y0 = contentTopLeft.y + padY + static_cast<float>(row) * lineH;
+				if (x < clipR.Min.x || x > clipR.Max.x || y0 + lineH < clipR.Min.y || y0 > clipR.Max.y)
+					continue;
+				dl->AddLine(ImVec2(x, y0), ImVec2(x, y0 + lineH), visibleColor, 2.0f);
+			}
+			dl->PopClipRect();
+		}
+
+		static bool applyEditToExtraCarets(ReviewAppState &app, const std::string &before, std::string &after, int cursorBefore, int cursorAfterEdit,
+			int selectionStart, int selectionEnd, int &cursorAfterMultiEdit)
+		{
+			if (app.rightEditExtraCarets.empty() || before == after)
+				return false;
+
+			size_t prefix = 0;
+			while (prefix < before.size() && prefix < after.size() && before[prefix] == after[prefix])
+				++prefix;
+			size_t suffix = 0;
+			while (suffix < before.size() - prefix && suffix < after.size() - prefix &&
+				   before[before.size() - 1 - suffix] == after[after.size() - 1 - suffix])
+				++suffix;
+
+			const int oldStart = static_cast<int>(prefix);
+			const int oldEnd = static_cast<int>(before.size() - suffix);
+			const int oldLen = oldEnd - oldStart;
+			const std::string inserted = after.substr(prefix, after.size() - prefix - suffix);
+			const bool hasSelection = selectionStart != selectionEnd;
+			const bool backspaceLike = !hasSelection && oldLen > 0 && cursorBefore >= oldEnd;
+
+			struct Replacement
+			{
+				int start = 0;
+				int end = 0;
+				std::string text;
+			};
+			std::vector<Replacement> replacements;
+			for (int caret : app.rightEditExtraCarets)
+			{
+				caret = std::clamp(caret, 0, static_cast<int>(before.size()));
+				if (caret >= oldStart && caret <= oldEnd)
+					continue;
+
+				Replacement r;
+				r.text = inserted;
+				if (oldLen == 0)
+				{
+					r.start = r.end = caret;
+				}
+				else if (backspaceLike)
+				{
+					r.end = caret;
+					r.start = std::max(0, caret - oldLen);
+				}
+				else
+				{
+					r.start = caret;
+					r.end = std::min(static_cast<int>(before.size()), caret + oldLen);
+				}
+				replacements.push_back(r);
+			}
+			if (replacements.empty())
+				return false;
+
+			const int primaryDelta = static_cast<int>(inserted.size()) - oldLen;
+			for (Replacement &r : replacements)
+			{
+				if (r.start > oldEnd)
+					r.start += primaryDelta;
+				if (r.end > oldEnd)
+					r.end += primaryDelta;
+				r.start = std::clamp(r.start, 0, static_cast<int>(after.size()));
+				r.end = std::clamp(r.end, r.start, static_cast<int>(after.size()));
+			}
+
+			std::sort(replacements.begin(), replacements.end(), [](const Replacement &a, const Replacement &b) { return a.start > b.start; });
+			std::string out = after;
+			for (const Replacement &r : replacements)
+			{
+				out.replace(static_cast<size_t>(r.start), static_cast<size_t>(std::max(0, r.end - r.start)), r.text);
+			}
+
+			std::vector<Replacement> ascending = replacements;
+			std::sort(ascending.begin(), ascending.end(), [](const Replacement &a, const Replacement &b) { return a.start < b.start; });
+			std::vector<int> newCarets;
+			int shift = 0;
+			cursorAfterMultiEdit = std::clamp(cursorAfterEdit, 0, static_cast<int>(after.size()));
+			for (const Replacement &r : ascending)
+			{
+				if (r.start <= cursorAfterMultiEdit)
+					cursorAfterMultiEdit += static_cast<int>(r.text.size()) - (r.end - r.start);
+				newCarets.push_back(r.start + shift + static_cast<int>(r.text.size()));
+				shift += static_cast<int>(r.text.size()) - (r.end - r.start);
+			}
+			after = std::move(out);
+			app.rightEditExtraCarets = std::move(newCarets);
+			return true;
 		}
 
 		static int diffLineCount(const std::string &text)
@@ -1786,6 +1987,12 @@ namespace gitReview
 					buf.reserve(buf.size() + 2048u);
 
 				const std::string undoBefore = readOnly ? std::string{} : rightBufferText(app);
+				const std::string rawBefore = readOnly ? std::string{} : bufferToString(buf);
+				const ImGuiID inputId = ImGui::GetID(inputLabel);
+				ImGuiInputTextState *preEditState = ImGui::GetInputTextState(inputId);
+				const int cursorBefore = preEditState ? preEditState->GetCursorPos() : 0;
+				const int selectionStart = preEditState ? preEditState->GetSelectionStart() : cursorBefore;
+				const int selectionEnd = preEditState ? preEditState->GetSelectionEnd() : cursorBefore;
 				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
 				ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
 				ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.f, 0.f, 0.f, 0.f));
@@ -1797,23 +2004,26 @@ namespace gitReview
 				ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 0.0f);
 				const bool edited = ImGui::InputTextMultiline(inputLabel, buf.data(), static_cast<int>(buf.size()), ImVec2(innerWL, paneH), fl,
 					vectorResizeCallback, &buf);
-				const ImGuiID inputId = ImGui::GetItemID();
 				if (edited && pane == M3PaneCol::Work)
 				{
-					const std::string rawAfterEdit = bufferToString(buf);
+					std::string rawAfterEdit = bufferToString(buf);
+					ImGuiInputTextState *editedState = ImGui::GetInputTextState(inputId);
+					int cursorAfterMultiEdit = editedState ? editedState->GetCursorPos() : cursorBefore;
+					const bool multiCaretApplied = applyEditToExtraCarets(app, rawBefore, rawAfterEdit, cursorBefore, cursorAfterMultiEdit, selectionStart,
+						selectionEnd, cursorAfterMultiEdit);
+					if (multiCaretApplied)
+						setBufferText(buf, rawAfterEdit);
 					cachedMergeThreePaneRows(app);
 					noteRightEditForUndo(app, undoBefore, rightBufferText(app));
-
-
-
-
-
-
-
-					if (bufferToString(buf) != rawAfterEdit)
+					if (multiCaretApplied || bufferToString(buf) != rawAfterEdit)
 					{
 						if (ImGuiInputTextState *st = ImGui::GetInputTextState(inputId))
-							reloadUserBufferPreservingCursor(st, rawAfterEdit, bufferToString(buf));
+						{
+							if (multiCaretApplied)
+								reloadUserBufferAtCursor(st, cursorAfterMultiEdit);
+							else
+								reloadUserBufferPreservingCursor(st, rawAfterEdit, bufferToString(buf));
+						}
 					}
 				}
 				if (!readOnly && ImGui::IsItemActive())
@@ -1861,6 +2071,16 @@ namespace gitReview
 							drawCppSyntaxLineOverlay(ov, font, fontSz, linePos, ln, scrollX, clipR.Min, clipR.Max, textBase);
 						}
 					}
+				}
+				if (!readOnly)
+				{
+					ImGuiInputTextState *st = ImGui::GetInputTextState(inputId);
+					const int primaryCursor = st ? st->GetCursorPos() : -1;
+					const std::string curText = bufferToString(buf);
+					addExtraCaretFromMouse(app, curText, innerL, gutterW, padXL, padYL, lineH, primaryCursor, app.rightEditLastPrimaryCursor);
+					mergeDuplicateCarets(app, primaryCursor, static_cast<int>(curText.size()));
+					drawExtraCarets(app, curText, innerL, gutterW, padXL, padYL, lineH);
+					app.rightEditLastPrimaryCursor = primaryCursor;
 				}
 				ImGui::SetCursorPos(ImVec2(0.f, 0.f));
 				ImGuiListClipper clipGut;
@@ -2312,6 +2532,12 @@ namespace gitReview
 				buf.reserve(buf.size() + 2048u);
 
 			const std::string undoBefore = app.rightSideIsWorktreeFile ? rightBufferText(app) : std::string{};
+			const std::string rawBefore = app.rightSideIsWorktreeFile ? bufferToString(buf) : std::string{};
+			const ImGuiID rightInputId = ImGui::GetID("##rightEditMain");
+			ImGuiInputTextState *preEditState = ImGui::GetInputTextState(rightInputId);
+			const int cursorBefore = preEditState ? preEditState->GetCursorPos() : 0;
+			const int selectionStart = preEditState ? preEditState->GetSelectionStart() : cursorBefore;
+			const int selectionEnd = preEditState ? preEditState->GetSelectionEnd() : cursorBefore;
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
 			ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
 			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.f, 0.f, 0.f, 0.f));
@@ -2320,24 +2546,37 @@ namespace gitReview
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.f, 0.f, 0.f));
 			const bool rightEdited = ImGui::InputTextMultiline("##rightEditMain", buf.data(), static_cast<int>(buf.size()), ImVec2(textW, paneH), editFlags,
 				vectorResizeCallback, &buf);
-			const ImGuiID rightInputId = ImGui::GetItemID();
 			if (rightEdited && app.rightSideIsWorktreeFile)
 			{
-				const std::string rawAfterEdit = bufferToString(buf);
+				std::string rawAfterEdit = bufferToString(buf);
+				ImGuiInputTextState *editedState = ImGui::GetInputTextState(rightInputId);
+				int cursorAfterMultiEdit = editedState ? editedState->GetCursorPos() : cursorBefore;
+				const bool multiCaretApplied = applyEditToExtraCarets(app, rawBefore, rawAfterEdit, cursorBefore, cursorAfterMultiEdit, selectionStart,
+					selectionEnd, cursorAfterMultiEdit);
+				if (multiCaretApplied)
+					setBufferText(buf, rawAfterEdit);
 				cachedDiffRows(app);
 				noteRightEditForUndo(app, undoBefore, rightBufferText(app));
-
-
-
-
-
-
-
-				if (bufferToString(buf) != rawAfterEdit)
+				if (multiCaretApplied || bufferToString(buf) != rawAfterEdit)
 				{
 					if (ImGuiInputTextState *rightState = ImGui::GetInputTextState(rightInputId))
-						reloadUserBufferPreservingCursor(rightState, rawAfterEdit, bufferToString(buf));
+					{
+						if (multiCaretApplied)
+							reloadUserBufferAtCursor(rightState, cursorAfterMultiEdit);
+						else
+							reloadUserBufferPreservingCursor(rightState, rawAfterEdit, bufferToString(buf));
+					}
 				}
+			}
+			if (app.rightSideIsWorktreeFile)
+			{
+				ImGuiInputTextState *rightState = ImGui::GetInputTextState(rightInputId);
+				const int primaryCursor = rightState ? rightState->GetCursorPos() : -1;
+				const std::string curText = bufferToString(buf);
+				addExtraCaretFromMouse(app, curText, inner0, gutterW, padX, padY, lineH, primaryCursor, app.rightEditLastPrimaryCursor);
+				mergeDuplicateCarets(app, primaryCursor, static_cast<int>(curText.size()));
+				drawExtraCarets(app, curText, inner0, gutterW, padX, padY, lineH);
+				app.rightEditLastPrimaryCursor = primaryCursor;
 			}
 			if (app.rightSideIsWorktreeFile && ImGui::IsItemActive())
 			{
