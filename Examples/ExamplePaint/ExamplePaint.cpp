@@ -165,13 +165,45 @@ static void textSymmetryMirrorFlags(bbe::SymmetryMode mode, size_t symIndex, boo
 	}
 }
 
+static float getPaintContentScale(bbe::Game &g)
+{
+	bbe::Window *window = g.getWindow();
+	if (window == nullptr) return 1.f;
+	const float scale = window->getScale();
+	return scale > 0.f ? scale : 1.f;
+}
+
+static PaintWindowMetrics getPaintWindowMetrics(bbe::Game &g)
+{
+	const float contentScale = getPaintContentScale(g);
+	PaintWindowMetrics w{};
+	w.width = (int32_t)std::round((float)g.getScaledWindowWidth() / contentScale);
+	w.height = (int32_t)std::round((float)g.getScaledWindowHeight() / contentScale);
+	if (w.width <= 0) w.width = g.getWindowWidth();
+	if (w.height <= 0) w.height = g.getWindowHeight();
+	bbe::Window *window = g.getWindow();
+	w.scale = window != nullptr ? window->getDpiScale() : 1.f;
+	return w;
+}
+
+static bbe::Vector2 toPaintScreenPos(const PaintWindowMetrics &w, bbe::Game &g, const bbe::Vector2 &rawPos)
+{
+	const float sx = w.width > 0 ? (float)g.getWindowWidth() / (float)w.width : 1.f;
+	const float sy = w.height > 0 ? (float)g.getWindowHeight() / (float)w.height : 1.f;
+	return {
+		sx > 0.f ? rawPos.x / sx : rawPos.x,
+		sy > 0.f ? rawPos.y / sy : rawPos.y
+	};
+}
+
 static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSinceLastFrame)
 {
-	PaintWindowMetrics w{};
-	w.width = g.getWindowWidth();
-	w.height = g.getWindowHeight();
-	w.scale = g.getWindow()->getDpiScale();
+	PaintWindowMetrics w = getPaintWindowMetrics(g);
 	editor.setViewportMetrics(w);
+	const bbe::Vector2 rawMousePos = g.getMouse();
+	const bbe::Vector2 mouseScreenPos = toPaintScreenPos(w, g, rawMousePos);
+	const bbe::Vector2 prevMouseScreenPos = toPaintScreenPos(w, g, g.getMousePrevious());
+	const bbe::Vector2 mouseScreenDelta = mouseScreenPos - prevMouseScreenPos;
 
 	bbe::Vector2 currMousePos{};
 	bool drawMode = false;
@@ -235,7 +267,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		discardTransientWorkArea();
 	}
 
-	const bbe::Vector2 prevMousePos = editor.screenToCanvas(g.getMousePrevious());
+	const bbe::Vector2 prevMousePos = editor.screenToCanvas(prevMouseScreenPos);
 	const int32_t modeBeforeInput = editor.mode;
 	bool refreshRectangleDraft = false;
 	if (g.isKeyPressed(bbe::Key::SPACE))
@@ -245,7 +277,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 	if (g.isKeyPressed(bbe::Key::F1) && editor.symmetryMode != bbe::SymmetryMode::None)
 	{
 		editor.symmetryOffsetCustom = true;
-		editor.symmetryOffset = editor.screenToCanvas(g.getMouse());
+		editor.symmetryOffset = editor.screenToCanvas(mouseScreenPos);
 	}
 
 	constexpr float CAM_WASD_SPEED = 400;
@@ -268,7 +300,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 
 	if (g.isMouseDown(bbe::MouseButton::MIDDLE))
 	{
-		editor.offset += g.getMouseDelta();
+		editor.offset += mouseScreenDelta;
 		if (editor.tiled)
 		{
 			if (editor.offset.x < 0) editor.offset.x += editor.getCanvasWidth() * editor.zoomLevel;
@@ -280,13 +312,13 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 
 	if (g.getMouseScrollY() < 0)
 	{
-		editor.changeZoom(1.0f / 1.1f, g.getMouse());
+		editor.changeZoom(1.0f / 1.1f, mouseScreenPos);
 	}
 	else if (g.getMouseScrollY() > 0)
 	{
-		editor.changeZoom(1.1f, g.getMouse());
+		editor.changeZoom(1.1f, mouseScreenPos);
 	}
-	currMousePos = editor.screenToCanvas(g.getMouse());
+	currMousePos = editor.screenToCanvas(mouseScreenPos);
 
 	if (!ctrlDown)
 	{
@@ -497,12 +529,12 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 
 	if (!mouseOnNavigator && (g.isMousePressed(bbe::MouseButton::LEFT) || g.isMousePressed(bbe::MouseButton::RIGHT)))
 	{
-		editor.startMousePos = editor.screenToCanvas(g.getMouse());
+		editor.startMousePos = editor.screenToCanvas(mouseScreenPos);
 	}
 
 	if (!mouseOnNavigator && !editor.canvasResizeActive && g.isMousePressed(bbe::MouseButton::LEFT))
 	{
-		const int32_t hitHandle = editor.getCanvasResizeHitHandle(g.getMouse());
+		const int32_t hitHandle = editor.getCanvasResizeHitHandle(mouseScreenPos);
 		if (hitHandle >= 0)
 		{
 			editor.canvasResizeActive = true;
@@ -628,7 +660,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		const bool selectionTransformClick = editor.selection.moveActive || editor.selection.resizeActive || editor.selection.rotationHandleActive;
 		if (!selectionTransformClick && !editor.consumeMagicWandSuppressedPick())
 		{
-			bbe::Vector2 pos = editor.screenToCanvas(g.getMouse());
+			bbe::Vector2 pos = editor.screenToCanvas(mouseScreenPos);
 			if (editor.toTiledPos(pos))
 			{
 				editor.applyMagicWandAt(editor.toCanvasPixel(pos), ctrlDown);
@@ -831,7 +863,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		{
 			const bool leftDown = g.isMouseDown(bbe::MouseButton::LEFT) && !editor.suppressCanvasInputUntilMouseUp;
 			const bool rightDown = g.isMouseDown(bbe::MouseButton::RIGHT) && !editor.suppressCanvasInputUntilMouseUp;
-			bbe::Vector2 pos = editor.screenToCanvas(g.getMouse());
+			bbe::Vector2 pos = editor.screenToCanvas(mouseScreenPos);
 			if (editor.toTiledPos(pos))
 			{
 				const auto symPositions = editor.getSymmetryPositions(pos);
@@ -862,7 +894,7 @@ static void runPaintEditorUpdate(PaintEditor &editor, bbe::Game &g, float timeSi
 		}
 		else if (editor.mode == PaintEditor::MODE_PIPETTE)
 		{
-			auto pos = editor.screenToCanvas(g.getMouse());
+			auto pos = editor.screenToCanvas(mouseScreenPos);
 			if (editor.toTiledPos(pos))
 			{
 				const size_t x = (size_t)pos.x;
@@ -1029,11 +1061,7 @@ public:
 			colorHistoryPersist.writeToFile();
 		};
 
-		PaintWindowMetrics w{};
-		w.width = getWindowWidth();
-		w.height = getWindowHeight();
-		w.scale = getWindow()->getDpiScale();
-		editor.onStart(w);
+		editor.onStart(getPaintWindowMetrics(*this));
 
 		if (!initialDocumentPath.empty())
 		{
@@ -1087,7 +1115,7 @@ public:
 
 	void draw2D(bbe::PrimitiveBrush2D &brush) override
 	{
-		drawExamplePaintGui(editor, brush, getMouse());
+		drawExamplePaintGui(editor, brush, toPaintScreenPos(editor.viewport, *this, getMouse()));
 	}
 
 	void onEnd() override
